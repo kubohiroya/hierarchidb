@@ -7,13 +7,21 @@
     "declarationMap": true,
     "skipLibCheck": false,
     "jsx": "react-jsx",
-    "types": ["node", "react"],
-    "typeRoots": [
-      "./src/types",
-      "../../../node_modules/@types"
+    "types": [
+      "node",
+      "react"
     ],
     "moduleResolution": "Node16",
-    "module": "Node16"
+    "module": "Node16",
+    "baseUrl": ".",
+    "paths": {
+      "react-transition-group": [
+        "src/types/react-transition-group/index.d.ts"
+      ],
+      "react-transition-group/Transition": [
+        "src/types/react-transition-group/transition.d.ts"
+      ]
+    }
   },
   "include": [
     "src/**/*"

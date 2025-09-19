@@ -72,6 +72,12 @@ export interface ChainExecutionResult {
   resolverResults: Map<NodeId, any>;
 }
 
+type ResolverExecutionResult = {
+  resolverId: NodeId;
+  data: unknown;
+  weight: number;
+};
+
 /**
  * Manager for Resolver chains
  */
@@ -216,7 +222,7 @@ export class ChainManager {
   ): Promise<any> {
     const enabledResolvers = chain.resolvers.filter(r => r.enabled);
 
-    const promises = enabledResolvers.map(async (resolver) => {
+    const promises = enabledResolvers.map(async (resolver): Promise<ResolverExecutionResult | null> => {
       try {
         const resolvedData = await this.executeResolver(resolver.resolverId, data);
         result.resolverResults.set(resolver.resolverId, resolvedData);
@@ -232,10 +238,10 @@ export class ChainManager {
       }
     });
 
-    const results = (await Promise.all(promises)).filter(r => r !== null);
+    const results = (await Promise.all(promises)).filter((r): r is ResolverExecutionResult => r !== null);
 
     // Merge results based on conflict resolution strategy
-    return this.mergeResults(results as any[], chain.conflictResolution);
+    return this.mergeResults(results, chain.conflictResolution);
   }
 
   /**
@@ -345,7 +351,7 @@ export class ChainManager {
    * Merge results from parallel execution
    */
   private mergeResults(
-    results: Array<{ resolverId: NodeId; data: any; weight: number }>,
+    results: ResolverExecutionResult[],
     strategy: ConflictResolution,
   ): any {
     if (results.length === 0) return null;

@@ -4,7 +4,7 @@
  */
 
 import type { Table } from 'dexie';
-import type { NodeId, NodeType } from '../../shared/index.js';
+import type { DataSourceName, NodeId, NodeType } from '../../shared/index.js';
 import {
   buildShapeEntityFromCreate,
   DEFAULT_PROCESSING_CONFIG,
@@ -13,7 +13,7 @@ import {
   ShapeEntity,
   ShapeWorkingCopy,
 } from '../../shared/index.js';
-import { BaseEntityHandler } from '@hierarchidb/base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 
 /**
  * Create shape data interface
@@ -21,7 +21,7 @@ import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 export interface CreateShapeData {
   name: string;
   description?: string;
-  dataSourceName: string;
+  dataSourceName: DataSourceName;
   processingConfig?: Partial<ProcessingConfig>;
   selectedCountries?: string[];
   adminLevels?: number[];
@@ -32,7 +32,7 @@ export interface CreateShapeData {
  */
 export interface ShapeFilterCriteria {
   name?: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   processingStatus?: string;
   hasActiveBatch?: boolean;
 }
@@ -69,7 +69,7 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       data: {
         name: data.name,
         description: data.description,
-        dataSourceName: data.dataSourceName as any,
+        dataSourceName: data.dataSourceName,
         processingConfig: data.processingConfig as Partial<ProcessingConfig>,
       },
     });

@@ -93,10 +93,13 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
   const allSelected = data.length > 0 && data.every((node) => isSelected(node.id));
   const someSelected = data.some((node) => isSelected(node.id));
 
-  const renderNode = (node: TreeNodeData, level: number = 0) => {
+  const renderNode = (node: TreeNodeData, level: number = 0, ancestorSelected: boolean = false) => {
     const hasChildren = node.children && node.children.length > 0;
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
+    const inheritedSelected = ancestorSelected;
+    const visuallyChecked = inheritedSelected || selected;
+    const checkboxDisabled = inheritedSelected;
 
     const handleRowClick = (event: React.MouseEvent) => {
       // Don't trigger row click if clicking on expand/checkbox
@@ -134,8 +137,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             style={{ padding: '4px 6px', width: 49, minWidth: 49, maxWidth: 49 }}
           >
             <Checkbox
-              checked={selected}
-              onChange={(e) => onNodeSelect?.(node.id, e.target.checked)}
+              checked={visuallyChecked}
+              disabled={checkboxDisabled}
+              onChange={(e) => {
+                if (checkboxDisabled) return;
+                onNodeSelect?.(node.id, e.target.checked);
+              }}
               size={dense ? 'small' : 'medium'}
             />
           </TableCell>
@@ -216,7 +223,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     // Child rows (if expanded)
     if (expanded && hasChildren && node.children) {
       node.children.forEach((child: any) => {
-        rows.push(...renderNode(child, level + 1));
+        rows.push(...renderNode(child, level + 1, inheritedSelected || selected));
       });
     }
 
@@ -322,7 +329,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                 </TableCell>
               </TableRow>
             ) : (
-              data.flatMap((node) => renderNode(node))
+              data.flatMap((node) => renderNode(node, 0, false))
             )}
           </TableBody>
         </Table>

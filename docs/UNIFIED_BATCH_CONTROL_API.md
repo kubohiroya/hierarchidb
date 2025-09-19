@@ -26,7 +26,7 @@ interface IBatchSessionManager {
 ### Location Plugin
 
 ```typescript
-import { createLocationBatchManager } from '@hierarchidb/location-plugin';
+import { createLocationBatchManager } from '@hierarchidb/node-type-location-plugin';
 
 const manager = createLocationBatchManager();
 
@@ -52,7 +52,7 @@ await manager.cancelBatchSession(sessionId);
 ### Shape Plugin
 
 ```typescript
-import { createShapeBatchManager } from '@hierarchidb/shape-plugin';
+import { createShapeBatchManager } from '@hierarchidb/node-type-shape-plugin';
 
 const manager = createShapeBatchManager();
 
@@ -68,7 +68,7 @@ const sessionId = await manager.startBatchSession(nodeId, {
 ### Route Plugin
 
 ```typescript
-import { createRouteBatchManager } from '@hierarchidb/route-plugin';
+import { createRouteBatchManager } from '@hierarchidb/node-type-route-plugin';
 
 const manager = createRouteBatchManager();
 

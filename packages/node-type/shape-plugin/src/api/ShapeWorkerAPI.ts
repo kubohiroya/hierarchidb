@@ -5,6 +5,7 @@
 
 import { NodeId } from '@hierarchidb/common-type';
 import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI.js';
+import type { CacheType } from '../services/types.js';
 
 /**
  * Worker-exposed API for Shape plugin
@@ -143,9 +144,9 @@ export class ShapeWorkerAPI {
     return this.pluginAPI.getCacheStatistics(nodeId);
   }
 
-  async clearCache(nodeId: NodeId, cacheType?: string): Promise<void> {
+  async clearCache(nodeId: NodeId, cacheType?: CacheType): Promise<void> {
     this.ensureInitialized();
-    return this.pluginAPI.clearCache(nodeId, cacheType as any);
+    return this.pluginAPI.clearCache(nodeId, cacheType);
   }
 
   async optimizeStorage(nodeId: NodeId): Promise<any> {

@@ -29,14 +29,16 @@ export { TabularQueryService as ShapeTableQueryService } from '@hierarchidb/tabu
 export * from './services/tiles/RuntimeTileClient.js';
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
-export const runtimeWiring = {
-  registerRuntimeWorkerAdapters: async () => {
+export class RuntimeWiring {
+  static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
       const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerShapeRuntimeWorkerAdapters();
-    } catch { /* noop */ }
-  },
-} as const;
+    } catch {
+      /* noop */
+    }
+  }
+}
 
 // Folder dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
 export { initializeShapeFolderExtension, shapeFolderExtension } from './extensions/ShapeFolderExtension.js';

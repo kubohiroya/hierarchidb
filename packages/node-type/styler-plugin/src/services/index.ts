@@ -4,7 +4,7 @@
  * : SpreadsheetCSVApiDriver
   */
 
-//  NOTE: SpreadsheetCSVApiDriver@hierarchidb/spreadsheet-plugin
+//  NOTE: SpreadsheetCSVApiDriver@hierarchidb/node-type-spreadsheet-plugin
 
 //  Styler
 export { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';

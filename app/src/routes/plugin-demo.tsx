@@ -23,7 +23,7 @@ import { type NodeId } from '@hierarchidb/common-type';
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead
 // import { BaseMapDialog } from "@hierarchidb/basemap";
-// import { StylerDialog } from "@hierarchidb/styler-plugin";
+// import { StylerDialog } from "@hierarchidb/node-type-styler-plugin";
 
 // Mock Dialog Component for demonstration
 type MockDialogProps = {
@@ -48,13 +48,13 @@ const MockDialog = ({ title, open, onClose, data, onSave }: MockDialogProps) => 
         <Stack spacing={2} sx={{ mt: 2 }}>
           <TextField
             label="Name"
-            value={String((formData as any).name ?? '')}
+            value={typeof formData.name === 'string' ? formData.name : ''}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             fullWidth
           />
           <TextField
             label="Description"
-            value={String((formData as any).description ?? '')}
+            value={typeof formData.description === 'string' ? formData.description : ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             multiline
             rows={3}

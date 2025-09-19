@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeQueryAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
 // Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
@@ -41,7 +41,7 @@ type TreeConsolePanelProps = {
   rowClickAction: 'Select/Navigate' | 'None';
 };
 
-const injected = (typeof window !== 'undefined' ? (window as unknown as { __HDB_TreeConsolePanel?: React.FC<TreeConsolePanelProps> }).__HDB_TreeConsolePanel : undefined);
+const injected = (typeof window !== 'undefined' ? (window as { __HDB_TreeConsolePanel?: React.FC<TreeConsolePanelProps> }).__HDB_TreeConsolePanel : undefined);
 const TreeConsolePanel: React.FC<TreeConsolePanelProps> = injected ?? (() => null);
 
 export type ResourceSummary = { nodeId: string; nodeType?: string; name?: string };
@@ -67,7 +67,7 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   // selection handler は TreeConsolePanel の onNodeSelect を使用
 
   const handleExpandAll = useCallback(() => {
-    const allIds = treeData.map((n:any)=> String(n.id));
+    const allIds = treeData.map((n) => String(n.id));
     setExpanded(new Set<string>(allIds));
   }, [treeData]);
 
@@ -77,7 +77,25 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   const handleSearchClear = useCallback(() => setSearchTerm(''), []);
 
   // Helpers declared before useMemo to avoid TS2454
-  const toRows = (nodes: TreeNode[], depth: number): Row[] => (nodes||[]).map((n) => ({ id: String(n.id), name: n.name, nodeType: (n as any).nodeType, hasChildren: !!(n as any).hasChildren, depth }));
+  const toRows = (nodes: TreeNode[], depth: number): Row[] =>
+    (nodes || []).map((node) => ({
+      id: String(node.id),
+      name: node.name,
+      nodeType: node.nodeType,
+      hasChildren: Boolean(node.hasChildren),
+      depth,
+    }));
+
+  const toNodeId = (value: string): NodeId => value as NodeId;
+  const toTreeId = (value: string): TreeId => value as TreeId;
+
+  const isWorkerAPI = (value: unknown): value is WorkerAPI => {
+    return typeof value === 'object' && value !== null && typeof (value as WorkerAPI).getQueryAPI === 'function';
+  };
+
+  const isWorkerClientHolder = (value: unknown): value is { client?: WorkerAPI | null } => {
+    return typeof value === 'object' && value !== null && 'client' in value;
+  };
 
   const ensureChildren = useCallback(async (parentId: string) => {
     if (cacheRef.current.has(parentId)) return;
@@ -87,8 +105,8 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
       const client = ref && ('getQueryAPI' in ref) ? ref : (ref?.client ?? null);
       if (!client) return;
       const query: TreeQueryAPI = await client.getQueryAPI();
-      const children = await query.listChildren(parentId as any);
-      cacheRef.current.set(parentId, toRows(children, ((breadcrumb.length||1)+0)));
+      const children = await query.listChildren(toNodeId(parentId));
+      cacheRef.current.set(parentId, toRows(children, breadcrumb.length + 1));
     } catch { /* noop */ }
   }, [breadcrumb.length]);
 
@@ -100,8 +118,8 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
       const closure = new Set<string>();
       for (const id of selfSet) {
         try {
-          const desc = await nodeApi.listDescendants(id as any);
-          (desc||[]).forEach((d)=> closure.add(String(d.id as any)));
+          const descendants = await nodeApi.listDescendants(toNodeId(id));
+          descendants?.forEach((d) => closure.add(String(d.id)));
         } catch { /* noop */ }
       }
       const ancestorLike = new Set<string>();
@@ -202,24 +220,28 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     let disposed = false;
     (async () => {
       try {
-        const getClient = getWorkerClientHook<any>() || null;
-        const ref = getClient ? getClient() : null;
-        const client = ref && ('getQueryAPI' in ref) ? ref : (ref?.client ?? null);
+        const hook = getWorkerClientHook<WorkerAPI | { client?: WorkerAPI | null }>() ?? null;
+        const ref = hook ? hook() : null;
+        const client = isWorkerAPI(ref)
+          ? ref
+          : isWorkerClientHolder(ref)
+            ? ref.client ?? null
+            : null;
         if (!client) return;
         const query: TreeQueryAPI = await client.getQueryAPI();
-        // Assuming 'r' is resources tree
-        const tree = await query.getTree('r' as any);
-        const rootId = tree?.rootId as string | undefined;
+        const resourcesTreeId = toTreeId('r');
+        const tree = await query.getTree(resourcesTreeId);
+        const rootId = tree?.rootId ? String(tree.rootId) : undefined;
         if (!rootId) return;
         // Preload ancestor/self/descendant sets for current Linker context if available
         await computeSelectionSets(query);
         // Load first level
-        const children = await query.listChildren(rootId as any);
+        const children = await query.listChildren(toNodeId(rootId));
         const rows = toRows(children, 1);
         cacheRef.current.set(String(rootId), rows);
         if (!disposed) {
           setTreeData(applySearchAndBadges(rows));
-      setBreadcrumb([{ id: String(rootId), name: 'Resources' }]);
+          setBreadcrumb([{ id: String(rootId), name: 'Resources' }]);
         }
       } catch {
         // fallback: empty

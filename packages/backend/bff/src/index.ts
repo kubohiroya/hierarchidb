@@ -93,7 +93,7 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
         googleAuthUrl.searchParams.set('response_type', 'code');
         googleAuthUrl.searchParams.set('scope', scope || 'openid profile email');
         // Recreate state using StateManager to ensure integrity
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
         googleAuthUrl.searchParams.set('state', state);
         if (code_challenge) {
@@ -117,7 +117,7 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
         const client_state = url.searchParams.get('state');
         const scope = url.searchParams.get('scope');
 
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
 
         const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
@@ -143,7 +143,7 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
         const client_state = url.searchParams.get('state');
         const scope = url.searchParams.get('scope');
 
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
 
         const microsoftAuthUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
@@ -180,7 +180,7 @@ app.post('/auth/authorize/:provider', async (c) => {
           clientSecret: c.env.GOOGLE_CLIENT_SECRET,
           redirectUri,
         };
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
         const code_challenge = url.searchParams.get('code_challenge');
         const code_challenge_method = url.searchParams.get('code_challenge_method') || 'S256';
@@ -202,7 +202,7 @@ app.post('/auth/authorize/:provider', async (c) => {
           return c.json({ error: 'GitHub OAuth not configured' }, 501);
         }
         const redirectUri = getDynamicRedirectUri(c, 'github');
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
         const scope = url.searchParams.get('scope') || 'read:user user:email';
         const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
@@ -218,7 +218,7 @@ app.post('/auth/authorize/:provider', async (c) => {
           return c.json({ error: 'Microsoft OAuth not configured' }, 501);
         }
         const redirectUri = getDynamicRedirectUri(c, 'microsoft');
-        const stateManager = new StateManager((c.env as any).JWT_SECRET || 'default-secret');
+        const stateManager = new StateManager(c.env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
         const code_challenge = url.searchParams.get('code_challenge');
         const code_challenge_method = url.searchParams.get('code_challenge_method') || 'S256';

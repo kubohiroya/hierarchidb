@@ -10,6 +10,7 @@ import {
   CountryMetadata,
   CreateShapeData,
   DataSourceConfig,
+  DataSourceName,
   DEFAULT_DATA_SOURCES,
   generateUrlMetadata,
   NodeId,
@@ -28,6 +29,7 @@ import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
+import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import * as Comlink from 'comlink';
 
@@ -118,20 +120,20 @@ export const shapePluginAPI = {
     return DEFAULT_DATA_SOURCES;
   },
 
-  getCountryMetadata: async (_dataSource: string): Promise<CountryMetadata[]> => {
+  getCountryMetadata: async (dataSource: string | DataSourceName): Promise<CountryMetadata[]> => {
     // Load from pre-fetched metadata files provided by @hierarchidb/runtime-shared-fetch-metadata
     // Use the centralized MetadataLoader service for caching and transformation
     try {
-      const data = await metadataLoader.loadMetadata(_dataSource);
+      const data = await metadataLoader.loadMetadata(toDataSourceName(dataSource));
       if (Array.isArray(data) && data.length > 0) return data;
     } catch (err) {
-      console.error('Failed to load country metadata for data source:', _dataSource, err);
+      console.error('Failed to load country metadata for data source:', dataSource, err);
     }
     // Fallback minimal metadata for tests/offline
     return [
       { countryCode: 'US', countryName: 'United States', availableAdminLevels: [0, 1, 2] },
       { countryCode: 'JP', countryName: 'Japan', availableAdminLevels: [0, 1, 2] },
-    ] as any;
+    ];
   },
 
   generateUrlMetadata: async (
@@ -140,8 +142,9 @@ export const shapePluginAPI = {
     adminLevels: number[],
   ): Promise<UrlMetadata[]> => {
     // Get country metadata first
-    const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSource);
-    return generateUrlMetadata(dataSource as any, countries, adminLevels, countryMetadata);
+    const dataSourceName = toDataSourceName(dataSource);
+    const countryMetadata = await shapePluginAPI.getCountryMetadata(dataSourceName);
+    return generateUrlMetadata(dataSourceName, countries, adminLevels, countryMetadata);
   },
 
   // ===================================
@@ -155,6 +158,7 @@ export const shapePluginAPI = {
   ): Promise<ValidationResult> => {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const dataSourceName = toDataSourceName(dataSource);
 
     if (countries.length === 0) {
       errors.push('At least one country must be selected');
@@ -164,7 +168,7 @@ export const shapePluginAPI = {
       errors.push('At least one administrative level must be selected');
     }
 
-    if (!DEFAULT_DATA_SOURCES.find((ds) => ds.name === dataSource)) {
+    if (!DEFAULT_DATA_SOURCES.find((ds) => ds.name === dataSourceName)) {
       errors.push('Invalid data source selected');
     }
 
@@ -206,20 +210,20 @@ export const shapePluginAPI = {
     }
 
     // Convert ProcessingConfig to BatchConfig
-    const batchConfig = {
-      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl || '',
+    const batchConfig: BatchProcessConfig = {
+      corsProxyBaseURL: config.downloadConfig?.corsProxyUrl ?? '',
       dataSource: config.dataSource,
       download: {
-        concurrentDownloads: config.downloadConfig?.maxConcurrent || 4,
-        deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles || false,
+        concurrentDownloads: config.downloadConfig?.maxConcurrent ?? 4,
+        deleteOnComplete: config.cleanupConfig?.deleteDownloadedFiles ?? false,
       },
       simplify1: {
-        concurrentProcesses: config.simplificationConfig?.level1Workers || 2,
-        enableFeatureFiltering: config.simplificationConfig?.enableFiltering || true,
-        featureAreaThreshold: config.simplificationConfig?.areaThreshold || 0.5,
+        concurrentProcesses: config.simplificationConfig?.level1Workers ?? 2,
+        enableFeatureFiltering: config.simplificationConfig?.enableFiltering ?? true,
+        featureAreaThreshold: config.simplificationConfig?.areaThreshold ?? 0.5,
         minVertexCountForAreaFilter: 25,
         aspectRatioThreshold: 5,
-        featureFilterMethod: 'hybrid' as const,
+        featureFilterMethod: 'hybrid',
         hybridFilterConfig: {
           quickRejectThreshold: 0.1,
           regularShapeMinRatio: 0.5,
@@ -230,24 +234,24 @@ export const shapePluginAPI = {
         deleteOnComplete: false,
       },
       simplify2: {
-        concurrentProcesses: config.simplificationConfig?.level2Workers || 2,
+        concurrentProcesses: config.simplificationConfig?.level2Workers ?? 2,
         quantize: 1e4,
-        simplify: config.simplificationConfig?.tolerance || 0.01,
+        simplify: config.simplificationConfig?.tolerance ?? 0.01,
         tolerance: 0.1,
         enablePerFeatureSimplification: true,
         deleteOnComplete: false,
       },
       vectorTiles: {
-        concurrentProcesses: config.tileConfig?.workers || 2,
-        maxZoom: config.tileConfig?.maxZoom || 14,
+        concurrentProcesses: config.tileConfig?.workers ?? 2,
+        maxZoom: config.tileConfig?.maxZoom ?? 14,
         tileCountThresholdForZoomStop: 5000,
       },
     };
 
+    const batchSessionData = { urlMetadata };
+
     // Start batch session using unified manager
-    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId, batchConfig as any, {
-      urlMetadata,
-    } as any);
+    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId, batchConfig, batchSessionData);
 
     // Register progress callback if provided
     if (progressCallback) {
@@ -561,3 +565,18 @@ export const shapePluginAPI = {
     console.log(`Cleaning up processing data for node: ${nodeId}`);
   },
 };
+
+function toDataSourceName(value: string | DataSourceName): DataSourceName {
+  if (isDataSourceName(value)) return value;
+  const normalized = value.trim().toLowerCase();
+  if (isDataSourceName(normalized)) return normalized;
+  console.warn('[shape-plugin] Unknown data source name:', value, '—fallback to naturalearth');
+  return 'naturalearth';
+}
+
+function isDataSourceName(value: string): value is DataSourceName {
+  return value === 'naturalearth' ||
+    value === 'geoboundaries' ||
+    value === 'gadm' ||
+    value === 'openstreetmap';
+}

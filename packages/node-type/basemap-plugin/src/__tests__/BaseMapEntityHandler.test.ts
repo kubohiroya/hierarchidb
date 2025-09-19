@@ -4,7 +4,7 @@ import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
 
 // Mock the FolderEntityHandler since BaseMapEntityHandler extends it
-vi.mock('@hierarchidb/folder-plugin', () => ({
+vi.mock('@hierarchidb/node-type-folder-plugin', () => ({
   FolderEntityHandler: class {
     async createEntity(nodeId: NodeId, data?: any) {
       return {
@@ -344,7 +344,7 @@ describe('BaseMapEntityHandler', () => {
     it('should reject invalid map style', async () => {
       const invalidConfig: Partial<BaseMapEntity> = {
         mapStyle: {
-          style: 'invalid-style' as any,
+          style: 'invalid-style' as unknown as BaseMapEntity['mapStyle']['style'],
         },
       };
 

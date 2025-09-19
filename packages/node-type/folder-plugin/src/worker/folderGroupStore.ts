@@ -6,21 +6,28 @@ import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
 type Item = GroupItemBase<{ value?: unknown }>;
 const mem = new Map<string, Item[]>(); // key: nodeId
 
+const toKey = (nodeId: NodeId): string => String(nodeId);
+
 export const folderGroupStore: GroupStore<Item> = {
   async list(nodeId: NodeId) {
-    return (mem.get(nodeId as any) || []).slice();
+    const key = toKey(nodeId);
+    return (mem.get(key) || []).slice();
   },
   async bulkUpsert(nodeId: NodeId, items: Item[]) {
-    const cur = mem.get(nodeId as any) || [];
-    const byId = new Map(cur.map((i) => [i.id, i] as const));
+    const key = toKey(nodeId);
+    const currentItems = mem.get(key) || [];
+    const byId = new Map(currentItems.map((item) => [item.id, item] as const));
     const now = Date.now();
-    for (const it of items) byId.set(it.id, { ...it, updatedAt: now });
-    mem.set(nodeId as any, Array.from(byId.values()));
+    for (const item of items) {
+      byId.set(item.id, { ...item, updatedAt: now });
+    }
+    mem.set(key, Array.from(byId.values()));
   },
   async bulkDelete(nodeId: NodeId, itemIds: string[]) {
-    const cur = mem.get(nodeId as any) || [];
-    const next = cur.filter((i) => !itemIds.includes(i.id));
-    mem.set(nodeId as any, next);
+    const key = toKey(nodeId);
+    const currentItems = mem.get(key) || [];
+    const nextItems = currentItems.filter((item) => !itemIds.includes(item.id));
+    mem.set(key, nextItems);
   },
 };
 

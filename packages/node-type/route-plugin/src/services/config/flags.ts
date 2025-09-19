@@ -1,10 +1,29 @@
 export function isFlagEnabled(name: string, fallback = false): boolean {
-  const g: any = (globalThis as any);
-  const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
-  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-  const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
-  if (v == null) return fallback;
-  const s = String(v).toLowerCase();
-  return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
+  const value = readFlagValue(name);
+  if (value === undefined) return fallback;
+  const normalized = value.toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled';
 }
 
+function readFlagValue(name: string): string | undefined {
+  const local = (() => {
+    if (typeof localStorage === 'undefined') return undefined;
+    try {
+      return localStorage.getItem(name) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (local !== undefined) return local;
+
+  const globalRecord = globalThis as Record<string, unknown>;
+  const globalValue = globalRecord[name];
+  if (globalValue != null) return String(globalValue);
+
+  if (typeof process !== 'undefined') {
+    const envValue = process.env?.[name];
+    if (envValue !== undefined) return envValue;
+  }
+
+  return undefined;
+}

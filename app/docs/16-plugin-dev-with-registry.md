@@ -70,6 +70,7 @@
   - `virtual:plugin-registry-ui` … UI ローダ
   - `virtual:plugin-registry-worker` … Worker ローダ
   - `virtual:mui-icon-map` … アイコンマップ
+- `@hierarchidb/tools-plugin-registry-utils` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/node-type-*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
 - 文字列リテラルの import() なので、Vite/Rollup が確実に解決・分割し、GitHub Pages でも問題ありません。
 
 ## UI 実装の取り込み例

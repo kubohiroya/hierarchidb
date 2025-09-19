@@ -59,6 +59,27 @@ const clampIndex = (index: number, length: number) => {
   return Math.min(Math.max(index, 0), length - 1);
 };
 
+const isWorkerAPI = (value: unknown): value is WorkerAPI => (
+  typeof value === 'object'
+  && value !== null
+  && 'getQueryAPI' in value
+  && typeof (value as { getQueryAPI: unknown }).getQueryAPI === 'function'
+);
+
+const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } => (
+  typeof value === 'object'
+  && value !== null
+  && 'client' in value
+);
+
+const toRecord = (value: unknown): Record<string, unknown> | undefined => (
+  typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
+);
+
+const toStringArray = (value: unknown): string[] => (
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+);
+
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
     mode,
@@ -76,10 +97,14 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
 
-  type WorkerRef = WorkerAPI | { client?: WorkerAPI } | null;
-  const useClientHook = (getWorkerClientHook<WorkerRef>() || (() => null));
+  type WorkerRef = WorkerAPI | { client?: WorkerAPI | null } | null;
+  const useClientHook = getWorkerClientHook<WorkerRef>() ?? (() => null);
   const ref = useClientHook();
-  const client: WorkerAPI | null = ref && ('getQueryAPI' in (ref as any)) ? (ref as WorkerAPI) : ((ref as { client?: WorkerAPI })?.client ?? null);
+  const client: WorkerAPI | null = useMemo(() => {
+    if (isWorkerAPI(ref)) return ref;
+    if (isWorkerHolder(ref) && ref.client && isWorkerAPI(ref.client)) return ref.client;
+    return null;
+  }, [ref]);
 
   const {
     workingCopy,
@@ -155,11 +180,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
   useEffect(() => {
     if (workingCopy) {
-      const tags = (() => {
-        const data = workingCopy.data as any;
-        const arr = data && Array.isArray(data.tags) ? data.tags as unknown[] : [];
-        return arr.filter((x): x is string => typeof x === 'string');
-      })();
+      const tagsValue = workingCopy.data?.['tags'];
+      const tags = toStringArray(tagsValue);
       setBasicInfo({ name: workingCopy.name ?? '', description: workingCopy.description ?? '', tags });
     }
   }, [workingCopy]);
@@ -173,10 +195,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         if (!client) return;
         const tagAPI = await client.getTagAPI();
         const all = await tagAPI.getAllTags();
-        if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter(Boolean));
+        if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter((name): name is string => typeof name === 'string'));
         if (mode === 'edit' && nodeId) {
           const nodeTags = await tagAPI.getTagsForNode(nodeId);
-          const names = (nodeTags || []).map((t: TagEntity) => t.name).filter(Boolean);
+          const names = (nodeTags || []).map((t: TagEntity) => t.name).filter((name): name is string => typeof name === 'string');
           if (!disposed && names.length) setBasicInfo(prev => ({ ...prev, tags: prev.tags.length ? prev.tags : names }));
         }
       } catch (err) {
@@ -194,14 +216,11 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         const query = await client.getQueryAPI();
         const node = await query.getNode(nodeId);
         if (!node || disposed) return;
-        const nodeTags = (() => {
-          const data = (node as any)?.data;
-          const arr = data && Array.isArray(data.tags) ? data.tags as unknown[] : [];
-          return arr.filter((x): x is string => typeof x === 'string');
-        })();
+        const nodeData = toRecord((node as unknown as { data?: unknown }).data);
+        const nodeTags = toStringArray(nodeData?.['tags']);
         setBasicInfo(prev => ({
           name: prev.name || node.name || '',
-          description: prev.description || (node as any).description || '',
+          description: prev.description || node.description || '',
           tags: prev.tags.length ? prev.tags : nodeTags,
         }));
       } catch (err) {

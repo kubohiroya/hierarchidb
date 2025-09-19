@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/timeline-plugin",
+  "name": "@hierarchidb/node-type-timeline-plugin",
   "version": "0.0.1",
   "description": "Timeline plugin scaffold for HierarchiDB (new design)",
   "type": "module",
@@ -23,16 +23,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
     }
   },
   "typesVersions": {
@@ -59,7 +49,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
@@ -79,8 +69,7 @@
     "react": ">=18.0.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
-    "react-transition-group": "^4.4.5",
-    "@types/react-transition-group": "^4.4.12"
+    "react-transition-group": "^4.4.5"
   },
   "hierarchidb": {
     "plugin": {
@@ -88,7 +77,7 @@
       "name": "Timeline Plugin",
       "icon": {
         "mui": "Timeline",
-        "emoji": "🕒",
+        "emoji": "\ud83d\udd52",
         "color": "#8a7cbf"
       }
     }

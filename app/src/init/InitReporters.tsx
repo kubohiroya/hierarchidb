@@ -4,6 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { useSimpleBFFAuth } from '@hierarchidb/ui-auth';
 import { useWorker } from '~/contexts/WorkerProvider.js';
 
+const logInitReporterWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[InitReporters]', message, error);
+};
+
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
 export const MarkStepDoneOnMount: React.FC<{ step: StepName; message?: string }>
@@ -83,10 +88,12 @@ export const WorkerProgressReporter: React.FC = () => {
     window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
     // Immediate check on mount
     try {
-      if ((window as any).__HDB_INIT_COMPLETE__) {
+      if ((window as InitStatusWindow).__HDB_INIT_COMPLETE__) {
         markStepDone('Worker', 'Worker ready');
       }
-    } catch {}
+    } catch (error) {
+      logInitReporterWarning('Failed to inspect __HDB_INIT_COMPLETE__ flag', error);
+    }
     const t = window.setInterval(() => {
       // Late import to avoid circular
       import('../WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
@@ -94,7 +101,9 @@ export const WorkerProgressReporter: React.FC = () => {
           markStepDone('Worker', 'Worker ready');
           window.clearInterval(t);
         }
-      }).catch(() => {});
+      }).catch((error) => {
+        logInitReporterWarning('Failed to poll WorkerAPIClient readiness', error);
+      });
     }, 200);
     return () => {
       window.removeEventListener('hierarchidb-worker-init-complete', onEvt);
@@ -102,4 +111,7 @@ export const WorkerProgressReporter: React.FC = () => {
     };
   }, [markStepDone]);
   return null;
+};
+type InitStatusWindow = Window & {
+  __HDB_INIT_COMPLETE__?: boolean;
 };

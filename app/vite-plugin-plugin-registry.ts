@@ -4,12 +4,12 @@ import * as path from 'path';
 
 type PlugPkg = {
   name?: string;
-  exports?: Record<string, any> | string;
+  exports?: Record<string, unknown> | string;
   hierarchidb?: { plugin?: { nodeType?: string } };
 };
 
-function readJsonSafe(p: string): any | null {
-  try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { return null; }
+function readJsonSafe<T>(p: string): T | null {
+  try { return JSON.parse(fs.readFileSync(p, 'utf-8')) as T; } catch { return null; }
 }
 
 function getNodeType(pkg: PlugPkg, fallback: string): string {
@@ -20,7 +20,7 @@ function hasSubpathExport(pkg: PlugPkg, sub: string): boolean {
   const ex = pkg?.exports;
   if (!ex) return false;
   if (typeof ex === 'string') return false;
-  return Boolean((ex as any)[sub]);
+  return typeof ex === 'object' && ex !== null && sub in ex;
 }
 
 export function pluginRegistryPlugin(opts?: { rootDir?: string }): Plugin {
@@ -40,7 +40,7 @@ export function pluginRegistryPlugin(opts?: { rootDir?: string }): Plugin {
       if (!/-plugin$/.test(dirent.name)) continue;
       const pkgJsonPath = path.join(NP_DIR, dirent.name, 'package.json');
       if (!fs.existsSync(pkgJsonPath)) continue;
-      const pkg = readJsonSafe(pkgJsonPath) as PlugPkg | null;
+      const pkg = readJsonSafe<PlugPkg>(pkgJsonPath);
       if (!pkg?.name) continue;
       // Only include real UI-loadable plugins that declare hierarchidb.plugin metadata
       if (!pkg?.hierarchidb?.plugin) continue;

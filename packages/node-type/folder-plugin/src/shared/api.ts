@@ -3,12 +3,12 @@
   */
 
 import { NodeId } from '@hierarchidb/common-type';
-import { CreateFolderData, FolderEntity, FolderSearchQuery, UpdateFolderData } from './types.js';
+import { CreateFolderData, FolderEntity, FolderSearchQuery, FolderSettings, UpdateFolderData } from './types.js';
 
 /**
  * Main Folder API interface for UI-Worker communication via PluginRegistryImpl
  */
-export interface FolderAPI extends Record<string, (...args: any[]) => Promise<any>> {
+export interface FolderAPI {
   // Core folder-plugin operations
   createEntity(nodeId: NodeId, data: CreateFolderData): Promise<FolderEntity>;
 
@@ -30,9 +30,9 @@ export interface FolderAPI extends Record<string, (...args: any[]) => Promise<an
   duplicateFolder(folderNodeId: NodeId): Promise<FolderEntity>;
 
   // Folder settings operations
-  updateSettings(nodeId: NodeId, settings: NodeId): Promise<void>;
+  updateSettings(nodeId: NodeId, settings: FolderSettings): Promise<void>;
 
-  getSettings(nodeId: NodeId): Promise<NodeId | undefined>;
+  getSettings(nodeId: NodeId): Promise<FolderSettings | undefined>;
 
   resetSettings(nodeId: NodeId): Promise<void>;
 

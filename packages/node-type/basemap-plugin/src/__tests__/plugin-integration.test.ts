@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../extension/definition.js';
 import { BaseMapExtension } from '../extension/definition.js';
 
@@ -187,8 +188,8 @@ describe('BaseMap Plugin Integration', () => {
     it('should have correct BaseMapEntity structure', () => {
       // This is a compile-time test - if it compiles, types are correct
       const entity: BaseMapEntity = {
-        id: 'test-id' as any,
-        nodeId: 'node-123' as any,
+        id: 'test-id' as NodeId,
+        nodeId: 'node-123' as NodeId,
         name: 'Test BaseMap',
         description: 'Test description',
         createdAt: Date.now(),
@@ -221,8 +222,8 @@ describe('BaseMap Plugin Integration', () => {
 
     it('should have correct BaseMapWorkingCopy structure', () => {
       const workingCopy: BaseMapWorkingCopy = {
-        id: 'test-id' as any,
-        nodeId: 'node-123' as any,
+        id: 'test-id' as NodeId,
+        nodeId: 'node-123' as NodeId,
         name: 'Test BaseMap',
         description: 'Test description',
         createdAt: Date.now(),

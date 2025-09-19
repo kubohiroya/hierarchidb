@@ -68,7 +68,7 @@ export abstract class BaseEntityHandler<
         await this.lifecycleHooks.beforeUpdate(existing, updates);
       }
 
-      const baseTs = typeof (existing as any).updatedAt === 'number' ? (existing as any).updatedAt : Date.now();
+      const baseTs = typeof existing.updatedAt === 'number' ? existing.updatedAt : Date.now();
       const updatedAt = baseTs + 1; // ensure strictly greater than previous
       const updated: TEntity = {
         ...existing,

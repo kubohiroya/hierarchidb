@@ -1,12 +1,12 @@
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { getDBName } from '@hierarchidb/util';
-import { getRowStoreDB } from './RowStoreDB.js';
+import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
 
 export class TabularWriter {
   private tableId: string | null = null;
   private chunkIndex = 0;
   private rowCursor = 0;
-  private rowsBuffered: any[] = [];
+  private rowsBuffered: unknown[] = [];
   private readonly chunkSize: number;
   private readonly manager: SimpleTableMetadataManager;
 
@@ -49,7 +49,7 @@ export class TabularWriter {
     return created.id;
   }
 
-  async writeRows(rows: any[]): Promise<void> {
+  async writeRows(rows: ReadonlyArray<unknown>): Promise<void> {
     if (!this.tableId) throw new Error('begin() not called');
     const db = getRowStoreDB();
     for (const r of rows) {
@@ -57,7 +57,7 @@ export class TabularWriter {
       if (this.rowsBuffered.length >= this.chunkSize) {
         const payload = JSON.stringify(this.rowsBuffered);
         const buf = new TextEncoder().encode(payload).buffer;
-        await db.table('rowChunks').add({
+        const chunk: RowChunk = {
           id: crypto.randomUUID(),
           pluginId: this.pluginId,
           tableId: this.tableId,
@@ -67,19 +67,11 @@ export class TabularWriter {
           binaryData: buf,
           createdAt: Date.now(),
           updatedAt: Date.now(),
-        } as any);
-        // Optional: update inverted index for configured columns
+        };
+        await db.rowChunks.add(chunk);
         if (this.indexColumns.length > 0) {
           const { TabularIndexer } = await import('./Indexer.js');
-          const indexer = new TabularIndexer(this.pluginId);
-          // Efficiently index just-written rows
-          for (const _r of this.rowsBuffered) {
-            for (const c of this.indexColumns) {
-              // eslint-disable-next-line no-await-in-loop
-              await indexer.indexRows(this.tableId!, [c]); // coarse; will re-scan chunks; simple path for now
-              break;
-            }
-          }
+          await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
         }
         this.rowCursor += this.rowsBuffered.length;
         this.rowsBuffered = [];
@@ -93,7 +85,7 @@ export class TabularWriter {
     const db = getRowStoreDB();
     const payload = JSON.stringify(this.rowsBuffered);
     const buf = new TextEncoder().encode(payload).buffer;
-    await db.table('rowChunks').add({
+    const chunk: RowChunk = {
       id: crypto.randomUUID(),
       pluginId: this.pluginId,
       tableId: this.tableId,
@@ -103,7 +95,12 @@ export class TabularWriter {
       binaryData: buf,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-    } as any);
+    };
+    await db.rowChunks.add(chunk);
+    if (this.indexColumns.length > 0) {
+      const { TabularIndexer } = await import('./Indexer.js');
+      await new TabularIndexer(this.pluginId).indexRows(this.tableId!, this.indexColumns);
+    }
     this.rowCursor += this.rowsBuffered.length;
     this.rowsBuffered = [];
   }

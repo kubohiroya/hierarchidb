@@ -19,6 +19,16 @@ import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 import { BUILT_IN_STYLES } from '../constants/builtInStyles.js';
 import { CrossViewSnackbar, useCrossHighlightSync, useMapLibreFeatureState, ensureDefaultStyles } from '@hierarchidb/ui-core';
 
+interface DemoFeatureCollection {
+  type: 'FeatureCollection';
+  features: Array<{
+    type: 'Feature';
+    id: string;
+    properties: { name: string; nodeType: string };
+    geometry: { type: 'Polygon'; coordinates: [number, number][][] };
+  }>;
+}
+
 export interface BaseMapDisplayProps {
   /** Node ID of the BaseMap entity */
   nodeId: NodeId;
@@ -75,9 +85,9 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
 
   const dsId = useMemo(() => datasetId ?? `basemap:${nodeId}`, [datasetId, nodeId]);
   const { bindMapLibre } = useCrossHighlightSync({ datasetId: dsId, withDeckAccessors: false });
-  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance as any, sourceId: bindSourceId || '', throttleMs: 16 });
+  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: bindSourceId || '', throttleMs: 16 });
   // Also mirror demo overlay feature-state if enabled
-  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance as any, sourceId: 'demo-source', throttleMs: 16 });
+  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: 'demo-source', throttleMs: 16 });
   // Default styles for hover/select
   useEffect(() => {
     ensureDefaultStyles(dsId, { includeRow: false, includeMap: true });
@@ -206,16 +216,20 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
         if (enableDemoOverlay) {
           const c = { lng: entity?.viewport?.center?.[0] ?? 0, lat: entity?.viewport?.center?.[1] ?? 0 } as { lng: number; lat: number };
           const dx = 0.05, dy = 0.03;
-          const mkPoly = (cx:number, cy:number, w:number, h:number) => ([
-            [cx-w, cy-h],[cx+w, cy-h],[cx+w, cy+h],[cx-w, cy+h],[cx-w, cy-h],
+          const mkPoly = (cx: number, cy: number, w: number, h: number): [number, number][] => ([
+            [cx - w, cy - h],
+            [cx + w, cy - h],
+            [cx + w, cy + h],
+            [cx - w, cy + h],
+            [cx - w, cy - h],
           ]);
-          const demoData = {
+          const demoData: DemoFeatureCollection = {
             type: 'FeatureCollection',
             features: [
               { type: 'Feature', id: 'demo-1', properties: { name: 'Demo Area A', nodeType: 'basemap' }, geometry: { type: 'Polygon', coordinates: [ mkPoly(c.lng-0.08, c.lat, dx, dy) ] } },
               { type: 'Feature', id: 'demo-2', properties: { name: 'Demo Area B', nodeType: 'basemap' }, geometry: { type: 'Polygon', coordinates: [ mkPoly(c.lng+0.08, c.lat, dx, dy) ] } },
             ],
-          } as any;
+          };
           if (!map.getSource('demo-source')) {
             map.addSource('demo-source', { type: 'geojson', data: demoData });
           }

@@ -1,4 +1,4 @@
-# @hierarchidb/linker-plugin — Linker（リンカー）
+# @hierarchidb/node-type-linker-plugin — Linker（リンカー）
 
 Linker は、Projects ツリー（folder / linker / timeline）で、フォルダにより集約・コンパイル済みのリソースを「link（参照）」して実用的な地図表示に束ねる軽量プラグインです。解析・生成など重い処理は行わず、選択・集約・表示に特化します。
 
@@ -34,4 +34,4 @@ Linker は、Projects ツリー（folder / linker / timeline）で、フォル�
 5) 旧 project-plugin からの移行
    - 旧 nodeType `project` → 新 `linker`
    - 旧 Worker 実装は不要になりました（削除済み）。新規は `linker` で作成してください。
-   - ※ 2025-09-16 時点で `project-plugin` は Deprecated 扱いです。`@hierarchidb/linker-plugin` を利用してください。
+   - ※ 2025-09-16 時点で `project-plugin` は Deprecated 扱いです。`@hierarchidb/node-type-linker-plugin` を利用してください。

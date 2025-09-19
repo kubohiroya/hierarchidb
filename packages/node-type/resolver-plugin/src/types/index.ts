@@ -87,6 +87,15 @@ export interface ResolverWorkingCopyEntity extends ResolverEntity {
 }
 
 /**
+ * Peer payload persisted for resolver nodes.
+ */
+export interface ResolverPeerData {
+  schemaVersion: 1;
+  lastExecutedAt?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/**
  * Schema information for property mapping
  */
 export interface SchemaInfo {

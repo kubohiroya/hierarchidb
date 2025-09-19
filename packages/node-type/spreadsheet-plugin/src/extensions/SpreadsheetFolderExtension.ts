@@ -3,7 +3,7 @@
  * - Provides step state evaluator for Spreadsheet steps (2: data source, 3: filtering)
  */
 
-import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
+import { BaseFolderPlugin } from '@hierarchidb/node-type-folder-plugin';
 
 export class SpreadsheetFolderExtension extends BaseFolderPlugin {
   readonly pluginId = 'spreadsheet-plugin-folder-extension';

@@ -47,6 +47,29 @@ import type {
   SortParams,
 } from './types/DataProvider.js';
 
+const getItemValue = <T extends DataItem>(item: T, field: ColumnDefinition<T>['field']): unknown => {
+  const key = typeof field === 'string' ? field : String(field);
+  const record = item as Record<string, unknown>;
+  return Object.prototype.hasOwnProperty.call(record, key) ? record[key] : undefined;
+};
+
+const renderDefaultValue = (value: unknown): React.ReactNode => {
+  if (React.isValidElement(value)) {
+    return value;
+  }
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '[object]';
+    }
+  }
+  return String(value);
+};
+
 export interface AbstractDataGridProps<T extends DataItem = DataItem> {
   /** Data provider instance */
   dataProvider: DataProvider<T>;
@@ -592,8 +615,8 @@ export function AbstractDataGrid<T extends DataItem = DataItem>({
                     </TableCell>
                   )}
                   {visibleColumns.map((column) => {
-                    const value = (item as any)[column.field];
-                    const formatted = column.formatter ? column.formatter(value, item) : value;
+                    const value = getItemValue(item, column.field);
+                    const formatted = column.formatter ? column.formatter(value, item) : renderDefaultValue(value);
 
                     return (
                       <TableCell key={String(column.field)} align={column.align}>

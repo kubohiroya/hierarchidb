@@ -4,9 +4,32 @@
  * doesn't expose setAuthToken().
  */
 
+import type { WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+
+interface PluginRegistryFacade {
+  getExtension<T = unknown>(nodeType: string): Promise<T | undefined>;
+}
+
+interface WorkerClientFacade {
+  getPluginRegistryAPI(): Promise<PluginRegistryFacade>;
+}
+
+interface WorkerClientWithAPI {
+  getAPI(): WorkerClientFacade;
+}
+
+interface ShapeAuthExtension {
+  setAuthToken(token: string, type?: 'Bearer' | 'Basic', expiresAt?: number): Promise<void> | void;
+}
+
+const isShapeAuthExtension = (extension: unknown): extension is ShapeAuthExtension => {
+  return typeof extension === 'object' && extension !== null &&
+    typeof (extension as ShapeAuthExtension).setAuthToken === 'function';
+};
+
 // Optional dependency injection for app-provided Worker API getter
-let getWorkerAPI: (() => any) | null = null;
-export function injectWorkerAPIGetter(getter: () => any) {
+let getWorkerAPI: WorkerClientHook<WorkerClientWithAPI> | null = null;
+export function injectWorkerAPIGetter(getter: WorkerClientHook<WorkerClientWithAPI>) {
   getWorkerAPI = getter;
 }
 
@@ -16,8 +39,8 @@ export async function setShapeAuthToken(token: string, type: 'Bearer' | 'Basic' 
   if (!client) return;
   const workerAPI = client.getAPI();
   const registry = await workerAPI.getPluginRegistryAPI();
-  const ext = await registry.getExtension('shape');
-  if (ext && typeof (ext as any).setAuthToken === 'function') {
-    await (ext as any).setAuthToken(token, type, expiresAt);
+  const extension = await registry.getExtension('shape');
+  if (isShapeAuthExtension(extension)) {
+    await extension.setAuthToken(token, type, expiresAt);
   }
 }

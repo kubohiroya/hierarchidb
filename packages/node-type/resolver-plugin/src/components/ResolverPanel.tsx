@@ -86,7 +86,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
         unmappedProperties: [],
         coverage: totalMappings > 0 ? 100 : 0,
         conflicts: [],
-      } as any);
+      });
 
       // Check if compiled version exists (mock)
       if (totalMappings > 5) {

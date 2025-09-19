@@ -9,9 +9,9 @@ let _servicesMap: Record<string, Loader> | null = null;
 async function getServices(): Promise<Record<string, Loader>> {
   if (_servicesMap) return _servicesMap;
   try {
-    const mod: any = await import('virtual:plugin-registry-services');
-    _servicesMap = (mod?.pluginServices || {}) as Record<string, Loader>;
-  } catch (e) {
+    const mod = await import('virtual:plugin-registry-services');
+    _servicesMap = mod.pluginServices ?? {};
+  } catch (error) {
     // During dev server warm-up the virtual module may not be ready yet.
     // Return empty map; callers will receive null and can retry on demand.
     _servicesMap = {};
@@ -20,15 +20,15 @@ async function getServices(): Promise<Record<string, Loader>> {
 }
 
 // Overloads for known services to provide strong typing without `as any`
-export async function loadPluginService(nodeType: 'basemap'): Promise<typeof import('@hierarchidb/basemap-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'resolver'): Promise<typeof import('@hierarchidb/resolver-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'spreadsheet'): Promise<typeof import('@hierarchidb/spreadsheet-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'route'): Promise<typeof import('@hierarchidb/route-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'shape'): Promise<typeof import('@hierarchidb/shape-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'location'): Promise<typeof import('@hierarchidb/location-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'styler'): Promise<typeof import('@hierarchidb/styler-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'timeline'): Promise<typeof import('@hierarchidb/timeline-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'linker'): Promise<typeof import('@hierarchidb/linker-plugin/services') | null>;
+export async function loadPluginService(nodeType: 'basemap'): Promise<typeof import('@hierarchidb/node-type-basemap-plugin/database') | null>;
+export async function loadPluginService(nodeType: 'resolver'): Promise<typeof import('@hierarchidb/node-type-resolver-plugin/database') | null>;
+export async function loadPluginService(nodeType: 'spreadsheet'): Promise<typeof import('@hierarchidb/node-type-spreadsheet-plugin/database') | null>;
+export async function loadPluginService(nodeType: 'route'): Promise<typeof import('@hierarchidb/node-type-route-plugin/database') | null>;
+export async function loadPluginService(nodeType: 'shape'): Promise<typeof import('@hierarchidb/node-type-shape-plugin/services') | null>;
+export async function loadPluginService(nodeType: 'location'): Promise<typeof import('@hierarchidb/node-type-location-plugin/services') | null>;
+export async function loadPluginService(nodeType: 'styler'): Promise<typeof import('@hierarchidb/node-type-styler-plugin/services') | null>;
+export async function loadPluginService(nodeType: 'timeline'): Promise<typeof import('@hierarchidb/node-type-timeline-plugin/services') | null>;
+export async function loadPluginService(nodeType: 'linker'): Promise<typeof import('@hierarchidb/node-type-linker-plugin/services') | null>;
 // For other plugins, fall back to generic typing
 export async function loadPluginService<T = unknown>(nodeType: string): Promise<T | null>;
 export async function loadPluginService<T = unknown>(nodeType: string): Promise<T | null> {
@@ -37,11 +37,21 @@ export async function loadPluginService<T = unknown>(nodeType: string): Promise<
   if (typeof loader !== 'function') return null;
   try {
     const mod = await loader();
-    // Prefer default export when present; otherwise return the module object
-    return (mod as any)?.default ?? (mod as unknown as T);
-  } catch {
+    return resolveModule<T>(mod);
+  } catch (error) {
     return null;
   }
+}
+
+function resolveModule<T>(moduleValue: unknown): T | null {
+  if (moduleValue == null) return null;
+  if (typeof moduleValue === 'object' && moduleValue !== null) {
+    const record = moduleValue as Record<string, unknown>;
+    if ('default' in record && record.default !== undefined) {
+      return record.default as T;
+    }
+  }
+  return moduleValue as T;
 }
 
 export async function tryLoadFirst<T = unknown>(nodeTypes: string[]): Promise<T | null> {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '../../shared/types.js';
 import { useShapeAPIGetter } from './useShapeAPI.js';
-import { BatchProgressEvent, ProcessingStatus, ProgressInfo } from '../../shared/index.js';
+import type { BatchProgressEvent, ProcessingStatus, ProgressInfo } from '../../shared/index.js';
 
 export interface ShapeProgressState {
   progress: ProgressInfo | null;
@@ -69,26 +69,23 @@ export function useShapeProgress(
 
   // Handle progress events
   const handleProgressEvent = useCallback((event: BatchProgressEvent) => {
-    console.log('📊 Progress update:', event);
-
     switch (event.type) {
       case 'progress':
         setProgress(event.progress);
         break;
       case 'stage-change':
-        setStatus(prev => prev ? { ...prev, stage: event.stage } : null);
+        setStatus((prev) => (prev ? { ...prev, stage: event.stage } : null));
         break;
       case 'complete':
-        setStatus(prev => prev ? { ...prev, status: 'completed' } : null);
-        setProgress(prev => prev ? { ...prev, percentage: 100 } : null);
+        setStatus((prev) => (prev ? { ...prev, status: 'completed' } : null));
+        setProgress((prev) => (prev ? { ...prev, percentage: 100 } : null));
         break;
       case 'error':
         setError(new Error(event.error));
-        setStatus(prev => prev ? { ...prev, status: 'failed', error: event.error } : null);
+        setStatus((prev) => (prev ? { ...prev, status: 'failed', error: event.error } : null));
         break;
     }
 
-    // Mark real-time as active (prevents polling)
     isRealTimeActiveRef.current = true;
   }, []);
 
@@ -137,27 +134,26 @@ export function useShapeProgress(
       const api = await getShapeAPI();
 
       // Check if subscribeToProgress is available (real-time capability)
-      if (typeof (api as any).subscribeToProgress === 'function') {
-        console.log('🔔 Subscribing to real-time progress updates');
+      const subscribeToProgress = (api as { subscribeToProgress?: (id: string, cb: (e: BatchProgressEvent) => void) => () => void }).subscribeToProgress;
 
-        const unsubscribe = (api as any).subscribeToProgress(sessionId, handleProgressEvent);
+      if (typeof subscribeToProgress === 'function') {
+        const unsubscribe = subscribeToProgress(sessionId, handleProgressEvent);
         unsubscribeRef.current = unsubscribe;
-        isRealTimeActiveRef.current = false; // Reset flag
+        isRealTimeActiveRef.current = false;
         setIsSubscribed(true);
-
-        // Get initial state
         await pollProgress();
-      } else if (enablePollingFallback) {
-        console.log('📡 Real-time subscription not available, falling back to polling');
+        return;
+      }
 
-        // Start polling
-        await pollProgress(); // Get initial state
+      if (enablePollingFallback) {
+        await pollProgress();
         pollingIntervalRef.current = setInterval(pollProgress, pollingInterval);
         setIsSubscribed(true);
         isRealTimeActiveRef.current = false;
-      } else {
-        throw new Error('Real-time subscription not supported and polling fallback is disabled');
+        return;
       }
+
+      throw new Error('Real-time subscription not supported and polling fallback is disabled');
     } catch (err) {
       console.error('Failed to subscribe to progress:', err);
       setError(err instanceof Error ? err : new Error('Failed to subscribe'));

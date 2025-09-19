@@ -12,8 +12,7 @@ export function register(): void {
 // Standardized worker-side factory exports (polymorphic contract)
 export async function createEntityHandler() {
   const { LocationEntityHandler } = await import('../entities/LocationEntityHandler.js');
-  // Handler may accept Dexie tables via later injection; construct bare for now
-  return new LocationEntityHandler(undefined as any);
+  return new LocationEntityHandler();
 }
 
 export async function createBatchManager() {
@@ -21,11 +20,11 @@ export async function createBatchManager() {
   return createLocationBatchManager();
 }
 
-export const lifecycle = {
-  async onCreate(nodeId: any): Promise<void> {
+export class Lifecycle {
+  static async onCreate(nodeId: any): Promise<void> {
     console.log(`[LocationPlugin] onCreate: ${nodeId}`);
-  },
-} as const;
+  }
+}
 
 const mod = { register };
 export default mod;

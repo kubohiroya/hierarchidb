@@ -19,7 +19,7 @@ Basic folder plugin for HierarchiDB UI layer that provides container functionali
 ## Overview
 
 This plugin implements the folder node type in the unified UI plugin system.
-Folders are container nodes backed by a persisted entity (Dexie store) and hierarchical utilities from `@hierarchidb/base-plugin`.
+Folders are container nodes backed by a persisted entity (Dexie store) and hierarchical utilities from `@hierarchidb/node-type-base-plugin`.
 
 ## Features
 

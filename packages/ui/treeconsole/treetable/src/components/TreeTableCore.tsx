@@ -7,7 +7,7 @@
  * Phase 5:
   */
 
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect, type ReactElement } from 'react';
+import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -30,17 +30,29 @@ import {
 import type { TreeTableCoreProps } from '../types.js';
 import { NodeContextMenu, NodeTypeIcon } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { rainbowColors } from '@hierarchidb/ui-core';
-import { TreeNode } from '@hierarchidb/common-type';
-import { computeDescendants } from '../utils/descendants.js';
+import { NodeId, TreeNode } from '@hierarchidb/common-type';
+import { computeDescendants, collectDescendantIdList } from '../utils/descendants.js';
 import { buildVisibleNodes } from '../utils/visible-nodes.js';
-import { cacheColumnWidths, columnWidthsEqual, loadCachedColumnWidths, mergeWithDefaults, resolveInitialColumnWidths } from '../utils/column-width-cache.js';
-import type { ColumnWidthMap } from '../utils/column-width-cache.js';
+import { useTreeTableColumnWidths } from './hooks/useTreeTableColumnWidths.js';
+import { useTreeTableSelectAll } from './hooks/useTreeTableSelectAll.js';
 
 const EMPTY_SET = new Set<string>();
+
+type TreeNodeWithTags = TreeNode & Record<string, unknown>;
 
 const normalizeNodeKey = (value: TreeNode['id'] | TreeNode['parentId'] | string | number | null | undefined): string | null => {
   if (value === null || value === undefined) return null;
   return String(value);
+};
+
+const extractTags = (node: TreeNode): string[] => {
+  const candidate = (node as TreeNodeWithTags).tags;
+  if (!Array.isArray(candidate)) return [];
+  return candidate.filter((tag): tag is string => typeof tag === 'string');
+};
+
+const isElementWithClosest = (value: EventTarget | null): value is Element => {
+  return value instanceof Element && typeof value.closest === 'function';
 };
 
 //  TreeTable.css
@@ -152,7 +164,7 @@ const NameCell = styled(Box)`
 `;
 
 const IndentSpace = styled(Box)<{ depth: number }>`
-  width: ${({ depth }) => depth * 32}px;
+  width: ${({ depth }) => depth * 24}px;
   flex-shrink: 0;
 `;
 
@@ -191,12 +203,15 @@ export function TreeTableCore({
     node: TreeNode | null;
   }>({ anchorEl: null, node: null });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => resolveInitialColumnWidths(pageNodeId));
-  const [columnWidthsHydrated, setColumnWidthsHydrated] = useState(!pageNodeId);
-  const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const {
+    columnWidths,
+    containerRef,
+    handleResizeStart,
+    resizingColumn,
+  } = useTreeTableColumnWidths({ pageNodeId });
+  const { selectAll, selectAllHydrated, setSelectAll } = useTreeTableSelectAll({ pageNodeId });
   const [hoverDropTargetId, setHoverDropTargetId] = useState<string | null>(null);
   const [forbiddenTargets, setForbiddenTargets] = useState<Set<string>>(new Set());
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Simple inline validator for name/description
   const validateInline = useCallback((field: 'name' | 'description', value: string): { ok: boolean; message?: string } => {
@@ -210,139 +225,44 @@ export function TreeTableCore({
     return { ok: true };
   }, []);
 
-  // Persist/restore column widths in Dexie using pageNodeId as the primary key
-  useEffect(() => {
-    setColumnWidthsHydrated(false);
-
-    const apply = (source: ColumnWidthMap | null | undefined, markHydrated = false) => {
-      setColumnWidths((prev) => {
-        const next = mergeWithDefaults(source);
-        return columnWidthsEqual(prev, next) ? prev : next;
-      });
-      if (markHydrated) {
-        setColumnWidthsHydrated(true);
-      }
-    };
-
-    if (!pageNodeId) {
-      apply(null, true);
-      return;
-    }
-
-    const cached = loadCachedColumnWidths(pageNodeId);
-    apply(cached, !!cached);
-
-    let cancelled = false;
-    (async () => {
-      const saved = await (await import('../state/column-widths-db.js')).getColumnWidths(pageNodeId);
-      if (cancelled) return;
-      if (saved) {
-        cacheColumnWidths(pageNodeId, saved);
-        apply(saved, true);
-      } else {
-        setColumnWidthsHydrated(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [pageNodeId]);
-
-  useEffect(() => {
-    if (!pageNodeId || !columnWidthsHydrated) return;
-    cacheColumnWidths(pageNodeId, columnWidths);
-    (async () => {
-      await (await import('../state/column-widths-db.js')).saveColumnWidths(pageNodeId, columnWidths);
-    })();
-  }, [columnWidths, pageNodeId, columnWidthsHydrated]);
-
-  // Keep first data column ('name') fixed on container resize: adjust only other columns proportionally
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    let ro: ResizeObserver | null = null;
-    let raf = 0;
-    const MIN = 50;
-
-    const onResize = (width: number) => {
-      // Fixed columns: only 'selection' is fixed to preserve checkbox width
-      const fixedKeys = new Set(['selection']);
-      const fixedSum = Object.entries(columnWidths)
-        .filter(([k]) => fixedKeys.has(k))
-        .reduce((s, [, v]) => s + (v || 0), 0);
-
-      // Adjustable columns (including 'name')
-      const adjustable = Object.entries(columnWidths).filter(([k]) => !fixedKeys.has(k));
-      if (adjustable.length === 0) return;
-
-      const currentAdjustableSum = adjustable.reduce((s, [, v]) => s + (v || 0), 0);
-      const targetAdjustableSum = Math.max(MIN * adjustable.length, width - fixedSum);
-      if (targetAdjustableSum <= 0 || currentAdjustableSum <= 0) return;
-
-      // If the change is trivial (<1px total), skip to avoid thrashing
-      if (Math.abs(targetAdjustableSum - currentAdjustableSum) < 1) return;
-
-      const scale = targetAdjustableSum / currentAdjustableSum;
-      const next: Record<string, number> = { ...columnWidths };
-
-      // Scale each adjustable column, clamp to MIN, track residual to keep exact sum
-      adjustable.forEach(([key], idx) => {
-        const cur = columnWidths[key] || MIN;
-        // naive scale
-        let val = Math.max(MIN, Math.round(cur * scale));
-        // on last column, absorb residual to match target sum exactly
-        if (idx === adjustable.length - 1) {
-          const sumSoFar = adjustable.slice(0, -1).reduce((s, [k]) => s + (next[k] || 0), 0);
-          val = Math.max(MIN, targetAdjustableSum - sumSoFar);
-        }
-        next[key] = val;
-      });
-
-      setColumnWidths((prev) => {
-        // Avoid unnecessary state updates
-        const same = Object.keys(next).every((k) => next[k] === prev[k]);
-        return same ? prev : next;
-      });
-    };
-
-    const measure = () => {
-      const rect = el.getBoundingClientRect();
-      onResize(Math.floor(rect.width));
-    };
-
-    // Perform initial measurement before observers to avoid flicker
-    measure();
-
-    // Use ResizeObserver when available
-    try {
-      ro = new ResizeObserver(() => {
-        if (raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(measure);
-      });
-      ro.observe(el);
-    } catch {
-      // Fallback to window resize
-      const onWin = () => {
-        if (raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(measure);
-      };
-      window.addEventListener('resize', onWin);
-      return () => {
-        window.removeEventListener('resize', onWin);
-      };
-    }
-
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      ro && ro.disconnect();
-    };
-  }, [columnWidths, containerRef]);
+  // column widths and select-all persistence handled by hooks
 
   // Get data from controller
   const rawData: TreeNode[] = useMemo(()=>controller?.data || [], [controller?.data]);
   const rowSelection: RowSelectionState = useMemo(()=>controller?.rowSelection || {}, [controller?.rowSelection]);
 
+  const parentMap = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const node of rawData) {
+      const id = normalizeNodeKey(node.id);
+      if (id == null) continue;
+      map.set(id, normalizeNodeKey((node as TreeNode).parentId ?? null));
+    }
+    return map;
+  }, [rawData]);
+
+  const hasSelectedAncestor = useCallback((nodeId: NodeId): boolean => {
+    const normalized = normalizeNodeKey(nodeId);
+    if (normalized == null) return false;
+    let current = parentMap.get(normalized) ?? null;
+    while (current) {
+      if (rowSelection[current]) return true;
+      current = parentMap.get(current) ?? null;
+    }
+    return false;
+  }, [parentMap, rowSelection]);
+
   // Helper: compute descendants including self
-  const getDescendants = useCallback((nodeId: string): Set<string> => {
-    return computeDescendants(rawData, nodeId as any) as unknown as Set<string>;
+  const getDescendants = useCallback((nodeId: NodeId): Set<NodeId> => {
+    return computeDescendants(rawData, nodeId as NodeId) as Set<NodeId>;
+  }, [rawData]);
+
+  const collectDescendantIds = useCallback((nodeId: NodeId): string[] => {
+    const list = collectDescendantIdList(rawData, nodeId as NodeId);
+    if (list.length === 0) {
+      return [String(nodeId)];
+    }
+    return list;
   }, [rawData]);
 
 
@@ -392,13 +312,14 @@ export function TreeTableCore({
     (controller?.expandedRowIds as ReadonlySet<string> | undefined) ?? EMPTY_SET;
 
   // Select all handling
-  const allSelected = useMemo(() => {
+  const allRowsSelected = useMemo(() => {
     return data.length > 0 && data.every((node) => rowSelection[node.id]);
   }, [data, rowSelection]);
 
   const someSelected = useMemo(() => {
-    return data.some((node) => rowSelection[node.id]) && !allSelected;
-  }, [data, rowSelection, allSelected]);
+    if (selectAll) return false;
+    return data.some((node) => rowSelection[node.id]) && !allRowsSelected;
+  }, [data, rowSelection, selectAll, allRowsSelected]);
 
   // Batch selection into a single frame
   const pendingSelectionRef = useRef<{ ids: string[]; checked: boolean } | null>(null);
@@ -422,15 +343,13 @@ export function TreeTableCore({
   }, [flushBatchedSelect]);
 
   const handleSelectAll = useCallback((checked: boolean) => {
-    if (!controller?.onNodeSelect) return;
-    const nodeIds = data.map((node) => node.id);
-    batchSelect(nodeIds, checked);
-  }, [batchSelect, controller?.onNodeSelect, data]);
+    setSelectAll((prev) => (prev === checked ? prev : checked));
+  }, []);
 
   const handleStartEdit = useCallback((node: TreeNode, field: 'name' | 'description' = 'name') => {
     setEditingNodeId(node.id);
     setEditingField(field);
-    const initial = field === 'name' ? node.name : ((node as any).description || '');
+    const initial = field === 'name' ? node.name : (node.description || '');
     setEditingValue(initial);
     controller?.startEdit?.(node.id);
   }, [controller]);
@@ -441,26 +360,37 @@ export function TreeTableCore({
       {
         id: 'selection',
         header: () => (
-          <Tooltip title={allSelected ? 'すべて解除' : 'すべて選択'} placement="bottom">
+          <Tooltip title={selectAll ? 'すべて解除' : 'すべて選択'} placement="right">
             <Checkbox
-              checked={allSelected}
-              indeterminate={someSelected}
-              onChange={() => handleSelectAll(!allSelected)}
+              checked={selectAll ? true : allRowsSelected}
+              indeterminate={!selectAll && someSelected}
+              onChange={() => handleSelectAll(!selectAll)}
+              disabled={!!pageNodeId && !selectAllHydrated}
               size="small"
             />
           </Tooltip>
         ),
         size: 50,
-        cell: ({ row }) => (
-          <Checkbox
-            checked={rowSelection[row.original.id] || false}
-            onChange={(e) => {
-              batchSelect([row.original.id], e.target.checked);
-            }}
-            size="small"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ),
+        cell: ({ row }) => {
+          const inheritedSelection = hasSelectedAncestor(row.original.id);
+          const forcedSelectAll = selectAll;
+          const visuallyChecked = forcedSelectAll || inheritedSelection || !!rowSelection[row.original.id];
+          const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
+          return (
+            <Checkbox
+              checked={visuallyChecked}
+              disabled={disableCheckbox}
+              onChange={(e) => {
+                if (disableCheckbox) return;
+                const targets = collectDescendantIds(row.original.id);
+                if (targets.length === 0) return;
+                batchSelect(targets, e.target.checked);
+              }}
+              size="small"
+              onClick={(e) => e.stopPropagation()}
+            />
+          );
+        },
       },
       {
         id: 'name',
@@ -612,17 +542,24 @@ export function TreeTableCore({
                   }}
                 >
                   <Box
-                    component={RouterLink as any}
+                    component={RouterLink}
                     to={`/${['t', String(treeId || '') , String(node.id)].filter(Boolean).join('/')}`}
                     sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                   >
                     {node.name}
                   </Box>
-                  {Boolean((node as any)?.isDraft) && (
+                  {Boolean(node?.isDraft) && (
                     <Chip label="draft" size="small" color="warning" variant="outlined" sx={{ height: 20 }} onClick={(e) => e.stopPropagation()} />
                   )}
-                  {Array.isArray((node as any)?.tags) && (node as any).tags.map((t: string, idx: number) => (
-                    <Chip key={`${node.id}:tag:${idx}`} label={t} size="small" variant="outlined" sx={{ height: 20 }} onClick={(e) => e.stopPropagation()} />
+                  {extractTags(node).map((tag, idx) => (
+                    <Chip
+                      key={`${node.id}:tag:${idx}`}
+                      label={tag}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 20 }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   ))}
                 </Box>
               )}
@@ -637,14 +574,14 @@ export function TreeTableCore({
         size: columnWidths.description,
         enableSorting: true,
         cell: ({ row }) => {
-          const node: any = row.original;
+          const node: TreeNode = row.original;
           const isEditingDesc = editingNodeId === node.id && editingField === 'description';
 
           // Event handlers
           const handleStartEdit = (node: TreeNode, field: 'name' | 'description' = 'name') => {
             setEditingNodeId(node.id);
             setEditingField(field);
-            const initial = field === 'name' ? node.name : ((node as any).description || '');
+            const initial = field === 'name' ? node.name : (node.description || '');
             setEditingValue(initial);
             controller?.startEdit?.(node.id);
           };
@@ -705,9 +642,9 @@ export function TreeTableCore({
           return (
             <Box
               sx={{ cursor: rowClickAction === 'Edit' ? 'text' : 'default' }}
-              onDoubleClick={() => handleStartEdit(node as any, 'description')}
+              onDoubleClick={() => handleStartEdit(node, 'description')}
               onClick={() => {
-                if (rowClickAction === 'Edit') handleStartEdit(node as any, 'description');
+                if (rowClickAction === 'Edit') handleStartEdit(node, 'description');
               }}
             >
               {node.description || '-'}
@@ -754,20 +691,57 @@ export function TreeTableCore({
         header: 'Deleted At',
         size: 150,
         cell: ({ row }) => {
-          const value = (row.original as any).createdAt as number | undefined;
+          const value = row.original.createdAt as number | undefined;
           return value ? new Date(value).toLocaleDateString() : '-';
         },
       });
     }
 
     return baseColumns;
-  }, [columnWidths.name, columnWidths.description, columnWidths.createdAt, columnWidths.updatedAt, useTrashColumns, allSelected, someSelected, handleSelectAll, rowSelection, batchSelect, depthOffset, nodesWithChildren, expandedRowIds, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, editingField, editingValue, editingError, treeId, controller, rowClickAction, selectionMode, validateInline, handleStartEdit]);
+  }, [columnWidths.name, columnWidths.description, columnWidths.createdAt, columnWidths.updatedAt, useTrashColumns, selectAll, allRowsSelected, someSelected, pageNodeId, selectAllHydrated, handleSelectAll, hasSelectedAncestor, rowSelection, collectDescendantIds, batchSelect, depthOffset, nodesWithChildren, expandedRowIds, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, editingField, editingValue, editingError, treeId, controller, rowClickAction, selectionMode, validateInline, handleStartEdit]);
 
   // Compute visible rows based on expansion state. Children of collapsed
   // nodes are filtered out while preserving sibling order.
   const visibleData = useMemo(() => {
     return buildVisibleNodes(data, expandedRowIds, { rootNodeId });
   }, [data, expandedRowIds, rootNodeId]);
+
+  const previousSelectAllRef = useRef(selectAll);
+
+  useEffect(() => {
+    const selectHandler = controller?.onNodeSelect;
+    if (!selectHandler) {
+      previousSelectAllRef.current = selectAll;
+      return;
+    }
+    if (!selectAllHydrated) {
+      previousSelectAllRef.current = selectAll;
+      return;
+    }
+
+    const visibleIds = visibleData.reduce<string[]>((acc, node) => {
+      const identifier = node?.id;
+      if (identifier === null || identifier === undefined) {
+        return acc;
+      }
+      acc.push(String(identifier));
+      return acc;
+    }, []);
+
+    if (selectAll) {
+      const missing = visibleIds.filter((id) => !rowSelection[id]);
+      if (missing.length) {
+        selectHandler(missing, true);
+      }
+    } else if (previousSelectAllRef.current) {
+      const selectedVisible = visibleIds.filter((id) => rowSelection[id]);
+      if (selectedVisible.length) {
+        selectHandler(selectedVisible, false);
+      }
+    }
+
+    previousSelectAllRef.current = selectAll;
+  }, [controller, controller?.onNodeSelect, rowSelection, selectAll, selectAllHydrated, visibleData]);
 
   // React Table instance
   const table = useReactTable({
@@ -777,7 +751,7 @@ export function TreeTableCore({
     getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getRowId: (row) => String((row as any).id ?? ''),
+    getRowId: (row) => String(row.id ?? ''),
     enableRowSelection: selectionMode !== 'none',
     enableMultiRowSelection: selectionMode === 'multiple',
     state: {
@@ -786,6 +760,7 @@ export function TreeTableCore({
     },
     onSortingChange: setSorting,
     onRowSelectionChange: (updater) => {
+      if (selectAll) return;
       if (typeof updater === 'function') {
         const newSelection = updater(rowSelection);
         const selectedIds = Object.keys(newSelection).filter((id) => newSelection[id]);
@@ -795,9 +770,13 @@ export function TreeTableCore({
   });
 
   const handleRowClick = (node: TreeNode, event: MouseEvent) => {
-    const target = (event.target as unknown as HTMLElement) || null;
-    if (target && (target as any).closest && (target as any).closest('a[href]')) {
+    const target = (event.target as EventTarget) || null;
+    if (isElementWithClosest(target) && target.closest('a[href]')) {
       return; // let native navigation happen
+    }
+    if (selectAll) {
+      onRowClick?.(node, event);
+      return;
     }
     if (rowClickAction === 'Select/Navigate' && selectionMode !== 'none') {
       const prevSelection = { ...rowSelection };
@@ -828,9 +807,9 @@ export function TreeTableCore({
   };
 
   const handleRowDoubleClick = (node: TreeNode, event: MouseEvent) => {
-    const target = (event.target as unknown as HTMLElement) || null;
-    if (target && (target as any).closest && (target as any).closest('a[href]')) {
-        return;
+    const target = (event.target as EventTarget) || null;
+    if (isElementWithClosest(target) && target.closest('a[href]')) {
+      return;
     }
     if (rowClickAction === 'Edit') {
       handleStartEdit(node);
@@ -843,51 +822,6 @@ export function TreeTableCore({
 
   const handleContextMenuClose = () => {
     setContextMenuState({ anchorEl: null, node: null });
-  };
-
-  // Column resize implementation
-  const resizeRef = useRef<{
-    startX: number;
-    leftStart: number;
-    rightStart: number;
-    leftId: string;
-    rightId: string;
-  }>({ startX: 0, leftStart: 0, rightStart: 0, leftId: '', rightId: '' });
-
-  const handleResizeStart = (leftColumnId: string, rightColumnId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Align drag delta to the visual column boundary (center of the 10px handle),
-    // so horizontal mouse movement in pixels === exact column width delta.
-    const handleRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const startX = handleRect.left + handleRect.width / 2;
-    const leftStart = columnWidths[leftColumnId] || 100;
-    const rightStart = columnWidths[rightColumnId] || 100;
-    resizeRef.current = { startX, leftStart, rightStart, leftId: leftColumnId, rightId: rightColumnId };
-    setResizingColumn(leftColumnId);
-
-    const handleMouseMove = (e: globalThis.MouseEvent) => {
-      const deltaX = e.clientX - startX;
-      const MIN = 50;
-      const { leftStart, rightStart, leftId, rightId } = resizeRef.current;
-      // Clamp delta so neither side goes below MIN
-      const maxPositive = rightStart - MIN; // moving handle right: left grows, right shrinks
-      const maxNegative = leftStart - MIN;  // moving handle left: left shrinks, right grows
-      const clamped = Math.max(-maxNegative, Math.min(deltaX, maxPositive));
-      const leftNew = Math.max(MIN, leftStart + clamped);
-      const rightNew = Math.max(MIN, rightStart - clamped);
-      setColumnWidths((prev) => ({ ...prev, [leftId]: leftNew, [rightId]: rightNew }));
-    };
-
-    const handleMouseUp = () => {
-      setResizingColumn(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
   };
 
   // Render
@@ -968,42 +902,81 @@ export function TreeTableCore({
 
           {/* Fallback: if react-table produced 0 rows while we do have data, render simple rows */}
           {table.getRowModel().rows.length === 0 && visibleData.length > 0 && (
-            visibleData.map((node) => (
-              <StyledTableRow key={(node as any).id} selected={!!rowSelection[(node as any).id]} draggable={false}
-                onClick={(e) => handleRowClick(node as any, e as unknown as MouseEvent)}
-              >
-                <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
-                  <Checkbox
-                    checked={rowSelection[(node as any).id] || false}
-                    onChange={(e) => batchSelect([(node as any).id], e.target.checked)}
-                    size="small"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </TableCell>
-                <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px` }}>
-                  <NameCell>
-                    <IndentSpace depth={Math.max(0, (((node as any).depth || 0) + depthOffset) - 1)} />
-                    <Box component={RouterLink as any} to={`/${['t', String(treeId || ''), String((node as any).id)].filter(Boolean).join('/')}`}
-                      sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                      {(node as any).name}
-                    </Box>
-                  </NameCell>
-                </TableCell>
-                <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px` }}>
-                  {(node as any).description || '-'}
-                </TableCell>
-                <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
-                  {(() => { const v = (node as any).createdAt; if (!v) return '-'; const d=new Date(v); return <span title={d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}>{d.toLocaleDateString()}</span>; })()}
-                </TableCell>
-                <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px` }}>
-                  {(() => { const v = (node as any).updatedAt; if (!v) return '-'; const d=new Date(v); return <span title={d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}>{d.toLocaleDateString()}</span>; })()}
-                </TableCell>
-              </StyledTableRow>
-            ))
+            visibleData.map((node) => {
+              const inheritedSelection = hasSelectedAncestor(node.id);
+              const forcedSelectAll = selectAll;
+              const visuallyChecked = forcedSelectAll || inheritedSelection || !!rowSelection[node.id];
+              const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
+              return (
+                <StyledTableRow
+                  key={node.id}
+                  selected={forcedSelectAll || !!rowSelection[node.id]}
+                  draggable={false}
+                  onClick={(e) => handleRowClick(node, e as unknown as MouseEvent)}
+                >
+                  <TableCell
+                    sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}
+                  >
+                    <Checkbox
+                      checked={visuallyChecked}
+                      disabled={disableCheckbox}
+                      onChange={(e) => {
+                        if (disableCheckbox) return;
+                        const targets = collectDescendantIds(node.id);
+                        if (targets.length === 0) return;
+                        batchSelect(targets, e.target.checked);
+                      }}
+                      size="small"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px` }}>
+                    <NameCell>
+                      <IndentSpace depth={Math.max(0, ((node.depth || 0) + depthOffset) - 1)} />
+                      <Box
+                        component={RouterLink}
+                        to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
+                        sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                      >
+                        {node.name}
+                      </Box>
+                    </NameCell>
+                  </TableCell>
+                  <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px` }}>
+                    {node.description || '-'}
+                  </TableCell>
+                  <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
+                    {(() => {
+                      const v = node.createdAt;
+                      if (!v) return '-';
+                      const d = new Date(v);
+                      return (
+                        <span title={d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}>
+                          {d.toLocaleDateString()}
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
+                  <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px` }}>
+                    {(() => {
+                      const v = node.updatedAt;
+                      if (!v) return '-';
+                      const d = new Date(v);
+                      return (
+                        <span title={d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}>
+                          {d.toLocaleDateString()}
+                        </span>
+                      );
+                    })()}
+                  </TableCell>
+                </StyledTableRow>
+              );
+            })
           )}
           {table.getRowModel().rows.map((row) => {
             const node = row.original;
-            const isSelected = rowSelection[node.id] || false;
+            const inheritedSelection = hasSelectedAncestor(node.id);
+            const isSelected = selectAll || inheritedSelection || !!rowSelection[node.id];
 
             const isBlockedTarget = forbiddenTargets.has(row.original.id);
             return (
@@ -1098,7 +1071,7 @@ export function TreeTableCore({
 
       {/* Context Menu (opened via left-click icon; no right-click handlers registered) */}
       {(() => {
-        const n = contextMenuState.node as any;
+        const n = contextMenuState.node;
         const isRoot = !!n && (n.depth === 0);
         return (
       <ContextMenuComponent
@@ -1122,23 +1095,23 @@ export function TreeTableCore({
         onEdit={() => {
           const n = contextMenuState.node;
           if (n) {
-            if ((n as any).depth === 0) { handleContextMenuClose(); return; }
+            if (n.depth === 0) { handleContextMenuClose(); return; }
             // Prefer explicit onEdit hook for navigation to Edit dialog; fallback to onNodeClick
-            if (controller?.onEdit) controller.onEdit(n.id, n as any);
-            else controller?.onNodeClick?.(n.id, n as any);
+            if (controller?.onEdit) controller.onEdit(n.id, n);
+            else controller?.onNodeClick?.(n.id, n);
           }
           handleContextMenuClose();
         }}
         onDuplicate={() => {
           if (contextMenuState.node) {
-            if ((contextMenuState.node as any).depth === 0) { handleContextMenuClose(); return; }
+            if (contextMenuState.node.depth === 0) { handleContextMenuClose(); return; }
             controller?.onDuplicate?.(contextMenuState.node.id);
           }
           handleContextMenuClose();
         }}
         onRemove={() => {
           if (contextMenuState.node) {
-            if ((contextMenuState.node as any).depth === 0) { handleContextMenuClose(); return; }
+            if (contextMenuState.node.depth === 0) { handleContextMenuClose(); return; }
             controller?.onRemove?.([contextMenuState.node.id]);
           }
           handleContextMenuClose();

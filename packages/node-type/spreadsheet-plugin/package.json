@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/spreadsheet-plugin",
+  "name": "@hierarchidb/node-type-spreadsheet-plugin",
   "type": "module",
   "version": "0.0.1",
   "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
@@ -25,16 +25,6 @@
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
       "default": "./dist/ui/index.js"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
     }
   },
   "typesVersions": {
@@ -65,10 +55,9 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
@@ -90,7 +79,8 @@
     "vitest": "^3.2.4",
     "react": "^18.3.1",
     "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1"
+    "@mui/material": "^7.3.1",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -98,7 +88,7 @@
       "name": "Spreadsheet Plugin",
       "icon": {
         "mui": "Assessment",
-        "emoji": "📈",
+        "emoji": "\ud83d\udcc8",
         "color": "#dcbc50"
       },
       "priority": 600,
@@ -138,7 +128,8 @@
     "react-i18next": "12.3.1",
     "i18next": "22.5.0",
     "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1"
+    "@mui/icons-material": "^7.3.1",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "tsup": {
     "external": [

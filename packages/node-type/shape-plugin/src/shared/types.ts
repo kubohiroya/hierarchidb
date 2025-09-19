@@ -40,7 +40,7 @@ export interface ShapeEntity extends PeerEntity {
   licenseAgreedAt?: string;
 
   // Processing Configuration (Step 4)
-  processingConfig: ProcessingConfig;
+  processingConfig?: ProcessingConfig;
 
   // Country & Admin Selection (Step 5)
   checkboxState: boolean[][] | string; // Serializable matrix
@@ -80,6 +80,12 @@ export interface ShapeWorkingCopy extends Omit<ShapeEntity, 'id' | 'nodeId'> {
   // Shape-specific working copy properties
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
+}
+
+export interface StepProps {
+  workingCopy: Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
+  onUpdate: (updates: Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] }) => void;
+  disabled?: boolean;
 }
 
 // ================================

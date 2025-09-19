@@ -7,6 +7,7 @@
   */
 
 import React, { useCallback } from 'react';
+import { wrapDialogStepComponent } from '@hierarchidb/node-type-folder-plugin';
 import { Box } from '@mui/material';
 import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
 import type { StylerConfig } from '../../types/stylerTypes.js';
@@ -120,10 +121,12 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
   * : Step
  * Spreadsheet
   */
+const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
+
 export const StylerStep5Definition = {
   stepNumber: 5,
   title: 'Style Mapping Configuration',
-  component: StylerStep5,
+  component: StylerStep5Component,
   validation: {
     validate: async (data: any) => {
       const config = data?.stylerConfig;

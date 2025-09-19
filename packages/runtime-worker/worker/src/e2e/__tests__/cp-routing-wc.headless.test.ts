@@ -7,7 +7,7 @@ import { CommandProcessor } from '../../services/CommandProcessor.js';
 describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
-    const request = (indexedDB as any)?.deleteDatabase?.('core-db');
+    const request = indexedDB.deleteDatabase('core-db');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();
@@ -33,7 +33,10 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       }),
     );
     expect(createRes.success).toBe(true);
-    const nodeId = (createRes as any).nodeId as NodeId;
+    if (!createRes.success || !createRes.nodeId) {
+      throw new Error('createNode did not return nodeId');
+    }
+    const nodeId = createRes.nodeId;
 
     const updateRes = await cp.processCommand(
       cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' }),
@@ -49,13 +52,13 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     const moveRes = await cp.processCommand(
       cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId }),
     );
     expect(moveRes.success).toBe(true);
 
-    const mt = await cp.processCommand(cp.createEnvelope('moveToTrash', { nodeIds: [nodeId] } as any));
+    const mt = await cp.processCommand(cp.createEnvelope('moveToTrash', { nodeIds: [nodeId] }));
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(

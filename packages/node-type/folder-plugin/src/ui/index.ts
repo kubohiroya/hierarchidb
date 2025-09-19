@@ -6,7 +6,7 @@ export { FolderDialog } from '../components/FolderDialog.js';
 // Standardized entry for PluginDialogRoute: provide getDialogComponent()
 export async function getDialogComponent() {
   const mod = await import('../components/FolderDialog.js');
-  return (mod as any).FolderDialog;
+  return mod.FolderDialog;
 }
 
 // Register folder host profile so PluginDialog can compose base steps for

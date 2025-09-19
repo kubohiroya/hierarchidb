@@ -7,6 +7,7 @@ const cfg = createTsupConfig({
   external: [
     'provider',
     'provider-dom',
+    'jotai',
     // UI libs are already in base externals; internal/workers deps should bundle
   ],
 });

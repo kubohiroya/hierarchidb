@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 //  @hierarchidb/_app-datasource
 //  import_app-datasource
-import type { StepProps } from '../../shared';
+import type { DataSourceName, StepProps } from '../../shared';
 import { DATA_SOURCE_CONFIGS } from '../../mock/data';
 
 /**
@@ -10,9 +10,9 @@ import { DATA_SOURCE_CONFIGS } from '../../mock/data';
  * Uses @hierarchidb/_app-datasource components for data source selection
  */
 export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
-  const handleDataSourceSelect = (dataSourceName: string) => {
+  const handleDataSourceSelect = (dataSourceName: DataSourceName) => {
     onUpdate({
-      dataSourceName: dataSourceName as any,
+      dataSourceName,
       licenseAgreement: false, // Reset license agreement when changing source
       licenseAgreedAt: undefined,
     });

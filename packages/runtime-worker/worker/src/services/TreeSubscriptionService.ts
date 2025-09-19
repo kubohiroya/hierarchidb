@@ -81,7 +81,6 @@ export class TreeSubscriptionService {
       id: subscriptionId as SubscriptionId,
       type: 'node',
       nodeId: nodeId,
-      callback: (event) => subject.next(event as any),
       options: { includeMetadata: includeInitialValue },
       isActive: true,
       lastActivity: Date.now(),
@@ -117,7 +116,7 @@ export class TreeSubscriptionService {
     const customSubscribe = (
       observer?: Parameters<Observable<TreeChangeEvent>['subscribe']>[0],
     ) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer });
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -170,7 +169,7 @@ export class TreeSubscriptionService {
           children = children.filter((n) => filter.nodeTypes!.includes(n.nodeType));
         }
         const chunkSize = 200;
-        const events: TreeChangeEvent[] = [] as any;
+        const events: TreeChangeEvent[] = [];
         for (let i = 0; i < children.length; i += chunkSize) {
           const slice = children.slice(i, i + chunkSize);
           events.push({
@@ -178,7 +177,7 @@ export class TreeSubscriptionService {
             nodeId: parentId,
             affectedChildren: slice.map((c) => c.id),
             timestamp: Date.now() as Timestamp,
-          } as any);
+          });
         }
         if (children.length === 0) {
           events.push({
@@ -186,7 +185,7 @@ export class TreeSubscriptionService {
             nodeId: parentId,
             affectedChildren: [],
             timestamp: Date.now() as Timestamp,
-          } as any);
+          });
         }
         return events;
       }),
@@ -213,8 +212,8 @@ export class TreeSubscriptionService {
     // Set up unsubscribe handler
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+    resultObservable.subscribe = (observer) => {
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -241,8 +240,7 @@ export class TreeSubscriptionService {
       id: subscriptionId as SubscriptionId,
       type: 'subtree',
       nodeId: rootId,
-      callback: (event) => subject.next(event as any),
-      options: { ...filter, maxDepth } as any,
+      options: { ...filter, maxDepth },
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
@@ -257,7 +255,7 @@ export class TreeSubscriptionService {
       bufferTime(30),
       rxFilter((batch) => batch.length > 0),
       mergeMap(async () => {
-        const events: TreeChangeEvent[] = [] as any;
+        const events: TreeChangeEvent[] = [];
         for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth)) {
           events.push(ev);
         }
@@ -287,7 +285,7 @@ export class TreeSubscriptionService {
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -342,7 +340,7 @@ export class TreeSubscriptionService {
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -600,13 +598,13 @@ export class TreeSubscriptionService {
       const table = this.coreDB.nodes;
       if (table && '_Items' in table) {
         // In fake-indexeddb, the data is stored in _Items
-        const items = (table as any)._Items;
+        const items = (table)._Items;
         if (items instanceof Map) {
           return items.get(nodeId);
         }
         // Try alternative access patterns for fake-indexeddb
         for (const item of Object.values(items || {})) {
-          if ((item as any)?.id === nodeId) {
+          if ((item)?.id === nodeId) {
             return item as TreeNode;
           }
         }
@@ -1164,7 +1162,7 @@ export class TreeSubscriptionService {
 
     const nodeEvent: TreeNodeEvent = {
       nodeId: changeEvent.nodeId,
-      type: mapType(changeEvent.type as any),
+      type: mapType(changeEvent.type),
       timestamp: changeEvent.timestamp || Date.now(),
       node: changeEvent.node,
       parentId: changeEvent.node?.parentId,

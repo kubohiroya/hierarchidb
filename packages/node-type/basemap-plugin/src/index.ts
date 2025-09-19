@@ -64,7 +64,7 @@ export const PLUGIN_INFO = {
 } as const;
 
 // Optional runtime wiring (no-op)
-export const runtimeWiring = {} as const;
+export class RuntimeWiring {}
 
 // Folder dialog extension initializer (optional)
 export { initializeBaseMapFolderExtension, baseMapFolderExtension } from './extensions/BaseMapFolderExtension.js';

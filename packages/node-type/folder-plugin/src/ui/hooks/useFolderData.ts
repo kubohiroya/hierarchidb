@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { NodeId } from '@hierarchidb/common-type';
 import { useFolderAPIGetter } from './useFolderAPI.js';
 import type { FolderEntity } from '../../shared/index.js';
-import { CreateFolderData, UpdateFolderData } from '~/shared/types';
+import type { CreateFolderData, FolderSettings, UpdateFolderData } from '../../shared/types.js';
 
 /**
  * Hook for managing folder-plugin data and operations
@@ -172,7 +172,7 @@ export function useFolderData(nodeId: NodeId) {
 
   // Update settings
   const updateSettings = useCallback(
-    async (settings: NodeId): Promise<void> => {
+    async (settings: FolderSettings): Promise<void> => {
       try {
         const api = await getFolderAPI();
         if (!api) return;

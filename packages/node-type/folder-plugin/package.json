@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/folder-plugin",
+  "name": "@hierarchidb/node-type-folder-plugin",
   "version": "1.0.0",
   "description": "Basic folder plugin for HierarchiDB UI layer",
   "types": "dist/index.d.ts",
@@ -10,6 +10,9 @@
       ],
       "shared": [
         "dist/shared/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"
@@ -34,24 +37,9 @@
       "default": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     }
   },
   "scripts": {
@@ -72,19 +60,14 @@
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
-    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hookform/resolvers": "^3.10.0",
     "i18next": "22.5.0",
-    "react-hook-form": "^7.62.0",
-    "react-i18next": "12.3.1",
-    "react-tag-input": "^6.10.6",
-    "uuid": "^9.0.1",
-    "yup": "^1.7.0"
+    "react-i18next": "12.3.1"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -98,7 +81,6 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/uuid": "^9.0.8",
     "@vitejs/plugin-react": "^5.0.2",
     "fake-indexeddb": "^6.2.2",
     "jsdom": "^26.1.0",

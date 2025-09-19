@@ -40,13 +40,11 @@ export class LocationBatchSessionManager {
     try {
       const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
-      // Opportunistic cleanup (7 days)
       try {
         await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000);
       } catch {
       }
-      // @ts-ignore
-      await db.table('sessions').put({
+      await db.sessions?.put({
         sessionId,
         nodeId,
         bbox,
@@ -70,8 +68,7 @@ export class LocationBatchSessionManager {
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
-        // @ts-ignore
-        await db.table('sessions').update(sessionId, { status: 'completed' });
+        await db.sessions?.update(sessionId, { status: 'completed' });
       } catch {
       }
     }).catch(async (e: any) => {
@@ -79,8 +76,7 @@ export class LocationBatchSessionManager {
       try {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
-        // @ts-ignore
-        await db.table('sessions').update(sessionId, { status: 'failed' });
+        await db.sessions?.update(sessionId, { status: 'failed' });
       } catch {
       }
     });

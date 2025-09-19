@@ -132,3 +132,6 @@ export interface LocationDialogProps {
   onSuccess?: (entity: LocationWorkingCopy) => void;
   onError?: (error: Error) => void;
 }
+
+// Worker entity metadata types
+export type { LocationPeerData, LocationGroupItemData, LocationRelationMeta } from './entities.js';

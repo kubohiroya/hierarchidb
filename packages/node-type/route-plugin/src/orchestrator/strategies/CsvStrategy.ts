@@ -1,4 +1,5 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, StrategyContext, TaskPlan } from '../types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from '../types.js';
+import { normalizeEngine, normalizeMode, toFiniteNumber } from './strategy-utils.js';
 
 export class CsvStrategy implements DataSourceStrategy {
   supports(spec: DataSourceSpec): boolean {
@@ -15,10 +16,7 @@ export class CsvStrategy implements DataSourceStrategy {
     };
   }
 
-  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: {
-    engine?: string;
-    mode?: string
-  }): Promise<OdPair[]> {
+  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]> {
     const blob = blobs.get(task.payloadRef);
     if (!blob) throw new Error(`Missing payload for ${task.payloadRef}`);
     const text = await blob.text();
@@ -26,7 +24,7 @@ export class CsvStrategy implements DataSourceStrategy {
   }
 }
 
-function parseCsvToOds(csv: string, defaults?: { engine?: string; mode?: string }): OdPair[] {
+function parseCsvToOds(csv: string, defaults?: RouteBatchSpec['defaults']): OdPair[] {
   const lines = csv.split(/\r?\n/).filter(Boolean);
   if (lines.length === 0) return [];
   const header = lines[0]!.split(',').map((h) => h.trim().toLowerCase());
@@ -41,13 +39,24 @@ function parseCsvToOds(csv: string, defaults?: { engine?: string; mode?: string 
   const out: OdPair[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = splitCsvLine(lines[i]!);
-    const o: OdPair = {
-      start: { lon: parseFloat(cols[lon1]!), lat: parseFloat(cols[lat1]!) },
-      end: { lon: parseFloat(cols[lon2]!), lat: parseFloat(cols[lat2]!) },
-      mode: (cols[modeIdx!] || defaults?.mode) as any,
-      engine: (cols[engineIdx!] || defaults?.engine) as any,
+    const startLon = toFiniteNumber(cols[lon1]);
+    const startLat = toFiniteNumber(cols[lat1]);
+    const endLon = toFiniteNumber(cols[lon2]);
+    const endLat = toFiniteNumber(cols[lat2]);
+    if (startLon === undefined || startLat === undefined || endLon === undefined || endLat === undefined) {
+      throw new Error(`Invalid coordinates in CSV line ${i + 1}`);
+    }
+    const rawMode = modeIdx >= 0 ? cols[modeIdx] : undefined;
+    const rawEngine = engineIdx >= 0 ? cols[engineIdx] : undefined;
+    const mode = normalizeMode(rawMode, defaults?.mode);
+    const engine = normalizeEngine(rawEngine, defaults?.engine);
+    const od: OdPair = {
+      start: { lon: startLon, lat: startLat },
+      end: { lon: endLon, lat: endLat },
     };
-    out.push(o);
+    if (mode) od.mode = mode;
+    if (engine) od.engine = engine;
+    out.push(od);
   }
   return out;
 }
@@ -55,4 +64,3 @@ function parseCsvToOds(csv: string, defaults?: { engine?: string; mode?: string 
 function splitCsvLine(line: string): string[] {
   return line.split(',').map((s) => s.trim());
 }
-

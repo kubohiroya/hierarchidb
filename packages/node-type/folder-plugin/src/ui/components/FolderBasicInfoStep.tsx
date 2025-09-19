@@ -3,7 +3,7 @@
  * Step1
   */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -21,13 +21,18 @@ export interface FolderBasicInfoStepProps {
 
 /**
      */
-export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
-                                                                          workingCopy,
-                                                                          onUpdate,
-                                                                          disabled = false,
-                                                                        }) => {
+export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({ workingCopy, onUpdate, disabled = false }) => {
   const { t } = useTranslation('folderPlugin');
 
+  const translate = useCallback(
+    (key: string, fallback: string): string => {
+      const value = t(key, { defaultValue: fallback }) as unknown;
+      if (typeof value === 'string') return value;
+      if (Array.isArray(value)) return value.join('');
+      return fallback;
+    },
+    [t],
+  );
 
   const handleTagChange = (tags: TagId[]) => {
     onUpdate({ tags });
@@ -39,11 +44,11 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
 */}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <FolderIcon color="primary" />
-        <Typography variant="h6">{t('basicInfo.title', 'Basic Information')}</Typography>
+        <Typography variant="h6">{translate('basicInfo.title', 'Basic Information')}</Typography>
       </Box>
 
       <Typography variant="body2" color="text.secondary" paragraph>
-        {t(
+        {translate(
           'basicInfo.description',
           'Enter basic folder information. Use tags to categorize and make folders easy to search.',
         )}
@@ -54,16 +59,16 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
           value={{ name: workingCopy.name, description: workingCopy.description }}
           onChange={onUpdate}
           disabled={disabled}
-          nameLabel={t('basicInfo.name.label', 'Folder Name')}
-          nameHelperText={t('basicInfo.name.helper', 'Enter a descriptive folder name')}
-          nameRequiredText={t('basicInfo.name.required', 'Folder name is required')}
-          namePlaceholder={t('basicInfo.name.placeholder', 'Enter folder name')}
-          descriptionLabel={t('basicInfo.description.label', 'Description')}
-          descriptionHelperText={t(
+          nameLabel={translate('basicInfo.name.label', 'Folder Name')}
+          nameHelperText={translate('basicInfo.name.helper', 'Enter a descriptive folder name')}
+          nameRequiredText={translate('basicInfo.name.required', 'Folder name is required')}
+          namePlaceholder={translate('basicInfo.name.placeholder', 'Enter folder name')}
+          descriptionLabel={translate('basicInfo.description.label', 'Description')}
+          descriptionHelperText={translate(
             'basicInfo.description.helper',
             'Describe the purpose or contents of this folder (optional)',
           )}
-          descriptionPlaceholder={t('basicInfo.description.placeholder', 'Enter description (optional)')}
+          descriptionPlaceholder={translate('basicInfo.description.placeholder', 'Enter description (optional)')}
         />
 
         <Divider />
@@ -74,9 +79,9 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
           <TagInput
             value={workingCopy.tags || []}
             onChange={handleTagChange}
-            placeholder={t('basicInfo.tags.placeholder', 'Enter or select tags...')}
-            label={t('basicInfo.tags.label', 'Tags')}
-            helperText={t('basicInfo.tags.helper', 'Add tags to categorize this folder')}
+            placeholder={translate('basicInfo.tags.placeholder', 'Enter or select tags...')}
+            label={translate('basicInfo.tags.label', 'Tags')}
+            helperText={translate('basicInfo.tags.helper', 'Add tags to categorize this folder')}
             maxTags={10}
             allowCreate={true}
             disabled={disabled}
@@ -88,8 +93,8 @@ export const FolderBasicInfoStep: React.FC<FolderBasicInfoStepProps> = ({
 */}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
-          💡 <strong>{t('basicInfo.hint.title', 'Tip:')}</strong>{' '}
-          {t(
+          💡 <strong>{translate('basicInfo.hint.title', 'Tip:')}</strong>{' '}
+          {translate(
             'basicInfo.hint.content',
             'Using tags makes it easy to search and organize folders. Examples: "Project", "Important", "Archive", etc.',
           )}

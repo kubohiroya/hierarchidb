@@ -34,7 +34,7 @@ export const PLUGIN_METADATA = {
       canvas: true,
     },
     dependencies: [
-      '@hierarchidb/folder-plugin',
+      '@hierarchidb/node-type-folder-plugin',
       '@hierarchidb/ui-map',
     ],
   },

@@ -71,7 +71,7 @@ export {
 } from './utils/colorUtils.js';
 
 // UI components are exported from subpath to avoid worker-time deps
-// import from '@hierarchidb/styler-plugin/ui' when needed
+// import from '@hierarchidb/node-type-styler-plugin/ui' when needed
 
 /**
   * : HierarchiDB
@@ -146,4 +146,4 @@ export async function initializeStylerPlugin(context: {
 }
 
 // Optional runtime wiring (no-op)
-export const runtimeWiring = {} as const;
+export class RuntimeWiring {}

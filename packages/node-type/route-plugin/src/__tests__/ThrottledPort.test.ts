@@ -1,18 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { ThrottledPort } from '../services/net/ThrottledPort.js';
+import { ThrottledPort, type NetworkPortLike } from '../services/net/ThrottledPort.js';
 
-class FakePort {
+class FakePort implements NetworkPortLike {
+  constructor(private readonly mockDelayMs = 0) {}
+
   async get(_url: string) {
-    return { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(0) };
+    if (this.mockDelayMs > 0) await new Promise((r) => setTimeout(r, this.mockDelayMs));
+    return {
+      ok: true,
+      status: 200,
+      async arrayBuffer() {
+        return new ArrayBuffer(0);
+      },
+    };
   }
 }
 
 describe('ThrottledPort', () => {
   // Queueing occurs before acquire; naive in-flight counting includes queued tasks in jsdom.
   // Skip in default CI to avoid false negatives; enable with ENABLE_THROTTLED_TESTS=1
-  (it as any).runIf?.(process.env.ENABLE_THROTTLED_TESTS === '1')('limits concurrent requests', async () => {
+  const runConcurrencyTest = (process.env.ENABLE_THROTTLED_TESTS === '1' ? it : it.skip);
+
+  runConcurrencyTest('limits concurrent requests', async () => {
     const base = new FakePort();
-    const port = new ThrottledPort(base as any, { concurrency: 2 });
+    const port = new ThrottledPort(base, { concurrency: 2 });
 
     let inFlight = 0;
     let maxInFlight = 0;
@@ -34,7 +45,7 @@ describe('ThrottledPort', () => {
 
   it('applies simple rps token bucket', async () => {
     const base = new FakePort();
-    const port = new ThrottledPort(base as any, { rps: 2 });
+    const port = new ThrottledPort(base, { rps: 2 });
 
     const t0 = Date.now();
     await Promise.all([port.get('a'), port.get('b'), port.get('c')]);

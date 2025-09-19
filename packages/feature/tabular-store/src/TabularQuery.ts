@@ -1,28 +1,32 @@
-import { getRowStoreDB } from './RowStoreDB.js';
+import { getRowStoreDB, readChunkRows } from './RowStoreDB.js';
 import { TabularIndexer } from './Indexer.js';
 
 export type ColumnFilter = {
   column: string;
   op: 'eq' | 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'neq';
-  value: any;
+  value: unknown;
 };
 
-function matchOp(v: any, op: ColumnFilter['op'], target: any): boolean {
+function toNumber(value: unknown): number {
+  return typeof value === 'number' ? value : Number(value);
+}
+
+function matchOp(value: unknown, op: ColumnFilter['op'], target: unknown): boolean {
   switch (op) {
     case 'eq':
-      return v === target;
+      return value === target;
     case 'neq':
-      return v !== target;
+      return value !== target;
     case 'contains':
-      return typeof v === 'string' && String(v).toLowerCase().includes(String(target).toLowerCase());
+      return typeof value === 'string' && String(value).toLowerCase().includes(String(target).toLowerCase());
     case 'gt':
-      return Number(v) > Number(target);
+      return toNumber(value) > toNumber(target);
     case 'gte':
-      return Number(v) >= Number(target);
+      return toNumber(value) >= toNumber(target);
     case 'lt':
-      return Number(v) < Number(target);
+      return toNumber(value) < toNumber(target);
     case 'lte':
-      return Number(v) <= Number(target);
+      return toNumber(value) <= toNumber(target);
     default:
       return false;
   }
@@ -32,7 +36,7 @@ export class TabularQueryService {
   constructor(private readonly pluginId: string) {
   }
 
-  async query(tableId: string, filters: ColumnFilter[], limit = 1000): Promise<any[]> {
+  async query(tableId: string, filters: ColumnFilter[], limit = 1000): Promise<unknown[]> {
     const db = getRowStoreDB();
     // Try index-assisted path for eq-only filters
     const eqFilters = filters.filter((f) => f.op === 'eq');
@@ -47,11 +51,11 @@ export class TabularQueryService {
           await indexer.indexRows(tableId, [f.column]);
           ids = await indexer.getRowIds(tableId, f.column, f.value);
         }
-        const set = new Set<number>(ids as number[]);
+        const set = new Set<number>(ids);
         if (acc) {
           const prev: number[] = Array.from(acc.values());
           const inter: number[] = prev.filter((x: number) => set.has(x));
-          acc = new Set<number>(inter as number[]);
+          acc = new Set<number>(inter);
         } else {
           acc = set;
         }
@@ -64,14 +68,19 @@ export class TabularQueryService {
     }
 
     // Fallback full scan
-    const chunks = await db.table('rowChunks').where(['pluginId+tableId'] as any).equals([this.pluginId, tableId] as any).sortBy('chunkIndex');
-    const out: any[] = [];
-    for (const c of chunks) {
-      const rows: any[] = JSON.parse(new TextDecoder().decode(new Uint8Array(c.binaryData)));
+    const chunks = await db.rowChunks
+      .where('[pluginId+tableId]')
+      .equals([this.pluginId, tableId])
+      .sortBy('chunkIndex');
+    const out: unknown[] = [];
+    for (const chunk of chunks) {
+      const rows = readChunkRows(chunk);
       for (const row of rows) {
-        const ok = filters.every((f) => matchOp(row[f.column], f.op, f.value));
+        if (typeof row !== 'object' || row === null) continue;
+        const record = row as Record<string, unknown>;
+        const ok = filters.every((f) => matchOp(record[f.column], f.op, f.value));
         if (ok) {
-          out.push(row);
+          out.push(record);
           if (out.length >= limit) return out;
         }
       }

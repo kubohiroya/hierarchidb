@@ -8,17 +8,62 @@
       "DOM.Iterable"
     ],
     "baseUrl": ".",
+    // NOTE: entries under @hierarchidb/node-type-* are auto-synced by createNodeTypeAliasPlugin. Avoid manual edits.
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/dist/worker/index.js"],
-      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/dist/worker/index.js"],
-      
-      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/dist/worker/index.mjs"],
-      "@hierarchidb/shape-plugin/worker": ["../packages/node-type/shape-plugin/dist/worker/index.js"],
-      "@hierarchidb/ui-auth": ["../packages/ui/auth/dist"],
-      "@hierarchidb/ui-icon": ["../packages/ui/icon/dist"],
-      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/dist"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist"]
+      "~/*": [
+        "src/*"
+      ],
+      "@hierarchidb/node-type-location-plugin/worker": [
+        "../packages/node-type/location-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/node-type-timeline-plugin/worker": [
+        "../packages/node-type/timeline-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/node-type-route-plugin/worker": [
+        "../packages/node-type/route-plugin/dist/worker/index.mjs"
+      ],
+      "@hierarchidb/node-type-shape-plugin/worker": [
+        "../packages/node-type/shape-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/node-type-shape-plugin/services": [
+        "../packages/node-type/shape-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/ui-auth": [
+        "../packages/ui/auth/dist"
+      ],
+      "@hierarchidb/ui-icon": [
+        "../packages/ui/icon/dist"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../packages/runtime-worker/worker/dist"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../packages/runtime-worker/worker-bootstrap/dist"
+      ],
+      "@hierarchidb/node-type-basemap-plugin/database": [
+        "../packages/node-type/basemap-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/node-type-linker-plugin/services": [
+        "../packages/node-type/linker-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/node-type-location-plugin/services": [
+        "../packages/node-type/location-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/node-type-resolver-plugin/database": [
+        "../packages/node-type/resolver-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/node-type-route-plugin/database": [
+        "../packages/node-type/route-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/node-type-spreadsheet-plugin/database": [
+        "../packages/node-type/spreadsheet-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/node-type-styler-plugin/services": [
+        "../packages/node-type/styler-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/node-type-timeline-plugin/services": [
+        "../packages/node-type/timeline-plugin/src/services/index.ts"
+      ]
     },
     "composite": false,
     "incremental": false,
@@ -32,8 +77,7 @@
     ],
     "esModuleInterop": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    
+    "noUnusedParameters": false
   },
   "include": [
     "src/**/*.ts",

@@ -10,7 +10,10 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     let completed = 0, failed = 0;
     for (const task of tasks) {
       try {
-        await client.vectortile.generateTiles(task.inputBufferId, { format: task.outputFormat as any, compression: task.compression as any });
+        await client.vectortile.generateTiles(task.inputBufferId, {
+          format: 'mvt',
+          compression: task.compression ? 'gzip' : 'none',
+        });
         completed++;
       } catch {
         failed++;
@@ -20,4 +23,3 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
     return { processed: completed, failed };
   }
 }
-

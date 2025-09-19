@@ -2,7 +2,7 @@
   * Folder plugin utilities - UIWorker
   */
 
-import { NodeId } from '@hierarchidb/common-type';
+import { NodeId, NodeType } from '@hierarchidb/common-type';
 import { CreateFolderData, FolderBreadcrumb, FolderDisplayData, FolderEntity, FolderTreeNode } from './types.js';
 import { FOLDER_DISPLAY, FOLDER_VALIDATION } from './constants.js';
 
@@ -10,10 +10,10 @@ import { FOLDER_DISPLAY, FOLDER_VALIDATION } from './constants.js';
  * ID generation utilities
  */
 export function generateFolderId(): NodeId {
-  return crypto.randomUUID() as unknown as NodeId;
+  return crypto.randomUUID() as NodeId;
 }
 
-// Bookmark/Template ID helpers removed
+const FOLDER_NODE_TYPE = 'folder' as NodeType;
 
 /**
  * Validation utilities - now using common validation from @hierarchidb/core
@@ -75,8 +75,11 @@ export function validateFolderData(data: CreateFolderData): { isValid: boolean; 
 /**
  * Display utilities
  */
+const isPresetIconColor = (candidate: string): candidate is (typeof FOLDER_DISPLAY.ICON_COLORS)[number] =>
+  (FOLDER_DISPLAY.ICON_COLORS as readonly string[]).includes(candidate);
+
 export function isValidIconColor(color: string): boolean {
-  return FOLDER_DISPLAY.ICON_COLORS.includes(color as any) || /^#[0-9A-Fa-f]{6}$/.test(color);
+  return isPresetIconColor(color) || /^#[0-9A-Fa-f]{6}$/.test(color);
 }
 
 export function getDefaultIconColor(): string {
@@ -100,8 +103,11 @@ export function createEmptyFolderEntity(nodeId: NodeId): FolderEntity {
   const now = Date.now();
 
   return {
-    id: generateFolderId(),
-    nodeId,
+    id: nodeId,
+    parentId: nodeId,
+    nodeType: FOLDER_NODE_TYPE,
+    name: '',
+    depth: 0,
     createdAt: now,
     updatedAt: now,
     version: 1,
@@ -331,25 +337,26 @@ export function sortFolders(
 /**
  * Performance utilities
  */
-export function debounce<T extends (...args: any[]) => any>(func: T, delay: number): T {
-  let timeoutId: ReturnType<typeof setTimeout>;
+export function debounce<TArgs extends unknown[]>(func: (...args: TArgs) => void, delay: number): (...args: TArgs) => void {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  return ((...args: any[]) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  }) as T;
+  return (...args: TArgs) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
 }
 
-export function throttle<T extends (...args: any[]) => any>(func: T, delay: number): T {
+export function throttle<TArgs extends unknown[]>(func: (...args: TArgs) => void, delay: number): (...args: TArgs) => void {
   let lastCallTime = 0;
 
-  return ((...args: any[]) => {
+  return (...args: TArgs) => {
     const now = Date.now();
-    if (now - lastCallTime >= delay) {
-      lastCallTime = now;
-      return func(...args);
-    }
-  }) as T;
+    if (now - lastCallTime < delay) return;
+    lastCallTime = now;
+    func(...args);
+  };
 }
 
 export function chunk<T>(array: T[], size: number): T[][] {

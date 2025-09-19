@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo } from '../types/index.js';
+import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo, PreviewConfig } from '../types/index.js';
 import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep.js';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
@@ -15,6 +15,7 @@ import {
   type HeadlessFooterRenderProps,
   type StepNavigationEvent,
   type StepComponentDescriptor,
+  type StepComponentProps,
 } from '@hierarchidb/ui-dialog';
 
 type ResolverDialogStep = {
@@ -24,7 +25,30 @@ type ResolverDialogStep = {
   validate?: () => Promise<boolean>;
 };
 
-interface ResolverDialogProps {
+const DEFAULT_PREVIEW_CONFIG: PreviewConfig = {
+  sampleSize: 100,
+  refreshInterval: 1000,
+  highlightMappings: true,
+  showValidationErrors: true,
+};
+
+const PlaceholderStepComponent: React.FC<StepComponentProps<Partial<ResolverWorkingCopyEntity>>> = () => null;
+
+const readMetaEnvMode = (): string | undefined => {
+  try {
+    return typeof import.meta !== 'undefined' ? import.meta.env?.MODE : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const readProcessEnvMode = (): string | undefined => {
+  return typeof process !== 'undefined' && typeof process.env?.NODE_ENV === 'string'
+    ? process.env.NODE_ENV
+    : undefined;
+};
+
+export interface ResolverDialogProps {
   open: boolean;
   nodeId: NodeId;
   entity?: ResolverEntity;
@@ -61,16 +85,11 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     if (entity) {
       const copy: Partial<ResolverWorkingCopyEntity> = {
         ...entity,
-        mappingRules: (entity as any).mappingRules?.map((rule: any) => ({ ...rule })) ?? [],
-        validationRules: (entity as any).validationRules?.map((rule: any) => ({ ...rule })) ?? [],
+        mappingRules: entity.mappingRules.map((rule) => ({ ...rule })),
+        validationRules: entity.validationRules.map((rule) => ({ ...rule })),
         duplicateResolution: entity.duplicateResolution ? { ...entity.duplicateResolution } : { strategy: 'ignore' },
-        dataTransformations: (entity as any).dataTransformations?.map((t: any) => ({ ...t })) ?? [],
-        previewConfig: entity.previewConfig ? { ...entity.previewConfig } : {
-          sampleSize: 100,
-          refreshInterval: 1000,
-          highlightMappings: true,
-          showValidationErrors: true,
-        },
+        dataTransformations: entity.dataTransformations.map((transformation) => ({ ...transformation })),
+        previewConfig: entity.previewConfig ? { ...entity.previewConfig } : { ...DEFAULT_PREVIEW_CONFIG },
       };
       setWorkingCopy(copy);
       initialWorkingCopy.current = copy;
@@ -85,12 +104,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         validationRules: [],
         duplicateResolution: { strategy: 'ignore' },
         dataTransformations: [],
-        previewConfig: {
-          sampleSize: 100,
-          refreshInterval: 1000,
-          highlightMappings: true,
-          showValidationErrors: true,
-        },
+        previewConfig: { ...DEFAULT_PREVIEW_CONFIG },
       };
       setWorkingCopy(copy);
       initialWorkingCopy.current = copy;
@@ -251,15 +265,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     await handleSave();
   }, [handleSave]);
 
-  const handleClose = useCallback(() => {
-    handleCancel();
-  }, [handleCancel]);
-
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
-    steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
-  ), [steps]);
-
-  const renderHeader = useCallback((props: HeadlessHeaderRenderProps<any>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<Partial<ResolverWorkingCopyEntity>>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>Resolver Configuration</strong>
@@ -274,16 +280,20 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length]);
 
-  const renderContent = useCallback((props: HeadlessContentRenderProps<any>) => (
+  const renderContent: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderContent'] = useCallback((props: HeadlessContentRenderProps<Partial<ResolverWorkingCopyEntity>>) => (
     <div style={{ padding: 16 }}>
       {steps[props.activeStepIndex]?.component}
     </div>
   ), [steps]);
 
-  const renderFooter = useCallback((props: HeadlessFooterRenderProps<any>) => {
+  const isTestEnv = useMemo(() => {
+    const metaMode = readMetaEnvMode();
+    const processMode = readProcessEnvMode();
+    return metaMode === 'test' || processMode === 'test';
+  }, []);
+
+  const renderFooter: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<Partial<ResolverWorkingCopyEntity>>) => {
     const canSave = filledSteps.every(Boolean) && !isSaving;
-    const isTestEnv = (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.MODE === 'test') ||
-      (typeof process !== 'undefined' && (process as any)?.env?.NODE_ENV === 'test');
 
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
@@ -299,9 +309,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
         )}
       </footer>
     );
-  }, [filledSteps, isSaving, handleNavigation]);
+  }, [filledSteps, handleNavigation, isSaving, isTestEnv]);
 
-  const invalidMessageMap = useMemo(() => ({} as Record<string, string>), []);
+  const invalidMessageMap = useMemo<Record<string, string>>(() => ({}), []);
 
   const initialSnapshot = initialWorkingCopy.current;
   const isDirty = useMemo(() => {
@@ -313,11 +323,20 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     }
   }, [workingCopy, initialSnapshot]);
 
-  const headlessProps: HeadlessMultiStepDialogProps<any> = {
+  const handleClose = useCallback((reason?: 'close' | 'discard') => {
+    void reason;
+    handleCancel();
+  }, [handleCancel]);
+
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<Partial<ResolverWorkingCopyEntity>>>>(() => (
+    steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: PlaceholderStepComponent }))
+  ), [steps]);
+
+  const headlessProps: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>> = {
     open,
     stepComponents: stepDescriptors,
     stepData: workingCopy,
-    onStepDataChange: (patch) => updateWorkingCopy(patch as Partial<ResolverWorkingCopyEntity>),
+    onStepDataChange: updateWorkingCopy,
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,
@@ -335,7 +354,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   };
 
   return (
-    <HeadlessMultiStepDialog {...headlessProps} />
+    <HeadlessMultiStepDialog<Partial<ResolverWorkingCopyEntity>> {...headlessProps} />
   );
 };
 

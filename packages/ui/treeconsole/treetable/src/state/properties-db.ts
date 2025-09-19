@@ -1,5 +1,10 @@
 import { Dexie, type Table } from 'dexie';
 
+const logPropertiesDbWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[TreeTablePropertiesDB]', message, error);
+};
+
 export type TreeTableProperties = {
   pageNodeId: string; // primary key
   // property bag (extend freely without schema churn)
@@ -9,19 +14,47 @@ export type TreeTableProperties = {
   rowClickAction?: 'Select/Navigate' | 'Edit';
   viewMode?: 'list' | 'grid';
   filterBy?: string;
+  selectAll?: boolean;
   updatedAt: number;
 };
 
 class UIStateDB extends Dexie {
   treetable_properties!: Table<TreeTableProperties, string>;
-  treetable_colwidths!: Table<{ pageNodeId: string; widths: Record<string, number>; updatedAt: number }, string>;
 
   constructor() {
     super('hdb_ui_state');
-    // v1: introduced treetable_colwidths (legacy, used only for migration)
-    // v2: treetable_properties (current). Dexie will auto-migrate store additions.
+    // v1: historical store for column widths only
     this.version(1).stores({ treetable_colwidths: '&pageNodeId' });
-    this.version(2).stores({ treetable_properties: '&pageNodeId' });
+    // v2: current store (also handles migrating and removing legacy table)
+    this.version(2)
+      .stores({ treetable_properties: '&pageNodeId' })
+      .upgrade(async (tx) => {
+        let legacyTable: Table<{ pageNodeId: string; widths: Record<string, number>; updatedAt?: number }, string> | null = null;
+        try {
+          // Access via dynamic lookup – will throw if store no longer exists (fresh installs)
+          legacyTable = tx.table('treetable_colwidths');
+        } catch {
+          legacyTable = null;
+        }
+        if (!legacyTable) return;
+        try {
+          const legacyRows = await legacyTable.toArray();
+          if (legacyRows.length > 0) {
+            const target = tx.table<TreeTableProperties>('treetable_properties');
+            const now = Date.now();
+            for (const legacy of legacyRows) {
+              await target.put({
+                pageNodeId: legacy.pageNodeId,
+                columnWidths: legacy.widths,
+                updatedAt: typeof legacy.updatedAt === 'number' ? legacy.updatedAt : now,
+              });
+            }
+          }
+          await legacyTable.clear().catch(() => undefined);
+        } catch (error) {
+          logPropertiesDbWarning('Legacy treetable_colwidths migration failed', error);
+        }
+      });
   }
 }
 
@@ -34,14 +67,6 @@ export async function getProperties(pageNodeId: string | undefined): Promise<Tre
   // Try new store first
   let row = await d.treetable_properties.get(pageNodeId);
   if (row) return row;
-  // Migrate from legacy colwidths store if present
-  const legacy = await d.treetable_colwidths.get(pageNodeId);
-  if (legacy) {
-    const migrated: TreeTableProperties = { pageNodeId, columnWidths: legacy.widths, updatedAt: legacy.updatedAt };
-    await d.treetable_properties.put(migrated);
-    try { await d.treetable_colwidths.delete(pageNodeId); } catch {}
-    return migrated;
-  }
   return null;
 }
 
@@ -80,4 +105,13 @@ export async function removeColumnWidths(pageNodeId: string | undefined): Promis
 
 export async function removeColumnWidthsMany(pageNodeIds: readonly string[]): Promise<void> {
   await removePropertiesMany(pageNodeIds);
+}
+
+export async function getSelectAll(pageNodeId: string | undefined): Promise<boolean | null> {
+  const props = await getProperties(pageNodeId);
+  return typeof props?.selectAll === 'boolean' ? props.selectAll : null;
+}
+
+export async function saveSelectAll(pageNodeId: string | undefined, value: boolean): Promise<void> {
+  await saveProperties(pageNodeId, { selectAll: value });
 }

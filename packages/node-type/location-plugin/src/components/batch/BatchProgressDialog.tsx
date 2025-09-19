@@ -219,9 +219,8 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     (async () => {
       try {
         const db = getEphemeralLocationDB();
-        // @ts-ignore
-        const sess = await (db.table('sessions') as any).get(sessionId);
-        if (!cancelled) setTableId(sess?.tableId || null);
+        const session = (await db.sessions?.get(sessionId)) ?? null;
+        if (!cancelled) setTableId(session?.tableId ?? null);
       } catch {
       }
     })();

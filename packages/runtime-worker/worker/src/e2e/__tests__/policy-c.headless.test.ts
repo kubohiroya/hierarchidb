@@ -9,7 +9,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
     // Ensure fake-indexeddb storage is cleared between tests
-    const request = (indexedDB as any)?.deleteDatabase?.('core-db');
+    const request = indexedDB.deleteDatabase('core-db');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();
@@ -51,7 +51,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     // Create WC child under holder
     await core.createNode({
       id: ('wcC-' + Date.now()) as NodeId,
@@ -62,7 +62,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     // Try move A to a new parent -> should be blocked
     const p2 = await core.createNode({
@@ -74,7 +74,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     const move = await cp.processCommand(
       cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId }),
@@ -82,7 +82,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     expect(move.success).toBe(false);
 
     // Try remove A -> should be blocked
-    const rem = await cp.processCommand(cp.createEnvelope('remove', { nodeIds: [aId] } as any));
+    const rem = await cp.processCommand(cp.createEnvelope('remove', { nodeIds: [aId] }));
     expect(rem.success).toBe(false);
   });
 
@@ -101,7 +101,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     // create WC holder that references a node in Resources tree (r)
     const aId = ('Ar-' + Date.now()) as NodeId;
@@ -114,7 +114,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     const holderId = ('wcH3-' + Date.now()) as NodeId;
     const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
     await core.createNode({
@@ -126,7 +126,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     await core.createNode({
       id: ('wcC3-' + Date.now()) as NodeId,
       parentId: holderId,
@@ -136,7 +136,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     // Move PX within Projects should be allowed
     const p2 = await core.createNode({
@@ -148,7 +148,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     const ok = await cp.processCommand(cp.createEnvelope('moveNodes', { nodeIds: [px], toParentId: p2 as NodeId }));
     expect(ok.success).toBe(true);
   });

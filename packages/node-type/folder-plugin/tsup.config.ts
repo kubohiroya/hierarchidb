@@ -5,6 +5,7 @@ export default createTsupConfig({
     index: 'src/index.ts',
     'ui/index': 'src/ui/index.ts',
     'shared/index': 'src/shared/index.ts',
+    'worker/index': 'src/worker/index.ts',
   },
   splitting: false,
   external: [
@@ -17,9 +18,9 @@ export default createTsupConfig({
     // runtime peers
     'dexie',
     // Optional node-type plugins loaded dynamically; keep external to avoid bundle-time resolution
-    '@hierarchidb/shape-plugin',
-    '@hierarchidb/spreadsheet-plugin',
-    '@hierarchidb/basemap-plugin',
-    '@hierarchidb/styler-plugin',
+    '@hierarchidb/node-type-shape-plugin',
+    '@hierarchidb/node-type-spreadsheet-plugin',
+    '@hierarchidb/node-type-basemap-plugin',
+    '@hierarchidb/node-type-styler-plugin',
   ],
 });

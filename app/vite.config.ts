@@ -1,4 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
+import type { NextHandleFunction } from 'connect';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 // @ts-ignore
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -13,6 +16,7 @@ import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { pluginRegistryPlugin } from './vite-plugin-plugin-registry.js';
 import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
+import { createNodeTypeAliasPlugin } from '@hierarchidb/tools-plugin-registry-utils';
 import {
   vitePluginPackageReader as toolsVitePluginPackageReader,
 } from '@hierarchidb/tools-vite-plugin-package-reader';
@@ -71,8 +75,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     '@hierarchidb/ui-icon': '../packages/ui/icon/src/index.ts',
     '@hierarchidb/ui-dialog': '../packages/ui/dialog/src/index.ts',
     // Node-type plugins (opt-in via HDB_DEV)
-    '@hierarchidb/resolver-plugin': '../packages/node-type/resolver-plugin/src/index.ts',
-    '@hierarchidb/linker-plugin': '../packages/node-type/linker-plugin/src/index.ts',
+    '@hierarchidb/node-type-resolver-plugin': '../packages/node-type/resolver-plugin/src/index.ts',
+    '@hierarchidb/node-type-linker-plugin': '../packages/node-type/linker-plugin/src/index.ts',
     // 追加したいパッケージがあればここにマッピングを足してください
   };
 
@@ -87,6 +91,16 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     muiIconsVirtualModule(),
     muiIconMapPlugin({ rootDir: path.resolve(__dirname, '..') }),
     pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
+    createNodeTypeAliasPlugin({
+      rootDir: path.resolve(__dirname, '..'),
+      tsconfigPath: path.resolve(__dirname, 'tsconfig.json'),
+      tsconfigSubpaths: ['services', 'database'],
+    }),
+    createNodeTypeAliasPlugin({
+      rootDir: path.resolve(__dirname, '..'),
+      tsconfigPath: path.resolve(__dirname, 'tsconfig.typecheck.json'),
+      tsconfigSubpaths: ['services', 'database'],
+    }),
     pluginServicesRegistry({ rootDir: path.resolve(__dirname, '..') }),
     devHealthPlugin({
       // Ignore virtual/server-only or known peer-provided modules to avoid false positives
@@ -109,7 +123,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
         // Include all node-type plugins used in menus
-        pattern: /@hierarchidb\/(basemap-plugin|linker-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin|resolver-plugin|timeline-plugin)$/,
+        pattern: /@hierarchidb\/node-type-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
       }),
@@ -169,11 +183,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     // no-op: fallback to default version when package.json is not accessible
   }
 
-  const buildBeaconPlugin = {
+  const buildBeaconPlugin: Plugin = {
     name: 'hdb-build-beacon',
-    configureServer(server: any) {
+    configureServer(server: ViteDevServer) {
       const startedAt = new Date().toISOString();
-      server.middlewares.use('/__hdb_build.json', (_req: any, res: any) => {
+      const beaconHandler: NextHandleFunction = (_req, res) => {
         const payload = {
           appVersion,
           buildTime,
@@ -183,22 +197,21 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         };
         res.setHeader('content-type', 'application/json');
         res.end(JSON.stringify(payload));
-      });
+      };
+      server.middlewares.use('/__hdb_build.json', beaconHandler);
     },
-  } as any;
+  };
 
   // Simple dev-time CORS-bypass proxy via query param (?url=...)
-  const hdbDevProxyPlugin = {
+  const hdbDevProxyPlugin: Plugin = {
     name: 'hdb-dev-proxy',
-    configureServer(server: any) {
-      const handler = async (req: any, res: any) => {
+    configureServer(server: ViteDevServer) {
+      const handler: NextHandleFunction = async (req, res, next) => {
         try {
           // Allow only localhost callers
-          const remote = (req.socket?.remoteAddress || req.connection?.remoteAddress || '').toString();
-          const xff = (Array.isArray(req.headers['x-forwarded-for'])
-            ? req.headers['x-forwarded-for'][0]
-            : req.headers['x-forwarded-for']) as string | undefined;
-          const forwarded = (xff || '').split(',')[0].trim();
+          const remote = (req.socket?.remoteAddress || '').toString();
+          const forwardedHeader = req.headers['x-forwarded-for'];
+          const forwarded = (Array.isArray(forwardedHeader) ? forwardedHeader[0] : forwardedHeader || '').split(',')[0].trim();
           const hostHeader = (req.headers['host'] || '').toString();
           const isLocalAddr = (addr: string) => !!addr && (
             addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1'
@@ -216,7 +229,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           const isLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
 
           // Parse target URL from query
-          const u = new URL(req.url, 'http://localhost');
+          const u = new URL(req.url ?? '', 'http://localhost');
           const target = u.searchParams.get('url');
           if (!target) {
             res.statusCode = 400;
@@ -251,7 +264,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           }
 
           // Collect request body (for POST/PUT/PATCH)
-          const getBody = async () => new Promise<Buffer>((resolve) => {
+          const getBody = async (): Promise<Buffer> => new Promise((resolve) => {
             const chunks: Buffer[] = [];
             req.on('data', (c: Buffer) => chunks.push(Buffer.from(c)));
             req.on('end', () => resolve(Buffer.concat(chunks)));
@@ -284,7 +297,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
             headers: fwdHeaders,
             body: rawBody,
             redirect: 'manual',
-          } as any);
+          });
 
           // Relay status and headers
           res.statusCode = resp.status;
@@ -298,18 +311,20 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           res.setHeader('access-control-expose-headers', '*');
 
           // Stream body if possible
-          const body = resp.body as any;
-          if (body && typeof body.getReader === 'function') {
+          const body = resp.body;
+          if (body) {
             const { Readable } = await import('node:stream');
             Readable.fromWeb(body).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
           }
-        } catch (err: any) {
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
           res.statusCode = 502;
           res.setHeader('content-type', 'application/json');
-          res.end(JSON.stringify({ error: 'Proxy error', message: String(err?.message || err) }));
+          res.end(JSON.stringify({ error: 'Proxy error', message }));
+          next?.(err as Error);
         }
       };
 
@@ -319,12 +334,12 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         server.middlewares.use(p, handler);
       }
     },
-  } as any;
+  };
 
   // Print a clear banner AFTER Vite finishes its own startup messages
-  const hdbDevBannerPlugin = {
+  const hdbDevBannerPlugin: Plugin = {
     name: 'hdb-dev-banner',
-    configureServer(server: any) {
+    configureServer(server: ViteDevServer) {
       const printBanner = (lines: string[]) => {
         const width = Math.max(...lines.map((l) => l.length), 64);
         const bar = '+-' + '-'.repeat(width) + '-+';
@@ -359,7 +374,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         onListening();
       }
     },
-  } as any;
+  };
 
   return {
     base,
@@ -400,50 +415,13 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         ...devAliases,
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
-        // Worker subpath exports — map to src during dev so Vite can resolve without prior builds
-        { find: '@hierarchidb/location-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/route-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/timeline-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/shape-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/basemap-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/basemap-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/basemap-plugin', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/index.ts') },
-        { find: '@hierarchidb/folder-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/folder-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/folder-plugin', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/index.ts') },
-        { find: '@hierarchidb/route-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/database/index.ts') },
-        { find: '@hierarchidb/route-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/index.ts') },
-        { find: '@hierarchidb/timeline-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/timeline-plugin', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/index.ts') },
-        
-        { find: '@hierarchidb/location-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/location-plugin', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/index.ts') },
-        { find: '@hierarchidb/shape-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/shape-plugin', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/index.ts') },
-        // Resolver plugin database: map to src during dev for HMR-friendly services (must come BEFORE root alias)
-        { find: '@hierarchidb/resolver-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/resolver-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/database/index.ts') },
-        // Some plugins don't ship a root dist during dev; point to src to avoid "Failed to resolve entry".
-        { find: '@hierarchidb/resolver-plugin', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/index.ts') },
-        // Styler plugin resolves to src for dev-time HMR
-        { find: '@hierarchidb/styler-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/styler-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/ui/index.ts') },
-        { find: '@hierarchidb/styler-plugin', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/index.ts') },
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
         { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
-        { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
-        { find: '@hierarchidb/location-plugin/services', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/services/index.ts') },
-        // Spreadsheet plugin database subpath must resolve before the root alias
-        { find: '@hierarchidb/spreadsheet-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/spreadsheet-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/ui/facade/index.ts') },
-        { find: '@hierarchidb/spreadsheet-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/database/index.ts') },
-        // Spreadsheet plugin is referenced by Styler UI; ensure resolvable during app build
-        { find: '@hierarchidb/spreadsheet-plugin', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/index.ts') },
+        { find: '@hierarchidb/node-type-base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
@@ -495,7 +473,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Run package-reader first so virtual modules are available early
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
-            pattern: /@hierarchidb\/(basemap-plugin|linker-plugin|folder-plugin|shape-plugin|styler-plugin|route-plugin|location-plugin|spreadsheet-plugin)$/,
+            pattern: /@hierarchidb\/node-type-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
             priorityPlugin: 'folder',
             extractPluginConfig: true,
           }),

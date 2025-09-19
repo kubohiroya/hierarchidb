@@ -5,7 +5,7 @@
 
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/node-type-spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
 import { detectFileType } from '../utils/fileProcessingUtils.js';
 

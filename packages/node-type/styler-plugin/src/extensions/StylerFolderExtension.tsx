@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import type { ComponentType } from 'react';
 import {
   Box,
   Chip,
@@ -11,9 +12,9 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
-import type { FolderEntity } from '@hierarchidb/folder-plugin';
+import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
 import type { DialogStepDefinition } from '@hierarchidb/common-type';
-import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
+import { BaseFolderPlugin } from '@hierarchidb/node-type-folder-plugin';
 
 /**
  * Styler extension data
@@ -28,6 +29,8 @@ export interface StylerData {
   strokeWidth?: number;
   categories?: string[];
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 /**
  * Styler configuration step component
@@ -299,7 +302,7 @@ export class StylerFolderExtension extends BaseFolderPlugin {
         id: 'style-config',
         label: 'Map Style',
         description: 'Configure map visualization style',
-        component: StylerConfigStep,
+        component: StylerConfigStep as ComponentType<any>,
         validation: {
           validate: async (data: StylerData) => {
             const errors: string[] = [];
@@ -331,7 +334,7 @@ export class StylerFolderExtension extends BaseFolderPlugin {
         id: 'category-mapping',
         label: 'Categories',
         description: 'Define data categories',
-        component: CategoryMappingStep,
+        component: CategoryMappingStep as ComponentType<any>,
         validation: {
           validate: async (data: { categories?: string[] }) => {
             const errors: string[] = [];
@@ -425,9 +428,9 @@ export class StylerFolderExtension extends BaseFolderPlugin {
     };
   }
 
-  protected transformDialogData(data: Record<string, any>): Record<string, any> {
+  protected transformDialogData(data: StylerData & Record<string, unknown>): Record<string, unknown> {
     // Transform the data to store Styler configuration
-    const stylerConfig: any = {};
+    const stylerConfig: Record<string, unknown> = {};
 
     if (data.styleType) {
       stylerConfig.styleType = data.styleType;
@@ -441,8 +444,8 @@ export class StylerFolderExtension extends BaseFolderPlugin {
       if (data.maxValue !== undefined) {
         stylerConfig.maxValue = data.maxValue;
       }
-      if (data.categories?.length) {
-        stylerConfig.categories = data.categories;
+      if (Array.isArray(data.categories) && data.categories.length > 0) {
+        stylerConfig.categories = [...data.categories];
       }
     }
 
@@ -458,7 +461,8 @@ export class StylerFolderExtension extends BaseFolderPlugin {
 
   protected async validateEntity(entity: Partial<FolderEntity>): Promise<string[]> {
     const errors: string[] = [];
-    const stylerConfig = (entity as any).stylerConfig;
+    const candidate = (entity as { stylerConfig?: unknown }).stylerConfig;
+    const stylerConfig = isRecord(candidate) ? candidate : undefined;
 
     if (stylerConfig) {
       if (!stylerConfig.styleType) {
@@ -473,14 +477,16 @@ export class StylerFolderExtension extends BaseFolderPlugin {
   }
 
   protected async afterCreate(_node: any, entity: FolderEntity): Promise<void> {
-    const stylerConfig = (entity as any).stylerConfig;
+    const candidate = (entity as { stylerConfig?: unknown }).stylerConfig;
+    const stylerConfig = isRecord(candidate) ? candidate : undefined;
     if (stylerConfig) {
       console.log(`Created folder "${entity.name}" with Styler configuration:`, stylerConfig);
     }
   }
 
   protected async afterUpdate(_node: any, entity: FolderEntity): Promise<void> {
-    const stylerConfig = (entity as any).stylerConfig;
+    const candidate = (entity as { stylerConfig?: unknown }).stylerConfig;
+    const stylerConfig = isRecord(candidate) ? candidate : undefined;
     if (stylerConfig) {
       console.log(`Updated folder "${entity.name}" Styler configuration:`, stylerConfig);
     }

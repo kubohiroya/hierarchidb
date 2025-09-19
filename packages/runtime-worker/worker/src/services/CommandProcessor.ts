@@ -1,13 +1,13 @@
 import crypto from 'crypto';
 import type { CommandId, NodeId, NodeType, Seq, Timestamp, TreeNode } from '@hierarchidb/common-type';
+import { SingletonMixin } from '@hierarchidb/util';
 import { commitWorkingCopyV2, createNewName } from './WorkingCopyTreeNodeOperations.js';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
 import type { CoreDB } from './CoreDB.js';
-import { SingletonMixin } from '@hierarchidb/util';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
-import { commandRegistry } from './command/registry.js';
-import { validateAndNormalizeEnvelope } from './validation/envelope.js';
+import { commandRegistry, type CommandHandlerContext } from './command/registry.js';
+import { validateAndNormalizeEnvelope, isValidationFailure } from './validation/envelope.js';
 import { encodeTrashHolderName } from './utils/holder-encoding.js';
 import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
@@ -26,6 +26,44 @@ type PostCommitTask = () => Promise<void> | void;
 type CommandExecutionContext = {
   postCommitTasks: PostCommitTask[];
 };
+
+type EntitiesDbTable = {
+  delete(id: NodeId): Promise<void> | void;
+};
+
+type EntitiesDbAdapter = {
+  table(name: string): EntitiesDbTable | undefined;
+};
+
+type EntitiesOverrideFactory =
+  | EntitiesDbAdapter
+  | (() => EntitiesDbAdapter | Promise<EntitiesDbAdapter | undefined> | undefined)
+  | (() => Promise<EntitiesDbAdapter | undefined>);
+
+type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
+
+function getEntitiesOverrides(): EntitiesOverrideRegistry | undefined {
+  const globalWithOverrides = globalThis as typeof globalThis & {
+    __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
+  };
+  return globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__;
+}
+
+async function resolveEntitiesOverride(
+  factory: EntitiesOverrideFactory | undefined,
+): Promise<EntitiesDbAdapter | null> {
+  if (!factory) return null;
+  try {
+    if (typeof factory === 'function') {
+      const resolved = await factory();
+      return resolved ?? null;
+    }
+    return factory;
+  } catch (error) {
+    console.warn('[CommandProcessor] override resolution failed:', error);
+    return null;
+  }
+}
 
 export class CommandProcessor {
   static async getSingleton(coreDB: CoreDB): Promise<CommandProcessor> {
@@ -68,11 +106,11 @@ export class CommandProcessor {
   }
 
   private isRetryableTransactionError(error: unknown): boolean {
-    const name = (error as any)?.name;
-    if (typeof name === 'string' && name.toLowerCase() === 'prematurecommiterror') {
-      return true;
+    if (!error || (typeof error !== 'object' && typeof error !== 'function')) {
+      return false;
     }
-    return false;
+    const name = 'name' in error ? (error as { name?: unknown }).name : undefined;
+    return typeof name === 'string' && name.toLowerCase() === 'prematurecommiterror';
   }
 
   /**
@@ -111,14 +149,11 @@ export class CommandProcessor {
     try {
       const startedAt = Date.now();
       // Validate and normalize envelope
-      const checked = validateAndNormalizeEnvelope(envelope);
-      if ((checked as any).ok === false) {
-        return this.createErrorResult(
-          (checked as ReturnType<typeof validateAndNormalizeEnvelope> & { error: string }).error,
-          WorkerErrorCode.VALIDATION_ERROR,
-        );
+      const validation = validateAndNormalizeEnvelope(envelope);
+      if (isValidationFailure(validation)) {
+        return this.createErrorResult(validation.error, WorkerErrorCode.VALIDATION_ERROR);
       }
-      envelope = (checked as { ok: true; envelope: CommandEnvelope<TType, TPayload> }).envelope;
+      envelope = validation.envelope as CommandEnvelope<TType, TPayload>;
 
       // Guard against unusually long IDs
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
@@ -154,7 +189,7 @@ export class CommandProcessor {
       if (result.success) {
         try {
           const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
-          await lifecycle.handleCommand(envelope as any);
+          await lifecycle.handleCommand(envelope as CommandEnvelope<string, unknown>);
         } catch {
           // ignore lifecycle errors in base skeleton
         }
@@ -177,10 +212,10 @@ export class CommandProcessor {
     // Prefer transactional path when enabled AND supported by the CoreDB mock/impl.
     // In unit tests, CoreDB is often a lightweight stub without runInTx; fall back gracefully.
     let context = this.createExecutionContext();
-    const db: any = this.coreDB as any;
     let result: CommandResult | undefined;
     let retriedWithoutTx = false;
-    if (typeof db?.runInTx === 'function') {
+    const runInTx = typeof this.coreDB.runInTx === 'function' ? this.coreDB.runInTx.bind(this.coreDB) : null;
+    if (runInTx) {
       // Some commands perform dynamic imports / multi-phase operations that do not play well with Dexie TX scopes.
       // Execute those without wrapping in a single TX to avoid PrematureCommitError.
       const NON_TX: Set<string> = new Set([
@@ -188,7 +223,7 @@ export class CommandProcessor {
       ]);
       if (!NON_TX.has(envelope.kind)) {
         try {
-          result = await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope, context));
+          result = await runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope, context));
         } catch (error) {
           if (this.isRetryableTransactionError(error)) {
             console.warn('[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.');
@@ -222,16 +257,16 @@ export class CommandProcessor {
     if (handler) {
       try {
         if (handler.validate) {
-          const valid = await handler.validate(envelope.payload as any);
+          const valid = await handler.validate(envelope.payload);
           if (!valid) {
             return this.createErrorResult('Validation failed', WorkerErrorCode.VALIDATION_ERROR);
           }
         }
-        const result = await handler.execute({
+        const contextForHandler: CommandHandlerContext<TType, TPayload> = {
           envelope,
           nextSeq: () => this.getNextSeq(),
-        } as any);
-        return result;
+        };
+        return await handler.execute(contextForHandler);
       } catch (err) {
         return this.createErrorResult(this.sanitizeErrorMessage(err), WorkerErrorCode.UNKNOWN_ERROR);
       }
@@ -315,7 +350,7 @@ export class CommandProcessor {
           // }
           // Policy C: block when subtree has working copies
           for (const id of p.nodeIds) {
-            if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
+            if (await hasWorkingCopyInSubtree(this.coreDB, id)) {
               return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
             }
           }
@@ -348,7 +383,7 @@ export class CommandProcessor {
           } else if (toUpdate.length > 1) {
             const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
             for (let i = 0; i < toUpdate.length; i += size) {
-              await (this.coreDB as any).bulkUpdateNodes?.(toUpdate.slice(i, i + size));
+              await this.coreDB.bulkUpdateNodes?.(toUpdate.slice(i, i + size));
             }
           }
           if (beforeList.length > 0) this.preMoveState.set(envelope.commandId, beforeList);
@@ -365,9 +400,12 @@ export class CommandProcessor {
           //  Legacy path removed always use holder-based Trash
 
           // Holder path: create holder under trash root and move node beneath
-          const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
-            | Array<{ rootId: NodeId; trashRootId: NodeId }>
-            | undefined;
+          let trees: Array<{ rootId: NodeId; trashRootId: NodeId }> | undefined;
+          try {
+            trees = await this.coreDB.trees.toArray();
+          } catch {
+            trees = undefined;
+          }
           const rootToTrash = new Map<NodeId, NodeId>(
             Array.isArray(trees) ? trees.map((t) => [t.rootId, t.trashRootId]) : [],
           );
@@ -377,33 +415,41 @@ export class CommandProcessor {
             // ascend to find rootId
             let cursor: NodeId | undefined = node.parentId;
             let trashRootId: NodeId | undefined = undefined;
+            let lastVisited: NodeId | undefined;
             while (cursor) {
               if (rootToTrash.has(cursor)) {
                 trashRootId = rootToTrash.get(cursor)!;
                 break;
               }
+              lastVisited = cursor;
               const parent = await this.coreDB.getNode?.(cursor);
               if (!parent || parent.parentId === cursor) break;
               cursor = parent.parentId;
             }
             // Fallback: derive trash root id from discovered root id pattern (e.g., r:root -> r:trash)
             if (!trashRootId) {
-              // If cursor stopped at a root-like id, try to replace suffix
-              const candidateRoot = cursor;
-              if (typeof candidateRoot === 'string' && candidateRoot.endsWith(':root')) {
-                const alt = (candidateRoot.slice(0, -(':root'.length)) + ':trash') as NodeId;
-                trashRootId = alt;
+              const candidates = [cursor, lastVisited, node.parentId];
+              for (const candidate of candidates) {
+                if (typeof candidate !== 'string') continue;
+                if (candidate.endsWith(':root')) {
+                  trashRootId = (candidate.slice(0, -(':root'.length)) + ':trash') as NodeId;
+                  break;
+                }
+                if (candidate.endsWith(':superRoot')) {
+                  trashRootId = (candidate.slice(0, -(':superRoot'.length)) + ':trash') as NodeId;
+                  break;
+                }
               }
             }
             if (!trashRootId) continue;
-            const holderId = (crypto.randomUUID() as unknown) as NodeId;
+            const holderId = crypto.randomUUID() as NodeId;
             const holderName = encodeTrashHolderName(node.parentId, node.id);
-            const now = (Date.now() as unknown) as Timestamp;
+            const now = Date.now() as Timestamp;
             // create holder with metadata
-            await this.coreDB.createNode?.({
+            const holderNode = {
               id: holderId,
               parentId: trashRootId,
-              nodeType: ('trash' as unknown) as NodeType,
+              nodeType: 'trash' as NodeType,
               name: holderName,
               depth: 0,
               createdAt: now,
@@ -412,14 +458,16 @@ export class CommandProcessor {
               holderType: 'trash' as const,
               holderTargetId: node.id,
               holderMetaParentId: node.parentId,
-            } as any);
+            } satisfies TreeNode;
+            await this.coreDB.createNode(holderNode);
             // move node under holder
-            await this.coreDB.updateNode?.({
+            const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
               ...node,
               parentId: holderId,
               updatedAt: now,
               version: (node.version || 1) + 1,
-            } as any);
+            };
+            await this.coreDB.updateNode(updatedNode);
           }
           return { success: true, seq: this.getNextSeq() };
         } catch (e) {
@@ -432,7 +480,7 @@ export class CommandProcessor {
         try {
           const p = envelope.payload as unknown as { nodeIds: NodeId[] };
           for (const id of p.nodeIds) {
-            if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
+            if (await hasWorkingCopyInSubtree(this.coreDB, id)) {
               return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
             }
           }
@@ -457,7 +505,7 @@ export class CommandProcessor {
             if (slice.length === 1) {
               await this.coreDB.deleteNode?.(slice[0]!);
             } else {
-              await (this.coreDB as any).bulkDeleteNodes?.(slice);
+              await this.coreDB.bulkDeleteNodes?.(slice);
             }
           }
           if (beforeList.length > 0) {
@@ -486,7 +534,10 @@ export class CommandProcessor {
           // Recursively collect descendants using coreDB.listChildren (post-order), then bulk delete
           const toDelete: TreeNode[] = [];
           const visit = async (parent: NodeId): Promise<void> => {
-            const children = (await (this.coreDB as any).listChildren?.(parent)) as Array<TreeNode> | undefined;
+            const children =
+              typeof this.coreDB.listChildren === 'function'
+                ? await this.coreDB.listChildren(parent)
+                : undefined;
             if (!children || children.length === 0) return;
             for (const ch of children) {
               await visit(ch.id as NodeId);
@@ -500,10 +551,10 @@ export class CommandProcessor {
             const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
             for (let i = 0; i < ids.length; i += size) {
               const slice = ids.slice(i, i + size);
-              if ((this.coreDB as any).bulkDeleteNodes) {
-                await (this.coreDB as any).bulkDeleteNodes(slice);
+              if (this.coreDB.bulkDeleteNodes) {
+                await this.coreDB.bulkDeleteNodes(slice);
               } else {
-                for (const id of slice) await (this.coreDB as any).deleteNode?.(id);
+                for (const id of slice) await this.coreDB.deleteNode?.(id);
               }
             }
             const subtreeForCleanup = toDelete.map((n) => ({ ...n }));
@@ -540,7 +591,9 @@ export class CommandProcessor {
             let targetParentId: NodeId | undefined = p.toParentId;
             if (!targetParentId) {
               const holder = await this.coreDB.getNode?.(node.parentId);
-              targetParentId = (holder as any)?.holderMetaParentId as NodeId;
+              if (holder?.holderMetaParentId) {
+                targetParentId = holder.holderMetaParentId;
+              }
             }
             targetParentId = targetParentId ?? node.parentId;
             if (!targetParentId) continue;
@@ -566,13 +619,13 @@ export class CommandProcessor {
           } else if (toUpdate.length > 1) {
             const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
             for (let i = 0; i < toUpdate.length; i += size) {
-              await (this.coreDB as any).bulkUpdateNodes?.(toUpdate.slice(i, i + size));
+              await this.coreDB.bulkUpdateNodes?.(toUpdate.slice(i, i + size));
             }
           }
           if (holdersToDelete.length > 0) {
             const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
             for (let i = 0; i < holdersToDelete.length; i += size) {
-              await (this.coreDB as any).bulkDeleteNodes?.(holdersToDelete.slice(i, i + size));
+              await this.coreDB.bulkDeleteNodes?.(holdersToDelete.slice(i, i + size));
             }
           }
           if (beforeList.length > 0) this.preRecoverState.set(envelope.commandId, beforeList);
@@ -590,7 +643,7 @@ export class CommandProcessor {
             expectedUpdatedAt?: Timestamp;
             onNameConflict?: 'error' | 'auto-rename';
           };
-          const result = await commitWorkingCopyV2(this.coreDB as any, p.workingCopyId, p.onNameConflict ?? 'error');
+          const result = await commitWorkingCopyV2(this.coreDB, p.workingCopyId, p.onNameConflict ?? 'error');
           if (result.status === 'ok') {
             return { success: true, seq: this.getNextSeq(), nodeId: p.workingCopyId };
           }
@@ -935,7 +988,8 @@ export class CommandProcessor {
         const beforeList = this.preRemoveState.get(command.commandId) || [];
         for (const n of beforeList) {
           // recreate node as best-effort
-          await this.coreDB.createNode({ ...(n as any) });
+          const recreatedNode: TreeNode = { ...n };
+          await this.coreDB.createNode?.(recreatedNode);
         }
         this.preRemoveState.delete(command.commandId);
         break;
@@ -960,7 +1014,7 @@ export class CommandProcessor {
   private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
     const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
-      const nodeType = (n as any).nodeType as string;
+      const nodeType = n.nodeType;
       const nodeId = n.id as NodeId;
       const store = storeRegistry.getPeer(nodeType);
       if (store) {
@@ -973,7 +1027,7 @@ export class CommandProcessor {
   }
 
   private async deletePeerEntityDirect(nodeType: string, nodeId: NodeId): Promise<void> {
-    const overrideFactory = (globalThis as any).__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
+    const overrideFactory = getEntitiesOverrides()?.[nodeType];
     if (!overrideFactory) {
       console.warn(
         '[CommandProcessor] peer-entity cleanup skipped: no override registered for nodeType=',
@@ -982,10 +1036,10 @@ export class CommandProcessor {
       return;
     }
     try {
-      const maybeFactory = typeof overrideFactory === 'function' ? await overrideFactory() : overrideFactory;
-      const db = typeof maybeFactory === 'function' ? await maybeFactory() : maybeFactory;
+      const db = await resolveEntitiesOverride(overrideFactory);
       if (db && typeof db.table === 'function') {
-        await db.table('peerEntities')?.delete?.(nodeId as any);
+        const table = db.table('peerEntities');
+        await table?.delete?.(nodeId);
         return;
       }
       console.warn('[CommandProcessor] override provided for', nodeType, 'but no table() interface found');

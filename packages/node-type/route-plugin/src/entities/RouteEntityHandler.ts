@@ -5,7 +5,7 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
-import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/base-plugin';
+import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/node-type-base-plugin';
 import type {
   RouteEntity,
   RouteGenerationConfig,

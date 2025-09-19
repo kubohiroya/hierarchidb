@@ -12,11 +12,11 @@ describe('useLocationProgress - auth notifications', () => {
     const reg = AuthNotificationRegistry.getInstance();
     const authReq = AuthNotificationFactory.createAuthRequired({
       source: 'worker', requestId: 'r1', url: 'https://example.com', method: 'GET', errorCode: 401,
-      errorMessage: 'Unauthorized', sessionId: 'sess-1', pluginType: 'generic', retryCount: 0,
+      errorMessage: 'Unauthorized', sessionId: 'sess-1', pluginType: 'shape', retryCount: 0,
     });
 
     await act(async () => {
-      await reg.dispatch(authReq as any);
+      await reg.dispatch(authReq);
     });
     expect(result.current.progress?.stage).toBe('auth-required');
 
@@ -26,12 +26,10 @@ describe('useLocationProgress - auth notifications', () => {
       tokenType: 'Bearer',
       expiresAt: Date.now() + 3600_000,
       sessionId: 'sess-1',
-      pluginType: 'generic',
     });
     await act(async () => {
-      await reg.dispatch(success as any);
+      await reg.dispatch(success);
     });
     expect(result.current.progress?.stage).toBe('resumed');
   });
 });
-

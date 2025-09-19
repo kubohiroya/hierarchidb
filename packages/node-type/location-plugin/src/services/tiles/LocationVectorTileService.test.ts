@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { toNodeId } from '@hierarchidb/common-type';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
@@ -43,7 +44,8 @@ describe('LocationVectorTileService', () => {
     ];
     const settings: LocationTileSettings = { zoomMinGenerate: 5, zoomMaxGenerate: 6 };
 
-    const summary = await svc.startSession('node-1' as any, points, settings);
+    const nodeId = toNodeId('node-1');
+    const summary = await svc.startSession(nodeId, points, settings);
     expect(summary.sessionId).toBeTruthy();
     expect(summary.totalPoints).toBe(3);
 
@@ -56,7 +58,7 @@ describe('LocationVectorTileService', () => {
     const first = tiles[0]!;
     const bytes = await svc.getVectorTile(summary.sessionId, summary.nodeId, first.z, first.x, first.y);
     expect(bytes).not.toBeNull();
-    expect((bytes as Uint8Array).byteLength).toBeGreaterThan(0);
+    expect(bytes?.byteLength ?? 0).toBeGreaterThan(0);
   });
 
   it('emits progress events and completes to 100%', async () => {
@@ -67,7 +69,8 @@ describe('LocationVectorTileService', () => {
       { lon: -73.9792, lat: 40.7615 },
     ];
     const settings: LocationTileSettings = { zoomMinGenerate: 4, zoomMaxGenerate: 4 };
-    const { sessionId } = await svc.startSession('node-2' as any, points, settings);
+    const nodeId = toNodeId('node-2');
+    const { sessionId } = await svc.startSession(nodeId, points, settings);
 
     let sawTilegen = false;
     const p = await waitForCompleted((cb) => svc.onProgress(sessionId, (e) => {
@@ -84,11 +87,12 @@ describe('LocationVectorTileService', () => {
 
     // pick a z/x/y from the first point and ask the service
     const z = 4;
-    const x = long2tile(points[0].lon, z);
-    const y = lat2tile(points[0].lat, z);
-    const bytes = await svc.getVectorTile(sessionId, 'node-2' as any, z, x, y);
+    const firstPoint = points[0];
+    expect(firstPoint).toBeDefined();
+    const x = long2tile(firstPoint!.lon, z);
+    const y = lat2tile(firstPoint!.lat, z);
+    const bytes = await svc.getVectorTile(sessionId, nodeId, z, x, y);
     // It might be null if all points fell in neighboring tile; allow null but require at least one non-null in DB overall
-    if (bytes) expect((bytes as Uint8Array).byteLength).toBeGreaterThan(0);
+    if (bytes) expect(bytes.byteLength).toBeGreaterThan(0);
   });
 });
-

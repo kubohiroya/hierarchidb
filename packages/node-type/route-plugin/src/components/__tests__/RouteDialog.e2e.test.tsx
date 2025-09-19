@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteDialog } from '../RouteDialog.js';
+import type { NodeId } from '@hierarchidb/common-type';
 
 describe('RouteDialog (ui-dialog integration)', () => {
   it('completes the dialog flow and calls onClose', async () => {
@@ -11,7 +12,7 @@ describe('RouteDialog (ui-dialog integration)', () => {
         open={true}
         onClose={onClose}
         mode={'create'}
-        parentId={'p1' as any}
+        parentId={'p1' as NodeId}
       />,
     );
 

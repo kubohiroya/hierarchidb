@@ -11,6 +11,22 @@ import type {
   LocationSearchConfig,
   LocationType,
 } from '../entities/LocationEntity.js';
+import {
+  buildLocationEntity,
+  createPoint,
+  mapCategory,
+  mapType,
+  normalizeImportance,
+  normalizeOsmType,
+  parseBoundingBox,
+  parseNumber,
+  sanitizeTags,
+} from './download/mappers.js';
+
+const logLocationBatchWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[LocationBatchManager]', message, error);
+};
 
 /**
  * Location batch task interface
@@ -64,6 +80,43 @@ export interface LocationBatchProgressEvent {
     locationsFiltered?: number;
     locationsSaved?: number;
   };
+}
+
+interface RawOsmAddress {
+  road?: string;
+  house_number?: string;
+  postcode?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  suburb?: string;
+  state?: string;
+  country?: string;
+  country_code?: string;
+}
+
+interface RawNominatimLike {
+  osm_id: number | string;
+  display_name?: string;
+  class?: string;
+  type?: string;
+  osm_type?: string;
+  lon?: string | number;
+  lat?: string | number;
+  boundingbox?: [string, string, string, string] | string[];
+  address?: RawOsmAddress;
+  extratags?: Record<string, string>;
+  importance?: number | string;
+}
+
+interface RawOverpassElement {
+  id: number | string;
+  type?: string;
+  lon?: number | string;
+  lat?: number | string;
+  center?: { lon?: number; lat?: number };
+  tags?: Record<string, string>;
+  importance?: number | string;
 }
 
 /**
@@ -271,7 +324,8 @@ export class LocationBatchManager {
         if (config.limit && list.length > (config.limit || 0)) return list.slice(0, config.limit);
         return list;
       }
-    } catch {
+    } catch (error) {
+      logLocationBatchWarning('Failed to execute registered location strategy', error);
     }
 
     const locations: LocationEntity[] = [];
@@ -384,8 +438,12 @@ export class LocationBatchManager {
     try {
       const { getJson } = await import('./utils/sharedNet.js');
       const url = config.options.customEndpoint;
-      const params = new URLSearchParams((config.options.queryParams || {}) as any).toString();
-      const data = await getJson(params ? `${url}?${params}` : url, { headers: config.options.customHeaders as any });
+      const searchParams = new URLSearchParams(config.options.queryParams ?? {});
+      const requestUrl = searchParams.size > 0 ? `${url}?${searchParams.toString()}` : url;
+      const init: RequestInit | undefined = config.options.customHeaders
+        ? { headers: config.options.customHeaders }
+        : undefined;
+      const data = await getJson(requestUrl, init);
       return this.convertCustomToLocations(data);
     } catch (error) {
       console.error('Custom search failed:', error);
@@ -462,16 +520,20 @@ export class LocationBatchManager {
   /**
    * Convert OSM data to location entities
    */
-  private convertOSMToLocations(data: any[]): LocationEntity[] {
-    return data.map(item => this.createLocationFromOSM(item));
+  private convertOSMToLocations(data: RawNominatimLike[]): LocationEntity[] {
+    return data
+      .map((item) => this.createLocationFromOSM(item))
+      .filter((value): value is LocationEntity => value !== null);
   }
 
   /**
    * Convert Overpass data to location entities
    */
-  private convertOverpassToLocations(data: any): LocationEntity[] {
-    if (!data.elements) return [];
-    return data.elements.map((item: any) => this.createLocationFromOverpass(item));
+  private convertOverpassToLocations(data: { elements?: RawOverpassElement[] }): LocationEntity[] {
+    if (!Array.isArray(data.elements)) return [];
+    return data.elements
+      .map((item) => this.createLocationFromOverpass(item))
+      .filter((value): value is LocationEntity => value !== null);
   }
 
   /**
@@ -485,150 +547,82 @@ export class LocationBatchManager {
   /**
    * Create location entity from OSM data
    */
-  private createLocationFromOSM(osmData: any): LocationEntity {
-    const now = Date.now();
+  private createLocationFromOSM(osmData: RawNominatimLike): LocationEntity | null {
+    const lon = parseNumber(osmData.lon);
+    const lat = parseNumber(osmData.lat);
+    if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
-    return {
-      id: `osm-${osmData.osm_id}` as any,
-      nodeId: `osm-node-${osmData.osm_id}` as any,
+    const address = osmData.address
+      ? {
+          street: osmData.address.road,
+          houseNumber: osmData.address.house_number,
+          postcode: osmData.address.postcode,
+          city: osmData.address.city || osmData.address.town || osmData.address.village,
+          district: osmData.address.suburb,
+          state: osmData.address.state,
+          country: osmData.address.country,
+          countryCode: osmData.address.country_code?.toUpperCase(),
+        }
+      : undefined;
+
+    return buildLocationEntity({
+      prefix: 'osm',
+      rawId: osmData.osm_id,
       name: osmData.display_name || 'Unknown',
-      category: this.detectCategory(osmData.class),
-      type: this.detectType(osmData.type),
+      category: mapCategory(osmData.class),
+      type: mapType(osmData.type),
       dataSource: 'openstreetmap',
-      point: {
-        coordinates: [parseFloat(osmData.lon), parseFloat(osmData.lat)],
-        source: 'openstreetmap',
-        timestamp: now,
-      },
-      boundingBox: osmData.boundingbox ?
-        osmData.boundingbox.map((v: string) => parseFloat(v)) as [number, number, number, number] :
-        undefined,
-      address: osmData.address ? {
-        street: osmData.address.road,
-        houseNumber: osmData.address.house_number,
-        postcode: osmData.address.postcode,
-        city: osmData.address.city || osmData.address.town || osmData.address.village,
-        district: osmData.address.suburb,
-        state: osmData.address.state,
-        country: osmData.address.country,
-        countryCode: osmData.address.country_code?.toUpperCase(),
-      } : undefined,
+      point: createPoint(lon, lat, 'openstreetmap', Date.now()),
       attributes: {
-        osmId: osmData.osm_id,
-        osmType: osmData.osm_type,
-        osmTags: osmData.extratags || {},
+        osmId: String(osmData.osm_id),
+        osmType: normalizeOsmType(osmData.osm_type),
+        osmTags: sanitizeTags(osmData.extratags),
       },
-      licenseAgreement: true,
-      licenseAgreedAt: now,
-      processingStatus: 'completed',
-      processedAt: now,
-      importance: parseFloat(osmData.importance) || 0.5,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      tags: [],
-      metadata: {},
-      customFields: {},
-      childLocationIds: [],
-      nearbyLocationIds: [],
-      searchKeywords: [],
-    } as LocationEntity;
+      boundingBox: parseBoundingBox(osmData.boundingbox),
+      address,
+      importance: normalizeImportance(osmData.importance, 0.5),
+      metadata: { source: 'osm-batch' },
+    });
   }
 
   /**
    * Create location entity from Overpass data
    */
-  private createLocationFromOverpass(overpassData: any): LocationEntity {
-    const now = Date.now();
-    const tags = overpassData.tags || {};
+  private createLocationFromOverpass(overpassData: RawOverpassElement): LocationEntity | null {
+    const lon = typeof overpassData.lon === 'number'
+      ? overpassData.lon
+      : typeof overpassData.lon === 'string'
+        ? parseNumber(overpassData.lon)
+        : overpassData.center?.lon;
+    const lat = typeof overpassData.lat === 'number'
+      ? overpassData.lat
+      : typeof overpassData.lat === 'string'
+        ? parseNumber(overpassData.lat)
+        : overpassData.center?.lat;
+    if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
-    return {
-      id: `overpass-${overpassData.id}` as any,
-      nodeId: `overpass-node-${overpassData.id}` as any,
+    const tags = overpassData.tags ?? {};
+    return buildLocationEntity({
+      prefix: 'overpass',
+      rawId: overpassData.id,
       name: tags.name || 'Unknown',
       category: this.detectCategoryFromTags(tags),
       type: this.detectTypeFromTags(tags),
       dataSource: 'overpass',
-      point: {
-        coordinates: [overpassData.lon || 0, overpassData.lat || 0],
-        source: 'overpass',
-        timestamp: now,
-      },
+      point: createPoint(lon, lat, 'overpass', Date.now()),
       attributes: {
         osmId: String(overpassData.id),
-        osmType: overpassData.type,
-        osmTags: tags,
+        osmType: normalizeOsmType(overpassData.type),
+        osmTags: sanitizeTags(tags),
       },
-      licenseAgreement: true,
-      licenseAgreedAt: now,
-      processingStatus: 'completed',
-      processedAt: now,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      tags: [],
-      metadata: {},
-      customFields: {},
-      childLocationIds: [],
-      nearbyLocationIds: [],
-      searchKeywords: [],
-    } as LocationEntity;
+      importance: normalizeImportance(tags.importance),
+      metadata: { source: 'overpass-batch' },
+    });
   }
 
   /**
    * Detect category from OSM class
    */
-  private detectCategory(osmClass: string): LocationCategory {
-    const classToCategory: Record<string, LocationCategory> = {
-      'aeroway': 'transportation',
-      'railway': 'transportation',
-      'highway': 'transportation',
-      'office': 'administrative',
-      'amenity': 'infrastructure',
-      'shop': 'commercial',
-      'tourism': 'leisure',
-      'historic': 'cultural',
-      'natural': 'natural',
-      'leisure': 'leisure',
-    };
-
-    return classToCategory[osmClass] || 'infrastructure';
-  }
-
-  /**
-   * Detect type from OSM type
-   */
-  private detectType(osmType: string): LocationType {
-    const typeMap: Record<string, LocationType> = {
-      'aerodrome': 'airport',
-      'station': 'railway_station',
-      'bus_stop': 'bus_stop',
-      'harbour': 'port',
-      'parking': 'parking',
-      'government': 'government',
-      'hospital': 'hospital',
-      'school': 'school',
-      'university': 'university',
-      'library': 'library',
-      'mall': 'shopping_mall',
-      'supermarket': 'supermarket',
-      'restaurant': 'restaurant',
-      'hotel': 'hotel',
-      'bank': 'bank',
-      'museum': 'museum',
-      'theatre': 'theater',
-      'monument': 'monument',
-      'park': 'park',
-      'stadium': 'stadium',
-      'beach': 'beach',
-      'peak': 'mountain',
-      'water': 'lake',
-      'river': 'river',
-    };
-
-    return typeMap[osmType] || 'airport';
-  }
-
   /**
    * Detect category from OSM tags
    */

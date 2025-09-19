@@ -7,14 +7,28 @@ type Item = GroupItemBase<{ value?: unknown }>;
 export function createShapeGroupStoreDexie(db: ShapeEntitiesDB): GroupStore<Item> {
   return {
     async list(nodeId: NodeId) {
-      return (await db.groupEntities.where('nodeId').equals(nodeId).toArray()) as any;
+      const rows = await db.groupEntities.where('nodeId').equals(nodeId).toArray();
+      return rows.map(({ id, data, updatedAt }) => ({
+        id,
+        data: (data ?? undefined) as Item['data'],
+        updatedAt,
+      }));
     },
     async bulkUpsert(nodeId: NodeId, items: Item[]) {
-      await db.groupEntities.bulkPut(items.map((i) => ({ ...i, nodeId, updatedAt: Date.now() })) as ShapeGroupRow[]);
+      const timestamp = Date.now();
+      const rows: ShapeGroupRow[] = items.map((item) => ({
+        nodeId,
+        id: item.id,
+        data: item.data,
+        updatedAt: item.updatedAt ?? timestamp,
+      }));
+      await db.groupEntities.bulkPut(rows);
     },
     async bulkDelete(nodeId: NodeId, itemIds: string[]) {
       await db.transaction('rw', db.groupEntities, async () => {
-        for (const id of itemIds) await db.groupEntities.delete([nodeId, id] as any);
+        for (const id of itemIds) {
+          await db.groupEntities.delete([nodeId, id]);
+        }
       });
     },
   };

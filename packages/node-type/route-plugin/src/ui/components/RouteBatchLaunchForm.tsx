@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
+import type { NodeId } from '@hierarchidb/common-type';
 import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator.js';
 import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService.js';
 import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';
+import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
+import type { RouteBatchSpec } from '../../orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 
 export interface RouteBatchLaunchFormProps {
-  nodeId: string;
+  nodeId: NodeId;
   createRouteBatchManager: typeof createMgrFn;
   onLaunched?: (res: { jobId: string; count: number }) => void;
 }
@@ -25,7 +28,8 @@ export function RouteBatchLaunchForm({
   const defaults = useMemo(() => getOsrmEngineDefaults(), []);
   const throttleDefaults = useMemo(() => getOsrmThrottleDefaults(), []);
   const [baseUrl, setBaseUrl] = useState(defaults.osrmBaseUrl || 'https://router.project-osrm.org');
-  const [profile, setProfile] = useState(defaults.osmProfile || 'car');
+  type OsrmProfile = 'car' | 'truck' | 'bike' | 'foot';
+  const [profile, setProfile] = useState<OsrmProfile>((defaults.osmProfile as OsrmProfile | undefined) ?? 'car');
   const [rps, setRps] = useState(throttleDefaults.rps || 1);
   const [concurrency, setConcurrency] = useState(throttleDefaults.concurrency || 1);
   const [status, setStatus] = useState<string | null>(null);
@@ -34,10 +38,10 @@ export function RouteBatchLaunchForm({
     setStatus('starting...');
     try {
       const net = getNetPort();
-      const orch = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net } as any), net as any);
-      const mgr = createRouteBatchManager({ net: net as any, osrmThrottle: { rps, concurrency } });
-      const opts = { osrmBaseUrl: baseUrl, osmProfile: profile as any };
-      const config = {
+      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net }), net);
+      const mgr = createRouteBatchManager({ net, osrmThrottle: { rps, concurrency } });
+      const methodOptions: Record<string, unknown> = { osrmBaseUrl: baseUrl, osmProfile: profile };
+      const config: RouteBatchConfig = {
         routeGeneration: {
           method: 'osm_route',
           parallel: true,
@@ -48,25 +52,28 @@ export function RouteBatchLaunchForm({
         locationResolution: { batchSize: 0, cacheResults: false, fallbackToCoordinates: true },
         validation: { checkLocationExists: false, checkDuplicateRoutes: false, validateDistance: false },
       };
+      const targetNodeId = nodeId;
+      const defaults = { engine: 'osm_route' as const } satisfies RouteBatchSpec['defaults'];
       if (kind === 'recompute') {
-        const spec = {
-          sources: [{ type: 'csv' as const, url: csvUrl }],
+        const spec: RouteBatchSpec = {
+          sources: [{ type: 'csv', url: csvUrl }],
           defaults: { engine: 'osm_route', mode: 'road_general' },
         };
-        const res = await orch.startFromSources(nodeId, spec as any, mgr as any, config);
+        const res = await orchestrator.startFromSources(targetNodeId, spec, mgr, config);
         setStatus(`launched ${res.jobId} (${res.count})`);
         onLaunched?.(res);
       } else if (kind === 'matrix') {
-        const origins = { sources: [{ type: 'csv' as const, url: csvUrl }], defaults: { engine: 'osm_route' } };
-        const dests = { sources: [{ type: 'csv' as const, url: csvUrl2 }], defaults: { engine: 'osm_route' } };
-        const res = await orch.startMatrix(nodeId, origins as any, dests as any, mgr as any, config, opts);
+        const origins: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl }], defaults };
+        const dests: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl2 }], defaults };
+        const res = await orchestrator.startMatrix(targetNodeId, origins, dests, mgr, config, methodOptions);
         setStatus(`launched ${res.jobId} (${res.count})`);
         onLaunched?.(res);
       } else {
-        const spec = { sources: [{ type: 'csv' as const, url: csvUrl }], defaults: { engine: 'osm_route' } };
-        const res = await orch.startEnrich(nodeId, spec as any, mgr as any, config, {
+        const spec: RouteBatchSpec = { sources: [{ type: 'csv', url: csvUrl }], defaults };
+        const res = await orchestrator.startEnrich(targetNodeId, spec, mgr, config, {
           smoothing: 0.5,
-          elevation: true, ...opts,
+          elevation: true,
+          ...methodOptions,
         });
         setStatus(`launched ${res.jobId} (${res.count})`);
         onLaunched?.(res);
@@ -103,7 +110,7 @@ export function RouteBatchLaunchForm({
         <div style={{ display: 'flex', gap: 8 }}>
           <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="OSRM Base URL"
                  style={{ flex: 1 }} />
-          <select value={profile} onChange={(e) => setProfile(e.target.value as any)}>
+          <select value={profile} onChange={(e) => setProfile(e.target.value as OsrmProfile)}>
             <option value="car">car</option>
             <option value="bike">bike</option>
             <option value="foot">foot</option>

@@ -10,16 +10,16 @@
 
 | パッケージ | 型チェック | テスト | 備考（テスト資産/概数） |
 |---|---|---|---|
-| @hierarchidb/base-plugin | ok | ok | src: 4 / tests: 2 |
-| @hierarchidb/basemap-plugin | ok | ok | src: 28 / tests: 3 |
-| @hierarchidb/folder-plugin | ok | ok | src: 42 / tests: 7 |
-| @hierarchidb/location-plugin | ok | ok | src: 41 / tests: 2 |
-| @hierarchidb/linker-plugin | ok | ok | src: 20 / tests: 1 |
-| @hierarchidb/resolver-plugin | ok | ok | src: 17 / tests: 5 |
-| @hierarchidb/route-plugin | ok | ok | src: 40 / tests: 7 |
-| @hierarchidb/shape-plugin | ok | ok | src: 125 / tests: 27 |
-| @hierarchidb/spreadsheet-plugin | ok | ok | src: 33 / tests: 4 |
-| @hierarchidb/styler-plugin | ok | ok | src: 33 / tests: 8 |
+| @hierarchidb/node-type-base-plugin | ok | ok | src: 4 / tests: 2 |
+| @hierarchidb/node-type-basemap-plugin | ok | ok | src: 28 / tests: 3 |
+| @hierarchidb/node-type-folder-plugin | ok | ok | src: 42 / tests: 7 |
+| @hierarchidb/node-type-location-plugin | ok | ok | src: 41 / tests: 2 |
+| @hierarchidb/node-type-linker-plugin | ok | ok | src: 20 / tests: 1 |
+| @hierarchidb/node-type-resolver-plugin | ok | ok | src: 17 / tests: 5 |
+| @hierarchidb/node-type-route-plugin | ok | ok | src: 40 / tests: 7 |
+| @hierarchidb/node-type-shape-plugin | ok | ok | src: 125 / tests: 27 |
+| @hierarchidb/node-type-spreadsheet-plugin | ok | ok | src: 33 / tests: 4 |
+| @hierarchidb/node-type-styler-plugin | ok | ok | src: 33 / tests: 8 |
 
 補足:
 - 出典ファイル: ルート `plugin-test-results.json` / `plugin-test-inventory.json`。

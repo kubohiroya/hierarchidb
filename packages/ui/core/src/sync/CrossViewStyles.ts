@@ -22,6 +22,11 @@ export type Id = string | number;
 export type DatasetId = string;
 export type VisualState = 'hovered' | 'selected' | 'matched' | 'disabled' | 'dragging' | 'dropTarget';
 
+const logCrossViewWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[CrossViewStyles]', message, error);
+};
+
 export interface RowStyleSpec { sx?: Record<string, any>; style?: React.CSSProperties; className?: string }
 export interface MapStyleSpec { fillColor?: [number,number,number,number]; lineColor?: [number,number,number,number]; lineWidth?: number; elevation?: number; featureState?: Record<string, any> }
 export type ComposeMode = 'override' | 'merge';
@@ -64,14 +69,26 @@ export const CrossViewStyles = {
    * @param cb 状態変更時に呼ばれるコールバック
    * @returns 解除関数
    */
-  subscribe(datasetId: DatasetId, cb: () => void) { const ch = getCh(datasetId); ch.listeners.add(cb); return () => ch.listeners.delete(cb); },
+  subscribe(datasetId: DatasetId, cb: () => void) {
+    const ch = getCh(datasetId);
+    ch.listeners.add(cb);
+    return () => {
+      ch.listeners.delete(cb);
+    };
+  },
   /**
    * フォーカスイベント（hover/selection に紐づく詳細情報）を購読します。
    * @param datasetId チャネル識別子
    * @param cb フォーカス発生/解除で呼ばれる（解除時は null）
    * @returns 解除関数
    */
-  subscribeFocus(datasetId: DatasetId, cb: (ev: FocusEventPayload | null) => void) { const ch = getCh(datasetId); ch.focusListeners.add(cb); return () => ch.focusListeners.delete(cb); },
+  subscribeFocus(datasetId: DatasetId, cb: (ev: FocusEventPayload | null) => void) {
+    const ch = getCh(datasetId);
+    ch.focusListeners.add(cb);
+    return () => {
+      ch.focusListeners.delete(cb);
+    };
+  },
 
   /**
    * 行IDとフィーチャIDの対応付けをセットします（1:n / n:n いずれも可）。
@@ -127,7 +144,7 @@ export const CrossViewStyles = {
     for (const s of specs){
       const r = s.spec.row!;
       merged.sx = { ...(merged.sx||{}), ...(r.sx||{}) };
-      merged.style = { ...(merged.style||{}), ...(r.style||{}) } as any;
+      merged.style = { ...(merged.style ?? {}), ...(r.style ?? {}) };
       merged.className = [merged.className, r.className].filter(Boolean).join(' ').trim() || undefined;
     }
     return merged;
@@ -171,14 +188,28 @@ export const CrossViewStyles = {
     ch.features.selected.forEach(id=>all.add(id));
     ch.features.matched.forEach(id=>all.add(id));
     all.forEach((fid)=>{
-      try { map.setFeatureState({ source: sourceId, id: fid }, {
-        hovered: ch.features.hovered.has(fid),
-        selected: ch.features.selected.has(fid),
-        matched: ch.features.matched.has(fid),
-      }); } catch {}
+      try {
+        map.setFeatureState({ source: sourceId, id: fid }, {
+          hovered: ch.features.hovered.has(fid),
+          selected: ch.features.selected.has(fid),
+          matched: ch.features.matched.has(fid),
+        });
+      } catch (error) {
+        logCrossViewWarning(`Failed to set feature state for id ${String(fid)}`, error);
+      }
     });
     // Additional explicit featureState via style assignments
-    ch.registry.featureAssignments.forEach((ids,sid)=>{ const fs=ch.registry.styles.get(sid)?.map?.featureState; if(!fs) return; ids.forEach(fid=>{ try{ map.setFeatureState({source:sourceId,id:fid}, fs);}catch{}}); });
+    ch.registry.featureAssignments.forEach((ids,sid)=>{
+      const fs=ch.registry.styles.get(sid)?.map?.featureState;
+      if(!fs) return;
+      ids.forEach(fid=>{
+        try {
+          map.setFeatureState({source:sourceId,id:fid}, fs);
+        } catch (error) {
+          logCrossViewWarning(`Failed to apply registry feature state for id ${String(fid)}`, error);
+        }
+      });
+    });
   },
 
   /** フォーカスイベントを発火（Snackbar などで利用） */

@@ -42,8 +42,8 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
     const base = Object.fromEntries(defaultSteps.map(s => [s.name, { ...s }])) as Record<StepName, BootStep>;
     // Persisted flags to survive remounts during dev/hydration
-    const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-    if (g.__HDB_INIT_COMPLETE__) {
+    const bootWindow = typeof window !== 'undefined' ? (window as BootWindow) : undefined;
+    if (bootWindow?.__HDB_INIT_COMPLETE__) {
       base.Worker.progress = 100;
       base.Worker.done = true;
       base.Worker.message = 'Worker ready';
@@ -126,8 +126,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
       workerForcedRef.current = true;
     };
     const maybeDone = () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((window as any).__HDB_INIT_COMPLETE__) forceDone();
+      if ((window as BootWindow).__HDB_INIT_COMPLETE__) forceDone();
     };
     maybeDone();
     const onEvt = () => {
@@ -232,4 +231,7 @@ export const StageGate: React.FC<{ dependsOn: StepName[]; children: React.ReactN
     }
   }, [ok, dependsOn]);
   return ok ? <>{children}</> : null;
+};
+type BootWindow = Window & {
+  __HDB_INIT_COMPLETE__?: boolean;
 };

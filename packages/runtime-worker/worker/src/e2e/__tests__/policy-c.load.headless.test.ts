@@ -8,7 +8,7 @@ import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encodin
 describe('Headless: Policy C load (moderate subtree)', () => {
   beforeEach(async () => {
     CoreDB.resetInstance();
-    const request = (indexedDB as any)?.deleteDatabase?.('core-db');
+    const request = indexedDB.deleteDatabase('core-db');
     if (request?.onsuccess !== undefined) {
       await new Promise<void>((resolve) => {
         request.onsuccess = request.onerror = request.onblocked = () => resolve();
@@ -35,7 +35,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     const toCreate: TreeNode[] = [];
     for (let i = 0; i < 200; i++) {
@@ -48,9 +48,9 @@ describe('Headless: Policy C load (moderate subtree)', () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
-      } as any);
+      });
     }
-    await (core as any).bulkCreateNodes?.(toCreate);
+    await core.bulkCreateNodes(toCreate);
 
     const targetChild = toCreate[199];
     // Create WC holder for the deepest child
@@ -65,7 +65,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
     await core.createNode({
       id: ('wcC-load-' + Date.now()) as NodeId,
       parentId: holderId,
@@ -75,7 +75,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     // Create new parent
     const p2 = await core.createNode({
@@ -87,7 +87,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    });
 
     // Measure
     const start = performance.now();

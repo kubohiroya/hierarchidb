@@ -1,18 +1,15 @@
-import type { DataSourceSpec, OdPair, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
+import type { NetworkPortLike } from '../services/createRouteBatchManager.js';
 import { getRouteDownloadService, notifyAuthRequired } from '../services/download/registry.js';
 import { CsvStrategy } from './strategies/CsvStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
-
-export interface NetworkPortLike {
-  get(url: string, init?: RequestInit): Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
-}
 
 export interface OrchestratorDeps {
   net: NetworkPortLike;
 }
 
 export class RouteSourceOrchestrator {
-  private strategies = [new CsvStrategy(), new GeoJsonStrategy()];
+  private readonly strategies: DataSourceStrategy[] = [new CsvStrategy(), new GeoJsonStrategy()];
 
   constructor(private deps: OrchestratorDeps) {
     void this.deps;
@@ -41,12 +38,12 @@ export class RouteSourceOrchestrator {
         await service.download(f.url, fileId);
         const full = await readAll(fileId);
         blobs.set(f.url, new Blob([full]));
-      } catch (e: any) {
-        const msg = String(e?.message || e);
-        if (/HTTP 401|HTTP 403|Auth required/i.test(msg)) {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/HTTP 401|HTTP 403|Auth required/i.test(message)) {
           notifyAuthRequired({ resource: f.url, provider: 'datasource', hint: 'Authentication required' });
         }
-        throw e;
+        throw error;
       }
     }
     for (const src of spec.sources) {
@@ -65,14 +62,15 @@ export class RouteSourceOrchestrator {
   }
 
   private pickStrategy(spec: DataSourceSpec) {
-    const s = this.strategies.find((st) => st.supports(spec));
-    if (!s) throw new Error(`No strategy for ${spec.type}`);
-    return s;
+    const strategy = this.strategies.find((candidate) => candidate.supports(spec));
+    if (!strategy) throw new Error(`No strategy for ${spec.type}`);
+    return strategy;
   }
 
-  private strategyForParse(source: string) {
-    const s = this.strategies.find((st) => (st as any).supports({ type: source } as any));
-    if (!s) throw new Error(`No parse strategy for ${source}`);
-    return s as any;
+  private strategyForParse(source: ParseTask['source']): DataSourceStrategy {
+    const stub: DataSourceSpec = { type: source };
+    const strategy = this.strategies.find((candidate) => candidate.supports(stub));
+    if (!strategy) throw new Error(`No parse strategy for ${source}`);
+    return strategy;
   }
 }

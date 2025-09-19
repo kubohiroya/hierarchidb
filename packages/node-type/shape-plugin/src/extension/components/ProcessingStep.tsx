@@ -8,35 +8,37 @@
 
 import React from 'react';
 import { Box, Button } from '@mui/material';
+
 import { Step4Processing } from '../../components/steps/Step4Processing.js';
+import { DEFAULT_PROCESSING_CONFIG } from '../../shared/index.js';
+import type { ShapeWorkingCopy } from '../../shared/index.js';
+
+type ShapeDialogData = Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
 
 export interface ProcessingStepProps {
-  data: any;
-  onNext: (data: any) => void;
+  data?: ShapeDialogData | null;
+  onNext: (data: ShapeDialogData) => void;
   onPrevious: () => void;
   errors?: string[];
 }
 
-export const ProcessingStep: React.FC<ProcessingStepProps> = ({
-                                                                data,
-                                                                onNext,
-                                                                onPrevious,
-                                                                errors,
-                                                              }) => {
-  const wc = (data || {}) as any;
+export const ProcessingStep: React.FC<ProcessingStepProps> = ({ data, onNext, onPrevious, errors }) => {
+  const dialogData: ShapeDialogData = typeof data === 'object' && data !== null ? { ...data } : {};
+  const workingCopy: ShapeDialogData = {
+    ...dialogData,
+    processingConfig: dialogData.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+  };
+
+  const handleUpdate = (updates: Partial<ShapeWorkingCopy>) => {
+    onNext({ ...dialogData, ...updates });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step4Processing
-          workingCopy={{
-            ...wc,
-            selectedAdminLevels: wc.selectedAdminLevels || [],
-            batchConfig: wc.batchConfig,
-          }}
-          onUpdate={(updates) => {
-            const updatedData = { ...wc, ...updates };
-            onNext(updatedData);
-          }}
+          workingCopy={workingCopy}
+          onUpdate={handleUpdate}
           disabled={false}
         />
 
@@ -58,11 +60,7 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({
         }}
       >
         <Button onClick={onPrevious}>Previous</Button>
-        <Button
-          variant="contained"
-          onClick={() => onNext(wc)}
-          disabled={!wc.selectedAdminLevels || wc.selectedAdminLevels.length === 0}
-        >
+        <Button variant="contained" onClick={() => onNext(dialogData)}>
           Next
         </Button>
       </Box>

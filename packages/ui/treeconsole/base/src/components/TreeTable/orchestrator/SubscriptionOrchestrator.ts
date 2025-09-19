@@ -21,6 +21,11 @@ import {
   tableDataAtom,
 } from '../state/index.js';
 
+const logSubscriptionWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[SubscriptionOrchestrator]', message, error);
+};
+
 /**
   * SubTree
   */
@@ -139,7 +144,12 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       clearTimeout(updateBatchTimerRef.current);
     }
     const batchDelay = (() => {
-      try { const v = (globalThis as any)?.FEATURE_FLAGS?.SUBSCRIPTION_BATCH_MS; if (v != null) return Number(v) || 100; } catch {}
+      try {
+        const v = (globalThis as any)?.FEATURE_FLAGS?.SUBSCRIPTION_BATCH_MS;
+        if (v != null) return Number(v) || 100;
+      } catch (error) {
+        logSubscriptionWarning('Failed to read SUBSCRIPTION_BATCH_MS flag', error);
+      }
       return 100;
     })();
     updateBatchTimerRef.current = setTimeout(() => {

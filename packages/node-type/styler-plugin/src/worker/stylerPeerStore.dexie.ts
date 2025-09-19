@@ -1,28 +1,59 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { StylerEntitiesDB } from './stylerEntitiesDB.js';
+import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB.js';
+import type { StylerPeerData } from '../types/stylerTypes.js';
 
-// Local minimal replicas to avoid hard type dependency on runtime-worker in DTS
-export type PeerEntity<T = any> = { nodeId: NodeId; updatedAt: number; data?: T } & Record<string, any>;
-export type PeerStore<T = any> = {
-  get(nodeId: NodeId): Promise<PeerEntity<T> | undefined>;
-  put(e: PeerEntity<T>): Promise<void>;
+interface StylerPeerEntity<TData = StylerPeerData> {
+  nodeId: NodeId;
+  data: TData;
+  updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
+}
+
+interface StylerPeerStore<TData = StylerPeerData> {
+  get(nodeId: NodeId): Promise<StylerPeerEntity<TData> | undefined>;
+  put(entity: StylerPeerEntity<TData>): Promise<void>;
   delete(nodeId: NodeId): Promise<void>;
-  bulkUpsert(entities: PeerEntity<T>[]): Promise<void>;
-};
+  bulkUpsert(entities: StylerPeerEntity<TData>[]): Promise<void>;
+}
 
-export function createStylerPeerStoreDexie(db: StylerEntitiesDB): PeerStore<any> {
+const normalizeStylerPeerData = (data?: StylerPeerData | null): StylerPeerData => ({
+  schemaVersion: 1,
+  lastAppliedConfig: data?.lastAppliedConfig,
+  metadata: data?.metadata ?? {},
+});
+
+export function createStylerPeerStoreDexie(db: StylerEntitiesDB): StylerPeerStore<StylerPeerData> {
   return {
     async get(nodeId: NodeId) {
-      return (await db.peerEntities.get(nodeId)) as unknown as PeerEntity<any> | undefined;
+      const row = await db.peerEntities.get(nodeId);
+      if (!row) return undefined;
+      const entity: StylerPeerEntity<StylerPeerData> = {
+        ...row,
+        data: normalizeStylerPeerData(row.data),
+      };
+      return entity;
     },
-    async put(e: PeerEntity<any>) {
-      await db.peerEntities.put({ nodeId: e.nodeId, updatedAt: Date.now(), displayMode: (e as any).displayMode });
+    async put(e: StylerPeerEntity<StylerPeerData>) {
+      const row: StylerPeerRow = {
+        ...e,
+        data: normalizeStylerPeerData(e.data),
+        updatedAt: Date.now(),
+      };
+      await db.peerEntities.put(row);
     },
     async delete(nodeId: NodeId) {
       await db.peerEntities.delete(nodeId);
     },
-    async bulkUpsert(entities: PeerEntity<any>[]) {
-      await db.peerEntities.bulkPut(entities.map((e) => ({ nodeId: e.nodeId, updatedAt: Date.now(), displayMode: (e as any).displayMode })) as any);
+    async bulkUpsert(entities: StylerPeerEntity<StylerPeerData>[]) {
+      const now = Date.now();
+      const rows: StylerPeerRow[] = entities.map((e) => ({
+        ...e,
+        data: normalizeStylerPeerData(e.data),
+        updatedAt: now,
+      }));
+      await db.peerEntities.bulkPut(rows);
     },
   };
 }

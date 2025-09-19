@@ -32,7 +32,9 @@ export class EphemeralLocationDB extends Dexie {
     totalPoints: number;
     createdAt: number;
     status: 'running' | 'completed' | 'failed';
-    tableId?: string
+    tableId?: string;
+    progress?: number;
+    updatedAt?: number;
   }>;
 
   constructor() {

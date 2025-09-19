@@ -88,7 +88,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
 
     setIsRunning(true);
     const startTime = performance.now();
-    const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const startMemory = readHeapUsage();
 
     try {
       // Simulate mapping execution
@@ -156,7 +156,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       onValidationResult(mockValidation);
 
       const endTime = performance.now();
-      const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      const endMemory = readHeapUsage();
 
       setExecutionTime(endTime - startTime);
       setMemoryUsage(Math.max(0, endMemory - startMemory));
@@ -533,4 +533,15 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
       )}
     </Box>
   );
+};
+
+const hasMemory = (perf: Performance): perf is Performance & { memory: { usedJSHeapSize?: number } } => {
+  return typeof (perf as { memory?: unknown }).memory !== 'undefined';
+};
+
+const readHeapUsage = (): number => {
+  if (typeof performance === 'undefined') return 0;
+  if (!hasMemory(performance)) return 0;
+  const memory = performance.memory;
+  return typeof memory?.usedJSHeapSize === 'number' ? memory.usedJSHeapSize : 0;
 };

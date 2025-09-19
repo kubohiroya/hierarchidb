@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { HierarchicalEntity } from '@hierarchidb/base-plugin';
+import type { HierarchicalEntity, HierarchicalSearchCriteria } from '@hierarchidb/node-type-base-plugin';
 
 /**
  * Map style configuration
@@ -91,9 +91,21 @@ export interface CreateBaseMapData extends Partial<BaseMapEntity> {
 /**
  * Search criteria for BaseMap entities
  */
-export interface BaseMapSearchCriteria {
-  name?: string;
+export interface BaseMapSearchCriteria extends HierarchicalSearchCriteria {
   mapStyle?: string;
-  parentId?: NodeId;
-  hasChildren?: boolean;
+  tags?: string[];
+}
+
+/**
+ * Peer data stored in Dexie peerEntities for basemap nodes.
+ * schemaVersion must always be present so that future migrations
+ * can discriminate payload revisions.
+ */
+export interface BasemapPeerData {
+  schemaVersion: 1;
+  presentation?: {
+    viewport?: MapViewport;
+    style?: MapStyle;
+  };
+  metadata?: Record<string, unknown>;
 }

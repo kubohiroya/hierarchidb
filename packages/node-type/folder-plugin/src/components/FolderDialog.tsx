@@ -14,7 +14,12 @@ export interface FolderDialogProps {
 }
 
 export const FolderDialog: React.FC<FolderDialogProps> = ({ open, onClose, mode = 'create', nodeId, parentId, onSuccess, onError }) => {
-  const { init, commit, discard } = useWorkingCopy({ nodeType: 'folder', mode, nodeId: nodeId as any, parentId: parentId as any });
+  const { init, commit, discard } = useWorkingCopy({
+    nodeType: 'folder',
+    mode,
+    nodeId: nodeId ? String(nodeId) : undefined,
+    parentId: parentId ? String(parentId) : undefined,
+  });
   useEffect(() => { if (open) void init(); }, [open, init]);
   useEffect(() => { return () => { void discard().catch(() => {}); }; }, [discard]);
 

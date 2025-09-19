@@ -20,7 +20,7 @@ export function loadAppConfig(): LoadAppConfigReturn {
     VITE_APP_NAME,
     VITE_APP_TITLE,
     VITE_APP_DESCRIPTION,
-    APP_HOMEPAGE,
+    VITE_APP_HOMEPAGE,
     VITE_APP_LOGO,
     VITE_APP_FAVICON,
     VITE_APP_THEME,
@@ -30,7 +30,7 @@ export function loadAppConfig(): LoadAppConfigReturn {
   } = import.meta.env;
 
   return {
-    appPrefix: VITE_APP_PREFIX || '',
+    appPrefix: VITE_APP_PREFIX || 'hierarchidb',
     appName: VITE_APP_NAME || 'HierarchiDB',
     appTitle: VITE_APP_TITLE || 'HierarchiDB',
     appDescription:
@@ -39,9 +39,9 @@ export function loadAppConfig(): LoadAppConfigReturn {
     appDetails:
       VITE_APP_DETAILS ||
       'A powerful framework for managing hierarchical data in browser environments',
-    appHomepage: APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
+    appHomepage: VITE_APP_HOMEPAGE || 'https://github.com/kubohiroya/hierarchidb',
     appLogo: VITE_APP_LOGO || 'logo.png',
-    appFavicon: VITE_APP_FAVICON || 'logo.favicon.png',
+    appFavicon: VITE_APP_FAVICON || 'favicon.svg',
     appTheme: VITE_APP_THEME || 'light',
     appLocale: VITE_APP_LOCALE || 'en-US',
     appAttribution: VITE_APP_ATTRIBUTION || '',

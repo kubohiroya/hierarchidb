@@ -145,7 +145,11 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                   <InputLabel>Operator</InputLabel>
                   <Select
                     value={rule.operator}
-                    onChange={(e) => handleUpdateColorRule(index, { operator: e.target.value as any })}
+                    onChange={(e) =>
+                      handleUpdateColorRule(index, {
+                        operator: e.target.value as StylerColorRule['operator'],
+                      })
+                    }
                     label="Operator"
                     size="small"
                   >

@@ -5,6 +5,7 @@ import {
   type ProgressSnapshot,
   type ProgressSnapshotStore,
 } from '@hierarchidb/runtime-shared-batch-processor';
+import type { ProgressEvent } from '@hierarchidb/common-type';
 
 export function useRouteBatchProgress(jobId: string, deps?: { emitter?: ProgressEmitter; store?: ProgressSnapshotStore }) {
   const emitter = useMemo(() => deps?.emitter ?? new ProgressEmitter(10), [deps?.emitter]);
@@ -33,28 +34,28 @@ export function useRouteBatchProgress(jobId: string, deps?: { emitter?: Progress
 
   // Unify with ui-core batch progress for UI consumers
   const adapter = useMemo(
-    () => createAdapterFromProgressSubscribe((cb: (p: any) => void) => emitter.on((s: ProgressSnapshot) => cb({
-      stage: s.phase,
-      total: 100,
-      completed: s.progress,
-      failed: 0,
-      percentage: s.progress,
-      currentTask: s.phase || '',
-    } as any))),
+    () => createAdapterFromProgressSubscribe((cb) =>
+      emitter.on((snapshot: ProgressSnapshot) => cb(toProgressEvent(snapshot)))
+    ),
     [emitter],
   );
   const { progress } = useBatchProgress(adapter, {
     poll: store
-      ? () => store.get(jobId).then((s: ProgressSnapshot | undefined) => (s ? ({
-        stage: s.phase,
-        total: 100,
-        completed: s.progress,
-        failed: 0,
-        percentage: s.progress,
-        currentTask: s.phase || '',
-      }) : null))
+      ? () => store.get(jobId).then((snapshot) => (snapshot ? toProgressEvent(snapshot) : null))
       : undefined,
   });
 
   return { snapshot: snap, ready, progress };
+}
+
+function toProgressEvent(snapshot: ProgressSnapshot): ProgressEvent {
+  return {
+    sessionId: snapshot.jobId,
+    stage: snapshot.phase,
+    total: 100,
+    completed: snapshot.progress,
+    failed: 0,
+    percentage: snapshot.progress,
+    currentTask: snapshot.phase ?? '',
+  };
 }

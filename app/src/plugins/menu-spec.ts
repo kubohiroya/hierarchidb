@@ -32,10 +32,14 @@ export const MENU_SPEC: Record<'resources' | 'projects', MenuSpec> = {
   },
 };
 
+type MenuSpecOverrides = Partial<Record<'resources' | 'projects', Partial<MenuSpec>>>;
+type MenuSpecGlobal = typeof globalThis & {
+  __HDB_MENU_SPEC__?: MenuSpecOverrides;
+};
+
 export function getMenuSpec(context: 'resources' | 'projects'): MenuSpec {
   try {
-    const overrides: Partial<Record<'resources' | 'projects', Partial<MenuSpec>>> =
-      (globalThis as any).__HDB_MENU_SPEC__ || {};
+    const overrides = (globalThis as MenuSpecGlobal).__HDB_MENU_SPEC__ ?? {};
     const base = MENU_SPEC[context];
     const override = overrides[context] || {};
     return {

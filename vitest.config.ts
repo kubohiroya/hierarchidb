@@ -1,5 +1,25 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import {
+  deriveNodeTypePluginAliases,
+  discoverNodeTypePlugins,
+} from './packages/tools/plugin-registry-utils/dist/index.js';
+
+const nodeTypePlugins = discoverNodeTypePlugins({ rootDir: __dirname });
+const nodeTypeAliasEntries = deriveNodeTypePluginAliases(nodeTypePlugins, {
+  subpaths: ['root', 'ui', 'services', 'database', 'shared'],
+});
+
+const nodeTypeAliases = Object.fromEntries(
+  nodeTypeAliasEntries.map(({ find, replacement }) => [find, replacement]),
+);
+
+const nodeTypeSrcAliases = Object.fromEntries(
+  nodeTypeAliasEntries
+    .filter(({ subpath }) => subpath === 'root')
+    .map(({ find, replacement }) => [`${find}/src`, path.dirname(replacement)]),
+);
+
 
 // Root Vitest config orchestrates per-package projects so each package's
 // own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
@@ -71,24 +91,9 @@ export default defineConfig({
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
-      '@hierarchidb/folder-plugin': path.resolve(__dirname, './packages/node-type/folder-plugin/src/index.ts'),
-      '@hierarchidb/folder-plugin/src': path.resolve(__dirname, './packages/node-type/folder-plugin/src'),
-      '@hierarchidb/linker-plugin': path.resolve(__dirname, './packages/node-type/linker-plugin/src/index.ts'),
-      '@hierarchidb/linker-plugin/src': path.resolve(__dirname, './packages/node-type/linker-plugin/src'),
-      '@hierarchidb/basemap-plugin': path.resolve(__dirname, './packages/node-type/basemap-plugin/src/index.ts'),
-      '@hierarchidb/basemap-plugin/src': path.resolve(__dirname, './packages/node-type/basemap-plugin/src'),
-      '@hierarchidb/styler-plugin': path.resolve(__dirname, './packages/node-type/styler-plugin/src/index.ts'),
-      '@hierarchidb/styler-plugin/src': path.resolve(__dirname, './packages/node-type/styler-plugin/src'),
-      '@hierarchidb/resolver-plugin': path.resolve(__dirname, './packages/node-type/resolver-plugin/src/index.ts'),
-      '@hierarchidb/resolver-plugin/src': path.resolve(__dirname, './packages/node-type/resolver-plugin/src'),
-      '@hierarchidb/route-plugin': path.resolve(__dirname, './packages/node-type/route-plugin/src/index.ts'),
-      '@hierarchidb/route-plugin/src': path.resolve(__dirname, './packages/node-type/route-plugin/src'),
-      '@hierarchidb/location-plugin': path.resolve(__dirname, './packages/node-type/location-plugin/src/index.ts'),
-      '@hierarchidb/location-plugin/src': path.resolve(__dirname, './packages/node-type/location-plugin/src'),
-      '@hierarchidb/shape-plugin': path.resolve(__dirname, './packages/node-type/shape-plugin/src/index.ts'),
-      '@hierarchidb/shape-plugin/src': path.resolve(__dirname, './packages/node-type/shape-plugin/src'),
-      '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, './packages/node-type/spreadsheet-plugin/src/index.ts'),
-      '@hierarchidb/spreadsheet-plugin/src': path.resolve(__dirname, './packages/node-type/spreadsheet-plugin/src'),
+      // Node-type plugin aliases are generated automatically (root/src/services/database/shared)
+      ...nodeTypeAliases,
+      ...nodeTypeSrcAliases,
       // Important: don't set a global "~" alias here to avoid conflicts across packages.
     },
   },

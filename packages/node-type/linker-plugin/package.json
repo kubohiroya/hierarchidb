@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/linker-plugin",
+  "name": "@hierarchidb/node-type-linker-plugin",
   "version": "0.0.1",
   "description": "Linker plugin for HierarchiDB: link compiled resources into maps",
   "type": "module",
@@ -19,8 +19,12 @@
   },
   "typesVersions": {
     "*": {
-      "services": ["dist/services/index.d.ts"],
-      "*": ["dist/index.d.ts"]
+      "services": [
+        "dist/services/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -32,23 +36,13 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@hierarchidb/base-plugin": "workspace:*",
-    "@hello-pangea/dnd": "^16.6.0",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/ui-date": "workspace:*",
-    "@turf/turf": "^7.0.0",
-    "@watergis/maplibre-gl-export": "^4.0.1",
-    "d3-scale": "^4.0.0",
-    "date-fns": "^3.0.0",
-    "h3-js": "^4.1.0",
-    "jspdf": "^2.5.0",
     "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
@@ -66,7 +60,8 @@
     "@deck.gl/aggregation-layers": "^9.0.0",
     "@deck.gl/geo-layers": "^9.0.0",
     "@deck.gl/mapbox": "^9.0.0",
-    "@deck.gl/mesh-layers": "^9.0.0"
+    "@deck.gl/mesh-layers": "^9.0.0",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -86,7 +81,8 @@
     "@deck.gl/aggregation-layers": "^9.0.0",
     "@deck.gl/geo-layers": "^9.0.0",
     "@deck.gl/mapbox": "^9.0.0",
-    "@deck.gl/mesh-layers": "^9.0.0"
+    "@deck.gl/mesh-layers": "^9.0.0",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*"
   },
   "author": "",
   "license": "MIT",
@@ -119,7 +115,7 @@
       "description": "Link compiled resources to map for usage",
       "icon": {
         "mui": "AccountTree",
-        "emoji": "🌲",
+        "emoji": "\ud83c\udf32",
         "color": "#ffe0f3"
       },
       "category": {

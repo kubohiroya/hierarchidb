@@ -118,8 +118,8 @@ describe('Spreadsheet拡張定義', () => {
 
     //  :
     //  : extendedValidationfileFormatCSV
-    const validation = SpreadsheetExtension.extendedValidation;
-    const fileFormatRule = (validation as any)?.extendedRules?.fileFormatRule;
+    const { extendedRules } = SpreadsheetExtension.extendedValidation;
+    const fileFormatRule = extendedRules.fileFormatRule;
     const isValid = fileFormatRule?.validate(formData);
 
     //  :
@@ -143,8 +143,8 @@ describe('Spreadsheet拡張定義', () => {
 
     //  :
     //  : extendedValidationfileFormatPDF
-    const validation = SpreadsheetExtension.extendedValidation;
-    const fileFormatRule = (validation as any)?.extendedRules?.fileFormatRule;
+    const { extendedRules } = SpreadsheetExtension.extendedValidation;
+    const fileFormatRule = extendedRules.fileFormatRule;
     const isValid = fileFormatRule?.validate(formData);
 
     //  :
@@ -244,8 +244,8 @@ describe('Spreadsheet拡張定義', () => {
 
     //  :
     //  : extendedValidationfileFormatTSV
-    const validation = SpreadsheetExtension.extendedValidation;
-    const fileFormatRule = (validation as any)?.extendedRules?.fileFormatRule;
+    const { extendedRules } = SpreadsheetExtension.extendedValidation;
+    const fileFormatRule = extendedRules.fileFormatRule;
     const isValid = fileFormatRule?.validate(formData);
 
     //  :
@@ -273,8 +273,8 @@ describe('Spreadsheet拡張定義', () => {
 
     //  :
     //  : extendedValidationfileFormatExcel
-    const validation = SpreadsheetExtension.extendedValidation;
-    const fileFormatRule = (validation as any)?.extendedRules?.fileFormatRule;
+    const { extendedRules } = SpreadsheetExtension.extendedValidation;
+    const fileFormatRule = extendedRules.fileFormatRule;
     const isXlsxValid = fileFormatRule?.validate(xlsxFormData);
     const isXlsValid = fileFormatRule?.validate(xlsFormData);
 

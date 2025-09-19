@@ -23,7 +23,7 @@
 ----------------
 1) UI でトークンを Worker に同期（ログイン/更新時）
 ```ts
-import { setShapeAuthToken } from '@hierarchidb/shape-plugin/ui';
+import { setShapeAuthToken } from '@hierarchidb/node-type-shape-plugin/ui';
 
 // 例: サインイン/リフレッシュ後
 await setShapeAuthToken(auth.token, 'Bearer', auth.expiresAt);

@@ -8,6 +8,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
+import type { NodeId } from '@hierarchidb/common-type';
+import type { ResolverEntity } from '../../types/index.js';
 import { ResolverDialog } from '../ResolverDialog.js';
 
 const TestThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -22,8 +24,13 @@ describe('ResolverDialog (ui-dialog integration)', () => {
     const onCancel = vi.fn();
     const onClose = vi.fn();
 
-    const working: any = {
+    const nodeId: NodeId = 'n1' as NodeId;
+    const now = Date.now();
+    const working: ResolverEntity = {
+      id: nodeId,
+      nodeId,
       name: 'resolver-1',
+      description: 'Test resolver dialog',
       sourceSchema: JSON.stringify([{ id: 1, value: 'foo' }]),
       targetSchema: JSON.stringify([{ identifier: 1, transformed: 'foo' }]),
       mappingRules: [
@@ -36,14 +43,25 @@ describe('ResolverDialog (ui-dialog integration)', () => {
           description: 'Map value to transformed',
         },
       ],
+      validationRules: [],
       duplicateResolution: { strategy: 'ignore' },
-      previewConfig: { sampleSize: 10 },
+      dataTransformations: [],
+      previewConfig: {
+        sampleSize: 10,
+        refreshInterval: 1000,
+        highlightMappings: true,
+        showValidationErrors: true,
+      },
+      isCompiled: false,
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
     };
 
     render(
       <ResolverDialog
         open={true}
-        nodeId={'n1' as any}
+        nodeId={nodeId}
         onClose={onClose}
         onSave={onSave}
         onCancel={onCancel}

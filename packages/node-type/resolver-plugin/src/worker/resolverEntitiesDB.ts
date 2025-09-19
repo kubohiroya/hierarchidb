@@ -1,8 +1,16 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
+import type { ResolverPeerData } from '../types/index.js';
 
-export type ResolverPeerRow = { nodeId: NodeId; data?: unknown; updatedAt?: number; displayMode?: 'standard' | 'maximized' | 'fullscreen' };
+export type ResolverPeerRow = {
+  nodeId: NodeId;
+  data?: ResolverPeerData;
+  updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
+};
 
 export class ResolverEntitiesDB extends Dexie {
   peerEntities!: Table<ResolverPeerRow, NodeId>;

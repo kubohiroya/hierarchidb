@@ -123,7 +123,7 @@ This document lists all environment variables used by the browser application an
 - Name: `VITE_ROUTE_SEAROUTE_PKG`
   - Meaning: Searoute implementation package to prefer (`searoute` or `searoute-js`).
   - Default: not set (runtime tries `searoute` then `searoute-js`)
-  - Used by: `@hierarchidb/route-plugin`
+  - Used by: `@hierarchidb/node-type-route-plugin`
 
 ## Other Vite Env Keys
 - `import.meta.env.MODE`: build mode (`development` / `production` / custom)

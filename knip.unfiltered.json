@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{ts,tsx,js,mjs,cjs}",
+        "tools/**/*.{ts,tsx,js,mjs,cjs}",
+        "*.{ts,tsx,js,mjs,cjs}",
+        "*.json"
+      ],
+      "project": [
+        "scripts/**/*.{ts,tsx,js,mjs,cjs}",
+        "tools/**/*.{ts,tsx,js,mjs,cjs}",
+        "*.{ts,tsx,js,mjs,cjs}",
+        "*.json"
+      ]
+    },
+    "app": {
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/*": {
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/*/*": {
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/*/*/*": {
+      "entry": ["src/**/*.{ts,tsx,js,jsx}"]
+    }
+  }
+}

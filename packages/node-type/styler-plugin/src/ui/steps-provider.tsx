@@ -2,8 +2,8 @@ import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtim
 import { StylerStep5 } from '../components/steps/StylerStep5.js';
 import { StylerStep6 } from '../components/steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
-import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
-import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/spreadsheet-plugin';
+import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/node-type-spreadsheet-plugin';
+import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/node-type-spreadsheet-plugin';
 
 type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();

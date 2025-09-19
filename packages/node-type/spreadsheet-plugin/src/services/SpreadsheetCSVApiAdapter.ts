@@ -64,7 +64,7 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
 
   async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
     // Fallback to preview path; for large exports, driver will implement efficiently later
-    const filters = (selection as any).filterRules ?? [];
+    const filters = selection.filterRules ?? [];
     return this.getFilteredPreview(tableId, filters, Number.MAX_SAFE_INTEGER, 0);
   }
 

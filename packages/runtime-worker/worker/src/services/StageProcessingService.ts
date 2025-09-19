@@ -2,6 +2,7 @@ import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '
 // Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime
 import type vtPbfNS = require('vt-pbf');
 import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import type { SharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
 import { TilesDB } from './TilesDB.js';
 
 /**
@@ -13,21 +14,18 @@ import { TilesDB } from './TilesDB.js';
  */
 
 class RealDownloadWorker implements DownloadWorkerAPI {
-  private servicePromise: Promise<any> | null = null;
+  private sharedPromise: Promise<SharedDownloadService> | null = null;
 
-  private async getService(): Promise<any> {
-    if (!this.servicePromise) {
-      this.servicePromise = (async () => {
-        const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4 });
-        return service;
-      })();
+  private async getShared(): Promise<SharedDownloadService> {
+    if (!this.sharedPromise) {
+      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 4 });
     }
-    return this.servicePromise;
+    return this.sharedPromise;
   }
 
   async download(url: string, fileId: string, opts?: { expectedHash?: string }) {
-    const svc = await this.getService();
-    const res = await svc.download(url, fileId, { expectedHash: opts?.expectedHash });
+    const shared = await this.getShared();
+    const res = await shared.service.download(url, fileId, { expectedHash: opts?.expectedHash });
     return { fileId: res.fileId, sizeBytes: res.sizeBytes, hash: res.hash };
   }
 }
@@ -49,11 +47,18 @@ class RealSimplifyWorker implements SimplifyWorkerAPI {
 }
 
 class RealVectorTileWorker implements VectorTileWorkerAPI {
+  private sharedPromise: Promise<SharedDownloadService> | null = null;
+
+  private async getShared(): Promise<SharedDownloadService> {
+    if (!this.sharedPromise) {
+      this.sharedPromise = createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
+    }
+    return this.sharedPromise;
+  }
+
   private async readBuffer(fileId: string): Promise<ArrayBuffer | null> {
-    const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
-    const storage = (service as any)?.store;
-    if (storage?.readAll) return await storage.readAll(fileId);
-    return null;
+    const shared = await this.getShared();
+    return shared.readAll(fileId);
   }
 
   private long2tile(lon: number, z: number) {
@@ -67,15 +72,18 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   async generateTiles(inputBufferId: string, config: { format: 'mvt'; compression?: 'gzip' | 'none' }) {
     const buf = await this.readBuffer(inputBufferId);
     if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
-    let geojson: any;
     const txt = new TextDecoder().decode(buf);
-    geojson = JSON.parse(txt);
+    const parsed = JSON.parse(txt);
+    if (!parsed || parsed.type !== 'FeatureCollection') {
+      return { tilesGenerated: 0, totalBytes: 0 };
+    }
+    const geojson = parsed as FeatureCollectionLike;
 
-    const gjvt = (await import('geojson-vt')).default as any;
+    const geojsonvt = await loadGeojsonVt();
     // Runtime import; typed via @types/vt-pbf without ambient shims
-    const vtpbf = (await import('@maplibre/vt-pbf')) as unknown as typeof vtPbfNS;
+    const vtpbf = await loadVtPbf();
     const extent = 4096;
-    const index = gjvt(geojson, { maxZoom: 6, extent, indexMaxZoom: 6, promoteId: 'id' });
+    const index = geojsonvt(geojson as GeojsonVtData, { maxZoom: 6, extent, indexMaxZoom: 6, promoteId: 'id' });
 
     // Compute bbox
     const fc = geojson;
@@ -109,9 +117,9 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     const y2 = this.lat2tile(minLat, z);
     for (let x = x1; x <= x2; x++) {
       for (let y = y1; y <= y2; y++) {
-        const tile = index.getTile(z, x, y);
+      const tile = index.getTile(z, x, y);
         if (tile && tile.features && tile.features.length) {
-          const pbf = vtpbf.fromGeojsonVt({ layer0: tile } as any, { version: 2 } as any);
+          const pbf = vtpbf.fromGeojsonVt({ layer0: tile }, { version: 2 });
           const bytes = pbf as Uint8Array;
           tiles++;
           totalBytes += bytes.byteLength;
@@ -196,3 +204,27 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
   return client as unknown as StageProcessingService;
 }
 /// <reference path="../types/external.d.ts" />
+
+type GeojsonVtModule = typeof import('geojson-vt');
+type GeojsonVtData = Parameters<GeojsonVtModule>[0];
+
+async function loadGeojsonVt(): Promise<GeojsonVtModule> {
+  const mod = await import('geojson-vt');
+  const candidate = mod as unknown as { default?: GeojsonVtModule } & GeojsonVtModule;
+  return candidate.default ?? candidate;
+}
+
+async function loadVtPbf(): Promise<typeof vtPbfNS> {
+  const mod = await import('@maplibre/vt-pbf');
+  const candidate = mod as unknown as { default?: typeof vtPbfNS } & typeof vtPbfNS;
+  return candidate.default ?? candidate;
+}
+
+type FeatureCollectionLike = {
+  type: 'FeatureCollection';
+  features?: Array<{
+    geometry?: {
+      coordinates?: unknown;
+    };
+  }>;
+};

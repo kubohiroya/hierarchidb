@@ -116,6 +116,20 @@ export interface SpreadsheetEntity {
 }
 
 /**
+ * Peer payload persisted in peerEntities for spreadsheet nodes.
+ * Maintains schemaVersion for forward-compatible migrations.
+ */
+export interface SpreadsheetPeerData {
+  schemaVersion: 1;
+  lastViewedSheet?: {
+    sheetId?: NodeId;
+    scrollTop?: number;
+    scrollLeft?: number;
+  };
+  metadata?: Record<string, unknown>;
+}
+
+/**
   * : Spreadsheet
  * : + CSV
   */

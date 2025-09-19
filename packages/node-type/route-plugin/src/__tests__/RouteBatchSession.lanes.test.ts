@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession.js';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
+import type { NodeId } from '@hierarchidb/common-type';
 
 class TestGenerator {
   public activeOsm = 0;
@@ -22,7 +23,7 @@ class TestGenerator {
 function makeTasks(sessionId: string, n: number, method: string): RouteBatchTask[] {
   return Array.from({ length: n }, (_, i) => ({
     taskId: `${method}-${i}`,
-    treeNodeId: 'n1' as any,
+    treeNodeId: 'n1' as NodeId,
     sessionId,
     taskType: 'route_generation',
     stage: 'route_generation',
@@ -48,11 +49,11 @@ describe('RouteBatchSession lane gating', () => {
       ...makeTasks(sessionId, 5, 'osm_route'),
       ...makeTasks(sessionId, 5, 'direct'),
     ];
-    const gen = new TestGenerator() as any;
-    const s = new RouteBatchSession(sessionId, 'n1' as any, cfg, tasks, undefined, { generator: gen });
+    const gen = new TestGenerator();
+    const nodeId = 'n1' as NodeId;
+    const s = new RouteBatchSession(sessionId, nodeId, cfg, tasks, undefined, { generator: gen });
     await s.initialize();
     await s.start();
-    expect((gen as TestGenerator).maxOsm).toBe(1);
+    expect(gen.maxOsm).toBe(1);
   });
 });
-

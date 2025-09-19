@@ -29,4 +29,4 @@ export const BasePluginDefinition = {
 };
 
 // Optional runtime wiring (no-op for base plugin)
-export const runtimeWiring = {} as const;
+export class RuntimeWiring {}

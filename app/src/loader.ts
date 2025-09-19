@@ -15,6 +15,18 @@ import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
 
 export type { LoadAppConfigReturn };
 
+type BootWindow = Window & {
+  __HDB_INIT_COMPLETE__?: boolean;
+  __HDB_INIT_STARTED__?: boolean;
+  __HDB_LOADER_INIT_STARTED__?: boolean;
+  __HDB_INIT_WAIT__?: Promise<void> | null;
+};
+
+function getBootWindow(): BootWindow | null {
+  if (typeof window === 'undefined') return null;
+  return window as BootWindow;
+}
+
 export type LoadWorkerAPIClientReturn = {
   client: Remote<WorkerAPI>; // Worker API instance via Comlink
 };
@@ -106,10 +118,9 @@ async function retryComlinkCall<T>(
       }
 
       // Avoid recreating the Worker while it is still booting to prevent races
-      // @eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
+      const bootWindow = getBootWindow();
       const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
-      const initComplete = Boolean(g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
+      const initComplete = Boolean(bootWindow?.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
       if (!initComplete) {
         console.warn(`[${operationName}] Comlink error during boot; will wait instead of recreating worker.`);
@@ -136,9 +147,10 @@ async function retryComlinkCall<T>(
 export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> {
   // Coordinate concurrent loader calls during hard-refresh/direct-access
   // by sharing a single wait promise for INIT_COMPLETE across the app runtime.
-  // @eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g: any = typeof window !== 'undefined' ? (window as any) : {};
-  if (!g.__HDB_INIT_WAIT__) g.__HDB_INIT_WAIT__ = null as Promise<void> | null;
+  const bootWindow = getBootWindow();
+  if (bootWindow && typeof bootWindow.__HDB_INIT_WAIT__ === 'undefined') {
+    bootWindow.__HDB_INIT_WAIT__ = null;
+  }
   const appConfig = loadAppConfig();
   
 
@@ -147,12 +159,11 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
 
     // Fast path: if global INIT_COMPLETE already observed, return immediately
-      // @eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-      if (g.__HDB_INIT_COMPLETE__) {
+      const initWindow = getBootWindow();
+      if (initWindow?.__HDB_INIT_COMPLETE__) {
         try {
           const client = WorkerAPIClient.getSingleton();
-          
+
           return { ...appConfig, client };
         } catch {
           const client = await WorkerAPIClient.getOrInit();
@@ -164,9 +175,9 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     // Ensure initialization kicked off exactly once per page load.
     // If the WorkerProvider already started, do not duplicate or spam logs.
     if (!WorkerAPIClient.isReady()) {
-      const startedByProvider = !!g.__HDB_INIT_STARTED__;
-      if (!startedByProvider && !g.__HDB_LOADER_INIT_STARTED__) {
-        g.__HDB_LOADER_INIT_STARTED__ = true;
+      const startedByProvider = Boolean(bootWindow?.__HDB_INIT_STARTED__);
+      if (!startedByProvider && !bootWindow?.__HDB_LOADER_INIT_STARTED__) {
+        if (bootWindow) bootWindow.__HDB_LOADER_INIT_STARTED__ = true;
         // Kick off initialization without awaiting to avoid race; event barrier will resolve readiness
         WorkerAPIClient.initialize().catch(() => {});
       } else {
@@ -178,31 +189,36 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     // Resolve when either (a) window event fires, or (b) WorkerAPIClient.isReady() becomes true,
     // or (c) an overall timeout elapses.
     const ensureInitComplete = async (timeoutMs = 20000) => {
-      
-      if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
-      if (g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
-      if (!g.__HDB_INIT_WAIT__) {
-        g.__HDB_INIT_WAIT__ = new Promise<void>((resolve) => {
+      const initWindow = getBootWindow();
+      if (initWindow?.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady()) return;
+      if (!initWindow) {
+        // Non-browser context: fall back to ensuring WorkerAPIClient readiness only.
+        if (!WorkerAPIClient.isReady()) await WorkerAPIClient.initialize();
+        return;
+      }
+
+      if (!initWindow.__HDB_INIT_WAIT__) {
+        initWindow.__HDB_INIT_WAIT__ = new Promise<void>((resolve) => {
           let done = false;
           const finish = () => { if (!done) { done = true; resolve(); } };
           const checkReady = () => {
             if (WorkerAPIClient.isReady()) finish();
           };
-            const handler = () => {
-              window.removeEventListener('hierarchidb-worker-init-complete', handler);
-              g.__HDB_INIT_COMPLETE__ = true;
-              finish();
-            };
-            window.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
-          const poll = window.setInterval(checkReady, 100);
-          window.setTimeout(() => {
-            window.clearInterval(poll);
+          const handler = () => {
+            initWindow.removeEventListener('hierarchidb-worker-init-complete', handler);
+            initWindow.__HDB_INIT_COMPLETE__ = true;
+            finish();
+          };
+          initWindow.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
+          const poll = initWindow.setInterval(checkReady, 100);
+          initWindow.setTimeout(() => {
+            initWindow.clearInterval(poll);
             finish();
           }, timeoutMs);
         });
       }
-      await g.__HDB_INIT_WAIT__;
-      g.__HDB_INIT_WAIT__ = null;
+      await initWindow.__HDB_INIT_WAIT__;
+      initWindow.__HDB_INIT_WAIT__ = null;
     };
 
     await ensureInitComplete();

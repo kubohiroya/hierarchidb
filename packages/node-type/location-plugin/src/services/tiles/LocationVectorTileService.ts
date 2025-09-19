@@ -13,7 +13,7 @@ export class LocationVectorTileService {
   }
 
   onProgress(sessionId: string, cb: (p: ProgressEvent) => void): () => void {
-    return this.manager.onProgress(sessionId, cb as any);
+    return this.manager.onProgress(sessionId, cb);
   }
 
   async getVectorTile(sessionId: string, nodeId: NodeId, z: number, x: number, y: number): Promise<Uint8Array | null> {

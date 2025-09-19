@@ -5,7 +5,7 @@ import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { getStageProcessingClient } from '@hierarchidb/runtime-worker';
 
 export interface LocationPointInput {
@@ -112,15 +112,9 @@ export class SessionController {
     const bytes = new TextEncoder().encode(json).buffer;
     const fileId = this.sessionId; // worker uses this as sessionId
     try {
-      const { service } = await createSharedDownloadService({ dbPrefix: 'hidb', perHostConcurrency: 2 });
-      const storage: any = (service as any)?.store;
-      if (storage?.putChunk && storage?.commit) {
-        await storage.putChunk(fileId, 0, bytes);
-        await storage.commit(fileId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
-      } else {
-        console.warn('[Location][Session] Shared storage not available; skipping tilegen');
-        return;
-      }
+      const storage = new DexieChunkStoragePort('hidb-chunks');
+      await storage.putChunk(fileId, 0, bytes);
+      await storage.commit(fileId, { sizeBytes: bytes.byteLength, contentType: 'application/json' });
     } catch (e) {
       console.error('[Location][Session] Failed to write input buffer for worker:', e);
       return;
@@ -128,7 +122,7 @@ export class SessionController {
 
     // 2) Delegate tile generation to runtime-worker
     const client = await getStageProcessingClient();
-    await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' as any });
+    await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
 
     // 3) Import generated tiles back into location DB for compatibility
     const list = await client.vectortile.listTiles(fileId);
@@ -140,7 +134,7 @@ export class SessionController {
       const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
       if (!u8) continue;
       // Ensure we store a plain ArrayBuffer (avoid SharedArrayBuffer unions)
-      const copy = new Uint8Array(u8 as Uint8Array);
+      const copy = new Uint8Array(u8);
       const data: ArrayBuffer = copy.buffer.slice(0);
       const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
       const hash = await sha256Hex(new Uint8Array(data));

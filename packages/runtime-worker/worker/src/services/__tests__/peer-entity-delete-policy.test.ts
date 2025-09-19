@@ -1,84 +1,129 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { CoreDB } from '../CoreDB.js';
 import { CommandProcessor } from '../CommandProcessor.js';
 import { storeRegistry } from '../../entity/store-registry.js';
-import type { PeerStore } from '../../entity/store.js';
+import type { PeerEntity, PeerStore } from '../../entity/store.js';
+
+const FOLDER_TYPE = 'folder' as NodeType;
+const TRASH_TYPE = 'trash' as NodeType;
+
+type TreeNodeState = Partial<Record<NodeId, TreeNode>>;
+
+interface CoreStub {
+  state: TreeNodeState;
+  getNode: (id: NodeId) => Promise<TreeNode | undefined>;
+  updateNode: (node: Partial<TreeNode> & { id: NodeId }) => Promise<void>;
+  deleteNode: (id: NodeId) => Promise<void>;
+  createNode: (node: TreeNode) => Promise<NodeId>;
+  listChildren: (parentId: NodeId) => Promise<TreeNode[]>;
+  trees: { toArray: () => Promise<Array<{ rootId: NodeId; trashRootId: NodeId }>> };
+}
+
+type FolderPeerData = { v: number };
 
 describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
-  let core: any;
-  let state: Record<string, TreeNode>;
-  const now = Date.now();
-  const makeNode = (id: string, parentId: string, nodeType: NodeType, name: string): TreeNode => ({
-    id: id as NodeId,
-    parentId: parentId as NodeId,
-    nodeType,
-    name,
-    depth: 1,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-  });
+  let core: CoreStub;
+  let state: TreeNodeState;
+  let folderPeerStore: PeerStore<FolderPeerData>;
+
+  const makeNode = (timestamp: number) =>
+    (id: string, parentId: string, nodeType: NodeType, name: string): TreeNode => ({
+      id: id as NodeId,
+      parentId: parentId as NodeId,
+      nodeType,
+      name,
+      depth: 1,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      version: 1,
+    });
 
   beforeEach(() => {
-    state = {
-      'r:superRoot': makeNode('r:superRoot', 'r:superRoot', 'folder' as any, 'super'),
-      'r:root': makeNode('r:root', 'r:superRoot', 'folder' as any, 'root'),
-      'r:trash': { ...makeNode('r:trash', 'r:superRoot', 'trash' as any, 'Trash'), nodeType: 'trash' as any },
-      a: makeNode('a', 'r:root', 'folder' as any, 'A'),
-    } as any;
+    const now = Date.now();
+    const buildNode = makeNode(now);
+    state = {};
+    state['r:superRoot' as NodeId] = buildNode('r:superRoot', 'r:superRoot', FOLDER_TYPE, 'super');
+    state['r:root' as NodeId] = buildNode('r:root', 'r:superRoot', FOLDER_TYPE, 'root');
+    state['r:trash' as NodeId] = {
+      ...buildNode('r:trash', 'r:superRoot', TRASH_TYPE, 'Trash'),
+      nodeType: TRASH_TYPE,
+    };
+    state['a' as NodeId] = buildNode('a', 'r:root', FOLDER_TYPE, 'A');
 
     core = {
-      getNode: vi.fn(async (id: NodeId) => state[id as unknown as string]),
-      updateNode: vi.fn(async (node: Partial<TreeNode> & { id: NodeId }) => {
-        state[node.id as unknown as string] = { ...(state[node.id as unknown as string] as any), ...node } as TreeNode;
-      }),
-      deleteNode: vi.fn(async (id: NodeId) => {
-        delete state[id as unknown as string];
-      }),
-      createNode: vi.fn(async (node: TreeNode) => {
-        state[node.id as unknown as string] = { ...node };
+      state,
+      async getNode(id: NodeId) {
+        return state[id];
+      },
+      async updateNode(node: Partial<TreeNode> & { id: NodeId }) {
+        const current = state[node.id];
+        if (!current) throw new Error(`Node ${String(node.id)} not found`);
+        state[node.id] = { ...current, ...node };
+      },
+      async deleteNode(id: NodeId) {
+        delete state[id];
+      },
+      async createNode(node: TreeNode) {
+        state[node.id] = { ...node };
         return node.id;
-      }),
-      listChildren: vi.fn(async (parentId: NodeId) => Object.values(state).filter((n: any) => n.parentId === parentId)),
-      trees: { toArray: vi.fn(async () => [{ rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId }]) },
+      },
+      async listChildren(parentId: NodeId) {
+        return Object.values(state).filter((node): node is TreeNode => Boolean(node && node.parentId === parentId));
+      },
+      trees: {
+        toArray: vi.fn(async () => [{ rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId }]),
+      },
     };
 
-    // Minimal PeerStore for 'folder'
-    const peer = new Map<string, any>();
-    const store: PeerStore<any> = {
-      async get(id: NodeId) { return peer.get(id as unknown as string); },
-      async put(e: any) { peer.set(e.nodeId as unknown as string, e); },
-      async delete(id: NodeId) { peer.delete(id as unknown as string); },
+    const entries = new Map<NodeId, PeerEntity<FolderPeerData>>();
+    folderPeerStore = {
+      async get(id: NodeId) {
+        return entries.get(id);
+      },
+      async put(entity: PeerEntity<FolderPeerData>) {
+        entries.set(entity.nodeId, { ...entity });
+      },
+      async delete(id: NodeId) {
+        entries.delete(id);
+      },
     };
-    storeRegistry.registerPeer('folder', store);
+    storeRegistry.registerPeer<FolderPeerData>(FOLDER_TYPE, folderPeerStore);
   });
 
+  function getFolderPeer(): PeerStore<FolderPeerData> {
+    const store = storeRegistry.getPeer<FolderPeerData>(FOLDER_TYPE);
+    if (!store) throw new Error('Expected folder peer store to be registered');
+    return store;
+  }
+
   it('moveToTrash keeps PeerEntity; recover keeps PeerEntity', async () => {
-    const cp = new CommandProcessor(core);
-    // seed peer entity for a
-    await (storeRegistry.getPeer('folder') as any).put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'standard' });
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const folderPeer = getFolderPeer();
 
-    // move to trash
-    const mt = cp.createEnvelope('moveToTrash', { nodeIds: ['a' as NodeId] } as any);
-    const r1 = await cp.processCommand(mt as any);
+    await folderPeer.put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'standard' });
+
+    const mt = cp.createEnvelope('moveToTrash', { nodeIds: ['a' as NodeId] });
+    const r1 = await cp.processCommand(mt);
     expect(r1.success).toBe(true);
-    expect((await (storeRegistry.getPeer('folder') as any).get('a' as any))?.data?.v).toBe(1);
+    const restoredAfterTrash = await folderPeer.get('a' as NodeId);
+    expect(restoredAfterTrash?.data?.v).toBe(1);
 
-    // recover from trash
-    const rc = cp.createEnvelope('recoverFromTrash', { nodeIds: ['a' as NodeId] } as any);
-    const r2 = await cp.processCommand(rc as any);
+    const rc = cp.createEnvelope('recoverFromTrash', { nodeIds: ['a' as NodeId] });
+    const r2 = await cp.processCommand(rc);
     expect(r2.success).toBe(true);
-    expect((await (storeRegistry.getPeer('folder') as any).get('a' as any))?.data?.v).toBe(1);
+    const restoredAfterRecover = await folderPeer.get('a' as NodeId);
+    expect(restoredAfterRecover?.data?.v).toBe(1);
   });
 
   it('remove (permanent delete) deletes PeerEntity', async () => {
-    const cp = new CommandProcessor(core);
-    await (storeRegistry.getPeer('folder') as any).put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'maximized' });
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const folderPeer = getFolderPeer();
+    await folderPeer.put({ nodeId: 'a' as NodeId, data: { v: 1 }, displayMode: 'maximized' });
 
-    const rm = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId] } as any);
-    const r = await cp.processCommand(rm as any);
-    expect(r.success).toBe(true);
-    expect(await (storeRegistry.getPeer('folder') as any).get('a' as any)).toBeUndefined();
+    const rm = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId] });
+    const result = await cp.processCommand(rm);
+    expect(result.success).toBe(true);
+    await expect(folderPeer.get('a' as NodeId)).resolves.toBeUndefined();
   });
 });
-

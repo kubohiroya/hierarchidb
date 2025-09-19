@@ -24,6 +24,13 @@ function parseArgs(): Args {
 
 const EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs', '.cjs'])
 
+const logCodemodWarning = (message: string, error: unknown): void => {
+  if (error && typeof (error as NodeJS.ErrnoException).code === 'string' && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+    return
+  }
+  console.warn('[esm-ext-codemod]', message, error)
+}
+
 function needsExtension(spec: string): boolean {
   if (!spec.startsWith('.')) return false
   const parsed = path.parse(spec)
@@ -41,7 +48,9 @@ function resolveIndexIfDir(absFrom: string, rel: string): string | null {
       )
       if (idx) return rel.replace(/\/$/, '') + (rel.endsWith('/') ? '' : '/') + 'index.js'
     }
-  } catch {}
+  } catch (error) {
+    logCodemodWarning(`Failed to resolve directory at ${abs}`, error as unknown)
+  }
   return null
 }
 
@@ -107,4 +116,3 @@ main().catch((e) => {
   console.error(e)
   process.exit(1)
 })
-

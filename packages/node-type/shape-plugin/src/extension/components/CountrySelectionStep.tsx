@@ -9,33 +9,30 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import { Step5CountrySelection } from '../../components/steps/Step5CountrySelection.js';
+import type { ShapeWorkingCopy } from '../../shared/index.js';
+
+type ShapeDialogData = Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
 
 export interface CountrySelectionStepProps {
-  data: any;
-  onNext: (data: any) => void;
+  data?: ShapeDialogData | null;
+  onNext: (data: ShapeDialogData) => void;
   onPrevious: () => void;
   errors?: string[];
 }
 
-export const CountrySelectionStep: React.FC<CountrySelectionStepProps> = ({
-                                                                            data,
-                                                                            onNext,
-                                                                            onPrevious,
-                                                                            errors,
-                                                                          }) => {
-  const wc = (data || {}) as any;
+export const CountrySelectionStep: React.FC<CountrySelectionStepProps> = ({ data, onNext, onPrevious, errors }) => {
+  const dialogData: ShapeDialogData = typeof data === 'object' && data !== null ? { ...data } : {};
+
+  const handleUpdate = (updates: Partial<ShapeWorkingCopy>) => {
+    onNext({ ...dialogData, ...updates });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step5CountrySelection
-          workingCopy={{
-            ...wc,
-            selectedCountries: wc.selectedCountries || [],
-          }}
-          onUpdate={(updates) => {
-            const updatedData = { ...wc, ...updates };
-            onNext(updatedData);
-          }}
+          workingCopy={dialogData}
+          onUpdate={handleUpdate}
           disabled={false}
         />
 
@@ -59,8 +56,8 @@ export const CountrySelectionStep: React.FC<CountrySelectionStepProps> = ({
         <Button onClick={onPrevious}>Previous</Button>
         <Button
           variant="contained"
-          onClick={() => onNext(wc)}
-          disabled={!wc.selectedCountries || wc.selectedCountries.length === 0}
+          onClick={() => onNext(dialogData)}
+          disabled={!dialogData.selectedCountries || dialogData.selectedCountries.length === 0}
         >
           Finish
         </Button>

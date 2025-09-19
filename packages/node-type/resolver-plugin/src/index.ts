@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+import type { ResolverDialogProps } from './components/ResolverDialog.js';
 
 // Export types
 export type {
@@ -32,9 +34,9 @@ export {
 } from './components/index.js';
 
 // Standard entry for PluginDialogRoute to discover dialog component
-export async function getDialogComponent() {
+export async function getDialogComponent(): Promise<ComponentType<ResolverDialogProps>> {
   const mod = await import('./components/ResolverDialog.js');
-  return (mod as any).ResolverDialog;
+  return mod.ResolverDialog;
 }
 
 // Register host-composed steps on import (idempotent)
@@ -48,4 +50,4 @@ import './ui/steps-provider';
 // Plugin definition exports removed: metadata is sourced from package.json
 
 // Optional runtime wiring (no-op)
-export const runtimeWiring = {} as const;
+export class RuntimeWiring {}

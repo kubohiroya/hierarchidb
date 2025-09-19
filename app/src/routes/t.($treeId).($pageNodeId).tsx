@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from 'react-router';
+import type { LoaderFunctionArgs, ShouldRevalidateFunction } from 'react-router';
 import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import {
@@ -19,32 +19,39 @@ import {
 } from '@mui/material';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { loadPageNode, type LoadPageNodeArgs } from '~/loader.js';
+import { loadPageNode } from '~/loader.js';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
 import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 
-export async function clientLoader(args: LoaderFunctionArgs) {
-  const params = args.params as LoadPageNodeArgs;
-  const pageNodeId = params.pageNodeId || (`${params.treeId}:root` as NodeId);
-  return await loadPageNode({ ...params, pageNodeId });
+type LoaderData = Awaited<ReturnType<typeof loadPageNode>>;
+
+export async function clientLoader({ params }: LoaderFunctionArgs) {
+  const { treeId } = params;
+  if (!treeId) {
+    throw new Response('Missing treeId parameter.', { status: 400 });
+  }
+  const pageNodeId: NodeId = (params.pageNodeId ?? `${treeId}:root`) as NodeId;
+  return await loadPageNode({ treeId, pageNodeId });
 }
 
 export default function TLayout() {
-  const data = useLoaderData() as Awaited<ReturnType<typeof clientLoader>>;
+  const data = useLoaderData<LoaderData>();
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
   const [notFoundOpen, setNotFoundOpen] = useState<boolean>(nodeNotFound);
-  useEffect(() => { setNotFoundOpen(nodeNotFound); }, [nodeNotFound]);
+  useEffect(() => {
+    setNotFoundOpen(nodeNotFound);
+  }, [nodeNotFound]);
 
   useEffect(() => {
     const loadTrees = async () => {
       try {
-        const client = await WorkerAPIClient.getSingleton();
+        const client = await WorkerAPIClient.getOrInit();
         const queryAPI = await client.getQueryAPI();
         const availableTrees = await queryAPI.listTrees();
         setTrees(availableTrees);
@@ -149,13 +156,13 @@ export default function TLayout() {
 
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         {nodeNotFound ? (
-          <Dialog open={notFoundOpen} onClose={() => navigate(`/t/${data.tree?.id || 'r'}`)}>
+          <Dialog open={notFoundOpen} onClose={() => navigate(`/t/${data.tree?.id ?? 'r'}`)}>
             <DialogTitle>Node Not Found</DialogTitle>
             <DialogContent>
-              <Typography>Node Not Found: ({data.pageNodeId || 'Unknown'})</Typography>
+              <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => navigate(`/t/${data.tree?.id || 'r'}`)} variant="contained" autoFocus>
+              <Button onClick={() => navigate(`/t/${data.tree?.id ?? 'r'}`)} variant="contained" autoFocus>
                 Go to Tree Root
               </Button>
             </DialogActions>
@@ -163,7 +170,7 @@ export default function TLayout() {
         ) : (
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}>
             <TreeConsoleIntegration
-              key={`${data.tree?.id || ''}:${data.pageNodeId || ''}`}
+              key={`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`}
               treeId={data.tree?.id}
               pageNodeId={data.pageNodeId}
               pageTreeNode={data.pageNode}
@@ -177,10 +184,9 @@ export default function TLayout() {
   );
 }
 
-export function shouldRevalidate(args: any) {
-  try {
-    return args.currentParams?.pageNodeId !== args.nextParams?.pageNodeId || args.currentParams?.treeId !== args.nextParams?.treeId;
-  } catch {
-    return true;
-  }
-}
+export const shouldRevalidate: ShouldRevalidateFunction = ({ currentParams, nextParams }) => {
+  return (
+    currentParams?.pageNodeId !== nextParams?.pageNodeId ||
+    currentParams?.treeId !== nextParams?.treeId
+  );
+};

@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import type { RouteObject } from 'react-router-dom';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import routes from './routes.js';
-import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
+import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/node-type-folder-plugin';
 import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider.js';
 import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
@@ -35,7 +35,7 @@ createApp().then((router) => {
   startTransition(() => {
     const root = document.getElementById('root');
     if (!root) throw new Error('Root element not found');
-    const base = (import.meta as any)?.env?.BASE_URL || (document?.baseURI ? new URL(document.baseURI).pathname : '/');
+    const base = import.meta?.env?.BASE_URL || (document?.baseURI ? new URL(document.baseURI).pathname : '/');
     const b = typeof base === 'string' ? base : '/';
     if (b && b !== '/' && location.pathname.startsWith(b) && !location.hash) {
       const rest = location.pathname.slice(b.length - (b.endsWith('/') ? 1 : 0));

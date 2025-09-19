@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
-import { BaseEntityHandler } from '@hierarchidb/base-plugin';
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import { resolverDB } from '../database/ResolverDatabase.js';
 import type {
   DataTransformation,

@@ -24,18 +24,21 @@ export async function createBatchManager() {
   return createRouteBatchManager();
 }
 
-export const lifecycle = {
-  async onCreate(nodeId: NodeId): Promise<void> {
+export class Lifecycle {
+  static async onCreate(nodeId: NodeId): Promise<void> {
     // lightweight log only; real work should live in handler
     console.log(`[RoutePlugin] onCreate: ${nodeId}`);
-  },
-  async afterCreate(node: TreeNode): Promise<void> {
+  }
+
+  static async afterCreate(node: TreeNode): Promise<void> {
     console.log(`[RoutePlugin] afterCreate: ${node.id}`);
-  },
-  async beforeDelete(node: TreeNode): Promise<void> {
+  }
+
+  static async beforeDelete(node: TreeNode): Promise<void> {
     console.log(`[RoutePlugin] beforeDelete: ${node.id}`);
-  },
-  async afterUpdate(node: TreeNode): Promise<void> {
+  }
+
+  static async afterUpdate(node: TreeNode): Promise<void> {
     console.log(`[RoutePlugin] afterUpdate: ${node.id}`);
-  },
-} as const;
+  }
+}

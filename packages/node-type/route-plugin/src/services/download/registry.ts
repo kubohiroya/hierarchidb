@@ -1,16 +1,9 @@
-import type { NetworkPortLike } from '../../orchestrator/RouteSourceOrchestrator.js';
-import { createRouteDownloadService } from './factory.js';
+import { createRouteDownloadService, type RouteDownloadFactoryOptions, type RouteDownloadService } from './factory.js';
 
-export interface RouteDownloadService {
-  service: { download: (url: string, fileId: string) => Promise<any> };
-  readAll: (fileId: string) => Promise<ArrayBuffer>;
-  net: NetworkPortLike;
-}
-
-type Factory = (opts?: { dbPrefix?: string; perHostConcurrency?: number }) => Promise<RouteDownloadService>;
+type Factory = (opts?: RouteDownloadFactoryOptions) => Promise<RouteDownloadService>;
 
 let factory: Factory | null = null;
-let authNotifier: ((info: { resource: string; provider?: string; hint?: string; status?: number }) => void) | null = null;
+let authNotifier: RouteAuthNotifier | null = null;
 
 /**
  * Allow host app to inject a shared download service (auth headers, CAS, concurrency),
@@ -23,26 +16,74 @@ export function registerRouteDownloadServiceFactory(f: Factory): void {
 /**
  * Resolve the route download service. Falls back to the built-in factory.
  */
-export async function getRouteDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }): Promise<RouteDownloadService> {
-  const f = factory ?? (async (o?: { dbPrefix?: string; perHostConcurrency?: number }) => createRouteDownloadService(o) as any);
-  return f(opts);
+export async function getRouteDownloadService(opts?: RouteDownloadFactoryOptions): Promise<RouteDownloadService> {
+  const effectiveFactory = factory ?? createRouteDownloadService;
+  return effectiveFactory(opts);
 }
 
 /**
  * Register an auth-notification callback consumed by the orchestrator.
  */
-export function registerRouteAuthNotifier(fn: (info: { resource: string; provider?: string; hint?: string; status?: number }) => void): void {
+export type RouteAuthNotification = {
+  resource: string;
+  provider?: string;
+  hint?: string;
+  status?: number;
+};
+
+export type RouteAuthNotifier = (info: RouteAuthNotification) => void;
+
+export function registerRouteAuthNotifier(fn: RouteAuthNotifier): void {
   authNotifier = fn;
 }
 
 /**
  * Notify registered callbacks (with a global fallback used in older UIs).
  */
-export function notifyAuthRequired(info: { resource: string; provider?: string; hint?: string; status?: number }): void {
+export function notifyAuthRequired(info: RouteAuthNotification): void {
   if (authNotifier) {
     authNotifier(info); return;
   }
-  const g: any = globalThis as any;
-  const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-  reg?.onAuthRequired?.(info);
+  const registry = resolveAuthRegistry();
+  registry?.onAuthRequired?.(info);
+}
+
+export interface AuthNotificationRegistry {
+  onAuthRequired?(payload: AuthNotificationPayload): void;
+  getInstance?(): unknown;
+}
+
+export interface AuthNotificationPayload {
+  resource: string;
+  provider?: string;
+  hint?: string;
+  status?: number;
+}
+
+export function resolveAuthRegistry(): AuthNotificationRegistry | undefined {
+  const globalRecord = globalThis as Record<string, unknown>;
+  const candidates: unknown[] = [
+    globalRecord.AuthNotificationRegistry,
+    globalRecord.authNotificationRegistry,
+    globalRecord.authRegistry,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (isAuthRegistry(candidate)) return candidate;
+    if (typeof candidate === 'object' && candidate !== null) {
+      const factoryCandidate = candidate as { getInstance?: () => unknown };
+      if (typeof factoryCandidate.getInstance === 'function') {
+        const instance = factoryCandidate.getInstance();
+        if (isAuthRegistry(instance)) return instance;
+      }
+    }
+  }
+  return undefined;
+}
+
+function isAuthRegistry(value: unknown): value is AuthNotificationRegistry {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.onAuthRequired === 'function';
 }

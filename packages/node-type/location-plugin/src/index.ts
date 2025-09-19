@@ -24,43 +24,66 @@ export { registerLocationSharedDownloadService } from './services/download/regis
 // Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
+type GlobalScope = Record<string, unknown>;
+
 function readNumberEnv(name: string, fallback: number): number {
   try {
-    const g: any = (globalThis as any);
-    const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
-    const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
-    const n = Number(v);
-    return isFinite(n) ? n : fallback;
-  } catch { return fallback; }
+    const scope = globalThis as GlobalScope;
+    const env = typeof process !== 'undefined' && process?.env ? process.env : {};
+    const storage = typeof localStorage !== 'undefined' ? localStorage : undefined;
+    const value = storage?.getItem(name) ?? (scope[name] as string | undefined) ?? env?.[name];
+    if (value == null) return fallback;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-export const runtimeWiring = {
-  registerSharedDownloadService: () => {
+export class RuntimeWiring {
+  static registerSharedDownloadService(): void {
     try {
       const phc = readNumberEnv('LOCATION_PER_HOST_CONCURRENCY', 4);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { registerLocationSharedDownloadService } = require('./services/download/registerSharedDownloadService');
+      const { registerLocationSharedDownloadService } = require('./services/download/registerSharedDownloadService') as typeof import('./services/download/registerSharedDownloadService.js');
       registerLocationSharedDownloadService({ perHostConcurrency: phc });
-    } catch { /* noop */ }
-  },
-  registerAuthNotifier: () => {
+    } catch {
+      /* noop */
+    }
+  }
+
+  static registerAuthNotifier(): void {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { registerLocationAuthNotifier } = require('./services/download/registry');
-      registerLocationAuthNotifier((info: any) => {
+      const { registerLocationAuthNotifier } = require('./services/download/registry') as typeof import('./services/download/registry.js');
+      registerLocationAuthNotifier((info) => {
         try {
-          const g: any = globalThis as any;
-          const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+          const scope = globalThis as GlobalScope & {
+            AuthNotificationRegistry?: {
+              getInstance?: () => { onAuthRequired?: (payload: typeof info) => void };
+            };
+            authNotificationRegistry?: { onAuthRequired?: (payload: typeof info) => void };
+            authRegistry?: { onAuthRequired?: (payload: typeof info) => void };
+          };
+          const reg = scope.AuthNotificationRegistry?.getInstance?.()
+            ?? scope.authNotificationRegistry
+            ?? scope.authRegistry;
           reg?.onAuthRequired?.(info);
-        } catch { /* noop */ }
+        } catch {
+          /* noop */
+        }
       });
-    } catch { /* noop */ }
-  },
-  registerRuntimeWorkerAdapters: async () => {
+    } catch {
+      /* noop */
+    }
+  }
+
+  static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
       const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerLocationRuntimeWorkerAdapters();
-    } catch { /* noop */ }
-  },
-} as const;
+    } catch {
+      /* noop */
+    }
+  }
+}

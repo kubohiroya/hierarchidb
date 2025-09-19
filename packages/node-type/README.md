@@ -185,7 +185,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 - 定義
   - `BasePluginDefinition`: 継承用の内部定義（UI 非表示）。
 
-これらは `@hierarchidb/base-plugin` から提供され、各プラグイン（folder/shape/route 等）が自前のハンドラ実装で再利用します。
+これらは `@hierarchidb/node-type-base-plugin` から提供され、各プラグイン（folder/shape/route 等）が自前のハンドラ実装で再利用します。
 
 #### 3x2エンティティ管理マトリクス（プラグイン別）
 

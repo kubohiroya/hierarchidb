@@ -28,7 +28,8 @@ describe('Headless metrics (command latency)', () => {
       }),
     );
     // Ping (registered success)
-    await cp.processCommand(cp.createEnvelope('ping', {} as any));
+    const pingPayload: Record<string, never> = {};
+    await cp.processCommand(cp.createEnvelope('ping', pingPayload));
 
     const snap = commandMetrics.snapshot();
     expect(snap['createNode']?.count ?? 0).toBeGreaterThan(0);

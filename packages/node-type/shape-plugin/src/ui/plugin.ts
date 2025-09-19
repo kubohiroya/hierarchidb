@@ -17,7 +17,7 @@ export const ShapeUIPlugin = {
   components: {
     DialogComponent: ShapeDialog,
     PanelComponent: ShapePanel,
-    IconComponent: undefined as any, // Could add a custom icon component
+    IconComponent: undefined, // Could add a custom icon component
   },
 
   // UI-specific validation (immediate feedback)

@@ -113,7 +113,7 @@ export class ShapePluginAPI implements ShapesAPIMethods {
     return {
       sessionId: 'mock-session-' + Date.now(),
       nodeId,
-      status: 'running' as any,
+      status: 'running',
       config,
       startedAt: Date.now(),
       updatedAt: Date.now(),
@@ -281,8 +281,8 @@ export class ShapePluginAPI implements ShapesAPIMethods {
         statistics: {
           activeSessions: activeSessions.length,
           queuedTasks: totalQueuedTasks,
-          cachedTiles: (cacheStats.byType?.tiles as any)?.count || 0,
-          storedFeatures: (cacheStats.byType?.features as any)?.count || 0,
+          cachedTiles: cacheStats.byType?.tiles?.count ?? 0,
+          storedFeatures: cacheStats.byType?.features?.count ?? 0,
         },
       };
     } catch (error) {

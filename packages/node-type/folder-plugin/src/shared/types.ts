@@ -20,7 +20,7 @@ export interface CreateFolderData {
   description?: string;
   settings?: FolderSettings;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateFolderData {
@@ -28,7 +28,7 @@ export interface UpdateFolderData {
   description?: string;
   settings?: Partial<FolderSettings>;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -150,7 +150,7 @@ export class FolderError extends Error {
   constructor(
     public type: FolderErrorType,
     message: string,
-    public details?: Record<string, any>,
+    public details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'FolderError';
@@ -186,16 +186,22 @@ export const FOLDER_CONSTANTS = {
 /**
  * Type guards
  */
-export function isFolderEntity(obj: any): obj is FolderEntity {
+export function isFolderEntity(obj: unknown): obj is FolderEntity {
+  if (!obj || typeof obj !== 'object') return false;
+  const candidate = obj as Partial<FolderEntity> & { id?: NodeId; nodeId?: NodeId };
+  const identifier = typeof candidate.id === 'string' ? candidate.id : candidate.nodeId;
   return (
-    obj &&
-    typeof obj === 'object' &&
-    typeof obj.nodeId === 'string' &&
-    typeof obj.name === 'string' &&
-    typeof obj.createdAt === 'number' &&
-    typeof obj.updatedAt === 'number' &&
-    typeof obj.version === 'number'
+    typeof identifier === 'string' &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.createdAt === 'number' &&
+    typeof candidate.updatedAt === 'number' &&
+    typeof candidate.version === 'number'
   );
+}
+
+export interface FolderPeerData {
+  schemaVersion: 1;
+  domain: Record<string, unknown>;
 }
 
 export function isValidFolderName(name: string): boolean {

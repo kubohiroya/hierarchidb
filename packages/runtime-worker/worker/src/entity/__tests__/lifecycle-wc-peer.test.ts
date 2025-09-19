@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
-import type { PeerStore } from '../store.js';
+import type { PeerEntity, PeerStore } from '../store.js';
 
 describe('EntityLifecycleManager working copy peer (create/discard)', () => {
   beforeEach(() => {
@@ -10,51 +11,83 @@ describe('EntityLifecycleManager working copy peer (create/discard)', () => {
   });
 
   it('copies peer on createWorkingCopy and deletes on discardWorkingCopy', async () => {
-    const nodeMap = new Map<string, any>();
-    const core: any = {
-      nodes: {
-        async get(id: NodeId) {
-          return nodeMap.get(id as unknown as string);
-        },
-        _put(obj: any) {
-          nodeMap.set(obj.id as unknown as string, obj);
-        },
-      },
-      getNode: async (id: NodeId) => nodeMap.get(id as unknown as string),
+    const nodeMap = new Map<NodeId, TreeNode>();
+    const core: Pick<CoreDB, 'getNode'> = {
+      getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
     };
 
-    const peer = new Map<string, any>();
-    const store: PeerStore<any> = {
+    const peer = new Map<NodeId, PeerEntity<{ k: number }>>();
+    const store: PeerStore<{ k: number }> = {
       async get(id: NodeId) {
-        return peer.get(id as unknown as string);
+        return peer.get(id);
       },
-      async put(e: any) {
-        peer.set(e.nodeId as unknown as string, e);
+      async put(entity) {
+        peer.set(entity.nodeId, { ...entity });
       },
       async delete(id: NodeId) {
-        peer.delete(id as unknown as string);
+        peer.delete(id);
       },
     };
-    storeRegistry.registerPeer('folder', store);
+    const folderType = 'folder' as NodeType;
+    storeRegistry.registerPeer(folderType, store);
 
     const originalId = 'orig' as NodeId;
     const wcId = 'wcX' as NodeId;
-    core.nodes._put({ id: originalId, parentId: 'p', nodeType: 'folder', name: 'N' });
+    const holderId = 'holder' as NodeId;
+    nodeMap.set(originalId, {
+      id: originalId,
+      parentId: 'p' as NodeId,
+      nodeType: folderType,
+      name: 'Original',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    });
+    nodeMap.set(holderId, {
+      id: holderId,
+      parentId: holderId,
+      nodeType: folderType,
+      name: 'holder',
+      depth: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    });
     await store.put({ nodeId: originalId, data: { k: 1 } });
 
-    const mgr = (EntityLifecycleManager as any).getSingleton(core) as EntityLifecycleManager;
+    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
 
     await mgr.onCreateWorkingCopy({
-      commandId: 'c1', groupId: 'g1', kind: 'createWorkingCopy',
-      payload: { originalId, workingCopyId: wcId }, issuedAt: Date.now(), type: 'createWorkingCopy',
-    } as any);
+      commandId: 'c1',
+      groupId: 'g1',
+      kind: 'createWorkingCopy',
+      payload: { originalId, workingCopyId: wcId },
+      issuedAt: Date.now(),
+      type: 'createWorkingCopy',
+    });
 
     expect((await store.get(wcId))?.data?.k).toBe(1);
 
+    nodeMap.set(wcId, {
+      id: wcId,
+      parentId: holderId,
+      nodeType: folderType,
+      name: 'Draft',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    });
+
     await mgr.onDiscardWorkingCopy({
-      commandId: 'c2', groupId: 'g1', kind: 'discardWorkingCopy',
-      payload: { workingCopyId: wcId }, issuedAt: Date.now(), type: 'discardWorkingCopy',
-    } as any);
+      commandId: 'c2',
+      groupId: 'g1',
+      kind: 'discardWorkingCopy',
+      payload: { workingCopyId: wcId },
+      issuedAt: Date.now(),
+      type: 'discardWorkingCopy',
+    });
 
     expect(await store.get(wcId)).toBeUndefined();
   });

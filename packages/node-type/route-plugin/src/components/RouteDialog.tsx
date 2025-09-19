@@ -43,58 +43,76 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   onError,
 }) => {
   const { t } = useTranslation();
-  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({ nodeType: 'route', mode, nodeId: nodeId as any, parentId: parentId as any });
+  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({
+    nodeType: 'route',
+    mode,
+    nodeId,
+    parentId,
+  });
   // Initialize working copy from Worker when dialog opens
   useEffect(() => { if (open) { void init(); } }, [open, init]);
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
+  const updateWorkingCopy = useCallback((updater: (prev: RouteWorkingCopy) => RouteWorkingCopy) => {
+    setWorkingCopy((prev) => (prev ? updater(prev) : prev));
+  }, [setWorkingCopy]);
+
+  const applyUpdates = useCallback((updates: Partial<RouteWorkingCopy>) => {
+    updateWorkingCopy((prev) => ({ ...prev, ...updates }));
+  }, [updateWorkingCopy]);
+
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
-    return Boolean((workingCopy as any).name?.trim()) && Boolean((workingCopy as any).routeType) &&
-      Array.isArray((workingCopy as any).transportModes) && (workingCopy as any).transportModes.length > 0;
+    if (!workingCopy) return false;
+    const { name, routeType, transportModes } = workingCopy;
+    return Boolean(name?.trim()) && Boolean(routeType) && Array.isArray(transportModes) && transportModes.length > 0;
   }, [workingCopy]);
   const isSelectionValid = true; // keep permissive; selection completeness is reflected after calculation
   const isProcessingValid = true;
 
-  const steps: DialogStep[] = useMemo(() => [
-    {
-      id: '1',
-      label: t('base-dialog.steps.basicInfo', 'Basic Information'),
-      component: (
-        <RouteBasicInfoStep
-          workingCopy={workingCopy as any}
-          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
-          onValidationChange={() => {/* computed above */}}
-        />
-      ),
-      validate: async () => isBasicValid,
-    },
-    {
-      id: '2',
-      label: t('base-dialog.steps.routeSelection', 'Route Selection'),
-      component: (
-        <RouteSelectionStep
-          workingCopy={workingCopy as any}
-          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
-          onValidationChange={() => {/* computed above */}}
-        />
-      ),
-      validate: async () => isSelectionValid,
-    },
-    {
-      id: '3',
-      label: t('base-dialog.steps.processing', 'Processing'),
-      component: (
-        <RouteProcessingStep
-          workingCopy={workingCopy as any}
-          onUpdate={(updates) => setWorkingCopy((prev: any) => ({ ...prev, ...updates }))}
-          onValidationChange={() => {/* computed above */}}
-        />
-      ),
-      validate: async () => isProcessingValid,
-    },
-  ], [workingCopy, isBasicValid]);
+  const steps: DialogStep[] = useMemo(() => {
+    if (!workingCopy) return [];
+    const handleUpdate = (updates: Partial<RouteWorkingCopy>) => applyUpdates(updates);
+    return [
+      {
+        id: '1',
+        label: t('base-dialog.steps.basicInfo', 'Basic Information'),
+        component: (
+          <RouteBasicInfoStep
+            workingCopy={workingCopy}
+            onUpdate={handleUpdate}
+            onValidationChange={() => {/* computed above */}}
+          />
+        ),
+        validate: async () => isBasicValid,
+      },
+      {
+        id: '2',
+        label: t('base-dialog.steps.routeSelection', 'Route Selection'),
+        component: (
+          <RouteSelectionStep
+            workingCopy={workingCopy}
+            onUpdate={handleUpdate}
+            onValidationChange={() => {/* computed above */}}
+          />
+        ),
+        validate: async () => isSelectionValid,
+      },
+      {
+        id: '3',
+        label: t('base-dialog.steps.processing', 'Processing'),
+        component: (
+          <RouteProcessingStep
+            workingCopy={workingCopy}
+            onUpdate={handleUpdate}
+            onValidationChange={() => {/* computed above */}}
+          />
+        ),
+        validate: async () => isProcessingValid,
+      },
+    ];
+  }, [applyUpdates, isBasicValid, isProcessingValid, isSelectionValid, t, workingCopy]);
 
   const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid]);
   const navigableSteps = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid]);
@@ -157,12 +175,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     onClose();
   }, [discard, onClose]);
 
-  const isTestEnv = useMemo(() => (
-    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.MODE === 'test') ||
-    (typeof process !== 'undefined' && (process as any)?.env?.NODE_ENV === 'test')
-  ), []);
+  const isTestEnv = useMemo(() => {
+    const metaEnv = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env?.MODE;
+    const processEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
+    return metaEnv === 'test' || processEnv === 'test';
+  }, []);
 
-  const renderHeader: HeadlessMultiStepDialogProps<any>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<any>) => (
+  const renderHeader: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteWorkingCopy | null>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
       <div>
         <strong>{t('base-dialog.title', 'Route Configuration')}</strong>
@@ -177,13 +196,13 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     </header>
   ), [handleNavigation, steps.length, t]);
 
-  const renderContent: HeadlessMultiStepDialogProps<any>['renderContent'] = useCallback((props: HeadlessContentRenderProps<any>) => (
+  const renderContent: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderContent'] = useCallback((props: HeadlessContentRenderProps<RouteWorkingCopy | null>) => (
     <div style={{ padding: 16 }}>
       {steps[props.activeStepIndex]?.component}
     </div>
   ), [steps]);
 
-  const renderFooter: HeadlessMultiStepDialogProps<any>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<any>) => {
+  const renderFooter: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<RouteWorkingCopy | null>) => {
     const allFilled = filledSteps.every(Boolean);
     return (
       <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
@@ -202,7 +221,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     );
   }, [filledSteps, handleNavigation, isTestEnv]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<RouteWorkingCopy | null>>>(() => (
     steps.map((step) => ({ id: step.id, label: step.label, component: () => null }))
   ), [steps]);
 
@@ -212,8 +231,11 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     <HeadlessMultiStepDialog
       open={open}
       stepComponents={stepDescriptors}
-      stepData={workingCopy ?? {}}
-      onStepDataChange={(patch) => setWorkingCopy((prev: any) => ({ ...prev, ...patch }))}
+      stepData={workingCopy}
+      onStepDataChange={(patch) => {
+        if (!patch || !workingCopy) return;
+        applyUpdates(patch as Partial<RouteWorkingCopy>);
+      }}
       activeStepIndex={activeStepIndex}
       onStepNavigate={handleNavigation}
       enabledStepIndices={enabledStepIndices}

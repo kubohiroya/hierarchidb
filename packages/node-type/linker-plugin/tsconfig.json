@@ -8,8 +8,7 @@
         "./src/*"
       ],
       "@hierarchidb/runtime-worker-bootstrap": [
-        "../../runtime-worker/worker-bootstrap/dist",
-        "../../runtime-worker/worker-bootstrap/src/index.ts"
+        "../../runtime-worker/worker-bootstrap/dist"
       ]
     },
     "types": [

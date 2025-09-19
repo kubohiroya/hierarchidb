@@ -1,41 +1,34 @@
 import type { Plugin } from 'vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import {
+  discoverNodeTypePlugins,
+  pickPreferredServiceSubpath,
+} from '@hierarchidb/tools-plugin-registry-utils';
 
 export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
   const rootDir = opts?.rootDir || path.resolve(__dirname, '..');
-  const NP_DIR = path.resolve(rootDir, 'packages', 'node-type');
   const ID = 'virtual:plugin-registry-services';
   const RES = '\0' + ID + '.js';
 
-  function readJsonSafe(p: string): any | null {
-    try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { return null; }
-  }
+  const logPluginWarn = (message: string, error: unknown): void => {
+    console.warn(`[vite-plugin-plugin-services] ${message}`, error);
+  };
 
-  function collect(): Array<{ nodeType: string; pkgName: string; sub: string, srcPath?: string }>{
-    const out: Array<{ nodeType: string; pkgName: string; sub: string, srcPath?: string }> = [];
-    if (!fs.existsSync(NP_DIR)) return out;
-    for (const dirent of fs.readdirSync(NP_DIR, { withFileTypes: true })) {
-      if (!dirent.isDirectory() || !/-plugin$/.test(dirent.name)) continue;
-      const pkgPath = path.join(NP_DIR, dirent.name, 'package.json');
-      if (!fs.existsSync(pkgPath)) continue;
-      const pkg = readJsonSafe(pkgPath) as any;
-      const pkgName = pkg?.name as string;
-      if (!pkgName) continue;
-      const nodeType = (pkg?.hierarchidb?.plugin?.nodeType as string) || dirent.name.replace(/-plugin$/, '');
-      const ex = pkg?.exports || {};
-      const has = (k: string) => typeof ex === 'object' && !!ex[k];
-      const sub = has('./services') ? '/services' : has('./database') ? '/database' : has('./shared') ? '/shared' : has('.') ? '' : '';
-      // Prefer src during dev if available (ensures resolution even when dist missing)
-      let srcPath: string | undefined;
-      if (sub) {
-        const subDir = sub.replace(/^\//, '');
-        const candidate = path.join(NP_DIR, dirent.name, 'src', subDir, 'index.ts');
-        if (fs.existsSync(candidate)) srcPath = candidate;
-      }
-      out.push({ nodeType, pkgName, sub, srcPath });
-    }
-    return out.sort((a,b)=> a.nodeType.localeCompare(b.nodeType));
+  const toImportSuffix = (exportKey: string): string => {
+    if (exportKey === '.') return '';
+    return `/${exportKey.replace(/^\.\//, '')}`;
+  };
+
+  function collect(): Array<{ nodeType: string; pkgName: string; sub: string }> {
+    const plugins = discoverNodeTypePlugins({ rootDir });
+    return plugins
+      .map((info) => {
+        const preferred = pickPreferredServiceSubpath(info);
+        const sub = preferred ? toImportSuffix(preferred.exportKey) : '';
+        return { nodeType: info.nodeType, pkgName: info.packageName, sub };
+      })
+      .sort((a, b) => a.nodeType.localeCompare(b.nodeType));
   }
 
   function generate(): string {
@@ -43,19 +36,21 @@ export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
     const debugMode = process.env.HDB_SERVICES_DEBUG_MODE || '';
     if (debugMode === 'one') {
       const first = list.find(Boolean);
-      const pkgName = first?.pkgName || '@hierarchidb/basemap-plugin';
+      const pkgName = first?.pkgName || '@hierarchidb/node-type-basemap-plugin';
       const sub = first?.sub || '/database';
       const code = `export const pluginServices = Object.freeze({ basemap: () => import('${pkgName}${sub}') });\n`;
       try {
         const outDir = path.resolve(rootDir, 'app/.debug');
         if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
         fs.writeFileSync(path.join(outDir, 'plugin-registry-services.generated.js'), code, 'utf-8');
-      } catch {}
+      } catch (error) {
+        logPluginWarn('Failed to write debug plugin services registry', error);
+      }
       return code;
     }
 
     const ents = list
-      .map(({ nodeType, pkgName, sub, srcPath }) => {
+      .map(({ nodeType, pkgName, sub }) => {
         if (sub) {
           return (
             `  '${nodeType}': () => import('${pkgName}${sub}')` +
@@ -77,7 +72,9 @@ export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
       const outDir = path.resolve(rootDir, 'app/.debug');
       if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
       fs.writeFileSync(path.join(outDir, 'plugin-registry-services.generated.js'), code, 'utf-8');
-    } catch {}
+    } catch (error) {
+      logPluginWarn('Failed to write plugin registry snapshot', error);
+    }
     return code;
   }
 

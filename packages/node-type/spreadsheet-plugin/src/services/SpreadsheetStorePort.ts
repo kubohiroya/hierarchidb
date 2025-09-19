@@ -1,11 +1,13 @@
 import type {
   TabularChunk,
+  TabularIngestContext,
   TabularIngestResult,
   TabularIngestSession,
   TabularIngestSummary,
   TabularSchema,
   TabularStorePort,
 } from '@hierarchidb/tabular';
+import type { NodeId } from '@hierarchidb/common-type';
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
 import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';
@@ -15,11 +17,12 @@ import { calculateFileHash, calculateTextHash } from '../utils/hashUtils.js';
 import { getDBName } from '@hierarchidb/util';
 
 type SessionData = {
-  rawFileMetadataId: string;
+  rawFileMetadataId: NodeId;
   filename: string;
   contentHash: string;
   fileSizeBytes: number;
   startRowIndex: number;
+  columns: CSVColumnInfo[];
 };
 
 export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLike> {
@@ -33,11 +36,7 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     this.db = new SpreadsheetDatabase(getDBName('spreadsheet-db'));
   }
 
-  async beginIngest(schema: TabularSchema, ctx: {
-    filename?: string;
-    sizeBytes?: number;
-    source?: any
-  }): Promise<TabularIngestSession> {
+  async beginIngest(schema: TabularSchema, ctx: TabularIngestContext): Promise<TabularIngestSession> {
     const filename = ctx.filename || 'unknown.csv';
     const size = ctx.sizeBytes || 0;
     let hash = 'na';
@@ -51,30 +50,44 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     }
 
     // Create RawFileMetadata
-    const rawMeta = await (this.db as any).createRawFileMetadata?.({
-      filename,
+    const columnSpecs = schema.columns ?? [];
+    const columnInfo: CSVColumnInfo[] = columnSpecs.map((column, index) => ({
+      name: column.name,
+      index,
+      type: column.type === 'number' || column.type === 'boolean' || column.type === 'date' ? column.type : 'string',
+      uniqueValues: 0,
+      hasNullValues: false,
+      sampleValues: [],
+    }));
+
+    const rawMeta = await this.db.createRawFileMetadata({
+      fileName: filename,
       contentHash: hash,
-      fileSizeBytes: size,
-      columns: (schema.columns as Array<{ name: string }>).map((c: { name: string }, i: number) => ({
-        name: c.name,
-        index: i,
-        type: 'string',
-        uniqueValues: 0,
-        hasNullValues: false,
-        sampleValues: [],
-      } as CSVColumnInfo)),
+      fileSize: size,
+      mimeType: ctx.source instanceof File ? ctx.source.type || 'text/csv' : 'text/csv',
+      encoding: 'utf-8',
+      parsingConfig: {
+        delimiter: ',',
+        quoteChar: '"',
+        escapeChar: '\\',
+        hasHeader: true,
+        skipEmptyLines: true,
+      },
       totalRows: 0,
+      totalColumns: columnInfo.length,
+      chunkCount: 0,
     });
 
-    const id = rawMeta?.id || crypto.randomUUID();
-    this.sessions.set(id, {
-      rawFileMetadataId: id,
+    const sessionId = String(rawMeta.id);
+    this.sessions.set(sessionId, {
+      rawFileMetadataId: rawMeta.id,
       filename,
       contentHash: hash,
       fileSizeBytes: size,
       startRowIndex: 0,
+      columns: columnInfo,
     });
-    return { id };
+    return { id: sessionId };
   }
 
   async writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void> {
@@ -84,10 +97,11 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     const json = JSON.stringify(chunk.rows);
     const enc = new TextEncoder();
     const buf = enc.encode(json);
-    await (this.db as any).createRowChunk?.({
+    const binaryData = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    await this.db.createRowChunk({
       rawFileMetadataId: s.rawFileMetadataId,
       chunkIndex: chunk.index,
-      binaryData: buf.buffer,
+      binaryData,
       rowCount: chunk.rows.length,
       startRowIndex: s.startRowIndex,
       endRowIndex: s.startRowIndex + chunk.rows.length - 1,
@@ -98,7 +112,10 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
   }
 
   async commit(session: TabularIngestSession, summary: TabularIngestSummary): Promise<TabularIngestResult<CSVTableMetadataLike>> {
-    const s = this.sessions.get(session.id)!;
+    const s = this.sessions.get(session.id);
+    if (!s) {
+      throw new Error(`Ingest session not found: ${session.id}`);
+    }
     // Build CSVTableMetadata
     const metadata: CSVTableMetadataLike = {
       id: session.id,
@@ -106,13 +123,13 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
       contentHash: s.contentHash,
       fileSizeBytes: s.fileSizeBytes || 0,
       totalRows: summary.totalRows,
-      columns: [],
+      columns: s.columns,
       createdAt: Date.now(),
       referenceCount: 0,
       referencingPlugins: [],
       isChunked: true,
       chunkCount: summary.chunkCount,
-    } as any;
+    };
     // Persist metadata in table manager
     const created = await this.tableManager.create(metadata, this.pluginId);
     this.sessions.delete(session.id);

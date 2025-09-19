@@ -2,7 +2,7 @@ import { startTransition, StrictMode, useMemo, useEffect } from 'react';
 // Dev health overlay (dev only)
 if (import.meta.env.DEV) import('./dev-health-client.js');
 import { hydrateRoot } from 'react-dom/client';
-import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
+import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/node-type-folder-plugin';
 // @ts-ignore
 import { HydratedRouter } from 'react-router/dom';
 import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider.js';

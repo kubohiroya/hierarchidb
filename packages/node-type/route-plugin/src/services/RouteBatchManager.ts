@@ -6,15 +6,37 @@
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
-// import { RouteGenerator } from './RouteGenerator.js';
-import { RouteDatabase } from '../database/RouteDatabase.js';
+import { RouteDatabase, type RouteCursorRow } from '../database/RouteDatabase.js';
 import { type RouteBatchConfig, RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
+
+export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
+export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };
+export type ProgressStore = { upsert?: (sessionId: string, record: ProgressUpdate) => void };
+export type RouteBatchManagerDeps = {
+  engines?: unknown;
+  emitter?: ProgressEmitter;
+  store?: ProgressStore;
+};
+
+export type RouteBatchRouteInput = {
+  startLocationId?: NodeId;
+  endLocationId?: NodeId;
+  startCoordinates?: [number, number];
+  endCoordinates?: [number, number];
+  method?: RouteGenerationConfig['method'];
+  methodOptions?: RouteGenerationConfig['options'];
+};
+
+const logRouteBatchWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[RouteBatchManager]', message, error);
+};
 
 /**
  * Route-specific batch configuration
  */
 export class RouteBatchManager {
-  constructor(private deps?: { engines?: unknown; emitter?: { emit?: (ev: any) => void }; store?: { upsert?: (id: string, row: any) => void } }) {
+  constructor(protected readonly deps?: RouteBatchManagerDeps) {
   }
 
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
@@ -38,13 +60,7 @@ export class RouteBatchManager {
   async startRouteBatchSession(
     nodeId: NodeId,
     config: RouteBatchConfig,
-    routes: Array<{
-      startLocationId?: NodeId;
-      endLocationId?: NodeId;
-      startCoordinates?: [number, number];
-      endCoordinates?: [number, number];
-      method?: RouteGenerationConfig['method'];
-    }>,
+    routes: RouteBatchRouteInput[],
   ): Promise<string> {
     // Idempotency: reuse an existing session if the same payload arrives
     const jobKey = this.computeJobKey(config, routes);
@@ -83,7 +99,7 @@ export class RouteBatchManager {
       const route = routes[i]!;
       routeTasks.push({
         taskId: crypto.randomUUID(),
-        treeNodeId: nodeId as any,
+        treeNodeId: nodeId,
         sessionId,
         taskType: 'route_generation',
         stage: 'simplify1', // Reuse Shape's stage for processing
@@ -98,7 +114,7 @@ export class RouteBatchManager {
             endCoordinates: route.endCoordinates,
           } : {}),
           // 追加オプションは型安全に存在チェック
-          ...('methodOptions' in (route as Record<string, unknown>) ? { methodOptions: (route as Record<string, unknown>).methodOptions } : {}),
+          ...(route.methodOptions ? { methodOptions: route.methodOptions } : {}),
         },
       });
     }
@@ -107,7 +123,7 @@ export class RouteBatchManager {
     if (config.validation && (config.validation.checkDuplicateRoutes || config.validation.validateDistance)) {
       routeTasks.push({
         taskId: crypto.randomUUID(),
-        treeNodeId: nodeId as any,
+        treeNodeId: nodeId,
         sessionId,
         taskType: 'validation',
         stage: 'simplify2', // Reuse Shape's stage for validation
@@ -119,7 +135,7 @@ export class RouteBatchManager {
     // Phase 4: Optimization tasks (vector tiles for routes)
     routeTasks.push({
       taskId: crypto.randomUUID(),
-      treeNodeId: nodeId as any,
+      treeNodeId: nodeId,
       sessionId,
       taskType: 'optimization',
       stage: 'vectortile', // Reuse Shape's stage for final optimization
@@ -131,13 +147,7 @@ export class RouteBatchManager {
     this.routeSpecificTasks.set(sessionId, routeTasks);
 
     // Initialize cursor
-    await this.db.routeCursors?.put({
-      sessionId,
-      completed: 0,
-      total: routeTasks.length,
-      updatedAt: Date.now(),
-      paused: false,
-    } as unknown as any);
+    await this.db.routeCursors.put(createCursorRow(sessionId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks, (ev: ProgressEvent) => this.emitProgress(ev));
     await session.initialize();
@@ -234,26 +244,36 @@ export class RouteBatchManager {
   /** Pause a running session */
   async pauseRouteBatchSession(sessionId: string): Promise<void> {
     try {
-      const c = await (this.db.routeCursors as any)?.get(sessionId);
-      await (this.db.routeCursors as any)?.put({
-        ...(c ?? { sessionId, completed: 0, total: 0, updatedAt: Date.now() }),
+      const cursor = await this.db.routeCursors.get(sessionId);
+      const update: RouteCursorRow = {
+        sessionId,
+        completed: cursor?.completed ?? 0,
+        total: cursor?.total ?? 0,
         paused: true,
         updatedAt: Date.now(),
-      });
-    } catch {
+        tableId: cursor?.tableId,
+      };
+      await this.db.routeCursors.put(update);
+    } catch (error) {
+      logRouteBatchWarning(`Failed to persist pause state for session ${sessionId}`, error);
     }
   }
 
   /** Resume a paused session */
   async resumeRouteBatchSession(_sessionId: string): Promise<void> {
     try {
-      const c = await (this.db.routeCursors as any)?.get(_sessionId);
-      await (this.db.routeCursors as any)?.put({
-        ...(c ?? { sessionId: _sessionId, completed: 0, total: 0 }),
+      const cursor = await this.db.routeCursors.get(_sessionId);
+      const update: RouteCursorRow = {
+        sessionId: _sessionId,
+        completed: cursor?.completed ?? 0,
+        total: cursor?.total ?? 0,
         paused: false,
         updatedAt: Date.now(),
-      });
-    } catch {
+        tableId: cursor?.tableId,
+      };
+      await this.db.routeCursors.put(update);
+    } catch (error) {
+      logRouteBatchWarning(`Failed to persist resume state for session ${_sessionId}`, error);
     }
   }
 
@@ -261,7 +281,8 @@ export class RouteBatchManager {
     // bridge to UI progress emitter/store if provided via deps in createRouteBatchManager
     try {
       this.deps?.emitter?.emit?.({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() });
-    } catch {
+    } catch (error) {
+      logRouteBatchWarning('Progress emitter raised an error', error);
     }
     try {
       this.deps?.store?.upsert?.(ev.sessionId, {
@@ -270,15 +291,12 @@ export class RouteBatchManager {
         phase: ev.stage,
         ts: Date.now(),
       });
-    } catch {
+    } catch (error) {
+      logRouteBatchWarning('Progress store upsert failed', error);
     }
   }
 
-  private computeJobKey(config: RouteBatchConfig, routes: Array<{
-    startCoordinates?: [number, number];
-    endCoordinates?: [number, number];
-    method?: string
-  }>): string {
+  private computeJobKey(config: RouteBatchConfig, routes: RouteBatchRouteInput[]): string {
     const payload = {
       method: config.routeGeneration.method,
       mc: config.routeGeneration.maxConcurrent,
@@ -288,15 +306,28 @@ export class RouteBatchManager {
   }
 }
 
-function stableStringify(x: any): string {
+function createCursorRow(sessionId: string, completed: number, total: number): RouteCursorRow {
+  return {
+    sessionId,
+    completed,
+    total,
+    updatedAt: Date.now(),
+    paused: false,
+  };
+}
+
+function stableStringify(x: unknown): string {
   const seen = new WeakSet();
-  return JSON.stringify(x, function(_key, value) {
+  return JSON.stringify(x, (_key, value: unknown) => {
     if (value && typeof value === 'object') {
       if (seen.has(value)) return;
       seen.add(value);
       if (!Array.isArray(value)) {
-        const sorted: any = {};
-        for (const k of Object.keys(value).sort()) sorted[k] = (value as any)[k];
+        const sorted: Record<string, unknown> = {};
+        const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+        for (const [key, entryValue] of entries) {
+          sorted[key] = entryValue;
+        }
         return sorted;
       }
     }
@@ -318,23 +349,44 @@ function hashCyrb53(str: string, seed = 0): string {
 }
 
 // Bridge notifyProgress (shim) to UI progress emitter/store using common ProgressEvent shape
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(RouteBatchManager.prototype as any)['notifyProgress'] = function(this: any, sessionId: string, ev: any) {
+type LegacyProgressEvent = {
+  percentage?: number;
+  progress?: number;
+  total?: number;
+  completed?: number;
+  stage?: string;
+  currentTask?: string;
+} | undefined;
+
+export interface RouteBatchManager {
+  notifyProgress(sessionId: string, ev: LegacyProgressEvent): void;
+}
+
+RouteBatchManager.prototype.notifyProgress = function notifyProgress(this: RouteBatchManager, sessionId: string, ev: LegacyProgressEvent): void {
+  const stage = ev?.stage ?? 'processing';
+  const percentage = resolveProgressPercentage(ev);
+  const update: ProgressUpdate = { jobId: sessionId, progress: percentage, phase: stage, ts: Date.now() };
   try {
-    const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
-    this['deps']?.emitter?.emit({ jobId: sessionId, progress: pct, phase: ev?.stage ?? 'processing', ts: Date.now() });
-  } catch {
+    this.deps?.emitter?.emit?.(update);
+  } catch (error) {
+    logRouteBatchWarning('Progress emitter raised an error (legacy notifyProgress)', error);
   }
   try {
-    const pct = typeof ev?.percentage === 'number' ? ev.percentage : (ev?.total ? Math.round(((ev?.completed ?? 0) / ev.total) * 100) : (ev?.progress ?? 0));
-    this['deps']?.store?.upsert(sessionId, {
-      jobId: sessionId,
-      progress: pct,
-      phase: ev?.stage ?? 'processing',
-      ts: Date.now(),
-    });
-  } catch {
+    this.deps?.store?.upsert?.(sessionId, update);
+  } catch (error) {
+    logRouteBatchWarning('Progress store upsert failed (legacy notifyProgress)', error);
   }
 };
+
+function resolveProgressPercentage(ev: LegacyProgressEvent): number {
+  if (!ev) return 0;
+  if (typeof ev.percentage === 'number') return ev.percentage;
+  if (typeof ev.progress === 'number') return ev.progress;
+  if (typeof ev.total === 'number' && ev.total > 0) {
+    const completed = ev.completed ?? 0;
+    return Math.round((completed / ev.total) * 100);
+  }
+  return 0;
+}
 
 // (removed) Semaphore helper; concurrency control is handled in RouteBatchSession

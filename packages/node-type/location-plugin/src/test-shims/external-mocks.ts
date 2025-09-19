@@ -7,10 +7,14 @@ export class TabularWriter {
 }
 
 // default exports expected by SessionController
-const vtpbf = {} as any;
+const vtpbf = {
+  fromGeojson: () => new Uint8Array(),
+};
+
 export default vtpbf;
-export const geojsonvt = (..._args: any[]) => ({
-  getTile: () => ({ features: [] }),
+
+export const geojsonvt = (..._args: unknown[]) => ({
+  getTile: () => ({ features: [] as unknown[] }),
 });
 // Support both default and named import styles
 module.exports = Object.assign(module.exports || {}, { default: vtpbf, geojsonvt });

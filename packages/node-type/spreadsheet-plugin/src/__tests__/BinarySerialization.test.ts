@@ -171,7 +171,8 @@ describe('Binary Serialization', () => {
 
       // Act & Assert: Invalid compression type should throw
       expect(() => {
-        serializeRowsToArrayBuffer(sampleRows, columnTypes, 'invalid' as any);
+        // @ts-expect-error intentional invalid format to exercise runtime guard
+        serializeRowsToArrayBuffer(sampleRows, columnTypes, 'invalid');
       }).toThrow(/compression.*not supported/i);
     });
   });

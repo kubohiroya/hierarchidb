@@ -3,14 +3,18 @@
  * @description Scaffolding for runtime worker registration (feature-flagged, no-op safe)
  */
 
+type RuntimeScope = Record<string, unknown> & {
+  AuthNotificationRegistry?: unknown;
+};
+
 function isFlagEnabled(name: string, fallback = false): boolean {
-  const g: any = (globalThis as any);
-  const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
-  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-  const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
-  if (v == null) return fallback;
-  const s = String(v).toLowerCase();
-  return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
+  const scope = globalThis as RuntimeScope;
+  const env = typeof process !== 'undefined' && process?.env ? process.env : {};
+  const storage = typeof localStorage !== 'undefined' ? localStorage : undefined;
+  const value = storage?.getItem(name) ?? (scope[name] as string | undefined) ?? env?.[name];
+  if (value == null) return fallback;
+  const normalized = String(value).toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled';
 }
 
 /**
@@ -23,8 +27,10 @@ export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
   try {
     // Lazy import to avoid bundling when flag is off
     const name = '@' + 'hierarchidb/runtime-worker';
-    const mod: any = await import(/* @vite-ignore */ (name as string));
-    if (typeof mod?.createStageWorkerClient === 'function') {
+    const mod = await import(/* @vite-ignore */ (name as string)) as {
+      createStageWorkerClient?: () => Promise<unknown>;
+    };
+    if (typeof mod.createStageWorkerClient === 'function') {
       // Create client instance once (caller can store if needed)
       await mod.createStageWorkerClient();
     }

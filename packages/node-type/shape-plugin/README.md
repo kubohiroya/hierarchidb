@@ -1,4 +1,4 @@
-@hierarchidb/shape-plugin
+@hierarchidb/node-type-shape-plugin
 =========================
 
 実装サマリ（2025-09-09）

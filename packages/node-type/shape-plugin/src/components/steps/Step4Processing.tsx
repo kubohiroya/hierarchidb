@@ -23,6 +23,7 @@ import {
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
+import { DEFAULT_PROCESSING_CONFIG } from '../../shared';
 import type { FeatureFilterMethod, StepProps } from '../../shared';
 
 /**
@@ -30,7 +31,7 @@ import type { FeatureFilterMethod, StepProps } from '../../shared';
  * Uses @hierarchidb/ui-accordion-config for processing settings
  */
 export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
-  const config = workingCopy.processingConfig;
+  const config = workingCopy.processingConfig ?? DEFAULT_PROCESSING_CONFIG;
 
   return (
     <Box sx={{ p: 2 }}>

@@ -68,6 +68,10 @@ export interface StylerConfig {
 
   keyColumn?: string;
   valueColumn?: string;
+  /** Legacy alias retained for backwards compatibility */
+  selectedKeyColumn?: string;
+  /** Legacy alias retained for backwards compatibility */
+  selectedValueColumn?: string;
 
   invertColors?: boolean;
   opacity?: number;
@@ -148,6 +152,16 @@ export const StylerConfigDefault: StylerConfig = {
   opacity: 1.0,
   enabled: true,
 };
+
+/**
+ * Peer payload stored for styler nodes. Always provide schemaVersion and
+ * include optional metadata for UI state persistence.
+ */
+export interface StylerPeerData {
+  schemaVersion: 1;
+  lastAppliedConfig?: StylerConfig;
+  metadata?: Record<string, unknown>;
+}
 
 /**
   * : MapLibre

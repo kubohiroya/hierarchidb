@@ -1,8 +1,16 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
+import type { StylerPeerData } from '../types/stylerTypes.js';
 
-export type StylerPeerRow = { nodeId: NodeId; updatedAt?: number; displayMode?: 'standard' | 'maximized' | 'fullscreen' };
+export type StylerPeerRow = {
+  nodeId: NodeId;
+  data?: StylerPeerData;
+  updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
+};
 
 export class StylerEntitiesDB extends Dexie {
   peerEntities!: Table<StylerPeerRow, NodeId>;

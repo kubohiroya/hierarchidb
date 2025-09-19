@@ -1,4 +1,4 @@
-# @hierarchidb/timeline-plugin
+# @hierarchidb/node-type-timeline-plugin
 
 Projects ツリーにおける「特殊なフォルダ」型ノードとしての Timeline プラグインのスケッチ実装です。Timeline は自分の配下（子孫）に folder / linker / timeline を含む任意ノードを持てます。配下のノード列を時間軸のフレームとして扱い、最終的に地図アニメーションとして閲覧します。
 
@@ -33,7 +33,7 @@ Projects ツリーにおける「特殊なフォルダ」型ノードとして�
 ### 前提
 - 本リポの app を開発モードで起動します。
   - `pnpm -C app dev`
-- app 側では Worker が `@hierarchidb/timeline-plugin/worker` を遅延ロードするように設定済みです。
+- app 側では Worker が `@hierarchidb/node-type-timeline-plugin/worker` を遅延ロードするように設定済みです。
   - app/src/worker.ts の `workerOverrides.timeline` を追加済み
 - Projects の「作成」メニューに timeline/linker を表示する設定を追加済みです。
   - app/src/plugins/menu-spec.ts の projects.order に `timeline`, `linker` を追記
@@ -55,7 +55,7 @@ import {
   MapPreviewStep,
   AnimationViewerStep,
   toFramesFromNodes,
-} from '@hierarchidb/timeline-plugin/ui';
+} from '@hierarchidb/node-type-timeline-plugin/ui';
 
 // 例: frames 整形
 const frames = toFramesFromNodes(descendants); // [{id,name}] に整形
@@ -66,7 +66,7 @@ const frames = toFramesFromNodes(descendants); // [{id,name}] に整形
 - 本パッケージは `TimelineDialog` も提供します（MUI Dialog + Stepper の簡易版）。
 
 ```tsx
-import { TimelineDialog } from '@hierarchidb/timeline-plugin/ui';
+import { TimelineDialog } from '@hierarchidb/node-type-timeline-plugin/ui';
 
 <TimelineDialog
   mode="create"
@@ -95,7 +95,7 @@ const frames = toFramesFromNodes(descendants);
   - `src/ui/utils/` … useFramePlayer / frames 整形ユーティリティ
   - `src/ui/TimelineDialog.tsx` … MUI Dialog ベースの簡易ウィザード
 - app への組込み
-  - Worker ローダ: `timeline: async () => import('@hierarchidb/timeline-plugin/worker')`
+  - Worker ローダ: `timeline: async () => import('@hierarchidb/node-type-timeline-plugin/worker')`
   - 作成メニュー: `menu-spec.ts` に `timeline` を追加済み
 - アイコン
   - MUI: Timeline（@mui/icons-material/Timeline）

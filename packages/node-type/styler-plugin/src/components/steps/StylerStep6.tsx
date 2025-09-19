@@ -7,6 +7,7 @@
   */
 
 import React, { useCallback, useMemo } from 'react';
+import { wrapDialogStepComponent } from '@hierarchidb/node-type-folder-plugin';
 import { Alert, AlertTitle, Box } from '@mui/material';
 import { StylerTablePreview } from '../../components/step6/StylerTablePreview.js';
 import type { StylerConfig } from '../../types/stylerTypes.js';
@@ -128,10 +129,12 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 /**
   * : Step
   */
+const StylerStep6Component = wrapDialogStepComponent(StylerStep6);
+
 export const StylerStep6Definition = {
   stepNumber: 6,
   title: 'Preview with Style Mapping',
-  component: StylerStep6,
+  component: StylerStep6Component,
   validation: {
     validate: async (_data: any) => {
       //  OK

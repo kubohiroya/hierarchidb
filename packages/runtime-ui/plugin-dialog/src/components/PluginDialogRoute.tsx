@@ -5,9 +5,34 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
-import { NodeId } from '@hierarchidb/common-type';
+import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+
+interface PluginDialogLoaderData {
+  tree: { id: TreeId };
+  pageNodeId: NodeId;
+  targetNodeId: NodeId;
+  targetNode?: unknown;
+  nodeType: string;
+  action: string;
+}
+
+type WorkerHookValue = WorkerAPI | { client?: WorkerAPI | null } | null;
+
+const isWorkerAPI = (value: unknown): value is WorkerAPI => (
+  typeof value === 'object'
+  && value !== null
+  && 'getQueryAPI' in value
+  && typeof (value as { getQueryAPI: unknown }).getQueryAPI === 'function'
+);
+
+const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } => (
+  typeof value === 'object'
+  && value !== null
+  && 'client' in value
+);
 
 /**
  * Plugin Dialog Route Component
@@ -15,12 +40,14 @@ import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
  */
 
 export const PluginDialogRoute: React.FC = () => {
-
-  const { tree, pageNodeId, targetNodeId, targetNode, nodeType, action } = useLoaderData() as any;
+  const { tree, pageNodeId, targetNodeId, targetNode, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
 
   const navigate = useNavigate();
-  const useWorkerHook = (getWorkerClientHook<any>() || (() => null));
-  const client = useWorkerHook()?.client ?? null;
+  const useWorkerHook = getWorkerClientHook<WorkerHookValue>() ?? (() => null);
+  const ref = useWorkerHook();
+  const client = isWorkerAPI(ref)
+    ? ref
+    : (isWorkerHolder(ref) && ref.client && isWorkerAPI(ref.client) ? ref.client : null);
 
   // Parse query params for additional context
   const searchParams = new URLSearchParams(window.location.search);
@@ -50,7 +77,7 @@ export const PluginDialogRoute: React.FC = () => {
         const node = await query.getNode(targetNodeId);
         if (node) {
           const parent = node.parentId ? await query.getNode(node.parentId) : null;
-          if ((parent as any)?.holderType === 'workingCopy') return;
+          if (parent?.holderType === 'workingCopy') return;
         }
         // Treat targetNodeId as canonical id; find or create WC and redirect
         const existing = await wcApi.getWorkingCopy(targetNodeId);

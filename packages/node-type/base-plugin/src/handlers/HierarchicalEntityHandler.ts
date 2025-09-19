@@ -345,12 +345,15 @@ export abstract class HierarchicalEntityHandler<
    * Sort tree nodes (can be overridden by derived classes)
    */
   protected sortTreeNodes(nodes: TreeNode<TEntity>[]): TreeNode<TEntity>[] {
-    return nodes.sort((a, b) => {
-      // Default: sort by name if available, otherwise by nodeId
-      const aName = (a.entity as any).name || a.entity.nodeId;
-      const bName = (b.entity as any).name || b.entity.nodeId;
-      return aName.localeCompare(bName);
-    });
+    const getName = (entity: TEntity): string => {
+      if ('name' in entity) {
+        const candidate = (entity as { name?: unknown }).name;
+        if (typeof candidate === 'string' && candidate.length > 0) return candidate;
+      }
+      return entity.nodeId;
+    };
+
+    return nodes.sort((a, b) => getName(a.entity).localeCompare(getName(b.entity)));
   }
 
   /**

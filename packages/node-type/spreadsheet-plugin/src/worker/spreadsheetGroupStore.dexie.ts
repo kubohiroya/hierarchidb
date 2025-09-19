@@ -8,14 +8,28 @@ type Item = GroupItemBase<SpreadsheetGroupItemData>;
 export function createSpreadsheetGroupStoreDexie(db: SpreadsheetEntitiesDB): GroupStore<Item> {
   return {
     async list(nodeId: NodeId) {
-      return (await db.groupEntities.where('nodeId').equals(nodeId).toArray()) as any;
+      const rows = await db.groupEntities.where('nodeId').equals(nodeId).toArray();
+      return rows.map((row) => ({
+        id: row.id,
+        data: row.data,
+        updatedAt: row.updatedAt,
+      }));
     },
     async bulkUpsert(nodeId: NodeId, items: Item[]) {
-      await db.groupEntities.bulkPut(items.map((i) => ({ ...i, nodeId, updatedAt: Date.now() })) as SheetGroupRow[]);
+      const rows: SheetGroupRow[] = items.map((item) => ({
+        nodeId,
+        id: item.id,
+        data: item.data,
+        updatedAt: item.updatedAt ?? Date.now(),
+      }));
+      await db.groupEntities.bulkPut(rows);
     },
     async bulkDelete(nodeId: NodeId, itemIds: string[]) {
       await db.transaction('rw', db.groupEntities, async () => {
-        for (const id of itemIds) await db.groupEntities.delete([nodeId, id] as any);
+        for (const id of itemIds) {
+          const key: [NodeId, string] = [nodeId, id];
+          await db.groupEntities.delete(key);
+        }
       });
     },
   };

@@ -332,10 +332,17 @@ function arraysEqual<T>(a: T[], b: T[]): boolean {
  * : performance.memory
  * :
   */
+type PerformanceWithMemory = Performance & {
+  memory?: {
+    usedJSHeapSize?: number;
+  };
+};
+
 function getMemoryUsage(): number {
-  //  : performance.memory
-  if (typeof performance !== 'undefined' && (performance as any).memory) {
-    return (performance as any).memory.usedJSHeapSize || 0;
+  if (typeof performance !== 'undefined') {
+    const perf = performance as PerformanceWithMemory;
+    const usage = perf.memory?.usedJSHeapSize;
+    if (typeof usage === 'number') return usage;
   }
 
   //  :

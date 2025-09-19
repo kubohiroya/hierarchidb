@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /**
  * Abstract Data Provider Interface
  *
@@ -19,7 +21,7 @@ export interface DataItem {
   updatedAt?: number | string | Date;
 
   /** Any additional properties */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -153,7 +155,7 @@ export interface ColumnDefinition<T extends DataItem = DataItem> {
   /** Enable filtering */
   filterable?: boolean;
   /** Custom formatter */
-  formatter?: (value: any, item: T) => React.ReactNode;
+  formatter?: (value: unknown, item: T) => ReactNode;
   /** Aggregation function for summaries */
   aggregate?: 'sum' | 'avg' | 'min' | 'max' | 'count' | ((items: T[]) => any);
   /** Column visibility */

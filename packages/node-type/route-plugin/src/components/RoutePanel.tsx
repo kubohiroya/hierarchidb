@@ -38,14 +38,19 @@ import {
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteEntity, RouteType } from '../types/index.js';
 import { TransportMode } from '../types/index.js';
+import { RouteDatabase } from '../database/RouteDatabase.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm.js';
 import { RouteBatchSummary } from '../ui/components/RouteBatchSummary.js';
 import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress.js';
 import { TabularPreview } from '@hierarchidb/ui-core';
-import { RouteDatabase } from '../database/RouteDatabase.js';
 import { createRouteBatchManager } from '../services/createRouteBatchManager.js';
 import { isFlagEnabled } from '../services/config/flags.js';
+
+const logRoutePanelWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[RoutePanel]', message, error);
+};
 
 export interface RoutePanelProps {
   nodeId: NodeId;
@@ -325,8 +330,8 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
               {t('panel.batch', 'Batch')}
             </Typography>
             <RouteBatchLaunchForm
-              nodeId={_nodeId as any}
-              createRouteBatchManager={createRouteBatchManager as any}
+              nodeId={_nodeId}
+              createRouteBatchManager={createRouteBatchManager}
               onLaunched={(r) => setLastJobId(r.jobId)}
             />
           </CardContent>
@@ -369,9 +374,10 @@ function RouteTablePreview({ sessionId }: { sessionId: string }) {
       try {
         const db = new RouteDatabase();
         // @ts-ignore
-        const cursor = await (db.table('routeCursors') as any)?.get(sessionId);
-        if (!cancelled) setTableId(cursor?.tableId || null);
-      } catch {
+        const cursor = await db.routeCursors.get(sessionId);
+        if (!cancelled) setTableId(cursor?.tableId ?? null);
+      } catch (error) {
+        logRoutePanelWarning('Failed to load route table preview metadata', error);
       }
     })();
     return () => {

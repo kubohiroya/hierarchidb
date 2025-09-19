@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/basemap-plugin",
+  "name": "@hierarchidb/node-type-basemap-plugin",
   "version": "1.0.0",
   "type": "module",
   "description": "BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management",
@@ -10,6 +10,9 @@
     "*": {
       "ui": [
         "dist/ui/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"
@@ -30,22 +33,8 @@
       "import": "./dist/ui/index.js"
     },
     "./worker": {
+      "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
-    },
-    "./worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
     }
   },
   "scripts": {
@@ -65,8 +54,8 @@
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/base-plugin": "workspace:*",
-    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
+    "@hierarchidb/node-type-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",

@@ -66,8 +66,9 @@ export class BFFAuthService {
 
   private constructor() {
     // Use proxy path for local development, direct URL for production
-    const envUrl = ((import.meta as any)?.env?.VITE_BFF_BASE_URL as string);
-    const isDevelopment = (((import.meta as any)?.env?.VITE_ENV_MODE as string) === 'development');
+    const envUrl = import.meta.env.VITE_BFF_BASE_URL ?? '';
+    const envMode = import.meta.env.VITE_ENV_MODE ?? import.meta.env.MODE;
+    const isDevelopment = (envMode ?? '').toLowerCase() === 'development' || import.meta.env.DEV;
 
     // In development, use relative URL for proxy; in production, use full URL
     if (isDevelopment && (!envUrl || envUrl.startsWith('http'))) {
@@ -195,7 +196,7 @@ export class BFFAuthService {
    * Returns a string like '' or '/hierarchidb'. No trailing slash.
    */
   private getAppBasePrefix(): string {
-    const base = (import.meta as any)?.env?.BASE_URL || '/';
+    const base = import.meta.env.BASE_URL || '/';
     const norm = String(base).startsWith('/') ? String(base) : `/${String(base)}`;
     return norm.endsWith('/') ? norm.slice(0, -1) : norm;
   }

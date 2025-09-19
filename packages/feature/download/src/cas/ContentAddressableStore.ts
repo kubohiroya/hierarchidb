@@ -80,9 +80,12 @@ export class ContentAddressableStore {
   }
 }
 
-function header(h: any, key: string): string | undefined {
-  if (!h) return undefined;
-  if (typeof h.get === 'function') return h.get(key) || undefined;
-  const k = Object.keys(h).find((x) => x.toLowerCase() === key);
-  return k ? (h as any)[k] : undefined;
+function header(headers: Headers | Record<string, string> | undefined, key: string): string | undefined {
+  if (!headers) return undefined;
+  if (headers instanceof Headers) return headers.get(key) ?? undefined;
+  const target = key.toLowerCase();
+  for (const [name, value] of Object.entries(headers)) {
+    if (name.toLowerCase() === target) return value;
+  }
+  return undefined;
 }

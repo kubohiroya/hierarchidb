@@ -8,6 +8,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    'jotai',
     '@hierarchidb/ui-icon',
     '@dnd-kit/core',
     '@dnd-kit/sortable',

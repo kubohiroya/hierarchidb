@@ -21,8 +21,8 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
     let active = true;
     const load = async () => {
       try {
-        const base = (import.meta as any)?.env?.BASE_URL || '/';
-        const res = await fetch(`${String(base).replace(/\/+$/, '/')}locales/manifest.json`).catch(() => null);
+        const base = (import.meta.env?.BASE_URL ?? '/').replace(/\/+$/, '/');
+        const res = await fetch(`${base}locales/manifest.json`).catch(() => null);
         if (active && res && res.ok) {
           const data = (await res.json()) as Manifest;
           const detected = (data.languages || []);
@@ -67,7 +67,7 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
   };
 
   const onChange = (e: SelectChangeEvent<string>) => {
-    const next = (e.target?.value ?? '') as string;
+    const next = e.target?.value ?? '';
     setValue(next);
     if (typeof window !== 'undefined') {
       localStorage.setItem('preferred-language', next);
@@ -78,9 +78,9 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
       // Try update without reload if i18next is available
       // Attempt lazy i18n change without hard dependency
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const anyWindow = window as any;
-      if (anyWindow?.i18next?.changeLanguage) {
-        anyWindow.i18next.changeLanguage(next);
+      const languageWindow = window as LanguageWindow;
+      if (languageWindow.i18next?.changeLanguage) {
+        languageWindow.i18next.changeLanguage(next);
       } else {
         window.location.reload();
       }
@@ -100,3 +100,8 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
 };
 
 export default LanguageSelector;
+type LanguageWindow = Window & {
+  i18next?: {
+    changeLanguage?: (lang: string) => unknown;
+  };
+};

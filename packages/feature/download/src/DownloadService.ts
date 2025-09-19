@@ -1,4 +1,4 @@
-import type { IntegrityPort, NetworkPort, StoragePort } from './ports.js';
+import type { IntegrityPort, NetworkPort, ResponseLike, StoragePort } from './ports.js';
 
 export interface DownloadOptions {
   concurrency?: number; // for multi-part in future
@@ -42,7 +42,8 @@ export class DownloadService {
   private async downloadChunked(url: string, fileId: string, opts: Required<Pick<DownloadOptions, 'partSize' | 'concurrency'>> & DownloadOptions): Promise<DownloadResult> {
     const head = await this.net.head(url);
     // Fallback when HEAD not allowed
-    const contentLength = Number((head.headers as any)?.get?.('content-length') || 0);
+    const contentLengthValue = readHeader(head.headers, 'content-length');
+    const contentLength = contentLengthValue ? Number(contentLengthValue) : 0;
     const totalSize = isFinite(contentLength) && contentLength > 0 ? contentLength : 0;
     const partSize = Math.max(64 * 1024, opts.partSize!);
     // Default moderate parallelism; callers can override explicitly
@@ -59,7 +60,9 @@ export class DownloadService {
         const idx = next++;
         const byteStart = totalSize === 0 ? 0 : idx * partSize;
         const byteEnd = totalSize === 0 ? undefined : Math.min((idx + 1) * partSize - 1, totalSize - 1);
-        const res = byteEnd !== undefined ? await this.net.getRange(url, byteStart, byteEnd) : await this.net.get(url);
+      const res = byteEnd !== undefined
+        ? await this.net.getRange(url, byteStart, byteEnd)
+        : await this.net.get(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buf = await res.arrayBuffer();
         await this.store.putChunk(fileId, idx, buf);
@@ -78,4 +81,17 @@ export class DownloadService {
     await this.store.commit(fileId, { sizeBytes: totalSize || undefined, hash });
     return { fileId, sizeBytes: totalSize || undefined, hash } as DownloadResult;
   }
+}
+
+function readHeader(headers: ResponseLike['headers'], key: string): string | undefined {
+  if (headers instanceof Headers) {
+    return headers.get(key) ?? undefined;
+  }
+  const target = key.toLowerCase();
+  for (const [name, value] of Object.entries(headers)) {
+    if (name.toLowerCase() === target) {
+      return value;
+    }
+  }
+  return undefined;
 }

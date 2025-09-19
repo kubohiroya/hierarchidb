@@ -26,9 +26,11 @@ export class ResolverService {
   }
 }
 
-export const featureDefinition = {
-  manifest: { name: '@hierarchidb/route-resolver', provides: ['route-resolver'] },
-  init() {
-  },
-};
+export class FeatureDefinition {
+  static readonly manifest = { name: '@hierarchidb/route-resolver', provides: ['route-resolver'] };
+
+  static init(): void {
+    // no-op
+  }
+}
 

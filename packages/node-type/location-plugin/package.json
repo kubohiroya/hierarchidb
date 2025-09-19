@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/location-plugin",
+  "name": "@hierarchidb/node-type-location-plugin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,21 +21,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
     }
   },
   "typesVersions": {
@@ -67,20 +52,21 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
-    "@hierarchidb/shape-plugin": "workspace:*",
+    "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "@hierarchidb/download": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -90,7 +76,8 @@
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0"
+    "@emotion/styled": "^11.14.0",
+    "@hierarchidb/download": "workspace:*"
   },
   "tsup": {
     "external": [
@@ -112,7 +99,7 @@
       "description": "Geographic location nodes with Shape integration",
       "icon": {
         "mui": "LocationPin",
-        "emoji": "📍",
+        "emoji": "\ud83d\udccd",
         "color": "#a3b030"
       },
       "category": {

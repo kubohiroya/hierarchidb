@@ -4,7 +4,7 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { BaseSearchCriteria } from '@hierarchidb/base-plugin';
+import type { BaseSearchCriteria } from '@hierarchidb/node-type-base-plugin';
 
 /**
  * Location type categories

@@ -316,7 +316,7 @@ export function buildShapeEntityFromCreate(
     data: {
       name: string;
       description?: string;
-      dataSourceName: any;
+      dataSourceName: DataSourceName;
       processingConfig?: Partial<ProcessingConfig> | ProcessingConfig;
     };
     now?: number;
@@ -385,10 +385,7 @@ export function mapWorkingCopyToUpdates(
     selectedCountries: workingCopy.selectedCountries,
     adminLevels: workingCopy.adminLevels,
     urlMetadata: workingCopy.urlMetadata,
+    checkboxState: workingCopy.checkboxState,
   };
-  // Optional checkbox state when present in the environment
-  if (typeof (workingCopy as any).checkboxState !== 'undefined') {
-    (updates as any).checkboxState = (workingCopy as any).checkboxState;
-  }
   return updates;
 }

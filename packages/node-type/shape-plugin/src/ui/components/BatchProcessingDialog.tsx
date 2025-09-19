@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -22,6 +22,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
+import type { ChipProps } from '@mui/material/Chip';
 import {
   CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
@@ -36,6 +37,11 @@ import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 
 import type { NodeId } from '@hierarchidb/common-type';
+
+const logBatchDialogWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[ShapeBatchProcessingDialog]', message, error);
+};
 
 export interface BatchProcessingDialogProps {
   open: boolean;
@@ -171,10 +177,10 @@ export function BatchProcessingDialog({
     (async () => {
       try {
         const db = getEphemeralShapeDB();
-        // @ts-ignore
-        const sess = await (db.table('sessions') as any).get(sessionId);
-        if (!cancelled) setTableId(sess?.tableId || null);
-      } catch {
+        const session = await db.sessions.get(sessionId);
+        if (!cancelled) setTableId(session?.tableId ?? null);
+      } catch (error) {
+        logBatchDialogWarning('Failed to load session metadata for preview', error);
       }
     })();
     return () => {
@@ -257,7 +263,7 @@ export function BatchProcessingDialog({
   };
 
   const renderStatusSection = () => {
-    const getStatusColor = () => {
+    const getStatusColor = (): ChipProps['color'] => {
       if (isCompleted) return 'success';
       if (isFailed) return 'error';
       if (isCancelled) return 'warning';
@@ -279,7 +285,7 @@ export function BatchProcessingDialog({
       <Box display="flex" alignItems="center" gap={2} mb={2}>
         <Chip
           label={getStatusText()}
-          color={getStatusColor() as any}
+          color={getStatusColor()}
           variant={isProcessing ? 'filled' : 'outlined'}
         />
 

@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/base-plugin",
+  "name": "@hierarchidb/node-type-base-plugin",
   "version": "0.0.1",
   "private": true,
   "type": "module",

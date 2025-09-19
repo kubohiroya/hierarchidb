@@ -60,7 +60,15 @@ for P in "${PLUGINS[@]}"; do
     const typeStatus=process.argv[3];
     const testStatus=process.argv[4];
     const covPath=process.argv[5];
-    let cov=null; try{ cov=JSON.parse(fs.readFileSync(covPath,"utf8")); } catch(e){}
+    let cov=null;
+    try {
+      const raw=fs.readFileSync(covPath,"utf8");
+      cov=JSON.parse(raw);
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        console.warn(`[run-plugin-tests] Failed to load coverage summary for ${pkg}:`, error);
+      }
+    }
     const obj={ package: pkg, dir, typecheck: typeStatus, test: testStatus, coverage: cov };
     process.stdout.write(JSON.stringify(obj));
   ' "$PKG_NAME" "$P" "$TYPE_STATUS" "$TEST_STATUS" "$COV_FILE" >> $RESULT_JSON

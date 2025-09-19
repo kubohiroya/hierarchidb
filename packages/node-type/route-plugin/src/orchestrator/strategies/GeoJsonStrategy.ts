@@ -1,4 +1,5 @@
-import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, StrategyContext, TaskPlan } from '../types.js';
+import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from '../types.js';
+import { normalizeEngine, normalizeMode, toCoordinatePair } from './strategy-utils.js';
 
 export class GeoJsonStrategy implements DataSourceStrategy {
   supports(spec: DataSourceSpec): boolean {
@@ -15,10 +16,7 @@ export class GeoJsonStrategy implements DataSourceStrategy {
     };
   }
 
-  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: {
-    engine?: string;
-    mode?: string
-  }): Promise<OdPair[]> {
+  async executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]> {
     const blob = blobs.get(task.payloadRef);
     if (!blob) throw new Error('Missing payload');
     const text = await blob.text();
@@ -27,33 +25,55 @@ export class GeoJsonStrategy implements DataSourceStrategy {
   }
 }
 
-function parseGeoJson(gj: any, defaults?: { engine?: string; mode?: string }): OdPair[] {
-  const feats: any[] = gj.type === 'FeatureCollection' ? gj.features : [gj];
+interface GeoJsonFeature {
+  geometry?: { type?: string; coordinates?: unknown } | null;
+  properties?: Record<string, unknown> | null;
+}
+
+function parseGeoJson(source: unknown, defaults?: RouteBatchSpec['defaults']): OdPair[] {
+  const features = toFeatureList(source);
   const out: OdPair[] = [];
-  for (const f of feats) {
-    const g = f.geometry;
-    if (!g) continue;
-    if (g.type === 'LineString' && Array.isArray(g.coordinates) && g.coordinates.length >= 2) {
-      const start = g.coordinates[0];
-      const end = g.coordinates[g.coordinates.length - 1];
-      out.push({
-        start: { lon: start[0], lat: start[1] },
-        end: { lon: end[0], lat: end[1] },
-        mode: (f.properties?.mode || defaults?.mode) as any,
-        engine: (f.properties?.engine || defaults?.engine) as any,
-      });
+  for (const feature of features) {
+    const geometry = feature.geometry;
+    if (!geometry) continue;
+
+    const properties = (feature.properties ?? {}) as Record<string, unknown>;
+    const mode = normalizeMode(properties.mode, defaults?.mode);
+    const engine = normalizeEngine(properties.engine, defaults?.engine);
+
+    if (geometry.type === 'LineString') {
+      const coords = Array.isArray(geometry.coordinates) ? geometry.coordinates : undefined;
+      const start = coords ? toCoordinatePair(coords[0]) : undefined;
+      const end = coords ? toCoordinatePair(coords[coords.length - 1]) : undefined;
+      if (start && end) {
+        const od: OdPair = { start: { lon: start[0], lat: start[1] }, end: { lon: end[0], lat: end[1] } };
+        if (mode) od.mode = mode;
+        if (engine) od.engine = engine;
+        out.push(od);
+      }
+      continue;
     }
-    if (g.type === 'Point' && f.properties?.end && Array.isArray(f.properties.end)) {
-      const s = g.coordinates;
-      const e = f.properties.end;
-      out.push({
-        start: { lon: s[0], lat: s[1] },
-        end: { lon: e[0], lat: e[1] },
-        mode: (f.properties?.mode || defaults?.mode) as any,
-        engine: (f.properties?.engine || defaults?.engine) as any,
-      });
+
+    const endCandidate = properties.end;
+    if (geometry.type === 'Point' && Array.isArray(endCandidate)) {
+      const start = toCoordinatePair(geometry.coordinates);
+      const end = toCoordinatePair(endCandidate);
+      if (start && end) {
+        const od: OdPair = { start: { lon: start[0], lat: start[1] }, end: { lon: end[0], lat: end[1] } };
+        if (mode) od.mode = mode;
+        if (engine) od.engine = engine;
+        out.push(od);
+      }
     }
   }
   return out;
 }
 
+function toFeatureList(source: unknown): GeoJsonFeature[] {
+  if (typeof source !== 'object' || source === null) return [];
+  const record = source as Record<string, unknown>;
+  if (record.type === 'FeatureCollection' && Array.isArray(record.features)) {
+    return record.features as GeoJsonFeature[];
+  }
+  return [record as GeoJsonFeature];
+}

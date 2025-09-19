@@ -104,6 +104,13 @@ react-i18next, i18next
 - DB 名は `getDBName('<kebab-suffix>')` を使用（例: `core-db`, `ephemeral-db`, `spreadsheet-metadata-db`）。
 - 共有実装がある場合は `@hierarchidb/table-metadata` などの feature パッケージを優先。
 
+### PeerStore データの扱い
+- プラグイン固有の `PeerRow` / `PeerStore` では、`data` フィールドが未定義の場合でも必ず**型付きの既定値**を格納すること。
+  - 例: `type FooPeerData = { schemaVersion: 1; domain?: FooDomain }` のように `schemaVersion` を含む最小構造体を定義する。
+  - 実装側では `normalizeFooPeerData(undefined) => { schemaVersion: 1 }` のような正規化関数を用意し、`put/bulkUpsert` で必ず通過させる。
+- UI 側が `PeerStore#get` を呼び出した際に `data` が `undefined` になることを禁止する。既定値を返すことで、`FolderPeerData` などデータを持たないプラグインでも型安全に扱えるようにする。
+- 一時的にドメインデータを持たないプラグインでも `PeerStore<T>` は `T = FooPeerData` の形で具体的な型パラメータを使用し、`any` や `unknown` を使用しない。
+
 ## 変更前チェックリスト
 - [ ] peer へ入れるべきものを peerDependencies に置いたか
 - [ ] tsup external で peer が二重バンドルされないか
@@ -111,7 +118,7 @@ react-i18next, i18next
 - [ ] 内部パッケージは公開APIからのみ参照しているか
 ## Shape Plugin Build/Exports
 
-The `@hierarchidb/shape-plugin` package now ships full ESM builds in `dist/`:
+The `@hierarchidb/node-type-shape-plugin` package now ships full ESM builds in `dist/`:
 
 - `dist/index.js` — main library entry (types: `dist/index.d.ts`)
 - `dist/shared/index.js` — shared types and helpers (types: `dist/shared/index.d.ts`)
@@ -121,16 +128,16 @@ The `@hierarchidb/shape-plugin` package now ships full ESM builds in `dist/`:
 
 Consumers should import as follows:
 
-- App (main thread): `import { ... } from '@hierarchidb/shape-plugin'`
-- UI: `import { ... } from '@hierarchidb/shape-plugin/ui'`
-- Workers (new URL): `new Worker(new URL('@hierarchidb/shape-plugin/workers/DownloadWorker', import.meta.url), { type: 'module' })`
+- App (main thread): `import { ... } from '@hierarchidb/node-type-shape-plugin'`
+- UI: `import { ... } from '@hierarchidb/node-type-shape-plugin/ui'`
+- Workers (new URL): `new Worker(new URL('@hierarchidb/node-type-shape-plugin/workers/DownloadWorker', import.meta.url), { type: 'module' })`
 
 Notes:
 
 - UI/Worker do not import app internals. The app provides the Worker client via:
   `import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap'`
   and `registerWorkerClientHook(useWorkerAPIClient)` at startup.
-- The app should reference `@hierarchidb/shape-plugin` entries via dist (avoid src deep imports).
+- The app should reference `@hierarchidb/node-type-shape-plugin` entries via dist (avoid src deep imports).
 - `exports` in package.json are configured accordingly; TS type resolution points to `dist/*.d.ts`.
 
 ### DTS policy

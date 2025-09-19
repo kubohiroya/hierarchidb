@@ -1,0 +1,215 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreDependencies": [
+    "@mui/icons-material",
+    "@storybook/blocks",
+    "@testing-library/user-event",
+    "@types/jscodeshift",
+    "@types/react-resizable",
+    "@typescript-eslint/eslint-plugin",
+    "@vitejs/plugin-react",
+    "change-case",
+    "eslint-config-prettier",
+    "eslint-plugin-react",
+    "eslint-plugin-react-refresh",
+    "gh-pages",
+    "glob",
+    "http-server",
+    "jscodeshift",
+    "react-draggable",
+    "react-resizable",
+    "react-router",
+    "ts-node",
+    "vite-plugin-checker",
+    "vite-tsconfig-paths"
+  ],
+  "ignoreBinaries": [
+    "4.2.0",
+    "attw",
+    "only-allow",
+    "publint",
+    "syncpack",
+    "vibe-kanban"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "duplicates": "off"
+  },
+  "ignore": [
+    "**/.cache/**",
+    "**/.debug/**",
+    "**/.generated/**",
+    "**/.react-router/**",
+    "**/.storybook-static/**",
+    "**/.turbo/**",
+    "**/build/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/*.d.ts",
+    "app/.debug/plugin-registry-services.generated.js",
+    "app/docs/**",
+    "app/vite.preview.config.ts",
+    "coverage/**",
+    "docs/pdf/**",
+    "packages/**/dist-types/**",
+    "packages/**/storybook-static/**",
+    "packages/node-type/folder-plugin/plugin.config.ts",
+    "packages/node-type/route-plugin/scripts/smoke.mjs",
+    "packages/node-type/route-plugin/tsup.database.config.ts",
+    "packages/node-type/shape-plugin/tsup.services.config.ts",
+    "packages/node-type/styler-plugin/vitest.setup.ts",
+    "packages/node-type/resolver-plugin/vitest.setup.ts",
+    "packages/runtime-shared/fetch-metadata/docs/**",
+    "reports/**",
+    "storybook-static/**",
+    "temp.ts"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{ts,tsx,js,mjs,cjs}",
+        "tools/**/*.{ts,tsx,js,mjs,cjs}",
+        "*.config.{ts,js,mjs,cjs}",
+        "*.config.ts",
+        "*.mjs",
+        "PluginRegistryAPI.ts"
+      ],
+      "project": [
+        "scripts/**/*.{ts,tsx,js,mjs,cjs}",
+        "tools/**/*.{ts,tsx,js,mjs,cjs}",
+        "*.{ts,tsx,js,mjs,cjs}",
+        "*.json",
+        "turbo.json",
+        "pnpm-workspace.yaml"
+      ],
+      "ignore": [
+        "app/**",
+        "packages/**",
+        "node_modules/**",
+        "coverage/**",
+        "reports/**",
+        ".turbo/**",
+        "storybook-static/**"
+      ],
+      "plugins": {
+        "vitest": {
+          "config": [
+            "vitest.config.ts",
+            "packages/**/vitest.config.ts"
+          ]
+        },
+        "tsup": {
+          "config": [
+            "tsup.config.{ts,js,mjs,cjs}",
+            "packages/**/tsup.config.{ts,js,mjs,cjs}",
+            "packages/**/tsup.*.config.{ts,js,mjs,cjs}"
+          ]
+        },
+        "vite": {
+          "config": [
+            "app/vite.config.ts",
+            "app/vite.preview.config.ts"
+          ]
+        },
+        "storybook": {
+          "config": [
+            "packages/**/.storybook/main.{ts,js,mjs,cjs}"
+          ]
+        },
+        "playwright": {
+          "config": [
+            "playwright.config.ts",
+            "packages/**/playwright.config.{ts,js,mjs,cjs}"
+          ]
+        },
+        "eslint": {
+          "config": [
+            "eslint.config.js"
+          ]
+        },
+        "biome": {
+          "config": [
+            "biome.json"
+          ]
+        },
+        "react-router": {
+          "config": [
+            "app/react-router.config.ts"
+          ]
+        }
+      }
+    },
+    "app": {
+      "entry": [
+        "src/**/*.{ts,tsx,js,jsx}"
+      ],
+      "paths": {
+        "~/*": [
+          "./src/*"
+        ]
+      },
+      "ignore": [
+        "build/**",
+        ".react-router/**",
+        ".debug/**",
+        ".generated/**",
+        "docs/**",
+        "node_modules/**"
+      ]
+    },
+    "packages/*": {
+      "entry": [
+        "src/**/*.{ts,tsx,js,jsx}"
+      ],
+      "paths": {
+        "~/*": [
+          "./src/*"
+        ]
+      },
+      "ignore": [
+        "dist/**",
+        "build/**",
+        ".turbo/**",
+        "coverage/**",
+        "docs/**",
+        "node_modules/**"
+      ]
+    },
+    "packages/*/*": {
+      "entry": [
+        "src/**/*.{ts,tsx,js,jsx}"
+      ],
+      "paths": {
+        "~/*": [
+          "./src/*"
+        ]
+      },
+      "ignore": [
+        "dist/**",
+        "build/**",
+        ".turbo/**",
+        "coverage/**",
+        "docs/**",
+        "node_modules/**"
+      ]
+    },
+    "packages/*/*/*": {
+      "entry": [
+        "src/**/*.{ts,tsx,js,jsx}"
+      ],
+      "paths": {
+        "~/*": [
+          "./src/*"
+        ]
+      },
+      "ignore": [
+        "dist/**",
+        "build/**",
+        ".turbo/**",
+        "coverage/**",
+        "docs/**",
+        "node_modules/**"
+      ]
+    }
+  }
+}

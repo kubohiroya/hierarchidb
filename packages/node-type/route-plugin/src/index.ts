@@ -4,6 +4,14 @@
 
 // Plugin components are exported via re-exports below
 
+import {
+  registerRouteDownloadServiceFactory,
+  registerRouteAuthNotifier,
+  resolveAuthRegistry,
+} from './services/download/registry.js';
+import type { RouteAuthNotification as DownloadAuthNotification } from './services/download/registry.js';
+type RouteAuthNotification = DownloadAuthNotification;
+
 // Export all types
 // Export all types and components
 // Avoid re-exporting names that collide with orchestrator/types (e.g., TransportMode)
@@ -28,10 +36,11 @@ export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabu
 export * from './services/UnifiedRouteBatchManager.js';
 export { RouteBatchManager } from './services/RouteBatchManager.js';
 export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
-export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier } from './services/download/registry.js';
+export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier, resolveAuthRegistry };
 export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService.js';
+export type { RouteAuthNotification } from './services/download/registry.js';
 
-// UI exports are available via subpath export "@hierarchidb/route-plugin/ui"
+// UI exports are available via subpath export "@hierarchidb/node-type-route-plugin/ui"
 
 /**
  * Route Plugin Definition
@@ -40,15 +49,22 @@ export { registerRouteSharedDownloadService } from './services/download/register
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {
-  const g = (globalThis as unknown) as Record<string, unknown>;
-  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-  const candidate = ls?.getItem(name) ?? (typeof g?.[name] === 'string' ? (g as any)[name] : undefined);
+  const lsValue = typeof localStorage !== 'undefined' ? localStorage.getItem(name) ?? undefined : undefined;
+  const globalValue = readGlobalString(name);
+  const envValue = typeof process !== 'undefined' ? process.env?.[name] : undefined;
+  const candidate = lsValue ?? globalValue ?? envValue;
   const value = Number(candidate);
   return Number.isFinite(value) ? value : fallback;
 }
 
-export const runtimeWiring = {
-  registerSharedDownloadService: () => {
+function readGlobalString(name: string): string | undefined {
+  const record = globalThis as Record<string, unknown>;
+  const value = record[name];
+  return typeof value === 'string' ? value : undefined;
+}
+
+export class RuntimeWiring {
+  static registerSharedDownloadService(): void {
     const perHostConcurrency = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
     void import('./services/download/registerSharedDownloadService.js')
       .then(({ registerRouteSharedDownloadService }) =>
@@ -57,26 +73,27 @@ export const runtimeWiring = {
       .catch((error) => {
         console.warn('[route-plugin] registerSharedDownloadService failed:', error);
       });
-  },
-  registerAuthNotifier: () => {
+  }
+
+  static registerAuthNotifier(): void {
     void import('./services/download/registry.js')
-      .then(({ registerRouteAuthNotifier }) =>
-        registerRouteAuthNotifier((info: any) => {
-          const g = globalThis as unknown as Record<string, any>;
-          const registry = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+      .then(({ registerRouteAuthNotifier: setNotifier }) =>
+        setNotifier((info: RouteAuthNotification) => {
+          const registry = resolveAuthRegistry();
           registry?.onAuthRequired?.(info);
         })
       )
       .catch((error) => {
         console.warn('[route-plugin] registerAuthNotifier failed:', error);
       });
-  },
-  registerRuntimeWorkerAdapters: async () => {
+  }
+
+  static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
       const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerRouteRuntimeWorkerAdapters();
     } catch (error) {
       console.warn('[route-plugin] registerRuntimeWorkerAdapters failed:', error);
     }
-  },
-} as const;
+  }
+}

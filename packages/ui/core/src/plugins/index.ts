@@ -1,6 +1,7 @@
 // Main plugin system exports
 export { UIPluginRegistry, getUIPluginRegistry } from './registry/UIPluginRegistry.js';
 import { getUIPluginRegistry } from './registry/UIPluginRegistry.js';
+import type { UIActionHooks, UIPluginDefinition } from './types.js';
 
 export { NodeDataAdapter } from './adapters/NodeDataAdapter.js';
 export { UnifiedNodeOperations } from './operations/UnifiedNodeOperations.js';
@@ -60,23 +61,20 @@ export function registerAllUIPlugins(): void {
   if (!registry.isRegistered('shape')) {
     try {
       // Create a simple Shape UI plugin definition inline for now
-      const ShapeUIPlugin = {
+      const shapeHooks: UIActionHooks = {};
+
+      const shapeUIPlugin: UIPluginDefinition = {
         nodeType: 'shape',
         displayName: 'Geographic Shapes',
         description: 'Manage geographic shape-plugin data with batch processing capabilities',
 
         components: {
           icon: () => null, // Will be replaced with actual icon
-          createDialog: () => null,
-          editDialog: () => null,
-          panel: () => null,
-          form: () => null,
         },
 
         dataSource: {
           requiresEntity: true,
           entityType: 'shape',
-          workingCopyEnabled: true,
         },
 
         capabilities: {
@@ -98,16 +96,14 @@ export function registerAllUIPlugins(): void {
           contextMenuItems: [],
         },
 
-        hooks: {},
+        hooks: shapeHooks,
 
         style: {
-          iconColor: '#4CAF50',
-          backgroundColor: '#E8F5E9',
-          borderColor: '#4CAF50',
+          primaryColor: '#4CAF50',
         },
       };
 
-      registry.register(ShapeUIPlugin as any);
+      registry.register(shapeUIPlugin);
 
     } catch (error) {
       console.error('Failed to register Shape UI Plugin:', error);

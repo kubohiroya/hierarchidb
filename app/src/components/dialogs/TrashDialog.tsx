@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
 import type { LoadTreeReturn } from '~/loader.js';
-import { loadTree, type LoadTreeArgs } from '~/loader.js';
+import { loadTree } from '~/loader.js';
 import { WorkerAPIClient } from '../../WorkerAPIClient.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { CommonDialogTitle } from '@hierarchidb/ui-dialog';
@@ -13,12 +13,16 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
 // This loader will be used by the route that renders the dialog
 export async function clientLoader(args: LoaderFunctionArgs) {
-  const treeData = await loadTree(args.params as LoadTreeArgs);
+  const { treeId } = args.params;
+  if (!treeId) {
+    throw new Response('Missing treeId parameter.', { status: 400 });
+  }
+  const treeData = await loadTree({ treeId });
   // Load trash root node
   if (treeData.tree) {
     // Use facade pattern: get QueryAPI first
     const queryAPI = await treeData.client.getQueryAPI();
-    const trashRootId = treeData.tree.trashRootId as NodeId;
+    const trashRootId = treeData.tree.trashRootId;
     const trashRootNode = await queryAPI.getNode(trashRootId);
 
     // Load trash items (children of trash root)
@@ -39,7 +43,7 @@ type TrashDialogData = LoadTreeReturn & {
 };
 
 export default function TrashDialog() {
-  const data = useLoaderData() as TrashDialogData;
+  const data = useLoaderData<TrashDialogData>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { treeId, pageNodeId, targetNodeId, nodeType, action } = useParams();
@@ -66,14 +70,26 @@ export default function TrashDialog() {
     setDisplayMode(m);
     persistDisplayMode(m);
   };
+  type FullscreenElement = HTMLElement & {
+    webkitRequestFullscreen?: () => Promise<void> | void;
+    msRequestFullscreen?: () => Promise<void> | void;
+  };
+
+  type FullscreenDocument = Document & {
+    webkitExitFullscreen?: () => Promise<void> | void;
+    webkitFullscreenElement?: Element | null;
+  };
+
   const toggleFullscreen = async (next?: boolean) => {
     const val = next ?? !isFullscreen;
     if (val) {
-      const el: any = paperRef.current;
-      const req = el?.requestFullscreen || el?.webkitRequestFullscreen || el?.msRequestFullscreen;
-      if (typeof req === 'function') {
+      const el = paperRef.current as FullscreenElement | null;
+      const request = el?.requestFullscreen?.bind(el)
+        ?? el?.webkitRequestFullscreen?.bind(el)
+        ?? el?.msRequestFullscreen?.bind(el);
+      if (request) {
         try {
-          await req.call(el);
+          await Promise.resolve(request());
           setIsFullscreen(true);
           setDisplayMode('fullscreen');
           persistDisplayMode('fullscreen');
@@ -86,7 +102,12 @@ export default function TrashDialog() {
       setDisplayMode('fullscreen');
       persistDisplayMode('fullscreen');
     } else {
-      if (document.fullscreenElement) await document.exitFullscreen?.();
+      const fullscreenDoc = document as FullscreenDocument;
+      const exit = document.exitFullscreen?.bind(document)
+        ?? fullscreenDoc.webkitExitFullscreen?.bind(fullscreenDoc);
+      if (exit) {
+        await Promise.resolve(exit());
+      }
       setIsFullscreen(false);
       const m = isMaximized ? 'maximized' : 'standard';
       setDisplayMode(m);
@@ -94,8 +115,9 @@ export default function TrashDialog() {
     }
   };
   useEffect(() => {
-    const onFsChange = () => {
-      const active = !!document.fullscreenElement;
+    const fullscreenDoc = document as FullscreenDocument;
+    const onFsChange = (_event: Event) => {
+      const active = Boolean(document.fullscreenElement ?? fullscreenDoc.webkitFullscreenElement);
       setIsFullscreen(active);
       if (active) {
         setDisplayMode('fullscreen');
@@ -107,10 +129,10 @@ export default function TrashDialog() {
       }
     };
     document.addEventListener('fullscreenchange', onFsChange);
-    document.addEventListener('webkitfullscreenchange' as any, onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
     return () => {
       document.removeEventListener('fullscreenchange', onFsChange);
-      document.removeEventListener('webkitfullscreenchange' as any, onFsChange);
+      document.removeEventListener('webkitfullscreenchange', onFsChange);
     };
   }, []);
   const handleChangeDisplayMode = (m: 'standard' | 'maximized' | 'fullscreen') => {
@@ -173,14 +195,14 @@ export default function TrashDialog() {
       const mutationAPI = await client.getMutationAPI();
 
       // Permanently delete all trash items (holders)
-      const allTrashIds = (data.trashItems || []).map((item) => item.id as NodeId);
+      const allTrashIds = (data.trashItems ?? []).map((item) => item.id);
 
       if (allTrashIds.length > 0) {
         const result = await mutationAPI.removeNodes(allTrashIds);
 
         if (result.success) {
           // Dispatch removal event so cleanup is centralized
-          const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as NodeId | undefined) || (item.id as NodeId));
+          const targetIds = (data.trashItems ?? []).map((item) => item.holderTargetId ?? item.id);
           window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds.map(String) } }));
           // Refresh the page to show empty trash
           navigate(-1); // Go back to the previous page
@@ -197,7 +219,7 @@ export default function TrashDialog() {
   };
 
   // Convert trash items to TreeNodeData format
-  const treeData: TreeNodeData[] = (data.trashItems || []).map((node: TreeNode) => ({
+  const treeData: TreeNodeData[] = (data.trashItems ?? []).map((node) => ({
     ...node,
     id: node.id,
     nodeType: node.nodeType,
@@ -283,13 +305,13 @@ export default function TrashDialog() {
             pageNodeId={data.tree?.trashRootId}
             data={treeData}
             columns={columns}
-            breadcrumbItems={[
+            breadcrumbItems={data.tree ? [
               {
-                id: (data.tree?.trashRootId as NodeId) || ('' as NodeId),
+                id: data.tree.trashRootId,
                 name: 'Trash',
                 nodeType: 'trash',
               },
-            ]}
+            ] : []}
             loading={false}
             selectedIds={selectedIds.map(String)}
             expandedIds={[]}
@@ -348,13 +370,15 @@ export default function TrashDialog() {
                 try {
                   const client = await WorkerAPIClient.getSingleton();
                   const mutationAPI = await client.getMutationAPI();
-                  const res = await mutationAPI.removeNodes([node.id as NodeId]);
+                  const res = await mutationAPI.removeNodes([node.id]);
                   if (res.success) {
                     try {
-                      const raw = (data.trashItems || []).find((t) => String(t.id) === String(node.id));
-                      const targetId = ((raw as any)?.holderTargetId as NodeId | undefined) || (node.id as NodeId);
+                      const raw = (data.trashItems ?? []).find((t) => String(t.id) === String(node.id));
+                      const targetId = raw?.holderTargetId ?? node.id;
                       window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: [String(targetId)] } }));
-                    } catch {}
+                    } catch (error) {
+                      console.warn('[TrashDialog] Failed to dispatch hdb-remove event', error);
+                    }
                     window.location.reload();
                   } else {
                     console.error('Permanent delete failed:', res.error);

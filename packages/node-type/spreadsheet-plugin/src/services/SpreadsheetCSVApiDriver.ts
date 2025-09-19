@@ -36,6 +36,12 @@ interface ChunkedData {
   chunkSize: number;
 }
 
+type MetadataInput = Partial<CSVTableMetadata> & {
+  id?: string;
+  columns?: CSVColumnInfo[];
+  totalColumns?: number;
+};
+
 export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   private tableManager: SimpleTableMetadataManager;
   private csvDataStorage = new Map<string, ChunkedData>();
@@ -89,23 +95,17 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         ...config,
         ...detectedConfig,
       });
-      // Normalize columns with detected types
-      const sampleRows = chunkedData.chunks[0] ?? [];
-      const detected = detectColumnTypes(columns.map((c) => c.name), sampleRows);
-      const normalizedColumns = columns.map((c, i) => ({
-        name: c.name,
-        index: i,
-        type: (detected[i]?.type || 'string') as any,
-        uniqueValues: 0,
-        hasNullValues: false,
-        sampleValues: sampleRows.slice(0, 5).map((r) => r[c.name] ?? null),
+      const normalizedColumns: CSVColumnInfo[] = columns.map((column, index) => ({
+        ...column,
+        index,
+        sampleValues: (column.sampleValues ?? []).slice(0, 5),
       }));
 
       const tableId = crypto.randomUUID();
       const metadata: CSVTableMetadata = {
         id: tableId,
         filename: file.name,
-        columns: normalizedColumns as any,
+        columns: normalizedColumns,
         totalRows: chunkedData.totalRows,
         contentHash,
         createdAt: Date.now(),
@@ -114,7 +114,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         referenceCount: 0,
         isChunked: chunkedData.totalRows > chunkedData.chunkSize,
         chunkCount: Math.max(1, Math.ceil(chunkedData.totalRows / chunkedData.chunkSize)),
-      } as any;
+      };
 
       this.storeChunkedData(tableId, chunkedData);
 
@@ -305,12 +305,13 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     const raw = await this.spreadsheetDB.getStatistics?.();
     if (!raw) return undefined;
 
-    //  :
-    const totalFiles = (raw as any).totalFiles ?? (raw as any).totalRawFiles ?? 0;
-    const totalChunks = (raw as any).totalChunks ?? (raw as any).rawChunkCount ?? 0;
-    const totalEntities = (raw as any).totalEntities ?? 0;
-    const totalDataSize = (raw as any).totalDataSize ?? 0;
-    const averageRowsPerFile = (raw as any).averageRowsPerFile ?? 0;
+    const {
+      totalFiles = 0,
+      totalChunks = 0,
+      totalEntities = 0,
+      totalDataSize = 0,
+      averageRowsPerFile = 0,
+    } = raw;
 
     return { totalFiles, totalChunks, totalEntities, totalDataSize, averageRowsPerFile };
   }
@@ -354,22 +355,25 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     return metadata ? this.ensureFullMetadata(metadata) : null;
   }
 
-  private ensureFullMetadata(m: any): CSVTableMetadata {
+  private ensureFullMetadata(m: MetadataInput): CSVTableMetadata {
+    const id = typeof m.id === 'string' && m.id.length > 0 ? m.id : crypto.randomUUID();
+    const baseColumns = this.ensureColumnsFromMetadata({ ...m, id }, []);
     return {
-      id: m.id,
+      id,
       filename: m.filename ?? '',
       fileUrl: m.fileUrl,
       contentHash: m.contentHash ?? '',
       fileSizeBytes: m.fileSizeBytes ?? 0,
       totalRows: m.totalRows ?? 0,
-      columns: (m.columns ?? []) as any,
+      columns: baseColumns,
       createdAt: m.createdAt ?? Date.now(),
       updatedAt: m.updatedAt,
-      referenceCount: m.referenceCount ?? (Array.isArray(m.referencingPlugins) ? m.referencingPlugins.length : 0),
+      referenceCount:
+        m.referenceCount ?? (Array.isArray(m.referencingPlugins) ? m.referencingPlugins.length : 0),
       referencingPlugins: m.referencingPlugins ?? [],
       isChunked: m.isChunked,
       chunkCount: m.chunkCount,
-    } as CSVTableMetadata;
+    };
   }
 
   /**
@@ -564,7 +568,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
    * : CSVColumnInfo
    * :
       */
-  private reconstructColumnsFromMetadata(metadata: any): CSVColumnInfo[] {
+  private reconstructColumnsFromMetadata(metadata: MetadataInput): CSVColumnInfo[] {
     //  :
     if (metadata.columns) {
       return metadata.columns;
@@ -591,11 +595,14 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   /**
    * Small wrapper to use column reconstruction where metadata columns are missing.
    */
-  private ensureColumnsFromMetadata(metadata: any, fallback: CSVColumnInfo[]): CSVColumnInfo[] {
+  private ensureColumnsFromMetadata(metadata: MetadataInput | null | undefined, fallback: CSVColumnInfo[]): CSVColumnInfo[] {
     if (!metadata || !Array.isArray(metadata.columns) || metadata.columns.length === 0) {
-      return this.reconstructColumnsFromMetadata(metadata ?? { totalColumns: fallback.length });
+      return this.reconstructColumnsFromMetadata({
+        id: metadata?.id ?? crypto.randomUUID(),
+        totalColumns: fallback.length,
+      });
     }
-    return metadata.columns as CSVColumnInfo[];
+    return metadata.columns;
   }
 
   /**

@@ -29,6 +29,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import type { AlertColor } from '@mui/material/Alert';
 import {
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
@@ -68,6 +69,32 @@ export interface ErrorRecoveryDialogProps {
   onAdjustSettings?: () => void;
 }
 
+const getSeverityColor = (severity: ErrorSeverity): AlertColor => {
+  switch (severity) {
+    case 'CRITICAL':
+    case 'ERROR':
+      return 'error';
+    case 'WARNING':
+      return 'warning';
+    case 'INFO':
+    default:
+      return 'info';
+  }
+};
+
+const getSeverityIcon = (severity: ErrorSeverity): React.ReactNode => {
+  switch (severity) {
+    case 'CRITICAL':
+    case 'ERROR':
+      return React.createElement(ErrorIcon);
+    case 'WARNING':
+      return React.createElement(WarningIcon);
+    case 'INFO':
+    default:
+      return React.createElement(InfoIcon);
+  }
+};
+
 // ========================================
 // ========================================
 
@@ -81,23 +108,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   const [expanded, setExpanded] = React.useState(false);
   const [actionInProgress, setActionInProgress] = React.useState<string | null>(null);
   const [autoRecoveryProgress, setAutoRecoveryProgress] = React.useState(0);
-
-  const getSeverityStyle = (severity: ErrorSeverity) => {
-    switch (severity) {
-      case 'CRITICAL':
-        return { color: 'error', icon: React.createElement(ErrorIcon) };
-      case 'ERROR':
-        return { color: 'error', icon: React.createElement(ErrorIcon) };
-      case 'WARNING':
-        return { color: 'warning', icon: React.createElement(WarningIcon) };
-      case 'INFO':
-        return { color: 'info', icon: React.createElement(InfoIcon) };
-      default:
-        return { color: 'info', icon: React.createElement(InfoIcon) };
-    }
-  };
-
-  const style = getSeverityStyle(error.severity);
+  const severityColor = getSeverityColor(error.severity);
+  const severityIcon = getSeverityIcon(error.severity);
 
   const handleAction = async (action: SuggestedAction) => {
     setActionInProgress(action.type);
@@ -152,8 +164,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   }, [autoRecoveryEnabled, error]);
 
   return React.createElement(Alert, {
-      severity: style.color as any,
-      icon: style.icon,
+      severity: severityColor,
+      icon: severityIcon,
       onClose: onDismiss,
       sx: { mb: 2 },
     },
@@ -414,8 +426,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
     ...errors.map((error) =>
       React.createElement(Alert, {
           key: `${error.code}-${error.timestamp}`,
-          severity: error.severity === 'CRITICAL' || error.severity === 'ERROR' ?
-            'error' : error.severity.toLowerCase() as any,
+          severity: getSeverityColor(error.severity),
           onClose: () => onClose(error),
           sx: {
             boxShadow: 3,

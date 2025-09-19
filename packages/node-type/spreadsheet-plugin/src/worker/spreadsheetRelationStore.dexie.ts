@@ -8,14 +8,31 @@ type Rel = RelationBase<SpreadsheetRelationMeta>;
 export function createSpreadsheetRelationStoreDexie(db: SpreadsheetEntitiesDB): RelationStore<Rel> {
   return {
     async listByNode(nodeId: NodeId) {
-      return (await db.relations.where('srcNodeId').equals(nodeId).toArray()) as any;
+      const rows = await db.relations.where('srcNodeId').equals(nodeId).toArray();
+      return rows.map((row) => ({
+        srcNodeId: row.srcNodeId,
+        dstNodeId: row.dstNodeId,
+        type: row.type,
+        meta: row.meta,
+        updatedAt: row.updatedAt,
+      }));
     },
     async bulkUpsert(rels: Rel[]) {
-      await db.relations.bulkPut(rels.map((r) => ({ ...r, updatedAt: Date.now() })) as SheetRelationRow[]);
+      const rows: SheetRelationRow[] = rels.map((rel) => ({
+        srcNodeId: rel.srcNodeId,
+        dstNodeId: rel.dstNodeId,
+        type: rel.type,
+        meta: rel.meta,
+        updatedAt: rel.updatedAt ?? Date.now(),
+      }));
+      await db.relations.bulkPut(rows);
     },
     async bulkDelete(rels: Rel[]) {
       await db.transaction('rw', db.relations, async () => {
-        for (const r of rels) await db.relations.delete([r.srcNodeId, r.type, r.dstNodeId] as any);
+        for (const rel of rels) {
+          const key: [NodeId, string, NodeId] = [rel.srcNodeId, rel.type, rel.dstNodeId];
+          await db.relations.delete(key);
+        }
       });
     },
   };

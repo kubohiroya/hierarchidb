@@ -8,11 +8,12 @@ import {
   isValidTrashHolderName,
   isValidWorkingCopyHolderName,
 } from './holder-encoding.js';
+import { NodeId } from '@hierarchidb/common-type';
 
 describe('holder-encoding v1 (TAB separator)', () => {
   it('encodes and decodes WorkingCopy holder name roundtrip', () => {
-    const parentId = 'r:workingCopy';
-    const targetNodeId = 'node-abc-123';
+    const parentId = 'r:workingCopy' as NodeId;
+    const targetNodeId = 'node-abc-123' as NodeId;
     const name = encodeWorkingCopyHolderName(parentId, targetNodeId);
     const decoded = decodeWorkingCopyHolderName(name);
     expect(decoded).toEqual({ targetParentNodeId: parentId, targetNodeId });
@@ -20,8 +21,8 @@ describe('holder-encoding v1 (TAB separator)', () => {
   });
 
   it('encodes and decodes Trash holder name roundtrip', () => {
-    const originalParentId = 'r:trash';
-    const trashedNodeId = 'node-dead-beef';
+    const originalParentId = 'r:trash' as NodeId;
+    const trashedNodeId = 'node-dead-beef' as NodeId;
     const name = encodeTrashHolderName(originalParentId, trashedNodeId);
     const decoded = decodeTrashHolderName(name);
     expect(decoded).toEqual({ originalParentNodeId: originalParentId, trashedNodeId });
@@ -29,13 +30,13 @@ describe('holder-encoding v1 (TAB separator)', () => {
   });
 
   it('rejects TAB in IDs for WorkingCopy encoding', () => {
-    expect(() => encodeWorkingCopyHolderName('bad\tid', 'ok')).toThrow();
-    expect(() => encodeWorkingCopyHolderName('ok', 'bad\tid')).toThrow();
+    expect(() => encodeWorkingCopyHolderName('bad\tid' as NodeId, 'ok' as NodeId)).toThrow();
+    expect(() => encodeWorkingCopyHolderName('ok' as NodeId, 'bad\tid' as NodeId)).toThrow();
   });
 
   it('rejects TAB in IDs for Trash encoding', () => {
-    expect(() => encodeTrashHolderName('bad\tid', 'ok')).toThrow();
-    expect(() => encodeTrashHolderName('ok', 'bad\tid')).toThrow();
+    expect(() => encodeTrashHolderName('bad\tid' as NodeId, 'ok' as NodeId)).toThrow();
+    expect(() => encodeTrashHolderName('ok' as NodeId, 'bad\tid' as NodeId)).toThrow();
   });
 
   it('throws on invalid holder name format (WorkingCopy)', () => {
@@ -62,8 +63,8 @@ describe('holder-encoding v1 (TAB separator)', () => {
   });
 
   it('micro-bench: encode/decode 1000 times stays under 50ms', () => {
-    const parentId = 'r:workingCopy';
-    const targetNodeId = 'node-abc-123';
+    const parentId = 'r:workingCopy' as NodeId;
+    const targetNodeId = 'node-abc-123' as NodeId;
     const start = performance.now();
     for (let i = 0; i < 1000; i++) {
       const n = encodeWorkingCopyHolderName(parentId, targetNodeId);

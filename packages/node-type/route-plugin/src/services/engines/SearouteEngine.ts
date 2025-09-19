@@ -1,85 +1,116 @@
 import type { RoutingEngine } from './types.js';
 
-type SeaRouteLike =
-  | { getSeaRoute: (from: [number, number], to: [number, number], options?: any) => Promise<any> }
-  | ((from: [number, number], to: [number, number], options?: any) => Promise<any>)
-  | { default: (from: [number, number], to: [number, number], options?: any) => Promise<any> };
+type Coordinate = [number, number];
+type SeaRouteFunction = (from: Coordinate, to: Coordinate, options?: SeaRouteOptions | string) => Promise<SeaRouteResponse>;
+type SeaRouteModule = SeaRouteFunction | SeaRouteObjectModule;
+type SeaRouteObjectModule = { getSeaRoute?: SeaRouteFunction; default?: SeaRouteFunction };
+
+interface SeaRouteOptions {
+  units?: string;
+  blockedAreas?: unknown;
+  avoidCanals?: boolean;
+  vesselSpeedKnots?: number;
+  vesselSpeed?: number;
+  speed_knots?: number;
+  [key: string]: unknown;
+}
+
+interface SeaRouteProperties {
+  distance?: unknown;
+  length?: unknown;
+  units?: string;
+  unit?: string;
+}
+
+interface SeaRouteGeometry {
+  type?: string;
+  coordinates?: unknown;
+}
+
+interface SeaRouteResponse {
+  geometry?: SeaRouteGeometry;
+  coordinates?: unknown;
+  line?: unknown;
+  properties?: SeaRouteProperties;
+  props?: SeaRouteProperties;
+  units?: string;
+  [key: string]: unknown;
+}
+
+type ImportMetaWithEnv = ImportMeta & { env?: Record<string, unknown> };
 
 export class SearouteEngine implements RoutingEngine {
-  private libPromise?: Promise<SeaRouteLike | undefined>;
+  private libPromise?: Promise<SeaRouteModule | undefined>;
 
-  async route(points: [number, number][], options?: any) {
-    const start = points[0]!;
-    const end = points[points.length - 1]!;
+  async route(points: Coordinate[], options?: SeaRouteOptions): Promise<{
+    line: Coordinate[];
+    distance_m: number;
+    duration_s?: number;
+  }> {
+    const start = points[0];
+    const end = points[points.length - 1];
+    if (!start || !end) throw new Error('searoute requires at least two coordinates');
+
+    const normalizedOptions = this.normalizeOptions(options);
 
     try {
-      const lib = await this.loadLib();
-      if (lib) {
-        const fn = this.resolveApi(lib);
-        if (!fn) throw new Error('Unsupported searoute-js API shape');
+      const module = await this.loadLib();
+      if (module) {
+        const fn = this.resolveApi(module);
+        if (!fn) throw new Error('Unsupported searoute module shape');
 
-        const srOptions = this.mapOptions(options);
-        let result: any;
+        let response: SeaRouteResponse;
         try {
-          result = await fn([start[0], start[1]], [end[0], end[1]], srOptions);
-        } catch (err: any) {
-          // Some variants (johnx25bd/searoute-js) expect the 3rd arg to be a units string
-          const msg = String(err?.message || err || '');
-          const unitsStr = this.unitsString(options);
-          if (unitsStr && /units/i.test(msg)) {
-            result = await fn([start[0], start[1]], [end[0], end[1]], unitsStr);
+          response = await fn([start[0], start[1]], [end[0], end[1]], normalizedOptions);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const fallbackUnits = normalizedOptions ? this.unitsString(normalizedOptions) : undefined;
+          if (fallbackUnits && /units/i.test(message)) {
+            response = await fn([start[0], start[1]], [end[0], end[1]], fallbackUnits);
           } else {
-            throw err;
+            throw error;
           }
         }
 
-        const line = this.extractLine(result);
-        const distance_m = this.extractDistanceMeters(result, line);
-        const duration_s = this.estimateDuration(distance_m, options);
-        return { line, distance_m, duration_s } as const;
+        const line = this.extractLine(response);
+        const distance_m = this.extractDistanceMeters(response, line);
+        const duration_s = this.estimateDuration(distance_m, normalizedOptions);
+        return { line, distance_m, duration_s };
       }
-    } catch (e: any) {
-      // Fall through to GC fallback with a warning
-
-      console.warn?.(`searoute-js unavailable, fallback to great-circle: ${e?.message ?? e}`);
-
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+        console.warn(`searoute-js unavailable, fallback to great-circle: ${message}`);
+      }
     }
 
-    // Fallback: straight great-circle approximation between endpoints
-    const distance_m = haversine(start[1], start[0], end[1], end[0]);
-    return { line: [start, end] as [number, number][], distance_m };
+    const fallbackDistance = haversine(start[1], start[0], end[1], end[0]);
+    const fallbackLine: Coordinate[] = [start, end];
+    return { line: fallbackLine, distance_m: fallbackDistance };
   }
 
-  private async loadLib(): Promise<SeaRouteLike | undefined> {
+  private async loadLib(): Promise<SeaRouteModule | undefined> {
     if (!this.libPromise) {
       this.libPromise = (async () => {
-        // Avoid bundler resolution: compute module names at runtime and use @vite-ignore
-        const tryLoad = async (name: string) => {
+        const tryLoad = async (name: string): Promise<SeaRouteModule | undefined> => {
           try {
-            const mod = await import(/* @vite-ignore */ name);
-            return mod as any;
+            const mod: unknown = await import(/* @vite-ignore */ name);
+            return isSeaRouteModule(mod) ? mod : undefined;
           } catch {
             return undefined;
           }
         };
 
-        // Prefer explicit override via env/flag
-        const forced =
-          (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ROUTE_SEAROUTE_PKG) ||
-          (typeof process !== 'undefined' && (process as any)?.env?.ROUTE_SEAROUTE_PKG) ||
-          (typeof globalThis !== 'undefined' && (globalThis as any)?.ROUTE_SEAROUTE_PKG) ||
-          undefined;
-
-        if (forced) {
-          const m = await tryLoad(String(forced));
-          if (m) return m;
+        const forcedName = this.readPreferredPackageName();
+        if (forcedName) {
+          const forcedModule = await tryLoad(forcedName);
+          if (forcedModule) return forcedModule;
         }
 
-        // Try well-known names in order
-        const names = ['searoute', 'searoute-js'];
-        for (const n of names) {
-          const m = await tryLoad(n);
-          if (m) return m;
+        const candidates = ['searoute', 'searoute-js'];
+        for (const candidate of candidates) {
+          const module = await tryLoad(candidate);
+          if (module) return module;
         }
         return undefined;
       })();
@@ -87,86 +118,138 @@ export class SearouteEngine implements RoutingEngine {
     return this.libPromise;
   }
 
-  private resolveApi(mod: SeaRouteLike): ((a: [number, number], b: [number, number], o?: any) => Promise<any>) | undefined {
-    if (!mod) return undefined;
-    if (typeof (mod as any).getSeaRoute === 'function') return (mod as any).getSeaRoute.bind(mod);
-    if (typeof (mod as any) === 'function') return mod as any;
-    if (typeof (mod as any).default === 'function') return (mod as any).default as any;
+  private readPreferredPackageName(): string | undefined {
+    const fromImportMeta = (() => {
+      try {
+        const meta = import.meta as ImportMetaWithEnv;
+        const value = meta.env?.VITE_ROUTE_SEAROUTE_PKG;
+        return readNonEmptyString(value);
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (fromImportMeta) return fromImportMeta;
+
+    if (typeof process !== 'undefined') {
+      const value = readNonEmptyString(process.env?.ROUTE_SEAROUTE_PKG);
+      if (value) return value;
+    }
+
+    const globalValue = readNonEmptyString((globalThis as Record<string, unknown>).ROUTE_SEAROUTE_PKG);
+    return globalValue;
+  }
+
+  private resolveApi(module: SeaRouteModule): SeaRouteFunction | undefined {
+    if (typeof module === 'function') return module;
+    if (isSeaRouteObjectModule(module) && typeof module.getSeaRoute === 'function') {
+      return module.getSeaRoute.bind(module);
+    }
+    if (isSeaRouteObjectModule(module) && typeof module.default === 'function') {
+      return module.default.bind(module);
+    }
     return undefined;
   }
 
-  private mapOptions(options?: any): any {
-    if (!options) return undefined;
-    const out: any = {};
-    if (options.units) out.units = options.units; // 'km' | 'miles' | 'nauticalmiles'
-    if (options.blockedAreas) out.blocked = options.blockedAreas;
-    if (options.avoidCanals !== undefined) out.avoidCanals = !!options.avoidCanals;
-    // Pass through any additional options as-is
-    for (const k of Object.keys(options)) if (!(k in out)) out[k] = (options as any)[k];
-    return out;
+  private normalizeOptions(options: SeaRouteOptions | undefined): SeaRouteOptions | undefined {
+    if (!options || typeof options !== 'object') return undefined;
+    const source = options as Record<string, unknown>;
+    const normalized: SeaRouteOptions = {};
+
+    const units = readNonEmptyString(source.units);
+    if (units) normalized.units = units;
+
+    if ('blockedAreas' in source) normalized.blockedAreas = source.blockedAreas;
+    if ('avoidCanals' in source) normalized.avoidCanals = Boolean(source.avoidCanals);
+
+    const vesselSpeedKnots = toFiniteNumber(source.vesselSpeedKnots);
+    if (vesselSpeedKnots !== undefined) normalized.vesselSpeedKnots = vesselSpeedKnots;
+
+    const vesselSpeed = toFiniteNumber(source.vesselSpeed);
+    if (vesselSpeed !== undefined) normalized.vesselSpeed = vesselSpeed;
+
+    const speedKnots = toFiniteNumber(source.speed_knots);
+    if (speedKnots !== undefined) normalized.speed_knots = speedKnots;
+
+    for (const [key, value] of Object.entries(source)) {
+      if (!(key in normalized)) normalized[key] = value;
+    }
+
+    return normalized;
   }
 
-  private extractLine(result: any): [number, number][] {
-    // Expect GeoJSON-like { geometry: { type: 'LineString', coordinates: [[lon,lat], ...] } }
-    const coords: [number, number][] | undefined =
-      result?.geometry?.coordinates || result?.coordinates || result?.line || undefined;
-    if (Array.isArray(coords) && coords.length >= 2) return coords as [number, number][];
-    throw new Error('searoute-js returned no coordinates');
+  private extractLine(result: SeaRouteResponse): Coordinate[] {
+    const candidates = [
+      result.geometry?.coordinates,
+      result.coordinates,
+      result.line,
+    ];
+
+    for (const candidate of candidates) {
+      const line = toCoordinatePairs(candidate);
+      if (line) return line;
+    }
+    throw new Error('searoute response did not include coordinates');
   }
 
-  private extractDistanceMeters(result: any, line: [number, number][]): number {
-    let distance_m: number | undefined;
-    const props = result?.properties || result?.props || undefined;
-    const dRaw = props?.distance ?? props?.length;
-    if (dRaw != null) {
-      const units: string | undefined = props?.units || props?.unit || result?.units || undefined;
-      const d = Number(dRaw);
-      if (Number.isFinite(d)) {
-        switch ((units || '').toLowerCase()) {
-          case 'm':
-          case 'meter':
-          case 'meters':
-            distance_m = d;
-            break;
-          case 'km':
-          case 'kilometer':
-          case 'kilometers':
-            distance_m = d * 1000;
-            break;
-          case 'mile':
-          case 'miles':
-          case 'mi':
-            distance_m = d * 1609.344;
-            break;
-          case 'nm':
-          case 'nauticalmile':
-          case 'nauticalmiles':
-            distance_m = d * 1852;
-            break;
-          default:
-            // Unknown units; fall back to geometry-based calculation
-            break;
-        }
+  private extractDistanceMeters(result: SeaRouteResponse, line: Coordinate[]): number {
+    let distance: number | undefined;
+    const props = result.properties ?? result.props ?? {};
+    const rawDistance = props.distance ?? props.length;
+    const numeric = toFiniteNumber(rawDistance);
+    const units = readNonEmptyString(props.units ?? props.unit ?? result.units)?.toLowerCase();
+
+    if (numeric !== undefined && units) {
+      switch (units) {
+        case 'm':
+        case 'meter':
+        case 'meters':
+          distance = numeric;
+          break;
+        case 'km':
+        case 'kilometer':
+        case 'kilometers':
+          distance = numeric * 1000;
+          break;
+        case 'mile':
+        case 'miles':
+        case 'mi':
+          distance = numeric * 1609.344;
+          break;
+        case 'nm':
+        case 'nauticalmile':
+        case 'nauticalmiles':
+          distance = numeric * 1852;
+          break;
+        default:
+          break;
       }
     }
-    if (distance_m == null) distance_m = this.distanceFromLine(line);
-    return distance_m;
-  }
 
-  private estimateDuration(distance_m: number, options?: any): number | undefined {
-    // If vessel speed is provided, estimate duration.
-    const speed_knots = options?.vesselSpeedKnots ?? options?.vesselSpeed ?? options?.speed_knots;
-    if (speed_knots && Number.isFinite(Number(speed_knots))) {
-      const dist_nm = distance_m / 1852;
-      const hours = dist_nm / Number(speed_knots);
-      return hours * 3600;
+    if (distance === undefined && numeric !== undefined) {
+      distance = numeric;
     }
-    return undefined;
+
+    if (distance === undefined) {
+      distance = this.distanceFromLine(line);
+    }
+    return distance;
   }
 
-  private unitsString(options?: any): 'nm' | 'kilometers' | 'miles' | undefined {
-    const u = (options?.units || options?.unit || '').toString().toLowerCase();
-    switch (u) {
+  private estimateDuration(distanceMeters: number, options?: SeaRouteOptions): number | undefined {
+    if (!options) return undefined;
+    const speed = options.vesselSpeedKnots ?? options.vesselSpeed ?? options.speed_knots;
+    if (speed === undefined || speed <= 0) return undefined;
+    const distanceNm = distanceMeters / 1852;
+    const hours = distanceNm / speed;
+    if (!Number.isFinite(hours)) return undefined;
+    return hours * 3600;
+  }
+
+  private unitsString(options: SeaRouteOptions): 'nm' | 'kilometers' | 'miles' | undefined {
+    const candidate = readNonEmptyString(options.units);
+    if (!candidate) return undefined;
+    switch (candidate.toLowerCase()) {
       case 'nm':
       case 'nauticalmile':
       case 'nauticalmiles':
@@ -185,15 +268,57 @@ export class SearouteEngine implements RoutingEngine {
     }
   }
 
-  private distanceFromLine(line: [number, number][]): number {
+  private distanceFromLine(line: Coordinate[]): number {
     let sum = 0;
     for (let i = 0; i < line.length - 1; i++) {
-      const a = line[i]!;
-      const b = line[i + 1]!;
-      sum += haversine(a[1], a[0], b[1], b[0]);
+      const current = line[i];
+      const next = line[i + 1];
+      if (!current || !next) continue;
+      sum += haversine(current[1], current[0], next[1], next[0]);
     }
     return sum;
   }
+}
+
+function isSeaRouteObjectModule(value: unknown): value is SeaRouteObjectModule {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSeaRouteModule(value: unknown): value is SeaRouteModule {
+  if (typeof value === 'function') return true;
+  if (isSeaRouteObjectModule(value)) {
+    const candidate = value as Record<string, unknown>;
+    return typeof candidate.getSeaRoute === 'function' || typeof candidate.default === 'function';
+  }
+  return false;
+}
+
+function toCoordinatePairs(candidate: unknown): Coordinate[] | undefined {
+  if (!Array.isArray(candidate)) return undefined;
+  const pairs: Coordinate[] = [];
+  for (const item of candidate) {
+    if (!Array.isArray(item) || item.length < 2) return undefined;
+    const lon = toFiniteNumber(item[0]);
+    const lat = toFiniteNumber(item[1]);
+    if (lon === undefined || lat === undefined) return undefined;
+    pairs.push([lon, lat]);
+  }
+  return pairs.length >= 2 ? pairs : undefined;
+}
+
+function readNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function toFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
 }
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {

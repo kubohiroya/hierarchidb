@@ -27,14 +27,14 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
           expiresAt: res.expiresAt ?? Date.now() + 60 * 60 * 1000,
           sessionId,
         });
-        await registry.dispatch(success as any);
-      } catch (e: any) {
+        await registry.dispatch(success);
+      } catch (e) {
         const cancelled = AuthNotificationFactory.createAuthCancelled({
           requestId,
           sessionId,
           reason: 'error',
         });
-        await registry.dispatch(cancelled as any);
+        await registry.dispatch(cancelled);
       }
     },
     onAuthSuccess: async () => {

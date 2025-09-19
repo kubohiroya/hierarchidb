@@ -3,7 +3,7 @@
  * @description Database schema and management for Spreadsheet plugin
  */
 
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table, type TransactionMode } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
@@ -13,14 +13,24 @@ import type {
   SpreadsheetRow,
 } from '../types/index.js';
 
+interface SpreadsheetTables {
+  rawFileMetadata: Table<RawFileMetadata>;
+  rowChunks: Table<RowChunk>;
+  spreadsheetRows: Table<SpreadsheetRow>;
+  spreadsheetEntities: Table<SpreadsheetEntity>;
+}
+
+type SpreadsheetTableName = keyof SpreadsheetTables;
+type SpreadsheetTable = SpreadsheetTables[SpreadsheetTableName];
+
 /**
   * : Spreadsheet
  * : PersistentRelationalEntity + PersistentPeerEntity
  * :
  * : Dexie
   */
-// Dexie v4 typings expose Dexie as a value with constructor type; cast to any for subclassing in UI-only typecheck
-export class SpreadsheetDatabase extends (Dexie as any) {
+// Dexie is subclassed directly; helper lookup keeps transaction tables type-safe without casts.
+export class SpreadsheetDatabase extends Dexie {
   // PersistentRelationalEntity Tables
   rawFileMetadata!: Table<RawFileMetadata>;
   rowChunks!: Table<RowChunk>;
@@ -28,6 +38,23 @@ export class SpreadsheetDatabase extends (Dexie as any) {
 
   // PersistentPeerEntity Tables
   spreadsheetEntities!: Table<SpreadsheetEntity>;
+
+  private resolveTable(tableName: SpreadsheetTableName): SpreadsheetTable {
+    switch (tableName) {
+      case 'rawFileMetadata':
+        return this.rawFileMetadata;
+      case 'rowChunks':
+        return this.rowChunks;
+      case 'spreadsheetRows':
+        return this.spreadsheetRows;
+      case 'spreadsheetEntities':
+        return this.spreadsheetEntities;
+      default: {
+        const exhaustiveCheck: never = tableName;
+        throw new Error(`Unsupported spreadsheet table: ${exhaustiveCheck}`);
+      }
+    }
+  }
 
   constructor(dbName: string = getDBName('spreadsheet-db')) {
     super(dbName);
@@ -301,14 +328,18 @@ export class SpreadsheetDatabase extends (Dexie as any) {
    * 【テスト対応】: トランザクションテスト
    * 🟢 信頼性レベル: ACID特性保証
    */
-  async performTransaction<T>(operation: () => Promise<T>, tables: string[] = []): Promise<T> {
-    const tablesToUse = tables.map((t) => (this as any)[t]);
-    // Ensure at least one table for TypeScript
-    if (tablesToUse.length === 0) {
+  async performTransaction<T>(
+    operation: () => Promise<T>,
+    tables: SpreadsheetTableName[] = [],
+    mode: TransactionMode = 'rw',
+  ): Promise<T> {
+    if (tables.length === 0) {
       return await operation();
     }
-    // Use apply to handle variable number of arguments
-    return await (this.transaction as any)('rw', ...tablesToUse, operation);
+
+    const transactionTables = tables.map((tableName) => this.resolveTable(tableName));
+
+    return await this.transaction(mode, transactionTables, operation);
   }
 
   /**

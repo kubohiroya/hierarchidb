@@ -503,7 +503,7 @@ export function useTreeConsoleIntegration({
 
       handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => {
         // Ignore non-clickable breadcrumb items (e.g., ellipsis)
-        if (!nodeId || (node && (node as any).isClickable === false)) return;
+        if (!nodeId || (node && node.isClickable === false)) return;
         const target = nodeId as NodeId;
         if (!target) return;
         if (pushPath && treeId) {

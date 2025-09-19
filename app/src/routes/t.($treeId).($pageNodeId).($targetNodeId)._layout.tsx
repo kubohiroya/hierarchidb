@@ -2,36 +2,44 @@ import { LoaderFunctionArgs } from 'react-router';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
-import { loadTargetNode, LoadTargetNodeArgs } from '~/loader.js';
+import { loadTargetNode } from '~/loader.js';
 
-export async function clientLoader(args: LoaderFunctionArgs) {
-  // Don't load if targetNodeId is undefined
-  if (!args.params.targetNodeId || !args.params.targetNodeId) {
-    return null;
+type LoaderData = Awaited<ReturnType<typeof loadTargetNode>>;
+
+export async function clientLoader({ params }: LoaderFunctionArgs) {
+  const { treeId, pageNodeId, targetNodeId } = params;
+  if (!treeId || !pageNodeId || !targetNodeId) {
+    throw new Response('Missing route parameters.', { status: 400 });
   }
-  return await loadTargetNode(args.params as LoadTargetNodeArgs);
+  return await loadTargetNode({ treeId, pageNodeId, targetNodeId });
 }
 
 export default function TLayout() {
-  const data = useLoaderData() as (Awaited<ReturnType<typeof clientLoader>> | null) & { tree?: any, pageNodeId?: string, targetNodeId?: string };
+  const data = useLoaderData<LoaderData>();
   const navigate = useNavigate();
-  const notFound = !!data && typeof (data as any) === 'object' && 'targetNode' in (data as any) && (data as any).targetNode === undefined;
-  const treeId = (data as any)?.tree?.id;
-  const pageNodeId = (data as any)?.pageNodeId;
-  const targetNodeId = (data as any)?.targetNodeId;
+  const { tree, pageNodeId, targetNodeId, targetNode } = data;
+  const notFound = targetNode === undefined;
+  const fallbackTreeId = tree?.id ?? 'r';
   const [open, setOpen] = useState<boolean>(notFound);
-  useEffect(() => { setOpen(notFound); }, [notFound]);
+
+  useEffect(() => {
+    setOpen(notFound);
+  }, [notFound]);
+
+  const goToPageNode = () => {
+    navigate(`/t/${fallbackTreeId}/${pageNodeId}`);
+  };
 
   return (
     <>
       {notFound && (
-        <Dialog open={open} onClose={() => navigate(`/t/${treeId || 'r'}/${pageNodeId || ''}`)}>
+        <Dialog open={open} onClose={goToPageNode}>
           <DialogTitle>Node Not Found</DialogTitle>
           <DialogContent>
-            <Typography>Node Not Found: ({targetNodeId || 'Unknown'})</Typography>
+            <Typography>Node Not Found: ({targetNodeId ?? 'Unknown'})</Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => navigate(`/t/${treeId || 'r'}/${pageNodeId || ''}`)} variant="contained" autoFocus>
+            <Button onClick={goToPageNode} variant="contained" autoFocus>
               Go to Page Node
             </Button>
           </DialogActions>

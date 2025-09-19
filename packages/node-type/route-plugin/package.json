@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/route-plugin",
+  "name": "@hierarchidb/node-type-route-plugin",
   "type": "module",
   "version": "1.0.0",
   "description": "Route management plugin extending Shape plugin for HierarchiDB",
@@ -23,16 +23,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.mjs"
-    },
-    "./src/worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
-    },
-    "./src/worker/*": {
-      "types": "./src/worker/*.ts",
-      "import": "./src/worker/*.ts",
-      "default": "./src/worker/*.ts"
     }
   },
   "typesVersions": {
@@ -61,12 +51,12 @@
   },
   "dependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/base-plugin": "workspace:*",
+    "@hierarchidb/node-type-base-plugin": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/shape-plugin": "workspace:*",
+    "@hierarchidb/node-type-shape-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",

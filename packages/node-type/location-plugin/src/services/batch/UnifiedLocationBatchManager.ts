@@ -32,16 +32,19 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     // Facade creation skipped to avoid unused symbol during dts build
   }
 
+  /** @internal Test-only injection hook */
+  setInternalManager(manager: LocationBatchSessionManager): void {
+    this.manager = manager;
+  }
+
   async startBatchSession(nodeId: NodeId, config: LocationBatchConfig, data?: LocationBatchData): Promise<string> {
     if (!data || !data.points || !data.settings) {
       throw new Error('Location batch session requires points and settings data');
     }
 
     const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
-    // Best-effort: ensure sessions table has an entry (if not already written by manager)
     const db = getEphemeralLocationDB();
-    // @ts-ignore
-    await db.table('sessions').put({
+    await db.sessions?.put({
       sessionId: summary.sessionId,
       nodeId,
       bbox: summary.bbox,
@@ -90,13 +93,12 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
 
   onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
     return this.manager.onProgress(sessionId, async (event) => {
-      const std: StandardProgressEvent = toStandardProgressEvent(event as any);
+      const std: StandardProgressEvent = toStandardProgressEvent(event);
       callback(std);
       // Persist lightweight progress snapshot (best-effort, fire-and-forget)
       void (async () => {
           const db = getEphemeralLocationDB();
-          // @ts-ignore
-          await db.table('sessions').update(sessionId, {
+          await db.sessions?.update(sessionId, {
             progress: std.percentage,
             updatedAt: Date.now(),
             status: std.percentage >= 100 ? 'completed' : 'running',

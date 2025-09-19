@@ -35,12 +35,12 @@ describe('Envelope validation (ZE-2)', () => {
   });
 
   it('rejects when both kind and type are missing', () => {
-    const input = {
+    const input: Record<string, unknown> = {
       commandId: 'cmd-3',
       groupId: 'grp-3',
       payload: {},
       issuedAt: Date.now(),
-    } as any;
+    };
     const r = validateAndNormalizeEnvelope(input);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toContain('kind');

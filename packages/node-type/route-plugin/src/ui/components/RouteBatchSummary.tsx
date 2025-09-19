@@ -8,10 +8,8 @@ export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
     (async () => {
       const db = new RouteDatabase();
       try {
-        // @ts-ignore
-        const cursor = await (db.table('routeCursors') as any)?.get(sessionId);
-        // @ts-ignore
-        const results = await (db.table('routeResults') as any)?.where('sessionId').equals(sessionId).count();
+        const cursor = await db.routeCursors.get(sessionId);
+        const results = await db.routeResults.where('sessionId').equals(sessionId).count();
         if (!cancelled) setState({
           completed: cursor?.completed ?? 0,
           total: cursor?.total ?? 0,
@@ -41,4 +39,3 @@ export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
     </div>
   );
 }
-

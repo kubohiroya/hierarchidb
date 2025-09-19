@@ -6,14 +6,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
 import type { InitializationStep } from '../types.js';
 
-// Mock self (Worker global scope)
-const mockSelf = {
-  addEventListener: vi.fn(),
-  postMessage: vi.fn(),
+type WorkerLikeScope = {
+  addEventListener: (type: 'message', handler: (event: MessageEvent) => void) => void;
+  postMessage: (data: unknown) => void;
 };
 
-// Store the original global
-const originalSelf = global.self;
+const mockSelf: WorkerLikeScope = {
+  addEventListener: vi.fn<(type: 'message', handler: (event: MessageEvent) => void) => void>(),
+  postMessage: vi.fn<(data: unknown) => void>(),
+};
+
+type GlobalWithWorker = typeof globalThis & { self: WorkerLikeScope };
+
+const globalWithWorker = globalThis as GlobalWithWorker;
+const originalSelf = globalWithWorker.self;
 
 describe('WorkerInitializationReporter', () => {
   let reporter: WorkerInitializationReporter;
@@ -27,10 +33,10 @@ describe('WorkerInitializationReporter', () => {
 
   beforeEach(() => {
     // Mock Worker global scope
-    global.self = mockSelf as any;
+    globalWithWorker.self = mockSelf;
 
     // Capture the message handler
-    mockSelf.addEventListener.mockImplementation((type: string, handler: any) => {
+    mockSelf.addEventListener.mockImplementation((type: string, handler: (event: MessageEvent) => void) => {
       if (type === 'message') {
         messageHandler = handler;
       }
@@ -44,7 +50,7 @@ describe('WorkerInitializationReporter', () => {
 
   afterEach(() => {
     // Restore original global
-    global.self = originalSelf;
+    globalWithWorker.self = originalSelf;
     vi.clearAllMocks();
   });
 

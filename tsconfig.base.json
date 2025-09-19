@@ -29,7 +29,21 @@
     "composite": false,
     "incremental": false,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "packages/runtime-shared/batch-processor/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor/*": [
+        "packages/runtime-shared/batch-processor/src/*"
+      ],
+      "@hierarchidb/download": [
+        "packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/download/*": [
+        "packages/feature/download/src/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules",

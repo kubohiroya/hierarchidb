@@ -141,7 +141,7 @@
 
 ### タスク6: project-plugin の修正（アーカイブ）
 
-> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
+> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/node-type-linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
 
 **対象**: `packages/node-type/linker-plugin`（旧 `project-plugin`）
 

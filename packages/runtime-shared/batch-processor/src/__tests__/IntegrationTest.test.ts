@@ -11,9 +11,9 @@ describe('Unified Batch Manager Integration', () => {
     // Test that we can import the factory functions
     expect(() => {
       // These imports will validate that the interfaces are correctly defined
-      const { createLocationBatchManager } = require('@hierarchidb/location-plugin');
-      const { createShapeBatchManager } = require('@hierarchidb/shape-plugin');
-      const { createRouteBatchManager } = require('@hierarchidb/route-plugin');
+      const { createLocationBatchManager } = require('@hierarchidb/node-type-location-plugin');
+      const { createShapeBatchManager } = require('@hierarchidb/node-type-shape-plugin');
+      const { createRouteBatchManager } = require('@hierarchidb/node-type-route-plugin');
 
       // Check that factory functions exist
       expect(typeof createLocationBatchManager).toBe('function');
@@ -25,9 +25,9 @@ describe('Unified Batch Manager Integration', () => {
 
   it('should create managers with unified interface', async () => {
     // This test verifies that all managers implement IBatchSessionManager
-    const { createLocationBatchManager } = await import('@hierarchidb/location-plugin');
-    const { createShapeBatchManager } = await import('@hierarchidb/shape-plugin');
-    const { createRouteBatchManager } = await import('@hierarchidb/route-plugin');
+    const { createLocationBatchManager } = await import('@hierarchidb/node-type-location-plugin');
+    const { createShapeBatchManager } = await import('@hierarchidb/node-type-shape-plugin');
+    const { createRouteBatchManager } = await import('@hierarchidb/node-type-route-plugin');
 
     const locationManager = createLocationBatchManager();
     const shapeManager = createShapeBatchManager();
@@ -53,9 +53,9 @@ describe('Unified Batch Manager Integration', () => {
 
 describe('Feature Flag Integration', () => {
   it('should detect feature flag correctly across plugins', async () => {
-    const { isLocationBatchAPIV2Enabled } = await import('@hierarchidb/location-plugin');
-    const { isShapeBatchAPIV2Enabled } = await import('@hierarchidb/shape-plugin');
-    const { isRouteBatchAPIV2Enabled } = await import('@hierarchidb/route-plugin');
+    const { isLocationBatchAPIV2Enabled } = await import('@hierarchidb/node-type-location-plugin');
+    const { isShapeBatchAPIV2Enabled } = await import('@hierarchidb/node-type-shape-plugin');
+    const { isRouteBatchAPIV2Enabled } = await import('@hierarchidb/node-type-route-plugin');
 
     expect(isLocationBatchAPIV2Enabled()).toBe(true);
     expect(isShapeBatchAPIV2Enabled()).toBe(true);

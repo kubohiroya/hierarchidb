@@ -1,5 +1,48 @@
 import type { ILocationDownloadStrategy } from '../types.js';
-import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity.js';
+import type {
+  LocationEntity,
+  LocationSearchConfig,
+  LocationCategory,
+  LocationType,
+} from '../../../entities/LocationEntity.js';
+import {
+  buildLocationEntity,
+  createPoint,
+  mapCategory,
+  mapType,
+  normalizeImportance,
+  normalizeOsmType,
+  parseBoundingBox,
+  parseNumber,
+  sanitizeTags,
+} from '../mappers.js';
+
+interface RawAddress {
+  road?: string;
+  house_number?: string;
+  postcode?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  suburb?: string;
+  state?: string;
+  country?: string;
+  country_code?: string;
+}
+
+interface RawNominatimResult {
+  osm_id: number | string;
+  display_name?: string;
+  class?: string;
+  type?: string;
+  osm_type?: string;
+  lon?: string;
+  lat?: string;
+  boundingbox?: [string, string, string, string] | string[];
+  address?: RawAddress;
+  extratags?: Record<string, string>;
+  importance?: number | string;
+}
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';
@@ -29,105 +72,57 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       const { authFetch } = await import('../../utils/authFetch.js');
       const response = await authFetch(`${endpoint}?${params}`);
       const data = await response.json();
-      return (data as any[]).map((osm) => this.fromOSM(osm));
+      if (!Array.isArray(data)) return [];
+      const entities = data
+        .map((item) => this.fromOSM(item as RawNominatimResult))
+        .filter((value): value is LocationEntity => value !== null);
+      return entities;
     } catch (e) {
       console.error('[Location][Strategy:Nominatim] search failed', e);
       return [];
     }
   }
 
-  private fromOSM(osmData: any): LocationEntity {
-    const now = Date.now();
-    return {
-      id: `osm-${osmData.osm_id}` as any,
-      nodeId: `osm-node-${osmData.osm_id}` as any,
+  private fromOSM(osmData: RawNominatimResult): LocationEntity | null {
+    const lon = parseNumber(osmData.lon);
+    const lat = parseNumber(osmData.lat);
+    if (typeof lon !== 'number' || typeof lat !== 'number') return null;
+
+    const address = osmData.address
+      ? {
+          street: osmData.address.road,
+          houseNumber: osmData.address.house_number,
+          postcode: osmData.address.postcode,
+          city: osmData.address.city || osmData.address.town || osmData.address.village,
+          district: osmData.address.suburb,
+          state: osmData.address.state,
+          country: osmData.address.country,
+          countryCode: osmData.address.country_code?.toUpperCase(),
+        }
+      : undefined;
+
+    const attributes = {
+      osmId: String(osmData.osm_id),
+      osmType: normalizeOsmType(osmData.osm_type),
+      osmTags: sanitizeTags(osmData.extratags),
+    };
+
+    const category: LocationCategory = mapCategory(osmData.class);
+    const type: LocationType = mapType(osmData.type);
+
+    return buildLocationEntity({
+      prefix: 'osm',
+      rawId: osmData.osm_id,
       name: osmData.display_name || 'Unknown',
-      category: this.detectCategory(osmData.class),
-      type: this.detectType(osmData.type),
+      category,
+      type,
       dataSource: 'openstreetmap',
-      point: {
-        coordinates: [parseFloat(osmData.lon), parseFloat(osmData.lat)],
-        source: 'openstreetmap',
-        timestamp: now,
-      },
-      boundingBox: osmData.boundingbox ? osmData.boundingbox.map((v: string) => parseFloat(v)) as [number, number, number, number] : undefined,
-      address: osmData.address ? {
-        street: osmData.address.road,
-        houseNumber: osmData.address.house_number,
-        postcode: osmData.address.postcode,
-        city: osmData.address.city || osmData.address.town || osmData.address.village,
-        district: osmData.address.suburb,
-        state: osmData.address.state,
-        country: osmData.address.country,
-        countryCode: osmData.address.country_code?.toUpperCase(),
-      } : undefined,
-      attributes: {
-        osmId: osmData.osm_id,
-        osmType: osmData.osm_type,
-        osmTags: osmData.extratags || {},
-      },
-      licenseAgreement: true,
-      licenseAgreedAt: now,
-      processingStatus: 'completed',
-      processedAt: now,
-      importance: parseFloat(osmData.importance) || 0.5,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      tags: [],
-      metadata: {},
-      customFields: {},
-      childLocationIds: [],
-      nearbyLocationIds: [],
-      searchKeywords: [],
-    } as LocationEntity;
-  }
-
-  private detectCategory(osmClass?: string): any {
-    const map: Record<string, string> = {
-      amenity: 'infrastructure',
-      aeroway: 'transportation',
-      railway: 'transportation',
-      highway: 'transportation',
-      place: 'administrative',
-      shop: 'commercial',
-      tourism: 'leisure',
-      historic: 'cultural',
-      leisure: 'leisure',
-      natural: 'natural',
-      office: 'administrative',
-    };
-    return (map[osmClass || ''] || 'infrastructure') as any;
-  }
-
-  private detectType(osmType?: string): any {
-    const map: Record<string, string> = {
-      aerodrome: 'airport',
-      railway: 'railway_station',
-      bus_station: 'bus_stop',
-      harbour: 'port',
-      hospital: 'hospital',
-      clinic: 'clinic',
-      pharmacy: 'pharmacy',
-      school: 'school',
-      university: 'university',
-      library: 'library',
-      mall: 'shopping_mall',
-      supermarket: 'supermarket',
-      restaurant: 'restaurant',
-      hotel: 'hotel',
-      bank: 'bank',
-      museum: 'museum',
-      theatre: 'theater',
-      monument: 'monument',
-      park: 'park',
-      stadium: 'stadium',
-      beach: 'beach',
-      peak: 'mountain',
-      water: 'lake',
-      river: 'river',
-    };
-    return (map[osmType || ''] || 'park') as any;
+      point: createPoint(lon, lat, 'openstreetmap', Date.now()),
+      attributes,
+      boundingBox: parseBoundingBox(osmData.boundingbox),
+      address,
+      importance: normalizeImportance(osmData.importance, 0.5),
+      metadata: { source: 'nominatim' },
+    });
   }
 }
-

@@ -12,7 +12,10 @@ export function useMultiStepA11y(rootRef: React.RefObject<HTMLElement>, stepInde
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
       );
       focusable?.focus?.();
-    } catch {}
+    } catch (error) {
+      if (typeof console !== 'undefined') {
+        console.warn('[useMultiStepA11y] focus attempt failed', error);
+      }
+    }
   }, [rootRef, stepIndex]);
 }
-

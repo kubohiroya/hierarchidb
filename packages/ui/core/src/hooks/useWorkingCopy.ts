@@ -8,6 +8,14 @@ type WorkingCopyAPI = {
   discardWorkingCopy: (nodeId: string) => Promise<void>;
 };
 
+type WorkerClient = {
+  getWorkingCopyAPI: () => Promise<WorkingCopyAPI>;
+};
+
+type WorkerClientProvider = {
+  client: WorkerClient;
+};
+
 export interface UseWorkingCopyOptions {
   nodeType: string;
   mode: 'create' | 'edit';
@@ -26,9 +34,18 @@ export interface UseWorkingCopyResult<T = any> {
   error: unknown;
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const extractWorkingCopyId = (value: unknown, fallback: string): string => {
+  if (isRecord(value) && 'id' in value && typeof value.id === 'string') {
+    return value.id;
+  }
+  return fallback;
+};
+
 export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorkingCopyResult<T> {
   const { nodeType, mode, nodeId, parentId } = opts;
-  const useWorker = getWorkerClientHook();
+  const useWorker = getWorkerClientHook<WorkerClientProvider>();
   const [wcId, setWcId] = useState<string | null>(null);
   const [workingCopy, _setWorkingCopy] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,9 +54,8 @@ export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorking
 
   const getAPI = useMemo(() => async (): Promise<WorkingCopyAPI> => {
     if (!useWorker) throw new Error('Worker client not available');
-    const client = useWorker();
-    // WorkerAPI directly exposes getWorkingCopyAPI()
-    const wc = await (client as any).getWorkingCopyAPI();
+    const { client } = useWorker();
+    const wc = await client.getWorkingCopyAPI();
     return wc as unknown as WorkingCopyAPI;
   }, [useWorker]);
 
@@ -55,7 +71,7 @@ export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorking
       if (mode === 'edit' && nodeId) {
         const data = await wc.getWorkingCopy(nodeId);
         _setWorkingCopy((data ?? null) as T | null);
-        setWcId(((data as any)?.id ?? nodeId) as string);
+        setWcId(extractWorkingCopyId(data, nodeId));
       } else if (mode === 'create' && parentId) {
         const id = await wc.createDraftWorkingCopy(nodeType, parentId, {});
         const data = await wc.getWorkingCopy(id);

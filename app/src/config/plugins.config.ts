@@ -114,8 +114,19 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
  * Get plugin configuration for current environment
  */
 export function getPluginConfig(): PluginConfig {
-  const mode = (import.meta as any)?.env?.MODE || 'development';
+  const mode = resolveRuntimeMode();
   return PLUGIN_CONFIGS[mode] || DEFAULT_PLUGIN_CONFIG;
+}
+
+function resolveRuntimeMode(): string {
+  let mode = typeof process !== 'undefined' && process.env?.NODE_ENV ? process.env.NODE_ENV : undefined;
+  try {
+    const metaMode = import.meta?.env?.MODE;
+    if (metaMode) return metaMode;
+  } catch {
+    // Ignore environments that do not define import.meta (e.g. Node-based tests)
+  }
+  return mode ?? 'development';
 }
 
 /**

@@ -21,9 +21,10 @@ describe('ProgressAdapter', () => {
       sessionId: 's2',
       stage: 'custom-stage',
       percentage: 55,
-    } as any);
+      total: 0,
+      completed: 0,
+    });
     expect(std.stage).toBe('custom-stage');
     expect(std.percentage).toBe(55);
   });
 });
-

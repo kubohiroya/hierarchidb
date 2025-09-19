@@ -1,19 +1,25 @@
-export type EngineMethod = 'direct' | 'great_circle' | 'osm_route' | 'searoute';
-export type TransportMode = 'road_general' | 'road_express' | 'rail' | 'rail_highspeed' | 'sea' | 'air';
+export type EngineMethod = 'direct' | 'great_circle' | 'osm_route' | 'searoute' | 'custom';
+export type TransportMode =
+  | 'road_general'
+  | 'road_express'
+  | 'rail'
+  | 'rail_highspeed'
+  | 'sea'
+  | 'air';
 
 export interface OdPair {
   start: { lon: number; lat: number };
   end: { lon: number; lat: number };
   mode?: TransportMode;
   engine?: EngineMethod;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DataSourceSpec {
   type: 'csv' | 'geojson' | 'api';
   url?: string;
   inline?: string; // for tests or pasted input
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 export interface RouteBatchSpec {
@@ -49,4 +55,3 @@ export interface DataSourceStrategy {
 
   executeParse(task: ParseTask, blobs: Map<string, Blob>, defaults?: RouteBatchSpec['defaults']): Promise<OdPair[]>;
 }
-

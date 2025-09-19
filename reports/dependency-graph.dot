@@ -21,20 +21,20 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_." {label="." subgraph "cluster_./services" {label="services" "./services/BatchSessionManager.js" [label=<BatchSessionManager.js> tooltip="BatchSessionManager.js" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/common-auth" {label="common-auth" "@hierarchidb/common-auth/AuthNotificationSystem" [label=<AuthNotificationSystem> tooltip="AuthNotificationSystem" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/common-type" [label=<common-type> tooltip="common-type" color="red" fontcolor="red"] }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/location-plugin" [label=<location-plugin> tooltip="location-plugin" color="red" fontcolor="red"] }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/location-plugin" {label="location-plugin" "@hierarchidb/location-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/route-plugin" [label=<route-plugin> tooltip="route-plugin" color="red" fontcolor="red"] }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/route-plugin" {label="route-plugin" "@hierarchidb/route-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/node-type-location-plugin" [label=<location-plugin> tooltip="location-plugin" color="red" fontcolor="red"] }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/node-type-location-plugin" {label="location-plugin" "@hierarchidb/node-type-location-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/node-type-route-plugin" [label=<route-plugin> tooltip="route-plugin" color="red" fontcolor="red"] }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/node-type-route-plugin" {label="route-plugin" "@hierarchidb/node-type-route-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-shared-batch-processor" [label=<runtime-shared-batch-processor> tooltip="runtime-shared-batch-processor" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-ui-datasource" [label=<runtime-ui-datasource> tooltip="runtime-ui-datasource" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-ui-plugin-dialog" [label=<runtime-ui-plugin-dialog> tooltip="runtime-ui-plugin-dialog" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-ui-tour" [label=<runtime-ui-tour> tooltip="runtime-ui-tour" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-worker" [label=<runtime-worker> tooltip="runtime-worker" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/runtime-worker-bootstrap" [label=<runtime-worker-bootstrap> tooltip="runtime-worker-bootstrap" color="red" fontcolor="red"] }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/shape-plugin" [label=<shape-plugin> tooltip="shape-plugin" color="red" fontcolor="red"] }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/shape-plugin" {label="shape-plugin" "@hierarchidb/shape-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/node-type-shape-plugin" [label=<shape-plugin> tooltip="shape-plugin" color="red" fontcolor="red"] }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/node-type-shape-plugin" {label="shape-plugin" "@hierarchidb/node-type-shape-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/tabular" {label="tabular" "@hierarchidb/tabular/registry" [label=<registry> tooltip="registry" color="red" fontcolor="red"] } }
-    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/timeline-plugin" {label="timeline-plugin" "@hierarchidb/timeline-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
+    subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/node-type-timeline-plugin" {label="timeline-plugin" "@hierarchidb/node-type-timeline-plugin/worker" [label=<worker> tooltip="worker" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" subgraph "cluster_@hierarchidb/tools-vite-plugin-package-reader" {label="tools-vite-plugin-package-reader" "@hierarchidb/tools-vite-plugin-package-reader/presets" [label=<presets> tooltip="presets" color="red" fontcolor="red"] } }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/ui-core" [label=<ui-core> tooltip="ui-core" color="red" fontcolor="red"] }
     subgraph "cluster_@hierarchidb" {label="@hierarchidb" "@hierarchidb/ui-csv-extract" [label=<ui-csv-extract> tooltip="ui-csv-extract" color="red" fontcolor="red"] }
@@ -390,11 +390,11 @@ strict digraph "dependency-cruiser output"{
     "app/src/worker.ts" -> "packages/node-type/timeline-plugin/src/worker/index.ts" [style="dashed"]
     "app/src/worker.ts" -> "app/src/version.ts"
     "app/src/worker.ts" -> "app/src/virtual/plugin-definitions.ts" [style="dashed"]
-    "app/src/worker.ts" -> "@hierarchidb/location-plugin/worker" [style="dashed"]
-    "app/src/worker.ts" -> "@hierarchidb/route-plugin/worker" [style="dashed"]
+    "app/src/worker.ts" -> "@hierarchidb/node-type-location-plugin/worker" [style="dashed"]
+    "app/src/worker.ts" -> "@hierarchidb/node-type-route-plugin/worker" [style="dashed"]
     "app/src/worker.ts" -> "@hierarchidb/runtime-worker" [style="dashed"]
-    "app/src/worker.ts" -> "@hierarchidb/shape-plugin/worker" [style="dashed"]
-    "app/src/worker.ts" -> "@hierarchidb/timeline-plugin/worker" [style="dashed"]
+    "app/src/worker.ts" -> "@hierarchidb/node-type-shape-plugin/worker" [style="dashed"]
+    "app/src/worker.ts" -> "@hierarchidb/node-type-timeline-plugin/worker" [style="dashed"]
     "app/src/worker.ts" -> "virtual:plugin-definitions" [style="dashed"]
     "app/src/worker.ts" -> "virtual:plugin-registry-worker" [style="dashed"]
     subgraph "cluster_app" {label="app" "app/vite-plugin-favicon.ts" [label=<vite-plugin-favicon.ts> tooltip="vite-plugin-favicon.ts" URL="app/vite-plugin-favicon.ts" fillcolor="#ddfeff"] }
@@ -2175,9 +2175,9 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_packages" {label="packages" subgraph "cluster_packages/runtime-shared" {label="runtime-shared" subgraph "cluster_packages/runtime-shared/batch-processor" {label="batch-processor" subgraph "cluster_packages/runtime-shared/batch-processor/src" {label="src" "packages/runtime-shared/batch-processor/src/BatchControlAPI.ts" [label=<BatchControlAPI.ts> tooltip="BatchControlAPI.ts" URL="packages/runtime-shared/batch-processor/src/BatchControlAPI.ts" fillcolor="#ddfeff"] } } } }
     subgraph "cluster_packages" {label="packages" subgraph "cluster_packages/runtime-shared" {label="runtime-shared" subgraph "cluster_packages/runtime-shared/batch-processor" {label="batch-processor" subgraph "cluster_packages/runtime-shared/batch-processor/src" {label="src" "packages/runtime-shared/batch-processor/src/Progress.ts" [label=<Progress.ts> tooltip="Progress.ts" URL="packages/runtime-shared/batch-processor/src/Progress.ts" fillcolor="#ddfeff"] } } } }
     subgraph "cluster_packages" {label="packages" subgraph "cluster_packages/runtime-shared" {label="runtime-shared" subgraph "cluster_packages/runtime-shared/batch-processor" {label="batch-processor" subgraph "cluster_packages/runtime-shared/batch-processor/src" {label="src" subgraph "cluster_packages/runtime-shared/batch-processor/src/__tests__" {label="__tests__" "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" [label=<IntegrationTest.test.ts> tooltip="IntegrationTest.test.ts" URL="packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" fillcolor="#ddfeff"] } } } } }
-    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/location-plugin"
-    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/route-plugin"
-    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/shape-plugin"
+    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/node-type-location-plugin"
+    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/node-type-route-plugin"
+    "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "@hierarchidb/node-type-shape-plugin"
     "packages/runtime-shared/batch-processor/src/__tests__/IntegrationTest.test.ts" -> "node_modules/.pnpm/fake-indexeddb@6.2.2" [penwidth="1.0"]
     subgraph "cluster_packages" {label="packages" subgraph "cluster_packages/runtime-shared" {label="runtime-shared" subgraph "cluster_packages/runtime-shared/batch-processor" {label="batch-processor" subgraph "cluster_packages/runtime-shared/batch-processor/src" {label="src" subgraph "cluster_packages/runtime-shared/batch-processor/src/__tests__" {label="__tests__" "packages/runtime-shared/batch-processor/src/__tests__/UnifiedBatchControlAPI.test.ts" [label=<UnifiedBatchControlAPI.test.ts> tooltip="UnifiedBatchControlAPI.test.ts" URL="packages/runtime-shared/batch-processor/src/__tests__/UnifiedBatchControlAPI.test.ts" fillcolor="#ddfeff"] } } } } }
     "packages/runtime-shared/batch-processor/src/__tests__/UnifiedBatchControlAPI.test.ts" -> "@hierarchidb/runtime-shared-batch-processor"

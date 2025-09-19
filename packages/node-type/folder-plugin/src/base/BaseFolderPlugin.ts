@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import type { FolderEntity } from '../entities/FolderEntity.js';
 import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI.js';
 import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI.js';
@@ -10,6 +11,7 @@ import type {
   ValidationResult,
 } from '@hierarchidb/common-type';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
+import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
 
 /**
  * Base class for plugins that extend the folder-plugin plugin
@@ -276,11 +278,11 @@ export abstract class BaseFolderPlugin {
   /**
    * Helper method to create a base-dialog step definition
    */
-  protected createDialogStep<T>(config: {
+  protected createDialogStep<T extends object>(config: {
     id: string;
     label: string;
     description?: string;
-    component: React.ComponentType<any>;
+    component: ComponentType<any>;
     validation?: {
       validate: (data: T) => Promise<{ isValid: boolean; errors?: string[] }>;
       canProceed?: (data: T) => boolean;
@@ -289,13 +291,15 @@ export abstract class BaseFolderPlugin {
     order?: number;
     //dependsOn?: string[];
   }): DialogStepDefinition {
+    const StepWrapper = wrapDialogStepComponent(config.component);
+
     return {
       stepNumber: config.order ?? 0,
       title: config.label,
-      component: config.component as any,
+      component: StepWrapper,
       validation: (config.validation
         ? ({
-          validate: async (data: any): Promise<ValidationResult> => {
+          validate: async (data: unknown): Promise<ValidationResult> => {
             const result = await config.validation!.validate(data as T);
             return result.isValid
               ? { valid: true }

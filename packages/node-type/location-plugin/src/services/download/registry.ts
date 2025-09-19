@@ -1,11 +1,11 @@
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import {
+  createSharedDownloadService,
+  type SharedDownloadService,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import type { ILocationDownloadStrategy } from './types.js';
 import type { LocationSearchConfig } from '../../entities/LocationEntity.js';
 
-export interface LocationNetService {
-  net: { get: (url: string, init?: RequestInit) => Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }> };
-  service: { download?: (url: string, fileId: string) => Promise<any> };
-}
+export type LocationNetService = SharedDownloadService;
 
 type Factory = (opts?: { dbPrefix?: string; perHostConcurrency?: number }) => Promise<LocationNetService>;
 
@@ -23,8 +23,7 @@ export function configureLocationDownloadDefaults(opts: { dbPrefix?: string; per
 
 export async function getLocationDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }): Promise<LocationNetService> {
   if (factory) return factory({ ...defaults, ...opts });
-  const svc = await createSharedDownloadService({ ...defaults, ...opts });
-  return svc as any;
+  return createSharedDownloadService({ ...defaults, ...opts });
 }
 
 export function registerLocationAuthNotifier(fn: (info: { resource: string; provider?: string; hint?: string; status?: number }) => void): void {
@@ -33,11 +32,20 @@ export function registerLocationAuthNotifier(fn: (info: { resource: string; prov
 
 export function notifyLocationAuthRequired(info: { resource: string; provider?: string; hint?: string; status?: number }): void {
   if (authNotifier) {
-    authNotifier(info); return;
+    authNotifier(info);
+    return;
   }
-  const g: any = globalThis as any;
-  const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-  reg?.onAuthRequired?.(info);
+  const globalScope = globalThis as unknown as {
+    AuthNotificationRegistry?: {
+      getInstance?: () => { onAuthRequired?: (payload: typeof info) => void };
+    };
+    authNotificationRegistry?: { onAuthRequired?: (payload: typeof info) => void };
+    authRegistry?: { onAuthRequired?: (payload: typeof info) => void };
+  };
+  const registry = globalScope.AuthNotificationRegistry?.getInstance?.()
+    ?? globalScope.authNotificationRegistry
+    ?? globalScope.authRegistry;
+  registry?.onAuthRequired?.(info);
 }
 
 // Simple in-memory strategy registry

@@ -34,7 +34,7 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
         total: p.total,
         completed: p.completed,
         failed: p.failed,
-        currentStage: (p.currentStage ?? 'processing') as ProcessingStage,
+        currentStage: p.currentStage ?? 'processing',
         currentTask: p.currentTask,
       });
     });
@@ -71,7 +71,7 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
   protected onStandardProgressUpdate(event: StandardProgressEvent): void {
     // Convert to legacy ProgressEvent for compatibility
     const legacyEvent: ProgressEvent = {
-      sessionId: event.sessionId as any,
+      sessionId: event.sessionId,
       stage: event.stage,
       total: event.total,
       completed: event.completed,

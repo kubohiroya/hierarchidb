@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "CORS proxy for external API access",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "src/index.mts",
   "scripts": {
     "dev:manual": "wrangler dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",

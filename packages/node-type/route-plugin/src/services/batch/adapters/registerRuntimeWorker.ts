@@ -4,13 +4,10 @@
  */
 
 function isFlagEnabled(name: string, fallback = false): boolean {
-  const g: any = (globalThis as any);
-  const env = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
-  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-  const v = ls?.getItem(name) ?? g?.[name] ?? env?.[name];
-  if (v == null) return fallback;
-  const s = String(v).toLowerCase();
-  return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
+  const value = readFlagValue(name);
+  if (value === undefined) return fallback;
+  const normalized = value.toLowerCase();
+  return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled';
 }
 
 /**
@@ -22,11 +19,41 @@ export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
   if (!isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) return;
   try {
     const name = '@' + 'hierarchidb/runtime-worker';
-    const mod: any = await import(/* @vite-ignore */ (name as string));
-    if (typeof mod?.createStageWorkerClient === 'function') {
+    const mod: unknown = await import(/* @vite-ignore */ name);
+    if (isRuntimeWorkerModule(mod) && typeof mod.createStageWorkerClient === 'function') {
       await mod.createStageWorkerClient();
     }
   } catch {
     // Silently ignore when runtime-worker is not available (dev/offline)
   }
+}
+
+function readFlagValue(name: string): string | undefined {
+  const fromLocalStorage = (() => {
+    if (typeof localStorage === 'undefined') return undefined;
+    try {
+      return localStorage.getItem(name) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (fromLocalStorage !== undefined) return fromLocalStorage;
+
+  const globalRecord = globalThis as Record<string, unknown>;
+  const fromGlobal = globalRecord[name];
+  if (fromGlobal != null) return String(fromGlobal);
+
+  if (typeof process !== 'undefined') {
+    const envValue = process.env?.[name];
+    if (envValue !== undefined) return envValue;
+  }
+  return undefined;
+}
+
+interface RuntimeWorkerModule {
+  createStageWorkerClient?: () => Promise<unknown>;
+}
+
+function isRuntimeWorkerModule(value: unknown): value is RuntimeWorkerModule {
+  return typeof value === 'object' && value !== null;
 }

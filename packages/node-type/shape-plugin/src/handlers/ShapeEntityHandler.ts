@@ -4,7 +4,7 @@
  * Avoids direct coupling to worker/services APIs to keep types consistent.
  */
 
-import type { NodeId, NodeType, ProcessingConfig, ShapeEntity, ShapeWorkingCopy } from '../shared/index.js';
+import type { DataSourceName, NodeId, NodeType, ProcessingConfig, ShapeEntity, ShapeWorkingCopy } from '../shared/index.js';
 
 /**
  * Create shape data interface (UI layer)
@@ -12,7 +12,7 @@ import type { NodeId, NodeType, ProcessingConfig, ShapeEntity, ShapeWorkingCopy 
 export interface CreateShapeData {
   name: string;
   description?: string;
-  dataSourceName: string;
+  dataSourceName: DataSourceName;
   processingConfig?: Partial<ProcessingConfig>;
   selectedCountries?: string[];
   adminLevels?: number[];
@@ -24,7 +24,7 @@ export interface CreateShapeData {
  */
 export interface ShapeFilterCriteria {
   name?: string;
-  dataSource?: string;
+  dataSource?: DataSourceName;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
   hasActiveBatch?: boolean;
 }
@@ -54,7 +54,7 @@ export class ShapeEntityHandler {
       nodeId,
       name: data.name,
       description: data.description,
-      dataSourceName: data.dataSourceName as any,
+      dataSourceName: data.dataSourceName,
       licenseAgreement: !!data.licenseAgreement,
       processingConfig: this.buildDefaultProcessingConfig(data.processingConfig),
       checkboxState: '',

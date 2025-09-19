@@ -5,7 +5,8 @@
 
 // (no direct Dexie typings to avoid cross-version conflicts)
 import type { NodeId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from '@hierarchidb/base-plugin';
+import type { Table } from 'dexie';
+import { BaseEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import type {
   LocationCategory,
   LocationEntity,
@@ -30,12 +31,22 @@ export interface CreateLocationData extends Partial<LocationEntity> {
  * Location entity handler with full CRUD operations
  */
 export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, CreateLocationData, LocationFilterCriteria> {
-  // Dexie typing differs across versions; keep broad here to avoid cross-version mismatch
-  protected table: any;
+  private tableRef: Table<LocationEntity, NodeId, LocationEntity> | null;
 
-  constructor(table: any) {
+  constructor(table?: Table<LocationEntity, NodeId, LocationEntity>) {
     super();
-    this.table = table as any;
+    this.tableRef = table ?? null;
+  }
+
+  setTable(table: Table<LocationEntity, NodeId, LocationEntity>): void {
+    this.tableRef = table;
+  }
+
+  protected get table(): Table<LocationEntity, NodeId, LocationEntity> {
+    if (!this.tableRef) {
+      throw new Error('LocationEntityHandler table is not initialized.');
+    }
+    return this.tableRef;
   }
 
   /**

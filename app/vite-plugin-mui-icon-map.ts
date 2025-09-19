@@ -48,9 +48,9 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
         if (!fs.existsSync(pkgPath)) continue;
         const txt = fs.readFileSync(pkgPath, 'utf-8');
         try {
-          const json = JSON.parse(txt) as any;
-          const icon = json?.hierarchidb?.plugin?.icon || {};
-          const raw = icon.muiIconName || icon.mui || '';
+          const json = JSON.parse(txt) as NodeTypePackageJson;
+          const icon = json.hierarchidb?.plugin?.icon;
+          const raw = icon?.muiIconName || icon?.mui || '';
           const pascal = normalizeMuiName(raw);
           if (pascal) icons.add(pascal);
         } catch {
@@ -96,3 +96,14 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
     },
   };
 }
+
+type NodeTypePackageJson = {
+  hierarchidb?: {
+    plugin?: {
+      icon?: {
+        muiIconName?: string;
+        mui?: string;
+      };
+    };
+  };
+};

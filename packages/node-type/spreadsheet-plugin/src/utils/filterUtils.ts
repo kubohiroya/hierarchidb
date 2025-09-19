@@ -6,6 +6,19 @@
 
 import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';
 
+type LegacyFilterRule = CSVFilterRule & {
+  field?: string;
+  op?: CSVFilterRule['operator'];
+};
+
+function getFilterColumn(filter: LegacyFilterRule): string {
+  return filter.column ?? filter.field ?? '';
+}
+
+function getFilterOperator(filter: LegacyFilterRule): CSVFilterRule['operator'] {
+  return filter.operator ?? filter.op ?? 'equals';
+}
+
 /**
   * : CSV
  * : AND
@@ -13,15 +26,15 @@ import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';
  * :
   */
 export function applyCsvFilters(
-  rows: Array<Record<string, any>>,
+  rows: Array<Record<string, unknown>>,
   filters: CSVFilterRule[],
-): Array<Record<string, any>> {
+): Array<Record<string, unknown>> {
   if (!filters || filters.length === 0) {
     return rows;
   }
 
   //  : enabled=true
-  const activeFilters = filters.filter(filter => filter.enabled);
+  const activeFilters: LegacyFilterRule[] = filters.filter(filter => filter.enabled) as LegacyFilterRule[];
 
   if (activeFilters.length === 0) {
     return rows;
@@ -39,8 +52,8 @@ export function applyCsvFilters(
  * :
  * :
   */
-function applyFilterToRow(row: Record<string, any>, filter: CSVFilterRule): boolean {
-  const col = (filter.column || (filter as any).field) as string;
+function applyFilterToRow(row: Record<string, unknown>, filter: LegacyFilterRule): boolean {
+  const col = getFilterColumn(filter);
   const cellValue = row[col];
   const filterValue = filter.value;
 
@@ -61,7 +74,7 @@ function applyFilterToRow(row: Record<string, any>, filter: CSVFilterRule): bool
   const filterString = String(filterValue).toLowerCase();
 
   //  :
-  const operator = (filter.operator || (filter as any).op) as string;
+  const operator = getFilterOperator(filter);
   switch (operator) {
     case 'equals':
       return cellString === filterString;
@@ -158,11 +171,13 @@ export function validateFilterRules(filters: CSVFilterRule[]): {
   const errors: string[] = [];
 
   for (const filter of filters) {
-    if (!filter.column || !filter.column.trim()) {
+    const columnName = getFilterColumn(filter);
+    if (!columnName || !columnName.trim()) {
       errors.push(`Filter ${filter.id || 'unknown'}: Column name is required`);
     }
 
-    if (!(filter.operator || (filter as any).op)) {
+    const operator = getFilterOperator(filter);
+    if (!operator) {
       errors.push(`Filter ${filter.id || 'unknown'}: Operator is required`);
     }
 
@@ -171,13 +186,12 @@ export function validateFilterRules(filters: CSVFilterRule[]): {
       'starts_with', 'ends_with', 'greater_than', 'less_than',
       'greater_equal', 'less_equal', 'regex',
     ];
-
-    if (valueRequiredOperators.includes((filter.operator || (filter as any).op) as string) &&
-      (!filter.value || (typeof filter.value === 'string' && filter.value.trim() === ''))) {
-      errors.push(`Filter ${filter.id || 'unknown'}: Value is required for operator "${(filter.operator || (filter as any).op)}"`);
+    if (valueRequiredOperators.includes(operator) &&
+      (filter.value == null || (typeof filter.value === 'string' && filter.value.trim() === ''))) {
+      errors.push(`Filter ${filter.id || 'unknown'}: Value is required for operator "${operator}"`);
     }
 
-    if (((filter.operator || (filter as any).op) as string) === 'regex' && filter.value) {
+    if (operator === 'regex' && filter.value) {
       try {
         new RegExp(String(filter.value));
       } catch (error) {

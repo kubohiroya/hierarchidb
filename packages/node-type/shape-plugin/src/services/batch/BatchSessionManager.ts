@@ -17,6 +17,11 @@ import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageSta
 import type { BatchProcessConfig } from './types.js';
 import type { UrlMetadata } from '../../shared/types.js';
 
+const logBatchSessionWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[ShapeBatchSessionManager]', message, error);
+};
+
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
   retryAttempts?: number;
@@ -106,7 +111,8 @@ export class BatchSessionManager {
           currentStage: (ev.stage as ProcessingStage) ?? 'processing',
           currentTask: ev.currentTask,
         });
-      } catch {
+      } catch (error) {
+        logBatchSessionWarning(`Progress callback for session ${session.sessionId} failed`, error);
       }
     });
     this.sharedSessions.set(session.sessionId, shared);

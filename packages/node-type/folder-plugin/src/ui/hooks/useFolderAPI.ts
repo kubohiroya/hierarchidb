@@ -4,7 +4,7 @@
  */
 
 import { useMemo } from 'react';
-import { FolderAPI } from '~/shared/api';
+import type { FolderAPI } from '../../shared/api.js';
 
 /**
   * Folder APIhook

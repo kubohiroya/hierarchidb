@@ -9,17 +9,43 @@
 
 // Bridge legacy tests that set process.env flags to FEATURE_FLAGS on globalThis.
 // This keeps production code free of `process` while preserving existing tests.
-const g: any = (globalThis as any);
-g.FEATURE_FLAGS = g.FEATURE_FLAGS || {};
-const env: any = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
+type FeatureFlagRecord = Record<string, unknown>;
+
+type EntitiesDbTable = {
+  delete(id: string): Promise<void> | void;
+};
+
+type EntitiesDbAdapter = {
+  open(): Promise<void> | void;
+  table(name: string): EntitiesDbTable | undefined;
+};
+
+type EntitiesOverrideFactory =
+  | EntitiesDbAdapter
+  | (() => EntitiesDbAdapter | Promise<EntitiesDbAdapter | undefined> | undefined)
+  | (() => Promise<EntitiesDbAdapter | undefined>);
+
+type TestGlobal = typeof globalThis & {
+  FEATURE_FLAGS?: FeatureFlagRecord;
+  __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesOverrideFactory>;
+};
+
+const globalWithOverrides = globalThis as TestGlobal;
+globalWithOverrides.FEATURE_FLAGS ??= {};
+const env = (typeof process !== 'undefined' ? process.env : undefined) ?? {};
 const keys = [
   'WORKER_PROGRESS_COMMON_TYPES',
 ];
-for (const k of keys) if (env[k] != null) g.FEATURE_FLAGS[k] = env[k];
+for (const key of keys) {
+  const value = env[key];
+  if (value != null) {
+    globalWithOverrides.FEATURE_FLAGS[key] = value;
+  }
+}
 
 // Provide lightweight EntitiesDB overrides so peer-entity cleanup code paths
 // do not attempt to import plugin-specific Dexie implementations during unit tests.
-const createMockEntitiesDB = () => {
+const createMockEntitiesDB = (): EntitiesDbAdapter => {
   const rows = new Map<string, unknown>();
   return {
     async open() {
@@ -35,7 +61,7 @@ const createMockEntitiesDB = () => {
   };
 };
 
-const overrides = (g.__HDB_PLUGIN_ENTITY_OVERRIDES__ = g.__HDB_PLUGIN_ENTITY_OVERRIDES__ || {});
+const overrides = (globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__ ??= {});
 for (const type of ['folder', 'route', 'resolver', 'shape', 'location', 'spreadsheet', 'styler', 'basemap']) {
   if (!overrides[type]) {
     overrides[type] = async () => createMockEntitiesDB();

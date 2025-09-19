@@ -1,14 +1,25 @@
 import 'fake-indexeddb/auto';
+import { webcrypto } from 'node:crypto';
 
-// Mock crypto.randomUUID if not available
-if (!global.crypto) {
-  global.crypto = {
-    randomUUID: () => {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    },
-  } as any;
+// Ensure crypto API is available for tests (Vitest/JSDOM)
+if (typeof globalThis.crypto === 'undefined') {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: webcrypto,
+    configurable: true,
+  });
+}
+
+if (typeof globalThis.crypto.randomUUID !== 'function') {
+  const fallbackRandomUUID = (): string => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+      const r = Math.floor(Math.random() * 16);
+      const v = char === 'x' ? r : ((r & 0x3) | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  Object.defineProperty(globalThis.crypto, 'randomUUID', {
+    value: fallbackRandomUUID,
+    configurable: true,
+  });
 }

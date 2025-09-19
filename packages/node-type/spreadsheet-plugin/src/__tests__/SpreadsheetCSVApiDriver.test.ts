@@ -148,6 +148,27 @@ vi.mock('../database/SpreadsheetDatabase', () => ({
   })),
 }));
 
+interface MockFileOptions {
+  name?: string;
+  type?: string;
+  size?: number;
+  text?: () => Promise<string>;
+}
+
+const createMockFile = (content: string, options: MockFileOptions = {}): File => {
+  const file = new File([content], options.name ?? 'test.csv', { type: options.type ?? 'text/csv' });
+
+  if (options.size !== undefined) {
+    Object.defineProperty(file, 'size', { value: options.size, configurable: true });
+  }
+
+  if (options.text) {
+    Object.defineProperty(file, 'text', { value: options.text, configurable: true });
+  }
+
+  return file;
+};
+
 describe('SpreadsheetCSVApiDriver', () => {
   let driver: SpreadsheetCSVApiDriver;
   let mockFile: File;
@@ -164,14 +185,7 @@ describe('SpreadsheetCSVApiDriver', () => {
     // Mock CSV file with proper File interface methods
     const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
 
-    // Create proper File mock with text() method
-    mockFile = {
-      name: 'test.csv',
-      size: csvContent.length,
-      type: 'text/csv',
-      text: vi.fn().mockResolvedValue(csvContent),
-      stream: vi.fn().mockReturnValue(new ReadableStream()),
-    } as any;
+    mockFile = createMockFile(csvContent, { name: 'test.csv' });
 
     mockConfig = {
       delimiter: ',',
@@ -198,13 +212,7 @@ describe('SpreadsheetCSVApiDriver', () => {
 
       // Act: Second upload with same content (different filename)
       const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
-      const secondFile = {
-        name: 'duplicate.csv',
-        size: csvContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(csvContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const secondFile = createMockFile(csvContent, { name: 'duplicate.csv' });
       const secondUpload = await driver.uploadCSVFile(secondFile, mockConfig);
 
       // Assert: Should reuse existing raw data
@@ -227,13 +235,7 @@ describe('SpreadsheetCSVApiDriver', () => {
 
       // Act: Different content
       const differentContent = 'product,price,category\nLaptop,999,Electronics';
-      const differentFile = {
-        name: 'products.csv',
-        size: differentContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(differentContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const differentFile = createMockFile(differentContent, { name: 'products.csv' });
       const secondUpload = await driver.uploadCSVFile(differentFile, mockConfig);
 
       // Assert: Should create new raw data
@@ -252,25 +254,15 @@ describe('SpreadsheetCSVApiDriver', () => {
       const csvContent = 'name,age,email\nJohn,25,john@test.com\nJane,30,jane@test.com';
 
       // Upload first file to establish initial hash
-      const firstFile = {
-        name: 'first.csv',
-        size: csvContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(csvContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const firstFile = createMockFile(csvContent, { name: 'first.csv' });
       await driver.uploadCSVFile(firstFile, mockConfig);
 
       // Then do concurrent uploads with same content
       const promises = Array.from({ length: 5 }, async (_, i) => {
-        const file = {
-          name: `concurrent-${i}.csv`,
-          size: csvContent.length,
-          type: 'text/csv',
-          text: vi.fn().mockResolvedValue(csvContent),
-          stream: vi.fn().mockReturnValue(new ReadableStream()),
-        } as any;
-        return driver.uploadCSVFile(file, mockConfig);
+        return driver.uploadCSVFile(
+          createMockFile(csvContent, { name: `concurrent-${i}.csv` }),
+          mockConfig,
+        );
       });
 
       const results = await Promise.all(promises);
@@ -296,13 +288,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         `user${i},${20 + i % 50},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
-      const largeFile = {
-        name: 'large.csv',
-        size: largeContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(largeContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const largeFile = createMockFile(largeContent, { name: 'large.csv' });
 
       // Act
       const result = await driver.uploadCSVFile(largeFile, mockConfig);
@@ -333,13 +319,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         `user${i},${20 + (i % 50)},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
-      const largeFile = {
-        name: 'large.csv',
-        size: largeContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(largeContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const largeFile = createMockFile(largeContent, { name: 'large.csv' });
 
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
 
@@ -385,13 +365,11 @@ describe('SpreadsheetCSVApiDriver', () => {
       //  RED: This test should fail initially
 
       // Arrange: Mock extremely large file that would exceed memory limits
-      const hugeFile = {
+      const hugeFile = createMockFile('large-file', {
         name: 'huge.csv',
-        size: 200 * 1024 * 1024, // 200MB
-        type: 'text/csv',
+        size: 200 * 1024 * 1024,
         text: vi.fn().mockRejectedValue(new Error('Memory limit exceeded during file read')),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      });
 
       // Act & Assert: Should handle gracefully
       await expect(
@@ -403,13 +381,11 @@ describe('SpreadsheetCSVApiDriver', () => {
       //  RED: This test should fail initially
 
       // Arrange: File exceeding size limit
-      const oversizedFile = {
+      const oversizedFile = createMockFile('dummy content', {
         name: 'huge.txt',
-        size: 200 * 1024 * 1024, // 200MB - exceeds 100MB limit
         type: 'text/plain',
-        text: vi.fn().mockResolvedValue('dummy content'),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+        size: 200 * 1024 * 1024,
+      });
 
       // Act & Assert
       await expect(
@@ -427,13 +403,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         `user${i},${i},user${i}@test.com`,
       ).join('\n');
       const boundaryContent = 'name,age,email\n' + exactBoundaryRows;
-      const boundaryFile = {
-        name: 'boundary.csv',
-        size: boundaryContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(boundaryContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const boundaryFile = createMockFile(boundaryContent, { name: 'boundary.csv' });
 
       const metadata = await driver.uploadCSVFile(boundaryFile, mockConfig);
 
@@ -462,13 +432,7 @@ describe('SpreadsheetCSVApiDriver', () => {
       const mixedContent = 'name,age,salary,active,join_date\n' +
         'John,25,50000.50,true,2023-01-15\n' +
         'Jane,30,75000.00,false,2022-06-10';
-      const mixedFile = {
-        name: 'mixed.csv',
-        size: mixedContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(mixedContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const mixedFile = createMockFile(mixedContent, { name: 'mixed.csv' });
 
       const metadata = await driver.uploadCSVFile(mixedFile, mockConfig);
 
@@ -498,13 +462,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         `user${i},${20 + (i % 50)},user${i}@test.com,${i % 10},${Math.random()}`,
       ).join('\n');
       const largeContent = 'name,age,email,department,score\n' + largeRows;
-      const largeFile = {
-        name: 'performance.csv',
-        size: largeContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(largeContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const largeFile = createMockFile(largeContent, { name: 'performance.csv' });
 
       // Act
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
@@ -525,13 +483,7 @@ describe('SpreadsheetCSVApiDriver', () => {
         `user${i},${20 + (i % 50)},user${i}@test.com`,
       ).join('\n');
       const largeContent = 'name,age,email\n' + largeRows;
-      const largeFile = {
-        name: 'concurrent.csv',
-        size: largeContent.length,
-        type: 'text/csv',
-        text: vi.fn().mockResolvedValue(largeContent),
-        stream: vi.fn().mockReturnValue(new ReadableStream()),
-      } as any;
+      const largeFile = createMockFile(largeContent, { name: 'concurrent.csv' });
 
       const metadata = await driver.uploadCSVFile(largeFile, mockConfig);
 

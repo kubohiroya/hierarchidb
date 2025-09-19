@@ -29,10 +29,14 @@ export function useBatchProgress(
   const subscribe = useCallback(() => {
     if (!adapter || subscribed) return;
     const result = adapter.subscribe((p) => setProgress(p));
-    if (result && typeof (result as any).then === 'function') {
-      (result as Promise<() => void>).then((fn) => (unsubRef.current = fn));
+    if (typeof result === 'function') {
+      unsubRef.current = result;
+    } else if (result && typeof result === 'object' && 'then' in result && typeof result.then === 'function') {
+      result.then((fn) => {
+        unsubRef.current = fn;
+      });
     } else {
-      unsubRef.current = result as () => void;
+      unsubRef.current = null;
     }
     setSubscribed(true);
   }, [adapter, subscribed]);
@@ -53,7 +57,7 @@ export function useBatchProgress(
   useEffect(() => {
     if (!poll) return;
     if (progress?.stage === 'completed') return;
-    let id: any;
+    let id: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
       try {
         const p = await poll();
@@ -63,7 +67,11 @@ export function useBatchProgress(
       id = setTimeout(tick, 2000);
     };
     tick();
-    return () => clearTimeout(id);
+    return () => {
+      if (id !== undefined) {
+        clearTimeout(id);
+      }
+    };
   }, [poll, progress?.stage]);
 
   return { progress, subscribed, subscribe, unsubscribe } as const;

@@ -5,79 +5,92 @@ import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
-// Minimal adapter to make Node's MessagePort look like a Comlink endpoint
-function toEndpoint(port: any) {
-  const handlerMap = new Map<Function, Function>();
-  const ep = {
-    postMessage: (v: any, transfer?: any[]) => (transfer ? port.postMessage(v, transfer) : port.postMessage(v)),
-    addEventListener: (_type: 'message', h: (ev: MessageEvent) => void) => {
-      const wrapped = (data: any) => h({ data } as MessageEvent);
-      handlerMap.set(h, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener: (_type: 'message', h: (ev: MessageEvent) => void) => {
-      const wrapped = handlerMap.get(h);
-      if (wrapped) {
-        port.off('message', wrapped as any);
-        handlerMap.delete(h);
+const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
+  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
+  return {
+    postMessage(value, transfer) {
+      if (transfer && transfer.length > 0) {
+        port.postMessage(value, transfer);
+      } else {
+        port.postMessage(value);
       }
     },
-    start: () => { port.start?.(); },
-  } as any;
-  ep.start();
-  return ep;
-}
+    addEventListener(_type, handler) {
+      const wrapped = (data: unknown) => handler({ data } as MessageEvent);
+      listeners.set(handler, wrapped);
+      port.on('message', wrapped);
+    },
+    removeEventListener(_type, handler) {
+      const wrapped = listeners.get(handler);
+      if (wrapped) {
+        port.off('message', wrapped);
+        listeners.delete(handler);
+      }
+    },
+    start() {
+      port.start?.();
+    },
+  };
+};
+
+type TestWorkerAPI = {
+  ping(): Promise<{ response: string; timestamp: number }>;
+  getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
+  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
+  getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
+};
+
+type SubscriptionEvent = Record<string, unknown> & { nodeId?: NodeId; type?: string };
 
 describe('Comlink + fake-indexeddb integration: create flow uses workingCopy before commit', () => {
   it('createNode returns a workingCopy nodeId under workingCopy root; canonical parent remains unchanged until commit', async () => {
     const { port1, port2 } = new MessageChannel();
-    // Expose the test WorkerAPI on port1
-    await exposeTestAPI(toEndpoint(port1));
-    // Wrap a client on port2
-    const client: any = Comlink.wrap(toEndpoint(port2));
+    await exposeTestAPI(endpointFromPort(port1));
+    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
 
-    const treeId = 'r' as TreeId; // Resources
+    const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
+    if (!tree?.rootId) throw new Error('rootId missing');
     const parentId = tree.rootId as NodeId;
 
-    // Subscribe canonical subtree (should NOT see draft WC events)
-    const subtreeEvents: any[] = [];
-    const sid = await subscriptionAPI.subscribeSubtree(parentId, Comlink.proxy((ev: any) => { subtreeEvents.push(ev); }));
+    const subtreeEvents: SubscriptionEvent[] = [];
+    const sid = await subscriptionAPI.subscribeSubtree(
+      parentId,
+      Comlink.proxy((event: SubscriptionEvent) => {
+        subtreeEvents.push(event);
+      }),
+    );
 
-    // 1) UI requests creation (Worker creates working copy under workingCopy root and returns wc nodeId)
     const res = await mutationAPI.createNode({ nodeType: 'folder', treeId, parentId, name: 'Created From Test' });
     expect(res?.success).toBe(true);
+    if (!res?.nodeId) throw new Error('createNode did not provide nodeId');
     const newId = res.nodeId as NodeId;
-    expect(typeof newId).toBe('string');
-    expect(newId.length).toBeGreaterThan(0);
 
-    // 2) Immediately after promise resolution, working copy node must exist and be queryable
     const created = await queryAPI.getNode(newId);
     expect(created).toBeTruthy();
-    expect(created?.id).toBe(newId);
-    expect(created?.name).toBe('Created From Test');
-    expect(created?.nodeType).toBe('folder');
-    // Its parent is a workingCopy holder; its grandparent is the workingCopy root
-    const holder = await queryAPI.getNode(created!.parentId as NodeId);
-    expect(holder?.parentId).toBe((tree.rootId as string).replace(':root', ':workingCopy'));
+    if (!created) throw new Error('working copy not created');
+    expect(created.id).toBe(newId);
+    expect(created.name).toBe('Created From Test');
+    expect(created.nodeType).toBe('folder');
 
-    // 3) Canonical parent listing should NOT include the new node yet
+    const holder = await queryAPI.getNode(created.parentId as NodeId);
+    expect(holder).toBeTruthy();
+    if (!holder) throw new Error('holder not found');
+    expect(holder.parentId).toBe((tree.rootId as string).replace(':root', ':workingCopy'));
+
     const children = await queryAPI.listChildren(parentId);
-    expect(children.some((n: any) => n.id === newId)).toBe(false);
+    expect(children.some((node) => node.id === newId)).toBe(false);
 
-    // 4) Canonical subtree subscription should NOT have seen a create event for the working copy
-    const sawCreate = subtreeEvents.some((e) => e?.nodeId === newId && (e.type === 'created' || e.type === 'node-created'));
+    const sawCreate = subtreeEvents.some(
+      (event) => event?.nodeId === newId && typeof event.type === 'string',
+    );
     expect(sawCreate).toBe(false);
 
-    // Cleanup subscription
     await subscriptionAPI.unsubscribe(sid);
-
-    // UI invariant: navigate to /t/:treeId/:pageNodeId/:newId/:nodeType/create AFTER createNode resolves,
-    // where newId is a workingCopy nodeId. Commit happens from the dialog.
   }, 20_000);
 });

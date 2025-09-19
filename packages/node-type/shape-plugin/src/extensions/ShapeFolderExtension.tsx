@@ -3,7 +3,7 @@
  * - Provides folder-plugin dialog steps (same as ShapeExtension) and a step state evaluator.
  */
 
-import { BaseFolderPlugin } from '@hierarchidb/folder-plugin';
+import { BaseFolderPlugin, wrapDialogStepComponent } from '@hierarchidb/node-type-folder-plugin';
 import type { DialogStepDefinition } from '@hierarchidb/common-type';
 
 // Reuse existing step components from the Shape plugin
@@ -23,7 +23,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
       {
         stepNumber: 2,
         title: 'Data Source',
-        component: DataSourceStep as any,
+        component: wrapDialogStepComponent(DataSourceStep),
         validation: {
           validate: async (data: any) => {
             const ok = !!data?.dataSourceName;
@@ -34,7 +34,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
       {
         stepNumber: 3,
         title: 'License Agreement',
-        component: LicenseStep as any,
+        component: wrapDialogStepComponent(LicenseStep),
         dependsOn: [2],
         validation: {
           validate: async (data: any) => {
@@ -46,7 +46,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
       {
         stepNumber: 4,
         title: 'Processing Configuration',
-        component: ProcessingStep as any,
+        component: wrapDialogStepComponent(ProcessingStep),
         dependsOn: [3],
         validation: {
           validate: async (data: any) => {
@@ -59,7 +59,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
       {
         stepNumber: 5,
         title: 'Country Selection',
-        component: CountrySelectionStep as any,
+        component: wrapDialogStepComponent(CountrySelectionStep),
         dependsOn: [4],
         validation: {
           validate: async (data: any) => {

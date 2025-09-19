@@ -1,31 +1,46 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
+import type { BasemapPeerData } from '../types/BaseMapEntity.js';
 
-export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<any> {
+export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<BasemapPeerData> {
   return {
     async get(nodeId: NodeId) {
-      return (await db.peerEntities.get(nodeId)) as unknown as PeerEntity<any> | undefined;
+      const row = await db.peerEntities.get(nodeId);
+      if (!row) return undefined;
+      const entity: PeerEntity<BasemapPeerData> = {
+        ...row,
+        data: normalizeBasemapPeerData(row.data),
+      };
+      return entity;
     },
-    async put(e: PeerEntity<any>) {
-      const row: BasemapPeerRow = { nodeId: e.nodeId, data: normalizeSchema(e.data), updatedAt: Date.now() };
+    async put(e: PeerEntity<BasemapPeerData>) {
+      const row: BasemapPeerRow = {
+        ...e,
+        data: normalizeBasemapPeerData(e.data),
+        updatedAt: Date.now(),
+      };
       await db.peerEntities.put(row);
     },
     async delete(nodeId: NodeId) {
       await db.peerEntities.delete(nodeId);
     },
-    async bulkUpsert(entities: PeerEntity<any>[]) {
-      const rows: BasemapPeerRow[] = entities.map((e) => ({ nodeId: e.nodeId, data: normalizeSchema(e.data), updatedAt: Date.now() }));
+    async bulkUpsert(entities: PeerEntity<BasemapPeerData>[]) {
+      const now = Date.now();
+      const rows: BasemapPeerRow[] = entities.map((e) => ({
+        ...e,
+        data: normalizeBasemapPeerData(e.data),
+        updatedAt: now,
+      }));
       await db.peerEntities.bulkPut(rows);
     },
   };
 }
 
-function normalizeSchema(data?: any): any {
-  // Basemap peer payload is currently unconstrained; stamp schemaVersion=1 if absent
-  if (!data) return { schemaVersion: 1 };
-  if ((data as any).schemaVersion === 1) return data;
-  if ((data as any).schemaVersion === undefined) return { ...data, schemaVersion: 1 };
-  return data;
+function normalizeBasemapPeerData(data?: BasemapPeerData | null): BasemapPeerData {
+  return {
+    schemaVersion: 1,
+    presentation: data?.presentation,
+    metadata: data?.metadata ?? {},
+  };
 }
-

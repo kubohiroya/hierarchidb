@@ -28,7 +28,7 @@
       "@hierarchidb/runtime-ui-plugin-dialog": [
         "../../runtime-ui/plugin-dialog"
       ],
-      "@hierarchidb/spreadsheet-plugin": [
+      "@hierarchidb/node-type-spreadsheet-plugin": [
         "../spreadsheet-plugin"
       ],
       "@hierarchidb/ui-core": [

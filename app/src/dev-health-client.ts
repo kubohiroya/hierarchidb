@@ -5,9 +5,9 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   let errorActive = false;
   let lastBuildLocal = '';
   (async () => {
-    const v = await import('./version.js');
-    const t = (v as any)?.BUILD_TIME as string | undefined;
-    if (t) lastBuildLocal = new Date(t).toLocaleString();
+    const mod = await import('./version.js');
+    const buildTime = typeof mod.BUILD_TIME === 'string' ? mod.BUILD_TIME : undefined;
+    if (buildTime) lastBuildLocal = new Date(buildTime).toLocaleString();
   })();
   type OverlayOpts = {
     position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | { x: number; y: number };

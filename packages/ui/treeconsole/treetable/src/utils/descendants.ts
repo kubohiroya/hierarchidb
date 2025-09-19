@@ -25,3 +25,18 @@ export function computeDescendants(data: readonly TreeNode[], startId: NodeId): 
   return out;
 }
 
+export function collectDescendantIdList(data: readonly TreeNode[], startId: NodeId): string[] {
+  const descendants = computeDescendants(data, startId);
+  if (descendants.size === 0) {
+    return [String(startId)];
+  }
+  const ids = new Set<string>();
+  descendants.forEach((id) => {
+    if (id === null || id === undefined) return;
+    ids.add(String(id));
+  });
+  if (!ids.size) {
+    ids.add(String(startId));
+  }
+  return Array.from(ids);
+}

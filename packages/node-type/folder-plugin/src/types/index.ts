@@ -32,5 +32,5 @@ export interface FolderEditData {
   description?: string;
   settings: ImportedFolderSettings;
 
-  [key: string]: any; // Allow additional properties for extensibility
+  [key: string]: unknown; // Allow additional properties for extensibility
 }

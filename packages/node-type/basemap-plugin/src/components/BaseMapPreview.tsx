@@ -100,9 +100,9 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   const handleMapClick = () => {
     if (!interactive) {
       const baseUrl = window.location.origin;
-      const basePath = (import.meta as any)?.env?.VITE_APP_PREFIX
-        ? `/${(import.meta as any)?.env?.VITE_APP_PREFIX}/`
-        : '/';
+      const prefix = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_APP_PREFIX : undefined;
+      const sanitized = prefix?.replace(/^\/+|\/+$/g, '');
+      const basePath = sanitized ? `/${sanitized}/` : '/';
       const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
       window.open(mapUrl, '_blank');
     }

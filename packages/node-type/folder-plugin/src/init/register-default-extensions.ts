@@ -11,7 +11,7 @@ export async function initializeDefaultFolderExtensions(): Promise<void> {
   const inits: Array<() => Promise<void>> = [];
 
   // Helper to try dynamic import (optional dependency)
-  const tryInit = async <T>(loader: () => Promise<T>, pick: (m: T) => (() => Promise<void>) | undefined) => {
+  const tryInit = async <T>(loader: () => Promise<T>, pick: (module: T) => (() => Promise<void>) | undefined) => {
     try {
       const mod = await loader();
       const fn = pick(mod);
@@ -24,16 +24,28 @@ export async function initializeDefaultFolderExtensions(): Promise<void> {
   };
 
   // Avoid TS resolving optional deps by using non-literal specifiers
-  const SHAPE = '@hierarchidb/shape-plugin' as string;
-  const SHEET = '@hierarchidb/spreadsheet-plugin' as string;
-  const BASEMAP = '@hierarchidb/basemap-plugin' as string;
-  const STYLER = '@hierarchidb/styler-plugin' as string;
+  const SHAPE = '@hierarchidb/node-type-shape-plugin' as string;
+  const SHEET = '@hierarchidb/node-type-spreadsheet-plugin' as string;
+  const BASEMAP = '@hierarchidb/node-type-basemap-plugin' as string;
+  const STYLER = '@hierarchidb/node-type-styler-plugin' as string;
 
   await Promise.all([
-    tryInit(() => import(/* @vite-ignore */ SHAPE), (m: any) => (m as any).initializeShapeFolderExtension),
-    tryInit(() => import(/* @vite-ignore */ SHEET), (m: any) => (m as any).initializeSpreadsheetFolderExtension),
-    tryInit(() => import(/* @vite-ignore */ BASEMAP), (m: any) => (m as any).initializeBaseMapFolderExtension),
-    tryInit(() => import(/* @vite-ignore */ STYLER), (m: any) => (m as any).initializeStylerFolderExtension),
+    tryInit<ShapeExtensionModule>(
+      () => import(/* @vite-ignore */ SHAPE) as Promise<ShapeExtensionModule>,
+      (mod) => mod.initializeShapeFolderExtension,
+    ),
+    tryInit<SpreadsheetExtensionModule>(
+      () => import(/* @vite-ignore */ SHEET) as Promise<SpreadsheetExtensionModule>,
+      (mod) => mod.initializeSpreadsheetFolderExtension,
+    ),
+    tryInit<BaseMapExtensionModule>(
+      () => import(/* @vite-ignore */ BASEMAP) as Promise<BaseMapExtensionModule>,
+      (mod) => mod.initializeBaseMapFolderExtension,
+    ),
+    tryInit<StylerExtensionModule>(
+      () => import(/* @vite-ignore */ STYLER) as Promise<StylerExtensionModule>,
+      (mod) => mod.initializeStylerFolderExtension,
+    ),
   ]);
 
   for (const fn of inits) {
@@ -47,4 +59,20 @@ export async function initializeDefaultFolderExtensions(): Promise<void> {
  */
 export async function initializeDefaultNodeDialogExtensions(): Promise<void> {
   return initializeDefaultFolderExtensions();
+}
+
+interface ShapeExtensionModule {
+  initializeShapeFolderExtension?: () => Promise<void>;
+}
+
+interface SpreadsheetExtensionModule {
+  initializeSpreadsheetFolderExtension?: () => Promise<void>;
+}
+
+interface BaseMapExtensionModule {
+  initializeBaseMapFolderExtension?: () => Promise<void>;
+}
+
+interface StylerExtensionModule {
+  initializeStylerFolderExtension?: () => Promise<void>;
 }

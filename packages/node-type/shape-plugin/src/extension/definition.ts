@@ -10,11 +10,17 @@
  * -> ShapePlugin (Step 2: Data Source, Step 3: License, Step 4: Processing, Step 5: Country Selection)
  */
 
+import { wrapDialogStepComponent } from '@hierarchidb/node-type-folder-plugin';
 // Step Components
 import { DataSourceStep } from './components/DataSourceStep.js';
 import { LicenseStep } from './components/LicenseStep.js';
 import { ProcessingStep } from './components/ProcessingStep.js';
 import { CountrySelectionStep } from './components/CountrySelectionStep.js';
+
+const WrappedDataSourceStep = wrapDialogStepComponent(DataSourceStep);
+const WrappedLicenseStep = wrapDialogStepComponent(LicenseStep);
+const WrappedProcessingStep = wrapDialogStepComponent(ProcessingStep);
+const WrappedCountrySelectionStep = wrapDialogStepComponent(CountrySelectionStep);
 
 /**
  * Shape Plugin Extension Definition
@@ -37,7 +43,7 @@ export const ShapeExtension = {
     {
       stepNumber: 2,
       title: 'Data Source',
-      component: DataSourceStep,
+      component: WrappedDataSourceStep,
       validation: {
         validate: async (data: any) => {
           if (!data.dataSourceName) {
@@ -50,7 +56,7 @@ export const ShapeExtension = {
     {
       stepNumber: 3,
       title: 'License Agreement',
-      component: LicenseStep,
+      component: WrappedLicenseStep,
       dependsOn: [2], // Depends on Data Source step
       validation: {
         validate: async (data: any) => {
@@ -67,7 +73,7 @@ export const ShapeExtension = {
     {
       stepNumber: 4,
       title: 'Processing Configuration',
-      component: ProcessingStep,
+      component: WrappedProcessingStep,
       dependsOn: [3], // Depends on License step
       validation: {
         validate: async (data: any) => {
@@ -91,7 +97,7 @@ export const ShapeExtension = {
     {
       stepNumber: 5,
       title: 'Country Selection',
-      component: CountrySelectionStep,
+      component: WrappedCountrySelectionStep,
       dependsOn: [4], // Depends on Processing step
       validation: {
         validate: async (data: any) => {

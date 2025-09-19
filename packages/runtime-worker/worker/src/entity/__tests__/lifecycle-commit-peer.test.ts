@@ -1,22 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
-import type { PeerStore } from '../store.js';
-
-function makeCoreStub() {
-  const nodeMap = new Map<string, any>();
-  return {
-    nodes: {
-      async get(id: NodeId) {
-        return nodeMap.get(id as unknown as string);
-      },
-      _put(obj: any) {
-        nodeMap.set(obj.id as unknown as string, obj);
-      },
-    },
-  } as any;
-}
+import type { PeerEntity, PeerStore } from '../store.js';
 
 describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
   beforeEach(() => {
@@ -24,34 +11,68 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
   });
 
   it('upserts peer from WC to target and deletes WC peer', async () => {
-    const core = makeCoreStub();
+    const nodeMap = new Map<NodeId, TreeNode>();
+    const core: Pick<CoreDB, 'getNode'> = {
+      getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
+    };
     const wcId = 'wc1' as NodeId;
     const holderId = 'h1' as NodeId;
     const targetId = 't1' as NodeId;
 
     // Register a peer store for 'folder'
-    const storeMap = new Map<string, any>();
-    const store: PeerStore<any> = {
+    const storeMap = new Map<NodeId, PeerEntity<{ x: number }>>();
+    const store: PeerStore<{ x: number }> = {
       async get(id: NodeId) {
-        return storeMap.get(id as unknown as string);
+        return storeMap.get(id);
       },
-      async put(e: any) {
-        storeMap.set(e.nodeId as unknown as string, e);
+      async put(entity) {
+        storeMap.set(entity.nodeId, { ...entity });
       },
       async delete(id: NodeId) {
-        storeMap.delete(id as unknown as string);
+        storeMap.delete(id);
       },
     };
-    storeRegistry.registerPeer('folder', store);
+    const folderType = 'folder' as NodeType;
+    storeRegistry.registerPeer(folderType, store);
 
     // Seed nodes (wc child and its holder)
-    core.nodes._put({ id: wcId, parentId: holderId, name: 'Draft', nodeType: 'folder' });
-    core.nodes._put({ id: holderId, name: 'h', holderTargetId: targetId, holderMetaParentId: 'p1' as NodeId });
+    nodeMap.set(wcId, {
+      id: wcId,
+      parentId: holderId,
+      nodeType: folderType,
+      name: 'Draft',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    });
+    nodeMap.set(holderId, {
+      id: holderId,
+      parentId: holderId,
+      nodeType: folderType,
+      name: 'holder',
+      depth: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+      holderTargetId: targetId,
+      holderMetaParentId: 'p1' as NodeId,
+    });
+    nodeMap.set(targetId, {
+      id: targetId,
+      parentId: 'p1' as NodeId,
+      nodeType: folderType,
+      name: 'Canonical',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    });
 
     // Seed peer entity for WC
     await store.put({ nodeId: wcId, data: { x: 42 } });
 
-    const mgr = (EntityLifecycleManager as any).getSingleton(core) as EntityLifecycleManager;
+    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
     await mgr.onCommitWorkingCopy({
       commandId: 'c1',
       groupId: 'g1',
@@ -59,7 +80,7 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
       payload: { workingCopyId: wcId },
       issuedAt: Date.now(),
       type: 'commitWorkingCopy',
-    } as any);
+    });
 
     // Target received upserted peer
     const targetPeer = await store.get(targetId);

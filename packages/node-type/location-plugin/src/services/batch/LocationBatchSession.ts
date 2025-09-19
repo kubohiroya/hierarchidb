@@ -27,7 +27,7 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
         total: ev.total,
         completed: ev.completed,
         failed: ev.failed,
-        currentStage: ev.stage as any,
+        currentStage: ev.stage,
         currentTask: ev.currentTask,
       });
     });
@@ -66,7 +66,7 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
   protected onStandardProgressUpdate(event: StandardProgressEvent): void {
     // Convert to legacy ProgressEvent for compatibility
     const legacyEvent: ProgressEvent = {
-      sessionId: event.sessionId as any,
+      sessionId: event.sessionId,
       stage: event.stage,
       total: event.total,
       completed: event.completed,

@@ -241,9 +241,12 @@ export class StylerDataService {
         tableMetadata.columns.find((c) => c.name === 'id')?.name ??
         tableMetadata.columns[0]?.name,
     };
-    // Legacy aliases expected by existing tests/UI: mirror value/key columns
-    (cfg as any).selectedValueColumn = cfg.valueColumn;
-    (cfg as any).selectedKeyColumn = cfg.keyColumn;
+    if (cfg.valueColumn) {
+      cfg.selectedValueColumn = cfg.valueColumn;
+    }
+    if (cfg.keyColumn) {
+      cfg.selectedKeyColumn = cfg.keyColumn;
+    }
     return cfg;
   }
 }

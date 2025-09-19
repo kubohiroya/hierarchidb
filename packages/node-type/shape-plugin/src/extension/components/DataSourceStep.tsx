@@ -9,38 +9,36 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import { Step2DataSource } from '../../components/steps/Step2DataSource.js';
+import type { ShapeWorkingCopy } from '../../shared/index.js';
+
+type ShapeDialogData = Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
 
 export interface DataSourceStepProps {
-  data: any;
-  onNext: (data: any) => void;
+  data?: ShapeDialogData | null;
+  onNext: (data: ShapeDialogData) => void;
   onPrevious: () => void;
   errors?: string[];
 }
 
 export const DataSourceStep: React.FC<DataSourceStepProps> = ({
-                                                                data,
-                                                                onNext,
-                                                                onPrevious,
-                                                                errors,
-                                                              }) => {
-  /*
-  const handleDataSourceChange = (dataSourceName: string) => {
-    const updatedData = { ...data, dataSourceName };
-    onNext(updatedData);
-  };
-   */
+  data,
+  onNext,
+  onPrevious,
+  errors,
+}) => {
+  const dialogData: ShapeDialogData =
+    typeof data === 'object' && data !== null ? { ...data } : {};
 
-  const wc = (data || {}) as any;
+  const handleNextState = (updates: Partial<ShapeWorkingCopy>) => {
+    onNext({ ...dialogData, ...updates });
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step2DataSource
-          workingCopy={{ ...wc, dataSourceName: wc.dataSourceName }}
-          onUpdate={(updates) => {
-            const updatedData = { ...wc, ...updates };
-            onNext(updatedData);
-          }}
+          workingCopy={dialogData}
+          onUpdate={handleNextState}
           disabled={false}
         />
 
@@ -62,7 +60,11 @@ export const DataSourceStep: React.FC<DataSourceStepProps> = ({
         }}
       >
         <Button onClick={onPrevious}>Previous</Button>
-        <Button variant="contained" onClick={() => onNext(wc)} disabled={!wc.dataSourceName}>
+        <Button
+          variant="contained"
+          onClick={() => onNext(dialogData)}
+          disabled={!dialogData.dataSourceName}
+        >
           Next
         </Button>
       </Box>

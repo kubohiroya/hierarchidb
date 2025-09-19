@@ -12,23 +12,33 @@ export interface PeerDialogPersistence {
   copyState?(fromNodeId: string, toNodeId: string): Promise<void>;
 }
 
-type EntitiesDBOverride = {
-  table: (name: string) => {
-    get: (id: string) => Promise<any>;
-    put: (row: any) => Promise<void>;
-  };
+type PeerDialogRow = {
+  nodeId: string;
+  displayMode?: PeerDisplayMode;
+  dialogPosition?: PeerDialogPosition;
+  dialogSize?: PeerDialogSize;
+  updatedAt?: number;
+};
+
+type PeerEntitiesTable = {
+  get: (id: string) => Promise<PeerDialogRow | undefined>;
+  put: (row: PeerDialogRow) => Promise<void>;
+};
+
+type EntitiesDBAdapter = {
+  table: (name: string) => PeerEntitiesTable;
 };
 
 declare global {
   // eslint-disable-next-line no-var
   var __HDB_PLUGIN_ENTITY_OVERRIDES__:
-    | Record<string, EntitiesDBOverride | (() => EntitiesDBOverride | Promise<EntitiesDBOverride>)>
+    | Record<string, EntitiesDBAdapter | (() => EntitiesDBAdapter | Promise<EntitiesDBAdapter>)>
     | undefined;
 }
 
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
-  private dbCache = new Map<string, { table: (name: string) => { get: (id: string) => Promise<any>; put: (row: any) => Promise<void> } } | null>();
+  private dbCache = new Map<string, EntitiesDBAdapter | null>();
 
   register(nodeType: string, provider: PeerDialogPersistence) {
     this.providers.set(nodeType, provider);
@@ -57,28 +67,37 @@ class UIPersistenceRegistry {
       if (!nodeType || typeof nodeType !== 'string') { this.dbCache.set(nodeType, null); return null; }
 
       const overrides = typeof globalThis !== 'undefined' ? (globalThis as typeof globalThis & {
-        __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesDBOverride | (() => EntitiesDBOverride | Promise<EntitiesDBOverride>)>;
+        __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesDBAdapter | (() => EntitiesDBAdapter | Promise<EntitiesDBAdapter>)>;
       }) : undefined;
       const overrideFactory = overrides?.__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
       if (overrideFactory) {
-        const instance = typeof overrideFactory === 'function' ? await Promise.resolve(overrideFactory()) : overrideFactory;
+        const instance = typeof overrideFactory === 'function'
+          ? await Promise.resolve(overrideFactory())
+          : overrideFactory;
         this.dbCache.set(nodeType, instance);
         return instance;
       }
 
       const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
-      const isDev = Boolean((import.meta as any)?.env?.DEV);
-      const basePaths = [
-        `@hierarchidb/${nodeType}-plugin/worker/${nodeType}EntitiesDB`,
-        `@hierarchidb/${nodeType}-plugin/worker/index`,
-        `@hierarchidb/${nodeType}-plugin/worker`,
+      const meta = import.meta as ImportMeta & { env?: Record<string, unknown> };
+      const isDev = Boolean(meta.env?.DEV);
+      const packageBases = [
+        `@hierarchidb/node-type-${nodeType}-plugin`,
+        `@hierarchidb/${nodeType}-plugin`,
       ];
+      const basePaths = packageBases.flatMap((pkg) => [
+        `${pkg}/worker/${nodeType}EntitiesDB`,
+        `${pkg}/worker/index`,
+        `${pkg}/worker`,
+      ]);
       if (isDev) {
-        basePaths.push(
-          `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`,
-          `@hierarchidb/${nodeType}-plugin/src/worker/index`,
-          `@hierarchidb/${nodeType}-plugin/src/worker`,
-        );
+        packageBases.forEach((pkg) => {
+          basePaths.push(
+            `${pkg}/src/worker/${nodeType}EntitiesDB`,
+            `${pkg}/src/worker/index`,
+            `${pkg}/src/worker`,
+          );
+        });
       }
       const extensions = ['.js', '.mjs', '.mts', '.ts', ''];
       const candidates = Array.from(new Set(
@@ -88,7 +107,7 @@ class UIPersistenceRegistry {
       let lastError: unknown = null;
       for (const candidate of candidates) {
         try {
-          const mod: any = await import(/* @vite-ignore */ candidate);
+          const mod = await import(/* @vite-ignore */ candidate);
           const Ctor = mod[className];
           if (!Ctor) {
             lastError = new Error(`Export ${className} missing in ${candidate}`);
@@ -96,8 +115,17 @@ class UIPersistenceRegistry {
           }
           const db = new Ctor();
           await db.open?.();
-          this.dbCache.set(nodeType, db);
-          return db;
+          const adapter: EntitiesDBAdapter = {
+            table: (name: string): PeerEntitiesTable => {
+              const tbl = db.table(name);
+              return {
+                get: (id: string) => tbl.get(id),
+                put: (row: PeerDialogRow) => tbl.put(row),
+              };
+            },
+          };
+          this.dbCache.set(nodeType, adapter);
+          return adapter;
         } catch (err) {
           lastError = err;
         }
@@ -110,10 +138,10 @@ class UIPersistenceRegistry {
       return null;
     };
 
-    const withRow = async (nodeId: string, updater: (row: any) => void | Promise<void>) => {
+    const withRow = async (nodeId: string, updater: (row: PeerDialogRow) => void | Promise<void>) => {
       const db = await ensureDB(); if (!db) return;
       const tbl = db.table('peerEntities');
-      const row = (await tbl.get(nodeId)) || { nodeId };
+      const row = (await tbl.get(nodeId)) ?? { nodeId };
       await Promise.resolve(updater(row));
       row.updatedAt = Date.now();
       await tbl.put(row);

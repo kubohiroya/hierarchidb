@@ -1,13 +1,19 @@
 import type { LoaderFunctionArgs } from 'react-router';
-import { Outlet } from 'react-router';
-import { loadTree, LoadTreeArgs } from '~/loader.js';
+import { Outlet, useLoaderData } from 'react-router';
+import { loadTree } from '~/loader.js';
 
-export async function clientLoader(args: LoaderFunctionArgs) {
-  return await loadTree(args.params as LoadTreeArgs);
+type LoaderData = Awaited<ReturnType<typeof loadTree>>;
+
+export async function clientLoader({ params }: LoaderFunctionArgs) {
+  const { treeId } = params;
+  if (!treeId) {
+    throw new Response('Missing treeId parameter.', { status: 400 });
+  }
+  return await loadTree({ treeId });
 }
 
 export default function TLayout() {
-  // const data = useLoaderData<Awaited<ReturnType<typeof clientLoader>>>();
+  void useLoaderData<LoaderData>();
 
   return <Outlet />;
 }

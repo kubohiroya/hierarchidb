@@ -15,7 +15,7 @@ export interface LocationPanelProps {
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
   const [entity] = useState<LocationEntity>({
-    id: nodeId as any,
+    id: nodeId,
     nodeId,
     name: 'サンプル地点情報',
     description: 'これはサンプルの地点情報です',

@@ -3,7 +3,7 @@
   * eria-cartographTreeConsoleBreadcrumbUI
    */
 
-import { type MouseEvent, useCallback, useState, type ReactElement, type KeyboardEvent } from 'react';
+import { type MouseEvent, type DragEvent, useCallback, useState, type ReactElement, type KeyboardEvent } from 'react';
 import {
   Box,
   Breadcrumbs,
@@ -23,6 +23,25 @@ import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
 import { rainbowColors } from '@hierarchidb/ui-core';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { NodeTypeIcon } from './NodeTypeIcon.js';
+
+const DRAGGED_NODE_MIME = 'text/hdb-node';
+const DESCENDANT_MIME = 'application/hdb-node-descendants';
+
+const parseDescendantPayload = (event: DragEvent<HTMLElement>): string[] => {
+  const raw = event.dataTransfer?.getData(DESCENDANT_MIME);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+};
+
+const readDraggedNodeId = (event: DragEvent<HTMLElement>): string | null => {
+  const value = event.dataTransfer?.getData(DRAGGED_NODE_MIME);
+  return value ? String(value) : null;
+};
 
 /**
   * BreadcrumbContainer -
@@ -257,11 +276,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const isLast = index === pathToUse.length - 1;
               const nodeId = node.id || node.id || '';
               const nodeName = node.name || 'Unknown';
-              const explicitDepth = typeof (node as any)?.depth === 'number' ? (node as any).depth : undefined;
+              const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
               const depth = explicitDepth ?? Math.max(0, index + _depthOffset);
               const iconColor = rainbowColors[depth % rainbowColors.length];
-              const treeId = (props as any)?.treeId as string | undefined;
-              const isRootLike = index === 0 && (!!(node as any)?.parentId === false || (treeId && nodeId === `${treeId}:root`));
+              const treeId = props.treeId;
+              const isRootLike = index === 0 && (!node.parentId || (treeId && nodeId === `${treeId}:root`));
               const toHref = treeId ? (isRootLike ? `/t/${treeId}` : `/t/${treeId}/${String(nodeId)}`) : String(nodeId);
 
               const isClickable = node.isClickable !== false;
@@ -316,27 +335,19 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                       handleContextMenuOpen(event, node);
                     }
                   }}
-                  onDragOver={(e: any) => {
-                    if (e.dataTransfer?.types?.includes('text/hdb-node')) {
-                      let blocked = false;
-                      const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                      if (raw) {
-                        const list = JSON.parse(raw) as string[];
-                        blocked = Array.isArray(list) && list.includes(String(nodeId));
-                      }
-                      setHoverId(String(nodeId));
-                      setHoverBlocked(blocked);
-                      if (!blocked) e.preventDefault();
-                    }
+                  onDragOver={(event: DragEvent<HTMLElement>) => {
+                    const types = event.dataTransfer?.types ?? [];
+                    if (!types.includes(DRAGGED_NODE_MIME)) return;
+                    const descendants = parseDescendantPayload(event);
+                    const blocked = descendants.includes(String(nodeId));
+                    setHoverId(String(nodeId));
+                    setHoverBlocked(blocked);
+                    if (!blocked) event.preventDefault();
                   }}
-                  onDrop={(e: any) => {
-                    const dragged = e.dataTransfer?.getData('text/hdb-node');
-                    let blocked = hoverBlocked;
-                    const raw = e.dataTransfer?.getData('application/hdb-node-descendants');
-                    if (raw) {
-                      const list = JSON.parse(raw) as string[];
-                      blocked = Array.isArray(list) && list.includes(String(nodeId));
-                    }
+                  onDrop={(event: DragEvent<HTMLElement>) => {
+                    const dragged = readDraggedNodeId(event);
+                    const descendants = parseDescendantPayload(event);
+                    const blocked = hoverBlocked || descendants.includes(String(nodeId));
                     if (dragged && nodeId && dragged !== nodeId && !blocked) {
                       props.onDropToNode?.(String(nodeId), dragged);
                     }
@@ -365,7 +376,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         nodeId={contextMenuNode?.id || contextMenuNode?.id || ''}
         nodeType={contextMenuNode?.nodeType || contextMenuNode?.type || 'folder-plugin'}
         nodeName={contextMenuNode?.name}
-        treeId={(props as any)?.treeId}
+        treeId={props.treeId}
         canCreate={true}
         canEdit={!isRootContext}
         canRemove={!isRootContext}

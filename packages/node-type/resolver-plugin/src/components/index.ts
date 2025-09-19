@@ -1,4 +1,5 @@
 export { ResolverDialog } from './ResolverDialog.js';
+export type { ResolverDialogProps } from './ResolverDialog.js';
 export { ResolverPanel } from './ResolverPanel.js';
 
 // Export step components for potential reuse

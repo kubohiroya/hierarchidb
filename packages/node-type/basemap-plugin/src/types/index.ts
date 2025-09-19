@@ -11,4 +11,5 @@ export type {
   MapStyle,
   MapViewport,
   DisplayOptions,
+  BasemapPeerData,
 } from './BaseMapEntity.js';

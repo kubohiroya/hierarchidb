@@ -1,4 +1,4 @@
-@hierarchidb/base-plugin
+@hierarchidb/node-type-base-plugin
 =======================
 
 このパッケージは各ノードタイプ実装から再利用される「共通基盤」です。UI には表示されず、エンティティ操作や階層処理の抽象を提供します。
@@ -20,7 +20,7 @@
 フォルダ、ロケーションなどのプラグインで、各エンティティ固有の `EntityHandler` を実装する際の基底として継承します。
 
 ```ts
-import { HierarchicalEntityHandler } from '@hierarchidb/base-plugin';
+import { HierarchicalEntityHandler } from '@hierarchidb/node-type-base-plugin';
 
 export class MyEntityHandler extends HierarchicalEntityHandler<MyEntity> {
   protected table = myDexieTable;

@@ -9,25 +9,30 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import { Step3License } from '../../components/steps/Step3License.js';
+import type { ShapeWorkingCopy } from '../../shared/index.js';
+
+type ShapeDialogData = Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
 
 export interface LicenseStepProps {
-  data: any;
-  onNext: (data: any) => void;
+  data?: ShapeDialogData | null;
+  onNext: (data: ShapeDialogData) => void;
   onPrevious: () => void;
   errors?: string[];
 }
 
 export const LicenseStep: React.FC<LicenseStepProps> = ({ data, onNext, onPrevious, errors }) => {
-  const wc = (data || {}) as any;
+  const dialogData: ShapeDialogData = typeof data === 'object' && data !== null ? { ...data } : {};
+
+  const handleUpdate = (updates: Partial<ShapeWorkingCopy>) => {
+    onNext({ ...dialogData, ...updates });
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ flex: 1 }}>
         <Step3License
-          workingCopy={{ ...wc, licenseAgreement: wc.licenseAgreement || false }}
-          onUpdate={(updates) => {
-            const updatedData = { ...wc, ...updates };
-            onNext(updatedData);
-          }}
+          workingCopy={dialogData}
+          onUpdate={handleUpdate}
           disabled={false}
         />
 
@@ -49,7 +54,11 @@ export const LicenseStep: React.FC<LicenseStepProps> = ({ data, onNext, onPrevio
         }}
       >
         <Button onClick={onPrevious}>Previous</Button>
-        <Button variant="contained" onClick={() => onNext(wc)} disabled={!wc.licenseAgreement}>
+        <Button
+          variant="contained"
+          onClick={() => onNext(dialogData)}
+          disabled={!dialogData.licenseAgreement}
+        >
           Next
         </Button>
       </Box>

@@ -5,7 +5,7 @@ import {
 } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
-import { RouteDatabase } from '../database/RouteDatabase.js';
+import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from '../database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
@@ -40,8 +40,8 @@ export interface RouteBatchTask {
   routeData?: {
     startLocationId?: NodeId;
     endLocationId?: NodeId;
-    method: string;
-    methodOptions?: any;
+    method: RouteGenerationConfig['method'];
+    methodOptions?: RouteGenerationConfig['options'];
     startCoordinates?: [number, number];
     endCoordinates?: [number, number];
     estimatedDistance?: number;
@@ -72,13 +72,14 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   }
 
   protected async onInitialize(): Promise<void> {
-    await this.db.routeCursors?.put({
+    const initialCursor: RouteCursorRow = {
       sessionId: this.sessionId,
       completed: 0,
       total: this.tasks.length,
       updatedAt: Date.now(),
       paused: false,
-    } as any);
+    };
+    await this.db.routeCursors.put(initialCursor);
     this.writer = new TabularWriter('route');
     const columns = ['taskId', 'method', 'distance', 'duration', 'startLon', 'startLat', 'endLon', 'endLat'];
     await this.writer.begin({ filename: `route-${this.sessionId}.json`, columns });
@@ -99,8 +100,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
 
   protected async onComplete(): Promise<void> {
     if (this.writer && this.writerReady) {
-        const { tableId } = await this.writer.commit();
-        await (this.db.table('routeCursors') as any)?.update(this.sessionId, { tableId });
+      const { tableId } = await this.writer.commit();
+      await this.db.routeCursors.update(this.sessionId, { tableId });
     }
   }
 
@@ -123,13 +124,12 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         await this.processTask(task);
       }
       completed++;
-      await this.db.routeCursors?.put({
-        sessionId: this.sessionId,
+      await this.db.routeCursors.update(this.sessionId, {
         completed,
         total: this.tasks.length,
         updatedAt: Date.now(),
         paused: this.getState().status === 'paused',
-      } as any);
+      });
       this.updateProgress({
         total: this.tasks.length,
         completed,
@@ -138,7 +138,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       });
       // Pause handling (poll cursor flag)
       for (; ;) {
-        const cur = await (this.db.routeCursors as any)?.get(this.sessionId);
+        const cur = await this.db.routeCursors.get(this.sessionId);
         if (!cur?.paused) break;
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
         await this.delay(250);
@@ -179,22 +179,26 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     try {
       switch (task.taskType) {
         case 'route_generation': {
-          const method = (task.routeData?.method || this.config.routeGeneration.method) as RouteGenerationConfig['method'];
-          const start = (task.routeData as any)?.startCoordinates as [number, number] | undefined;
-          const end = (task.routeData as any)?.endCoordinates as [number, number] | undefined;
+          const method = task.routeData?.method ?? this.config.routeGeneration.method;
+          const start = task.routeData?.startCoordinates;
+          const end = task.routeData?.endCoordinates;
           const pts: [number, number][] = start && end ? [start, end] : [[0, 0], [1, 1]];
-          const res = await this.generator.generate(pts, { method, options: (task.routeData as any)?.methodOptions });
-            // @ts-ignore best-effort
-            await (this.db.table('routeResults') as any)?.put({
-              id: `${this.sessionId}:${task.taskId}`,
-              sessionId: this.sessionId,
-              taskId: task.taskId,
-              method,
-              lineGeometry: res.lineGeometry,
-              distance: res.distance,
-              duration: res.duration,
-              createdAt: Date.now(),
-            });
+          const config: RouteGenerationConfig = {
+            method,
+            options: task.routeData?.methodOptions,
+          };
+          const res = await this.generator.generate(pts, config);
+          const resultRow: RouteResultRow = {
+            id: `${this.sessionId}:${task.taskId}`,
+            sessionId: this.sessionId,
+            taskId: task.taskId,
+            method,
+            lineGeometry: res.lineGeometry,
+            distance: res.distance,
+            duration: res.duration,
+            createdAt: Date.now(),
+          };
+          await this.db.routeResults.put(resultRow);
             if (this.writer && this.writerReady) {
               const row = {
                 taskId: task.taskId,
@@ -217,9 +221,9 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
           break;
       }
       task.status = 'completed';
-    } catch (e: any) {
+    } catch (error: unknown) {
       task.status = 'failed';
-      task.error = e?.message || String(e);
+      task.error = error instanceof Error ? error.message : String(error);
       this.updateProgress({ failed: (this.getProgress().failed || 0) + 1, currentTask: `error:${task.taskType}` });
       if (this.config.routeGeneration.retryOnFailure) {
         // rudimentary retry with small delay
@@ -227,8 +231,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         let done = false;
         for (let i = 0; i < max && !done; i++) {
           await this.delay(150);
-            await this.processTask({ ...task, status: 'pending' });
-            done = true;
+          await this.processTask({ ...task, status: 'pending' });
+          done = true;
         }
       }
     }

@@ -33,7 +33,7 @@ import { NodeId } from '@hierarchidb/common-type';
 import type { ShapeEntity } from '../shared';
 import type { BatchStatus } from '../services/types';
 
-interface ShapeViewPanelProps {
+export interface ShapeViewPanelProps {
   nodeId: NodeId;
   entity: ShapeEntity;
   onEdit: () => void;
@@ -63,12 +63,13 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
 
       // In a real implementation, this would call the worker API
       // For now, we'll simulate the response
+      const sessionStatus = mapProcessingStatus(entity.processingStatus);
       const mockStatus: BatchStatus = {
         session: {
           sessionId: entity.batchSessionId,
           nodeId: entity.nodeId,
-          status: entity.processingStatus as any,
-          config: entity.processingConfig as any,
+          status: sessionStatus,
+          config: entity.processingConfig,
           startedAt: Date.now() - 60000,
           updatedAt: Date.now(),
           progress: {
@@ -413,3 +414,20 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     </Box>
   );
 };
+
+function mapProcessingStatus(status: ShapeEntity['processingStatus']): 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' {
+  switch (status) {
+    case 'processing':
+      return 'running';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return 'cancelled';
+    case 'paused':
+      return 'paused';
+    default:
+      return 'idle';
+  }
+}

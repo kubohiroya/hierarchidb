@@ -25,13 +25,13 @@ export class PeerEntityHandler {
 
   async bulkUpsertFromIds(pairs: Array<{ targetId: NodeId; fromId: NodeId }>): Promise<void> {
     // If store supports bulkUpsert, collect and forward; otherwise fall back to per-item upsert
-    if (typeof (this.store as any).bulkUpsert === 'function') {
+    if (this.store.bulkUpsert) {
       const entities: PeerEntity[] = [];
       for (const { targetId, fromId } of pairs) {
         const src: PeerEntity | undefined = await this.store.get(fromId);
         entities.push({ nodeId: targetId, data: src?.data, displayMode: src?.displayMode, updatedAt: Date.now() });
       }
-      await (this.store as any).bulkUpsert(entities);
+      await this.store.bulkUpsert(entities);
       return;
     }
     for (const p of pairs) await this.upsertPeer(p.targetId, p.fromId);

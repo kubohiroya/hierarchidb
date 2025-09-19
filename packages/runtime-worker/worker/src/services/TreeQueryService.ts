@@ -124,12 +124,10 @@ export class TreeQueryService implements TreeQueryAPI {
       if (maxResults && results.length >= maxResults) break;
 
       const nodeName = caseSensitive ? node.name : node.name.toLowerCase();
-      const nodeDesc =
-        searchInDescription && (node as any).description
-          ? caseSensitive
-            ? (node as any).description
-            : (node as any).description.toLowerCase()
-          : '';
+      const rawDescription = node.description ?? '';
+      const nodeDesc = searchInDescription
+        ? (caseSensitive ? rawDescription : rawDescription.toLowerCase())
+        : '';
 
       let matches = false;
 
@@ -167,20 +165,36 @@ export class TreeQueryService implements TreeQueryAPI {
 
     // Apply sorting
     if (sortBy) {
-      childNodes = childNodes.sort((a: any, b: any) => {
-        let valueA = a[sortBy];
-        let valueB = b[sortBy];
+      childNodes = childNodes.sort((a, b) => {
+        const getComparable = (node: TreeNode): string | number | undefined => {
+          switch (sortBy) {
+            case 'name':
+              return node.name?.toLowerCase();
+            case 'createdAt':
+              return node.createdAt;
+            case 'updatedAt':
+              return node.updatedAt;
+            default:
+              return undefined;
+          }
+        };
 
-        if (sortBy === 'name') {
-          valueA = valueA?.toLowerCase();
-          valueB = valueB?.toLowerCase();
+        const valueA = getComparable(a);
+        const valueB = getComparable(b);
+
+        if (valueA == null && valueB == null) return 0;
+        if (valueA == null) return sortOrder === 'desc' ? 1 : -1;
+        if (valueB == null) return sortOrder === 'desc' ? -1 : 1;
+
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          const comparison = valueA.localeCompare(valueB);
+          return sortOrder === 'desc' ? -comparison : comparison;
         }
 
-        if (sortOrder === 'desc') {
-          return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
-        } else {
-          return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-        }
+        const numericA = Number(valueA);
+        const numericB = Number(valueB);
+        const comparison = numericA === numericB ? 0 : numericA < numericB ? -1 : 1;
+        return sortOrder === 'desc' ? -comparison : comparison;
       });
     }
 

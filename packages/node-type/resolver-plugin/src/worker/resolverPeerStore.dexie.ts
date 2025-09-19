@@ -1,23 +1,44 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB.js';
+import type { ResolverPeerData } from '../types/index.js';
 
-export function createResolverPeerStoreDexie(db: ResolverEntitiesDB): PeerStore<any> {
+const normalizeResolverPeerData = (data?: ResolverPeerData | null): ResolverPeerData => ({
+  schemaVersion: 1,
+  lastExecutedAt: data?.lastExecutedAt,
+  metadata: data?.metadata ?? {},
+});
+
+export function createResolverPeerStoreDexie(db: ResolverEntitiesDB): PeerStore<ResolverPeerData> {
   return {
     async get(nodeId: NodeId) {
-      return (await db.peerEntities.get(nodeId)) as unknown as PeerEntity<any> | undefined;
+      const row = await db.peerEntities.get(nodeId);
+      if (!row) return undefined;
+      const entity: PeerEntity<ResolverPeerData> = {
+        ...row,
+        data: normalizeResolverPeerData(row.data),
+      };
+      return entity;
     },
-    async put(entity: PeerEntity<any>) {
-      const row: ResolverPeerRow = { ...entity, updatedAt: Date.now() } as any;
+    async put(entity: PeerEntity<ResolverPeerData>) {
+      const row: ResolverPeerRow = {
+        ...entity,
+        data: normalizeResolverPeerData(entity.data),
+        updatedAt: Date.now(),
+      };
       await db.peerEntities.put(row);
     },
     async delete(nodeId: NodeId) {
       await db.peerEntities.delete(nodeId);
     },
-    async bulkUpsert(entities: PeerEntity<any>[]) {
-      const rows: ResolverPeerRow[] = entities.map((e) => ({ ...e, updatedAt: Date.now() } as any));
+    async bulkUpsert(entities: PeerEntity<ResolverPeerData>[]) {
+      const now = Date.now();
+      const rows: ResolverPeerRow[] = entities.map((e) => ({
+        ...e,
+        data: normalizeResolverPeerData(e.data),
+        updatedAt: now,
+      }));
       await db.peerEntities.bulkPut(rows);
     },
   };
 }
-

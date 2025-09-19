@@ -4,8 +4,8 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { Collection, Table } from 'dexie';
-import { HierarchicalEntityHandler } from '@hierarchidb/base-plugin';
+import type { Collection, IndexableType, Table } from 'dexie';
+import { HierarchicalEntityHandler } from '@hierarchidb/node-type-base-plugin';
 import type {
   BaseMapEntity,
   BaseMapSearchCriteria,
@@ -14,8 +14,10 @@ import type {
   DisplayOptions,
   MapStyle,
   MapViewport,
+  BasemapPeerData,
 } from '../types/index.js';
 import { BaseMapDatabase } from '../database/BaseMapDatabase.js';
+import type { PeerEntity } from '@hierarchidb/runtime-worker';
 
 /**
  * Default values for BaseMap configuration
@@ -39,13 +41,16 @@ const DEFAULT_DISPLAY_OPTIONS: DisplayOptions = {
   showLabels: true,
 };
 
-export interface BaseMapExtendedSearchCriteria extends BaseMapSearchCriteria {
-}
+export interface BaseMapExtendedSearchCriteria extends BaseMapSearchCriteria {}
 
 /**
  * BaseMap Entity Handler (typed to BaseMapEntity)
  */
-export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntity> {
+export class BaseMapEntityHandler extends HierarchicalEntityHandler<
+  BaseMapEntity,
+  CreateBaseMapData,
+  BaseMapExtendedSearchCriteria
+> {
   public baseMapDB: BaseMapDatabase;
   protected table: Table<BaseMapEntity, NodeId>;
   protected workingCopyTable: Table<BaseMapWorkingCopy, NodeId>;
@@ -292,15 +297,15 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
     return { isValid: errors.length === 0, errors };
   }
 
-  async searchBaseMaps(criteria: BaseMapExtendedSearchCriteria & { tags?: string[] }): Promise<BaseMapEntity[]> {
-    return await this.searchEntities(criteria as any);
+  async searchBaseMaps(criteria: BaseMapExtendedSearchCriteria): Promise<BaseMapEntity[]> {
+    return await this.searchEntities(criteria);
   }
 
   protected applyAdditionalSearchCriteria(
-    collection: Collection<BaseMapEntity>,
-    criteria: BaseMapExtendedSearchCriteria & { tags?: string[] },
-  ): Collection<BaseMapEntity, any> {
-    collection = super.applyAdditionalSearchCriteria(collection, criteria as any);
+    collection: Collection<BaseMapEntity, IndexableType, BaseMapEntity>,
+    criteria: BaseMapExtendedSearchCriteria,
+  ): Collection<BaseMapEntity, IndexableType, BaseMapEntity> {
+    collection = super.applyAdditionalSearchCriteria(collection, criteria);
 
     if (criteria.mapStyle) {
       collection = collection.filter((entity: BaseMapEntity) => entity.mapStyle.style === criteria.mapStyle);
@@ -402,17 +407,23 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<BaseMapEntit
 
   private async mirrorToPeerStore(entity: BaseMapEntity): Promise<void> {
     try {
-      const RW = '@hierarchidb/runtime-worker' as string;
-      const mod = await import(/* @vite-ignore */ RW as any);
-      const store = mod.storeRegistry.getPeer('basemap');
+      const mod = await import(/* @vite-ignore */ '@hierarchidb/runtime-worker');
+      const store = mod.storeRegistry.getPeer<BasemapPeerData>('basemap');
       if (!store) return;
-      const payload = {
-        mapStyle: entity.mapStyle,
-        viewport: entity.viewport,
-        displayOptions: entity.displayOptions,
+      const payload: BasemapPeerData = {
         schemaVersion: 1,
-      } as any;
-      await store.put({ nodeId: entity.nodeId, data: payload, updatedAt: Date.now() } as any);
+        presentation: {
+          style: entity.mapStyle,
+          viewport: entity.viewport,
+        },
+        metadata: entity.displayOptions ? { displayOptions: entity.displayOptions } : undefined,
+      };
+      const peerEntity: PeerEntity<BasemapPeerData> = {
+        nodeId: entity.nodeId,
+        data: payload,
+        updatedAt: Date.now(),
+      };
+      await store.put(peerEntity);
     } catch {
       // ignore in non-worker contexts or tests
     }

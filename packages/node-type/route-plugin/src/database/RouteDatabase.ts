@@ -6,7 +6,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RouteEntity, RouteWorkingCopy } from '../entities/RouteEntity.js';
+import type { RouteEntity, RouteGenerationConfig, RouteWorkingCopy } from '../entities/RouteEntity.js';
 
 /**
  * Route cache entry
@@ -15,9 +15,30 @@ export interface RouteCacheEntry {
   id: string;
   routeId: NodeId;
   cacheKey: string;
-  data: any;
+  data: unknown;
   createdAt: number;
   expiresAt: number;
+}
+
+export interface RouteCursorRow {
+  sessionId: string;
+  completed: number;
+  total: number;
+  paused?: boolean;
+  updatedAt: number;
+  /** Optional reference to persisted result table (set on commit). */
+  tableId?: string;
+}
+
+export interface RouteResultRow {
+  id: string;
+  sessionId: string;
+  taskId: string;
+  method: RouteGenerationConfig['method'];
+  lineGeometry: [number, number][];
+  distance?: number;
+  duration?: number;
+  createdAt: number;
 }
 
 /**
@@ -28,24 +49,9 @@ export class RouteDatabase extends Dexie {
   workingCopies!: Table<RouteWorkingCopy, NodeId>;
   routeCache!: Table<RouteCacheEntry, string>;
   // Batch session tracking (cursor/progress)
-  routeCursors!: Table<{
-    sessionId: string;
-    completed: number;
-    total: number;
-    paused?: boolean;
-    updatedAt: number
-  }, string>;
+  routeCursors!: Table<RouteCursorRow, string>;
   // Optional results storage for batch-generated routes
-  routeResults!: Table<{
-    id: string;
-    sessionId: string;
-    taskId: string;
-    method: string;
-    lineGeometry: [number, number][];
-    distance?: number;
-    duration?: number;
-    createdAt: number
-  }, string>;
+  routeResults!: Table<RouteResultRow, string>;
 
   constructor(dbName: string = getDBName('route-db')) {
     super(dbName);
@@ -86,7 +92,7 @@ export class RouteDatabase extends Dexie {
   /**
    * Get cached data for route
    */
-  async getCachedData(routeId: NodeId, cacheKey: string): Promise<any | null> {
+  async getCachedData(routeId: NodeId, cacheKey: string): Promise<unknown | null> {
     const entry = await this.routeCache
       .where('[routeId+cacheKey]')
       .equals([routeId, cacheKey])
@@ -109,7 +115,7 @@ export class RouteDatabase extends Dexie {
   async setCachedData(
     routeId: NodeId,
     cacheKey: string,
-    data: any,
+    data: unknown,
     ttl: number = 3600000, // 1 hour default
   ): Promise<void> {
     const now = Date.now();

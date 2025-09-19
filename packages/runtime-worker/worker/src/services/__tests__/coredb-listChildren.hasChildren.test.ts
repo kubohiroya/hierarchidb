@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 import { CoreDB } from '../CoreDB.js';
 
-function legacyListChildrenProjection(children: any[]) {
+function legacyListChildrenProjection(children: TreeNode[]) {
   return children.map((node) => ({
     id: node.id,
     parentId: node.parentId,
@@ -24,17 +24,18 @@ describe('CoreDB.listChildren hasChildren propagation', () => {
 
   beforeAll(async () => {
     core = await CoreDB.getSingleton('hasChildren-test');
-    await core.nodes.put({
+    const node: TreeNode = {
       id: childId,
       parentId,
-      nodeType: 'folder' as any,
+      nodeType: 'folder' as NodeType,
       name: 'Has children node',
       depth: 1,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
       hasChildren: true,
-    } as any);
+    };
+    await core.nodes.put(node);
   });
 
   afterAll(async () => {

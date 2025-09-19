@@ -4,10 +4,14 @@
 import type { Timestamp } from '@hierarchidb/common-type';
 import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types.js';
 
+type CryptoLike = { randomUUID?: () => string };
+
 function randomId(prefix: string): string {
-  const g: any = (globalThis as any);
-  const cryptoObj = g?.crypto;
-  if (cryptoObj && typeof cryptoObj.randomUUID === 'function') {
+  const cryptoObj: CryptoLike | undefined =
+    typeof globalThis === 'object' && globalThis && 'crypto' in globalThis
+      ? (globalThis as typeof globalThis & { crypto?: CryptoLike }).crypto
+      : undefined;
+  if (cryptoObj?.randomUUID) {
     return cryptoObj.randomUUID();
   }
   //  Fallback sufficient for non-crypto use (tests/dev only)
@@ -19,14 +23,14 @@ export function createEnvelope<K extends CommandKind>(
   payload: PayloadOf<K>,
   init?: EnvelopeInit,
 ): CommandEnvelope<K> {
-  const issuedAt = (init?.issuedAt ?? (Date.now() as unknown)) as Timestamp;
-  return {
+  const issuedAt = (init?.issuedAt ?? Date.now()) as Timestamp;
+  const envelope: CommandEnvelope<K> = {
     commandId: init?.commandId ?? randomId('cmd'),
     groupId: init?.groupId ?? randomId('grp'),
     kind,
     payload,
     issuedAt,
     ...(init?.sourceViewId ? { sourceViewId: init.sourceViewId } : {}),
-  } as CommandEnvelope<K>;
+  };
+  return envelope;
 }
-

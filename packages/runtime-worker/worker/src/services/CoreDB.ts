@@ -11,6 +11,7 @@ import {
 } from '@hierarchidb/common-type';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
+import type { BulkError } from 'dexie';
 import { Subject } from 'rxjs';
 
 export class CoreDB extends Dexie {
@@ -33,13 +34,21 @@ export class CoreDB extends Dexie {
     tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
     fn: () => Promise<T>,
   ): Promise<T> {
+    const tableMap = {
+      trees: this.trees,
+      nodes: this.nodes,
+      rootStates: this.rootStates,
+      tags: this.tags,
+      tagAssociations: this.tagAssociations,
+    } as const;
+
     const tables = tableNames
-      .map((n) => (this as any)[n])
-      .filter((t) => !!t);
+      .map((name) => tableMap[name])
+      .filter((table): table is NonNullable<typeof table> => Boolean(table));
     // If no tables provided, just run function without a transaction
     if (tables.length === 0) return await fn();
     // Use Dexie's variadic or array form; cast to any to avoid TS tuple spread issues
-    return await (this as any).transaction(mode, tables, fn);
+    return await this.transaction(mode, tables, fn);
   }
 
   static async getSingleton(_name?: string): Promise<CoreDB> {
@@ -162,8 +171,8 @@ export class CoreDB extends Dexie {
           console.error('Data that failed:', rootStateData);
 
           // Try to get more details about the error
-          if ((error as any).failures) {
-            console.error('Bulk add failures:', (error as any).failures);
+          if (isBulkError(error) && error.failures) {
+            console.error('Bulk add failures:', error.failures);
           }
           throw error;
         }
@@ -964,4 +973,8 @@ export class CoreDB extends Dexie {
   static resetInstance(): void {
     SingletonMixin.terminate(CoreDB.name);
   }
+}
+
+function isBulkError(error: unknown): error is BulkError {
+  return error instanceof Dexie.BulkError;
 }

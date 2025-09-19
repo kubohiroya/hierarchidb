@@ -106,6 +106,15 @@ export interface RouteWorkingCopy extends RouteEntity {
   routeParameters: RouteParameters;
 }
 
+/**
+ * Peer payload stored for route nodes in peerEntities.
+ */
+export interface RoutePeerData {
+  schemaVersion: 1;
+  lastComputedAt?: number;
+  metadata?: Record<string, unknown>;
+}
+
 // ================================
 // Processing Configuration
 // ================================

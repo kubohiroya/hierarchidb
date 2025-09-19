@@ -31,8 +31,7 @@
     "reason": "UI transitive types (MUI/Emotion) — tracked to remove."
   },
   "include": [
-    "src/types.ts",
-    "src/types/**/*.d.ts"
+    "src/**/*"
   ],
   "exclude": [
     "dist",

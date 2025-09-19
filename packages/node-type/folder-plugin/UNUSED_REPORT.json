@@ -1198,7 +1198,7 @@
         {
           "file": "./packages/node-type/shape-plugin/src/extension/handler.ts",
           "line": 10,
-          "text": "import type { FolderEntity } from '@hierarchidb/folder-plugin';"
+          "text": "import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';"
         },
         {
           "file": "./packages/node-type/shape-plugin/src/extension/handler.ts",
@@ -1278,7 +1278,7 @@
         {
           "file": "./packages/node-type/styler-plugin/src/extensions/StylerFolderExtension.tsx",
           "line": 14,
-          "text": "import type { FolderEntity } from '@hierarchidb/folder-plugin';"
+          "text": "import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';"
         },
         {
           "file": "./packages/node-type/styler-plugin/src/extensions/StylerFolderExtension.tsx",
@@ -4338,7 +4338,7 @@
         {
           "file": "./TASKS.md",
           "line": 1379,
-          "text": "- `tsconfig.json` に `\"@hierarchidb/folder-plugin/ui\" -> dist/ui/index.d.ts` の paths を追加し、`TagInput` 型を解決。"
+          "text": "- `tsconfig.json` に `\"@hierarchidb/node-type-folder-plugin/ui\" -> dist/ui/index.d.ts` の paths を追加し、`TagInput` 型を解決。"
         },
         {
           "file": "./app/src/virtual/stubs/ui-core-TagInput.tsx",
