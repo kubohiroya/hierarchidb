@@ -850,6 +850,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime-worker/worker
+      '@hierarchidb/runtime-worker-bootstrap':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker-bootstrap
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../feature/tag
@@ -944,6 +947,9 @@ importers:
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
+      '@hierarchidb/runtime-worker-bootstrap':
+        specifier: workspace:*
+        version: link:../../runtime-worker/worker-bootstrap
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core

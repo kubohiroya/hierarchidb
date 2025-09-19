@@ -311,10 +311,6 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                   aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
                   title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
                   aria-haspopup="menu"
-                  onContextMenu={(event: MouseEvent<HTMLElement>) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
                   onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
                     if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
                       handleContextMenuOpen(event, node);

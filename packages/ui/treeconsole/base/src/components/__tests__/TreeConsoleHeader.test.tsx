@@ -3,10 +3,10 @@
   * props
   */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { TreeConsoleHeader } from '../TreeConsoleHeader.js';
-import type { TreeConsoleHeaderProps, TreeViewController } from '~/types';
+import type { TreeConsoleHeaderProps, TreeViewController } from '../../types';
 
 const mockController: TreeViewController = {
   currentNode: null,
@@ -64,7 +64,7 @@ describe('TreeConsoleHeader', () => {
   it('should render title correctly', () => {
     render(<TreeConsoleHeader {...defaultProps} />);
 
-    expect(screen.getByText('Test TreeTypes Console')).toBeInTheDocument();
+    expect(screen.getByText('Test TreeTypes Console')).toBeDefined();
   });
 
   it('should show resources page type', () => {
@@ -78,7 +78,7 @@ describe('TreeConsoleHeader', () => {
   it('should show projects page type when isProjectsPage is true', () => {
     render(<TreeConsoleHeader {...defaultProps} isProjectsPage={true} isResourcesPage={false} />);
 
-    expect(screen.getByText(/projects/i)).toBeInTheDocument();
+    expect(screen.getByText(/projects/i)).toBeDefined();
   });
 
   it('should show trash indicator when isTrashPage is true', () => {
@@ -91,14 +91,14 @@ describe('TreeConsoleHeader', () => {
   it('should show preview button when canPreviewNode is true', () => {
     render(<TreeConsoleHeader {...defaultProps} canPreviewNode={true} />);
 
-    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.getByText('Preview')).toBeDefined();
   });
 
   it('should show close button when onClose is provided', () => {
     const mockOnClose = vi.fn();
     render(<TreeConsoleHeader {...defaultProps} onClose={mockOnClose} />);
 
-    expect(screen.getByText('Close')).toBeInTheDocument();
+    expect(screen.getByText('Close')).toBeDefined();
   });
 
   it('should show current node info when provided', () => {
@@ -111,8 +111,8 @@ describe('TreeConsoleHeader', () => {
 
     render(<TreeConsoleHeader {...defaultProps} currentNodeInfo={currentNodeInfo} />);
 
-    expect(screen.getByText(/Test Node \(folder\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Has Children/)).toBeInTheDocument();
+    expect(screen.getByText(/Test Node \(folder\)/)).toBeDefined();
+    expect(screen.getByText(/Has Children/)).toBeDefined();
   });
 
   it.skip('should show breadcrumb path when not root node', () => {
@@ -125,6 +125,6 @@ describe('TreeConsoleHeader', () => {
       <TreeConsoleHeader {...defaultProps} previousNodePath={previousNodePath} isRootNode={false} />,
     );
 
-    expect(screen.getByText(/Path: Root > Parent/)).toBeInTheDocument();
+    expect(screen.getByText(/Path: Root > Parent/)).toBeDefined();
   });
 });

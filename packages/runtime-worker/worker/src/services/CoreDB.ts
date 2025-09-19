@@ -321,10 +321,7 @@ export class CoreDB extends Dexie {
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {
     const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
 
-    return children.map((node) => {
-      const plain: TreeNode = { ...node } as TreeNode;
-      return plain;
-    });
+    return children;
   }
 
   /**

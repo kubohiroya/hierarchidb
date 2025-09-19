@@ -191,7 +191,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
       />
       {/* Main Table Content */}
-      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', paddingLeft: '8px', paddingRight: '8px' }}>
         <TreeTableCore
           controller={controller}
           viewHeight={600}
