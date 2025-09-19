@@ -15,6 +15,7 @@ import {
   getExpandedRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  RowSelectionState,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
@@ -151,7 +152,7 @@ const NameCell = styled(Box)`
 `;
 
 const IndentSpace = styled(Box)<{ depth: number }>`
-  width: ${({ depth }) => depth * 8}px;
+  width: ${({ depth }) => depth * 32}px;
   flex-shrink: 0;
 `;
 
@@ -324,14 +325,15 @@ export function TreeTableCore({
     };
   }, [columnWidths, containerRef]);
 
+  // Get data from controller
+  const rawData: TreeNode[] = useMemo(()=>controller?.data || [], [controller?.data]);
+  const rowSelection: RowSelectionState = useMemo(()=>controller?.rowSelection || {}, [controller?.rowSelection]);
+
   // Helper: compute descendants including self
   const getDescendants = useCallback((nodeId: string): Set<string> => {
-    const data = (controller?.data || []) as unknown as TreeNode[];
-    return computeDescendants(data, nodeId as any) as unknown as Set<string>;
-  }, [controller]);
+    return computeDescendants(rawData, nodeId as any) as unknown as Set<string>;
+  }, [rawData]);
 
-  // Get data from controller
-  const rawData = controller?.data || [];
 
   // Calculate depth for each node
   const data = useMemo(() => {
@@ -375,7 +377,6 @@ export function TreeTableCore({
     }
     return set;
   }, [rawData]);
-  const rowSelection = controller?.rowSelection || {};
   const expandedRowIds: ReadonlySet<string> =
     (controller?.expandedRowIds as ReadonlySet<string> | undefined) ?? EMPTY_SET;
 
@@ -391,7 +392,7 @@ export function TreeTableCore({
   // Batch selection into a single frame
   const pendingSelectionRef = useRef<{ ids: string[]; checked: boolean } | null>(null);
   const rafRef = useRef<number | null>(null);
-  const flushBatchedSelect = () => {
+  const flushBatchedSelect = useCallback(() => {
     try {
       const payload = pendingSelectionRef.current;
       rafRef.current = null;
@@ -400,19 +401,28 @@ export function TreeTableCore({
     } finally {
       pendingSelectionRef.current = null;
     }
-  };
-  const batchSelect = (ids: string[], checked: boolean) => {
+  }, [controller]);
+
+  const batchSelect = useCallback((ids: string[], checked: boolean) => {
     pendingSelectionRef.current = { ids, checked };
     if (rafRef.current == null) {
       rafRef.current = requestAnimationFrame(flushBatchedSelect);
     }
-  };
+  }, [flushBatchedSelect]);
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
     if (!controller?.onNodeSelect) return;
     const nodeIds = data.map((node) => node.id);
     batchSelect(nodeIds, checked);
-  };
+  }, [batchSelect, controller?.onNodeSelect, data]);
+
+  const handleStartEdit = useCallback((node: TreeNode, field: 'name' | 'description' = 'name') => {
+    setEditingNodeId(node.id);
+    setEditingField(field);
+    const initial = field === 'name' ? node.name : ((node as any).description || '');
+    setEditingValue(initial);
+    controller?.startEdit?.(node.id);
+  }, [controller]);
 
   // Column definitions
   const columns = useMemo<ColumnDef<any>[]>(() => {
@@ -618,6 +628,16 @@ export function TreeTableCore({
         cell: ({ row }) => {
           const node: any = row.original;
           const isEditingDesc = editingNodeId === node.id && editingField === 'description';
+
+          // Event handlers
+          const handleStartEdit = (node: TreeNode, field: 'name' | 'description' = 'name') => {
+            setEditingNodeId(node.id);
+            setEditingField(field);
+            const initial = field === 'name' ? node.name : ((node as any).description || '');
+            setEditingValue(initial);
+            controller?.startEdit?.(node.id);
+          };
+
           if (isEditingDesc) {
             return (
               <Box sx={{ position: 'relative', width: '100%' }}>
@@ -730,22 +750,7 @@ export function TreeTableCore({
     }
 
     return baseColumns;
-  }, [
-    depthOffset,
-    expandedRowIds,
-    editingNodeId,
-    editingValue,
-    rowClickAction,
-    hideDragHandler,
-    disableDragAndDrop,
-    useTrashColumns,
-    controller,
-    IconComponent,
-    columnWidths,
-    rowSelection,
-    allSelected,
-    someSelected,
-  ]);
+  }, [columnWidths.name, columnWidths.description, columnWidths.createdAt, columnWidths.updatedAt, useTrashColumns, allSelected, someSelected, handleSelectAll, rowSelection, batchSelect, depthOffset, nodesWithChildren, expandedRowIds, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, editingField, editingValue, editingError, treeId, controller, rowClickAction, selectionMode, validateInline, handleStartEdit]);
 
   // Compute visible rows based on expansion state. Children of collapsed
   // nodes are filtered out while preserving sibling order.
@@ -777,15 +782,6 @@ export function TreeTableCore({
       }
     },
   });
-
-  // Event handlers
-  const handleStartEdit = (node: TreeNode, field: 'name' | 'description' = 'name') => {
-    setEditingNodeId(node.id);
-    setEditingField(field);
-    const initial = field === 'name' ? node.name : ((node as any).description || '');
-    setEditingValue(initial);
-    controller?.startEdit?.(node.id);
-  };
 
   const handleRowClick = (node: TreeNode, event: MouseEvent) => {
     const target = (event.target as unknown as HTMLElement) || null;
