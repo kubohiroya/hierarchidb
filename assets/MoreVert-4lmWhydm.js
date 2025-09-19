@@ -1,1 +1,0 @@
-import{j as o}from"./jsx-runtime-tmbUWu7A.js";import{c as s}from"./createSvgIcon-9sees_LD.js";const t=s(o.jsx("path",{d:"M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2"}));export{t as M};
