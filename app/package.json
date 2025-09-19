@@ -58,6 +58,7 @@
     "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
+    "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
     "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
     "@hierarchidb/ui-usermenu": "workspace:*",
     "@mui/icons-material": "^7.3.2",

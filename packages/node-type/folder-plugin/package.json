@@ -11,6 +11,9 @@
       "shared": [
         "dist/shared/index.d.ts"
       ],
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ]
@@ -34,9 +37,9 @@
       "default": "./dist/ui/index.js"
     },
     "./worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     },
     "./worker/*": {
       "types": "./src/worker/*.ts",

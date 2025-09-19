@@ -5,6 +5,7 @@ export default createTsupConfig({
     index: 'src/index.ts',
     'ui/index': 'src/ui/index.ts',
     'shared/index': 'src/shared/index.ts',
+    'worker/index': 'src/worker/index.ts',
   },
   splitting: false,
   external: [

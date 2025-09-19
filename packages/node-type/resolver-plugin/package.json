@@ -6,6 +6,19 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "database": [
+        "dist/database/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,9 +30,9 @@
       "import": "./dist/database/index.js"
     },
     "./worker": {
-      "types": "./src/worker/index.ts",
-      "import": "./src/worker/index.ts",
-      "default": "./src/worker/index.ts"
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     },
     "./worker/*": {
       "types": "./src/worker/*.ts",

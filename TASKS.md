@@ -53,6 +53,24 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+- fix/ui-auth/import-meta-env — `import.meta.env` 型エラー修正（ui-auth ビルド対応）
+  - ブランチ: `fix/ui-auth/import-meta-env`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-auth`
+  - 受け入れ基準（DoD）:
+    - [x] `pnpm -C packages/ui/auth typecheck` が成功する
+    - [x] `pnpm -C packages/ui/auth build` が成功する
+    - [x] `import.meta.env` 参照箇所で型エラーが発生しない
+  - チェックリスト:
+    - [x] tsup の DTS 設定に `vite/client` 型を反映
+    - [x] OIDCAuthContext での `import.meta.env` 参照が型エラーなくビルド
+  - ロールバック手順:
+    - `tsup.base.config.ts` の変更を元に戻し、`pnpm -C packages/ui/auth build` を再実行して従来挙動へ戻す
+  - 運用ログ:
+    - start: 2025-09-19 09:10 `@hierarchidb/ui-auth` の `import.meta.env` 型エラー調査を開始
+    - progress: 2025-09-19 09:32 `pnpm -C packages/ui/auth typecheck` を実行し成功
+    - progress: 2025-09-19 09:35 `pnpm -C packages/ui/auth build` を実行し成功
+    - done: 2025-09-19 09:36 DTS ビルドでも `import.meta.env` 型エラーが再発しないことを確認
+
 - fix/runtime-ui/plugin-dialog-entitiesdb-resolve — UIPersistenceRegistry の EntitiesDB 解決で folder plugin を読み込めない不具合修正
   - ブランチ: `fix/runtime-ui/plugin-dialog-entitiesdb-resolve`（サンドボックス制約でローカル新規ブランチ作成不可のため `main` 上で作業）
   - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/folder-plugin`
@@ -86,6 +104,26 @@
     - done: 2025-09-18 11:49 `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を再実行し、違反が解消されたことを確認。
     - progress: 2025-09-19 09:45 TreeTableCore の column width 読み込み処理に hydrate フラグを追加し、Dexie 取得前に既存値を上書きしないよう調整（初回レンダリングの再計算フリッカーを解消）。
     - done: 2025-09-19 09:59 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`, `pnpm --filter @hierarchidb/ui-treeconsole-treetable test`, `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し成功。column-width-cache の例外ハンドリングを補強し、例外時のユニットテストを追加。
+    - progress: 2025-09-19 10:10 `rollup-plugin-visualizer` を導入し、Vite で `BUNDLE_ANALYZE=true pnpm --filter @hierarchidb/app build:vite` を実行して bundle-visualizer-{client,server}.html を生成。
+    - progress: 2025-09-19 10:28 Vite SSR 設定で maplibre-gl / @mui/material / @mui/system / @mui/utils / node-fetch / whatwg-url / tr46 を external 指定し、SSR バンドルから除外。
+    - done: 2025-09-19 10:32 `pnpm --filter @hierarchidb/app build` を `build:vite` ベースに変更し、旧 `react-router build` は `build:react-router` へ移設。
+    - done: 2025-09-19 10:18 サーバーバンドルの上位要素を集計し、@mui/material (約20.5%) / maplibre-gl (約15.7%) / node-type プラグイン群 (約14.8%) / tr46 (約9.9%) が主要要因であることを確認。クライアント側も maplibre-gl・node-type・@mui/material が 40%超を占有。
+    - progress: 2025-09-19 15:20 feat/worker/entity-peer — EntityLifecycleManager の working copy discard/commit 経路を NodeId/NodeType 型で整理し、Dexie フォールバックを typed loader に置換。
+    - done: 2025-09-19 15:40 同タスク — `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test:run` を実行し、peer/group/relations コピー処理の NodeId マップ統一がグリーンであることを確認。
+    - progress: 2025-09-19 15:52 同タスク — peer DB フォールバック定義を NodeType keyed Map へ移行し、CoreDB.getNode ベースの参照に統一。
+    - done: 2025-09-19 15:57 同タスク — 再度 `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test:run` を実行し、フェイルバック調整後も成功を確認。
+    - progress: 2025-09-19 16:05 同タスク — sourceNodes キャッシュを活用する resolver を追加し、グループ/リレーション複製時の NodeId 解決を共通化。
+    - done: 2025-09-19 16:09 同タスク — 追補後に `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test:run` を再実行しグリーンを確認。
+    - progress: 2025-09-19 16:15 同タスク — setIdMapping の正規化挙動を検証するユニットテストを追加し、異常系/正常系双方をカバー。
+    - done: 2025-09-19 16:19 同タスク — テスト追加後に `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test:run` を再実行して成功を確認。
+    - progress: 2025-09-19 16:24 同タスク — peer/group/relations 向けのハッピーケーステストを追加し、NodeId マッピングの正規化→bulkUpsert 経路をユニットで担保。
+    - done: 2025-09-19 16:29 同タスク — 追加テスト実行後に `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test:run` を再実行し成功を確認。
+    - done: 2025-09-19 16:35 refactor/app/ui-treeconsole-types — app/tsconfig の `@hierarchidb/ui-treeconsole-treetable` dist 参照を撤去し、正式な workspace 依存へ切替。`app/package.json` へ依存を追加して解決経路を統一。
+    - done: 2025-09-19 16:37 refactor/node-type/folder-plugin-dts — Dexie 継承部を調整し、`pnpm --filter @hierarchidb/folder-plugin build` で `dist/*.d.ts` を生成できるよう型エラーを修正。
+    - done: 2025-09-19 18:22 同タスク — `pnpm install && pnpm build` 実行後に `pnpm --filter @hierarchidb/app typecheck` / `pnpm --filter @hierarchidb/runtime-worker test:run` を再確認し、dist 参照撤去後もグリーンを確認。
+    - progress: 2025-09-19 19:05 フォルダ系ノードタイプ（folder/styler/resolver）の `tsup` エントリに `worker/index` を追加し、`package.json` の `exports`/`typesVersions` を `dist` 参照へ変更
+    - done: 2025-09-19 19:12 `pnpm --filter @hierarchidb/folder-plugin typecheck && pnpm --filter @hierarchidb/folder-plugin build` を実行し `dist/worker/index.*` が生成されることを確認
+    - done: 2025-09-19 19:20 `pnpm --filter @hierarchidb/styler-plugin build` / `typecheck` および `pnpm --filter @hierarchidb/resolver-plugin build` / `typecheck` を再実行し、Exports 更新後もグリーンであることを確認
 
 - fix/ui/breadcrumb-drag-handle-remove — TreeConsole パンくず内ドラッグハンドル表示の撤去
   - ブランチ: `fix/ui/breadcrumb-drag-handle-remove`（サンドボックス制約でローカル新規ブランチ作成不可のため `fix/app/emotion-dedupe` 上で作業）
@@ -166,6 +204,10 @@
   - 運用ログ:
     - updated: 2025-09-07 19:45 進捗同期（前半完了・残タスク明記）。
     - updated: 2025-09-07 20:10 レーン別セマフォ実装とテスト確認（Session/Manager）。
+    - progress: 2025-09-19 09:48 `pnpm -C packages/runtime-shared/batch-processor build` を実行し、`dist/index.d.ts` を再生成して共通バッチ基盤の型定義を揃えた。
+    - progress: 2025-09-19 09:52 `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行し、RouteBatchManager/Session での `import.meta` 関連 TS2339 を解消した。
+    - progress: 2025-09-19 09:57 ルート `tsconfig.base.json` に `@hierarchidb/runtime-shared-batch-processor` の `paths` を追加し、TypeScript がソースを直接解決できるよう調整。
+    - done: 2025-09-19 10:00 `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行し、`TS7016` が再発しないことを確認。
 
 - chore/docs/linker-plugin-migration — project-plugin の参照整理（docs/metadata）
   - ブランチ: `chore/docs/linker-plugin-migration`
@@ -2870,6 +2912,14 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-19 start: fix/ui-auth/import-meta-env — @hierarchidb/ui-auth の `import.meta.env` 型エラー調査を開始。
+- 2025-09-19 progress: fix/ui-auth/import-meta-env — `pnpm -C packages/ui/auth typecheck` を実行し成功。
+- 2025-09-19 progress: fix/ui-auth/import-meta-env — `pnpm -C packages/ui/auth build` を実行し成功。
+- 2025-09-19 done: fix/ui-auth/import-meta-env — DTS ビルドでも `import.meta.env` 型エラーが再発しないことを確認。
+- 2025-09-19 progress: feat/route/batch-processing-implementation — `pnpm -C packages/runtime-shared/batch-processor build` を実行し、共通バッチ基盤の `dist/index.d.ts` を再生成。
+- 2025-09-19 done: feat/route/batch-processing-implementation — `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行し、RouteBatchManager.ts の TS2339 を解消。
+- 2025-09-19 progress: feat/route/batch-processing-implementation — `tsconfig.base.json` に runtime-shared-batch-processor の `paths` を追加し、型解決をソース参照へ統一。
+- 2025-09-19 done: feat/route/batch-processing-implementation — `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` と `pnpm --filter @hierarchidb/route-plugin typecheck` を再実行し、`TS7016` が再発しないことを確認。
 - 2025-09-18 start: fix/runtime-ui/plugin-dialog-entitiesdb-resolve — Folder ダイアログ EntitiesDB 解決エラーの調査を開始。
 - 2025-09-18 progress: fix/runtime-ui/plugin-dialog-entitiesdb-resolve — peerDialogPersistence.ts の解決候補を拡張し、plugin exports を同期。
 - 2025-09-18 done: 同タスク — runtime-ui-plugin-dialog と folder/basemap/location/route/shape/resolver/styler/spreadsheet の typecheck を順次実行し成功。
@@ -2887,6 +2937,15 @@ P2:
 - 2025-09-18 done: 同タスク — policy/ban-tsconfig-paths-dist-dts を再実行し違反がないことを確認。
 - 2025-09-18 progress: refactor/app/shim-removal — app/tsconfig.typecheck.json の paths を dist フォルダ参照へ統一し、worker/plugin/ui パッケージの正式 d.ts を解決できるよう整理。
 - 2025-09-18 done: refactor/app/shim-removal — app/src/types/shims.d.ts・common-type/ambient-ui.d.ts から `ui-theme`/`ui-auth`/`ui-treeconsole-toolbar`/`folder-plugin` 向けシムを削除し、`docs/shim-any-audit-2025-09.md` を更新。`pnpm --filter @hierarchidb/common-type typecheck` / `build` と `pnpm --filter @hierarchidb/app typecheck` がグリーン。
+- 2025-09-18 done: refactor/node-type/shim-removal — route/spreadsheet plugin の runtime-ui-plugin-dialog shim を削除し、本家 export のみで typecheck が通ることを確認。
+- 2025-09-18 done: refactor/common/ambient-ui-shrink — `@hierarchidb/ui-core` / `@hierarchidb/ui-data-grid` 向け ambient 宣言を撤去し、ワークスペース `pnpm -w typecheck` がグリーン。
+- 2025-09-18 done: tooling/as-any-guard — `scripts/report-as-any.mjs` と `scripts/check-shims.mjs` を追加し、`pnpm as-any:check` / `pnpm shims:check` を `prebuild` に組み込み。総件数 1076 を基準に監視開始。
+- 2025-09-18 done: refactor/app/ui-treeconsole-types — app 側の `shims-ui-treeconsole-treetable.d.ts` を削除し、`@hierarchidb/ui-treeconsole-treetable` の公式 d.ts（dist 出力）を参照するよう tsconfig を更新。
+- 2025-09-18 done: refactor/feature-auth-recovery-typed — 箇所の shim を削除し、`@hierarchidb/util` / `@hierarchidb/common-auth` の正式 export へ整理。`pnpm --filter @hierarchidb/auth-recovery typecheck` グリーン。
+- 2025-09-18 done: refactor/ui-i18n-typed — `packages/ui/i18n` の外部ライブラリ shim を撤去し、公式 d.ts 参照で `pnpm --filter @hierarchidb/ui-i18n typecheck` グリーン。
+- 2025-09-18 done: refactor/ui-auth-env-shims-remove — `packages/ui/auth` の env/import-meta shims を撤去し、`vite/client` 型で補完。`pnpm --filter @hierarchidb/ui-auth typecheck` グリーン。
+- 2025-09-18 done: refactor/app/peer-display-mode-typed — peer-display-mode.ts の Dexie 操作を型付きラッパへ置換し、`as any` 依存を削減。関連パッケージの peer row 型に dialogPosition/dialogSize を追加。
+- 2025-09-18 done: metric/as-any-baseline-update — `pnpm as-any:report` の結果を 975 件にリフレッシュし、`as-any:check` 閾値を更新。
 - 2025-09-18 done: refactor/styler-plugin-typecheck — styler-plugin の import パス調整と Dexie 型修正で `pnpm --filter @hierarchidb/styler-plugin typecheck` / `pnpm -w typecheck` がグリーン。
 - 2025-09-17 start: fix/ui-treeconsole/treetable-node-brands — `ui-treeconsole/treetable` の typecheck で発生した NodeId brand エラー（filterAndPath.test.ts）を調査開始。
 - 2025-09-17 done: 同タスク — NodeId/NodeType brand を `toNodeId`/`toNodeType` で生成するよう修正し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功。

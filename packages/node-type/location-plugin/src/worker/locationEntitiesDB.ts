@@ -3,7 +3,14 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { LocationGroupItemData, LocationPeerData, LocationRelationMeta } from '../types/entities.js';
 
-export type LocationPeerRow = { nodeId: NodeId; data?: LocationPeerData; updatedAt?: number; displayMode?: 'standard' | 'maximized' | 'fullscreen' };
+export type LocationPeerRow = {
+  nodeId: NodeId;
+  data?: LocationPeerData;
+  updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number };
+  dialogSize?: { width: number; height: number };
+};
 export type LocationGroupRow = { nodeId: NodeId; id: string; data?: LocationGroupItemData; updatedAt?: number };
 export type LocationRelationRow = {
   srcNodeId: NodeId;

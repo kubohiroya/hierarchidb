@@ -15,12 +15,16 @@
 | `packages/node-type/route-plugin/src/types/plugin-dialog-shim.d.ts`<br>`packages/node-type/spreadsheet-plugin/src/types/runtime-ui-plugin-dialog-shim.d.ts` | runtime-ui-plugin-dialog | shim で補完 | runtime-ui-plugin-dialog の export を拡張し shim を撤去 |
 | `packages/node-type/timeline-plugin/src/types/rtg-bridge.d.ts` | `react-transition-group` | 型補完の暫定 shim | `@types/react-transition-group` を追加し公式型へ置換 |
 | `packages/node-type/location-plugin/src/types/ui-map-augment.d.ts` | `@hierarchidb/ui-map` | UI-map の型不足 | `ui-map` 側で必要 API を dist 型として公開 |
-| `packages/feature/auth-recovery/src/shims.d.ts` | `@hierarchidb/util`, `@hierarchidb/common-auth` | 旧 shim が残存 | 既存 dist 型に置換 |
+| （削除済み）`packages/feature/auth-recovery/src/shims.d.ts` | `@hierarchidb/util`, `@hierarchidb/common-auth` | - | SingletonMixin / AuthNotification 系は dist export へ統合（2025-09-18） |
 | `packages/feature/map-source/src/types/dexie.d.ts` など | 外部ライブラリ | 公式型未提供 | ライブラリの型確認／導入 or コメント付き維持 |
 | `packages/common/types/src/ambient-ui.d.ts` | `@hierarchidb/ui-icon`, `@hierarchidb/ui-core` など | UI 全体共通シム | 各 UI パッケージで dist 型を公開して縮退（`ui-theme` 分は削除済み） |
 | `packages/ui/treeconsole/*/ambient-breadcrumb.d.ts` | `@hierarchidb/ui-treeconsole-breadcrumb` | dist 型未検証 | treeconsole-breadcrumb で型を公開し削除 |
-| `packages/ui/i18n/src/types/shims.d.ts` | `i18next` 系 | 外部型不足 | 公式型があれば移行、無ければ最小維持 |
-| `app/src/types/shims.d.ts` | runtime-worker-bootstrap, common-type, util, virtual:* | 最小化済みだが残存 | UI 系（`ui-theme` / `ui-auth` / `ui-treeconsole-toolbar` / `folder-plugin`）は削除済み。残件は virtual モジュール等 |
+| （削除済み）`packages/ui/i18n/src/types/shims.d.ts` | `i18next` 系 | - | `i18next-browser-languagedetector`/`i18next-http-backend` が d.ts 同梱のため撤去（2025-09-18） |
+| `app/src/types/shims.d.ts` | runtime-worker-bootstrap, common-type, util | 最小化済み（仮想フラグ用途のみ） | 追加宣言は禁止。virtual モジュールは `.generated/types` で自動生成 |
+| （削除済み）`app/src/types/shims-ui-treeconsole-treetable.d.ts` | - | - | `@hierarchidb/ui-treeconsole-treetable` の公式 d.ts 参照へ移行（2025-09-18） |
+
+### 現在残っている shim と理由
+- `app/src/types/shims.d.ts`: グローバル FeatureFlags の ambient 定義（virtual モジュールは `.generated/types` にて自動生成）
 
 ## `as any` ホットスポット（概算）
 
@@ -42,11 +46,11 @@
 ### 2025-09-18 自動集計（`pnpm as-any:report`）
 
 ```
-total occurrences: 1076
+total occurrences: 975
 
 top packages:
-  app                                        245
   packages/runtime-worker/worker             238
+  app                                        144
   packages/node-type/route-plugin             95
   packages/node-type/shape-plugin             66
   packages/node-type/location-plugin          48

@@ -337,6 +337,9 @@ importers:
       '@hierarchidb/ui-treeconsole-toolbar':
         specifier: workspace:*
         version: link:../packages/ui/treeconsole/toolbar
+      '@hierarchidb/ui-treeconsole-treetable':
+        specifier: workspace:*
+        version: link:../packages/ui/treeconsole/treetable
       '@hierarchidb/ui-usermenu':
         specifier: workspace:*
         version: link:../packages/ui/usermenu

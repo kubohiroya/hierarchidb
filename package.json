@@ -65,7 +65,7 @@
     "analyze:licenses": "pnpm --filter @hierarchidb/analyze-licenses run build && pnpm --filter @hierarchidb/analyze-licenses exec node dist/cli.mjs",
     "analyze:docs": "node scripts/analyze-docs.js",
     "as-any:report": "node scripts/report-as-any.mjs",
-    "as-any:check": "node scripts/report-as-any.mjs --max=1076",
+    "as-any:check": "node scripts/report-as-any.mjs --max=975",
     "shims:check": "node scripts/check-shims.mjs",
     "generate:pdf": "node scripts/generate-pdf-with-translation.js",
     "generate:pdf:ja": "node scripts/generate-pdf-with-translation.js --japanese",

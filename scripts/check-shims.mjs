@@ -9,11 +9,6 @@ const ROOT = path.resolve(__dirname, '..');
 
 const ALLOW_LIST = new Set([
   'app/src/types/shims.d.ts',
-  'app/src/types/shims-ui-treeconsole-treetable.d.ts',
-  'packages/feature/auth-recovery/src/shims.d.ts',
-  'packages/ui/i18n/src/types/shims.d.ts',
-  'packages/ui/auth/src/types/shims-env.d.ts',
-  'packages/ui/auth/src/types/shims-import-meta.d.ts',
 ]);
 
 const matches = [];
