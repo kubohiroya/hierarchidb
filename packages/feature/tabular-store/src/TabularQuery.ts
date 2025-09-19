@@ -1,5 +1,5 @@
-import { getRowStoreDB } from './RowStoreDB';
-import { TabularIndexer } from './Indexer';
+import { getRowStoreDB } from './RowStoreDB.js';
+import { TabularIndexer } from './Indexer.js';
 
 export type ColumnFilter = {
   column: string;

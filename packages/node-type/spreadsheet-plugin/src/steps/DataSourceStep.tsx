@@ -6,7 +6,7 @@
   */
 
 import React from 'react';
-import { CSVUploadPanel } from './CSVUploadPanel';
+import { CSVUploadPanel } from './CSVUploadPanel.js';
 import { useTranslation } from 'react-i18next';
 
 /**

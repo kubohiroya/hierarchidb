@@ -1,35 +1,35 @@
 // Plugin System Exports
-export * from './plugins';
+export * from './plugins/index.js';
 
 // Component Exports
-export { ThemedLoadingScreen } from './components/ThemedLoadingScreen';
-export { TreeToggleButtonGroup } from './components/TreeToggleButtonGroup';
-export type { TreeConfig } from './components/TreeToggleButtonGroup';
-export { BaseIcon, createSvgIcon, createMuiIconWrapper } from './components/BaseIcon';
-export type { BaseIconProps, SvgIconDefinition } from './components/BaseIcon';
-export { DropdownMenu } from './components/DropdownMenu/DropdownMenu';
-export type { DropdownMenuItemType } from './components/DropdownMenu/DropdownMenuItemType';
-export { TagInput } from './components/TagInput';
-export { CategorySelector } from './components/CategorySelector';
-export { BasicInfoFields } from './components/BasicInfoFields';
-export { TagChipsInput } from './components/TagChipsInput';
-export type { TagChipsInputProps } from './components/TagChipsInput';
-export { TabularPreview } from './components/TabularPreview/TabularPreview';
-export { CrossViewStyles } from './sync/CrossViewStyles';
-export { CrossViewSnackbar } from './components/CrossViewSnackbar';
-export { useCrossHighlightSync } from './hooks/useCrossHighlightSync';
-export { useMapLibreFeatureState } from './hooks/useMapLibreFeatureState';
-export { ensureDefaultStyles } from './utils/ensureDefaultStyles';
+export { ThemedLoadingScreen } from './components/ThemedLoadingScreen.js';
+export { TreeToggleButtonGroup } from './components/TreeToggleButtonGroup/index.js';
+export type { TreeConfig } from './components/TreeToggleButtonGroup/index.js';
+export { BaseIcon, createSvgIcon, createMuiIconWrapper } from './components/BaseIcon.js';
+export type { BaseIconProps, SvgIconDefinition } from './components/BaseIcon.js';
+export { DropdownMenu } from './components/DropdownMenu/DropdownMenu.js';
+export type { DropdownMenuItemType } from './components/DropdownMenu/DropdownMenuItemType.js';
+export { TagInput } from './components/TagInput.js';
+export { CategorySelector } from './components/CategorySelector.js';
+export { BasicInfoFields } from './components/BasicInfoFields.js';
+export { TagChipsInput } from './components/TagChipsInput.js';
+export type { TagChipsInputProps } from './components/TagChipsInput.js';
+export { TabularPreview } from './components/TabularPreview/TabularPreview.js';
+export { CrossViewStyles } from './sync/CrossViewStyles.js';
+export { CrossViewSnackbar } from './components/CrossViewSnackbar.js';
+export { useCrossHighlightSync } from './hooks/useCrossHighlightSync.js';
+export { useMapLibreFeatureState } from './hooks/useMapLibreFeatureState.js';
+export { ensureDefaultStyles } from './utils/ensureDefaultStyles.js';
 
 // Hook Exports
-export { useAsyncOperation } from './hooks/useAsyncOperation';
-export type { UseAsyncOperationResult } from './hooks/useAsyncOperation';
-export { useFormState } from './hooks/useFormState';
-export type { UseFormStateOptions, UseFormStateResult, FormFieldError } from './hooks/useFormState';
+export { useAsyncOperation } from './hooks/useAsyncOperation.js';
+export type { UseAsyncOperationResult } from './hooks/useAsyncOperation.js';
+export { useFormState } from './hooks/useFormState.js';
+export type { UseFormStateOptions, UseFormStateResult, FormFieldError } from './hooks/useFormState.js';
 // Batch progress hooks (public API)
-export { useBatchProgress } from './hooks/useBatchProgress';
-export { createAdapterFromProgressSubscribe } from './hooks/progressAdapters';
-export type { UnifiedProgressInfo, BatchProgressAdapter } from './hooks/useBatchProgress';
+export { useBatchProgress } from './hooks/useBatchProgress.js';
+export { createAdapterFromProgressSubscribe } from './hooks/progressAdapters.js';
+export type { UnifiedProgressInfo, BatchProgressAdapter } from './hooks/useBatchProgress.js';
 
 // Utility Exports
 // Logger now exported from @hierarchidb/common-core
@@ -43,8 +43,8 @@ export {
   getStoredThemeMode,
   getSystemTheme,
   getActualTheme,
-} from './utils/theme';
-export type { ThemeMode } from './utils/theme';
+} from './utils/theme.js';
+export type { ThemeMode } from './utils/theme.js';
 
 // Type Exports (explicitly import to avoid conflicts with plugin types)
 export type {
@@ -54,20 +54,20 @@ export type {
   BaseFormData,
   DialogResult,
   EditDialogProps as BaseEditDialogProps,
-} from './types/dialog';
+} from './types/dialog.js';
 
 // Re-export EditDialogProps from plugins (which is the main one used)
-export type { EditDialogProps } from './plugins';
+export type { EditDialogProps } from './plugins/index.js';
 
 // Notifications
-export { NotificationSystem, notify } from './components/NotificationSystem/NotificationSystem';
+export { NotificationSystem, notify } from './components/NotificationSystem/NotificationSystem.js';
 
 // Plugin host-facing component types
-export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports';
+export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports.js';
 
 // Common hooks
-export { useWorkingCopy } from './hooks/useWorkingCopy';
-export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy';
+export { useWorkingCopy } from './hooks/useWorkingCopy.js';
+export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy.js';
 
 // Misc types/utilities
-export { rainbowColors } from './types/RainbowColors';
+export { rainbowColors } from './types/RainbowColors.js';

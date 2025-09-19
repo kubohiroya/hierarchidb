@@ -2,7 +2,7 @@ import { LoaderFunctionArgs } from 'react-router';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
-import { loadTargetNode, LoadTargetNodeArgs } from '~/loader';
+import { loadTargetNode, LoadTargetNodeArgs } from '~/loader.js';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   // Don't load if targetNodeId is undefined

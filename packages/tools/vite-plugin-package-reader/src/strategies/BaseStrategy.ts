@@ -1,4 +1,4 @@
-import type { PackageDetectionStrategy, PackageJson } from '../types';
+import type { PackageDetectionStrategy, PackageJson } from '../types.js';
 
 /**
     */

@@ -21,8 +21,8 @@ import {
   Grid,
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
-import type { LocationType, LocationWorkingCopy } from '../../types';
-import { type Country, type LocationTypeConfig, SelectionMatrix, type SelectionState } from '../ui/SelectionMatrix';
+import type { LocationType, LocationWorkingCopy } from '../../types/index.js';
+import { type Country, type LocationTypeConfig, SelectionMatrix, type SelectionState } from '../ui/SelectionMatrix.js';
 
 interface LocationSelectionStepProps {
   workingCopy: LocationWorkingCopy;

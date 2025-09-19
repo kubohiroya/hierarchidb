@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
-import { resolverDB } from '../database/ResolverDatabase';
+import { resolverDB } from '../database/ResolverDatabase.js';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
@@ -9,7 +9,7 @@ import type {
   ResolverEntity,
   ResolverWorkingCopy,
   ValidationRule,
-} from '../types';
+} from '../types/index.js';
 
 /**
  * Search criteria specific to Resolver entities

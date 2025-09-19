@@ -1,6 +1,6 @@
 import { Box, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
 import { PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
-import { useFramePlayer } from '../utils/useFramePlayer';
+import { useFramePlayer } from '../utils/useFramePlayer.js';
 
 export interface AnimationViewerStepProps {
   frames: Array<{ id: string; name: string }>;

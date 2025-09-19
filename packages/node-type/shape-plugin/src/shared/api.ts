@@ -2,7 +2,7 @@
   * Shape API interface - UI-Worker
   */
 
-import type { NodeId } from './types';
+import type { NodeId } from './types.js';
 import {
   BatchSession,
   BatchTask,
@@ -16,7 +16,7 @@ import {
   UpdateShapeData,
   UrlMetadata,
   ValidationResult,
-} from './types';
+} from './types.js';
 
 /**
  * Main Shape API interface for UI-Worker communication via PluginRegistryImpl

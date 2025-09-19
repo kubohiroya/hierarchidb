@@ -5,8 +5,8 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import { MapLibreMap } from './MapLibreMap';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
+import { MapLibreMap } from './MapLibreMap.js';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 
 export interface DeckOverlayProps {
   layers: any[];

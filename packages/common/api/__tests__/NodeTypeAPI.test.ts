@@ -4,7 +4,7 @@
   * TDD Red: NodeTypeAPI
   */
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import { NodeTypeAPI } from '../src/NodeTypeAPI';
+import { NodeTypeAPI } from '../src/NodeTypeAPI.js';
 import { NodeId, NodeType } from '@hierarchidb/common-type';
 
 describe('NodeTypeAPI', () => {

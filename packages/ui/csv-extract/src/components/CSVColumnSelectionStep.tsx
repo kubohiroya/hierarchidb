@@ -32,7 +32,7 @@ import {
   SwapHoriz as SwapHorizIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import type { CSVColumnMapping, CSVColumnType, CSVDataResult, CSVTableMetadata } from '../types';
+import type { CSVColumnMapping, CSVColumnType, CSVDataResult, CSVTableMetadata } from '../types/index.js';
 
 export interface CSVColumnSelectionStepProps {
   tableMetadata: CSVTableMetadata;

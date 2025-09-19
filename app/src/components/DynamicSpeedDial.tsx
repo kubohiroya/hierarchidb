@@ -8,8 +8,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
-import { usePluginMenuItems } from '~/hooks/usePluginMenuItems';
-import type { TreeContext } from '~/plugins/menu-builders';
+import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
+import type { TreeContext } from '~/plugins/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { TreeId } from '@hierarchidb/common-type';
 

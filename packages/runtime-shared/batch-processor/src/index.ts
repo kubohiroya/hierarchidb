@@ -41,11 +41,11 @@ export class BatchProcessor<T> {
 export default BatchProcessor;
 
 // Progress utilities (shared across plugins)
-export * from './Progress';
-export * from './downloadAdapter';
+export * from './Progress.js';
+export * from './downloadAdapter.js';
 // Core abstract base classes
-export * from './AbstractBatchSession';
-export * from './AbstractWorkerPoolManager';
+export * from './AbstractBatchSession.js';
+export * from './AbstractWorkerPoolManager.js';
 // Unified batch control API
-export * from './BatchControlAPI';
-export * from './BaseBatchSessionManager';
+export * from './BatchControlAPI.js';
+export * from './BaseBatchSessionManager.js';

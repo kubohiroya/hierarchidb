@@ -3,7 +3,7 @@
 {"package":"@hierarchidb/basemap-plugin","dir":"packages/node-type/basemap-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/folder-plugin","dir":"packages/node-type/folder-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/location-plugin","dir":"packages/node-type/location-plugin","typecheck":"ok","test":"ok","coverage":null},
-{"package":"@hierarchidb/project-plugin","dir":"packages/node-type/project-plugin","typecheck":"ok","test":"ok","coverage":null},
+{"package":"@hierarchidb/linker-plugin","dir":"packages/node-type/linker-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/resolver-plugin","dir":"packages/node-type/resolver-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/route-plugin","dir":"packages/node-type/route-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/shape-plugin","dir":"packages/node-type/shape-plugin","typecheck":"ok","test":"ok","coverage":null},

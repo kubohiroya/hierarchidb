@@ -7,7 +7,7 @@ import {
   HOLDER_NAME_TAB,
   isValidTrashHolderName,
   isValidWorkingCopyHolderName,
-} from './holder-encoding';
+} from './holder-encoding.js';
 
 describe('holder-encoding v1 (TAB separator)', () => {
   it('encodes and decodes WorkingCopy holder name roundtrip', () => {

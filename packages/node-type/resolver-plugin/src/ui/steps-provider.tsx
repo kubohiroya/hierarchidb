@@ -1,10 +1,10 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { SchemaSelectionStep } from '../components/steps/SchemaSelectionStep';
-import { PropertyMappingStep } from '../components/steps/PropertyMappingStep';
-import { ValidationConfigStep } from '../components/steps/ValidationConfigStep';
-import { DuplicateResolutionStep } from '../components/steps/DuplicateResolutionStep';
-import { PreviewTestStep } from '../components/steps/PreviewTestStep';
-import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '~/types';
+import { SchemaSelectionStep } from '../components/steps/SchemaSelectionStep.js';
+import { PropertyMappingStep } from '../components/steps/PropertyMappingStep.js';
+import { ValidationConfigStep } from '../components/steps/ValidationConfigStep.js';
+import { DuplicateResolutionStep } from '../components/steps/DuplicateResolutionStep.js';
+import { PreviewTestStep } from '../components/steps/PreviewTestStep.js';
+import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '../types/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 

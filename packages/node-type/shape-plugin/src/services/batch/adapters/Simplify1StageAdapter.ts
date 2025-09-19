@@ -1,5 +1,5 @@
-import type { ProgressInfo } from '../../../shared';
-import type { Simplify1Task } from '../../types';
+import type { ProgressInfo } from '../../../shared/index.js';
+import type { Simplify1Task } from '../../types.js';
 
 export interface SimplifyStageAdapterResult {
   processed: number;

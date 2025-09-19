@@ -1,4 +1,4 @@
-import type { TabularProcessor } from '../processor';
+import type { TabularProcessor } from '../processor.js';
 
 export interface NumberCoerceRule {
   column: string;

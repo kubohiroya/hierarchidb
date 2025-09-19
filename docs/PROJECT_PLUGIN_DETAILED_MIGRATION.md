@@ -1,4 +1,6 @@
-# project-plugin移行計画書
+# project-plugin移行計画書（アーカイブ）
+
+> 2025-09-16 更新: `project-plugin` は廃止され、後継の `@hierarchidb/linker-plugin` が運用中です。本書は旧プラグイン向けのアーカイブ資料として残しています。実運用/新規作業では `linker-plugin` の設計・ガイドを参照してください。
 
 ## 現状分析結果
 

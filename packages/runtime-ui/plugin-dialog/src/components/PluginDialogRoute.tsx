@@ -6,7 +6,7 @@
 import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { NodeId } from '@hierarchidb/common-type';
-import { PluginDialog } from './PluginDialog';
+import { PluginDialogShell } from '../headless/PluginDialogShell.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 
 /**
@@ -86,9 +86,9 @@ export const PluginDialogRoute: React.FC = () => {
     navigate(`/t/${tree.id}/${pageNodeId}/${savedNodeId}`);
   };
 
-  // Unified host: generic PluginDialog with Basic Info + registry-provided steps (if any)
+  // Unified host: headless plugin dialog shell
   return (
-    <PluginDialog
+    <PluginDialogShell
       mode={mode}
       nodeType={nodeType}
       nodeId={workingCopyId}

@@ -36,7 +36,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from '@mui/icons-material';
-import type { LocationType, NodeId } from '../../types';
+import type { LocationType, NodeId } from '../../types/index.js';
 
 export interface LocationPoint {
   id: string;

@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo } from '~/types';
+import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '../../types/index.js';
 
 interface PropertyMappingStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -61,10 +61,10 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         const transformFunction = simpleMatch[4]?.trim();
 
         // Validate properties exist in schemas
-        if (sourceSchema && !sourceSchema.properties?.some(p => p.name === sourceProperty)) {
+        if (sourceSchema && !sourceSchema.properties?.some((p: PropertyInfo) => p.name === sourceProperty)) {
           errors.push(`Line ${index + 1}: Source property "${sourceProperty}" not found in source schema`);
         }
-        if (targetSchema && !targetSchema.properties?.some(p => p.name === targetProperty)) {
+        if (targetSchema && !targetSchema.properties?.some((p: PropertyInfo) => p.name === targetProperty)) {
           errors.push(`Line ${index + 1}: Target property "${targetProperty}" not found in target schema`);
         }
 
@@ -132,8 +132,8 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
     const suggestions: string[] = [];
 
     // Try exact name matches first
-    sourceSchema.properties.forEach(sourceProp => {
-      const exactMatch = targetSchema.properties.find(targetProp =>
+    sourceSchema.properties.forEach((sourceProp: PropertyInfo) => {
+      const exactMatch = targetSchema.properties.find((targetProp: PropertyInfo) =>
         targetProp.name === sourceProp.name,
       );
       if (exactMatch) {
@@ -142,8 +142,8 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
     });
 
     // Try similar name matches (simple heuristic)
-    sourceSchema.properties.forEach(sourceProp => {
-      const similarMatch = targetSchema.properties.find(targetProp => {
+    sourceSchema.properties.forEach((sourceProp: PropertyInfo) => {
+      const similarMatch = targetSchema.properties.find((targetProp: PropertyInfo) => {
         const sourceLower = sourceProp.name.toLowerCase();
         const targetLower = targetProp.name.toLowerCase();
         return sourceLower.includes(targetLower) || targetLower.includes(sourceLower);
@@ -169,9 +169,9 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
     // Create mock preview result
     const mockPreview: MappingPreviewResult = {
       success: true,
-      mappedData: sourceSchema.sampleData?.slice(0, 3).map(sample => {
+      mappedData: sourceSchema.sampleData?.slice(0, 3).map((sample: Record<string, unknown>) => {
         const mapped: Record<string, unknown> = {};
-        data.mappingRules!.forEach(rule => {
+        data.mappingRules!.forEach((rule: PropertyMappingRule) => {
           if (sample && typeof sample === 'object' && rule.sourceProperty in sample) {
             mapped[rule.targetProperty] = (sample as Record<string, unknown>)[rule.sourceProperty];
           }
@@ -179,8 +179,8 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         return mapped;
       }) || [],
       unmappedProperties: sourceSchema.properties
-        .filter(prop => !data.mappingRules!.some(rule => rule.sourceProperty === prop.name))
-        .map(prop => prop.name),
+        .filter((prop: PropertyInfo) => !data.mappingRules!.some((rule: PropertyMappingRule) => rule.sourceProperty === prop.name))
+        .map((prop: PropertyInfo) => prop.name),
       errors: mappingErrors,
       statistics: {
         totalRecords: sourceSchema.sampleData?.length || 0,

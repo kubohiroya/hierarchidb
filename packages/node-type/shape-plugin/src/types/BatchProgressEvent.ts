@@ -4,7 +4,7 @@
   */
 
 import type { TreeNodeId } from '@hierarchidb/common-type';
-import type { BatchStage, BatchTaskStatus } from './BatchTaskLike';
+import type { BatchStage, BatchTaskStatus } from './BatchTaskLike.js';
 
 /**
  * Batch progress event

@@ -1,8 +1,8 @@
-export * from './ports';
-export * from './MapSourceService';
-export * from './adapters/DexieShapePort';
-export * from './ports.spatial';
-export * from './adapters/FeatureCollectionGridIndex';
+export * from './ports.js';
+export * from './MapSourceService.js';
+export * from './adapters/DexieShapePort.js';
+export * from './ports.spatial.js';
+export * from './adapters/FeatureCollectionGridIndex.js';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/map-source', provides: ['map-source'] },
   init() {

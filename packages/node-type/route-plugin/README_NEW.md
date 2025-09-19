@@ -441,6 +441,6 @@ interface RouteEntity extends ShapeEntity {
    - バッチ処理の並列化最適化
 
 3. ❓ **要確認事項**
-   - Searoute APIの具体的な実装方法（動的 import で統合済み。`pnpm add searoute` または `searoute-js` を追加し、`WORKER_FEATURE_ROUTE_SEAROUTE=1` で有効化）
+- Searoute APIの具体的な実装方法（動的 import で統合済み。`pnpm add searoute` または `searoute-js` を追加するだけで利用可能）
    - Location検索のパフォーマンス最適化
    - 大規模データ（10万ルート以上）の処理方法

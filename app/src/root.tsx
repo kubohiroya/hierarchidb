@@ -3,27 +3,27 @@ import {useRouteError} from 'react-router';
 import { CssBaseline } from '@mui/material';
 // Note: When using Emotion Cache with insertion point, do not also use StyledEngineProvider injectFirst
 import { StrictMode } from 'react';
-import { bootLog } from './utils/bootLog';
-import { AppConfigProvider } from './contexts/AppConfigContext';
+import { bootLog } from './utils/bootLog.js';
+import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
-import { WorkerProvider } from './contexts/WorkerProvider';
-import { InitInspector } from './dev/InitInspector';
+import { WorkerProvider } from './contexts/WorkerProvider.js';
+import { InitInspector } from './dev/InitInspector.js';
 // Initialize UI plugins
 import { NotificationSystem, registerAllUIPlugins } from '@hierarchidb/ui-core';
-import { APP_VERSION, BUILD_TIME } from './version';
+import { APP_VERSION, BUILD_TIME } from './version.js';
 // Bridge: provide app's Worker client hook to shape-plugin UI hooks
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
-import { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
-import { BootProgressProvider } from './contexts/BootProgressProvider';
-import { AppThemeProvider } from './components/AppThemeProvider';
+import { useWorkerAPIClient } from './hooks/useWorkerAPIClient.js';
+import { BootProgressProvider } from './contexts/BootProgressProvider.js';
+import { AppThemeProvider } from './components/AppThemeProvider.js';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
-import { ServicesReadySnackbar } from './components/ServicesReadySnackbar';
-import { LanguageEventsBridge } from './components/LanguageEventsBridge';
-import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters';
+import { ServicesReadySnackbar } from './components/ServicesReadySnackbar.js';
+import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
+import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters.js';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
-import { autoLoadPlugins } from './plugins/auto-load';
+import { autoLoadPlugins } from './plugins/auto-load.js';
 
 // Log version and build time at startup (local time)
 const localBuildTime = (() => {
@@ -71,18 +71,21 @@ if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
-  import('./WorkerAPIClient').then(({ WorkerAPIClient }) => {
+  import('./WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
 
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
   });
 
   // Warm-load menu builders in all modes so DynamicSpeedDial can build items
-  import('./plugins/menu-builders')
+  import('./plugins/menu-builders.js')
     .then(async (mod) => {
       // @eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).__HDB_MENU_BUILDERS__ = mod;
-      await (mod as any).prefetchIconsForAllContexts?.();
+      // prefetch remains available from original module; keep best-effort call
+      try {
+        await (mod as any).prefetchIconsForAllContexts?.();
+      } catch {}
     })
     .catch((err) => {
       console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
@@ -111,7 +114,7 @@ if (typeof window !== 'undefined') {
 
   // Optional: prewarm plugin services (DB/Shared/Services) in dev when enabled
   if ((import.meta as any)?.env?.VITE_PREWARM_SERVICES) {
-    import('~/services/databases').then(async (db) => {
+    import('~/services/databases.js').then(async (db) => {
       const results = await Promise.allSettled([
         db.getBaseMapDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'basemap'; }),
         db.getResolverDB().then(async (r) => { try { await (r as any)?.open?.(); } catch {} ; return 'resolver'; }),

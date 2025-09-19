@@ -7,18 +7,18 @@
   */
 
 import { useMemo } from 'react';
-import type { TreeViewController } from '../../../types/index';
+import type { TreeViewController } from '../../../types/index.js';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { useAtomValue } from 'jotai';
-import { tableDataAtom } from '../state';
+import { tableDataAtom } from '../state/index.js';
 
 // Individual Orchestrators
-import { type SelectionOrchestratorResult, useSelectionOrchestrator } from './SelectionOrchestrator';
-import { type ExpansionOrchestratorResult, useExpansionOrchestrator } from './ExpansionOrchestrator';
-import { type EditingOrchestratorResult, useEditingOrchestrator } from './EditingOrchestrator';
-import { type DragDropOrchestratorResult, useDragDropOrchestrator } from './DragDropOrchestrator';
-import { type SearchOrchestratorResult, useSearchOrchestrator } from './SearchOrchestrator';
-import { type SubscriptionOrchestratorResult, useSubscriptionOrchestrator } from './SubscriptionOrchestrator';
+import { type SelectionOrchestratorResult, useSelectionOrchestrator } from './SelectionOrchestrator.js';
+import { type ExpansionOrchestratorResult, useExpansionOrchestrator } from './ExpansionOrchestrator.js';
+import { type EditingOrchestratorResult, useEditingOrchestrator } from './EditingOrchestrator.js';
+import { type DragDropOrchestratorResult, useDragDropOrchestrator } from './DragDropOrchestrator.js';
+import { type SearchOrchestratorResult, useSearchOrchestrator } from './SearchOrchestrator.js';
+import { type SubscriptionOrchestratorResult, useSubscriptionOrchestrator } from './SubscriptionOrchestrator.js';
 
 /**
     */

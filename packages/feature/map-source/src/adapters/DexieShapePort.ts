@@ -1,4 +1,4 @@
-import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports';
+import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports.js';
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 

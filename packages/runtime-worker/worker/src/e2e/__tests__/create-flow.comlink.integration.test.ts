@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import { exposeTestAPI } from '../test-worker.entry';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 // Minimal adapter to make Node's MessagePort look like a Comlink endpoint
 function toEndpoint(port: any) {

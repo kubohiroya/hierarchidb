@@ -3,7 +3,7 @@
  * Manages automatic cleanup of expired WorkingCopies and batch processing data
  */
 
-import { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared';
+import { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared/index.js';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;

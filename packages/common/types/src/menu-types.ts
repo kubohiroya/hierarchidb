@@ -31,3 +31,35 @@ export interface MenuDividerItem {
  * Combined menu item type for create menus
  */
 export type CreateMenuItemOrDivider = CreateMenuItem | MenuDividerItem;
+
+/**
+ * Icon spec used by dynamic menu builders in UI (MUI icon name / emoji / color)
+ */
+export interface PluginMenuIconSpec {
+  muiIconName?: string;
+  emoji?: string;
+  color?: string;
+}
+
+/**
+ * Minimal create menu entry used by UI's global builders
+ */
+export interface CreateMenuEntry {
+  key: string;
+  nodeType: string;
+  label: string;
+  icon?: PluginMenuIconSpec;
+}
+
+/**
+ * Builder signature for global create menu providers
+ */
+export type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
+
+/**
+ * Global builders container placed on globalThis by host application
+ */
+export interface GlobalMenuBuilders {
+  buildMenuItemsForTreeId?: CreateMenuBuilder;
+  buildMenuItemsForContext?: CreateMenuBuilder;
+}

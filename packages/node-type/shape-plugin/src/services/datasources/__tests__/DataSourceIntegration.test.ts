@@ -5,10 +5,10 @@
   */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory';
-import { FetchOptions } from '../DataSourceStrategy';
-import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy';
-import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
+import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
+import { FetchOptions } from '../DataSourceStrategy.js';
+import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
+import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getRouteDownloadService, registerRouteDownloadServiceFactory } from '../../download/registry';
+import { getRouteDownloadService, registerRouteDownloadServiceFactory } from '../../download/registry.js';
 
 describe('route download registry', () => {
   it('uses injected factory when provided', async () => {

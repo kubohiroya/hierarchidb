@@ -3,7 +3,7 @@ import { Alert, Box, IconButton, Paper, Tooltip, Typography } from '@mui/materia
 import { OpenInNew } from '@mui/icons-material';
 import { type MapViewState, MapWithVectorTiles } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { DownloadTask, VectorTileTask } from '~/shared';
+import type { DownloadTask, VectorTileTask } from '../../shared';
 
 interface MapPreviewProps {
   nodeId: NodeId;

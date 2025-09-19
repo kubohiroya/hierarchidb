@@ -1,5 +1,5 @@
-import type { NodeId } from './id-types';
-import { Timestamp } from './primitive-types';
+import type { NodeId } from './id-types.js';
+import { Timestamp } from './primitive-types.js';
 
 // =============================================================================
 // =============================================================================

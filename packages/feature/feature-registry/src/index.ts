@@ -1,3 +1,3 @@
-export * from './types';
-export * from './FeatureRegistry';
+export * from './types.js';
+export * from './FeatureRegistry.js';
 

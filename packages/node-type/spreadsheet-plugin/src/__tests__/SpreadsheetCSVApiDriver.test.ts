@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Removed unused imports - NodeId, EntityId
-import { SpreadsheetCSVApiDriver } from '../services/SpreadsheetCSVApiDriver';
+import { SpreadsheetCSVApiDriver } from '../services/SpreadsheetCSVApiDriver.js';
 import type { CSVFilterRule, CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
 
 // Mock external dependencies

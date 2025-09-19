@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
 import { Box, Chip, List, ListItem, ListItemText, Typography } from '@mui/material';
 
 const meta = {
-  title: 'UI Dialog/UnsavedChangesDialog',
+  title: 'ui/legacy-dialog/UnsavedChangesDialog',
   component: UnsavedChangesDialog,
   parameters: {
     layout: 'centered',
@@ -13,7 +13,7 @@ const meta = {
       },
     },
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', 'deprecated'],
   argTypes: {
     open: {
       control: 'boolean',

@@ -1,4 +1,4 @@
-import { createTsupConfig } from "../../../tsup.base.config";
+import { createTsupConfig } from "../../../tsup.base.config.js";
 
 export default createTsupConfig({
   entry: [
@@ -9,6 +9,9 @@ export default createTsupConfig({
   ],
   dts: {
     entry: {
+      'index': 'src/index.ts',
+      'ui/index': 'src/ui/index.ts',
+      'worker/index': 'src/worker/index.ts',
       'services/index': 'src/services/index.ts',
     },
   },

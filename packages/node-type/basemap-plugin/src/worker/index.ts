@@ -4,11 +4,11 @@ try {
   import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
-      const { BasemapEntitiesDB } = await import('./basemapEntitiesDB');
+      const { BasemapEntitiesDB } = await import('./basemapEntitiesDB.js');
       const db = new BasemapEntitiesDB();
       await db.open();
       if (!storeRegistry.getPeer('basemap')) {
-        const { createBasemapPeerStoreDexie } = await import('./basemapPeerStore.dexie');
+        const { createBasemapPeerStoreDexie } = await import('./basemapPeerStore.dexie.js');
         storeRegistry.registerPeer('basemap', createBasemapPeerStoreDexie(db));
       }
     } catch {

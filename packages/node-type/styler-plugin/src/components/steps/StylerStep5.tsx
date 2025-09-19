@@ -8,9 +8,9 @@
 
 import React, { useCallback } from 'react';
 import { Box } from '@mui/material';
-import { StylerConfiguration } from '../../components/step5/StylerConfiguration';
-import type { StylerConfig } from '../../types/stylerTypes';
-import { StylerConfigDefault } from '../../types/stylerTypes';
+import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
+import type { StylerConfig } from '../../types/stylerTypes.js';
+import { StylerConfigDefault } from '../../types/stylerTypes.js';
 
 /**
   * : Step5

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Stack, TextField, Typography } from '@mui/material';
-import type { StepProps } from '~/shared';
+import type { StepProps } from '../../shared';
 
 /**
  * Step 1: Basic Information

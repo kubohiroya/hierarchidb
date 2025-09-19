@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { Step3License } from '../../components/steps/Step3License';
+import { Step3License } from '../../components/steps/Step3License.js';
 
 export interface LicenseStepProps {
   data: any;

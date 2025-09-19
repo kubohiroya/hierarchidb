@@ -4,9 +4,9 @@
 
 import React, { useCallback, useState } from 'react';
 import { Dialog, DialogContent } from '@mui/material';
-import { UnsavedChangesDialog } from './UnsavedChangesDialog';
-import { CommonDialogActions } from './CommonDialogActions';
-import { CommonDialogTitle } from './CommonDialogTitle';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
+import { CommonDialogActions } from './CommonDialogActions.js';
+import { CommonDialogTitle } from './CommonDialogTitle.js';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit';
@@ -21,7 +21,8 @@ export interface CommonPluginDialogProps {
 
   // Dialog size
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
-  fullScreen?: boolean;
+  initialDisplayMode?: 'standard' | 'maximized' | 'fullscreen';
+  onDisplayModeChange?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
 
   // State management
   hasUnsavedChanges?: boolean;
@@ -49,7 +50,8 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
                                                                   icon,
                                                                   children,
                                                                   maxWidth = 'md',
-                                                                  fullScreen: initialFullScreen = false,
+                                                                  initialDisplayMode = 'standard',
+                                                                  onDisplayModeChange,
                                                                   hasUnsavedChanges = false,
                                                                   supportsDraft = false,
                                                                   isValid = true,
@@ -58,7 +60,9 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
                                                                   onCancel,
                                                                   additionalActions,
                                                                 }) => {
-  const [isFullscreen, setIsFullscreen] = useState(initialFullScreen);
+  const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>(initialDisplayMode);
+  const isFullscreen = displayMode === 'fullscreen';
+  const isMaximized = displayMode === 'maximized';
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -105,10 +109,10 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
     onCancel();
   }, [onCancel]);
 
-  // Toggle fullscreen
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(!isFullscreen);
-  }, [isFullscreen]);
+  const handleDisplayModeChange = useCallback((mode: 'standard' | 'maximized' | 'fullscreen') => {
+    setDisplayMode(mode);
+    onDisplayModeChange?.(mode);
+  }, [onDisplayModeChange]);
 
   return (
     <>
@@ -116,7 +120,7 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
         open={open}
         onClose={handleClose}
         maxWidth={isFullscreen ? false : maxWidth}
-        fullWidth={!isFullscreen}
+        fullWidth={!isFullscreen && !isMaximized}
         fullScreen={isFullscreen}
         disableEscapeKeyDown={hasUnsavedChanges}
         PaperProps={
@@ -142,8 +146,8 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
           mode={mode}
           nodeId={nodeId}
           isDraft={isDraft}
-          isFullscreen={isFullscreen}
-          toggleFullscreen={toggleFullscreen}
+          displayMode={displayMode}
+          onChangeDisplayMode={handleDisplayModeChange}
         />
 
         <DialogContent sx={{ flex: 1, minHeight: 0 }}>{children}</DialogContent>
@@ -154,7 +158,7 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
           onCancel={handleClose}
-          isFullscreen={isFullscreen}
+          displayMode={displayMode}
           additionalActions={additionalActions}
         />
       </Dialog>

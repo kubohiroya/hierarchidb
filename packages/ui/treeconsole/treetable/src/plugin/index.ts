@@ -4,7 +4,7 @@
   */
 
 // Core plugin system
-export { PluginRegistry } from './PluginRegistry';
+export { PluginRegistry } from './PluginRegistry.js';
 export {
   PluginProvider,
   usePluginContext,
@@ -13,12 +13,12 @@ export {
   usePluginHooks,
   usePluginEnabled,
   withPlugins,
-} from './PluginProvider';
+} from './PluginProvider.js';
 export {
   useOptionalPluginContext,
   usePluginsEnabled,
   useSafePluginHook,
-} from './useOptionalPluginContext';
+} from './useOptionalPluginContext.js';
 
 // Type definitions
 export type {
@@ -43,26 +43,26 @@ export type {
   PluginError,
   PluginRegistrationError,
   HookExecutionError,
-} from './types';
+} from './types.js';
 
 //  Plugin-enhanced components ()
 export {
   InlineEditableTreeTable,
   KeyboardNavigableTreeTable,
   AdvancedTreeTable,
-} from '../components/TreeTableCoreWithPlugins';
+} from '../components/TreeTableCoreWithPlugins.js';
 
 // Utility functions
 export function createPlugin(
   name: string,
   version: string,
-  hooks: import('./types').TreeTableHooks,
+  hooks: import('./types.js').TreeTableHooks,
   options?: {
-    components?: import('./types').TreeTableComponentOverrides;
+    components?: import('./types.js').TreeTableComponentOverrides;
     dependencies?: string[];
     config?: Record<string, any>;
   },
-): import('./types').TreeTablePlugin {
+): import('./types.js').TreeTablePlugin {
   return {
     name,
     version,
@@ -82,17 +82,17 @@ export const PluginHelpers = {
 
   /**
             */
-  createHook<T extends keyof import('./types').TreeTableHooks>(
+  createHook<T extends keyof import('./types.js').TreeTableHooks>(
     hookName: T,
-    implementation: NonNullable<import('./types').TreeTableHooks[T]>,
+    implementation: NonNullable<import('./types.js').TreeTableHooks[T]>,
   ) {
-    return { [hookName]: implementation } as Pick<import('./types').TreeTableHooks, T>;
+    return { [hookName]: implementation } as Pick<import('./types.js').TreeTableHooks, T>;
   },
 
   /**
             */
   validateDependencies(
-    plugin: import('./types').TreeTablePlugin,
+    plugin: import('./types.js').TreeTablePlugin,
     availablePlugins: string[],
   ): { isValid: boolean; missingDependencies: string[] } {
     const missing = plugin.dependencies?.filter(dep => !availablePlugins.includes(dep)) || [];
@@ -105,7 +105,7 @@ export const PluginHelpers = {
   /**
             */
   checkCompatibility(
-    plugin: import('./types').TreeTablePlugin,
+    plugin: import('./types.js').TreeTablePlugin,
     targetVersion: string,
   ): boolean {
     //  semver

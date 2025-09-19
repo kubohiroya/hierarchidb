@@ -1,4 +1,4 @@
-import { createTsupConfig } from "../../../tsup.base.config";
+import { createTsupConfig } from "../../../tsup.base.config.js";
 
 export default createTsupConfig({
   entry: [
@@ -7,7 +7,14 @@ export default createTsupConfig({
     "src/ui/index.ts",
     "src/services/index.ts"
   ],
-  dts: false,
+  dts: {
+    entry: {
+      'index': 'src/index.ts',
+      'ui/index': 'src/ui/index.ts',
+      'worker/index': 'src/worker/index.ts',
+      'services/index': 'src/services/index.ts',
+    },
+  },
   external: [
     // Explicit peers
     '@emotion/react',

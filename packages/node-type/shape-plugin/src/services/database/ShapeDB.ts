@@ -8,12 +8,12 @@
  * - Vector tiles and cache
  */
 
-import Dexie, { Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ShapeEntity } from '../../types/ShapeEntity';
-import type { DataSourceName, VectorTileEntity } from '../../shared/types';
-import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../types';
+import type { ShapeEntity } from '../../types/ShapeEntity.js';
+import type { DataSourceName, VectorTileEntity } from '../../shared/types.js';
+import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../types.js';
 
 // Database schema interfaces
 export interface ShapeEntityRecord extends ShapeEntity {

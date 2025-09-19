@@ -6,6 +6,6 @@ export {
   getSelectionsSummary,
   mergeSelections,
   filterSelections,
-} from './selectionUtils';
+} from './selectionUtils.js';
 
-export type { SelectionExport } from './selectionUtils';
+export type { SelectionExport } from './selectionUtils.js';

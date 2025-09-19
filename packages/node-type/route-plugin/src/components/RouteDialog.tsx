@@ -4,18 +4,24 @@
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RouteWorkingCopy } from '../types';
-import { useTranslation } from '../i18n';
-import { RouteBasicInfoStep } from './RouteBasicInfoStep';
-import { RouteSelectionStep } from './RouteSelectionStep';
-import { RouteProcessingStep } from './RouteProcessingStep';
+import type { RouteWorkingCopy } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
+import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
+import { RouteSelectionStep } from './RouteSelectionStep.js';
+import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { notify } from '@hierarchidb/ui-core';
 import { useWorkingCopy } from '@hierarchidb/ui-core';
-// Avoid build-time hard dependency on ui-dialog; load at runtime
+import {
+  HeadlessMultiStepDialog,
+  type HeadlessMultiStepDialogProps,
+  type StepNavigationEvent,
+  type StepComponentDescriptor,
+  type HeadlessHeaderRenderProps,
+  type HeadlessContentRenderProps,
+  type HeadlessFooterRenderProps,
+} from '@hierarchidb/ui-dialog';
+
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
-// Align evaluator signature to shared interface: (data, stepNumbers?) => boolean[]
-type StepStateEvaluator = { getFilledSteps?: (data: any, stepNumbers?: number[]) => boolean[]; getNavigableSteps?: (data: any, stepNumbers?: number[]) => boolean[] };
-let MultiStepDialog: any;
 
 export interface RouteDialogProps {
   open: boolean;
@@ -40,6 +46,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<RouteWorkingCopy>({ nodeType: 'route', mode, nodeId: nodeId as any, parentId: parentId as any });
   // Initialize working copy from Worker when dialog opens
   useEffect(() => { if (open) { void init(); } }, [open, init]);
+
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
@@ -88,72 +96,137 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     },
   ], [workingCopy, isBasicValid]);
 
-  const evaluator: StepStateEvaluator = useMemo(() => ({
-    getFilledSteps: (_data?: any, stepNumbers?: number[]) => {
-      const arr = [isBasicValid, isSelectionValid, isProcessingValid];
-      if (!stepNumbers || stepNumbers.length === arr.length) return arr;
-      // Map by index when stepNumbers provided but lengths differ
-      return stepNumbers.map((_, i) => arr[i] ?? false);
-    },
-    getNavigableSteps: (_data?: any, stepNumbers?: number[]) => {
-      const nav = [true, isBasicValid, isSelectionValid];
-      if (!stepNumbers || stepNumbers.length === nav.length) return nav;
-      return stepNumbers.map((_, i) => nav[i] ?? false);
-    },
-  }), [isBasicValid]);
-
-  const canSubmit = useCallback(() => isBasicValid && isSelectionValid && isProcessingValid, [isBasicValid]);
+  const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid]);
+  const navigableSteps = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid]);
+  const enabledStepIndices = useMemo(() => navigableSteps
+    .map((allow, idx) => (allow ? idx : -1))
+    .filter((idx) => idx >= 0), [navigableSteps]);
+  const validatedStepIndices = useMemo(() => filledSteps
+    .map((valid, idx) => (valid ? idx : -1))
+    .filter((idx) => idx >= 0), [filledSteps]);
+  const committableStepIndices = useMemo(() => (steps.length ? [steps.length - 1] : []), [steps.length]);
 
   // Display mode: keep volatile here (UI layer is responsible for persistence)
   const [displayMode, setDisplayModeState] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
 
-  // Load MultiStepDialog dynamically to avoid static linkage
   useEffect(() => {
-    (async () => {
-      const M = '@hierarchidb/ui-dialog' as string;
-      const mod = await import(/* @vite-ignore */ M);
-      MultiStepDialog = (mod as any).MultiStepDialog || (mod as any).default;
-    })();
-  }, []);
+    if (!open) {
+      setActiveStepIndex(0);
+    }
+  }, [open]);
 
   // Cleanup draft on unmount (best-effort)
   useEffect(() => {
     return () => { void (async () => { await discard(); })(); };
   }, [discard]);
 
+  const handleNavigation = useCallback((event: StepNavigationEvent) => {
+    switch (event.type) {
+      case 'direct':
+        setActiveStepIndex(event.targetIndex);
+        break;
+      case 'next':
+        setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+        break;
+      case 'back':
+        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        break;
+    }
+  }, [steps.length]);
+
+  const handleCommit = useCallback(async () => {
+    try {
+      await commit();
+      if (workingCopy) onSuccess?.(workingCopy);
+      notify.success('Route saved successfully');
+    } catch (e) {
+      onError?.(e as Error);
+      notify.error('Failed to save route');
+      return;
+    }
+    onClose();
+  }, [commit, workingCopy, onSuccess, onError, onClose]);
+
+  const handleCancel = useCallback(async () => {
+    try {
+      await discard();
+      notify.info('Route changes discarded');
+    } catch (e) {
+      console.warn('[RouteDialog] discard failed', e);
+    }
+    onClose();
+  }, [discard, onClose]);
+
+  const isTestEnv = useMemo(() => (
+    (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.MODE === 'test') ||
+    (typeof process !== 'undefined' && (process as any)?.env?.NODE_ENV === 'test')
+  ), []);
+
+  const renderHeader: HeadlessMultiStepDialogProps<any>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<any>) => (
+    <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
+      <div>
+        <strong>{t('base-dialog.title', 'Route Configuration')}</strong>
+        <div style={{ fontSize: 12, color: '#64748b' }}>
+          Step {props.activeStepIndex + 1} / {steps.length}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="button" onClick={() => handleNavigation({ type: 'back' })} disabled={props.activeStepIndex === 0}>Back</button>
+        <button type="button" onClick={() => handleNavigation({ type: 'next' })} disabled={props.activeStepIndex >= steps.length - 1}>Next</button>
+      </div>
+    </header>
+  ), [handleNavigation, steps.length, t]);
+
+  const renderContent: HeadlessMultiStepDialogProps<any>['renderContent'] = useCallback((props: HeadlessContentRenderProps<any>) => (
+    <div style={{ padding: 16 }}>
+      {steps[props.activeStepIndex]?.component}
+    </div>
+  ), [steps]);
+
+  const renderFooter: HeadlessMultiStepDialogProps<any>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<any>) => {
+    const allFilled = filledSteps.every(Boolean);
+    return (
+      <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={() => props.onRequestClose?.('close')}>Cancel</button>
+        </div>
+        <button type="button" onClick={() => props.onRequestCommit?.()} disabled={!allFilled}>Save</button>
+        {isTestEnv && (
+          <div style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+            <button type="button" onClick={() => props.onRequestClose?.('close')}>Cancel</button>
+            <button type="button" onClick={() => handleNavigation({ type: 'next' })}>Next</button>
+            <button type="button" onClick={() => props.onRequestCommit?.()}>Complete</button>
+          </div>
+        )}
+      </footer>
+    );
+  }, [filledSteps, handleNavigation, isTestEnv]);
+
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
+    steps.map((step) => ({ id: step.id, label: step.label, component: () => null }))
+  ), [steps]);
+
+  const invalidMessageMap = useMemo(() => ({} as Record<string, string>), []);
+
   return (
-    <MultiStepDialog
+    <HeadlessMultiStepDialog
       open={open}
-      mode={mode}
-      title={t('base-dialog.title', 'Route Configuration')}
-      icon={null}
-      steps={steps}
-      currentData={workingCopy}
-      evaluateSteps={evaluator}
-      evaluateSubmit={canSubmit}
-      onSubmit={async () => {
-        try {
-          await commit();
-          if (workingCopy) onSuccess?.(workingCopy);
-          notify.success('Route saved successfully');
-        } catch (e) {
-          onError?.(e as Error);
-          notify.error('Failed to save route');
-        } finally {
-          onClose();
-        }
-      }}
-      onCancel={async () => {
-        await discard(); notify.info('Route changes discarded');
-        onClose();
-      }}
-      enableA11yTestControls={
-        // Prefer Vite/modern env; fall back to Node-style only if polyfilled
-        (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.MODE === 'test') ||
-        (typeof process !== 'undefined' && (process as any)?.env?.NODE_ENV === 'test')
-      }
+      stepComponents={stepDescriptors}
+      stepData={workingCopy ?? {}}
+      onStepDataChange={(patch) => setWorkingCopy((prev: any) => ({ ...prev, ...patch }))}
+      activeStepIndex={activeStepIndex}
+      onStepNavigate={handleNavigation}
+      enabledStepIndices={enabledStepIndices}
+      validatedStepIndices={validatedStepIndices}
+      committableStepIndices={committableStepIndices}
+      invalidMessageMap={invalidMessageMap}
+      onRequestClose={handleCancel}
+      onRequestCommit={handleCommit}
       displayMode={displayMode}
-      onDisplayModeChange={(m: 'standard' | 'maximized' | 'fullscreen') => { setDisplayModeState(m); }}
+      onDisplayModeChange={(m) => setDisplayModeState(m)}
+      renderHeader={renderHeader}
+      renderContent={renderContent}
+      renderFooter={renderFooter}
     />
   );
 };

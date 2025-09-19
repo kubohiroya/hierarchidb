@@ -6,13 +6,13 @@
 export {
   createInlineEditPlugin,
   inlineEditPlugin,
-} from './InlineEditPlugin';
-export type { InlineEditPluginConfig } from './InlineEditPlugin';
+} from './InlineEditPlugin.js';
+export type { InlineEditPluginConfig } from './InlineEditPlugin.js';
 
 export {
   createKeyboardNavigationPlugin,
   keyboardNavigationPlugin,
-} from './KeyboardNavigationPlugin';
-export type { KeyboardNavigationPluginConfig } from './KeyboardNavigationPlugin';
+} from './KeyboardNavigationPlugin.js';
+export type { KeyboardNavigationPluginConfig } from './KeyboardNavigationPlugin.js';
 
-export { defaultPlugins } from './defaultPlugins';
+export { defaultPlugins } from './defaultPlugins.js';

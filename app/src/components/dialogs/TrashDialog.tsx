@@ -3,9 +3,9 @@ import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-ro
 import { useState, useRef, useEffect } from 'react';
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
-import type { LoadTreeReturn } from '~/loader';
-import { loadTree, type LoadTreeArgs } from '~/loader';
-import { WorkerAPIClient } from '../../WorkerAPIClient';
+import type { LoadTreeReturn } from '~/loader.js';
+import { loadTree, type LoadTreeArgs } from '~/loader.js';
+import { WorkerAPIClient } from '../../WorkerAPIClient.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { CommonDialogTitle } from '@hierarchidb/ui-dialog';
 import { TreeConsolePanel, type TreeNodeData, type TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
@@ -18,10 +18,11 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   if (treeData.tree) {
     // Use facade pattern: get QueryAPI first
     const queryAPI = await treeData.client.getQueryAPI();
-    const trashRootNode = await queryAPI.getNode(treeData.tree.trashRootId);
+    const trashRootId = treeData.tree.trashRootId as NodeId;
+    const trashRootNode = await queryAPI.getNode(trashRootId);
 
     // Load trash items (children of trash root)
-    const trashItems = await queryAPI.listChildren(treeData.tree.trashRootId);
+    const trashItems = await queryAPI.listChildren(trashRootId);
 
     return {
       ...treeData,
@@ -45,11 +46,13 @@ export default function TrashDialog() {
 
   const mode = searchParams.get('mode') || 'restore'; // "restore" or "empty"
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const isFullscreen = displayMode === 'fullscreen';
+  const isMaximized = displayMode === 'maximized';
+  const setIsFullscreen = (v: boolean) => setDisplayMode(v ? 'fullscreen' : (isMaximized ? 'maximized' : 'standard'));
+  const setIsMaximized = (v: boolean) => setDisplayMode(v ? 'maximized' : (isFullscreen ? 'fullscreen' : 'standard'));
   const paperRef = useRef<HTMLDivElement | null>(null);
 
   // No persistence for TrashDialog (not tied to a stable nodeId)
@@ -135,7 +138,7 @@ export default function TrashDialog() {
 
       // Use recoverNodesFromTrash API
       const result = await mutationAPI.recoverNodesFromTrash({
-        nodeIds: selectedIds as NodeId[],
+        nodeIds: selectedIds,
       });
 
       if (result.success) {
@@ -170,15 +173,15 @@ export default function TrashDialog() {
       const mutationAPI = await client.getMutationAPI();
 
       // Permanently delete all trash items (holders)
-      const allTrashIds = (data.trashItems || []).map((item) => item.id);
+      const allTrashIds = (data.trashItems || []).map((item) => item.id as NodeId);
 
       if (allTrashIds.length > 0) {
         const result = await mutationAPI.removeNodes(allTrashIds);
 
         if (result.success) {
           // Dispatch removal event so cleanup is centralized
-          const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as string | undefined) || item.id);
-          window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds } }));
+          const targetIds = (data.trashItems || []).map((item) => ((item as any).holderTargetId as NodeId | undefined) || (item.id as NodeId));
+          window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: targetIds.map(String) } }));
           // Refresh the page to show empty trash
           navigate(-1); // Go back to the previous page
           window.location.reload(); // Or trigger a revalidation in parent route
@@ -288,7 +291,7 @@ export default function TrashDialog() {
               },
             ]}
             loading={false}
-            selectedIds={selectedIds}
+            selectedIds={selectedIds.map(String)}
             expandedIds={[]}
             searchTerm=""
             viewMode="list"
@@ -297,12 +300,12 @@ export default function TrashDialog() {
             canDelete={mode === 'empty'}
             onNodeClick={(node: TreeNodeData) => console.log('Node clicked:', node)}
             onNodeSelect={(nodeId: string, selected: boolean) => {
+              const branded = nodeId as NodeId;
               setSelectedIds((prev) => {
                 if (selected) {
-                  return [...prev, nodeId];
-                } else {
-                  return prev.filter((id) => id !== nodeId);
+                  return prev.includes(branded) ? prev : [...prev, branded];
                 }
+                return prev.filter((id) => id !== branded);
               });
             }}
             onNodeExpand={() => {
@@ -345,11 +348,11 @@ export default function TrashDialog() {
                 try {
                   const client = await WorkerAPIClient.getSingleton();
                   const mutationAPI = await client.getMutationAPI();
-                  const res = await mutationAPI.removeNodes([node.id as unknown as NodeId]);
+                  const res = await mutationAPI.removeNodes([node.id as NodeId]);
                   if (res.success) {
                     try {
-                      const raw = (data.trashItems || []).find((t) => t.id === (node.id as any));
-                      const targetId = (raw as any)?.holderTargetId || node.id;
+                      const raw = (data.trashItems || []).find((t) => String(t.id) === String(node.id));
+                      const targetId = ((raw as any)?.holderTargetId as NodeId | undefined) || (node.id as NodeId);
                       window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: [String(targetId)] } }));
                     } catch {}
                     window.location.reload();

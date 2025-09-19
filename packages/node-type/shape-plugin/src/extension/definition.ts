@@ -11,10 +11,10 @@
  */
 
 // Step Components
-import { DataSourceStep } from './components/DataSourceStep';
-import { LicenseStep } from './components/LicenseStep';
-import { ProcessingStep } from './components/ProcessingStep';
-import { CountrySelectionStep } from './components/CountrySelectionStep';
+import { DataSourceStep } from './components/DataSourceStep.js';
+import { LicenseStep } from './components/LicenseStep.js';
+import { ProcessingStep } from './components/ProcessingStep.js';
+import { CountrySelectionStep } from './components/CountrySelectionStep.js';
 
 /**
  * Shape Plugin Extension Definition

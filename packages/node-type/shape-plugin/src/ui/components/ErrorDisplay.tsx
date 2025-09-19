@@ -44,8 +44,8 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 
-import type { ActionType, BaseShapeError, ErrorSeverity, SuggestedAction } from '../../types/ShapeErrorHierarchy';
-import type { RecoveryResult } from '../../services/RecoveryStrategy';
+import type { ActionType, BaseShapeError, ErrorSeverity, SuggestedAction } from '../../types/ShapeErrorHierarchy.js';
+import type { RecoveryResult } from '../../services/RecoveryStrategy.js';
 
 // ========================================
 //  Props

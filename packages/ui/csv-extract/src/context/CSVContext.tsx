@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import type { ICSVDataApi } from '~/types';
+import type { ICSVDataApi } from '../types/index.js';
 
 /**
  * CSV API Context

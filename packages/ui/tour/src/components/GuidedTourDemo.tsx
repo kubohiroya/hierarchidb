@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { GenericGuidedTour } from './GenericGuidedTour';
+import { GenericGuidedTour } from './GenericGuidedTour.js';
 import type { Step } from 'react-joyride';
 
 const demoSteps: Step[] = [

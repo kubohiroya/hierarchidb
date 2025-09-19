@@ -11,9 +11,9 @@ import type {
   VectorSourceSpecification,
 } from 'maplibre-gl';
 import { addProtocol } from 'maplibre-gl';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
-import type { VectorTileProps } from '../types/unified-map-props';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type { VectorTileProps } from '../types/unified-map-props.js';
+import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;

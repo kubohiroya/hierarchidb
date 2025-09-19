@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getLocationDownloadService, registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from '../../download/registry';
+import { getLocationDownloadService, registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from '../../download/registry.js';
 
 describe('location download registry', () => {
   it('uses injected factory and respects defaults', async () => {

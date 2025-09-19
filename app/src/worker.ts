@@ -4,11 +4,6 @@
  */
 
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
-import { APP_VERSION, BUILD_TIME } from './version';
-
-const localBuildTime = (() => {
-  try { return new Date(BUILD_TIME).toLocaleString(); } catch { return String(BUILD_TIME); }
-})();
 
 // Minimal shims for Node-centric plugins to run inside Web Worker
 // Provide a global alias so packages using `global` don't crash
@@ -37,7 +32,6 @@ reporter.reportStepProgress('Load Comlink', 0);
     reporter.reportStepProgress('Load Comlink', 100);
 
     // Step 2: Skip legacy plugin-map path; registries handle loading below
-    const isDev = (import.meta as any)?.env?.DEV;
     reporter.reportStepProgress('Load plugin loaders', 100);
 
     // After package-reader runs, resolve plugin defs (or fallback)
@@ -47,7 +41,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         // @eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         const mod = await import('virtual:plugin-definitions').catch(async () =>
-          await import('./virtual/plugin-definitions')
+          await import('./virtual/plugin-definitions.js')
         );
         pluginDefinitions = (mod?.default as any[]) || [];
       } catch {
@@ -75,16 +69,10 @@ reporter.reportStepProgress('Load Comlink', 0);
 
         // Worker overrides: force worker-safe entries for known plugins
         const workerOverrides: Record<string, () => Promise<unknown>> = {
-          // Use package subpath exports to avoid importing TS sources directly
-          location: async () => import('@hierarchidb/location-plugin/worker'),
-          // No worker for 'project'/'linker' in new design
-          route: async () => import('@hierarchidb/route-plugin/worker'),
-          // In dev, import monorepo source directly to avoid unresolved workspace pkg; in prod, use published subpath
-          timeline: (isDev
-            ? async () => import('../../packages/node-type/timeline-plugin/src/worker/index')
-            : async () => import('@hierarchidb/timeline-plugin/worker')
-          ),
-          shape: async () => import('@hierarchidb/shape-plugin/worker'),
+          location: () => import('@hierarchidb/location-plugin/worker'),
+          route: () => import('@hierarchidb/route-plugin/worker'),
+          timeline: () => import('@hierarchidb/timeline-plugin/worker'),
+          shape: () => import('@hierarchidb/shape-plugin/worker'),
         };
         pluginMap = { ...pluginMap, ...workerOverrides } as any;
 
@@ -108,18 +96,19 @@ reporter.reportStepProgress('Load Comlink', 0);
             } catch (e: unknown) {
               const msg = (e as any)?.message ?? String(e);
               const soft = /document is not defined|Grid2|does not provide an export/i.test(msg);
+              const prefix = `[worker bootstrap] failed to load worker for ${nodeType}:`;
               if ((import.meta as any)?.env?.DEV || soft) {
-                
+                console.warn(prefix, msg);
               } else {
-                
+                throw e;
               }
             }
           }
         }
         await wirePluginsFromModules(modEntries);
       }
-    } catch (e) {
-      
+    } catch (error) {
+      console.error('[worker bootstrap] plugin wiring failed:', error);
     }
     // Merge standardized lifecycles discovered from worker modules into pluginDefinitions
     try {
@@ -140,22 +129,23 @@ reporter.reportStepProgress('Load Comlink', 0);
               try {
                 const handler = await factory();
                 if (handler) entityRegistry.register(nodeType, handler as any);
-              } catch (e){
-                
+              } catch (error) {
+                console.warn('[worker bootstrap] entity handler registration failed:', nodeType, error);
               }
             }
           }
         }
-      } catch (e){
-        
+      } catch (error) {
+        console.warn('[worker bootstrap] runtime-worker entity registry unavailable:', error);
       }
 
       const { WorkerService } = await import('@hierarchidb/runtime-worker');
       const services = await WorkerService.getSingleton(enriched || (pluginDefinitions as any[]));
       reporter.reportStepProgress('Bootstrap services', 100);
-      try {
-        (self as any).postMessage?.({ type: 'SERVICES_READY', source: 'worker', at: Date.now() });
-      } catch {}
+      const messagePort: any = self as any;
+      if (typeof messagePort?.postMessage === 'function') {
+        messagePort.postMessage({ type: 'SERVICES_READY', source: 'worker', at: Date.now() });
+      }
 
       // Step 5: Create API facade
       reporter.reportStepProgress('Create API facade', 10);
@@ -177,30 +167,6 @@ reporter.reportStepProgress('Load Comlink', 0);
         listDescendants: (id: any, maxDepth?: number) => (query as any).listDescendants?.(id, maxDepth),
         listAncestors: (id: any) => (query as any).listAncestors?.(id),
         searchNodes: (opts: any) => (query as any).searchNodes?.(opts),
-      } as const;
-      const mutationFacade = {
-        createNode: (args: any) => mutation.createNode(args),
-        updateNode: (args: any) => mutation.updateNode(args),
-        // Ensure parity with fallback facade so UI methods are always available
-        removeNodes: (nodeIds: any[]) => (mutation as any).removeNodes(nodeIds as any),
-        moveNodes: (nodeIds: any[], toParentId: any, onNameConflict?: 'error' | 'auto-rename') =>
-          (mutation as any).moveNodes({ nodeIds: nodeIds as any, toParentId, onNameConflict }),
-        duplicateNodes: (nodeIds: any[], toParentId?: any) => (mutation as any).duplicateNodes({
-          nodeIds: nodeIds as any,
-          toParentId,
-        }),
-        moveNodesToTrash: (nodeIds: any[]) => (mutation as any).moveNodesToTrash(nodeIds as any),
-        recoverNodesFromTrash: (nodeIds: any[], toParentId?: any) => (mutation as any).recoverNodesFromTrash({
-          nodeIds: nodeIds as any,
-          toParentId,
-        }),
-      } as const;
-      const subscriptionFacade = {
-        subscribeNode: (id: any, cb: any, opts?: any) => subscription.subscribeNode(id, cb, opts),
-        subscribeSubtree: (id: any, cb: any, opts?: any) => subscription.subscribeSubtree(id, cb, opts),
-        subscribeTree: (treeId: any, cb: any, opts?: any) => subscription.subscribeTree(treeId, cb, opts),
-        unsubscribe: (sid: any) => subscription.unsubscribe(sid),
-        unsubscribeAll: () => subscription.unsubscribeAll(),
       } as const;
       // Expose through Comlink using direct service proxies (型安全 / as any 不要)
       const api = {
@@ -224,8 +190,8 @@ reporter.reportStepProgress('Load Comlink', 0);
       // Ensure UI receives INIT_COMPLETE in all code paths
       reporter.reportComplete();
       return;
-    } catch (e){
-      
+    } catch (ignore){
+      console.log(ignore);
     }
 
     const { WorkerService } = await import('@hierarchidb/runtime-worker');
@@ -250,15 +216,7 @@ reporter.reportStepProgress('Load Comlink', 0);
       shutdown: () => services.shutdown(),
       getSystemHealth: () => services.getSystemHealth(),
       // Return minimal facades to avoid leaking Dexie instances/functions across the boundary
-      getQueryAPI: () => Comlink.proxy({
-        getTree: (id: any) => query.getTree(id),
-        listTrees: () => (query as any).listTrees?.(),
-        getNode: (id: any) => (query as any).getNode?.(id),
-        listChildren: (id: any) => (query as any).listChildren?.(id),
-        listDescendants: (id: any, maxDepth?: number) => (query as any).listDescendants?.(id, maxDepth),
-        listAncestors: (id: any) => (query as any).listAncestors?.(id),
-        searchNodes: (opts: any) => (query as any).searchNodes?.(opts),
-      }),
+      getQueryAPI: () => Comlink.proxy(query),
       getMutationAPI: () => Comlink.proxy(mutation),
       getSubscriptionAPI: () => Comlink.proxy(subscription),
       getWorkingCopyAPI: () => Comlink.proxy(workingCopy),
@@ -279,7 +237,6 @@ reporter.reportStepProgress('Load Comlink', 0);
     // Report full error to UI
     const err = error as any;
     const message = err?.message || String(err);
-    const stack = err?.stack || null;
     reporter.reportError(`${message}`);
     // Also throw to surface error event
     throw error;

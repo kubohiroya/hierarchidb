@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai';
 import type { ExpandedState } from '@tanstack/react-table';
-import { tableDataAtom } from '../core/data.atoms';
+import { tableDataAtom } from '../core/data.atoms.js';
 
 /**
     */

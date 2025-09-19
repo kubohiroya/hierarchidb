@@ -9,4 +9,4 @@ export {
   type ResourceProjectType,
   type ResourceProjectToggleOrientation,
   type ResourceProjectToggleSize,
-} from './components/ResourceProjectToggle';
+} from './components/ResourceProjectToggle/index.js';

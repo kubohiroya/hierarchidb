@@ -1,5 +1,5 @@
-export { useLRUPanes } from './useLRUPanes';
+export { useLRUPanes } from './useLRUPanes.js';
 
 export type {
   UseLRUPanesResult,
-} from '../types/LRUSplitView';
+} from '../types/LRUSplitView.js';

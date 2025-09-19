@@ -1,2 +1,2 @@
-export { FileInputWithUrl } from './FileInputWithUrl';
-export type { FileInputWithUrlProps } from './FileInputWithUrl';
+export { FileInputWithUrl } from './FileInputWithUrl.js';
+export type { FileInputWithUrlProps } from './FileInputWithUrl.js';

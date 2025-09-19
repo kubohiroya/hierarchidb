@@ -4,15 +4,15 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
-import MapLibreMap from './MapLibreMap';
-import VectorTileLayer from './VectorTileLayer';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import MapLibreMap from './MapLibreMap.js';
+import VectorTileLayer from './VectorTileLayer.js';
 import {
   BaseMapProps,
   DEFAULT_MAP_CONFIG,
   VectorTileDataSource,
   VectorTileLayerConfig,
-} from '../types/unified-map-props';
+} from '../types/unified-map-props.js';
 
 // Re-export for backward compatibility - but mark as deprecated
 /**

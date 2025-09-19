@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { TagId, NodeId, NodeTagAssociation, NodeTagAssociationId, TagEntity, TagSuggestion, Timestamp } from '@hierarchidb/common-type';
 import type { CreateTagRequest, TagAPI, TagAssociationRequest, UpdateTagRequest } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
-import type { TagDBPort } from './ports';
+import type { TagDBPort } from './ports.js';
 
 /**
  * TagService - generic tagging service using a DB port.

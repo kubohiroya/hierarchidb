@@ -1,6 +1,6 @@
-export { ResourceProjectToggle } from './ResourceProjectToggle';
+export { ResourceProjectToggle } from './ResourceProjectToggle.js';
 export type {
   ResourceProjectType,
   ResourceProjectToggleOrientation,
   ResourceProjectToggleSize,
-} from './ResourceProjectToggle';
+} from './ResourceProjectToggle.js';

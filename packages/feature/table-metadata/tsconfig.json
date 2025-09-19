@@ -6,14 +6,15 @@
     "declaration": true,
     "declarationMap": true,
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "baseUrl": ".",
     "paths": {
       "~/*": [
         "./src/*"
       ]
     },
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Node16"
   },
   "include": [
     "src/**/*"

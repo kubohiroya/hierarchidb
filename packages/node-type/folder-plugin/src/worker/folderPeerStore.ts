@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { FolderPeerData } from '../types/entities';
+import type { FolderPeerData } from '../types/entities.js';
 
 // Development-only in-memory PeerStore for the folder plugin.
 // Replace with Dexie-backed implementation in production:

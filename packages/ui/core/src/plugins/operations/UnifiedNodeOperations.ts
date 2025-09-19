@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { UIPluginDefinition } from '../types';
-import { getUIPluginRegistry } from '../registry/UIPluginRegistry';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
+import type { UIPluginDefinition } from '../types.js';
+import { getUIPluginRegistry } from '../registry/UIPluginRegistry.js';
+import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 
 /**
  * Unified Node Operations

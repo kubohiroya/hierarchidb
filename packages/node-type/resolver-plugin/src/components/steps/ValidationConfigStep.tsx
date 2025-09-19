@@ -32,7 +32,7 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '~/types';
+import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '../../types/index.js';
 
 interface ValidationConfigStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -95,10 +95,10 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
   const availableProperties = React.useMemo(() => {
     const properties = new Set<string>();
     if (sourceSchema) {
-      sourceSchema.properties.forEach(prop => properties.add(`source.${prop.name}`));
+      sourceSchema.properties.forEach((prop: { name: string }) => properties.add(`source.${prop.name}`));
     }
     if (targetSchema) {
-      targetSchema.properties.forEach(prop => properties.add(`target.${prop.name}`));
+      targetSchema.properties.forEach((prop: { name: string }) => properties.add(`target.${prop.name}`));
     }
     return Array.from(properties);
   }, [sourceSchema, targetSchema]);

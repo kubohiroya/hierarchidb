@@ -3,7 +3,7 @@
  * @module @hierarchidb/ui-country-select/data
  */
 
-import type { Country } from '../types/Country';
+import type { Country } from '../types/Country.js';
 
 /** Sample countries data (subset for demonstration) */
 export const SAMPLE_COUNTRIES: Country[] = [

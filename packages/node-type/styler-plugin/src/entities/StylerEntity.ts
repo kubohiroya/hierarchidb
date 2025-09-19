@@ -6,7 +6,7 @@ import type { NodeId } from '@hierarchidb/common-type';
  * :
   */
 //import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
-import type { StylerConfig } from '../types/stylerTypes';
+import type { StylerConfig } from '../types/stylerTypes.js';
 
 // Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };

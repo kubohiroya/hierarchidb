@@ -1,4 +1,4 @@
-export { TabularWriter } from './TabularWriter';
-export { TabularQueryService, type ColumnFilter } from './TabularQuery';
-export { getRowStoreDB, closeRowStoreDB } from './RowStoreDB';
+export { TabularWriter } from './TabularWriter.js';
+export { TabularQueryService, type ColumnFilter } from './TabularQuery.js';
+export { getRowStoreDB, closeRowStoreDB } from './RowStoreDB.js';
 

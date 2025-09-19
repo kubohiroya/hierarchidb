@@ -4,8 +4,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../extension/definition';
-import { BaseMapExtension } from '../extension/definition';
+import type { BaseMapEntity, BaseMapWorkingCopy } from '../extension/definition.js';
+import { BaseMapExtension } from '../extension/definition.js';
 
 describe('BaseMap Plugin Integration', () => {
   describe('Extension Definition', () => {

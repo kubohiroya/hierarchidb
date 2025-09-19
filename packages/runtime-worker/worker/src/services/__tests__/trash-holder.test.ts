@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor.js';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
-describe('Trash holder flow (flag ON)', () => {
+describe('Trash holder flow', () => {
   let core: any;
   let state: Record<string, any>;
   const now = Date.now();
@@ -18,7 +18,6 @@ describe('Trash holder flow (flag ON)', () => {
   });
 
   beforeEach(() => {
-    (process as any).env.WORKER_TRASH_USE_HOLDER = '1';
     state = {
       'r:superRoot': makeNode('r:superRoot', 'r:superRoot', 'super'),
       'r:root': makeNode('r:root', 'r:superRoot', 'root'),

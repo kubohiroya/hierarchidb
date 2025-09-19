@@ -1,6 +1,6 @@
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { getDBName } from '@hierarchidb/util';
-import { getRowStoreDB } from './RowStoreDB';
+import { getRowStoreDB } from './RowStoreDB.js';
 
 export class TabularWriter {
   private tableId: string | null = null;
@@ -70,7 +70,7 @@ export class TabularWriter {
         } as any);
         // Optional: update inverted index for configured columns
         if (this.indexColumns.length > 0) {
-          const { TabularIndexer } = await import('./Indexer');
+          const { TabularIndexer } = await import('./Indexer.js');
           const indexer = new TabularIndexer(this.pluginId);
           // Efficiently index just-written rows
           for (const _r of this.rowsBuffered) {

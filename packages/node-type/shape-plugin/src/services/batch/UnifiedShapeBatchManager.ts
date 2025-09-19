@@ -10,9 +10,9 @@ import type {
   IBatchSessionManager,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager';
-import type { BatchProcessConfig } from './types';
-import type { UrlMetadata } from '../../shared/types';
+import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
+import type { BatchProcessConfig } from './types.js';
+import type { UrlMetadata } from '../../shared/types.js';
 
 /**
  * Unified shape batch manager implementing the standard interface

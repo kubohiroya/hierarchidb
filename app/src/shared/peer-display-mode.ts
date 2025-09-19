@@ -1,3 +1,6 @@
+import type { Table } from 'dexie';
+import type { NodeId } from '@hierarchidb/common-type';
+
 export type PeerDisplayMode = 'standard' | 'maximized' | 'fullscreen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
@@ -13,52 +16,62 @@ export type PeerDisplayNodeType =
   | 'styler'
   | 'basemap';
 
-// Strongly-typed helpers (nodeType is a union of supported kinds)
+type DexieInstance = import('dexie').Dexie;
+interface PeerEntityRecord {
+  nodeId: NodeId;
+  updatedAt?: number;
+  displayMode?: PeerDisplayMode;
+  dialogPosition?: PeerDialogPosition;
+  dialogSize?: PeerDialogSize;
+  data?: unknown;
+}
+
+type PeerEntitiesDB = DexieInstance & { peerEntities: Table<PeerEntityRecord, NodeId> };
+type PeerDbLoader = () => Promise<PeerEntitiesDB>;
+
+const createLoader = (specifier: string, exportName: string): PeerDbLoader =>
+  async () => {
+    const mod = (await import(/* @vite-ignore */ specifier)) as Record<string, unknown>;
+    const Constructor = mod[exportName] as new () => PeerEntitiesDB;
+    return new Constructor();
+  };
+
+const peerDbLoaders: Partial<Record<PeerDisplayNodeType, PeerDbLoader>> = {
+  folder: createLoader('@hierarchidb/folder-plugin/src/worker/folderEntitiesDB', 'FolderEntitiesDB'),
+  route: createLoader('@hierarchidb/route-plugin/src/worker/routeEntitiesDB', 'RouteEntitiesDB'),
+  resolver: createLoader('@hierarchidb/resolver-plugin/src/worker/resolverEntitiesDB', 'ResolverEntitiesDB'),
+  basemap: createLoader('@hierarchidb/basemap-plugin/src/worker/basemapEntitiesDB', 'BasemapEntitiesDB'),
+  location: createLoader('@hierarchidb/location-plugin/src/worker/locationEntitiesDB', 'LocationEntitiesDB'),
+  shape: createLoader('@hierarchidb/shape-plugin/src/worker/shapeEntitiesDB', 'ShapeEntitiesDB'),
+  spreadsheet: createLoader('@hierarchidb/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB', 'SpreadsheetEntitiesDB'),
+  styler: createLoader('@hierarchidb/styler-plugin/src/worker/stylerEntitiesDB', 'StylerEntitiesDB'),
+};
+
+const toNodeId = (value: string): NodeId => value as NodeId;
+
+async function withPeerDb<T>(
+  nodeType: PeerDisplayNodeType,
+  fallback: T,
+  fn: (db: PeerEntitiesDB) => Promise<T>,
+): Promise<T> {
+  const loader = peerDbLoaders[nodeType];
+  if (!loader) return fallback;
+  const db = await loader();
+  try {
+    return await fn(db);
+  } finally {
+    db.close();
+  }
+}
+
 export async function getPeerDisplayMode<T extends PeerDisplayNodeType>(
   nodeType: T,
   nodeId: string,
 ): Promise<PeerDisplayMode | null> {
-  if (nodeType === 'project' || nodeType === 'linker') return null;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.displayMode as PeerDisplayMode) ?? null;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.displayMode as PeerDisplayMode) ?? null;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.displayMode as PeerDisplayMode) ?? null;
-    }
-    case 'project': {
-      // Back-compat: map legacy 'project' to linker's peer DB
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.displayMode as PeerDisplayMode) ?? null;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.displayMode as PeerDisplayMode) ?? null;
-    }
-    default:
-      return null;
-  }
+  return withPeerDb(nodeType, null, async (db) => {
+    const row = await db.peerEntities.get(toNodeId(nodeId));
+    return row?.displayMode ?? null;
+  });
 }
 
 export async function setPeerDisplayMode<T extends PeerDisplayNodeType>(
@@ -66,96 +79,28 @@ export async function setPeerDisplayMode<T extends PeerDisplayNodeType>(
   nodeId: string,
   mode: PeerDisplayMode,
 ): Promise<void> {
-  if (nodeType === 'project' || nodeType === 'linker') return;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.displayMode = mode; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.displayMode = mode; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.displayMode = mode; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'project': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.displayMode = mode; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.displayMode = mode; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    default:
-      return;
-  }
+  await withPeerDb(nodeType, undefined, async (db) => {
+    const key = toNodeId(nodeId);
+    const existing = await db.peerEntities.get(key);
+    const next: PeerEntityRecord = {
+      nodeId: key,
+      ...existing,
+      displayMode: mode,
+      updatedAt: Date.now(),
+    };
+    await db.peerEntities.put(next);
+    return undefined;
+  });
 }
 
-// Position persistence
 export async function getPeerDialogPosition<T extends PeerDisplayNodeType>(
   nodeType: T,
   nodeId: string,
 ): Promise<PeerDialogPosition | null> {
-  if (nodeType === 'project' || nodeType === 'linker') return null;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogPosition as PeerDialogPosition) ?? null;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogPosition as PeerDialogPosition) ?? null;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogPosition as PeerDialogPosition) ?? null;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogPosition as PeerDialogPosition) ?? null;
-    }
-    default:
-      return null;
-  }
+  return withPeerDb(nodeType, null, async (db) => {
+    const row = await db.peerEntities.get(toNodeId(nodeId));
+    return row?.dialogPosition ?? null;
+  });
 }
 
 export async function setPeerDialogPosition<T extends PeerDisplayNodeType>(
@@ -163,103 +108,28 @@ export async function setPeerDialogPosition<T extends PeerDisplayNodeType>(
   nodeId: string,
   pos: PeerDialogPosition,
 ): Promise<void> {
-  if (nodeType === 'project' || nodeType === 'linker') return;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogPosition = pos; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogPosition = pos; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogPosition = pos; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'project': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogPosition = pos; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogPosition = pos; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    default:
-      return;
-  }
+  await withPeerDb(nodeType, undefined, async (db) => {
+    const key = toNodeId(nodeId);
+    const existing = await db.peerEntities.get(key);
+    const next: PeerEntityRecord = {
+      nodeId: key,
+      ...existing,
+      dialogPosition: pos,
+      updatedAt: Date.now(),
+    };
+    await db.peerEntities.put(next);
+    return undefined;
+  });
 }
 
-// Size persistence
 export async function getPeerDialogSize<T extends PeerDisplayNodeType>(
   nodeType: T,
   nodeId: string,
 ): Promise<PeerDialogSize | null> {
-  if (nodeType === 'project' || nodeType === 'linker') return null;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogSize as PeerDialogSize) ?? null;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogSize as PeerDialogSize) ?? null;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogSize as PeerDialogSize) ?? null;
-    }
-    case 'project': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogSize as PeerDialogSize) ?? null;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row = await db.table('peerEntities').get(nodeId as any) as any;
-      return (row?.dialogSize as PeerDialogSize) ?? null;
-    }
-    default:
-      return null;
-  }
+  return withPeerDb(nodeType, null, async (db) => {
+    const row = await db.peerEntities.get(toNodeId(nodeId));
+    return row?.dialogSize ?? null;
+  });
 }
 
 export async function setPeerDialogSize<T extends PeerDisplayNodeType>(
@@ -267,54 +137,16 @@ export async function setPeerDialogSize<T extends PeerDisplayNodeType>(
   nodeId: string,
   size: PeerDialogSize,
 ): Promise<void> {
-  if (nodeType === 'project' || nodeType === 'linker') return;
-  switch (nodeType) {
-    case 'folder': {
-      const M = '@hierarchidb' + '/folder-plugin/src/worker/folderEntitiesDB';
-      const { FolderEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (FolderEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogSize = size; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'route': {
-      const M = '@hierarchidb' + '/route-plugin/src/worker/routeEntitiesDB';
-      const { RouteEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (RouteEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogSize = size; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'resolver': {
-      const M = '@hierarchidb' + '/resolver-plugin/src/worker/resolverEntitiesDB';
-      const { ResolverEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (ResolverEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogSize = size; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'project': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogSize = size; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    case 'linker': {
-      const M = '@hierarchidb' + '/linker-plugin/src/worker/linkerEntitiesDB';
-      const { LinkerEntitiesDB } = (await import(/* @vite-ignore */ (M as string))) as any;
-      const db = new (LinkerEntitiesDB as any)();
-      const row: any = (await db.table('peerEntities').get(nodeId as any)) || { nodeId };
-      row.dialogSize = size; row.updatedAt = Date.now();
-      await db.table('peerEntities').put(row);
-      return;
-    }
-    default:
-      return;
-  }
+  await withPeerDb(nodeType, undefined, async (db) => {
+    const key = toNodeId(nodeId);
+    const existing = await db.peerEntities.get(key);
+    const next: PeerEntityRecord = {
+      nodeId: key,
+      ...existing,
+      dialogSize: size,
+      updatedAt: Date.now(),
+    };
+    await db.peerEntities.put(next);
+    return undefined;
+  });
 }

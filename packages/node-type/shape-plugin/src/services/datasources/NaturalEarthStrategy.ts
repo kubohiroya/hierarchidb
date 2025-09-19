@@ -3,8 +3,8 @@
  * https://www.naturalearthdata.com/ Shapefile
   */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy';
-import { ShapeEntity } from '../../types/ShapeEntity';
+import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy.js';
+import { ShapeEntity } from '../../types/ShapeEntity.js';
 import JSZip from 'jszip';
 
 //  Natural Earth
@@ -219,7 +219,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         const controller = new AbortController();
         const timeoutId = timeout ? setTimeout(() => controller.abort(), timeout) : null;
 
-        const { authFetch } = await import('../utils/authFetch');
+        const { authFetch } = await import('../utils/authFetch.js');
         const response = await authFetch(url, {
           signal: controller.signal,
         });

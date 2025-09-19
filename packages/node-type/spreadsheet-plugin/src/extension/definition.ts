@@ -17,8 +17,8 @@ type BaseFolderFields = {
 };
 
 //  Step
-// import { DataSourceStep } from '../steps/DataSourceStep';
-// import { FilteringStep } from '../steps/FilteringStep';
+// import { DataSourceStep } from '../steps/DataSourceStep.js';
+// import { FilteringStep } from '../steps/FilteringStep.js';
 
 /**
   * : SpreadsheetEntity

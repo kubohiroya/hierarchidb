@@ -7,13 +7,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
-import { Subscriptions } from '~/subscriptions/controller';
+import { Subscriptions } from '~/subscriptions/controller.js';
 import { Alert, Box, CircularProgress } from '@mui/material';
-import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial';
+import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration';
-import { useWorkerClient } from '~/contexts/WorkerProvider';
+import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js';
+import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
@@ -63,7 +63,7 @@ const TreeConsoleIntegrationInner: React.FC<
   });
 
   // Row Click Action state (Select | Edit | Navigate)
-  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Select' | 'Edit' | 'Navigate'>('Select/Navigate');
+  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>('Select/Navigate');
 
   // Check for trash items when worker client is available
   useEffect(() => {
@@ -281,7 +281,7 @@ const TreeConsoleIntegrationInner: React.FC<
       switch (action) {
         case 'setRowClickAction':
           if (typeof params === 'string') {
-            setRowClickAction(params as 'Select/Navigate' | 'Select' | 'Edit' | 'Navigate');
+            setRowClickAction(params === 'Edit' ? 'Edit' : 'Select/Navigate');
           }
           break;
         case 'import-template':
@@ -432,7 +432,7 @@ const TreeConsoleIntegrationInner: React.FC<
         }}
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}
-        rowClickAction={rowClickAction === 'Edit' ? 'Edit' : 'Select/Navigate'}
+        rowClickAction={rowClickAction}
         canUndo={state.canUndo}
         canRedo={state.canRedo}
         canCopy={selectedIds.length > 0}

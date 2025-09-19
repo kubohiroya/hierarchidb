@@ -5,24 +5,24 @@
  */
 
 // Core types
-export * from './types';
+export * from './types.js';
 
 // UI-side channel
-export { WorkerInitializationChannel } from './WorkerInitializationChannel';
+export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
 
 // Worker-side reporter
-export { WorkerInitializationReporter } from './WorkerInitializationReporter';
+export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 
 // React components
-export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider';
+export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider.js';
 
 // UI: App-provided Worker client hook registration (shared for plugins)
-export { registerWorkerClientHook, getWorkerClientHook } from './ui/workerClientHook';
-export type { WorkerClientHook } from './ui/workerClientHook';
+export { registerWorkerClientHook, getWorkerClientHook } from './ui/workerClientHook.js';
+export type { WorkerClientHook } from './ui/workerClientHook.js';
 
 // Wiring utilities (plugin capability bootstrap)
-export { wirePluginsFromModules } from './wiring/wirePlugins';
-export { getRuntimeExports, getAllRuntimeExports, registerRuntimeExports } from './wiring/runtime-export-registry';
+export { wirePluginsFromModules } from './wiring/wirePlugins.js';
+export { getRuntimeExports, getAllRuntimeExports, registerRuntimeExports } from './wiring/runtime-export-registry.js';
 
 
 // Re-export types for convenience
@@ -34,4 +34,4 @@ export type {
   InitializationStep,
   WorkerInitState,
   InitializationResult,
-} from './types';
+} from './types.js';

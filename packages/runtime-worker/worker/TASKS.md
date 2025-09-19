@@ -55,10 +55,10 @@
   - DB: `ResolverDB`（OK）
   - Tables: `resolvers`, `workingCopies`（OK）
   - 実装: `packages/node-type/resolver-plugin/src/database/ResolverDatabase.ts`
-- project-plugin
-  - DB: `ProjectPluginDB` → `ProjectDB`
-  - Tables: `projects`, `snapshots`, `analysisResults`, `tiles`（OK）
-  - 実装: `packages/node-type/project-plugin/src/database/project-database.ts`
+- linker-plugin（旧 project-plugin）
+  - DB: `LinkerDB`（旧 `ProjectPluginDB` / `ProjectDB`）※ Worker 側 Dexie 実装は rename 移行中
+  - Tables: `projects`, `snapshots`, `analysisResults`, `tiles`（legacy スキーマを継承予定）
+  - 実装: `packages/node-type/linker-plugin`（Worker 向け DB 実装は後続タスクで再公開）
 
 ## 実施手順（段階導入）
 1) 命名規約の確定（本ドキュメント）
@@ -84,7 +84,7 @@ catch {
 - [ ] spreadsheet: 複合DB名改名（spreadsheet-plugin-entities→spreadsheet-entities）
 - [ ] styler: DB名改名（StylerCSVMetadata→StylerMetadataDB）
 - [ ] location: 複合DB名改名（location-plugin-entities→location-entities）
-- [ ] project: DB名改名（ProjectPluginDB→ProjectDB）
+- [ ] linker: DB名改名（ProjectPluginDB→LinkerDB）
 - [ ] route/resolver/shape: 命名は現状維持（OK）
 
 ## ロールバック

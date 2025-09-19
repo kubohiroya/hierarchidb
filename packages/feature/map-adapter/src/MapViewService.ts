@@ -1,5 +1,5 @@
-import type { MapAdapterPort } from './ports';
-import type { DeckLayerSpec, MapStyleSpec, MapViewConfig, ViewState } from './types';
+import type { MapAdapterPort } from './ports.js';
+import type { DeckLayerSpec, MapStyleSpec, MapViewConfig, ViewState } from './types.js';
 
 export class MapViewService {
   private adapter: MapAdapterPort;

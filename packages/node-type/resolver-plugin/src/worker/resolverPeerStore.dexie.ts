@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB';
+import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB.js';
 
 export function createResolverPeerStoreDexie(db: ResolverEntitiesDB): PeerStore<any> {
   return {

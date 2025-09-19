@@ -5,10 +5,10 @@
  */
 
 // Main component
-export { TreeConsoleFooter } from './components/TreeConsoleFooter';
+export { TreeConsoleFooter } from './components/TreeConsoleFooter.js';
 
 // Types
 export type {
   TreeConsoleFooterController,
   TreeConsoleFooterProps,
-} from './types';
+} from './types.js';

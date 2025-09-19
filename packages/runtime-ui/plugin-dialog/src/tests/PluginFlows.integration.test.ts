@@ -6,7 +6,7 @@
 import { beforeEach, afterEach, describe, it, expect } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-type';
-import { WorkerAPIImpl } from './mocks/WorkerAPIImpl';
+import { WorkerAPIImpl } from './mocks/WorkerAPIImpl.js';
 
 type DialogAPI = ReturnType<WorkerAPIImpl['getMultiStepDialogAPI']>;
 

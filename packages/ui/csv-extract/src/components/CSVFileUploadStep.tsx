@@ -19,8 +19,8 @@ import {
   Typography,
 } from '@mui/material';
 import { CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
-import type { CSVProcessingConfig, CSVTableMetadata } from '../types';
-import { useCSVData } from '../hooks/useCSVData';
+import type { CSVProcessingConfig, CSVTableMetadata } from '../types/index.js';
+import { useCSVData } from '../hooks/useCSVData.js';
 
 export interface CSVFileUploadStepProps {
   onFileUploaded: (metadata: CSVTableMetadata) => void;

@@ -13,7 +13,7 @@ import type {
   LocationPoint,
   LocationType,
   LocationWorkingCopy,
-} from './LocationEntity';
+} from './LocationEntity.js';
 
 /**
  * Create location data interface

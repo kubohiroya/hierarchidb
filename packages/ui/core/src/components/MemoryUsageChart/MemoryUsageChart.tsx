@@ -3,8 +3,8 @@ import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/mate
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { formatBytes } from '@hierarchidb/util';
 
-import { useMemoryData } from './hooks/useMemoryData';
-import { CanvasRenderer } from './services/CanvasRenderer';
+import { useMemoryData } from './hooks/useMemoryData.js';
+import { CanvasRenderer } from './services/CanvasRenderer.js';
 
 export interface MemoryUsageChartProps {
   /**

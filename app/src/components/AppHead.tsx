@@ -1,4 +1,4 @@
-import { useAppConfig } from '~/contexts/AppConfigContext';
+import { useAppConfig } from '~/contexts/AppConfigContext.js';
 
 /**
  * Common head tags for all pages

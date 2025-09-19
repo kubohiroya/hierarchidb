@@ -7,29 +7,29 @@
 // Export all types
 // Export all types and components
 // Avoid re-exporting names that collide with orchestrator/types (e.g., TransportMode)
-export type { RouteEntity, RouteWorkingCopy, RouteProcessingConfig, RouteParameters, RouteStatistics } from './types';
-export * from './entities/RouteEntityHandler';
-export * from './i18n';
-export { ThrottledPort } from './services/net/ThrottledPort';
-export * from './services/engines/OsrmEngine';
-export * from './services/engines/SearouteEngine';
-export { createRouteBatchManager } from './services/createRouteBatchManager';
-export * from './orchestrator/types';
-export * from './orchestrator/RouteSourceOrchestrator';
-export * from './orchestrator/RouteBatchOrchestrationService';
-export * from './services/config/osrm-defaults';
-export * from './ui/components/RouteBatchLaunchForm';
-export * from './orchestrator/RouteSourceOrchestrator';
-export * from './orchestrator/RouteBatchOrchestrationService';
-export * from './ui/hooks/useRouteBatchProgress';
+export type { RouteEntity, RouteWorkingCopy, RouteProcessingConfig, RouteParameters, RouteStatistics } from './types/index.js';
+export * from './entities/RouteEntityHandler.js';
+export * from './i18n/index.js';
+export { ThrottledPort } from './services/net/ThrottledPort.js';
+export * from './services/engines/OsrmEngine.js';
+export * from './services/engines/SearouteEngine.js';
+export { createRouteBatchManager } from './services/createRouteBatchManager.js';
+export * from './orchestrator/types.js';
+export * from './orchestrator/RouteSourceOrchestrator.js';
+export * from './orchestrator/RouteBatchOrchestrationService.js';
+export * from './services/config/osrm-defaults.js';
+export * from './ui/components/RouteBatchLaunchForm.js';
+export * from './orchestrator/RouteSourceOrchestrator.js';
+export * from './orchestrator/RouteBatchOrchestrationService.js';
+export * from './ui/hooks/useRouteBatchProgress.js';
 export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabular-store';
 
 // Unified Batch Control API (API v2)
-export * from './services/UnifiedRouteBatchManager';
-export { RouteBatchManager } from './services/RouteBatchManager';
-export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker';
-export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier } from './services/download/registry';
-export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService';
+export * from './services/UnifiedRouteBatchManager.js';
+export { RouteBatchManager } from './services/RouteBatchManager.js';
+export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
+export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier } from './services/download/registry.js';
+export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 
 // UI exports are available via subpath export "@hierarchidb/route-plugin/ui"
 
@@ -40,44 +40,43 @@ export { registerRouteSharedDownloadService } from './services/download/register
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {
-  try {
-    const g = (globalThis as unknown) as Record<string, unknown>;
-    const env = ((typeof process !== 'undefined' ? (process as any).env : undefined) || {}) as Record<string, unknown>;
-    const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const gv = g?.[name];
-    const ev = env?.[name];
-    const v = ls?.getItem(name) ?? (typeof gv === 'string' ? gv : undefined) ?? (typeof ev === 'string' ? ev : undefined);
-    const n = Number(v);
-    return isFinite(n) ? n : fallback;
-  } catch { return fallback; }
+  const g = (globalThis as unknown) as Record<string, unknown>;
+  const ls = typeof localStorage !== 'undefined' ? localStorage : undefined;
+  const candidate = ls?.getItem(name) ?? (typeof g?.[name] === 'string' ? (g as any)[name] : undefined);
+  const value = Number(candidate);
+  return Number.isFinite(value) ? value : fallback;
 }
 
 export const runtimeWiring = {
   registerSharedDownloadService: () => {
-    try {
-      const phc = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { registerRouteSharedDownloadService } = require('./services/download/registerSharedDownloadService');
-      registerRouteSharedDownloadService({ perHostConcurrency: phc });
-    } catch { /* noop */ }
+    const perHostConcurrency = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
+    void import('./services/download/registerSharedDownloadService.js')
+      .then(({ registerRouteSharedDownloadService }) =>
+        registerRouteSharedDownloadService({ perHostConcurrency })
+      )
+      .catch((error) => {
+        console.warn('[route-plugin] registerSharedDownloadService failed:', error);
+      });
   },
   registerAuthNotifier: () => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { registerRouteAuthNotifier } = require('./services/download/registry');
-      registerRouteAuthNotifier((info: any) => {
-        try {
+    void import('./services/download/registry.js')
+      .then(({ registerRouteAuthNotifier }) =>
+        registerRouteAuthNotifier((info: any) => {
           const g = globalThis as unknown as Record<string, any>;
-          const reg = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
-          reg?.onAuthRequired?.(info);
-        } catch { /* noop */ }
+          const registry = g?.AuthNotificationRegistry?.getInstance?.() || g?.authNotificationRegistry || g?.authRegistry;
+          registry?.onAuthRequired?.(info);
+        })
+      )
+      .catch((error) => {
+        console.warn('[route-plugin] registerAuthNotifier failed:', error);
       });
-    } catch { /* noop */ }
   },
   registerRuntimeWorkerAdapters: async () => {
     try {
-      const mod = await import('./services/batch/adapters/registerRuntimeWorker');
+      const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerRouteRuntimeWorkerAdapters();
-    } catch { /* noop */ }
+    } catch (error) {
+      console.warn('[route-plugin] registerRuntimeWorkerAdapters failed:', error);
+    }
   },
 } as const;

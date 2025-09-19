@@ -5,4 +5,4 @@ export type {
   LRUSplitViewConfig,
   PaneHeaderProps,
   UseLRUPanesResult,
-} from './LRUSplitView';
+} from './LRUSplitView.js';

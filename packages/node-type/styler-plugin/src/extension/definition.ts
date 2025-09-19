@@ -22,9 +22,9 @@ interface SpreadsheetEntity {
   version: number;
 }
 
-import type { StylerConfig } from '../types/stylerTypes';
-import { StylerStep5Definition } from '../components/steps/StylerStep5';
-import { StylerStep6Definition } from '../components/steps/StylerStep6';
+import type { StylerConfig } from '../types/stylerTypes.js';
+import { StylerStep5Definition } from '../components/steps/StylerStep5.js';
+import { StylerStep6Definition } from '../components/steps/StylerStep6.js';
 
 /**
   * : StylerEntity

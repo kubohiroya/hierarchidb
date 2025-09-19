@@ -2,9 +2,9 @@
   * Tag Entity Types
    */
 
-import type { NodeId, TagId } from './id-types';
-import type { RelationalEntity } from './entity-types';
-import { Timestamp } from './primitive-types';
+import type { NodeId, TagId } from './id-types.js';
+import type { RelationalEntity } from './entity-types.js';
+import { Timestamp } from './primitive-types.js';
 
 /**
   * TagEntity -

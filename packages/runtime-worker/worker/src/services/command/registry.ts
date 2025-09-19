@@ -1,4 +1,4 @@
-import type { CommandEnvelope } from '../command-types';
+import type { CommandEnvelope } from '../command-types.js';
 import type { Seq } from '@hierarchidb/common-type';
 
 // Minimal command handler interfaces and registry implementation.
@@ -14,7 +14,7 @@ export interface CommandHandler<TType extends string = string, TPayload = unknow
   validate?: (payload: TPayload) => boolean | Promise<boolean>;
   execute: (
     ctx: CommandHandlerContext<TType, TPayload>,
-  ) => Promise<import('../command-types').CommandResult>;
+  ) => Promise<import('../command-types.js').CommandResult>;
   undo?: (ctx: CommandHandlerContext<TType, TPayload>) => Promise<void>;
   redo?: (ctx: CommandHandlerContext<TType, TPayload>) => Promise<void>;
 }

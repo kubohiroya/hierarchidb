@@ -37,7 +37,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ResolverEntity } from '~/types';
+import type { ResolverEntity, PropertyMappingRule } from '../types/index.js';
 
 interface MappingStatistics {
   totalSourceProperties: number;
@@ -325,7 +325,7 @@ export const ResolverPanel: React.FC<ResolverPanelProps> = ({
         </Box>
         <Divider />
         <List dense>
-          {entity.mappingRules.slice(0, 5).map((rule) => (
+          {entity.mappingRules.slice(0, 5).map((rule: PropertyMappingRule) => (
             <ListItem key={rule.id}>
               <ListItemText
                 primary={

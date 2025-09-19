@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB';
+import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
 
 export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<any> {
   return {

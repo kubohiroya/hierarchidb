@@ -10,7 +10,7 @@ export interface PluginRuntimeWiring {
  * Reflectively scans given modules for an exported `runtimeWiring` object and
  * calls its optional hooks in a safe, best-effort manner.
  */
-import { registerRuntimeExports } from './runtime-export-registry';
+import { registerRuntimeExports } from './runtime-export-registry.js';
 
 export interface PluginModuleEntry {
   nodeType: string;

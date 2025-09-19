@@ -26,9 +26,9 @@ import {
 
 import { Virtuoso } from 'react-virtuoso';
 
-import type { ContinentCode, Country, CountryFilter } from '../types/Country';
-import { CONTINENTS } from '../types/Country';
-import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn';
+import type { ContinentCode, Country, CountryFilter } from '../types/Country.js';
+import { CONTINENTS } from '../types/Country.js';
+import type { MatrixConfig, MatrixSelection } from '../types/MatrixColumn.js';
 
 export interface CountryMatrixSelectorProps {
   /** Available countries to select from */

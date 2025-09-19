@@ -5,7 +5,7 @@
  */
 
 // Main component
-export { TreeConsoleToolbar } from './components/TreeConsoleToolbar';
+export { TreeConsoleToolbar } from './components/TreeConsoleToolbar.js';
 
 // Types
 export type {
@@ -13,4 +13,4 @@ export type {
   TreeConsoleToolbarContext,
   TreeConsoleToolbarProps,
   TreeConsoleToolbarActionParams,
-} from './types';
+} from './types.js';

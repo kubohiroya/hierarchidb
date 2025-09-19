@@ -3,8 +3,8 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { validateFolderData, validateFolderName } from '../../shared/utils';
-import type { CreateFolderData, UpdateFolderData } from '../../shared/types';
+import { validateFolderData, validateFolderName } from '../../shared/utils.js';
+import type { CreateFolderData, UpdateFolderData } from '../../shared/types.js';
 
 export interface FormValidationResult {
   isValid: boolean;

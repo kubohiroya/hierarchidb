@@ -12,6 +12,20 @@ export interface PeerDialogPersistence {
   copyState?(fromNodeId: string, toNodeId: string): Promise<void>;
 }
 
+type EntitiesDBOverride = {
+  table: (name: string) => {
+    get: (id: string) => Promise<any>;
+    put: (row: any) => Promise<void>;
+  };
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __HDB_PLUGIN_ENTITY_OVERRIDES__:
+    | Record<string, EntitiesDBOverride | (() => EntitiesDBOverride | Promise<EntitiesDBOverride>)>
+    | undefined;
+}
+
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
   private dbCache = new Map<string, { table: (name: string) => { get: (id: string) => Promise<any>; put: (row: any) => Promise<void> } } | null>();
@@ -41,20 +55,59 @@ class UIPersistenceRegistry {
     const ensureDB = async () => {
       if (this.dbCache.has(nodeType)) return this.dbCache.get(nodeType);
       if (!nodeType || typeof nodeType !== 'string') { this.dbCache.set(nodeType, null); return null; }
-      const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
-      const path = `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`;
-      try {
-        const mod: any = await import(/* @vite-ignore */ path);
-        const Ctor = mod[className];
-        const db = new Ctor();
-        await db.open?.();
-        this.dbCache.set(nodeType, db);
-        return db;
-      } catch (e) {
-        console.warn('[UIPersistenceRegistry] Failed to load EntitiesDB for', nodeType, e);
-        this.dbCache.set(nodeType, null);
-        return null;
+
+      const overrides = typeof globalThis !== 'undefined' ? (globalThis as typeof globalThis & {
+        __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesDBOverride | (() => EntitiesDBOverride | Promise<EntitiesDBOverride>)>;
+      }) : undefined;
+      const overrideFactory = overrides?.__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
+      if (overrideFactory) {
+        const instance = typeof overrideFactory === 'function' ? await Promise.resolve(overrideFactory()) : overrideFactory;
+        this.dbCache.set(nodeType, instance);
+        return instance;
       }
+
+      const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
+      const isDev = Boolean((import.meta as any)?.env?.DEV);
+      const basePaths = [
+        `@hierarchidb/${nodeType}-plugin/worker/${nodeType}EntitiesDB`,
+        `@hierarchidb/${nodeType}-plugin/worker/index`,
+        `@hierarchidb/${nodeType}-plugin/worker`,
+      ];
+      if (isDev) {
+        basePaths.push(
+          `@hierarchidb/${nodeType}-plugin/src/worker/${nodeType}EntitiesDB`,
+          `@hierarchidb/${nodeType}-plugin/src/worker/index`,
+          `@hierarchidb/${nodeType}-plugin/src/worker`,
+        );
+      }
+      const extensions = ['.js', '.mjs', '.mts', '.ts', ''];
+      const candidates = Array.from(new Set(
+        basePaths.flatMap((base) => extensions.map((ext) => (ext ? `${base}${ext}` : base))),
+      ));
+
+      let lastError: unknown = null;
+      for (const candidate of candidates) {
+        try {
+          const mod: any = await import(/* @vite-ignore */ candidate);
+          const Ctor = mod[className];
+          if (!Ctor) {
+            lastError = new Error(`Export ${className} missing in ${candidate}`);
+            continue;
+          }
+          const db = new Ctor();
+          await db.open?.();
+          this.dbCache.set(nodeType, db);
+          return db;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (lastError) {
+        console.warn('[UIPersistenceRegistry] Failed to load EntitiesDB for', nodeType, lastError);
+      }
+      this.dbCache.set(nodeType, null);
+      return null;
     };
 
     const withRow = async (nodeId: string, updater: (row: any) => void | Promise<void>) => {

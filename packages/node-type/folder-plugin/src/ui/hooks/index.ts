@@ -2,6 +2,6 @@
  * UI hooks exports
  */
 
-export * from './useFolderAPI';
-export * from './useFolderData';
-export * from './useFormValidation';
+export * from './useFolderAPI.js';
+export * from './useFolderData.js';
+export * from './useFormValidation.js';

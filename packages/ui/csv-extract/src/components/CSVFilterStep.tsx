@@ -35,8 +35,8 @@ import {
   FilterList as FilterListIcon,
   Preview as PreviewIcon,
 } from '@mui/icons-material';
-import type { CSVColumnType, CSVDataResult, CSVFilterOperator, CSVFilterRule, CSVTableMetadata } from '../types';
-import { useCSVFilter } from '../hooks/useCSVFilter';
+import type { CSVColumnType, CSVDataResult, CSVFilterOperator, CSVFilterRule, CSVTableMetadata } from '../types/index.js';
+import { useCSVFilter } from '../hooks/useCSVFilter.js';
 
 export interface CSVFilterStepProps {
   tableMetadata: CSVTableMetadata;
@@ -370,7 +370,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {previewData.columns.map(col => (
+                    {previewData.columns.map((col: { name: string; type: string }) => (
                       <TableCell key={col.name}>
                         <Typography variant="subtitle2">
                           {col.name}
@@ -383,9 +383,9 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {previewData.rows.map((row, index) => (
+                  {previewData.rows.map((row: Record<string, string | number | null>, index: number) => (
                     <TableRow key={index}>
-                      {previewData.columns.map(col => (
+                      {previewData.columns.map((col: { name: string }) => (
                         <TableCell key={col.name}>
                           {row[col.name]?.toString() || ''}
                         </TableCell>

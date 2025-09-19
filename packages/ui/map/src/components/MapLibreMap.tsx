@@ -20,7 +20,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Re-export types for backward compatibility
-export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props';
+export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props.js';
 
 export interface MapLibreMapProps extends BaseMapProps {
   /** Children components (layers, markers, etc.) */

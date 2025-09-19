@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, Paper, styled, Typography } from '@mui/material';
 import { Close as CloseIcon, CropSquare as RestoreIcon, Minimize as MinimizeIcon } from '@mui/icons-material';
-import type { FloatingWindowProps, WindowState } from '../types/WindowState';
+import type { FloatingWindowProps, WindowState } from '../types/WindowState.js';
 
 const StyledWindow = styled(Paper)(({ theme }) => ({
   position: 'fixed',

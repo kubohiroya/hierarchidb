@@ -8,7 +8,7 @@ import {
   Pause as PauseIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
-import type { BatchTask, BatchTaskStage } from '~/shared';
+import type { BatchTask, BatchTaskStage } from '../../shared';
 
 interface TaskMonitorProps {
   tasks: BatchTask[];

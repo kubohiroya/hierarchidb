@@ -6,12 +6,12 @@ import type {
   TabularSchema,
   TabularStorePort,
 } from '@hierarchidb/tabular';
-import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
-import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
+import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
+import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
 import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';
 import type { SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/table-metadata';
 type CSVTableMetadataLike = Parameters<TableMetadataManagerPublic['create']>[0];
-import { calculateFileHash, calculateTextHash } from '../utils/hashUtils';
+import { calculateFileHash, calculateTextHash } from '../utils/hashUtils.js';
 import { getDBName } from '@hierarchidb/util';
 
 type SessionData = {

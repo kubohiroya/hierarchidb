@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "lib": [
       "ES2022",
       "DOM",
@@ -10,15 +10,15 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["src/*"],
-      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/src/worker/index.ts"],
-      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/src/worker/index.ts"],
+      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/dist/worker/index.js"],
+      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/dist/worker/index.js"],
       
-      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/src/worker/index.ts"],
-      "@hierarchidb/shape-plugin/worker": ["../packages/node-type/shape-plugin/src/worker/index.ts"],
-      "@hierarchidb/ui-auth": ["../packages/ui/auth/src/index.ts"],
-      "@hierarchidb/ui-icon": ["../packages/ui/icon/src/index.ts"],
-      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/src/index.ts"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/src/index.ts"]
+      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/dist/worker/index.mjs"],
+      "@hierarchidb/shape-plugin/worker": ["../packages/node-type/shape-plugin/dist/worker/index.js"],
+      "@hierarchidb/ui-auth": ["../packages/ui/auth/dist"],
+      "@hierarchidb/ui-icon": ["../packages/ui/icon/dist"],
+      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/dist"],
+      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist"]
     },
     "composite": false,
     "incremental": false,
@@ -37,7 +37,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    ".generated/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

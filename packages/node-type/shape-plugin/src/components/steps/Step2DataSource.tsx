@@ -2,8 +2,8 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 //  @hierarchidb/_app-datasource
 //  import_app-datasource
-import type { StepProps } from '~/shared';
-import { DATA_SOURCE_CONFIGS } from '~/mock/data';
+import type { StepProps } from '../../shared';
+import { DATA_SOURCE_CONFIGS } from '../../mock/data';
 
 /**
  * Step 2: Data Source Selection

@@ -8,7 +8,6 @@
     "noEmit": false,
     "composite": false,
     "outDir": "./dist",
-    "rootDir": "./",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -25,12 +24,22 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog": [
+        "../../runtime-ui/plugin-dialog"
+      ],
+      "@hierarchidb/spreadsheet-plugin": [
+        "../spreadsheet-plugin"
+      ],
+      "@hierarchidb/ui-core": [
+        "../../ui/core"
       ]
-    }
+    },
+    "module": "Node16"
   },
   "include": [
-    "src/types/**/*.ts",
-    "src/types/**/*.d.ts"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "dist",

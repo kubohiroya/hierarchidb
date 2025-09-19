@@ -17,7 +17,7 @@
     "population-shapes-2023": {
       "treeNodeId": "population-shapes-2023",
       "parentTreeNodeId": "population-folder-2023",
-      "treeNodeType": "shapes",
+      "treeNodeType": "shape",
       "name": "Country Boundaries",
       "description": "Geographic boundaries for all countries",
       "createdAt": 1704067200000,
@@ -46,7 +46,7 @@
     "population-table-2023": {
       "treeNodeId": "population-table-2023",
       "parentTreeNodeId": "population-folder-2023",
-      "treeNodeType": "table",
+      "treeNodeType": "spreadsheet",
       "name": "Population Data Table",
       "description": "Detailed population statistics by country",
       "createdAt": 1704067200000,

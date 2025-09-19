@@ -1,5 +1,5 @@
-import Dexie from 'dexie';
-import { getDBName } from './db-name';
+import { Dexie } from 'dexie';
+import { getDBName } from './db-name.js';
 
 /**
  * Open a Dexie database using the shared naming convention.
@@ -15,4 +15,3 @@ export interface EphemeralSessionRecord {
   createdAt: number;
   status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
-

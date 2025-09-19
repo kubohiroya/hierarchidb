@@ -1,4 +1,4 @@
-import type { ThrottleOptions } from '../net/ThrottledPort';
+import type { ThrottleOptions } from '../net/ThrottledPort.js';
 
 export function getOsrmEngineDefaults(): { osrmBaseUrl?: string; osmProfile?: 'car' | 'bike' | 'foot' | 'truck' } {
   const g: any = (globalThis as any);

@@ -9,21 +9,22 @@
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import type { TreeViewController } from '../../../types/index';
-import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state';
+import type { TreeViewController } from '../../../types/index.js';
+import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state/index.js';
+import { computeDescendants } from '@hierarchidb/ui-treeconsole-treetable';
 
 export interface DragDropOrchestratorResult {
   // State
-  draggingNodeId: string | null;
-  dropTargetNodeId: string | null;
+  draggingNodeId: NodeId | null;
+  dropTargetNodeId: NodeId | null;
   isDragging: boolean;
-  canDrop: (targetNodeId: string) => boolean;
+  canDrop: (targetNodeId: NodeId) => boolean;
 
   // Actions
-  startDrag: (nodeId: string) => void;
-  updateDropTarget: (targetNodeId: string | null) => void;
+  startDrag: (nodeId: NodeId) => void;
+  updateDropTarget: (targetNodeId: NodeId | null) => void;
   endDrag: () => void;
-  handleDrop: (targetNodeId: string) => Promise<void>;
+  handleDrop: (targetNodeId: NodeId) => Promise<void>;
 }
 
 /**
@@ -39,36 +40,16 @@ export function useDragDropOrchestrator(
   const [forbiddenTargets, setForbiddenTargets] = useAtom(forbiddenDropTargetsAtom);
 
   // Refs for performance
-  const descendantsRef = useRef<Set<string>>(new Set());
+  const descendantsRef = useRef<Set<NodeId>>(new Set<NodeId>());
 
   /**
             */
-  const getDescendants = useCallback(
-    (nodeId: string): Set<string> => {
-      const descendants = new Set<string>();
-      const stack = [nodeId];
-
-      while (stack.length > 0) {
-        const currentId = stack.pop()!;
-        descendants.add(currentId);
-
-        const children = tableData.filter((n) => n.parentId === currentId);
-        children.forEach((child) => {
-          if (child.id && !descendants.has(child.id)) {
-            stack.push(child.id);
-          }
-        });
-      }
-
-      return descendants;
-    },
-    [tableData],
-  );
+  const getDescendants = useCallback((nodeId: NodeId): Set<NodeId> => computeDescendants(tableData, nodeId), [tableData]);
 
   /**
             */
   const canDrop = useCallback(
-    (targetNodeId: string): boolean => {
+    (targetNodeId: NodeId): boolean => {
       if (!draggingNodeId) return false;
 
       if (targetNodeId === draggingNodeId) return false;
@@ -86,7 +67,7 @@ export function useDragDropOrchestrator(
   /**
             */
   const startDrag = useCallback(
-    (nodeId: string) => {
+    (nodeId: NodeId) => {
       setDraggingNodeId(nodeId);
 
       const descendants = getDescendants(nodeId);
@@ -103,7 +84,7 @@ export function useDragDropOrchestrator(
   /**
             */
   const updateDropTarget = useCallback(
-    (targetNodeId: string | null) => {
+    (targetNodeId: NodeId | null) => {
       if (targetNodeId && !canDrop(targetNodeId)) {
         setDropTargetNodeId(null);
         return;
@@ -119,8 +100,8 @@ export function useDragDropOrchestrator(
   const endDrag = useCallback(() => {
     setDraggingNodeId(null);
     setDropTargetNodeId(null);
-    setForbiddenTargets(new Set());
-    descendantsRef.current = new Set();
+    setForbiddenTargets(new Set<NodeId>());
+    descendantsRef.current = new Set<NodeId>();
 
     //  Controller
     // Clear drag state locally
@@ -130,7 +111,7 @@ export function useDragDropOrchestrator(
   /**
             */
   const handleDrop = useCallback(
-    async (targetNodeId: string) => {
+    async (targetNodeId: NodeId) => {
       if (!draggingNodeId || !canDrop(targetNodeId)) {
         endDrag();
         return;
@@ -138,7 +119,7 @@ export function useDragDropOrchestrator(
 
       try {
         //  Controller
-        await controller?.moveNodes?.([draggingNodeId as NodeId], targetNodeId as NodeId);
+        await controller?.moveNodes?.([draggingNodeId], targetNodeId);
 
         endDrag();
       } catch (error) {

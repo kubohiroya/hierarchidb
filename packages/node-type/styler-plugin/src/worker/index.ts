@@ -6,11 +6,13 @@ try {
   import(/* @vite-ignore */ (workerModName as string)).then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
-      const { StylerEntitiesDB } = await import('./stylerEntitiesDB');
+      const { StylerEntitiesDB } = await import('./stylerEntitiesDB.js');
       const db = new StylerEntitiesDB();
-      await db.open();
+      if (typeof db.open === 'function') {
+        await db.open();
+      }
       if (!storeRegistry.getPeer('styler')) {
-        const { createStylerPeerStoreDexie } = await import('./stylerPeerStore.dexie');
+        const { createStylerPeerStoreDexie } = await import('./stylerPeerStore.dexie.js');
         storeRegistry.registerPeer('styler', createStylerPeerStoreDexie(db));
       }
     } catch {
@@ -22,3 +24,5 @@ try {
 } catch {
   // ignore (SSR/tests)
 }
+
+export { StylerEntitiesDB } from './stylerEntitiesDB.js';

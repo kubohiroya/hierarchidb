@@ -1,6 +1,6 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { ResolverEntity, ResolverWorkingCopy } from '../types';
+import type { ResolverEntity, ResolverWorkingCopy } from '../types/index.js';
 
 /**
  * Resolver database for managing entity storage

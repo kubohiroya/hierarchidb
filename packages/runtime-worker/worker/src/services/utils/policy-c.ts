@@ -1,6 +1,6 @@
-import type { CoreDB } from '../CoreDB';
+import type { CoreDB } from '../CoreDB.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import { decodeWorkingCopyHolderName } from './holder-encoding';
+import { decodeWorkingCopyHolderName } from './holder-encoding.js';
 
 export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise<Set<NodeId>> {
   const ids = new Set<NodeId>();

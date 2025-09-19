@@ -17,9 +17,9 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import type { NodeId } from '../../shared/types';
+import type { NodeId } from '../../shared/types.js';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
-import { CreateShapeData, ShapeEntity, ShapeWorkingCopy, UI_CONSTANTS, UpdateShapeData } from '../../shared';
+import { CreateShapeData, ShapeEntity, ShapeWorkingCopy, UI_CONSTANTS, UpdateShapeData } from '../../shared/index.js';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';

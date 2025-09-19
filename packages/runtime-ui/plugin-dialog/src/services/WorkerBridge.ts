@@ -7,7 +7,7 @@ import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
 import { NodeId } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { StepCapabilities, ValidationResult, WorkingCopyData } from '../atoms/workingCopyAtoms';
+import type { StepCapabilities, ValidationResult, WorkingCopyData } from '../atoms/workingCopyAtoms.js';
 
 /**
  * Worker validation request

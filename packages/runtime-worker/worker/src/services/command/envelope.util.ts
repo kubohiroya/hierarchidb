@@ -2,7 +2,7 @@
 // Keeps the runtime behavior unchanged; this is a typing utility only.
 
 import type { Timestamp } from '@hierarchidb/common-type';
-import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types';
+import type { CommandEnvelope, CommandKind, EnvelopeInit, PayloadOf } from './registry.types.js';
 
 function randomId(prefix: string): string {
   const g: any = (globalThis as any);

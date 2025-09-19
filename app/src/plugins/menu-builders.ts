@@ -7,8 +7,8 @@
 // @ts-ignore
 import { TreeId } from '@hierarchidb/common-type';
 import pluginDefinitions from 'virtual:plugin-definitions';
-import { getPresentation, prefetchAllIcons } from '~/services/plugin-presentation';
-import { getMenuSpec } from '~/plugins/menu-spec';
+import { getPresentation, prefetchAllIcons } from '~/services/plugin-presentation.js';
+import { getMenuSpec } from '~/plugins/menu-spec.js';
 
 export type TreeContext = 'resources' | 'projects';
 

@@ -4,9 +4,9 @@
  */
 
 // Export handlers
-export { BaseEntityHandler } from './handlers/BaseEntityHandler';
-export { HierarchicalEntityHandler } from './handlers/HierarchicalEntityHandler';
-export type { HierarchicalEntity, HierarchicalSearchCriteria, TreeNode } from './handlers/HierarchicalEntityHandler';
+export { BaseEntityHandler } from './handlers/BaseEntityHandler.js';
+export { HierarchicalEntityHandler } from './handlers/HierarchicalEntityHandler.js';
+export type { HierarchicalEntity, HierarchicalSearchCriteria, TreeNode } from './handlers/HierarchicalEntityHandler.js';
 
 // Export types
 export type {
@@ -14,7 +14,7 @@ export type {
   PaginatedResult,
   EntityLifecycleHooks,
   OperationResult,
-} from './types';
+} from './types.js';
 
 // Plugin definition (for inheritance only)
 export const BasePluginDefinition = {

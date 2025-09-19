@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ProgressEvent } from '@hierarchidb/common-type';
-import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService';
+import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
 

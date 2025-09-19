@@ -184,3 +184,4 @@ e2e-results.json
 e2e-results.xml
 tsup.config.bundled*.mjs
 vitest.config.ts.*.mjs
+/app/build-analysis/

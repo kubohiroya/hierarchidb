@@ -11,7 +11,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { useLinkButton } from './useLinkButton';
+import { useLinkButton } from './useLinkButton.js';
 
 // Toast configuration type (placeholder)
 export interface ToastConfig {

@@ -8,7 +8,7 @@ import React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { BasicInfoFields, CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';
-import type { SpreadsheetCategory } from '../types/category-types';
+import type { SpreadsheetCategory } from '../types/category-types.js';
 
 export interface BasicInfoStepProps {
   data: {

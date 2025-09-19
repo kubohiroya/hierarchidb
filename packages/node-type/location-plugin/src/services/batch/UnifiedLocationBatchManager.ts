@@ -11,10 +11,10 @@ import type {
   StandardProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { LocationBatchSessionManager } from './BatchSessionManager';
-import type { LocationPointInput, LocationTileSettings } from './SessionController';
-import { toStandardProgressEvent } from './ProgressAdapter';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import { LocationBatchSessionManager } from './BatchSessionManager.js';
+import type { LocationPointInput, LocationTileSettings } from './SessionController.js';
+import { toStandardProgressEvent } from './ProgressAdapter.js';
+import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 
 /**
  * Unified location batch manager implementing the standard interface
@@ -23,7 +23,6 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
   private manager: LocationBatchSessionManager;
   // facade is currently unused in this minimal implementation; keep for future
   // compatibility with unified manager factory without exporting in dts.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // Use underscore to mark intentionally unused until unified facade is required by API
   // removed facade to satisfy dts build; can be reintroduced when unified API is wired
 
@@ -92,17 +91,17 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
   onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
     return this.manager.onProgress(sessionId, async (event) => {
       const std: StandardProgressEvent = toStandardProgressEvent(event as any);
-      // Persist lightweight progress snapshot (best-effort)
-      const db = getEphemeralLocationDB();
-      // @ts-ignore
-      await db.table('sessions').update(sessionId, {
-        // store last known percentage and status hint
-        // schema is flexible; no index change required
-        progress: std.percentage,
-        updatedAt: Date.now(),
-        status: std.percentage >= 100 ? 'completed' : 'running',
-      });
       callback(std);
+      // Persist lightweight progress snapshot (best-effort, fire-and-forget)
+      void (async () => {
+          const db = getEphemeralLocationDB();
+          // @ts-ignore
+          await db.table('sessions').update(sessionId, {
+            progress: std.percentage,
+            updatedAt: Date.now(),
+            status: std.percentage >= 100 ? 'completed' : 'running',
+          });
+      })();
     });
   }
 }

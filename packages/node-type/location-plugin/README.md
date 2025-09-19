@@ -29,7 +29,7 @@ OpenStreetMapやGeoNames等のオープンデータソースから、空港、�
 - 💾 **効率的なデータ管理**: IndexedDBによる永続化とキャッシング
 
 ### Tabular Preview（データテーブル）
-- フラグ `LOCATION_TABULAR=1` を有効にすると、バッチ実行後に BatchProgressDialog の「データテーブル」タブで表データを閲覧できます。
+- バッチ実行後に BatchProgressDialog の「データテーブル」タブで表データを閲覧できます。
 - 機能: 複数条件フィルタ（AND）、表示列の切替、`eq` 条件の索引（初回は遅延作成）。
 - 目的: 取り込みデータの確認・軽量検索。ノード群の一括保存/復元は従来の Import/Export を使用してください。
 

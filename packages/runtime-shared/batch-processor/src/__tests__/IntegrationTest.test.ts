@@ -3,17 +3,8 @@
  * Tests that all plugin managers implement the same interface correctly
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-
-// Set feature flag globally for testing
-beforeEach(() => {
-  if (typeof globalThis !== 'undefined') {
-    (globalThis as any).FEATURE_FLAGS = {
-      BATCH_CONTROL_API_V2: true,
-    };
-  }
-});
 
 describe('Unified Batch Manager Integration', () => {
   it('should have unified interface signatures', () => {

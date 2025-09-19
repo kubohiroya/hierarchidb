@@ -19,8 +19,8 @@
       "ES2022"
     ],
     "target": "es2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "jsx": "react-jsx",
     "rootDir": "src"
   },

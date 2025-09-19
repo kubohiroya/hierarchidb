@@ -23,12 +23,12 @@ export declare const SelectField: ({ id, label, value, handleChange, helperText,
     value: string;
     handleChange: (value: string) => void;
     label: string;
-    helperText?: string | undefined;
+    helperText?: string;
     items: {
         name: string;
-        value?: string | undefined;
+        value?: string;
     }[];
-    formLabelProps: Omit<FormLabelProps, 'labelBackground'>;
-    disabled?: boolean | undefined;
+    formLabelProps: Omit<FormLabelProps, "labelBackground">;
+    disabled?: boolean;
 }) => React.ReactElement;
 //# sourceMappingURL=SelectField.d.ts.map

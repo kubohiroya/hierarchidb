@@ -3,8 +3,8 @@
  * @module @hierarchidb/ui-country-select/utils
  */
 
-import type { MatrixColumn, MatrixSelection } from '../types/MatrixColumn';
-import type { Country } from '../types/Country';
+import type { MatrixColumn, MatrixSelection } from '../types/MatrixColumn.js';
+import type { Country } from '../types/Country.js';
 
 /** Export format for selections */
 export interface SelectionExport {

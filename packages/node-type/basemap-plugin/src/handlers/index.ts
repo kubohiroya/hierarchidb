@@ -3,4 +3,4 @@
  * @description Entity handlers exports for BaseMap plugin
  */
 
-export { BaseMapEntityHandler } from './BaseMapEntityHandler';
+export { BaseMapEntityHandler } from './BaseMapEntityHandler.js';

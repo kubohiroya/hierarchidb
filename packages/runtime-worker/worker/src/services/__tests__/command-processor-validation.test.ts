@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CommandProcessor } from '../CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor.js';
 
 // Minimal CoreDB stub to satisfy constructor; not used on validation failure path
 const coreDBStub: any = {};

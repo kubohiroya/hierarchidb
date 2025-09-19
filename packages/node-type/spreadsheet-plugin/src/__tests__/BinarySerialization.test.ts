@@ -12,7 +12,7 @@ import {
   getBinaryFormatInfo,
   measureSerializationPerformance,
   serializeRowsToArrayBuffer,
-} from '../utils';
+} from '../utils/index.js';
 
 describe('Binary Serialization', () => {
   let sampleRows: Array<Record<string, any>>;

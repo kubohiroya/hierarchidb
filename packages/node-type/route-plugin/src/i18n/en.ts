@@ -2,7 +2,7 @@
  * English translations for Route Plugin
  */
 
-import type { RoutePluginTranslations } from './types';
+import type { RoutePluginTranslations } from './types.js';
 
 export const en: RoutePluginTranslations = {
   // Common

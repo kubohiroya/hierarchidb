@@ -2,7 +2,7 @@ import { LoaderFunctionArgs } from 'react-router';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
-import { loadNodeType, LoadNodeTypeArgs } from '~/loader';
+import { loadNodeType, LoadNodeTypeArgs } from '~/loader.js';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   return await loadNodeType(args.params as LoadNodeTypeArgs);

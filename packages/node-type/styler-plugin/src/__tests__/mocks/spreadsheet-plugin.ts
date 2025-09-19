@@ -7,7 +7,7 @@ import type {
   CSVTableListResult,
   CSVTableMetadata,
 } from '@hierarchidb/ui-csv-extract';
-import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
+import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
 import * as XLSX from 'xlsx';
 import * as JSZipNS from 'jszip';
 

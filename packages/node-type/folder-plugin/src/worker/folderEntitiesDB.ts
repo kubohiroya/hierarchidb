@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type DexieConstructor, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
@@ -22,9 +22,14 @@ export type FolderPeerRow = {
   data?: unknown;
   updatedAt?: number;
   displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number };
+  dialogSize?: { width: number; height: number };
 };
 
-export class FolderEntitiesDB extends Dexie {
+type DexieClass = typeof Dexie extends { new (...args: any[]): infer T } ? new (...args: any[]) => T : DexieConstructor;
+const DexieBase = Dexie as unknown as DexieClass;
+
+export class FolderEntitiesDB extends DexieBase {
   peerEntities!: Table<FolderPeerRow, NodeId>;
   groupEntities!: Table<FolderGroupRow, [NodeId, string]>;
   relations!: Table<FolderRelationRow, [NodeId, string, NodeId]>;

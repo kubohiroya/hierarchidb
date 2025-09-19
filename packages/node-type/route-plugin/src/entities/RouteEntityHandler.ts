@@ -13,10 +13,10 @@ import type {
   RoutePoint,
   RouteStatistics,
   TransportMode,
-} from './RouteEntity';
-import { RouteDatabase } from '../database/RouteDatabase';
-import { RouteGenerator } from '../services/RouteGenerator';
-import { LocationResolver } from '../services/LocationResolver';
+} from './RouteEntity.js';
+import { RouteDatabase } from '../database/RouteDatabase.js';
+import { RouteGenerator } from '../services/RouteGenerator.js';
+import { LocationResolver } from '../services/LocationResolver.js';
 
 /**
  * Metadata search criteria
@@ -308,6 +308,107 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
   }
 
   /**
+   * Find the shortest sequence of routes that connects two locations.
+   * Uses Dijkstra's algorithm with route distance as the edge weight.
+   * Returns an empty array when no connecting routes are available.
+   */
+  async getShortestRouteSetBetweenLocations(
+    startLocationId: NodeId,
+    endLocationId: NodeId,
+  ): Promise<RouteEntity[]> {
+    if (startLocationId === endLocationId) {
+      return [];
+    }
+
+    const routes = (await this.table.toArray()) as RouteEntity[];
+    const adjacency = new Map<NodeId, Array<{ to: NodeId; route: RouteEntity; weight: number }>>();
+
+    for (const route of routes) {
+      const start = route.startLocationId;
+      const end = route.endLocationId;
+      if (!start || !end || start === end) {
+        continue;
+      }
+
+      const weight = this.getRouteWeight(route);
+      if (weight === null) {
+        continue;
+      }
+
+      let edges = adjacency.get(start);
+      if (!edges) {
+        edges = [];
+        adjacency.set(start, edges);
+      }
+
+      edges.push({ to: end, route, weight });
+    }
+
+    if (!adjacency.has(startLocationId)) {
+      return [];
+    }
+
+    const distances = new Map<NodeId, number>();
+    const previousNodes = new Map<NodeId, NodeId>();
+    const previousRoutes = new Map<NodeId, RouteEntity>();
+    const visited = new Set<NodeId>();
+    const queue: Array<{ nodeId: NodeId; distance: number }> = [
+      { nodeId: startLocationId, distance: 0 },
+    ];
+
+    distances.set(startLocationId, 0);
+
+    while (queue.length > 0) {
+      queue.sort((a, b) => a.distance - b.distance);
+      const current = queue.shift()!;
+
+      if (visited.has(current.nodeId)) {
+        continue;
+      }
+      visited.add(current.nodeId);
+
+      if (current.nodeId === endLocationId) {
+        break;
+      }
+
+      const edges = adjacency.get(current.nodeId);
+      if (!edges) {
+        continue;
+      }
+
+      for (const edge of edges) {
+        const newDistance = current.distance + edge.weight;
+        if (newDistance < (distances.get(edge.to) ?? Number.POSITIVE_INFINITY)) {
+          distances.set(edge.to, newDistance);
+          previousNodes.set(edge.to, current.nodeId);
+          previousRoutes.set(edge.to, edge.route);
+          queue.push({ nodeId: edge.to, distance: newDistance });
+        }
+      }
+    }
+
+    if (!previousRoutes.has(endLocationId)) {
+      return [];
+    }
+
+    const path: RouteEntity[] = [];
+    let currentNode: NodeId | undefined = endLocationId;
+
+    while (currentNode && currentNode !== startLocationId) {
+      const route = previousRoutes.get(currentNode);
+      const previousNode = previousNodes.get(currentNode);
+      if (!route || !previousNode) {
+        return [];
+      }
+
+      path.push(route);
+      currentNode = previousNode;
+    }
+
+    return path.reverse();
+  }
+
+  /**
    * Get connected routes from a location
    */
   async getConnectedRoutes(locationId: NodeId): Promise<{
@@ -409,6 +510,83 @@ export class RouteEntityHandler extends BaseEntityHandler<RouteEntity, Partial<R
    */
 
   // Note: uses base search (name/createdAt/updatedAt). Route-specific criteria can be added later.
+
+  private getRouteWeight(route: RouteEntity): number | null {
+    if (typeof route.distance === 'number' && Number.isFinite(route.distance) && route.distance >= 0) {
+      return route.distance;
+    }
+
+    if (route.lineGeometry && route.lineGeometry.length >= 2) {
+      const lineDistance = this.calculateLineGeometryDistance(route.lineGeometry);
+      if (lineDistance > 0) {
+        return lineDistance;
+      }
+    }
+
+    const coordinatePath: [number, number][] = [];
+    if (route.startPoint?.coordinates) {
+      coordinatePath.push(route.startPoint.coordinates);
+    }
+    if (route.waypoints?.length) {
+      for (const waypoint of route.waypoints) {
+        if (waypoint?.coordinates) {
+          coordinatePath.push(waypoint.coordinates);
+        }
+      }
+    }
+    if (route.endPoint?.coordinates) {
+      coordinatePath.push(route.endPoint.coordinates);
+    }
+
+    if (coordinatePath.length >= 2) {
+      const fallbackDistance = this.calculateLineGeometryDistance(coordinatePath);
+      if (fallbackDistance > 0) {
+        return fallbackDistance;
+      }
+    }
+
+    return null;
+  }
+
+  private calculateLineGeometryDistance(line: [number, number][]): number {
+    let total = 0;
+
+    for (let i = 0; i < line.length - 1; i++) {
+      const current = line[i];
+      const next = line[i + 1];
+      if (!current || !next) {
+        continue;
+      }
+
+      total += this.calculateDistance(current, next);
+    }
+
+    return total;
+  }
+
+  private calculateDistance(
+    point1: [number, number],
+    point2: [number, number],
+  ): number {
+    const R = 6371000; // Earth radius in meters
+
+    const lat1 = this.toRadians(point1[1]);
+    const lat2 = this.toRadians(point2[1]);
+    const deltaLat = this.toRadians(point2[1] - point1[1]);
+    const deltaLon = this.toRadians(point2[0] - point1[0]);
+
+    const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  private toRadians(degrees: number): number {
+    return degrees * (Math.PI / 180);
+  }
 
   /**
    * Clean up route-specific data

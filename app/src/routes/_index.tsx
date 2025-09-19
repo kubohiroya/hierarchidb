@@ -5,9 +5,9 @@ import { type TreeConfig, TreeToggleButtonGroup } from '@hierarchidb/ui-core';
 import { AccountTree, Folder } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 import { useCallback, useEffect, useState } from 'react';
-import { useAppConfig } from '../contexts/AppConfigContext';
+import { useAppConfig } from '../contexts/AppConfigContext.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { TitleLogo } from '../components/TitleLogo';
+import { TitleLogo } from '../components/TitleLogo.js';
 import { TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 
 // Temporary type definition until TreeToggleButtonGroup is available
@@ -103,7 +103,6 @@ export default function Index() {
       const savedPageNodeId = getSavedPageNodeId(treeId) || '';
       const path1 = savedPageNodeId ? `/${treeId}/${savedPageNodeId}` : `/${treeId}`;
       const path = `t${path1}`;
-      console.log(path);
       navigate(path);
     },
     [navigate, getSavedPageNodeId],

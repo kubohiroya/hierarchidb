@@ -1,8 +1,8 @@
 import { generateNodeId, NodeBase, NodeId, NodeType, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-type';
-import type { CommandResult } from './command-types';
-import { WorkerErrorCode } from './command-types';
-import type { CoreDB } from './CoreDB';
-import { encodeWorkingCopyHolderName } from './utils/holder-encoding';
+import type { CommandResult } from './command-types.js';
+import { WorkerErrorCode } from './command-types.js';
+import type { CoreDB } from './CoreDB.js';
+import { encodeWorkingCopyHolderName } from './utils/holder-encoding.js';
 
 export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
   // Align with CoreDB root id convention: `${treeId}:workingCopy`
@@ -116,7 +116,7 @@ export async function createDraftWorkingCopyGetOrCreate(
     const ex: any = existing;
     if (!ex.holderType || !ex.holderTargetId || !ex.holderMetaParentId) {
       try {
-        const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding');
+        const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
         const parsed = decodeWorkingCopyHolderName(ex.name as string);
         ex.holderType = 'workingCopy';
         ex.holderTargetId = parsed.targetNodeId;
@@ -221,21 +221,17 @@ export async function createWorkingCopyFromNode(
 
   coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
 
-  // Notify lifecycle to copy Peer original->wc (behind-the-flag)
   try {
-    const { FEATURE_FLAGS } = await import('../config/feature-flags');
-    if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
-      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
-      const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
-      await lifecycle.handleCommand({
-        commandId: crypto.randomUUID() as any,
-        groupId: crypto.randomUUID() as any,
-        kind: 'createWorkingCopy' as any,
-        payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
-        issuedAt: Date.now() as any,
-        type: 'createWorkingCopy' as any,
-      } as any);
-    }
+    const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
+    const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
+    await lifecycle.handleCommand({
+      commandId: crypto.randomUUID() as any,
+      groupId: crypto.randomUUID() as any,
+      kind: 'createWorkingCopy' as any,
+      payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
+      issuedAt: Date.now() as any,
+      type: 'createWorkingCopy' as any,
+    } as any);
   } catch {
   }
 
@@ -243,7 +239,7 @@ export async function createWorkingCopyFromNode(
 }
 
 // V2 commit result types (non-breaking: new API)
-export type CommitOk = { status: 'ok'; autoRenameTo?: string };
+export type CommitOk = { status: 'ok'; nodeId: NodeId; autoRenameTo?: string };
 export type CommitConflict = { status: 'COMMIT_CONFLICT'; originalVersion: number; wcVersion: number };
 export type NameConflict = { status: 'NAME_CONFLICT'; suggestedName: string };
 export type CommitResultV2 = CommitOk | CommitConflict | NameConflict;
@@ -270,7 +266,7 @@ export async function commitWorkingCopyV2(
   let targetNodeId = (holder as any).holderTargetId as NodeId | undefined;
   if (!targetParentNodeId || !targetNodeId) {
     try {
-      const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding');
+      const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
       const parsed = decodeWorkingCopyHolderName((holder as any).name as string);
       targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
       targetNodeId = targetNodeId ?? parsed.targetNodeId;
@@ -309,7 +305,7 @@ export async function commitWorkingCopyV2(
 
     // Cleanup WC (holder + child)
     await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
-    const ok: CommitOk = { status: 'ok' };
+    const ok: CommitOk = { status: 'ok', nodeId: targetNodeId };
     if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;
     return ok;
   }
@@ -337,7 +333,7 @@ export async function commitWorkingCopyV2(
   });
 
   await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
-  const ok: CommitOk = { status: 'ok' };
+  const ok: CommitOk = { status: 'ok', nodeId: targetNodeId };
   if (nameConflicts && onNameConflict === 'auto-rename') ok.autoRenameTo = finalName;
   return ok;
 }
@@ -467,21 +463,18 @@ export async function discardWorkingCopy(
   await coreDB.nodes.bulkDelete(workingCopyNodeIdPair);
   // workingCopyNodeIdPair = [holderId, wcId]; inform lifecycle to drop wc peer
   try {
-    const { FEATURE_FLAGS } = await import('../config/feature-flags');
-    if ((FEATURE_FLAGS as any).WORKER_ENTITY_UNIFIED) {
-      const wcId = workingCopyNodeIdPair?.[1];
-      if (wcId) {
-        const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager');
-        const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
-        await lifecycle.handleCommand({
-          commandId: crypto.randomUUID() as any,
-          groupId: crypto.randomUUID() as any,
-          kind: 'discardWorkingCopy' as any,
-          payload: { workingCopyId: wcId },
-          issuedAt: Date.now() as any,
-          type: 'discardWorkingCopy' as any,
-        } as any);
-      }
+    const wcId = workingCopyNodeIdPair?.[1];
+    if (wcId) {
+      const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
+      const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
+      await lifecycle.handleCommand({
+        commandId: crypto.randomUUID() as any,
+        groupId: crypto.randomUUID() as any,
+        kind: 'discardWorkingCopy' as any,
+        payload: { workingCopyId: wcId },
+        issuedAt: Date.now() as any,
+        type: 'discardWorkingCopy' as any,
+      } as any);
     }
   } catch {
   }

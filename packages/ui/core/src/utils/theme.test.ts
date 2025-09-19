@@ -10,7 +10,7 @@ import {
   getThemeIcon,
   getThemeTextColor,
   type ThemeMode,
-} from './theme';
+} from './theme.js';
 
 describe('Theme Utilities', () => {
   //  : windowlocalStoragematchMedia

@@ -7,9 +7,9 @@
  * 4.
   */
 
-import type { BaseShapeError } from '../types/ShapeErrorHierarchy';
-import { ErrorCategory } from '../types/ShapeErrorHierarchy';
-import type { BatchConfig } from '../types/BatchConfig';
+import type { BaseShapeError } from '../types/ShapeErrorHierarchy.js';
+import { ErrorCategory } from '../types/ShapeErrorHierarchy.js';
+import type { BatchConfig } from '../types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-type';
 
 // ========================================

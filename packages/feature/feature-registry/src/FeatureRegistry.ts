@@ -1,4 +1,4 @@
-import type { FeatureContext, FeatureDefinition, FeatureManifest } from './types';
+import type { FeatureContext, FeatureDefinition, FeatureManifest } from './types.js';
 
 export class FeatureRegistry {
   private defs = new Map<string, FeatureDefinition>();

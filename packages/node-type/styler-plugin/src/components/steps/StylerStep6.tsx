@@ -8,9 +8,9 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { Alert, AlertTitle, Box } from '@mui/material';
-import { StylerTablePreview } from '../../components/step6/StylerTablePreview';
-import type { StylerConfig } from '../../types/stylerTypes';
-import { StylerConfigDefault } from '../../types/stylerTypes';
+import { StylerTablePreview } from '../../components/step6/StylerTablePreview.js';
+import type { StylerConfig } from '../../types/stylerTypes.js';
+import { StylerConfigDefault } from '../../types/stylerTypes.js';
 
 /**
   * : Step6

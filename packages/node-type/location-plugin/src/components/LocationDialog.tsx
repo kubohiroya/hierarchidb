@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import { notify } from '@hierarchidb/ui-core';
-import type { LocationDialogProps, LocationWorkingCopy } from '../types';
+import type { LocationDialogProps, LocationWorkingCopy } from '../types/index.js';
 import { useWorkingCopy } from '@hierarchidb/ui-core';
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({

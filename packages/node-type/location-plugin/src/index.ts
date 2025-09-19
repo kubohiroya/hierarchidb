@@ -2,23 +2,23 @@
  * Location Plugin Entry Point
  */
 
-export * from './types';
-export type { CreateLocationData } from './entities/LocationEntityHandler';
-export * from './entities/LocationEntityHandler';
+export * from './types/index.js';
+export type { CreateLocationData } from './entities/LocationEntityHandler.js';
+export * from './entities/LocationEntityHandler.js';
 export { TabularQueryService as LocationTableQueryService } from '@hierarchidb/tabular-store';
-export * from './components/LocationDialog';
-export * from './components/LocationPanel';
-export * from './components/ui/SelectionMatrix';
-export * from './components/steps/LocationSelectionStep';
-export * from './components/batch/BatchProgressDialog';
-export * from './components/batch/LocationMapPreview';
+export * from './components/LocationDialog.js';
+export * from './components/LocationPanel.js';
+export * from './components/ui/SelectionMatrix.js';
+export * from './components/steps/LocationSelectionStep.js';
+export * from './components/batch/BatchProgressDialog.js';
+export * from './components/batch/LocationMapPreview.js';
 
 // Unified Batch Control API (API v2)
-export * from './services/batch/UnifiedLocationBatchManager';
-export { LocationBatchSessionManager } from './services/batch/BatchSessionManager';
-export { registerLocationRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker';
-export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults, registerLocationAuthNotifier } from './services/download/registry';
-export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService';
+export * from './services/batch/UnifiedLocationBatchManager.js';
+export { LocationBatchSessionManager } from './services/batch/BatchSessionManager.js';
+export { registerLocationRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
+export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults, registerLocationAuthNotifier } from './services/download/registry.js';
+export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 
 // Import and re-export the plugin definition
 // Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
@@ -59,7 +59,7 @@ export const runtimeWiring = {
   },
   registerRuntimeWorkerAdapters: async () => {
     try {
-      const mod = await import('./services/batch/adapters/registerRuntimeWorker');
+      const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
       await mod.registerLocationRuntimeWorkerAdapters();
     } catch { /* noop */ }
   },

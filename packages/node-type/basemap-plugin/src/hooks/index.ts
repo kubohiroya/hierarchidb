@@ -1,2 +1,2 @@
-export * from './useBaseMapEntity';
+export * from './useBaseMapEntity.js';
 

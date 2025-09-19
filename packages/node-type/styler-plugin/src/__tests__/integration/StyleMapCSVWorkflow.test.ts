@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
-import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager';
+import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
 
 // Mock hashUtils
 vi.mock('../../utils/hashUtils', () => ({

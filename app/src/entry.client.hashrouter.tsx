@@ -1,24 +1,24 @@
 import { startTransition, StrictMode, useEffect } from 'react';
 // Dev health overlay (dev only)
-if (import.meta.env.DEV) import('./dev-health-client');
+if (import.meta.env.DEV) import('./dev-health-client.js');
 import { createRoot } from 'react-dom/client';
 import type { RouteObject } from 'react-router-dom';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
-import routes from './routes';
+import routes from './routes.js';
 import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
-import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider';
-import { AppConfigProvider } from './contexts/AppConfigContext';
+import { BootProgressProvider, StageGate } from './contexts/BootProgressProvider.js';
+import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
-import { AppThemeProvider } from './components/AppThemeProvider';
-import { registerTableStateCleanupEvents } from './shared/table-state';
-import { LanguageEventsBridge } from './components/LanguageEventsBridge';
+import { AppThemeProvider } from './components/AppThemeProvider.js';
+import { registerTableStateCleanupEvents } from './shared/table-state.js';
+import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
 import { NotificationSystem } from '@hierarchidb/ui-core';
-import { WorkerProvider } from './contexts/WorkerProvider';
-import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIReadyReporter, I18nReadyReporter, AuthReadyReporter } from './init/InitReporters';
+import { WorkerProvider } from './contexts/WorkerProvider.js';
+import { WorkerProgressReporter, ConfigReadyReporter, ThemeReadyReporter, UIReadyReporter, I18nReadyReporter, AuthReadyReporter } from './init/InitReporters.js';
 
 //  HashRouter
 //  GitHub Pages

@@ -1,1 +1,1 @@
-export * from './WindowState';
+export * from './WindowState.js';

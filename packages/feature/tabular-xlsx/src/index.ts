@@ -1,5 +1,5 @@
 import { registerParser } from '@hierarchidb/tabular/registry';
-import { xlsxParser } from './xlsxParser';
+import { xlsxParser } from './xlsxParser.js';
 
 export function installTabularXlsx(): void {
   registerParser(xlsxParser);

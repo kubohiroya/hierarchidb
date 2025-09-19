@@ -1,4 +1,4 @@
-import type { TabularParserPort } from '../ports';
+import type { TabularParserPort } from '../ports.js';
 import type {
   DetectionResult,
   FileLike,
@@ -6,7 +6,7 @@ import type {
   TabularChunk,
   TabularParseResult,
   TabularPreview,
-} from '../types';
+} from '../types.js';
 
 async function toText(input: FileLike, encoding?: string): Promise<string> {
   if (typeof input === 'string') return input;

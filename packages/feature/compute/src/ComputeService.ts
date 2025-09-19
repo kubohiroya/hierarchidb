@@ -1,5 +1,5 @@
-import { WorkerPool, type WorkerPoolOptions } from './WorkerPool';
-import type { TaskHandle, TaskSpec } from './types';
+import { WorkerPool, type WorkerPoolOptions } from './WorkerPool.js';
+import type { TaskHandle, TaskSpec } from './types.js';
 
 export class ComputeService {
   private pool: WorkerPool;

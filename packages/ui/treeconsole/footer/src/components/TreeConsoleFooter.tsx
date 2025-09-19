@@ -5,7 +5,7 @@
 
 import { Box, IconButton, Typography } from '@mui/material';
 import { HelpOutline } from '@mui/icons-material';
-import type { TreeConsoleFooterProps } from '../types';
+import type { TreeConsoleFooterProps } from '../types.js';
 
 /**
   * TreeConsoleFooter

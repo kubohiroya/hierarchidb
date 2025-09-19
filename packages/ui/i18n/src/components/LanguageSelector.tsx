@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
-import type { LanguageConfig } from '../provider/LanguageProvider';
-import { useLanguage } from '../provider/LanguageProvider';
+import type { LanguageConfig } from '../provider/LanguageProvider.js';
+import { useLanguage } from '../provider/LanguageProvider.js';
 
 export interface LanguageSelectorProps {
   variant?: 'dropdown' | 'buttons' | 'compact';

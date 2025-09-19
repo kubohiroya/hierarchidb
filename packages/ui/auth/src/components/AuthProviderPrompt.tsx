@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { AuthProviderType } from '../types/AuthProviderType';
-import { AuthProviderOptions } from './AuthProviderOptions';
+import { AuthProviderType } from '../types/AuthProviderType.js';
+import { AuthProviderOptions } from './AuthProviderOptions.js';
 
 interface AuthProviderPromptProps {
   isLoadingAuth: boolean;

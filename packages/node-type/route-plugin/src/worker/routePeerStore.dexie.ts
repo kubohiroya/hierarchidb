@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { RouteEntitiesDB, RoutePeerRow } from './routeEntitiesDB';
+import type { RouteEntitiesDB, RoutePeerRow } from './routeEntitiesDB.js';
 
 export function createRoutePeerStoreDexie(db: RouteEntitiesDB): PeerStore<any> {
   return {

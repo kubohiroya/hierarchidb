@@ -1,11 +1,16 @@
-import { createTsupConfig } from "../../../tsup.base.config";
+import { createTsupConfig } from "../../../tsup.base.config.js";
 
 export default createTsupConfig({
-  entry: [
-    "src/index.ts",
-    "src/services/index.ts",
-  ],
-  dts: false,
+  entry: {
+    index: 'src/index.ts',
+    'services/index': 'src/services/index.ts',
+  },
+  dts: {
+    entry: {
+      index: 'src/index.ts',
+      'services/index': 'src/services/index.ts',
+    },
+  },
   external: [
     // Peer/runtime libs explicitly externalized to satisfy dep-fence
     'dexie',

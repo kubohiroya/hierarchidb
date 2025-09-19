@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RouteBatchManager } from '../../src/services/RouteBatchManager';
+import { RouteBatchManager } from '../../src/services/RouteBatchManager.js';
 
 describe('RouteBatchManager idempotency', () => {
   it('returns the same sessionId for identical input payload', async () => {

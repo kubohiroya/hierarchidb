@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
-import { DataSourceLicenseAgreement } from './DataSourceLicenseAgreement';
-import { DataSourceName, getDataSourceConfig } from '../types/DataSource';
+import { DataSourceLicenseAgreement } from './DataSourceLicenseAgreement.js';
+import { DataSourceName, getDataSourceConfig } from '../types/DataSource.js';
 
 export interface DataSourceLicenseStepProps {
   selectedDataSource: DataSourceName;

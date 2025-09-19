@@ -18,7 +18,7 @@ import type {
   PluginUsageStats,
   TimePeriod,
   TreePluginInfo,
-} from '../src/PluginTreeAPI';
+} from '../src/PluginTreeAPI.js';
 import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-type';
 
 describe('PluginTreeAPI - TDD Green Phase', () => {

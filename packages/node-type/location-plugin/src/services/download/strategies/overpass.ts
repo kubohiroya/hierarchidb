@@ -1,5 +1,5 @@
-import type { ILocationDownloadStrategy } from '../types';
-import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity';
+import type { ILocationDownloadStrategy } from '../types.js';
+import type { LocationEntity, LocationSearchConfig } from '../../../entities/LocationEntity.js';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';
@@ -16,7 +16,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       return [];
     }
     try {
-      const { authFetch } = await import('../../utils/authFetch');
+      const { authFetch } = await import('../../utils/authFetch.js');
       const res = await authFetch(endpoint, {
         method: 'POST',
         body: query,

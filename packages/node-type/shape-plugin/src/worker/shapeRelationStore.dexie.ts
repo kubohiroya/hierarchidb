@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { ShapeEntitiesDB, ShapeRelationRow } from './shapeEntitiesDB';
+import type { ShapeEntitiesDB, ShapeRelationRow } from './shapeEntitiesDB.js';
 
 type Rel = RelationBase<{ weight?: number }>;
 

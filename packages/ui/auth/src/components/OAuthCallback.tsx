@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BFFAuthService } from '../services/BFFAuthService';
+import { BFFAuthService } from '../services/BFFAuthService.js';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 
 export const OAuthCallback: React.FC = () => {

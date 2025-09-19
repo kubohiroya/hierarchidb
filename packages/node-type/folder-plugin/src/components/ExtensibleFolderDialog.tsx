@@ -1,13 +1,18 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Grid, TextField } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import { type DialogStep, MultiStepDialog } from '@hierarchidb/ui-dialog';
-import type { StepStateEvaluator } from '@hierarchidb/ui-dialog';
-import { folderExtensionRegistry } from '../api/FolderExtensionAPI';
+import {
+  type DialogStep,
+  type StepStateEvaluator,
+  HeadlessMultiStepDialog,
+  type HeadlessMultiStepDialogProps,
+  type StepNavigationEvent,
+} from '@hierarchidb/ui-dialog';
+import { folderExtensionRegistry } from '../api/FolderExtensionAPI.js';
 import { useDialogUrlSync } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type { DialogStepDefinition, StepValidation, ValidationResult } from '@hierarchidb/common-type';
 import { NodeId } from '@hierarchidb/common-type';
-import type { FolderCreateData, FolderDisplayData, FolderEditData } from '../types';
+import type { FolderCreateData, FolderDisplayData, FolderEditData } from '../types.js';
 
 // IconGroupSettings is exported by deprecated components; import type via that module if needed
 export type IconGroupSettings = {
@@ -327,20 +332,15 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   // Determine base-dialog title
   const dialogTitle = title || (mode === 'create' ? 'Create New Folder' : 'Edit Folder');
 
-  // Combine title with icon for display
-  const displayTitle = (
-    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      {icon}
-      {dialogTitle}
-    </span>
-  );
-
   // 拡張データに地図パラメータを含める
   const [formData, setFormData] = useState<any>(() => {
     const data: any = { ...initialData };
     return data;
   });
   const [formErrors, setFormErrors] = useState<string[] | undefined>(undefined);
+  const hasUnsavedChanges = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(initialData);
+  }, [formData, initialData]);
 
   // Ensure we start at step 0 when the dialog opens (avoid leaking URL state across tests/routes)
   React.useLayoutEffect(() => {
@@ -493,58 +493,111 @@ export const ExtensibleFolderDialog: React.FC<ExtensibleFolderDialogProps> = ({
   }, [allSteps, formData]);
 
   // === Submit eligibility (compose: host default AND all plugin guards) ===
-  const evaluateSubmit = useCallback(async (data: any): Promise<boolean> => {
-    // Host default: re-validate all steps that define validation
-    for (const def of allSteps) {
-      if (def.validation?.validate) {
-        try {
-          const r = await def.validation.validate(data);
-          const ok = typeof r === 'boolean' ? r : ('isValid' in (r as any) ? (r as any).isValid : ('valid' in (r as any) ? (r as any).valid : true));
-          if (!ok) return false;
-        } catch {
-          return false;
-        }
-      }
-    }
+  const navigableSteps = useMemo(() => stepStateEvaluator.getNavigableSteps(formData), [stepStateEvaluator, formData]);
+  const filledSteps = useMemo(() => stepStateEvaluator.getFilledSteps(formData), [stepStateEvaluator, formData]);
+  const enabledStepIndices = useMemo(() => (
+    (navigableSteps || []).reduce<number[]>((acc, allow, idx) => {
+      if (allow) acc.push(idx);
+      return acc;
+    }, [])
+  ), [navigableSteps]);
+  const validatedStepIndices = useMemo(() => (
+    (filledSteps || []).reduce<number[]>((acc, valid, idx) => {
+      if (valid) acc.push(idx);
+      return acc;
+    }, [])
+  ), [filledSteps]);
+  const committableStepIndices = useMemo(() => (
+    stepsForUi.length ? [stepsForUi.length - 1] : []
+  ), [stepsForUi.length]);
 
-    // Plugin guards
-    const guards = folderExtensionRegistry.getSubmitEvaluators();
-    for (const g of guards) {
-      try {
-        const ok = await Promise.resolve(g(data));
-        if (!ok) return false;
-      } catch {
-        return false;
-      }
+  const invalidMessageMap = useMemo(() => {
+    if (!formErrors || formErrors.length === 0) return {};
+    const stepId = stepsForUi[activeStep]?.id ?? String(activeStep);
+    return { [stepId]: formErrors.join('\n') } as Record<string, string>;
+  }, [formErrors, stepsForUi, activeStep]);
+
+  const handleNavigate = useCallback((event: StepNavigationEvent) => {
+    switch (event.type) {
+      case 'direct':
+        setActiveStep(event.targetIndex);
+        break;
+      case 'next':
+        setActiveStep((prev) => Math.min(prev + 1, stepsForUi.length - 1));
+        break;
+      case 'back':
+        setActiveStep((prev) => Math.max(prev - 1, 0));
+        break;
     }
-    return true;
-  }, [allSteps]);
+  }, [stepsForUi.length]);
+
+  const renderHeader = useCallback<HeadlessMultiStepDialogProps<any>['renderHeader']>((props) => {
+    return (
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
+        {icon}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600 }}>{dialogTitle}</div>
+          <small style={{ color: '#64748b' }}>
+            Step {props.activeStepIndex + 1} / {stepsForUi.length}
+          </small>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" onClick={() => handleNavigate({ type: 'back' })} disabled={props.activeStepIndex === 0}>Back</button>
+          <button type="button" onClick={() => handleNavigate({ type: 'next' })} disabled={props.activeStepIndex >= stepsForUi.length - 1}>Next</button>
+        </div>
+      </header>
+    );
+  }, [dialogTitle, icon, handleNavigate, stepsForUi.length]);
+
+  const renderContent = useCallback<HeadlessMultiStepDialogProps<any>['renderContent']>((props) => {
+    const stepNode = stepsForUi[props.activeStepIndex]?.component;
+    const currentErrors = invalidMessageMap[stepsForUi[props.activeStepIndex]?.id ?? ''];
+    return (
+      <div style={{ padding: 16 }}>
+        {stepNode}
+        {currentErrors && (
+          <div style={{ marginTop: 12, color: '#d32f2f' }}>{currentErrors}</div>
+        )}
+      </div>
+    );
+  }, [stepsForUi, invalidMessageMap]);
+
+  const renderFooter = useCallback<HeadlessMultiStepDialogProps<any>['renderFooter']>((props) => {
+    const canSubmit = filledSteps?.every(Boolean) ?? true;
+    return (
+      <footer style={{ padding: '12px 16px', borderTop: '1px solid #dde1eb', display: 'flex', justifyContent: 'space-between' }}>
+        <button type="button" onClick={handleClose}>Cancel</button>
+        <button type="button" onClick={() => props.onRequestCommit?.()} disabled={!canSubmit}>
+          Complete
+        </button>
+      </footer>
+    );
+  }, [handleClose, filledSteps]);
 
   return (
-    <MultiStepDialog
+    <HeadlessMultiStepDialog
       open={open}
-      mode={mode}
-      title={dialogTitle}
-      icon={icon}
-      steps={stepsForUi}
-      currentData={formData}
-      evaluateSteps={stepStateEvaluator}
-      evaluateSubmit={evaluateSubmit}
-      activeStep={activeStep}
-      onStepChange={setActiveStep}
-      nonLinear={true}
+      stepComponents={stepsForUi.map((step) => ({ id: step.id, label: step.label ?? step.id, component: () => null }))}
+      stepData={formData}
+      onStepDataChange={() => undefined}
+      activeStepIndex={activeStep}
+      onStepNavigate={handleNavigate}
+      enabledStepIndices={enabledStepIndices}
+      validatedStepIndices={validatedStepIndices}
+      committableStepIndices={committableStepIndices}
+      invalidMessageMap={invalidMessageMap}
+      onRequestClose={() => handleClose()}
+      onRequestCommit={() => handleSubmit(formData)}
+      isDirty={hasUnsavedChanges}
       displayMode={displayMode}
       onDisplayModeChange={(m) => {
-        // URL と永続化の同期
         if (m === 'fullscreen') setMode('full'); else setMode('normal');
         setDisplayMode(m);
         persistDisplayMode(m);
       }}
-      onSubmit={() => handleSubmit(formData)}
-      onCancel={handleClose}
-      submitText="Complete"
-      showFullscreenToggle={true}
-      showMaximizeToggle={true}
+      renderHeader={renderHeader}
+      renderContent={renderContent}
+      renderFooter={renderFooter}
     />
   );
 };

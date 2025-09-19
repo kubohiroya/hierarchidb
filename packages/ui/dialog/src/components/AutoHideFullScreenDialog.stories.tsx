@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { AutoHideFullScreenDialog } from './AutoHideFullScreenDialog';
+import { AutoHideFullScreenDialog } from './AutoHideFullScreenDialog.js';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import { Edit as EditIcon, Info as InfoIcon, Save as SaveIcon } from '@mui/icons-material';
 
 const meta = {
-  title: 'UI Dialog/AutoHideFullScreenDialog',
+  title: 'ui/legacy-dialog/AutoHideFullScreenDialog',
   component: AutoHideFullScreenDialog,
   parameters: {
     layout: 'fullscreen',
@@ -15,7 +15,7 @@ const meta = {
       },
     },
   },
-  tags: ['autodocs'],
+  tags: ['autodocs', 'deprecated'],
   argTypes: {
     title: {
       control: 'text',

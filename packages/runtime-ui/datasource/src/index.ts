@@ -4,14 +4,14 @@ export {
   DataSourceLicenseAgreement,
   DataSourceSelectionStep,
   DataSourceLicenseStep,
-} from './components';
+} from './components/index.js';
 
 export type {
   DataSourceSelectorProps,
   DataSourceLicenseAgreementProps,
   DataSourceSelectionStepProps,
   DataSourceLicenseStepProps,
-} from './components';
+} from './components/index.js';
 
 // Services
 export {
@@ -20,7 +20,7 @@ export {
   NaturalEarthStrategy,
   GeoBoundariesStrategy,
   OpenStreetMapStrategy,
-} from './services/DataSourceManager';
+} from './services/DataSourceManager.js';
 
 export type {
   DataSourceStrategy,
@@ -29,7 +29,7 @@ export type {
   ValidationResult,
   BoundingBox,
   DataSourceInfo,
-} from './services/DataSourceManager';
+} from './services/DataSourceManager.js';
 
 // Types and utilities
 export {
@@ -38,7 +38,7 @@ export {
   getDataSourcesByCategory,
   getLicenseColor,
   extractLimitations,
-} from './types/DataSource';
+} from './types/DataSource.js';
 
 export type {
   DataSourceName,
@@ -46,4 +46,4 @@ export type {
   LicenseType,
   UsageType,
   DataSourceConfig,
-} from './types/DataSource';
+} from './types/DataSource.js';

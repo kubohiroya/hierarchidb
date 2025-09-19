@@ -8,7 +8,9 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-type';
+import type { SubTreeChanges } from '../state/features/subscription.atoms.js';
+import { coalesceBatches } from './mergeUtils.js';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
   lastUpdateTimestampAtom,
@@ -17,28 +19,12 @@ import {
   subscriptionDepthAtom,
   subscriptionIdAtom,
   tableDataAtom,
-} from '../state';
+} from '../state/index.js';
 
 /**
   * SubTree
   */
-export interface SubTreeChanges {
-  added?: TreeNode[];
-  updated?: Array<{
-    nodeId: string;
-    changes: Partial<TreeNode>;
-  }>;
-  removed?: string[];
-  moved?: Array<{
-    nodeId: string;
-    oldParentId: string;
-    newParentId: string;
-    oldIndex: number;
-    newIndex: number;
-  }>;
-  timestamp: number;
-  version?: number;
-}
+// SubTreeChanges type is provided by state/features to avoid duplication
 
 export interface SubscriptionOrchestratorResult {
   // State
@@ -67,7 +53,8 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
 
   // Refs for batching
   const updateBatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const subscriptionRef = useRef<any>(null);
+  // Holds an unsubscribe function returned by subscription API
+  const subscriptionRef = useRef<(() => void) | null>(null);
 
   /**
             */
@@ -76,33 +63,38 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       let mergedData = [...tableData];
 
       updates.forEach((update) => {
-        if (update.added) {
-          const existingIds = new Set(mergedData.map((n) => n.id));
-          const newNodes = update.added.filter((n) => !existingIds.has(n.id));
-          mergedData = [...mergedData, ...newNodes];
+        const idxMap = new Map(mergedData.map((n, i) => [n.id, i] as const));
+
+        if (update.removed && update.removed.length) {
+          const removed = new Set(update.removed);
+          mergedData = mergedData.filter((n) => !removed.has(n.id));
+          for (const id of removed) idxMap.delete(id as NodeId);
         }
 
-        if (update.updated) {
-          update.updated.forEach(({ nodeId, changes }) => {
-            const index = mergedData.findIndex((node) => node.id === nodeId);
-            if (index !== -1) {
-              mergedData[index] = { ...mergedData[index], ...changes } as TreeNode;
+        if (update.added && update.added.length) {
+          for (const n of update.added) {
+            const id = n.id as NodeId;
+            const i = idxMap.get(id);
+            const flat = n as unknown as TreeNode;
+            if (i != null) mergedData[i] = { ...mergedData[i], ...flat } as TreeNode;
+            else { mergedData.push(flat); idxMap.set(id, mergedData.length - 1); }
+          }
+        }
+
+        if (update.updated && update.updated.length) {
+          for (const { nodeId, changes } of update.updated) {
+            const i = idxMap.get(nodeId as NodeId);
+            if (i != null) mergedData[i] = { ...mergedData[i], ...(changes as Partial<TreeNode>) } as TreeNode;
+          }
+        }
+
+        if (update.moved && update.moved.length) {
+          for (const move of update.moved) {
+            const i = idxMap.get(move.nodeId as NodeId);
+            if (i != null) {
+              mergedData[i] = { ...mergedData[i], parentId: move.newParentId as NodeId } as TreeNode;
             }
-          });
-        }
-
-        if (update.removed) {
-          const removedSet = new Set(update.removed);
-          mergedData = mergedData.filter((node) => !removedSet.has(node.id!));
-        }
-
-        if (update.moved) {
-          update.moved.forEach((move) => {
-            const node = mergedData.find((n) => n.id === move.nodeId);
-            if (node) {
-              node.parentId = move.newParentId as NodeId;
-            }
-          });
+          }
         }
       });
 
@@ -114,32 +106,18 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
   /**
       * SubTree
       */
-  const handleSubTreeUpdate = useCallback(
-    (changes: SubTreeChanges) => {
-      setLastUpdateTimestamp(changes.timestamp);
-
-      //  : 100ms
-      setPendingUpdates((prev) => [...prev, changes]);
-
-      if (updateBatchTimerRef.current) {
-        clearTimeout(updateBatchTimerRef.current);
-      }
-
-      updateBatchTimerRef.current = setTimeout(() => {
-        processPendingUpdates();
-      }, 100);
-    },
-    [setLastUpdateTimestamp, setPendingUpdates],
-  );
-
-  /**
-            */
   const processPendingUpdates = useCallback(() => {
+    const t0 = performance.now?.() ?? Date.now();
     setPendingUpdates((pending) => {
       if (pending.length === 0) return [];
-
-      const mergedData = mergeUpdates(pending);
+      const batch = coalesceBatches(pending);
+      const mergedData = mergeUpdates([batch]);
       setTableData(mergedData);
+
+      const dt = (performance.now?.() ?? Date.now()) - t0;
+      if (pending.length > 200 || dt > 200) {
+        console.warn('[Subscription] heavy batch', { count: pending.length, ms: Math.round(dt) });
+      }
 
       return [];
     });
@@ -153,6 +131,37 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
   /**
       * SubTree
       */
+  // Forward declaration binding with function expression below
+  let scheduleProcess: () => void;
+
+  scheduleProcess = useCallback(() => {
+    if (updateBatchTimerRef.current) {
+      clearTimeout(updateBatchTimerRef.current);
+    }
+    const batchDelay = (() => {
+      try { const v = (globalThis as any)?.FEATURE_FLAGS?.SUBSCRIPTION_BATCH_MS; if (v != null) return Number(v) || 100; } catch {}
+      return 100;
+    })();
+    updateBatchTimerRef.current = setTimeout(() => {
+      processPendingUpdates();
+    }, batchDelay);
+  }, [processPendingUpdates]);
+
+  const handleSubTreeUpdate = useCallback(
+    (changes: SubTreeChanges) => {
+      setLastUpdateTimestamp(Date.now());
+      setPendingUpdates((prev) => [...prev, changes]);
+      scheduleProcess();
+    },
+    [setLastUpdateTimestamp, setPendingUpdates, scheduleProcess],
+  );
+
+  /**
+            */
+
+  /**
+      * SubTree
+      */
   const subscribe = useCallback(
     async (rootNodeId: string, _depth: number = 2) => {
       if (subscriptionRef.current) {
@@ -162,11 +171,24 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       try {
         //  WorkerAPI
         const subscriptionAPI = await workerAPI.getSubscriptionAPI();
-        const proxied = (await import('comlink')).proxy((event: any) => {
-          if (event.type === 'expanded') {
-            console.log('Expanded changes:', event);
-          } else {
-            handleSubTreeUpdate(event as SubTreeChanges);
+        const proxied = (await import('comlink')).proxy((event: TreeNodeEvent) => {
+          // Map a single node event to our local SubTreeChanges batch form
+          const batch: SubTreeChanges = (() => {
+            switch (event.type) {
+              case 'created':
+                return { added: [Object.assign({ id: event.nodeId }, event.node || {})] };
+              case 'updated':
+                return { updated: [{ nodeId: event.nodeId as string, changes: (event.node || {}) as Record<string, unknown> }] };
+              case 'deleted':
+                return { removed: [event.nodeId as string] };
+              case 'moved':
+                return { moved: [{ nodeId: event.nodeId as string, oldParentId: event.previousParentNodeId as string | undefined, newParentId: event.parentId as string, oldIndex: -1, newIndex: -1 }] };
+              default:
+                return {};
+            }
+          })();
+          if (batch && (batch.added?.length || batch.updated?.length || batch.removed?.length || batch.moved?.length)) {
+            handleSubTreeUpdate(batch);
           }
         });
         const subscriptionId = await subscriptionAPI.subscribeSubtree(

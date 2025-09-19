@@ -1,5 +1,5 @@
 // Lightweight helper to make a FetchNetworkPort that pulls headers from a provider
-import { FetchNetworkPort } from '../adapters/FetchNetworkPort';
+import { FetchNetworkPort } from '../adapters/FetchNetworkPort.js';
 
 export interface AuthHeadersProviderLike {
   getAuthHeaders(): Record<string, string>;

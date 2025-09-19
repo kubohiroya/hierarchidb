@@ -10,8 +10,8 @@ import type {
   SelectionStats,
   UrlMetadata,
   ValidationResult,
-} from './types';
-import { DEFAULT_PROCESSING_CONFIG } from './constants';
+} from './types.js';
+import { DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 /**
  * Validate shape-plugin entity name
@@ -312,7 +312,7 @@ export function serializeCheckboxState(state: boolean[][]): string {
  */
 export function buildShapeEntityFromCreate(
   params: {
-    nodeId: import('./types').NodeId;
+    nodeId: import('./types.js').NodeId;
     data: {
       name: string;
       description?: string;
@@ -321,7 +321,7 @@ export function buildShapeEntityFromCreate(
     };
     now?: number;
   },
-): import('./types').ShapeEntity {
+): import('./types.js').ShapeEntity {
   const now = params.now ?? Date.now();
   const merged = mergeProcessingConfig(
     (params.data.processingConfig as Partial<ProcessingConfig>) || {},
@@ -349,8 +349,8 @@ export function buildShapeEntityFromCreate(
  * Create a ShapeWorkingCopy from an entity (shared mapping)
  */
 export function createWorkingCopyFromEntity(
-  entity: import('./types').ShapeEntity,
-): import('./types').ShapeWorkingCopy {
+  entity: import('./types.js').ShapeEntity,
+): import('./types.js').ShapeWorkingCopy {
   const obj = {
     id: entity.id,
     nodeId: entity.nodeId,
@@ -368,16 +368,16 @@ export function createWorkingCopyFromEntity(
     updatedAt: entity.updatedAt,
     version: entity.version,
   } as const;
-  return obj as unknown as import('./types').ShapeWorkingCopy;
+  return obj as unknown as import('./types.js').ShapeWorkingCopy;
 }
 
 /**
  * Map a working copy back to entity updates (shared mapping)
  */
 export function mapWorkingCopyToUpdates(
-  workingCopy: import('./types').ShapeWorkingCopy,
-): Partial<import('./types').ShapeEntity> {
-  const updates: Partial<import('./types').ShapeEntity> = {
+  workingCopy: import('./types.js').ShapeWorkingCopy,
+): Partial<import('./types.js').ShapeEntity> {
+  const updates: Partial<import('./types.js').ShapeEntity> = {
     name: workingCopy.name,
     description: workingCopy.description,
     dataSourceName: workingCopy.dataSourceName,

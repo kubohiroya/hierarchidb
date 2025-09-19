@@ -2,11 +2,11 @@ export {
   TreeToggleButtonGroup,
   createResourcesTreeConfig,
   createProjectsTreeConfig,
-} from './TreeToggleButtonGroup';
+} from './TreeToggleButtonGroup.js';
 
 export type {
   TreeConfig,
   TreeToggleButtonGroupProps,
   ButtonGroupOrientation,
   ButtonGroupSize,
-} from './TreeToggleButtonGroup';
+} from './TreeToggleButtonGroup.js';

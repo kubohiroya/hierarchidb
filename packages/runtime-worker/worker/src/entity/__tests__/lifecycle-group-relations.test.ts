@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { EntityLifecycleManager } from '../EntityLifecycleManager';
-import { storeRegistry } from '../store-registry';
-import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '../store';
+import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
+import { storeRegistry } from '../store-registry.js';
+import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '../store.js';
 
 describe('Lifecycle: Group/Relations duplication via idMap', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('copies group items from src to dst node', async () => {

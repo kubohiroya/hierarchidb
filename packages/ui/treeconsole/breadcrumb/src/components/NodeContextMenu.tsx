@@ -8,6 +8,9 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+type CreateMenuEntry = { key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
+type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
+type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 
 
 export interface NodeContextMenuProps {
@@ -192,10 +195,10 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
   const builtCreateItems: Array<BuiltItem> = (() => {
     if (props.createItems && props.createItems.length) return props.createItems;
     try {
-      const g: any = (globalThis as any).__HDB_MENU_BUILDERS__;
-      const builder = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
+      const g = (globalThis as unknown as { __HDB_MENU_BUILDERS__?: GlobalMenuBuilders }).__HDB_MENU_BUILDERS__;
+      const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
       if (typeof builder === 'function') {
-        const items = builder(treeId) as Array<{ key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } }>;
+        const items = builder(treeId) as CreateMenuEntry[];
         return (items || []).map((i) => ({ type: i.nodeType, label: i.label, icon: i.icon }));
       }
     } catch {}

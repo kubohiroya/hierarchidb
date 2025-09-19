@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
-import { CoreDB } from '../CoreDB';
+import { CoreDB } from '../CoreDB.js';
 
 function node(id: string, parentId: string, name: string, depth = 1, type: NodeType = 'folder' as any): TreeNode {
   return {

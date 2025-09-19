@@ -31,6 +31,7 @@ Linker は、Projects ツリー（folder / linker / timeline）で、フォル�
    - テーブル: `peerEntities (&nodeId, updatedAt)`
    - 保存: 表示モード、ダイアログ位置・サイズ 等（ノードごとの UI 状態）
 
-5) project-plugin からの移行
+5) 旧 project-plugin からの移行
    - 旧 nodeType `project` → 新 `linker`
    - 旧 Worker 実装は不要になりました（削除済み）。新規は `linker` で作成してください。
+   - ※ 2025-09-16 時点で `project-plugin` は Deprecated 扱いです。`@hierarchidb/linker-plugin` を利用してください。

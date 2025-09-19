@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
-import type { FolderEntitiesDB, FolderGroupRow } from './folderEntitiesDB';
+import type { FolderEntitiesDB, FolderGroupRow } from './folderEntitiesDB.js';
 
 type Item = GroupItemBase<{ value?: unknown }>
 

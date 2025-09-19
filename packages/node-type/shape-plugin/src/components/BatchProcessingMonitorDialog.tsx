@@ -21,16 +21,16 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { BatchMonitorDialogProps, BatchStatus } from '~/shared';
+import type { BatchMonitorDialogProps, BatchStatus } from '../shared';
 // import { mockShapeService } from '~/services/MockShapeService';
-import { BatchProgressSplitView } from './batch/BatchProgressSplitView';
-import { MapPreview } from './batch/MapPreview';
-import { ErrorConsoleDialog } from './batch/ErrorConsoleDialog';
-import { ErrorReportPanel } from './batch/ErrorReportPanel';
-import type { ErrorLogEntry } from '../hooks/useErrorConsole';
-import { BatchStatusChip } from './batch/BatchStatusChip';
-import { useBatchWorkerConsole } from '~/hooks/useBatchWorkerConsole';
-import { useErrorConsole } from '~/hooks/useErrorConsole';
+import { BatchProgressSplitView } from './batch/BatchProgressSplitView.js';
+import { MapPreview } from './batch/MapPreview.js';
+import { ErrorConsoleDialog } from './batch/ErrorConsoleDialog.js';
+import { ErrorReportPanel } from './batch/ErrorReportPanel.js';
+import type { ErrorLogEntry } from '../hooks/useErrorConsole.js';
+import { BatchStatusChip } from './batch/BatchStatusChip.js';
+import { useBatchWorkerConsole } from '../hooks/useBatchWorkerConsole';
+import { useErrorConsole } from '../hooks/useErrorConsole';
 
 export const BatchProcessingMonitorDialog: React.FC<BatchMonitorDialogProps> = ({
                                                                                   open,

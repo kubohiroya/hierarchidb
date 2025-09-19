@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import type { NodeId, NodeType } from '@hierarchidb/common-type';
-import { CoreDB } from '../CoreDB';
-import { NodeLifecycleManager } from '../NodeLifecycleManager';
+import { CoreDB } from '../CoreDB.js';
+import { NodeLifecycleManager } from '../NodeLifecycleManager.js';
 
 describe('NodeLifecycleManager reference counting port', () => {
   it('invokes increment/decrement when registry provided', async () => {

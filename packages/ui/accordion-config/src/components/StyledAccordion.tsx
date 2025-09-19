@@ -1,5 +1,5 @@
 import React from 'react';
-import { BaseAccordion, BaseAccordionProps } from './BaseAccordion';
+import { BaseAccordion, BaseAccordionProps } from './BaseAccordion.js';
 import { useTheme } from '@mui/material';
 
 export type AccordionVariant = 'default' | 'outlined' | 'filled' | 'elevated';

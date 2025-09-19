@@ -3,18 +3,18 @@
  * @description Database class for BaseMap plugin using Dexie
  */
 
-import Dexie from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity';
+import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity.js';
 
 /**
  * BaseMap Database
  * Manages BaseMap entities and working copies with IndexedDB
  */
 export class BaseMapDatabase extends Dexie {
-  baseMaps!: Dexie.Table<BaseMapEntity, NodeId>;
-  workingCopies!: Dexie.Table<BaseMapWorkingCopy, NodeId>;
+  baseMaps!: Table<BaseMapEntity, NodeId>;
+  workingCopies!: Table<BaseMapWorkingCopy, NodeId>;
 
   constructor() {
     super(getDBName('basemap-db'));

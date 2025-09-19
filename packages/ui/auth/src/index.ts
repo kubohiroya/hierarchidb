@@ -1,42 +1,42 @@
 // Components
-export { AuthErrorBoundary } from './components/AuthErrorBoundary';
-export { LoginForm } from './components/LoginForm';
-export { AuthErrorListener } from './components/AuthErrorListener';
-export { AuthMethodSettings } from './components/AuthMethodSettings';
-export { AuthProviderDialog } from './components/AuthProviderDialog';
-export type { AuthProviderOption } from './components/AuthProviderOption';
-export { AuthProviderOptions } from './components/AuthProviderOptions';
-export { AuthProviderPrompt, AuthRequiredPrompt } from './components/AuthProviderPrompt';
-export { AuthRequiredDialog } from './components/AuthRequiredDialog';
-export type { AuthRequiredDialogProps } from './components/AuthRequiredDialog';
-export { MicrosoftIcon } from './components/MicrosoftIcon';
-export { OAuthCallback } from './components/OAuthCallback';
-export { OidcProvider } from './components/OidcProvider';
-export { UserAvatar } from './components/UserAvatar';
-export { UserProfile, UserAvatarMenu } from './components/UserAvatarMenu';
+export { AuthErrorBoundary } from './components/AuthErrorBoundary.js';
+export { LoginForm } from './components/LoginForm.js';
+export { AuthErrorListener } from './components/AuthErrorListener.js';
+export { AuthMethodSettings } from './components/AuthMethodSettings.js';
+export { AuthProviderDialog } from './components/AuthProviderDialog.js';
+export type { AuthProviderOption } from './components/AuthProviderOption.js';
+export { AuthProviderOptions } from './components/AuthProviderOptions.js';
+export { AuthProviderPrompt, AuthRequiredPrompt } from './components/AuthProviderPrompt.js';
+export { AuthRequiredDialog } from './components/AuthRequiredDialog.js';
+export type { AuthRequiredDialogProps } from './components/AuthRequiredDialog.js';
+export { MicrosoftIcon } from './components/MicrosoftIcon.js';
+export { OAuthCallback } from './components/OAuthCallback.js';
+export { OidcProvider } from './components/OidcProvider.js';
+export { UserAvatar } from './components/UserAvatar.js';
+export { UserProfile, UserAvatarMenu } from './components/UserAvatarMenu.js';
 
 // Contexts
-export { useGoogleAuth, GoogleAuthProvider } from './contexts/GoogleAuthContext';
-export { useMultiAuth, MultiAuthProvider } from './contexts/MultiAuthContext';
-export { useOIDCAuth, OIDCAuthProvider } from './contexts/OIDCAuthContext';
-export { useSimpleBFFAuth, SimpleBFFAuthProvider } from './contexts/SimpleBFFAuthContext';
+export { useGoogleAuth, GoogleAuthProvider } from './contexts/GoogleAuthContext.js';
+export { useMultiAuth, MultiAuthProvider } from './contexts/MultiAuthContext.js';
+export { useOIDCAuth, OIDCAuthProvider } from './contexts/OIDCAuthContext.js';
+export { useSimpleBFFAuth, SimpleBFFAuthProvider } from './contexts/SimpleBFFAuthContext.js';
 
 // Types
-export type { AuthProviderType } from './types/AuthProviderType';
-export type { AuthUser } from './types/AuthUser';
-export type { AuthContextType } from './types/AuthContextType';
-export type { AuthProviderConfig } from './types/AuthProviderConfig';
+export type { AuthProviderType } from './types/AuthProviderType.js';
+export type { AuthUser } from './types/AuthUser.js';
+export type { AuthContextType } from './types/AuthContextType.js';
+export type { AuthProviderConfig } from './types/AuthProviderConfig.js';
 
 // Services
-export { AuthCallbackHandler } from './services/AuthCallbackHandler';
-export { BFFAuthService } from './services/BFFAuthService';
-export type { BFFUser, BFFSignInOptions, BFFAuthResponse } from './services/BFFAuthService';
-export { PopupDetectionService } from './services/PopupDetectionService';
-export type { PopupCapability } from './services/PopupDetectionService';
-export { AuthService } from './services/AuthService';
-export type { AuthMethod } from './services/AuthService';
-export { handleAuthError } from './services/handleAuthError';
-export { registerAuthUIHandlers } from './services/UIAuthRecoveryClient';
+export { AuthCallbackHandler } from './services/AuthCallbackHandler.js';
+export { BFFAuthService } from './services/BFFAuthService.js';
+export type { BFFUser, BFFSignInOptions, BFFAuthResponse } from './services/BFFAuthService.js';
+export { PopupDetectionService } from './services/PopupDetectionService.js';
+export type { PopupCapability } from './services/PopupDetectionService.js';
+export { AuthService } from './services/AuthService.js';
+export type { AuthMethod } from './services/AuthService.js';
+export { handleAuthError } from './services/handleAuthError.js';
+export { registerAuthUIHandlers } from './services/UIAuthRecoveryClient.js';
 
 // Hooks
-export { useAuth, getIdToken } from './hooks/useAuth';
+export { useAuth, getIdToken } from './hooks/useAuth.js';

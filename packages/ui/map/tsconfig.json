@@ -2,8 +2,8 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -15,6 +15,21 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@deck.gl/core": [
+        "../../node-type/linker-plugin/node_modules/@deck.gl/core"
+      ],
+      "@deck.gl/layers": [
+        "../../node-type/linker-plugin/node_modules/@deck.gl/layers"
+      ],
+      "@deck.gl/geo-layers": [
+        "../../node-type/linker-plugin/node_modules/@deck.gl/geo-layers"
+      ],
+      "@deck.gl/mapbox": [
+        "../../node-type/linker-plugin/node_modules/@deck.gl/mapbox"
+      ],
+      "geojson": [
+        "../../node-type/linker-plugin/node_modules/@types/geojson"
       ]
     },
     "lib": [

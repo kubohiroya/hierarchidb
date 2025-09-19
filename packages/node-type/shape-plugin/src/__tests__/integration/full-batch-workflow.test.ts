@@ -14,7 +14,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
-import { ShapeErrorHandler } from '../../services/ShapeErrorHandler';
+import { ShapeErrorHandler } from '../../services/ShapeErrorHandler.js';
 
 import {
   createTestShapeEntity,
@@ -23,7 +23,7 @@ import {
   GEOBOUNDARIES_TEST_ENDPOINTS,
   TEST_NODE_ID,
   TEST_TIMEOUTS,
-} from '../fixtures/test-shape-entity-data';
+} from '../fixtures/test-shape-entity-data.js';
 
 // Minimal type definitions for standalone testing
 type NodeId = string & { readonly __brand: 'NodeId' };

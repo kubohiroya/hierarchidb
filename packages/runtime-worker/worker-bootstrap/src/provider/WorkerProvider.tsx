@@ -8,9 +8,9 @@
 
 import React, { ReactNode } from 'react';
 import type { Remote } from 'comlink';
-// import { WorkerSingletonProvider } from './WorkerSingletonProvider'; // Temporarily disabled
-import { createWorkerClientProvider } from './WorkerClientProvider';
-import type { InitializationResult } from '../types';
+// import { WorkerSingletonProvider } from './WorkerSingletonProvider.js'; // Temporarily disabled
+import { createWorkerClientProvider } from './WorkerClientProvider.js';
+import type { InitializationResult } from '../types.js';
 
 export interface WorkerProviderProps<T> {
   /** Function to create the Worker instance */

@@ -3,11 +3,11 @@
  * folder-pluginUI
   */
 
-export { TagInput } from './TagInput';
-export type { TagInputProps } from './TagInput';
+export { TagInput } from './TagInput.js';
+export type { TagInputProps } from './TagInput.js';
 
-export { CategorySelector } from './CategorySelector';
-export type { CategorySelectorProps, CategoryOption } from './CategorySelector';
+export { CategorySelector } from './CategorySelector.js';
+export type { CategorySelectorProps, CategoryOption } from './CategorySelector.js';
 
-export { FolderBasicInfoStep } from './FolderBasicInfoStep';
-export type { FolderBasicInfoStepProps } from './FolderBasicInfoStep';
+export { FolderBasicInfoStep } from './FolderBasicInfoStep.js';
+export type { FolderBasicInfoStepProps } from './FolderBasicInfoStep.js';

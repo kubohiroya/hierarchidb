@@ -1,5 +1,5 @@
 import * as Comlink from 'comlink';
-import { getStageProcessingService } from './StageProcessingService';
+import { getStageProcessingService } from './StageProcessingService.js';
 
 (async () => {
   const svc = await getStageProcessingService();

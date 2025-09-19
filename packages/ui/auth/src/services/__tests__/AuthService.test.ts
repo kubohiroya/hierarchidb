@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '../AuthService';
+import { AuthService } from '../AuthService.js';
 
 // Mock global objects
 const mockCrypto = {

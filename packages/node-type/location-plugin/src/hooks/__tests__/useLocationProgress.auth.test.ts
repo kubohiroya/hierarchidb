@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { act, renderHook } from '@testing-library/react';
-import { useLocationProgress } from '../../hooks/useLocationProgress';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService';
+import { useLocationProgress } from '../../hooks/useLocationProgress.js';
+import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 
 describe('useLocationProgress - auth notifications', () => {
   it('emits auth-required and resumed progress events when notifications fire', async () => {

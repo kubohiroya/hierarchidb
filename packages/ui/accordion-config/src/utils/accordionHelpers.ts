@@ -1,4 +1,4 @@
-import { AccordionTheme, defaultAccordionTheme } from '../types';
+import { AccordionTheme, defaultAccordionTheme } from '../types/index.js';
 
 /**
  * Get phase color based on theme mode

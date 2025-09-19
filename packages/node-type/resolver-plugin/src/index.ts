@@ -13,27 +13,27 @@ export type {
   MappingValidationResult,
   MappingPreviewResult,
   StylerIntegration,
-} from './types';
+} from './types/index.js';
 
 // Export handlers
 export {
   ResolverEntityHandler,
   type ResolverSearchCriteria,
   type CreateResolverData,
-} from './handlers/ResolverEntityHandler';
+} from './handlers/ResolverEntityHandler.js';
 
 // Export database
-export { resolverDB } from './database/ResolverDatabase';
+export { resolverDB } from './database/ResolverDatabase.js';
 
 // Export components
 export {
   ResolverDialog,
   ResolverPanel,
-} from './components';
+} from './components/index.js';
 
 // Standard entry for PluginDialogRoute to discover dialog component
 export async function getDialogComponent() {
-  const mod = await import('./components/ResolverDialog');
+  const mod = await import('./components/ResolverDialog.js');
   return (mod as any).ResolverDialog;
 }
 
@@ -41,9 +41,9 @@ export async function getDialogComponent() {
 import './ui/steps-provider';
 
 // Export services (to be implemented)
-// export { MappingCompiler } from './services/MappingCompiler';
-// export { ChainManager } from './services/ChainManager';
-// export { SchemaDetector } from './services/SchemaDetector';
+// export { MappingCompiler } from './services/MappingCompiler.js';
+// export { ChainManager } from './services/ChainManager.js';
+// export { SchemaDetector } from './services/SchemaDetector.js';
 
 // Plugin definition exports removed: metadata is sourced from package.json
 

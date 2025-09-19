@@ -2,7 +2,7 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client';
+import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -106,9 +106,6 @@ export class WorkerAPIClient {
 
 
     } catch (error) {
-      
-      
-
       // Clean up on failure
       this.workerInstance = null;
       throw error;
@@ -123,12 +120,8 @@ export class WorkerAPIClient {
       
       throw new NotInitializedError();
     }
-    if (this.state !== 'initialized') {
-      try {
-        if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-          
-        }
-      } catch {}
+    if (this.state !== 'initialized' && (import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
+      console.warn('[WorkerAPIClient] getSingleton called before initialization');
     }
     return this.workerInstance;
   }
@@ -176,9 +169,6 @@ export class WorkerAPIClient {
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
-    if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-      
-    }
     return ready;
   }
 

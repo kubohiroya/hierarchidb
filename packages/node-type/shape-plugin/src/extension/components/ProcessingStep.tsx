@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Box, Button } from '@mui/material';
-import { Step4Processing } from '../../components/steps/Step4Processing';
+import { Step4Processing } from '../../components/steps/Step4Processing.js';
 
 export interface ProcessingStepProps {
   data: any;

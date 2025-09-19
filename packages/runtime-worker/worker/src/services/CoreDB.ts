@@ -10,7 +10,7 @@ import {
   TreeRootState,
 } from '@hierarchidb/common-type';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
 export class CoreDB extends Dexie {
@@ -321,20 +321,7 @@ export class CoreDB extends Dexie {
   async listChildren(parentId: NodeId): Promise<TreeNode[]> {
     const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
 
-    // Ensure we return plain objects that can be serialized by Comlink
-    return children.map(
-      (node): TreeNode => ({
-        id: node.id,
-        parentId: node.parentId,
-        nodeType: node.nodeType,
-        name: node.name,
-        depth: node.depth,
-        createdAt: node.createdAt,
-        updatedAt: node.updatedAt,
-        version: node.version,
-        ...(node.references && { references: node.references }),
-      }),
-    );
+    return children;
   }
 
   /**
@@ -411,14 +398,26 @@ export class CoreDB extends Dexie {
   async bulkCreateNodes(nodes: TreeNode[]): Promise<void> {
     await this.nodes.bulkAdd(nodes);
 
-    nodes.forEach((node) => {
+    const parentIds = new Set<NodeId>();
+    for (const node of nodes) {
+      if (node.parentId) parentIds.add(node.parentId);
       this.changeSubject.next({
         type: 'node-created' as const,
         nodeId: node.id,
         node: node,
         timestamp: Date.now(),
       });
-    });
+    }
+
+    for (const parentId of parentIds) {
+      const parent = await this.nodes.get(parentId);
+      if (parent && !parent.hasChildren) {
+        parent.hasChildren = true;
+        parent.updatedAt = Date.now();
+        parent.version = (parent.version || 0) + 1;
+        await this.nodes.put(parent);
+      }
+    }
   }
 
   async bulkUpdateNodes(nodes: TreeNode[]): Promise<void> {

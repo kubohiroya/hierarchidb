@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useCSVApi } from '~/context/CSVContext';
-import type { CSVProcessingConfig, CSVTableListResult, CSVTableMetadata, PaginationOptions } from '~/types';
+import { useCSVApi } from '../context/CSVContext.js';
+import type { CSVProcessingConfig, CSVTableListResult, CSVTableMetadata, PaginationOptions } from '../types/index.js';
 
 /**
  * Options for useCSVData hook

@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import { Box, Chip, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
-import type { LocationEntity, NodeId } from '../types';
+import type { LocationEntity, NodeId } from '../types/index.js';
 
 export interface LocationPanelProps {
   nodeId: NodeId;

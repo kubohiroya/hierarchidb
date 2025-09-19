@@ -1,2 +1,2 @@
-export { resolverDB } from './ResolverDatabase';
+export { resolverDB } from './ResolverDatabase.js';
 

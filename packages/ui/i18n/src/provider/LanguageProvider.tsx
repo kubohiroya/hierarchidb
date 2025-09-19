@@ -130,7 +130,7 @@ const LanguageProviderClient: React.FC<LanguageProviderProps> = ({ children }) =
   useEffect(() => {
     // Delay i18n initialization to ensure React is ready
     const timer = setTimeout(() => {
-      import('../i18n/index').then(() => {
+      import('../i18n/index.js').then(() => {
         setIsI18nReady(true);
       });
     }, 0);

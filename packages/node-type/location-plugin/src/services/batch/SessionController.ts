@@ -2,7 +2,7 @@
  * Location SessionController - minimal point -> MVT pipeline
  */
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
@@ -66,29 +66,20 @@ export class SessionController {
 
     // Optional: persist tabular rows for column-wise search
     try {
-      const enabled =
-        (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_LOCATION_TABULAR === '1') ||
-        (typeof process !== 'undefined' && (process as any)?.env?.LOCATION_TABULAR === '1') ||
-        (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.LOCATION_TABULAR === true);
-      if (enabled) {
-        const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
-        const writer = new TabularWriter('location');
-        await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
-        const rows = featuresToRows(norm.features);
-        // Write in chunks
-        const CHUNK = 2000;
-        for (let i = 0; i < rows.length; i += CHUNK) {
-          await writer.writeRows(rows.slice(i, i + CHUNK));
-        }
-        const { tableId: committedId } = await writer.commit();
-        // Link tableId to session (best-effort)
-        try {
-          const db = getEphemeralLocationDB();
-          // @ts-ignore
-          await db.table('sessions').update(this.sessionId, { tableId: committedId });
-        } catch {
-        }
+      const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
+      const writer = new TabularWriter('location');
+      await writer.begin({ filename: `location-${this.sessionId}.json`, columns });
+      const rows = featuresToRows(norm.features);
+      // Write in chunks
+      const CHUNK = 2000;
+      for (let i = 0; i < rows.length; i += CHUNK) {
+        await writer.writeRows(rows.slice(i, i + CHUNK));
       }
+      const { tableId: committedId } = await writer.commit();
+      // Link tableId to session (best-effort)
+        const db = getEphemeralLocationDB();
+        // @ts-ignore
+        await db.table('sessions').update(this.sessionId, { tableId: committedId });
     } catch (e) {
       console.warn('[Location][Session] tabular persist skipped:', e);
     }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PackageCache } from '../src/core/PackageCache';
-import type { PackageJson } from '../src/types';
+import { PackageCache } from '../src/core/PackageCache.js';
+import type { PackageJson } from '../src/types.js';
 
 describe('PackageCache', () => {
   let cache: PackageCache;

@@ -3,8 +3,8 @@
  * @description Type definitions for authentication context
  */
 
-import type { AuthUser } from './AuthUser';
-import type { AuthProviderType } from './AuthProviderType';
+import type { AuthUser } from './AuthUser.js';
+import type { AuthProviderType } from './AuthProviderType.js';
 
 export interface AuthContextType {
   user: AuthUser | null;

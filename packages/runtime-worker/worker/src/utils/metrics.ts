@@ -1,5 +1,3 @@
-import { FEATURE_FLAGS } from '../config/feature-flags';
-
 type Stats = {
   count: number;
   totalMs: number;
@@ -9,7 +7,6 @@ type Stats = {
 const byCommand: Map<string, Stats> = new Map();
 
 export function recordCommandLatency(kind: string, ms: number): void {
-  if (!FEATURE_FLAGS.WORKER_METRICS_ENABLED) return;
   const s = byCommand.get(kind) || { count: 0, totalMs: 0, maxMs: 0 };
   s.count += 1;
   s.totalMs += ms;
@@ -24,4 +21,3 @@ export function getCommandLatencySnapshot(): Record<string, { count: number; avg
   }
   return out;
 }
-

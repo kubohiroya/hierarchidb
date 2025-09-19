@@ -2,13 +2,13 @@
     */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory';
-import { BaseDataSourceStrategy, FetchOptions, ProcessOptions, SaveTarget, DataSourceConfig } from '../DataSourceStrategy';
-import { NaturalEarthStrategy } from '../NaturalEarthStrategy';
-import { GADMStrategy } from '../GADMStrategy';
-import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy';
-import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy';
-import type { ShapeEntity } from '../../../types/ShapeEntity';
+import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory.js';
+import { BaseDataSourceStrategy, FetchOptions, ProcessOptions, SaveTarget, DataSourceConfig } from '../DataSourceStrategy.js';
+import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
+import { GADMStrategy } from '../GADMStrategy.js';
+import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
+import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
+import type { ShapeEntity } from '../../../types/ShapeEntity.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {

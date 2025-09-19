@@ -71,7 +71,7 @@ export function registerStores(db: MyPluginDB) {
 
 ## 4) Runtime behavior
 
-- When `WORKER_ENTITY_UNIFIED=1`, the worker will:
+- The worker runtime performs the following entity operations:
   - On commit (WC→target): upsert Peer to target and delete WC Peer.
   - On paste/import/duplicate: copy Peer according to the old→new NodeId mapping.
   - If your store exposes `bulkUpsert`, it will be used automatically for efficiency.
@@ -150,7 +150,7 @@ export function createRelationStore(db: MyPluginDB): RelationStore<MyRel> {
 }
 ```
 
-Runtime behavior (when `WORKER_ENTITY_UNIFIED=1`): during duplicate/paste/import, the worker will:
+Runtime behavior: during duplicate/paste/import, the worker will:
 - Group: list(src) → bulkUpsert(dst, items)
 - Relations: listByNode(src) → rebind both ends via idMap → bulkUpsert(filtered)
 

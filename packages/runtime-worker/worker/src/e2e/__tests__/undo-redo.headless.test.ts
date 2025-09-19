@@ -1,15 +1,11 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
-import { CoreDB } from '../../services/CoreDB';
-import { CommandProcessor } from '../../services/CommandProcessor';
+import { CoreDB } from '../../services/CoreDB.js';
+import { CommandProcessor } from '../../services/CommandProcessor.js';
 
 describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', () => {
   const rTree = 'r' as TreeId;
-
-  beforeEach(() => {
-    delete (process as any).env.WORKER_TRASH_USE_HOLDER;
-  });
 
   async function newCore(name: string): Promise<CoreDB> {
     return await CoreDB.getSingleton(`e2e-undo-redo-${name}-${Date.now()}-${Math.random()}`);

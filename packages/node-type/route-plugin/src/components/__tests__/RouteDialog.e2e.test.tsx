@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { RouteDialog } from '../RouteDialog';
+import { RouteDialog } from '../RouteDialog.js';
 
 describe('RouteDialog (ui-dialog integration)', () => {
   it('completes the dialog flow and calls onClose', async () => {

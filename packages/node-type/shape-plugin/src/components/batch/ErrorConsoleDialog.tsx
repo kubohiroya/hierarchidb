@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Clear as ClearIcon, Close as CloseIcon } from '@mui/icons-material';
-import type { ErrorLogEntry } from '../../hooks/useErrorConsole';
+import type { ErrorLogEntry } from '../../hooks/useErrorConsole.js';
 
 interface ErrorConsoleDialogProps {
   open: boolean;

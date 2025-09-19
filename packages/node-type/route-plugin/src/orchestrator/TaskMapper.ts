@@ -1,4 +1,4 @@
-import type { EngineMethod, OdPair, RouteBatchSpec } from './types';
+import type { EngineMethod, OdPair, RouteBatchSpec } from './types.js';
 
 export interface RouteTaskInput {
   startCoordinates?: [number, number];

@@ -3,7 +3,7 @@
  * @description Type definitions for OAuth provider configuration
  */
 
-import type { AuthProviderType } from './AuthProviderType';
+import type { AuthProviderType } from './AuthProviderType.js';
 
 export interface AuthProviderConfig {
   type: AuthProviderType;

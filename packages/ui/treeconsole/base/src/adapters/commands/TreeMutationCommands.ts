@@ -3,7 +3,7 @@
   * TreeConsoleCRUDWorkerAPICommandEnvelope
    */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI, TreeMutationAPI } from '@hierarchidb/common-api';
 import type {
   DuplicateNodesPayload,
   MoveNodesPayload,
@@ -12,9 +12,9 @@ import type {
   RecoverFromTrashPayload,
   RemovePayload,
 } from '@hierarchidb/common-type';
-import { createCommand } from '../utils';
-import type { CommandAdapterOptions } from '../../types/index';
-import { TreeConsoleAdapterError } from '../../types/index';
+import { createCommand } from '../utils.js';
+import type { CommandAdapterOptions } from '../../types/index.js';
+import { TreeConsoleAdapterError } from '../../types/index.js';
 
 export class TreeMutationCommandsAdapter {
   constructor(private workerAPI: WorkerAPI) {
@@ -46,29 +46,17 @@ export class TreeMutationCommandsAdapter {
         },
       );
 
-      if (typeof (this.workerAPI as any).getMutationAPI === 'function') {
-        const mutationAPI = await (this.workerAPI as any).getMutationAPI();
-        const result = await (mutationAPI as any).moveNodes?.({
-          nodeIds: command.payload.nodeIds,
-          toParentId: command.payload.toParentId,
-          onNameConflict: command.payload.onNameConflict,
-        });
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to move nodes: ${result?.error || 'Unknown error'}`,
-            'MOVE_NODES_FAILED',
-          );
-        }
-      } else {
-        const mover = (this.workerAPI as any).moveNodes?.bind(this.workerAPI);
-        if (typeof mover !== 'function') throw new Error('moveNodes not available on WorkerAPI');
-        const result = await mover(command);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to move nodes: ${result?.error || 'Unknown error'}`,
-            'MOVE_NODES_FAILED',
-          );
-        }
+      const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
+      const result = await mutationAPI.moveNodes({
+        nodeIds: command.payload.nodeIds,
+        toParentId: command.payload.toParentId,
+        onNameConflict: command.payload.onNameConflict,
+      });
+      if (!result?.success) {
+        throw new TreeConsoleAdapterError(
+          `Failed to move nodes: ${result?.error || 'Unknown error'}`,
+          'MOVE_NODES_FAILED',
+        );
       }
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -100,25 +88,13 @@ export class TreeMutationCommandsAdapter {
         },
       );
 
-      if (typeof (this.workerAPI as any).getMutationAPI === 'function') {
-        const mutationAPI = await (this.workerAPI as any).getMutationAPI();
-        const result = await (mutationAPI as any).moveNodesToTrash?.(command.payload.nodeIds);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to delete nodes: ${result?.error || 'Unknown error'}`,
-            'DELETE_NODES_FAILED',
-          );
-        }
-      } else {
-        const deleter = (this.workerAPI as any).moveToTrash?.bind(this.workerAPI);
-        if (typeof deleter !== 'function') throw new Error('moveToTrash not available on WorkerAPI');
-        const result = await deleter(command);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to delete nodes: ${result?.error || 'Unknown error'}`,
-            'DELETE_NODES_FAILED',
-          );
-        }
+      const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
+      const result = await mutationAPI.moveNodesToTrash(command.payload.nodeIds);
+      if (!result?.success) {
+        throw new TreeConsoleAdapterError(
+          `Failed to delete nodes: ${result?.error || 'Unknown error'}`,
+          'DELETE_NODES_FAILED',
+        );
       }
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -157,28 +133,16 @@ export class TreeMutationCommandsAdapter {
         },
       );
 
-      if (typeof (this.workerAPI as any).getMutationAPI === 'function') {
-        const mutationAPI = await (this.workerAPI as any).getMutationAPI();
-        const result = await (mutationAPI as any).duplicateNodes?.({
-          nodeIds: command.payload.nodeIds,
-          toParentId: command.payload.toParentId,
-        });
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to duplicate nodes: ${result?.error || 'Unknown error'}`,
-            'DUPLICATE_NODES_FAILED',
-          );
-        }
-      } else {
-        const duper = (this.workerAPI as any).duplicateNodes?.bind(this.workerAPI);
-        if (typeof duper !== 'function') throw new Error('duplicateNodes not available on WorkerAPI');
-        const result = await duper(command);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to duplicate nodes: ${result?.error || 'Unknown error'}`,
-            'DUPLICATE_NODES_FAILED',
-          );
-        }
+      const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
+      const result = await mutationAPI.duplicateNodes({
+        nodeIds: command.payload.nodeIds,
+        toParentId: command.payload.toParentId,
+      });
+      if (!result?.success) {
+        throw new TreeConsoleAdapterError(
+          `Failed to duplicate nodes: ${result?.error || 'Unknown error'}`,
+          'DUPLICATE_NODES_FAILED',
+        );
       }
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -243,25 +207,13 @@ export class TreeMutationCommandsAdapter {
         },
       );
 
-      if (typeof (this.workerAPI as any).getMutationAPI === 'function') {
-        const mutationAPI = await (this.workerAPI as any).getMutationAPI();
-        const result = await (mutationAPI as any).removeNodes?.(command.payload.nodeIds);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to remove nodes: ${result?.error || 'Unknown error'}`,
-            'PERMANENT_DELETE_FAILED',
-          );
-        }
-      } else {
-        const remover = (this.workerAPI as any).remove?.bind(this.workerAPI);
-        if (typeof remover !== 'function') throw new Error('removeNodes not available on WorkerAPI');
-        const result = await remover(command);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to remove nodes: ${result?.error || 'Unknown error'}`,
-            'PERMANENT_DELETE_FAILED',
-          );
-        }
+      const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
+      const result = await mutationAPI.removeNodes(command.payload.nodeIds);
+      if (!result?.success) {
+        throw new TreeConsoleAdapterError(
+          `Failed to remove nodes: ${result?.error || 'Unknown error'}`,
+          'PERMANENT_DELETE_FAILED',
+        );
       }
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -300,28 +252,16 @@ export class TreeMutationCommandsAdapter {
         },
       );
 
-      if (typeof (this.workerAPI as any).getMutationAPI === 'function') {
-        const mutationAPI = await (this.workerAPI as any).getMutationAPI();
-        const result = await (mutationAPI as any).recoverNodesFromTrash?.({
-          nodeIds: command.payload.nodeIds,
-          toParentId: command.payload.toParentId,
-        });
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to recover nodes from trash: ${result?.error || 'Unknown error'}`,
-            'RECOVER_FROM_TRASH_FAILED',
-          );
-        }
-      } else {
-        const recover = (this.workerAPI as any).recoverFromTrash?.bind(this.workerAPI);
-        if (typeof recover !== 'function') throw new Error('recoverFromTrash not available on WorkerAPI');
-        const result = await recover(command);
-        if (!result?.success) {
-          throw new TreeConsoleAdapterError(
-            `Failed to recover nodes from trash: ${result?.error || 'Unknown error'}`,
-            'RECOVER_FROM_TRASH_FAILED',
-          );
-        }
+      const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
+      const result = await mutationAPI.recoverNodesFromTrash({
+        nodeIds: command.payload.nodeIds,
+        toParentId: command.payload.toParentId,
+      });
+      if (!result?.success) {
+        throw new TreeConsoleAdapterError(
+          `Failed to recover nodes from trash: ${result?.error || 'Unknown error'}`,
+          'RECOVER_FROM_TRASH_FAILED',
+        );
       }
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {

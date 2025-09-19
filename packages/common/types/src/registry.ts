@@ -4,7 +4,7 @@
  * Moved from common-core/src/registry/INodeTypeRegistry.ts
  */
 
-import type { EntityHandler, NodeType, PluginDefinition } from './index';
+import type { EntityHandler, NodeType, PluginDefinition } from './index.js';
 
 /**
  * Base interface for all node type registries

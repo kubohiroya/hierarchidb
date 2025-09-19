@@ -17,7 +17,4 @@ function flagOn(key: string, def = false): boolean {
   return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
 }
 
-export const UI_FLAGS = {
-  // Default OFF (latest implementation does not allow legacy API by default)
-  get UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE() { return flagOn('UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE', false); },
-} as const;
+export const UI_FLAGS = {} as const;

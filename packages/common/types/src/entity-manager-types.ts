@@ -2,8 +2,8 @@
 // Plugin Definition Types (moved from worker package)
 // =============================================================================
 
-import { RelationalEntity } from './entity-types';
-import { NodeId } from './id-types';
+import { RelationalEntity } from './entity-types.js';
+import { NodeId } from './id-types.js';
 
 // =============================================================================
 //  RelationalEntity

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useRouteBatchProgress } from '../../ui/hooks/useRouteBatchProgress';
+import { useRouteBatchProgress } from '../../ui/hooks/useRouteBatchProgress.js';
 
 export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
   const { snapshot } = useRouteBatchProgress(jobId);

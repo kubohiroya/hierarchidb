@@ -5,13 +5,14 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
 import * as fs from 'fs';
-import { faviconPlugin } from './vite-plugin-favicon';
+import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
-import { muiIconsVirtualModule } from './vite-plugin-mui-icons';
-import { muiIconMapPlugin } from './vite-plugin-mui-icon-map';
-import { pluginRegistryPlugin } from './vite-plugin-plugin-registry';
-import { pluginServicesRegistry } from './vite-plugin-plugin-services';
+import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
+import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { pluginRegistryPlugin } from './vite-plugin-plugin-registry.js';
+import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
 import {
   vitePluginPackageReader as toolsVitePluginPackageReader,
 } from '@hierarchidb/tools-vite-plugin-package-reader';
@@ -24,6 +25,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const base = appPrefix ? `/${appPrefix}/` : '/';
   // const isDev = mode === 'development';
+
+  const ssrExternalDeps = ['maplibre-gl', '@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
 
   /**
    * HDB_DEV 運用ドキュメント（開発者向け）
@@ -137,6 +140,24 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     }),
   ];
 
+  const enableVisualizer = (env.VITE_APP_ANALYZE || process.env.HDB_ANALYZE || process.env.BUNDLE_ANALYZE || '')
+    .toString()
+    .toLowerCase() === 'true';
+  if (enableVisualizer) {
+    const suffix = isSsrBuild ? 'server' : 'client';
+    const analysisDir = path.resolve(__dirname, 'build-analysis');
+    plugins.push(
+      visualizer({
+        filename: path.join(analysisDir, `bundle-visualizer-${suffix}.html`),
+        template: 'treemap',
+        gzipSize: true,
+        brotliSize: true,
+        emitFile: false,
+        // ssr: isSsrBuild,
+      }),
+    );
+  }
+
   // beacon values captured in closure
   const buildTime = new Date().toISOString();
   let appVersion = '0.0.0-dev';
@@ -144,7 +165,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     const pkgPath = path.resolve(__dirname, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
     if (pkg?.version) appVersion = pkg.version;
-  } catch {}
+  } catch {
+    // no-op: fallback to default version when package.json is not accessible
+  }
 
   const buildBeaconPlugin = {
     name: 'hdb-build-beacon',
@@ -305,18 +328,15 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       const printBanner = (lines: string[]) => {
         const width = Math.max(...lines.map((l) => l.length), 64);
         const bar = '+-' + '-'.repeat(width) + '-+';
-        // eslint-disable-next-line no-console
         console.log('\n' + bar);
         for (const l of lines) {
           const pad = ' '.repeat(width - l.length);
-          // eslint-disable-next-line no-console
           console.log(`|  ${l}${pad}  |`);
         }
-        // eslint-disable-next-line no-console
         console.log(bar + '\n');
       };
       const onListening = () => {
-        try {
+
           if (DEV_PACKAGES.length === 0) {
             printBanner([
               'HDB_DEV is not set.',
@@ -330,7 +350,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
               ...DEV_PACKAGES.map((p) => `- ${p}`),
             ]);
           }
-        } catch {}
+
       };
       if (server?.httpServer) {
         server.httpServer.once('listening', onListening);
@@ -381,18 +401,35 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Worker subpath exports — map to src during dev so Vite can resolve without prior builds
+        { find: '@hierarchidb/location-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/worker/index.ts') },
         { find: '@hierarchidb/route-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/timeline-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/shape-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/basemap-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/basemap-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/basemap-plugin', replacement: path.resolve(__dirname, '../packages/node-type/basemap-plugin/src/index.ts') },
+        { find: '@hierarchidb/folder-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/folder-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/folder-plugin', replacement: path.resolve(__dirname, '../packages/node-type/folder-plugin/src/index.ts') },
         { find: '@hierarchidb/route-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/database/index.ts') },
         { find: '@hierarchidb/route-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/ui/index.ts') },
         { find: '@hierarchidb/route-plugin', replacement: path.resolve(__dirname, '../packages/node-type/route-plugin/src/index.ts') },
-        { find: '@hierarchidb/timeline-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/timeline-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/timeline-plugin', replacement: path.resolve(__dirname, '../packages/node-type/timeline-plugin/src/index.ts') },
         
-        { find: '@hierarchidb/location-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/worker/index.ts') },
-        { find: '@hierarchidb/shape-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/location-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/location-plugin', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/index.ts') },
+        { find: '@hierarchidb/shape-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/shape-plugin', replacement: path.resolve(__dirname, '../packages/node-type/shape-plugin/src/index.ts') },
         // Resolver plugin database: map to src during dev for HMR-friendly services (must come BEFORE root alias)
+        { find: '@hierarchidb/resolver-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/worker/index.ts') },
         { find: '@hierarchidb/resolver-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/database/index.ts') },
         // Some plugins don't ship a root dist during dev; point to src to avoid "Failed to resolve entry".
         { find: '@hierarchidb/resolver-plugin', replacement: path.resolve(__dirname, '../packages/node-type/resolver-plugin/src/index.ts') },
+        // Styler plugin resolves to src for dev-time HMR
+        { find: '@hierarchidb/styler-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/styler-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/ui/index.ts') },
+        { find: '@hierarchidb/styler-plugin', replacement: path.resolve(__dirname, '../packages/node-type/styler-plugin/src/index.ts') },
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
@@ -402,6 +439,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
         { find: '@hierarchidb/location-plugin/services', replacement: path.resolve(__dirname, '../packages/node-type/location-plugin/src/services/index.ts') },
         // Spreadsheet plugin database subpath must resolve before the root alias
+        { find: '@hierarchidb/spreadsheet-plugin/worker', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/worker/index.ts') },
+        { find: '@hierarchidb/spreadsheet-plugin/ui', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/ui/facade/index.ts') },
         { find: '@hierarchidb/spreadsheet-plugin/database', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/database/index.ts') },
         // Spreadsheet plugin is referenced by Styler UI; ensure resolvable during app build
         { find: '@hierarchidb/spreadsheet-plugin', replacement: path.resolve(__dirname, '../packages/node-type/spreadsheet-plugin/src/index.ts') },
@@ -502,9 +541,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     // Prevent Vite/React Router SSR build from externalizing workspace packages,
     // which would otherwise cause runtime failures when loaded in the browser.
     ssr: {
-      // Bundle MUI and Emotion into the SSR build to avoid Node ESM directory-import resolution
-      // errors (e.g., importing '@mui/material/styles' from the server bundle).
-      noExternal: [/^@hierarchidb\//, /^@mui\//, /^@emotion\//],
+      external: ssrExternalDeps,
+      // Keep workspace and Emotion packages bundled; maplibre/MUI are externalized above.
+      noExternal: [/^@hierarchidb\//, /^@emotion\//],
     },
     optimizeDeps: {
       include: [

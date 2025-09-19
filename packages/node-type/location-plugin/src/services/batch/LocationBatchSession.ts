@@ -4,7 +4,7 @@ import {
   type StandardProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-type';
-import type { SessionController } from './SessionController';
+import type { SessionController } from './SessionController.js';
 
 export interface LocationBatchConfig extends BaseBatchConfig {
   concurrency?: number;

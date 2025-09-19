@@ -1,8 +1,15 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 
-export type ResolverPeerRow = { nodeId: NodeId; data?: unknown; updatedAt?: number; displayMode?: 'standard' | 'maximized' | 'fullscreen' };
+export type ResolverPeerRow = {
+  nodeId: NodeId;
+  data?: unknown;
+  updatedAt?: number;
+  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  dialogPosition?: { x: number; y: number };
+  dialogSize?: { width: number; height: number };
+};
 
 export class ResolverEntitiesDB extends Dexie {
   peerEntities!: Table<ResolverPeerRow, NodeId>;
@@ -14,4 +21,3 @@ export class ResolverEntitiesDB extends Dexie {
     });
   }
 }
-

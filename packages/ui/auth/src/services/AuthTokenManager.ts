@@ -5,7 +5,7 @@
  * : OAuth2.0/JWT
   */
 
-import { AUTH_CONSTANTS } from './AuthServiceConfig';
+import { AUTH_CONSTANTS } from './AuthServiceConfig.js';
 
 /**
   * :

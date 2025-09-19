@@ -5,8 +5,8 @@
 
 import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
 import type { Collection } from 'dexie';
-import { BaseEntityHandler } from './BaseEntityHandler';
-import type { BaseSearchCriteria } from '../types';
+import { BaseEntityHandler } from './BaseEntityHandler.js';
+import type { BaseSearchCriteria } from '../types.js';
 
 /**
  * Entity interface for hierarchical structures

@@ -14,9 +14,9 @@ import type {
   ICSVDataApi,
 } from '@hierarchidb/ui-csv-extract';
 
-import type { StylerEntity } from '../entities/StylerEntity';
-import type { StylerConfig } from '../types/stylerTypes';
-import { valueToColor } from '../utils/colorUtils';
+import type { StylerEntity } from '../entities/StylerEntity.js';
+import type { StylerConfig } from '../types/stylerTypes.js';
+import { valueToColor } from '../utils/colorUtils.js';
 
 /**
   * : Styler

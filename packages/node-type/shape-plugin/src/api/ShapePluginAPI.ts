@@ -23,14 +23,14 @@ import type {
   ShapesAPIMethods,
   TileMetadata,
   ValidationResult,
-} from '~/services/types';
+} from '../services/types';
 
-import { ShapeService } from '~/services/ShapeService';
+import { ShapeService } from '../services/ShapeService';
 // Note: These imports would be used in full implementation
 // import { BatchSessionManager } from '~/services/batch/BatchSessionManager';
 // import { DataSourceManager } from '~/services/datasource/DataSourceManager';
-import { VectorTileService } from '~/services/tiles/VectorTileService';
-import { ShapeDB } from '~/services/database/ShapeDB';
+import { VectorTileService } from '../services/tiles/VectorTileService';
+import { ShapeDB } from '../services/database/ShapeDB';
 
 /**
  * Main Plugin API implementation that integrates with HierarchiDB Worker system

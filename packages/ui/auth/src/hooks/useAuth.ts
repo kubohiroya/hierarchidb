@@ -5,9 +5,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthProviderType } from '../types/AuthProviderType';
-import { PopupDetectionService } from '../services/PopupDetectionService';
-import { BFFAuthService, BFFSignInOptions, BFFUser } from '../services/BFFAuthService';
+import { AuthProviderType } from '../types/AuthProviderType.js';
+import { PopupDetectionService } from '../services/PopupDetectionService.js';
+import { BFFAuthService, BFFSignInOptions, BFFUser } from '../services/BFFAuthService.js';
 
 // Storage keys
 const STORAGE_KEYS = {

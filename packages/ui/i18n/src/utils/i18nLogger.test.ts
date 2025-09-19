@@ -4,7 +4,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as i18nLogger from './i18nLogger';
+import * as i18nLogger from './i18nLogger.js';
 
 // Mock i18next
 vi.mock('../i18n', () => ({

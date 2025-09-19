@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 // import type { DialogStepDefinition } from '@hierarchidb/common-type';
 //  Red
-import { SpreadsheetExtension } from './definition';
-// import { DataSourceStep } from '../steps/DataSourceStep';
-// import { FilteringStep } from '../steps/FilteringStep';
+import { SpreadsheetExtension } from './definition.js';
+// import { DataSourceStep } from '../steps/DataSourceStep.js';
+// import { FilteringStep } from '../steps/FilteringStep.js';
 
 describe('Spreadsheet拡張定義', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession';
-import { RouteBatchSession } from '../../src/services/RouteBatchSession';
+import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession.js';
+import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
 
 class TestGenerator {
   public activeOsm = 0;

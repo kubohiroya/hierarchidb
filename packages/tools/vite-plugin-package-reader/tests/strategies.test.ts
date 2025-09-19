@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CompositeStrategy, FieldStrategy, FunctionStrategy, RegexStrategy } from '../src/strategies';
-import type { PackageJson } from '../src/types';
+import { CompositeStrategy, FieldStrategy, FunctionStrategy, RegexStrategy } from '../src/strategies/index.js';
+import type { PackageJson } from '../src/types.js';
 
 describe('Strategies', () => {
   describe('RegexStrategy', () => {

@@ -67,34 +67,6 @@ export VITE_NEW_FEATURE_ENABLED="true"
 
 ## Worker feature flags (runtime-worker)
 
-段階導入のための機能フラグ（既定OFF）。`scripts/start-env.sh <env> <cmd>` の前に環境変数として指定します。
-
-注意: 以下2つは 2025-09-02 以降は非推奨（無効化・無視）です。
-- `WORKER_USE_CMDPROC_CREATE_UPDATE`（deprecated, ignored）
-- `WORKER_USE_CMDPROC_MOVE_REMOVE`（deprecated, ignored）
-
-例（現在有効なもの）:
-
-```
-# Working Copy commit を V2 フローに切替（戻り: ok/COMMIT_CONFLICT/NAME_CONFLICT）
-export WORKER_WC_COMMIT_V2="1"
-
-# 1コマンド＝1Tx の検証（開発時のみ）
-export WORKER_TX_ENABLED="1"
-
-# Trash を holder 方式に統一
-export WORKER_TRASH_USE_HOLDER="1"
-```
-
-CIや単発実行での例:
-
-```
-WORKER_WC_COMMIT_V2=1 pnpm --filter @hierarchidb/runtime-worker test -r
-WORKER_TX_ENABLED=1 pnpm --filter @hierarchidb/runtime-worker test -r
-WORKER_TRASH_USE_HOLDER=1 pnpm --filter @hierarchidb/runtime-worker test -r
-```
-```
-
 ### セキュアな値を追加
 
 `app/.env.secrets` に追加：

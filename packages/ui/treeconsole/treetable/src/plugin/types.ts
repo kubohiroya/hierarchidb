@@ -5,7 +5,7 @@
 
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react';
 import type { CellContext } from '@tanstack/react-table';
-import type { TreeNodeInUI } from '../types';
+import type { TreeNodeInUI } from '../types.js';
 
 // =============================================================================
 // Core Plugin Interfaces

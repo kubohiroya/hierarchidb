@@ -7,7 +7,7 @@ vk:doc kind=runbook audience=ops scope=worker
 
 準備
 - Node >= 20, pnpm >= 9
-- 既定はON（`WORKER_TRASH_USE_HOLDER=1`）。レガシー互換が必要なケースのみ一時的にOFFへ切替え。
+- Trash ホルダー方式は常時有効（旧 removedAt 方式は廃止済み）
 
 手順
 1) ドライラン
@@ -24,7 +24,7 @@ node -r esbuild-register packages/runtime-worker/worker/src/tools/trash-migrate.
 - まずは小さな limit から。監視しながら増やす。
 
 3) 切替
-- 既定がONのため、特別な切替作業は不要。旧挙動が必要な場合のみ OFF に設定して検証。
+- コードはホルダー方式で固定化されているため、作業完了後に追加の切替は不要。
 
 ロールバック
 - 再度スクリプトを `--rollback` で実行（`--dry-run` で計画確認→実行）

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { ThemedCircularProgress, ThemedLinearProgress, ThemedLoadingScreen } from './ThemedLoadingScreen';
+import { ThemedCircularProgress, ThemedLinearProgress, ThemedLoadingScreen } from './ThemedLoadingScreen.js';
 
 const renderWithTheme = (ui: React.ReactElement, mode: 'light' | 'dark' = 'light') => {
   const theme = createTheme({ palette: { mode } });

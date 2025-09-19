@@ -9,9 +9,9 @@ import {
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { useRouteLoaderData } from 'react-router-dom';
-import type { LoadAppConfigReturn } from '~/loadAppConfig';
-import { loadAppConfig } from '~/loadAppConfig';
-import { normalizeNodeType } from '~/utils/nodeTypeNormalize';
+import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
+import { loadAppConfig } from '~/loadAppConfig.js';
+import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
 
 export type { LoadAppConfigReturn };
 
@@ -108,7 +108,7 @@ async function retryComlinkCall<T>(
       // Avoid recreating the Worker while it is still booting to prevent races
       // @eslint-disable-next-line @typescript-eslint/no-explicit-any
       const g: any = (typeof window !== 'undefined') ? (window as any) : {};
-      const { WorkerAPIClient } = await import('./WorkerAPIClient');
+      const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
       const initComplete = Boolean(g.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
       if (!initComplete) {
@@ -144,7 +144,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
   try {
     //  WorkerAPIClient
-    const { WorkerAPIClient } = await import('./WorkerAPIClient');
+    const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
 
     // Fast path: if global INIT_COMPLETE already observed, return immediately
       // @eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -352,7 +352,7 @@ export async function loadNodeAction({
   });
   return {
     ...loadNodeTypeReturn,
-    action: action as NodeAction | undefined,
+    action: action as unknown as NodeAction | undefined,
   };
 }
 

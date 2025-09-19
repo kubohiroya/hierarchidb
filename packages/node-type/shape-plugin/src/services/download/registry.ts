@@ -1,6 +1,6 @@
-import type { BatchTaskLike } from '../../types/BatchTaskLike';
-import type { IShapeDownloadStrategy } from './strategy';
-import { HttpUrlStrategy } from './strategies/http-url';
+import type { BatchTaskLike } from '../../types/BatchTaskLike.js';
+import type { IShapeDownloadStrategy } from './strategy.js';
+import { HttpUrlStrategy } from './strategies/http-url.js';
 
 class InMemoryRegistry {
   private list: IShapeDownloadStrategy[] = [];
@@ -18,8 +18,5 @@ const registry = new InMemoryRegistry();
 registry.register(new HttpUrlStrategy());
 
 export function resolveShapeDownloadStrategy(task: BatchTaskLike): IShapeDownloadStrategy | null {
-  const enabled =
-    (typeof globalThis !== 'undefined' && (globalThis as any)?.FEATURE_FLAGS?.SHAPE_DOWNLOAD_STRATEGY === true);
-  if (!enabled) return null;
   return registry.resolve(task);
 }

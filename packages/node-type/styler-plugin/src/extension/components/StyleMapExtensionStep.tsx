@@ -67,11 +67,11 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
 
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>{t('extension.styleType.label', 'Style Type')}</InputLabel>
+          <InputLabel>{String(t('extension.styleType.label', 'Style Type'))}</InputLabel>
           <Select
             value={data.styleType || 'choropleth'}
             onChange={handleStyleTypeChange}
-            label={t('extension.styleType.label', 'Style Type')}
+            label={String(t('extension.styleType.label', 'Style Type'))}
           >
             <MenuItem value="choropleth">
               {t('extension.styleType.choropleth', 'Choropleth Map')}
@@ -86,21 +86,21 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
       <Grid item xs={12} sm={6}>
         <TextField
           fullWidth
-          label={t('extension.dataSource.label', 'Data Source')}
+          label={String(t('extension.dataSource.label', 'Data Source'))}
           value={data.dataSource || ''}
           onChange={handleDataSourceChange}
           disabled={isSubmitting}
-          placeholder={t('extension.dataSource.placeholder', 'e.g., CSV file path or URL')}
+          placeholder={String(t('extension.dataSource.placeholder', 'e.g., CSV file path or URL'))}
         />
       </Grid>
 
       <Grid item xs={12} sm={6}>
         <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>{t('extension.colorScheme.label', 'Color Scheme')}</InputLabel>
+          <InputLabel>{String(t('extension.colorScheme.label', 'Color Scheme'))}</InputLabel>
           <Select
             value={data.colorScheme || 'blues'}
             onChange={handleColorSchemeChange}
-            label={t('extension.colorScheme.label', 'Color Scheme')}
+            label={String(t('extension.colorScheme.label', 'Color Scheme'))}
           >
             <MenuItem value="blues">{t('extension.colorScheme.blues', 'Blues')}</MenuItem>
             <MenuItem value="reds">{t('extension.colorScheme.reds', 'Reds')}</MenuItem>

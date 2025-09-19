@@ -4,11 +4,11 @@ import type {
   VitePluginPackageReaderAPI,
   VitePluginPackageReaderOptions,
   VitePluginWithAPI,
-} from '../types';
-import { Logger } from '../core/Logger';
-import { PackageDetector } from '../core/PackageDetector';
-import { TransformPipeline } from '../pipeline/TransformPipeline';
-import { VirtualModuleManager } from '../virtual/VirtualModuleManager';
+} from '../types.js';
+import { Logger } from '../core/Logger.js';
+import { PackageDetector } from '../core/PackageDetector.js';
+import { TransformPipeline } from '../pipeline/TransformPipeline.js';
+import { VirtualModuleManager } from '../virtual/VirtualModuleManager.js';
 import fs from 'fs/promises';
 
 export function vitePluginPackageReader<T = any>(

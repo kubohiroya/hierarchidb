@@ -12,7 +12,7 @@ import type {
   FilterParams,
   QueryParams,
   QueryResult,
-} from '../types/DataProvider';
+} from '../types/DataProvider.js';
 
 export class InMemoryDataProvider<T extends DataItem = DataItem> implements DataProvider<T> {
   private data: T[];

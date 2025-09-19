@@ -11,7 +11,7 @@ export {
   getBinaryFormatInfo,
   calculateCompressionRatio,
   measureSerializationPerformance,
-} from './binarySerializer';
+} from './binarySerializer.js';
 
 //  :
 export {
@@ -21,10 +21,10 @@ export {
   calculateCombinedHash,
   compareHashes,
   getShortHash,
-} from './hashUtils';
+} from './hashUtils.js';
 
 //  CSV: CSV
-export { parseCSVContent, detectColumnTypes } from './csvParser';
+export { parseCSVContent, detectColumnTypes } from './csvParser.js';
 
 //  : Excel/ZIP
 export {
@@ -34,7 +34,7 @@ export {
   getExtensionFromMimeType,
   formatFileSize,
   detectCSVDelimiter,
-} from './fileProcessingUtils';
+} from './fileProcessingUtils.js';
 
 //  : CSV
-export { applyCsvFilters, validateFilterRules, getFilterStatistics } from './filterUtils';
+export { applyCsvFilters, validateFilterRules, getFilterStatistics } from './filterUtils.js';

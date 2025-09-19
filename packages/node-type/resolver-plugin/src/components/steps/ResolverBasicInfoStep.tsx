@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, FormHelperText, Typography } from '@mui/material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
-import type { ResolverWorkingCopyEntity } from '~/types';
+import type { ResolverWorkingCopyEntity } from '../../types/index.js';
 
 interface ResolverBasicInfoStepProps {
   data: Partial<ResolverWorkingCopyEntity>;

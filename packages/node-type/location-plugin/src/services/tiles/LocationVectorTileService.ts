@@ -1,7 +1,7 @@
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB';
-import { LocationBatchSessionManager } from '../batch/BatchSessionManager';
-import type { LocationPointInput, LocationTileSettings, SessionSummary, ProgressInfo } from '../batch/SessionController';
+import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { LocationBatchSessionManager } from '../batch/BatchSessionManager.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary, ProgressInfo } from '../batch/SessionController.js';
 
 export class LocationVectorTileService {
   private manager = new LocationBatchSessionManager();

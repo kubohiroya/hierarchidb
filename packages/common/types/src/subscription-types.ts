@@ -1,4 +1,4 @@
-import { TreeNodeEvent } from './tree-node-event-types';
+import { TreeNodeEvent } from './tree-node-event-types.js';
 
 export type SubscriptionId = string & { readonly __brand: 'SubscriptionId' };
 

@@ -1,5 +1,5 @@
-import type { VirtualModuleGenerator } from '../types';
-import { Logger } from '../core/Logger';
+import type { VirtualModuleGenerator } from '../types.js';
+import { Logger } from '../core/Logger.js';
 
 interface VirtualModule {
   id: string;

@@ -19,8 +19,8 @@ export const InitInspector: React.FC = () => {
     let mounted = true;
     const update = async () => {
       try {
-        const mod = await import('../WorkerAPIClient');
-        const initMod = await import('../client');
+        const mod = await import('../WorkerAPIClient.js');
+        const initMod = await import('../client.js');
         const clientReady = mod.WorkerAPIClient.isReady();
         const hasInstance = !!mod['WorkerAPIClient'] && (mod as any)['WorkerAPIClient']['getRawWorkerInstance']?.() != null;
         const workerState = (mod as any)['WorkerAPIClient']?.['state'] ?? 'unknown';
@@ -76,7 +76,7 @@ export const InitInspector: React.FC = () => {
   };
 
   const ping = async () => {
-    const { WorkerAPIClient } = await import('../WorkerAPIClient');
+    const { WorkerAPIClient } = await import('../WorkerAPIClient.js');
     try {
       await WorkerAPIClient.initialize();
       const client = WorkerAPIClient.getSingleton();

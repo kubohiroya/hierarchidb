@@ -1,6 +1,8 @@
-import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types';
+import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
+// Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime
+import type vtPbfNS = require('vt-pbf');
 import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
-import { TilesDB } from './TilesDB';
+import { TilesDB } from './TilesDB.js';
 
 /**
  * StageProcessingService
@@ -70,8 +72,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     geojson = JSON.parse(txt);
 
     const gjvt = (await import('geojson-vt')).default as any;
-    // @maplibre/vt-pbf exposes named exports; use the module object directly
-    const vtpbf = await import('@maplibre/vt-pbf');
+    // Runtime import; typed via @types/vt-pbf without ambient shims
+    const vtpbf = (await import('@maplibre/vt-pbf')) as unknown as typeof vtPbfNS;
     const extent = 4096;
     const index = gjvt(geojson, { maxZoom: 6, extent, indexMaxZoom: 6, promoteId: 'id' });
 

@@ -1,9 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { glob } from 'glob';
-import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../types';
-import { Logger } from './Logger';
-import { PackageCache } from './PackageCache';
+import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../types.js';
+import { Logger } from './Logger.js';
+import { PackageCache } from './PackageCache.js';
 
 export interface PackageDetectorOptions {
   rootDir?: string;

@@ -2,6 +2,7 @@
   "name": "@hierarchidb/cors-proxy",
   "version": "0.0.1",
   "description": "CORS proxy for external API access",
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "dev:manual": "wrangler dev",

@@ -25,6 +25,6 @@ interface ResourceProjectPreviewGroupProps {
     /** Button size - small, medium (default), or large */
     size?: ButtonGroupSize;
 }
-export declare function ResourceProjectPreviewGroup({ selected, currentPageNodeId, appPrefix, getSavedPageNodeId, savePageNodeId, previewEnabled, onPreviewClick, orientation, size, }: ResourceProjectPreviewGroupProps): JSX.Element;
+export declare function ResourceProjectPreviewGroup({ selected, currentPageNodeId, appPrefix: _appPrefix, getSavedPageNodeId, savePageNodeId, previewEnabled: _previewEnabled, onPreviewClick: _onPreviewClick, orientation, size, }: ResourceProjectPreviewGroupProps): JSX.Element;
 export {};
 //# sourceMappingURL=ResourceProjectPreviewGroup.d.ts.map

@@ -16,7 +16,7 @@ import type {
   UpdateShapeData,
   UrlMetadata,
   ValidationResult,
-} from '../shared';
+} from '../shared/index.js';
 
 export interface ShapeWorkerAPI {
   // Entities
@@ -66,4 +66,4 @@ export interface ShapeWorkerAPI {
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
 }
 
-export type { NodeId } from '../shared';
+export type { NodeId } from '../shared/index.js';

@@ -19,7 +19,7 @@ import {
   DeleteForever as DeleteForeverIcon,
   Restore as RestoreIcon,
 } from '@mui/icons-material';
-import type { TrashbinActionsProps } from '../types';
+import type { TrashbinActionsProps } from '../types.js';
 
 /**
   * TrashbinActions

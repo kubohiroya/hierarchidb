@@ -1,0 +1,47 @@
+import { describe, it, expect } from 'vitest';
+import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import { toNodeId, toNodeType } from '@hierarchidb/common-type';
+import { filterNodesBySearch, getNodePath } from '../utils/index.js';
+
+const ROOT_PARENT_ID = null as unknown as NodeId;
+const TIMESTAMP = 0;
+
+const createNode = (
+  id: string,
+  name: string,
+  nodeType: string,
+  parentId: string | null,
+  depth: number,
+): TreeNode => ({
+  id: toNodeId(id),
+  name,
+  nodeType: toNodeType(nodeType),
+  parentId: parentId === null ? ROOT_PARENT_ID : toNodeId(parentId),
+  depth,
+  createdAt: TIMESTAMP,
+  updatedAt: TIMESTAMP,
+  version: 1,
+});
+
+const nodes: TreeNode[] = [
+  createNode('r', 'root', 'folder', null, 0),
+  createNode('a', 'alpha', 'folder', 'r', 1),
+  createNode('b', 'beta', 'folder', 'r', 1),
+  createNode('c', 'charlie', 'note', 'a', 2),
+  createNode('d', 'delta', 'note', 'a', 2),
+  createNode('e', 'echo', 'note', 'b', 2),
+];
+
+describe('filterNodesBySearch + getNodePath', () => {
+  it('includes matching nodes and their ancestors/descendants', () => {
+    const r = filterNodesBySearch(nodes, 'char');
+    const ids = r.map(n => n.id).sort();
+    // match: c (charlie); include ancestors: a, r; include descendants: none
+    expect(ids).toEqual(['a', 'c', 'r']);
+  });
+
+  it('produces a readable path', () => {
+    const path = getNodePath('c', nodes, ' / ');
+    expect(path).toBe('root / alpha / charlie');
+  });
+});

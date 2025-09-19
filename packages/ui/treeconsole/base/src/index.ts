@@ -1,9 +1,9 @@
 // Main containers
-export { TreeConsolePanel } from './components/TreeConsolePanel';
-export type { TreeConsolePanelProps } from './components/TreeConsolePanel';
+export { TreeConsolePanel } from './components/TreeConsolePanel.js';
+export type { TreeConsolePanelProps } from './components/TreeConsolePanel.js';
 
 // TreeTable containers
-export { TreeTableView, TreeTableFooter, RowContextMenu } from './components/TreeTable';
+export { TreeTableView, TreeTableFooter, RowContextMenu } from './components/TreeTable/index.js';
 
 export type {
   TreeTableViewProps,
@@ -11,7 +11,7 @@ export type {
   TreeTableToolbarProps,
   TreeTableFooterProps,
   RowContextMenuProps,
-} from './components/TreeTable';
+} from './components/TreeTable/index.js';
 
 // Types
 export type {
@@ -25,4 +25,4 @@ export type {
   NavigationState,
   LoadingState,
   ErrorState,
-} from './types/index';
+} from './types/index.js';

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useWorker } from '../contexts/WorkerProvider';
+import { useWorker } from '../contexts/WorkerProvider.js';
 import type { PluginInfo } from '@hierarchidb/common-api';
 import type { NodeType } from '@hierarchidb/common-type';
 

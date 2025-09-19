@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandEnvelope } from '../../services/command-types';
-import { EntityLifecycleManager } from '../EntityLifecycleManager';
+import type { CommandEnvelope } from '../../services/command-types.js';
+import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 
 describe('EntityLifecycleManager dispatch', () => {
   beforeEach(() => {

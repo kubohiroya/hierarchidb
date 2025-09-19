@@ -19,9 +19,9 @@ import {
 } from '@mui/material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Route as RouteIcon } from '@mui/icons-material';
-import type { RouteCategory, RouteWorkingCopy, TagId } from '../types';
-import { RouteType, TransportMode } from '../types';
-import { useTranslation } from '../i18n';
+import type { RouteCategory, RouteWorkingCopy, TagId } from '../types/index.js';
+import { RouteType, TransportMode } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
 
 export interface RouteBasicInfoStepProps {
   workingCopy: RouteWorkingCopy;

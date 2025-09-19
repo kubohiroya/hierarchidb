@@ -3,7 +3,7 @@
  * @description Route generation service for different algorithms
  */
 
-import type { RouteGenerationConfig } from '../entities/RouteEntity';
+import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 
 /**
  * Route generation result

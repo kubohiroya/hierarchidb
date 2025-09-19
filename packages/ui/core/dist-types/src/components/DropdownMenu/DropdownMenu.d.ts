@@ -17,7 +17,7 @@
  * - DropdownMenuItemType: Menu item configuration type
  */
 import { type ReactNode } from 'react';
-import type { DropdownMenuItemType } from './DropdownMenuItemType';
+import type { DropdownMenuItemType } from './DropdownMenuItemType.js';
 export interface DropdownMenuProps {
     id: string;
     items: Array<DropdownMenuItemType | null>;

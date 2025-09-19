@@ -9,4 +9,4 @@ export {
   calculateOptimalSizes,
   AutoExpandPresets,
   batchUpdateProgress,
-} from './lruUtils';
+} from './lruUtils.js';

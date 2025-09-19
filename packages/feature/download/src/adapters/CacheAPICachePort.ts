@@ -1,4 +1,4 @@
-import type { CachePort, HashAlgorithm, ResponseLike } from '../ports';
+import type { CachePort, HashAlgorithm, ResponseLike } from '../ports.js';
 
 const CACHE_NAME = 'hierarchidb-cas';
 

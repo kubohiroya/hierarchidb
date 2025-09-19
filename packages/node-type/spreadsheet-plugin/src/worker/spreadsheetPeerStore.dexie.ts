@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { SheetPeerRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB';
+import type { SheetPeerRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB.js';
 
 export function createSpreadsheetPeerStoreDexie(db: SpreadsheetEntitiesDB): PeerStore<any> {
   return {

@@ -1,7 +1,7 @@
-export { FolderIcon } from './FolderIcon';
-export { FolderCreateDialog } from './FolderCreateDialog';
-export { FolderEditDialog } from './FolderEditDialog';
+export { FolderIcon } from './FolderIcon.js';
+export { FolderCreateDialog } from './FolderCreateDialog.js';
+export { FolderEditDialog } from './FolderEditDialog.js';
 
-export type { FolderIconProps } from './FolderIcon';
-export type { FolderCreateDialogProps } from './FolderCreateDialog';
-export type { FolderEditDialogProps } from './FolderEditDialog';
+export type { FolderIconProps } from './FolderIcon.js';
+export type { FolderCreateDialogProps } from './FolderCreateDialog.js';
+export type { FolderEditDialogProps } from './FolderEditDialog.js';

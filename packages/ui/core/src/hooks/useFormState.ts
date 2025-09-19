@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { useAsyncOperation } from './useAsyncOperation';
+import { useAsyncOperation } from './useAsyncOperation.js';
 
 // Utility function to omit keys from an object that maintains proper type safety
 function omitErrorField(errors: Record<string, string>, field: string): Record<string, string> {

@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import type { LoggerOptions, LogLevel } from '../types';
+import type { LoggerOptions, LogLevel } from '../types.js';
 
 export class Logger {
   private level: LogLevel;

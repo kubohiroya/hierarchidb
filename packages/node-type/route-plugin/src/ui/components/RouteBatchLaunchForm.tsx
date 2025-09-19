@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator';
-import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService';
-import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager';
-import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults';
-import { getNetPort } from '../../services/net/getNetPort';
+import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator.js';
+import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService.js';
+import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';
+import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
+import { getNetPort } from '../../services/net/getNetPort.js';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService';
-import { LocationVectorTileService } from './LocationVectorTileService';
-import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB';
+import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
+import { LocationVectorTileService } from './LocationVectorTileService.js';
+import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 
 function long2tile(lon: number, z: number) {
   return Math.floor(((lon + 180) / 360) * Math.pow(2, z));

@@ -1,6 +1,6 @@
 import { formatBytes } from '@hierarchidb/util';
 
-import type { MemoryData } from '../hooks/useMemoryData';
+import type { MemoryData } from '../hooks/useMemoryData.js';
 
 /**
   * : Canvas

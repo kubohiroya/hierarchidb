@@ -3,4 +3,4 @@
  * @description BaseMap entities export
  */
 
-export * from './BaseMapEntity';
+export * from './BaseMapEntity.js';

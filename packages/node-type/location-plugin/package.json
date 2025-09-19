@@ -15,10 +15,43 @@
       "import": "./dist/services/index.js"
     },
     "./worker": {
-      "import": "./src/worker/index.ts"
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
     },
     "./ui": {
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
+    },
+    "./worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "services": [
+        "dist/services/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -56,8 +89,8 @@
     "react-dom": "^18.3.1",
     "@mui/material": "^7.3.1",
     "@mui/icons-material": "^7.3.2",
-    "@emotion/react": "^11.11.0",
-    "@emotion/styled": "^11.11.0"
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0"
   },
   "tsup": {
     "external": [

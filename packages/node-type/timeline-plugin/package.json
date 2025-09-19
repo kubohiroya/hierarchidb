@@ -17,10 +17,38 @@
       "import": "./dist/services/index.js"
     },
     "./worker": {
+      "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
     "./ui": {
+      "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
+    },
+    "./src/worker": {
+      "types": "./src/worker/index.ts",
+      "import": "./src/worker/index.ts",
+      "default": "./src/worker/index.ts"
+    },
+    "./src/worker/*": {
+      "types": "./src/worker/*.ts",
+      "import": "./src/worker/*.ts",
+      "default": "./src/worker/*.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "services": [
+        "dist/services/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "scripts": {
@@ -40,7 +68,7 @@
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
+    "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@hierarchidb/ui-dialog": "workspace:*",
@@ -50,13 +78,19 @@
     "@types/node": "^20.10.5",
     "react": ">=18.0.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "react-transition-group": "^4.4.5",
+    "@types/react-transition-group": "^4.4.12"
   },
   "hierarchidb": {
     "plugin": {
       "nodeType": "timeline",
       "name": "Timeline Plugin",
-      "icon": { "mui": "Timeline", "emoji": "🕒", "color": "#8a7cbf" }
+      "icon": {
+        "mui": "Timeline",
+        "emoji": "🕒",
+        "color": "#8a7cbf"
+      }
     }
   },
   "tsup": {

@@ -1,6 +1,6 @@
 import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
-import type { ILocationDownloadStrategy } from './types';
-import type { LocationSearchConfig } from '../../entities/LocationEntity';
+import type { ILocationDownloadStrategy } from './types.js';
+import type { LocationSearchConfig } from '../../entities/LocationEntity.js';
 
 export interface LocationNetService {
   net: { get: (url: string, init?: RequestInit) => Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }> };

@@ -1,4 +1,4 @@
-import type { CountryMetadata } from '~/shared';
+import type { CountryMetadata } from '../../shared';
 import type { CountryMetadata as FetchedCountryMetadata } from '@hierarchidb/runtime-shared-fetch-metadata';
 
 /**

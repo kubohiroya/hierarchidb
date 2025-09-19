@@ -1,6 +1,6 @@
-export * from './TagService';
-export * from './ports';
-export * from './capability';
+export * from './TagService.js';
+export * from './ports.js';
+export * from './capability.js';
 export const featureDefinition = {
   manifest: { name: '@hierarchidb/tag', provides: ['taggable'] },
   init() {

@@ -1,5 +1,5 @@
-export { CountryMatrixSelector } from './CountryMatrixSelector';
-export { CountryMatrixStep } from './CountryMatrixStep';
+export { CountryMatrixSelector } from './CountryMatrixSelector.js';
+export { CountryMatrixStep } from './CountryMatrixStep.js';
 
-export type { CountryMatrixSelectorProps } from './CountryMatrixSelector';
-export type { CountryMatrixStepProps } from './CountryMatrixStep';
+export type { CountryMatrixSelectorProps } from './CountryMatrixSelector.js';
+export type { CountryMatrixStepProps } from './CountryMatrixStep.js';

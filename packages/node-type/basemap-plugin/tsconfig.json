@@ -17,7 +17,8 @@
       ]
     },
     "incremental": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Node16"
   },
   "include": [
     "src/**/*"

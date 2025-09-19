@@ -19,7 +19,9 @@
     "composite": true,
     "incremental": true,
     "noEmit": false,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "module": "Node16",
+    "moduleResolution": "Node16"
   },
   "include": [
     "src"

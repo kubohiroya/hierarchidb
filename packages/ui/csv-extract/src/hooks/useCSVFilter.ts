@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useCSVApi } from '~/context/CSVContext';
-import type { CSVDataResult, CSVFilterRule, CSVSelectionConfig } from '~/types';
+import { useCSVApi } from '../context/CSVContext.js';
+import type { CSVDataResult, CSVFilterRule, CSVSelectionConfig } from '../types/index.js';
 
 /**
  * Options for useCSVFilter hook

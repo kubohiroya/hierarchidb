@@ -11,9 +11,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { ShapeEntityHandler } from '../../services/ShapeEntityHandler';
-import type { ShapeWorkingCopy } from '../../types/ShapeEntity';
-import type { BatchConfig } from '../../types/BatchConfig';
+import { ShapeEntityHandler } from '../../services/ShapeEntityHandler.js';
+import type { ShapeWorkingCopy } from '../../types/ShapeEntity.js';
+import type { BatchConfig } from '../../types/BatchConfig.js';
 
 describe('ShapeEntityHandler Migration Tests', () => {
   let entityHandler: ShapeEntityHandler;

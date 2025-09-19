@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { LocationEntitiesDB, LocationPeerRow } from './locationEntitiesDB';
-import type { LocationPeerData } from '../types/entities';
+import type { LocationEntitiesDB, LocationPeerRow } from './locationEntitiesDB.js';
+import type { LocationPeerData } from '../types/entities.js';
 
 export function createLocationPeerStoreDexie(db: LocationEntitiesDB): PeerStore<LocationPeerData> {
   return {

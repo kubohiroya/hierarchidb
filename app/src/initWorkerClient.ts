@@ -1,2 +1,2 @@
 // Deprecated file: re-export from client.ts to keep backward compatibility.
-export { initializeWorker, getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client';
+export { initializeWorker, getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client.js';

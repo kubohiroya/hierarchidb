@@ -103,6 +103,7 @@ export function NodeTypeIcon({
         disabled={disabled}
         sx={{
           padding: iconSize === 'small' ? 0.5 : 1,
+          cursor: disabled ? 'not-allowed' : 'context-menu',
           '&:hover': {
             backgroundColor: 'action.hover',
           },

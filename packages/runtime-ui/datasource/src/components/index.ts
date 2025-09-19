@@ -1,9 +1,9 @@
-export { DataSourceSelector } from './DataSourceSelector';
-export { DataSourceLicenseAgreement } from './DataSourceLicenseAgreement';
-export { DataSourceSelectionStep } from './DataSourceSelectionStep';
-export { DataSourceLicenseStep } from './DataSourceLicenseStep';
+export { DataSourceSelector } from './DataSourceSelector.js';
+export { DataSourceLicenseAgreement } from './DataSourceLicenseAgreement.js';
+export { DataSourceSelectionStep } from './DataSourceSelectionStep.js';
+export { DataSourceLicenseStep } from './DataSourceLicenseStep.js';
 
-export type { DataSourceSelectorProps } from './DataSourceSelector';
-export type { DataSourceLicenseAgreementProps } from './DataSourceLicenseAgreement';
-export type { DataSourceSelectionStepProps } from './DataSourceSelectionStep';
-export type { DataSourceLicenseStepProps } from './DataSourceLicenseStep';
+export type { DataSourceSelectorProps } from './DataSourceSelector.js';
+export type { DataSourceLicenseAgreementProps } from './DataSourceLicenseAgreement.js';
+export type { DataSourceSelectionStepProps } from './DataSourceSelectionStep.js';
+export type { DataSourceLicenseStepProps } from './DataSourceLicenseStep.js';

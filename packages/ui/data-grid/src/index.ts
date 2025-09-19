@@ -6,12 +6,12 @@
  */
 
 // Core components
-export { AbstractDataGrid } from './AbstractDataGrid';
-export type { AbstractDataGridProps } from './AbstractDataGrid';
+export { AbstractDataGrid } from './AbstractDataGrid.js';
+export type { AbstractDataGridProps } from './AbstractDataGrid.js';
 
 // Legacy generic grid (will be deprecated)
-export { GenericDataGrid } from './GenericDataGrid';
-export type { GenericDataGridProps, GridColumn } from './GenericDataGrid';
+export { GenericDataGrid } from './GenericDataGrid.js';
+export type { GenericDataGridProps, GridColumn } from './GenericDataGrid.js';
 
 // Data provider types
 export type {
@@ -25,7 +25,7 @@ export type {
   ColumnDefinition,
   SchemaDefinition,
   DataChangeEvent,
-} from './types/DataProvider';
+} from './types/DataProvider.js';
 
 // Built-in providers
-export { InMemoryDataProvider } from './providers/InMemoryDataProvider';
+export { InMemoryDataProvider } from './providers/InMemoryDataProvider.js';

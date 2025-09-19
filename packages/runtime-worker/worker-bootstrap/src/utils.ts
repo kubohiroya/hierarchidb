@@ -2,8 +2,8 @@
  * Utility functions for Worker initialization
  */
 
-import { WorkerInitializationReporter } from './WorkerInitializationReporter';
-import type { InitializationStep } from './types';
+import { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
+import type { InitializationStep } from './types.js';
 
 /**
  * Helper function to wrap the entire Worker initialization with reporting

@@ -4,9 +4,9 @@
   */
 
 import { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerLauncher } from './WorkerLauncher';
-import { WorkerConnector } from './WorkerConnector';
-import { ComlinkBridge } from './ComlinkBridge';
+import { WorkerLauncher } from './WorkerLauncher.js';
+import { WorkerConnector } from './WorkerConnector.js';
+import { ComlinkBridge } from './ComlinkBridge.js';
 
 /**
     */

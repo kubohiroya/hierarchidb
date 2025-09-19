@@ -5,7 +5,7 @@
  * its internal initialization, using native browser messaging APIs.
  */
 
-import type { InitializationResult, WorkerInitConfig, WorkerInitMessage, WorkerInitRequest } from './types';
+import type { InitializationResult, WorkerInitConfig, WorkerInitMessage, WorkerInitRequest } from './types.js';
 
 export class WorkerInitializationChannel {
   private worker: Worker | null = null;

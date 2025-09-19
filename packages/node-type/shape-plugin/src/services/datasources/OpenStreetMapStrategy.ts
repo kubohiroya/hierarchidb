@@ -9,8 +9,8 @@ import {
   DataSourceConfig,
   FetchOptions,
   ProcessOptions,
-} from './DataSourceStrategy';
-import { ShapeEntity } from '../../types/ShapeEntity';
+} from './DataSourceStrategy.js';
+import { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  OSM
 export interface OSMRawData {
@@ -308,7 +308,7 @@ out geom;
   private async executeOverpassQuery(query: string): Promise<any> {
     const url = `${this.config.access.baseUrl}${this.config.access.endpoints?.interpreter}`;
 
-    const { authFetch } = await import('../utils/authFetch');
+    const { authFetch } = await import('../utils/authFetch.js');
     const response = await authFetch(url, {
       method: 'POST',
       headers: {

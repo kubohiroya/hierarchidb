@@ -1,4 +1,4 @@
-import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, NetworkPort, ResponseLike } from '../ports';
+import type { CachePort, ContentIndexPort, HashAlgorithm, HashPort, NetworkPort, ResponseLike } from '../ports.js';
 
 export interface FetchToCasOptions {
   url: string;

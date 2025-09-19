@@ -1,8 +1,8 @@
 // Core exports
-export { vitePluginPackageReader } from './plugin/VitePlugin';
-export { Logger } from './core/Logger';
-export { PackageCache } from './core/PackageCache';
-export { PackageDetector } from './core/PackageDetector';
+export { vitePluginPackageReader } from './plugin/VitePlugin.js';
+export { Logger } from './core/Logger.js';
+export { PackageCache } from './core/PackageCache.js';
+export { PackageDetector } from './core/PackageDetector.js';
 
 // Strategy exports
 export {
@@ -11,15 +11,15 @@ export {
   FieldStrategy,
   CompositeStrategy,
   FunctionStrategy,
-} from './strategies';
+} from './strategies/index.js';
 
 // Pipeline exports
-export { TransformPipeline } from './pipeline/TransformPipeline';
-export { DependencyResolver } from './pipeline/DependencyResolver';
+export { TransformPipeline } from './pipeline/TransformPipeline.js';
+export { DependencyResolver } from './pipeline/DependencyResolver.js';
 
 // Virtual module exports
-export { VirtualModuleManager } from './virtual/VirtualModuleManager';
-export { TypeGenerator } from './virtual/TypeGenerator';
+export { VirtualModuleManager } from './virtual/VirtualModuleManager.js';
+export { TypeGenerator } from './virtual/TypeGenerator.js';
 
 // Type exports
 export type {
@@ -34,4 +34,4 @@ export type {
   VitePluginPackageReaderOptions,
   VitePluginPackageReaderAPI,
   VitePluginWithAPI,
-} from './types';
+} from './types.js';

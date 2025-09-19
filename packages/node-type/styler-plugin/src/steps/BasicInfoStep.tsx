@@ -3,7 +3,7 @@ import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextFie
 import Grid from '@mui/material/GridLegacy';
 import { useTranslation } from 'react-i18next';
 import { BasicInfoFields, CategorySelector, TagInput } from '@hierarchidb/ui-core';
-import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types';
+import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types.js';
 
 type TagId = string;
 type TagEntity = { id: TagId; name?: string };

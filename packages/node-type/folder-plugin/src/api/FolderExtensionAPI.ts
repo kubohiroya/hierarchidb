@@ -6,7 +6,7 @@ import type {
   TreeNode,
   ValidationExtension,
 } from '@hierarchidb/common-type';
-import type { FolderEntity } from '../entities/FolderEntity';
+import type { FolderEntity } from '../entities/FolderEntity.js';
 
 /**
  * Lightweight evaluator interface for folder-plugin extensions.

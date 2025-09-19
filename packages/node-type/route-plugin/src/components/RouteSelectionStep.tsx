@@ -21,8 +21,8 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, MyLocation, Remove } from '@mui/icons-material';
-import type { RouteWorkingCopy } from '../types';
-import { useTranslation } from '../i18n';
+import type { RouteWorkingCopy } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
 
 export interface RouteSelectionStepProps {
   workingCopy: RouteWorkingCopy;

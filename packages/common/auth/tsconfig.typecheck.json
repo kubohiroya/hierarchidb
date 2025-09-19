@@ -3,6 +3,7 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "incremental": true
+    "incremental": true,
+    "module": "ESNext"
   }
 }

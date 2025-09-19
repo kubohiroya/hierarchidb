@@ -10,8 +10,9 @@ import {
   Typography,
 } from '@mui/material';
 import type { CreateMenuItem, NodeId } from '@hierarchidb/common-type';
-import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter';
+import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu.js';
+import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
+import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
 
 export interface DynamicCreateMenuProps {
   /**
@@ -186,9 +187,17 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
 
         // Render menu item (CreateMenuItem)
         const createItem = item as CreateMenuItem;
-        const IconComponent = createItem.icon as React.ComponentType<{
-          fontSize?: string;
-        }>;
+        const { icon: iconSpec } = createItem;
+
+        let iconNode: React.ReactNode = null;
+        if (typeof iconSpec === 'string') {
+          iconNode = getMuiIconWithColor(iconSpec);
+        } else if (typeof iconSpec === 'function') {
+          const IconComponent = iconSpec as React.ComponentType<{ fontSize?: string }>;
+          iconNode = <IconComponent fontSize="small" />;
+        } else if (iconSpec) {
+          iconNode = iconSpec;
+        }
 
         return (
           <MenuItem
@@ -203,7 +212,7 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
               },
             }}
           >
-            <ListItemIcon>{IconComponent && <IconComponent fontSize="small" />}</ListItemIcon>
+            <ListItemIcon>{iconNode}</ListItemIcon>
             <ListItemText
               primary={createItem.label}
               secondary={createItem.description}

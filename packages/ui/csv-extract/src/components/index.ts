@@ -3,11 +3,11 @@
  * @description Export all CSV UI components
  */
 
-export { CSVFileUploadStep } from './CSVFileUploadStep';
-export type { CSVFileUploadStepProps } from './CSVFileUploadStep';
+export { CSVFileUploadStep } from './CSVFileUploadStep.js';
+export type { CSVFileUploadStepProps } from './CSVFileUploadStep.js';
 
-export { CSVFilterStep } from './CSVFilterStep';
-export type { CSVFilterStepProps } from './CSVFilterStep';
+export { CSVFilterStep } from './CSVFilterStep.js';
+export type { CSVFilterStepProps } from './CSVFilterStep.js';
 
-export { CSVColumnSelectionStep } from './CSVColumnSelectionStep';
-export type { CSVColumnSelectionStepProps } from './CSVColumnSelectionStep';
+export { CSVColumnSelectionStep } from './CSVColumnSelectionStep.js';
+export type { CSVColumnSelectionStepProps } from './CSVColumnSelectionStep.js';

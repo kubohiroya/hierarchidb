@@ -4,8 +4,8 @@
   */
 
 import type { TreeNodeId } from '@hierarchidb/common-type';
-import { BatchSessionManager } from './services/BatchSessionManager';
-import type { BatchConfig } from './types/BatchConfig';
+import { BatchSessionManager } from './services/BatchSessionManager.js';
+import type { BatchConfig } from './types/BatchConfig.js';
 
 /**
  * Shape Plugin Main Class

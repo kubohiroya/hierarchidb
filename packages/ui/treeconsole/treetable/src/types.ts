@@ -4,7 +4,8 @@
 
 import type { MouseEvent, ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
-import type { TreeTablePlugin } from './plugin/types';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { TreeTablePlugin } from './plugin/types.js';
 import { TreeNode } from '@hierarchidb/common-type';
 //import { TreeNode } from '@hierarchidb/common-type';
 
@@ -29,6 +30,7 @@ export interface TreeTableController {
   // State
   rowSelection?: RowSelectionState;
   expandedRowIds?: Set<string>;
+  rootNodeId?: NodeId;
 
   // Actions
   handleSearchTextChange?: (value: string) => void;
@@ -94,8 +96,8 @@ export interface TreeTableCoreProps {
    * Drag and drop
    */
   onDragStateChange?: (
-    draggingNodeId: string | undefined,
-    descendantIdSet: Set<string> | undefined,
+    draggingNodeId: NodeId | undefined,
+    descendantIdSet: Set<NodeId> | undefined,
     dragPreviewElement: HTMLElement | null,
   ) => void;
 

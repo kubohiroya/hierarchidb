@@ -2,12 +2,12 @@
 export {
   CountryMatrixSelector,
   CountryMatrixStep,
-} from './components';
+} from './components/index.js';
 
 export type {
   CountryMatrixSelectorProps,
   CountryMatrixStepProps,
-} from './components';
+} from './components/index.js';
 
 // Types and column sets
 export type {
@@ -26,7 +26,7 @@ export type {
   ColumnSet,
   MatrixSelection,
   MatrixConfig,
-} from './types';
+} from './types/index.js';
 
 export {
   CONTINENTS,
@@ -38,14 +38,14 @@ export {
   COLUMN_SETS,
   getColumnSet,
   getColumnSetTypes,
-} from './types';
+} from './types/index.js';
 
 // Hooks
-export { useCountrySelection } from './hooks';
+export { useCountrySelection } from './hooks/index.js';
 export type {
   UseCountrySelectionOptions,
   UseCountrySelectionResult,
-} from './hooks';
+} from './hooks/index.js';
 
 // Utilities
 export {
@@ -56,9 +56,9 @@ export {
   getSelectionsSummary,
   mergeSelections,
   filterSelections,
-} from './utils';
+} from './utils/index.js';
 
-export type { SelectionExport } from './utils';
+export type { SelectionExport } from './utils/index.js';
 
 // Sample data
 export {
@@ -66,4 +66,4 @@ export {
   getCountriesByContinent,
   getCountryByCode,
   searchCountries,
-} from './data';
+} from './data/index.js';

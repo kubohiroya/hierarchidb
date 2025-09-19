@@ -2,10 +2,10 @@
    * vitest
   */
 
-import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory';
-import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy';
-import { BaseDataSourceStrategy, FetchOptions, ProcessOptions } from '../DataSourceStrategy';
-import { ShapeEntity } from '../../../types/ShapeEntity';
+import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory.js';
+import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
+import { BaseDataSourceStrategy, FetchOptions, ProcessOptions } from '../DataSourceStrategy.js';
+import { ShapeEntity } from '../../../types/ShapeEntity.js';
 
 interface TestResult {
   name: string;

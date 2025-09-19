@@ -1,5 +1,5 @@
-import { NodeType } from './id-types';
-import { PluginDefinition } from './plugin-definition';
+import { NodeType } from './id-types.js';
+import { PluginDefinition } from './plugin-definition.js';
 
 /**
  * Dependency resolution result

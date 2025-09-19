@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter';
-import type { InitializationStep } from '../types';
+import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
+import type { InitializationStep } from '../types.js';
 
 // Mock self (Worker global scope)
 const mockSelf = {

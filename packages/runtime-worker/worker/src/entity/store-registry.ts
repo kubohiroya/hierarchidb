@@ -1,4 +1,4 @@
-import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from './store';
+import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from './store.js';
 
 /**
  * Store registry for plugin-provided entity stores.

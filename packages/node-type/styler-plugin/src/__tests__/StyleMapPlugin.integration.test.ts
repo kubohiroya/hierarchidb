@@ -8,11 +8,11 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { StylerExtension } from '../extension/definition';
-import { StylerEntityHandler } from '../handlers/StylerEntityHandler';
-import { StylerDataService } from '../services/StylerDataService';
-import type { StylerEntity } from '../entities/StylerEntity';
-import { StylerConfigDefault } from '../types/stylerTypes';
+import { StylerExtension } from '../extension/definition.js';
+import { StylerEntityHandler } from '../handlers/StylerEntityHandler.js';
+import { StylerDataService } from '../services/StylerDataService.js';
+import type { StylerEntity } from '../entities/StylerEntity.js';
+import { StylerConfigDefault } from '../types/stylerTypes.js';
 
 // Mock dependencies
 const mockSpreadsheetHandler = {

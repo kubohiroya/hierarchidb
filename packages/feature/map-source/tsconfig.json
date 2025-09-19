@@ -5,7 +5,7 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "isolatedModules": false,
     "skipLibCheck": true,
     "baseUrl": ".",
@@ -14,7 +14,8 @@
         "./src/*"
       ]
     },
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Node16"
   },
   "include": [
     "src/**/*"

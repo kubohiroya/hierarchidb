@@ -1,4 +1,4 @@
-import { getShapeRuntimeWorkerClient } from '../batch/adapters/RuntimeWorkerClient';
+import { getShapeRuntimeWorkerClient } from '../batch/adapters/RuntimeWorkerClient.js';
 
 export async function listTiles(sessionId: string) {
   const client = await getShapeRuntimeWorkerClient();

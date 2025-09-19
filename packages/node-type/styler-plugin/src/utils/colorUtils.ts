@@ -6,7 +6,7 @@
  * :
   */
 
-import type { ColorCalculationResult, StylerConfig } from '../types/stylerTypes';
+import type { ColorCalculationResult, StylerConfig } from '../types/stylerTypes.js';
 
 /**
   * : HSVRGB

@@ -7,9 +7,9 @@
  * :
   */
 
-import { PeerEntity } from './entity-types';
-import { NodeId } from './id-types';
-import { StepValidation } from './validation-types';
+import { PeerEntity } from './entity-types.js';
+import { NodeId } from './id-types.js';
+import { StepValidation } from './validation-types.js';
 
 /**
   * :

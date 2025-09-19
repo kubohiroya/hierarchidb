@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 
 export interface TileRow {
@@ -33,4 +33,3 @@ export class TilesDB extends Dexie {
     this.tiles = this.table('tiles');
   }
 }
-

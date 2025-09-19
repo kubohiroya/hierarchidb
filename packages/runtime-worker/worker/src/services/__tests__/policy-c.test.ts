@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor.js';
+import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Policy C: block move/remove when WC exists', () => {
@@ -18,7 +19,6 @@ describe('Policy C: block move/remove when WC exists', () => {
   let state: Record<string, any>;
 
   beforeEach(() => {
-    (process as any).env.WORKER_POLICY_C = '1';
     state = {
       root: makeNode('root', 'super', 'root'),
       a: makeNode('a', 'root', 'A'),
@@ -28,7 +28,7 @@ describe('Policy C: block move/remove when WC exists', () => {
         id: 'wcHolder' as NodeId,
         parentId: 'r:workingCopy' as NodeId,
         nodeType: 'workingCopy' as NodeType,
-        name: 'root\ta',
+        name: encodeWorkingCopyHolderName('root' as NodeId, 'a' as NodeId),
         depth: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -53,7 +53,7 @@ describe('Policy C: block move/remove when WC exists', () => {
     };
   });
 
-  it('blocks moveNodes when WC under subtree', async () => {
+   it('blocks moveNodes when WC under subtree', async () => {
     const cp = new CommandProcessor(core);
     const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'root' as NodeId });
     const r = await cp.processCommand(env);

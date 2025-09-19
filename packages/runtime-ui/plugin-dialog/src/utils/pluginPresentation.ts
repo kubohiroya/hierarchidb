@@ -1,5 +1,6 @@
 // Import as namespace to avoid type-level named export mismatches across package builds
 // Note: UIIcon provides getMuiIconComponent/prefetchMuiIcons at runtime
+import type { ReactNode } from 'react';
 import * as UIIcon from '@hierarchidb/ui-icon';
 
 export interface PluginIconInfo {
@@ -58,16 +59,16 @@ export function getPresentation(nodeType: string): PluginPresentation | undefine
   return buildCache().get(nodeType);
 }
 
-export function getIconComponent(nodeType: string) {
+export function getIconComponent(nodeType: string): ReactNode | undefined {
   const icon = getPresentation(nodeType)?.icon;
   try {
-    const Comp = (UIIcon as unknown as { getMuiIconComponent?: (name?: string, emoji?: string) => any })
+    const Comp = (UIIcon as unknown as { getMuiIconComponent?: (name?: string, emoji?: string) => ReactNode | undefined })
       .getMuiIconComponent?.(icon?.muiIconName, icon?.emoji);
     if (Comp) return Comp;
   } catch (err) {
     console.warn('[pluginPresentation] getMuiIconComponent failed', err);
   }
-  return (UIIcon as unknown as { getMuiIconComponent?: (name?: string) => any }).getMuiIconComponent?.('Extension');
+  return (UIIcon as unknown as { getMuiIconComponent?: (name?: string) => ReactNode | undefined }).getMuiIconComponent?.('Extension');
 }
 
 export async function prefetchAllIcons() {

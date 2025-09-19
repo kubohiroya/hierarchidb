@@ -3,7 +3,8 @@
   "compilerOptions": {
     "composite": true,
     "noEmit": true,
-    "incremental": true
+    "incremental": true,
+    "module": "Node16",
+    "moduleResolution": "Node16"
   }
 }
-

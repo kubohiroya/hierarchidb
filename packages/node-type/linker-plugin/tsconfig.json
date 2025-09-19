@@ -6,6 +6,10 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../../runtime-worker/worker-bootstrap/dist",
+        "../../runtime-worker/worker-bootstrap/src/index.ts"
       ]
     },
     "types": [
@@ -13,7 +17,8 @@
       "node"
     ],
     "skipLibCheck": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "Node16"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

@@ -1,10 +1,10 @@
-export { ResolverDialog } from './ResolverDialog';
-export { ResolverPanel } from './ResolverPanel';
+export { ResolverDialog } from './ResolverDialog.js';
+export { ResolverPanel } from './ResolverPanel.js';
 
 // Export step components for potential reuse
-export { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep';
-export { SchemaSelectionStep } from './steps/SchemaSelectionStep';
-export { PropertyMappingStep } from './steps/PropertyMappingStep';
-export { ValidationConfigStep } from './steps/ValidationConfigStep';
-export { DuplicateResolutionStep } from './steps/DuplicateResolutionStep';
-export { PreviewTestStep } from './steps/PreviewTestStep';
+export { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep.js';
+export { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
+export { PropertyMappingStep } from './steps/PropertyMappingStep.js';
+export { ValidationConfigStep } from './steps/ValidationConfigStep.js';
+export { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
+export { PreviewTestStep } from './steps/PreviewTestStep.js';

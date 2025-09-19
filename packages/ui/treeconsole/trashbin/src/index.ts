@@ -5,9 +5,9 @@
  */
 
 // Main containers
-export { TrashbinTable } from './components/TrashbinTable';
-export { TrashbinActions } from './components/TrashbinActions';
-export { TrashbinSearch } from './components/TrashbinSearch';
+export { TrashbinTable } from './components/TrashbinTable.js';
+export { TrashbinActions } from './components/TrashbinActions.js';
+export { TrashbinSearch } from './components/TrashbinSearch.js';
 
 // Types
 export type {
@@ -16,4 +16,4 @@ export type {
   TrashbinTableProps,
   TrashbinActionsProps,
   TrashbinSearchProps,
-} from './types';
+} from './types.js';

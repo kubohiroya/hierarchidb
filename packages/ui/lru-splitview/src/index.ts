@@ -2,12 +2,12 @@
 export {
   LRUSplitView,
   PaneHeader,
-} from './components';
+} from './components/index.js';
 
 export type {
   LRUSplitViewProps,
   PaneHeaderComponentProps,
-} from './components';
+} from './components/index.js';
 
 // Types
 export type {
@@ -17,10 +17,10 @@ export type {
   LRUSplitViewConfig,
   PaneHeaderProps,
   UseLRUPanesResult,
-} from './types';
+} from './types/index.js';
 
 // Hooks
-export { useLRUPanes } from './hooks';
+export { useLRUPanes } from './hooks/index.js';
 
 // Utilities
 export {
@@ -34,4 +34,4 @@ export {
   calculateOptimalSizes,
   AutoExpandPresets,
   batchUpdateProgress,
-} from './utils';
+} from './utils/index.js';

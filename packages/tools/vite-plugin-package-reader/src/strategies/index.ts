@@ -4,4 +4,4 @@ export {
   FieldStrategy,
   CompositeStrategy,
   FunctionStrategy,
-} from './BaseStrategy';
+} from './BaseStrategy.js';

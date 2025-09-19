@@ -4,7 +4,7 @@
  */
 
 // Worker client singleton
-export { WorkerAPIClient } from './WorkerAPIClient';
+export { WorkerAPIClient } from './WorkerAPIClient.js';
 
 // React hook for Worker client
-export { useWorkerAPIClient } from './hooks/useWorkerAPIClient';
+export { useWorkerAPIClient } from './hooks/useWorkerAPIClient.js';

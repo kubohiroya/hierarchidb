@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB';
+import type { StylerEntitiesDB } from './stylerEntitiesDB.js';
 
 // Local minimal replicas to avoid hard type dependency on runtime-worker in DTS
 export type PeerEntity<T = any> = { nodeId: NodeId; updatedAt: number; data?: T } & Record<string, any>;

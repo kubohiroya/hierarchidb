@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { LocationEntitiesDB, LocationRelationRow } from './locationEntitiesDB';
-import type { LocationRelationMeta } from '../types/entities';
+import type { LocationEntitiesDB, LocationRelationRow } from './locationEntitiesDB.js';
+import type { LocationRelationMeta } from '../types/entities.js';
 
 type Rel = RelationBase<LocationRelationMeta>;
 

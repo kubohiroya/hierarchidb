@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommandProcessor } from '../CommandProcessor';
+import { CommandProcessor } from '../CommandProcessor.js';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 
 describe('Undo/Redo for updateNode', () => {

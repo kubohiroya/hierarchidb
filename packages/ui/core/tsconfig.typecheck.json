@@ -4,6 +4,8 @@
     "emitDeclarationOnly": false,
     "noEmit": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "Node16",
+    "moduleResolution": "Node16"
   }
 }

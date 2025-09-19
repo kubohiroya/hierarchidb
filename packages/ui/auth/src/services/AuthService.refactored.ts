@@ -1,9 +1,9 @@
-import { AUTH_CONSTANTS, AuthConfig, AuthConfigValidator } from './AuthServiceConfig';
-import { AuthToken, AuthTokenManager } from './AuthTokenManager';
-import { AuthSecurityUtils } from './AuthSecurityUtils';
+import { AUTH_CONSTANTS, AuthConfig, AuthConfigValidator } from './AuthServiceConfig.js';
+import { AuthToken, AuthTokenManager } from './AuthTokenManager.js';
+import { AuthSecurityUtils } from './AuthSecurityUtils.js';
 
 export type AuthMethod = 'popup' | 'redirect';
-export type { AuthConfig } from './AuthServiceConfig';
+export type { AuthConfig } from './AuthServiceConfig.js';
 export type AuthResult = Omit<AuthToken, 'issuedAt'>;
 
 export class AuthService {

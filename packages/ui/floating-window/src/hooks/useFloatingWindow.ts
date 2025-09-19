@@ -5,7 +5,7 @@
 
 /* eslint-disable no-unused-vars */
 import { useCallback, useEffect, useState } from 'react';
-import type { Position, Size, WindowState } from '../types/WindowState';
+import type { Position, Size, WindowState } from '../types/WindowState.js';
 
 export interface UseFloatingWindowOptions {
   initialPosition?: Position;

@@ -4,7 +4,7 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BatchProgress, BatchSessionState } from './AbstractBatchSession';
+import type { BatchProgress, BatchSessionState } from './AbstractBatchSession.js';
 
 /**
  * Common interface for batch session management across all plugins
@@ -121,15 +121,12 @@ export interface IBatchControlCommands {
 }
 
 /**
- * Configuration flag for enabling new batch control API
+ * The unified batch control API (V2) is now always enabled.
+ * This function is retained for backward compatibility with callers that
+ * previously gated behaviour on the rollout flag.
  */
 export function isBatchControlAPIV2Enabled(): boolean {
-  // Read from global feature flags only; browser code must not rely on process.env
-  if (typeof globalThis !== 'undefined' && (globalThis as any).FEATURE_FLAGS) {
-    const v = (globalThis as any).FEATURE_FLAGS.BATCH_CONTROL_API_V2;
-    return v === true || v === '1' || v === 'true' || v === 'on' || v === 'enabled';
-  }
-  return false;
+  return true;
 }
 
 /**

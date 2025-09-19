@@ -1,10 +1,10 @@
 // Components
-export { GenericGuidedTour } from './components/GenericGuidedTour';
-export { GuidedTour } from './components/GuidedTour';
-export { GuidedTourDemo } from './components/GuidedTourDemo';
+export { GenericGuidedTour } from './components/GenericGuidedTour.js';
+export { GuidedTour } from './components/GuidedTour.js';
+export { GuidedTourDemo } from './components/GuidedTourDemo.js';
 
 // Managers
-export { GuidedTourStateManager } from './managers/GuidedTourStateManager';
+export { GuidedTourStateManager } from './managers/GuidedTourStateManager.js';
 
 // Types
-export type { GenericGuidedTourProps } from './components/GenericGuidedTour';
+export type { GenericGuidedTourProps } from './components/GenericGuidedTour.js';

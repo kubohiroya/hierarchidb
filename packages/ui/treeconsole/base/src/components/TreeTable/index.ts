@@ -1,15 +1,15 @@
 // Main TreeTable containers
-export { TreeTableView } from './core/TreeTableView';
-export type { TreeTableViewProps, TreeTableColumn } from './core/TreeTableView';
+export { TreeTableView } from './core/TreeTableView.js';
+export type { TreeTableViewProps, TreeTableColumn } from './core/TreeTableView.js';
 
 // Context menu
-export { RowContextMenu } from './context-menu/RowContextMenu';
-export type { RowContextMenuProps } from './context-menu/RowContextMenu';
+export { RowContextMenu } from './context-menu/RowContextMenu.js';
+export type { RowContextMenuProps } from './context-menu/RowContextMenu.js';
 
 // Toolbar
-// export { TreeTableToolbar } from './toolbar/TreeTableToolbar';
-export type { TreeTableToolbarProps } from './toolbar/TreeTableToolbar';
+// export { TreeTableToolbar } from './toolbar/TreeTableToolbar.js';
+export type { TreeTableToolbarProps } from './toolbar/TreeTableToolbar.js';
 
 // Footer
-export { TreeTableFooter } from './footer/TreeTableFooter';
-export type { TreeTableFooterProps } from './footer/TreeTableFooter';
+export { TreeTableFooter } from './footer/TreeTableFooter.js';
+export type { TreeTableFooterProps } from './footer/TreeTableFooter.js';

@@ -29,7 +29,8 @@
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*"
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -71,7 +72,8 @@
       "@mui/icons-material",
       "@mui/material",
       "react",
-      "react-router-dom"
+      "react-router-dom",
+      "@hierarchidb/ui-icon"
     ]
   }
 }

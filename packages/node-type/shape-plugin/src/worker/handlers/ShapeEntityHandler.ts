@@ -4,7 +4,7 @@
  */
 
 import type { Table } from 'dexie';
-import type { NodeId, NodeType } from '../../shared';
+import type { NodeId, NodeType } from '../../shared/index.js';
 import {
   buildShapeEntityFromCreate,
   DEFAULT_PROCESSING_CONFIG,
@@ -12,7 +12,7 @@ import {
   ProcessingConfig,
   ShapeEntity,
   ShapeWorkingCopy,
-} from '../../shared';
+} from '../../shared/index.js';
 import { BaseEntityHandler } from '@hierarchidb/base-plugin';
 
 /**

@@ -16,12 +16,12 @@ import type {
   PaginationOptions,
 } from '@hierarchidb/ui-csv-extract';
 
-import { SimpleTableMetadataManager } from './SimpleTableMetadataManager';
-import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase';
-import { calculateFileHash } from '../utils/hashUtils';
-import { detectColumnTypes, parseCSVContent } from '../utils/csvParser';
-import { processExcelFile, processZipFile } from '../utils/fileProcessingUtils';
-import { applyCsvFilters } from '../utils/filterUtils';
+import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
+import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
+import { calculateFileHash } from '../utils/hashUtils.js';
+import { detectColumnTypes, parseCSVContent } from '../utils/csvParser.js';
+import { processExcelFile, processZipFile } from '../utils/fileProcessingUtils.js';
+import { applyCsvFilters } from '../utils/filterUtils.js';
 
 // Chunk configuration for large table support
 interface ChunkConfig {
@@ -143,7 +143,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       //  : URLSSRF
 
       //  : fetch API
-      const { authFetch } = await import('./utils/authFetch');
+      const { authFetch } = await import('./utils/authFetch.js');
       const response = await authFetch(url, {
         method: 'GET',
         headers: {

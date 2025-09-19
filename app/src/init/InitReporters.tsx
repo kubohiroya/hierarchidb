@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useBootProgress } from '~/contexts/BootProgressProvider';
+import { useBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useTranslation } from 'react-i18next';
 import { useSimpleBFFAuth } from '@hierarchidb/ui-auth';
-import { useWorker } from '~/contexts/WorkerProvider';
+import { useWorker } from '~/contexts/WorkerProvider.js';
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
@@ -89,7 +89,7 @@ export const WorkerProgressReporter: React.FC = () => {
     } catch {}
     const t = window.setInterval(() => {
       // Late import to avoid circular
-      import('../WorkerAPIClient').then(({ WorkerAPIClient }) => {
+      import('../WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
         if (WorkerAPIClient.isReady()) {
           markStepDone('Worker', 'Worker ready');
           window.clearInterval(t);

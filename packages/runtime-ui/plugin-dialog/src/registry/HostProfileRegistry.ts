@@ -1,4 +1,4 @@
-import type { PluginStepConfig } from './PluginStepRegistry';
+import type { PluginStepConfig } from './PluginStepRegistry.js';
 
 export type HostName = string;
 

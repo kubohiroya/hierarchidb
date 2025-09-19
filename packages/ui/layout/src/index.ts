@@ -1,3 +1,2 @@
 // Components
-export { ResizableSidebar } from '~/components/ResizableSidebar/ResizableSidebar';
-
+export { ResizableSidebar } from './components/ResizableSidebar/ResizableSidebar.js';

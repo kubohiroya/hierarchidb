@@ -15,11 +15,11 @@ export declare const getStoredThemeMode: () => ThemeMode;
  * Get system theme preference using matchMedia
  * SSR-compatible: returns 'light' when window is undefined or matchMedia unsupported
  */
-export declare const getSystemTheme: () => 'light' | 'dark';
+export declare const getSystemTheme: () => "light" | "dark";
 /**
  * Get actual theme mode resolving 'system' to light/dark
  */
-export declare const getActualTheme: () => 'light' | 'dark';
+export declare const getActualTheme: () => "light" | "dark";
 /**
  * Get background color for current theme
  * SSR-compatible: returns light theme color when window is undefined

@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu';
+import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu.js';
 import type { AuthContextProps } from 'react-oidc-context';
 
 // Mock dependencies

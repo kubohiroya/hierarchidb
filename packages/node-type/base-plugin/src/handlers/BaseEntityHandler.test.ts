@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { BaseEntity, NodeId } from '@hierarchidb/common-type';
-import { BaseEntityHandler } from './BaseEntityHandler';
+import { BaseEntityHandler } from './BaseEntityHandler.js';
 
 interface TestEntity extends BaseEntity {
   nodeId: NodeId;

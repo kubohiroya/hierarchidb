@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import type { WorkerAPI, WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 
 export interface WorkingCopyData {
@@ -53,8 +52,14 @@ export function useWorkingCopy({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Resolve WorkerAPI client from app-registered hook (supports {client} or direct WorkerAPI)
-  type WorkerRef = WorkerAPI | { client?: WorkerAPI } | null;
+  const toWorkingCopyData = useCallback((node: any): WorkingCopyData => ({
+    treeNodeId: node?.id as NodeId,
+    name: node?.name || '',
+    description: (node as any)?.description || '',
+    data: (node as any)?.data || {},
+  }), []);
+
+  // Resolve WorkerAPI client provided by host (supports direct WorkerAPI only in this hook)
   const getClient = async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
     // Prefer explicitly provided client from host (valid React hook context)
     let api: WorkerAPI | null = client ?? null;
@@ -81,25 +86,33 @@ export function useWorkingCopy({
           await wcAPI.createWorkingCopyFromNode(nodeId);
           const wc = await wcAPI.getWorkingCopy(nodeId);
           if (!wc) throw new Error('Failed to create working copy');
-          const copy: WorkingCopyData = {
-            treeNodeId: wc.id as NodeId,
-            name: wc.name || '',
-            description: (wc as any).description || '',
-            data: (wc as any).data || {},
-          };
+          const copy = toWorkingCopyData(wc);
           setWorkingCopy(copy);
           setOriginalCopy(copy);
-        } else if (mode === 'create' && parentId) {
-          // Create a draft WC under the parent
-          const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as unknown as NodeType, parentId, { name: '' } as Partial<TreeNode>);
-          const copy: WorkingCopyData = {
-            treeNodeId: wcNode.id as NodeId,
-            name: wcNode.name || '',
-            description: (wcNode as any).description || '',
-            data: (wcNode as any).data || {},
-          };
-          setWorkingCopy(copy);
-          setOriginalCopy(copy);
+          return;
+        }
+
+        if (mode === 'create') {
+          if (nodeId) {
+            const existing = await wcAPI.getWorkingCopy(nodeId);
+            if (existing) {
+              const copy = toWorkingCopyData(existing);
+              setWorkingCopy(copy);
+              setOriginalCopy(copy);
+              return;
+            }
+          }
+
+          if (parentId) {
+            // Create a draft WC under the parent when one does not exist yet
+            const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as unknown as NodeType, parentId, { name: '' } as Partial<TreeNode>);
+            const copy = toWorkingCopyData(wcNode);
+            setWorkingCopy(copy);
+            setOriginalCopy(copy);
+            return;
+          }
+
+          console.warn('[useWorkingCopy] Missing parentId for create mode; working copy not initialized');
         }
       } catch (err) {
         console.error('Failed to initialize working copy:', err);
@@ -110,7 +123,7 @@ export function useWorkingCopy({
     }
 
     initializeWorkingCopy();
-  }, [client, mode, nodeId, parentId, nodeType, treeId]);
+  }, [client, mode, nodeId, parentId, nodeType, treeId, toWorkingCopyData]);
 
   // Check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {

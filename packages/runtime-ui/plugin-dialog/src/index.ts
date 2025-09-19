@@ -15,32 +15,33 @@ export function dummy() {
  */
 
 // Registry
-export { PluginStepRegistry } from './registry/PluginStepRegistry';
+export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
 export type {
   PluginStepProvider,
   PluginStepConfig,
   StepComponentProps,
-} from './registry/PluginStepRegistry';
-export { HostProfileRegistry } from './registry/HostProfileRegistry';
-export { composeStepConfigs } from './services/StepComposer';
+} from './registry/PluginStepRegistry.js';
+export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
+export { composeStepConfigs } from './services/StepComposer.js';
 
-// Components
-export { PluginDialog } from './components/PluginDialog';
-export type { PluginDialogProps } from './components/PluginDialog';
+// Components (headless shell)
+export { PluginDialogShell } from './headless/PluginDialogShell.js';
+export type { PluginDialogShellProps } from './headless/PluginDialogShell.js';
 
-export { PluginDialogRoute, createPluginDialogRoutes } from './components/PluginDialogRoute';
+// Legacy exports retained temporarily (will be removed after migration)
+export { PluginDialogRoute, createPluginDialogRoutes } from './components/PluginDialogRoute.js';
 
-export { BasicInfoStep } from './components/steps/BasicInfoStep';
-export type { BasicInfoStepProps, BasicInfoData } from './components/steps/BasicInfoStep';
+export { BasicInfoStep } from './components/steps/BasicInfoStep.js';
+export type { BasicInfoStepProps, BasicInfoData } from './components/steps/BasicInfoStep.js';
 
 // Hooks
-export { useWorkingCopy } from './hooks/useWorkingCopy';
+export { useWorkingCopy } from './hooks/useWorkingCopy.js';
 export type {
   UseWorkingCopyOptions,
   UseWorkingCopyResult,
   WorkingCopyData,
-} from './hooks/useWorkingCopy';
+} from './hooks/useWorkingCopy.js';
 
 // URL synchronization hook (lightweight)
-export { useDialogUrlSync } from './hooks/useDialogUrlSync';
-export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync';
+export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
+export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';

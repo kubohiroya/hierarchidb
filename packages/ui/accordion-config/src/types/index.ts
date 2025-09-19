@@ -1,8 +1,8 @@
 // Export component prop types
-export type { ConfigAccordionProps } from '../components/ConfigAccordion';
-export type { PhaseConfigAccordionProps, PhaseConfig } from '../components/PhaseConfigAccordion';
-export type { CacheConfig, CacheStats } from '../sections/CacheSection';
-export type { ConcurrencyConfig, ConcurrencySectionProps } from '../sections/ConcurrencySection';
+export type { ConfigAccordionProps } from '../components/ConfigAccordion.js';
+export type { PhaseConfigAccordionProps, PhaseConfig } from '../components/PhaseConfigAccordion.js';
+export type { CacheConfig, CacheStats } from '../sections/CacheSection.js';
+export type { ConcurrencyConfig, ConcurrencySectionProps } from '../sections/ConcurrencySection.js';
 
 // Common accordion themes
 export interface AccordionTheme {

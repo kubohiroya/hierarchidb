@@ -1,4 +1,4 @@
-import type { TabularChunk, TabularSchema } from './types';
+import type { TabularChunk, TabularSchema } from './types.js';
 
 export interface TabularIngestContext {
   filename?: string;

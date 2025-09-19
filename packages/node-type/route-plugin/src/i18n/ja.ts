@@ -2,7 +2,7 @@
   * Japanese translations for Route Plugin
    */
 
-import type { RoutePluginTranslations } from './types';
+import type { RoutePluginTranslations } from './types.js';
 
 export const ja: RoutePluginTranslations = {
   common: {

@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { Alert, Box, Button, Container, Typography } from '@mui/material';
-import { WorkerAPIClient } from '../WorkerAPIClient';
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 

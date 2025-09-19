@@ -39,7 +39,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
 
       // 2) Fallback: dynamic import (works in dev as well)
       try {
-        const mod = await import('~/plugins/menu-builders');
+        const mod = await import('~/plugins/menu-builders.js');
         (globalThis as any).__HDB_MENU_BUILDERS__ = mod; // cache for next time
         // Prefer a treeId-aware builder if available
         const builder = (mod as any).buildMenuItemsForTreeId || (mod as any).buildMenuItemsForContext;

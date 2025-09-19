@@ -6,8 +6,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
-import { ShapesPluginAPI } from '../ShapesPluginAPI';
-import type { BatchProcessConfig, DataSourceInfo } from '../types';
+import { ShapesPluginAPI } from '../ShapesPluginAPI.js';
+import type { BatchProcessConfig, DataSourceInfo } from '../types.js';
 
 // Mock ShapeDB - define everything inside the mock factory to avoid hoisting issues
 vi.mock('../database/ShapeDB', () => {

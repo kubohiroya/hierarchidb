@@ -255,20 +255,7 @@ const { step, setStep, mode, setMode, map, setMap, clearParams } = useDialogUrlS
 });
 ```
 
-MultiStepDialog との統合例:
-
-```tsx
-<MultiStepDialog
-  activeStep={step}
-  onStepChange={setStep}
-  fullScreen={mode === 'full'}
-  onFullscreenChange={(is) => setMode(is ? 'full' : 'normal')}
-  /* ... */
-/>
-
-// 地図カメラ更新時（任意）
-setMap({ lng, lat, zoom });
-```
+ヘッドレスダイアログとの統合は `HeadlessMultiStepDialog` もしくは `PluginDialogShell` で行います。`PluginDialogShell` は `useDialogUrlSync` を内部で利用するため、URL とダイアログ状態の同期が自動で有効になります。カスタム実装で `HeadlessMultiStepDialog` を直接利用する場合は、`onStepNavigate` や `displayMode` を上のフックで連携させてください。
 
 URL パラメータ仕様（既定の `namespace: 'd'` の場合）
 - `d_step`: number（0-based）。履歴: push（戻る/進むで遷移）

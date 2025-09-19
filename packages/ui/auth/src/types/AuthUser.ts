@@ -3,7 +3,7 @@
  * @description Type definitions for authenticated user data
  */
 
-import type { AuthProviderType } from './AuthProviderType';
+import type { AuthProviderType } from './AuthProviderType.js';
 
 export interface AuthUser {
   id: string;

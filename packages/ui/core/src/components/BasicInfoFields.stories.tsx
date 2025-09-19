@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React, { useState } from 'react';
 import { Box } from '@mui/material';
-import { BasicInfoFields } from './BasicInfoFields';
+import { BasicInfoFields } from './BasicInfoFields.js';
 
 const meta: Meta<typeof BasicInfoFields> = {
   title: 'UI Core/Forms/BasicInfoFields',

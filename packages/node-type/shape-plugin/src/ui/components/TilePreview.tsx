@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
-import { listTiles, getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient';
+import { listTiles, getTile, getTileSummary } from '../../services/tiles/RuntimeTileClient.js';
 
 export function TilePreview({ sessionId }: { sessionId: string }) {
   const [tiles, setTiles] = useState<Array<{ z: number; x: number; y: number; size: number; timestamp: number }>>([]);

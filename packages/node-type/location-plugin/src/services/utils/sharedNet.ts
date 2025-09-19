@@ -1,5 +1,5 @@
 import { postJson } from '@hierarchidb/runtime-shared-batch-processor';
-import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry';
+import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry.js';
 
 let cached: Promise<Awaited<ReturnType<typeof getLocationDownloadService>>> | undefined;
 

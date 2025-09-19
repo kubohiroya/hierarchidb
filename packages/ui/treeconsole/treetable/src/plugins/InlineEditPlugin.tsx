@@ -3,8 +3,8 @@
   * TreeTable
   */
 
-import type { TreeTablePlugin } from '../plugin/types';
-import type { TreeNodeInUI } from '../types';
+import type { TreeTablePlugin } from '../plugin/types.js';
+import type { TreeNodeInUI } from '../types.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import { KeyboardEvent } from 'react';
 

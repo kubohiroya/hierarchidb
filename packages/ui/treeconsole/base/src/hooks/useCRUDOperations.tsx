@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import type { WorkerAPIAdapter } from '~/adapters';
+import type { WorkerAPIAdapter } from '../adapters/index.js';
 
 type StateManagerLike = Partial<{
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<void> | void;
@@ -68,7 +68,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         if (!canMove) throw new Error('No adapter available for move operation');
         setIsLoading?.(true);
         try {
-          await stateManager.moveNode!(nodeId, targetParentId, _index ?? 0);
+          const res: any = await stateManager.moveNode!(nodeId, targetParentId, _index ?? 0);
+          if (res && typeof res === 'object' && 'success' in res && res.success === false) {
+            if (res.error) console.error('Failed to move node:', res.error);
+            return;
+          }
           onExpandedNodesChange?.((prev) => (prev.includes(targetParentId) ? prev : [...prev, targetParentId]));
         } finally {
           setIsLoading?.(false);
@@ -173,7 +177,25 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         if (!canDup) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          await stateManager.duplicateNode!(nodeId);
+          const result: any = await stateManager.duplicateNode!(nodeId);
+          const duplicated: Partial<TreeNode> | undefined = result?.data;
+
+          // Update selection to include original and duplicated node
+          if (duplicated?.id) {
+            onSelectedNodesChange?.(() => [nodeId, duplicated.id as NodeId]);
+          } else {
+            onSelectedNodesChange?.((prev) => (prev.includes(nodeId) ? prev : [...prev, nodeId]));
+          }
+
+          // Expand parentId of duplicated node if available
+          if (duplicated?.parentId) {
+            onExpandedNodesChange?.((prev) => (prev.includes(duplicated.parentId as NodeId) ? prev : [...prev, duplicated.parentId as NodeId]));
+          }
+
+          // Set current node to duplicated node when available
+          if (duplicated) {
+            onCurrentNodeChange?.(() => duplicated as TreeNode);
+          }
         } finally {
           setIsLoading?.(false);
         }

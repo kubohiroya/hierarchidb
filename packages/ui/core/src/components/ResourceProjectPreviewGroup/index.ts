@@ -1,1 +1,1 @@
-export * from './ResourceProjectPreviewGroup';
+export * from './ResourceProjectPreviewGroup.js';

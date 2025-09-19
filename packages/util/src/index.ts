@@ -8,11 +8,11 @@
  */
 
 // Formatting utilities
-export * from './format';
+export * from './format.js';
 
 // Validation utilities
-export * from './validation';
-export { SingletonMixin } from './SingletonMixin';
-export { generateId } from './generateId';
-export * from './db-name';
+export * from './validation.js';
+export { SingletonMixin } from './SingletonMixin.js';
+export { generateId } from './generateId.js';
+export * from './db-name.js';
 // Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

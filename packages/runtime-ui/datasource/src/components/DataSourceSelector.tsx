@@ -13,7 +13,7 @@ import {
   DataSourceName,
   getLicenseColor,
   getLicenseLimitations,
-} from '../types/DataSource';
+} from '../types/DataSource.js';
 
 export interface DataSourceSelectorProps {
   /**

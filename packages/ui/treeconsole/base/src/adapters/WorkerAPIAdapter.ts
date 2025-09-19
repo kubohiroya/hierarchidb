@@ -6,12 +6,12 @@
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
-// import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter'; // Currently unused
-import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands';
-import { WorkingCopyCommandsAdapter, WorkingCopyEditSession } from './commands/WorkingCopyCommands';
-import { SubscriptionManager } from './subscriptions/SubscriptionManager';
-import { createAdapterGroupId } from './utils';
-import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types';
+// import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
+import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
+import { WorkingCopyCommandsAdapter, WorkingCopyEditSession } from './commands/WorkingCopyCommands.js';
+import { SubscriptionManager } from './subscriptions/SubscriptionManager.js';
+import { createAdapterGroupId } from './utils.js';
+import type { AdapterContext, CommandAdapterOptions, UnsubscribeFunction, WorkerAPIAdapterConfig } from './types.js';
 
 type TreeNodeEventCallback = (event: TreeNodeEvent) => void;
 

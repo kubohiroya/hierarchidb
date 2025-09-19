@@ -3,9 +3,9 @@
   * TreeTable
   */
 
-import { inlineEditPlugin } from './InlineEditPlugin';
-import { keyboardNavigationPlugin } from './KeyboardNavigationPlugin';
-import type { TreeTablePlugin } from '../plugin/types';
+import { inlineEditPlugin } from './InlineEditPlugin.js';
+import { keyboardNavigationPlugin } from './KeyboardNavigationPlugin.js';
+import type { TreeTablePlugin } from '../plugin/types.js';
 
 /**
     */

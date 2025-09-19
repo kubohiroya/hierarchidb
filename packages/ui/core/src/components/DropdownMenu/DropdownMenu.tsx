@@ -19,7 +19,7 @@
 
 import { Box, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
-import type { DropdownMenuItemType } from './DropdownMenuItemType';
+import type { DropdownMenuItemType } from './DropdownMenuItemType.js';
 
 export interface DropdownMenuProps {
   id: string;

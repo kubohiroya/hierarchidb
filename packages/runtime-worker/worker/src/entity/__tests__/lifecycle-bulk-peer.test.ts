@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import { storeRegistry } from '../store-registry';
+import { storeRegistry } from '../store-registry.js';
 
 describe('Lifecycle uses bulkUpsert when available', () => {
   beforeEach(() => {
     vi.resetModules();
-    (process as any).env.WORKER_ENTITY_UNIFIED = '1';
   });
 
   it('paste: calls store.bulkUpsert once for same nodeType', async () => {

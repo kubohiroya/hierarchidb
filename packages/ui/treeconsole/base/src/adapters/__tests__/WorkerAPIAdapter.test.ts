@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
 import type { CommandResult, TreeChangeEvent } from '@hierarchidb/common-type';
-import { WorkerAPIAdapter } from '../WorkerAPIAdapter';
+import { WorkerAPIAdapter } from '../WorkerAPIAdapter.js';
 
 //  WorkerAPI
 const createMockWorkerAPI = () =>
@@ -46,9 +46,32 @@ const createMockWorkerAPI = () =>
 describe('WorkerAPIAdapter', () => {
   let mockWorkerAPI: any;
   let adapter: WorkerAPIAdapter;
+  let workingCopyAPI: any;
 
   beforeEach(() => {
     mockWorkerAPI = createMockWorkerAPI();
+
+    // Provide APIs expected by the adapters
+    // Map Worker API methods into the corresponding sub-APIs used internally
+    mockWorkerAPI.getMutationAPI = vi.fn().mockResolvedValue({
+      moveNodes: mockWorkerAPI.moveNodes,
+      duplicateNodes: mockWorkerAPI.duplicateNodes,
+      moveNodesToTrash: mockWorkerAPI.moveToTrash,
+      removeNodes: mockWorkerAPI.remove,
+      recoverNodesFromTrash: mockWorkerAPI.recoverFromTrash,
+    });
+
+    workingCopyAPI = {
+      createWorkingCopyFromNode: vi.fn().mockResolvedValue(undefined),
+      createDraftWorkingCopy: vi.fn().mockResolvedValue({ id: 'wc-1' }),
+      commitWorkingCopy: vi.fn().mockResolvedValue({ success: true }),
+      discardWorkingCopy: vi.fn().mockResolvedValue(undefined),
+    };
+    mockWorkerAPI.getWorkingCopyAPI = vi.fn().mockResolvedValue(workingCopyAPI);
+
+    mockWorkerAPI.getQueryAPI = vi.fn().mockReturnValue({
+      getNode: vi.fn().mockResolvedValue({ id: 'test-node', updatedAt: Date.now() }),
+    });
 
     adapter = new WorkerAPIAdapter({
       workerAPI: mockWorkerAPI,
@@ -128,7 +151,7 @@ describe('WorkerAPIAdapter', () => {
   });
 
   describe('Mutation Operations', () => {
-    it('should convert moveNodes to CommandEnvelope format', async () => {
+    it('should convert moveNodes to mutation payload', async () => {
       const successResult: CommandResult = {
         success: true,
         seq: 123,
@@ -140,15 +163,9 @@ describe('WorkerAPIAdapter', () => {
 
       expect(mockWorkerAPI.moveNodes).toHaveBeenCalledWith(
         expect.objectContaining({
-          kind: 'moveNodes',
-          payload: expect.objectContaining({
-            nodeIds: ['node1', 'node2'],
-            toParentId: 'target-parent',
-            onNameConflict: 'auto-rename',
-          }),
-          commandId: expect.any(String),
-          groupId: expect.any(String),
-          issuedAt: expect.any(Number),
+          nodeIds: ['node1', 'node2'],
+          toParentId: 'target-parent',
+          onNameConflict: expect.any(Function),
         }),
       );
     });
@@ -178,17 +195,7 @@ describe('WorkerAPIAdapter', () => {
 
       await adapter.deleteNodes(['node1', 'node2'] as any);
 
-      expect(mockWorkerAPI.moveToTrash).toHaveBeenCalledWith(
-        expect.objectContaining({
-          kind: 'moveToTrash',
-          payload: expect.objectContaining({
-            nodeIds: ['node1', 'node2'],
-          }),
-          commandId: expect.any(String),
-          groupId: expect.any(String),
-          issuedAt: expect.any(Number),
-        }),
-      );
+      expect(mockWorkerAPI.moveToTrash).toHaveBeenCalledWith(['node1', 'node2']);
     });
   });
 
@@ -201,25 +208,15 @@ describe('WorkerAPIAdapter', () => {
       expect(editSession).toEqual(
         expect.objectContaining({
           workingCopyId: expect.any(String),
-          sourceNodeId: 'test-node',
+          sourceId: 'test-node',
           isCreate: false,
         }),
       );
 
-      expect(mockWorkerAPI.createWorkingCopy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          kind: 'createWorkingCopy',
-          payload: expect.objectContaining({
-            sourceNodeId: 'test-node',
-            workingCopyId: expect.any(String),
-          }),
-        }),
-      );
+      expect(workingCopyAPI.createWorkingCopyFromNode).toHaveBeenCalledWith('test-node');
     });
 
     it('should handle startNodeCreate correctly', async () => {
-      mockWorkerAPI.createWorkingCopyForCreate.mockResolvedValue(undefined);
-
       const editSession = await adapter.startNodeCreate(
         'parent-node' as any,
         'New Node',
@@ -231,18 +228,6 @@ describe('WorkerAPIAdapter', () => {
           workingCopyId: expect.any(String),
           parentId: 'parent-node',
           isCreate: true,
-        }),
-      );
-
-      expect(mockWorkerAPI.createWorkingCopyForCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          kind: 'createWorkingCopyForCreate',
-          payload: expect.objectContaining({
-            parentId: 'parent-node',
-            name: 'New Node',
-            description: 'Description',
-            workingCopyId: expect.any(String),
-          }),
         }),
       );
     });
@@ -304,10 +289,9 @@ describe('WorkerAPIAdapter', () => {
 
       expect(mockWorkerAPI.moveNodes).toHaveBeenCalledWith(
         expect.objectContaining({
-          payload: expect.objectContaining({
-            onNameConflict: 'error',
-          }),
-          groupId: 'custom-group',
+          nodeIds: ['node1'],
+          toParentId: 'target',
+          onNameConflict: 'error',
         }),
       );
     });

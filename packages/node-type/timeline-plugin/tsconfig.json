@@ -8,9 +8,18 @@
     "skipLibCheck": false,
     "jsx": "react-jsx",
     "types": ["node", "react"],
-    "moduleResolution": "node",
-    // Avoid local path overrides that shadow public entrypoints; rely on ambient or published types
+    "typeRoots": [
+      "./src/types",
+      "../../../node_modules/@types"
+    ],
+    "moduleResolution": "Node16",
+    "module": "Node16"
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
 }

@@ -2,7 +2,7 @@
   * Japanese translations for Location Plugin
    */
 
-import type { LocationPluginTranslations } from './types';
+import type { LocationPluginTranslations } from './types.js';
 
 export const ja: LocationPluginTranslations = {
   common: {

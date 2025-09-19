@@ -13,16 +13,31 @@ const g: any = (globalThis as any);
 g.FEATURE_FLAGS = g.FEATURE_FLAGS || {};
 const env: any = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
 const keys = [
-  'WORKER_USE_CMDPROC_CREATE_UPDATE',
-  'WORKER_USE_CMDPROC_MOVE_REMOVE',
-  'WORKER_WC_COMMIT_V2',
-  'WORKER_TRASH_USE_HOLDER',
-  'WORKER_METRICS_ENABLED',
-  'WORKER_POLICY_C',
-  'WORKER_TX_ENABLED',
-  'WORKER_ENTITY_UNIFIED',
   'WORKER_PROGRESS_COMMON_TYPES',
-  'LOCATION_DOWNLOAD_STRATEGY',
-  'SHAPE_DOWNLOAD_STRATEGY',
 ];
 for (const k of keys) if (env[k] != null) g.FEATURE_FLAGS[k] = env[k];
+
+// Provide lightweight EntitiesDB overrides so peer-entity cleanup code paths
+// do not attempt to import plugin-specific Dexie implementations during unit tests.
+const createMockEntitiesDB = () => {
+  const rows = new Map<string, unknown>();
+  return {
+    async open() {
+      /* no-op */
+    },
+    table() {
+      return {
+        async delete(id: string) {
+          rows.delete(id);
+        },
+      };
+    },
+  };
+};
+
+const overrides = (g.__HDB_PLUGIN_ENTITY_OVERRIDES__ = g.__HDB_PLUGIN_ENTITY_OVERRIDES__ || {});
+for (const type of ['folder', 'route', 'resolver', 'shape', 'location', 'spreadsheet', 'styler', 'basemap']) {
+  if (!overrides[type]) {
+    overrides[type] = async () => createMockEntitiesDB();
+  }
+}
