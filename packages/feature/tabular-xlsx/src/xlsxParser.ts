@@ -24,7 +24,6 @@ export const xlsxParser: TabularParserPort = {
     return { format: 'xlsx', confidence };
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const XLSX = require('xlsx');
 
     async function toArrayBuffer(i: FileLike): Promise<ArrayBuffer> {
