@@ -50,7 +50,7 @@ export interface TreeConsoleState {
 
 export interface TreeConsoleActions {
   handleNodeClick: (node: TreeNodeData) => void;
-  handleNodeSelect: (nodeId: string, selected: boolean) => void;
+  handleNodeSelect: (nodeIds: string[], selected: boolean) => void;
   handleNodeExpand: (nodeId: string, expanded: boolean) => void;
   handleSearchChange: (term: string) => void;
   handleSearchClear: () => void;

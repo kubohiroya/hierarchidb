@@ -69,15 +69,20 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       }
     },
 
-    handleNodeSelect: (nodeId: string, selected: boolean) => {
+    handleNodeSelect: (nodeIds: string[], selected: boolean) => {
+      const next = new Set<NodeId>((selectedIds || []).map((id) => id as NodeId));
+      const ids = Array.isArray(nodeIds) ? nodeIds : [nodeIds];
+      ids.forEach((rawId) => {
+        const id = rawId as NodeId;
+        if (selected) {
+          next.add(id);
+        } else {
+          next.delete(id);
+        }
+      });
+
       setSSOT({
-        selectedIds: (() => {
-          const prev = selectedIds;
-          if (selected) {
-            return [...new Set([...(prev || []), nodeId as NodeId])];
-          }
-          return (prev || []).filter((id) => id !== nodeId);
-        })(),
+        selectedIds: Array.from(next),
       });
     },
 

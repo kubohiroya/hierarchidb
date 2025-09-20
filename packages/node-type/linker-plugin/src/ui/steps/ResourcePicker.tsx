@@ -25,7 +25,7 @@ type TreeConsolePanelProps = {
   canEdit: boolean;
   canDelete: boolean;
   showNavigationButtons: boolean;
-  onNodeSelect: (_id: string, _isSel: boolean) => void;
+  onNodeSelect: (_ids: string[], _isSel: boolean) => void;
   onNodeExpand: (_id: string, _isExp: boolean) => void;
   onSearchChange: (_t: string) => void;
   onSearchClear: () => void;
@@ -166,9 +166,11 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     canEdit: false,
     canDelete: false,
     showNavigationButtons: true,
-    onNodeSelect: (id: string, isSel: boolean) => {
+    onNodeSelect: (nodeIds: string[], isSel: boolean) => {
       const next = new Set<string>(selected);
-      isSel ? next.add(id) : next.delete(id);
+      nodeIds.forEach((id) => {
+        if (isSel) next.add(id); else next.delete(id);
+      });
       setSelected(next);
       onChange(next);
     },

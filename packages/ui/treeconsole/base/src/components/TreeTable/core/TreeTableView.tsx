@@ -43,7 +43,7 @@ export interface TreeTableViewProps {
   readonly sortBy?: string;
   readonly sortDirection?: 'asc' | 'desc';
   readonly onNodeClick?: (node: TreeNodeData) => void;
-  readonly onNodeSelect?: (nodeId: string, selected: boolean) => void;
+  readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSort?: (columnId: string) => void;
   // Right-click context menus are disabled app-wide
@@ -83,11 +83,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
 
   const handleSelectAll = (checked: boolean) => {
     if (!onNodeSelect) return;
-    data.forEach((node) => {
-      if (isSelected(node.id) !== checked) {
-        onNodeSelect(node.id, checked);
-      }
-    });
+    const targets = data
+      .filter((node) => isSelected(node.id) !== checked)
+      .map((node) => node.id);
+    if (targets.length) {
+      onNodeSelect(targets, checked);
+    }
   };
 
   const allSelected = data.length > 0 && data.every((node) => isSelected(node.id));
@@ -141,7 +142,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
               disabled={checkboxDisabled}
               onChange={(e) => {
                 if (checkboxDisabled) return;
-                onNodeSelect?.(node.id, e.target.checked);
+                onNodeSelect?.([node.id], e.target.checked);
               }}
               size={dense ? 'small' : 'medium'}
             />

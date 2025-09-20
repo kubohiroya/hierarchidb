@@ -47,7 +47,7 @@ export interface TreeConsolePanelProps {
   readonly maxHeight?: number | string;
   readonly dense?: boolean;
   readonly onNodeClick?: (node: TreeNodeData) => void;
-  readonly onNodeSelect?: (nodeId: string, selected: boolean) => void;
+  readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSearchChange: (term: string) => void;
   readonly onSearchClear: () => void;
@@ -130,26 +130,17 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           props.onNodeClick(nodeData);
         }
       },
-      onNodeSelect: (nodeIds: string[], selected: boolean) => {
-        if (props.onNodeSelect) {
-          nodeIds.forEach((id) => props.onNodeSelect?.(id, selected));
-        }
-      },
+      onNodeSelect: props.onNodeSelect
+        ? (nodeIds: string[], selected: boolean) => {
+            props.onNodeSelect?.(nodeIds, selected);
+          }
+        : undefined,
       onNodeExpand: props.onNodeExpand,
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
     };
-  }, [
-    props.data,
-    props.selectedIds,
-    props.expandedIds,
-    props.onNodeClick,
-    props.onNodeSelect,
-    props.onNodeExpand,
-    props.onContextMenuAction,
-    props.onMoveNodes,
-  ]);
+  }, [props]);
 
   // No right-click handlers
 

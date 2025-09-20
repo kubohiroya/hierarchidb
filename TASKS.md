@@ -97,7 +97,8 @@
     - progress: 2025-09-20 22:55 `useTreeConsoleSSOT` の API を `useMemo` でラップし、参照の安定化と未定義キー時の noop を実装
     - progress: 2025-09-20 23:02 TreeConsole loader/subscription で expandedIds/applySortFilter を ref 化し、setupSubscription が client 依存のみになるよう再設計
     - progress: 2025-09-20 23:10 TreeConsoleIntegration で inc/decRef と subscription 呼び出しを ref 経由に変更し、依存を `pageNodeId` + client state 判定へ縮小
-    - done: 2025-09-20 23:12 `pnpm -C app typecheck` を実行し成功
+    - progress: 2025-09-20 23:18 TreeConsolePanel/Actions の onNodeSelect を NodeId 配列対応に統一し、親選択時に子孫へ伝播するよう修正
+    - done: 2025-09-20 23:22 `pnpm --filter @hierarchidb/ui-treeconsole-base build` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable {typecheck,test,build}` / `pnpm -C app typecheck` を実行し全て成功
 
 - refactor/node-type/dialog-step-wrapper-unify — StepComponent ラッパー共通化とプラグイン整合
   - ブランチ: `refactor/node-type/dialog-step-wrapper-unify`（サンドボックス制約によりローカルでは `main` 上で作業）

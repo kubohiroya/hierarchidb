@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from 'react-router';
 import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-router';
-import { useState, useRef, useEffect } from 'react';
-import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography } from '@mui/material';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
@@ -46,7 +46,7 @@ export default function TrashDialog() {
   const data = useLoaderData<TrashDialogData>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { treeId, pageNodeId, targetNodeId, nodeType, action } = useParams();
+  const { treeId } = useParams();
 
   const mode = searchParams.get('mode') || 'restore'; // "restore" or "empty"
 
@@ -55,8 +55,8 @@ export default function TrashDialog() {
   const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
   const isFullscreen = displayMode === 'fullscreen';
   const isMaximized = displayMode === 'maximized';
-  const setIsFullscreen = (v: boolean) => setDisplayMode(v ? 'fullscreen' : (isMaximized ? 'maximized' : 'standard'));
-  const setIsMaximized = (v: boolean) => setDisplayMode(v ? 'maximized' : (isFullscreen ? 'fullscreen' : 'standard'));
+  const setIsFullscreen = useCallback((v: boolean) => setDisplayMode(v ? 'fullscreen' : (isMaximized ? 'maximized' : 'standard')), [isMaximized]);
+  const setIsMaximized = useCallback((v: boolean) => setDisplayMode(v ? 'maximized' : (isFullscreen ? 'fullscreen' : 'standard')), [isFullscreen]);
   const paperRef = useRef<HTMLDivElement | null>(null);
 
   // No persistence for TrashDialog (not tied to a stable nodeId)
@@ -134,7 +134,7 @@ export default function TrashDialog() {
       document.removeEventListener('fullscreenchange', onFsChange);
       document.removeEventListener('webkitfullscreenchange', onFsChange);
     };
-  }, []);
+  }, [isMaximized, setIsFullscreen]);
   const handleChangeDisplayMode = (m: 'standard' | 'maximized' | 'fullscreen') => {
     if (m === 'fullscreen') {
       if (!isFullscreen) void toggleFullscreen(true);
@@ -154,7 +154,7 @@ export default function TrashDialog() {
 
     setLoading(true);
     try {
-      const client = await WorkerAPIClient.getSingleton();
+      const client = WorkerAPIClient.getSingleton();
       // Use facade pattern: get MutationAPI first
       const mutationAPI = await client.getMutationAPI();
 
@@ -321,13 +321,16 @@ export default function TrashDialog() {
             canEdit={false}
             canDelete={mode === 'empty'}
             onNodeClick={(node: TreeNodeData) => console.log('Node clicked:', node)}
-            onNodeSelect={(nodeId: string, selected: boolean) => {
-              const branded = nodeId as NodeId;
+            onNodeSelect={(nodeIds: string[], selected: boolean) => {
+              const brandedIds = nodeIds.map((id) => id as NodeId);
               setSelectedIds((prev) => {
+                const next = new Set<NodeId>(prev);
                 if (selected) {
-                  return prev.includes(branded) ? prev : [...prev, branded];
+                  brandedIds.forEach((id) => next.add(id));
+                } else {
+                  brandedIds.forEach((id) => next.delete(id));
                 }
-                return prev.filter((id) => id !== branded);
+                return Array.from(next);
               });
             }}
             onNodeExpand={() => {
@@ -368,7 +371,7 @@ export default function TrashDialog() {
                 const ok = confirm('Permanently delete this item? This cannot be undone.');
                 if (!ok) return;
                 try {
-                  const client = await WorkerAPIClient.getSingleton();
+                  const client = WorkerAPIClient.getSingleton();
                   const mutationAPI = await client.getMutationAPI();
                   const res = await mutationAPI.removeNodes([node.id]);
                   if (res.success) {
