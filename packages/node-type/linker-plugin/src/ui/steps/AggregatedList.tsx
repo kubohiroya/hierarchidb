@@ -18,9 +18,14 @@ function resolveWorkerClient(): WorkerAPI | null {
   const hook = getWorkerClientHook<WorkerClientRef>() || null;
   const ref = hook ? hook() : null;
   if (!ref) return null;
-  return (typeof (ref as any).getQueryAPI === 'function')
-    ? (ref as WorkerAPI)
-    : (((ref as { client?: WorkerAPI }).client) || null);
+  if (typeof ref === 'object' && ref !== null && 'getQueryAPI' in ref && typeof (ref as WorkerAPI).getQueryAPI === 'function') {
+    return ref as WorkerAPI;
+  }
+  if (typeof ref === 'object' && ref !== null && 'client' in ref) {
+    const maybeClient = (ref as { client?: WorkerAPI }).client;
+    return maybeClient ?? null;
+  }
+  return null;
 }
 
 export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, selected }) => {

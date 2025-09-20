@@ -3,11 +3,11 @@ import type {
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
   MapLibrePoint,
-} from '../types/maplibre-public';
+} from '../types/maplibre-public.js';
 import type {
   MapFeatureIdentifyConfig,
   MapFeatureIdentifier,
-} from '../types/unified-map-props';
+} from '../types/unified-map-props.js';
 
 export const DEFAULT_IDENTIFY_RADIUS = 5;
 
@@ -29,14 +29,14 @@ export const defaultFeatureIdAccessor = (
 
   const { id, properties } = feature;
   if (typeof id === 'string' || typeof id === 'number') {
-    return id as MapFeatureIdentifier;
+    return id;
   }
 
   if (properties) {
     for (const key of FALLBACK_ID_PROPERTY_KEYS) {
-      const candidate = (properties as Record<string, unknown>)[key];
+      const candidate = properties[key];
       if (typeof candidate === 'string' || typeof candidate === 'number') {
-        return candidate as MapFeatureIdentifier;
+        return candidate;
       }
     }
   }
@@ -52,7 +52,7 @@ const toQueryGeometry = (point: MapLibrePoint, radius: number) => {
   return [
     [point.x - radius, point.y - radius],
     [point.x + radius, point.y + radius],
-  ] as const;
+  ] as [[number, number], [number, number]];
 };
 
 const pickQueriedFeatures = (
@@ -64,17 +64,13 @@ const pickQueriedFeatures = (
     return undefined;
   }
 
-  if (typeof (map as any).queryRenderedFeatures !== 'function') {
-    return undefined;
-  }
-
   const radius = typeof config.radius === 'number' && config.radius >= 0 ? config.radius : DEFAULT_IDENTIFY_RADIUS;
 
   try {
     const geometry = toQueryGeometry(event.point, radius);
     const options = config.layerIds || config.filter ? { layers: config.layerIds, filter: config.filter } : undefined;
-    const result = (map as any).queryRenderedFeatures(geometry, options);
-    return Array.isArray(result) ? (result as MapLibreGeoJSONFeature[]) : undefined;
+    const result = map.queryRenderedFeatures(geometry, options);
+    return Array.isArray(result) ? result : undefined;
   } catch (error) {
     console.warn('Map feature identification failed to query rendered features.', error);
     return undefined;
@@ -149,7 +145,7 @@ export const resolveIdentifyCandidates = (
     queriedFeatures && queriedFeatures.length > 0
       ? queriedFeatures
       : includeEventFeatures && Array.isArray(event.features)
-        ? (event.features as MapLibreGeoJSONFeature[])
+        ? event.features
         : [];
 
   const filteredFeatures = filterFeaturesByLayer(combinedFeatures, config.layerIds);

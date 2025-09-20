@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Box } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
 
@@ -18,7 +19,7 @@ export interface LRUSplitViewProps extends LRUSplitViewConfig {
   /** Component width */
   width?: string | number;
   /** Additional CSS styles */
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 /**
@@ -70,69 +71,68 @@ export const LRUSplitView: React.FC<LRUSplitViewProps> = ({
     return panes.find(p => p.id === paneId);
   };
 
+  const expandedKey = paneStates
+    .filter((pane) => pane.isExpanded)
+    .map((pane) => pane.id)
+    .join('-');
+
   return (
-    <Box sx={{ height, width, ...sx }}>
-      {React.createElement(Allotment as any, {
-          key: paneStates
-            .filter((p) => p.isExpanded)
-            .map((p) => p.id)
-            .join('-'),
-          vertical: vertical,
-          proportionalLayout: false,
-          defaultSizes: sizes,
-          onDragEnd: (_newSizes: number[]) => {
-            // Optional: Handle pane resize completion
-            if (onPaneReorder) {
-              const expandedPanes = paneStates.filter(p => p.isExpanded);
-              onPaneReorder(expandedPanes.map(p => p.id));
-            }
-          },
-        },
-        paneStates.map((state, index) => {
+    <Box sx={[{ height, width }, sx] as SxProps<Theme>}>
+      <Allotment
+        key={expandedKey}
+        vertical={vertical}
+        proportionalLayout={false}
+        defaultSizes={sizes}
+        onDragEnd={() => {
+          if (!onPaneReorder) return;
+          const expandedPanes = paneStates.filter((pane) => pane.isExpanded);
+          onPaneReorder(expandedPanes.map((pane) => pane.id));
+        }}
+      >
+        {paneStates.map((state, index) => {
           const config = getPaneConfig(state.id);
+          if (!config) return null;
           const progressInfo = getProgressForPane(state.id);
 
-          if (!config) return null;
-
-          return React.createElement((Allotment as any).Pane, {
-              key: state.id,
-              minSize: state.collapsedSize || defaultCollapsedSize,
-              preferredSize: sizes[index],
-            },
-            <Box
-              sx={{
-                height: '100%',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
+          return (
+            <Allotment.Pane
+              key={state.id}
+              minSize={state.collapsedSize || defaultCollapsedSize}
+              preferredSize={sizes[index]}
             >
-              {/* Custom header or default header */}
-              {config.customHeader || (
-                <PaneHeader
-                  pane={config}
-                  state={state}
-                  progress={progressInfo}
-                  onToggle={togglePane}
-                />
-              )}
+              <Box
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {config.customHeader || (
+                  <PaneHeader
+                    pane={config}
+                    state={state}
+                    progress={progressInfo}
+                    onToggle={togglePane}
+                  />
+                )}
 
-              {/* Pane content - only render when expanded or always visible */}
-              {(state.isExpanded || !config.content) && (
-                <Box
-                  sx={{
-                    flex: 1,
-                    overflow: 'auto',
-                    display: state.isExpanded ? 'block' : 'none',
-                  }}
-                >
-                  {config.content}
-                </Box>
-              )}
-            </Box>,
+                {(state.isExpanded || !config.content) && (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      overflow: 'auto',
+                      display: state.isExpanded ? 'block' : 'none',
+                    }}
+                  >
+                    {config.content}
+                  </Box>
+                )}
+              </Box>
+            </Allotment.Pane>
           );
-        }),
-      )}
+        })}
+      </Allotment>
     </Box>
   );
 };

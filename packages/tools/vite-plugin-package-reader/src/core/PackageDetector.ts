@@ -5,6 +5,9 @@ import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../
 import { Logger } from './Logger.js';
 import { PackageCache } from './PackageCache.js';
 
+const isErrnoException = (error: unknown): error is NodeJS.ErrnoException =>
+  typeof error === 'object' && error !== null && 'code' in error;
+
 export interface PackageDetectorOptions {
   rootDir?: string;
   cache?: boolean;
@@ -140,7 +143,7 @@ export class PackageDetector {
 
       return packageJson;
     } catch (error) {
-      if ((error as any).code !== 'ENOENT') {
+      if (!isErrnoException(error) || error.code !== 'ENOENT') {
         this.logger.error(`Failed to read ${filePath}:`, error);
       }
       return null;

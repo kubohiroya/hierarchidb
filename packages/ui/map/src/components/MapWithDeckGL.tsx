@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { MapLibreMap } from './MapLibreMap.js';
+import type { IControl } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 
 export interface DeckOverlayProps {
@@ -19,13 +20,16 @@ export interface MapWithDeckGLProps extends React.ComponentProps<typeof MapLibre
   deck: DeckOverlayProps;
 }
 
+type DeckOverlayControl = IControl & {
+  setProps: (props: DeckOverlayProps) => void;
+};
+
 export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...mapProps }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
-  const overlayRef = useRef<any>(null);
+  const overlayRef = useRef<DeckOverlayControl | null>(null);
 
   const OverlayCtor = useMemo(() => {
     // Lazy require to avoid hard dependency at import time
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('@deck.gl/mapbox').MapboxOverlay;
   }, []);
 
@@ -39,8 +43,8 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
           layers: deck.layers || [],
           getTooltip: deck.getTooltip,
           onClick: deck.onClick,
-        });
-        m.addControl(overlayRef.current as any);
+        }) as DeckOverlayControl;
+        m.addControl(overlayRef.current);
       }
       onLoad?.(m);
     },
@@ -61,10 +65,7 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
   // Cleanup overlay on unmount
   useEffect(() => () => {
     if (overlayRef.current) {
-      try {
-        overlayRef.current.setProps({ layers: [] });
-      } catch {
-      }
+      overlayRef.current.setProps({ layers: [] });
       overlayRef.current = null;
     }
   }, []);
@@ -73,4 +74,3 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
 };
 
 export default MapWithDeckGL;
-

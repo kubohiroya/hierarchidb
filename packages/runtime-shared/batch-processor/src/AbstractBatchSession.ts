@@ -78,6 +78,7 @@ export abstract class AbstractBatchSession<
   protected progress: BatchProgress;
   protected resourceUsage?: ResourceUsage;
   protected abortController?: AbortController;
+  private standardProgressListeners = new Set<(event: StandardProgressEvent) => void>();
 
   constructor(sessionId: string, nodeId: NodeId, config: TConfig) {
     this.sessionId = sessionId;
@@ -324,7 +325,7 @@ export abstract class AbstractBatchSession<
       estimatedTimeRemaining: progress.estimatedTimeRemaining,
     };
 
-    this.onStandardProgressUpdate(event);
+    this.emitStandardProgressEvent(event);
   }
 
   /**
@@ -334,5 +335,31 @@ export abstract class AbstractBatchSession<
   protected onStandardProgressUpdate(_event: StandardProgressEvent): void {
     // Default implementation: no-op
     // Subclasses should override this to emit progress to their specific systems
+  }
+
+  /**
+   * Add a listener for standardized progress events emitted by this session.
+   * Returns an unsubscribe function for cleanup.
+   */
+  addStandardProgressListener(listener: (event: StandardProgressEvent) => void): () => void {
+    this.standardProgressListeners.add(listener);
+    return () => {
+      this.standardProgressListeners.delete(listener);
+    };
+  }
+
+  private emitStandardProgressEvent(event: StandardProgressEvent): void {
+    try {
+      this.onStandardProgressUpdate(event);
+    } catch (error) {
+      console.error('Standard progress handler threw an error:', error);
+    }
+    for (const listener of this.standardProgressListeners) {
+      try {
+        listener(event);
+      } catch (error) {
+        console.error('Progress listener threw an error:', error);
+      }
+    }
   }
 }

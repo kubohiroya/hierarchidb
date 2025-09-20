@@ -51,16 +51,17 @@ describe('EntityLifecycleManager.copyGroupsByMapping', () => {
     };
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    EntityLifecycleManager.setIdMapping('cmd-group', [
-      [folderSrc, folderDst],
-      [routeSrc, routeDst],
-    ]);
+    const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [
+      [folderSrc, folderDst] as const,
+      [routeSrc, routeDst] as const,
+    ];
+    EntityLifecycleManager.setIdMapping('cmd-group', mapping);
 
     await mgr.onDuplicateNodes({
       commandId: 'cmd-group',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
+      payload: { nodeIds: [], toParentId: 'parent' as NodeId },
       issuedAt: Date.now(),
       type: 'duplicateNodes',
     });

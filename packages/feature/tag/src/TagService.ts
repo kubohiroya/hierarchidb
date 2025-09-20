@@ -17,7 +17,7 @@ export class TagService implements TagAPI {
   }
 
   async createTag(request: CreateTagRequest): Promise<TagEntity> {
-    const now = Date.now();
+    const now = Date.now() as Timestamp;
     const tag: TagEntity = {
       id: this.generateTagId(),
       name: request.name.trim(),
@@ -31,7 +31,7 @@ export class TagService implements TagAPI {
       nodeIds: [],
       referenceCount: 0,
       lastAccessedAt: now,
-    } as any; // TagEntity extends RelationalEntity
+    };
 
     await this.db.createTag(tag);
     return tag;

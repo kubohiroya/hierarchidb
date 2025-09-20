@@ -20,6 +20,7 @@ import type { AbstractBatchSession } from './AbstractBatchSession.js';
 export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   protected sessions = new Map<string, AbstractBatchSession>();
   protected progressCallbacks = new Map<string, Set<BatchProgressCallback>>();
+  private sessionProgressTeardown = new Map<string, () => void>();
 
   abstract startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string>;
 
@@ -110,17 +111,21 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
    * Register a session and set up progress forwarding
    */
   protected registerSession(session: AbstractBatchSession): void {
-    this.sessions.set(session.getState().sessionId, session);
+    const sessionId = session.getState().sessionId;
+    this.sessions.set(sessionId, session);
+
+    const teardown = this.sessionProgressTeardown.get(sessionId);
+    if (teardown) {
+      teardown();
+      this.sessionProgressTeardown.delete(sessionId);
+    }
 
     // Set up progress forwarding if API v2 is enabled
     if (isBatchControlAPIV2Enabled()) {
-      const originalOnStandardProgressUpdate = (session as any).onStandardProgressUpdate?.bind(session);
-      if (originalOnStandardProgressUpdate) {
-        (session as any).onStandardProgressUpdate = (event: StandardProgressEvent) => {
-          originalOnStandardProgressUpdate(event);
-          this.emitProgress(session.getState().sessionId, event);
-        };
-      }
+      const unsubscribe = session.addStandardProgressListener((event: StandardProgressEvent) => {
+        this.emitProgress(sessionId, event);
+      });
+      this.sessionProgressTeardown.set(sessionId, unsubscribe);
     }
   }
 
@@ -130,6 +135,11 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   protected cleanupSession(sessionId: string): void {
     this.sessions.delete(sessionId);
     this.progressCallbacks.delete(sessionId);
+    const teardown = this.sessionProgressTeardown.get(sessionId);
+    if (teardown) {
+      teardown();
+      this.sessionProgressTeardown.delete(sessionId);
+    }
   }
 }
 

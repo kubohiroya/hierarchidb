@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyledAccordion, StyledAccordionProps } from '../components/StyledAccordion.js';
 import { Chip } from '@mui/material';
+import type { ChipProps } from '@mui/material';
 
 export interface WorkflowStep {
   /** Step number or identifier */
@@ -56,13 +57,22 @@ export const WorkflowAccordion: React.FC<WorkflowAccordionProps> = ({
 
     const label = step.label || `Step ${step.id}`;
     const color = step.badgeColor || getStatusColor(step.status);
+    const muiColors: Array<ChipProps['color']> = ['default', 'primary', 'secondary', 'error', 'info', 'success', 'warning'];
+    const muiColor = muiColors.includes(color as ChipProps['color']) ? (color as ChipProps['color']) : undefined;
+    const chipSx = muiColor
+      ? undefined
+      : {
+        backgroundColor: color,
+        color: '#fff',
+      };
 
     return (
       <Chip
         label={label}
-        color={color as any}
+        color={muiColor}
         size="small"
         variant={step.status === 'active' ? 'filled' : 'outlined'}
+        sx={chipSx}
       />
     );
   }, [step, showStepBadge, renderStep]);

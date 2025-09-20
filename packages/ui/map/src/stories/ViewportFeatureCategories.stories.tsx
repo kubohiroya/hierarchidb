@@ -1,13 +1,21 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Source, Layer } from '@vis.gl/react-maplibre';
-import { MapLibreMap } from '../components/MapLibreMap';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
-import type { MapViewState } from '../types/unified-map-props';
+import { MapLibreMap } from '../components/MapLibreMap.js';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import type { MapViewState } from '../types/unified-map-props.js';
 
-type Geometry = GeoJSON.Geometry;
-type Position = GeoJSON.Position;
+type Position = [number, number];
+
+type Geometry =
+  | { type: 'Point'; coordinates: Position }
+  | { type: 'MultiPoint'; coordinates: Position[] }
+  | { type: 'LineString'; coordinates: Position[] }
+  | { type: 'Polygon'; coordinates: Position[][] }
+  | { type: 'MultiLineString'; coordinates: Position[][] }
+  | { type: 'MultiPolygon'; coordinates: Position[][][] }
+  | { type: 'GeometryCollection'; geometries: Geometry[] };
 
 type FeatureCategory = 'shape' | 'route' | 'location';
 
@@ -18,9 +26,17 @@ interface DemoFeatureProperties {
   summary: string;
 }
 
-type DemoFeature = GeoJSON.Feature<Geometry, DemoFeatureProperties>;
+type DemoFeature = {
+  type: 'Feature';
+  geometry: Geometry;
+  properties: DemoFeatureProperties;
+  id?: string;
+};
 
-type DemoFeatureCollection = GeoJSON.FeatureCollection<Geometry, DemoFeatureProperties>;
+type DemoFeatureCollection = {
+  type: 'FeatureCollection';
+  features: DemoFeature[];
+};
 
 interface BoundingBox {
   minLng: number;

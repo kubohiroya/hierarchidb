@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { useMemo } from 'react';
 import type { Feature, Polygon } from 'geojson';
 import { TileLayer } from '@deck.gl/geo-layers';
+import type { TileLayerProps } from '@deck.gl/geo-layers';
 import { GeoJsonLayer } from '@deck.gl/layers';
-import MapWithDeckGL from '../components/MapWithDeckGL';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props';
+import type { GeoJsonLayerProps } from '@deck.gl/layers';
+import MapWithDeckGL from '../components/MapWithDeckGL.js';
+import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
 
 type PrefectureFeatureProperties = {
   name: string;
@@ -104,6 +106,9 @@ const PREFECTURE_FEATURES: PrefectureFeature[] = [
 const PREFECTURE_IDS = PREFECTURE_FEATURES.map((feature) => feature.id as string);
 const PREFECTURE_NAMES = Array.from(new Set(PREFECTURE_FEATURES.map((feature) => feature.properties.prefecture)));
 
+type PrefectureTileProps = TileLayerProps<PrefectureFeature[]>;
+type PrefectureGeoJsonProps = GeoJsonLayerProps<PrefectureFeatureProperties>;
+
 const createVectorTileLayer = ({ highlightId, matchProperty, matchValue }: HighlightArgs) =>
   new TileLayer<PrefectureFeature[]>({
     id: 'prefecture-vector-tiles',
@@ -111,30 +116,31 @@ const createVectorTileLayer = ({ highlightId, matchProperty, matchValue }: Highl
     minZoom: 5,
     maxZoom: 12,
     getTileData: () => PREFECTURE_FEATURES,
-    renderSubLayers: (props) => {
-      const data = (props.data as PrefectureFeature[]) ?? [];
-      return new GeoJsonLayer<PrefectureFeatureProperties>({
-        ...props,
+    renderSubLayers: (props: PrefectureTileProps & { id: string; data: PrefectureFeature[] }) => {
+      const fillColorResolver: NonNullable<PrefectureGeoJsonProps['getFillColor']> = (feature) => {
+        const featureId = feature.id != null ? String(feature.id) : undefined;
+        const matchesId = highlightId ? featureId === highlightId : false;
+        const matchesProperty = matchProperty && matchValue
+          ? feature.properties?.[matchProperty] === matchValue
+          : false;
+        return matchesId || matchesProperty ? HIGHLIGHT_FILL_COLOR : BASE_FILL_COLOR;
+      };
+
+      const geoJsonProps: PrefectureGeoJsonProps = {
         id: `${props.id}-geojson`,
-        data,
+        data: props.data,
         stroked: true,
         filled: true,
         getLineColor: OUTLINE_COLOR,
         lineWidthMinPixels: 1.5,
         pickable: true,
-        getFillColor: (feature) => {
-          if (!feature) return BASE_FILL_COLOR;
-          const featureId = (feature.id as string | number | undefined)?.toString();
-          const matchesId = highlightId ? featureId === highlightId : false;
-          const matchesProperty = matchProperty && matchValue
-            ? feature.properties?.[matchProperty] === matchValue
-            : false;
-          return matchesId || matchesProperty ? HIGHLIGHT_FILL_COLOR : BASE_FILL_COLOR;
-        },
+        getFillColor: fillColorResolver,
         updateTriggers: {
           getFillColor: [highlightId, matchProperty, matchValue],
         },
-      });
+      };
+
+      return new GeoJsonLayer<PrefectureFeatureProperties>(geoJsonProps);
     },
   });
 
@@ -151,7 +157,7 @@ const VectorTileHighlightDemo = ({ highlightId, matchProperty, matchValue }: Hig
       height="520px"
       deck={{
         layers,
-        getTooltip: ({ object }) =>
+        getTooltip: ({ object }: { object?: PrefectureFeature }) =>
           object
             ? {
                 text: `${object.properties?.name}\n${object.properties?.prefecture}`,

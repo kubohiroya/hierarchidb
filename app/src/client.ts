@@ -45,6 +45,16 @@ const logInitWorkerWarning = (message: string, error: unknown): void => {
   console.warn(`[client:initWorker] ${message}`, error);
 };
 
+const COMLINK_NOISE_TYPES = new Set([
+  'GET',
+  'SET',
+  'APPLY',
+  'CONSTRUCT',
+  'ENDPOINT',
+  'RELEASE',
+  'HANDLER',
+]);
+
 function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
   return window as BootWindow;
@@ -92,7 +102,9 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
               typeof (data as { payload?: { type?: unknown } }).payload?.type === 'string'
               ? String((data as { payload: { type: string } }).payload.type)
               : 'unknown';
-        bootLog('client:recv %s', messageType);
+        if (!COMLINK_NOISE_TYPES.has(messageType)) {
+          bootLog('client:recv %s', messageType);
+        }
 
         if (isWorkerInitMessage(data) && data.type === 'INIT_COMPLETE') {
           workerInitCompleted = true;

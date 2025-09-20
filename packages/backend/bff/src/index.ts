@@ -265,10 +265,11 @@ app.post('/auth/google/callback', async (c) => {
       return c.json({ error: 'Missing required parameters' }, 400);
     }
 
+    const env = getEnv(c);
     const config: GoogleOAuth2Config = {
-      clientId: c.env.GOOGLE_CLIENT_ID,
-      clientSecret: c.env.GOOGLE_CLIENT_SECRET,
-      redirectUri: c.env.REDIRECT_URI,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+      redirectUri: env.REDIRECT_URI,
     };
 
     // Exchange authorization code for tokens
@@ -278,7 +279,7 @@ app.post('/auth/google/callback', async (c) => {
     const userInfo = await getGoogleUserInfo(tokens.access_token);
 
     // Create session JWT
-    const sessionDuration = parseInt(c.env.SESSION_DURATION_HOURS || '24');
+    const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
     const sessionToken = await createSessionToken(
       {
         sub: userInfo.id,
@@ -287,9 +288,9 @@ app.post('/auth/google/callback', async (c) => {
         picture: userInfo.picture,
         provider: 'google',
       },
-      c.env.JWT_SECRET,
+      env.JWT_SECRET,
       sessionDuration,
-      c.env.JWT_ISSUER,
+      env.JWT_ISSUER,
     );
 
     return c.json({
@@ -345,7 +346,8 @@ app.post('/auth/verify', async (c) => {
       return c.json({ error: 'Missing authorization token' }, 401);
     }
 
-    const payload = await verifySessionToken(token, c.env.JWT_SECRET, c.env.JWT_ISSUER);
+    const env = getEnv(c);
+    const payload = await verifySessionToken(token, env.JWT_SECRET, env.JWT_ISSUER);
 
     return c.json({
       valid: true,
@@ -373,7 +375,8 @@ app.get('/auth/userinfo', async (c) => {
       return c.json({ error: 'Missing authorization token' }, 401);
     }
 
-    const payload = await verifySessionToken(token, c.env.JWT_SECRET, c.env.JWT_ISSUER);
+    const env = getEnv(c);
+    const payload = await verifySessionToken(token, env.JWT_SECRET, env.JWT_ISSUER);
 
     return c.json({
       id: payload.sub,
@@ -396,15 +399,16 @@ app.post('/auth/revoke', revokeToken);
 
 // Logout endpoint (invalidate session)
 app.post('/auth/logout', async (c) => {
-  if (c.env.AUTH_KV) {
+  const env = getEnv(c);
+  if (env.AUTH_KV) {
     try {
       const authHeader = c.req.header('Authorization');
       const token = extractBearerToken(authHeader);
 
       if (token) {
         const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
-          c.env.AUTH_KV,
-          c.env.JWT_SECRET,
+          env.AUTH_KV,
+          env.JWT_SECRET,
         );
 
         const userData = await kvManager.getUserAuthBySession(token);

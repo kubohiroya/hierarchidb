@@ -30,7 +30,7 @@ import type {
   MapLibreMapInstance,
   MapLibreMapMouseEvent,
   MapLibreStyle,
-} from './maplibre-public';
+} from './maplibre-public.js';
 
 /**
  * Base map view state - shared across all map components

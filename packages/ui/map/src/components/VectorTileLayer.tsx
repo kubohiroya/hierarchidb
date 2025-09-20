@@ -177,7 +177,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
     }
 
     try {
-      const layerConfig: any = {
+      const layerConfig: Record<string, unknown> = {
         id: layerId!,
         type: layerType,
         source: sourceId!,
@@ -200,7 +200,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
         layerConfig.filter = filter;
       }
 
-      mapRef.addLayer(layerConfig as any);
+      mapRef.addLayer(layerConfig);
     } catch (error) {
       if (!(error instanceof Error && error.message.includes('already exists'))) {
         console.error('Failed to add layer:', error);

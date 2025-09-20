@@ -59,11 +59,14 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
   for (const entry of entries) {
     const mod = entry.mod;
     try {
-      const m = mod as any;
+      const moduleRecord: Record<string, unknown> | null =
+        (typeof mod === 'object' || typeof mod === 'function') && mod !== null
+          ? mod as Record<string, unknown>
+          : null;
       const wiringCandidates: PluginRuntimeWiring[] = [];
-      const objectWiring = toRuntimeWiring(m?.runtimeWiring);
+      const objectWiring = toRuntimeWiring(moduleRecord?.runtimeWiring);
       if (objectWiring) wiringCandidates.push(objectWiring);
-      const classWiring = toRuntimeWiring(m?.RuntimeWiring);
+      const classWiring = toRuntimeWiring(moduleRecord?.RuntimeWiring);
       if (classWiring) wiringCandidates.push(classWiring);
 
       for (const wiring of wiringCandidates) {
@@ -78,14 +81,20 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
         }
       }
       // Register standardized factories/lifecycle when present
-      const exp: any = {};
-      const workerSide = m?.worker || m; // tolerate packaging that nests exports under .worker
-      if (typeof workerSide?.createEntityHandler === 'function') exp.createEntityHandler = workerSide.createEntityHandler;
-      if (typeof workerSide?.createBatchManager === 'function') exp.createBatchManager = workerSide.createBatchManager;
+      const exp: Record<string, unknown> = {};
+      const workerSource = moduleRecord?.worker && typeof moduleRecord.worker === 'object'
+        ? moduleRecord.worker as Record<string, unknown>
+        : moduleRecord;
+      if (workerSource && typeof workerSource.createEntityHandler === 'function') {
+        exp.createEntityHandler = workerSource.createEntityHandler;
+      }
+      if (workerSource && typeof workerSource.createBatchManager === 'function') {
+        exp.createBatchManager = workerSource.createBatchManager;
+      }
 
-      const workerLifecycle = workerSide?.lifecycle && typeof workerSide.lifecycle === 'object'
-        ? workerSide.lifecycle
-        : toLifecycle(workerSide?.Lifecycle);
+      const workerLifecycle = workerSource && workerSource.lifecycle && typeof workerSource.lifecycle === 'object'
+        ? workerSource.lifecycle as Record<string, unknown>
+        : toLifecycle(workerSource?.Lifecycle);
       if (workerLifecycle) {
         exp.lifecycle = workerLifecycle;
       }

@@ -1,7 +1,5 @@
-/**
- * Cloudflare Turnstile verification
- * https://developers.cloudflare.com/turnstile/
- */
+import type { Next } from 'hono';
+import { getEnv, type BffContext } from './env.js';
 
 interface TurnstileVerifyResponse {
   success: boolean;
@@ -12,9 +10,6 @@ interface TurnstileVerifyResponse {
   cdata?: string;
 }
 
-/**
-  * Cloudflare Turnstile
-  */
 export async function verifyTurnstileToken(
   token: string,
   secretKey: string,
@@ -59,35 +54,35 @@ export async function verifyTurnstileToken(
   }
 }
 
-/**
-  * Turnstile
-  */
-export function extractTurnstileToken(request: Request): string | null {
-  const url = new URL(request.url);
+const TURNSTILE_QUERY_PARAM = 'cf-turnstile-response';
 
-  //  URL
-  const urlToken = url.searchParams.get('cf-turnstile-response');
-  if (urlToken) return urlToken;
+export function extractTurnstileToken(c: BffContext): string | null {
+  const url = new URL(c.req.url);
+  const urlToken = url.searchParams.get(TURNSTILE_QUERY_PARAM);
+  if (urlToken) {
+    return urlToken;
+  }
 
-  const headerToken = request.headers.get('X-Turnstile-Token');
-  if (headerToken) return headerToken;
+  const headerToken = c.req.header('X-Turnstile-Token');
+  if (headerToken) {
+    return headerToken;
+  }
 
   return null;
 }
 
-/**
-  * Turnstile
-  */
-export async function requireTurnstile(c: any, next: any) {
-  const env = c.env as any;
+export async function requireTurnstile(c: BffContext, next: Next) {
+  const env = getEnv(c);
 
-  if (env.SKIP_TURNSTILE === 'true' || env.ENVIRONMENT === 'development') {
+  if (
+    env.SKIP_TURNSTILE === 'true' ||
+    env.ENVIRONMENT === 'development' ||
+    !env.TURNSTILE_SECRET_KEY
+  ) {
     return next();
   }
 
-  //  Turnstile
-  const token = extractTurnstileToken(c.req) ||
-    (await c.req.json().catch(() => ({}))).turnstileToken;
+  const token = extractTurnstileToken(c) || (await c.req.json().catch(() => ({}))).turnstileToken;
 
   if (!token) {
     return c.json({
@@ -96,8 +91,7 @@ export async function requireTurnstile(c: any, next: any) {
     }, 400);
   }
 
-  const clientIp = c.req.header('CF-Connecting-IP') ||
-    c.req.header('X-Forwarded-For')?.split(',')[0];
+  const clientIp = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For')?.split(',')[0];
 
   const result = await verifyTurnstileToken(
     token,

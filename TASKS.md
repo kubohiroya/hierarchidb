@@ -72,6 +72,33 @@
     - progress: 2025-09-20 20:18 TreeTableCore へ selectAll 復元/保存処理と UI オーバーレイ制御を組み込み
     - done: 2025-09-20 20:22 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功
 
+- refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
+  - ブランチ: `refactor/ui-treeconsole/treetable-core-slimdown`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-treetable`, `TreeTableCore` 既存抽出フック群
+  - 受け入れ基準（DoD）：
+    - [ ] `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx` の行数が 260 行未満である
+    - [ ] 選択派生状態セットが `Set<NodeId>` で統一され、`string | NodeId` 型の混在が解消されている
+    - [ ] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `test` が成功
+  - チェックリスト：
+    - [ ] 選択派生ロジックを専用フック（例: `useTreeTableSelectionOverlay`）へ抽出し TreeTableCore から削減
+    - [ ] 編集状態およびコンテキストメニュー処理をフック/コンポーネントへ移設し責務を分離
+    - [ ] TreeTable utils と内部コンポーネントで `Set<NodeId>` を採用し、キャスト削減と型整合を実現
+  - ロールバック手順：
+    - 追加したフック/コンポーネントを削除し、`TreeTableCore.tsx` を直前コミットへ戻したうえで `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `test` を実行
+  - 運用ログ：
+    - start: 2025-09-20 22:05 TreeTableCore 行数削減と選択派生ロジック整理に着手
+    - progress: 2025-09-20 22:24 TreeTableCore をフック/コンポーネント分割し、行数を 247 行まで削減
+    - progress: 2025-09-20 22:26 選択派生フック `useTreeTableSelectionOverlay` を新設し `Set<NodeId>` へ統一
+    - progress: 2025-09-20 22:28 TreeTable utils の ancestor/descendant 判定を NodeId 専用 API へ更新
+    - progress: 2025-09-20 22:33 StyledTableContainer を forwardRef 化し、ref 警告を解消
+    - progress: 2025-09-20 22:42 TreeConsole loader/subscription で SSOT Map 参照を ref 化し、無限再レンダーを抑止
+    - progress: 2025-09-20 22:48 `useTreeConsoleLoader` / `useTreeConsoleSubscription` で setSSOT 参照を ref ラップし、依存循環を遮断
+    - progress: 2025-09-20 22:50 `useTreeConsoleSSOT` の ref カウンタ更新をストア参照ベースへ戻し Hook 順序を安定化
+    - progress: 2025-09-20 22:55 `useTreeConsoleSSOT` の API を `useMemo` でラップし、参照の安定化と未定義キー時の noop を実装
+    - progress: 2025-09-20 23:02 TreeConsole loader/subscription で expandedIds/applySortFilter を ref 化し、setupSubscription が client 依存のみになるよう再設計
+    - progress: 2025-09-20 23:10 TreeConsoleIntegration で inc/decRef と subscription 呼び出しを ref 経由に変更し、依存を `pageNodeId` + client state 判定へ縮小
+    - done: 2025-09-20 23:12 `pnpm -C app typecheck` を実行し成功
+
 - refactor/node-type/dialog-step-wrapper-unify — StepComponent ラッパー共通化とプラグイン整合
   - ブランチ: `refactor/node-type/dialog-step-wrapper-unify`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: folder-plugin / shape-plugin / styler-plugin の最新 `typecheck` 成功ログ（2025-09-20 13:56 記録）
@@ -186,6 +213,28 @@
     - progress: 2025-09-20 18:18 関連パッケージの typecheck を実行（plugin-dialog/search-result-window/ui-core/ui-treeconsole-{base,treetable}/runtime-worker）し全て成功
     - done: 2025-09-20 18:20 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test` を再実行し、自動 alias 化後もグリーンであることを確認
     - progress: 2025-09-20 17:52 createNodeTypeAliasPlugin の config フック呼び出しテストを union 型に対応させ、`pnpm --filter @hierarchidb/tools-plugin-registry-utils typecheck` / `test` がグリーンであることを確認
+
+- refactor/app/treeconsole-integration-split — useTreeConsoleIntegration フックの責務分割とサブモジュール化
+  - ブランチ: `refactor/app/treeconsole-integration-split`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `app` パッケージの既存型定義、`@hierarchidb/ui-treeconsole-*` ユーティリティ
+  - 受け入れ基準（DoD）：
+    - [x] `app/src/hooks/useTreeConsoleIntegration.ts` の行数が 500 行未満になり、主要責務が別ファイルへ移動している
+    - [x] 新設したサブモジュールに英語ヘッダーコメントと責務説明が追加されている
+    - [x] `pnpm -C app typecheck` が成功する
+  - チェックリスト：
+    - [x] Tree データ取得・サブスクリプション処理を `useTreeConsoleLoader` / `useTreeConsoleSubscription` へ抽出
+    - [x] UI ハンドラー生成ロジックを `createTreeConsoleActions` のモジュールへ分離
+    - [x] 共通ユーティリティ（ソート/フィルタ等）を純粋関数として切り出し、単体テストを追加
+  - ロールバック手順：
+    - 新規ファイルを削除し、`useTreeConsoleIntegration.ts` を直前コミットへ戻したうえで `pnpm -C app typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-20 20:45 useTreeConsoleIntegration 分割プラン策定・リファクタリング着手
+    - progress: 2025-09-20 21:05 useTreeConsoleIntegration を treeconsole サブモジュール群へ分割し、主要副作用を移設
+    - progress: 2025-09-20 21:12 sort/filter ユーティリティを純粋化し、`app/src/hooks/__tests__/sortFilter.test.ts` を追加
+    - progress: 2025-09-20 21:20 `pnpm -C app typecheck` を実行し成功
+    - blocked: 2025-09-20 21:25 `pnpm -C app exec vitest run app/src/hooks/__tests__/sortFilter.test.ts` が Sandbox のファイル監視制限 (EMFILE) により失敗。手元では追加検証が行えず、実行依頼が必要
+    - blocked: 2025-09-20 21:33 `pnpm -C app exec vitest run --pool=threads --no-watch app/src/hooks/__tests__/sortFilter.test.ts` および `--pool=forks` も同一理由で失敗（監視上限）。外部環境での実行が必要
+    - progress: 2025-09-20 21:40 旧設計アーカイブ `docs/deprecated/REPORT/design/plugin-shapes/interfaces.ts` を削除
 
 - chore/naming/export-file-alignment — ファイル名と主要export命名の整合調査/支援ツール整備（Phase1-2）
   - ブランチ: `chore/naming/export-file-alignment`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -502,6 +551,8 @@
     - progress: 2025-09-20 11:55 app/src/client.ts の worker 初期化イベントを正式型でハンドリングし、環境依存の feature flag / plugin config 読み出しから `as any` を撤廃。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` で app 38 件 / ワークスペース 254 件を確認。
     - progress: 2025-09-20 11:58 app/src/loader.ts のブート状態共有を BootWindow 型へ統一し、初期化待ちロジックから `as any` を除去。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` で app 35 件 / ワークスペース 251 件を確認。
     - progress: 2025-09-20 17:06 runtime-worker の単体/E2E テストから `as any` を全撤廃。Comlink エンドポイントと CoreDB/CommandProcessor スタブを型付けし、`pnpm --filter @hierarchidb/runtime-worker typecheck` → `pnpm --filter @hierarchidb/runtime-worker test:run` → `pnpm as-any:report` を実行。runtime-worker パッケージの `as any` 件数 0（実装・テスト共に）/ ワークスペース合計 70 件を確認。
+    - progress: 2025-09-20 17:22 backend/bff の OAuth2 フロー／リダイレクト判定／Turnstile ヘルパーから `as any` を撤廃し、`getEnv` ヘルパーで Cloudflare Bindings を型安全に扱うよう変更。`pnpm --filter @hierarchidb/bff typecheck` → `pnpm as-any:report` を実行し、BFF パッケージ 0 件／ワークスペース 62 件を記録。
+    - progress: 2025-09-20 17:35 map-adapter の MapLibreDeckAdapter から `as any` を撤廃。環境変数の読み出しと deck.gl レイヤ管理を型安全化し、`pnpm --filter @hierarchidb/map-adapter typecheck` → `pnpm as-any:report` を実行。ワークスペース合計 56 件まで減少（残件は feature/tabular・ui/file など）。
     - progress: 2025-09-20 12:06 app/src/services/databases.ts で各プラグインの Dexie DB を正式 export から動的取得するよう更新し、プレウォーム用スタブの `as any` を撤廃。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` で app 32 件 / ワークスペース 248 件を確認。
     - progress: 2025-09-20 12:10 virtual:plugin-registry-services facade と t.tsx/plugin-demo の型整備で App 内 `as any` を 28 件まで削減。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` でワークスペース 244 件を確認。
     - progress: 2025-09-20 12:12 TreeConsoleIntegration のパンくず遷移判定を型付けし、App 内 `as any` を 27 件まで削減。`pnpm --filter @hierarchidb/app typecheck` / `pnpm as-any:report` でワークスペース 243 件を確認。
@@ -2889,6 +2940,8 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- refactor/worker/command-processor-split — CommandProcessor.ts を 375 行へ分割し履歴/TX/legacy 処理を専用モジュール化（runtime-worker typecheck/test:run 済み）
+
 
 - fix/runtime-ui/plugin-dialog-unused-isrecord（UIPersistenceRegistry の未使用ガード削除で typecheck を安定化）
   - ブランチ: `fix/runtime-ui/plugin-dialog-unused-isrecord`（sandbox 制約によりローカルは `main` 上で作業）
@@ -3221,6 +3274,8 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
+- 2025-09-20: ui-map デッキストーリーの公式型適用 — `@deck.gl/{geo-layers,layers,mapbox}` と `@types/geojson` を devDependencies として追加し、`tsconfig.json` の他パッケージ node_modules 参照を整理。`MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式シグネチャに沿って書き換え、`src/types/story-shims.d.ts` を削除。`pnpm install` → `pnpm --filter @hierarchidb/ui-map typecheck` → `node scripts/check-shims.mjs` → `pnpm as-any:report` まで成功。
+- 2025-09-20: Workspace `as any` ゼロ化 — ui-map / ui-monitoring / ui-lru-splitview / runtime-worker-bootstrap / feature-compute / runtime-shared-batch-processor / node-type-linker-plugin ほか残存パッケージから `as any` を全面撤廃。`pnpm --filter` による個別 typecheck（compute/util/runtime-worker-bootstrap/tools-vite-plugin-package-reader/auth-recovery/tabular-xlsx/runtime-shared-batch-processor/node-type-linker-plugin/analyze-licenses/ui-icon/ui-lru-splitview/ui-monitoring/ui-map/ui-accordion-config/ui-import-export/ui-treeconsole-base/ui-treeconsole-treetable/runtime-ui-search-result-window/ui-auth/ui-file/tag）と `pnpm as-any:report` で 0 件を確認。
 - 2025-09-18: Location plugin d.ts 整備 — tsup/exports/typesVersions を更新し、`app` 側の Location シムを削除。`pnpm --filter @hierarchidb/node-type-location-plugin build` と `pnpm --filter @hierarchidb/app typecheck` で確認済み。
 - 2025-09-18: Route / Timeline / Spreadsheet / Styler / Shape / Linker plugin の d.ts 整備 — 各 tsup/exports/typesVersions を更新し、`app` シムを撤去。`pnpm --filter @hierarchidb/{route-plugin,timeline-plugin,location-plugin,shape-plugin,styler-plugin,spreadsheet-plugin} build` および `pnpm --filter @hierarchidb/app typecheck` を実行済み。
 - 2025-09-18: Route/Timeline/Spreadsheet plugin d.ts 整備 — 各 tsup/exports/typesVersions を更新し、app シム（worker/database）を撤去。`pnpm --filter @hierarchidb/{route-plugin,timeline-plugin,spreadsheet-plugin} build` および `pnpm --filter @hierarchidb/app typecheck` で確認済み。
@@ -3349,6 +3404,9 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-20 start: refactor/worker/command-processor-split — CommandProcessor.ts 分割計画に着手（現行責務棚卸し開始）。
+- 2025-09-20 18:12 progress: refactor/worker/command-processor-split — CommandHistoryManager / CommandExecutionRunner / core-handlers 抽出により CommandProcessor.ts を 375 行まで削減。
+- 2025-09-20 18:14 progress: refactor/worker/command-processor-split — `pnpm --filter @hierarchidb/runtime-worker typecheck` / `test:run` を実行し既存テストがグリーンであることを確認。
 - 2025-09-20 start: chore/tooling/knip-config — knip.json 作成と初回スキャン準備に着手。
 - 2025-09-20 progress: chore/tooling/knip-config — knip.json を整備し、ワークスペース/プラグイン/ignore 設定を反映。
 - 2025-09-20 done: chore/tooling/knip-config — `pnpm exec knip` を実行し警告なしで完了（結果を TASKS.md に記録）。

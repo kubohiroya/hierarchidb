@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { PluginDefinitionBuilder, type PackageJsonContent } from './plugin-definition-builder';
+import { PluginDefinitionBuilder, type PackageJsonContent } from './plugin-definition-builder.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

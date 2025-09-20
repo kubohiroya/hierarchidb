@@ -49,12 +49,12 @@ export type {
   MapLibreMapMouseEvent,
   MapLibrePoint,
   MapLibreQueryGeometry,
-} from './types/maplibre-public';
+} from './types/maplibre-public.js';
 
 // Feature identification helpers
 export {
   DEFAULT_IDENTIFY_RADIUS,
   defaultFeatureIdAccessor,
   resolveIdentifyCandidates,
-} from './lib/feature-identification';
-export type { MapFeatureIdentifyCandidates } from './lib/feature-identification';
+} from './lib/feature-identification.js';
+export type { MapFeatureIdentifyCandidates } from './lib/feature-identification.js';

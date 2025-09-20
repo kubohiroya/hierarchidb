@@ -2,14 +2,14 @@
  * Dynamic redirect URI utilities
  */
 
-import { Context } from 'hono';
 import { parseAllowedOrigins } from './cors.js';
+import { getEnv, type BffContext } from './env.js';
 
 /**
  * Gets dynamic redirect URI based on request origin
  */
-export function getDynamicRedirectUri(c: Context, provider: string = 'google'): string {
-  const env = c.env as any;
+export function getDynamicRedirectUri(c: BffContext, provider: string = 'google'): string {
+  const env = getEnv(c);
 
   // Check for provider-specific redirect URI
   if (provider === 'github' && env.GITHUB_REDIRECT_URI) {
@@ -32,8 +32,8 @@ export function getDynamicRedirectUri(c: Context, provider: string = 'google'): 
 /**
  * Gets src callback URL from state parameter
  */
-export function getAppCallbackUrlFromState(c: Context, state: string | null): string {
-  const env = c.env as any;
+export function getAppCallbackUrlFromState(c: BffContext, state: string | null): string {
+  const env = getEnv(c);
 
   // Try to extract origin from state if it's encoded
   let stateOrigin: string | undefined;
@@ -99,8 +99,8 @@ export function getAppCallbackUrlFromState(c: Context, state: string | null): st
 /**
  * Gets src callback URL
  */
-export function getAppCallbackUrl(c: Context): string {
-  const env = c.env as any;
+export function getAppCallbackUrl(c: BffContext): string {
+  const env = getEnv(c);
 
   //  1:
   if (env.APP_BASE_URL) {
@@ -137,8 +137,8 @@ export function getAppCallbackUrl(c: Context): string {
  * : localhost
  * : ALLOWED_ORIGINSREDIRECT_URI
   */
-export function validateRedirectUri(redirectUri: string, c: Context): boolean {
-  const env = c.env as any;
+export function validateRedirectUri(redirectUri: string, c: BffContext): boolean {
+  const env = getEnv(c);
 
   try {
     const url = new URL(redirectUri);

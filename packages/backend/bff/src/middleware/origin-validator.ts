@@ -2,17 +2,18 @@
  * Origin validation middleware
  */
 
-import { Context, Next } from 'hono';
+import { Next } from 'hono';
 import { parseAllowedOrigins } from '../utils/cors.js';
+import { getEnv, type BffContext } from '../utils/env.js';
 
 /**
   * Origin
  * localhost
  * ALLOWED_ORIGINS
   */
-export async function validateOrigin(c: Context, next: Next) {
+export async function validateOrigin(c: BffContext, next: Next) {
   const origin = c.req.header('Origin');
-  const env = c.env as any;
+  const env = getEnv(c);
 
   //  Origin
   if (!origin) {
@@ -58,7 +59,7 @@ export async function validateOrigin(c: Context, next: Next) {
   * Origin
   */
 export function requireValidOrigin(paths: string[]) {
-  return async (c: Context, next: Next) => {
+  return async (c: BffContext, next: Next) => {
     const path = new URL(c.req.url).pathname;
 
     if (paths.some((p) => path.startsWith(p))) {

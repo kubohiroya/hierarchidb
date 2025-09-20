@@ -1,15 +1,38 @@
-export function resolveDbPrefix(): string {
-  let fromVite = '';
+interface EnvRecord {
+  [key: string]: unknown;
+}
+
+interface HierarchidbGlobal {
+  FEATURE_FLAGS?: {
+    WORKER_DB_PREFIX?: unknown;
+  };
+  APP_PREFIX?: unknown;
+}
+
+const readVitePrefix = (): string => {
   try {
-    // Access Vite env if available (in ESM builds). This will be tree-shaken where not supported.
-    // eslint-disable-next-line no-undef
-    // @ts-ignore
-    fromVite = (import.meta as any)?.env?.VITE_APP_PREFIX || '';
+    const meta = import.meta as ImportMeta & { env?: EnvRecord };
+    const prefix = meta.env?.VITE_APP_PREFIX;
+    return typeof prefix === 'string' ? prefix : '';
   } catch {
     // ignore if import.meta is not supported in this environment
+    return '';
   }
-  // Global override for tests or bootstrap
-  const fromGlobal = (globalThis as any)?.FEATURE_FLAGS?.WORKER_DB_PREFIX || (globalThis as any)?.APP_PREFIX || '';
+};
+
+const readGlobalPrefix = (): string => {
+  const candidate = globalThis as HierarchidbGlobal;
+  const fromFlags = candidate.FEATURE_FLAGS?.WORKER_DB_PREFIX;
+  if (typeof fromFlags === 'string' && fromFlags.trim()) {
+    return fromFlags;
+  }
+  const fromAppPrefix = candidate.APP_PREFIX;
+  return typeof fromAppPrefix === 'string' ? fromAppPrefix : '';
+};
+
+export function resolveDbPrefix(): string {
+  const fromGlobal = readGlobalPrefix();
+  const fromVite = readVitePrefix();
   return (fromGlobal || fromVite || 'hidb').trim();
 }
 

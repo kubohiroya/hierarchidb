@@ -20,12 +20,15 @@ export class TransformPipeline<T = any> {
 
     if (Array.isArray(result) && this.options.resolveDependencies) {
       this.logger.debug('Resolving dependencies...');
-      result = this.resolveDependenciesAndSort(result as any[]) as T;
+      const resolver = this.options.resolveDependencies as (item: unknown) => readonly string[];
+      const resolved = this.resolveDependenciesAndSort(result, resolver);
+      result = resolved as unknown as T;
     }
 
     if (Array.isArray(result) && this.options.sort) {
       this.logger.debug('Applying custom sort...');
-      result = this.options.sort(result as any[]) as T;
+      const sorted = this.options.sort(result as unknown as T[]);
+      result = sorted as unknown as T;
     }
 
     this.logger.info('Transformation pipeline completed');
@@ -34,23 +37,22 @@ export class TransformPipeline<T = any> {
 
   /**
             */
-  private resolveDependenciesAndSort<I>(items: I[]): I[] {
-    if (!this.options.resolveDependencies) {
-      return items;
-    }
+  private resolveDependenciesAndSort(items: readonly unknown[], resolver: (item: unknown) => readonly string[]): unknown[] {
+    const mutableItems = [...items];
 
-    const graph = new Map<I, Set<I>>();
-    const itemMap = new Map<string, I>();
+    const graph = new Map<unknown, Set<unknown>>();
+    const itemMap = new Map<string, unknown>();
 
-    for (const item of items) {
+    for (const item of mutableItems) {
       const itemKey = this.getItemKey(item);
       itemMap.set(itemKey, item);
       graph.set(item, new Set());
     }
 
-    for (const item of items) {
-      const deps = this.options.resolveDependencies!(item as unknown as T);
-      const itemDeps = graph.get(item)!;
+    for (const item of mutableItems) {
+      const deps = resolver(item);
+      const itemDeps = graph.get(item);
+      if (!itemDeps) continue;
 
       for (const dep of deps) {
         const depItem = itemMap.get(dep);
@@ -60,17 +62,27 @@ export class TransformPipeline<T = any> {
       }
     }
 
-    return this.topologicalSort(items, graph);
+    return this.topologicalSort(mutableItems, graph);
   }
 
   /**
             */
-  private getItemKey(item: any): string {
+  private getItemKey(item: unknown): string {
     if (typeof item === 'string') {
       return item;
     }
     if (item && typeof item === 'object') {
-      return item.name || item.id || JSON.stringify(item);
+      const record = item as Record<string, unknown>;
+      const byName = record.name;
+      if (typeof byName === 'string') return byName;
+      const byId = record.id;
+      if (typeof byId === 'string') return byId;
+      if (typeof byId === 'number') return byId.toString();
+      try {
+        return JSON.stringify(item);
+      } catch {
+        return String(item);
+      }
     }
     return String(item);
   }

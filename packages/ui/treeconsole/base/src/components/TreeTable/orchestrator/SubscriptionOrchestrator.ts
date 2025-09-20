@@ -26,6 +26,23 @@ const logSubscriptionWarning = (message: string, error: unknown): void => {
   console.warn('[SubscriptionOrchestrator]', message, error);
 };
 
+interface FeatureFlagRecord {
+  [key: string]: unknown;
+}
+
+const readFeatureFlagNumber = (key: string, fallback: number): number => {
+  const flags = (globalThis as { FEATURE_FLAGS?: FeatureFlagRecord }).FEATURE_FLAGS;
+  const value = flags?.[key];
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
+};
+
 /**
   * SubTree
   */
@@ -145,12 +162,11 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
     }
     const batchDelay = (() => {
       try {
-        const v = (globalThis as any)?.FEATURE_FLAGS?.SUBSCRIPTION_BATCH_MS;
-        if (v != null) return Number(v) || 100;
+        return readFeatureFlagNumber('SUBSCRIPTION_BATCH_MS', 100);
       } catch (error) {
         logSubscriptionWarning('Failed to read SUBSCRIPTION_BATCH_MS flag', error);
+        return 100;
       }
-      return 100;
     })();
     updateBatchTimerRef.current = setTimeout(() => {
       processPendingUpdates();

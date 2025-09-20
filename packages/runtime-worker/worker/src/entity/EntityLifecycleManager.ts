@@ -28,7 +28,7 @@ type PasteNodesEnvelope = CommandEnvelope<'pasteNodes', PasteNodesPayload>;
 type ImportNodesEnvelope = CommandEnvelope<'importNodes', ImportNodesPayload>;
 
 type NodeMapping = Map<NodeId, NodeId>;
-type NodeMappingSource = Iterable<readonly [NodeId | string, NodeId | string]>;
+type NodeMappingSource = Iterable<readonly [unknown, unknown]>;
 type SourceNodeMap = Map<NodeId, TreeNode>;
 
 type PeerEntitiesDb = Dexie & { peerEntities: Table<unknown, NodeId> };

@@ -19,27 +19,32 @@ async function getServices(): Promise<Record<string, Loader>> {
   return _servicesMap;
 }
 
-// Overloads for known services to provide strong typing without `as any`
-export async function loadPluginService(nodeType: 'basemap'): Promise<typeof import('@hierarchidb/node-type-basemap-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'resolver'): Promise<typeof import('@hierarchidb/node-type-resolver-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'spreadsheet'): Promise<typeof import('@hierarchidb/node-type-spreadsheet-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'route'): Promise<typeof import('@hierarchidb/node-type-route-plugin/database') | null>;
-export async function loadPluginService(nodeType: 'shape'): Promise<typeof import('@hierarchidb/node-type-shape-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'location'): Promise<typeof import('@hierarchidb/node-type-location-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'styler'): Promise<typeof import('@hierarchidb/node-type-styler-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'timeline'): Promise<typeof import('@hierarchidb/node-type-timeline-plugin/services') | null>;
-export async function loadPluginService(nodeType: 'linker'): Promise<typeof import('@hierarchidb/node-type-linker-plugin/services') | null>;
-// For other plugins, fall back to generic typing
-export async function loadPluginService<T = unknown>(nodeType: string): Promise<T | null>;
-export async function loadPluginService<T = unknown>(nodeType: string): Promise<T | null> {
+type KnownPluginServiceReturnMap = {
+  basemap: typeof import('@hierarchidb/node-type-basemap-plugin/database') | null;
+  resolver: typeof import('@hierarchidb/node-type-resolver-plugin/database') | null;
+  spreadsheet: typeof import('@hierarchidb/node-type-spreadsheet-plugin/database') | null;
+  route: typeof import('@hierarchidb/node-type-route-plugin/database') | null;
+  shape: typeof import('@hierarchidb/node-type-shape-plugin/services') | null;
+  location: typeof import('@hierarchidb/node-type-location-plugin/services') | null;
+  styler: typeof import('@hierarchidb/node-type-styler-plugin/services') | null;
+  timeline: typeof import('@hierarchidb/node-type-timeline-plugin/services') | null;
+  linker: typeof import('@hierarchidb/node-type-linker-plugin/services') | null;
+};
+
+type KnownPluginNodeType = keyof KnownPluginServiceReturnMap;
+
+type LoadPluginServiceResult<N extends string> =
+  N extends KnownPluginNodeType ? KnownPluginServiceReturnMap[N] : (unknown | null);
+
+export async function loadPluginService<N extends string>(nodeType: N): Promise<LoadPluginServiceResult<N>> {
   const services = await getServices();
   const loader: Loader | undefined = services[nodeType];
-  if (typeof loader !== 'function') return null;
+  if (typeof loader !== 'function') return null as LoadPluginServiceResult<N>;
   try {
     const mod = await loader();
-    return resolveModule<T>(mod);
+    return resolveModule(mod) as LoadPluginServiceResult<N>;
   } catch (error) {
-    return null;
+    return null as LoadPluginServiceResult<N>;
   }
 }
 
@@ -56,8 +61,8 @@ function resolveModule<T>(moduleValue: unknown): T | null {
 
 export async function tryLoadFirst<T = unknown>(nodeTypes: string[]): Promise<T | null> {
   for (const nt of nodeTypes) {
-    const m = await loadPluginService<T>(nt);
-    if (m) return m;
+    const moduleValue = await loadPluginService(nt);
+    if (moduleValue) return moduleValue as T;
   }
   return null;
 }

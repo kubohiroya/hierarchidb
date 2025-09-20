@@ -57,16 +57,17 @@ describe('EntityLifecycleManager.copyRelationsByMapping', () => {
     };
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    EntityLifecycleManager.setIdMapping('cmd-rel', [
-      [a1, b1],
-      [a2, b2],
-    ]);
+    const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [
+      [a1, b1] as const,
+      [a2, b2] as const,
+    ];
+    EntityLifecycleManager.setIdMapping('cmd-rel', mapping);
 
     await mgr.onDuplicateNodes({
       commandId: 'cmd-rel',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
+      payload: { nodeIds: [], toParentId: 'parent' as NodeId },
       issuedAt: Date.now(),
       type: 'duplicateNodes',
     });

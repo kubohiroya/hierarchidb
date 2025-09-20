@@ -27,7 +27,7 @@ export interface UseTreeTableColumnWidthsResult {
   columnWidths: Record<string, number>;
   columnWidthsHydrated: boolean;
   resizingColumn: string | null;
-  containerRef: RefObject<HTMLDivElement | null>;
+  containerRef: RefObject<HTMLDivElement>;
   handleResizeStart: (leftColumnId: string, rightColumnId: string, event: ReactMouseEvent) => void;
 }
 
@@ -42,7 +42,7 @@ const applyColumnMap = (
 };
 
 export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidthsOptions): UseTreeTableColumnWidthsResult {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<{
     startX: number;
     leftStart: number;

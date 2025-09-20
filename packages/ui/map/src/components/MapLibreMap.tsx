@@ -5,14 +5,14 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import {
   BaseMapProps,
   DEFAULT_MAP_CONFIG,
   type MapClickEvent,
   type MapFeatureIdentifyResult,
-} from '../types/unified-map-props';
-import { resolveIdentifyCandidates } from '../lib/feature-identification';
+} from '../types/unified-map-props.js';
+import { resolveIdentifyCandidates } from '../lib/feature-identification.js';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
@@ -140,12 +140,14 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     height: '100%',
   };
 
+  const resolvedMapStyle = mapStyle as React.ComponentProps<typeof ReactMapLibreMap>['mapStyle'];
+
   return (
     <div style={containerStyle}>
       <MapProvider>
         <ReactMapLibreMap
           style={mapStyleForMapLibre}
-          mapStyle={mapStyle as any}
+          mapStyle={resolvedMapStyle}
           initialViewState={initialViewState}
           onLoad={handleMapLoad}
           onMove={handleViewStateChange}

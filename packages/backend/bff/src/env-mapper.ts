@@ -42,7 +42,7 @@ export interface MappedEnv extends Env, AdditionalEnv {
 export function mapEnvironmentVariables(env: RawEnv): MappedEnv {
   return {
     ...env,
-    JWT_ISSUER: env.BFF_JWT_ISSUER || env.JWT_ISSUER,
+    JWT_ISSUER: env.BFF_JWT_ISSUER || env.JWT_ISSUER || '',
     SESSION_DURATION_HOURS: env.BFF_SESSION_DURATION_HOURS || env.SESSION_DURATION_HOURS || '24',
     ALLOWED_ORIGINS: env.BFF_ALLOWED_ORIGINS || env.ALLOWED_ORIGINS || '',
     APP_BASE_URL: env.BFF_APP_BASE_URL || env.APP_BASE_URL,

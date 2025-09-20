@@ -15,11 +15,12 @@ export interface WorkerRef {
   native?: any;
 }
 
+export type TimeoutHandle = ReturnType<typeof setTimeout>;
+
 export interface ClockPort {
   now(): number;
 
-  setTimeout(cb: () => void, ms: number): any;
+  setTimeout(cb: () => void, ms: number): TimeoutHandle;
 
-  clearTimeout(id: any): void;
+  clearTimeout(id: TimeoutHandle): void;
 }
-

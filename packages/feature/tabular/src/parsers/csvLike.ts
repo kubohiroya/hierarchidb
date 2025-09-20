@@ -8,6 +8,8 @@ import type {
   TabularPreview,
 } from '../types.js';
 
+type FileMeta = { name?: string; type?: string };
+
 async function toText(input: FileLike, encoding?: string): Promise<string> {
   if (typeof input === 'string') return input;
   if (typeof Blob !== 'undefined' && input instanceof Blob) {
@@ -19,7 +21,17 @@ async function toText(input: FileLike, encoding?: string): Promise<string> {
     return dec.decode(buf);
   }
   // Fallback
-  return String(input as any);
+  return String(input);
+}
+
+function getFileMeta(input: FileLike): FileMeta {
+  if (typeof input === 'object' && input !== null) {
+    const candidate = input as Partial<FileMeta>;
+    const name = typeof candidate.name === 'string' ? candidate.name : undefined;
+    const type = typeof candidate.type === 'string' ? candidate.type : undefined;
+    return { name, type };
+  }
+  return {};
 }
 
 function splitLines(text: string): string[] {
@@ -36,8 +48,9 @@ export function createCsvLikeParser(id: 'csv' | 'tsv', delimiter: string): Tabul
   return {
     id,
     detect(input: FileLike): DetectionResult {
-      const name = (input as any).name?.toLowerCase?.() || '';
-      const type = (input as any).type?.toLowerCase?.() || '';
+      const meta = getFileMeta(input);
+      const name = meta.name?.toLowerCase() ?? '';
+      const type = meta.type?.toLowerCase() ?? '';
       const ext = id === 'csv' ? '.csv' : '.tsv';
       const mime = id === 'csv' ? 'text/csv' : 'text/tab-separated-values';
       let confidence = 0;

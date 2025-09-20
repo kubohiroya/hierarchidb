@@ -1024,6 +1024,82 @@ total occurrences: 70
   - 残り 70 件は backend/bff・feature/tabular・ui/file など周辺パッケージに集中。次はバックエンドのリダイレクト処理 (`redirect-uri.ts`) と MapLibre Adapter を優先候補とする。
 ```
 
+### 2025-09-20 17:22 再集計（`pnpm as-any:report`）
+
+```
+total occurrences: 62
+
+追加メモ:
+  - backend/bff の OAuth2 フロー／リダイレクト判定／Turnstile 検証から `as any` を撤廃。`getEnv` ヘルパーで Cloudflare Bindings を型安全に扱うよう変更し、BFF 配下の `as any` を 0 件へ。`pnpm --filter @hierarchidb/bff typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計 62 件（主に map-adapter / tabular / ui-file などが残件）を確認。
+```
+
+### 2025-09-20 17:35 再集計（`pnpm as-any:report`）
+
+```
+total occurrences: 56
+
+### 2025-09-20 17:45 再集計（`pnpm as-any:report`）
+
+```
+total occurrences: 50
+
+追加メモ:
+  - tabular パーサ（CSV/JSONL）と RequiredColumnsValidator から `as any` を撤廃し、FileLike メタデータの扱いを共通化。`pnpm --filter @hierarchidb/tabular typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計 50 件を確認（次のフォーカス: ui/file・ui/map・runtime-worker-bootstrap など）。
+```
+
+### 2025-09-20 21:10 再集計（`pnpm as-any:report`）
+
+```
+total occurrences: 0
+
+追加メモ:
+  - ui-map・ui-monitoring・ui-lru-splitview・runtime-worker-bootstrap・feature-compute など残存ホットスポットの `as any` を段階的に除去。Deck.gl ストーリー向けに最小限の ambient module を追加し、Node16 モジュール解決に合わせて `.js` 拡張子を補完。
+  - feature-auth-recovery / tabular-xlsx / runtime-shared-batch-processor / node-type-linker-plugin 等も正式型で再構築し、ログ出力や環境判定ロジックでの `process` 依存を `globalThis` ベースへ統一。
+  - `pnpm as-any:report` で 0 件を確認。あわせて以下を実行し、対応パッケージの型検証がすべてグリーンであることを確認済み。
+    - `pnpm --filter @hierarchidb/compute typecheck`
+    - `pnpm --filter @hierarchidb/util typecheck`
+    - `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck`
+    - `pnpm --filter @hierarchidb/tools-vite-plugin-package-reader typecheck`
+    - `pnpm --filter @hierarchidb/auth-recovery typecheck`
+    - `pnpm --filter @hierarchidb/tabular-xlsx typecheck`
+    - `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck`
+    - `pnpm --filter @hierarchidb/node-type-linker-plugin typecheck`
+    - `pnpm --filter @hierarchidb/analyze-licenses typecheck`
+    - `pnpm --filter @hierarchidb/ui-icon typecheck`
+    - `pnpm --filter @hierarchidb/ui-lru-splitview typecheck`
+    - `pnpm --filter @hierarchidb/ui-monitoring typecheck`
+    - `pnpm --filter @hierarchidb/ui-map typecheck`
+    - `pnpm --filter @hierarchidb/ui-accordion-config typecheck`
+    - `pnpm --filter @hierarchidb/ui-import-export typecheck`
+    - `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck`
+    - `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`
+    - `pnpm --filter @hierarchidb/runtime-ui-search-result-window typecheck`
+    - `pnpm --filter @hierarchidb/ui-auth typecheck`
+    - `pnpm --filter @hierarchidb/ui-file typecheck`
+    - `pnpm --filter @hierarchidb/tag typecheck`
+```
+
+### 2025-09-20 21:32 Deck.gl ストーリーの型整備
+
+```
+追加作業:
+  - `packages/ui/map` に deck.gl / GeoJSON 公式型を devDependencies として宣言し、`tsconfig.json` から他パッケージの node_modules 参照を撤廃。
+  - `MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式な型シグネチャに合わせて更新し、`story-shims.d.ts` を削除。
+検証:
+  - `pnpm install`
+  - `pnpm --filter @hierarchidb/ui-map typecheck`
+  - `node scripts/check-shims.mjs`
+  - `pnpm as-any:report`
+結果:
+  - workspace の shim チェックは許容内（story 用 shim は 0）。`as any` 件数は引き続き 0 件。
+```
+
+
+追加メモ:
+  - map-adapter の MapLibreDeckAdapter から `as any` を撤廃し、動的ロード時の環境変数判定と Layer 更新を型安全化。`pnpm --filter @hierarchidb/map-adapter typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計が 56 件に減少（主な残件: feature/tabular・ui/file・ui/map・runtime-worker-bootstrap など）。
+```
+
+
 ## 推奨アクション
 
 1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/runtime-worker-bootstrap` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。

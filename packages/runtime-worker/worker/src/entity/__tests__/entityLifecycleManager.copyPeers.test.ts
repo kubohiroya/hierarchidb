@@ -60,16 +60,17 @@ describe('EntityLifecycleManager.copyPeersByMapping', () => {
     };
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    EntityLifecycleManager.setIdMapping('cmd-peers', [
-      [folderSrc, folderDst],
-      [routeSrc, routeDst],
-    ]);
+    const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [
+      [folderSrc, folderDst] as const,
+      [routeSrc, routeDst] as const,
+    ];
+    EntityLifecycleManager.setIdMapping('cmd-peers', mapping);
 
     await mgr.onDuplicateNodes({
       commandId: 'cmd-peers',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
+      payload: { nodeIds: [], toParentId: 'parent' as NodeId },
       issuedAt: Date.now(),
       type: 'duplicateNodes',
     });

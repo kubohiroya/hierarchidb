@@ -12,8 +12,8 @@ describe('EntityLifecycleManager.setIdMapping', () => {
     const core = makeCore();
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
 
-    const mapping = new Map<unknown, unknown>([
-      [123, 'dest'],
+    const mapping = new Map<NodeId|number|string, NodeId|number|string>([
+      [123, 'dest' as NodeId],
       ['valid' as NodeId, null],
     ]);
 
@@ -23,7 +23,7 @@ describe('EntityLifecycleManager.setIdMapping', () => {
       commandId: 'cmd-empty',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
+      payload: { nodeIds: [], toParentId: 'parent' as NodeId },
       issuedAt: Date.now(),
       type: 'duplicateNodes',
     });
@@ -48,13 +48,14 @@ describe('EntityLifecycleManager.setIdMapping', () => {
     }));
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
-    EntityLifecycleManager.setIdMapping('cmd', [[source, target]]);
+    const mapping: ReadonlyArray<readonly [NodeId, NodeId]> = [[source, target] as const];
+    EntityLifecycleManager.setIdMapping('cmd', mapping);
 
     await mgr.onDuplicateNodes({
       commandId: 'cmd',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
+      payload: { nodeIds: [], toParentId: 'parent' as NodeId },
       issuedAt: Date.now(),
       type: 'duplicateNodes',
     });

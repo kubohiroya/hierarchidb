@@ -14,8 +14,12 @@ import type {
 export const xlsxParser: TabularParserPort = {
   id: 'xlsx',
   detect(input: FileLike): DetectionResult {
-    const name = (input as any).name?.toLowerCase?.() || '';
-    const type = (input as any).type?.toLowerCase?.() || '';
+    const name = typeof input === 'object' && input !== null && 'name' in input && typeof input.name === 'string'
+      ? input.name.toLowerCase()
+      : '';
+    const type = typeof input === 'object' && input !== null && 'type' in input && typeof input.type === 'string'
+      ? input.type.toLowerCase()
+      : '';
     const confidence = name.endsWith('.xlsx') || type.includes('spreadsheet') ? 0.9 : 0.1;
     return { format: 'xlsx', confidence };
   },
@@ -47,12 +51,12 @@ export const xlsxParser: TabularParserPort = {
     const chunkSize = options?.chunkSize ?? 1000;
 
     const headers = json.length > 0 ? Object.keys(json[0]) : [];
-    const previewRows: Record<string, any>[] = json.slice(0, 50);
+    const previewRows: Array<Record<string, unknown>> = json.slice(0, 50);
 
     async function* iterator(): AsyncGenerator<TabularChunk> {
       let index = 0;
       for (let i = 0; i < json.length; i += chunkSize) {
-        const slice = json.slice(i, i + chunkSize);
+        const slice = json.slice(i, i + chunkSize) as Array<Record<string, unknown>>;
         const hasMore = i + chunkSize < json.length;
         yield { rows: slice, index: index++, hasMore };
       }

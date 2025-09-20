@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/util';
+import { isDevEnv } from '../../utils/env.js';
 
 interface MemoryUsageChartProps {
   /**
@@ -124,10 +125,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         return newPoints;
       });
     } catch (error) {
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (isDevEnv()) {
         console.warn('Memory measurement failed:', String(error));
-
       }
     }
   }, [maxMemory, maxDataPoints]);

@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React, { useCallback, useState } from 'react';
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
-import { MapLibreMap } from './MapLibreMap';
-import type { MapLibreMapInstance } from '../types/maplibre-public';
+import { MapLibreMap } from './MapLibreMap.js';
+import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type {
   MapClickEvent,
   MapFeatureIdentifyResult,
   MapFeatureIdentifier,
-} from '../types/unified-map-props';
+} from '../types/unified-map-props.js';
 
 const DEMO_SOURCE_ID = 'demo-click-points';
 const DEMO_LAYER_ID = 'demo-click-points-layer';
@@ -150,7 +150,7 @@ const FeatureIdentifyContent: React.FC = () => {
         <Typography variant="subtitle2">identifyFeatureOnClick.onIdentify</Typography>
         {identifyItems.length ? (
           <Stack component="ul" spacing={0.5} sx={{ pl: 3, my: 1 }}>
-            {identifyItems.map((id) => (
+            {identifyItems.map((id: MapFeatureIdentifier) => (
               <Typography component="li" variant="body2" key={`identify-${String(id)}`}>
                 {String(id)}
               </Typography>
@@ -165,7 +165,7 @@ const FeatureIdentifyContent: React.FC = () => {
         <Typography variant="subtitle2">onClick: event.identifiedFeatureIds</Typography>
         {eventIds.length ? (
           <Stack component="ul" spacing={0.5} sx={{ pl: 3, my: 1 }}>
-            {eventIds.map((id) => (
+            {eventIds.map((id: MapFeatureIdentifier) => (
               <Typography component="li" variant="body2" key={`event-${String(id)}`}>
                 {String(id)}
               </Typography>
@@ -188,4 +188,3 @@ export const IdentifyFeaturesOnClick: Story = {
   },
   render: () => <FeatureIdentifyContent />,
 };
-

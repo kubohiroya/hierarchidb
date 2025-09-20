@@ -7,8 +7,8 @@ import type {
   PluginAPIConfig,
   PluginValidationConfig,
   DatabaseSchema
-} from '../packages/common/types/src/plugin-definition';
-import type { NodeType } from '../packages/common/types/src/id-types';
+} from '../packages/common/types/src/plugin-definition.js';
+import type { NodeType } from '../packages/common/types/src/id-types.js';
 
 export interface PackageJsonContent {
   name: string;
