@@ -5,8 +5,14 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
-import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import { BaseMapProps, DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import type { MapLibreMapInstance } from '../types/maplibre-public';
+import {
+  BaseMapProps,
+  DEFAULT_MAP_CONFIG,
+  type MapClickEvent,
+  type MapFeatureIdentifyResult,
+} from '../types/unified-map-props';
+import { resolveIdentifyCandidates } from '../lib/feature-identification';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
@@ -46,6 +52,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                           children,
                                                           mapOptions = defaultMapOptions,
                                                           controls,
+                                                          identifyFeatureOnClick,
                                                         }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -95,6 +102,32 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     }
   }, [onViewStateChange]);
 
+  const handleMapClick = useCallback(
+    (event: any) => {
+      const mapEvent = event as MapClickEvent;
+      if (!identifyFeatureOnClick) {
+        onClick?.(mapEvent);
+        return;
+      }
+
+      const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, identifyFeatureOnClick);
+      const enrichedEvent: MapClickEvent = {
+        ...mapEvent,
+        identifiedFeatureIds: baseResult.featureIds,
+        identifiedFeatures: baseResult.features,
+      };
+
+      const identifyResult: MapFeatureIdentifyResult = {
+        ...baseResult,
+        originalEvent: enrichedEvent,
+      };
+
+      identifyFeatureOnClick.onIdentify?.(identifyResult);
+      onClick?.(enrichedEvent);
+    },
+    [identifyFeatureOnClick, onClick],
+  );
+
   const containerStyle: React.CSSProperties = {
     width,
     height,
@@ -116,7 +149,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           initialViewState={initialViewState}
           onLoad={handleMapLoad}
           onMove={handleViewStateChange}
-          onClick={onClick}
+          onClick={handleMapClick}
           interactive={mapOptions.interactive}
           scrollZoom={mapOptions.scrollZoom}
           dragPan={mapOptions.dragPan}
