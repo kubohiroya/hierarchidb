@@ -37,11 +37,14 @@ export default [
     plugins: {
       deprecation,
       'react-hooks': reactHooks,
+      '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
+
     },
     rules: {
       ...js.configs.recommended.rules,
       // Keep repo green: prefer warnings for stylistic pitfalls in mixed JS/TS code
-      'no-unused-vars': ['warn', {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         ignoreRestSiblings: true,
