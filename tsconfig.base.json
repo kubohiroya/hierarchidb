@@ -42,6 +42,12 @@
       ],
       "@hierarchidb/download/*": [
         "packages/feature/download/src/*"
+      ],
+      "@hierarchidb/util": [
+        "packages/util/src/index.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "packages/util/src/*"
       ]
     }
   },

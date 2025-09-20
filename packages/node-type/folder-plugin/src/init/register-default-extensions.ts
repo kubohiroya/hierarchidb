@@ -4,8 +4,10 @@
  * Safe to call multiple times; underlying registry ignores duplicate registrations.
  */
 
+import { readRuntimeMode } from '@hierarchidb/util';
+
 export async function initializeDefaultFolderExtensions(): Promise<void> {
-  if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+  if (readRuntimeMode() !== 'production') {
     console.warn('[Deprecation] initializeDefaultFolderExtensions is deprecated. Use initializeDefaultNodeDialogExtensions instead.');
   }
   const inits: Array<() => Promise<void>> = [];

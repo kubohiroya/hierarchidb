@@ -9,6 +9,7 @@ import { useTranslation } from '../i18n/index.js';
 import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
+import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/ui-core';
 import { useWorkingCopy } from '@hierarchidb/ui-core';
 import {
@@ -114,8 +115,8 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     ];
   }, [applyUpdates, isBasicValid, isProcessingValid, isSelectionValid, t, workingCopy]);
 
-  const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid]);
-  const navigableSteps = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid]);
+  const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid, isProcessingValid, isSelectionValid]);
+  const navigableSteps = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid, isSelectionValid]);
   const enabledStepIndices = useMemo(() => navigableSteps
     .map((allow, idx) => (allow ? idx : -1))
     .filter((idx) => idx >= 0), [navigableSteps]);
@@ -175,11 +176,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     onClose();
   }, [discard, onClose]);
 
-  const isTestEnv = useMemo(() => {
-    const metaEnv = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env?.MODE;
-    const processEnv = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
-    return metaEnv === 'test' || processEnv === 'test';
-  }, []);
+  const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
   const renderHeader: HeadlessMultiStepDialogProps<RouteWorkingCopy | null>['renderHeader'] = useCallback((props: HeadlessHeaderRenderProps<RouteWorkingCopy | null>) => (
     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>

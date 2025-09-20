@@ -1,4 +1,5 @@
 import type { ThrottleOptions } from '../net/ThrottledPort.js';
+import { readRuntimeEnvValue } from '@hierarchidb/util';
 
 type OsrmProfile = 'car' | 'bike' | 'foot' | 'truck';
 
@@ -19,10 +20,8 @@ function readConfigString(key: string): string | undefined {
   const globalRecord = globalThis as Record<string, unknown>;
   const fromGlobal = readNonEmptyString(globalRecord[key]);
   if (fromGlobal) return fromGlobal;
-  if (typeof process !== 'undefined') {
-    const envValue = readNonEmptyString(process.env?.[key]);
-    if (envValue) return envValue;
-  }
+  const envValue = readNonEmptyString(readRuntimeEnvValue(key, { prefixes: [''] }));
+  if (envValue) return envValue;
   return undefined;
 }
 

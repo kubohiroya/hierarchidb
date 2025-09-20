@@ -9,6 +9,7 @@ import {
   registerRouteAuthNotifier,
   resolveAuthRegistry,
 } from './services/download/registry.js';
+import { readRuntimeEnvNumber, readRuntimeEnvValue } from '@hierarchidb/util';
 import type { RouteAuthNotification as DownloadAuthNotification } from './services/download/registry.js';
 type RouteAuthNotification = DownloadAuthNotification;
 
@@ -51,9 +52,10 @@ export type { RouteAuthNotification } from './services/download/registry.js';
 function readNumberEnv(name: string, fallback: number): number {
   const lsValue = typeof localStorage !== 'undefined' ? localStorage.getItem(name) ?? undefined : undefined;
   const globalValue = readGlobalString(name);
-  const envValue = typeof process !== 'undefined' ? process.env?.[name] : undefined;
-  const candidate = lsValue ?? globalValue ?? envValue;
-  const value = Number(candidate);
+  const envNumber = readRuntimeEnvNumber(name);
+  const envFallback = envNumber ?? readRuntimeEnvValue(name, { prefixes: [''] });
+  const candidate = lsValue ?? globalValue ?? envFallback;
+  const value = typeof candidate === 'number' ? candidate : Number(candidate);
   return Number.isFinite(value) ? value : fallback;
 }
 

@@ -17,6 +17,7 @@ import {
   type StepComponentDescriptor,
   type StepComponentProps,
 } from '@hierarchidb/ui-dialog';
+import { readRuntimeMode } from '@hierarchidb/util';
 
 type ResolverDialogStep = {
   id: string;
@@ -33,20 +34,6 @@ const DEFAULT_PREVIEW_CONFIG: PreviewConfig = {
 };
 
 const PlaceholderStepComponent: React.FC<StepComponentProps<Partial<ResolverWorkingCopyEntity>>> = () => null;
-
-const readMetaEnvMode = (): string | undefined => {
-  try {
-    return typeof import.meta !== 'undefined' ? import.meta.env?.MODE : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
-const readProcessEnvMode = (): string | undefined => {
-  return typeof process !== 'undefined' && typeof process.env?.NODE_ENV === 'string'
-    ? process.env.NODE_ENV
-    : undefined;
-};
 
 export interface ResolverDialogProps {
   open: boolean;
@@ -286,11 +273,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     </div>
   ), [steps]);
 
-  const isTestEnv = useMemo(() => {
-    const metaMode = readMetaEnvMode();
-    const processMode = readProcessEnvMode();
-    return metaMode === 'test' || processMode === 'test';
-  }, []);
+  const isTestEnv = useMemo(() => readRuntimeMode() === 'test', []);
 
   const renderFooter: HeadlessMultiStepDialogProps<Partial<ResolverWorkingCopyEntity>>['renderFooter'] = useCallback((props: HeadlessFooterRenderProps<Partial<ResolverWorkingCopyEntity>>) => {
     const canSave = filledSteps.every(Boolean) && !isSaving;

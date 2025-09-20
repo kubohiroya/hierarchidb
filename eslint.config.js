@@ -73,7 +73,8 @@ export default [
 
   // Browser-delivered code: forbid accidental `process` usage
   {
-    files: ['packages/{ui,runtime-worker,node-type}/**/*.{js,jsx,ts,tsx}'],
+    files: ['app/src/**/*.{js,jsx,ts,tsx}', 'packages/**/src/**/*.{js,jsx,ts,tsx}'],
+    ignores: ['packages/backend/**', '**/__tests__/**', '**/*.test.*', '**/*.spec.*', 'packages/**/scripts/**'],
     rules: {
       'no-restricted-globals': ['error', 'process'],
     },

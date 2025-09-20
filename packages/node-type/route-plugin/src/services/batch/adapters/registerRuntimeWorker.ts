@@ -3,6 +3,8 @@
  * @description Scaffolding for runtime worker registration (feature-flagged, no-op safe) for Route plugin
  */
 
+import { readRuntimeEnvValue } from '@hierarchidb/util';
+
 function isFlagEnabled(name: string, fallback = false): boolean {
   const value = readFlagValue(name);
   if (value === undefined) return fallback;
@@ -43,10 +45,8 @@ function readFlagValue(name: string): string | undefined {
   const fromGlobal = globalRecord[name];
   if (fromGlobal != null) return String(fromGlobal);
 
-  if (typeof process !== 'undefined') {
-    const envValue = process.env?.[name];
-    if (envValue !== undefined) return envValue;
-  }
+  const envValue = readRuntimeEnvValue(name, { prefixes: [''] });
+  if (envValue !== undefined) return envValue;
   return undefined;
 }
 

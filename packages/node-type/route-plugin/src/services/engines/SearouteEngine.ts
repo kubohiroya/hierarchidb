@@ -1,4 +1,5 @@
 import type { RoutingEngine } from './types.js';
+import { readRuntimeEnvValue } from '@hierarchidb/util';
 
 type Coordinate = [number, number];
 type SeaRouteFunction = (from: Coordinate, to: Coordinate, options?: SeaRouteOptions | string) => Promise<SeaRouteResponse>;
@@ -131,10 +132,8 @@ export class SearouteEngine implements RoutingEngine {
 
     if (fromImportMeta) return fromImportMeta;
 
-    if (typeof process !== 'undefined') {
-      const value = readNonEmptyString(process.env?.ROUTE_SEAROUTE_PKG);
-      if (value) return value;
-    }
+    const envValue = readNonEmptyString(readRuntimeEnvValue('ROUTE_SEAROUTE_PKG', { prefixes: [''] }));
+    if (envValue) return envValue;
 
     const globalValue = readNonEmptyString((globalThis as Record<string, unknown>).ROUTE_SEAROUTE_PKG);
     return globalValue;

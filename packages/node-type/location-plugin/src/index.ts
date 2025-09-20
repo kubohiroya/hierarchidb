@@ -2,6 +2,8 @@
  * Location Plugin Entry Point
  */
 
+import { readRuntimeEnvNumber } from '@hierarchidb/util';
+
 export * from './types/index.js';
 export type { CreateLocationData } from './entities/LocationEntityHandler.js';
 export * from './entities/LocationEntityHandler.js';
@@ -29,9 +31,11 @@ type GlobalScope = Record<string, unknown>;
 function readNumberEnv(name: string, fallback: number): number {
   try {
     const scope = globalThis as GlobalScope;
-    const env = typeof process !== 'undefined' && process?.env ? process.env : {};
     const storage = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const value = storage?.getItem(name) ?? (scope[name] as string | undefined) ?? env?.[name];
+    const envValue = readRuntimeEnvNumber(name);
+    const value = storage?.getItem(name)
+      ?? (scope[name] as string | undefined)
+      ?? (envValue != null ? String(envValue) : undefined);
     if (value == null) return fallback;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
@@ -44,7 +48,6 @@ export class RuntimeWiring {
   static registerSharedDownloadService(): void {
     try {
       const phc = readNumberEnv('LOCATION_PER_HOST_CONCURRENCY', 4);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { registerLocationSharedDownloadService } = require('./services/download/registerSharedDownloadService') as typeof import('./services/download/registerSharedDownloadService.js');
       registerLocationSharedDownloadService({ perHostConcurrency: phc });
     } catch {
@@ -54,7 +57,6 @@ export class RuntimeWiring {
 
   static registerAuthNotifier(): void {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { registerLocationAuthNotifier } = require('./services/download/registry') as typeof import('./services/download/registry.js');
       registerLocationAuthNotifier((info) => {
         try {

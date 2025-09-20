@@ -3,15 +3,17 @@
  * @description Scaffolding for runtime worker registration (feature-flagged, no-op safe)
  */
 
+import { readRuntimeEnvValue } from '@hierarchidb/util';
+
 type RuntimeScope = Record<string, unknown> & {
   AuthNotificationRegistry?: unknown;
 };
 
 function isFlagEnabled(name: string, fallback = false): boolean {
   const scope = globalThis as RuntimeScope;
-  const env = typeof process !== 'undefined' && process?.env ? process.env : {};
   const storage = typeof localStorage !== 'undefined' ? localStorage : undefined;
-  const value = storage?.getItem(name) ?? (scope[name] as string | undefined) ?? env?.[name];
+  const envValue = readRuntimeEnvValue(name, { prefixes: [''] });
+  const value = storage?.getItem(name) ?? (scope[name] as string | undefined) ?? envValue;
   if (value == null) return fallback;
   const normalized = String(value).toLowerCase();
   return normalized === '1' || normalized === 'true' || normalized === 'on' || normalized === 'enabled';

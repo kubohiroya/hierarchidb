@@ -1,3 +1,5 @@
+import { readRuntimeEnvValue } from '@hierarchidb/util';
+
 export function isFlagEnabled(name: string, fallback = false): boolean {
   const value = readFlagValue(name);
   if (value === undefined) return fallback;
@@ -20,10 +22,8 @@ function readFlagValue(name: string): string | undefined {
   const globalValue = globalRecord[name];
   if (globalValue != null) return String(globalValue);
 
-  if (typeof process !== 'undefined') {
-    const envValue = process.env?.[name];
-    if (envValue !== undefined) return envValue;
-  }
+  const envValue = readRuntimeEnvValue(name, { prefixes: [''] });
+  if (envValue !== undefined) return envValue;
 
   return undefined;
 }

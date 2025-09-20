@@ -6,6 +6,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-type';
+import { readRuntimeMode } from '@hierarchidb/util';
 
 const NT = (s: string) => s as NodeType;
 
@@ -119,14 +120,7 @@ export function getPluginConfig(): PluginConfig {
 }
 
 function resolveRuntimeMode(): string {
-  let mode = typeof process !== 'undefined' && process.env?.NODE_ENV ? process.env.NODE_ENV : undefined;
-  try {
-    const metaMode = import.meta?.env?.MODE;
-    if (metaMode) return metaMode;
-  } catch {
-    // Ignore environments that do not define import.meta (e.g. Node-based tests)
-  }
-  return mode ?? 'development';
+  return readRuntimeMode() ?? 'development';
 }
 
 /**

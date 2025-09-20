@@ -21,7 +21,7 @@ function readFromGlobalFlags(key: string): string | undefined {
   return value == null ? undefined : String(value);
 }
 
-function flagOn(key: string, def = false): boolean {
+function _flagOn(key: string, def = false): boolean {
   const raw = readFlag(key);
   if (raw == null) return !!def;
   const s = String(raw).toLowerCase();

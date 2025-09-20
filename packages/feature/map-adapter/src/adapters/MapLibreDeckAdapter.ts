@@ -5,6 +5,7 @@ import type { MapAdapterPort } from '../ports.js';
 import type { DeckLayerSpec, MapStyleSpec, ViewState } from '../types.js';
 import type * as MapLibreNS from 'maplibre-gl';
 import type { Deck, LayersList } from 'deck.gl';
+import { readRuntimeEnvValue } from '@hierarchidb/util';
 
 type MapLibreCtor = typeof import('maplibre-gl');
 type DeckCtor = typeof import('deck.gl').Deck;
@@ -18,8 +19,6 @@ interface ViteEnvOverrides {
   VITE_MAP_ADAPTER_MAPLIBRE_PKG?: string;
   VITE_MAP_ADAPTER_DECK_PKG?: string;
 }
-
-interface NodeEnvOverrides extends EnvOverrides {}
 
 export interface MapLibreDeckAdapterOptions {
   maplibregl?: MapLibreCtor;
@@ -125,20 +124,21 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
     const viteEnv = (typeof import.meta !== 'undefined'
       ? ((import.meta as { env?: ViteEnvOverrides }).env ?? {})
       : {}) as ViteEnvOverrides;
-    const nodeEnv = (typeof process !== 'undefined'
-      ? (process.env as NodeEnvOverrides | undefined)
-      : undefined) ?? {};
+    const envOverrides: EnvOverrides = {
+      MAP_ADAPTER_MAPLIBRE_PKG: readRuntimeEnvValue('MAP_ADAPTER_MAPLIBRE_PKG', { prefixes: [''] }),
+      MAP_ADAPTER_DECK_PKG: readRuntimeEnvValue('MAP_ADAPTER_DECK_PKG', { prefixes: [''] }),
+    };
     const maplibreName =
       this.opts.maplibrePackageName ||
       viteEnv.VITE_MAP_ADAPTER_MAPLIBRE_PKG ||
       globalOverrides.MAP_ADAPTER_MAPLIBRE_PKG ||
-      nodeEnv.MAP_ADAPTER_MAPLIBRE_PKG ||
+      envOverrides.MAP_ADAPTER_MAPLIBRE_PKG ||
       'maplibre-gl';
     const deckName =
       this.opts.deckPackageName ||
       viteEnv.VITE_MAP_ADAPTER_DECK_PKG ||
       globalOverrides.MAP_ADAPTER_DECK_PKG ||
-      nodeEnv.MAP_ADAPTER_DECK_PKG ||
+      envOverrides.MAP_ADAPTER_DECK_PKG ||
       'deck.gl';
     // Use vite-ignore + computed names to avoid bundler pre-bundling
     const modMap = await import(/* @vite-ignore */ maplibreName);
