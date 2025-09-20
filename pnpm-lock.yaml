@@ -123,7 +123,7 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0))
       ajv:
         specifier: ^8.13.0
         version: 8.13.0
@@ -626,6 +626,9 @@ importers:
       '@hierarchidb/map-source':
         specifier: workspace:*
         version: link:../map-source
+      '@hierarchidb/util':
+        specifier: workspace:*
+        version: link:../../util
     devDependencies:
       deck.gl:
         specifier: ^9.0.0
@@ -2697,7 +2700,7 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0))
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -14217,7 +14220,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4)':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -14233,6 +14236,25 @@ snapshots:
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 1.0.2
+      ast-v8-to-istanbul: 0.3.5
+      debug: 4.4.3
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.19
+      magicast: 0.3.5
+      std-env: 3.9.0
+      test-exclude: 7.0.1
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 
