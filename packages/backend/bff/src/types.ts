@@ -15,6 +15,8 @@ export interface Env {
   JWT_SECRET: string;
   JWT_ISSUER?: string;
   SESSION_DURATION_HOURS?: string;
+  ENVIRONMENT?: string;
+  NODE_ENV?: string;
 
   // CORS and App Configuration
   ALLOWED_ORIGINS: string;
@@ -36,4 +38,12 @@ export interface Env {
 
   // Cloudflare KV
   AUTH_KV?: KVNamespace;
+
+  // Turnstile / feature toggles
+  TURNSTILE_SECRET_KEY?: string;
+  SKIP_TURNSTILE?: string;
+
+  // Miscellaneous flags
+  STATIC_CALLBACK_PATH?: string;
+  USE_HISTORY_WORKAROUND?: string;
 }
