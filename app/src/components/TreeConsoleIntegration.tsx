@@ -65,9 +65,11 @@ const TreeConsoleIntegrationInner: React.FC<
   const navigate = useNavigate();
   const [tourRun, setTourRun] = useState(false);
   const [hasTrashItems, setHasTrashItems] = useState(false);
+  const [trashRootId, setTrashRootId] = useState<NodeId | null>(null);
   const trashSubRef = useRef<string | null>(null);
   const trashCallbackRef = useRef<SubscriptionCallback | null>(null);
   const trashRefreshTimerRef = useRef<number | null>(null);
+  const trashRootIdRef = useRef<NodeId | null>(null);
 
   const {
     loading: workerLoading,
@@ -106,21 +108,28 @@ const TreeConsoleIntegrationInner: React.FC<
   useEffect(() => {
     const checkTrashItems = async () => {
       if (workerClient && treeId) {
-        try {
+
           // Use facade APIs instead of deprecated direct methods
           const queryAPI = await workerClient.getQueryAPI();
           const tree = await queryAPI.getTree(treeId as TreeId);
           if (tree?.trashRootId) {
-            const trashChildren = await queryAPI.listChildren(tree.trashRootId as NodeId);
+            const trashNodeId = tree.trashRootId as NodeId;
+            setTrashRootId(trashNodeId);
+            const trashChildren = await queryAPI.listChildren(trashNodeId);
             setHasTrashItems(trashChildren.length > 0);
+          } else {
+            setTrashRootId(null);
+            setHasTrashItems(false);
           }
-        } catch (error) {
-          
-        }
+
       }
     };
     checkTrashItems();
   }, [workerClient, treeId]);
+
+  useEffect(() => {
+    trashRootIdRef.current = trashRootId;
+  }, [trashRootId]);
 
   // Subscribe to trash root changes and update hasTrashItems reactively
   useEffect(() => {
@@ -129,10 +138,14 @@ const TreeConsoleIntegrationInner: React.FC<
       if (!workerClient || !treeId) return;
       try {
         const queryAPI = await workerClient.getQueryAPI();
-        const subscriptionAPI = await workerClient.getSubscriptionAPI();
+        await workerClient.getSubscriptionAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
         const trashRootId = tree?.trashRootId;
-        if (!trashRootId) return;
+        if (!trashRootId) {
+          setTrashRootId(null);
+          return;
+        }
+        setTrashRootId(trashRootId as NodeId);
 
         // Avoid duplicate subscriptions to the same trash root
         if (trashSubRef.current && (typeof trashRootId === 'string')) {
@@ -322,40 +335,26 @@ const TreeConsoleIntegrationInner: React.FC<
         case 'import-template':
           if (params && typeof params === 'object' && 'templateId' in params && typeof params.templateId === 'string') {
             void importTemplate(params.templateId);
-          } else {
-            
           }
           break;
-        case 'restore':
-          // Open trash dialog in recover mode
-          navigate(`/t/${treeId}/${currentPageNodeId}/trash/recover`);
+        case 'restore': {
+          if (!treeId) break;
+          const resolvedTrashNodeId =
+            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+              ? params.trashNodeId
+              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/recover`);
           break;
-        case 'empty':
-          // High-level API: removeSubtree(trashRootId)
-          (async () => {
-            try {
-              const ok = confirm('Trash will be permanently emptied. This cannot be undone. Continue?');
-              if (!ok) return;
-              const queryAPI = await workerClient.getQueryAPI();
-              const mutationAPI = await workerClient.getMutationAPI();
-              const t = await queryAPI.getTree(treeId as TreeId);
-              const trashRootId = t?.trashRootId as NodeId | undefined;
-              if (!trashRootId) {
-                alert('Trash root not found.');
-                return;
-              }
-              const res = await mutationAPI.removeSubtree(trashRootId);
-              if (!res.success) {
-                alert('Failed to empty trash: ' + (res.error || 'Unknown error'));
-                return;
-              }
-              await actions.handleRefresh?.();
-            } catch (error) {
-              logIntegrationWarning('Empty trash workflow failed', error);
-              alert('Empty trash failed: ' + String(error));
-            }
-          })();
+        }
+        case 'empty': {
+          if (!treeId) break;
+          const resolvedTrashNodeId =
+            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+              ? params.trashNodeId
+              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty`);
           break;
+        }
         case 'undo':
           actions.handleUndo?.();
           break;
@@ -477,7 +476,7 @@ const TreeConsoleIntegrationInner: React.FC<
         availableTemplates={(() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
-            return [{ id: 'population-2023', label: 'Import Template: World Population by Countries' }];
+            return [{ id: 'population-2023', label: 'Import Template: Total Population by Country' }];
           }
           return [];
         })()}

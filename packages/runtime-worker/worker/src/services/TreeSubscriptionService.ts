@@ -13,6 +13,7 @@ import type {
   TreeId,
   TreeNode,
   TreeNodeEvent,
+  UndoStateEvent,
 } from '@hierarchidb/common-type';
 import { bufferTime, concat, filter as rxFilter, from, map, mergeMap, type Observable, share, Subject } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
@@ -38,6 +39,14 @@ export class TreeSubscriptionService {
   private eventsProcessedToday = 0;
   private totalLatency = 0;
   private eventCount = 0;
+
+  private readonly undoStateSubscriptions = new Map<SubscriptionId, (event: UndoStateEvent) => void>();
+  private latestUndoState: UndoStateEvent = {
+    type: 'undo-state',
+    canUndo: false,
+    canRedo: false,
+    timestamp: Date.now() as Timestamp,
+  };
 
   private readonly searchService: TreeSearchService;
 
@@ -734,6 +743,7 @@ export class TreeSubscriptionService {
       subscription.subject?.complete();
       subscription.subscription?.unsubscribe?.();
     });
+    this.undoStateSubscriptions.clear();
     return Promise.resolve(removed.length);
   }
 
@@ -764,7 +774,7 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'node',
       nodeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
@@ -805,7 +815,7 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'subtree',
       nodeId: rootNodeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
@@ -818,7 +828,7 @@ export class TreeSubscriptionService {
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForSubtreeObservation(event, rootNodeId, options)),
       map((event) => this.convertToTreeNodeEvent(event)),
-    );
+    ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);
 
@@ -842,7 +852,7 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'tree',
       treeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
@@ -855,12 +865,36 @@ export class TreeSubscriptionService {
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForTreeObservation(event, treeId)),
       map((event) => this.convertToTreeNodeEvent(event)),
-    );
+    ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);
 
     // Store the subscription for cleanup
     subscriptionInfo.subscription = subscription;
+
+    return subscriptionId;
+  }
+
+  async subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId> {
+    const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
+
+    const subscriptionInfo: SubscriptionInfo = {
+      id: subscriptionId,
+      type: 'undo-state',
+      callback: callback as (event: unknown) => void,
+      isActive: true,
+      lastActivity: Date.now(),
+      createdAt: Date.now(),
+    };
+
+    this.registry.register(subscriptionInfo);
+    this.undoStateSubscriptions.set(subscriptionId, callback);
+
+    try {
+      callback(this.latestUndoState);
+    } catch (error) {
+      console.warn('[TreeSubscriptionService] undo-state subscriber callback failed', error);
+    }
 
     return subscriptionId;
   }
@@ -884,6 +918,10 @@ export class TreeSubscriptionService {
       }
 
       this.registry.delete(subscriptionId);
+    }
+
+    if (this.undoStateSubscriptions.has(subscriptionId)) {
+      this.undoStateSubscriptions.delete(subscriptionId);
     }
   }
 
@@ -940,6 +978,21 @@ export class TreeSubscriptionService {
     }
 
     return count;
+  }
+
+  publishUndoState(event: UndoStateEvent): void {
+    this.latestUndoState = event;
+    for (const [subscriptionId, callback] of this.undoStateSubscriptions.entries()) {
+      try {
+        callback(event);
+      } catch (error) {
+        console.warn('[TreeSubscriptionService] undo-state callback threw', error);
+      }
+      const info = this.registry.get(subscriptionId);
+      if (info) {
+        info.lastActivity = Date.now();
+      }
+    }
   }
 
   /**

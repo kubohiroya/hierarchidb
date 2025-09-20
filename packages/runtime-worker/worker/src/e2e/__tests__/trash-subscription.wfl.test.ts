@@ -81,6 +81,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
 
     const subtreeEvents: SubscriptionEvent[] = [];
     const trashEvents: SubscriptionEvent[] = [];
+    const trashNodeEvents: SubscriptionEvent[] = [];
 
     const subtreeSid = await subscriptionAPI.subscribeSubtree(
       rootId,
@@ -89,6 +90,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const trashSid = await subscriptionAPI.subscribeSubtree(
       trashRootId,
       Comlink.proxy((event: SubscriptionEvent) => { trashEvents.push(event); }),
+    );
+    const trashNodeSid = await subscriptionAPI.subscribeNode(
+      trashRootId,
+      Comlink.proxy((event: SubscriptionEvent) => { trashNodeEvents.push(event); }),
     );
 
     const createRes = await mutationAPI.createNode({ nodeType: 'folder', treeId, parentId: rootId, name: 'tmp' });
@@ -138,13 +143,125 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const nodesUnderHolder = await queryAPI.listChildren(holder.id as NodeId);
     expect(nodesUnderHolder.some((node) => node.id === canonicalId)).toBe(true);
 
-    const delAll = await mutationAPI.removeSubtree(trashRootId);
-    expect(delAll?.success).toBe(true);
+    const subtreeEventsBeforeRecover = subtreeEvents.length;
+    const recoverRes = await mutationAPI.recoverNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
+    expect(recoverRes?.success).toBe(true);
 
     await waitFor(async () => {
-      const remaining = await queryAPI.listDescendants(trashRootId);
-      return remaining.length === 0;
+      const rootChildrenAfterRecover = await queryAPI.listChildren(rootId);
+      return rootChildrenAfterRecover.some((node) => node.id === canonicalId);
     });
+
+    await waitFor(() => subtreeEvents.length > subtreeEventsBeforeRecover);
+
+    const trashChildrenAfterRecover = await queryAPI.listChildren(trashRootId);
+    const holderAfterRecover = trashChildrenAfterRecover.find((node) => {
+      if (node.nodeType !== 'trash' || !isValidTrashHolderName(node.name)) return false;
+      try {
+        return decodeTrashHolderName(node.name).trashedNodeId === canonicalId;
+      } catch {
+        return false;
+      }
+    });
+    expect(holderAfterRecover).toBeFalsy();
+
+    const trashEventsBeforeSecondMove = trashEvents.length;
+    const subtreeEventsBeforeSecondMove = subtreeEvents.length;
+    const moveAgainRes = await mutationAPI.moveNodesToTrash([canonicalId]);
+    if (!moveAgainRes?.success) {
+      throw new Error(`moveNodesToTrash (second) failed: ${JSON.stringify(moveAgainRes)}`);
+    }
+
+    await waitFor(() =>
+      subtreeEvents
+        .slice(subtreeEventsBeforeSecondMove)
+        .some(
+          (event) =>
+            (event.nodeId === canonicalId && (event.type === 'moved' || event.type === 'deleted')) ||
+            (event.nodeId === rootId && event.type === 'updated'),
+        ),
+    );
+
+    const afterSecondRootChildren = await queryAPI.listChildren(rootId);
+    expect(afterSecondRootChildren.some((node) => node.id === canonicalId)).toBe(false);
+
+    const afterSecondTrashChildren = await queryAPI.listChildren(trashRootId);
+    const secondHolder = afterSecondTrashChildren.find(
+      (node) =>
+        node.nodeType === 'trash' &&
+        isValidTrashHolderName(node.name) &&
+        decodeTrashHolderName(node.name).trashedNodeId === canonicalId,
+    );
+    expect(secondHolder).toBeTruthy();
+    if (!secondHolder) throw new Error('Second trash holder not found');
+
+    const secondHolderId = secondHolder.id as NodeId;
+
+    await waitFor(() => trashEvents.length > trashEventsBeforeSecondMove);
+
+    await waitFor(() =>
+      trashEvents
+        .slice(trashEventsBeforeSecondMove)
+        .some((event) => event.nodeId === secondHolderId && event.type === 'created'),
+    );
+
+    const trashEventsBeforeCanonicalRemoval = trashEvents.length;
+    const trashNodeEventsBeforeCanonicalRemoval = trashNodeEvents.length;
+    const removeCanonical = await mutationAPI.removeNodes([canonicalId]);
+    expect(removeCanonical?.success).toBe(true);
+
+    await waitFor(() =>
+      trashEvents
+        .slice(trashEventsBeforeCanonicalRemoval)
+        .some(
+          (event) =>
+            event.nodeId === secondHolderId &&
+            event.type === 'updated' &&
+            typeof event.node === 'object' &&
+            event.node?.hasChildren === false,
+        ),
+    );
+
+    await waitFor(() =>
+      trashNodeEvents
+        .slice(trashNodeEventsBeforeCanonicalRemoval)
+        .some(
+          (event) =>
+            event.nodeId === trashRootId &&
+            event.type === 'updated' &&
+            typeof event.node === 'object' &&
+            event.node?.hasChildren === true,
+        ),
+    );
+
+    const trashEventsBeforeHolderRemoval = trashEvents.length;
+    const trashNodeEventsBeforeHolderRemoval = trashNodeEvents.length;
+    const removeHolder = await mutationAPI.removeNodes([secondHolderId]);
+    expect(removeHolder?.success).toBe(true);
+
+    await waitFor(() =>
+      trashEvents
+        .slice(trashEventsBeforeHolderRemoval)
+        .some(
+          (event) =>
+            event.nodeId === trashRootId &&
+            event.type === 'updated' &&
+            typeof event.node === 'object' &&
+            event.node?.hasChildren === false,
+        ),
+    );
+
+    await waitFor(() =>
+      trashNodeEvents
+        .slice(trashNodeEventsBeforeHolderRemoval)
+        .some(
+          (event) =>
+            event.nodeId === trashRootId &&
+            event.type === 'updated' &&
+            typeof event.node === 'object' &&
+            event.node?.hasChildren === false,
+        ),
+    );
 
     const finalDesc = await queryAPI.listDescendants(trashRootId);
     expect(finalDesc.length).toBe(0);
@@ -153,5 +270,6 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
 
     await subscriptionAPI.unsubscribe(subtreeSid);
     await subscriptionAPI.unsubscribe(trashSid);
+    await subscriptionAPI.unsubscribe(trashNodeSid);
   }, 30_000);
 });

@@ -72,7 +72,44 @@
     - progress: 2025-09-20 20:18 TreeTableCore へ selectAll 復元/保存処理と UI オーバーレイ制御を組み込み
     - done: 2025-09-20 20:22 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功
 
+- feat/ui-treeconsole/treetable-draft-chip — TreeTable draft ノードにチップを表示
+  - ブランチ: `feat/ui-treeconsole/treetable-draft-chip`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-treetable`
+  - 受け入れ基準（DoD）：
+    - [x] `isDraft` が true のノード名直後に `Draft` チップが表示される
+    - [x] Draft チップは既存スタイルと調和したトーンでツリー行内に収まる
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck && pnpm --filter @hierarchidb/ui-treeconsole-treetable test` が成功
+  - チェックリスト：
+    - [x] TreeTable のノード表示コンポーネントを確認し、isDraft 判定の表示ポイントを特定
+    - [x] Draft チップ用のスタイル/コンポーネントを追加し UI へ組み込み
+    - [x] 既存スナップショット/ユニットテストを更新（必要に応じて追加）
+  - ロールバック手順：
+    - 新規スタイル/コンポーネントを削除し、TreeTable 表示差分を直前タグへ戻したうえで `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck && test` を再実行
+  - 運用ログ：
+    - progress: 2025-09-20 22:52 TreeTable name カラムで isDraft ノードに Draft チップを追加。
+    - progress: 2025-09-20 22:53 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` を実行し成功。
+    - start: 2025-09-20 22:45 TreeTable draft チップ表示対応に着手
+
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
+- fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示
+  - ブランチ: `fix/ui-treeconsole/trash-root-flatten`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-treeconsole-trashbin`
+  - 受け入れ基準（DoD）：
+    - [x] Trash ルート（例: `r:trash`）を開いた場合、ホルダーを介さず実ノードが第一階層に表示される
+    - [x] 非ルートノード（ホルダー等）を開いた場合は従来通り直下の子ノードが第一階層に表示される
+    - [x] ゴミ箱ダイアログで選択・復元・完全削除の挙動が変わらない
+    - [x] `pnpm --filter @hierarchidb/app typecheck` が成功
+  - チェックリスト：
+    - [x] TrashDialog ローダーでホルダー配下ノードを取得し表示データをフラット化
+    - [x] 表示用ノードとホルダーの対応表を保持し単体削除がホルダーを対象にするよう更新
+    - [x] ルート/非ルート判定ロジックと UI 更新を追加し、タイプチェックを実行
+  - ロールバック手順：
+    - TrashDialog で追加したフラット化ロジックを削除し、`app/src/subscriptions/controller.ts` 変更も含め元に戻したうえで `pnpm --filter @hierarchidb/app typecheck` を再実行
+  - 運用ログ：
+    - progress: 2025-09-20 23:12 TrashDialog ローダーにフラット化処理を追加し、ホルダー配下のノードを第一階層に表示。
+    - progress: 2025-09-20 23:14 `pnpm --filter @hierarchidb/app typecheck` を実行し成功。
+    - start: 2025-09-20 23:05 Trash ダイアログのルート表示フラット化に着手
+
   - ブランチ: `refactor/ui-treeconsole/treetable-core-slimdown`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-treetable`, `TreeTableCore` 既存抽出フック群
   - 受け入れ基準（DoD）：
@@ -98,7 +135,9 @@
     - progress: 2025-09-20 23:02 TreeConsole loader/subscription で expandedIds/applySortFilter を ref 化し、setupSubscription が client 依存のみになるよう再設計
     - progress: 2025-09-20 23:10 TreeConsoleIntegration で inc/decRef と subscription 呼び出しを ref 経由に変更し、依存を `pageNodeId` + client state 判定へ縮小
     - progress: 2025-09-20 23:18 TreeConsolePanel/Actions の onNodeSelect を NodeId 配列対応に統一し、親選択時に子孫へ伝播するよう修正
-    - done: 2025-09-20 23:22 `pnpm --filter @hierarchidb/ui-treeconsole-base build` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable {typecheck,test,build}` / `pnpm -C app typecheck` を実行し全て成功
+    - progress: 2025-09-20 23:26 undo/redo 状態を Worker → UI へ push 通知する subscription API を追加し、ツールバーの Undo/Redo ボタンと連動
+    - progress: 2025-09-20 23:28 ゴミ箱ダイアログの遷移を `/t/:treeId/:pageNodeId/:trashNodeId/trash/(recover|empty)` へ変更し、toolbar から trashNodeId を可搬化
+    - done: 2025-09-20 23:32 `pnpm --filter @hierarchidb/common-type build` / `@hierarchidb/common-api build` / `@hierarchidb/runtime-worker typecheck` / `@hierarchidb/ui-treeconsole-{toolbar,base,treetable} typecheck` / `@hierarchidb/ui-treeconsole-{toolbar,base,treetable} build` / `pnpm -C app typecheck` を実行し全て成功
 
 - refactor/node-type/dialog-step-wrapper-unify — StepComponent ラッパー共通化とプラグイン整合
   - ブランチ: `refactor/node-type/dialog-step-wrapper-unify`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -1172,6 +1211,7 @@
     - start: 2025-09-10 10:05 ルートに `eslint.config.js` 追加、`--ext` 依存スクリプトの修正。
     - blocked: 2025-09-10 10:20 `eslint-plugin-deprecation` が ESLint v9 で `context.getAncestors` 不在によりクラッシュ（互換版待ち）。
     - done: 2025-09-10 10:25 代替レポート `scripts/report-deprecations.mjs` で集計完了（TS/TSX 合計 109 件、33 ファイル）。
+    - progress: 2025-09-20 22:58 `@hierarchidb/util` に runtime env 読み出しヘルパーを実装し、ブラウザ配布コードの `process.env` 参照を排除。`eslint.config.js` の `no-restricted-globals: process` を `app/src` / `packages/**/src` へ拡張し、lint 例外依存を解消。
 
 - fix/ui-treeconsole/treetable-visibility-bug — TreeTable 展開表示の修正
   - ブランチ: `fix/ui-treeconsole/treetable-visibility-bug`（サンドボックス制約でローカル新規ブランチ作成不可のため main 上で作業）
@@ -1299,6 +1339,103 @@
     - progress: 2025-09-20 19:18 ui-dialog2/ui-navigation/ui-i18n の tsup external と peerDependencies を dep-fence 方針へ揃えた
     - progress: 2025-09-20 19:28 関連パッケージの typecheck を実行し全て成功（tools-plugin-registry-utils / node-type-{linker,location,spreadsheet,styler,timeline} / ui-{dialog2,navigation,i18n}）
     - progress: 2025-09-20 19:32 `pnpm exec dep-fence --strict` を実行しポリシーエラー/警告がゼロであることを確認
+
+- test/runtime-worker/wfl-import-template — WFL Import Template テンプレート検証
+  - ブランチ: `test/runtime-worker/wfl-import-template`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`, `app/public/templates/population-2023`
+  - 受け入れ基準（DoD）：
+    - [x] WFL テストが Import Template / Total Population by Country シナリオで親フォルダと shape/styler/spreadsheet 子ノード生成を検証
+    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` が成功
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-population` が成功
+  - チェックリスト：
+    - [x] テンプレート JSON を読み込み ImportData 構造を生成するヘルパーを実装
+    - [x] Comlink 経由で Worker API を起動し importNodes を実行
+    - [x] 期待するノード構造を assertion で検証
+  - ロールバック手順：
+    - 追加したテストファイルを削除し、関連 import の差分を戻す。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-20 21:10 WFL Import Template 結合テストの追加に着手
+    - progress: 2025-09-20 21:42 import-template-population.wfl.test.ts にテンプレート読み込みと検証ロジックを追加
+    - progress: 2025-09-20 21:55 test-worker.entry.ts に ImportExportAPI を expose するハンドラを追加
+    - done: 2025-09-20 22:59 `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-population` を実行しグリーン
+    - done: 2025-09-20 23:00 `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行しグリーン
+
+- test/runtime-worker/wfl-trash-subscription — ゴミ箱購読フロー再現テスト
+  - ブランチ: `test/runtime-worker/wfl-trash-subscription`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`
+  - 受け入れ基準（DoD）：
+    - [x] ゴミ箱への移動→復元→再度移動→永久削除のフローを WFL テストで再現
+    - [x] ゴミ箱が空になった際に trash サブツリー購読および trash ルートノード購読で `updated` 通知が届くことを検証
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-subscription` / `typecheck` が成功
+  - チェックリスト：
+    - [x] recoverNodesFromTrash を挟み root/trash 両方の構造変化を検証
+    - [x] removeNodes を用いた永久削除で購読イベント（holder 更新・trash ルート更新）をアサート
+    - [x] 最終的に trash root の子孫/子が空であることを確認
+  - ロールバック手順：
+    - `packages/runtime-worker/worker/src/e2e/__tests__/trash-subscription.wfl.test.ts` の変更を元に戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-subscription` を再実行
+  - 運用ログ：
+    - start: 2025-09-20 23:05 trash-subscription.wfl.test.ts にゴミ箱復元/再移動/永久削除フローを追加開始
+    - progress: 2025-09-20 23:11 removeNodes を用いた永久削除に切り替え、購読イベントの検証ロジックを整備
+    - done: 2025-09-20 23:17 `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-subscription` を実行しグリーン
+    - done: 2025-09-20 23:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行しグリーン
+
+- test/runtime-worker/wfl-import-template-duplicate — Import Template 複製フロー検証
+  - ブランチ: `test/runtime-worker/wfl-import-template-duplicate`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`, `CoreDB`
+  - 受け入れ基準（DoD）：
+    - [x] Import Template で生成したフォルダを `duplicateNodes` で `r:root` 配下へ複製すると、衝突しない名前で兄弟ノードが生成されることをテスト
+    - [x] 複製先を自身または子孫ノードに指定した場合に `duplicateNodes` が失敗することをテスト
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` / `trash-subscription` / `typecheck` が成功
+  - チェックリスト：
+    - [x] CoreDB.duplicateSubtreeWithMap に root 名上書きオプションを追加
+    - [x] TreeMutationService.duplicateNodesCommand で名称衝突回避と自己/子孫検出を実装
+    - [x] import-template-poplulation-duplicate.wfl.test.ts に成功ケースと失敗ケースを追加
+  - ロールバック手順：
+    - CoreDB と TreeMutationService の変更を差し戻し、`packages/runtime-worker/worker/src/e2e/__tests__/import-template-poplulation-duplicate.wfl.test.ts` を削除。`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
+  - 運用ログ：
+    - start: 2025-09-20 23:24 duplicateNodes の挙動調査とテスト素案を作成
+    - progress: 2025-09-20 23:30 CoreDB.duplicateSubtreeWithMap に root 名上書きを追加し、TreeMutationService に名称衝突回避と自己/子孫ガードを実装
+    - done: 2025-09-20 23:33 `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を実行し import/duplicate 系テストがグリーン
+    - done: 2025-09-20 23:34 `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-subscription` および `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行しグリーン
+
+- test/runtime-worker/wfl-import-template-copy-paste — Import Template コピー＆ペースト検証
+  - ブランチ: `test/runtime-worker/wfl-import-template-copy-paste`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`
+  - 受け入れ基準（DoD）：
+    - [x] Import Template で生成したフォルダをコピーし、`pasteNodes` を `r:root` 配下に実行すると重複しない兄弟ノードとして貼り付けられることをテスト
+    - [x] 貼り付け先をコピー対象自身・子孫に指定しても成功することをテスト
+    - [x] 貼り付け後のノード名を変更できること、かつ元の名称へ戻そうとした際に兄弟重複エラーで拒否されることをテスト
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` / `typecheck` が成功
+  - チェックリスト：
+    - [x] クリップボード生成ヘルパーを追加してテンプレートフォルダ構造を収集
+    - [x] Comlink 経由で pasteNodes コマンドエンベロープを生成し、自己／子孫／root への貼り付けと名称変更フローを検証
+    - [x] ルート配下で名称がユニークに生成され、重複名称への rename が拒否されることを確認
+  - ロールバック手順：
+    - `packages/runtime-worker/worker/src/e2e/__tests__/import-template-poplulation-copy-pate.wfl.test.ts` を削除し、`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
+  - 運用ログ：
+    - start: 2025-09-20 23:35 pasteNodes API の利用方法を調査し、コピー＆ペースト検証のテスト素案を作成
+    - progress: 2025-09-20 23:36 paste エンベロープ生成ヘルパーを実装し、自己/子孫/ルートへの貼り付けと rename フローをテストに追加
+    - done: 2025-09-20 23:40 `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を実行し import/paste 系テストがグリーン
+    - done: 2025-09-20 23:40 `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行しグリーン
+
+- test/runtime-worker/wfl-command-processor-undo-redo — CommandProcessor undo/redo フロー検証
+  - ブランチ: `test/runtime-worker/wfl-command-processor-undo-redo`
+  - 依存: `@hierarchidb/runtime-worker`
+  - 受け入れ基準（DoD）：
+    - [x] CommandProcessor の主要コマンド（createNode/updateNode/moveNodes/moveToTrash/recoverFromTrash/remove/commitWorkingCopy/removeSubtree）を WFL 経由で順に実行する
+    - [x] 実行済みコマンドをすべて undo し、さらに追加の undo が失敗することを検証
+    - [x] undo 後にすべて redo し、追加の redo が失敗することを検証
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` / `import-template-pop` が成功
+  - チェックリスト：
+    - [x] test-worker.entry.ts に CommandProcessor を Comlink 経由で取得できるエンドポイントを追加
+    - [x] CommandHistoryManager に moveToTrash / commitWorkingCopy の undo/redo サポートを追加
+    - [x] WFL テストで undo/redo の最終状態と追加コマンド（removeSubtree）を検証
+  - ロールバック手順：
+    - 新規テストファイルと CommandHistoryManager/Test エントリの変更を戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` が元通り失敗することを確認
+  - 運用ログ：
+    - start: 2025-09-21 00:00 CommandProcessor undo/redo フローの WFL テスト設計に着手
+    - progress: 2025-09-21 00:02 CommandHistoryManager に moveToTrash/commitWorkingCopy の逆操作実装を追加
+    - done: 2025-09-21 00:03 `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を実行しグリーン
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 

@@ -142,6 +142,7 @@ function RadioItem({ icon, label, value }: { icon: React.ReactNode; label: strin
 function TreeConsoleToolbarContent({
                                      controller,
                                      hasTrashItems,
+                                     trashNodeId,
                                      onAction,
                                      rowClickAction = 'Select/Navigate',
                                      onRowClickActionChange,
@@ -155,6 +156,7 @@ function TreeConsoleToolbarContent({
                                    }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
+  trashNodeId?: string;
   onAction?: TreeConsoleToolbarProps['onAction'];
   rowClickAction?: TreeConsoleToolbarProps['rowClickAction'];
   onRowClickActionChange?: TreeConsoleToolbarProps['onRowClickActionChange'];
@@ -248,9 +250,7 @@ function TreeConsoleToolbarContent({
     } catch (error) {
       console.warn('Search not implemented:', error);
     }
-  }, [
-    controller?.handleSearchTextChange,
-  ]);
+  }, [controller]);
 
   const themeOpen = Boolean(themeAnchorEl);
   const languageOpen = Boolean(languageAnchorEl);
@@ -347,7 +347,7 @@ function TreeConsoleToolbarContent({
       <Menu anchorEl={trashAnchorEl} open={trashOpen} onClose={handleTrashClose}>
         <MenuItem
           onClick={() => {
-            handleAction('restore');
+            handleAction('restore', trashNodeId ? { trashNodeId } : undefined);
             handleTrashClose();
           }}
         >
@@ -358,7 +358,7 @@ function TreeConsoleToolbarContent({
         </MenuItem>
         <MenuItem
           onClick={() => {
-            handleAction('empty');
+            handleAction('empty', trashNodeId ? { trashNodeId } : undefined);
             handleTrashClose();
           }}
         >
@@ -535,6 +535,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     showSearchOnly = false,
     controller,
     hasTrashItems = false,
+    trashNodeId,
     onAction,
     rowClickAction = 'Select/Navigate',
     onRowClickActionChange,
@@ -577,6 +578,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
       <TreeConsoleToolbarContent
         controller={controller}
         hasTrashItems={hasTrashItems}
+        trashNodeId={trashNodeId}
         onAction={onAction}
         rowClickAction={rowClickAction}
         onRowClickActionChange={onRowClickActionChange}

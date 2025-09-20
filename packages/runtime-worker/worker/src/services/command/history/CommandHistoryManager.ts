@@ -6,6 +6,7 @@ import type {
 import { WorkerErrorCode } from '../../command-types.js';
 import type { CoreDB } from '../../CoreDB.js';
 import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
+import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
 import type {
   CommandId,
   NodeId,
@@ -37,6 +38,12 @@ export class CommandHistoryManager {
   private readonly preMoveState = new Map<CommandId, TreeNode[]>();
   private readonly preRemoveState = new Map<CommandId, TreeNode[]>();
   private readonly preRecoverState = new Map<CommandId, TreeNode[]>();
+  private readonly preMoveToTrashState = new Map<CommandId, Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }>>();
+  private readonly preCommitWorkingCopyState = new Map<CommandId, {
+    workingCopy: TreeNode;
+    holder: TreeNode;
+    committedNode?: TreeNode;
+  }>();
 
   private static readonly UNDOABLE_COMMANDS = new Set([
     'createNode',
@@ -116,6 +123,8 @@ export class CommandHistoryManager {
     this.preMoveState.clear();
     this.preRemoveState.clear();
     this.preRecoverState.clear();
+    this.preMoveToTrashState.clear();
+    this.preCommitWorkingCopyState.clear();
   }
 
   async undo(): Promise<CommandResult> {
@@ -170,6 +179,31 @@ export class CommandHistoryManager {
 
   storePreRecoverState(commandId: CommandId, nodes: TreeNode[]): void {
     this.preRecoverState.set(commandId, nodes.map((node) => ({ ...node })));
+  }
+
+  storePreMoveToTrashState(
+    commandId: CommandId,
+    entries: Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }>,
+  ): void {
+    this.preMoveToTrashState.set(
+      commandId,
+      entries.map((entry) => ({ ...entry })),
+    );
+  }
+
+  storeCommitWorkingCopySnapshot(
+    commandId: CommandId,
+    snapshot: {
+      workingCopy: TreeNode;
+      holder: TreeNode;
+      committedNode?: TreeNode;
+    },
+  ): void {
+    this.preCommitWorkingCopyState.set(commandId, {
+      workingCopy: { ...snapshot.workingCopy },
+      holder: { ...snapshot.holder },
+      committedNode: snapshot.committedNode ? { ...snapshot.committedNode } : undefined,
+    });
   }
 
   private addToUndoStackSafely(envelope: CommandEnvelope<string, unknown>): void {
@@ -255,6 +289,39 @@ export class CommandHistoryManager {
           await this.deps.coreDB.updateNode?.({ ...node });
         }
         this.preRecoverState.delete(commandId);
+        break;
+      }
+
+      case 'moveToTrash': {
+        const commandId = command.commandId as CommandId;
+        const entries = this.preMoveToTrashState.get(commandId) || [];
+        for (const entry of entries) {
+          const node = await this.deps.coreDB.getNode?.(entry.nodeId);
+          if (!node) {
+            continue;
+          }
+          await this.deps.coreDB.updateNode?.({
+            ...node,
+            parentId: entry.previousParentId,
+            updatedAt: Date.now() as Timestamp,
+            version: (node.version || 1) + 1,
+          });
+          await this.deps.coreDB.deleteNode?.(entry.holderId);
+        }
+        break;
+      }
+
+      case 'commitWorkingCopy': {
+        const commandId = command.commandId as CommandId;
+        const snapshot = this.preCommitWorkingCopyState.get(commandId);
+        if (!snapshot) {
+          throw new Error('No working copy snapshot recorded for undo');
+        }
+        if (snapshot.committedNode) {
+          await this.deps.coreDB.deleteNode?.(snapshot.committedNode.id as NodeId);
+        }
+        await this.restoreNode(snapshot.holder);
+        await this.restoreNode(snapshot.workingCopy);
         break;
       }
 
@@ -385,8 +452,78 @@ export class CommandHistoryManager {
         break;
       }
 
+      case 'moveToTrash': {
+        const commandId = command.commandId as CommandId;
+        const entries = this.preMoveToTrashState.get(commandId) || [];
+        for (const entry of entries) {
+          const node = await this.deps.coreDB.getNode?.(entry.nodeId);
+          if (!node) {
+            continue;
+          }
+          const now = Date.now() as Timestamp;
+          const holderNode: TreeNode = {
+            id: entry.holderId,
+            parentId: entry.trashRootId,
+            nodeType: 'trash' as NodeType,
+            name: encodeTrashHolderName(entry.previousParentId, entry.nodeId),
+            depth: 0,
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+            holderType: 'trash' as const,
+            holderTargetId: entry.nodeId,
+            holderMetaParentId: entry.previousParentId,
+          };
+          const existingHolder = await this.deps.coreDB.getNode?.(entry.holderId);
+          if (!existingHolder) {
+            await this.deps.coreDB.createNode?.(holderNode);
+          }
+          await this.deps.coreDB.updateNode?.({
+            ...node,
+            parentId: entry.holderId,
+            updatedAt: now,
+            version: (node.version || 1) + 1,
+          });
+        }
+        break;
+      }
+
+      case 'commitWorkingCopy': {
+        const commandId = command.commandId as CommandId;
+        const snapshot = this.preCommitWorkingCopyState.get(commandId);
+        if (!snapshot) {
+          throw new Error('No working copy snapshot recorded for redo');
+        }
+        const holderId = snapshot.holder.id as NodeId;
+        const workingCopyId = snapshot.workingCopy.id as NodeId;
+        await this.restoreNode(snapshot.holder);
+        await this.restoreNode(snapshot.workingCopy);
+        if (snapshot.committedNode) {
+          const existing = await this.deps.coreDB.getNode?.(snapshot.committedNode.id as NodeId);
+          if (!existing) {
+            await this.deps.coreDB.createNode?.({ ...snapshot.committedNode });
+          }
+        }
+        await this.deps.coreDB.deleteNode?.(holderId);
+        await this.deps.coreDB.deleteNode?.(workingCopyId);
+        break;
+      }
+
       default:
         throw new Error(`Redo operation not implemented for command type: ${command.kind}`);
     }
+  }
+
+  private async restoreNode(node?: TreeNode): Promise<void> {
+    if (!node) return;
+    const existing = await this.deps.coreDB.getNode?.(node.id as NodeId);
+    if (existing) {
+      await this.deps.coreDB.updateNode?.({
+        ...existing,
+        ...node,
+      });
+      return;
+    }
+    await this.deps.coreDB.createNode?.({ ...node });
   }
 }

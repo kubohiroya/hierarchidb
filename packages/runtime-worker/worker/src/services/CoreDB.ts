@@ -672,6 +672,7 @@ export class CoreDB extends Dexie {
   async duplicateSubtreeWithMap(
     sourceRootId: NodeId,
     targetParentId: NodeId,
+    options?: { rootNameOverride?: string },
   ): Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }> {
     const sourceRoot = await this.nodes.get(sourceRootId);
     if (!sourceRoot) {
@@ -733,6 +734,10 @@ export class CoreDB extends Dexie {
         id: newNodeId,
         parentId: newParentId,
         depth: newDepth,
+        name:
+          originalNode.id === sourceRootId && options?.rootNameOverride
+            ? options.rootNameOverride
+            : originalNode.name,
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,

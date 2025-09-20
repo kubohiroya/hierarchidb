@@ -326,8 +326,54 @@ export class TreeMutationService implements TreeMutationAPI {
     const newNodeIds: NodeId[] = [];
     const idMap = new Map<NodeId, NodeId>();
 
+    const siblingNamesCache = new Map<NodeId, Set<string>>();
+    const getSiblingNames = async (parentId: NodeId): Promise<Set<string>> => {
+      const cached = siblingNamesCache.get(parentId);
+      if (cached) return cached;
+      const siblings = (await this.coreDB.listChildren?.(parentId)) || [];
+      const names = new Set<string>(siblings.map((sibling) => sibling.name));
+      siblingNamesCache.set(parentId, names);
+      return names;
+    };
+
     for (const sourceId of nodeIds) {
-      const { newRootId, idMap: subMap } = await this.coreDB.duplicateSubtreeWithMap(sourceId, toParentId);
+      if (sourceId === toParentId) {
+        return {
+          success: false,
+          error: 'Cannot duplicate node into itself',
+          code: 'INVALID_OPERATION',
+        };
+      }
+
+      const descendants = (await this.coreDB.listDescendants?.(sourceId)) || [];
+      if (descendants.some((node) => node.id === toParentId)) {
+        return {
+          success: false,
+          error: 'Cannot duplicate node into its own descendant',
+          code: 'INVALID_OPERATION',
+        };
+      }
+
+      const sourceNode = await this.coreDB.getNode?.(sourceId);
+      if (!sourceNode) {
+        return {
+          success: false,
+          error: 'Source node not found',
+          code: 'NODE_NOT_FOUND',
+        };
+      }
+
+      const siblingNames = await getSiblingNames(toParentId);
+      let desiredName = sourceNode.name;
+      while (siblingNames.has(desiredName)) {
+        desiredName = createNewName([...siblingNames], sourceNode.name);
+        if (!siblingNames.has(desiredName)) break;
+      }
+      siblingNames.add(desiredName);
+
+      const { newRootId, idMap: subMap } = await this.coreDB.duplicateSubtreeWithMap(sourceId, toParentId, {
+        rootNameOverride: desiredName,
+      });
       newNodeIds.push(newRootId);
       for (const [src, dst] of subMap.entries()) idMap.set(src, dst);
     }

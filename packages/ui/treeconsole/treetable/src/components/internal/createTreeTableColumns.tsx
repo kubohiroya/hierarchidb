@@ -334,9 +334,9 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               >
                 {node.name}
               </Box>
-              {Boolean(nodeMetrics.isDraft) && (
+              {Boolean(node.isDraft) && (
                 <Chip
-                  label="draft"
+                  label="Draft"
                   size="small"
                   color="warning"
                   variant="outlined"

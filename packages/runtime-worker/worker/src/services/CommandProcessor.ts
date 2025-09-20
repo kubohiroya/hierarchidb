@@ -15,6 +15,7 @@ import { executeCoreCommand } from './command/core-handlers/index.js';
 import { validateAndNormalizeEnvelope, isValidationFailure } from './validation/envelope.js';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { recordCommandLatency } from '../utils/metrics.js';
+import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 
 type EntitiesDbTable = {
   delete(id: NodeId): Promise<void> | void;
@@ -68,6 +69,8 @@ export class CommandProcessor {
   private readonly history: CommandHistoryManager;
   private readonly runner: CommandExecutionRunner;
   private sequenceNumber = 0;
+  private undoStateServicePromise?: Promise<TreeSubscriptionService>;
+  private lastUndoState = { canUndo: false, canRedo: false };
 
   /**
    * Create a command envelope with auto-output metadata
@@ -149,12 +152,16 @@ export class CommandProcessor {
           // ignore lifecycle errors in base skeleton
         }
       }
+
+      await this.emitUndoStateIfChanged();
       return result;
     } catch (error) {
       // Do not leak internal details in error message
       const sanitizedMessage = this.sanitizeErrorMessage(error);
       console.error('CommandProcessor error:', error);
-      return this.createErrorResult(sanitizedMessage, WorkerErrorCode.INVALID_OPERATION);
+      const failure = this.createErrorResult(sanitizedMessage, WorkerErrorCode.INVALID_OPERATION);
+      await this.emitUndoStateIfChanged();
+      return failure;
     }
   }
 
@@ -269,6 +276,33 @@ export class CommandProcessor {
     return 'An unexpected error occurred';
   }
 
+  private async getUndoStateService(): Promise<TreeSubscriptionService> {
+    if (!this.undoStateServicePromise) {
+      this.undoStateServicePromise = TreeSubscriptionService.getSingleton(this.coreDB);
+    }
+    return this.undoStateServicePromise;
+  }
+
+  private async emitUndoStateIfChanged(force = false): Promise<void> {
+    try {
+      const canUndo = this.history.canUndo();
+      const canRedo = this.history.canRedo();
+      if (!force && this.lastUndoState.canUndo === canUndo && this.lastUndoState.canRedo === canRedo) {
+        return;
+      }
+      this.lastUndoState = { canUndo, canRedo };
+      const service = await this.getUndoStateService();
+      service.publishUndoState({
+        type: 'undo-state',
+        canUndo,
+        canRedo,
+        timestamp: Date.now() as Timestamp,
+      });
+    } catch (error) {
+      console.warn('[CommandProcessor] failed to publish undo state', error);
+    }
+  }
+
   /**
    * Check if undo is available
    */
@@ -305,15 +339,20 @@ export class CommandProcessor {
   }
 
   async undo(): Promise<CommandResult> {
-    return this.history.undo();
+    const result = await this.history.undo();
+    await this.emitUndoStateIfChanged();
+    return result;
   }
 
   async redo(): Promise<CommandResult> {
-    return this.history.redo();
+    const result = await this.history.redo();
+    await this.emitUndoStateIfChanged();
+    return result;
   }
 
   clearHistory(): void {
     this.history.clearHistory();
+    void this.emitUndoStateIfChanged();
   }
 
   // Best-effort deletion of peerEntities (permanent delete only)
@@ -371,5 +410,6 @@ export class CommandProcessor {
       maxEventHistorySize: this.MAX_EVENT_HISTORY_SIZE,
     });
     this.runner = new CommandExecutionRunner(coreDB);
+    void this.emitUndoStateIfChanged(true);
   }
 }

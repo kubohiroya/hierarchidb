@@ -5,18 +5,23 @@ import type {
   SubscriptionOptions,
   TreeChangeEvent,
   TreeId,
-  TreeNodeEvent,
 } from '@hierarchidb/common-type';
 import type { Subject } from 'rxjs';
 
-export type SubscriptionKind = 'node' | 'subtree' | 'tree' | 'childNodes' | 'working-copies';
+export type SubscriptionKind =
+  | 'node'
+  | 'subtree'
+  | 'tree'
+  | 'childNodes'
+  | 'working-copies'
+  | 'undo-state';
 
 export interface SubscriptionInfo {
   id: SubscriptionId;
   type: SubscriptionKind;
   nodeId?: NodeId;
   treeId?: TreeId;
-  callback?: (event: TreeNodeEvent) => void;
+  callback?: (event: unknown) => void;
   options?: SubscriptionOptions;
   isActive: boolean;
   lastActivity: number;

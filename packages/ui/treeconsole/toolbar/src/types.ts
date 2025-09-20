@@ -23,7 +23,10 @@ export type TreeConsoleToolbarAction =
  */
 export type TreeConsoleToolbarActionParams =
   | undefined
-  | ('Select/Navigate' | 'Edit') | { treeId: string } | { templateId: string };
+  | ('Select/Navigate' | 'Edit')
+  | { treeId: string }
+  | { templateId: string }
+  | { trashNodeId: string };
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
@@ -71,6 +74,11 @@ export interface TreeConsoleToolbarProps {
    * Whether there are items in trash
    */
   hasTrashItems?: boolean;
+
+  /**
+   * Identifier for the trash root or folder used when opening the trash dialog.
+   */
+  trashNodeId?: string;
 
   /**
    * Whether current node has children

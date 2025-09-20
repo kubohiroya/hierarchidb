@@ -5,10 +5,11 @@
  * exposed by the Worker command processor.
  */
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/common-type';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleState } from './types.js';
 
@@ -39,6 +40,41 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
     return () => window.removeEventListener('hdb-cmd', handler as EventListener);
   }, [refreshUndoRedo]);
 
+  const subscriptionEstablishedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!client) return;
+    let isActive = true;
+    let subscriptionId: SubscriptionId | undefined;
+    let subscriptionAPI: Awaited<ReturnType<typeof client.getSubscriptionAPI>> | undefined;
+
+    const attach = async () => {
+      try {
+        subscriptionAPI = await client.getSubscriptionAPI();
+        subscriptionId = await subscriptionAPI.subscribeUndoState((event: UndoStateEvent) => {
+          if (!isActive) return;
+          const { canUndo, canRedo } = event;
+          subscriptionEstablishedRef.current = true;
+          setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+          setSSOT({ canUndo, canRedo });
+        });
+      } catch (error) {
+        console.warn('[useCommandProcessorTracker] undo-state subscription failed', error);
+      }
+    };
+
+    void attach();
+
+    return () => {
+      isActive = false;
+      if (subscriptionId && subscriptionAPI) {
+        void subscriptionAPI.unsubscribe(subscriptionId).catch(() => {});
+      } else if (subscriptionId) {
+        void client.getSubscriptionAPI().then((api) => api.unsubscribe(subscriptionId!)).catch(() => {});
+      }
+    };
+  }, [client, setSSOT, setState]);
+
   useEffect(() => {
     let stopped = false;
     let cp: unknown;
@@ -61,7 +97,7 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
 
     void tick();
     const id = globalThis.setInterval(() => {
-      if (!stopped) void tick();
+      if (!stopped && !subscriptionEstablishedRef.current) void tick();
     }, 600);
 
     return () => {

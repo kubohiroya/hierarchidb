@@ -14,6 +14,7 @@ import {
 import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
 import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
 import type {
+  CommandId,
   NodeId,
   NodeType,
   Seq,
@@ -110,6 +111,19 @@ async function handleUpdateNode(
       return deps.createErrorResult('Node not found', WorkerErrorCode.INVALID_OPERATION);
     }
 
+    if (payload.name && payload.name !== node.name && node.parentId) {
+      const siblings = (await deps.coreDB.listChildren?.(node.parentId)) || [];
+      const hasConflict = siblings.some(
+        (sibling) => sibling.id !== node.id && sibling.name === payload.name,
+      );
+      if (hasConflict) {
+        return deps.createErrorResult(
+          `Name conflict: '${payload.name}' already exists`,
+          WorkerErrorCode.NAME_NOT_UNIQUE,
+        );
+      }
+    }
+
     deps.history.storePreUpdateState(envelope.commandId, node);
     await deps.coreDB.updateNode?.({
       ...node,
@@ -204,6 +218,7 @@ async function handleMoveToTrash(
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as { nodeIds: NodeId[] };
+    const snapshotEntries: Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }> = [];
 
     let trees: Array<{ rootId: NodeId; trashRootId: NodeId }> | undefined;
     try {
@@ -286,7 +301,16 @@ async function handleMoveToTrash(
         version: (node.version || 1) + 1,
       };
       await deps.coreDB.updateNode?.(updatedNode);
+
+      snapshotEntries.push({
+        nodeId: node.id as NodeId,
+        previousParentId: node.parentId as NodeId,
+        holderId,
+        trashRootId,
+      });
     }
+
+    deps.history.storePreMoveToTrashState(envelope.commandId as CommandId, snapshotEntries);
 
     return { success: true, seq: deps.getNextSeq() };
   } catch (error) {
@@ -520,6 +544,17 @@ async function handleCommitWorkingCopy(
       onNameConflict?: 'error' | 'auto-rename';
     };
 
+    const wcNode = await deps.coreDB.nodes.get(payload.workingCopyId);
+    if (!wcNode) {
+      return deps.createErrorResult('Working copy not found', WorkerErrorCode.INVALID_OPERATION);
+    }
+    const holder = wcNode.parentId ? await deps.coreDB.nodes.get(wcNode.parentId as NodeId) : undefined;
+    if (!holder) {
+      return deps.createErrorResult('Working copy holder not found', WorkerErrorCode.INVALID_OPERATION);
+    }
+    const wcSnapshot: TreeNode = { ...wcNode };
+    const holderSnapshot: TreeNode = { ...holder };
+
     const result = await commitWorkingCopyV2(
       deps.coreDB,
       payload.workingCopyId,
@@ -527,6 +562,18 @@ async function handleCommitWorkingCopy(
     );
 
     if (result.status === 'ok') {
+      let committedSnapshot: TreeNode | undefined;
+      if (result.nodeId) {
+        const committedNode = await deps.coreDB.nodes.get(result.nodeId);
+        if (committedNode) {
+          committedSnapshot = { ...committedNode };
+        }
+      }
+      deps.history.storeCommitWorkingCopySnapshot(envelope.commandId as CommandId, {
+        workingCopy: wcSnapshot,
+        holder: holderSnapshot,
+        committedNode: committedSnapshot,
+      });
       return { success: true, seq: deps.getNextSeq(), nodeId: payload.workingCopyId };
     }
 

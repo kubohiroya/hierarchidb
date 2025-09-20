@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from 'react-router';
-import { useLoaderData, useNavigate, useParams, useSearchParams } from 'react-router';
+import { useLoaderData, useNavigate, useParams } from 'react-router';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack } from '@mui/material';
 import { DeleteForever as EmptyTrashIcon, RestoreFromTrash as RestoreIcon } from '@mui/icons-material';
@@ -13,42 +13,77 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
 // This loader will be used by the route that renders the dialog
 export async function clientLoader(args: LoaderFunctionArgs) {
-  const { treeId } = args.params;
+  const { treeId, targetNodeId } = args.params;
   if (!treeId) {
     throw new Response('Missing treeId parameter.', { status: 400 });
   }
   const treeData = await loadTree({ treeId });
   // Load trash root node
-  if (treeData.tree) {
-    // Use facade pattern: get QueryAPI first
-    const queryAPI = await treeData.client.getQueryAPI();
-    const trashRootId = treeData.tree.trashRootId;
-    const trashRootNode = await queryAPI.getNode(trashRootId);
-
-    // Load trash items (children of trash root)
-    const trashItems = await queryAPI.listChildren(trashRootId);
-
+  if (!treeData.tree) {
     return {
       ...treeData,
-      trashRootNode,
-      trashItems,
+      activeTrashNodeId: (targetNodeId as NodeId | undefined) ?? null,
     };
   }
-  return treeData;
+
+  const queryAPI = await treeData.client.getQueryAPI();
+  const fallbackTrashId = treeData.tree.trashRootId as NodeId | undefined;
+  const activeTrashNodeId = (targetNodeId as NodeId | undefined) ?? fallbackTrashId;
+  if (!activeTrashNodeId) {
+    throw new Response('Trash root not found.', { status: 404 });
+  }
+
+  const trashRootNode = await queryAPI.getNode(activeTrashNodeId);
+
+  const trashItems = await queryAPI.listChildren(activeTrashNodeId);
+
+  const isRootTrash = Boolean(fallbackTrashId && activeTrashNodeId === fallbackTrashId);
+  let trashDisplayItems = trashItems;
+  const holderLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
+
+  if (isRootTrash && trashItems.length > 0) {
+    const batches = await Promise.all(
+      trashItems.map(async (holder) => {
+        const childNodes = await queryAPI.listChildren(holder.id as NodeId);
+        return childNodes.map((child) => {
+          holderLookup[String(child.id)] = { holderId: holder.id as NodeId, holderName: holder.name };
+          return {
+            ...child,
+            parentId: activeTrashNodeId,
+            depth: 1,
+          } as TreeNode;
+        });
+      }),
+    );
+    trashDisplayItems = batches.flat();
+  }
+
+  return {
+    ...treeData,
+    trashRootNode,
+    trashItems,
+    trashDisplayItems,
+    holderLookup,
+    activeTrashNodeId,
+  };
 }
 
 type TrashDialogData = LoadTreeReturn & {
   trashRootNode?: TreeNode;
   trashItems?: TreeNode[];
+  trashDisplayItems?: TreeNode[];
+  holderLookup?: Record<string, { holderId: NodeId; holderName?: string }>;
+  activeTrashNodeId: NodeId | null;
 };
 
 export default function TrashDialog() {
   const data = useLoaderData<TrashDialogData>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { treeId } = useParams();
+  const { treeId, targetNodeId: trashNodeIdParam, action } = useParams();
 
-  const mode = searchParams.get('mode') || 'restore'; // "restore" or "empty"
+  const mode: 'restore' | 'empty' = action === 'empty' ? 'empty' : 'restore';
+  const activeTrashNodeId = data.activeTrashNodeId ?? (trashNodeIdParam as NodeId | null) ?? null;
+  const effectiveTrashNodeId = activeTrashNodeId ?? (data.tree?.trashRootId as NodeId | undefined) ?? null;
 
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [loading, setLoading] = useState(false);
@@ -219,12 +254,20 @@ export default function TrashDialog() {
   };
 
   // Convert trash items to TreeNodeData format
-  const treeData: TreeNodeData[] = (data.trashItems ?? []).map((node) => ({
+  const displayNodes = data.trashDisplayItems ?? data.trashItems ?? [];
+
+  const treeData: TreeNodeData[] = displayNodes.map((node) => ({
     ...node,
     id: node.id,
     nodeType: node.nodeType,
+    depth: 1,
     children: undefined,
   }));
+
+  const dialogContextName = data.trashRootNode?.name ?? (effectiveTrashNodeId ? String(effectiveTrashNodeId) : data.tree?.name ?? '');
+  const breadcrumbItems = data.trashRootNode
+    ? [{ id: data.trashRootNode.id, name: data.trashRootNode.name ?? 'Trash', nodeType: data.trashRootNode.nodeType ?? 'trash' }]
+    : [];
 
   // Define columns for trash view
   const columns: TreeTableColumn[] = [
@@ -281,7 +324,7 @@ export default function TrashDialog() {
       }}
     >
       <CommonDialogTitle
-        title={`${mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'} - ${data.tree?.name ?? ''}`}
+        title={`${mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'}${dialogContextName ? ` - ${dialogContextName}` : ''}`}
         onClose={handleClose}
         displayMode={displayMode}
         onChangeDisplayMode={handleChangeDisplayMode}
@@ -301,17 +344,11 @@ export default function TrashDialog() {
           </Box>
         ) : (
           <TreeConsolePanel
-            title={`Trash - ${data.tree?.name}`}
-            pageNodeId={data.tree?.trashRootId}
+            title={`Trash - ${dialogContextName}`}
+            pageNodeId={effectiveTrashNodeId ?? undefined}
             data={treeData}
             columns={columns}
-            breadcrumbItems={data.tree ? [
-              {
-                id: data.tree.trashRootId,
-                name: 'Trash',
-                nodeType: 'trash',
-              },
-            ] : []}
+            breadcrumbItems={breadcrumbItems}
             loading={false}
             selectedIds={selectedIds.map(String)}
             expandedIds={[]}
@@ -373,10 +410,11 @@ export default function TrashDialog() {
                 try {
                   const client = WorkerAPIClient.getSingleton();
                   const mutationAPI = await client.getMutationAPI();
-                  const res = await mutationAPI.removeNodes([node.id]);
+                  const holderId = data.holderLookup?.[String(node.id)]?.holderId ?? (node.id as NodeId);
+                  const res = await mutationAPI.removeNodes([holderId]);
                   if (res.success) {
                     try {
-                      const raw = (data.trashItems ?? []).find((t) => String(t.id) === String(node.id));
+                      const raw = (data.trashItems ?? []).find((t) => String(t.id) === String(holderId));
                       const targetId = raw?.holderTargetId ?? node.id;
                       window.dispatchEvent(new CustomEvent('hdb-remove', { detail: { treeId, nodeIds: [String(targetId)] } }));
                     } catch (error) {
