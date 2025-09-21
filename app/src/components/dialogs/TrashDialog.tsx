@@ -111,10 +111,30 @@ export async function clientLoader(args: LoaderFunctionArgs) {
       }
     });
 
-    trashDisplayItems = trashItems.filter((node) => {
-      const parentIdValue = node.parentId ? String(node.parentId) : undefined;
-      return Boolean(parentIdValue && placeholderMap.has(parentIdValue));
-    });
+    const placeholderIds = Array.from(placeholderMap.keys());
+    if (placeholderIds.length > 0) {
+      const nestedResults = await Promise.all(
+        placeholderIds.map(async (placeholderId) => {
+          const nested = await queryAPI.listChildren(placeholderId as NodeId, { prefetch: { depth: targetDepth } });
+          console.log('[TrashDialog loader] placeholder children', {
+            placeholderId,
+            total: nested.length,
+            sample: nested.slice(0, 5),
+          });
+          return nested;
+        }),
+      );
+      const placeholderChildren = nestedResults.flat();
+      const unique = new Map<string, TreeNode>();
+      trashItems.forEach((node) => unique.set(String(node.id), node));
+      placeholderChildren.forEach((node) => unique.set(String(node.id), node));
+      trashDisplayItems = Array.from(unique.values()).filter((node) => {
+        const parentIdValue = node.parentId ? String(node.parentId) : undefined;
+        return Boolean(parentIdValue && placeholderMap.has(parentIdValue));
+      });
+    } else {
+      trashDisplayItems = [];
+    }
 
     trashDisplayItems.forEach((node) => {
       const parentId = node.parentId ? String(node.parentId) : undefined;
@@ -1468,16 +1488,6 @@ export default function TrashDialog() {
         return;
       }
 
-      const nextMap = new Map<string, TreeNode>();
-      if (rootNode) {
-        nextMap.set(String(rootNode.id), rootNode);
-      } else {
-        nextMap.set(String(data.trashRootNode.id), data.trashRootNode);
-      }
-      descendants.forEach((node) => {
-        nextMap.set(String(node.id), node);
-      });
-
       const rootIdStr = String(trashRootIdValue);
       const placeholderMap = new Map<string, TreeNode>();
       descendants.forEach((node) => {
@@ -1486,8 +1496,39 @@ export default function TrashDialog() {
         }
       });
 
+      let augmentedDescendants = descendants;
+      if (placeholderMap.size > 0) {
+        const placeholderIds = Array.from(placeholderMap.keys());
+        const nestedResults = await Promise.all(
+          placeholderIds.map(async (placeholderId) => {
+            const nested = await queryAPI.listChildren(placeholderId as NodeId, { prefetch: { depth: PREFETCH_DEPTH } });
+            console.log('[TrashDialog refresh] placeholder children', {
+              placeholderId,
+              total: nested.length,
+              sample: nested.slice(0, 5),
+            });
+            return nested;
+          }),
+        );
+        const placeholderChildren = nestedResults.flat();
+        const unique = new Map<string, TreeNode>();
+        descendants.forEach((node) => unique.set(String(node.id), node));
+        placeholderChildren.forEach((node) => unique.set(String(node.id), node));
+        augmentedDescendants = Array.from(unique.values());
+      }
+
+      const nextMap = new Map<string, TreeNode>();
+      if (rootNode) {
+        nextMap.set(String(rootNode.id), rootNode);
+      } else {
+        nextMap.set(String(data.trashRootNode.id), data.trashRootNode);
+      }
+      augmentedDescendants.forEach((node) => {
+        nextMap.set(String(node.id), node);
+      });
+
       const nextLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
-      descendants.forEach((node) => {
+      augmentedDescendants.forEach((node) => {
         const parentId = node.parentId ? String(node.parentId) : undefined;
         if (!parentId) return;
         const holderNode = placeholderMap.get(parentId);
