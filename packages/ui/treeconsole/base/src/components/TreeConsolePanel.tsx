@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import type { ComponentProps, ReactElement } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
@@ -6,7 +7,6 @@ import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treecons
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-// import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeNodeData } from '../types/index.js';
 
 type PanelBreadcrumbNode = {
@@ -17,6 +17,15 @@ type PanelBreadcrumbNode = {
   name?: string;
   parentId?: string | null;
 };
+
+type DefaultBreadcrumbProps = ComponentProps<typeof TreeConsoleBreadcrumb>;
+type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
+
+export interface TreeConsolePanelBreadcrumbRendererProps {
+  readonly items: readonly PanelBreadcrumbNode[];
+  readonly defaultRendererProps: DefaultBreadcrumbProps;
+  readonly defaultRenderer: () => ReactElement;
+}
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -82,6 +91,8 @@ export interface TreeConsolePanelProps {
   readonly renderBuiltInSpeedDial?: boolean;
   /** Hide the drag handle column when true (e.g., Trash dialog). */
   readonly hideDragHandler?: boolean;
+  /** Optional custom breadcrumb renderer for host-specific presentation. */
+  readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -179,17 +190,30 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       }}
     >
       {/* Breadcrumb Navigation with drop-to-parent support */}
-      <TreeConsoleBreadcrumb
-        nodePath={[...props.breadcrumbItems]}
-        onNodeClick={props.onBreadcrumbNavigate}
-        treeId={props.treeId}
-        variant="default"
-        pageNodeId={props.pageNodeId}
-        useTrashColumns={props.useTrashColumns ?? false}
-        trashAction={props.trashAction}
-        iconInteractive={!Boolean(props.useTrashColumns)}
-        onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
-      />
+      {(() => {
+        const defaultRendererProps: DefaultBreadcrumbProps = {
+          nodePath: [...props.breadcrumbItems] as readonly DefaultBreadcrumbNode[],
+          onNodeClick: props.onBreadcrumbNavigate,
+          treeId: props.treeId,
+          variant: 'default',
+          pageNodeId: props.pageNodeId,
+          useTrashColumns: props.useTrashColumns ?? false,
+          trashAction: props.trashAction,
+          iconInteractive: !Boolean(props.useTrashColumns),
+          onDropToNode: props.onMoveNodes
+            ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
+            : undefined,
+        };
+        const renderDefault = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
+        if (props.breadcrumbRenderer) {
+          return props.breadcrumbRenderer({
+            items: props.breadcrumbItems,
+            defaultRendererProps,
+            defaultRenderer: renderDefault,
+          });
+        }
+        return renderDefault();
+      })()}
       {/* Main Table Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', paddingLeft: '8px', paddingRight: '8px' }}>
       <TreeTableCore

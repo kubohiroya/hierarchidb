@@ -26,20 +26,23 @@
     "fetch:geoboundaries": "node dist/cli.js fetch geoboundaries output geoboundaries.json",
     "fetch": "pnpm run build && pnpm run fetch:gadm && pnpm run fetch:naturalearth && pnpm run fetch:osm && pnpm run fetch:geoboundaries"
   },
-  "dependencies": {
-    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*"
-  },
+  "dependencies": {},
   "peerDependencies": {
-    "commander": "^11.1.0"
+    "commander": "^11.1.0",
+    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*"
   },
   "peerDependenciesMeta": {
     "commander": {
+      "optional": false
+    },
+    "@hierarchidb/runtime-shared-fetch-metadata": {
       "optional": false
     }
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
     "commander": "^11.1.0",
+    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"
   },

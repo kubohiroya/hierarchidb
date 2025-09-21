@@ -7,8 +7,6 @@ import {
   HeadlessFooterRenderProps,
   StepComponentDescriptor,
   StepNavigationEvent,
-  MultiDialogFrame,
-  useDialogDisplayTransition,
   FRAME_CONSTANTS,
   getViewportSize,
   getPresetSize,
@@ -211,24 +209,51 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
   }, [nodeType, nodeId]);
 
-  const { handleDisplayModeChange: transitionDisplayMode } = useDialogDisplayTransition({
-    displayMode,
-    setDisplayMode: persistDisplayMode,
-    sizeRef: dialogSizeRef,
-    positionRef: dialogPositionRef,
-    onSizeChange: persistSize,
-    onPositionChange: persistPosition,
-    fullscreenElement: () => (typeof document !== 'undefined' ? document.documentElement : null),
-    viewportResolver: getViewportSize,
-    nonStandardMargin: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-  });
+  const transitionDisplayMode = useCallback(async (mode: DialogDisplayMode) => {
+    const viewport = getViewportSize();
+
+    const applyNormalizedState = (size: MultiDialogSize, position: MultiDialogPosition) => {
+      dialogSizeRef.current = size;
+      dialogPositionRef.current = position;
+      persistSize(size);
+      persistPosition(position);
+    };
+
+    if (mode === 'full-screen') {
+      const fullSize: MultiDialogSize = {
+        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      };
+      applyNormalizedState(fullSize, { x: 0, y: 0 });
+    } else if (mode === 'maximize') {
+      const size = getPresetSize('maximize', viewport);
+      const position: MultiDialogPosition = {
+        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+      };
+      const normalized = normalizeDialogState(size, position, viewport, {
+        enforceTopLeftMargin: false,
+        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      applyNormalizedState(normalized.size, normalized.position);
+    } else {
+      const size = getPresetSize('normal', viewport);
+      const position = initialPosition(size, viewport);
+      const normalized = normalizeDialogState(size, position, viewport, { enforceTopLeftMargin: true });
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+
+    setDisplayModeState(mode);
+    persistDisplayMode(mode);
+  }, [persistDisplayMode, persistPosition, persistSize]);
 
   useEffect(() => {
     const modeKey = urlMode as string;
     if (modeKey === 'full') {
-      void transitionDisplayMode('full-screen').catch(() => void 0);
+      void transitionDisplayMode('full-screen');
     } else if (displayMode === 'full-screen' && modeKey !== 'full') {
-      void transitionDisplayMode('normal').catch(() => void 0);
+      void transitionDisplayMode('normal');
     }
   }, [urlMode, displayMode, transitionDisplayMode]);
 
@@ -669,17 +694,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     size: dialogSize,
     onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: (mode) => { void transitionDisplayMode(mode).catch(() => void 0); },
+    onDisplayModeChange: (mode) => { void transitionDisplayMode(mode); },
     renderHeader,
     renderContent,
     renderFooter,
-    FrameComponent: MultiDialogFrame,
-    frameComponentProps: {
-      resizable: displayMode !== 'full-screen',
-      enableEdgeHandles: true,
-      minWidth: FRAME_CONSTANTS.MIN_DIALOG_WIDTH,
-      minHeight: FRAME_CONSTANTS.MIN_DIALOG_HEIGHT,
-    },
   };
 
   return {

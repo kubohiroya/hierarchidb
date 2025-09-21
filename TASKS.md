@@ -98,6 +98,8 @@
     - progress: 2025-09-21 20:18 RouteDialog / ResolverDialog を `useDialogDisplayTransition` ＋ `MultiDialogFrame` 対応に更新し、表示モードとリサイズ挙動を統一。`pnpm --filter @hierarchidb/node-type-route-plugin typecheck` と `pnpm --filter @hierarchidb/node-type-resolver-plugin typecheck` を実行し成功
     - progress: 2025-09-21 20:32 resolver dialog の共通化差分がリセットされていたため再適用。`pnpm --filter @hierarchidb/node-type-resolver-plugin typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再確認
     - progress: 2025-09-21 20:40 timeline dialog / plugin shell でも `MultiDialogFrame` + `useDialogDisplayTransition` を適用し、全プラグインダイアログの表示モード挙動を統一。`pnpm --filter @hierarchidb/node-type-timeline-plugin typecheck` と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
+    - progress: 2025-09-21 22:11 RouteDialog の `MultiDialogFrame` 対応を再確認し、初期レイアウト正規化・表示モード遷移ロジックを最新ユーティリティへ移行。`pnpm exec tsc --noEmit -p packages/node-type/route-plugin/tsconfig.json` を実行して成功（`pnpm --filter` は依存再インストール不可のため実行不能）
+    - progress: 2025-09-21 22:24 LocationDialog を HeadlessMultiStepDialog + `MultiDialogFrame` へ全面リファクタし、サイズ調整・フルスクリーン化・フォーム再描画を共通化。`pnpm exec tsc --noEmit -p packages/node-type/location-plugin/tsconfig.json` を実行し成功、`package.json` へ `@hierarchidb/ui-dialog` 依存を追加
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
@@ -191,6 +193,9 @@
     - progress: 2025-09-21 17:12 TrashDialog パンくずで depth1（プレースホルダー）と depth2（実データ）を単一ノードとしてまとめ、専用URLでゴミ箱内を遷移できるよう調整
     - progress: 2025-09-21 17:28 TrashDialog 向けの `buildTrashTreeData` を追加し、TreeTable でも Trash 階層を再構築（展開状態の管理も導入）
     - progress: 2025-09-21 17:42 TrashBreadcrumb コンポーネントを作成し、TrashDialog 表示で専用パンくずを描画（TreeConsolePanel とは独立）
+    - progress: 2025-09-21 20:40 TreeConsolePanel に `breadcrumbRenderer` を実装し、TrashDialog からカスタムパンくずを受け取るよう統合。`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` / `build` / `test:run -- --run TreeConsolePanel.breadcrumbRenderer.test.tsx` と `pnpm -C app typecheck` / `build` を順に実行し、すべて成功を確認
+    - progress: 2025-09-21 21:35 runtime-ui/plugin-dialog と node-type ({location,resolver,route,timeline}) のダイアログを headless API ベースへ更新し、`MultiDialogFrame` / `useDialogDisplayTransition` 依存を解消。`pnpm --filter @hierarchidb/ui-dialog build` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {build,typecheck}` / `pnpm --filter @hierarchidb/node-type-{resolver,route,timeline}-plugin typecheck` を実施。`@hierarchidb/node-type-location-plugin typecheck` は既存の runtime-shared-batch-processor 型未整備により継続失敗（詳細は報告済み）
+    - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
 - fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示

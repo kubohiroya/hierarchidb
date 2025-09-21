@@ -1,12 +1,23 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import {
   HeadlessMultiStepDialog,
+  FRAME_CONSTANTS,
+  getViewportSize,
+  getPresetSize,
+  normalizeDialogState,
+  initialPosition,
+  sizesEqual,
+  positionsEqual,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
   type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
   type StepComponentDescriptor,
   type StepNavigationEvent,
+  type DialogDisplayMode,
+  type MultiDialogSize,
+  type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import { BasicInfoStep, type BasicInfoValues } from './steps/BasicInfoStep.js';
 import { FramesPreviewStep, type TimelineFrame } from './steps/FramesPreviewStep.js';
@@ -38,6 +49,37 @@ export function TimelineDialog(props: TimelineDialogProps) {
   ]);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
+  const viewportOnMount = getViewportSize();
+  const defaultSize = getPresetSize('normal', viewportOnMount);
+  const initialLayout = normalizeDialogState(
+    defaultSize,
+    initialPosition(defaultSize, viewportOnMount),
+    viewportOnMount,
+    { enforceTopLeftMargin: true },
+  );
+
+  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
+  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialLayout.size);
+  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialLayout.position);
+
+  const dialogSizeRef = useRef(dialogSize);
+  const dialogPositionRef = useRef(dialogPosition);
+
+  const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
+    dialogSizeRef.current = size;
+    dialogPositionRef.current = position;
+    setDialogSize(size);
+    setDialogPosition(position);
+  }, [setDialogPosition, setDialogSize]);
+
+  useEffect(() => {
+    dialogSizeRef.current = dialogSize;
+  }, [dialogSize]);
+
+  useEffect(() => {
+    dialogPositionRef.current = dialogPosition;
+  }, [dialogPosition]);
+
   const steps = useMemo<TimelineDialogStep[]>(() => [
     {
       id: 'basic',
@@ -59,11 +101,11 @@ export function TimelineDialog(props: TimelineDialogProps) {
 
   const enabledStepIndices = useMemo(() => filledSteps
     .map((_, idx) => (idx === 0 || filledSteps.slice(0, idx).every(Boolean) ? idx : -1))
-    .filter(idx => idx >= 0), [filledSteps]);
+    .filter((idx) => idx >= 0), [filledSteps]);
 
   const validatedStepIndices = useMemo(() => filledSteps
     .map((valid, idx) => (valid ? idx : -1))
-    .filter(idx => idx >= 0), [filledSteps]);
+    .filter((idx) => idx >= 0), [filledSteps]);
 
   const committableStepIndices = useMemo(() => (steps.length ? [steps.length - 1] : []), [steps.length]);
 
@@ -75,10 +117,10 @@ export function TimelineDialog(props: TimelineDialogProps) {
         setActiveStepIndex(event.targetIndex);
         break;
       case 'next':
-        setActiveStepIndex(prev => Math.min(prev + 1, steps.length - 1));
+        setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
         break;
       case 'back':
-        setActiveStepIndex(prev => Math.max(prev - 1, 0));
+        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
         break;
     }
   }, [steps.length]);
@@ -88,7 +130,7 @@ export function TimelineDialog(props: TimelineDialogProps) {
   }, [props]);
 
   const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
-    steps.map(step => ({ id: step.id, label: step.label, component: () => null }))
+    steps.map((step) => ({ id: step.id, label: step.label, component: () => null }))
   ), [steps]);
 
   const renderHeader = useCallback((propsHeader: HeadlessHeaderRenderProps<any>) => (
@@ -120,6 +162,131 @@ export function TimelineDialog(props: TimelineDialogProps) {
     );
   }, [filledSteps]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let rafId: number | null = null;
+
+    const normalize = () => {
+      rafId = null;
+      const viewport = getViewportSize();
+      let targetSize = dialogSizeRef.current;
+      let targetPosition = dialogPositionRef.current;
+      let options = {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      };
+
+      if (displayMode === 'full-screen') {
+        targetSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        targetPosition = { x: 0, y: 0 };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: 0,
+          clampSizeToViewport: false,
+        };
+      } else if (displayMode === 'maximize') {
+        targetSize = getPresetSize('maximize', viewport);
+        targetPosition = { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          clampSizeToViewport: true,
+        };
+      }
+
+      const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
+      if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+    };
+
+    const schedule = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(normalize);
+    };
+
+    window.addEventListener('resize', schedule, { passive: true });
+    schedule();
+
+    return () => {
+      window.removeEventListener('resize', schedule);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [applyNormalizedState, displayMode]);
+
+  const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
+    const viewport = getViewportSize();
+
+    if (mode === 'full-screen') {
+      const size: MultiDialogSize = {
+        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      };
+      applyNormalizedState(size, { x: 0, y: 0 });
+    } else if (mode === 'maximize') {
+      const preset = getPresetSize('maximize', viewport);
+      const normalized = normalizeDialogState(preset, {
+        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+      }, viewport, {
+        enforceTopLeftMargin: false,
+        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      applyNormalizedState(normalized.size, normalized.position);
+    } else {
+      const preset = getPresetSize('normal', viewport);
+      const normalized = normalizeDialogState(preset, initialPosition(preset, viewport), viewport, {
+        enforceTopLeftMargin: true,
+      });
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+
+    setDisplayMode(mode);
+  }, [applyNormalizedState, setDisplayMode]);
+
+  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
+    if (!next) return;
+    const normalized = normalizeDialogState(
+      next,
+      dialogPositionRef.current,
+      getViewportSize(),
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+  }, [applyNormalizedState, displayMode]);
+
+  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
+    if (!next) return;
+    const normalized = normalizeDialogState(
+      dialogSizeRef.current,
+      next,
+      getViewportSize(),
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+  }, [applyNormalizedState, displayMode]);
+
   const headlessProps: HeadlessMultiStepDialogProps<any> = {
     open: props.open,
     stepComponents: stepDescriptors,
@@ -134,13 +301,37 @@ export function TimelineDialog(props: TimelineDialogProps) {
     onRequestClose: () => props.onClose(),
     onRequestCommit: handleCommit,
     isDirty: true,
+    position: dialogPosition,
+    onPositionChange: handlePositionChange,
+    size: dialogSize,
+    onSizeChange: handleSizeChange,
+    displayMode,
+    onDisplayModeChange: (mode) => { transitionDisplayMode(mode); },
     renderHeader,
     renderContent,
     renderFooter,
   };
 
+  const frameStyle = useMemo((): CSSProperties => {
+    const fullScreen = displayMode === 'full-screen';
+    return {
+      width: fullScreen ? '100%' : `${dialogSize.width}px`,
+      maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
+      height: fullScreen ? '100%' : `${dialogSize.height}px`,
+      maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
+      display: 'flex',
+      flexDirection: 'column',
+      borderRadius: fullScreen ? 0 : 12,
+      boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
+      overflow: 'hidden',
+      backgroundColor: '#fff',
+    };
+  }, [dialogSize.height, dialogSize.width, displayMode]);
+
   return (
-    <HeadlessMultiStepDialog {...headlessProps} />
+    <div style={frameStyle} role="dialog" aria-modal={props.open}>
+      <HeadlessMultiStepDialog {...headlessProps} />
+    </div>
   );
 }
 

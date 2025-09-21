@@ -1071,6 +1071,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/ui-dialog':
+        specifier: workspace:*
+        version: link:../../ui/dialog
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util

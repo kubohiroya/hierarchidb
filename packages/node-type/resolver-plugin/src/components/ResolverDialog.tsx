@@ -9,6 +9,13 @@ import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from './steps/PreviewTestStep.js';
 import {
   HeadlessMultiStepDialog,
+  FRAME_CONSTANTS,
+  getViewportSize,
+  getPresetSize,
+  normalizeDialogState,
+  initialPosition,
+  sizesEqual,
+  positionsEqual,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
   type HeadlessContentRenderProps,
@@ -17,6 +24,8 @@ import {
   type StepComponentDescriptor,
   type StepComponentProps,
   type DialogDisplayMode,
+  type MultiDialogSize,
+  type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 
@@ -61,7 +70,36 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const viewportOnMount = getViewportSize();
+  const defaultSize = getPresetSize('normal', viewportOnMount);
+  const initialLayout = normalizeDialogState(
+    defaultSize,
+    initialPosition(defaultSize, viewportOnMount),
+    viewportOnMount,
+    { enforceTopLeftMargin: true },
+  );
+
   const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
+  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialLayout.size);
+  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialLayout.position);
+
+  const dialogSizeRef = useRef(dialogSize);
+  const dialogPositionRef = useRef(dialogPosition);
+
+  const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
+    dialogSizeRef.current = size;
+    dialogPositionRef.current = position;
+    setDialogSize(size);
+    setDialogPosition(position);
+  }, [setDialogPosition, setDialogSize]);
+
+  useEffect(() => {
+    dialogSizeRef.current = dialogSize;
+  }, [dialogSize]);
+
+  useEffect(() => {
+    dialogPositionRef.current = dialogPosition;
+  }, [dialogPosition]);
 
   useEffect(() => {
     if (!open) {
@@ -297,6 +335,131 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
 
   const invalidMessageMap = useMemo<Record<string, string>>(() => ({}), []);
 
+  const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
+    const viewport = getViewportSize();
+
+    if (mode === 'full-screen') {
+      const size: MultiDialogSize = {
+        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      };
+      applyNormalizedState(size, { x: 0, y: 0 });
+    } else if (mode === 'maximize') {
+      const preset = getPresetSize('maximize', viewport);
+      const normalized = normalizeDialogState(preset, {
+        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+      }, viewport, {
+        enforceTopLeftMargin: false,
+        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      });
+      applyNormalizedState(normalized.size, normalized.position);
+    } else {
+      const preset = getPresetSize('normal', viewport);
+      const normalized = normalizeDialogState(preset, initialPosition(preset, viewport), viewport, {
+        enforceTopLeftMargin: true,
+      });
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+
+    setDisplayModeState(mode);
+  }, [applyNormalizedState, setDisplayModeState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let rafId: number | null = null;
+
+    const normalize = () => {
+      rafId = null;
+      const viewport = getViewportSize();
+      let targetSize = dialogSizeRef.current;
+      let targetPosition = dialogPositionRef.current;
+      let options = {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      };
+
+      if (displayMode === 'full-screen') {
+        targetSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        targetPosition = { x: 0, y: 0 };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: 0,
+          clampSizeToViewport: false,
+        };
+      } else if (displayMode === 'maximize') {
+        targetSize = getPresetSize('maximize', viewport);
+        targetPosition = { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          clampSizeToViewport: true,
+        };
+      }
+
+      const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
+      if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+    };
+
+    const schedule = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(normalize);
+    };
+
+    window.addEventListener('resize', schedule, { passive: true });
+    schedule();
+
+    return () => {
+      window.removeEventListener('resize', schedule);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [applyNormalizedState, displayMode]);
+
+  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
+    if (!next) return;
+    const normalized = normalizeDialogState(
+      next,
+      dialogPositionRef.current,
+      getViewportSize(),
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+  }, [applyNormalizedState, displayMode]);
+
+  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
+    if (!next) return;
+    const normalized = normalizeDialogState(
+      dialogSizeRef.current,
+      next,
+      getViewportSize(),
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
+      applyNormalizedState(normalized.size, normalized.position);
+    }
+  }, [applyNormalizedState, displayMode]);
+
   const initialSnapshot = initialWorkingCopy.current;
   const isDirty = useMemo(() => {
     if (!initialSnapshot) return true;
@@ -330,15 +493,35 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     onRequestClose: handleClose,
     onRequestCommit: handleCommit,
     isDirty,
+    position: dialogPosition,
+    onPositionChange: handlePositionChange,
+    size: dialogSize,
+    onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: setDisplayModeState,
+    onDisplayModeChange: (mode) => { transitionDisplayMode(mode); },
     renderHeader,
     renderContent,
     renderFooter,
   };
 
+  const fullScreen = displayMode === 'full-screen';
+  const frameStyle: React.CSSProperties = {
+    width: fullScreen ? '100%' : `${dialogSize.width}px`,
+    maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
+    height: fullScreen ? '100%' : `${dialogSize.height}px`,
+    maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
+    display: 'flex',
+    flexDirection: 'column',
+    borderRadius: fullScreen ? 0 : 12,
+    boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  };
+
   return (
-    <HeadlessMultiStepDialog<Partial<ResolverWorkingCopyEntity>> {...headlessProps} />
+    <div style={frameStyle} role="dialog" aria-modal={open}>
+      <HeadlessMultiStepDialog<Partial<ResolverWorkingCopyEntity>> {...headlessProps} />
+    </div>
   );
 };
 

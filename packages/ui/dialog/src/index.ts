@@ -11,3 +11,4 @@ export * from './headless/MultiStepDialogFooter.js';
 export * from './headless/types.js';
 export * from './headless/context.js';
 export * from './headless/hooks.js';
+export * from './headless/frameLegacy.js';

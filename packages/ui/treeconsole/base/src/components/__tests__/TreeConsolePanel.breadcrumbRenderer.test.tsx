@@ -1,0 +1,110 @@
+import { describe, expect, it, afterEach, vi } from 'vitest';
+import type { TreeConsolePanelBreadcrumbRendererProps, TreeConsolePanelProps } from '../TreeConsolePanel.js';
+import { TreeConsolePanel } from '../TreeConsolePanel.js';
+import { cleanup, render, screen } from '@testing-library/react';
+import React = require('react');
+import type { TreeNodeData } from '../../types/index.js';
+import type { TreeTableColumn } from '../TreeTable/index.js';
+
+vi.mock('react-router-dom', () => ({
+  Link: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+const breadcrumbModule = vi.hoisted(() => ({
+  TreeConsoleBreadcrumb: vi.fn(() => React.createElement('div', { 'data-testid': 'default-breadcrumb' })),
+}));
+
+vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => breadcrumbModule);
+
+vi.mock('@hierarchidb/ui-treeconsole-treetable', () => ({
+  TreeTableCore: () => React.createElement('div', { 'data-testid': 'tree-table-core' }),
+}));
+
+const noop = () => {};
+const stringNoop = (_value: string) => {};
+const viewModeNoop = (_mode: 'list' | 'grid') => {};
+const contextMenuNoop = (_action: string, _node: TreeNodeData) => {};
+
+const baseColumns: TreeTableColumn[] = [
+  { id: 'name', label: 'Name', width: 120 },
+];
+
+function buildProps(overrides: Partial<TreeConsolePanelProps> = {}): TreeConsolePanelProps {
+  return {
+    treeId: 'r',
+    title: 'Test',
+    pageNodeId: 'root',
+    data: [],
+    columns: baseColumns,
+    breadcrumbItems: [],
+    loading: false,
+    error: undefined,
+    selectedIds: [],
+    expandedIds: [],
+    searchTerm: '',
+    sortBy: 'name',
+    sortDirection: 'asc',
+    filterBy: '',
+    availableFilters: [],
+    viewMode: 'list',
+    canCreate: true,
+    canEdit: true,
+    canDelete: true,
+    onNodeClick: noop,
+    onNodeSelect: noop,
+    onNodeExpand: noop,
+    onSearchChange: noop,
+    onSearchClear: noop,
+    onCreate: noop,
+    onEdit: noop,
+    onDelete: noop,
+    onRefresh: noop,
+    onExpandAll: noop,
+    onCollapseAll: noop,
+    onSort: stringNoop,
+    onFilterChange: stringNoop,
+    onViewModeChange: viewModeNoop,
+    onBreadcrumbNavigate: stringNoop,
+    onNavigateBack: noop,
+    onNavigateForward: noop,
+    canGoBack: false,
+    canGoForward: false,
+    onContextMenuAction: contextMenuNoop,
+    onStartTour: noop,
+    onMoveNodes: undefined,
+    breadcrumbRenderer: undefined,
+    renderBuiltInSpeedDial: false,
+    hideDragHandler: false,
+    ...overrides,
+  } satisfies TreeConsolePanelProps;
+}
+
+describe('TreeConsolePanel breadcrumbRenderer', () => {
+  afterEach(() => {
+    cleanup();
+    breadcrumbModule.TreeConsoleBreadcrumb.mockClear();
+  });
+
+  it('invokes the custom renderer with default props and allows fallback rendering', () => {
+    const items = [{ id: 'trash', name: 'Trash' }];
+    let capturedDefaultProps: TreeConsolePanelBreadcrumbRendererProps['defaultRendererProps'] | undefined;
+    const renderer = vi.fn((params: TreeConsolePanelBreadcrumbRendererProps) => {
+      capturedDefaultProps = params.defaultRendererProps;
+      const fallback = params.defaultRenderer();
+      expect(React.isValidElement(fallback)).toBe(true);
+      return React.createElement('div', { 'data-testid': 'custom-breadcrumb' });
+    });
+
+    const props = buildProps({
+      breadcrumbItems: items,
+      breadcrumbRenderer: renderer as TreeConsolePanelProps['breadcrumbRenderer'],
+    });
+
+    render(<TreeConsolePanel {...props} />);
+
+    expect(renderer).toHaveBeenCalledTimes(1);
+    expect(renderer.mock.calls[0]?.[0]?.items).toEqual(items);
+    expect(screen.getByTestId('custom-breadcrumb')).toBeInTheDocument();
+    expect(capturedDefaultProps?.nodePath).toEqual(items);
+  });
+});

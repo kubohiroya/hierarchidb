@@ -8,6 +8,7 @@ import {
   useRef,
   cloneElement,
 } from 'react';
+import { proxy as comlinkProxy } from 'comlink';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -58,7 +59,8 @@ import {
   type TreeTableColumn,
 } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
+import type { TreeSubscriptionAPI } from '@hierarchidb/common-api';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
@@ -732,16 +734,6 @@ function TrashDialogContent({
       data-dialog-cancel-drag="true"
       sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0, mt: 1 }}
     >
-      <Box data-dialog-cancel-drag="true" sx={{ px: 2, pt: 0, pb: 1 }}>
-        <TrashBreadcrumb
-          nodePath={breadcrumbItems}
-          treeId={treeId}
-          pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
-          variant="default"
-          onNodeClick={() => undefined}
-          trashAction={mode}
-        />
-      </Box>
       <Box
         data-dialog-cancel-drag="true"
         sx={{
@@ -771,7 +763,7 @@ function TrashDialogContent({
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           data={filteredTreeData}
           columns={columns}
-          breadcrumbItems={[]}
+          breadcrumbItems={breadcrumbItems}
           loading={false}
           selectedIds={selectedIds.map(String)}
           expandedIds={expandedIds}
@@ -782,6 +774,9 @@ function TrashDialogContent({
           useTrashColumns
           trashAction={mode}
           hideDragHandler
+          breadcrumbRenderer={({ defaultRendererProps }) => (
+            <TrashBreadcrumb {...defaultRendererProps} />
+          )}
           onNodeClick={() => undefined}
           onNodeSelect={(nodeIds: string[], selected: boolean) => {
             const branded = nodeIds.map((id) => id as NodeId);
@@ -1351,6 +1346,7 @@ export default function TrashDialog() {
   }, [data.trashItems, navigate, treeId]);
 
   const displayNodes = data.trashDisplayItems ?? data.trashItems ?? [];
+  const trashRootNodeId = data.trashRootNode?.id as NodeId | undefined;
 
   const initialNodeMap = useMemo(() => {
     const map = new Map<string, TreeNode>();
@@ -1376,9 +1372,88 @@ export default function TrashDialog() {
 
   const [nodeMap, setNodeMap] = useState<Map<string, TreeNode>>(initialNodeMap);
 
+  const refreshTimerRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
+
   useEffect(() => {
     setNodeMap(initialNodeMap);
   }, [initialNodeMap]);
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (refreshTimerRef.current !== null) {
+      window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
+  const refreshTrashTree = useCallback(async () => {
+    if (!trashRootNodeId || !treeId || !data.trashRootNode) return;
+    const trashRootIdValue = trashRootNodeId;
+    try {
+      const client = await WorkerAPIClient.getSingleton();
+      const queryAPI = await client.getQueryAPI();
+      const PREFETCH_DEPTH = 8;
+      const [rootNode, descendants] = await Promise.all([
+        queryAPI.getNode(trashRootIdValue),
+        queryAPI.listChildren(trashRootIdValue, { prefetch: { depth: PREFETCH_DEPTH } }),
+      ]);
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      const nextMap = new Map<string, TreeNode>();
+      if (rootNode) {
+        nextMap.set(String(rootNode.id), rootNode);
+      } else {
+        nextMap.set(String(data.trashRootNode.id), data.trashRootNode);
+      }
+      descendants.forEach((node) => {
+        nextMap.set(String(node.id), node);
+      });
+
+      const holderInfos = new Map<string, { holderId: NodeId; holderName?: string }>();
+      descendants.forEach((node) => {
+        const parentId = node.parentId ? String(node.parentId) : undefined;
+        if (parentId && parentId === String(trashRootIdValue)) {
+          holderInfos.set(String(node.id), { holderId: node.id as NodeId, holderName: node.name });
+        }
+      });
+
+      const nextLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
+      descendants.forEach((node) => {
+        const parentId = node.parentId ? String(node.parentId) : undefined;
+        if (!parentId) return;
+        const holder = holderInfos.get(parentId);
+        if (holder) {
+          nextLookup[String(node.id)] = {
+            holderId: holder.holderId,
+            holderName: holder.holderName,
+          };
+        }
+      });
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setNodeMap(nextMap);
+      setHolderLookupState(nextLookup);
+    } catch (error) {
+      console.warn('[TrashDialog] failed to refresh trash data', error);
+    }
+  }, [data.trashRootNode, trashRootNodeId, treeId]);
+
+  const scheduleTrashRefresh = useCallback(() => {
+    if (refreshTimerRef.current !== null) {
+      return;
+    }
+    refreshTimerRef.current = window.setTimeout(() => {
+      refreshTimerRef.current = null;
+      void refreshTrashTree();
+    }, 120);
+  }, [refreshTrashTree]);
 
   const [treeData, setTreeData] = useState<TreeNodeData[]>(() => {
     if (!data.trashRootNode || !treeId) return [];
@@ -1468,6 +1543,55 @@ export default function TrashDialog() {
       }
     })();
   }, [treeData]);
+
+  useEffect(() => {
+    const rootNode = data.trashRootNode;
+    if (!treeId || !rootNode) {
+      return;
+    }
+
+    let cancelled = false;
+    let currentSubId: SubscriptionId | null = null;
+    let subscriptionAPI: TreeSubscriptionAPI | null = null;
+
+    const setup = async () => {
+      try {
+        const client = await WorkerAPIClient.getSingleton();
+        subscriptionAPI = await client.getSubscriptionAPI();
+        const callback = comlinkProxy((_event: unknown) => {
+          if (cancelled) return;
+          scheduleTrashRefresh();
+        });
+        currentSubId = await subscriptionAPI.subscribeSubtree(
+          rootNode.id as NodeId,
+          callback as (event: any) => void,
+          { prefetch: { depth: 8 } },
+        );
+        if (!cancelled) {
+          await refreshTrashTree();
+        }
+      } catch (error) {
+        console.warn('[TrashDialog] failed to subscribe trash subtree', error);
+      }
+    };
+
+    void setup();
+
+    return () => {
+      cancelled = true;
+      if (currentSubId) {
+        void (async () => {
+          try {
+            const client = await WorkerAPIClient.getSingleton();
+            const api = subscriptionAPI ?? (await client.getSubscriptionAPI());
+            await api.unsubscribe(currentSubId);
+          } catch (error) {
+            console.warn('[TrashDialog] failed to unsubscribe trash subtree', error);
+          }
+        })();
+      }
+    };
+  }, [data.trashRootNode, refreshTrashTree, scheduleTrashRefresh, trashRootNodeId, treeId]);
 
   const dialogContextName = data.trashRootNode?.name ?? (effectiveTrashNodeId ? String(effectiveTrashNodeId) : data.tree?.name ?? '');
   const breadcrumbItems = useMemo<BreadcrumbNode[]>(() => {
