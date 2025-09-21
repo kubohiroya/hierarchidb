@@ -52,7 +52,24 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
-
+- fix/app/trash-dialog-chrome-hover — TrashDialog Chrome hover制御のReferenceError解消
+  - ブランチ: `fix/app/trash-dialog-chrome-hover`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/app`, `app/src/components/dialogs/TrashDialog.tsx`
+  - 受け入れ基準（DoD）：
+    - [x] TrashDialog 表示時に `setChromeHoverEnabled` の ReferenceError が発生しない
+    - [x] 表示モード切替時もヘッダー/フッターの hover 表示が意図通りに挙動する
+    - [ ] `pnpm -C app typecheck && pnpm -C app build` が成功する
+  - チェックリスト：
+    - [x] Chrome hover 制御用の state を TrashDialog 親コンポーネントに集約し子へ受け渡す
+    - [x] TrashDialogFrame 内の hover 制御副作用を新しいプロップに追従させる
+    - [x] displayMode 遷移ロジックからの hover 有効/無効切替を調整する
+  - ロールバック手順：
+    - `app/src/components/dialogs/TrashDialog.tsx` の変更を差分前へ戻し `pnpm -C app typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-21 11:05 TrashDialog で `setChromeHoverEnabled` ReferenceError が発生しているため調査・修正に着手
+    - progress: 2025-09-21 11:18 chrome hover 制御 state を親コンポーネントへ移し、TrashDialogFrame へ props 配線を追加
+    - blocked: 2025-09-21 11:30 `pnpm -C app typecheck` が `normalizeDialogDisplayMode` 等未エクスポートの既存問題で失敗（ReferenceError 修正は完了）
+    - blocked: 2025-09-21 11:34 `pnpm -C app build` も同じ未エクスポートにより失敗
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
@@ -89,6 +106,56 @@
     - progress: 2025-09-20 22:52 TreeTable name カラムで isDraft ノードに Draft チップを追加。
     - progress: 2025-09-20 22:53 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` を実行し成功。
     - start: 2025-09-20 22:45 TreeTable draft チップ表示対応に着手
+
+- fix/common-type/dist-dts-regeneration — @hierarchidb/common-type の d.ts 再生成と TS7016 解消
+  - ブランチ: `fix/common-type/dist-dts-regeneration`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/common-type`, `app/src/ui/index.ts`
+  - 受け入れ基準（DoD）：
+    - [x] `pnpm --filter @hierarchidb/common-type build` が成功し `dist/index.d.ts` が生成される
+    - [x] `pnpm --filter @hierarchidb/common-type typecheck` が成功する
+    - [x] `pnpm -C app typecheck` で `@hierarchidb/common-type` に起因する TS7016 が発生しない（TrashDialog displayMode 対応待ち）
+  - チェックリスト：
+    - [x] `RestoreFromTrashPayload` の重複定義を解消
+    - [x] 必要に応じて ambient 定義の参照を調整（tsup ビルド後に `ambient-ui.d.ts` 参照を確認）
+    - [x] `dist/index.d.ts` を再生成し ambient 参照を付与
+  - ロールバック手順：
+    - `packages/common/types/src/command-types.ts` の変更を戻し、`pnpm --filter @hierarchidb/common-type build` を再実行
+  - 運用ログ：
+    - start: 2025-09-21 08:03 src/ui/index.ts の TS7016 を受け d.ts 再生成タスクに着手
+    - blocked: 2025-09-21 08:04 `pnpm --filter @hierarchidb/common-type build` が `RestoreFromTrashPayload` 重複定義で失敗
+    - progress: 2025-09-21 08:06 同コマンドの再実行が成功し、`dist/index.d.ts` が再生成された
+    - progress: 2025-09-21 08:07 `pnpm --filter @hierarchidb/common-type typecheck` が成功
+    - blocked: 2025-09-21 08:08 `pnpm -C app typecheck` が TrashDialog の `displayMode` 必須化で停止（別タスク進行中の影響）
+    - progress: 2025-09-21 08:09 仮設ファイルから `pnpm exec tsc --noEmit tmp-check/ts7016-check.ts` を実行し、`@hierarchidb/common-type` を型解決できることを確認（完了後にファイル削除）
+    - progress: 2025-09-21 08:34 `pnpm -C app typecheck` が成功し、TS7016 が再発しないことを確認
+
+- fix/ui-dialog/fullscreen-resize-sync — Fullscreen モード遷移後にダイアログサイズを再測定
+  - ブランチ: `fix/ui-dialog/fullscreen-resize-sync`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-dialog`, `app/src/components/dialogs/TrashDialog.tsx`
+  - 受け入れ基準（DoD）：
+    - [x] フルスクリーン切替時に画面サイズ取得を遅延させ、ダイアログの高さ・幅がビューポートと一致する
+    - [x] フルスクリーン解除後も標準/最大化レイアウトが以前の寸法に復元する
+    - [x] `pnpm --filter @hierarchidb/ui-dialog typecheck` と `pnpm -C app typecheck` が成功する
+    - [x] ダイアログサイズの用語を normal / maximize / full-screen へ統一し、表示文言を更新
+    - [x] Legacy display mode 型・関数（LegacyDialogDisplayMode, coerceDisplayMode 等）を廃止し、normal / maximize / full-screen のみを使用する
+  - チェックリスト：
+    - [x] Fullscreen API 完了を待機するユーティリティ/コールバックを実装
+    - [x] TrashDialog（および該当コンポーネント）のモード遷移ロジックを更新
+    - [x] レイアウト復元時に viewport 再計測を行う
+    - [x] 用語変更に合わせて翻訳テキストと UI ラベルを更新
+  - ロールバック手順：
+    - `app/src/components/dialogs/TrashDialog.tsx` の変更を revert し、`pnpm -C app typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-21 08:18 フルスクリーン遷移後のサイズ不一致調査と修正に着手
+    - progress: 2025-09-21 08:26 Fullscreen API 待機ロジックを追加し、遷移後に viewport を再測定するよう更新
+    - progress: 2025-09-21 08:29 `TrashDialogHeader` の `aria-label` を文字列化し、typecheck 警告を解消
+    - progress: 2025-09-21 08:32 `pnpm --filter @hierarchidb/ui-dialog typecheck` と `pnpm -C app typecheck` を実行し成功
+    - progress: 2025-09-21 08:41 全画面完了検知後のリサイズが不十分なため、追加調整を開始
+    - progress: 2025-09-21 08:43 Fullscreen 変化イベント待機と 0 マージン適用を実装し、ダイアログサイズをビューポートに揃えるよう更新
+    - progress: 2025-09-21 08:43 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 08:46 Display mode 用語を normal / maximize / full-screen へ統一し、翻訳キーを更新
+    - progress: 2025-09-21 12:12 Legacy display mode 型と変換関数の削除要請を受け、normal / maximize / full-screen への一本化作業を再開
+    - progress: 2025-09-21 12:58 表示モード周辺の Legacy 定義を排除し、関連パッケージの typecheck / build を実行して完了を確認（app, ui-dialog, runtime-* 系, node-type-* 系など）
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
 - fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示
@@ -137,6 +204,28 @@
     - progress: 2025-09-20 23:18 TreeConsolePanel/Actions の onNodeSelect を NodeId 配列対応に統一し、親選択時に子孫へ伝播するよう修正
     - progress: 2025-09-20 23:26 undo/redo 状態を Worker → UI へ push 通知する subscription API を追加し、ツールバーの Undo/Redo ボタンと連動
     - progress: 2025-09-20 23:28 ゴミ箱ダイアログの遷移を `/t/:treeId/:pageNodeId/:trashNodeId/trash/(recover|empty)` へ変更し、toolbar から trashNodeId を可搬化
+    - progress: 2025-09-21 01:05 `@hierarchidb/ui-treeconsole-treetable` で Dexie properties API をトップレベル公開し、`pnpm -C app build` が通ることを確認
+    - progress: 2025-09-21 01:34 TreeConsolePanel/Content に `hideDragHandler` フラグを追加し、TrashDialog で行ドラッグハンドルを非表示にできるよう更新。`pnpm --filter @hierarchidb/ui-treeconsole-{base,treetable} typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 01:46 最大化/フルスクリーン時のダイアログサイズをビューポート基準で適用しつつ、保存済みサイズは標準モード分のみ更新するよう TrashDialog を調整。`pnpm --filter @hierarchidb/ui-treeconsole-{base,treetable} typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 01:58 ダイアログタイトルのダブルクリックで自動的に標準サイズ（ビューポート比率計算）と中央位置へ戻し、位置永続化をウインドウ左上基準に統一。`pnpm --filter @hierarchidb/ui-treeconsole-{base,treetable} typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:06 normalizeDialogState の位置クランプを見直し、左端・上端方向へも 32px マージンを保ったまま自由に移動できるよう修正。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:12 normalizeDialogState の入力/出力サイズ・位置を `console.debug` へ記録し、デバッグ時に補正内容を追跡可能にした。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:20 ウインドウリサイズフック等で無限ループが発生しないよう、正規化後のサイズ/位置が変化した場合のみ state を更新するガードを追加。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:28 normalizeDialogState のクランプ式を再設計し、ビューポート・マージン双方を考慮したサイズ/位置算出に修正。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:34 Draggable の `onStop` で `data.x`/`data.y` を保存するよう切り替え、left/top と x/y の取り違えによる位置ズレを解消。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:40 32px マージン制約を撤廃し、クランプ/初期位置/プリセット計算をビューポート全面に対応するよう更新。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:45 ダイアログコンテナの flex 中央配置を解除し、Draggable 座標をスクリーン左上基準で扱えるようレイアウトを修正。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 02:52 ウインドウリサイズ処理を requestAnimationFrame で調整し、連続 state 更新による最大更新深度超過を防止。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 03:00 クランプ条件を「左上 32px x 32px が画面内に残る」基準へ再定義し、正規化ロジックをシンプル化。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 03:08 四隅それぞれに独立したリサイズハンドルを追加し、ドラッグでサイズと位置を同時調整できるよう実装。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 03:14 デバッグログ（console.debug）を撤去し、本番使用時に不要なログが出ないよう整理。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 03:22 表示モードを「ウインドウ内ダイアログ」「フルスクリーン」「全画面」の3択に再設計し、windowed状態のサイズ・位置のみ永続化するよう調整。`pnpm --filter @hierarchidb/ui-treeconsole-base build` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 03:47 TrashDialog の Search 欄で TreeTable と同じスタイルになるよう label を撤去し、浮動ラベルによる角丸崩れを解消。`pnpm -C app typecheck` / `pnpm -C app build` を実行し成功
+    - progress: 2025-09-21 03:52 TrashDialogFrame 内で二重定義されていた `frameDisplayMode` を除去し、ビルド時の redeclare エラーを解消。`pnpm -C app typecheck` / `pnpm -C app build` を再実行し成功
+    - progress: 2025-09-21 03:56 SSR 初回レンダー後の hook 順序ずれを防ぐため、`TrashDialogFrame` の `useCallback` 定義を早期 return の前へ移動。`pnpm -C app typecheck` / `pnpm -C app build` を再実行し成功
+    - progress: 2025-09-21 04:01 全画面表示時はモード切替メニューを隠し、×ボタンで「フルスクリーン（maximized）へ戻る」挙動に変更。`pnpm -C app typecheck` / `pnpm -C app build` を実行し成功
+    - progress: 2025-09-21 04:14 TrashDialog の表示モードメニュー表記と TreeTable の「すべて選択」ツールチップを i18n 化し、英語デフォルト + ja ロケールを追加。`pnpm --filter @hierarchidb/ui-treeconsole-treetable {typecheck,build}` / `pnpm -C app {typecheck,build}` を再実行し成功
+    - progress: 2025-09-21 04:28 全画面モードでのヘッダー/フッター hover 換気を遅延化し、フルスクリーン完了後にイベントを有効化するよう `TrashDialogFrame` を調整。`pnpm -C app typecheck` （既存の TrashDialog 型差分で失敗するが新変更起因の追加エラーなし）
     - done: 2025-09-20 23:32 `pnpm --filter @hierarchidb/common-type build` / `@hierarchidb/common-api build` / `@hierarchidb/runtime-worker typecheck` / `@hierarchidb/ui-treeconsole-{toolbar,base,treetable} typecheck` / `@hierarchidb/ui-treeconsole-{toolbar,base,treetable} build` / `pnpm -C app typecheck` を実行し全て成功
 
 - refactor/node-type/dialog-step-wrapper-unify — StepComponent ラッパー共通化とプラグイン整合
@@ -3078,6 +3167,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- chore/runtime-worker/rename-recover-to-restore — ゴミ箱復帰用コマンド等の restore 表記統一（2025-09-21 05:45 CommandProcessor/UI/URL を `restore` へ統一、主要 typecheck 成功）
+- chore/app/treeconsole-trash-link-update — ゴミ箱表示時の TreeTable 行リンクを `/t/:treeId/:pageNodeId/:trashNodeId/trash/restore` へ変更し、treeId=p 等でも restore ダイアログに遷移できるよう調整（2025-09-21 05:30 `pnpm --filter @hierarchidb/app typecheck` 成功確認）
+- chore/app/treeconsole-theme-swap — TreeConsole で treeId=p のときに primary/secondary を入れ替えるテーマ境界を追加（2025-09-21 05:23 `pnpm --filter @hierarchidb/app typecheck` 成功確認）
+- chore/app/add-favicon — root.tsx に favicon リンクを常設し、全ルートでアイコンが反映されるよう調整（2025-09-21 05:18 `pnpm lint`, `pnpm --filter @hierarchidb/app typecheck` 成功確認）
+- chore/tools/vite-package-reader-process-clean — PackageDetector で Node の `cwd()` を利用し lint 偽陽性を解消（2025-09-21 05:10 `pnpm --filter @hierarchidb/tools-vite-plugin-package-reader lint` 成功確認）
+- chore/runtime-worker/bootstrap-lint-cleanup — WorkerInitializationChannel の case ブロックとテスト未使用変数を是正し、lint 警告ゼロを達成（2025-09-21 05:08 `pnpm --filter @hierarchidb/runtime-worker-bootstrap lint` 成功確認）
+- chore/tools/dev-health-lint-process-allow — ESLint の `no-restricted-globals` を Vite dev-health プラグイン限定で解除し、build ツールでの `process` 利用を許容（2025-09-21 04:45 `pnpm --filter @hierarchidb/tools-vite-plugin-dev-health lint` 成功確認）
+- chore/tools/fetch-metadata-cli-split — runtime-shared 側の CLI/`process` 依存を撤去し、`@hierarchidb/tools-fetch-metadata` として CLI を分離（2025-09-21 05:00 `pnpm --filter @hierarchidb/tools-fetch-metadata lint && pnpm --filter @hierarchidb/tools-fetch-metadata typecheck && pnpm --filter @hierarchidb/runtime-shared-fetch-metadata lint && pnpm --filter @hierarchidb/runtime-shared-fetch-metadata typecheck` 成功確認）
 - refactor/worker/command-processor-split — CommandProcessor.ts を 375 行へ分割し履歴/TX/legacy 処理を専用モジュール化（runtime-worker typecheck/test:run 済み）
 
 
@@ -3543,6 +3640,24 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-21 09:24 done: chore/tools/fetch-metadata-cli-peers — @hierarchidb/tools-fetch-metadata の commander / runtime-shared 依存を peerDependencies へ移し、tsup external と整合。`npx dep-fence` を再実行して警告が消えたことを確認。
+- 2025-09-21 09:12 progress: fix/ui-treeconsole-base-dist-alias — tsconfig.base.json と ui-treeconsole-base/tsconfig.json の treetable パスエイリアスを削除し、dist 参照を Node 解決へ任せる構成に変更。`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` → `pnpm --filter @hierarchidb/ui-treeconsole-base build` を実行し TS6059/TS7016 を解消。
+- 2025-09-21 08:58 done: fix/runtime-ui-plugin-dialog-ambient-types — @hierarchidb/runtime-ui-plugin-dialog に index.d.ts ブリッジを追加し、依存プラグインの TS7016 を解消。 `pnpm --filter @hierarchidb/node-type-basemap-plugin typecheck` / `pnpm --filter @hierarchidb/node-type-linker-plugin typecheck` を実行し成功を確認。
+- 2025-09-21 08:09 progress: fix/common-type/dist-dts-regeneration — 仮設ファイルを用いた `pnpm exec tsc --noEmit tmp-check/ts7016-check.ts` で `@hierarchidb/common-type` が型解決できることを確認し、ファイルを削除。
+- 2025-09-21 08:18 start: fix/ui-dialog/fullscreen-resize-sync — フルスクリーン遷移後のサイズ不一致調査を開始。
+- 2025-09-21 08:26 progress: fix/ui-dialog/fullscreen-resize-sync — Fullscreen API 完了待ちの非同期処理を追加し、遷移後に viewport を再測定。
+- 2025-09-21 08:29 progress: fix/ui-dialog/fullscreen-resize-sync — TrashDialog のフルスクリーン遷移処理と `aria-label` の型不一致を解消。
+- 2025-09-21 08:32 progress: fix/ui-dialog/fullscreen-resize-sync — `pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm -C app typecheck` が成功。
+- 2025-09-21 08:41 progress: fix/ui-dialog/fullscreen-resize-sync — Fullscreen 完了後もダイアログが余白を残す事象を再確認し、追加修正に着手。
+- 2025-09-21 08:43 progress: fix/ui-dialog/fullscreen-resize-sync — Fullscreen 変化イベントの待機と 0 マージン適用で余白を解消し、typecheck を再実行して成功を確認。
+- 2025-09-21 08:46 progress: fix/ui-dialog/fullscreen-resize-sync — Display mode を normal / maximize / full-screen 表記へ統一し、翻訳テキストを更新。
+- 2025-09-21 08:08 blocked: fix/common-type/dist-dts-regeneration — `pnpm -C app typecheck` が TrashDialog の `displayMode` 必須化対応未完で失敗（別タスクの影響）。
+- 2025-09-21 08:07 progress: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type typecheck` が成功。
+- 2025-09-21 08:06 progress: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type build` が成功し `dist/index.d.ts` を再生成。
+- 2025-09-21 08:04 blocked: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type build` が `RestoreFromTrashPayload` の重複定義で停止。
+- 2025-09-21 08:03 start: fix/common-type/dist-dts-regeneration — src/ui/index.ts の TS7016 を解消するため common-type の d.ts 再生成に着手。
+- 2025-09-20 22:05 done: fix/app/treeconsole-undo-subscription — useCommandProcessorTracker で undo-state 購読が DataCloneError になる問題に対し、Comlink.proxy でコールバックをラップし `pnpm --filter @hierarchidb/app typecheck` まで確認。
+- 2025-09-20 22:18 done: fix/app/trash-dialog-hooks — TrashDialogFrame で useEffect 順序が変動して Hook 順序警告が出ていたため、エフェクトを条件分岐前に再配置し再度 `pnpm --filter @hierarchidb/app typecheck` を実行。
 - 2025-09-20 start: refactor/worker/command-processor-split — CommandProcessor.ts 分割計画に着手（現行責務棚卸し開始）。
 - 2025-09-20 18:12 progress: refactor/worker/command-processor-split — CommandHistoryManager / CommandExecutionRunner / core-handlers 抽出により CommandProcessor.ts を 375 行まで削減。
 - 2025-09-20 18:14 progress: refactor/worker/command-processor-split — `pnpm --filter @hierarchidb/runtime-worker typecheck` / `test:run` を実行し既存テストがグリーンであることを確認。

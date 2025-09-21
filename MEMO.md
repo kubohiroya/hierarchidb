@@ -9,7 +9,7 @@
   - TrashDialog は独自に表示モード保存・復元を実装。他のプラグインダイアログ（MultiStepDialog 非使用のもの）は未対応。
 - 仕上げ提案
   - MultiStepDialog を「制御可能」に：props 変更（`fullScreen`/`maximized` あるいは displayMode）を監視し、内部 state を追従。
-  - 表示モード API の一本化：`displayMode: 'standard' | 'maximized' | 'fullscreen'` を追加し、`fullScreen`/`maximized` を内部概念に。`onDisplayModeChange` で外部と同期。
+  - 表示モード API の一本化：`displayMode: 'normal' | 'maximize' | 'full-screen'` を追加し、`fullScreen`/`maximized` を内部概念に。`onDisplayModeChange` で外部と同期。
   - ほかのプラグインダイアログ（Route/Resolver 等）にも NodeId/ContextId 単位の保存・復元を横展開。
 
 ## TreeConsole 列幅の永続化と削除
