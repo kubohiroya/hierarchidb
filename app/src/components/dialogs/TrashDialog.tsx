@@ -57,6 +57,7 @@ import {
   type TreeNodeData,
   type TreeTableColumn,
 } from '@hierarchidb/ui-treeconsole-base';
+import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 
 // ----------------------------------------
@@ -607,7 +608,7 @@ interface TrashDialogContentProps {
   titleSuffix: string;
   treeData: TreeNodeData[];
   columns: TreeTableColumn[];
-  breadcrumbItems: { id: NodeId; name: string; nodeType: string }[];
+  breadcrumbItems: BreadcrumbNode[];
   selectedIds: NodeId[];
   setSelectedIds: (updater: (prev: NodeId[]) => NodeId[]) => void;
   treeId?: string;
@@ -1281,9 +1282,27 @@ export default function TrashDialog() {
   }, [treeData, searchTerm, data.holderLookup]);
 
   const dialogContextName = data.trashRootNode?.name ?? (effectiveTrashNodeId ? String(effectiveTrashNodeId) : data.tree?.name ?? '');
-  const breadcrumbItems = data.trashRootNode
-    ? [{ id: data.trashRootNode.id, name: data.trashRootNode.name ?? 'Trash', nodeType: data.trashRootNode.nodeType ?? 'trash' }]
-    : [];
+  const breadcrumbItems = useMemo<BreadcrumbNode[]>(() => {
+    if (!data.trashRootNode || !treeId) return [];
+    const root = data.trashRootNode;
+    const rootId = String(root.id);
+    const lookup = data.holderLookup?.[rootId];
+    const fallbackParent = effectiveTrashNodeId ? String(effectiveTrashNodeId) : `${treeId}:root`;
+    const holderMetaParentId = lookup?.holderId ? String(lookup.holderId) : fallbackParent;
+
+    return [
+      {
+        id: rootId,
+        name: root.name ?? 'Trash',
+        nodeType: root.nodeType ?? 'trash',
+        parentId: holderMetaParentId,
+        holderType: 'trash',
+        holderTargetId: (root as { holderTargetId?: NodeId }).holderTargetId ? String((root as { holderTargetId?: NodeId }).holderTargetId) : rootId,
+        holderMetaParentId,
+        isClickable: true,
+      },
+    ];
+  }, [data.trashRootNode, data.holderLookup, effectiveTrashNodeId, treeId]);
 
   const columns: TreeTableColumn[] = useMemo(() => [
     {
