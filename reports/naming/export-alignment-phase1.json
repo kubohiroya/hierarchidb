@@ -11084,7 +11084,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/base-plugin/src/handlers/BaseEntityHandler.ts",
+      "filePath": "packages/plugins/base-plugin/src/handlers/BaseEntityHandler.ts",
       "baseName": "BaseEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -11109,7 +11109,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/base-plugin/src/handlers/HierarchicalEntityHandler.ts",
+      "filePath": "packages/plugins/base-plugin/src/handlers/HierarchicalEntityHandler.ts",
       "baseName": "HierarchicalEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -11167,7 +11167,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/base-plugin/src/types.ts",
+      "filePath": "packages/plugins/base-plugin/src/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -11223,7 +11223,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/base-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/base-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -11246,7 +11246,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/base-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/base-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -11269,7 +11269,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/base-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/base-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -11280,7 +11280,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/components/BaseMapDisplay.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/components/BaseMapDisplay.tsx",
       "baseName": "BaseMapDisplay",
       "extension": ".tsx",
       "exports": [
@@ -11327,7 +11327,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/components/BaseMapPanel.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/components/BaseMapPanel.tsx",
       "baseName": "BaseMapPanel",
       "extension": ".tsx",
       "exports": [
@@ -11374,7 +11374,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/components/BaseMapPreview.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/components/BaseMapPreview.tsx",
       "baseName": "BaseMapPreview",
       "extension": ".tsx",
       "exports": [
@@ -11421,7 +11421,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/constants/builtInStyles.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/constants/builtInStyles.ts",
       "baseName": "builtInStyles",
       "extension": ".ts",
       "exports": [
@@ -11512,7 +11512,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/database/BaseMapDatabase.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/database/BaseMapDatabase.ts",
       "baseName": "BaseMapDatabase",
       "extension": ".ts",
       "exports": [
@@ -11537,7 +11537,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/entities/BaseMapEntity.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/entities/BaseMapEntity.ts",
       "baseName": "BaseMapEntity",
       "extension": ".ts",
       "exports": [
@@ -11582,7 +11582,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/extension/definition.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/extension/definition.ts",
       "baseName": "definition",
       "extension": ".ts",
       "exports": [
@@ -11627,7 +11627,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/extensions/BaseMapFolderExtension.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/extensions/BaseMapFolderExtension.ts",
       "baseName": "BaseMapFolderExtension",
       "extension": ".ts",
       "exports": [
@@ -11676,7 +11676,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/handlers/BaseMapEntityHandler.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/handlers/BaseMapEntityHandler.ts",
       "baseName": "BaseMapEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -11712,7 +11712,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/hooks/useBaseMapEntity.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/hooks/useBaseMapEntity.ts",
       "baseName": "useBaseMapEntity",
       "extension": ".ts",
       "exports": [
@@ -11770,7 +11770,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/shared/api.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/shared/api.ts",
       "baseName": "api",
       "extension": ".ts",
       "exports": [
@@ -11793,7 +11793,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/shared/constants.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/shared/constants.ts",
       "baseName": "constants",
       "extension": ".ts",
       "exports": [
@@ -11838,7 +11838,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/shared/metadata.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/shared/metadata.ts",
       "baseName": "metadata",
       "extension": ".ts",
       "exports": [
@@ -11861,7 +11861,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/shared/types.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/shared/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -11928,7 +11928,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/shared/utils.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/shared/utils.ts",
       "baseName": "utils",
       "extension": ".ts",
       "exports": [
@@ -12017,7 +12017,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/types/BaseMapEntity.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/types/BaseMapEntity.ts",
       "baseName": "BaseMapEntity",
       "extension": ".ts",
       "exports": [
@@ -12128,7 +12128,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/types/category-types.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/types/category-types.ts",
       "baseName": "category-types",
       "extension": ".ts",
       "exports": [
@@ -12173,7 +12173,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -12184,7 +12184,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/ui/steps/DisplayOptionsStep.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/ui/steps/DisplayOptionsStep.tsx",
       "baseName": "DisplayOptionsStep",
       "extension": ".tsx",
       "exports": [
@@ -12220,7 +12220,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/ui/steps/MapStyleStep.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/ui/steps/MapStyleStep.tsx",
       "baseName": "MapStyleStep",
       "extension": ".tsx",
       "exports": [
@@ -12256,7 +12256,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/ui/steps/ViewportStep.tsx",
+      "filePath": "packages/plugins/basemap-plugin/src/ui/steps/ViewportStep.tsx",
       "baseName": "ViewportStep",
       "extension": ".tsx",
       "exports": [
@@ -12292,7 +12292,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/worker/basemapEntitiesDB.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/worker/basemapEntitiesDB.ts",
       "baseName": "basemapEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -12328,7 +12328,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/src/worker/basemapPeerStore.dexie.ts",
+      "filePath": "packages/plugins/basemap-plugin/src/worker/basemapPeerStore.dexie.ts",
       "baseName": "basemapPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -12351,7 +12351,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/basemap-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -12374,7 +12374,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/basemap-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -12397,7 +12397,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/basemap-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/basemap-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -12408,7 +12408,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/plugin.config.ts",
+      "filePath": "packages/plugins/folder-plugin/plugin.config.ts",
       "baseName": "plugin.config",
       "extension": ".ts",
       "exports": [
@@ -12431,7 +12431,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/api/FolderExtensionAPI.ts",
+      "filePath": "packages/plugins/folder-plugin/src/api/FolderExtensionAPI.ts",
       "baseName": "FolderExtensionAPI",
       "extension": ".ts",
       "exports": [
@@ -12564,7 +12564,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/base/BaseFolderPlugin.ts",
+      "filePath": "packages/plugins/folder-plugin/src/base/BaseFolderPlugin.ts",
       "baseName": "BaseFolderPlugin",
       "extension": ".ts",
       "exports": [
@@ -12589,7 +12589,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/components/ExtensibleFolderDialog.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx",
       "baseName": "ExtensibleFolderDialog",
       "extension": ".tsx",
       "exports": [
@@ -12658,7 +12658,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/components/FolderCreateDialog.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/components/FolderCreateDialog.tsx",
       "baseName": "FolderCreateDialog",
       "extension": ".tsx",
       "exports": [
@@ -12705,7 +12705,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/components/FolderDialog.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/components/FolderDialog.tsx",
       "baseName": "FolderDialog",
       "extension": ".tsx",
       "exports": [
@@ -12741,7 +12741,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/components/FolderEditDialog.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/components/FolderEditDialog.tsx",
       "baseName": "FolderEditDialog",
       "extension": ".tsx",
       "exports": [
@@ -12788,7 +12788,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/components/FolderIcon.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/components/FolderIcon.tsx",
       "baseName": "FolderIcon",
       "extension": ".tsx",
       "exports": [
@@ -12824,7 +12824,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/entities/FolderEntity.ts",
+      "filePath": "packages/plugins/folder-plugin/src/entities/FolderEntity.ts",
       "baseName": "FolderEntity",
       "extension": ".ts",
       "exports": [
@@ -12891,7 +12891,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/init/register-default-extensions.ts",
+      "filePath": "packages/plugins/folder-plugin/src/init/register-default-extensions.ts",
       "baseName": "register-default-extensions",
       "extension": ".ts",
       "exports": [
@@ -12925,7 +12925,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/api.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/api.ts",
       "baseName": "api",
       "extension": ".ts",
       "exports": [
@@ -13036,7 +13036,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/constants.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/constants.ts",
       "baseName": "constants",
       "extension": ".ts",
       "exports": [
@@ -13147,7 +13147,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/metadata.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/metadata.ts",
       "baseName": "metadata",
       "extension": ".ts",
       "exports": [
@@ -13203,7 +13203,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/peer-display-mode.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/peer-display-mode.ts",
       "baseName": "peer-display-mode",
       "extension": ".ts",
       "exports": [
@@ -13237,7 +13237,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/types.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -13403,7 +13403,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/shared/utils.ts",
+      "filePath": "packages/plugins/folder-plugin/src/shared/utils.ts",
       "baseName": "utils",
       "extension": ".ts",
       "exports": [
@@ -13624,7 +13624,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/types.ts",
+      "filePath": "packages/plugins/folder-plugin/src/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -13669,7 +13669,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/components/CategorySelector.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/ui/components/CategorySelector.tsx",
       "baseName": "CategorySelector",
       "extension": ".tsx",
       "exports": [
@@ -13716,7 +13716,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/components/FolderBasicInfoStep.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/ui/components/FolderBasicInfoStep.tsx",
       "baseName": "FolderBasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -13752,7 +13752,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/components/TagInput.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/ui/components/TagInput.tsx",
       "baseName": "TagInput",
       "extension": ".tsx",
       "exports": [
@@ -13788,7 +13788,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/folder-host.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/ui/folder-host.tsx",
       "baseName": "folder-host",
       "extension": ".tsx",
       "exports": [],
@@ -13799,7 +13799,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/FolderUIPlugin.tsx",
+      "filePath": "packages/plugins/folder-plugin/src/ui/FolderUIPlugin.tsx",
       "baseName": "FolderUIPlugin",
       "extension": ".tsx",
       "exports": [
@@ -13835,7 +13835,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/hooks/useFolderAPI.ts",
+      "filePath": "packages/plugins/folder-plugin/src/ui/hooks/useFolderAPI.ts",
       "baseName": "useFolderAPI",
       "extension": ".ts",
       "exports": [
@@ -13871,7 +13871,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/hooks/useFolderData.ts",
+      "filePath": "packages/plugins/folder-plugin/src/ui/hooks/useFolderData.ts",
       "baseName": "useFolderData",
       "extension": ".ts",
       "exports": [
@@ -13896,7 +13896,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/hooks/useFormValidation.ts",
+      "filePath": "packages/plugins/folder-plugin/src/ui/hooks/useFormValidation.ts",
       "baseName": "useFormValidation",
       "extension": ".ts",
       "exports": [
@@ -13954,7 +13954,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/hooks/useWorkingCopy.ts",
+      "filePath": "packages/plugins/folder-plugin/src/ui/hooks/useWorkingCopy.ts",
       "baseName": "useWorkingCopy",
       "extension": ".ts",
       "exports": [
@@ -13977,7 +13977,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/ui/plugin.ts",
+      "filePath": "packages/plugins/folder-plugin/src/ui/plugin.ts",
       "baseName": "plugin",
       "extension": ".ts",
       "exports": [
@@ -14000,7 +14000,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderEntitiesDB.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderEntitiesDB.ts",
       "baseName": "folderEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -14058,7 +14058,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderGroupStore.dexie.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderGroupStore.dexie.ts",
       "baseName": "folderGroupStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -14081,7 +14081,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderGroupStore.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderGroupStore.ts",
       "baseName": "folderGroupStore",
       "extension": ".ts",
       "exports": [
@@ -14117,7 +14117,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderPeerStore.dexie.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderPeerStore.dexie.ts",
       "baseName": "folderPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -14140,7 +14140,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderPeerStore.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderPeerStore.ts",
       "baseName": "folderPeerStore",
       "extension": ".ts",
       "exports": [
@@ -14187,7 +14187,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderRelationStore.dexie.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderRelationStore.dexie.ts",
       "baseName": "folderRelationStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -14210,7 +14210,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/folderRelationStore.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/folderRelationStore.ts",
       "baseName": "folderRelationStore",
       "extension": ".ts",
       "exports": [
@@ -14246,7 +14246,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/src/worker/TagService.ts",
+      "filePath": "packages/plugins/folder-plugin/src/worker/TagService.ts",
       "baseName": "TagService",
       "extension": ".ts",
       "exports": [],
@@ -14257,7 +14257,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/folder-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -14280,7 +14280,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/folder-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -14303,7 +14303,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/folder-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/folder-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -14314,7 +14314,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/linker-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/linker-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -14325,7 +14325,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/linker-plugin/src/ui/steps/AggregatedList.tsx",
+      "filePath": "packages/plugins/linker-plugin/src/ui/steps/AggregatedList.tsx",
       "baseName": "AggregatedList",
       "extension": ".tsx",
       "exports": [
@@ -14361,7 +14361,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/linker-plugin/src/ui/steps/MapPreview.tsx",
+      "filePath": "packages/plugins/linker-plugin/src/ui/steps/MapPreview.tsx",
       "baseName": "MapPreview",
       "extension": ".tsx",
       "exports": [
@@ -14397,7 +14397,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/linker-plugin/src/ui/steps/ResourcePicker.tsx",
+      "filePath": "packages/plugins/linker-plugin/src/ui/steps/ResourcePicker.tsx",
       "baseName": "ResourcePicker",
       "extension": ".tsx",
       "exports": [
@@ -14444,7 +14444,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/linker-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/linker-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -14467,7 +14467,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/batch/BatchProgressDialog.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/batch/BatchProgressDialog.tsx",
       "baseName": "BatchProgressDialog",
       "extension": ".tsx",
       "exports": [
@@ -14503,7 +14503,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/batch/LocationMapPreview.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/batch/LocationMapPreview.tsx",
       "baseName": "LocationMapPreview",
       "extension": ".tsx",
       "exports": [
@@ -14572,7 +14572,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/LocationDialog.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/LocationDialog.tsx",
       "baseName": "LocationDialog",
       "extension": ".tsx",
       "exports": [
@@ -14597,7 +14597,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/LocationPanel.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/LocationPanel.tsx",
       "baseName": "LocationPanel",
       "extension": ".tsx",
       "exports": [
@@ -14633,7 +14633,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/steps/LocationSelectionStep.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/steps/LocationSelectionStep.tsx",
       "baseName": "LocationSelectionStep",
       "extension": ".tsx",
       "exports": [
@@ -14658,7 +14658,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/components/ui/SelectionMatrix.tsx",
+      "filePath": "packages/plugins/location-plugin/src/components/ui/SelectionMatrix.tsx",
       "baseName": "SelectionMatrix",
       "extension": ".tsx",
       "exports": [
@@ -14727,7 +14727,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/datasources/LocationDataSourceDefinitions.ts",
+      "filePath": "packages/plugins/location-plugin/src/datasources/LocationDataSourceDefinitions.ts",
       "baseName": "LocationDataSourceDefinitions",
       "extension": ".ts",
       "exports": [
@@ -14882,7 +14882,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/entities/LocationEntity.ts",
+      "filePath": "packages/plugins/location-plugin/src/entities/LocationEntity.ts",
       "baseName": "LocationEntity",
       "extension": ".ts",
       "exports": [
@@ -15026,7 +15026,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/entities/LocationEntityHandler.ts",
+      "filePath": "packages/plugins/location-plugin/src/entities/LocationEntityHandler.ts",
       "baseName": "LocationEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -15062,7 +15062,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/hooks/useLocationProgress.ts",
+      "filePath": "packages/plugins/location-plugin/src/hooks/useLocationProgress.ts",
       "baseName": "useLocationProgress",
       "extension": ".ts",
       "exports": [
@@ -15109,7 +15109,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/i18n/en.ts",
+      "filePath": "packages/plugins/location-plugin/src/i18n/en.ts",
       "baseName": "en",
       "extension": ".ts",
       "exports": [
@@ -15134,7 +15134,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/i18n/ja.ts",
+      "filePath": "packages/plugins/location-plugin/src/i18n/ja.ts",
       "baseName": "ja",
       "extension": ".ts",
       "exports": [
@@ -15159,7 +15159,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/i18n/types.ts",
+      "filePath": "packages/plugins/location-plugin/src/i18n/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -15193,7 +15193,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
       "baseName": "registerRuntimeWorker",
       "extension": ".ts",
       "exports": [
@@ -15216,7 +15216,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/BatchSessionManager.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/BatchSessionManager.ts",
       "baseName": "BatchSessionManager",
       "extension": ".ts",
       "exports": [
@@ -15239,7 +15239,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/LocationBatchSession.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/LocationBatchSession.ts",
       "baseName": "LocationBatchSession",
       "extension": ".ts",
       "exports": [
@@ -15275,7 +15275,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/ProgressAdapter.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/ProgressAdapter.ts",
       "baseName": "ProgressAdapter",
       "extension": ".ts",
       "exports": [
@@ -15298,7 +15298,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/SessionController.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/SessionController.ts",
       "baseName": "SessionController",
       "extension": ".ts",
       "exports": [
@@ -15367,7 +15367,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/batch/UnifiedLocationBatchManager.ts",
       "baseName": "UnifiedLocationBatchManager",
       "extension": ".ts",
       "exports": [
@@ -15436,7 +15436,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/database/EphemeralLocationDB.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/database/EphemeralLocationDB.ts",
       "baseName": "EphemeralLocationDB",
       "extension": ".ts",
       "exports": [
@@ -15494,7 +15494,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/download/registerSharedDownloadService.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/download/registerSharedDownloadService.ts",
       "baseName": "registerSharedDownloadService",
       "extension": ".ts",
       "exports": [
@@ -15517,7 +15517,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/download/registry.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/download/registry.ts",
       "baseName": "registry",
       "extension": ".ts",
       "exports": [
@@ -15617,7 +15617,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/download/strategies/nominatim.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/download/strategies/nominatim.ts",
       "baseName": "nominatim",
       "extension": ".ts",
       "exports": [
@@ -15640,7 +15640,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/download/strategies/overpass.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/download/strategies/overpass.ts",
       "baseName": "overpass",
       "extension": ".ts",
       "exports": [
@@ -15663,7 +15663,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/download/types.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/download/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -15697,7 +15697,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/LocationBatchManager.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/LocationBatchManager.ts",
       "baseName": "LocationBatchManager",
       "extension": ".ts",
       "exports": [
@@ -15733,7 +15733,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/tiles/LocationVectorTileService.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/tiles/LocationVectorTileService.ts",
       "baseName": "LocationVectorTileService",
       "extension": ".ts",
       "exports": [
@@ -15769,7 +15769,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/utils/authFetch.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/utils/authFetch.ts",
       "baseName": "authFetch",
       "extension": ".ts",
       "exports": [
@@ -15794,7 +15794,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/services/utils/sharedNet.ts",
+      "filePath": "packages/plugins/location-plugin/src/services/utils/sharedNet.ts",
       "baseName": "sharedNet",
       "extension": ".ts",
       "exports": [
@@ -15817,7 +15817,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/test-shims/external-mocks.ts",
+      "filePath": "packages/plugins/location-plugin/src/test-shims/external-mocks.ts",
       "baseName": "external-mocks",
       "extension": ".ts",
       "exports": [
@@ -15873,7 +15873,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/types/category-types.ts",
+      "filePath": "packages/plugins/location-plugin/src/types/category-types.ts",
       "baseName": "category-types",
       "extension": ".ts",
       "exports": [
@@ -15951,7 +15951,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/types/entities.ts",
+      "filePath": "packages/plugins/location-plugin/src/types/entities.ts",
       "baseName": "entities",
       "extension": ".ts",
       "exports": [
@@ -15996,7 +15996,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/ui/components/LocationBasicInfoStep.tsx",
+      "filePath": "packages/plugins/location-plugin/src/ui/components/LocationBasicInfoStep.tsx",
       "baseName": "LocationBasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -16032,7 +16032,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/location-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -16043,7 +16043,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/worker/locationEntitiesDB.ts",
+      "filePath": "packages/plugins/location-plugin/src/worker/locationEntitiesDB.ts",
       "baseName": "locationEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -16101,7 +16101,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/worker/locationGroupStore.dexie.ts",
+      "filePath": "packages/plugins/location-plugin/src/worker/locationGroupStore.dexie.ts",
       "baseName": "locationGroupStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -16124,7 +16124,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/worker/locationPeerStore.dexie.ts",
+      "filePath": "packages/plugins/location-plugin/src/worker/locationPeerStore.dexie.ts",
       "baseName": "locationPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -16147,7 +16147,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/src/worker/locationRelationStore.dexie.ts",
+      "filePath": "packages/plugins/location-plugin/src/worker/locationRelationStore.dexie.ts",
       "baseName": "locationRelationStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -16170,7 +16170,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/location-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -16193,7 +16193,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/location-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/location-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -16216,7 +16216,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/ResolverDialog.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/ResolverDialog.tsx",
       "baseName": "ResolverDialog",
       "extension": ".tsx",
       "exports": [
@@ -16252,7 +16252,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/ResolverPanel.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/ResolverPanel.tsx",
       "baseName": "ResolverPanel",
       "extension": ".tsx",
       "exports": [
@@ -16277,7 +16277,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/DuplicateResolutionStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/DuplicateResolutionStep.tsx",
       "baseName": "DuplicateResolutionStep",
       "extension": ".tsx",
       "exports": [
@@ -16302,7 +16302,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/PreviewTestStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/PreviewTestStep.tsx",
       "baseName": "PreviewTestStep",
       "extension": ".tsx",
       "exports": [
@@ -16327,7 +16327,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/PropertyMappingStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/PropertyMappingStep.tsx",
       "baseName": "PropertyMappingStep",
       "extension": ".tsx",
       "exports": [
@@ -16352,7 +16352,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/ResolverBasicInfoStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/ResolverBasicInfoStep.tsx",
       "baseName": "ResolverBasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -16377,7 +16377,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/SchemaSelectionStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/SchemaSelectionStep.tsx",
       "baseName": "SchemaSelectionStep",
       "extension": ".tsx",
       "exports": [
@@ -16402,7 +16402,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/components/steps/ValidationConfigStep.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/components/steps/ValidationConfigStep.tsx",
       "baseName": "ValidationConfigStep",
       "extension": ".tsx",
       "exports": [
@@ -16427,7 +16427,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/database/ResolverDatabase.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/database/ResolverDatabase.ts",
       "baseName": "ResolverDatabase",
       "extension": ".ts",
       "exports": [
@@ -16450,7 +16450,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/handlers/ResolverEntityHandler.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/handlers/ResolverEntityHandler.ts",
       "baseName": "ResolverEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -16497,7 +16497,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/services/ChainManager.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/services/ChainManager.ts",
       "baseName": "ChainManager",
       "extension": ".ts",
       "exports": [
@@ -16577,7 +16577,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/services/MappingCompiler.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/services/MappingCompiler.ts",
       "baseName": "MappingCompiler",
       "extension": ".ts",
       "exports": [
@@ -16668,7 +16668,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/services/SimpleMappingCompiler.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/services/SimpleMappingCompiler.ts",
       "baseName": "SimpleMappingCompiler",
       "extension": ".ts",
       "exports": [
@@ -16702,7 +16702,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/resolver-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -16713,7 +16713,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/worker/resolverEntitiesDB.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/worker/resolverEntitiesDB.ts",
       "baseName": "resolverEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -16749,7 +16749,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/src/worker/resolverPeerStore.dexie.ts",
+      "filePath": "packages/plugins/resolver-plugin/src/worker/resolverPeerStore.dexie.ts",
       "baseName": "resolverPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -16772,7 +16772,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/resolver-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -16795,7 +16795,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/tsup.database.config.ts",
+      "filePath": "packages/plugins/resolver-plugin/tsup.database.config.ts",
       "baseName": "tsup.database.config",
       "extension": ".ts",
       "exports": [
@@ -16818,7 +16818,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/resolver-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -16841,7 +16841,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/resolver-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/resolver-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -16852,7 +16852,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/components/RouteBasicInfoStep.tsx",
+      "filePath": "packages/plugins/route-plugin/src/components/RouteBasicInfoStep.tsx",
       "baseName": "RouteBasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -16888,7 +16888,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/components/RouteDialog.tsx",
+      "filePath": "packages/plugins/route-plugin/src/components/RouteDialog.tsx",
       "baseName": "RouteDialog",
       "extension": ".tsx",
       "exports": [
@@ -16924,7 +16924,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/components/RoutePanel.tsx",
+      "filePath": "packages/plugins/route-plugin/src/components/RoutePanel.tsx",
       "baseName": "RoutePanel",
       "extension": ".tsx",
       "exports": [
@@ -16960,7 +16960,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/components/RouteProcessingStep.tsx",
+      "filePath": "packages/plugins/route-plugin/src/components/RouteProcessingStep.tsx",
       "baseName": "RouteProcessingStep",
       "extension": ".tsx",
       "exports": [
@@ -16996,7 +16996,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/components/RouteSelectionStep.tsx",
+      "filePath": "packages/plugins/route-plugin/src/components/RouteSelectionStep.tsx",
       "baseName": "RouteSelectionStep",
       "extension": ".tsx",
       "exports": [
@@ -17032,7 +17032,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/database/RouteDatabase.ts",
+      "filePath": "packages/plugins/route-plugin/src/database/RouteDatabase.ts",
       "baseName": "RouteDatabase",
       "extension": ".ts",
       "exports": [
@@ -17090,7 +17090,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/entities/RouteEntity.ts",
+      "filePath": "packages/plugins/route-plugin/src/entities/RouteEntity.ts",
       "baseName": "RouteEntity",
       "extension": ".ts",
       "exports": [
@@ -17201,7 +17201,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/entities/RouteEntityHandler.ts",
+      "filePath": "packages/plugins/route-plugin/src/entities/RouteEntityHandler.ts",
       "baseName": "RouteEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -17248,7 +17248,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/i18n/en.ts",
+      "filePath": "packages/plugins/route-plugin/src/i18n/en.ts",
       "baseName": "en",
       "extension": ".ts",
       "exports": [
@@ -17273,7 +17273,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/i18n/ja.ts",
+      "filePath": "packages/plugins/route-plugin/src/i18n/ja.ts",
       "baseName": "ja",
       "extension": ".ts",
       "exports": [
@@ -17298,7 +17298,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/i18n/types.ts",
+      "filePath": "packages/plugins/route-plugin/src/i18n/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -17332,7 +17332,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/RouteBatchOrchestrationService.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/RouteBatchOrchestrationService.ts",
       "baseName": "RouteBatchOrchestrationService",
       "extension": ".ts",
       "exports": [
@@ -17368,7 +17368,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/RouteSourceOrchestrator.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/RouteSourceOrchestrator.ts",
       "baseName": "RouteSourceOrchestrator",
       "extension": ".ts",
       "exports": [
@@ -17404,7 +17404,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/strategies/CsvStrategy.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/strategies/CsvStrategy.ts",
       "baseName": "CsvStrategy",
       "extension": ".ts",
       "exports": [
@@ -17429,7 +17429,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/strategies/GeoJsonStrategy.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/strategies/GeoJsonStrategy.ts",
       "baseName": "GeoJsonStrategy",
       "extension": ".ts",
       "exports": [
@@ -17454,7 +17454,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/strategies/strategy-utils.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/strategies/strategy-utils.ts",
       "baseName": "strategy-utils",
       "extension": ".ts",
       "exports": [
@@ -17510,7 +17510,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/TaskMapper.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/TaskMapper.ts",
       "baseName": "TaskMapper",
       "extension": ".ts",
       "exports": [
@@ -17577,7 +17577,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/orchestrator/types.ts",
+      "filePath": "packages/plugins/route-plugin/src/orchestrator/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -17699,7 +17699,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
       "baseName": "registerRuntimeWorker",
       "extension": ".ts",
       "exports": [
@@ -17722,7 +17722,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/config/flags.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/config/flags.ts",
       "baseName": "flags",
       "extension": ".ts",
       "exports": [
@@ -17745,7 +17745,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/config/osrm-defaults.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/config/osrm-defaults.ts",
       "baseName": "osrm-defaults",
       "extension": ".ts",
       "exports": [
@@ -17779,7 +17779,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/createRouteBatchManager.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/createRouteBatchManager.ts",
       "baseName": "createRouteBatchManager",
       "extension": ".ts",
       "exports": [
@@ -17826,7 +17826,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/download/factory.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/download/factory.ts",
       "baseName": "factory",
       "extension": ".ts",
       "exports": [
@@ -17871,7 +17871,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/download/registerSharedDownloadService.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/download/registerSharedDownloadService.ts",
       "baseName": "registerSharedDownloadService",
       "extension": ".ts",
       "exports": [
@@ -17894,7 +17894,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/download/registry.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/download/registry.ts",
       "baseName": "registry",
       "extension": ".ts",
       "exports": [
@@ -18005,7 +18005,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/engines/OsrmEngine.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/engines/OsrmEngine.ts",
       "baseName": "OsrmEngine",
       "extension": ".ts",
       "exports": [
@@ -18041,7 +18041,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/engines/SearouteEngine.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/engines/SearouteEngine.ts",
       "baseName": "SearouteEngine",
       "extension": ".ts",
       "exports": [
@@ -18066,7 +18066,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/engines/types.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/engines/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -18100,7 +18100,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/LocationResolver.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/LocationResolver.ts",
       "baseName": "LocationResolver",
       "extension": ".ts",
       "exports": [
@@ -18136,7 +18136,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/net/getNetPort.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/net/getNetPort.ts",
       "baseName": "getNetPort",
       "extension": ".ts",
       "exports": [
@@ -18161,7 +18161,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/net/ThrottledPort.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/net/ThrottledPort.ts",
       "baseName": "ThrottledPort",
       "extension": ".ts",
       "exports": [
@@ -18208,7 +18208,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/RouteBatchManager.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/RouteBatchManager.ts",
       "baseName": "RouteBatchManager",
       "extension": ".ts",
       "exports": [
@@ -18299,7 +18299,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/RouteBatchSession.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/RouteBatchSession.ts",
       "baseName": "RouteBatchSession",
       "extension": ".ts",
       "exports": [
@@ -18346,7 +18346,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/RouteGenerator.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/RouteGenerator.ts",
       "baseName": "RouteGenerator",
       "extension": ".ts",
       "exports": [
@@ -18393,7 +18393,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/services/UnifiedRouteBatchManager.ts",
+      "filePath": "packages/plugins/route-plugin/src/services/UnifiedRouteBatchManager.ts",
       "baseName": "UnifiedRouteBatchManager",
       "extension": ".ts",
       "exports": [
@@ -18462,7 +18462,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/components/RouteBatchLaunchForm.tsx",
+      "filePath": "packages/plugins/route-plugin/src/ui/components/RouteBatchLaunchForm.tsx",
       "baseName": "RouteBatchLaunchForm",
       "extension": ".tsx",
       "exports": [
@@ -18498,7 +18498,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/components/RouteBatchLiveProgress.tsx",
+      "filePath": "packages/plugins/route-plugin/src/ui/components/RouteBatchLiveProgress.tsx",
       "baseName": "RouteBatchLiveProgress",
       "extension": ".tsx",
       "exports": [
@@ -18523,7 +18523,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/components/RouteBatchProgressBar.tsx",
+      "filePath": "packages/plugins/route-plugin/src/ui/components/RouteBatchProgressBar.tsx",
       "baseName": "RouteBatchProgressBar",
       "extension": ".tsx",
       "exports": [
@@ -18548,7 +18548,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/components/RouteBatchSummary.tsx",
+      "filePath": "packages/plugins/route-plugin/src/ui/components/RouteBatchSummary.tsx",
       "baseName": "RouteBatchSummary",
       "extension": ".tsx",
       "exports": [
@@ -18573,7 +18573,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/hooks/useRouteBatchProgress.ts",
+      "filePath": "packages/plugins/route-plugin/src/ui/hooks/useRouteBatchProgress.ts",
       "baseName": "useRouteBatchProgress",
       "extension": ".ts",
       "exports": [
@@ -18598,7 +18598,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/route-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -18609,7 +18609,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/worker/routeEntitiesDB.ts",
+      "filePath": "packages/plugins/route-plugin/src/worker/routeEntitiesDB.ts",
       "baseName": "routeEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -18645,7 +18645,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/route-plugin/src/worker/routePeerStore.dexie.ts",
+      "filePath": "packages/plugins/route-plugin/src/worker/routePeerStore.dexie.ts",
       "baseName": "routePeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -18668,7 +18668,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/route-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -18691,7 +18691,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/tsup.database.config.ts",
+      "filePath": "packages/plugins/route-plugin/tsup.database.config.ts",
       "baseName": "tsup.database.config",
       "extension": ".ts",
       "exports": [
@@ -18714,7 +18714,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/route-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/route-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -18737,7 +18737,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/api/ShapePluginAPI.ts",
+      "filePath": "packages/plugins/shape-plugin/src/api/ShapePluginAPI.ts",
       "baseName": "ShapePluginAPI",
       "extension": ".ts",
       "exports": [
@@ -18775,7 +18775,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/api/ShapeWorkerAPI.ts",
+      "filePath": "packages/plugins/shape-plugin/src/api/ShapeWorkerAPI.ts",
       "baseName": "ShapeWorkerAPI",
       "extension": ".ts",
       "exports": [
@@ -18813,7 +18813,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/BatchProgressSplitView.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/BatchProgressSplitView.tsx",
       "baseName": "BatchProgressSplitView",
       "extension": ".tsx",
       "exports": [
@@ -18838,7 +18838,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/BatchStatusChip.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/BatchStatusChip.tsx",
       "baseName": "BatchStatusChip",
       "extension": ".tsx",
       "exports": [
@@ -18863,7 +18863,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/ErrorConsoleDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/ErrorConsoleDialog.tsx",
       "baseName": "ErrorConsoleDialog",
       "extension": ".tsx",
       "exports": [
@@ -18888,7 +18888,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/ErrorReportPanel.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/ErrorReportPanel.tsx",
       "baseName": "ErrorReportPanel",
       "extension": ".tsx",
       "exports": [
@@ -18935,7 +18935,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/MapPreview.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/MapPreview.tsx",
       "baseName": "MapPreview",
       "extension": ".tsx",
       "exports": [
@@ -18960,7 +18960,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/batch/TaskMonitor.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/batch/TaskMonitor.tsx",
       "baseName": "TaskMonitor",
       "extension": ".tsx",
       "exports": [
@@ -18985,7 +18985,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/BatchProcessingMonitorDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/BatchProcessingMonitorDialog.tsx",
       "baseName": "BatchProcessingMonitorDialog",
       "extension": ".tsx",
       "exports": [
@@ -19010,7 +19010,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/ShapeDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/ShapeDialog.tsx",
       "baseName": "ShapeDialog",
       "extension": ".tsx",
       "exports": [],
@@ -19021,7 +19021,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/ShapeViewPanel.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/ShapeViewPanel.tsx",
       "baseName": "ShapeViewPanel",
       "extension": ".tsx",
       "exports": [
@@ -19046,7 +19046,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/steps/Step1BasicInfo.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/steps/Step1BasicInfo.tsx",
       "baseName": "Step1BasicInfo",
       "extension": ".tsx",
       "exports": [
@@ -19071,7 +19071,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/steps/Step2DataSource.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/steps/Step2DataSource.tsx",
       "baseName": "Step2DataSource",
       "extension": ".tsx",
       "exports": [
@@ -19096,7 +19096,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/steps/Step3License.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/steps/Step3License.tsx",
       "baseName": "Step3License",
       "extension": ".tsx",
       "exports": [
@@ -19121,7 +19121,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/steps/Step4Processing.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/steps/Step4Processing.tsx",
       "baseName": "Step4Processing",
       "extension": ".tsx",
       "exports": [
@@ -19146,7 +19146,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/components/steps/Step5CountrySelection.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/components/steps/Step5CountrySelection.tsx",
       "baseName": "Step5CountrySelection",
       "extension": ".tsx",
       "exports": [
@@ -19171,7 +19171,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/components/CountrySelectionStep.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/extension/components/CountrySelectionStep.tsx",
       "baseName": "CountrySelectionStep",
       "extension": ".tsx",
       "exports": [
@@ -19207,7 +19207,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/components/DataSourceStep.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/extension/components/DataSourceStep.tsx",
       "baseName": "DataSourceStep",
       "extension": ".tsx",
       "exports": [
@@ -19243,7 +19243,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/components/LicenseStep.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/extension/components/LicenseStep.tsx",
       "baseName": "LicenseStep",
       "extension": ".tsx",
       "exports": [
@@ -19279,7 +19279,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/components/ProcessingStep.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/extension/components/ProcessingStep.tsx",
       "baseName": "ProcessingStep",
       "extension": ".tsx",
       "exports": [
@@ -19315,7 +19315,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/definition.ts",
+      "filePath": "packages/plugins/shape-plugin/src/extension/definition.ts",
       "baseName": "definition",
       "extension": ".ts",
       "exports": [
@@ -19338,7 +19338,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extension/handler.ts",
+      "filePath": "packages/plugins/shape-plugin/src/extension/handler.ts",
       "baseName": "handler",
       "extension": ".ts",
       "exports": [
@@ -19361,7 +19361,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/extensions/ShapeFolderExtension.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/extensions/ShapeFolderExtension.tsx",
       "baseName": "ShapeFolderExtension",
       "extension": ".tsx",
       "exports": [
@@ -19410,7 +19410,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/handlers/ShapeEntityHandler.ts",
+      "filePath": "packages/plugins/shape-plugin/src/handlers/ShapeEntityHandler.ts",
       "baseName": "ShapeEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -19457,7 +19457,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/hooks/useBatchWorkerConsole.ts",
+      "filePath": "packages/plugins/shape-plugin/src/hooks/useBatchWorkerConsole.ts",
       "baseName": "useBatchWorkerConsole",
       "extension": ".ts",
       "exports": [
@@ -19482,7 +19482,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/hooks/useCountryMetadata.ts",
+      "filePath": "packages/plugins/shape-plugin/src/hooks/useCountryMetadata.ts",
       "baseName": "useCountryMetadata",
       "extension": ".ts",
       "exports": [
@@ -19529,7 +19529,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/hooks/useErrorConsole.ts",
+      "filePath": "packages/plugins/shape-plugin/src/hooks/useErrorConsole.ts",
       "baseName": "useErrorConsole",
       "extension": ".ts",
       "exports": [
@@ -19565,7 +19565,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/mock/data.ts",
+      "filePath": "packages/plugins/shape-plugin/src/mock/data.ts",
       "baseName": "data",
       "extension": ".ts",
       "exports": [
@@ -19709,7 +19709,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/plugin.ts",
+      "filePath": "packages/plugins/shape-plugin/src/plugin.ts",
       "baseName": "plugin",
       "extension": ".ts",
       "exports": [
@@ -19754,7 +19754,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/auth/WorkerAuthHandler.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/auth/WorkerAuthHandler.ts",
       "baseName": "WorkerAuthHandler",
       "extension": ".ts",
       "exports": [
@@ -19823,7 +19823,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/DownloadStageAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/DownloadStageAdapter.ts",
       "baseName": "DownloadStageAdapter",
       "extension": ".ts",
       "exports": [
@@ -19857,7 +19857,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/registerRuntimeWorker.ts",
       "baseName": "registerRuntimeWorker",
       "extension": ".ts",
       "exports": [
@@ -19880,7 +19880,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/RuntimeWorkerClient.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerClient.ts",
       "baseName": "RuntimeWorkerClient",
       "extension": ".ts",
       "exports": [
@@ -19925,7 +19925,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerDownloadAdapter.ts",
       "baseName": "RuntimeWorkerDownloadAdapter",
       "extension": ".ts",
       "exports": [
@@ -19950,7 +19950,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/RuntimeWorkerSimplifyAdapters.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerSimplifyAdapters.ts",
       "baseName": "RuntimeWorkerSimplifyAdapters",
       "extension": ".ts",
       "exports": [
@@ -19984,7 +19984,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/RuntimeWorkerVectorTileAdapter.ts",
       "baseName": "RuntimeWorkerVectorTileAdapter",
       "extension": ".ts",
       "exports": [
@@ -20009,7 +20009,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/Simplify1StageAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/Simplify1StageAdapter.ts",
       "baseName": "Simplify1StageAdapter",
       "extension": ".ts",
       "exports": [
@@ -20043,7 +20043,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/Simplify2StageAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/Simplify2StageAdapter.ts",
       "baseName": "Simplify2StageAdapter",
       "extension": ".ts",
       "exports": [
@@ -20077,7 +20077,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/adapters/VectorTileStageAdapter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/adapters/VectorTileStageAdapter.ts",
       "baseName": "VectorTileStageAdapter",
       "extension": ".ts",
       "exports": [
@@ -20111,7 +20111,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/BatchSessionManager.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/BatchSessionManager.ts",
       "baseName": "BatchSessionManager",
       "extension": ".ts",
       "exports": [
@@ -20147,7 +20147,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/SessionController.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/SessionController.ts",
       "baseName": "SessionController",
       "extension": ".ts",
       "exports": [
@@ -20183,7 +20183,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/ShapeBatchSession.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/ShapeBatchSession.ts",
       "baseName": "ShapeBatchSession",
       "extension": ".ts",
       "exports": [
@@ -20230,7 +20230,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/types.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -20253,7 +20253,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/batch/UnifiedShapeBatchManager.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/batch/UnifiedShapeBatchManager.ts",
       "baseName": "UnifiedShapeBatchManager",
       "extension": ".ts",
       "exports": [
@@ -20322,7 +20322,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/database/EphemeralShapeDB.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/database/EphemeralShapeDB.ts",
       "baseName": "EphemeralShapeDB",
       "extension": ".ts",
       "exports": [
@@ -20424,7 +20424,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/database/ShapeDB.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/database/ShapeDB.ts",
       "baseName": "ShapeDB",
       "extension": ".ts",
       "exports": [
@@ -20561,7 +20561,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/DataSourceStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/DataSourceStrategy.ts",
       "baseName": "DataSourceStrategy",
       "extension": ".ts",
       "exports": [
@@ -20837,7 +20837,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/DataSourceStrategyFactory.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/DataSourceStrategyFactory.ts",
       "baseName": "DataSourceStrategyFactory",
       "extension": ".ts",
       "exports": [
@@ -20895,7 +20895,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/GADMStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/GADMStrategy.ts",
       "baseName": "GADMStrategy",
       "extension": ".ts",
       "exports": [
@@ -20942,7 +20942,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/GeoBoundariesStrategy.ts",
       "baseName": "GeoBoundariesStrategy",
       "extension": ".ts",
       "exports": [
@@ -20989,7 +20989,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/NaturalEarthStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/NaturalEarthStrategy.ts",
       "baseName": "NaturalEarthStrategy",
       "extension": ".ts",
       "exports": [
@@ -21036,7 +21036,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/datasources/OpenStreetMapStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/datasources/OpenStreetMapStrategy.ts",
       "baseName": "OpenStreetMapStrategy",
       "extension": ".ts",
       "exports": [
@@ -21105,7 +21105,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/download/factory.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/download/factory.ts",
       "baseName": "factory",
       "extension": ".ts",
       "exports": [
@@ -21128,7 +21128,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/download/registry.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/download/registry.ts",
       "baseName": "registry",
       "extension": ".ts",
       "exports": [
@@ -21151,7 +21151,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/download/strategies/http-url.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/download/strategies/http-url.ts",
       "baseName": "http-url",
       "extension": ".ts",
       "exports": [
@@ -21174,7 +21174,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/download/strategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/download/strategy.ts",
       "baseName": "strategy",
       "extension": ".ts",
       "exports": [
@@ -21197,7 +21197,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/metadata/MetadataLoader.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/metadata/MetadataLoader.ts",
       "baseName": "MetadataLoader",
       "extension": ".ts",
       "exports": [
@@ -21235,7 +21235,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/RecoveryStrategy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/RecoveryStrategy.ts",
       "baseName": "RecoveryStrategy",
       "extension": ".ts",
       "exports": [
@@ -21368,7 +21368,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/tiles/RuntimeTileClient.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/tiles/RuntimeTileClient.ts",
       "baseName": "RuntimeTileClient",
       "extension": ".ts",
       "exports": [
@@ -21413,7 +21413,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/tiles/VectorTileService.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/tiles/VectorTileService.ts",
       "baseName": "VectorTileService",
       "extension": ".ts",
       "exports": [
@@ -21460,7 +21460,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/types.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -22022,7 +22022,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/services/utils/authFetch.ts",
+      "filePath": "packages/plugins/shape-plugin/src/services/utils/authFetch.ts",
       "baseName": "authFetch",
       "extension": ".ts",
       "exports": [
@@ -22047,7 +22047,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ShapePlugin.ts",
+      "filePath": "packages/plugins/shape-plugin/src/ShapePlugin.ts",
       "baseName": "ShapePlugin",
       "extension": ".ts",
       "exports": [
@@ -22072,7 +22072,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/shared/api.ts",
+      "filePath": "packages/plugins/shape-plugin/src/shared/api.ts",
       "baseName": "api",
       "extension": ".ts",
       "exports": [
@@ -22117,7 +22117,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/shared/constants.ts",
+      "filePath": "packages/plugins/shape-plugin/src/shared/constants.ts",
       "baseName": "constants",
       "extension": ".ts",
       "exports": [
@@ -22195,7 +22195,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/shared/metadata.ts",
+      "filePath": "packages/plugins/shape-plugin/src/shared/metadata.ts",
       "baseName": "metadata",
       "extension": ".ts",
       "exports": [
@@ -22218,7 +22218,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/shared/types.ts",
+      "filePath": "packages/plugins/shape-plugin/src/shared/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -22571,7 +22571,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/shared/utils.ts",
+      "filePath": "packages/plugins/shape-plugin/src/shared/utils.ts",
       "baseName": "utils",
       "extension": ".ts",
       "exports": [
@@ -22737,7 +22737,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/BatchConfig.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/BatchConfig.ts",
       "baseName": "BatchConfig",
       "extension": ".ts",
       "exports": [
@@ -22837,7 +22837,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/BatchProgressEvent.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/BatchProgressEvent.ts",
       "baseName": "BatchProgressEvent",
       "extension": ".ts",
       "exports": [
@@ -22860,7 +22860,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/BatchTaskLike.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/BatchTaskLike.ts",
       "baseName": "BatchTaskLike",
       "extension": ".ts",
       "exports": [
@@ -22916,7 +22916,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/category-types.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/category-types.ts",
       "baseName": "category-types",
       "extension": ".ts",
       "exports": [
@@ -23005,7 +23005,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/entities.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/entities.ts",
       "baseName": "entities",
       "extension": ".ts",
       "exports": [
@@ -23028,7 +23028,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/ShapeEntity.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/ShapeEntity.ts",
       "baseName": "ShapeEntity",
       "extension": ".ts",
       "exports": [
@@ -23062,7 +23062,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/ShapeError.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/ShapeError.ts",
       "baseName": "ShapeError",
       "extension": ".ts",
       "exports": [
@@ -23096,7 +23096,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/types/ShapeErrorHierarchy.ts",
+      "filePath": "packages/plugins/shape-plugin/src/types/ShapeErrorHierarchy.ts",
       "baseName": "ShapeErrorHierarchy",
       "extension": ".ts",
       "exports": [
@@ -23383,7 +23383,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui-plugin.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui-plugin.tsx",
       "baseName": "ui-plugin",
       "extension": ".tsx",
       "exports": [
@@ -23417,7 +23417,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/auth/setShapeAuthToken.ts",
+      "filePath": "packages/plugins/shape-plugin/src/ui/auth/setShapeAuthToken.ts",
       "baseName": "setShapeAuthToken",
       "extension": ".ts",
       "exports": [
@@ -23453,7 +23453,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/BatchProcessingDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/BatchProcessingDialog.tsx",
       "baseName": "BatchProcessingDialog",
       "extension": ".tsx",
       "exports": [
@@ -23489,7 +23489,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/BatchRecoveryDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/BatchRecoveryDialog.tsx",
       "baseName": "BatchRecoveryDialog",
       "extension": ".tsx",
       "exports": [
@@ -23525,7 +23525,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/ErrorDisplay.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/ErrorDisplay.tsx",
       "baseName": "ErrorDisplay",
       "extension": ".tsx",
       "exports": [
@@ -23605,7 +23605,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/ShapeBatchProgressDisplay.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/ShapeBatchProgressDisplay.tsx",
       "baseName": "ShapeBatchProgressDisplay",
       "extension": ".tsx",
       "exports": [
@@ -23641,7 +23641,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/ShapeDialog.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/ShapeDialog.tsx",
       "baseName": "ShapeDialog",
       "extension": ".tsx",
       "exports": [
@@ -23677,7 +23677,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/ShapePanel.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/ShapePanel.tsx",
       "baseName": "ShapePanel",
       "extension": ".tsx",
       "exports": [
@@ -23713,7 +23713,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/components/TilePreview.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/components/TilePreview.tsx",
       "baseName": "TilePreview",
       "extension": ".tsx",
       "exports": [
@@ -23738,7 +23738,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/hooks/useShapeAPI.ts",
+      "filePath": "packages/plugins/shape-plugin/src/ui/hooks/useShapeAPI.ts",
       "baseName": "useShapeAPI",
       "extension": ".ts",
       "exports": [
@@ -23774,7 +23774,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/hooks/useShapeProgress.ts",
+      "filePath": "packages/plugins/shape-plugin/src/ui/hooks/useShapeProgress.ts",
       "baseName": "useShapeProgress",
       "extension": ".ts",
       "exports": [
@@ -23832,7 +23832,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/plugin.ts",
+      "filePath": "packages/plugins/shape-plugin/src/ui/plugin.ts",
       "baseName": "plugin",
       "extension": ".ts",
       "exports": [
@@ -23855,7 +23855,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/shape-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -23866,7 +23866,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/utils/featureConverter.ts",
+      "filePath": "packages/plugins/shape-plugin/src/utils/featureConverter.ts",
       "baseName": "featureConverter",
       "extension": ".ts",
       "exports": [
@@ -23922,7 +23922,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/api.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/api.ts",
       "baseName": "api",
       "extension": ".ts",
       "exports": [
@@ -23945,7 +23945,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/handlers/ShapeEntityHandler.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/handlers/ShapeEntityHandler.ts",
       "baseName": "ShapeEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -23992,7 +23992,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/plugin.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/plugin.ts",
       "baseName": "plugin",
       "extension": ".ts",
       "exports": [
@@ -24015,7 +24015,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/public.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/public.ts",
       "baseName": "public",
       "extension": ".ts",
       "exports": [
@@ -24038,7 +24038,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/services/EphemeralDataCleanupService.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/services/EphemeralDataCleanupService.ts",
       "baseName": "EphemeralDataCleanupService",
       "extension": ".ts",
       "exports": [
@@ -24087,7 +24087,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/shapeEntitiesDB.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/shapeEntitiesDB.ts",
       "baseName": "shapeEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -24145,7 +24145,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/shapeGroupStore.dexie.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/shapeGroupStore.dexie.ts",
       "baseName": "shapeGroupStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -24168,7 +24168,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/shapePeerStore.dexie.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/shapePeerStore.dexie.ts",
       "baseName": "shapePeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -24191,7 +24191,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/src/worker/shapeRelationStore.dexie.ts",
+      "filePath": "packages/plugins/shape-plugin/src/worker/shapeRelationStore.dexie.ts",
       "baseName": "shapeRelationStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -24214,7 +24214,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/shape-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -24237,7 +24237,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/tsup.services.config.ts",
+      "filePath": "packages/plugins/shape-plugin/tsup.services.config.ts",
       "baseName": "tsup.services.config",
       "extension": ".ts",
       "exports": [
@@ -24260,7 +24260,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/shape-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -24283,7 +24283,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/shape-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/shape-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -24294,7 +24294,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/database/SpreadsheetDatabase.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/database/SpreadsheetDatabase.ts",
       "baseName": "SpreadsheetDatabase",
       "extension": ".ts",
       "exports": [
@@ -24319,7 +24319,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/extension/constants.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/extension/constants.ts",
       "baseName": "constants",
       "extension": ".ts",
       "exports": [
@@ -24463,7 +24463,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/extension/definition.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/extension/definition.ts",
       "baseName": "definition",
       "extension": ".ts",
       "exports": [
@@ -24508,7 +24508,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/extension/types.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/extension/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -24641,7 +24641,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/extensions/SpreadsheetFolderExtension.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/extensions/SpreadsheetFolderExtension.ts",
       "baseName": "SpreadsheetFolderExtension",
       "extension": ".ts",
       "exports": [
@@ -24690,7 +24690,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SimpleTableMetadataManager.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SimpleTableMetadataManager.ts",
       "baseName": "SimpleTableMetadataManager",
       "extension": ".ts",
       "exports": [
@@ -24715,7 +24715,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SpreadsheetCSVApiAdapter.service.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SpreadsheetCSVApiAdapter.service.ts",
       "baseName": "SpreadsheetCSVApiAdapter.service",
       "extension": ".ts",
       "exports": [
@@ -24738,7 +24738,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SpreadsheetCSVApiAdapter.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SpreadsheetCSVApiAdapter.ts",
       "baseName": "SpreadsheetCSVApiAdapter",
       "extension": ".ts",
       "exports": [
@@ -24774,7 +24774,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver.ts",
       "baseName": "SpreadsheetCSVApiDriver",
       "extension": ".ts",
       "exports": [
@@ -24799,7 +24799,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SpreadsheetStorePort.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SpreadsheetStorePort.ts",
       "baseName": "SpreadsheetStorePort",
       "extension": ".ts",
       "exports": [
@@ -24824,7 +24824,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/SpreadsheetTabularDriver.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/SpreadsheetTabularDriver.ts",
       "baseName": "SpreadsheetTabularDriver",
       "extension": ".ts",
       "exports": [
@@ -24849,7 +24849,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/services/utils/authFetch.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/services/utils/authFetch.ts",
       "baseName": "authFetch",
       "extension": ".ts",
       "exports": [
@@ -24874,7 +24874,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/steps/BasicInfoStep.tsx",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/steps/BasicInfoStep.tsx",
       "baseName": "BasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -24910,7 +24910,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/steps/CSVUploadPanel.tsx",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/steps/CSVUploadPanel.tsx",
       "baseName": "CSVUploadPanel",
       "extension": ".tsx",
       "exports": [
@@ -24946,7 +24946,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/steps/DataSourceStep.tsx",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/steps/DataSourceStep.tsx",
       "baseName": "DataSourceStep",
       "extension": ".tsx",
       "exports": [
@@ -24982,7 +24982,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/steps/FilteringStep.tsx",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/steps/FilteringStep.tsx",
       "baseName": "FilteringStep",
       "extension": ".tsx",
       "exports": [
@@ -25018,7 +25018,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/types/category-types.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/types/category-types.ts",
       "baseName": "category-types",
       "extension": ".ts",
       "exports": [
@@ -25063,7 +25063,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -25074,7 +25074,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/utils/binarySerializer.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/utils/binarySerializer.ts",
       "baseName": "binarySerializer",
       "extension": ".ts",
       "exports": [
@@ -25141,7 +25141,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/utils/csvParser.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/utils/csvParser.ts",
       "baseName": "csvParser",
       "extension": ".ts",
       "exports": [
@@ -25175,7 +25175,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/utils/fileProcessingUtils.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/utils/fileProcessingUtils.ts",
       "baseName": "fileProcessingUtils",
       "extension": ".ts",
       "exports": [
@@ -25253,7 +25253,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/utils/filterUtils.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/utils/filterUtils.ts",
       "baseName": "filterUtils",
       "extension": ".ts",
       "exports": [
@@ -25298,7 +25298,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/utils/hashUtils.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/utils/hashUtils.ts",
       "baseName": "hashUtils",
       "extension": ".ts",
       "exports": [
@@ -25376,7 +25376,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB.ts",
       "baseName": "spreadsheetEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -25434,7 +25434,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/worker/spreadsheetGroupStore.dexie.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/worker/spreadsheetGroupStore.dexie.ts",
       "baseName": "spreadsheetGroupStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -25457,7 +25457,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/worker/spreadsheetPeerStore.dexie.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/worker/spreadsheetPeerStore.dexie.ts",
       "baseName": "spreadsheetPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -25480,7 +25480,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/src/worker/spreadsheetRelationStore.dexie.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/src/worker/spreadsheetRelationStore.dexie.ts",
       "baseName": "spreadsheetRelationStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -25503,7 +25503,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -25526,7 +25526,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/spreadsheet-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/spreadsheet-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -25549,7 +25549,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/step5/StylerConfiguration.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/step5/StylerConfiguration.tsx",
       "baseName": "StylerConfiguration",
       "extension": ".tsx",
       "exports": [
@@ -25585,7 +25585,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/step6/StylerTablePreview.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/step6/StylerTablePreview.tsx",
       "baseName": "StylerTablePreview",
       "extension": ".tsx",
       "exports": [
@@ -25621,7 +25621,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/steps/StylerStep5.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/steps/StylerStep5.tsx",
       "baseName": "StylerStep5",
       "extension": ".tsx",
       "exports": [
@@ -25668,7 +25668,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/steps/StylerStep6.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/steps/StylerStep6.tsx",
       "baseName": "StylerStep6",
       "extension": ".tsx",
       "exports": [
@@ -25715,7 +25715,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/StylerSimpleDialog.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/StylerSimpleDialog.tsx",
       "baseName": "StylerSimpleDialog",
       "extension": ".tsx",
       "exports": [
@@ -25762,7 +25762,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/StylerView.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/components/StylerView.tsx",
       "baseName": "StylerView",
       "extension": ".tsx",
       "exports": [
@@ -25809,7 +25809,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/components/types.ts",
+      "filePath": "packages/plugins/styler-plugin/src/components/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -25843,7 +25843,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/entities/StylerEntity.ts",
+      "filePath": "packages/plugins/styler-plugin/src/entities/StylerEntity.ts",
       "baseName": "StylerEntity",
       "extension": ".ts",
       "exports": [
@@ -25965,7 +25965,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/extension/components/StyleMapExtensionStep.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/extension/components/StyleMapExtensionStep.tsx",
       "baseName": "StyleMapExtensionStep",
       "extension": ".tsx",
       "exports": [
@@ -26010,7 +26010,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/extension/definition.ts",
+      "filePath": "packages/plugins/styler-plugin/src/extension/definition.ts",
       "baseName": "definition",
       "extension": ".ts",
       "exports": [
@@ -26055,7 +26055,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/extension/handler.ts",
+      "filePath": "packages/plugins/styler-plugin/src/extension/handler.ts",
       "baseName": "handler",
       "extension": ".ts",
       "exports": [
@@ -26100,7 +26100,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/extensions/StylerFolderExtension.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/extensions/StylerFolderExtension.tsx",
       "baseName": "StylerFolderExtension",
       "extension": ".tsx",
       "exports": [
@@ -26160,7 +26160,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/handlers/StylerEntityHandler.ts",
+      "filePath": "packages/plugins/styler-plugin/src/handlers/StylerEntityHandler.ts",
       "baseName": "StylerEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -26185,7 +26185,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/services/SimpleTableMetadataManager.ts",
+      "filePath": "packages/plugins/styler-plugin/src/services/SimpleTableMetadataManager.ts",
       "baseName": "SimpleTableMetadataManager",
       "extension": ".ts",
       "exports": [
@@ -26210,7 +26210,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/services/StylerDataService.ts",
+      "filePath": "packages/plugins/styler-plugin/src/services/StylerDataService.ts",
       "baseName": "StylerDataService",
       "extension": ".ts",
       "exports": [
@@ -26235,7 +26235,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/shared/metadata.ts",
+      "filePath": "packages/plugins/styler-plugin/src/shared/metadata.ts",
       "baseName": "metadata",
       "extension": ".ts",
       "exports": [
@@ -26258,7 +26258,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/steps/BasicInfoStep.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/steps/BasicInfoStep.tsx",
       "baseName": "BasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -26316,7 +26316,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/types/category-types.ts",
+      "filePath": "packages/plugins/styler-plugin/src/types/category-types.ts",
       "baseName": "category-types",
       "extension": ".ts",
       "exports": [
@@ -26361,7 +26361,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/types/stylerTypes.ts",
+      "filePath": "packages/plugins/styler-plugin/src/types/stylerTypes.ts",
       "baseName": "stylerTypes",
       "extension": ".ts",
       "exports": [
@@ -26516,7 +26516,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/styler-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -26527,7 +26527,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/utils/colorUtils.ts",
+      "filePath": "packages/plugins/styler-plugin/src/utils/colorUtils.ts",
       "baseName": "colorUtils",
       "extension": ".ts",
       "exports": [
@@ -26649,7 +26649,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/utils/dataAnalysis.ts",
+      "filePath": "packages/plugins/styler-plugin/src/utils/dataAnalysis.ts",
       "baseName": "dataAnalysis",
       "extension": ".ts",
       "exports": [
@@ -26760,7 +26760,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/utils/fileProcessingUtils.ts",
+      "filePath": "packages/plugins/styler-plugin/src/utils/fileProcessingUtils.ts",
       "baseName": "fileProcessingUtils",
       "extension": ".ts",
       "exports": [
@@ -26794,7 +26794,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/worker/stylerEntitiesDB.ts",
+      "filePath": "packages/plugins/styler-plugin/src/worker/stylerEntitiesDB.ts",
       "baseName": "stylerEntitiesDB",
       "extension": ".ts",
       "exports": [
@@ -26830,7 +26830,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/src/worker/stylerPeerStore.dexie.ts",
+      "filePath": "packages/plugins/styler-plugin/src/worker/stylerPeerStore.dexie.ts",
       "baseName": "stylerPeerStore.dexie",
       "extension": ".ts",
       "exports": [
@@ -26853,7 +26853,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/styler-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -26876,7 +26876,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/vitest.config.ts",
+      "filePath": "packages/plugins/styler-plugin/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -26899,7 +26899,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/styler-plugin/vitest.setup.ts",
+      "filePath": "packages/plugins/styler-plugin/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],
@@ -26910,7 +26910,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/steps-provider.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/steps-provider.tsx",
       "baseName": "steps-provider",
       "extension": ".tsx",
       "exports": [],
@@ -26921,7 +26921,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/steps/AnimationViewerStep.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/steps/AnimationViewerStep.tsx",
       "baseName": "AnimationViewerStep",
       "extension": ".tsx",
       "exports": [
@@ -26957,7 +26957,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/steps/BasicInfoStep.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/steps/BasicInfoStep.tsx",
       "baseName": "BasicInfoStep",
       "extension": ".tsx",
       "exports": [
@@ -26993,7 +26993,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/steps/FramesPreviewStep.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/steps/FramesPreviewStep.tsx",
       "baseName": "FramesPreviewStep",
       "extension": ".tsx",
       "exports": [
@@ -27029,7 +27029,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/steps/MapPreviewStep.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/steps/MapPreviewStep.tsx",
       "baseName": "MapPreviewStep",
       "extension": ".tsx",
       "exports": [
@@ -27065,7 +27065,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/TimelineDialog.tsx",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/TimelineDialog.tsx",
       "baseName": "TimelineDialog",
       "extension": ".tsx",
       "exports": [
@@ -27112,7 +27112,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/utils/frames.ts",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/utils/frames.ts",
       "baseName": "frames",
       "extension": ".ts",
       "exports": [
@@ -27157,7 +27157,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/ui/utils/useFramePlayer.ts",
+      "filePath": "packages/plugins/timeline-plugin/src/ui/utils/useFramePlayer.ts",
       "baseName": "useFramePlayer",
       "extension": ".ts",
       "exports": [
@@ -27193,7 +27193,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/src/worker/lifecycle.ts",
+      "filePath": "packages/plugins/timeline-plugin/src/worker/lifecycle.ts",
       "baseName": "lifecycle",
       "extension": ".ts",
       "exports": [
@@ -27218,7 +27218,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/node-type/timeline-plugin/tsup.config.ts",
+      "filePath": "packages/plugins/timeline-plugin/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [

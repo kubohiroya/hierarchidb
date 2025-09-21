@@ -48,7 +48,7 @@ describe('peerDialogPersistence default provider', () => {
 
 const fallbackRows = new Map<string, any>();
 
-vi.mock('@hierarchidb/node-type-folder-plugin/worker/folderEntitiesDB', () => ({
+vi.mock('@hierarchidb/plugins-folder-plugin/worker/folderEntitiesDB', () => ({
   FolderEntitiesDB: class {
     async open() { /* no-op */ }
     table() {

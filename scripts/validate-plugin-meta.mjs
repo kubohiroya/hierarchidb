@@ -9,12 +9,12 @@ const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 const ajv = new Ajv({ allErrors: true, strict: false });
 const validate = ajv.compile(schema);
 
-const pluginDirs = fs.readdirSync(path.join(repoRoot, 'packages/node-type'))
-  .filter((d) => fs.existsSync(path.join(repoRoot, 'packages/node-type', d, 'package.json')));
+const pluginDirs = fs.readdirSync(path.join(repoRoot, 'packages/plugins'))
+  .filter((d) => fs.existsSync(path.join(repoRoot, 'packages/plugins', d, 'package.json')));
 
 let ok = true;
 for (const d of pluginDirs) {
-  const pkgPath = path.join(repoRoot, 'packages/node-type', d, 'package.json');
+  const pkgPath = path.join(repoRoot, 'packages/plugins', d, 'package.json');
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
   const meta = pkg?.hierarchidb?.plugin;
   if (!meta) {

@@ -812,11 +812,11 @@ HierarchiDBは、アプリケーションの`package.json`の`dependencies`か�
 // packages/common/core/src/plugin-loader/SimplePluginDiscovery.ts
 
 export class SimplePluginDiscovery {
-  private static readonly NODE_TYPE_PLUGIN_PATTERN = /^@hierarchidb\/node-type-(.+)-plugin$/;
+  private static readonly NODE_TYPE_PLUGIN_PATTERN = /^@hierarchidb\/plugins-(.+)-plugin$/;
 
   /**
    * app/package.jsonのdependenciesから自動検出
-   * @hierarchidb/node-type-*-plugin パターンに合致するものがプラグイン
+   * @hierarchidb/plugins-*-plugin パターンに合致するものがプラグイン
    */
   discoverPluginsFromPackageJson(packageJson: PackageJson): NodeType[] {
     const plugins: NodeType[] = [];
@@ -838,11 +838,11 @@ export class SimplePluginDiscovery {
 各プラグインの`package.json`から依存関係を読み取り、推移的な依存関係を含めて解決します。
 
 ```json
-// packages/node-type-plugin/styler-plugin/package.json
+// packages/plugins-plugin/styler-plugin/package.json
 {
-  "name": "@hierarchidb/node-type-styler-plugin-plugin",
+  "name": "@hierarchidb/plugins-styler-plugin-plugin",
   "dependencies": {
-    "@hierarchidb/node-type-spreadsheet-plugin": "workspace:*"
+    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -1089,7 +1089,7 @@ interface DeletePluginDialogProps {
 
 | ファイル | 役割 |
 |---------|------|
-| packages/node-type-plugin/*/package.json | 各プラグインのメタデータ |
+| packages/plugins-plugin/*/package.json | 各プラグインのメタデータ |
 
 ### 30.7 今後の拡張計画
 
@@ -1121,7 +1121,7 @@ interface DeletePluginDialogProps {
    ```json
    {
      "dependencies": {
-       "@hierarchidb/node-type-folder-plugin": "workspace:*"
+       "@hierarchidb/plugins-folder-plugin": "workspace:*"
      },
      "hierarchidb": {
        "plugin": {

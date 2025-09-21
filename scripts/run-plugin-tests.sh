@@ -5,16 +5,16 @@ export ENABLE_INTEGRATION_TESTS=false
 export ENABLE_SHAPE_DEEP_TESTS=false
 
 PLUGINS=(
-  packages/node-type/base-plugin
-  packages/node-type/basemap-plugin
-  packages/node-type/folder-plugin
-  packages/node-type/location-plugin
-  packages/node-type/linker-plugin
-  packages/node-type/resolver-plugin
-  packages/node-type/route-plugin
-  packages/node-type/shape-plugin
-  packages/node-type/spreadsheet-plugin
-  packages/node-type/styler-plugin
+  packages/plugins/base-plugin
+  packages/plugins/basemap-plugin
+  packages/plugins/folder-plugin
+  packages/plugins/location-plugin
+  packages/plugins/linker-plugin
+  packages/plugins/resolver-plugin
+  packages/plugins/route-plugin
+  packages/plugins/shape-plugin
+  packages/plugins/spreadsheet-plugin
+  packages/plugins/styler-plugin
 )
 
 RESULT_JSON=plugin-test-results.json

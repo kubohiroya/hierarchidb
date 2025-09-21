@@ -268,36 +268,36 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../packages/common/types
-      '@hierarchidb/node-type-basemap-plugin':
+      '@hierarchidb/plugins-basemap-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/basemap-plugin
-      '@hierarchidb/node-type-folder-plugin':
+        version: link:../packages/plugins/basemap-plugin
+      '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/folder-plugin
-      '@hierarchidb/node-type-linker-plugin':
+        version: link:../packages/plugins/folder-plugin
+      '@hierarchidb/plugins-linker-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/linker-plugin
-      '@hierarchidb/node-type-location-plugin':
+        version: link:../packages/plugins/linker-plugin
+      '@hierarchidb/plugins-location-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/location-plugin
-      '@hierarchidb/node-type-resolver-plugin':
+        version: link:../packages/plugins/location-plugin
+      '@hierarchidb/plugins-resolver-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/resolver-plugin
-      '@hierarchidb/node-type-route-plugin':
+        version: link:../packages/plugins/resolver-plugin
+      '@hierarchidb/plugins-route-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/route-plugin
-      '@hierarchidb/node-type-shape-plugin':
+        version: link:../packages/plugins/route-plugin
+      '@hierarchidb/plugins-shape-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/shape-plugin
-      '@hierarchidb/node-type-spreadsheet-plugin':
+        version: link:../packages/plugins/shape-plugin
+      '@hierarchidb/plugins-spreadsheet-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/spreadsheet-plugin
-      '@hierarchidb/node-type-styler-plugin':
+        version: link:../packages/plugins/spreadsheet-plugin
+      '@hierarchidb/plugins-styler-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/styler-plugin
-      '@hierarchidb/node-type-timeline-plugin':
+        version: link:../packages/plugins/styler-plugin
+      '@hierarchidb/plugins-timeline-plugin':
         specifier: workspace:*
-        version: link:../packages/node-type/timeline-plugin
+        version: link:../packages/plugins/timeline-plugin
       '@hierarchidb/runtime-ui-landingpage':
         specifier: workspace:*
         version: link:../packages/runtime-ui/landingpage
@@ -777,7 +777,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/node-type/base-plugin:
+  packages/plugins/base-plugin:
     dependencies:
       '@hierarchidb/common-type':
         specifier: workspace:*
@@ -796,7 +796,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/node-type/basemap-plugin:
+  packages/plugins/basemap-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -810,10 +810,10 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
-      '@hierarchidb/node-type-folder-plugin':
+      '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -857,7 +857,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@22.1.0)
 
-  packages/node-type/folder-plugin:
+  packages/plugins/folder-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -871,7 +871,7 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -936,7 +936,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
-  packages/node-type/linker-plugin:
+  packages/plugins/linker-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -950,7 +950,7 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -1027,7 +1027,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/node-type/location-plugin:
+  packages/plugins/location-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -1050,10 +1050,10 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
-      '@hierarchidb/node-type-shape-plugin':
+      '@hierarchidb/plugins-shape-plugin':
         specifier: workspace:*
         version: link:../shape-plugin
       '@hierarchidb/runtime-shared-batch-processor':
@@ -1106,7 +1106,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/node-type/resolver-plugin:
+  packages/plugins/resolver-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -1120,7 +1120,7 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -1179,7 +1179,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
-  packages/node-type/route-plugin:
+  packages/plugins/route-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -1202,10 +1202,10 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../feature/download
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
-      '@hierarchidb/node-type-shape-plugin':
+      '@hierarchidb/plugins-shape-plugin':
         specifier: workspace:*
         version: link:../shape-plugin
       '@hierarchidb/runtime-shared-batch-processor':
@@ -1261,7 +1261,7 @@ importers:
         specifier: 5.6.2
         version: 5.6.2
 
-  packages/node-type/shape-plugin:
+  packages/plugins/shape-plugin:
     dependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
@@ -1281,10 +1281,10 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../feature/download
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
-      '@hierarchidb/node-type-folder-plugin':
+      '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
       '@hierarchidb/runtime-shared-batch-processor':
@@ -1415,7 +1415,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@25.0.1)
 
-  packages/node-type/spreadsheet-plugin:
+  packages/plugins/spreadsheet-plugin:
     dependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
@@ -1426,7 +1426,7 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-folder-plugin':
+      '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
       '@hierarchidb/runtime-worker':
@@ -1494,12 +1494,12 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
-  packages/node-type/styler-plugin:
+  packages/plugins/styler-plugin:
     dependencies:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-folder-plugin':
+      '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
       '@hierarchidb/table-metadata':
@@ -1530,7 +1530,7 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
     devDependencies:
-      '@hierarchidb/node-type-spreadsheet-plugin':
+      '@hierarchidb/plugins-spreadsheet-plugin':
         specifier: workspace:*
         version: link:../spreadsheet-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -1564,7 +1564,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
-  packages/node-type/timeline-plugin:
+  packages/plugins/timeline-plugin:
     dependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -1578,7 +1578,7 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/node-type-base-plugin':
+      '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
       '@hierarchidb/runtime-ui-plugin-dialog':
@@ -2032,11 +2032,10 @@ importers:
         version: 8.5.0(@microsoft/api-extractor@7.52.13(@types/node@18.19.123))(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.2)(yaml@2.8.1)
 
   packages/tools/fetch-metadata-cli:
-    dependencies:
+    devDependencies:
       '@hierarchidb/runtime-shared-fetch-metadata':
         specifier: workspace:*
         version: link:../../runtime-shared/fetch-metadata
-    devDependencies:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123

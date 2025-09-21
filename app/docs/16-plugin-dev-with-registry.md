@@ -14,7 +14,7 @@
 ## 仕組みの概要
 - 生成プラグイン（Vite）
   - `app/vite-plugin-plugin-registry.ts`（UI/Worker のレジストリ）
-    - 走査対象: `packages/node-type/*-plugin/package.json`
+    - 走査対象: `packages/plugins/*-plugin/package.json`
     - 生成: `virtual:plugin-registry-ui`, `virtual:plugin-registry-worker`
       - `pluginMapUI = { nodeType: () => import('<pkg>') }`
       - `pluginMapWorker = { nodeType: () => import('<pkg>/worker') | async () => ({ default: {} }) }`
@@ -66,11 +66,11 @@
 - ビルド: tsup で `dist/` に出力（exports に合わせる）
 
 ## アプリへの接続（自動）
-- 開発時は Vite が `packages/node-type/*-plugin/package.json` を監視し、以下を再生成します。
+- 開発時は Vite が `packages/plugins/*-plugin/package.json` を監視し、以下を再生成します。
   - `virtual:plugin-registry-ui` … UI ローダ
   - `virtual:plugin-registry-worker` … Worker ローダ
   - `virtual:mui-icon-map` … アイコンマップ
-- `@hierarchidb/tools-plugin-registry-utils` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/node-type-*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
+- `@hierarchidb/tools-plugin-registry-utils` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/plugins-*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
 - 文字列リテラルの import() なので、Vite/Rollup が確実に解決・分割し、GitHub Pages でも問題ありません。
 
 ## UI 実装の取り込み例
@@ -122,7 +122,7 @@ export interface PluginStepConfigProvider<TData = unknown> {
 プラグインの UI で次のように登録します（例: route-plugin）。
 
 ```tsx
-// packages/node-type/route-plugin/src/ui/steps-provider.tsx
+// packages/plugins/route-plugin/src/ui/steps-provider.tsx
 import React from 'react';
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep';
@@ -201,7 +201,7 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
 
 ## 新規プラグインの最短テンプレート
 ```
-packages/node-type/foo-plugin/
+packages/plugins/foo-plugin/
 ├── package.json   // 上記の例に準拠
 ├── tsup.config.ts // createTsupConfig({ entry: ['src/index.ts', 'src/worker/index.ts'] }) 等
 └── src/

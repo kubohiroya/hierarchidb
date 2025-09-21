@@ -94,7 +94,7 @@ export function pluginRegistryPlugin(opts?: { rootDir?: string }): Plugin {
       return null;
     },
     handleHotUpdate(ctx) {
-      if (/packages\/node-type\/.*-plugin\/package\.json$/.test(ctx.file)) {
+      if (/packages\/plugins\/.*-plugin\/package\.json$/.test(ctx.file)) {
         const modUI = ctx.server.moduleGraph.getModuleById(RES_UI);
         const modW = ctx.server.moduleGraph.getModuleById(RES_WORKER);
         if (modUI) ctx.server.moduleGraph.invalidateModule(modUI);

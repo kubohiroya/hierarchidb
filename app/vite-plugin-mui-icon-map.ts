@@ -35,10 +35,10 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
   const VIRTUAL_ID = 'virtual:mui-icon-map';
   const RESOLVED = '\0' + VIRTUAL_ID;
   const rootDir = opts?.rootDir || path.resolve(__dirname, '..');
-  const include = opts?.include || /packages\/node-type\/.*-plugin\/package\.json$/;
+  const include = opts?.include || /packages\/plugins\/.*-plugin\/package\.json$/;
 
   function collectIconNames(): string[] {
-    const nodeTypeDir = path.resolve(rootDir, 'packages', 'node-type');
+    const nodeTypeDir = path.resolve(rootDir, 'packages', 'plugins');
     let icons = new Set<string>();
     try {
       const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });

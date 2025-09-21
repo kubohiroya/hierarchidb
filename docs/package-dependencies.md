@@ -41,16 +41,16 @@ graph LR
     N19["@hierarchidb/tag"]
   end
   subgraph node-type
-    N20["@hierarchidb/node-type-base-plugin"]
-    N21["@hierarchidb/node-type-basemap-plugin"]
-    N22["@hierarchidb/node-type-folder-plugin"]
-    N23["@hierarchidb/node-type-location-plugin"]
-    N24["@hierarchidb/node-type-linker-plugin"]
-    N25["@hierarchidb/node-type-resolver-plugin"]
-    N26["@hierarchidb/node-type-route-plugin"]
-    N27["@hierarchidb/node-type-shape-plugin"]
-    N28["@hierarchidb/node-type-spreadsheet-plugin"]
-    N29["@hierarchidb/node-type-styler-plugin"]
+    N20["@hierarchidb/plugins-base-plugin"]
+    N21["@hierarchidb/plugins-basemap-plugin"]
+    N22["@hierarchidb/plugins-folder-plugin"]
+    N23["@hierarchidb/plugins-location-plugin"]
+    N24["@hierarchidb/plugins-linker-plugin"]
+    N25["@hierarchidb/plugins-resolver-plugin"]
+    N26["@hierarchidb/plugins-route-plugin"]
+    N27["@hierarchidb/plugins-shape-plugin"]
+    N28["@hierarchidb/plugins-spreadsheet-plugin"]
+    N29["@hierarchidb/plugins-styler-plugin"]
   end
   subgraph runtime-shared
     N30["@hierarchidb/runtime-shared-batch-processor"]

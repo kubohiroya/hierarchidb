@@ -8,9 +8,9 @@ export default createTsupConfig({
     '@emotion/react',
     '@emotion/styled',
     // Optional node-type plugins loaded via dynamic import in register-default-extensions
-    '@hierarchidb/node-type-shape-plugin',
-    '@hierarchidb/node-type-spreadsheet-plugin',
-    '@hierarchidb/node-type-basemap-plugin',
-    '@hierarchidb/node-type-styler-plugin',
+    '@hierarchidb/plugins-shape-plugin',
+    '@hierarchidb/plugins-spreadsheet-plugin',
+    '@hierarchidb/plugins-basemap-plugin',
+    '@hierarchidb/plugins-styler-plugin',
   ],
 });

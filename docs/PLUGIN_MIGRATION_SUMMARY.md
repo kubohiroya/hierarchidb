@@ -9,7 +9,7 @@ HierarchiDBの全8プラグインについて詳細な調査を実施した結�
 ### 🏆 最高峰レベル
 #### **project-plugin** （127件のエラー → 4時間で修正可能／アーカイブ）
 
-> 2025-09-16 更新: プロジェクト領域プラグインは `@hierarchidb/node-type-linker-plugin` にリネームされ、`project-plugin` は Deprecated になりました。本評価は旧名称の履歴です。現行の改善は `linker-plugin` を対象にしてください。
+> 2025-09-16 更新: プロジェクト領域プラグインは `@hierarchidb/plugins-linker-plugin` にリネームされ、`project-plugin` は Deprecated になりました。本評価は旧名称の履歴です。現行の改善は `linker-plugin` を対象にしてください。
 - **HierarchiDB最高峰の複合機能プラグイン**
 - Deck.gl 3D可視化、空間分析エンジン、時系列分析、レポート生成（PDF/HTML/DOCX）
 - プロジェクト管理、ワークフロー、コラボレーション機能

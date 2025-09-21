@@ -22,43 +22,43 @@
 - basemap-plugin
   - DB: `BaseMapDatabase` → `BaseMapDB`
   - Tables: `baseMaps`, `workingCopies`（OK）
-  - 定義/実装: `packages/node-type/basemap-plugin/src/database/BaseMapDatabase.ts`
+  - 定義/実装: `packages/plugins/basemap-plugin/src/database/BaseMapDatabase.ts`
 - folder-plugin
   - DB(複合): `folder-plugin-entities` → `folder-entities`
     - Tables: `peerEntities`, `groupEntities`, `relations`（OK）
-    - 実装: `packages/node-type/folder-plugin/src/worker/folderEntitiesDB.ts`
+    - 実装: `packages/plugins/folder-plugin/src/worker/folderEntitiesDB.ts`
   - DB(固有): `FolderDatabase` → `FolderDB`
     - Tables: `folders`, `workingCopies`（OK）
-    - 実装: `packages/node-type/folder-plugin/src/database/FolderDatabase.ts`
+    - 実装: `packages/plugins/folder-plugin/src/database/FolderDatabase.ts`
 - spreadsheet-plugin
   - DB(複合): `spreadsheet-plugin-entities` → `spreadsheet-entities`
-    - 実装: `packages/node-type/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB.ts`
+    - 実装: `packages/plugins/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB.ts`
   - DB(固有): `SpreadsheetDB`（OK）
-    - 実装: `packages/node-type/spreadsheet-plugin/src/database/SpreadsheetDatabase.ts`
+    - 実装: `packages/plugins/spreadsheet-plugin/src/database/SpreadsheetDatabase.ts`
 - styler-plugin
   - DB: `StylerCSVMetadata` → `StylerMetadataDB`（提案）
     - Table: `csvMetadata`（OK）
-    - 実装: `packages/node-type/styler-plugin/src/services/SimpleTableMetadataManager.ts`
+    - 実装: `packages/plugins/styler-plugin/src/services/SimpleTableMetadataManager.ts`
 - shape-plugin
   - DB(固有): `ShapeDB`（OK）
   - Ephemeral: `EphemeralShapeDB`（OK）
   - Tables: `shapeEntities`, `batchSessions`, `batchTasks`, `features`, `featureIndices`, `featureBuffers`, `vectorTiles`, `tileBuffers`, `cache`（OK）
-  - 実装: `packages/node-type/shape-plugin/src/services/database/ShapeDB.ts` / `.../EphemeralShapeDB.ts`
+  - 実装: `packages/plugins/shape-plugin/src/services/database/ShapeDB.ts` / `.../EphemeralShapeDB.ts`
 - location-plugin
   - DB(複合): `location-plugin-entities` → `location-entities`
-    - 実装: `packages/node-type/location-plugin/src/worker/locationEntitiesDB.ts`
+    - 実装: `packages/plugins/location-plugin/src/worker/locationEntitiesDB.ts`
 - route-plugin
   - DB: `RouteDB`（OK）
   - Tables: `routes`, `workingCopies`, `routeCache`（OK）
-  - 実装: `packages/node-type/route-plugin/src/database/RouteDatabase.ts`
+  - 実装: `packages/plugins/route-plugin/src/database/RouteDatabase.ts`
 - resolver-plugin
   - DB: `ResolverDB`（OK）
   - Tables: `resolvers`, `workingCopies`（OK）
-  - 実装: `packages/node-type/resolver-plugin/src/database/ResolverDatabase.ts`
+  - 実装: `packages/plugins/resolver-plugin/src/database/ResolverDatabase.ts`
 - linker-plugin（旧 project-plugin）
   - DB: `LinkerDB`（旧 `ProjectPluginDB` / `ProjectDB`）※ Worker 側 Dexie 実装は rename 移行中
   - Tables: `projects`, `snapshots`, `analysisResults`, `tiles`（legacy スキーマを継承予定）
-  - 実装: `packages/node-type/linker-plugin`（Worker 向け DB 実装は後続タスクで再公開）
+  - 実装: `packages/plugins/linker-plugin`（Worker 向け DB 実装は後続タスクで再公開）
 
 ## 実施手順（段階導入）
 1) 命名規約の確定（本ドキュメント）

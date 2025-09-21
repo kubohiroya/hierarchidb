@@ -107,11 +107,11 @@ export default [
 
   // Type-aware deprecation checks (shape-plugin)
   {
-    files: ['packages/node-type/shape-plugin/**/*.{ts,tsx}'],
+    files: ['packages/plugins/shape-plugin/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/node-type/shape-plugin/tsconfig.json'],
+        project: ['./packages/plugins/shape-plugin/tsconfig.json'],
       },
     },
     rules: {

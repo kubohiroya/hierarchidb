@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PLUGINS=(packages/node-type/*-plugin)
+PLUGINS=(packages/plugins/*-plugin)
 
 json='['
 first=1

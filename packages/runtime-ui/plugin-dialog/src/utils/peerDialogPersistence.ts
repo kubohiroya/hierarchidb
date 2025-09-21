@@ -30,7 +30,6 @@ type EntitiesDBAdapter = {
 };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __HDB_PLUGIN_ENTITY_OVERRIDES__:
     | Record<string, EntitiesDBAdapter | (() => EntitiesDBAdapter | Promise<EntitiesDBAdapter>)>
     | undefined;
@@ -82,7 +81,7 @@ class UIPersistenceRegistry {
       const meta = import.meta as ImportMeta & { env?: Record<string, unknown> };
       const isDev = Boolean(meta.env?.DEV);
       const packageBases = [
-        `@hierarchidb/node-type-${nodeType}-plugin`,
+        `@hierarchidb/plugins-${nodeType}-plugin`,
         `@hierarchidb/${nodeType}-plugin`,
       ];
       const basePaths = packageBases.flatMap((pkg) => [

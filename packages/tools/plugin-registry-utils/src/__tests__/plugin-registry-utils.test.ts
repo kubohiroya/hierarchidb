@@ -26,7 +26,7 @@ beforeAll(() => {
     path.join(fooPkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: '@hierarchidb/node-type-foo-plugin',
+        name: '@hierarchidb/plugins-foo-plugin',
         type: 'module',
         exports: {
           '.': './dist/index.js',
@@ -47,7 +47,7 @@ beforeAll(() => {
     path.join(barPkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: '@hierarchidb/node-type-bar-plugin',
+        name: '@hierarchidb/plugins-bar-plugin',
         type: 'module',
         exports: {
           '.': './dist/index.js',
@@ -90,11 +90,11 @@ describe('plugin registry utils', () => {
     expect(aliases).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          find: '@hierarchidb/node-type-foo-plugin/services',
+          find: '@hierarchidb/plugins-foo-plugin/services',
           replacement: expect.stringContaining('foo-plugin/src/services/index.ts'),
         }),
         expect.objectContaining({
-          find: '@hierarchidb/node-type-foo-plugin/database',
+          find: '@hierarchidb/plugins-foo-plugin/database',
           replacement: expect.stringContaining('foo-plugin/src/database/index.ts'),
         }),
       ]),
@@ -122,11 +122,11 @@ describe('plugin registry utils', () => {
     });
 
     const updated = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
-    expect(updated.compilerOptions.paths['@hierarchidb/node-type-foo-plugin/services'][0]).toBe(
-      '../packages/node-type/foo-plugin/src/services/index.ts',
+    expect(updated.compilerOptions.paths['@hierarchidb/plugins-foo-plugin/services'][0]).toBe(
+      '../packages/plugins/foo-plugin/src/services/index.ts',
     );
-    expect(updated.compilerOptions.paths['@hierarchidb/node-type-foo-plugin/database'][0]).toBe(
-      '../packages/node-type/foo-plugin/src/database/index.ts',
+    expect(updated.compilerOptions.paths['@hierarchidb/plugins-foo-plugin/database'][0]).toBe(
+      '../packages/plugins/foo-plugin/src/database/index.ts',
     );
   });
 
@@ -153,7 +153,7 @@ describe('plugin registry utils', () => {
     expect(result?.resolve?.alias).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          find: '@hierarchidb/node-type-foo-plugin/services',
+          find: '@hierarchidb/plugins-foo-plugin/services',
           replacement: expect.stringContaining('foo-plugin/src/services/index.ts'),
         }),
       ]),

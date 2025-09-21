@@ -31,10 +31,10 @@ const config: StorybookConfig = {
         ...config.resolve,
         alias: {
           ...config.resolve?.alias,
-          '@deck.gl/core': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/core'),
-          '@deck.gl/layers': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/layers'),
-          '@deck.gl/geo-layers': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/geo-layers'),
-          '@deck.gl/mapbox': resolve(__dirname, '../packages/node-type/linker-plugin/node_modules/@deck.gl/mapbox'),
+          '@deck.gl/core': resolve(__dirname, '../packages/plugins/linker-plugin/node_modules/@deck.gl/core'),
+          '@deck.gl/layers': resolve(__dirname, '../packages/plugins/linker-plugin/node_modules/@deck.gl/layers'),
+          '@deck.gl/geo-layers': resolve(__dirname, '../packages/plugins/linker-plugin/node_modules/@deck.gl/geo-layers'),
+          '@deck.gl/mapbox': resolve(__dirname, '../packages/plugins/linker-plugin/node_modules/@deck.gl/mapbox'),
         },
       },
     };

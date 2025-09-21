@@ -1365,7 +1365,7 @@ test('should create and edit node', async ({ page }) => {
   // Create new node
   await page.click('[data-testid="create-node-button"]');
   await page.fill('[data-testid="node-name-input"]', 'New Node');
-  await page.selectOption('[data-testid="node-type-select"]', 'folder-plugin');
+  await page.selectOption('[data-testid="plugins-select"]', 'folder-plugin');
   await page.click('[data-testid="save-button"]');
   
   // Verify node created

@@ -9,9 +9,14 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "~*.ts",
-    "src*.tsx"
-  ],
+      "~/*.ts": [
+        "./src/*"
+      ],
+      "~/*.tsx": [
+        "./src/*"
+      ]
+    }
+  },
   "exclude": [
     "node_modules",
     "dist"

@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => ({
 }));
 ```
 
-At build time the plugin scans `packages/node-type/*-plugin/package.json`, detects
+At build time the plugin scans `packages/plugins/*-plugin/package.json`, detects
 their `exports` subpaths and:
 
 1. Injects Vite `resolve.alias` entries that point at the corresponding `src/` files.

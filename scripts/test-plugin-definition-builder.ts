@@ -11,13 +11,14 @@ class MockPackageJsonReader {
     
         const pluginPackages = [
       'folder-plugin',
+          'basemap-plugin',
       'shape-plugin',
       'location-plugin',
-      'basemap-plugin',
-      'linker-plugin',
       'route-plugin',
       'resolver-plugin',
-      'styler-plugin'
+          'styler-plugin',
+          'linker-plugin',
+          'timeline-plugin'
     ];
     
     for (const pkg of pluginPackages) {
@@ -25,7 +26,7 @@ class MockPackageJsonReader {
         process.cwd(),
         '..',
         'packages',
-        'node-type',
+        'plugins',
         pkg,
         'package.json'
       );
@@ -34,7 +35,7 @@ class MockPackageJsonReader {
         try {
           const content = fs.readFileSync(packagePath, 'utf-8');
           const packageJson = JSON.parse(content) as PackageJsonContent;
-          packages.set(`@hierarchidb/node-type-${pkg}`, packageJson);
+          packages.set(`@hierarchidb/plugins-${pkg}`, packageJson);
         } catch (error) {
           console.error(`Failed to read ${packagePath}:`, error);
         }

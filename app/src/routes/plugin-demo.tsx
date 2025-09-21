@@ -23,7 +23,7 @@ import { type NodeId } from '@hierarchidb/common-type';
 // Note: These imports will be commented out initially to avoid build errors
 // We'll use mock components instead
 // import { BaseMapDialog } from "@hierarchidb/basemap";
-// import { StylerDialog } from "@hierarchidb/node-type-styler-plugin";
+// import { StylerDialog } from "@hierarchidb/plugins-styler-plugin";
 
 // Mock Dialog Component for demonstration
 type MockDialogProps = {

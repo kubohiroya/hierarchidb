@@ -37,14 +37,14 @@ const createLoader = (specifier: string, exportName: string): PeerDbLoader =>
   };
 
 const peerDbLoaders: Partial<Record<PeerDisplayNodeType, PeerDbLoader>> = {
-  folder: createLoader('@hierarchidb/node-type-folder-plugin/worker', 'FolderEntitiesDB'),
-  route: createLoader('@hierarchidb/node-type-route-plugin/worker', 'RouteEntitiesDB'),
-  resolver: createLoader('@hierarchidb/node-type-resolver-plugin/worker', 'ResolverEntitiesDB'),
-  basemap: createLoader('@hierarchidb/node-type-basemap-plugin/worker', 'BasemapEntitiesDB'),
-  location: createLoader('@hierarchidb/node-type-location-plugin/worker', 'LocationEntitiesDB'),
-  shape: createLoader('@hierarchidb/node-type-shape-plugin/worker', 'ShapeEntitiesDB'),
-  spreadsheet: createLoader('@hierarchidb/node-type-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB'),
-  styler: createLoader('@hierarchidb/node-type-styler-plugin/worker', 'StylerEntitiesDB'),
+  folder: createLoader('@hierarchidb/plugins-folder-plugin/worker', 'FolderEntitiesDB'),
+  route: createLoader('@hierarchidb/plugins-route-plugin/worker', 'RouteEntitiesDB'),
+  resolver: createLoader('@hierarchidb/plugins-resolver-plugin/worker', 'ResolverEntitiesDB'),
+  basemap: createLoader('@hierarchidb/plugins-basemap-plugin/worker', 'BasemapEntitiesDB'),
+  location: createLoader('@hierarchidb/plugins-location-plugin/worker', 'LocationEntitiesDB'),
+  shape: createLoader('@hierarchidb/plugins-shape-plugin/worker', 'ShapeEntitiesDB'),
+  spreadsheet: createLoader('@hierarchidb/plugins-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB'),
+  styler: createLoader('@hierarchidb/plugins-styler-plugin/worker', 'StylerEntitiesDB'),
 };
 
 const toNodeId = (value: string): NodeId => value as NodeId;

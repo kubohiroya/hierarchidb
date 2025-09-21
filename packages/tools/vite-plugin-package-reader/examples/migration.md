@@ -27,7 +27,7 @@ export default defineConfig({
   plugins: [
     vitePluginPackageReader({
       rootDir: path.resolve(__dirname, '..'),
-      pluginPattern: /@hierarchidb\/node-type-.*-plugin$/
+      pluginPattern: /@hierarchidb\/plugins-.*-plugin$/
     }),
     // ... other plugins
   ]
@@ -68,7 +68,7 @@ export default defineConfig({
       strategies: [
         new RegexStrategy({
           name: 'hierarchidb-plugins',
-          pattern: /@hierarchidb\/node-type-.*-plugin$/,
+          pattern: /@hierarchidb\/plugins-.*-plugin$/,
           metadataExtractor: (pkg) => ({
             nodeType: pkg.name.replace('@hierarchidb/', '').replace('-plugin', ''),
             config: pkg.hierarchidb?.plugin
@@ -81,7 +81,7 @@ export default defineConfig({
       virtualModules: [createPluginVirtualModule()],
       
       monorepo: {
-        packages: ['packages/node-type/*'],
+        packages: ['packages/plugins/*'],
         usePnpmWorkspace: true
       },
       
@@ -193,7 +193,7 @@ Make sure your strategy pattern matches your package names:
 strategies: [
   new RegexStrategy({
     name: 'debug',
-    pattern: /@hierarchidb\/node-type-.*-plugin$/,
+    pattern: /@hierarchidb\/plugins-.*-plugin$/,
   })
 ]
 ```

@@ -1,7 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
-import type { NextHandleFunction } from 'connect';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 // @ts-ignore
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -75,8 +73,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     '@hierarchidb/ui-icon': '../packages/ui/icon/src/index.ts',
     '@hierarchidb/ui-dialog': '../packages/ui/dialog/src/index.ts',
     // Node-type plugins (opt-in via HDB_DEV)
-    '@hierarchidb/node-type-resolver-plugin': '../packages/node-type/resolver-plugin/src/index.ts',
-    '@hierarchidb/node-type-linker-plugin': '../packages/node-type/linker-plugin/src/index.ts',
+    '@hierarchidb/plugins-resolver-plugin': '../packages/plugins/resolver-plugin/src/index.ts',
+    '@hierarchidb/plugins-linker-plugin': '../packages/plugins/linker-plugin/src/index.ts',
     // 追加したいパッケージがあればここにマッピングを足してください
   };
 
@@ -123,7 +121,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
         // Include all node-type plugins used in menus
-        pattern: /@hierarchidb\/node-type-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
+        pattern: /@hierarchidb\/plugins-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
       }),
@@ -187,7 +185,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     name: 'hdb-build-beacon',
     configureServer(server: ViteDevServer) {
       const startedAt = new Date().toISOString();
-      const beaconHandler: NextHandleFunction = (_req, res) => {
+      const beaconHandler = (_req, res) => {
         const payload = {
           appVersion,
           buildTime,
@@ -206,7 +204,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const hdbDevProxyPlugin: Plugin = {
     name: 'hdb-dev-proxy',
     configureServer(server: ViteDevServer) {
-      const handler: NextHandleFunction = async (req, res, next) => {
+      const handler = async (req, res, next) => {
         try {
           // Allow only localhost callers
           const remote = (req.socket?.remoteAddress || '').toString();
@@ -311,10 +309,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           res.setHeader('access-control-expose-headers', '*');
 
           // Stream body if possible
-          const body = resp.body;
+          const body: ReadableStream<Uint8Array> = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body).pipe(res);
+            Readable.fromWeb(body as any).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
@@ -421,7 +419,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
-        { find: '@hierarchidb/node-type-base-plugin', replacement: path.resolve(__dirname, '../packages/node-type/base-plugin/dist/index.js') },
+        { find: '@hierarchidb/plugins-base-plugin', replacement: path.resolve(__dirname, '../packages/plugins/base-plugin/dist/index.js') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
@@ -473,7 +471,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Run package-reader first so virtual modules are available early
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
-            pattern: /@hierarchidb\/node-type-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
+            pattern: /@hierarchidb\/plugins-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
             priorityPlugin: 'folder',
             extractPluginConfig: true,
           }),

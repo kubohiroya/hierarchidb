@@ -16,7 +16,7 @@ This repository prioritizes prebuild typecheck stability and consistent CI resul
 Further details are duplicated in:
 - `packages/ui/README.md` (UI libraries)
 - `packages/runtime-ui/README.md` (app integration packages)
-- `packages/node-type/README.md` (plugin system packages)
+- `packages/plugins/README.md` (plugin system packages)
 
 ## File / Export Naming
 

@@ -1,4 +1,4 @@
-declare module '@hierarchidb/node-type-route-plugin/worker' {
+declare module '@hierarchidb/plugins-route-plugin/worker' {
   export function createEntityHandler(): Promise<any>;
   export function createBatchManager(): Promise<any>;
   export const lifecycle: any;
@@ -29,9 +29,9 @@ declare module '@hierarchidb/runtime-worker-bootstrap' {
 }
 declare module '@hierarchidb/ui-i18n';
 declare module '@hierarchidb/runtime-ui-plugin-dialog';
-declare module '@hierarchidb/node-type-basemap-plugin/database';
-declare module '@hierarchidb/node-type-shape-plugin/services';
-declare module '@hierarchidb/node-type-shape-plugin/worker';
+declare module '@hierarchidb/plugins-basemap-plugin/database';
+declare module '@hierarchidb/plugins-shape-plugin/services';
+declare module '@hierarchidb/plugins-shape-plugin/worker';
 
 // Minimal ambient type for geojson-vt so app typecheck passes when worker imports it.
 // Prefer installing official types: `pnpm add -D @types/geojson-vt` at the workspace root.

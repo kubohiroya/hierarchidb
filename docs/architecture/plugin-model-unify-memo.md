@@ -1,7 +1,7 @@
 # メモ: 「シンプル/拡張」プラグイン分類を統一する理由と方針
 
 作成日: 2025-09-05
-対象: packages/node-type/README.md, スキャフォールド/テンプレート, テスト命名
+対象: packages/plugins/README.md, スキャフォールド/テンプレート, テスト命名
 
 ## 結論
 - 実装上は単一の `PluginDefinition` で十分（`extends?: NodeType`, `dependencies: NodeType[]`）。

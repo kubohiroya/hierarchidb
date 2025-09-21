@@ -6,7 +6,6 @@ import {
   useEffect,
   useCallback,
   useRef,
-  cloneElement,
 } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
 import { useTranslation } from 'react-i18next';
@@ -59,7 +58,7 @@ import {
   type TreeTableColumn,
 } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { NodeId, TreeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode, SubscriptionId } from '@hierarchidb/common-type';
 import type { TreeSubscriptionAPI } from '@hierarchidb/common-api';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
@@ -735,8 +734,6 @@ function TrashDialogContent({
   onSearchClear,
   onRestore,
   onEmptyItem,
-  displayMode,
-  footerVisible,
   expandedIds,
   onToggleExpand,
   holderLookup,
@@ -1540,9 +1537,9 @@ export default function TrashDialog() {
       treeId,
       rootNode: data.trashRootNode,
       targetNodeIds: Array.from(initialNodeMap.keys()) as NodeId[],
-      holderLookup: holderLookupState,
       nodeMap: initialNodeMap,
       activeNodeId: effectiveTrashNodeId ?? null,
+      pageNodeId,
     }).nodes;
     console.log('[TrashDialog] treeData initial', {
       treeId,
@@ -1563,9 +1560,9 @@ export default function TrashDialog() {
       treeId,
       rootNode: data.trashRootNode,
       targetNodeIds: Array.from(nodeMap.keys()) as NodeId[],
-      holderLookup: holderLookupState,
       nodeMap,
       activeNodeId: effectiveTrashNodeId ?? null,
+      pageNodeId,
     });
     setTreeData(nodes);
     console.log('[TrashDialog] treeData recomputed', {
@@ -1574,7 +1571,7 @@ export default function TrashDialog() {
       total: nodes.length,
       sample: nodes.slice(0, 10),
     });
-  }, [nodeMap, holderLookupState, data.trashRootNode, treeId, effectiveTrashNodeId]);
+  }, [nodeMap, data.trashRootNode, treeId, effectiveTrashNodeId, pageNodeId]);
 
   const trashRootId = data.trashRootNode ? String(data.trashRootNode.id) : '';
 

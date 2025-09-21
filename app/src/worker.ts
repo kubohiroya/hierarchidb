@@ -73,10 +73,10 @@ reporter.reportStepProgress('Load Comlink', 0);
     let pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
 
     const workerOverrides: PluginLoaderMap = {
-      location: () => import('@hierarchidb/node-type-location-plugin/worker'),
-      route: () => import('@hierarchidb/node-type-route-plugin/worker'),
-      timeline: () => import('@hierarchidb/node-type-timeline-plugin/worker'),
-      shape: () => import('@hierarchidb/node-type-shape-plugin/worker'),
+      location: () => import('@hierarchidb/plugins-location-plugin/worker'),
+      route: () => import('@hierarchidb/plugins-route-plugin/worker'),
+      timeline: () => import('@hierarchidb/plugins-timeline-plugin/worker'),
+      shape: () => import('@hierarchidb/plugins-shape-plugin/worker'),
     };
     pluginMap = { ...pluginMap, ...workerOverrides };
 

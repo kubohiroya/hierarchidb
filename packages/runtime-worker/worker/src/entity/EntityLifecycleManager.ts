@@ -71,14 +71,14 @@ const createPeerDbLoader = (specifier: string, exportName: string): PeerDbLoader
 };
 
 const peerDbLoaders = new Map<NodeType, PeerDbLoader>([
-  [toNodeType('folder'), createPeerDbLoader('@hierarchidb/node-type-folder-plugin/worker', 'FolderEntitiesDB')],
-  [toNodeType('route'), createPeerDbLoader('@hierarchidb/node-type-route-plugin/worker', 'RouteEntitiesDB')],
-  [toNodeType('resolver'), createPeerDbLoader('@hierarchidb/node-type-resolver-plugin/worker', 'ResolverEntitiesDB')],
-  [toNodeType('shape'), createPeerDbLoader('@hierarchidb/node-type-shape-plugin/worker', 'ShapeEntitiesDB')],
-  [toNodeType('location'), createPeerDbLoader('@hierarchidb/node-type-location-plugin/worker', 'LocationEntitiesDB')],
-  [toNodeType('spreadsheet'), createPeerDbLoader('@hierarchidb/node-type-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB')],
-  [toNodeType('styler'), createPeerDbLoader('@hierarchidb/node-type-styler-plugin/worker', 'StylerEntitiesDB')],
-  [toNodeType('basemap'), createPeerDbLoader('@hierarchidb/node-type-basemap-plugin/worker', 'BasemapEntitiesDB')],
+  [toNodeType('folder'), createPeerDbLoader('@hierarchidb/plugins-folder-plugin/worker', 'FolderEntitiesDB')],
+  [toNodeType('route'), createPeerDbLoader('@hierarchidb/plugins-route-plugin/worker', 'RouteEntitiesDB')],
+  [toNodeType('resolver'), createPeerDbLoader('@hierarchidb/plugins-resolver-plugin/worker', 'ResolverEntitiesDB')],
+  [toNodeType('shape'), createPeerDbLoader('@hierarchidb/plugins-shape-plugin/worker', 'ShapeEntitiesDB')],
+  [toNodeType('location'), createPeerDbLoader('@hierarchidb/plugins-location-plugin/worker', 'LocationEntitiesDB')],
+  [toNodeType('spreadsheet'), createPeerDbLoader('@hierarchidb/plugins-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB')],
+  [toNodeType('styler'), createPeerDbLoader('@hierarchidb/plugins-styler-plugin/worker', 'StylerEntitiesDB')],
+  [toNodeType('basemap'), createPeerDbLoader('@hierarchidb/plugins-basemap-plugin/worker', 'BasemapEntitiesDB')],
 ]);
 
 const withPeerDb = async (nodeType: NodeType, fn: (db: PeerEntitiesDb) => Promise<void>): Promise<void> => {

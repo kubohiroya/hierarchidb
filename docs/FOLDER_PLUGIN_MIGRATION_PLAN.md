@@ -23,7 +23,7 @@
 3. **tags・metadataフィールド**: 新アーキテクチャから除外
 
 ### 新規導入されたもの
-1. **@hierarchidb/node-type-base-plugin**: 新しい基底クラス群
+1. **@hierarchidb/plugins-base-plugin**: 新しい基底クラス群
    - `BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
    - `HierarchicalEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
 2. **HierarchicalEntity interface**: nodeId必須フィールド追加
@@ -439,7 +439,7 @@ describe('FolderEntityHandler', () => {
 ### 各Phase完了後の確認
 ```bash
 # エラー数の段階的減少を確認
-pnpm --filter @hierarchidb/node-type-folder-plugin typecheck
+pnpm --filter @hierarchidb/plugins-folder-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 109件 → 80件以下（Working Copy API解決）
@@ -452,10 +452,10 @@ pnpm --filter @hierarchidb/node-type-folder-plugin typecheck
 ### 最終確認
 ```bash
 # ビルド成功確認
-pnpm --filter @hierarchidb/node-type-folder-plugin build
+pnpm --filter @hierarchidb/plugins-folder-plugin build
 
 # テスト実行確認
-pnpm --filter @hierarchidb/node-type-folder-plugin test
+pnpm --filter @hierarchidb/plugins-folder-plugin test
 ```
 
 ## 重要な作業注意点

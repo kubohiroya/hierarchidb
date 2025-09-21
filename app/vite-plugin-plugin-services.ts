@@ -36,7 +36,7 @@ export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
     const debugMode = process.env.HDB_SERVICES_DEBUG_MODE || '';
     if (debugMode === 'one') {
       const first = list.find(Boolean);
-      const pkgName = first?.pkgName || '@hierarchidb/node-type-basemap-plugin';
+      const pkgName = first?.pkgName || '@hierarchidb/plugins-basemap-plugin';
       const sub = first?.sub || '/database';
       const code = `export const pluginServices = Object.freeze({ basemap: () => import('${pkgName}${sub}') });\n`;
       try {
@@ -84,7 +84,7 @@ export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
     resolveId(id) { return id === ID ? RES : null; },
     load(id) { return id === RES ? generate() : null; },
     handleHotUpdate(ctx) {
-      if (/packages\/node-type\/.*-plugin\/package\.json$/.test(ctx.file)) {
+      if (/packages\/plugins\/.*-plugin\/package\.json$/.test(ctx.file)) {
         const m = ctx.server.moduleGraph.getModuleById(RES);
         if (m) ctx.server.moduleGraph.invalidateModule(m);
         return [];

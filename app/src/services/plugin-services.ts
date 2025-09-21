@@ -20,15 +20,15 @@ async function getServices(): Promise<Record<string, Loader>> {
 }
 
 type KnownPluginServiceReturnMap = {
-  basemap: typeof import('@hierarchidb/node-type-basemap-plugin/database') | null;
-  resolver: typeof import('@hierarchidb/node-type-resolver-plugin/database') | null;
-  spreadsheet: typeof import('@hierarchidb/node-type-spreadsheet-plugin/database') | null;
-  route: typeof import('@hierarchidb/node-type-route-plugin/database') | null;
-  shape: typeof import('@hierarchidb/node-type-shape-plugin/services') | null;
-  location: typeof import('@hierarchidb/node-type-location-plugin/services') | null;
-  styler: typeof import('@hierarchidb/node-type-styler-plugin/services') | null;
-  timeline: typeof import('@hierarchidb/node-type-timeline-plugin/services') | null;
-  linker: typeof import('@hierarchidb/node-type-linker-plugin/services') | null;
+  basemap: typeof import('@hierarchidb/plugins-basemap-plugin/database') | null;
+  resolver: typeof import('@hierarchidb/plugins-resolver-plugin/database') | null;
+  spreadsheet: typeof import('@hierarchidb/plugins-spreadsheet-plugin/database') | null;
+  route: typeof import('@hierarchidb/plugins-route-plugin/database') | null;
+  shape: typeof import('@hierarchidb/plugins-shape-plugin/services') | null;
+  location: typeof import('@hierarchidb/plugins-location-plugin/services') | null;
+  styler: typeof import('@hierarchidb/plugins-styler-plugin/services') | null;
+  timeline: typeof import('@hierarchidb/plugins-timeline-plugin/services') | null;
+  linker: typeof import('@hierarchidb/plugins-linker-plugin/services') | null;
 };
 
 type KnownPluginNodeType = keyof KnownPluginServiceReturnMap;

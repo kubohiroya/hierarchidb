@@ -18,11 +18,11 @@
 
 ```typescript
 // 従来の方法（手動管理）
-import folderPlugin from '@hierarchidb/node-type-folder-plugin';
-import shapePlugin from '@hierarchidb/node-type-shape-plugin';
-import routePlugin from '@hierarchidb/node-type-route-plugin';
-import spreadsheetPlugin from '@hierarchidb/node-type-spreadsheet-plugin';
-import locationPlugin from '@hierarchidb/node-type-location-plugin';
+import folderPlugin from '@hierarchidb/plugins-folder-plugin';
+import shapePlugin from '@hierarchidb/plugins-shape-plugin';
+import routePlugin from '@hierarchidb/plugins-route-plugin';
+import spreadsheetPlugin from '@hierarchidb/plugins-spreadsheet-plugin';
+import locationPlugin from '@hierarchidb/plugins-location-plugin';
 // ... 新しいプラグインを追加するたびにここを更新...
 
 const plugins = [

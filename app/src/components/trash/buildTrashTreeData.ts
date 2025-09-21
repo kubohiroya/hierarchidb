@@ -5,9 +5,9 @@ export interface BuildTrashTreeDataParams {
   treeId: string;
   rootNode: TreeNode;
   targetNodeIds: readonly NodeId[];
-  holderLookup?: Record<string, { holderId: NodeId; holderName?: string }>;
   nodeMap?: Map<string, TreeNode>;
   activeNodeId?: NodeId | null;
+  pageNodeId?: NodeId | null;
 }
 
 export interface BuildTrashTreeDataResult {
@@ -19,9 +19,9 @@ export function buildTrashTreeData({
   treeId: _treeId,
   rootNode,
   targetNodeIds,
-  holderLookup,
   nodeMap,
   activeNodeId,
+  pageNodeId,
 }: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
   const rootId = String(rootNode.id);
   const sourceMap = new Map<string, TreeNode>();
@@ -37,12 +37,22 @@ export function buildTrashTreeData({
     sourceMap.set(rootId, rootNode);
   }
 
+  const placeholderIds = new Set<string>();
+  sourceMap.forEach((node) => {
+    const parentKey = node.parentId ? String(node.parentId) : null;
+    if (parentKey && parentKey === rootId) {
+      placeholderIds.add(String(node.id));
+    }
+  });
+
   // Filter nodes: use only those with depth >= 1 (depth 0 is placeholder)
   const selectedNodes: TreeNodeData[] = [];
   const seen = new Set<string>();
   const activeId = activeNodeId ? String(activeNodeId) : null;
 
-  const lookup = holderLookup ?? {};
+  const normalizedPageNodeId: NodeId = pageNodeId
+    ? (String(pageNodeId) as NodeId)
+    : (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId));
   const isActiveTrashRoot = activeId != null && String(activeId) === rootId;
 
   const includeNode = (node: TreeNode) => {
@@ -57,17 +67,17 @@ export function buildTrashTreeData({
     if (seen.has(id)) {
       return;
     }
-    if (isActiveTrashRoot) {
-      const parentIdValue = node.parentId ? String(node.parentId) : null;
-      const parentNode = parentIdValue ? sourceMap.get(parentIdValue) : undefined;
-      const parentIsRoot = parentIdValue === rootId || String(parentNode?.parentId ?? '') === rootId;
-      if (parentIsRoot && !lookup[String(id)]) {
-        return;
-      }
+    if (placeholderIds.has(String(node.id))) {
+      return;
     }
     seen.add(id);
-    const parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
-    const metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
+    const parentIdValue = node.parentId ? String(node.parentId) : null;
+    let parentId = parentIdValue ? (String(node.parentId) as NodeId) : normalizedPageNodeId;
+    let metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
+    if (isActiveTrashRoot && parentIdValue && placeholderIds.has(parentIdValue)) {
+      parentId = normalizedPageNodeId;
+      metaParentId = normalizedPageNodeId;
+    }
     selectedNodes.push({
       id,
       parentId,
@@ -88,13 +98,8 @@ export function buildTrashTreeData({
   const filteredTargetIds = targetNodeIds.filter((id) => {
       const node = sourceMap.get(String(id));
       if (!node) return false;
-      if (isActiveTrashRoot && !lookup[String(id)]) {
-        const parentIdValue = node.parentId ? String(node.parentId) : null;
-        const parentNode = parentIdValue ? sourceMap.get(parentIdValue) : undefined;
-        const parentIsRoot = parentIdValue === rootId || String(parentNode?.parentId ?? '') === rootId;
-        if (parentIsRoot) {
-          return false;
-        }
+      if (placeholderIds.has(String(id))) {
+        return false;
       }
       return true;
     });

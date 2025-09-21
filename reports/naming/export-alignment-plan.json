@@ -1,20 +1,20 @@
 {
   "renames": [
     {
-      "from": "packages/node-type/location-plugin/src/worker/locationEntitiesDB.ts",
-      "to": "packages/node-type/location-plugin/src/worker/LocationEntitiesDB.ts"
+      "from": "packages/plugins/location-plugin/src/worker/locationEntitiesDB.ts",
+      "to": "packages/plugins/location-plugin/src/worker/LocationEntitiesDB.ts"
     },
     {
-      "from": "packages/node-type/location-plugin/src/worker/locationGroupStore.dexie.ts",
-      "to": "packages/node-type/location-plugin/src/worker/createLocationGroupStoreDexie.ts"
+      "from": "packages/plugins/location-plugin/src/worker/locationGroupStore.dexie.ts",
+      "to": "packages/plugins/location-plugin/src/worker/createLocationGroupStoreDexie.ts"
     },
     {
-      "from": "packages/node-type/location-plugin/src/worker/locationPeerStore.dexie.ts",
-      "to": "packages/node-type/location-plugin/src/worker/createLocationPeerStoreDexie.ts"
+      "from": "packages/plugins/location-plugin/src/worker/locationPeerStore.dexie.ts",
+      "to": "packages/plugins/location-plugin/src/worker/createLocationPeerStoreDexie.ts"
     },
     {
-      "from": "packages/node-type/location-plugin/src/worker/locationRelationStore.dexie.ts",
-      "to": "packages/node-type/location-plugin/src/worker/createLocationRelationStoreDexie.ts"
+      "from": "packages/plugins/location-plugin/src/worker/locationRelationStore.dexie.ts",
+      "to": "packages/plugins/location-plugin/src/worker/createLocationRelationStoreDexie.ts"
     }
   ]
 }

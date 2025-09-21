@@ -33,7 +33,7 @@ route-pluginは**shape-pluginが修正されれば即座に正常動作**する�
 #### 1.1 shape-pluginのcategory-types.ts修正後の確認
 ```bash
 # shape-pluginの修正完了後、route-pluginのエラーが自動解決されることを確認
-pnpm --filter @hierarchidb/node-type-route-plugin typecheck
+pnpm --filter @hierarchidb/plugins-route-plugin typecheck
 
 # 期待結果: 4件 → 0件（shape-plugin修正により自動解決）
 ```
@@ -50,7 +50,7 @@ pnpm --filter @hierarchidb/node-type-route-plugin typecheck
 #### 2.1 機能確認
 ```bash
 # ビルド確認
-pnpm --filter @hierarchidb/node-type-route-plugin build
+pnpm --filter @hierarchidb/plugins-route-plugin build
 
 # 既存機能の動作確認
 # - ルート検索機能
@@ -68,13 +68,13 @@ pnpm --filter @hierarchidb/node-type-route-plugin build
 ### 検証方法
 ```bash
 # shape-plugin修正後の確認
-pnpm --filter @hierarchidb/node-type-route-plugin typecheck
+pnpm --filter @hierarchidb/plugins-route-plugin typecheck
 
 # 期待される改善:
 # shape-plugin修正後: 4件 → 0件（間接エラー自動解決）
 
 # 最終確認
-pnpm --filter @hierarchidb/node-type-route-plugin build
+pnpm --filter @hierarchidb/plugins-route-plugin build
 ```
 
 ## 依存関係と注意点

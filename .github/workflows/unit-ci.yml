@@ -98,11 +98,11 @@ jobs:
       max-parallel: 2
       matrix:
         pkg:
-          - { name: basemap-plugin, filter: "@hierarchidb/node-type-basemap-plugin" }
-          - { name: folder-plugin,  filter: "@hierarchidb/node-type-folder-plugin" }
-          - { name: resolver-plugin, filter: "@hierarchidb/node-type-resolver-plugin" }
-          - { name: styler-plugin,   filter: "@hierarchidb/node-type-styler-plugin" }
-          - { name: shape-plugin (unit only), filter: "@hierarchidb/node-type-shape-plugin" }
+          - { name: basemap-plugin, filter: "@hierarchidb/plugins-basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/plugins-folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/plugins-resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/plugins-styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/plugins-shape-plugin" }
 
     steps:
       - name: Checkout
@@ -143,11 +143,11 @@ jobs:
       max-parallel: 2
       matrix:
         pkg:
-          - { name: basemap-plugin, filter: "@hierarchidb/node-type-basemap-plugin" }
-          - { name: folder-plugin,  filter: "@hierarchidb/node-type-folder-plugin" }
-          - { name: resolver-plugin, filter: "@hierarchidb/node-type-resolver-plugin" }
-          - { name: styler-plugin,   filter: "@hierarchidb/node-type-styler-plugin" }
-          - { name: shape-plugin (unit only), filter: "@hierarchidb/node-type-shape-plugin" }
+          - { name: basemap-plugin, filter: "@hierarchidb/plugins-basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/plugins-folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/plugins-resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/plugins-styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/plugins-shape-plugin" }
 
     steps:
       - name: Checkout
@@ -190,11 +190,11 @@ jobs:
       max-parallel: 2
       matrix:
         pkg:
-          - { name: basemap-plugin, filter: "@hierarchidb/node-type-basemap-plugin" }
-          - { name: folder-plugin,  filter: "@hierarchidb/node-type-folder-plugin" }
-          - { name: resolver-plugin, filter: "@hierarchidb/node-type-resolver-plugin" }
-          - { name: styler-plugin,   filter: "@hierarchidb/node-type-styler-plugin" }
-          - { name: shape-plugin (unit only), filter: "@hierarchidb/node-type-shape-plugin" }
+          - { name: basemap-plugin, filter: "@hierarchidb/plugins-basemap-plugin" }
+          - { name: folder-plugin,  filter: "@hierarchidb/plugins-folder-plugin" }
+          - { name: resolver-plugin, filter: "@hierarchidb/plugins-resolver-plugin" }
+          - { name: styler-plugin,   filter: "@hierarchidb/plugins-styler-plugin" }
+          - { name: shape-plugin (unit only), filter: "@hierarchidb/plugins-shape-plugin" }
     env:
       NODE_OPTIONS: "--max-old-space-size=6144"
 
