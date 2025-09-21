@@ -6,10 +6,7 @@
 
 import { readRuntimeMode } from '@hierarchidb/util';
 
-export async function initializeDefaultFolderExtensions(): Promise<void> {
-  if (readRuntimeMode() !== 'production') {
-    console.warn('[Deprecation] initializeDefaultFolderExtensions is deprecated. Use initializeDefaultNodeDialogExtensions instead.');
-  }
+async function registerNodeDialogDefaults(): Promise<void> {
   const inits: Array<() => Promise<void>> = [];
 
   // Helper to try dynamic import (optional dependency)
@@ -55,14 +52,6 @@ export async function initializeDefaultFolderExtensions(): Promise<void> {
   }
 }
 
-/**
- * Generic name that doesn’t assume “folder” as a concept.
- * Prefer this in new code. Backed by the same implementation as the deprecated function.
- */
-export async function initializeDefaultNodeDialogExtensions(): Promise<void> {
-  return initializeDefaultFolderExtensions();
-}
-
 interface ShapeExtensionModule {
   initializeShapeFolderExtension?: () => Promise<void>;
 }
@@ -77,4 +66,19 @@ interface BaseMapExtensionModule {
 
 interface StylerExtensionModule {
   initializeStylerFolderExtension?: () => Promise<void>;
+}
+
+/**
+ * Generic name that doesn’t assume “folder” as a concept.
+ * Prefer this in new code.
+ */
+export async function initializeDefaultNodeDialogExtensions(): Promise<void> {
+  await registerNodeDialogDefaults();
+}
+
+export async function initializeDefaultFolderExtensions(): Promise<void> {
+  if (readRuntimeMode() !== 'production') {
+    console.warn('[Deprecation] initializeDefaultFolderExtensions is deprecated. Use initializeDefaultNodeDialogExtensions instead.');
+  }
+  await registerNodeDialogDefaults();
 }

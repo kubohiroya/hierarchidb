@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
 import { enUS, ja } from 'date-fns/locale';
 import { isDevEnv } from '../utils/env.js';
+import '../i18n/index.js';
 // Avoid hard type dependency on date-fns types during DTS build
 type Locale = unknown;
 
@@ -108,38 +109,15 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState<boolean>(typeof window === 'undefined');
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (!isMounted) {
+      setIsMounted(true);
+    }
+  }, [isMounted]);
 
-  // During SSR, provide default theme
   if (!isMounted) {
-    return (
-      <LanguageContext.Provider value={defaultContextValue}>{children}</LanguageContext.Provider>
-    );
-  }
-
-  return <LanguageProviderClient>{children}</LanguageProviderClient>;
-};
-
-const LanguageProviderClient: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [isI18nReady, setIsI18nReady] = useState(false);
-
-  // Ensure i18n is loaded
-  useEffect(() => {
-    // Delay i18n initialization to ensure React is ready
-    const timer = setTimeout(() => {
-      import('../i18n/index.js').then(() => {
-        setIsI18nReady(true);
-      });
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isI18nReady) {
     return (
       <LanguageContext.Provider value={defaultContextValue}>{children}</LanguageContext.Provider>
     );

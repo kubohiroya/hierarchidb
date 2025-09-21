@@ -52,6 +52,37 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
+  - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
+  - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
+  - 受け入れ基準（DoD）：
+    - [x] エラーの発生条件と原因を特定できる
+    - [x] 原因に対する修正案または回避策を提示できる
+    - [x] 調査結果を TASKS.md と報告で共有できる
+  - チェックリスト：
+    - [x] TreeTableCore の i18n 依存関係を確認する
+    - [x] アプリケーション側の i18next 初期化有無を確認する
+    - [x] エラー発生経緯を再現してログを確認する
+  - ロールバック手順：
+    - 調査のみのため適用不要
+  - 運用ログ：
+    - start: 2025-09-21 21:02 react-i18next の i18next インスタンス未初期化エラー調査に着手
+    - progress: 2025-09-21 21:10 LanguageProvider で i18n 初期化完了前は子コンポーネントを描画しないようにし、TreeTableCore の翻訳フックが例外を投げないことを確認
+- fix/node-dialog/default-extensions-warning — デフォルト拡張初期化の非推奨警告を解消
+  - ブランチ: `fix/node-dialog/default-extensions-warning`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/node-type/folder-plugin`, `app/src/entry.client.tsx`
+  - 受け入れ基準（DoD）：
+    - [x] `initializeDefaultNodeDialogExtensions` 利用時に非推奨警告が出力されない
+    - [x] 旧API `initializeDefaultFolderExtensions` は継続してワーニングを表示しつつ新実装を呼び出す
+    - [x] `pnpm --filter @hierarchidb/node-type-folder-plugin typecheck` が通る
+  - チェックリスト：
+    - [x] register-default-extensions の実装を新API中心に再構成する
+    - [x] 旧API呼び出しでのみ警告が出ることを確認する仮ロジックを導入
+  - ロールバック手順：
+    - `packages/node-type/folder-plugin/src/init/register-default-extensions.ts` を差分前へ戻し再度 `pnpm --filter @hierarchidb/node-type-folder-plugin typecheck` を実行
+  - 運用ログ：
+    - start: 2025-09-21 20:48 Deprecation 警告解消対応に着手
+    - progress: 2025-09-21 20:54 register-default-extensions をリファクタリングし、新API経由では警告が出ず旧APIのみ警告を発するように調整
 - investigate/ui/speeddial-folder-dialog — SpeedDial 経由フォルダ作成ダイアログが表示されない問題の調査
   - ブランチ: `investigate/ui/speeddial-folder-dialog`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/app`, `app/src/routes/(hierarchidb)/t/[tenant]/r/[root]/[node]/folder/create`
