@@ -89,27 +89,47 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   }
 
   const trashRootNode = await queryAPI.getNode(activeTrashNodeId);
-  const trashItems = (await queryAPI.listChildren(activeTrashNodeId)) as TreeNode[];
+  const listOptions = fallbackTrashId && activeTrashNodeId === fallbackTrashId
+    ? { prefetch: { depth: 2 } }
+    : undefined;
+  const trashItems = (await queryAPI.listChildren(activeTrashNodeId, listOptions)) as TreeNode[];
 
   const isRootTrash = Boolean(fallbackTrashId && activeTrashNodeId === fallbackTrashId);
-  let trashDisplayItems = trashItems;
   const holderLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
 
-  if (isRootTrash && trashItems.length > 0) {
-    const batches = await Promise.all(
-      trashItems.map(async (holder: TreeNode) => {
-        const childNodes = (await queryAPI.listChildren(holder.id as NodeId)) as TreeNode[];
-        return childNodes.map((child: TreeNode) => {
-          holderLookup[String(child.id)] = { holderId: holder.id as NodeId, holderName: holder.name };
-          return {
-            ...child,
-            parentId: activeTrashNodeId,
-            depth: 1,
-          } as TreeNode;
-        });
-      }),
-    );
-    trashDisplayItems = batches.flat();
+  let trashDisplayItems = trashItems;
+  if (isRootTrash) {
+    const placeholderMap = new Map<string, TreeNode>();
+    const rootIdStr = String(activeTrashNodeId);
+    trashItems.forEach((node) => {
+      if (node.parentId && String(node.parentId) === rootIdStr) {
+        placeholderMap.set(String(node.id), node);
+      }
+    });
+
+    trashDisplayItems = trashItems.filter((node) => node.depth === 1);
+
+    trashDisplayItems.forEach((node) => {
+      const parentId = node.parentId ? String(node.parentId) : undefined;
+      const holderNode = parentId ? placeholderMap.get(parentId) : undefined;
+      const holderId = holderNode?.id ?? (parentId ? (parentId as unknown as NodeId) : undefined);
+      if (holderId) {
+        holderLookup[String(node.id)] = {
+          holderId,
+          holderName: holderNode?.name,
+        };
+      }
+    });
+  } else {
+    trashItems.forEach((node) => {
+      const holderId = (node as { holderTargetId?: NodeId }).holderTargetId;
+      if (holderId) {
+        holderLookup[String(node.id)] = {
+          holderId,
+          holderName: node.name,
+        };
+      }
+    });
   }
 
   return {
@@ -1436,11 +1456,11 @@ export default function TrashDialog() {
         nextMap.set(String(node.id), node);
       });
 
-      const holderInfos = new Map<string, { holderId: NodeId; holderName?: string }>();
+      const rootIdStr = String(trashRootIdValue);
+      const placeholderMap = new Map<string, TreeNode>();
       descendants.forEach((node) => {
-        const parentId = node.parentId ? String(node.parentId) : undefined;
-        if (parentId && parentId === String(trashRootIdValue)) {
-          holderInfos.set(String(node.id), { holderId: node.id as NodeId, holderName: node.name });
+        if (node.parentId && String(node.parentId) === rootIdStr) {
+          placeholderMap.set(String(node.id), node);
         }
       });
 
@@ -1448,11 +1468,19 @@ export default function TrashDialog() {
       descendants.forEach((node) => {
         const parentId = node.parentId ? String(node.parentId) : undefined;
         if (!parentId) return;
-        const holder = holderInfos.get(parentId);
-        if (holder) {
+        const holderNode = placeholderMap.get(parentId);
+        if (holderNode) {
           nextLookup[String(node.id)] = {
-            holderId: holder.holderId,
-            holderName: holder.holderName,
+            holderId: holderNode.id as NodeId,
+            holderName: holderNode.name,
+          };
+          return;
+        }
+        const holderId = (node as { holderTargetId?: NodeId }).holderTargetId;
+        if (holderId) {
+          nextLookup[String(node.id)] = {
+            holderId,
+            holderName: node.name,
           };
         }
       });

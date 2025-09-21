@@ -42,6 +42,8 @@ export function buildTrashTreeData({
   const seen = new Set<string>();
   const activeId = activeNodeId ? String(activeNodeId) : null;
 
+  const isActiveTrashRoot = activeId != null && String(activeId) === rootId;
+
   const includeNode = (node: TreeNode) => {
     const depth = typeof node.depth === 'number' ? node.depth : 0;
     if (depth < 1) {
@@ -52,6 +54,9 @@ export function buildTrashTreeData({
       return;
     }
     if (seen.has(id)) {
+      return;
+    }
+    if (isActiveTrashRoot && depth !== 1) {
       return;
     }
     seen.add(id);
@@ -73,8 +78,17 @@ export function buildTrashTreeData({
     });
   };
 
-  if (targetNodeIds.length > 0) {
-    targetNodeIds.forEach((id) => {
+  const filteredTargetIds = targetNodeIds.filter((id) => {
+      const node = sourceMap.get(String(id));
+      if (!node) return false;
+      if (isActiveTrashRoot) {
+        return typeof node.depth === 'number' ? node.depth === 1 : false;
+      }
+      return true;
+    });
+
+  if (filteredTargetIds.length > 0) {
+    filteredTargetIds.forEach((id) => {
       const node = sourceMap.get(String(id));
       if (node) {
         includeNode(node);

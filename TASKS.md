@@ -252,6 +252,7 @@
     - progress: 2025-09-21 23:38 TrashDialog 側でも loader から得た `tree.id` を優先使用し、ルート経由で `treeId` が `r:root` になる誤配線を防止。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 23:46 buildTrashTreeData でアクティブページノード（現在ブラウズ中）を除外し、TreeTable の先頭行に同一ノードが重複表示されないよう調整。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 23:55 パンクズ生成ロジックを更新し、index0=Trash固定・index1でホルダー+実ノードを統合表示するアルゴリズムに変更。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 23:59 TrashDialog の listChildren 結果処理を見直し、`*:trash` 直下では depth=1 の孫ノードのみを TreeTable に流すようフィルタリング（placeholder は UI から隠蔽）。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
