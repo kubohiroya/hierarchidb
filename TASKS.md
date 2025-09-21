@@ -67,6 +67,7 @@
     - 調査のみのため適用不要（実装変更を行う場合は別タスクで管理）
   - 運用ログ：
     - start: 2025-09-21 19:05 SpeedDial 経由フォルダ作成ダイアログ非表示の原因調査に着手
+    - progress: 2025-09-21 19:52 TreeConsole レイアウトの `overflow: hidden` と PluginDialogShell の通常フローが衝突し、Outlet 直下にレンダリングされたダイアログがビューポート外で不可視になっている兆候を確認
 - fix/app/trash-dialog-chrome-hover — TrashDialog Chrome hover制御のReferenceError解消
   - ブランチ: `fix/app/trash-dialog-chrome-hover`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`, `app/src/components/dialogs/TrashDialog.tsx`
@@ -92,6 +93,8 @@
     - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `trash-partial-restore.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-partial-restore.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
     - progress: 2025-09-21 19:44 `@hierarchidb/ui-dialog` に汎用リサイズ対応フレーム `MultiDialogFrame` を追加し、TrashDialog はこれを `FrameComponent` として利用する形にリファクタ。`pnpm --filter @hierarchidb/ui-dialog build` と `pnpm --filter @hierarchidb/app build` を再実行してグリーンを確認
     - progress: 2025-09-21 19:55 `@hierarchidb/ui-dialog` に表示モード遷移ユーティリティ `useDialogDisplayTransition`・`fullscreen` ヘルパを実装し、TrashDialog からサイズ補正・位置補正・FullScreen API 呼び出しロジックを移管。`pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/app build` で確認
+    - progress: 2025-09-21 20:05 プラグイン系ダイアログ（`usePluginDialogController`）でも `useDialogDisplayTransition` を適用し、表示モード切替・サイズ補正ロジックを共通化。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
+    - progress: 2025-09-21 20:18 RouteDialog / ResolverDialog を `useDialogDisplayTransition` ＋ `MultiDialogFrame` 対応に更新し、表示モードとリサイズ挙動を統一。`pnpm --filter @hierarchidb/node-type-route-plugin typecheck` と `pnpm --filter @hierarchidb/node-type-resolver-plugin typecheck` を実行し成功
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
