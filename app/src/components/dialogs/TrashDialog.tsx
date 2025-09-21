@@ -60,6 +60,7 @@ import {
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
+import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 
 // ----------------------------------------
 // Data loader
@@ -622,6 +623,8 @@ interface TrashDialogContentProps {
   onEmptyItem: (node: TreeNodeData) => Promise<void> | void;
   displayMode: DialogDisplayMode;
   footerVisible: boolean;
+  expandedIds: string[];
+  onToggleExpand: (nodeId: string, expanded: boolean) => void;
 }
 
 type TrashDialogContentRenderProps = HeadlessContentRenderProps<Record<string, never>> & {
@@ -647,6 +650,8 @@ function TrashDialogContent({
   onEmptyItem,
   displayMode,
   footerVisible,
+  expandedIds,
+  onToggleExpand,
 }: TrashDialogContentProps) {
 
   if (loading) {
@@ -705,7 +710,7 @@ function TrashDialogContent({
           breadcrumbItems={breadcrumbItems}
           loading={false}
           selectedIds={selectedIds.map(String)}
-          expandedIds={[]}
+          expandedIds={expandedIds}
           viewMode="list"
           canCreate={false}
           canEdit={false}
@@ -728,7 +733,9 @@ function TrashDialogContent({
               return Array.from(next);
             });
           }}
-          onNodeExpand={() => undefined}
+        onNodeExpand={(nodeId, expanded) => {
+          onToggleExpand(String(nodeId), expanded);
+        }}
           availableFilters={[]}
           searchTerm={searchTerm}
           onSearchChange={onSearchTermChange}
@@ -1250,26 +1257,6 @@ export default function TrashDialog() {
   }, [data.trashItems, navigate, treeId]);
 
   const displayNodes = data.trashDisplayItems ?? data.trashItems ?? [];
-  const treeData: TreeNodeData[] = useMemo(() => {
-    return displayNodes.map((node) => {
-      const lookup = data.holderLookup?.[String(node.id)];
-      const existingHolderType = (node as { holderType?: 'workingCopy' | 'trash' }).holderType;
-      const holderTargetId = (node as { holderTargetId?: NodeId }).holderTargetId ?? (node.id as NodeId);
-      const holderMetaParentId =
-        (node as { holderMetaParentId?: NodeId }).holderMetaParentId ?? (lookup?.holderId as NodeId | undefined);
-
-      return {
-        ...node,
-        id: node.id,
-        nodeType: node.nodeType,
-        depth: 1,
-        children: undefined,
-        holderType: existingHolderType ?? 'trash',
-        holderTargetId,
-        holderMetaParentId,
-      };
-    });
-  }, [displayNodes, data.holderLookup]);
 
   const trashNodeMap = useMemo(() => {
     const map = new Map<string, TreeNode>();
@@ -1284,6 +1271,37 @@ export default function TrashDialog() {
     });
     return map;
   }, [data.trashRootNode, data.trashItems, data.trashDisplayItems]);
+
+  const { nodes: treeData, rootId: trashRootId } = useMemo(() => {
+    if (!data.trashRootNode || !treeId) {
+      return { nodes: [] as TreeNodeData[], rootId: '' };
+    }
+    const targetIds = displayNodes.map((node) => node.id as NodeId);
+    return buildTrashTreeData({
+      treeId,
+      rootNode: data.trashRootNode,
+      targetNodeIds: targetIds,
+      holderLookup: data.holderLookup,
+      nodeMap: trashNodeMap,
+    });
+  }, [data.trashRootNode, treeId, displayNodes, data.holderLookup, trashNodeMap]);
+
+  const [expandedIds, setExpandedIds] = useState<string[]>(() => (trashRootId ? [trashRootId] : []));
+
+  useEffect(() => {
+    if (!trashRootId) return;
+    setExpandedIds((prev) => (prev.includes(trashRootId) ? prev : [trashRootId, ...prev]));
+  }, [trashRootId]);
+
+  const handleToggleExpand = useCallback((nodeId: string, expanded: boolean) => {
+    setExpandedIds((prev) => {
+      const id = String(nodeId);
+      if (expanded) {
+        return prev.includes(id) ? prev : [...prev, id];
+      }
+      return prev.filter((value) => value !== id);
+    });
+  }, []);
 
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -1373,6 +1391,8 @@ export default function TrashDialog() {
         onEmptyItem={handleEmptySingle}
         displayMode={frameMode}
         footerVisible={footerVisible}
+        expandedIds={expandedIds}
+        onToggleExpand={handleToggleExpand}
       />
     ),
     [
@@ -1385,6 +1405,8 @@ export default function TrashDialog() {
       searchTerm,
       treeId,
       effectiveTrashNodeId,
+      expandedIds,
+      handleToggleExpand,
       mode,
       handleRestore,
       handleEmptySingle,
