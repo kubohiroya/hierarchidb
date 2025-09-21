@@ -19,7 +19,7 @@ export function buildTrashTreeData({
   treeId: _treeId,
   rootNode,
   targetNodeIds,
-  holderLookup: _holderLookup,
+  holderLookup,
   nodeMap,
   activeNodeId,
 }: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
@@ -42,6 +42,7 @@ export function buildTrashTreeData({
   const seen = new Set<string>();
   const activeId = activeNodeId ? String(activeNodeId) : null;
 
+  const lookup = holderLookup ?? {};
   const isActiveTrashRoot = activeId != null && String(activeId) === rootId;
 
   const includeNode = (node: TreeNode) => {
@@ -56,7 +57,7 @@ export function buildTrashTreeData({
     if (seen.has(id)) {
       return;
     }
-    if (isActiveTrashRoot && depth !== 1) {
+    if (isActiveTrashRoot && !lookup[String(id)]) {
       return;
     }
     seen.add(id);
@@ -81,8 +82,8 @@ export function buildTrashTreeData({
   const filteredTargetIds = targetNodeIds.filter((id) => {
       const node = sourceMap.get(String(id));
       if (!node) return false;
-      if (isActiveTrashRoot) {
-        return typeof node.depth === 'number' ? node.depth === 1 : false;
+      if (isActiveTrashRoot && !lookup[String(id)]) {
+        return false;
       }
       return true;
     });
