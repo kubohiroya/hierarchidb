@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { WheelEvent as ReactWheelEvent } from 'react';
+import type { CSSProperties, WheelEvent as ReactWheelEvent } from 'react';
 import type {
   DialogDisplayMode,
   HeadlessMultiStepDialogProps,
@@ -218,5 +218,7 @@ export function useDialogInteractionGuards(options?: DialogInteractionGuardsOpti
     handleBackdropClick,
     handleWheelCapture,
     isDraggingRef: draggingRef,
+    surfaceStyle: stopWheelPropagation ? { overscrollBehavior: 'contain' } as CSSProperties : undefined,
+    frameStyle: { overscrollBehavior: 'contain' } as CSSProperties,
   } as const;
 }
