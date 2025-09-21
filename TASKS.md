@@ -158,6 +158,7 @@
     - progress: 2025-09-21 12:12 Legacy display mode 型と変換関数の削除要請を受け、normal / maximize / full-screen への一本化作業を再開
     - progress: 2025-09-21 12:58 表示モード周辺の Legacy 定義を排除し、関連パッケージの typecheck / build を実行して完了を確認（app, ui-dialog, runtime-* 系, node-type-* 系など）
     - progress: 2025-09-21 16:18 TrashDialog から TreeConsolePanel へ treeId / useTrashColumns / trashAction を配線し、TreeTable のリンクファクトリでゴミ箱専用 URL が生成されることを確認
+    - progress: 2025-09-21 16:33 TrashDialog の表示データに holderType / holderMetaParentId / holderTargetId を補完し、ゴミ箱行で専用リンクが必ず生成されることを確認
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
 - fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示

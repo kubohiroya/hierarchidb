@@ -646,6 +646,7 @@ function TrashDialogContent({
   displayMode,
   footerVisible,
 }: TrashDialogContentProps) {
+
   if (loading) {
     return (
       <Box
@@ -1247,17 +1248,26 @@ export default function TrashDialog() {
   }, [data.trashItems, navigate, treeId]);
 
   const displayNodes = data.trashDisplayItems ?? data.trashItems ?? [];
-  const treeData: TreeNodeData[] = useMemo(
-    () =>
-      displayNodes.map((node) => ({
+  const treeData: TreeNodeData[] = useMemo(() => {
+    return displayNodes.map((node) => {
+      const lookup = data.holderLookup?.[String(node.id)];
+      const existingHolderType = (node as { holderType?: 'workingCopy' | 'trash' }).holderType;
+      const holderTargetId = (node as { holderTargetId?: NodeId }).holderTargetId ?? (node.id as NodeId);
+      const holderMetaParentId =
+        (node as { holderMetaParentId?: NodeId }).holderMetaParentId ?? (lookup?.holderId as NodeId | undefined);
+
+      return {
         ...node,
         id: node.id,
         nodeType: node.nodeType,
         depth: 1,
         children: undefined,
-      })),
-    [displayNodes],
-  );
+        holderType: existingHolderType ?? 'trash',
+        holderTargetId,
+        holderMetaParentId,
+      };
+    });
+  }, [displayNodes, data.holderLookup]);
 
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
