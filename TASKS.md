@@ -163,6 +163,7 @@
     - progress: 2025-09-21 16:33 TrashDialog の表示データに holderType / holderMetaParentId / holderTargetId を補完し、ゴミ箱行で専用リンクが必ず生成されることを確認
     - progress: 2025-09-21 16:44 TreeConsoleBreadcrumb でリンクファクトリを共有し、TrashDialog のパンくずリンクもゴミ箱専用 URL を生成するよう統一
     - progress: 2025-09-21 17:00 TrashDialog のパンくず・TreeTable 行アイコンを非インタラクティブ化し、クリックしてもコンテキストメニューが開かないよう調整
+    - progress: 2025-09-21 17:12 TrashDialog パンくずで depth1（プレースホルダー）と depth2（実データ）を単一ノードとしてまとめ、専用URLでゴミ箱内を遷移できるよう調整
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
 - fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示

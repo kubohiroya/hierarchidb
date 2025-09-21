@@ -1270,6 +1270,20 @@ export default function TrashDialog() {
     });
   }, [displayNodes, data.holderLookup]);
 
+  const trashNodeMap = useMemo(() => {
+    const map = new Map<string, TreeNode>();
+    if (data.trashRootNode) {
+      map.set(String(data.trashRootNode.id), data.trashRootNode);
+    }
+    (data.trashItems ?? []).forEach((node) => {
+      map.set(String(node.id), node);
+    });
+    (data.trashDisplayItems ?? []).forEach((node) => {
+      map.set(String(node.id), node);
+    });
+    return map;
+  }, [data.trashRootNode, data.trashItems, data.trashDisplayItems]);
+
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return treeData;
@@ -1284,25 +1298,80 @@ export default function TrashDialog() {
   const dialogContextName = data.trashRootNode?.name ?? (effectiveTrashNodeId ? String(effectiveTrashNodeId) : data.tree?.name ?? '');
   const breadcrumbItems = useMemo<BreadcrumbNode[]>(() => {
     if (!data.trashRootNode || !treeId) return [];
-    const root = data.trashRootNode;
-    const rootId = String(root.id);
-    const lookup = data.holderLookup?.[rootId];
-    const fallbackParent = effectiveTrashNodeId ? String(effectiveTrashNodeId) : `${treeId}:root`;
-    const holderMetaParentId = lookup?.holderId ? String(lookup.holderId) : fallbackParent;
 
-    return [
+    const rootNode = data.trashRootNode;
+    const rootId = String(rootNode.id);
+
+    const crumbs: BreadcrumbNode[] = [
       {
         id: rootId,
-        name: root.name ?? 'Trash',
-        nodeType: root.nodeType ?? 'trash',
-        parentId: holderMetaParentId,
+        name: rootNode.name ?? 'Trash',
+        nodeType: rootNode.nodeType ?? 'trash',
+        parentId: `${treeId}:root`,
         holderType: 'trash',
-        holderTargetId: (root as { holderTargetId?: NodeId }).holderTargetId ? String((root as { holderTargetId?: NodeId }).holderTargetId) : rootId,
-        holderMetaParentId,
+        holderTargetId: rootId,
+        holderMetaParentId: `${treeId}:root`,
         isClickable: true,
+        depth: 0,
       },
     ];
-  }, [data.trashRootNode, data.holderLookup, effectiveTrashNodeId, treeId]);
+
+    const targetId = effectiveTrashNodeId ? String(effectiveTrashNodeId) : null;
+    if (!targetId || targetId === rootId) {
+      return crumbs;
+    }
+
+    const segments: BreadcrumbNode[] = [];
+    const safetySet = new Set<string>();
+
+    let currentId: string | null = targetId;
+
+    while (currentId && currentId !== rootId && !safetySet.has(currentId)) {
+      safetySet.add(currentId);
+      const currentNode = trashNodeMap.get(currentId);
+      if (!currentNode) {
+        break;
+      }
+
+      const parentRaw = (currentNode as { holderMetaParentId?: NodeId }).holderMetaParentId;
+      const parentIdInternal: string = parentRaw ? String(parentRaw) : rootId;
+      const parentNode = parentIdInternal === rootId
+        ? rootNode
+        : trashNodeMap.get(parentIdInternal);
+
+      const parentName = parentNode?.name
+        ?? data.holderLookup?.[currentId]?.holderName
+        ?? (parentIdInternal === rootId ? rootNode.name ?? 'Trash' : parentIdInternal);
+
+      const currentName = currentNode.name ?? currentId;
+      const combinedLabel = parentName === currentName ? currentName : `${parentName} / ${currentName}`;
+
+      segments.unshift({
+        id: currentId,
+        name: combinedLabel,
+        nodeType: currentNode.nodeType ?? 'trash-item',
+        parentId: parentIdInternal,
+        holderType: 'trash',
+        holderTargetId: currentId,
+        holderMetaParentId: parentIdInternal,
+        isClickable: true,
+      });
+
+      if (!parentRaw || String(parentRaw) === currentId) {
+        break;
+      }
+      currentId = parentIdInternal;
+    }
+
+    if (segments.length) {
+      segments[segments.length - 1] = {
+        ...segments[segments.length - 1],
+        isClickable: false,
+      };
+    }
+
+    return [...crumbs, ...segments];
+  }, [data.trashRootNode, data.holderLookup, effectiveTrashNodeId, treeId, trashNodeMap]);
 
   const columns: TreeTableColumn[] = useMemo(() => [
     {
