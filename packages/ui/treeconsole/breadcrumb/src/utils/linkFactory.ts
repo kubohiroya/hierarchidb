@@ -26,7 +26,9 @@ export function buildTreeConsoleLinkHref({
   isRootLike,
 }: BuildTreeConsoleLinkOptions): string {
   const normalizedNodeId = nodeId == null ? '' : String(nodeId);
-  const normalizedTreeId = treeId == null ? '' : String(treeId);
+  const rawTreeId = treeId == null ? '' : String(treeId);
+  const treeSegment = rawTreeId.includes(':') ? rawTreeId.split(':')[0] : rawTreeId;
+  const normalizedTreeId = treeSegment;
 
   if (isRootLike && normalizedTreeId) {
     return `/t/${normalizedTreeId}`;
@@ -45,7 +47,8 @@ export function buildTreeConsoleLinkHref({
     return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
   }
 
-  const fallbackPageNodeId = pageNodeId == null ? `${normalizedTreeId}:root` : String(pageNodeId);
+  const rootNodeId = `${treeSegment}:root`;
+  const fallbackPageNodeId = pageNodeId == null ? rootNodeId : String(pageNodeId);
   const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
   const targetSegment = normalizedNodeId;
   const actionValue = trashAction === 'empty' ? 'empty' : 'restore';
