@@ -259,6 +259,7 @@
     - progress: 2025-09-22 00:18 `TreeQueryService.listChildren` の BFS ログを追加し、placeholder → 実ノードの追跡を容易化。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
     - progress: 2025-09-22 00:22 `TreeQueryService.listChildren` が `CoreDB.listChildren` へ `prefetch.depth` を渡さず BFS できていなかったため、直接委譲するよう修正。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
     - progress: 2025-09-22 00:27 ゴミ箱ルート閲覧時も深い世代を表示できるよう、`buildTrashTreeData` のフィルタを「親がルートかどうか」で判断し、孫以降は除外しないよう調整。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-22 00:30 プレースホルダーを可視化せずに階層を維持するため、`buildTrashTreeData` でプレースホルダー親のノードは `parentId` をルートに差し替えるなど階層を再構成。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理

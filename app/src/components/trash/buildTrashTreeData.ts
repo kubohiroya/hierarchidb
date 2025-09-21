@@ -59,13 +59,25 @@ export function buildTrashTreeData({
     }
     if (isActiveTrashRoot) {
       const parentIdValue = node.parentId ? String(node.parentId) : null;
-      const parentIsRoot = parentIdValue === rootId;
+      const parentNode = parentIdValue ? sourceMap.get(parentIdValue) : undefined;
+      const parentIsRoot = parentIdValue === rootId || String(parentNode?.parentId ?? '') === rootId;
       if (parentIsRoot && !lookup[String(id)]) {
         return;
       }
     }
     seen.add(id);
-    const parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
+    let parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
+    let metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
+    if (isActiveTrashRoot) {
+      const parentKey = String(parentId);
+      if (parentKey !== rootId) {
+        const parentNode = sourceMap.get(parentKey);
+        if (parentNode && String(parentNode.parentId ?? '') === rootId) {
+          parentId = rootId as NodeId;
+          metaParentId = rootId as NodeId;
+        }
+      }
+    }
     selectedNodes.push({
       id,
       parentId,
@@ -74,7 +86,7 @@ export function buildTrashTreeData({
       depth,
       holderType: node.holderType,
       holderTargetId: node.holderTargetId,
-      holderMetaParentId: node.holderMetaParentId,
+      holderMetaParentId: metaParentId,
       hasChildren: Boolean(node.hasChildren),
       description: node.description,
       createdAt: node.createdAt,
@@ -86,10 +98,11 @@ export function buildTrashTreeData({
   const filteredTargetIds = targetNodeIds.filter((id) => {
       const node = sourceMap.get(String(id));
       if (!node) return false;
-      if (isActiveTrashRoot) {
+      if (isActiveTrashRoot && !lookup[String(id)]) {
         const parentIdValue = node.parentId ? String(node.parentId) : null;
-        const parentIsRoot = parentIdValue === rootId;
-        if (parentIsRoot && !lookup[String(id)]) {
+        const parentNode = parentIdValue ? sourceMap.get(parentIdValue) : undefined;
+        const parentIsRoot = parentIdValue === rootId || String(parentNode?.parentId ?? '') === rootId;
+        if (parentIsRoot) {
           return false;
         }
       }
