@@ -20,7 +20,7 @@ export type {
   PasteNodesPayload,
   MoveToTrashPayload,
   RemovePayload,
-  RecoverFromTrashPayload,
+  RestoreFromTrashPayload,
   ImportNodesPayload,
   CopyNodesPayload,
   ExportNodesPayload,

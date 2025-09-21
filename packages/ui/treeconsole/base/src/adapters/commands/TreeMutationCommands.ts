@@ -9,7 +9,7 @@ import type {
   MoveNodesPayload,
   MoveToTrashPayload,
   NodeId,
-  RecoverFromTrashPayload,
+  RestoreFromTrashPayload,
   RemovePayload,
 } from '@hierarchidb/common-type';
 import { createCommand } from '../utils.js';
@@ -233,19 +233,19 @@ export class TreeMutationCommandsAdapter {
    * @param options
    * @returns Promise<void>
       */
-  async recoverFromTrash(
+  async restoreFromTrash(
     nodeIds: NodeId[],
     targetParentId: NodeId | undefined,
     options: CommandAdapterOptions,
   ): Promise<void> {
     try {
       const command = createCommand(
-        'recoverFromTrash',
+        'restoreFromTrash',
         {
           nodeIds,
           toParentId: targetParentId,
           onNameConflict: options.context?.onNameConflict,
-        } as RecoverFromTrashPayload,
+        } as RestoreFromTrashPayload,
         {
           groupId: options.context?.groupId,
           sourceViewId: options.context?.viewId,
@@ -253,14 +253,14 @@ export class TreeMutationCommandsAdapter {
       );
 
       const mutationAPI: TreeMutationAPI = await this.workerAPI.getMutationAPI();
-      const result = await mutationAPI.recoverNodesFromTrash({
+      const result = await mutationAPI.restoreNodesFromTrash({
         nodeIds: command.payload.nodeIds,
         toParentId: command.payload.toParentId,
       });
       if (!result?.success) {
         throw new TreeConsoleAdapterError(
-          `Failed to recover nodes from trash: ${result?.error || 'Unknown error'}`,
-          'RECOVER_FROM_TRASH_FAILED',
+          `Failed to restore nodes from trash: ${result?.error || 'Unknown error'}`,
+          'RESTORE_FROM_TRASH_FAILED',
         );
       }
     } catch (error) {
@@ -268,8 +268,8 @@ export class TreeMutationCommandsAdapter {
         throw error;
       }
       throw new TreeConsoleAdapterError(
-        `Recovery operation failed for nodes [${nodeIds.join(', ')}]`,
-        'RECOVER_FROM_TRASH_ADAPTER_ERROR',
+        `Restore operation failed for nodes [${nodeIds.join(', ')}]`,
+        'RESTORE_FROM_TRASH_ADAPTER_ERROR',
         error as Error,
       );
     }

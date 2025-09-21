@@ -1,5 +1,5 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
-import {useRouteError} from 'react-router';
+import { useRouteError } from 'react-router';
 import { CssBaseline } from '@mui/material';
 // Note: When using Emotion Cache with insertion point, do not also use StyledEngineProvider injectFirst
 import { StrictMode, type ComponentType } from 'react';
@@ -24,6 +24,13 @@ import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters.js';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 import { autoLoadPlugins } from './plugins/auto-load.js';
+
+/**
+ * Global link descriptors shared across all routes (favicons, etc.)
+ */
+export function links() {
+  return [] as const;
+}
 
 const logRootWarning = (message: string, error?: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -170,8 +177,8 @@ if (typeof window !== 'undefined') {
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-    <head>
-      <Meta />
+      <head>
+        <Meta />
       <Links />
     </head>
     <body suppressHydrationWarning>

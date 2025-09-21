@@ -24,6 +24,7 @@ import {
   setPeerDialogPosition,
   getPeerDialogSize,
   setPeerDialogSize,
+  type PeerDisplayMode,
 } from '../utils/peerDialogPersistence.js';
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
@@ -130,7 +131,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
   }, [urlStep]);
 
-  const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const [displayMode, setDisplayMode] = useState<PeerDisplayMode>('normal');
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 80, y: 80 });
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 960, height: 640 });
 
@@ -155,16 +156,16 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   useEffect(() => {
     const modeKey = urlMode as string;
     if (modeKey === 'full') {
-      setDisplayMode('fullscreen');
-    } else if (displayMode === 'fullscreen' && modeKey !== 'full') {
-      setDisplayMode('standard');
+      setDisplayMode('full-screen');
+    } else if (displayMode === 'full-screen' && modeKey !== 'full') {
+      setDisplayMode('normal');
     }
   }, [urlMode, displayMode]);
 
-  const persistDisplayMode = useCallback((value: 'standard' | 'maximized' | 'fullscreen') => {
+  const persistDisplayMode = useCallback((value: PeerDisplayMode) => {
     setDisplayMode(value);
     setPeerDisplayMode(nodeType, String(nodeId), value).catch(() => void 0);
-    setUrlMode(value === 'fullscreen' ? 'full' : 'normal');
+    setUrlMode(value === 'full-screen' ? 'full' : 'normal');
   }, [nodeType, nodeId, setUrlMode]);
 
   const persistPosition = useCallback((next: { x: number; y: number }) => {

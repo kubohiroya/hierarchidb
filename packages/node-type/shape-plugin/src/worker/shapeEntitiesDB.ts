@@ -7,7 +7,7 @@ export type ShapePeerRow = {
   nodeId: NodeId;
   data?: ShapePeerData;
   updatedAt?: number;
-  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  displayMode?: 'normal' | 'maximize' | 'full-screen';
   dialogPosition?: { x: number; y: number };
   dialogSize?: { width: number; height: number };
 };

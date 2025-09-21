@@ -45,7 +45,7 @@ const UNDOABLE_COMMANDS = new Set([
   'updateNode',
   'moveNodes',
   'moveToTrash',
-  'recoverFromTrash',
+  'restoreFromTrash',
   'remove',
   'commitWorkingCopy',
 ]);
@@ -100,7 +100,7 @@ describe('WFL command processor undo/redo flow', () => {
 
     await runCommand('moveToTrash', { nodeIds: [subjectId] });
 
-    await runCommand('recoverFromTrash', {
+    await runCommand('restoreFromTrash', {
       nodeIds: [subjectId],
       toParentId: moveTargetId,
       onNameConflict: 'auto-rename',

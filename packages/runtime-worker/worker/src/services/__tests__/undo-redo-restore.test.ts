@@ -3,7 +3,7 @@ import { CommandProcessor } from '../CommandProcessor.js';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 import type { CoreDB } from '../CoreDB.js';
 
-describe('Undo/Redo for recoverFromTrash', () => {
+describe('Undo/Redo for restoreFromTrash', () => {
   type TrashedNode = TreeNode & {
     removedAt?: number;
     originalParentId?: NodeId;
@@ -63,21 +63,21 @@ describe('Undo/Redo for recoverFromTrash', () => {
     };
   });
 
-  it('undo/redo recoverFromTrash', async () => {
+  it('undo/redo restoreFromTrash', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('recoverFromTrash', { nodeIds: ['x' as NodeId], toParentId: 'r_root' as NodeId });
+    const env = cp.createEnvelope('restoreFromTrash', { nodeIds: ['x' as NodeId], toParentId: 'r_root' as NodeId });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
-    const recovered = state.get('x' as NodeId);
-    expect(recovered?.parentId).toBe('r_root');
-    expect(recovered?.removedAt).toBeUndefined();
+    const restored = state.get('x' as NodeId);
+    expect(restored?.parentId).toBe('r_root');
+    expect(restored?.removedAt).toBeUndefined();
 
     // undo -> back to trash state
     const u = await cp.undo();
     expect(u.success).toBe(true);
     expect(state.get('x' as NodeId)?.parentId).toBe('t_trash');
 
-    // redo -> recovered again
+    // redo -> restored again
     const re = await cp.redo();
     expect(re.success).toBe(true);
     expect(state.get('x' as NodeId)?.parentId).toBe('r_root');

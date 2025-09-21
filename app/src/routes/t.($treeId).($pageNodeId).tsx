@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs, ShouldRevalidateFunction } from 'react-router';
-import { Suspense, useEffect, useState } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import {
   AppBar,
@@ -17,6 +18,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { loadPageNode } from '~/loader.js';
@@ -68,7 +70,7 @@ export default function TLayout() {
     }
   }, [data.tree?.id]);
 
-  const handleTreeChange = (_event: React.MouseEvent<HTMLElement>, newTreeId: string | null) => {
+  const handleTreeChange = (_event: MouseEvent<HTMLElement>, newTreeId: string | null) => {
     if (newTreeId && newTreeId !== selectedTreeId) {
       setSelectedTreeId(newTreeId);
       navigate(`/t/${newTreeId}`);
@@ -78,9 +80,10 @@ export default function TLayout() {
   const pageName = data.pageNode?.name || data.tree?.name || 'TreeTypes Console';
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
+    <TreeConsoleThemeBoundary treeId={data.tree?.id}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <AppBar position="static" color="default" elevation={1}>
+          <Toolbar>
           <IconButton
             onClick={() => navigate('/')}
             edge="start"
@@ -151,8 +154,8 @@ export default function TLayout() {
               <UserLoginButton />
             </Box>
           </Stack>
-        </Toolbar>
-      </AppBar>
+          </Toolbar>
+        </AppBar>
 
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         {nodeNotFound ? (
@@ -180,7 +183,8 @@ export default function TLayout() {
           </Suspense>
         )}
       </Box>
-    </Box>
+      </Box>
+    </TreeConsoleThemeBoundary>
   );
 }
 
@@ -190,3 +194,32 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({ currentParams, next
     currentParams?.treeId !== nextParams?.treeId
   );
 };
+
+function TreeConsoleThemeBoundary({
+  treeId,
+  children,
+}: {
+  treeId?: string;
+  children: ReactNode;
+}) {
+  const baseTheme = useTheme();
+
+  const themed = useMemo(() => {
+    if (treeId !== 'p') {
+      return baseTheme;
+    }
+
+    return createTheme(baseTheme, {
+      palette: {
+        primary: { ...baseTheme.palette.secondary },
+        secondary: { ...baseTheme.palette.primary },
+      },
+    });
+  }, [baseTheme, treeId]);
+
+  if (themed === baseTheme) {
+    return <>{children}</>;
+  }
+
+  return <ThemeProvider theme={themed}>{children}</ThemeProvider>;
+}

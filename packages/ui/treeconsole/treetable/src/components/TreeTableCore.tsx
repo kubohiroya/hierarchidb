@@ -4,6 +4,7 @@
  */
 
 import { useMemo, useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getCoreRowModel,
   getExpandedRowModel,
@@ -32,6 +33,7 @@ export function TreeTableCore({
   viewHeight,
   viewWidth: _viewWidth,
   useTrashColumns = false,
+  trashAction = 'restore',
   depthOffset = 0,
   disableDragAndDrop = false,
   hideDragHandler = false,
@@ -101,6 +103,8 @@ export function TreeTableCore({
     handleStartEdit,
   });
 
+  const { t } = useTranslation('common', { keyPrefix: 'treeTable.selectAll' });
+
   const columns = useMemo(() => createTreeTableColumns({
     columnWidths,
     selectAll,
@@ -109,6 +113,10 @@ export function TreeTableCore({
     handleSelectAll,
     pageNodeId,
     selectAllHydrated,
+    selectAllLabels: {
+      select: t('select'),
+      clear: t('clear'),
+    },
     hasSelectedAncestor: structure.hasSelectedAncestor,
     rowSelection: structure.rowSelection,
     collectDescendantIds: structure.collectDescendantIds,
@@ -136,6 +144,7 @@ export function TreeTableCore({
     setContextMenuState,
     visualSelectionSet,
     useTrashColumns,
+    trashAction,
   }), [
     columnWidths,
     selectAll,
@@ -144,6 +153,7 @@ export function TreeTableCore({
     handleSelectAll,
     pageNodeId,
     selectAllHydrated,
+    t,
     structure.hasSelectedAncestor,
     structure.rowSelection,
     structure.collectDescendantIds,
@@ -167,6 +177,7 @@ export function TreeTableCore({
     setContextMenuState,
     visualSelectionSet,
     useTrashColumns,
+    trashAction,
   ]);
 
   const table = useReactTable({

@@ -1,5 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 
+type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
+
 export type TreeTableProperties = {
   pageNodeId: string; // primary key
   // property bag (extend freely without schema churn)
@@ -10,6 +12,9 @@ export type TreeTableProperties = {
   viewMode?: 'list' | 'grid';
   filterBy?: string;
   selectAll?: boolean;
+  dialogPosition?: { x: number; y: number };
+  dialogSize?: { width: number; height: number };
+  dialogDisplayMode?: DialogDisplayMode;
   updatedAt: number;
 };
 
@@ -19,7 +24,7 @@ class UIStateDB extends Dexie {
   constructor() {
     super('hdb_ui_state');
     // v2: current store (also handles migrating and removing legacy table)
-    this.version(2)
+    this.version(3)
       .stores({ treetable_properties: '&pageNodeId' });
   }
 }
@@ -31,8 +36,21 @@ export async function getProperties(pageNodeId: string | undefined): Promise<Tre
   if (!pageNodeId) return null;
   const d = db();
   // Try new store first
-  let row = await d.treetable_properties.get(pageNodeId);
-  if (row) return row;
+  const row = await d.treetable_properties.get(pageNodeId);
+  if (row) {
+    const rawMode = row.dialogDisplayMode as string | undefined;
+    if (rawMode === 'standard' || rawMode === 'maximized' || rawMode === 'fullscreen') {
+      const migrated: TreeTableProperties = {
+        ...row,
+        dialogDisplayMode:
+          rawMode === 'standard' ? 'normal' : rawMode === 'maximized' ? 'maximize' : 'full-screen',
+        updatedAt: Date.now(),
+      };
+      await d.treetable_properties.put(migrated);
+      return migrated;
+    }
+    return row;
+  }
   return null;
 }
 

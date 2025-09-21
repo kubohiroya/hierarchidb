@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { cwd } from 'node:process';
 import { glob } from 'glob';
 import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../types.js';
 import { Logger } from './Logger.js';
@@ -23,7 +24,7 @@ export class PackageDetector {
   private monorepo: MonorepoOptions;
 
   constructor(options: PackageDetectorOptions = {}) {
-    this.rootDir = options.rootDir || process.cwd();
+    this.rootDir = options.rootDir || cwd();
     this.cache = options.cache !== false ? new PackageCache(options.cacheTTL) : null;
     this.logger = options.logger || new Logger();
     this.monorepo = options.monorepo || {};

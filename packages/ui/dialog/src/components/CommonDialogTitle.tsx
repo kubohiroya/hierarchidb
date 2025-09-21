@@ -9,8 +9,13 @@ import {
   Fullscreen as FullscreenIcon,
   FullscreenExit as FullscreenExitIcon,
 } from '@mui/icons-material';
-// Use existing icon available in our dev/peer range to avoid subpath type issues
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+
+const DISPLAY_MODE_LABELS: Record<'normal' | 'maximize' | 'full-screen', string> = {
+  normal: 'Normal (通常)',
+  maximize: 'Maximize (最大)',
+  'full-screen': 'Full-screen (全画面)',
+};
 
 export interface CommonDialogTitleProps {
   title: string;
@@ -22,32 +27,34 @@ export interface CommonDialogTitleProps {
   onClose: () => void;
   additionalActions?: React.ReactNode;
   /** Current display mode */
-  displayMode?: 'standard' | 'maximized' | 'fullscreen';
-  /** Change display mode (standard/maximized/fullscreen) */
-  onChangeDisplayMode?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
-  /** Show AspectRatio menu + quick toggles */
+  displayMode?: 'normal' | 'maximize' | 'full-screen';
+  /** Change display mode (normal/maximize/full-screen) */
+  onChangeDisplayMode?: (mode: 'normal' | 'maximize' | 'full-screen') => void;
+  /** Show mode switcher controls */
   showDisplayModeControls?: boolean;
 }
 
 export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
-                                                                       title,
-                                                                       subtitle,
-                                                                       icon,
-                                                                       mode,
-                                                                       nodeId,
-                                                                       isDraft = false,
-                                                                       onClose,
-                                                                       displayMode = 'standard',
-                                                                       onChangeDisplayMode,
-                                                                       showDisplayModeControls = true,
-                                                                    }) => {
+  title,
+  subtitle,
+  icon,
+  mode,
+  nodeId,
+  isDraft = false,
+  onClose,
+  displayMode = 'normal',
+  onChangeDisplayMode,
+  showDisplayModeControls = true,
+}) => {
   const [modeMenuAnchor, setModeMenuAnchor] = React.useState<null | HTMLElement>(null);
-  const openModeMenu = (e: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(e.currentTarget);
+  const openModeMenu = (event: React.MouseEvent<HTMLElement>) => setModeMenuAnchor(event.currentTarget);
   const closeModeMenu = () => setModeMenuAnchor(null);
-  const selectDisplayMode = (m: 'standard' | 'maximized' | 'fullscreen') => {
-    onChangeDisplayMode?.(m);
+
+  const selectDisplayMode = (next: 'normal' | 'maximize' | 'full-screen') => {
+    onChangeDisplayMode?.(next);
     closeModeMenu();
   };
+
   return (
     <DialogTitle>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -65,38 +72,44 @@ export const CommonDialogTitle: React.FC<CommonDialogTitleProps> = ({
         <Stack direction="row" spacing={1}>
           {showDisplayModeControls && onChangeDisplayMode && (
             <>
-              {/* Display mode menu (Standard / Maximize / Fullscreen) */}
               <IconButton aria-label="Display mode" onClick={openModeMenu} size="small">
                 <OpenInFullIcon />
               </IconButton>
               <Menu anchorEl={modeMenuAnchor} open={Boolean(modeMenuAnchor)} onClose={closeModeMenu} keepMounted>
-                <MenuItem selected={displayMode === 'standard'} onClick={() => selectDisplayMode('standard')}>
+                <MenuItem selected={displayMode === 'normal'} onClick={() => selectDisplayMode('normal')}>
                   <ListItemIcon>
                     <FullscreenExitIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>標準サイズ</ListItemText>
+                  <ListItemText>{DISPLAY_MODE_LABELS.normal}</ListItemText>
                 </MenuItem>
-                <MenuItem selected={displayMode === 'maximized'} onClick={() => selectDisplayMode('maximized')}>
+                <MenuItem selected={displayMode === 'maximize'} onClick={() => selectDisplayMode('maximize')}>
                   <ListItemIcon>
                     <OpenInFullIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>最大化（ウィンドウ内）</ListItemText>
+                  <ListItemText>{DISPLAY_MODE_LABELS.maximize}</ListItemText>
                 </MenuItem>
-                <MenuItem selected={displayMode === 'fullscreen'} onClick={() => selectDisplayMode('fullscreen')}>
+                <MenuItem selected={displayMode === 'full-screen'} onClick={() => selectDisplayMode('full-screen')}>
                   <ListItemIcon>
                     <FullscreenIcon fontSize="small" />
                   </ListItemIcon>
-                  <ListItemText>フルスクリーン</ListItemText>
+                  <ListItemText>{DISPLAY_MODE_LABELS['full-screen']}</ListItemText>
                 </MenuItem>
               </Menu>
-              {/* quick toggles */}
-              {displayMode !== 'fullscreen' && (
-                <IconButton aria-label={displayMode === 'maximized' ? '標準サイズに戻す' : '最大化'} onClick={() => selectDisplayMode(displayMode === 'maximized' ? 'standard' : 'maximized')} size="small">
-                  {displayMode === 'maximized' ? <FullscreenExitIcon /> : <OpenInFullIcon />}
+              {displayMode !== 'full-screen' && (
+                <IconButton
+                  aria-label={displayMode === 'maximize' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS.maximize}
+                  onClick={() => selectDisplayMode(displayMode === 'maximize' ? 'normal' : 'maximize')}
+                  size="small"
+                >
+                  {displayMode === 'maximize' ? <FullscreenExitIcon /> : <OpenInFullIcon />}
                 </IconButton>
               )}
-              <IconButton aria-label={displayMode === 'fullscreen' ? 'フルスクリーン解除' : 'フルスクリーン'} onClick={() => selectDisplayMode(displayMode === 'fullscreen' ? 'standard' : 'fullscreen')} size="small">
-                {displayMode === 'fullscreen' ? <FullscreenExitIcon /> : <FullscreenIcon />}
+              <IconButton
+                aria-label={displayMode === 'full-screen' ? DISPLAY_MODE_LABELS.normal : DISPLAY_MODE_LABELS['full-screen']}
+                onClick={() => selectDisplayMode(displayMode === 'full-screen' ? 'normal' : 'full-screen')}
+                size="small"
+              >
+                {displayMode === 'full-screen' ? <FullscreenExitIcon /> : <FullscreenIcon />}
               </IconButton>
             </>
           )}

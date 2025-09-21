@@ -50,45 +50,45 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
 export async function createTestFolder(page: Page, baseName: string): Promise<string> {
   const timestamp = Date.now();
   const folderName = `${baseName} ${timestamp}`;
+  const folderDescription = `Automated description for ${folderName}`;
 
-  // Open SpeedDial menu using aria-label
-  // The SpeedDial has role="presentation" and aria-label="Create new item"
-  const speedDialButton = page.locator('[aria-label="Create new item"]');
+  // Ensure main tree is ready
+  await waitForTreeTableLoad(page);
 
-  // Scroll to make SpeedDial button visible in viewport
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForTimeout(500);
-
-  // Try force click to open the menu
+  // Open SpeedDial menu (Floating Action Button labelled "Create new item")
+  const speedDialButton = page.getByRole('button', { name: /Create new item/i });
+  if (!(await speedDialButton.isVisible())) {
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(250);
+  }
   await speedDialButton.click({ force: true });
 
-  // Wait for SpeedDial menu to open - SpeedDialAction creates button elements with tooltipTitle
-  // MUI SpeedDialAction creates button elements, not menuitem elements
-  await page.waitForTimeout(1000); // Give time for menu to open
-
-  // Try to find SpeedDialAction button by tooltip title (aria-label)
-  const createFolderAction = page
-    .locator('button[aria-label="Create Folder"]')
-    .or(page.locator('button').filter({ hasText: 'Create Folder' }));
+  // Select "Create Folder" SpeedDial action
+  const createFolderAction = page.getByRole('button', { name: /Create Folder/i });
   await expect(createFolderAction).toBeVisible({ timeout: 5000 });
-
-  // Click folder-plugin creation action
   await createFolderAction.click();
 
-  // Handle the browser prompt base-dialog for folder-plugin creation
-  page.on('dialog', async (dialog) => {
-    console.log('Dialog appeared:', dialog.type(), dialog.message());
-    if (dialog.type() === 'prompt') {
-      await dialog.accept(folderName);
-    }
-  });
+  // Interact with the folder creation dialog
+  const dialog = page.getByRole('dialog', { name: /Create New Folder/i });
+  await expect(dialog).toBeVisible({ timeout: 5000 });
 
-  // Wait a moment for the base-dialog to be handled
-  await page.waitForTimeout(1000);
+  await dialog.getByLabel(/Folder Name/i).fill(folderName);
 
-  // For SpeedDial testing, we just verify the UI interaction worked
-  // The actual folder-plugin creation would require backend implementation
-  console.log('SpeedDial folder-plugin creation flow completed successfully');
+  const descriptionField = dialog.getByLabel(/Description/i);
+  if (await descriptionField.isVisible()) {
+    await descriptionField.fill(folderDescription);
+  }
+
+  const createButton = dialog.getByRole('button', { name: /Create Folder/i });
+  await expect(createButton).toBeEnabled();
+  await createButton.click();
+
+  await expect(dialog).not.toBeVisible({ timeout: 5000 });
+
+  const newNode = page.locator('[data-testid="tree-node"]').filter({ hasText: folderName }).first();
+  await expect(newNode).toBeVisible({ timeout: 10000 });
+
+  console.log('SpeedDial folder creation flow completed successfully');
 
   return folderName;
 }

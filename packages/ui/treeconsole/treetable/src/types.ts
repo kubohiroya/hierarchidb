@@ -83,6 +83,7 @@ export interface TreeTableCoreProps {
    * Table configuration
    */
   useTrashColumns?: boolean;
+  trashAction?: 'restore' | 'empty';
   depthOffset?: number;
 
   /**

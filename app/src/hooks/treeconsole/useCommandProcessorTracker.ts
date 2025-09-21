@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { Remote } from 'comlink';
+import { proxy, type Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/common-type';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
@@ -51,13 +51,15 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
     const attach = async () => {
       try {
         subscriptionAPI = await client.getSubscriptionAPI();
-        subscriptionId = await subscriptionAPI.subscribeUndoState((event: UndoStateEvent) => {
+        const handler = proxy((event: UndoStateEvent) => {
           if (!isActive) return;
           const { canUndo, canRedo } = event;
           subscriptionEstablishedRef.current = true;
           setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
           setSSOT({ canUndo, canRedo });
         });
+
+        subscriptionId = await subscriptionAPI.subscribeUndoState(handler);
       } catch (error) {
         console.warn('[useCommandProcessorTracker] undo-state subscription failed', error);
       }

@@ -20,7 +20,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     return await CoreDB.getSingleton(`e2e-${name}-${Date.now()}-${Math.random()}`);
   }
 
-  it('create → update → move → trash → recover works via CommandProcessor default routing', async () => {
+  it('create → update → move → trash → restore works via CommandProcessor default routing', async () => {
     const core = await newCore('on');
     const cp = new CommandProcessor(core);
 
@@ -62,7 +62,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(
-      cp.createEnvelope('recoverFromTrash', { nodeIds: [nodeId] }),
+      cp.createEnvelope('restoreFromTrash', { nodeIds: [nodeId] }),
     );
     expect(rec.success).toBe(true);
   });

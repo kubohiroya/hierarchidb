@@ -12,7 +12,7 @@ export interface CommonDialogActionsProps {
   onSubmit: () => void;
   onCancel: () => void;
   additionalActions?: React.ReactNode;
-  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  displayMode?: 'normal' | 'maximize' | 'full-screen';
 }
 
 export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
@@ -22,9 +22,9 @@ export const CommonDialogActions: React.FC<CommonDialogActionsProps> = ({
                                                                           onSubmit,
                                                                           onCancel,
                                                                           additionalActions,
-                                                                          displayMode = 'standard',
+                                                                          displayMode = 'normal',
                                                                         }) => {
-  if (displayMode !== 'fullscreen') {
+  if (displayMode !== 'full-screen') {
     return null;
   }
   return (

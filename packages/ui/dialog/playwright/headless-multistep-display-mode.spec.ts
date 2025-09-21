@@ -11,7 +11,7 @@ const storyUrl = (id: string, args?: Record<string, string>) => {
 test.describe('HeadlessMultiStepDialog display modes', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
-  test('switches between standard, maximized, and fullscreen', async ({ page }) => {
+test('switches between normal, maximize, and full-screen', async ({ page }) => {
     await page.goto(storyUrl('ui-headless-headlessmultistepdialog--default'));
     const iframe = page.frameLocator('iframe[title="storybook-preview"]');
 
@@ -32,14 +32,13 @@ test.describe('HeadlessMultiStepDialog display modes', () => {
     await iframe.getByRole('button', { name: 'Back' }).click();
     await expect(iframe.getByRole('heading', { name: /Members/ })).toBeVisible();
 
-    await iframe.locator('select').selectOption('maximized');
-    await expect(iframe.locator('select')).toHaveValue('maximized');
+    await iframe.locator('select').selectOption('maximize');
+    await expect(iframe.locator('select')).toHaveValue('maximize');
 
-    await iframe.locator('select').selectOption('fullscreen');
-    await expect(iframe.locator('select')).toHaveValue('fullscreen');
+  await iframe.locator('select').selectOption('full-screen');
+  await expect(iframe.locator('select')).toHaveValue('full-screen');
 
-    await iframe.locator('select').selectOption('standard');
-    await expect(iframe.locator('select')).toHaveValue('standard');
+    await iframe.locator('select').selectOption('normal');
+    await expect(iframe.locator('select')).toHaveValue('normal');
   });
 });
-

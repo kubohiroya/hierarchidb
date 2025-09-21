@@ -20,6 +20,15 @@
       "@hierarchidb/runtime-worker-bootstrap": [
         "../packages/runtime-worker/worker-bootstrap/dist"
       ],
+      "@hierarchidb/common-api": [
+        "../packages/common/api/dist"
+      ],
+      "@hierarchidb/ui-dialog": [
+        "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "../packages/ui/treeconsole/treetable/dist"
+      ],
       "@hierarchidb/ui-auth": [
         "../packages/ui/auth/dist"
       ],

@@ -115,6 +115,8 @@ export interface RecoverFromTrashPayload {
   onNameConflict?: OnNameConflict;
 }
 
+export type RestoreFromTrashPayload = RecoverFromTrashPayload;
+
 export interface ImportNodesPayload {
   nodes: Record<NodeId, TreeNode>;
   nodeIds: NodeId[];

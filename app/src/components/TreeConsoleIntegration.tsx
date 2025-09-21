@@ -343,7 +343,7 @@ const TreeConsoleIntegrationInner: React.FC<
             (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
               ? params.trashNodeId
               : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
-          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/recover`);
+          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore`);
           break;
         }
         case 'empty': {
@@ -397,6 +397,12 @@ const TreeConsoleIntegrationInner: React.FC<
   const handleTourFinish = useCallback(() => {
     setTourRun(false);
   }, []);
+
+  const lowerPageNodeId = pageNodeId ? String(pageNodeId).toLowerCase() : '';
+  const isTrashPage =
+    pageTreeNode?.nodeType === 'trash' ||
+    lowerPageNodeId.endsWith(':trash') ||
+    lowerPageNodeId === 'trash';
 
   
 
@@ -530,6 +536,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canGoForward={state.canGoForward}
         onContextMenuAction={actions.handleContextMenuAction}
         onMoveNodes={actions.handleMoveNodes}
+        useTrashColumns={isTrashPage}
       />
       </Box>
 

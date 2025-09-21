@@ -21,7 +21,7 @@ class MockWorker {
     this.listeners.get(type)?.delete(handler);
   }
 
-  postMessage(data: any) {
+  postMessage(_data: any) {
     // Mock implementation
   }
 
@@ -108,7 +108,6 @@ describe('WorkerInitializationChannel', () => {
         timeout: 5000,
       };
 
-      const startTime = Date.now();
       const initPromise = channel.waitForInitialization(config);
 
       // Advance timer by 1 second

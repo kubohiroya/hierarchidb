@@ -24,6 +24,10 @@ describe('TreeTable Draft chip', () => {
     handleSelectAll: () => {},
     pageNodeId: undefined,
     selectAllHydrated: true,
+    selectAllLabels: {
+      select: 'Select all',
+      clear: 'Clear all',
+    },
     hasSelectedAncestor: () => false,
     rowSelection: {},
     collectDescendantIds: () => [],
@@ -51,6 +55,7 @@ describe('TreeTable Draft chip', () => {
     setContextMenuState: () => {},
     visualSelectionSet: new Set(),
     useTrashColumns: false,
+    trashAction: 'restore',
   };
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({

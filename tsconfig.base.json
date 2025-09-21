@@ -37,6 +37,18 @@
       "@hierarchidb/runtime-shared-batch-processor/*": [
         "packages/runtime-shared/batch-processor/src/*"
       ],
+      "@hierarchidb/runtime-shared-fetch-metadata": [
+        "packages/runtime-shared/fetch-metadata/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata/*": [
+        "packages/runtime-shared/fetch-metadata/src/*"
+      ],
+      "@hierarchidb/common-type": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-type/*": [
+        "packages/common/types/src/*"
+      ],
       "@hierarchidb/download": [
         "packages/feature/download/src/index.ts"
       ],

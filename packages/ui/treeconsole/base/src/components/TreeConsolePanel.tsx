@@ -72,11 +72,16 @@ export interface TreeConsolePanelProps {
   readonly treeIdForPersistence?: string;
   /** Row click action behavior */
   readonly rowClickAction?: 'Edit' | 'Select/Navigate';
+  /** Enable trash-specific columns and behaviours */
+  readonly useTrashColumns?: boolean;
+  readonly trashAction?: 'restore' | 'empty';
   /**
    * Whether to render the built-in static SpeedDial.
    * Set to false when an external DynamicSpeedDial is provided by the host app.
    */
   readonly renderBuiltInSpeedDial?: boolean;
+  /** Hide the drag handle column when true (e.g., Trash dialog). */
+  readonly hideDragHandler?: boolean;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -183,18 +188,19 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       />
       {/* Main Table Content */}
       <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', paddingLeft: '8px', paddingRight: '8px' }}>
-        <TreeTableCore
-          controller={controller}
-          viewHeight={600}
-          viewWidth={1200}
-          treeId={props.treeId}
-          pageNodeId={props.pageNodeId}
-          useTrashColumns={false}
-          depthOffset={0}
-          disableDragAndDrop={false}
-          hideDragHandler={false}
-          rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-          selectionMode="multiple"
+      <TreeTableCore
+        controller={controller}
+        viewHeight={600}
+        viewWidth={1200}
+        treeId={props.treeId}
+        pageNodeId={props.pageNodeId}
+        useTrashColumns={props.useTrashColumns ?? false}
+        trashAction={props.trashAction}
+        depthOffset={0}
+        disableDragAndDrop={false}
+        hideDragHandler={props.hideDragHandler ?? false}
+        rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+        selectionMode="multiple"
           // Right-click disabled
         />
       </Box>

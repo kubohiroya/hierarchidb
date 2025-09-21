@@ -143,19 +143,19 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const nodesUnderHolder = await queryAPI.listChildren(holder.id as NodeId);
     expect(nodesUnderHolder.some((node) => node.id === canonicalId)).toBe(true);
 
-    const subtreeEventsBeforeRecover = subtreeEvents.length;
-    const recoverRes = await mutationAPI.recoverNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
-    expect(recoverRes?.success).toBe(true);
+    const subtreeEventsBeforeRestore = subtreeEvents.length;
+    const restoreRes = await mutationAPI.restoreNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
+    expect(restoreRes?.success).toBe(true);
 
     await waitFor(async () => {
-      const rootChildrenAfterRecover = await queryAPI.listChildren(rootId);
-      return rootChildrenAfterRecover.some((node) => node.id === canonicalId);
+      const rootChildrenAfterRestore = await queryAPI.listChildren(rootId);
+      return rootChildrenAfterRestore.some((node) => node.id === canonicalId);
     });
 
-    await waitFor(() => subtreeEvents.length > subtreeEventsBeforeRecover);
+    await waitFor(() => subtreeEvents.length > subtreeEventsBeforeRestore);
 
-    const trashChildrenAfterRecover = await queryAPI.listChildren(trashRootId);
-    const holderAfterRecover = trashChildrenAfterRecover.find((node) => {
+    const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
+    const holderAfterRestore = trashChildrenAfterRestore.find((node) => {
       if (node.nodeType !== 'trash' || !isValidTrashHolderName(node.name)) return false;
       try {
         return decodeTrashHolderName(node.name).trashedNodeId === canonicalId;
@@ -163,7 +163,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
         return false;
       }
     });
-    expect(holderAfterRecover).toBeFalsy();
+    expect(holderAfterRestore).toBeFalsy();
 
     const trashEventsBeforeSecondMove = trashEvents.length;
     const subtreeEventsBeforeSecondMove = subtreeEvents.length;

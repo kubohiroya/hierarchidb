@@ -20,6 +20,10 @@ export interface ColumnBuilderParams {
   handleSelectAll: (checked: boolean) => void;
   pageNodeId?: string;
   selectAllHydrated: boolean;
+  selectAllLabels: {
+    select: string;
+    clear: string;
+  };
   hasSelectedAncestor: (nodeId: TreeNode['id']) => boolean;
   rowSelection: Record<string, boolean>;
   collectDescendantIds: (nodeId: NodeId) => string[];
@@ -47,6 +51,7 @@ export interface ColumnBuilderParams {
   setContextMenuState: React.Dispatch<React.SetStateAction<{ anchorEl: HTMLElement | null; node: TreeNode | null }>>;
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
+  trashAction: 'restore' | 'empty';
 }
 
 export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<TreeNode>[] {
@@ -58,6 +63,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     handleSelectAll,
     pageNodeId,
     selectAllHydrated,
+    selectAllLabels,
     hasSelectedAncestor,
     rowSelection,
     collectDescendantIds,
@@ -85,12 +91,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     setContextMenuState,
     visualSelectionSet,
     useTrashColumns,
+    trashAction,
   } = params;
 
   const selectionColumn: ColumnDef<TreeNode> = {
     id: 'selection',
     header: () => (
-      <Tooltip title={selectAll ? 'すべて解除' : 'すべて選択'} placement="right">
+      <Tooltip title={selectAll ? selectAllLabels.clear : selectAllLabels.select} placement="right">
         <Checkbox
           checked={selectAll ? true : allRowsSelected}
           indeterminate={!selectAll && someSelected}
@@ -305,57 +312,85 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 autoFocus
                 error={!!editingError}
                 helperText={editingError || undefined}
-                placeholder={!editingValue ? 'Enterで確定 / Escでキャンセル' : undefined}
+                placeholder={!editingValue ? 'Press Enter to confirm / Esc to cancel' : undefined}
                 sx={{ flex: 1 }}
               />
             </Box>
-          ) : (
-            <Box
-              sx={{
-                flex: 1,
-                cursor: 'pointer',
-                '&:hover': { textDecoration: 'underline' },
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                flexWrap: 'wrap',
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (rowClickAction === 'Edit') {
-                  handleStartEdit(node, 'name');
-                }
-              }}
-            >
+          ) : (() => {
+            const trashMetaParentId = (node as { holderMetaParentId?: NodeId }).holderMetaParentId;
+            const trashTargetId = (node as { holderTargetId?: NodeId }).holderTargetId;
+            const holderType = (node as { holderType?: string }).holderType;
+            const normalizedTreeId = treeId ? String(treeId) : '';
+            const isTrashRow = useTrashColumns && holderType === 'trash' && normalizedTreeId.length > 0;
+            const trashActionValue = trashAction === 'empty' ? 'empty' : 'restore';
+
+            const linkHref = (() => {
+              if (!normalizedTreeId) {
+                return `/${['t', String(node.id)].join('/')}`;
+              }
+
+              if (!isTrashRow) {
+                return `/${['t', normalizedTreeId, String(node.id)].filter(Boolean).join('/')}`;
+              }
+
+              const originalPageId = String(
+                trashMetaParentId ?? pageNodeId ?? `${normalizedTreeId}:root`,
+              );
+              const trashPageNodeId = String(trashTargetId ?? node.id);
+
+              return `/${['t', normalizedTreeId, originalPageId, trashPageNodeId, 'trash', trashActionValue]
+                .filter(Boolean)
+                .join('/')}`;
+            })();
+
+            return (
               <Box
-                component={RouterLink}
-                to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
-                sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                sx={{
+                  flex: 1,
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  flexWrap: 'wrap',
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (rowClickAction === 'Edit') {
+                    handleStartEdit(node, 'name');
+                  }
+                }}
               >
-                {node.name}
+                <Box
+                  component={RouterLink}
+                  to={linkHref}
+                  sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                >
+                  {node.name}
+                </Box>
+                {Boolean(node.isDraft) && (
+                  <Chip
+                    label="Draft"
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                    sx={{ height: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                {extractTags(node).map((tag, idx) => (
+                  <Chip
+                    key={`${node.id}:tag:${idx}`}
+                    label={tag}
+                    size="small"
+                    variant="outlined"
+                    sx={{ height: 20 }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ))}
               </Box>
-              {Boolean(node.isDraft) && (
-                <Chip
-                  label="Draft"
-                  size="small"
-                  color="warning"
-                  variant="outlined"
-                  sx={{ height: 20 }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
-              {extractTags(node).map((tag, idx) => (
-                <Chip
-                  key={`${node.id}:tag:${idx}`}
-                  label={tag}
-                  size="small"
-                  variant="outlined"
-                  sx={{ height: 20 }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ))}
-            </Box>
-          )}
+            );
+          })()}
         </NameCell>
       );
     },

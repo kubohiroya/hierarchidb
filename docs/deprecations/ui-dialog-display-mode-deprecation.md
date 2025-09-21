@@ -3,7 +3,7 @@
 
 **Scope**
 - UI ダイアログの表示モード周りの旧実装/旧APIを段階的に撤廃する計画。
-- 影響範囲: Dialog display mode（standard/maximized/fullscreen）UI とその永続化。
+- 影響範囲: Dialog display mode（normal/maximize/full-screen）UI とその永続化。
 
 **対象（旧実装/旧API）**
 - 旧 API（@deprecated 済）
@@ -18,7 +18,7 @@
 
 **新実装（置き換え先）**
 - 表示モード API（制御）
-  - `displayMode: 'standard'|'maximized'|'fullscreen'`
+  - `displayMode: 'normal'|'maximize'|'full-screen'`
   - `onDisplayModeChange(mode)`
 - 永続化
   - `PeerEntity.displayMode`（UI/Worker 共有 Dexie）

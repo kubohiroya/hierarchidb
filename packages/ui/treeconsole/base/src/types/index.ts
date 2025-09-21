@@ -27,12 +27,14 @@ export interface TreeTableConsolePanelProps {
   hideConsole?: boolean;
   showSearchOnly?: boolean;
   useTrashColumns?: boolean;
+  trashAction?: 'restore' | 'empty';
   containerWidth?: number;
   containerHeight?: number;
   handleStartTour?: () => void;
   footerHeight?: number;
   mode?: 'restore' | 'dispose';
   workerClient?: WorkerAPI; // Optional WorkerAPIClient for standalone usage
+  hideDragHandler?: boolean;
 }
 
 /**

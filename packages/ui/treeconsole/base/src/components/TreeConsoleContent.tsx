@@ -65,6 +65,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
      onDragStateChange: _onDragStateChange,
      canPreviewNode: _canPreviewNode = false,
      mode: _mode,
+     hideDragHandler = false,
    }) => {
     const [isWebKit, setIsWebKit] = useState(false);
     const [webKitInitialized, setWebKitInitialized] = useState(false);
@@ -195,7 +196,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                 useTrashColumns={useTrashColumns}
                 depthOffset={_depthOffset}
                 disableDragAndDrop={false}
-                hideDragHandler={false}
+                hideDragHandler={hideDragHandler}
                 onDragStateChange={_onDragStateChange ?
                   (draggingNodeId: NodeId | undefined, descendantIdSet: Set<NodeId> | undefined, _dragPreviewElement: HTMLElement | null) =>
                     _onDragStateChange(draggingNodeId, descendantIdSet) :

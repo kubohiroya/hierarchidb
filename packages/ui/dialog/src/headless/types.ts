@@ -7,7 +7,7 @@ export type StepNavigationEvent =
   | { type: 'back' };
 
 /** Display mode handled by the dialog frame. */
-export type DialogDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
 /** Visibility policy for header / footer elements. */
 export type SectionVisibilityMode = 'visible' | 'hidden' | 'auto';

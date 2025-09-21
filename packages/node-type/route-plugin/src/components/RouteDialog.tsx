@@ -20,6 +20,7 @@ import {
   type HeadlessHeaderRenderProps,
   type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
+  type DialogDisplayMode,
 } from '@hierarchidb/ui-dialog';
 
 type DialogStep = { id: string; label: string; component: React.ReactNode; validate?: () => Promise<boolean> };
@@ -126,7 +127,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   const committableStepIndices = useMemo(() => (steps.length ? [steps.length - 1] : []), [steps.length]);
 
   // Display mode: keep volatile here (UI layer is responsible for persistence)
-  const [displayMode, setDisplayModeState] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
 
   useEffect(() => {
     if (!open) {

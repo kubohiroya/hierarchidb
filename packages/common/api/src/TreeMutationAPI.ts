@@ -76,7 +76,7 @@ export interface TreeMutationAPI {
    * @param params.toParentId - ID
    * @returns
       */
-  recoverNodesFromTrash(params: {
+  restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: boolean; error?: string }>;

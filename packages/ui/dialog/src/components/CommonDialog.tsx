@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
 import { CommonDialogActions } from './CommonDialogActions.js';
 import { CommonDialogTitle } from './CommonDialogTitle.js';
+import type { DialogDisplayMode } from '../headless/types.js';
 
 export interface CommonPluginDialogProps {
   mode: 'create' | 'edit';
@@ -21,8 +22,8 @@ export interface CommonPluginDialogProps {
 
   // Dialog size
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
-  initialDisplayMode?: 'standard' | 'maximized' | 'fullscreen';
-  onDisplayModeChange?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
+  initialDisplayMode?: DialogDisplayMode;
+  onDisplayModeChange?: (mode: DialogDisplayMode) => void;
 
   // State management
   hasUnsavedChanges?: boolean;
@@ -50,7 +51,7 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
                                                                   icon,
                                                                   children,
                                                                   maxWidth = 'md',
-                                                                  initialDisplayMode = 'standard',
+                                                                  initialDisplayMode = 'normal',
                                                                   onDisplayModeChange,
                                                                   hasUnsavedChanges = false,
                                                                   supportsDraft = false,
@@ -60,9 +61,9 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
                                                                   onCancel,
                                                                   additionalActions,
                                                                 }) => {
-  const [displayMode, setDisplayMode] = useState<'standard' | 'maximized' | 'fullscreen'>(initialDisplayMode);
-  const isFullscreen = displayMode === 'fullscreen';
-  const isMaximized = displayMode === 'maximized';
+  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>(initialDisplayMode);
+  const isFullscreen = displayMode === 'full-screen';
+  const isMaximized = displayMode === 'maximize';
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,7 +110,7 @@ export const CommonDialog: React.FC<CommonPluginDialogProps> = ({
     onCancel();
   }, [onCancel]);
 
-  const handleDisplayModeChange = useCallback((mode: 'standard' | 'maximized' | 'fullscreen') => {
+  const handleDisplayModeChange = useCallback((mode: DialogDisplayMode) => {
     setDisplayMode(mode);
     onDisplayModeChange?.(mode);
   }, [onDisplayModeChange]);

@@ -750,7 +750,7 @@ export class CoreDB extends Dexie {
     return { newRootId, idMap: idMapping };
   }
 
-  // Legacy restoreFromTrash removed. Use CommandProcessor.recoverFromTrash with holder-based model.
+  // Legacy restoreFromTrash removed. Use CommandProcessor.restoreFromTrash with holder-based model.
 
   /**
    * Paste nodes with correct depth calculation

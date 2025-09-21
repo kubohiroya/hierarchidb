@@ -22,7 +22,7 @@ export type FolderPeerRow = {
   nodeId: NodeId;
   data?: FolderPeerData;
   updatedAt?: number;
-  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  displayMode?: 'normal' | 'maximize' | 'full-screen';
   dialogPosition?: { x: number; y: number } | null;
   dialogSize?: { width: number; height: number } | null;
 };

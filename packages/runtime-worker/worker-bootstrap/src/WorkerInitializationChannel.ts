@@ -57,7 +57,7 @@ export class WorkerInitializationChannel {
             });
             break;
 
-          case 'INIT_ERROR':
+          case 'INIT_ERROR': {
             if (timeoutId) {
               clearTimeout(timeoutId);
             }
@@ -69,6 +69,7 @@ export class WorkerInitializationChannel {
               duration: Date.now() - startTime,
             });
             break;
+          }
 
           case 'INIT_PROGRESS':
             if (this.debug) {

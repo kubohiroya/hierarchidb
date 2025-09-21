@@ -60,11 +60,11 @@ describe('CommandRegistry types: envelope inference', () => {
     expectTypeOf(mt.payload).toEqualTypeOf<PayloadOf<'moveToTrash'>>();
 
     const rt = createEnvelope(
-      'recoverFromTrash',
+      'restoreFromTrash',
       {
         nodeIds: [] as NodeId[],
-      } satisfies PayloadOf<'recoverFromTrash'>,
+      } satisfies PayloadOf<'restoreFromTrash'>,
     );
-    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'recoverFromTrash'>>();
+    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'restoreFromTrash'>>();
   });
 });

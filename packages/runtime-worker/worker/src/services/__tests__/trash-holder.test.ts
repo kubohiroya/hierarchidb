@@ -59,7 +59,7 @@ describe('Trash holder flow', () => {
     };
   });
 
-  it('moveToTrash creates holder and moves node under it; recover deletes holder', async () => {
+  it('moveToTrash creates holder and moves node under it; restore deletes holder', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
     // move a to trash
     const mt = cp.createEnvelope('moveToTrash', { nodeIds: ['a' as NodeId] });
@@ -75,13 +75,13 @@ describe('Trash holder flow', () => {
     if (!nodeA) throw new Error('Node a missing after moveToTrash');
     expect(nodeA.parentId).toBe(holder.id);
 
-    // recover a
-    const rc = cp.createEnvelope('recoverFromTrash', { nodeIds: ['a' as NodeId] });
+    // restore a
+    const rc = cp.createEnvelope('restoreFromTrash', { nodeIds: ['a' as NodeId] });
     const r2 = await cp.processCommand(rc);
     expect(r2.success).toBe(true);
     // back under root and holder deleted
-    const recoveredA = state['a'];
-    if (!recoveredA) throw new Error('Node a missing after recoverFromTrash');
-    expect(recoveredA.parentId).toBe('r:root');
+    const restoredA = state['a'];
+    if (!restoredA) throw new Error('Node a missing after restoreFromTrash');
+    expect(restoredA.parentId).toBe('r:root');
   });
 });

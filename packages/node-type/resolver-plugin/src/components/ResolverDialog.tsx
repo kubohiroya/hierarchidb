@@ -16,6 +16,7 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
   type StepComponentProps,
+  type DialogDisplayMode,
 } from '@hierarchidb/ui-dialog';
 import { readRuntimeMode } from '@hierarchidb/util';
 
@@ -60,7 +61,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   const [targetSchema, setTargetSchema] = useState<SchemaInfo | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [displayMode, setDisplayModeState] = useState<'standard' | 'maximized' | 'fullscreen'>('standard');
+  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
 
   useEffect(() => {
     if (!open) {

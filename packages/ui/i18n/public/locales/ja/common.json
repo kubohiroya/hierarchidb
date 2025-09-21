@@ -48,5 +48,25 @@
     "update": "更新",
     "render": "レンダー",
     "effect": "エフェクト"
+  },
+  "dialogs": {
+    "trash": {
+      "modeMenu": {
+        "ariaLabel": "表示モード",
+        "normal": "Normal（通常）",
+        "maximize": "Maximize（最大）",
+        "fullScreen": "Full-screen（全画面）"
+      },
+      "actions": {
+        "close": "ダイアログを閉じる",
+        "exitFullscreen": "全画面を終了"
+      }
+    }
+  },
+  "treeTable": {
+    "selectAll": {
+      "select": "すべて選択",
+      "clear": "すべて解除"
+    }
   }
 }

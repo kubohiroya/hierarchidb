@@ -80,6 +80,17 @@ export default [
     },
   },
 
+  // Node-targeted tooling/CLI packages: allow deliberate `process` access
+  {
+    files: [
+      'packages/tools/vite-plugin-dev-health/src/**/*.{js,jsx,ts,tsx}',
+      'packages/tools/fetch-metadata-cli/src/**/*.{js,jsx,ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-globals': 'off',
+    },
+  },
+
   // Type-aware deprecation checks (runtime-worker)
   {
     files: ['packages/runtime-worker/worker/**/*.{ts,tsx}'],

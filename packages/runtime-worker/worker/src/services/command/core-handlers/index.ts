@@ -49,8 +49,8 @@ export async function executeCoreCommand(
       return handleRemove(envelope, context, deps);
     case 'removeSubtree':
       return handleRemoveSubtree(envelope, context, deps);
-    case 'recoverFromTrash':
-      return handleRecoverFromTrash(envelope, deps);
+    case 'restoreFromTrash':
+      return handleRestoreFromTrash(envelope, deps);
     case 'commitWorkingCopy':
       return handleCommitWorkingCopy(envelope, deps);
     case 'invalidCommand':
@@ -453,7 +453,7 @@ async function handleRemoveSubtree(
   }
 }
 
-async function handleRecoverFromTrash(
+async function handleRestoreFromTrash(
   envelope: CommandEnvelope<string, unknown>,
   deps: CoreCommandDeps,
 ): Promise<CommandResult> {

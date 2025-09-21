@@ -1,7 +1,7 @@
 import type { Table } from 'dexie';
 import type { NodeId } from '@hierarchidb/common-type';
 
-export type PeerDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
 export type PeerDisplayNodeType =
@@ -20,7 +20,7 @@ type DexieInstance = import('dexie').Dexie;
 interface PeerEntityRecord {
   nodeId: NodeId;
   updatedAt?: number;
-  displayMode?: PeerDisplayMode;
+  displayMode?: string;
   dialogPosition?: PeerDialogPosition;
   dialogSize?: PeerDialogSize;
   data?: unknown;
@@ -70,7 +70,19 @@ export async function getPeerDisplayMode<T extends PeerDisplayNodeType>(
 ): Promise<PeerDisplayMode | null> {
   return withPeerDb(nodeType, null, async (db) => {
     const row = await db.peerEntities.get(toNodeId(nodeId));
-    return row?.displayMode ?? null;
+    const raw = row?.displayMode ?? null;
+    if (raw === 'normal' || raw === 'maximize' || raw === 'full-screen') {
+      return raw;
+    }
+    if (raw === 'standard' || raw === 'maximized' || raw === 'fullscreen') {
+      const migrated =
+        raw === 'standard' ? 'normal' : raw === 'maximized' ? 'maximize' : 'full-screen';
+      if (row) {
+        await db.peerEntities.put({ ...row, displayMode: migrated, updatedAt: Date.now() });
+      }
+      return migrated;
+    }
+    return null;
   });
 }
 

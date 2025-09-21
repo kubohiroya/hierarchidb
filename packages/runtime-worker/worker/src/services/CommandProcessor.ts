@@ -235,7 +235,7 @@ export class CommandProcessor {
       'moveNodes',
       'moveToTrash',
       'remove',
-      'recoverFromTrash',
+      'restoreFromTrash',
       'removeSubtree',
       'commitWorkingCopy',
     ]);

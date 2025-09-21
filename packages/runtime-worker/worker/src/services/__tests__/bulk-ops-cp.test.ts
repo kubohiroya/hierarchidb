@@ -118,7 +118,7 @@ describe('CommandProcessor bulk operations', () => {
     expect(state.has('b' as NodeId)).toBe(false);
   });
 
-  it('recoverFromTrash uses bulkUpdateNodes and bulkDeleteNodes (holders) when multiple', async () => {
+  it('restoreFromTrash uses bulkUpdateNodes and bulkDeleteNodes (holders) when multiple', async () => {
     const holder1 = makeNode('h1', 'trash', 'ignored', TRASH_TYPE);
     const holder2 = makeNode('h2', 'trash', 'ignored', TRASH_TYPE);
     const trashed1: TreeNode = { ...makeNode('t1', 'h1', 'n1'), removedAt: Date.now() };
@@ -159,7 +159,7 @@ describe('CommandProcessor bulk operations', () => {
 
     const { CommandProcessor } = await import('~/services/CommandProcessor');
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('recoverFromTrash', {
+    const env = cp.createEnvelope('restoreFromTrash', {
       nodeIds: ['t1' as NodeId, 't2' as NodeId],
       toParentId: 'root' as NodeId,
     });

@@ -8,7 +8,7 @@ import {
   NodeId,
   NodeType,
   PasteNodesPayload,
-  RecoverFromTrashPayload,
+  RestoreFromTrashPayload,
   RedoPayload,
   Timestamp,
   TreeId,
@@ -266,11 +266,11 @@ export class TreeMutationService implements TreeMutationAPI {
     }
   }
 
-  async recoverNodesFromTrash(params: {
+  async restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
   }): Promise<{ success: boolean; error?: string }> {
-    const cmd = this.commandProcessor.createEnvelope('recoverFromTrash', {
+    const cmd = this.commandProcessor.createEnvelope('restoreFromTrash', {
       nodeIds: params.nodeIds,
       toParentId: params.toParentId,
     });
@@ -279,16 +279,16 @@ export class TreeMutationService implements TreeMutationAPI {
     if (!result.success) {
       return { success: false, error: getCommandError(result) };
     }
-    // After successful recover, recompute destination ancestors hasChildren
+    // After successful restore, recompute destination ancestors hasChildren
     if (params.toParentId) {
       await this.recomputeAncestorsHasChildrenFromParent(params.toParentId);
-      // Also recompute depth for recovered roots
+      // Also recompute depth for restored roots
       try {
         for (const rootId of params.nodeIds) {
           await this.recomputeDepthForSubtree(params.toParentId, rootId);
         }
       } catch (error) {
-        this.logRecoverableWarning('recoverNodesFromTrash: recomputeDepthForSubtree failed', error);
+        this.logRecoverableWarning('restoreNodesFromTrash: recomputeDepthForSubtree failed', error);
       }
     } else {
       await this.ensureAncestorsHaveChildrenFromNodes(params.nodeIds);
@@ -316,7 +316,7 @@ export class TreeMutationService implements TreeMutationAPI {
     return node?.parentId || ('' as NodeId);
   }
 
-  // Legacy internal move/recover implementations removed: always route via CommandProcessor
+  // Legacy internal move/restore implementations removed: always route via CommandProcessor
 
   // Internal method for command processing
   async duplicateNodesCommand(
@@ -383,7 +383,7 @@ export class TreeMutationService implements TreeMutationAPI {
     return { success: true, seq: this.getNextSeq(), newNodeIds };
   }
 
-  /** Recompute depth for a subtree moved/duplicated/recovered under a new parent. */
+  /** Recompute depth for a subtree moved/duplicated/restored under a new parent. */
   private async recomputeDepthForSubtree(newParentId: NodeId, rootId: NodeId): Promise<void> {
     const parent = await this.coreDB.getNode?.(newParentId);
     const baseDepth = parent?.depth ?? 0;
@@ -678,7 +678,7 @@ export class TreeMutationService implements TreeMutationAPI {
    * : folder-plugin-operations.test.tsisRemovedfalse
    * : docs/13-trash-operations-analysis.md
       */
-  // recoverFromTrash legacy removed: handled by CommandProcessor
+  // restoreFromTrash legacy removed: handled by CommandProcessor
 
   async importNodes(
     cmd: CommandEnvelope<'importNodes', ImportNodesPayload>,

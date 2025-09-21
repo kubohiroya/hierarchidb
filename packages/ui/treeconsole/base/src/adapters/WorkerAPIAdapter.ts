@@ -158,13 +158,13 @@ export class WorkerAPIAdapter {
 
   /**
             */
-  async recoverFromTrash(
+  async restoreFromTrash(
     nodeIds: NodeId[],
     targetParentId?: NodeId,
     contextOverrides?: Partial<AdapterContext>,
   ): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
-    return this.mutationAdapter.recoverFromTrash(nodeIds, targetParentId, options);
+    return this.mutationAdapter.restoreFromTrash(nodeIds, targetParentId, options);
   }
 
   // =====================

@@ -74,7 +74,7 @@ export function useHeadlessDialogFrame(options?: {
   const {
     initialPosition = { x: 80, y: 80 },
     initialSize = { width: 960, height: 640 },
-    initialDisplayMode = 'standard',
+    initialDisplayMode = 'normal',
     onDisplayModeChange,
   } = options ?? {};
 

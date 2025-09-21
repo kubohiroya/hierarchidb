@@ -1,4 +1,4 @@
-export type PeerDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
 
@@ -14,7 +14,7 @@ export interface PeerDialogPersistence {
 
 type PeerDialogRow = {
   nodeId: string;
-  displayMode?: PeerDisplayMode;
+  displayMode?: string;
   dialogPosition?: PeerDialogPosition;
   dialogSize?: PeerDialogSize;
   updatedAt?: number;
@@ -151,7 +151,21 @@ class UIPersistenceRegistry {
       getDisplayMode: async (nodeId) => {
         const db = await ensureDB(); if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
-        return (row?.displayMode as PeerDisplayMode) ?? null;
+        const raw = row?.displayMode ?? null;
+        if (raw === 'normal' || raw === 'maximize' || raw === 'full-screen') {
+          return raw;
+        }
+        if (raw === 'standard' || raw === 'maximized' || raw === 'fullscreen') {
+          const migrated = raw === 'standard' ? 'normal' : raw === 'maximized' ? 'maximize' : 'full-screen';
+          await db.table('peerEntities').put({
+            ...(row ?? { nodeId }),
+            nodeId,
+            displayMode: migrated,
+            updatedAt: Date.now(),
+          });
+          return migrated;
+        }
+        return null;
       },
       setDisplayMode: async (nodeId, mode) => withRow(nodeId, (r) => { r.displayMode = mode; }),
       getPosition: async (nodeId) => {
@@ -171,7 +185,21 @@ class UIPersistenceRegistry {
         const tbl = db.table('peerEntities');
         const src = await tbl.get(fromId); if (!src) return;
         const dst = (await tbl.get(toId)) || { nodeId: toId };
-        dst.displayMode = src.displayMode ?? dst.displayMode;
+        if (src.displayMode) {
+          const raw = src.displayMode;
+          const normalized = raw === 'normal' || raw === 'maximize' || raw === 'full-screen'
+            ? raw
+            : raw === 'standard'
+              ? 'normal'
+              : raw === 'maximized'
+                ? 'maximize'
+                : raw === 'fullscreen'
+                  ? 'full-screen'
+                  : null;
+          if (normalized) {
+            dst.displayMode = normalized;
+          }
+        }
         dst.dialogPosition = src.dialogPosition ?? dst.dialogPosition;
         dst.dialogSize = src.dialogSize ?? dst.dialogSize;
         dst.updatedAt = Date.now();

@@ -37,7 +37,7 @@ export class CommandHistoryManager {
   private readonly preUpdateState = new Map<CommandId, TreeNode>();
   private readonly preMoveState = new Map<CommandId, TreeNode[]>();
   private readonly preRemoveState = new Map<CommandId, TreeNode[]>();
-  private readonly preRecoverState = new Map<CommandId, TreeNode[]>();
+  private readonly preRestoreState = new Map<CommandId, TreeNode[]>();
   private readonly preMoveToTrashState = new Map<CommandId, Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }>>();
   private readonly preCommitWorkingCopyState = new Map<CommandId, {
     workingCopy: TreeNode;
@@ -51,7 +51,7 @@ export class CommandHistoryManager {
     'moveNodes',
     'moveToTrash',
     'remove',
-    'recoverFromTrash',
+    'restoreFromTrash',
     'commitWorkingCopy',
   ]);
 
@@ -122,7 +122,7 @@ export class CommandHistoryManager {
     this.preUpdateState.clear();
     this.preMoveState.clear();
     this.preRemoveState.clear();
-    this.preRecoverState.clear();
+    this.preRestoreState.clear();
     this.preMoveToTrashState.clear();
     this.preCommitWorkingCopyState.clear();
   }
@@ -178,7 +178,7 @@ export class CommandHistoryManager {
   }
 
   storePreRecoverState(commandId: CommandId, nodes: TreeNode[]): void {
-    this.preRecoverState.set(commandId, nodes.map((node) => ({ ...node })));
+    this.preRestoreState.set(commandId, nodes.map((node) => ({ ...node })));
   }
 
   storePreMoveToTrashState(
@@ -282,13 +282,13 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'recoverFromTrash': {
+      case 'restoreFromTrash': {
         const commandId = command.commandId as CommandId;
-        const snapshot = this.preRecoverState.get(commandId) || [];
+        const snapshot = this.preRestoreState.get(commandId) || [];
         for (const node of snapshot) {
           await this.deps.coreDB.updateNode?.({ ...node });
         }
-        this.preRecoverState.delete(commandId);
+        this.preRestoreState.delete(commandId);
         break;
       }
 
@@ -418,7 +418,7 @@ export class CommandHistoryManager {
         break;
       }
 
-      case 'recoverFromTrash': {
+      case 'restoreFromTrash': {
         const payload = command.payload as {
           nodeIds: NodeId[];
           toParentId?: NodeId;
