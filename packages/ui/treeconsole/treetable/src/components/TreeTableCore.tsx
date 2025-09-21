@@ -3,7 +3,7 @@
  * Coordinates TreeTable controller state with presentational building blocks.
  */
 
-import { useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   getCoreRowModel,
@@ -59,7 +59,20 @@ export function TreeTableCore({
   const [forbiddenTargets, setForbiddenTargets] = useState<Set<NodeId>>(new Set());
 
   const structure = useTreeTableStructure({ controller });
-  const { columnWidths, containerRef, handleResizeStart, resizingColumn } = useTreeTableColumnWidths({ pageNodeId });
+  const {
+    columnWidths,
+    setContainerElement,
+    setObserverTarget,
+    handleResizeStart,
+    resizingColumn,
+  } = useTreeTableColumnWidths({ pageNodeId });
+
+  const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
+    setContainerElement(node);
+    const parent = node?.parentElement ?? null;
+    const grandParent = parent?.parentElement ?? null;
+    setObserverTarget(grandParent ?? parent ?? null);
+  }, [setContainerElement, setObserverTarget]);
   const { selectAll, selectAllHydrated, setSelectAll } = useTreeTableSelectAll({ pageNodeId });
 
   const {
@@ -211,7 +224,7 @@ export function TreeTableCore({
   };
 
   return (
-    <StyledTableContainer ref={containerRef} sx={{ height: viewHeight || '100%', width: '100%' }}>
+    <StyledTableContainer ref={handleContainerRef} sx={{ height: viewHeight || '100%', width: '100%' }}>
       <StyledTable>
         <TreeTableHeader
           table={table}

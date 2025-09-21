@@ -187,6 +187,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        minWidth: 0,
       }}
     >
       {/* Breadcrumb Navigation with drop-to-parent support */}
@@ -215,7 +216,16 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         return renderDefault();
       })()}
       {/* Main Table Content */}
-      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', paddingLeft: '8px', paddingRight: '8px' }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflow: 'hidden',
+          position: 'relative',
+          paddingLeft: '8px',
+          paddingRight: '8px',
+          minWidth: 0,
+        }}
+      >
       <TreeTableCore
         controller={controller}
         viewHeight={600}

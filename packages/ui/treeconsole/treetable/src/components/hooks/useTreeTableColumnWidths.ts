@@ -27,7 +27,9 @@ export interface UseTreeTableColumnWidthsResult {
   columnWidths: Record<string, number>;
   columnWidthsHydrated: boolean;
   resizingColumn: string | null;
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
+  setContainerElement: (element: HTMLDivElement | null) => void;
+  setObserverTarget: (element: HTMLElement | null) => void;
   handleResizeStart: (leftColumnId: string, rightColumnId: string, event: ReactMouseEvent) => void;
 }
 
@@ -42,7 +44,8 @@ const applyColumnMap = (
 };
 
 export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidthsOptions): UseTreeTableColumnWidthsResult {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const observerTargetRef = useRef<HTMLElement | null>(null);
   const resizeRef = useRef<{
     startX: number;
     leftStart: number;
@@ -107,6 +110,9 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
     const container = containerRef.current;
     if (!container) return;
 
+    const observerTarget = observerTargetRef.current ?? container;
+    if (!observerTarget) return;
+
     let raf = 0;
     let ro: ResizeObserver | null = null;
 
@@ -151,7 +157,7 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
         if (raf) cancelAnimationFrame(raf);
         raf = requestAnimationFrame(measure);
       });
-      ro.observe(container);
+      ro.observe(observerTarget);
     } catch {
       const onWindowResize = () => {
         if (raf) cancelAnimationFrame(raf);
@@ -203,11 +209,21 @@ export function useTreeTableColumnWidths({ pageNodeId }: UseTreeTableColumnWidth
     document.addEventListener('mouseup', handleMouseUp);
   }, [columnWidths]);
 
+  const setContainerElement = useCallback((element: HTMLDivElement | null) => {
+    containerRef.current = element;
+  }, []);
+
+  const setObserverTarget = useCallback((element: HTMLElement | null) => {
+    observerTargetRef.current = element;
+  }, []);
+
   return {
     columnWidths,
     columnWidthsHydrated,
     resizingColumn,
     containerRef,
+    setContainerElement,
+    setObserverTarget,
     handleResizeStart,
   };
 }

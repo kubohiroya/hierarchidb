@@ -729,7 +729,7 @@ function TrashDialogContent({
   return (
     <Box
       data-dialog-cancel-drag="true"
-      sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0, mt: 1 }}
+      sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0, mt: 1 }}
     >
       <Box
         data-dialog-cancel-drag="true"
@@ -740,6 +740,7 @@ function TrashDialogContent({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-start',
+          minWidth: 0,
         }}
       >
         <TreeTableSearchInput
@@ -752,7 +753,7 @@ function TrashDialogContent({
       </Box>
       <Box
         data-dialog-cancel-drag="true"
-        sx={{ flex: 1, minHeight: 0, display: 'flex' }}
+        sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex' }}
       >
         <TreeConsolePanel
           title={`Trash – ${titleSuffix}`}
@@ -1207,7 +1208,7 @@ function TrashDialogFrame({
               )}
             </MultiStepDialogHeader>
           </Box>
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <MultiDialogContent>
               {(contentProps) =>
                 renderContent({
