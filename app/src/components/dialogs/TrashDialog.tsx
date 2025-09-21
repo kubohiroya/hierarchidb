@@ -726,9 +726,6 @@ function TrashDialogContent({
     );
   }
 
-  const footerOffset = footerVisible ? FOOTER_HEIGHT : 0;
-  const panelHeight = `calc(100% - ${footerOffset}px)`;
-
   return (
     <Box
       data-dialog-cancel-drag="true"
@@ -755,7 +752,7 @@ function TrashDialogContent({
       </Box>
       <Box
         data-dialog-cancel-drag="true"
-        sx={{ flex: 1, minHeight: 0, height: panelHeight, display: 'flex' }}
+        sx={{ flex: 1, minHeight: 0, display: 'flex' }}
       >
         <TreeConsolePanel
           title={`Trash – ${titleSuffix}`}
@@ -819,7 +816,6 @@ function TrashDialogContent({
           }}
         />
       </Box>
-      <Box data-dialog-cancel-drag="true" sx={{ height: footerOffset, flexShrink: 0 }} />
     </Box>
   );
 }
@@ -1293,6 +1289,21 @@ export default function TrashDialog() {
 
   const lastNormalStateRef = useRef<{ size: MultiDialogSize; position: MultiDialogPosition }>(initialNormalizedState);
   const hydrationRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const { body } = document;
+    if (!body) {
+      return;
+    }
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   const handleClose = useCallback(() => {
     navigate(-1);

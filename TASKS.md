@@ -226,6 +226,8 @@
     - progress: 2025-09-21 17:42 TrashBreadcrumb コンポーネントを作成し、TrashDialog 表示で専用パンくずを描画（TreeConsolePanel とは独立）
     - progress: 2025-09-21 20:40 TreeConsolePanel に `breadcrumbRenderer` を実装し、TrashDialog からカスタムパンくずを受け取るよう統合。`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` / `build` / `test:run -- --run TreeConsolePanel.breadcrumbRenderer.test.tsx` と `pnpm -C app typecheck` / `build` を順に実行し、すべて成功を確認
     - progress: 2025-09-21 21:35 runtime-ui/plugin-dialog と node-type ({location,resolver,route,timeline}) のダイアログを headless API ベースへ更新し、`MultiDialogFrame` / `useDialogDisplayTransition` 依存を解消。`pnpm --filter @hierarchidb/ui-dialog build` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {build,typecheck}` / `pnpm --filter @hierarchidb/node-type-{resolver,route,timeline}-plugin typecheck` を実施。`@hierarchidb/node-type-location-plugin typecheck` は既存の runtime-shared-batch-processor 型未整備により継続失敗（詳細は報告済み）
+    - progress: 2025-09-21 22:05 TrashDialogContent で footer 高さを手動控除していた処理を撤去し、コンテンツ領域が余白なく TreeTable に割り当てられるよう調整。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 22:12 TrashDialog 表示中は `document.body` のスクロールを抑止し、背景側 TreeTable へのホイール伝播を防止。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
