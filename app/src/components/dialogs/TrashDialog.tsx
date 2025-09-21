@@ -89,10 +89,8 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   }
 
   const trashRootNode = await queryAPI.getNode(activeTrashNodeId);
-  const listOptions = fallbackTrashId && activeTrashNodeId === fallbackTrashId
-    ? { prefetch: { depth: 2 } }
-    : undefined;
-  const trashItems = (await queryAPI.listChildren(activeTrashNodeId, listOptions)) as TreeNode[];
+  const targetDepth = fallbackTrashId && activeTrashNodeId === fallbackTrashId ? 2 : 1;
+  const trashItems = (await queryAPI.listChildren(activeTrashNodeId, { prefetch: { depth: targetDepth } })) as TreeNode[];
 
   const isRootTrash = Boolean(fallbackTrashId && activeTrashNodeId === fallbackTrashId);
   const holderLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
