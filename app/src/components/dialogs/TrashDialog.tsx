@@ -111,7 +111,10 @@ export async function clientLoader(args: LoaderFunctionArgs) {
       }
     });
 
-    trashDisplayItems = trashItems.filter((node) => node.depth === 1);
+    trashDisplayItems = trashItems.filter((node) => {
+      const parentIdValue = node.parentId ? String(node.parentId) : undefined;
+      return Boolean(parentIdValue && placeholderMap.has(parentIdValue));
+    });
 
     trashDisplayItems.forEach((node) => {
       const parentId = node.parentId ? String(node.parentId) : undefined;
