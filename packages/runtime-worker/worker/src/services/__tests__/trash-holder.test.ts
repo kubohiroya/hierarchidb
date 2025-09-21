@@ -36,6 +36,13 @@ describe('Trash holder flow', () => {
     state['r:root'] = makeNode('r:root', 'r:superRoot', 'root');
     state['r:trash'] = makeNode('r:trash', 'r:superRoot', 'Trash', 'trash' as NodeType);
     state['a'] = makeNode('a', 'r:root', 'A');
+    state['a'].depth = 1;
+    state['b'] = makeNode('b', 'a', 'B');
+    state['b'].depth = 2;
+    state['c'] = makeNode('c', 'b', 'C');
+    state['c'].depth = 3;
+    state['d'] = makeNode('d', 'b', 'D');
+    state['d'].depth = 3;
 
     core = {
       state,
@@ -83,5 +90,80 @@ describe('Trash holder flow', () => {
     const restoredA = state['a'];
     if (!restoredA) throw new Error('Node a missing after restoreFromTrash');
     expect(restoredA.parentId).toBe('r:root');
+  });
+
+  it('restores nested descendants back to their original parent when recovering from trash', async () => {
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+
+    const moveGrandchild = cp.createEnvelope('moveToTrash', { nodeIds: ['c' as NodeId] });
+    const moveResult = await cp.processCommand(moveGrandchild);
+    expect(moveResult.success).toBe(true);
+
+    const trashChildrenAfterMove = await core.listChildren('r:trash' as NodeId);
+    const holder = trashChildrenAfterMove.find((node) => node.id !== ('r:trash' as NodeId));
+    expect(holder).toBeTruthy();
+    if (!holder) throw new Error('Expected trash holder for nested node');
+
+    const nodeCInTrash = state['c'];
+    expect(nodeCInTrash).toBeDefined();
+    expect(nodeCInTrash?.parentId).toBe(holder.id);
+
+    const restoreGrandchild = cp.createEnvelope('restoreFromTrash', { nodeIds: ['c' as NodeId] });
+    const restoreResult = await cp.processCommand(restoreGrandchild);
+    expect(restoreResult.success).toBe(true);
+
+    const restoredC = state['c'];
+    expect(restoredC).toBeDefined();
+    expect(restoredC?.parentId).toBe('b');
+
+    const parentNode = state['b'];
+    expect(parentNode).toBeDefined();
+    expect(parentNode?.parentId).toBe('a');
+
+    const holderChildrenAfterRestore = await core.listChildren(holder.id as NodeId);
+    expect(holderChildrenAfterRestore.some((node) => node.id === 'c')).toBe(false);
+  });
+
+  it('allows restoring a subset of nodes when multiple were trashed together', async () => {
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+
+    const moveBatch = cp.createEnvelope('moveToTrash', { nodeIds: ['c' as NodeId, 'd' as NodeId] });
+    const moveBatchResult = await cp.processCommand(moveBatch);
+    expect(moveBatchResult.success).toBe(true);
+
+    const trashChildren = await core.listChildren('r:trash' as NodeId);
+    expect(trashChildren.length).toBeGreaterThanOrEqual(2);
+
+    const holderByTarget = new Map<NodeId, TreeNode>();
+    for (const holder of trashChildren) {
+      if (holder.holderTargetId) {
+        holderByTarget.set(holder.holderTargetId as NodeId, holder);
+      }
+    }
+
+    const holderForC = holderByTarget.get('c' as NodeId);
+    const holderForD = holderByTarget.get('d' as NodeId);
+    expect(holderForC).toBeDefined();
+    expect(holderForD).toBeDefined();
+    if (!holderForC || !holderForD) throw new Error('Expected holders for trashed nodes');
+
+    expect(state['c']?.parentId).toBe(holderForC.id);
+    expect(state['d']?.parentId).toBe(holderForD.id);
+
+    const restoreOne = cp.createEnvelope('restoreFromTrash', { nodeIds: ['c' as NodeId] });
+    const restoreOneResult = await cp.processCommand(restoreOne);
+    expect(restoreOneResult.success).toBe(true);
+
+    expect(state['c']?.parentId).toBe('b');
+    expect(state['d']?.parentId).toBe(holderForD.id);
+
+    const holderForDChildren = await core.listChildren(holderForD.id as NodeId);
+    expect(holderForDChildren.some((node) => node.id === ('d' as NodeId))).toBe(true);
+
+    const holderForCNode = await core.getNode(holderForC.id as NodeId);
+    if (holderForCNode) {
+      const holderForCChildren = await core.listChildren(holderForC.id as NodeId);
+      expect(holderForCChildren.length).toBe(0);
+    }
   });
 });
