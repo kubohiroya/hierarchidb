@@ -1,6 +1,7 @@
+import path from 'node:path';
+import { argv, exit } from 'node:process';
 import { Command } from 'commander';
-import path from 'path';
-import { fetchMetadata, getAvailableDataSources } from './index.js';
+import { fetchMetadata, getAvailableDataSources } from '@hierarchidb/runtime-shared-fetch-metadata';
 
 const program = new Command()
   .name('fetch-metadata')
@@ -25,7 +26,7 @@ program
       if (!availableSources.includes(source)) {
         console.error(`❌ Error: Unknown data source "${source}"`);
         console.error(`Available sources: ${availableSources.join(', ')}`);
-        process.exit(1);
+        exit(1);
       }
 
       // Fetch metadata
@@ -35,7 +36,7 @@ program
       console.log(`📁 Output saved to: ${path.join(absoluteOutputDir, outputFile)}\n`);
     } catch (error) {
       console.error('\n❌ Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
+      exit(1);
     }
   });
 
@@ -45,22 +46,22 @@ program
   .action(() => {
     console.log('\n📋 Available data sources:\n');
     const sources = getAvailableDataSources();
-    sources.forEach((source) => {
-      const descriptions: Record<string, string> = {
-        gadm: 'Global Administrative Areas - High-resolution administrative boundaries',
-        naturalearth: 'Natural Earth - Free vector and raster map data',
-        osm: 'OpenStreetMap - Crowd-sourced geographic data',
-        geoboundaries: 'geoBoundaries - Open administrative boundary data',
-      };
-      console.log(`  • ${source}: ${descriptions[source] || 'No description available'}`);
+    const descriptions: Record<string, string> = {
+      gadm: 'Global Administrative Areas - High-resolution administrative boundaries',
+      naturalearth: 'Natural Earth - Free vector and raster map data',
+      osm: 'OpenStreetMap - Crowd-sourced geographic data',
+      geoboundaries: 'geoBoundaries - Open administrative boundary data',
+    };
+    sources.forEach((source: string) => {
+      console.log(`  • ${source}: ${descriptions[source] ?? 'No description available'}`);
     });
     console.log('');
   });
 
 // Parse command line arguments
-program.parse(process.argv);
+program.parse(argv);
 
 // Show help if no command provided
-if (!process.argv.slice(2).length) {
+if (!argv.slice(2).length) {
   program.outputHelp();
 }
