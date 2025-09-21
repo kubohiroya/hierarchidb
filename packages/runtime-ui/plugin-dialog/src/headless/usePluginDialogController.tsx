@@ -7,8 +7,22 @@ import {
   HeadlessFooterRenderProps,
   StepComponentDescriptor,
   StepNavigationEvent,
+  MultiDialogFrame,
+  useDialogDisplayTransition,
+  FRAME_CONSTANTS,
+  getViewportSize,
+  getPresetSize,
+  normalizeDialogState,
+  initialPosition,
+  sizesEqual,
+  positionsEqual,
 } from '@hierarchidb/ui-dialog';
-import type { DialogStep } from '@hierarchidb/ui-dialog';
+import type {
+  DialogStep,
+  DialogDisplayMode,
+  MultiDialogSize,
+  MultiDialogPosition,
+} from '@hierarchidb/ui-dialog';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TagEntity } from '@hierarchidb/common-type';
@@ -54,6 +68,10 @@ export interface PluginDialogControllerState {
   };
   hasUnsavedChanges: boolean;
 }
+
+const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
+const DEFAULT_VIEWPORT = { width: 1280, height: 720 } as const;
+const DEFAULT_POSITION: MultiDialogPosition = initialPosition(DEFAULT_SIZE, DEFAULT_VIEWPORT);
 
 const clampIndex = (index: number, length: number) => {
   if (length <= 0) return 0;
@@ -131,21 +149,43 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
   }, [urlStep]);
 
-  const [displayMode, setDisplayMode] = useState<PeerDisplayMode>('normal');
-  const [position, setPosition] = useState<{ x: number; y: number }>({ x: 80, y: 80 });
-  const [size, setSize] = useState<{ width: number; height: number }>({ width: 960, height: 640 });
+  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
+  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(DEFAULT_SIZE);
+  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(DEFAULT_POSITION);
+
+  const dialogSizeRef = useRef(dialogSize);
+  const dialogPositionRef = useRef(dialogPosition);
+
+  useEffect(() => {
+    dialogSizeRef.current = dialogSize;
+  }, [dialogSize]);
+
+  useEffect(() => {
+    dialogPositionRef.current = dialogPosition;
+  }, [dialogPosition]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const dm = await getPeerDisplayMode(nodeType, String(nodeId));
-        const pos = await getPeerDialogPosition(nodeType, String(nodeId));
-        const sz = await getPeerDialogSize(nodeType, String(nodeId));
+        const [dm, pos, sz] = await Promise.all([
+          getPeerDisplayMode(nodeType, String(nodeId)),
+          getPeerDialogPosition(nodeType, String(nodeId)),
+          getPeerDialogSize(nodeType, String(nodeId)),
+        ]);
         if (!mounted) return;
-        if (dm) setDisplayMode(dm);
-        if (pos) setPosition(pos);
-        if (sz) setSize(sz);
+        if (dm) {
+          setDisplayModeState(dm as DialogDisplayMode);
+          setUrlMode(dm === 'full-screen' ? 'full' : 'normal');
+        }
+        if (pos) {
+          setDialogPosition(pos);
+          dialogPositionRef.current = pos;
+        }
+        if (sz) {
+          setDialogSize(sz);
+          dialogSizeRef.current = sz;
+        }
       } catch (err) {
         console.warn('[PluginDialogShell] restore frame state failed', err);
       }
@@ -153,30 +193,109 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return () => { mounted = false; };
   }, [nodeType, nodeId]);
 
-  useEffect(() => {
-    const modeKey = urlMode as string;
-    if (modeKey === 'full') {
-      setDisplayMode('full-screen');
-    } else if (displayMode === 'full-screen' && modeKey !== 'full') {
-      setDisplayMode('normal');
-    }
-  }, [urlMode, displayMode]);
-
-  const persistDisplayMode = useCallback((value: PeerDisplayMode) => {
-    setDisplayMode(value);
-    setPeerDisplayMode(nodeType, String(nodeId), value).catch(() => void 0);
+  const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
+    setDisplayModeState(value);
+    setPeerDisplayMode(nodeType, String(nodeId), value as PeerDisplayMode).catch(() => void 0);
     setUrlMode(value === 'full-screen' ? 'full' : 'normal');
   }, [nodeType, nodeId, setUrlMode]);
 
-  const persistPosition = useCallback((next: { x: number; y: number }) => {
-    setPosition(next);
+  const persistPosition = useCallback((next: MultiDialogPosition) => {
+    setDialogPosition(next);
+    dialogPositionRef.current = next;
     setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
   }, [nodeType, nodeId]);
 
-  const persistSize = useCallback((next: { width: number; height: number }) => {
-    setSize(next);
+  const persistSize = useCallback((next: MultiDialogSize) => {
+    setDialogSize(next);
+    dialogSizeRef.current = next;
     setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
   }, [nodeType, nodeId]);
+
+  const { handleDisplayModeChange: transitionDisplayMode } = useDialogDisplayTransition({
+    displayMode,
+    setDisplayMode: persistDisplayMode,
+    sizeRef: dialogSizeRef,
+    positionRef: dialogPositionRef,
+    onSizeChange: persistSize,
+    onPositionChange: persistPosition,
+    fullscreenElement: () => (typeof document !== 'undefined' ? document.documentElement : null),
+    viewportResolver: getViewportSize,
+    nonStandardMargin: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+  });
+
+  useEffect(() => {
+    const modeKey = urlMode as string;
+    if (modeKey === 'full') {
+      void transitionDisplayMode('full-screen').catch(() => void 0);
+    } else if (displayMode === 'full-screen' && modeKey !== 'full') {
+      void transitionDisplayMode('normal').catch(() => void 0);
+    }
+  }, [urlMode, displayMode, transitionDisplayMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let rafId: number | null = null;
+
+    const normalize = () => {
+      rafId = null;
+      const viewport = getViewportSize();
+      let targetSize = dialogSizeRef.current;
+      let targetPosition = dialogPositionRef.current;
+      let options = {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      };
+
+      if (displayMode === 'full-screen') {
+        targetSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        targetPosition = { x: 0, y: 0 };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: 0,
+          clampSizeToViewport: false,
+        };
+      } else if (displayMode === 'maximize') {
+        targetSize = getPresetSize('maximize', viewport);
+        targetPosition = { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN };
+        options = {
+          enforceTopLeftMargin: false,
+          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          clampSizeToViewport: true,
+        };
+      }
+
+      const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
+      if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
+        dialogSizeRef.current = normalized.size;
+        persistSize(normalized.size);
+      }
+      if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
+        dialogPositionRef.current = normalized.position;
+        persistPosition(normalized.position);
+      }
+    };
+
+    const schedule = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(normalize);
+    };
+
+    window.addEventListener('resize', schedule, { passive: true });
+    schedule();
+
+    return () => {
+      window.removeEventListener('resize', schedule);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+    };
+  }, [displayMode, persistPosition, persistSize]);
 
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
   useEffect(() => {
@@ -489,6 +608,48 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     handleCancel().catch(() => void 0);
   }, [handleCancel, onClose]);
 
+  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
+    if (!next) return;
+    const viewport = getViewportSize();
+    const normalized = normalizeDialogState(
+      next,
+      dialogPositionRef.current,
+      viewport,
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
+      persistSize(normalized.size);
+    }
+    if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
+      persistPosition(normalized.position);
+    }
+  }, [displayMode, persistPosition, persistSize]);
+
+  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
+    if (!next) return;
+    const viewport = getViewportSize();
+    const normalized = normalizeDialogState(
+      dialogSizeRef.current,
+      next,
+      viewport,
+      {
+        enforceTopLeftMargin: displayMode === 'normal',
+        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        clampSizeToViewport: true,
+      },
+    );
+    if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
+      persistSize(normalized.size);
+    }
+    if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
+      persistPosition(normalized.position);
+    }
+  }, [displayMode, persistPosition, persistSize]);
+
   const headlessProps: HeadlessMultiStepDialogProps<any> = {
     open,
     stepComponents: stepDescriptors,
@@ -503,15 +664,22 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     onRequestClose: handleCloseRequest,
     onRequestCommit: () => { handleSubmit().catch(() => void 0); },
     isDirty: hasUnsavedChanges,
-    position,
-    onPositionChange: persistPosition,
-    size,
-    onSizeChange: persistSize,
+    position: dialogPosition,
+    onPositionChange: handlePositionChange,
+    size: dialogSize,
+    onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: persistDisplayMode,
+    onDisplayModeChange: (mode) => { void transitionDisplayMode(mode).catch(() => void 0); },
     renderHeader,
     renderContent,
     renderFooter,
+    FrameComponent: MultiDialogFrame,
+    frameComponentProps: {
+      resizable: displayMode !== 'full-screen',
+      enableEdgeHandles: true,
+      minWidth: FRAME_CONSTANTS.MIN_DIALOG_WIDTH,
+      minHeight: FRAME_CONSTANTS.MIN_DIALOG_HEIGHT,
+    },
   };
 
   return {

@@ -56,18 +56,19 @@
   - ブランチ: `investigate/ui/speeddial-folder-dialog`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/app`, `app/src/routes/(hierarchidb)/t/[tenant]/r/[root]/[node]/folder/create`
   - 受け入れ基準（DoD）：
-    - [ ] SpeedDial からフォルダ作成遷移時にダイアログが表示されない原因を特定できる
-    - [ ] 原因に対する解決方針または修正案を提案できる
+    - [x] SpeedDial からフォルダ作成遷移時にダイアログが表示されない原因を特定できる
+    - [x] 原因に対する解決方針または修正案を提案できる
     - [ ] 再現手順と調査結果を TASKS.md および報告で共有できる
   - チェックリスト：
-    - [ ] SpeedDial のアクションハンドラとフォルダ作成ルートの表示制御を確認する
-    - [ ] 関連ログ出力や例外が発生しない理由を調べる
+    - [x] SpeedDial のアクションハンドラとフォルダ作成ルートの表示制御を確認する
+    - [x] 関連ログ出力や例外が発生しない理由を調べる
     - [ ] 想定動作との差分と改善策を整理する
   - ロールバック手順：
     - 調査のみのため適用不要（実装変更を行う場合は別タスクで管理）
   - 運用ログ：
     - start: 2025-09-21 19:05 SpeedDial 経由フォルダ作成ダイアログ非表示の原因調査に着手
     - progress: 2025-09-21 19:52 TreeConsole レイアウトの `overflow: hidden` と PluginDialogShell の通常フローが衝突し、Outlet 直下にレンダリングされたダイアログがビューポート外で不可視になっている兆候を確認
+    - progress: 2025-09-21 20:34 PluginDialogShell を `Portal` ベースの固定レイヤーに変更し、HeadlessMultiStepDialog をモーダル表示できるように暫定実装。body スクロール抑制と全画面モード互換スタイルを追加
 - fix/app/trash-dialog-chrome-hover — TrashDialog Chrome hover制御のReferenceError解消
   - ブランチ: `fix/app/trash-dialog-chrome-hover`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`, `app/src/components/dialogs/TrashDialog.tsx`
@@ -95,6 +96,8 @@
     - progress: 2025-09-21 19:55 `@hierarchidb/ui-dialog` に表示モード遷移ユーティリティ `useDialogDisplayTransition`・`fullscreen` ヘルパを実装し、TrashDialog からサイズ補正・位置補正・FullScreen API 呼び出しロジックを移管。`pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/app build` で確認
     - progress: 2025-09-21 20:05 プラグイン系ダイアログ（`usePluginDialogController`）でも `useDialogDisplayTransition` を適用し、表示モード切替・サイズ補正ロジックを共通化。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
     - progress: 2025-09-21 20:18 RouteDialog / ResolverDialog を `useDialogDisplayTransition` ＋ `MultiDialogFrame` 対応に更新し、表示モードとリサイズ挙動を統一。`pnpm --filter @hierarchidb/node-type-route-plugin typecheck` と `pnpm --filter @hierarchidb/node-type-resolver-plugin typecheck` を実行し成功
+    - progress: 2025-09-21 20:32 resolver dialog の共通化差分がリセットされていたため再適用。`pnpm --filter @hierarchidb/node-type-resolver-plugin typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再確認
+    - progress: 2025-09-21 20:40 timeline dialog / plugin shell でも `MultiDialogFrame` + `useDialogDisplayTransition` を適用し、全プラグインダイアログの表示モード挙動を統一。`pnpm --filter @hierarchidb/node-type-timeline-plugin typecheck` と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
