@@ -91,6 +91,12 @@ export async function clientLoader(args: LoaderFunctionArgs) {
   const trashRootNode = await queryAPI.getNode(activeTrashNodeId);
   const targetDepth = fallbackTrashId && activeTrashNodeId === fallbackTrashId ? 2 : 1;
   const trashItems = (await queryAPI.listChildren(activeTrashNodeId, { prefetch: { depth: targetDepth } })) as TreeNode[];
+  console.log('[TrashDialog loader] listChildren', {
+    parentId: String(activeTrashNodeId),
+    depth: targetDepth,
+    total: trashItems.length,
+    sample: trashItems.slice(0, 5),
+  });
 
   const isRootTrash = Boolean(fallbackTrashId && activeTrashNodeId === fallbackTrashId);
   const holderLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
@@ -118,6 +124,11 @@ export async function clientLoader(args: LoaderFunctionArgs) {
         };
       }
     });
+    console.log('[TrashDialog loader] normalized trash root data', {
+      placeholders: Array.from(placeholderMap.values()).map((node) => ({ id: node.id, name: node.name })),
+      items: trashDisplayItems.map((node) => ({ id: node.id, name: node.name, depth: node.depth, parentId: node.parentId })),
+      holderLookup,
+    });
   } else {
     trashItems.forEach((node) => {
       const holderId = (node as { holderTargetId?: NodeId }).holderTargetId;
@@ -127,6 +138,10 @@ export async function clientLoader(args: LoaderFunctionArgs) {
           holderName: node.name,
         };
       }
+    });
+    console.log('[TrashDialog loader] normalized trash branch data', {
+      items: trashItems.map((node) => ({ id: node.id, name: node.name, depth: node.depth, parentId: node.parentId })),
+      holderLookup,
     });
   }
 
@@ -1439,6 +1454,12 @@ export default function TrashDialog() {
         queryAPI.getNode(trashRootIdValue),
         queryAPI.listChildren(trashRootIdValue, { prefetch: { depth: PREFETCH_DEPTH } }),
       ]);
+      console.log('[TrashDialog refresh] listChildren', {
+        parentId: String(trashRootIdValue),
+        depth: PREFETCH_DEPTH,
+        total: descendants.length,
+        sample: descendants.slice(0, 5),
+      });
 
       if (!mountedRef.current) {
         return;
@@ -1489,6 +1510,10 @@ export default function TrashDialog() {
 
       setNodeMap(nextMap);
       setHolderLookupState(nextLookup);
+      console.log('[TrashDialog refresh] normalized state', {
+        nodeCount: nextMap.size,
+        holderLookup: nextLookup,
+      });
     } catch (error) {
       console.warn('[TrashDialog] failed to refresh trash data', error);
     }
@@ -1506,7 +1531,7 @@ export default function TrashDialog() {
 
   const [treeData, setTreeData] = useState<TreeNodeData[]>(() => {
     if (!data.trashRootNode || !treeId) return [];
-    return buildTrashTreeData({
+    const initial = buildTrashTreeData({
       treeId,
       rootNode: data.trashRootNode,
       targetNodeIds: Array.from(initialNodeMap.keys()) as NodeId[],
@@ -1514,11 +1539,19 @@ export default function TrashDialog() {
       nodeMap: initialNodeMap,
       activeNodeId: effectiveTrashNodeId ?? null,
     }).nodes;
+    console.log('[TrashDialog] treeData initial', {
+      treeId,
+      activeNodeId: effectiveTrashNodeId,
+      total: initial.length,
+      sample: initial.slice(0, 10),
+    });
+    return initial;
   });
 
   useEffect(() => {
     if (!data.trashRootNode || !treeId) {
       setTreeData([]);
+      console.log('[TrashDialog] treeData cleared');
       return;
     }
     const { nodes } = buildTrashTreeData({
@@ -1530,7 +1563,13 @@ export default function TrashDialog() {
       activeNodeId: effectiveTrashNodeId ?? null,
     });
     setTreeData(nodes);
-  }, [nodeMap, holderLookupState, data.trashRootNode, treeId]);
+    console.log('[TrashDialog] treeData recomputed', {
+      treeId,
+      activeNodeId: effectiveTrashNodeId,
+      total: nodes.length,
+      sample: nodes.slice(0, 10),
+    });
+  }, [nodeMap, holderLookupState, data.trashRootNode, treeId, effectiveTrashNodeId]);
 
   const trashRootId = data.trashRootNode ? String(data.trashRootNode.id) : '';
 
@@ -1564,6 +1603,12 @@ export default function TrashDialog() {
         const client = await WorkerAPIClient.getSingleton();
         const queryAPI = await client.getQueryAPI();
         const fetched = await queryAPI.listChildren(nodeId as NodeId, { prefetch: { depth: 2 } });
+        console.log('[TrashDialog expand] listChildren', {
+          parentId: nodeId,
+          depth: 2,
+          total: fetched?.length ?? 0,
+          sample: fetched?.slice?.(0, 5),
+        });
         if (!fetched || fetched.length === 0) {
           return;
         }
