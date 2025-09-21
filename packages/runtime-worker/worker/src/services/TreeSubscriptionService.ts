@@ -227,7 +227,8 @@ export class TreeSubscriptionService {
   subscribeSubtreeCommand(
     cmd: CommandEnvelope<'subscribeSubtree', ObserveSubtreePayload>,
   ): Observable<TreeChangeEvent> {
-    const { rootId, maxDepth, filter, includeInitialSnapshot = false } = cmd.payload;
+    const { rootId, maxDepth, filter, includeInitialSnapshot = false, prefetch } = cmd.payload;
+    const depthLimit = prefetch?.depth ?? 1;
 
     const subscriptionId = this.generateSubscriptionId();
     const subject = new Subject<TreeChangeEvent>();
@@ -236,7 +237,7 @@ export class TreeSubscriptionService {
       id: subscriptionId as SubscriptionId,
       type: 'subtree',
       nodeId: rootId,
-      options: { ...filter, maxDepth },
+      options: { ...filter, maxDepth, prefetch },
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
@@ -253,7 +254,7 @@ export class TreeSubscriptionService {
       rxFilter((batch) => batch.length > 0),
       mergeMap(async () => {
         const events: TreeChangeEvent[] = [];
-        for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth)) {
+        for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth, 200, depthLimit)) {
           events.push(ev);
         }
         return events;
@@ -274,7 +275,7 @@ export class TreeSubscriptionService {
     let resultObservable: Observable<TreeChangeEvent> = subject.asObservable();
 
     if (includeInitialSnapshot) {
-      const initial$ = from(this.createInitialSubtreeEvents(rootId, filter, maxDepth));
+      const initial$ = from(this.createInitialSubtreeEvents(rootId, filter, maxDepth, 200, depthLimit));
       resultObservable = concat(initial$, resultObservable);
     }
 
@@ -535,28 +536,48 @@ export class TreeSubscriptionService {
     parentId: NodeId,
     filter?: SubscriptionFilter,
     chunkSize: number = 200,
+    depthLimit: number = 1,
   ): AsyncGenerator<TreeChangeEvent> {
-    let childNodes = await this.coreDB.listChildren(parentId);
-    if (filter?.nodeTypes?.length) {
-      childNodes = childNodes.filter((n) => filter.nodeTypes!.includes(n.nodeType));
-    }
-    for (let i = 0; i < childNodes.length; i += chunkSize) {
-      const slice = childNodes.slice(i, i + chunkSize);
-      yield {
-        type: 'children-changed',
-        nodeId: parentId,
-        affectedChildren: slice.map((c) => c.id),
-        timestamp: Date.now() as Timestamp,
-      };
-    }
-    if (childNodes.length === 0) {
-      // Send an empty snapshot to indicate completion for empty lists
-      yield {
-        type: 'children-changed',
-        nodeId: parentId,
-        affectedChildren: [],
-        timestamp: Date.now() as Timestamp,
-      };
+    const queue: Array<{ parent: NodeId; depth: number }> = [{ parent: parentId, depth: 0 }];
+    const visitedParents = new Set<string>();
+
+    while (queue.length > 0) {
+      const { parent, depth } = queue.shift()!;
+      const parentKey = String(parent);
+      if (visitedParents.has(parentKey)) {
+        continue;
+      }
+      visitedParents.add(parentKey);
+
+      const childrenRaw = await this.coreDB.listChildren(parent);
+      let childNodes = childrenRaw;
+      if (filter?.nodeTypes?.length) {
+        childNodes = childNodes.filter((n) => filter.nodeTypes!.includes(n.nodeType));
+      }
+
+      for (let i = 0; i < childNodes.length; i += chunkSize) {
+        const slice = childNodes.slice(i, i + chunkSize);
+        yield {
+          type: 'children-changed',
+          nodeId: parent,
+          affectedChildren: slice.map((c) => c.id),
+          timestamp: Date.now() as Timestamp,
+        };
+      }
+      if (childNodes.length === 0) {
+        yield {
+          type: 'children-changed',
+          nodeId: parent,
+          affectedChildren: [],
+          timestamp: Date.now() as Timestamp,
+        };
+      }
+
+      if (depth + 1 < depthLimit) {
+        for (const child of childrenRaw) {
+          queue.push({ parent: child.id, depth: depth + 1 });
+        }
+      }
     }
   }
 
@@ -565,10 +586,9 @@ export class TreeSubscriptionService {
     filter?: SubscriptionFilter,
     _maxDepth?: number,
     chunkSize: number = 200,
+    depthLimit: number = 1,
   ): AsyncGenerator<TreeChangeEvent> {
-    // Minimal progressive snapshot: emit root's direct children in chunks
-    // Future: walk BFS up to maxDepth and emit per-level chunks
-    yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize);
+    yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize, depthLimit);
   }
 
   private getNodeFromDB(nodeId: NodeId): TreeNode | undefined {
@@ -834,6 +854,26 @@ export class TreeSubscriptionService {
 
     // Store the subscription for cleanup
     subscriptionInfo.subscription = subscription;
+
+    if (options?.prefetch?.depth && options.prefetch.depth > 0) {
+      try {
+        const nodes = await this.coreDB.listChildren(rootNodeId, {
+          prefetch: { depth: options.prefetch.depth },
+        });
+        const timestamp = Date.now() as Timestamp;
+        for (const node of nodes) {
+          callback({
+            type: 'updated',
+            nodeId: node.id,
+            node,
+            parentId: node.parentId,
+            timestamp,
+          });
+        }
+      } catch (error) {
+        console.warn('[TreeSubscriptionService] Failed to deliver prefetch snapshot', error);
+      }
+    }
 
     return subscriptionId;
   }

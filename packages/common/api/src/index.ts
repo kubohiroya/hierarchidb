@@ -14,7 +14,7 @@ export type {
   OperationStatus,
 } from './ImportExportAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-export type { TreeQueryAPI } from './TreeQueryAPI.js';
+export type { TreeQueryAPI, ListChildrenOptions, ListChildrenPrefetchOptions } from './TreeQueryAPI.js';
 export type { WorkingCopyAPI } from './WorkingCopyAPI.js';
 export type { WorkerAPI } from './WorkerAPI.js';
 

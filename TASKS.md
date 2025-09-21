@@ -52,6 +52,21 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- investigate/ui/speeddial-folder-dialog — SpeedDial 経由フォルダ作成ダイアログが表示されない問題の調査
+  - ブランチ: `investigate/ui/speeddial-folder-dialog`（サンドボックス制約によりローカルでは `main` 上で調査）
+  - 依存: `@hierarchidb/app`, `app/src/routes/(hierarchidb)/t/[tenant]/r/[root]/[node]/folder/create`
+  - 受け入れ基準（DoD）：
+    - [ ] SpeedDial からフォルダ作成遷移時にダイアログが表示されない原因を特定できる
+    - [ ] 原因に対する解決方針または修正案を提案できる
+    - [ ] 再現手順と調査結果を TASKS.md および報告で共有できる
+  - チェックリスト：
+    - [ ] SpeedDial のアクションハンドラとフォルダ作成ルートの表示制御を確認する
+    - [ ] 関連ログ出力や例外が発生しない理由を調べる
+    - [ ] 想定動作との差分と改善策を整理する
+  - ロールバック手順：
+    - 調査のみのため適用不要（実装変更を行う場合は別タスクで管理）
+  - 運用ログ：
+    - start: 2025-09-21 19:05 SpeedDial 経由フォルダ作成ダイアログ非表示の原因調査に着手
 - fix/app/trash-dialog-chrome-hover — TrashDialog Chrome hover制御のReferenceError解消
   - ブランチ: `fix/app/trash-dialog-chrome-hover`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`, `app/src/components/dialogs/TrashDialog.tsx`
@@ -75,6 +90,8 @@
     - progress: 2025-09-21 18:07 TrashDialog の TreeTable を SubscriptionAPI ベースで自動更新できるようにし、ゴミ箱サブツリーの購読と再描画を Worker 経由で実装。`pnpm --filter @hierarchidb/app typecheck` を実行して成功を確認
     - progress: 2025-09-21 18:22 runtime-worker の `trash-holder` 結合テストを拡張し、孫ノード（2階層目以降）がゴミ箱から復帰した際に元親へ戻ることを検証するケースを追加。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-holder.test.ts` を実行し成功（既存テスト出力の SubscriptionService 警告は従来どおり）
     - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `trash-partial-restore.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-partial-restore.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
+    - progress: 2025-09-21 19:44 `@hierarchidb/ui-dialog` に汎用リサイズ対応フレーム `MultiDialogFrame` を追加し、TrashDialog はこれを `FrameComponent` として利用する形にリファクタ。`pnpm --filter @hierarchidb/ui-dialog build` と `pnpm --filter @hierarchidb/app build` を再実行してグリーンを確認
+    - progress: 2025-09-21 19:55 `@hierarchidb/ui-dialog` に表示モード遷移ユーティリティ `useDialogDisplayTransition`・`fullscreen` ヘルパを実装し、TrashDialog からサイズ補正・位置補正・FullScreen API 呼び出しロジックを移管。`pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/app build` で確認
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema

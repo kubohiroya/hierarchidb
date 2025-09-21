@@ -205,6 +205,9 @@ export interface ObserveSubtreePayload {
   maxDepth?: number;
   filter?: SubscriptionFilter;
   includeInitialSnapshot?: boolean;
+  prefetch?: {
+    depth: number;
+  };
 }
 
 export interface ObserveWorkingCopiesPayload {

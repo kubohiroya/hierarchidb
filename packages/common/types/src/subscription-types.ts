@@ -9,4 +9,7 @@ export interface SubscriptionOptions {
   minDepth?: number; // Minimum depth (inclusive)
   excludeTypes?: string[];
   filter?: (event: TreeNodeEvent) => boolean;
+  prefetch?: {
+    depth: number;
+  };
 }

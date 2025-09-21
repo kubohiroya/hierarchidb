@@ -9,6 +9,7 @@ import {
   TreeNode,
   TreeRootState,
 } from '@hierarchidb/common-type';
+import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
 import type { BulkError } from 'dexie';
@@ -327,10 +328,40 @@ export class CoreDB extends Dexie {
     });
   }
 
-  async listChildren(parentId: NodeId): Promise<TreeNode[]> {
-    const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
+  async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
+    const directChildren = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
 
-    return children;
+    const depth = options?.prefetch?.depth;
+    if (!depth || depth <= 1) {
+      return directChildren;
+    }
+
+    const result = [...directChildren];
+    const visited = new Set<string>(directChildren.map((node) => String(node.id)));
+    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({ node, depth: 1 }));
+
+    while (queue.length > 0) {
+      const { node, depth: currentDepth } = queue.shift()!;
+      if (currentDepth >= depth) {
+        continue;
+      }
+
+      const nested = await this.nodes.where('parentId').equals(node.id).sortBy('createdAt');
+      if (!nested || nested.length === 0) {
+        continue;
+      }
+
+      for (const child of nested) {
+        const key = String(child.id);
+        if (!visited.has(key)) {
+          visited.add(key);
+          result.push(child);
+          queue.push({ node: child, depth: currentDepth + 1 });
+        }
+      }
+    }
+
+    return result;
   }
 
   /**

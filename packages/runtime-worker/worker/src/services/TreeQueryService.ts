@@ -10,7 +10,7 @@ import type {
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-type';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 
@@ -51,8 +51,41 @@ export class TreeQueryService implements TreeQueryAPI {
     return await this.coreDB.getNode(nodeId);
   }
 
-  async listChildren(parentId: NodeId): Promise<TreeNode[]> {
-    return await this.coreDB.listChildren(parentId);
+  async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
+    const directChildren = await this.coreDB.listChildren(parentId);
+
+    const depth = options?.prefetch?.depth;
+    if (!depth || depth <= 1) {
+      return directChildren;
+    }
+
+    const result = [...directChildren];
+    const visited = new Set<string>(directChildren.map((node) => String(node.id)));
+    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({
+      node,
+      depth: 1,
+    }));
+
+    while (queue.length > 0) {
+      const { node, depth: currentDepth } = queue.shift()!;
+      if (currentDepth >= depth) {
+        continue;
+      }
+      const children = await this.coreDB.listChildren(node.id);
+      if (!children || children.length === 0) {
+        continue;
+      }
+      for (const child of children) {
+        const key = String(child.id);
+        if (!visited.has(key)) {
+          visited.add(key);
+          result.push(child);
+          queue.push({ node: child, depth: currentDepth + 1 });
+        }
+      }
+    }
+
+    return result;
   }
 
   async listDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]> {

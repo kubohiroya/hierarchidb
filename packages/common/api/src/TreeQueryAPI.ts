@@ -18,6 +18,14 @@ import type { NodeId, Tree, TreeId, TreeNode } from '@hierarchidb/common-type';
  * This API is optimized for performance with caching strategies and
  * efficient query patterns. Large result sets are automatically paginated.
  */
+export interface ListChildrenPrefetchOptions {
+  depth: number;
+}
+
+export interface ListChildrenOptions {
+  prefetch?: ListChildrenPrefetchOptions;
+}
+
 export interface TreeQueryAPI {
   /**
    * Retrieve tree information by ID
@@ -100,7 +108,7 @@ export interface TreeQueryAPI {
    * Only returns direct children (depth=1). For all descendants, use `listDescendants`.
    * Results exclude nodes in trash unless parent is trash root.
    */
-  listChildren(parentId: NodeId): Promise<TreeNode[]>;
+  listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]>;
 
   /**
    * List all descendant nodes from a specified starting point
