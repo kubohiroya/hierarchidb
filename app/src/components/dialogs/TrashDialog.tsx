@@ -61,6 +61,7 @@ import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
+import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
 
 // ----------------------------------------
 // Data loader
@@ -130,7 +131,15 @@ type TrashDialogData = LoadTreeReturn & {
   activeTrashNodeId: NodeId | null;
 };
 
-type ResizeDirection = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+type ResizeDirection =
+  | 'top-left'
+  | 'top'
+  | 'top-right'
+  | 'right'
+  | 'bottom-right'
+  | 'bottom'
+  | 'bottom-left'
+  | 'left';
 
 // ----------------------------------------
 // Dialog layout helpers
@@ -382,11 +391,27 @@ const RESIZE_HANDLE_STYLE: Record<ResizeDirection, Record<string, unknown>> = {
     cursor: 'nwse-resize',
     transform: 'translate(-50%, -50%)',
   },
+  top: {
+    top: 0,
+    left: '50%',
+    cursor: 'ns-resize',
+    transform: 'translate(-50%, -50%)',
+    width: 'calc(100% - 32px)',
+    height: 12,
+  },
   'top-right': {
     top: 0,
     right: 0,
     cursor: 'nesw-resize',
     transform: 'translate(50%, -50%)',
+  },
+  right: {
+    top: '50%',
+    right: 0,
+    cursor: 'ew-resize',
+    transform: 'translate(50%, -50%)',
+    width: 12,
+    height: 'calc(100% - 32px)',
   },
   'bottom-left': {
     bottom: 0,
@@ -394,11 +419,27 @@ const RESIZE_HANDLE_STYLE: Record<ResizeDirection, Record<string, unknown>> = {
     cursor: 'nesw-resize',
     transform: 'translate(-50%, 50%)',
   },
+  bottom: {
+    bottom: 0,
+    left: '50%',
+    cursor: 'ns-resize',
+    transform: 'translate(-50%, 50%)',
+    width: 'calc(100% - 32px)',
+    height: 12,
+  },
   'bottom-right': {
     bottom: 0,
     right: 0,
     cursor: 'nwse-resize',
     transform: 'translate(50%, 50%)',
+  },
+  left: {
+    top: '50%',
+    left: 0,
+    cursor: 'ew-resize',
+    transform: 'translate(-50%, -50%)',
+    width: 12,
+    height: 'calc(100% - 32px)',
   },
 };
 
@@ -678,6 +719,16 @@ function TrashDialogContent({
       data-dialog-cancel-drag="true"
       sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0, mt: 1 }}
     >
+      <Box data-dialog-cancel-drag="true" sx={{ px: 2, pt: 0, pb: 1 }}>
+        <TrashBreadcrumb
+          nodePath={breadcrumbItems}
+          treeId={treeId}
+          pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
+          variant="default"
+          onNodeClick={() => undefined}
+          trashAction={mode}
+        />
+      </Box>
       <Box
         data-dialog-cancel-drag="true"
         sx={{
@@ -707,7 +758,7 @@ function TrashDialogContent({
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           data={treeData}
           columns={columns}
-          breadcrumbItems={breadcrumbItems}
+          breadcrumbItems={[]}
           loading={false}
           selectedIds={selectedIds.map(String)}
           expandedIds={expandedIds}
@@ -919,13 +970,23 @@ function TrashDialogFrame({
           width = current.startWidth + deltaX;
           height = current.startHeight + deltaY;
           break;
+        case 'bottom':
+          height = current.startHeight + deltaY;
+          break;
         case 'bottom-left':
           width = current.startWidth - deltaX;
           height = current.startHeight + deltaY;
           left = current.startLeft + deltaX;
           break;
+        case 'right':
+          width = current.startWidth + deltaX;
+          break;
         case 'top-right':
           width = current.startWidth + deltaX;
+          height = current.startHeight - deltaY;
+          top = current.startTop + deltaY;
+          break;
+        case 'top':
           height = current.startHeight - deltaY;
           top = current.startTop + deltaY;
           break;
@@ -934,6 +995,10 @@ function TrashDialogFrame({
           height = current.startHeight - deltaY;
           left = current.startLeft + deltaX;
           top = current.startTop + deltaY;
+          break;
+        case 'left':
+          width = current.startWidth - deltaX;
+          left = current.startLeft + deltaX;
           break;
         default:
           break;
@@ -1090,16 +1155,32 @@ function TrashDialogFrame({
             onPointerDown={handleResizePointerDown('top-left')}
           />
           <ResizeHandle
+            position="top"
+            onPointerDown={handleResizePointerDown('top')}
+          />
+          <ResizeHandle
             position="top-right"
             onPointerDown={handleResizePointerDown('top-right')}
+          />
+          <ResizeHandle
+            position="right"
+            onPointerDown={handleResizePointerDown('right')}
           />
           <ResizeHandle
             position="bottom-left"
             onPointerDown={handleResizePointerDown('bottom-left')}
           />
           <ResizeHandle
+            position="bottom"
+            onPointerDown={handleResizePointerDown('bottom')}
+          />
+          <ResizeHandle
             position="bottom-right"
             onPointerDown={handleResizePointerDown('bottom-right')}
+          />
+          <ResizeHandle
+            position="left"
+            onPointerDown={handleResizePointerDown('left')}
           />
           <Box
             sx={{
