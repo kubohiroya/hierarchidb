@@ -249,6 +249,8 @@
     - progress: 2025-09-21 23:22 ゴミ箱行リンクのファクトリを更新し、`/t/:rootId/:pageNodeId/:rowId/trash/(restore|empty)` 形式の URL を常に生成するよう統一。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck` / `@hierarchidb/ui-treeconsole-base typecheck` / `pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 23:28 ゴミ箱行リンクの第1セグメントを treeId（例: `r`, `p`）へ修正し、`/t/:treeId/:pageNodeId/:rowId/trash/(restore|empty)` を生成するよう再調整。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck` / `@hierarchidb/ui-treeconsole-base typecheck` / `pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 23:34 treeId が `r:root` 等に化ける問題を再修正し、リンクファクトリ内部で `treeId.split(':')[0]` を採用して必ず `r`/`p` 等のツリー ID を URL 先頭に使用。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck` / `@hierarchidb/ui-treeconsole-base typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 23:38 TrashDialog 側でも loader から得た `tree.id` を優先使用し、ルート経由で `treeId` が `r:root` になる誤配線を防止。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 23:46 buildTrashTreeData でアクティブページノード（現在ブラウズ中）を除外し、TreeTable の先頭行に同一ノードが重複表示されないよう調整。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理

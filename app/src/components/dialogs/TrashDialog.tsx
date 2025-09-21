@@ -1262,7 +1262,11 @@ function TrashDialogFrame({
 export default function TrashDialog() {
   const data = useLoaderData<TrashDialogData>();
   const navigate = useNavigate();
-  const { treeId, targetNodeId: trashNodeIdParam, action } = useParams();
+  const params = useParams();
+  const routeTreeId = params.treeId;
+  const trashNodeIdParam = params.targetNodeId;
+  const action = params.action;
+  const treeId = (data.tree?.id as string | undefined) ?? routeTreeId;
 
   const mode: 'restore' | 'empty' = action === 'empty' ? 'empty' : 'restore';
   const activeTrashNodeId = data.activeTrashNodeId ?? (trashNodeIdParam as NodeId | null) ?? null;
@@ -1482,6 +1486,7 @@ export default function TrashDialog() {
       targetNodeIds: Array.from(initialNodeMap.keys()) as NodeId[],
       holderLookup: holderLookupState,
       nodeMap: initialNodeMap,
+      activeNodeId: effectiveTrashNodeId ?? null,
     }).nodes;
   });
 
@@ -1496,6 +1501,7 @@ export default function TrashDialog() {
       targetNodeIds: Array.from(nodeMap.keys()) as NodeId[],
       holderLookup: holderLookupState,
       nodeMap,
+      activeNodeId: effectiveTrashNodeId ?? null,
     });
     setTreeData(nodes);
   }, [nodeMap, holderLookupState, data.trashRootNode, treeId]);

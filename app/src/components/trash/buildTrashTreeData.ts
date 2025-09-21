@@ -7,6 +7,7 @@ export interface BuildTrashTreeDataParams {
   targetNodeIds: readonly NodeId[];
   holderLookup?: Record<string, { holderId: NodeId; holderName?: string }>;
   nodeMap?: Map<string, TreeNode>;
+  activeNodeId?: NodeId | null;
 }
 
 export interface BuildTrashTreeDataResult {
@@ -20,6 +21,7 @@ export function buildTrashTreeData({
   targetNodeIds,
   holderLookup: _holderLookup,
   nodeMap,
+  activeNodeId,
 }: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
   const rootId = String(rootNode.id);
   const sourceMap = new Map<string, TreeNode>();
@@ -38,6 +40,7 @@ export function buildTrashTreeData({
   // Filter nodes: use only those with depth >= 1 (depth 0 is placeholder)
   const selectedNodes: TreeNodeData[] = [];
   const seen = new Set<string>();
+  const activeId = activeNodeId ? String(activeNodeId) : null;
 
   const includeNode = (node: TreeNode) => {
     const depth = typeof node.depth === 'number' ? node.depth : 0;
@@ -45,6 +48,9 @@ export function buildTrashTreeData({
       return;
     }
     const id = String(node.id) as NodeId;
+    if (activeId && String(id) === activeId) {
+      return;
+    }
     if (seen.has(id)) {
       return;
     }
