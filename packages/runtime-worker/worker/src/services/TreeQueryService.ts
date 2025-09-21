@@ -52,58 +52,10 @@ export class TreeQueryService implements TreeQueryAPI {
   }
 
   async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
-    const directChildren = await this.coreDB.listChildren(parentId);
-    console.log('[TreeQueryService.listChildren] base', {
+    const result = await this.coreDB.listChildren(parentId, options);
+    console.log('[TreeQueryService.listChildren] result', {
       parentId: String(parentId),
       requestedDepth: options?.prefetch?.depth ?? 1,
-      directCount: directChildren.length,
-      sample: directChildren.slice(0, 5).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
-    });
-
-    const depth = options?.prefetch?.depth;
-    if (!depth || depth <= 1) {
-      console.log('[TreeQueryService.listChildren] returning direct only', {
-        parentId: String(parentId),
-        total: directChildren.length,
-      });
-      return directChildren;
-    }
-
-    const result = [...directChildren];
-    const visited = new Set<string>(directChildren.map((node) => String(node.id)));
-    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({
-      node,
-      depth: 1,
-    }));
-
-    while (queue.length > 0) {
-      const { node, depth: currentDepth } = queue.shift()!;
-      if (currentDepth >= depth) {
-        continue;
-      }
-      const children = await this.coreDB.listChildren(node.id);
-      console.log('[TreeQueryService.listChildren] expand', {
-        parentId: String(node.id),
-        depth: currentDepth + 1,
-        childCount: children.length,
-        children: children.map((child) => ({ id: child.id, parentId: child.parentId, depth: child.depth })),
-      });
-      if (!children || children.length === 0) {
-        continue;
-      }
-      for (const child of children) {
-        const key = String(child.id);
-        if (!visited.has(key)) {
-          visited.add(key);
-          result.push(child);
-          queue.push({ node: child, depth: currentDepth + 1 });
-        }
-      }
-    }
-
-    console.log('[TreeQueryService.listChildren] returning with descendants', {
-      parentId: String(parentId),
-      requestedDepth: depth,
       total: result.length,
       sample: result.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
     });

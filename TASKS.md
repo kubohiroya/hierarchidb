@@ -256,7 +256,8 @@
     - progress: 2025-09-22 00:09 listChildren→整形→TreeConsoleCore までのパイプラインを追跡できるよう、ゴミ箱関連の API 入出力と変換結果を `console.log` で出力するデバッグログを追加。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-22 00:12 ゴミ箱ルート整形が placeholder の depth 値に依存していたため、`parentId` が placeholder を指すノード（実ゴミ）を抽出する方式へ修正。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-22 00:16 Worker 側でも `CoreDB.listChildren` / `TreeSubscriptionService.subscribeSubtree` にデバッグログを追加し、prefetch 深度ごとの戻り値を確認できるよう対応。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
-    - progress: 2025-09-22 00:18 `TreeQueryService.listChildren` の BFS 展開過程を確認するログを追加し、placeholder → 実ノードの追跡を容易化。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
+    - progress: 2025-09-22 00:18 `TreeQueryService.listChildren` の BFS ログを追加し、placeholder → 実ノードの追跡を容易化。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
+    - progress: 2025-09-22 00:22 `TreeQueryService.listChildren` が `CoreDB.listChildren` へ `prefetch.depth` を渡さず BFS できていなかったため、直接委譲するよう修正。`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
