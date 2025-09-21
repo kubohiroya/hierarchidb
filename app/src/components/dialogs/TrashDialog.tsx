@@ -111,30 +111,10 @@ export async function clientLoader(args: LoaderFunctionArgs) {
       }
     });
 
-    const placeholderIds = Array.from(placeholderMap.keys());
-    if (placeholderIds.length > 0) {
-      const nestedResults = await Promise.all(
-        placeholderIds.map(async (placeholderId) => {
-          const nested = await queryAPI.listChildren(placeholderId as NodeId, { prefetch: { depth: targetDepth } });
-          console.log('[TrashDialog loader] placeholder children', {
-            placeholderId,
-            total: nested.length,
-            sample: nested.slice(0, 5),
-          });
-          return nested;
-        }),
-      );
-      const placeholderChildren = nestedResults.flat();
-      const unique = new Map<string, TreeNode>();
-      trashItems.forEach((node) => unique.set(String(node.id), node));
-      placeholderChildren.forEach((node) => unique.set(String(node.id), node));
-      trashDisplayItems = Array.from(unique.values()).filter((node) => {
-        const parentIdValue = node.parentId ? String(node.parentId) : undefined;
-        return Boolean(parentIdValue && placeholderMap.has(parentIdValue));
-      });
-    } else {
-      trashDisplayItems = [];
-    }
+    trashDisplayItems = trashItems.filter((node) => {
+      const parentIdValue = node.parentId ? String(node.parentId) : undefined;
+      return Boolean(parentIdValue && placeholderMap.has(parentIdValue));
+    });
 
     trashDisplayItems.forEach((node) => {
       const parentId = node.parentId ? String(node.parentId) : undefined;
@@ -1320,6 +1300,7 @@ export default function TrashDialog() {
   const navigate = useNavigate();
   const params = useParams();
   const routeTreeId = params.treeId;
+  const pageNodeIdParam = params.pageNodeId;
   const trashNodeIdParam = params.targetNodeId;
   const action = params.action;
   const treeId = (data.tree?.id as string | undefined) ?? routeTreeId;
@@ -1327,6 +1308,7 @@ export default function TrashDialog() {
   const mode: 'restore' | 'empty' = action === 'empty' ? 'empty' : 'restore';
   const activeTrashNodeId = data.activeTrashNodeId ?? (trashNodeIdParam as NodeId | null) ?? null;
   const effectiveTrashNodeId = activeTrashNodeId ?? (data.tree?.trashRootId as NodeId | undefined) ?? null;
+  const pageNodeId = (pageNodeIdParam as NodeId | undefined) ?? (data.tree?.rootId as NodeId | undefined) ?? null;
 
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1496,39 +1478,18 @@ export default function TrashDialog() {
         }
       });
 
-      let augmentedDescendants = descendants;
-      if (placeholderMap.size > 0) {
-        const placeholderIds = Array.from(placeholderMap.keys());
-        const nestedResults = await Promise.all(
-          placeholderIds.map(async (placeholderId) => {
-            const nested = await queryAPI.listChildren(placeholderId as NodeId, { prefetch: { depth: PREFETCH_DEPTH } });
-            console.log('[TrashDialog refresh] placeholder children', {
-              placeholderId,
-              total: nested.length,
-              sample: nested.slice(0, 5),
-            });
-            return nested;
-          }),
-        );
-        const placeholderChildren = nestedResults.flat();
-        const unique = new Map<string, TreeNode>();
-        descendants.forEach((node) => unique.set(String(node.id), node));
-        placeholderChildren.forEach((node) => unique.set(String(node.id), node));
-        augmentedDescendants = Array.from(unique.values());
-      }
-
       const nextMap = new Map<string, TreeNode>();
       if (rootNode) {
         nextMap.set(String(rootNode.id), rootNode);
       } else {
         nextMap.set(String(data.trashRootNode.id), data.trashRootNode);
       }
-      augmentedDescendants.forEach((node) => {
+      descendants.forEach((node) => {
         nextMap.set(String(node.id), node);
       });
 
       const nextLookup: Record<string, { holderId: NodeId; holderName?: string }> = {};
-      augmentedDescendants.forEach((node) => {
+      descendants.forEach((node) => {
         const parentId = node.parentId ? String(node.parentId) : undefined;
         if (!parentId) return;
         const holderNode = placeholderMap.get(parentId);
@@ -1801,7 +1762,7 @@ export default function TrashDialog() {
         selectedIds={selectedIds}
         setSelectedIds={(updater) => setSelectedIds((prev) => updater(Array.from(prev)))}
         treeId={treeId}
-        pageNodeId={effectiveTrashNodeId}
+        pageNodeId={pageNodeId}
         searchTerm={searchTerm}
         onSearchTermChange={(value) => setSearchTerm(value)}
         onSearchClear={() => setSearchTerm('')}
@@ -1824,7 +1785,7 @@ export default function TrashDialog() {
       selectedIds,
       searchTerm,
       treeId,
-      effectiveTrashNodeId,
+      pageNodeId,
       expandedIds,
       handleToggleExpand,
       mode,

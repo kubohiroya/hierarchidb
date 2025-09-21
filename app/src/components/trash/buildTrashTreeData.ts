@@ -66,18 +66,8 @@ export function buildTrashTreeData({
       }
     }
     seen.add(id);
-    let parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
-    let metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
-    if (isActiveTrashRoot) {
-      const parentKey = String(parentId);
-      if (parentKey !== rootId) {
-        const parentNode = sourceMap.get(parentKey);
-        if (parentNode && String(parentNode.parentId ?? '') === rootId) {
-          parentId = rootId as NodeId;
-          metaParentId = rootId as NodeId;
-        }
-      }
-    }
+    const parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
+    const metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
     selectedNodes.push({
       id,
       parentId,
