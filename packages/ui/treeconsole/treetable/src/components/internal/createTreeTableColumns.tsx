@@ -9,6 +9,7 @@ import type { TreeNode, NodeId } from '@hierarchidb/common-type';
 import { rainbowColors } from '@hierarchidb/ui-core';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
+import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from 'react-router-dom';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 
@@ -317,31 +318,16 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               />
             </Box>
           ) : (() => {
-            const trashMetaParentId = (node as { holderMetaParentId?: NodeId }).holderMetaParentId;
-            const trashTargetId = (node as { holderTargetId?: NodeId }).holderTargetId;
-            const holderType = (node as { holderType?: string }).holderType;
-            const normalizedTreeId = treeId ? String(treeId) : '';
-            const isTrashRow = useTrashColumns && holderType === 'trash' && normalizedTreeId.length > 0;
-            const trashActionValue = trashAction === 'empty' ? 'empty' : 'restore';
-
-            const linkHref = (() => {
-              if (!normalizedTreeId) {
-                return `/${['t', String(node.id)].join('/')}`;
-              }
-
-              if (!isTrashRow) {
-                return `/${['t', normalizedTreeId, String(node.id)].filter(Boolean).join('/')}`;
-              }
-
-              const originalPageId = String(
-                trashMetaParentId ?? pageNodeId ?? `${normalizedTreeId}:root`,
-              );
-              const trashPageNodeId = String(trashTargetId ?? node.id);
-
-              return `/${['t', normalizedTreeId, originalPageId, trashPageNodeId, 'trash', trashActionValue]
-                .filter(Boolean)
-                .join('/')}`;
-            })();
+            const linkHref = buildTreeConsoleLinkHref({
+              treeId,
+              nodeId: node.id,
+              pageNodeId,
+              holderType: (node as { holderType?: 'workingCopy' | 'trash' }).holderType,
+              holderMetaParentId: (node as { holderMetaParentId?: NodeId }).holderMetaParentId,
+              holderTargetId: (node as { holderTargetId?: NodeId }).holderTargetId,
+              useTrashColumns,
+              trashAction,
+            });
 
             return (
               <Box

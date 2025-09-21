@@ -23,6 +23,8 @@ import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
 import { rainbowColors } from '@hierarchidb/ui-core';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { NodeTypeIcon } from './NodeTypeIcon.js';
+import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
+import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
@@ -151,9 +153,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     depthOffset: _depthOffset = 0,
     NodeTypeIcon: CustomNodeTypeIcon,
     NodeContextMenu: CustomNodeContextMenu,
+    pageNodeId,
   } = props;
 
   const { isTrashPage: _isTrashPage, isProjectsPage } = context;
+  const useTrashColumnsFlag: boolean = Boolean(props.useTrashColumns);
+  const trashActionValue: 'restore' | 'empty' | undefined = props.trashAction;
 
   // Use custom containers if provided, otherwise use defaults
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
@@ -274,17 +279,32 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
           >
             {pathToUse.map((node, index) => {
               const isLast = index === pathToUse.length - 1;
-              const nodeId = node.id || node.id || '';
+              const nodeId = node.id ?? node.treeNodeId ?? '';
+              const nodeIdString = nodeId != null ? String(nodeId) : '';
               const nodeName = node.name || 'Unknown';
               const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
               const depth = explicitDepth ?? Math.max(0, index + _depthOffset);
               const iconColor = rainbowColors[depth % rainbowColors.length];
               const treeId = props.treeId;
-              const isRootLike = index === 0 && (!node.parentId || (treeId && nodeId === `${treeId}:root`));
-              const toHref = treeId ? (isRootLike ? `/t/${treeId}` : `/t/${treeId}/${String(nodeId)}`) : String(nodeId);
+              const hasTreeId = Boolean(treeId);
+              const isRootLike =
+                index === 0 && (!node.parentId || (hasTreeId && nodeIdString === `${treeId}:root`));
+              const linkOptions: BuildTreeConsoleLinkOptions = {
+                treeId,
+                nodeId: nodeIdString,
+                pageNodeId,
+                holderType: node.holderType as ('workingCopy' | 'trash' | undefined),
+                holderMetaParentId: node.holderMetaParentId ?? undefined,
+                holderTargetId: node.holderTargetId ?? undefined,
+                useTrashColumns: useTrashColumnsFlag,
+                trashAction: trashActionValue,
+                isRootLike,
+              };
+
+              const toHref = buildTreeConsoleLinkHref(linkOptions);
 
               const isClickable = node.isClickable !== false;
-              const isOutline = hoverId === nodeId;
+              const isOutline = hoverId === nodeIdString;
               const outlineColor = isOutline
                 ? hoverBlocked
                   ? '2px dashed rgba(211,47,47,0.7)'
@@ -321,14 +341,14 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
               return (
                 <BreadcrumbLink
-                  key={nodeId}
+                  key={nodeIdString}
                   to={toHref}
                   $isLast={isLast}
                   $outlined={isOutline}
                   $outlineColor={outlineColor}
-                  $blocked={hoverId === nodeId && hoverBlocked}
-                  aria-disabled={hoverId === nodeId && hoverBlocked ? true : undefined}
-                  title={hoverId === nodeId && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                  $blocked={hoverId === nodeIdString && hoverBlocked}
+                  aria-disabled={hoverId === nodeIdString && hoverBlocked ? true : undefined}
+                  title={hoverId === nodeIdString && hoverBlocked ? '子孫に移動することはできません' : undefined}
                   aria-haspopup="menu"
                   onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
                     if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
@@ -339,23 +359,23 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     const types = event.dataTransfer?.types ?? [];
                     if (!types.includes(DRAGGED_NODE_MIME)) return;
                     const descendants = parseDescendantPayload(event);
-                    const blocked = descendants.includes(String(nodeId));
-                    setHoverId(String(nodeId));
+                    const blocked = descendants.includes(nodeIdString);
+                    setHoverId(nodeIdString);
                     setHoverBlocked(blocked);
                     if (!blocked) event.preventDefault();
                   }}
                   onDrop={(event: DragEvent<HTMLElement>) => {
                     const dragged = readDraggedNodeId(event);
                     const descendants = parseDescendantPayload(event);
-                    const blocked = hoverBlocked || descendants.includes(String(nodeId));
-                    if (dragged && nodeId && dragged !== nodeId && !blocked) {
-                      props.onDropToNode?.(String(nodeId), dragged);
+                    const blocked = hoverBlocked || descendants.includes(nodeIdString);
+                    if (dragged && nodeIdString && dragged !== nodeIdString && !blocked) {
+                      props.onDropToNode?.(nodeIdString, dragged);
                     }
                     setHoverId(null);
                     setHoverBlocked(false);
                   }}
                   onDragLeave={() => {
-                    setHoverId((id) => (id === nodeId ? null : id));
+                    setHoverId((id) => (id === nodeIdString ? null : id));
                     setHoverBlocked(false);
                   }}
                 >

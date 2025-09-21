@@ -18,5 +18,9 @@ export type {
   TreeConsoleBreadcrumbProps,
 } from './types.js';
 
+// Utilities
+export { buildTreeConsoleLinkHref } from './utils/linkFactory.js';
+export type { BuildTreeConsoleLinkOptions } from './utils/linkFactory.js';
+
 // Re-export the NodeContextMenuProps type for consumers
 export type { NodeContextMenuProps } from './components/NodeContextMenu.js';

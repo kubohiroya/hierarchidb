@@ -184,6 +184,9 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         onNodeClick={props.onBreadcrumbNavigate}
         treeId={props.treeId}
         variant="default"
+        pageNodeId={props.pageNodeId}
+        useTrashColumns={props.useTrashColumns ?? false}
+        trashAction={props.trashAction}
         onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
       />
       {/* Main Table Content */}
