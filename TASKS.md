@@ -71,6 +71,7 @@
     - blocked: 2025-09-21 11:30 `pnpm -C app typecheck` が `normalizeDialogDisplayMode` 等未エクスポートの既存問題で失敗（ReferenceError 修正は完了）
     - blocked: 2025-09-21 11:34 `pnpm -C app build` も同じ未エクスポートにより失敗
     - progress: 2025-09-21 15:45 `pnpm -C app typecheck` と `pnpm -C app build` が成功し、DoD 条件を満たしたことを確認
+    - progress: 2025-09-21 17:28 TrashDialog の `trashItemsState` 初期化をハンドラ定義より前へ移動し、`ReferenceError: Cannot access 'trashItemsState' before initialization` を解消。`pnpm --filter @hierarchidb/app typecheck` を再実行して正常終了を確認
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
@@ -160,6 +161,7 @@
     - progress: 2025-09-21 16:18 TrashDialog から TreeConsolePanel へ treeId / useTrashColumns / trashAction を配線し、TreeTable のリンクファクトリでゴミ箱専用 URL が生成されることを確認
     - progress: 2025-09-21 16:33 TrashDialog の表示データに holderType / holderMetaParentId / holderTargetId を補完し、ゴミ箱行で専用リンクが必ず生成されることを確認
     - progress: 2025-09-21 16:44 TreeConsoleBreadcrumb でリンクファクトリを共有し、TrashDialog のパンくずリンクもゴミ箱専用 URL を生成するよう統一
+    - progress: 2025-09-21 17:00 TrashDialog のパンくず・TreeTable 行アイコンを非インタラクティブ化し、クリックしてもコンテキストメニューが開かないよう調整
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理
 - fix/ui-treeconsole/trash-root-flatten — Trash ダイアログでルート直下のプレースホルダーをフラット表示

@@ -128,6 +128,7 @@ export function TreeTableCore({
     hideDragHandler,
     disableDragAndDrop,
     IconComponent,
+    iconInteractive: !useTrashColumns,
     rowClickAction,
     selectionMode,
     controller,

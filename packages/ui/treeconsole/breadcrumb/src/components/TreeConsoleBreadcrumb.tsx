@@ -159,6 +159,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   const { isTrashPage: _isTrashPage, isProjectsPage } = context;
   const useTrashColumnsFlag: boolean = Boolean(props.useTrashColumns);
   const trashActionValue: 'restore' | 'empty' | undefined = props.trashAction;
+  const iconInteractive = props.iconInteractive ?? true;
 
   // Use custom containers if provided, otherwise use defaults
   const IconComponent = CustomNodeTypeIcon || NodeTypeIcon;
@@ -318,12 +319,12 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     size="small"
                     color="inherit"
                     htmlColor={iconColor}
-                    clickable
-                    onClick={(event) => {
+                    clickable={iconInteractive}
+                    onClick={iconInteractive ? (event) => {
                       event.preventDefault();
                       event.stopPropagation();
                       openContextMenu(node, event.currentTarget as HTMLElement);
-                    }}
+                    } : undefined}
                   />
                   <Typography component="span" sx={{ fontWeight: isLast ? 700 : 500 }}>
                     {nodeName}

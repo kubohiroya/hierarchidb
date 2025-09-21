@@ -103,6 +103,7 @@ export interface TreeConsoleBreadcrumbProps {
   variant?: 'default' | 'compact' | 'minimal';
   maxWidth?: number;
   showIcons?: boolean;
+  iconInteractive?: boolean;
 }
 
 export interface TreeConsoleToolbarProps {

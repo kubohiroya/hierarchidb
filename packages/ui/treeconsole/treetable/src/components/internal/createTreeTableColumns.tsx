@@ -36,6 +36,7 @@ export interface ColumnBuilderParams {
   hideDragHandler: boolean;
   disableDragAndDrop: boolean;
   IconComponent: React.ComponentType<{ nodeType: string; size?: string; clickable?: boolean; color?: string; htmlColor?: string }>;
+  iconInteractive?: boolean;
   rowClickAction: 'Select/Navigate' | 'Edit';
   selectionMode: 'single' | 'multiple' | 'none';
   controller: any;
@@ -76,6 +77,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     hideDragHandler,
     disableDragAndDrop,
     IconComponent,
+    iconInteractive = true,
     rowClickAction,
     selectionMode,
     controller,
@@ -252,7 +254,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 transition: 'background-color 120ms ease, box-shadow 120ms ease',
               }}
             >
-              <IconComponent nodeType={node.nodeType || 'folder'} size="small" clickable color="inherit" htmlColor={iconColor} />
+              <IconComponent
+                nodeType={node.nodeType || 'folder'}
+                size="small"
+                clickable={iconInteractive}
+                color="inherit"
+                htmlColor={iconColor}
+              />
             </IconButton>
           </Box>
 

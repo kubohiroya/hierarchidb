@@ -87,4 +87,10 @@ export interface TreeConsoleBreadcrumbProps {
    * Trash action context when useTrashColumns is true.
    */
   trashAction?: 'restore' | 'empty';
+
+  /**
+   * Whether node-type icons should respond to clicks (context menu).
+   * Defaults to true.
+   */
+  iconInteractive?: boolean;
 }
