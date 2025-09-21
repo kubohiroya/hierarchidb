@@ -793,10 +793,24 @@ function TrashDialogFrame({
   } | null>(null);
   const activeResizeMoveListenerRef = useRef<((event: PointerEvent) => void) | null>(null);
   const hideChromeTimeoutRef = useRef<number | null>(null);
+  const draggingRef = useRef(false);
+  const ignoreBackdropClickRef = useRef(false);
+  const ignoreBackdropTimeoutRef = useRef<number | null>(null);
   const frameDisplayMode: DialogDisplayMode = ctx.displayMode ?? 'normal';
   const [chromeVisible, setChromeVisible] = useState(true);
   const footerVisible = frameDisplayMode === 'full-screen' ? chromeVisible : true;
   const headerVisible = frameDisplayMode === 'full-screen' ? chromeVisible : true;
+
+  const scheduleBackdropClickIgnore = useCallback(() => {
+    ignoreBackdropClickRef.current = true;
+    if (ignoreBackdropTimeoutRef.current !== null) {
+      window.clearTimeout(ignoreBackdropTimeoutRef.current);
+    }
+    ignoreBackdropTimeoutRef.current = window.setTimeout(() => {
+      ignoreBackdropClickRef.current = false;
+      ignoreBackdropTimeoutRef.current = null;
+    }, 0);
+  }, []);
 
   const syncFullscreenLayout = useCallback(() => {
     requestAnimationFrame(() => {
@@ -858,6 +872,7 @@ function TrashDialogFrame({
     event.stopPropagation();
     if (!panelRef.current) return;
 
+    draggingRef.current = true;
     const rect = panelRef.current.getBoundingClientRect();
     resizeStateRef.current = {
       direction,
@@ -935,6 +950,8 @@ function TrashDialogFrame({
       }
       window.removeEventListener('pointercancel', handlePointerUp);
       resizeStateRef.current = null;
+      draggingRef.current = false;
+      scheduleBackdropClickIgnore();
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -952,6 +969,10 @@ function TrashDialogFrame({
   useEffect(() => () => {
     if (typeof document !== 'undefined' && document.fullscreenElement) {
       document.exitFullscreen?.().catch(() => {});
+    }
+    if (ignoreBackdropTimeoutRef.current !== null) {
+      window.clearTimeout(ignoreBackdropTimeoutRef.current);
+      ignoreBackdropTimeoutRef.current = null;
     }
   }, []);
 
@@ -1005,7 +1026,16 @@ function TrashDialogFrame({
       : { x: 0, y: 0 };
   const fallbackPosition = ctx.position ?? defaultNonWindowedPosition;
 
-  const handleBackdropClick = () => ctx.onRequestClose?.('close');
+  const handleBackdropClick = () => {
+    if (draggingRef.current || ignoreBackdropClickRef.current) {
+      return;
+    }
+    ctx.onRequestClose?.('close');
+  };
+  const handleWheelCapture = useCallback((event: React.WheelEvent) => {
+    if (draggingRef.current) return;
+    event.stopPropagation();
+  }, []);
   const handlePaperClick: React.MouseEventHandler = (event) => event.stopPropagation();
 
   return createPortal(
@@ -1030,14 +1060,20 @@ function TrashDialogFrame({
         handle="#trash-dialog-title"
         cancel='[data-dialog-cancel-drag="true"]'
         position={fallbackPosition}
+        onStart={() => {
+          draggingRef.current = true;
+        }}
         onStop={(_, data) => {
           ctx.onPositionChange?.({ x: data.x, y: data.y });
+          draggingRef.current = false;
+          scheduleBackdropClickIgnore();
         }}
       >
         <Paper
           ref={panelRef}
           onClick={handlePaperClick}
           elevation={16}
+          onWheelCapture={handleWheelCapture}
           sx={{
             width: fallbackSize.width,
             height: fallbackSize.height,

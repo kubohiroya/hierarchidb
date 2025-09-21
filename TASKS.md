@@ -58,7 +58,7 @@
   - 受け入れ基準（DoD）：
     - [x] TrashDialog 表示時に `setChromeHoverEnabled` の ReferenceError が発生しない
     - [x] 表示モード切替時もヘッダー/フッターの hover 表示が意図通りに挙動する
-    - [ ] `pnpm -C app typecheck && pnpm -C app build` が成功する
+    - [x] `pnpm -C app typecheck && pnpm -C app build` が成功する
   - チェックリスト：
     - [x] Chrome hover 制御用の state を TrashDialog 親コンポーネントに集約し子へ受け渡す
     - [x] TrashDialogFrame 内の hover 制御副作用を新しいプロップに追従させる
@@ -70,6 +70,7 @@
     - progress: 2025-09-21 11:18 chrome hover 制御 state を親コンポーネントへ移し、TrashDialogFrame へ props 配線を追加
     - blocked: 2025-09-21 11:30 `pnpm -C app typecheck` が `normalizeDialogDisplayMode` 等未エクスポートの既存問題で失敗（ReferenceError 修正は完了）
     - blocked: 2025-09-21 11:34 `pnpm -C app build` も同じ未エクスポートにより失敗
+    - progress: 2025-09-21 15:45 `pnpm -C app typecheck` と `pnpm -C app build` が成功し、DoD 条件を満たしたことを確認
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
