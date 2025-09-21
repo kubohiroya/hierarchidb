@@ -585,10 +585,27 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
   ), [steps]);
 
+  const [headerHover, setHeaderHover] = useState(false);
+
   const renderHeader = useCallback((props: HeadlessHeaderRenderProps<any>) => {
     const { activeStepIndex: idx, stepNavigation } = props;
+    const baseStyle: React.CSSProperties = {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '12px 16px',
+      borderBottom: '1px solid #dde1eb',
+      cursor: 'move',
+      userSelect: 'none',
+      backgroundColor: headerHover ? 'rgba(15, 23, 42, 0.06)' : 'transparent',
+      transition: 'background-color 160ms ease',
+    };
     return (
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #dde1eb' }}>
+      <header
+        style={baseStyle}
+        onMouseEnter={() => setHeaderHover(true)}
+        onMouseLeave={() => setHeaderHover(false)}
+      >
         <div>
           <h2 style={{ margin: 0 }}>{dialogTitle}</h2>
         </div>
@@ -598,7 +615,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         </div>
       </header>
     );
-  }, [dialogTitle, steps.length]);
+  }, [dialogTitle, headerHover, steps.length]);
 
   const renderContent = useCallback((props: HeadlessContentRenderProps<any>) => {
     const { activeStepIndex: idx } = props;

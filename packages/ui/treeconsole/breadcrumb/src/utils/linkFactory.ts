@@ -18,8 +18,8 @@ export function buildTreeConsoleLinkHref({
   treeId,
   nodeId,
   pageNodeId,
-  holderType,
-  holderTargetId,
+  holderType: _holderType,
+  holderTargetId: _holderTargetId,
   holderMetaParentId,
   useTrashColumns,
   trashAction,
@@ -40,15 +40,16 @@ export function buildTreeConsoleLinkHref({
     return `/t/${normalizedTreeId}`;
   }
 
-  const isTrashRow = Boolean(useTrashColumns && holderType === 'trash');
-  if (!isTrashRow) {
+  const isTrashContext = Boolean(useTrashColumns);
+  if (!isTrashContext) {
     return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
   }
 
-  const fallbackPageNodeId = pageNodeId == null ? `${normalizedTreeId}:root` : String(pageNodeId);
-  const originalPageId = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
-  const trashPageNodeId = holderTargetId == null ? normalizedNodeId : String(holderTargetId);
+  const rootSegment = `${normalizedTreeId}:root`;
+  const fallbackPageNodeId = pageNodeId == null ? rootSegment : String(pageNodeId);
+  const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
+  const targetSegment = normalizedNodeId;
   const actionValue = trashAction === 'empty' ? 'empty' : 'restore';
 
-  return `/t/${[normalizedTreeId, originalPageId, trashPageNodeId, 'trash', actionValue].join('/')}`;
+  return `/t/${[rootSegment, pageSegment, targetSegment, 'trash', actionValue].join('/')}`;
 }

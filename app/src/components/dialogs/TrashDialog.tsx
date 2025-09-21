@@ -559,6 +559,13 @@ function TrashDialogHeader<TData = unknown>({
         borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         cursor: 'move',
         userSelect: 'none',
+        backgroundColor: (theme) => theme.palette.background.paper,
+        transition: (theme) => theme.transitions.create('background-color', {
+          duration: theme.transitions.duration.shortest,
+        }),
+        '&:hover': {
+          backgroundColor: (theme) => theme.palette.action.hover,
+        },
       }}
       onDoubleClick={() => onResetToNormal?.()}
     >

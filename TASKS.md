@@ -52,6 +52,21 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- feat/ui/dialog-hover-feedback — ダイアログタイトルのドラッグハンドルにホバー演出を追加
+  - ブランチ: `feat/ui/dialog-hover-feedback`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-dialog`
+  - 受け入れ基準（DoD）：
+    - [x] ドラッグ可能なダイアログヘッダーにホバー時の背景色変化が追加される
+    - [x] 通常時のドラッグ挙動やアクセシビリティを損なわない
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/app typecheck` が成功する
+  - チェックリスト：
+    - [x] 対象ヘッダーコンポーネントを特定する
+    - [x] ホバー用スタイルを追加しテーマに合わせて調整する
+  - ロールバック手順：
+    - `packages/ui/dialog` 配下のスタイル変更を差分前に戻し再度型チェックを実行
+  - 運用ログ：
+    - start: 2025-09-21 21:22 ダイアログタイトルホバー演出の改善に着手
+    - progress: 2025-09-21 21:30 プラグイン/ゴミ箱ダイアログのタイトルにホバー時の背景変化を追加し、型チェックを通過させた
 - investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
   - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
@@ -230,6 +245,8 @@
     - progress: 2025-09-21 22:12 TrashDialog 表示中は `document.body` のスクロールを抑止し、背景側 TreeTable へのホイール伝播を防止。`pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 22:35 TrashDialog → TreeConsolePanel 階層の flex 子要素へ `minWidth: 0` を付与し、リサイズ時に TreeTable へ正しく ResizeObserver 通知が届くよう調整。`pnpm -C app typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` を再実行し成功
     - progress: 2025-09-21 22:52 TreeTableCore の列幅監視でダイアログに近い祖先ノードを ResizeObserver 対象に変更し、親コンテナ経由でもリサイズ通知が得られるよう `setObserverTarget` を導入。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` / `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 23:08 TrashDialog の TreeTable データ生成で IndexedDB 由来の `name` と `depth` をそのまま使用し、`depth >= 1` のノードのみを `TreeConsolePanel` へ渡すよう `buildTrashTreeData` を簡素化。`pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-21 23:22 ゴミ箱行リンクのファクトリを更新し、`/t/:rootId/:pageNodeId/:rowId/trash/(restore|empty)` 形式の URL を常に生成するよう統一。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck` / `@hierarchidb/ui-treeconsole-base typecheck` / `pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-21 21:15 TrashDialog で Worker `subscribeSubtree` を利用し、イベント受信時に `listChildren(..., { prefetch: { depth: 8 }})` を再実行して `nodeMap`/`holderLookupState` を同期するリフレッシュ処理を追加。`pnpm -C app typecheck` / `build` は TypeScript 5.6.2 および Vite バイナリが sandbox 環境に存在せず失敗（ログ参照）。`pnpm -C app` 直下で `node_modules/.pnpm/typescript@5.6.2` が生成できない制約のため、ローカルでの実行を依頼予定
 
 - refactor/ui-treeconsole/treetable-core-slimdown — TreeTableCore 行数削減と選択派生ロジックの整理

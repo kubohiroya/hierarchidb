@@ -1,14 +1,12 @@
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import { buildTrashBreadcrumbs, type BuildTrashBreadcrumbsParams } from './buildTrashBreadcrumbs.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
 export interface BuildTrashTreeDataParams {
   treeId: string;
   rootNode: TreeNode;
   targetNodeIds: readonly NodeId[];
-  holderLookup?: BuildTrashBreadcrumbsParams['holderLookup'];
-  nodeMap?: BuildTrashBreadcrumbsParams['nodeMap'];
+  holderLookup?: Record<string, { holderId: NodeId; holderName?: string }>;
+  nodeMap?: Map<string, TreeNode>;
 }
 
 export interface BuildTrashTreeDataResult {
@@ -17,85 +15,84 @@ export interface BuildTrashTreeDataResult {
 }
 
 export function buildTrashTreeData({
-  treeId,
+  treeId: _treeId,
   rootNode,
   targetNodeIds,
-  holderLookup,
+  holderLookup: _holderLookup,
   nodeMap,
 }: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
   const rootId = String(rootNode.id);
-  const aggregated = new Map<string, TreeNodeData>();
+  const sourceMap = new Map<string, TreeNode>();
 
-  const ensureNode = (crumb: BreadcrumbNode) => {
-    const id = String(crumb.id);
-    if (!aggregated.has(id)) {
-      const holderTargetId = crumb.holderTargetId ? (String(crumb.holderTargetId) as NodeId) : undefined;
-      const holderMetaParentId = crumb.holderMetaParentId ? (String(crumb.holderMetaParentId) as NodeId) : undefined;
-      const parentIdValue: NodeId = id === rootId
-        ? (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId))
-        : crumb.parentId
-          ? (String(crumb.parentId) as NodeId)
-          : (rootId as NodeId);
-      aggregated.set(id, {
-        id: id as NodeId,
-        parentId: parentIdValue,
-        nodeType: crumb.nodeType as any,
-        name: crumb.name,
-        depth: typeof crumb.depth === 'number' ? crumb.depth : undefined,
-        holderType: crumb.holderType as any,
-        holderTargetId,
-        holderMetaParentId,
-      } as TreeNodeData);
+  if (nodeMap) {
+    nodeMap.forEach((node, key) => {
+      sourceMap.set(String(key), node);
+    });
+  }
+
+  // Fallback: ensure root node is present even if nodeMap is empty.
+  if (!sourceMap.has(rootId)) {
+    sourceMap.set(rootId, rootNode);
+  }
+
+  // Filter nodes: use only those with depth >= 1 (depth 0 is placeholder)
+  const selectedNodes: TreeNodeData[] = [];
+  const seen = new Set<string>();
+
+  const includeNode = (node: TreeNode) => {
+    const depth = typeof node.depth === 'number' ? node.depth : 0;
+    if (depth < 1) {
+      return;
     }
-    return aggregated.get(id)!;
+    const id = String(node.id) as NodeId;
+    if (seen.has(id)) {
+      return;
+    }
+    seen.add(id);
+    const parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
+    selectedNodes.push({
+      id,
+      parentId,
+      nodeType: node.nodeType,
+      name: node.name,
+      depth,
+      holderType: node.holderType,
+      holderTargetId: node.holderTargetId,
+      holderMetaParentId: node.holderMetaParentId,
+      hasChildren: Boolean(node.hasChildren),
+      description: node.description,
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      version: node.version,
+    });
   };
 
-  const addPath = (targetId: NodeId) => {
-    const crumbs = buildTrashBreadcrumbs({
-      treeId,
-      rootNode,
-      targetNodeId: targetId,
-      holderLookup,
-      nodeMap,
-    });
-
-    crumbs.forEach((crumb, index) => {
-      if (index === 0) {
-        // root node
-        ensureNode(crumb);
-        return;
+  if (targetNodeIds.length > 0) {
+    targetNodeIds.forEach((id) => {
+      const node = sourceMap.get(String(id));
+      if (node) {
+        includeNode(node);
       }
-      const current = ensureNode(crumb);
-      current.parentId = current.id === (rootId as NodeId)
-        ? (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId))
-        : crumb.parentId
-          ? (String(crumb.parentId) as NodeId)
-          : (rootId as NodeId);
-      current.depth = index;
     });
-  };
+  } else {
+    sourceMap.forEach((node) => includeNode(node));
+  }
 
-  targetNodeIds.forEach((id) => addPath(id));
-
-  // Update hasChildren flags
+  // Compute hasChildren based on selected nodes themselves if the flag is missing
   const parentCount = new Map<string, number>();
-  aggregated.forEach((node) => {
+  selectedNodes.forEach((node) => {
     const parentId = node.parentId ? String(node.parentId) : undefined;
     if (parentId) {
       parentCount.set(parentId, (parentCount.get(parentId) ?? 0) + 1);
     }
   });
-
-  aggregated.forEach((node, id) => {
-    const count = parentCount.get(id) ?? 0;
-    node.hasChildren = count > 0;
-    if (node.depth == null && id === rootId) {
-      node.depth = 0;
-    }
+  selectedNodes.forEach((node) => {
+    const count = parentCount.get(String(node.id)) ?? 0;
+    node.hasChildren = count > 0 || Boolean(node.hasChildren);
   });
 
   return {
-    nodes: Array.from(aggregated.values()),
+    nodes: selectedNodes,
     rootId,
   };
 }
