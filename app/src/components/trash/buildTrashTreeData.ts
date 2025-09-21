@@ -57,8 +57,12 @@ export function buildTrashTreeData({
     if (seen.has(id)) {
       return;
     }
-    if (isActiveTrashRoot && !lookup[String(id)]) {
-      return;
+    if (isActiveTrashRoot) {
+      const parentIdValue = node.parentId ? String(node.parentId) : null;
+      const parentIsRoot = parentIdValue === rootId;
+      if (parentIsRoot && !lookup[String(id)]) {
+        return;
+      }
     }
     seen.add(id);
     const parentId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
@@ -82,8 +86,12 @@ export function buildTrashTreeData({
   const filteredTargetIds = targetNodeIds.filter((id) => {
       const node = sourceMap.get(String(id));
       if (!node) return false;
-      if (isActiveTrashRoot && !lookup[String(id)]) {
-        return false;
+      if (isActiveTrashRoot) {
+        const parentIdValue = node.parentId ? String(node.parentId) : null;
+        const parentIsRoot = parentIdValue === rootId;
+        if (parentIsRoot && !lookup[String(id)]) {
+          return false;
+        }
       }
       return true;
     });
