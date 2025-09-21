@@ -59,6 +59,7 @@ import {
 } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 
 // ----------------------------------------
 // Data loader
@@ -1298,79 +1299,13 @@ export default function TrashDialog() {
   const dialogContextName = data.trashRootNode?.name ?? (effectiveTrashNodeId ? String(effectiveTrashNodeId) : data.tree?.name ?? '');
   const breadcrumbItems = useMemo<BreadcrumbNode[]>(() => {
     if (!data.trashRootNode || !treeId) return [];
-
-    const rootNode = data.trashRootNode;
-    const rootId = String(rootNode.id);
-
-    const crumbs: BreadcrumbNode[] = [
-      {
-        id: rootId,
-        name: rootNode.name ?? 'Trash',
-        nodeType: rootNode.nodeType ?? 'trash',
-        parentId: `${treeId}:root`,
-        holderType: 'trash',
-        holderTargetId: rootId,
-        holderMetaParentId: `${treeId}:root`,
-        isClickable: true,
-        depth: 0,
-      },
-    ];
-
-    const targetId = effectiveTrashNodeId ? String(effectiveTrashNodeId) : null;
-    if (!targetId || targetId === rootId) {
-      return crumbs;
-    }
-
-    const segments: BreadcrumbNode[] = [];
-    const safetySet = new Set<string>();
-
-    let currentId: string | null = targetId;
-
-    while (currentId && currentId !== rootId && !safetySet.has(currentId)) {
-      safetySet.add(currentId);
-      const currentNode = trashNodeMap.get(currentId);
-      if (!currentNode) {
-        break;
-      }
-
-      const parentRaw = (currentNode as { holderMetaParentId?: NodeId }).holderMetaParentId;
-      const parentIdInternal: string = parentRaw ? String(parentRaw) : rootId;
-      const parentNode = parentIdInternal === rootId
-        ? rootNode
-        : trashNodeMap.get(parentIdInternal);
-
-      const parentName = parentNode?.name
-        ?? data.holderLookup?.[currentId]?.holderName
-        ?? (parentIdInternal === rootId ? rootNode.name ?? 'Trash' : parentIdInternal);
-
-      const currentName = currentNode.name ?? currentId;
-      const combinedLabel = parentName === currentName ? currentName : `${parentName} / ${currentName}`;
-
-      segments.unshift({
-        id: currentId,
-        name: combinedLabel,
-        nodeType: currentNode.nodeType ?? 'trash-item',
-        parentId: parentIdInternal,
-        holderType: 'trash',
-        holderTargetId: currentId,
-        holderMetaParentId: parentIdInternal,
-        isClickable: true,
-      });
-
-      if (!parentRaw || String(parentRaw) === currentId) {
-        break;
-      }
-      currentId = parentIdInternal;
-    }
-
-    if (segments.length) {
-      segments[segments.length - 1] = {
-        ...segments[segments.length - 1],
-        isClickable: false,
-      };
-    }
-
-    return [...crumbs, ...segments];
+    return buildTrashBreadcrumbs({
+      treeId,
+      rootNode: data.trashRootNode,
+      targetNodeId: effectiveTrashNodeId,
+      holderLookup: data.holderLookup,
+      nodeMap: trashNodeMap,
+    });
   }, [data.trashRootNode, data.holderLookup, effectiveTrashNodeId, treeId, trashNodeMap]);
 
   const columns: TreeTableColumn[] = useMemo(() => [

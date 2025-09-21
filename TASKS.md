@@ -73,6 +73,8 @@
     - progress: 2025-09-21 15:45 `pnpm -C app typecheck` と `pnpm -C app build` が成功し、DoD 条件を満たしたことを確認
     - progress: 2025-09-21 17:28 TrashDialog の `trashItemsState` 初期化をハンドラ定義より前へ移動し、`ReferenceError: Cannot access 'trashItemsState' before initialization` を解消。`pnpm --filter @hierarchidb/app typecheck` を再実行して正常終了を確認
     - progress: 2025-09-21 18:07 TrashDialog の TreeTable を SubscriptionAPI ベースで自動更新できるようにし、ゴミ箱サブツリーの購読と再描画を Worker 経由で実装。`pnpm --filter @hierarchidb/app typecheck` を実行して成功を確認
+    - progress: 2025-09-21 18:22 runtime-worker の `trash-holder` 結合テストを拡張し、孫ノード（2階層目以降）がゴミ箱から復帰した際に元親へ戻ることを検証するケースを追加。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-holder.test.ts` を実行し成功（既存テスト出力の SubscriptionService 警告は従来どおり）
+    - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `trash-partial-restore.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-partial-restore.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
 - fix/ui-treeconsole/treetable-select-all-overlay — TreeTable select-all 状態の永続化と表示オーバーレイ実装
   - ブランチ: `fix/ui-treeconsole/treetable-select-all-overlay`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: @hierarchidb/ui-treeconsole-treetable / hidb_ui_state Dexie schema
