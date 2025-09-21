@@ -610,6 +610,8 @@ interface TrashDialogContentProps {
   breadcrumbItems: { id: NodeId; name: string; nodeType: string }[];
   selectedIds: NodeId[];
   setSelectedIds: (updater: (prev: NodeId[]) => NodeId[]) => void;
+  treeId?: string;
+  pageNodeId?: NodeId | null;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   onSearchClear: () => void;
@@ -633,6 +635,8 @@ function TrashDialogContent({
   breadcrumbItems,
   selectedIds,
   setSelectedIds,
+  treeId,
+  pageNodeId,
   mode,
   searchTerm,
   onSearchTermChange,
@@ -691,7 +695,8 @@ function TrashDialogContent({
       >
         <TreeConsolePanel
           title={`Trash – ${titleSuffix}`}
-          pageNodeId={undefined}
+          treeId={treeId}
+          pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           data={treeData}
           columns={columns}
           breadcrumbItems={breadcrumbItems}
@@ -702,6 +707,8 @@ function TrashDialogContent({
           canCreate={false}
           canEdit={false}
           canDelete={mode === 'empty'}
+          useTrashColumns
+          trashAction={mode}
           hideDragHandler
           onNodeClick={() => undefined}
           onNodeSelect={(nodeIds: string[], selected: boolean) => {
@@ -799,6 +806,7 @@ function TrashDialogFrame({
     registerDragEnd,
     handleBackdropClick,
     handleWheelCapture,
+    frameStyle,
   } = useDialogInteractionGuards({
     onBackdropClick: () => ctx.onRequestClose?.('close'),
   });
@@ -1024,6 +1032,7 @@ function TrashDialogFrame({
         position: 'fixed',
         inset: 0,
         zIndex: 1300,
+        overscrollBehavior: frameStyle.overscrollBehavior,
       }}
       onClick={handleBackdropClick}
       onMouseMove={chromeHoverEnabled ? handleFrameMouseMove : undefined}
@@ -1063,6 +1072,7 @@ function TrashDialogFrame({
             resize: 'none',
             backgroundColor: 'background.paper',
             position: 'relative',
+            overscrollBehavior: frameStyle.overscrollBehavior,
           }}
         >
           <ResizeHandle
@@ -1320,6 +1330,8 @@ export default function TrashDialog() {
         breadcrumbItems={breadcrumbItems}
         selectedIds={selectedIds}
         setSelectedIds={(updater) => setSelectedIds((prev) => updater(Array.from(prev)))}
+        treeId={treeId}
+        pageNodeId={effectiveTrashNodeId}
         searchTerm={searchTerm}
         onSearchTermChange={(value) => setSearchTerm(value)}
         onSearchClear={() => setSearchTerm('')}
@@ -1330,7 +1342,20 @@ export default function TrashDialog() {
         footerVisible={footerVisible}
       />
     ),
-    [loading, dialogContextName, filteredTreeData, columns, breadcrumbItems, selectedIds, searchTerm, mode, handleRestore, handleEmptySingle],
+    [
+      loading,
+      dialogContextName,
+      filteredTreeData,
+      columns,
+      breadcrumbItems,
+      selectedIds,
+      searchTerm,
+      treeId,
+      effectiveTrashNodeId,
+      mode,
+      handleRestore,
+      handleEmptySingle,
+    ],
   );
 
   useEffect(() => {
