@@ -860,6 +860,12 @@ export class TreeSubscriptionService {
         const nodes = await this.coreDB.listChildren(rootNodeId, {
           prefetch: { depth: options.prefetch.depth },
         });
+        console.log('[TreeSubscriptionService.subscribeSubtree] prefetch snapshot', {
+          rootNodeId: String(rootNodeId),
+          depth: options.prefetch.depth,
+          total: nodes.length,
+          sample: nodes.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+        });
         const timestamp = Date.now() as Timestamp;
         for (const node of nodes) {
           callback({

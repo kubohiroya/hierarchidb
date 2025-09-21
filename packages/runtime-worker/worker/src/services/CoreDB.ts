@@ -330,9 +330,19 @@ export class CoreDB extends Dexie {
 
   async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
     const directChildren = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
+    console.log('[CoreDB.listChildren] direct', {
+      parentId: String(parentId),
+      requestedDepth: options?.prefetch?.depth ?? 1,
+      directCount: directChildren.length,
+      sample: directChildren.slice(0, 5).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+    });
 
     const depth = options?.prefetch?.depth;
     if (!depth || depth <= 1) {
+      console.log('[CoreDB.listChildren] returning direct children only', {
+        parentId: String(parentId),
+        total: directChildren.length,
+      });
       return directChildren;
     }
 
@@ -361,6 +371,12 @@ export class CoreDB extends Dexie {
       }
     }
 
+    console.log('[CoreDB.listChildren] returning with descendants', {
+      parentId: String(parentId),
+      requestedDepth: depth,
+      total: result.length,
+      sample: result.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+    });
     return result;
   }
 
