@@ -123,7 +123,7 @@ interface TransitionOptions {
 
 export function useDialogDisplayTransition(options: TransitionOptions) {
   const {
-    displayMode,
+    displayMode: _displayMode,
     setDisplayMode,
     sizeRef,
     positionRef,
