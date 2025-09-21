@@ -26,29 +26,27 @@ export function buildTrashBreadcrumbs({
   maxDepth = DEFAULT_MAX_DEPTH,
 }: BuildTrashBreadcrumbsParams): BreadcrumbNode[] {
   const rootId = String(rootNode.id);
-  const crumbs: BreadcrumbNode[] = [
-    {
-      id: rootId,
-      name: rootNode.name ?? 'Trash',
-      nodeType: rootNode.nodeType ?? 'trash',
-      parentId: `${treeId}:root`,
-      holderType: 'trash',
-      holderTargetId: rootId,
-      holderMetaParentId: `${treeId}:root`,
-      isClickable: true,
-      depth: 0,
-    },
-  ];
+  const rootCrumb: BreadcrumbNode = {
+    id: rootId,
+    name: 'Trash',
+    nodeType: rootNode.nodeType ?? 'trash',
+    parentId: `${treeId}:root`,
+    holderType: 'trash',
+    holderTargetId: rootId,
+    holderMetaParentId: `${treeId}:root`,
+    isClickable: true,
+    depth: 0,
+  };
 
   if (!targetNodeId || String(targetNodeId) === rootId) {
-    return crumbs;
+    return [rootCrumb];
   }
 
   const chain: BreadcrumbNode[] = [];
   const seen = new Set<string>();
   let currentId: string | null = String(targetNodeId);
   let depth = 0;
-  const rootLabel = crumbs[0]?.name ?? 'Trash';
+  const rootLabel = rootCrumb.name ?? 'Trash';
 
   while (currentId && currentId !== rootId && depth < maxDepth) {
     if (seen.has(currentId)) {
@@ -86,9 +84,29 @@ export function buildTrashBreadcrumbs({
   }
 
   if (chain.length) {
-    const lastIndex = chain.length - 1;
-    chain[lastIndex] = { ...chain[lastIndex], isClickable: false };
+    const first = chain[0];
+    const second = chain[1];
+    const rest = chain.slice(2);
+    let normalizedChain: BreadcrumbNode[] = chain;
+
+    if (first && second && second.parentId && String(second.parentId) === String(first.id)) {
+      const mergedActual: BreadcrumbNode = {
+        ...second,
+        parentId: first.parentId ?? rootCrumb.id,
+      };
+      normalizedChain = [mergedActual, ...rest];
+    }
+
+    if (normalizedChain.length > 0) {
+      const last = normalizedChain[normalizedChain.length - 1];
+      if (last) {
+        const updatedLast: BreadcrumbNode = { ...last, isClickable: false };
+        normalizedChain = [...normalizedChain.slice(0, -1), updatedLast];
+      }
+    }
+
+    return [rootCrumb, ...normalizedChain];
   }
 
-  return [...crumbs, ...chain];
+  return [rootCrumb];
 }
