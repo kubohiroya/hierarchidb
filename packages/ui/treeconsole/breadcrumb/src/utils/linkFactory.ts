@@ -45,11 +45,10 @@ export function buildTreeConsoleLinkHref({
     return `/t/${[normalizedTreeId, normalizedNodeId].join('/')}`;
   }
 
-  const rootSegment = `${normalizedTreeId}:root`;
-  const fallbackPageNodeId = pageNodeId == null ? rootSegment : String(pageNodeId);
+  const fallbackPageNodeId = pageNodeId == null ? `${normalizedTreeId}:root` : String(pageNodeId);
   const pageSegment = holderMetaParentId == null ? fallbackPageNodeId : String(holderMetaParentId);
   const targetSegment = normalizedNodeId;
   const actionValue = trashAction === 'empty' ? 'empty' : 'restore';
 
-  return `/t/${[rootSegment, pageSegment, targetSegment, 'trash', actionValue].join('/')}`;
+  return `/t/${[normalizedTreeId, pageSegment, targetSegment, 'trash', actionValue].join('/')}`;
 }
