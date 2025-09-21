@@ -31,7 +31,11 @@ export function buildTrashTreeData({
     if (!aggregated.has(id)) {
       const holderTargetId = crumb.holderTargetId ? (String(crumb.holderTargetId) as NodeId) : undefined;
       const holderMetaParentId = crumb.holderMetaParentId ? (String(crumb.holderMetaParentId) as NodeId) : undefined;
-      const parentIdValue = crumb.parentId ? (String(crumb.parentId) as NodeId) : (rootId as NodeId);
+      const parentIdValue: NodeId = id === rootId
+        ? (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId))
+        : crumb.parentId
+          ? (String(crumb.parentId) as NodeId)
+          : (rootId as NodeId);
       aggregated.set(id, {
         id: id as NodeId,
         parentId: parentIdValue,
@@ -62,7 +66,11 @@ export function buildTrashTreeData({
         return;
       }
       const current = ensureNode(crumb);
-      current.parentId = crumb.parentId ? (String(crumb.parentId) as NodeId) : (rootId as NodeId);
+      current.parentId = current.id === (rootId as NodeId)
+        ? (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId))
+        : crumb.parentId
+          ? (String(crumb.parentId) as NodeId)
+          : (rootId as NodeId);
       current.depth = index;
     });
   };
