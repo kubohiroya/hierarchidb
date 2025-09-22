@@ -1,27 +1,55 @@
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-
-export interface TrashHolderLookupEntry {
-  holderId: NodeId;
-  holderName?: string;
-}
+import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashBreadcrumbsParams {
   treeId: string;
   rootNode: TreeNode;
   targetNodeId: NodeId | null | undefined;
-  holderLookup?: Record<string, TrashHolderLookupEntry>;
   nodeMap?: Map<string, TreeNode>;
   maxDepth?: number;
 }
 
 const DEFAULT_MAX_DEPTH = 32;
 
+/**
+ * Generate breadcrumb entries for the trash dialog.
+ *
+ * Trash data in the worker is organized by storing canonical nodes directly under
+ * the trash root. Each node carries optional metadata (`originalName`,
+ * `originalParentId`) describing its source location. The UI still needs to render
+ * a logical breadcrumb path for the trashed node; this helper constructs the list
+ * of breadcrumb entries the TreeConsole UI can consume, preferring the preserved
+ * original name when available.
+ *
+ * Typical usage in the trash dialog:
+ *
+ * ```ts
+ * const breadcrumbs = buildTrashBreadcrumbs({
+ *   treeId,
+ *   rootNode: trashRoot,
+ *   targetNodeId: selectedNodeId,
+ *   nodeMap,
+ * });
+ * // breadcrumbs is passed to the TreeConsole breadcrumb renderer to display
+ * // "Trash / Node" (or deeper paths when children exist) while still using
+ * // the original label when it is available.
+ * ```
+ *
+ * @param params.treeId Current tree identifier (e.g. "r" for resources tree).
+ * @param params.rootNode Trash root node supplied by the worker.
+ * @param params.targetNodeId The trashed node we want to build a path for.
+ * @param params.nodeMap Optional map of node id to worker-provided TreeNode instances.
+ * @param params.maxDepth Safety cap to avoid infinite loops on malformed data (defaults to 32).
+ *
+ * @returns Breadcrumb nodes ordered from root to target. The first element always
+ *          represents the trash root. Intermediate entries have `holderType: 'trash'`
+ *          to indicate that navigating them should keep the dialog in “trash mode”.
+ */
 export function buildTrashBreadcrumbs({
   treeId,
   rootNode,
   targetNodeId,
-  holderLookup,
   nodeMap,
   maxDepth = DEFAULT_MAX_DEPTH,
 }: BuildTrashBreadcrumbsParams): BreadcrumbNode[] {
@@ -46,7 +74,6 @@ export function buildTrashBreadcrumbs({
   const seen = new Set<string>();
   let currentId: string | null = String(targetNodeId);
   let depth = 0;
-  const rootLabel = rootCrumb.name ?? 'Trash';
 
   while (currentId && currentId !== rootId && depth < maxDepth) {
     if (seen.has(currentId)) {
@@ -56,24 +83,21 @@ export function buildTrashBreadcrumbs({
     depth += 1;
 
     const currentNode: TreeNode | undefined = nodeMap?.get(currentId);
-    const parentRaw: NodeId | undefined = (currentNode as { holderMetaParentId?: NodeId } | undefined)?.holderMetaParentId;
+    const parentRaw: NodeId | undefined = currentNode?.parentId;
     const parentId: string = parentRaw ? String(parentRaw) : rootId;
 
-    const parentNode: TreeNode | undefined = parentId === rootId ? rootNode : nodeMap?.get(parentId);
-    const holderEntry = holderLookup?.[currentId];
-
-    const parentName = parentNode?.name ?? holderEntry?.holderName ?? (parentId === rootId ? rootLabel : parentId);
-    const currentName = currentNode?.name ?? currentId;
-    const combinedLabel = parentName === currentName ? currentName : `${parentName} / ${currentName}`;
+    const displayName = getTrashDisplayName(currentNode) || currentId;
+    const originalParentId = (currentNode as { originalParentId?: NodeId } | undefined)?.originalParentId;
+    const metaParentId = originalParentId ? String(originalParentId) : parentId;
 
     chain.unshift({
       id: currentId,
-      name: combinedLabel,
+      name: displayName,
       nodeType: currentNode?.nodeType ?? 'trash-item',
       parentId,
       holderType: 'trash',
       holderTargetId: currentId,
-      holderMetaParentId: parentId,
+      holderMetaParentId: metaParentId,
       isClickable: true,
     });
 

@@ -6,14 +6,14 @@ import type {
 import { WorkerErrorCode } from '../../command-types.js';
 import type { CoreDB } from '../../CoreDB.js';
 import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
-import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
-import type {
-  CommandId,
-  NodeId,
-  NodeType,
-  Seq,
-  Timestamp,
-  TreeNode,
+import {
+  generateNodeId,
+  type CommandId,
+  type NodeId,
+  type NodeType,
+  type Seq,
+  type Timestamp,
+  type TreeNode,
 } from '@hierarchidb/common-type';
 
 type SanitizedLogResult = {
@@ -37,8 +37,31 @@ export class CommandHistoryManager {
   private readonly preUpdateState = new Map<CommandId, TreeNode>();
   private readonly preMoveState = new Map<CommandId, TreeNode[]>();
   private readonly preRemoveState = new Map<CommandId, TreeNode[]>();
-  private readonly preRestoreState = new Map<CommandId, TreeNode[]>();
-  private readonly preMoveToTrashState = new Map<CommandId, Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }>>();
+  private readonly preRestoreState = new Map<
+    CommandId,
+    Array<{ node: TreeNode; holder?: TreeNode; nextParentId: NodeId; nextName: string }>
+  >();
+  private readonly redoRestoreState = new Map<
+    CommandId,
+    Map<NodeId, { nextParentId: NodeId; nextName: string }>
+  >();
+  private readonly preMoveToTrashState = new Map<CommandId, Array<{
+    nodeId: NodeId;
+    previousParentId: NodeId;
+    previousName: string;
+    previousOriginalName?: string;
+    previousOriginalParentId?: NodeId;
+    previousRemovedAt?: Timestamp;
+    previousHolderType?: TreeNode['holderType'];
+    previousHolderTargetId?: NodeId;
+    previousHolderMetaParentId?: NodeId;
+    trashRootId: NodeId;
+    trashRemovedAt: Timestamp;
+    //trashHolderId: NodeId;
+    //trashHolderName: string;
+    //trashHolderWasCreated: boolean;
+    //trashName: string;
+  }>>();
   private readonly preCommitWorkingCopyState = new Map<CommandId, {
     workingCopy: TreeNode;
     holder: TreeNode;
@@ -123,6 +146,7 @@ export class CommandHistoryManager {
     this.preMoveState.clear();
     this.preRemoveState.clear();
     this.preRestoreState.clear();
+    this.redoRestoreState.clear();
     this.preMoveToTrashState.clear();
     this.preCommitWorkingCopyState.clear();
   }
@@ -177,18 +201,50 @@ export class CommandHistoryManager {
     this.preRemoveState.set(commandId, nodes.map((node) => ({ ...node })));
   }
 
-  storePreRecoverState(commandId: CommandId, nodes: TreeNode[]): void {
-    this.preRestoreState.set(commandId, nodes.map((node) => ({ ...node })));
+  storePreRecoverState(
+    commandId: CommandId,
+    entries: Array<{ node: TreeNode; holder?: TreeNode; nextParentId: NodeId; nextName: string }>,
+  ): void {
+    this.preRestoreState.set(
+      commandId,
+      entries.map(({ node, holder, nextParentId, nextName }) => ({
+        node: { ...node },
+        holder: holder ? ({ ...holder } as TreeNode) : undefined,
+        nextParentId,
+        nextName,
+      })),
+    );
+    const snapshotMap = new Map<NodeId, { nextParentId: NodeId; nextName: string }>();
+    for (const entry of entries) {
+      snapshotMap.set(entry.node.id as NodeId, {
+        nextParentId: entry.nextParentId,
+        nextName: entry.nextName,
+      });
+    }
+    this.redoRestoreState.set(commandId, snapshotMap);
   }
 
   storePreMoveToTrashState(
     commandId: CommandId,
-    entries: Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }>,
+    entries: Array<{
+      nodeId: NodeId;
+      previousParentId: NodeId;
+      previousName: string;
+      previousOriginalName?: string;
+      previousOriginalParentId?: NodeId;
+      previousRemovedAt?: Timestamp;
+      previousHolderType?: TreeNode['holderType'];
+      previousHolderTargetId?: NodeId;
+      previousHolderMetaParentId?: NodeId;
+      trashRootId: NodeId;
+      trashRemovedAt: Timestamp;
+      //trashHolderId: NodeId;
+      //trashHolderName: string;
+      //trashHolderWasCreated: boolean;
+      //trashName: string;
+    }>,
   ): void {
-    this.preMoveToTrashState.set(
-      commandId,
-      entries.map((entry) => ({ ...entry })),
-    );
+    this.preMoveToTrashState.set(commandId, entries.map((entry) => ({ ...entry })));
   }
 
   storeCommitWorkingCopySnapshot(
@@ -285,8 +341,11 @@ export class CommandHistoryManager {
       case 'restoreFromTrash': {
         const commandId = command.commandId as CommandId;
         const snapshot = this.preRestoreState.get(commandId) || [];
-        for (const node of snapshot) {
-          await this.deps.coreDB.updateNode?.({ ...node });
+        for (const entry of snapshot) {
+          if (entry.holder) {
+            await this.restoreNode(entry.holder);
+          }
+          await this.restoreNode(entry.node);
         }
         this.preRestoreState.delete(commandId);
         break;
@@ -303,10 +362,25 @@ export class CommandHistoryManager {
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: entry.previousParentId,
+            name: entry.previousName,
+            originalName: entry.previousOriginalName,
+            originalParentId: entry.previousOriginalParentId,
+            removedAt: entry.previousRemovedAt,
+            holderType: entry.previousHolderType,
+            holderTargetId: entry.previousHolderTargetId,
+            holderMetaParentId: entry.previousHolderMetaParentId,
             updatedAt: Date.now() as Timestamp,
             version: (node.version || 1) + 1,
           });
-          await this.deps.coreDB.deleteNode?.(entry.holderId);
+          /*
+          if (entry.trashHolderId) {
+            try {
+              await this.deps.coreDB.deleteNode?.(entry.trashHolderId);
+            } catch {
+              // Holder might already be absent; ignore
+            }
+          }
+           */
         }
         break;
       }
@@ -424,30 +498,60 @@ export class CommandHistoryManager {
           toParentId?: NodeId;
           onNameConflict?: 'error' | 'auto-rename';
         };
+        const commandId = command.commandId as CommandId;
+        const redoSnapshot = this.redoRestoreState.get(commandId);
         for (const id of payload.nodeIds) {
           const node = await this.deps.coreDB.getNode?.(id);
           if (!node) {
             continue;
           }
-          const targetParentId = payload.toParentId ?? node.parentId;
+          /*
+          const holderId = node.parentId as NodeId | undefined;
+          const holder = holderId ? await this.deps.coreDB.getNode?.(holderId) : undefined;
+
+          let targetParentId = storedNext?.nextParentId ?? payload.toParentId;
+          if (!targetParentId && holder && holder.nodeType === 'trash' && holder.parentId) {
+            if (isValidTrashHolderName(holder.name)) {
+              try {
+                targetParentId = decodeTrashHolderName(holder.name).originalParentNodeId;
+              } catch {
+                targetParentId = holder.holderMetaParentId as NodeId | undefined;
+              }
+            } else if (holder.holderMetaParentId) {
+              targetParentId = holder.holderMetaParentId as NodeId;
+            }
+          }
+           */
+          const storedNext = redoSnapshot?.get(id);
+          let targetParentId = storedNext?.nextParentId ?? payload.toParentId;
+          if (!targetParentId) {
+            const fallbackParent = (node as { originalParentId?: NodeId }).originalParentId;
+            targetParentId = fallbackParent ?? node.parentId;
+          }
           if (!targetParentId) {
             continue;
           }
-          let nextName = node.name;
-          if (payload.onNameConflict === 'auto-rename') {
-            const siblings = (await this.deps.coreDB.listChildren?.(targetParentId)) || [];
-            nextName = createNewName(
-              siblings.map((sibling) => sibling.name),
-              node.name,
-            );
-          }
+
+          const nextName = storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: targetParentId,
             name: nextName,
+            originalName: undefined,
+            originalParentId: undefined,
+            removedAt: undefined,
             updatedAt: Date.now() as Timestamp,
             version: (node.version || 1) + 1,
           });
+          /*
+          if (holder) {
+            try {
+              await this.deps.coreDB.deleteNode?.(holder.id as NodeId);
+            } catch {
+              // holder might already be absent; ignore
+            }
+          }
+           */
         }
         break;
       }
@@ -461,26 +565,37 @@ export class CommandHistoryManager {
             continue;
           }
           const now = Date.now() as Timestamp;
+          /*
+        let holder = entry.trashHolderId
+          ? await this.deps.coreDB.getNode?.(entry.trashHolderId)
+          : undefined;
+        if (!holder) {
           const holderNode: TreeNode = {
-            id: entry.holderId,
+            id: entry.trashHolderId,
             parentId: entry.trashRootId,
-            nodeType: 'trash' as NodeType,
-            name: encodeTrashHolderName(entry.previousParentId, entry.nodeId),
-            depth: 0,
-            createdAt: now,
-            updatedAt: now,
-            version: 1,
-            holderType: 'trash' as const,
-            holderTargetId: entry.nodeId,
-            holderMetaParentId: entry.previousParentId,
+            nodeType: entry.nodeType, // 'trash' as NodeType,
+            name: entry.trashHolderName,
+            createdAt: entry.trashRemovedAt,
+            updatedAt: entry.trashRemovedAt,
+            version: holder?.version ?? 1,
+            //holderType: 'trash',
+            //holderTargetId: entry.nodeId,
+            //holderMetaParentId: entry.previousParentId,
           };
-          const existingHolder = await this.deps.coreDB.getNode?.(entry.holderId);
-          if (!existingHolder) {
-            await this.deps.coreDB.createNode?.(holderNode);
-          }
+          await this.deps.coreDB.createNode?.(holderNode);
+          holder = holderNode;
+        }
+           */
           await this.deps.coreDB.updateNode?.({
             ...node,
-            parentId: entry.holderId,
+            parentId: entry.trashRootId,
+            name: generateNodeId(), //entry.trashName,
+            originalName: entry.previousOriginalName ?? entry.previousName,
+            originalParentId: entry.previousParentId,
+            removedAt: entry.trashRemovedAt,
+            //holderType: entry.nodeType,
+            //holderTargetId: entry.nodeId,
+            //holderMetaParentId: entry.previousParentId,
             updatedAt: now,
             version: (node.version || 1) + 1,
           });

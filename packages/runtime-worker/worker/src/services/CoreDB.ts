@@ -243,6 +243,18 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
+        ...('holderType' in node && node.holderType !== undefined ? { holderType: node.holderType } : {}),
+        ...('holderTargetId' in node && node.holderTargetId !== undefined
+          ? { holderTargetId: node.holderTargetId }
+          : {}),
+        ...('holderMetaParentId' in node && node.holderMetaParentId !== undefined
+          ? { holderMetaParentId: node.holderMetaParentId }
+          : {}),
+        ...('originalName' in node && node.originalName !== undefined ? { originalName: node.originalName } : {}),
+        ...('originalParentId' in node && node.originalParentId !== undefined
+          ? { originalParentId: node.originalParentId }
+          : {}),
+        ...('removedAt' in node && node.removedAt !== undefined ? { removedAt: node.removedAt } : {}),
       };
       return plainNode;
     }

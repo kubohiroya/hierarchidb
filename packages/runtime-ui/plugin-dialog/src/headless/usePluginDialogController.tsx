@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   HeadlessMultiStepDialogProps,
-  HeadlessHeaderRenderProps,
   HeadlessContentRenderProps,
-  HeadlessFooterRenderProps,
   StepComponentDescriptor,
   StepNavigationEvent,
   FRAME_CONSTANTS,
@@ -15,6 +13,7 @@ import {
   sizesEqual,
   positionsEqual,
 } from '@hierarchidb/ui-dialog';
+import { Box } from '@mui/material';
 import type {
   DialogStep,
   DialogDisplayMode,
@@ -29,6 +28,7 @@ import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import { composeStepConfigs } from '../services/StepComposer.js';
 import { useWorkingCopy } from '../hooks/useWorkingCopy.js';
 import { getIconComponent, getPresentation } from '../utils/pluginPresentation.js';
+import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
 import {
   getPeerDisplayMode,
   setPeerDisplayMode,
@@ -43,6 +43,7 @@ import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 
 export interface PluginDialogControllerOptions {
+  intent: 'create' | 'edit';
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId: NodeId;
@@ -99,6 +100,7 @@ const toStringArray = (value: unknown): string[] => (
 
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
+    intent,
     mode,
     nodeType,
     nodeId,
@@ -153,6 +155,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const dialogSizeRef = useRef(dialogSize);
   const dialogPositionRef = useRef(dialogPosition);
+  const positionPersistTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     dialogSizeRef.current = dialogSize;
@@ -189,7 +192,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       }
     })();
     return () => { mounted = false; };
-  }, [nodeType, nodeId]);
+  }, [nodeType, nodeId, setUrlMode]);
 
   const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
     setDisplayModeState(value);
@@ -197,10 +200,28 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     setUrlMode(value === 'full-screen' ? 'full' : 'normal');
   }, [nodeType, nodeId, setUrlMode]);
 
+  useEffect(() => () => {
+    if (positionPersistTimeoutRef.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(positionPersistTimeoutRef.current);
+      positionPersistTimeoutRef.current = null;
+    }
+  }, []);
+
   const persistPosition = useCallback((next: MultiDialogPosition) => {
     setDialogPosition(next);
     dialogPositionRef.current = next;
-    setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
+
+    if (typeof window !== 'undefined') {
+      if (positionPersistTimeoutRef.current !== null) {
+        window.clearTimeout(positionPersistTimeoutRef.current);
+      }
+      positionPersistTimeoutRef.current = window.setTimeout(() => {
+        positionPersistTimeoutRef.current = null;
+        setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
+      }, 16); // ~1 frame debounce
+    } else {
+      setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
+    }
   }, [nodeType, nodeId]);
 
   const persistSize = useCallback((next: MultiDialogSize) => {
@@ -395,7 +416,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return [];
   }, [mode, nodeType, nodeId, workingCopy?.data, stepRegistry, regTick]);
 
-  const StepAdapter: React.FC<{ cfg: PluginStepConfig }> = ({ cfg }) => {
+  const StepAdapter: React.FC<{ cfg: PluginStepConfig }> = useCallback(({ cfg }) => {
     const [, setValid] = useState<boolean | undefined>();
     const [, setError] = useState<string | null>(null);
 
@@ -418,7 +439,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         })}
       </>
     );
-  };
+  }, [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]);
 
   const steps: DialogStep[] = useMemo(() => {
     const result: DialogStep[] = [];
@@ -463,12 +484,9 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
-    const modeLabel = mode === 'create' ? 'Create' : 'Edit';
-    const current = activeStepIndex + 1;
-    const total = steps.length || 1;
-    const stepTitle = steps[activeStepIndex]?.label ? ` ${steps[activeStepIndex]?.label}` : '';
-    return `${modeLabel} ${label} [${current}/${total}]${stepTitle}`;
-  }, [presentation?.label, nodeType, mode, activeStepIndex, steps]);
+    const modeLabel = intent === 'create' ? 'Create' : 'Edit';
+    return `${modeLabel} ${label}`;
+  }, [presentation?.label, nodeType, intent]);
 
   const [evaluatedState, setEvaluatedState] = useState<{ navigable?: boolean[]; filled?: boolean[] }>({});
   useEffect(() => {
@@ -533,6 +551,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const saveDraftInProgress = useRef(false);
 
   const handleSubmit = useCallback(async () => {
+    console.debug("[Folder-create]");
     const finalData = {
       ...workingCopy,
       name: basicInfo.name,
@@ -585,61 +604,50 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
   ), [steps]);
 
-  const [headerHover, setHeaderHover] = useState(false);
+  const allStepsComplete = useMemo(() => (evaluatedState.filled || []).every(Boolean), [evaluatedState.filled]);
 
-  const renderHeader = useCallback((props: HeadlessHeaderRenderProps<any>) => {
-    const { activeStepIndex: idx, stepNavigation } = props;
-    const baseStyle: React.CSSProperties = {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '12px 16px',
-      borderBottom: '1px solid #dde1eb',
-      cursor: 'move',
-      userSelect: 'none',
-      backgroundColor: headerHover ? 'rgba(15, 23, 42, 0.06)' : 'transparent',
-      transition: 'background-color 160ms ease',
-    };
+  const headerSubtitle = useMemo(() => {
+    if (mode === 'edit') {
+      const desc = presentation?.description?.trim();
+      if (desc) {
+        return desc;
+      }
+    }
+    return undefined;
+  }, [mode, presentation?.description]);
+
+  const HeaderComponent: HeadlessMultiStepDialogProps<any>['HeaderComponent'] = useCallback(() => (
+    <PluginDialogHeader
+      title={dialogTitle}
+      subtitle={headerSubtitle}
+      icon={icon || undefined}
+    />
+  ), [dialogTitle, headerSubtitle, icon]);
+
+  const renderContent = useCallback((propsContent: HeadlessContentRenderProps<any>) => {
+    const step = steps[propsContent.activeStepIndex];
     return (
-      <header
-        style={baseStyle}
-        onMouseEnter={() => setHeaderHover(true)}
-        onMouseLeave={() => setHeaderHover(false)}
+      <Box
+        sx={(theme) => ({
+          flex: 1,
+          overflow: 'auto',
+          padding: theme.spacing(2),
+          backgroundColor: theme.palette.background.default,
+        })}
       >
-        <div>
-          <h2 style={{ margin: 0 }}>{dialogTitle}</h2>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => stepNavigation({ type: 'back' })} disabled={idx === 0}>Back</button>
-          <button type="button" onClick={() => stepNavigation({ type: 'next' })} disabled={idx >= steps.length - 1}>Next</button>
-        </div>
-      </header>
-    );
-  }, [dialogTitle, headerHover, steps.length]);
-
-  const renderContent = useCallback((props: HeadlessContentRenderProps<any>) => {
-    const { activeStepIndex: idx } = props;
-    const step = steps[idx];
-    return (
-      <div style={{ padding: 16 }}>
         {step?.component ?? null}
-      </div>
+      </Box>
     );
   }, [steps]);
 
-  const renderFooter = useCallback((props: HeadlessFooterRenderProps<any>) => {
-    const { onRequestClose, onRequestCommit } = props;
-    const allFilled = (evaluatedState.filled || []).every(Boolean);
-    return (
-      <footer style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #dde1eb' }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" onClick={() => onRequestClose?.('close')}>Cancel</button>
-          <button type="button" onClick={() => handleSaveDraft().catch(() => void 0)}>Save Draft</button>
-        </div>
-        <button type="button" onClick={() => onRequestCommit?.()} disabled={!allFilled}>Save</button>
-      </footer>
-    );
-  }, [evaluatedState.filled, handleSaveDraft]);
+  const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
+    <PluginDialogFooter
+      intent={intent}
+      canCommit={allStepsComplete}
+      onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
+      disableDraft={!hasUnsavedChanges}
+    />
+  ), [intent, allStepsComplete, handleSaveDraft, hasUnsavedChanges]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
@@ -704,7 +712,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     committableStepIndices,
     invalidMessageMap: {},
     onRequestClose: handleCloseRequest,
-    onRequestCommit: () => { handleSubmit().catch(() => void 0); },
+    onRequestCommit: () => { console.debug("[Folder-create]"); handleSubmit().catch(() => void 0); },
     isDirty: hasUnsavedChanges,
     position: dialogPosition,
     onPositionChange: handlePositionChange,
@@ -712,9 +720,9 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     onSizeChange: handleSizeChange,
     displayMode,
     onDisplayModeChange: (mode) => { void transitionDisplayMode(mode); },
-    renderHeader,
+    HeaderComponent,
     renderContent,
-    renderFooter,
+    FooterComponent,
   };
 
   return {

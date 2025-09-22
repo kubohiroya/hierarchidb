@@ -4,6 +4,8 @@ import { CssBaseline } from '@mui/material';
 // Note: When using Emotion Cache with insertion point, do not also use StyledEngineProvider injectFirst
 import { StrictMode, type ComponentType } from 'react';
 import { bootLog } from './utils/bootLog.js';
+// Ensure plugin EntitiesDB adapters are registered early (side-effect import)
+import './shared/peer-display-mode.js';
 import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
@@ -23,7 +25,8 @@ import { ServicesReadySnackbar } from './components/ServicesReadySnackbar.js';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters.js';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
-import { autoLoadPlugins } from './plugins/auto-load.js';
+// Generated static UI plugin loader: imports plugin UI entry points in dependency order
+import './generated/ui-loader.js';
 
 /**
  * Global link descriptors shared across all routes (favicons, etc.)
@@ -50,7 +53,6 @@ const localBuildTime = (() => {
     return String(BUILD_TIME);
   }
 })();
-// eslint-disable-next-line no-console
 console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 
 // Register the app-provided hook once at module load
@@ -70,25 +72,16 @@ declare global {
 
 // Initialize worker URL configuration
 
-// Register all UI plugins at startup (only once)
+// Register all UI plugins at startup (only once). UI plugins are statically imported via generated/ui-loader.
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
-  (async () => {
-    // Load plugins discovered by virtual modules unless explicitly skipped
-    if (import.meta.env.VITE_SKIP_PLUGIN_AUTOLOAD !== '1') {
-      try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
-    } else {
-      console.warn('[root] autoLoadPlugins skipped by VITE_SKIP_PLUGIN_AUTOLOAD=1');
-    }
-    // Keep legacy/stub registration as a fallback (no-ops when already registered)
-    registerAllUIPlugins();
-    window.__uiPluginsRegistered = true;
-  })();
+  registerAllUIPlugins();
+  window.__uiPluginsRegistered = true;
 }
 
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
-  import('./WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
+  import('./WorkerAPIClient.js').then(() => {
 
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);

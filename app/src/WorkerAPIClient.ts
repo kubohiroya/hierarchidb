@@ -88,7 +88,7 @@ export class WorkerAPIClient {
       try {
         const initComplete = Boolean(isWorkerInitCompleted?.());
         if (!initComplete) {
-          const pingResult = await remoteWorker.ping();
+          await remoteWorker.ping();
           this.verified = true;
         } else {
           

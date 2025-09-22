@@ -10,7 +10,7 @@ import type {
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
-import { addProtocol } from 'maplibre-gl';
+import maplibregl from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type { VectorTileProps } from '../types/unified-map-props.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
@@ -53,7 +53,7 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
     if (!protocolRegistered) {
       try {
-        addProtocol(
+        maplibregl.addProtocol(
           'dexie',
           async (
             params: RequestParameters,

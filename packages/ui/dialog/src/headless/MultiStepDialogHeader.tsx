@@ -13,6 +13,7 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialog
     onDisplayModeChange: ctx.onDisplayModeChange,
     stepNavigation: ctx.onStepNavigate,
     isDirty: ctx.isDirty,
+    onRequestClose: ctx.onRequestClose,
   };
 }
 

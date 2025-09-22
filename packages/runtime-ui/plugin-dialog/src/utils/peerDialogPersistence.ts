@@ -82,7 +82,6 @@ class UIPersistenceRegistry {
       const isDev = Boolean(meta.env?.DEV);
       const packageBases = [
         `@hierarchidb/plugins-${nodeType}-plugin`,
-        `@hierarchidb/${nodeType}-plugin`,
       ];
       const basePaths = packageBases.flatMap((pkg) => [
         `${pkg}/worker/${nodeType}EntitiesDB`,

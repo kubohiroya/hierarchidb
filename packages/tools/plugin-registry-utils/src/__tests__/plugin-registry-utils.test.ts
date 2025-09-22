@@ -13,7 +13,7 @@ import {
 } from '../index.js';
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'hdb-registry-utils-'));
-const packagesDir = path.join(tmpRoot, 'packages', 'node-type');
+const packagesDir = path.join(tmpRoot, 'packages', 'plugins');
 
 function writeFile(relPath: string, contents: string): void {
   fs.mkdirSync(path.dirname(relPath), { recursive: true });

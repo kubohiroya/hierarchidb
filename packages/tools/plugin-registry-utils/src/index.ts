@@ -98,7 +98,7 @@ const SUBPATH_CONFIGS: readonly SubpathConfig[] = [
   },
 ] as const;
 
-const NODE_TYPE_DIR_NAME = path.join('packages', 'node-type');
+const NODE_TYPE_DIR_NAME = path.join('packages', 'plugins');
 
 interface PackageJsonShape {
   name?: string;
@@ -425,6 +425,7 @@ export function syncNodeTypeAliasesToTsconfig({
 }
 
 export function createNodeTypeAliasPlugin(options?: CreateNodeTypeAliasPluginOptions): Plugin {
+  // eslint-disable-next-line no-restricted-globals
   const rootDir = options?.rootDir ?? process.cwd();
 
   return {

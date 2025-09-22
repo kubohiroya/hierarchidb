@@ -1,0 +1,33 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "module": "Node16"
+  },
+  "checkDeps": {
+    "allowSkipLibCheck": true,
+    "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

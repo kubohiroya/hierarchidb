@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd());
-const NODE_TYPE_DIR = path.join(ROOT, 'packages', 'node-type');
+const NODE_TYPE_DIR = path.join(ROOT, 'packages', 'plugins');
 const OUT_DIR = path.join(ROOT, 'app', '.generated', 'types');
 
 function readJSON(p) {

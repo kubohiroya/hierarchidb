@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+// import crypto from 'crypto';
 import type {
   CommandEnvelope,
   CommandResult,
@@ -11,7 +11,6 @@ import {
   commitWorkingCopyV2,
   createNewName,
 } from '../../WorkingCopyTreeNodeOperations.js';
-import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
 import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
 import type {
   CommandId,
@@ -21,6 +20,7 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-type';
+import { generateNodeId } from '@hierarchidb/common-type';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;
@@ -175,8 +175,10 @@ async function handleMoveNodes(
       beforeNodes.push({ ...node });
 
       let nextName = node.name;
+      let originalNamePatch: string | undefined;
       if (payload.onNameConflict === 'auto-rename') {
         if (siblingNames.has(nextName)) {
+          originalNamePatch = (node as { originalName?: string }).originalName ?? node.name;
           nextName = createNewName(Array.from(siblingNames), nextName);
         }
         siblingNames.add(nextName);
@@ -186,6 +188,7 @@ async function handleMoveNodes(
         ...node,
         parentId: payload.toParentId,
         name: nextName,
+        ...(originalNamePatch ? { originalName: originalNamePatch } : {}),
         updatedAt: Date.now() as Timestamp,
       } as TreeNode);
     }
@@ -218,7 +221,19 @@ async function handleMoveToTrash(
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as { nodeIds: NodeId[] };
-    const snapshotEntries: Array<{ nodeId: NodeId; previousParentId: NodeId; holderId: NodeId; trashRootId: NodeId }> = [];
+    const snapshotEntries: Array<{
+      nodeId: NodeId;
+      previousParentId: NodeId;
+      previousName: string;
+      previousOriginalName?: string;
+      previousOriginalParentId?: NodeId;
+      previousRemovedAt?: Timestamp;
+      previousHolderType?: TreeNode['holderType'];
+      previousHolderTargetId?: NodeId;
+      previousHolderMetaParentId?: NodeId;
+      trashRootId: NodeId;
+      trashRemovedAt: Timestamp;
+    }> = [];
 
     let trees: Array<{ rootId: NodeId; trashRootId: NodeId }> | undefined;
     try {
@@ -237,7 +252,12 @@ async function handleMoveToTrash(
         continue;
       }
 
-      let cursor: NodeId | undefined = node.parentId;
+      const originalParentId = node.parentId as NodeId | undefined;
+      if (!originalParentId) {
+        continue;
+      }
+
+      let cursor: NodeId | undefined = originalParentId;
       let trashRootId: NodeId | undefined;
       let lastVisited: NodeId | undefined;
 
@@ -255,7 +275,7 @@ async function handleMoveToTrash(
       }
 
       if (!trashRootId) {
-        const candidates = [cursor, lastVisited, node.parentId];
+        const candidates = [cursor, lastVisited, originalParentId];
         for (const candidate of candidates) {
           if (typeof candidate !== 'string') {
             continue;
@@ -275,38 +295,47 @@ async function handleMoveToTrash(
         continue;
       }
 
-      const holderId = crypto.randomUUID() as NodeId;
-      const holderName = encodeTrashHolderName(node.parentId, node.id);
+      // If already under this trash root, skip
+      if (node.parentId === trashRootId) {
+        continue;
+      }
+
       const now = Date.now() as Timestamp;
+      const previousOriginalName = (node as { originalName?: string }).originalName;
+      const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
+      const previousRemovedAt = (node as { removedAt?: Timestamp }).removedAt;
+      const previousHolderType = node.holderType;
+      const previousHolderTargetId = node.holderTargetId as NodeId | undefined;
+      const previousHolderMetaParentId = node.holderMetaParentId as NodeId | undefined;
 
-      const holderNode: TreeNode = {
-        id: holderId,
-        parentId: trashRootId,
-        nodeType: 'trash' as NodeType,
-        name: holderName,
-        depth: 0,
-        createdAt: now,
-        updatedAt: now,
-        version: 1,
-        holderType: 'trash' as const,
-        holderTargetId: node.id,
-        holderMetaParentId: node.parentId,
-      };
-
-      await deps.coreDB.createNode(holderNode);
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,
-        parentId: holderId,
+        parentId: trashRootId,
+        name: generateNodeId(),
+        originalName: previousOriginalName ?? node.name,
+        originalParentId: previousOriginalParentId ?? originalParentId,
+        removedAt: now,
+        holderType: undefined,
+        holderTargetId: undefined,
+        holderMetaParentId: undefined,
         updatedAt: now,
         version: (node.version || 1) + 1,
       };
+
       await deps.coreDB.updateNode?.(updatedNode);
 
       snapshotEntries.push({
         nodeId: node.id as NodeId,
-        previousParentId: node.parentId as NodeId,
-        holderId,
+        previousParentId: originalParentId,
+        previousName: node.name,
+        previousOriginalName,
+        previousOriginalParentId,
+        previousRemovedAt,
+        previousHolderType,
+        previousHolderTargetId,
+        previousHolderMetaParentId,
         trashRootId,
+        trashRemovedAt: now,
       });
     }
 
@@ -464,44 +493,65 @@ async function handleRestoreFromTrash(
       onNameConflict?: 'error' | 'auto-rename';
     };
 
-    const beforeNodes: TreeNode[] = [];
+    const snapshots: Array<{
+      node: TreeNode;
+      holder?: TreeNode;
+      nextParentId: NodeId;
+      nextName: string;
+    }> = [];
     const toUpdate: TreeNode[] = [];
-    const holdersToDelete: NodeId[] = [];
 
     for (const id of payload.nodeIds) {
       const node = await deps.coreDB.getNode?.(id);
       if (!node) {
         continue;
       }
-      beforeNodes.push({ ...node });
 
+      // Determine target parent
       let targetParentId: NodeId | undefined = payload.toParentId;
+      const recordedOriginalParent = (node as { originalParentId?: NodeId }).originalParentId;
       if (!targetParentId) {
-        const holder = await deps.coreDB.getNode?.(node.parentId);
-        if (holder?.holderMetaParentId) {
-          targetParentId = holder.holderMetaParentId;
-        }
+        targetParentId = recordedOriginalParent;
       }
-      targetParentId = targetParentId ?? node.parentId;
+      if (!targetParentId) {
+        // As a last resort, keep under current parent (e.g., trash root) but typically should have originalParentId
+        targetParentId = node.parentId as NodeId | undefined;
+      }
       if (!targetParentId) {
         continue;
       }
 
-      let nextName = node.name;
+      // Resolve next name with conflict handling
+      const baseName = (node as { originalName?: string }).originalName ?? node.name;
+      let nextName = baseName;
       if (payload.onNameConflict === 'auto-rename') {
         const siblings = (await deps.coreDB.listChildren?.(targetParentId)) || [];
-        nextName = createNewName(siblings.map((sibling) => sibling.name), nextName);
+        const siblingNames = siblings.map((s) => s.name);
+        if (siblingNames.includes(nextName)) {
+          nextName = createNewName(siblingNames, nextName);
+        }
       }
 
       toUpdate.push({
         ...node,
         parentId: targetParentId,
         name: nextName,
+        originalName: undefined,
+        originalParentId: undefined,
+        removedAt: undefined,
+        holderType: undefined,
+        holderTargetId: undefined,
+        holderMetaParentId: undefined,
         updatedAt: Date.now() as Timestamp,
         version: (node.version || 1) + 1,
-        removedAt: undefined as unknown as Timestamp,
       } as TreeNode);
-      holdersToDelete.push(node.parentId);
+
+      snapshots.push({
+        node: { ...node },
+        holder: undefined,
+        nextParentId: targetParentId,
+        nextName,
+      });
     }
 
     if (toUpdate.length === 1) {
@@ -513,15 +563,8 @@ async function handleRestoreFromTrash(
       }
     }
 
-    if (holdersToDelete.length > 0) {
-      const size = deps.batchOperationSize;
-      for (let i = 0; i < holdersToDelete.length; i += size) {
-        await deps.coreDB.bulkDeleteNodes?.(holdersToDelete.slice(i, i + size));
-      }
-    }
-
-    if (beforeNodes.length > 0) {
-      deps.history.storePreRecoverState(envelope.commandId, beforeNodes);
+    if (snapshots.length > 0) {
+      deps.history.storePreRecoverState(envelope.commandId, snapshots);
     }
 
     return { success: true, seq: deps.getNextSeq() };

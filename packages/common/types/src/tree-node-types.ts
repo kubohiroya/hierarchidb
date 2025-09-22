@@ -61,6 +61,9 @@ export type TreeNode = NodeBase &
     holderType: 'workingCopy' | 'trash';
     holderTargetId: NodeId; // WC: original nodeId, Trash: trashed nodeId
     holderMetaParentId: NodeId; // WC: target parentId, Trash: original parentId
+    originalName: string;
+    originalParentId: NodeId;
+    removedAt: Timestamp;
   }>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {

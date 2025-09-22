@@ -52,13 +52,46 @@ export class TreeQueryService implements TreeQueryAPI {
   }
 
   async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
-    const result = await this.coreDB.listChildren(parentId, options);
-    console.log('[TreeQueryService.listChildren] result', {
-      parentId: String(parentId),
-      requestedDepth: options?.prefetch?.depth ?? 1,
-      total: result.length,
-      sample: result.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
-    });
+    const initial = await this.coreDB.listChildren(parentId, options);
+
+    const requestedDepth = options?.prefetch?.depth ?? 1;
+    if (requestedDepth <= 1) {
+      return initial;
+    }
+
+    const hasPrefetchedDescendants = initial.some(
+      (node) => node.parentId && node.parentId !== parentId,
+    );
+    if (hasPrefetchedDescendants) {
+      return initial;
+    }
+
+    const result = [...initial];
+    const queue: Array<{ node: TreeNode; depth: number }> = initial.map((node) => ({ node, depth: 1 }));
+    const visited = new Set<string>(initial.map((node) => String(node.id)));
+
+    while (queue.length > 0) {
+      const { node, depth } = queue.shift()!;
+      if (depth >= requestedDepth) {
+        continue;
+      }
+
+      const children = await this.coreDB.listChildren(node.id as NodeId);
+      if (!children || children.length === 0) {
+        continue;
+      }
+
+      for (const child of children) {
+        const key = String(child.id);
+        if (visited.has(key)) {
+          continue;
+        }
+        visited.add(key);
+        result.push(child);
+        queue.push({ node: child, depth: depth + 1 });
+      }
+    }
+
     return result;
   }
 

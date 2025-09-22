@@ -9,12 +9,14 @@ import { useAppConfig } from '../contexts/AppConfigContext.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { TitleLogo } from '../components/TitleLogo.js';
 import { TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
+import { loadAppConfig, resolveAssetHref } from '../loadAppConfig.js';
 
 // Temporary type definition until TreeToggleButtonGroup is available
 
 // Meta function for React Router v7
 export function meta() {
-  const appPrefix = import.meta.env.BASE_URL || '/';
+  const { appPrefix, appFavicon } = loadAppConfig();
+  const faviconHref = resolveAssetHref(appPrefix, appFavicon);
   return [
     { title: 'HierarchiDB' },
     { name: 'description', content: 'High-performance tree-structured data management framework' },
@@ -22,7 +24,7 @@ export function meta() {
       tagName: 'link',
       rel: 'icon',
       type: 'image/svg+xml',
-      href: `${appPrefix}favicon.svg`,
+      href: faviconHref,
     },
     {
       tagName: 'link',
@@ -55,7 +57,7 @@ const treeButtonConfigs: TreeConfig[] = [
 
 export default function Index() {
   // Get _app config from context
-  const { appPrefix, appTitle, appDescription, appHomepage } = useAppConfig();
+  const { appTitle, appDescription, appHomepage } = useAppConfig();
   const navigate = useNavigate();
 
   // Track if we're in browser environment to avoid SSR/hydration mismatch

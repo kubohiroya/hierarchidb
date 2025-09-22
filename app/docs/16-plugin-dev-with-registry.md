@@ -13,7 +13,7 @@
 
 ## 仕組みの概要
 - 生成プラグイン（Vite）
-  - `app/vite-plugin-plugin-registry.ts`（UI/Worker のレジストリ）
+  - `app/vite-plugin-registry.ts`（UI/Worker のレジストリ）
     - 走査対象: `packages/plugins/*-plugin/package.json`
     - 生成: `virtual:plugin-registry-ui`, `virtual:plugin-registry-worker`
       - `pluginMapUI = { nodeType: () => import('<pkg>') }`

@@ -1,0 +1,115 @@
+{
+  "menuItem": {
+    "title": "Base Map",
+    "tooltip": "Configure and manage map layers with various styles"
+  },
+  "dialog": {
+    "title": "Create Base Map",
+    "description": "Base maps provide the foundational geographic context for your spatial data. Choose from various map styles including streets, satellite, terrain, and custom styles.",
+    "createButton": "Create Map",
+    "updateButton": "Update Map",
+    "cancelButton": "Cancel",
+    "fields": {
+      "name": {
+        "label": "Map Name",
+        "placeholder": "Enter map name",
+        "helper": "A descriptive name for this map configuration"
+      },
+      "mapStyle": {
+        "label": "Map Style",
+        "placeholder": "Select a style",
+        "helper": "Choose the visual style for your base map",
+        "options": {
+          "streets": "Streets",
+          "satellite": "Satellite",
+          "hybrid": "Hybrid",
+          "terrain": "Terrain",
+          "custom": "Custom Style"
+        }
+      },
+      "center": {
+        "label": "Center Coordinates",
+        "longitude": "Longitude",
+        "latitude": "Latitude",
+        "helper": "Initial center point of the map"
+      },
+      "zoom": {
+        "label": "Zoom Level",
+        "helper": "Initial zoom level (0-22)"
+      },
+      "bearing": {
+        "label": "Bearing",
+        "helper": "Map rotation in degrees (0-360)"
+      },
+      "pitch": {
+        "label": "Pitch",
+        "helper": "Map tilt angle in degrees (0-60)"
+      },
+      "styleUrl": {
+        "label": "Style URL",
+        "placeholder": "Enter MapLibre style URL",
+        "helper": "URL to a MapLibre GL JS style document"
+      }
+    },
+    "validation": {
+      "nameRequired": "Map name is required",
+      "invalidCoordinates": "Invalid coordinates: longitude must be between -180 and 180, latitude between -90 and 90",
+      "invalidZoom": "Zoom level must be between 0 and 22",
+      "invalidBearing": "Bearing must be between 0 and 360",
+      "invalidPitch": "Pitch must be between 0 and 60",
+      "invalidStyle": "Invalid map style selected",
+      "customStyleRequired": "Custom style requires either URL or configuration"
+    }
+  },
+  "panel": {
+    "title": "Map Properties",
+    "description": "Configure map display and interaction settings",
+    "tabs": {
+      "general": "General",
+      "style": "Style",
+      "controls": "Controls",
+      "advanced": "Advanced"
+    },
+    "fields": {
+      "currentZoom": "Current Zoom",
+      "bounds": "Bounds",
+      "projection": "Projection",
+      "renderMode": "Render Mode"
+    },
+    "actions": {
+      "resetView": "Reset View",
+      "exportStyle": "Export Style",
+      "importStyle": "Import Style",
+      "fitBounds": "Fit to Bounds"
+    }
+  },
+  "speedDial": {
+    "tooltip": "Create new base map"
+  },
+  "contextMenu": {
+    "open": "Open Map",
+    "edit": "Edit Map",
+    "duplicate": "Duplicate",
+    "exportStyle": "Export Style",
+    "delete": "Delete",
+    "properties": "Properties"
+  },
+  "treeTable": {
+    "columns": {
+      "name": "Name",
+      "style": "Style",
+      "center": "Center",
+      "zoom": "Zoom"
+    },
+    "type": "Base Map"
+  },
+  "messages": {
+    "createSuccess": "Base map '{{name}}' created successfully",
+    "updateSuccess": "Map updated successfully",
+    "deleteSuccess": "Map deleted successfully",
+    "styleExported": "Map style exported successfully",
+    "styleImported": "Map style imported successfully",
+    "loadingTiles": "Loading map tiles...",
+    "tileError": "Error loading map tiles"
+  }
+}

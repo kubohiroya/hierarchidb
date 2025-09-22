@@ -41,7 +41,6 @@ export function TreeTableRows({
   selectAll,
   selectAllHydrated,
   hasSelectedAncestor,
-  rowSelection,
   collectDescendantIds,
   batchSelect,
   depthOffset,
@@ -126,20 +125,7 @@ export function TreeTableRows({
         </TableCell>
       </StyledTableRow>
     );
-  }, [
-    batchSelect,
-    collectDescendantIds,
-    columnWidths,
-    depthOffset,
-    handleRowClick,
-    hasSelectedAncestor,
-    pageNodeId,
-    rowSelection,
-    selectAll,
-    selectAllHydrated,
-    treeId,
-    visualSelectionSet,
-  ]);
+  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, visualSelectionSet]);
 
   return (
     <TableBody>
@@ -221,7 +207,7 @@ export function TreeTableRows({
               outlineOffset: '-2px',
             }}
             aria-disabled={hoverDropTargetId === row.original.id && isBlockedTarget ? true : undefined}
-            title={hoverDropTargetId === row.original.id && isBlockedTarget ? '子孫に移動することはできません' : undefined}
+            title={hoverDropTargetId === row.original.id && isBlockedTarget ? 'Cannot move to descendants' : undefined}
           >
             {row.getVisibleCells().map((cell) => (
               <TableCell

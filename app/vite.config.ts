@@ -12,7 +12,7 @@ import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
 import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { pluginRegistryPlugin } from './vite-plugin-plugin-registry.js';
+import { pluginRegistryPlugin } from './vite-plugin-registry.js';
 import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
 import { createNodeTypeAliasPlugin } from '@hierarchidb/tools-plugin-registry-utils';
 import {
@@ -494,6 +494,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       outDir: 'dist',
       //  production
       sourcemap: mode === 'development',
+      // MapLibre GL and Deck.gl ship together in map.js; allow a larger warning threshold.
+      chunkSizeWarningLimit: 900,
       rollupOptions: {
         external: [
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app

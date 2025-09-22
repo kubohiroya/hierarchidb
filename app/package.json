@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/entry.client.tsx",
   "scripts": {
-    "predev": "pnpm -w run check:deps:extra",
+    "predev": "node ../scripts/generate-plugin-loader.mjs && pnpm -w run check:deps:extra",
+    "prebuild": "node ../scripts/generate-plugin-loader.mjs",
     "dev": "react-router dev",
     "test": "vitest run",
     "build": "NODE_OPTIONS=\"--max-old-space-size=6144\" pnpm run build:vite",

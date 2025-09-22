@@ -14,6 +14,7 @@ export interface PluginPresentation {
   label: string;
   icon: PluginIconInfo;
   priority: number;
+  description?: string;
 }
 
 let cache: Map<string, PluginPresentation> | null = null;
@@ -33,7 +34,7 @@ function buildCache(): Map<string, PluginPresentation> {
   const map = new Map<string, PluginPresentation>();
   // Avoid async/await here to keep library build simple.
   // If the host app wants to provide plugin definitions, it can set a global at runtime.
-  type PluginDef = { nodeType: string; name?: string; config?: { displayName?: string; name?: string; priority?: number; icon?: { mui?: string; muiIconName?: string; emoji?: string; color?: string } } };
+  type PluginDef = { nodeType: string; name?: string; config?: { displayName?: string; name?: string; description?: string; priority?: number; icon?: { mui?: string; muiIconName?: string; emoji?: string; color?: string } } };
   const g = (typeof globalThis !== 'undefined' ? globalThis : ({} as unknown)) as { __HDB_PLUGIN_DEFS__?: PluginDef[] };
   const defs: PluginDef[] = Array.isArray(g.__HDB_PLUGIN_DEFS__) ? (g.__HDB_PLUGIN_DEFS__ as PluginDef[]) : [];
 
@@ -48,6 +49,7 @@ function buildCache(): Map<string, PluginPresentation> {
       label,
       icon: { muiIconName, emoji: icon.emoji, color: icon.color },
       priority: (cfg.priority as number | undefined) ?? 1000,
+      description: cfg.description ?? cfg.displayName,
     });
   }
 

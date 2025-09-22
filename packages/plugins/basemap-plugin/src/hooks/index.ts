@@ -1,0 +1,2 @@
+export * from './useBaseMapEntity.js';
+

@@ -189,3 +189,5 @@ tsup.config.bundled*.mjs
 vitest.config.ts.*.mjs
 /app/build-analysis/
 /app/.generated/
+/app/src/generated/
+/app/.generated/

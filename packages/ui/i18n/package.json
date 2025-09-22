@@ -58,7 +58,10 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
-      "react"
+      "react",
+      "i18next-browser-languagedetector",
+      "i18next-http-backend",
+      "date-fns"
     ]
   }
 }

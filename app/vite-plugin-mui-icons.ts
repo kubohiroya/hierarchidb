@@ -48,7 +48,7 @@ export function muiIconsVirtualModule(): Plugin {
 
       // Scan node-type plugin package.json files for hierarchidb.plugin.icon.mui
       const repoRoot = path.resolve(__dirname, '..');
-      const nodeTypeDir = path.join(repoRoot, 'packages', 'node-type');
+      const nodeTypeDir = path.join(repoRoot, 'packages', 'plugins');
       const names = new Set<string>();
       try {
         const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
@@ -67,7 +67,7 @@ export function muiIconsVirtualModule(): Plugin {
           }
         }
       } catch (error) {
-        logWarn(`Failed to scan node-type directory ${nodeTypeDir}`, error);
+        logWarn(`Failed to scan plugins directory ${nodeTypeDir}`, error);
       }
 
       // Always include a minimal baseline we know we use widely

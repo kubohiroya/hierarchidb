@@ -52,6 +52,63 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
+  - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] `app/vite.config.ts` の `build.chunkSizeWarningLimit` を 900 kB に設定する
+    - [x] `pnpm -C app build` を実行し、chunk size 警告なしで完了する
+    - [x] 変更内容と検証結果を `TASKS.md` の運用ログに記録する
+  - チェックリスト：
+    - [x] `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加
+    - [x] `pnpm -C app build` を実行し結果を確認
+  - ロールバック手順：
+    - `app/vite.config.ts` の `chunkSizeWarningLimit` 変更を戻し、`pnpm -C app build` を再実行
+  - 運用ログ：
+    - start: 2025-09-22 10:24 map.js チャンク警告抑制対応に着手
+    - progress: 2025-09-22 10:26 `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加し、MapLibre/Deck.gl を含むチャンクの閾値を引き上げ
+    - blocked: 2025-09-22 10:27 `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（本差分による悪化なし）
+    - progress: 2025-09-22 10:32 `pnpm -C app build` を実行し、チャンク警告なしで完了（map.js 828 kB / 閾値 900 kB）
+- fix/ui-folder/dialog-theme-tokens — フォルダ作成ダイアログのテーマ配色対応
+  - ブランチ: `fix/ui-folder/dialog-theme-tokens`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
+  - 受け入れ基準（DoD）：
+    - [ ] フォルダ作成ダイアログの背景・枠線・ステップインジケータ・エラーメッセージがテーマのパレット値を使用し、HEX ハードコードを排除
+    - [ ] ライト/ダーク両テーマで視認性が保持されることを手動確認
+    - [ ] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` が成功する
+  - チェックリスト：
+    - [ ] `ExtensibleFolderDialog` のスタイル定義を見直し、テーマトークンに置換
+    - [ ] ステップバッジやエラーテキストで MUI パレットを参照するよう更新
+    - [ ] ダイアログラッパーで `@hierarchidb/ui-dialog` 共通スタイルとの整合を確認
+  - ロールバック手順：
+    - `packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx` の変更を元に戻し、型チェックを再実行
+  - 運用ログ：
+    - start: 2025-09-22 10:15 フォルダ作成ダイアログの配色をテーマトークンへ統一する作業に着手
+    - progress: 2025-09-22 10:33 `ExtensibleFolderDialog` の背景・ステップインジケータ配色を MUI テーマ参照へ更新し、HEX ハードコードを除去。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` を実行して成功
+    - blocked: 2025-09-22 10:37 `pnpm -C app typecheck` が TrashDialog 系 `originalName` 型未定義エラーで失敗（既知の別タスク依存）。新規変更による追加エラーは発生せず
+- feat/runtime-dialog/unified-frame — プラグインダイアログの MUI ボタン化とフレーム標準化
+  - ブランチ: `feat/runtime-dialog/unified-frame`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-dialog`, `@hierarchidb/plugins-folder-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `usePluginDialogController` がヘッダー/フッターに MUI ボタン群・表示モード切替・クローズボタンを備えた標準 UI を提供する
+    - [x] PluginDialogShell でダイアログのドラッグ移動・リサイズ・表示モード切替が機能し、position/size persistence が維持される
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `test` および `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` がグリーン
+  - チェックリスト：
+    - [x] HeadlessMultiStepDialog のヘッダー/フッター描画を差し替え、MUI ボタンを使用
+    - [x] PluginDialogShell にドラッグ/リサイズ処理とバックドロップ制御を実装
+    - [x] displayMode 操作と閉じるボタンを全ダイアログで一貫提供
+    - [x] 最低 1 つのユニットテストを追加し、ボタン群が MUI 実装であることを検証
+  - ロールバック手順：
+    - `packages/runtime-ui/plugin-dialog/src/headless` 配下の変更と `@hierarchidb/ui-dialog` 型拡張を git revert し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-22 11:05 プラグインダイアログの標準フレーム刷新と MUI ボタン化に着手
+    - progress: 2025-09-22 11:36 PluginDialogHeader/Footer を新設し、`usePluginDialogController` で標準 UI を組み込み。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
+    - progress: 2025-09-22 11:41 `PluginDialogShell` をドラッグ/リサイズ対応へ刷新し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test` を実行して全 29 テストが成功
+    - progress: 2025-09-22 11:43 `pnpm --filter @hierarchidb/ui-dialog build` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` を実行し、新しいフレーム API を d.ts に反映
+    - progress: 2025-09-22 11:45 `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` を再実行し、依存側の型整合を確認
+    - progress: 2025-09-22 12:08 プラグイン/Trash 双方のヘッダーを Stepper + React Router Link ナビゲーションへ更新し、単一ステップ時の余分な表示を除去
+    - progress: 2025-09-22 12:12 非ゴミ箱ダイアログのフッターを Cancel/Back・Save Draft・Start Batch（条件付き）・Next/Save 配置へ統一。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `test` および `pnpm -C app typecheck` を再実行し成功
+    - progress: 2025-09-22 12:24 create アクション時も UI が “Create …” と表示されるよう `intent` を導入し、作成完了後にツリーへ反映されるよう WorkingCopy コミット処理とナビゲーションを調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {typecheck,test}` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` を実行し成功
 - feat/ui/dialog-hover-feedback — ダイアログタイトルのドラッグハンドルにホバー演出を追加
   - ブランチ: `feat/ui/dialog-hover-feedback`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`
@@ -67,6 +124,25 @@
   - 運用ログ：
     - start: 2025-09-21 21:22 ダイアログタイトルホバー演出の改善に着手
     - progress: 2025-09-21 21:30 プラグイン/ゴミ箱ダイアログのタイトルにホバー時の背景変化を追加し、型チェックを通過させた
+- feat/app/trash-direct-storage — ゴミ箱ルート直下にノードを格納する方式へ移行
+  - ブランチ: `feat/app/trash-direct-storage`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/app`, `@hierarchidb/common-type`, `@hierarchidb/runtime-worker`
+  - 受け入れ基準（DoD）：
+    - [ ] ノードをゴミ箱へ移動する際に `name` が UUID に置換され、`originalName`/`originalParentId` に元情報が保存される
+    - [ ] TrashDialog のパンくず・TreeTable 表示で `originalName` があればそれを優先表示する
+    - [ ] ゴミ箱から復旧する際に `originalName` と `originalParentId` を用いて元のツリー構造へ戻る
+    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` と `pnpm --filter @hierarchidb/app typecheck` が成功する
+  - チェックリスト：
+    - [ ] ゴミ箱移動 API / コマンド処理を新仕様へ更新
+    - [ ] 表示層（パンくず/TreeTable）の名称解決ロジックを更新
+    - [ ] 復旧処理で `original*` フィールドを復元に使用し、復旧後は削除する
+    - [ ] 新仕様に合わせてドキュメント/TASKS の運用ログを更新
+  - ロールバック手順：
+    - 変更ファイルを差分前へ戻し、旧プレイスホルダー方式（フォルダ経由）へ復帰。必要に応じてゴミ箱移行スクリプトを再実行
+  - 運用ログ：
+    - start: 2025-09-22 16:34 ゴミ箱直下格納方式への移行検討に着手
+    - blocked: 2025-09-22 18:10 `CI=1 pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` を実行すると 5 件の失敗が残存（command-processor-undo-redo, trash-partial-restore, trash-subscription, bulk-ops-cp, tree-query.prefetch）。`originalName`/`originalParentId` の復旧ロジック未整備と Trash holder 処理の移行不足が原因と推測
+    - progress: 2025-09-22 18:52 Trash holder 実装を導入し、`moveToTrash` でホルダー生成 + UUID リネーム、`restoreFromTrash` でホルダー経由復帰するよう更新。`command-processor-undo-redo` 系の undo/redo でもホルダーと元名称を保持するよう `CommandHistoryManager` を拡張。`pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` がグリーン
 - investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
   - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
@@ -3762,6 +3838,10 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-22 10:24 start: chore/app/map-chunk-warning-limit — map.js チャンク警告を抑制する閾値調整に着手。
+- 2025-09-22 10:26 progress: chore/app/map-chunk-warning-limit — `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加。
+- 2025-09-22 10:27 blocked: chore/app/map-chunk-warning-limit — `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（差分影響なし）。
+- 2025-09-22 10:32 progress: chore/app/map-chunk-warning-limit — `pnpm -C app build` を実行し、チャンク警告なしで完了（map.js 828 kB / 閾値 900 kB）。
 - 2025-09-21 23:27 progress: fix/app/route-worker-import — `pnpm --filter @hierarchidb/app build` を再実行し、Worker import 解決エラーが一時的に解消されたことを確認。
 - 2025-09-21 23:18 progress: fix/app/route-worker-import — route-plugin の exports / app tsconfig / start-env を `.js` 拡張子へ統一し、`pnpm --filter @hierarchidb/plugins-route-plugin build` がグリーンであることを確認。
 - 2025-09-21 23:15 start: fix/app/route-worker-import — Vite build が `@hierarchidb/plugins-route-plugin/worker` を解決できない症状の調査を開始。

@@ -1,5 +1,4 @@
-import type { Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '../generated/loader.js';
 
 export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
@@ -16,7 +15,6 @@ export type PeerDisplayNodeType =
   | 'styler'
   | 'basemap';
 
-type DexieInstance = import('dexie').Dexie;
 interface PeerEntityRecord {
   nodeId: NodeId;
   updatedAt?: number;
@@ -26,26 +24,14 @@ interface PeerEntityRecord {
   data?: unknown;
 }
 
-type PeerEntitiesDB = DexieInstance & { peerEntities: Table<PeerEntityRecord, NodeId> };
-type PeerDbLoader = () => Promise<PeerEntitiesDB>;
+// Generated static plugin loader (prebuild)
+import { peerDbLoaders as generatedPeerDbLoaders, PeerDbLoader, registerUIPersistenceOverrides, type PeerEntitiesDB } from '../generated/loader.js';
 
-const createLoader = (specifier: string, exportName: string): PeerDbLoader =>
-  async () => {
-    const mod = (await import(/* @vite-ignore */ specifier)) as Record<string, unknown>;
-    const Constructor = mod[exportName] as new () => PeerEntitiesDB;
-    return new Constructor();
-  };
+// Initialize UI persistence overrides at module load
+try { registerUIPersistenceOverrides(); } catch { /* ignore */ }
 
-const peerDbLoaders: Partial<Record<PeerDisplayNodeType, PeerDbLoader>> = {
-  folder: createLoader('@hierarchidb/plugins-folder-plugin/worker', 'FolderEntitiesDB'),
-  route: createLoader('@hierarchidb/plugins-route-plugin/worker', 'RouteEntitiesDB'),
-  resolver: createLoader('@hierarchidb/plugins-resolver-plugin/worker', 'ResolverEntitiesDB'),
-  basemap: createLoader('@hierarchidb/plugins-basemap-plugin/worker', 'BasemapEntitiesDB'),
-  location: createLoader('@hierarchidb/plugins-location-plugin/worker', 'LocationEntitiesDB'),
-  shape: createLoader('@hierarchidb/plugins-shape-plugin/worker', 'ShapeEntitiesDB'),
-  spreadsheet: createLoader('@hierarchidb/plugins-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB'),
-  styler: createLoader('@hierarchidb/plugins-styler-plugin/worker', 'StylerEntitiesDB'),
-};
+// Narrowed view for this module; generated loaders return instances compatible with PeerEntitiesDB
+const peerDbLoaders: Partial<Record<PeerDisplayNodeType, PeerDbLoader>> = generatedPeerDbLoaders as any;
 
 const toNodeId = (value: string): NodeId => value as NodeId;
 
@@ -57,10 +43,12 @@ async function withPeerDb<T>(
   const loader = peerDbLoaders[nodeType];
   if (!loader) return fallback;
   const db = await loader();
+  if(!db) throw new Error("cannot load db.");
   try {
     return await fn(db);
   } finally {
-    db.close();
+    // Close if the DB provides a close() method (optional in generated type)
+    (db as any).close?.();
   }
 }
 
@@ -162,3 +150,35 @@ export async function setPeerDialogSize<T extends PeerDisplayNodeType>(
     return undefined;
   });
 }
+
+// Expose EntitiesDB adapter overrides for the UI persistence registry used by runtime-ui/plugin-dialog
+(() => {
+  try {
+    const globalAny = globalThis as any;
+    const overrides = (globalAny.__HDB_PLUGIN_ENTITY_OVERRIDES__ ??= {});
+
+    const toAdapterFactory = (loader: PeerDbLoader) => async () => {
+      const db = await loader();
+      if (!db) {
+        return { table: () => ({ get: async () => undefined, put: async () => {} }) };
+      }
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return {
+        table: (_name: string) => ({
+          get: (id: string) => (db as any).peerEntities.get(toNodeId(id)),
+          put: (row: any) => (db as any).peerEntities.put(row),
+        }),
+      };
+    };
+
+    (Object.keys(peerDbLoaders) as PeerDisplayNodeType[]).forEach((nodeType) => {
+      const loader = peerDbLoaders[nodeType];
+      if (!loader) return;
+      overrides[nodeType] = toAdapterFactory(loader);
+    });
+  } catch {
+    // non-fatal; UI will fall back to internal dynamic import logic
+  }
+})();

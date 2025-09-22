@@ -50,7 +50,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
   const availableSuggestions = useMemo(() => suggestions.filter((s) => s && !value.includes(s)), [suggestions, value]);
 
   return (
-    <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box data-ui-core="TagChipsInput" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       {label && (
         <Typography variant="subtitle2">
           {label}{required ? ' *' : ''}
@@ -58,7 +58,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
       )}
 
       {/* Selected tags */}
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 0.5 }}>
+      {value && value.length > 0 && <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 0.5 }}>
         {value.map((t) => (
           <Chip
             key={t}
@@ -69,6 +69,7 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
           />
         ))}
       </Stack>
+      }
 
       {/* Input */}
       <TextField

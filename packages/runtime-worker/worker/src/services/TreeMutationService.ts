@@ -627,7 +627,10 @@ export class TreeMutationService implements TreeMutationAPI {
       for (const nodeId of nodeIds) {
         const node = await this.coreDB.getNode?.(nodeId);
         if (!node) continue;
-        let cursor: NodeId | undefined = node.parentId;
+        const originalParentId = node.parentId as NodeId | undefined;
+        if (!originalParentId) continue;
+
+        let cursor: NodeId | undefined = originalParentId;
         let trashRootId: NodeId | undefined;
         while (cursor) {
           if (typeof cursor === 'string' && cursor.endsWith(':root')) {
@@ -639,26 +642,54 @@ export class TreeMutationService implements TreeMutationAPI {
           cursor = parent.parentId;
         }
         if (!trashRootId) continue;
-        const holderId = crypto.randomUUID() as NodeId;
-        const holderName = encodeTrashHolderName(node.parentId, node.id);
         const now = Date.now() as Timestamp;
-        const holderNode: TreeNode = {
-          id: holderId,
-          parentId: trashRootId,
-          nodeType: 'trash' as NodeType,
-          name: holderName,
-          depth: 0,
-          createdAt: now,
-          updatedAt: now,
-          version: 1,
-          holderType: 'trash',
-          holderTargetId: node.id,
-          holderMetaParentId: node.parentId,
-        };
-        await this.coreDB.createNode?.(holderNode);
+        if (node.holderType === 'trash' && node.holderTargetId === node.id) {
+          const currentParent = node.parentId ? await this.coreDB.getNode?.(node.parentId) : undefined;
+          if (currentParent && currentParent.parentId === trashRootId && currentParent.nodeType === 'trash') {
+            continue;
+          }
+        }
+
+        const holderName = encodeTrashHolderName(originalParentId, node.id as NodeId);
+        const trashChildren = (await this.coreDB.listChildren?.(trashRootId)) || [];
+        let holder = trashChildren.find((candidate) => {
+          if (candidate.nodeType !== 'trash') return false;
+          const meta = candidate as { holderTargetId?: NodeId };
+          return meta.holderTargetId === node.id;
+        });
+
+        let holderId: NodeId;
+        if (holder) {
+          holderId = holder.id as NodeId;
+        } else {
+          holderId = generateNodeId();
+          const holderNode: TreeNode = {
+            id: holderId,
+            parentId: trashRootId,
+            nodeType: 'trash' as NodeType,
+            name: holderName,
+            depth: 0,
+            createdAt: now,
+            updatedAt: now,
+            version: 1,
+            holderType: 'trash',
+            holderTargetId: node.id as NodeId,
+            holderMetaParentId: originalParentId,
+          };
+          await this.coreDB.createNode?.(holderNode);
+          holder = holderNode;
+        }
+
         await this.coreDB.updateNode?.({
           id: node.id,
           parentId: holderId,
+          name: node.name,
+          originalName: (node as { originalName?: string }).originalName ?? node.name,
+          originalParentId: originalParentId,
+          removedAt: now,
+          holderType: 'trash',
+          holderTargetId: node.id,
+          holderMetaParentId: originalParentId,
           updatedAt: now,
           version: (node.version ?? 1) + 1,
         });

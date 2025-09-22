@@ -40,7 +40,7 @@ const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } 
  */
 
 export const PluginDialogRoute: React.FC = () => {
-  const { tree, pageNodeId, targetNodeId, targetNode, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
+  const { tree, pageNodeId, targetNodeId, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
 
   const navigate = useNavigate();
   const useWorkerHook = getWorkerClientHook<WorkerHookValue>() ?? (() => null);
@@ -56,7 +56,8 @@ export const PluginDialogRoute: React.FC = () => {
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
-  const mode: 'create' | 'edit' = action === 'create' && !targetNode ? 'create' : 'edit';
+  const intent: 'create' | 'edit' = action === 'create' ? 'create' : 'edit';
+  const mode: 'create' | 'edit' = intent;
 
   // targetNodeId is the working copy ID (UUID) for both create and edit
   const workingCopyId = targetNodeId;
@@ -117,6 +118,7 @@ export const PluginDialogRoute: React.FC = () => {
   return (
     <PluginDialogShell
       mode={mode}
+      intent={intent}
       nodeType={nodeType}
       nodeId={workingCopyId}
       pageNodeId={pageNodeId}

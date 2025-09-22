@@ -407,9 +407,9 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_app" {label="app" "app/vite-plugin-mui-icons.ts" [label=<vite-plugin-mui-icons.ts> tooltip="vite-plugin-mui-icons.ts" URL="app/vite-plugin-mui-icons.ts" fillcolor="#ddfeff"] }
     "app/vite-plugin-mui-icons.ts" -> "fs" [style="dashed" penwidth="1.0"]
     "app/vite-plugin-mui-icons.ts" -> "path" [style="dashed" penwidth="1.0"]
-    subgraph "cluster_app" {label="app" "app/vite-plugin-plugin-registry.ts" [label=<vite-plugin-plugin-registry.ts> tooltip="vite-plugin-plugin-registry.ts" URL="app/vite-plugin-plugin-registry.ts" fillcolor="#ddfeff"] }
-    "app/vite-plugin-plugin-registry.ts" -> "fs" [style="dashed" penwidth="1.0"]
-    "app/vite-plugin-plugin-registry.ts" -> "path" [style="dashed" penwidth="1.0"]
+    subgraph "cluster_app" {label="app" "app/vite-plugin-registry.ts" [label=<vite-plugin-registry.ts> tooltip="vite-plugin-registry.ts" URL="app/vite-plugin-registry.ts" fillcolor="#ddfeff"] }
+    "app/vite-plugin-registry.ts" -> "fs" [style="dashed" penwidth="1.0"]
+    "app/vite-plugin-registry.ts" -> "path" [style="dashed" penwidth="1.0"]
     subgraph "cluster_app" {label="app" "app/vite-plugin-plugin-services.ts" [label=<vite-plugin-plugin-services.ts> tooltip="vite-plugin-plugin-services.ts" URL="app/vite-plugin-plugin-services.ts" fillcolor="#ddfeff"] }
     "app/vite-plugin-plugin-services.ts" -> "fs" [style="dashed" penwidth="1.0"]
     "app/vite-plugin-plugin-services.ts" -> "path" [style="dashed" penwidth="1.0"]
@@ -420,7 +420,7 @@ strict digraph "dependency-cruiser output"{
     "app/vite.config.ts" -> "app/vite-plugin-favicon.ts"
     "app/vite.config.ts" -> "app/vite-plugin-mui-icon-map.ts"
     "app/vite.config.ts" -> "app/vite-plugin-mui-icons.ts"
-    "app/vite.config.ts" -> "app/vite-plugin-plugin-registry.ts"
+    "app/vite.config.ts" -> "app/vite-plugin-registry.ts"
     "app/vite.config.ts" -> "app/vite-plugin-plugin-services.ts"
     "app/vite.config.ts" -> "@hierarchidb/tools-vite-plugin-package-reader/presets"
     "app/vite.config.ts" -> "@react-router/dev/vite"

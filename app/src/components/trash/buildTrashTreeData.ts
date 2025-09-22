@@ -1,13 +1,11 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashTreeDataParams {
   treeId: string;
   rootNode: TreeNode;
-  targetNodeIds: readonly NodeId[];
   nodeMap?: Map<string, TreeNode>;
-  activeNodeId?: NodeId | null;
-  pageNodeId?: NodeId | null;
 }
 
 export interface BuildTrashTreeDataResult {
@@ -15,13 +13,34 @@ export interface BuildTrashTreeDataResult {
   rootId: string;
 }
 
+/**
+ * Normalise trash nodes for the TreeConsole data model.
+ *
+ * Nodes are now stored directly under the trash root. Each trashed node keeps
+ * track of its original identity (`originalName`, `originalParentId`) so that
+ * the UI can render user-friendly labels and deep links. This helper turns the
+ * worker-provided node map into a flat array that the TreeTable understands.
+ *
+ * Typical usage in the trash dialog:
+ *
+ * ```ts
+ * const { nodes, rootId } = buildTrashTreeData({
+ *   treeId,
+ *   rootNode: trashRoot,
+ *   nodeMap,
+ * });
+ * ```
+ *
+ * @param params.treeId Current tree identifier (e.g. "r"). Used for diagnostics only.
+ * @param params.rootNode Trash root node returned by the worker.
+ * @param params.nodeMap Optional lookup of node id -> TreeNode from IndexedDB snapshots.
+ *
+ * @returns Flat TreeConsole rows for every known trash node (excluding the root).
+ */
 export function buildTrashTreeData({
   treeId: _treeId,
   rootNode,
-  targetNodeIds,
   nodeMap,
-  activeNodeId,
-  pageNodeId,
 }: BuildTrashTreeDataParams): BuildTrashTreeDataResult {
   const rootId = String(rootNode.id);
   const sourceMap = new Map<string, TreeNode>();
@@ -37,83 +56,46 @@ export function buildTrashTreeData({
     sourceMap.set(rootId, rootNode);
   }
 
-  const placeholderIds = new Set<string>();
-  sourceMap.forEach((node) => {
-    const parentKey = node.parentId ? String(node.parentId) : null;
-    if (parentKey && parentKey === rootId) {
-      placeholderIds.add(String(node.id));
-    }
-  });
-
-  // Filter nodes: use only those with depth >= 1 (depth 0 is placeholder)
   const selectedNodes: TreeNodeData[] = [];
   const seen = new Set<string>();
-  const activeId = activeNodeId ? String(activeNodeId) : null;
+  
+  sourceMap.forEach((node) => {
+    const rawId = String(node.id);
+    if (rawId === rootId) {
+      return;
+    }
+    if (seen.has(rawId)) {
+      return;
+    }
+    seen.add(rawId);
 
-  const normalizedPageNodeId: NodeId = pageNodeId
-    ? (String(pageNodeId) as NodeId)
-    : (rootNode.parentId ? (String(rootNode.parentId) as NodeId) : (rootId as NodeId));
-  const isActiveTrashRoot = activeId != null && String(activeId) === rootId;
+    const id = rawId as NodeId;
+    const parentId: NodeId = node.parentId ? (String(node.parentId) as NodeId) : (rootId as NodeId);
+    const originalName = (node as { originalName?: string }).originalName;
+    const originalParentId = (node as { originalParentId?: NodeId }).originalParentId;
+    const removedAt = (node as { removedAt?: number }).removedAt;
 
-  const includeNode = (node: TreeNode) => {
-    const depth = typeof node.depth === 'number' ? node.depth : 0;
-    if (depth < 1) {
-      return;
-    }
-    const id = String(node.id) as NodeId;
-    if (activeId && String(id) === activeId) {
-      return;
-    }
-    if (seen.has(id)) {
-      return;
-    }
-    if (placeholderIds.has(String(node.id))) {
-      return;
-    }
-    seen.add(id);
-    const parentIdValue = node.parentId ? String(node.parentId) : null;
-    let parentId = parentIdValue ? (String(node.parentId) as NodeId) : normalizedPageNodeId;
-    let metaParentId = node.holderMetaParentId ? (String(node.holderMetaParentId) as NodeId) : undefined;
-    if (isActiveTrashRoot && parentIdValue && placeholderIds.has(parentIdValue)) {
-      parentId = normalizedPageNodeId;
-      metaParentId = normalizedPageNodeId;
-    }
+    const displayName = getTrashDisplayName(node) || rawId;
+
     selectedNodes.push({
       id,
       parentId,
       nodeType: node.nodeType,
-      name: node.name,
-      depth,
-      holderType: node.holderType,
-      holderTargetId: node.holderTargetId,
-      holderMetaParentId: metaParentId,
+      name: displayName,
+      depth: typeof node.depth === 'number' ? node.depth : 0,
+      originalName,
+      originalParentId,
+      removedAt,
+      holderType: 'trash',
+      holderTargetId: id,
+      holderMetaParentId: originalParentId ? (String(originalParentId) as NodeId) : undefined,
       hasChildren: Boolean(node.hasChildren),
       description: node.description,
       createdAt: node.createdAt,
       updatedAt: node.updatedAt,
       version: node.version,
     });
-  };
-
-  const filteredTargetIds = targetNodeIds.filter((id) => {
-      const node = sourceMap.get(String(id));
-      if (!node) return false;
-      if (placeholderIds.has(String(id))) {
-        return false;
-      }
-      return true;
-    });
-
-  if (filteredTargetIds.length > 0) {
-    filteredTargetIds.forEach((id) => {
-      const node = sourceMap.get(String(id));
-      if (node) {
-        includeNode(node);
-      }
-    });
-  } else {
-    sourceMap.forEach((node) => includeNode(node));
-  }
+  });
 
   // Compute hasChildren based on selected nodes themselves if the flag is missing
   const parentCount = new Map<string, number>();

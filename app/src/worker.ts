@@ -72,13 +72,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     const registryModule = await import('virtual:plugin-registry-worker').catch(() => null);
     let pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
 
-    const workerOverrides: PluginLoaderMap = {
-      location: () => import('@hierarchidb/plugins-location-plugin/worker'),
-      route: () => import('@hierarchidb/plugins-route-plugin/worker'),
-      timeline: () => import('@hierarchidb/plugins-timeline-plugin/worker'),
-      shape: () => import('@hierarchidb/plugins-shape-plugin/worker'),
-    };
-    pluginMap = { ...pluginMap, ...workerOverrides };
+    // Note: Legacy workerModuleLoaders are no longer generated; pluginMapWorker now provides all loaders.
 
     const denyEnv = typeof import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY === 'string'
       ? import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY

@@ -184,7 +184,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   p: 0.25,
                   width: 24,
                   height: 24,
-                  color: isExpanded ? 'primary.main' : 'action.active',
+                  color: 'primary.main',
                   transition: 'color 120ms ease, background-color 120ms ease',
                   '&:hover': {
                     backgroundColor: 'rgba(25, 118, 210, 0.24)',

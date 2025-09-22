@@ -57,9 +57,9 @@ const maybeOpenDexie = async (db: Dexie): Promise<void> => {
   }
 };
 
-const createPeerDbLoader = (specifier: string, exportName: string): PeerDbLoader => async () => {
+const loadPeerDb = async (importer: () => Promise<Record<string, unknown>>, exportName: string): Promise<PeerEntitiesDb | undefined> => {
   try {
-    const module = (await import(/* @vite-ignore */ specifier)) as Record<string, unknown>;
+    const module = await importer();
     const Candidate = module[exportName];
     if (typeof Candidate !== 'function') return undefined;
     const db = new (Candidate as Constructor<PeerEntitiesDb>)();
@@ -70,16 +70,26 @@ const createPeerDbLoader = (specifier: string, exportName: string): PeerDbLoader
   }
 };
 
-const peerDbLoaders = new Map<NodeType, PeerDbLoader>([
-  [toNodeType('folder'), createPeerDbLoader('@hierarchidb/plugins-folder-plugin/worker', 'FolderEntitiesDB')],
-  [toNodeType('route'), createPeerDbLoader('@hierarchidb/plugins-route-plugin/worker', 'RouteEntitiesDB')],
-  [toNodeType('resolver'), createPeerDbLoader('@hierarchidb/plugins-resolver-plugin/worker', 'ResolverEntitiesDB')],
-  [toNodeType('shape'), createPeerDbLoader('@hierarchidb/plugins-shape-plugin/worker', 'ShapeEntitiesDB')],
-  [toNodeType('location'), createPeerDbLoader('@hierarchidb/plugins-location-plugin/worker', 'LocationEntitiesDB')],
-  [toNodeType('spreadsheet'), createPeerDbLoader('@hierarchidb/plugins-spreadsheet-plugin/worker', 'SpreadsheetEntitiesDB')],
-  [toNodeType('styler'), createPeerDbLoader('@hierarchidb/plugins-styler-plugin/worker', 'StylerEntitiesDB')],
-  [toNodeType('basemap'), createPeerDbLoader('@hierarchidb/plugins-basemap-plugin/worker', 'BasemapEntitiesDB')],
-]);
+// Plugin-specific EntitiesDB loaders are not wired in the worker package to avoid
+// hard dependencies on app-selected plugins. The app build/runtime may register
+// loaders via an extension point when bundling with Vite.
+const peerDbLoaders = new Map<NodeType, PeerDbLoader>();
+
+// Optional extension API for registering loaders at runtime (e.g., by the app)
+export const registerPeerDbLoader = (nodeType: NodeType, loader: PeerDbLoader): void => {
+  peerDbLoaders.set(nodeType, loader);
+};
+export const registerPeerDbLoaders = (
+  entries: ReadonlyArray<[NodeType, PeerDbLoader]> | Record<string, PeerDbLoader>,
+): void => {
+  if (Array.isArray(entries)) {
+    for (const [type, loader] of entries) peerDbLoaders.set(type, loader);
+  } else {
+    for (const [key, loader] of Object.entries(entries)) {
+      peerDbLoaders.set(toNodeType(key as NodeType), loader);
+    }
+  }
+};
 
 const withPeerDb = async (nodeType: NodeType, fn: (db: PeerEntitiesDb) => Promise<void>): Promise<void> => {
   const loader = peerDbLoaders.get(nodeType);

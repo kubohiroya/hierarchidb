@@ -150,6 +150,7 @@ export function useWorkingCopy({
 
   // Save working copy
   const saveWorkingCopy = useCallback(async (data?: Partial<WorkingCopyData>): Promise<NodeId> => {
+    console.debug("[Folder-create]");
     if (!workingCopy) throw new Error('No working copy to save');
     const finalData = data ? { ...workingCopy, ...data } : workingCopy;
 
@@ -182,10 +183,14 @@ export function useWorkingCopy({
       const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId);
       if (!res?.success) throw new Error(res?.error || 'Commit failed');
 
-      // Update original copy snapshot
-      setOriginalCopy(finalData);
+      const committedNodeId = (res.node?.id as NodeId | undefined)
+        ?? targetNodeId
+        ?? finalData.treeNodeId;
 
-      return (targetNodeId || finalData.treeNodeId) as NodeId;
+      // Update original copy snapshot with latest data
+      setOriginalCopy({ ...finalData, treeNodeId: committedNodeId });
+
+      return committedNodeId;
     } catch (err) {
       console.error('Failed to save working copy:', err);
       throw err;

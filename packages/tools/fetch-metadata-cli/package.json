@@ -51,5 +51,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "tsup": {
+    "external": [
+      "commander",
+      "@hierarchidb/runtime-shared-fetch-metadata"
+    ]
   }
 }
