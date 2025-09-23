@@ -1,3 +1,10 @@
+/**
+ * PluginDialogFooter – renders navigation and action buttons for the dialog.
+ *
+ * Consumes multi-step dialog context to honour per-step enablement while
+ * exposing plugin-specific commit/start-batch controls supplied by the
+ * controller layer.
+ */
 import React from 'react';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';

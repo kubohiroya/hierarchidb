@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * WorkerProvider – React context for the shared worker lifecycle.
+ *
+ * Exposes initialization progress, errors, and the `WorkerClientRef` bundle
+ * to any descendant component while coordinating suspense for the worker
+ * bootstrap flow so that consumers never observe a null client reference.
+ */
+import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
@@ -136,6 +143,60 @@ const secondaryButtonStyle: CSSProperties = {
   ...buttonStyle,
   backgroundColor: '#607d8b',
 };
+
+type SuspendHandle = {
+  promise: Promise<void>;
+  resolve: () => void;
+};
+
+function createSuspendHandle(): SuspendHandle {
+  let resolve!: () => void;
+  const promise = new Promise<void>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+type WorkerClientGateProps = {
+  status: WorkerStatusState;
+  renderOverlay: boolean;
+  onRetry: () => void;
+  children: ReactNode;
+};
+
+function WorkerClientGate({ status, renderOverlay, onRetry, children }: WorkerClientGateProps) {
+  const suspendRef = useRef<SuspendHandle | null>(null);
+
+  useEffect(() => {
+    if (status.client && status.isInitialized && suspendRef.current) {
+      suspendRef.current.resolve();
+      suspendRef.current = null;
+    }
+  }, [status.client, status.isInitialized]);
+
+  useEffect(() => {
+    if (status.error && suspendRef.current) {
+      suspendRef.current.resolve();
+      suspendRef.current = null;
+    }
+  }, [status.error]);
+
+  if (status.error) {
+    if (renderOverlay) {
+      return <ErrorOverlay error={status.error} onRetry={onRetry} />;
+    }
+    throw status.error;
+  }
+
+  if (!status.client || !status.isInitialized) {
+    if (!suspendRef.current) {
+      suspendRef.current = createSuspendHandle();
+    }
+    throw suspendRef.current.promise;
+  }
+
+  return <>{children}</>;
+}
 
 function InitializingOverlay({ progress, message }: { progress: number; message: string }) {
   const clamped = Math.max(0, Math.min(100, Math.round(progress)));
@@ -411,15 +472,18 @@ export const WorkerProvider = ({
     getAPI,
   }), [status, getAPI, initialize, reset]);
 
+  const suspenseFallback = useMemo(() => {
+    if (!renderOverlay || status.error) return null;
+    return <InitializingOverlay progress={status.initProgress} message={status.initMessage} />;
+  }, [renderOverlay, status.error, status.initMessage, status.initProgress]);
+
   return (
     <WorkerContext.Provider value={contextValue}>
-      {renderOverlay && !status.isInitialized && !status.error ? (
-        <InitializingOverlay progress={status.initProgress} message={status.initMessage} />
-      ) : null}
-      {renderOverlay && status.error ? (
-        <ErrorOverlay error={status.error} onRetry={retryInitialization} />
-      ) : null}
-      {children}
+      <Suspense fallback={suspenseFallback}>
+        <WorkerClientGate status={status} renderOverlay={renderOverlay} onRetry={retryInitialization}>
+          {children}
+        </WorkerClientGate>
+      </Suspense>
     </WorkerContext.Provider>
   );
 };

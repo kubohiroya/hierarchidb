@@ -1,3 +1,10 @@
+/**
+ * usePluginDialogController – core state machine for plugin dialogs.
+ *
+ * Coordinates worker access, step composition, navigation rules, and
+ * capability evaluation so the headless dialog shell can render plugins with
+ * consistent Next/Save guards derived from plugin-provided services.
+ */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -84,6 +91,167 @@ const toRecord = (value: unknown): Record<string, unknown> | undefined => (
 const toStringArray = (value: unknown): string[] => (
   Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 );
+
+type BasicInfoState = { name: string; description: string; tags: string[] };
+
+type StepGuardState = {
+  enabledSteps: boolean[];
+  canSave: boolean;
+  canProceedNext: boolean;
+  canGoBack: boolean;
+  canStartBatch: boolean;
+};
+
+const emptyGuards: StepGuardState = {
+  enabledSteps: [],
+  canSave: false,
+  canProceedNext: false,
+  canGoBack: false,
+  canStartBatch: false,
+};
+
+function mergeDialogData(basic: BasicInfoState, workingData: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  const merged: Record<string, unknown> = workingData ? { ...workingData } : {};
+  merged.name = basic.name;
+  merged.description = basic.description;
+  merged.tags = basic.tags;
+  return merged;
+}
+
+async function evaluateValidationState(steps: DialogStep[]): Promise<boolean[]> {
+  if (!steps.length) return [];
+  const results = await Promise.all(steps.map(async (step) => {
+    if (typeof step?.validate === 'function') {
+      try {
+        const outcome = await Promise.resolve(step.validate());
+        return Boolean(outcome);
+      } catch {
+        return false;
+      }
+    }
+    return true;
+  }));
+  return results;
+}
+
+function createStepConfigMap(configs: ReadonlyArray<PluginStepConfig>): Map<string, PluginStepConfig> {
+  return new Map(configs.map(cfg => [cfg.id, cfg]));
+}
+
+function sequentiallyReachable(index: number, steps: DialogStep[], filled: boolean[]): boolean {
+  if (index <= 0) return true;
+  for (let i = 0; i < index; i++) {
+    const step = steps[i];
+    if (!step?.optional && !filled[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function evaluateStepGuards({
+  steps,
+  configs,
+  filled,
+  activeStepIndex,
+  dialogData,
+  hostCanSubmit,
+}: {
+  steps: DialogStep[];
+  configs: ReadonlyArray<PluginStepConfig>;
+  filled: boolean[];
+  activeStepIndex: number;
+  dialogData: Record<string, unknown>;
+  hostCanSubmit?: (data: unknown) => boolean | Promise<boolean>;
+}): Promise<StepGuardState> {
+  if (!steps.length) {
+    return emptyGuards;
+  }
+
+  const configMap = createStepConfigMap(configs);
+  const enabledSteps: boolean[] = new Array(steps.length).fill(false);
+
+  const activeStep = steps[activeStepIndex];
+  const activeConfig = activeStep ? configMap.get(activeStep.id) : undefined;
+
+  const callBoolean = async <T extends boolean>(
+    fn: ((...args: any[]) => T | Promise<T>) | undefined,
+    fallback: boolean,
+  ): Promise<boolean> => {
+    if (!fn) return fallback;
+    try {
+      const result = await Promise.resolve(fn(dialogData));
+      return Boolean(result);
+    } catch {
+      return false;
+    }
+  };
+
+  const checkNavigate = async (targetIndex: number): Promise<boolean> => {
+    if (targetIndex === activeStepIndex) return true;
+    if (targetIndex < 0 || targetIndex >= steps.length) return false;
+    const targetStep = steps[targetIndex];
+    const targetConfig = targetStep ? configMap.get(targetStep.id) : undefined;
+    if (targetConfig?.capabilities?.canNavigateTo) {
+      try {
+        const res = await Promise.resolve(targetConfig.capabilities.canNavigateTo(activeStepIndex, dialogData));
+        return Boolean(res);
+      } catch {
+        return false;
+      }
+    }
+    return sequentiallyReachable(targetIndex, steps, filled);
+  };
+
+  const allRequiredFilled = steps.every((step, idx) => step?.optional || filled[idx]);
+
+  const canSave = await (async () => {
+    if (activeConfig?.capabilities?.canSave) {
+      return callBoolean(activeConfig.capabilities.canSave, false);
+    }
+    if (hostCanSubmit) {
+      try {
+        const hostResult = await Promise.resolve(hostCanSubmit(dialogData));
+        return Boolean(hostResult);
+      } catch {
+        return false;
+      }
+    }
+    return allRequiredFilled;
+  })();
+
+  const nextIndex = activeStepIndex + 1;
+  const defaultCanProceed = nextIndex < steps.length ? await checkNavigate(nextIndex) : false;
+  const canProceedNext = await callBoolean(activeConfig?.capabilities?.canProceedToNext, defaultCanProceed);
+
+  const prevIndex = activeStepIndex - 1;
+  const defaultCanBack = prevIndex >= 0 ? await checkNavigate(prevIndex) : false;
+  const canGoBack = await callBoolean(activeConfig?.capabilities?.canBackToPrevious, defaultCanBack);
+
+  const canStartBatch = await callBoolean(activeConfig?.capabilities?.canStartBatch, false);
+
+  for (let idx = 0; idx < enabledSteps.length; idx++) {
+    let allowed = await checkNavigate(idx);
+    if (idx === prevIndex) {
+      allowed = allowed && canGoBack;
+    }
+    if (idx === nextIndex) {
+      allowed = allowed && canProceedNext;
+    }
+    enabledSteps[idx] = allowed;
+  }
+
+  // Ensure the active step is always considered enabled for context consumers.
+  enabledSteps[activeStepIndex] = true;
+
+  return {
+    enabledSteps,
+    canSave,
+    canProceedNext,
+    canGoBack,
+    canStartBatch,
+  };
+}
 
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
@@ -470,34 +638,45 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return `${modeLabel} ${label}`;
   }, [presentation?.label, nodeType, intent]);
 
-  const [evaluatedState, setEvaluatedState] = useState<{ navigable?: boolean[]; filled?: boolean[] }>({});
+  const [evaluatedState, setEvaluatedState] = useState<{ filled: boolean[]; guards: StepGuardState }>({
+    filled: [],
+    guards: emptyGuards,
+  });
+
   useEffect(() => {
-    let disposed = false;
-    const handle = window.setTimeout(async () => {
-      const filled: boolean[] = [];
-      for (let i = 0; i < steps.length; i++) {
-        const v = steps[i]?.validate;
-        if (typeof v === 'function') {
-          try { filled[i] = !!(await Promise.resolve(v())); } catch { filled[i] = false; }
-        } else {
-          filled[i] = true;
+    let cancelled = false;
+    const evaluate = async () => {
+      try {
+        const filled = await evaluateValidationState(steps);
+        const dialogData = mergeDialogData(basicInfo, workingCopy?.data as Record<string, unknown> | undefined);
+        const guards = await evaluateStepGuards({
+          steps,
+          configs: composedConfigs.configs,
+          filled,
+          activeStepIndex,
+          dialogData,
+          hostCanSubmit: composedConfigs.hostCanSubmit,
+        });
+        if (!cancelled) {
+          setEvaluatedState({ filled, guards });
+        }
+      } catch (error) {
+        console.warn('[PluginDialogShell] capability evaluation failed', error);
+        if (!cancelled) {
+          setEvaluatedState({ filled: [], guards: emptyGuards });
         }
       }
-      const navigable: boolean[] = [];
-      for (let i = 0; i < steps.length; i++) {
-        if (i === 0) { navigable[i] = true; continue; }
-        const prevOk = steps.slice(0, i).every((s, idx) => (s?.optional ?? false) ? true : !!filled[idx]);
-        navigable[i] = prevOk;
-      }
-      if (!disposed) setEvaluatedState({ navigable, filled });
-    }, 200);
-    return () => { disposed = true; window.clearTimeout(handle); };
-  }, [steps, basicInfo, workingCopy]);
+    };
+    evaluate();
+    return () => {
+      cancelled = true;
+    };
+  }, [steps, composedConfigs.configs, composedConfigs.hostCanSubmit, activeStepIndex, basicInfo, workingCopy?.data]);
 
   const enabledStepIndices = useMemo(() => {
-    const nav = evaluatedState.navigable || [];
-    return nav.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
-  }, [evaluatedState.navigable]);
+    const flags = evaluatedState.guards.enabledSteps || [];
+    return flags.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
+  }, [evaluatedState.guards.enabledSteps]);
 
   const validatedStepIndices = useMemo(() => {
     const filled = evaluatedState.filled || [];
@@ -586,7 +765,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
   ), [steps]);
 
-  const allStepsComplete = useMemo(() => (evaluatedState.filled || []).every(Boolean), [evaluatedState.filled]);
+  const canSaveCurrent = evaluatedState.guards.canSave;
+  const canStartBatch = evaluatedState.guards.canStartBatch;
 
   const headerSubtitle = useMemo(() => {
     if (mode === 'edit') {
@@ -625,11 +805,12 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
     <PluginDialogFooter
       intent={intent}
-      canCommit={allStepsComplete}
+      canCommit={canSaveCurrent}
       onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
       disableDraft={!hasUnsavedChanges}
+      canStartBatch={canStartBatch}
     />
-  ), [intent, allStepsComplete, handleSaveDraft, hasUnsavedChanges]);
+  ), [intent, canSaveCurrent, handleSaveDraft, hasUnsavedChanges, canStartBatch]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
