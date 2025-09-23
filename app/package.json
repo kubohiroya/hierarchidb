@@ -8,7 +8,7 @@
     "predev": "pnpm -w run check:deps:extra",
     "dev": "react-router dev",
     "test": "vitest run",
-    "prebuild": "pnpm -w run -r --filter @hierarchidb/app^... --filter !@hierarchidb/app --filter !hierarchidb build",
+    "prebuild": "node ../scripts/prebuild-app.mjs",
     "build": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode production && node scripts/fix-spa-build.js && touch build/client/assets/.nojekyll",
     "build:dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
