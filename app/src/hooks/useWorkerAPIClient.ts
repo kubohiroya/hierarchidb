@@ -1,2 +1,6 @@
-export function useWorkerAPIClient() { return null as any; }
+import type { LoadWorkerAPIClientReturn } from '~/loader.js';
+import { useWorkerAPIClient as useWorkerAPIClientFromLoader } from '~/loader.js';
 
+export function useWorkerAPIClient(): LoadWorkerAPIClientReturn {
+  return useWorkerAPIClientFromLoader();
+}

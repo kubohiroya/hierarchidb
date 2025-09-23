@@ -1,10 +1,11 @@
-import { Dexie } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { ContentIndexPort, ContentMeta, HashAlgorithm } from '../ports.js';
 
 class CasDB extends Dexie {
-  contents!: any; // Table<ContentMeta, [hash, algo]>
-  urls!: any;     // Table<{ url, hash, algo }, url>
+  contents!: Table<ContentMeta, [string, HashAlgorithm]>;
+  urls!: Table<{ url: string; hash: string; algo: HashAlgorithm }, string>;
+
   constructor(name: string = getDBName('cas-db')) {
     super(name);
     this.version(1).stores({
@@ -22,7 +23,7 @@ export class DexieContentIndexPort implements ContentIndexPort {
   }
 
   async getMeta(hash: string, algo: HashAlgorithm): Promise<ContentMeta | undefined> {
-    return await this.db.contents.get([hash, algo] as any);
+    return await this.db.contents.get([hash, algo]);
   }
 
   async putMeta(meta: ContentMeta): Promise<void> {
@@ -31,13 +32,16 @@ export class DexieContentIndexPort implements ContentIndexPort {
 
   async incRef(hash: string, algo: HashAlgorithm, by: number = 1): Promise<number> {
     return await this.db.transaction('rw', this.db.contents, async () => {
-      const meta = (await this.db.contents.get([hash, algo] as any)) || ({
-        hash,
-        algo,
-        size: 0,
-        createdAt: Date.now(),
-        refCount: 0,
-      } as ContentMeta);
+      let meta = await this.db.contents.get([hash, algo]);
+      if (!meta) {
+        meta = {
+          hash,
+          algo,
+          size: 0,
+          createdAt: Date.now(),
+          refCount: 0,
+        };
+      }
       meta.refCount = (meta.refCount || 0) + by;
       await this.db.contents.put(meta);
       return meta.refCount;
@@ -46,7 +50,7 @@ export class DexieContentIndexPort implements ContentIndexPort {
 
   async decRef(hash: string, algo: HashAlgorithm, by: number = 1): Promise<number> {
     return await this.db.transaction('rw', this.db.contents, async () => {
-      const meta = await this.db.contents.get([hash, algo] as any);
+      const meta = await this.db.contents.get([hash, algo]);
       if (!meta) return 0;
       meta.refCount = Math.max(0, (meta.refCount || 0) - by);
       await this.db.contents.put(meta);

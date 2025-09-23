@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-type';
+import type { CoreDB } from '../../services/CoreDB.js';
+import type { CommandEnvelope, PasteNodesPayload } from '../../services/command-types.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
-import type { PeerStore } from '../store.js';
+import type { PeerEntity, PeerStore } from '../store.js';
 
 describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
   beforeEach(() => {
@@ -10,51 +12,60 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
   });
 
   it('copies peer entities for idMap on paste', async () => {
-    const nodeMap = new Map<string, any>();
-    const core: any = {
-      nodes: {
-        async get(id: NodeId) {
-          return nodeMap.get(id as unknown as string);
-        },
-        _put(obj: any) {
-          nodeMap.set(obj.id as unknown as string, obj);
-        },
-      },
-      getNode: async (id: NodeId) => nodeMap.get(id as unknown as string),
+    const nodeMap = new Map<NodeId, TreeNode>();
+    const core: Pick<CoreDB, 'getNode'> = {
+      getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
     };
 
-    // Register a peer store for 'folder'
-    const peerMap = new Map<string, any>();
-    const store: PeerStore<any> = {
+    const peerMap = new Map<NodeId, PeerEntity<{ v: number }>>();
+    const store: PeerStore<{ v: number }> = {
       async get(id: NodeId) {
-        return peerMap.get(id as unknown as string);
+        return peerMap.get(id);
       },
-      async put(e: any) {
-        peerMap.set(e.nodeId as unknown as string, e);
+      async put(entity: PeerEntity<{ v: number }>) {
+        peerMap.set(entity.nodeId, { ...entity });
       },
       async delete(id: NodeId) {
-        peerMap.delete(id as unknown as string);
+        peerMap.delete(id);
       },
     };
-    storeRegistry.registerPeer('folder', store);
+    const folderType = 'folder' as NodeType;
+    storeRegistry.registerPeer(folderType, store);
 
-    // Seed source nodes and peers
-    const s1 = 'src-a' as NodeId;
-    const d1 = 'dst-a' as NodeId;
-    core.nodes._put({ id: s1, parentId: 'p', nodeType: 'folder' });
-    await store.put({ nodeId: s1, data: { v: 7 } });
+    const sourceId = 'src-a' as NodeId;
+    const targetId = 'dst-a' as NodeId;
+    const sourceNode: TreeNode = {
+      id: sourceId,
+      parentId: 'parent' as NodeId,
+      nodeType: folderType,
+      name: 'Source',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    };
+    nodeMap.set(sourceId, sourceNode);
+    await store.put({ nodeId: sourceId, data: { v: 7 } });
 
-    const mgr = (EntityLifecycleManager as any).getSingleton(core) as EntityLifecycleManager;
-    // Provide idMap via the static registry
-    const map = new Map<string, string>([[s1 as any, d1 as any]]);
-    (EntityLifecycleManager as any).setIdMapping('cmd-paste', map);
+    const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
+    EntityLifecycleManager.setIdMapping('cmd-paste', [[sourceId, targetId]]);
 
-    await mgr.onPasteNodes({
-      commandId: 'cmd-paste', groupId: 'g1', kind: 'pasteNodes',
-      payload: { idMap: Object.fromEntries(map), nodes: { [s1]: { nodeType: 'folder' } }, nodeIds: [s1] },
-      issuedAt: Date.now(), type: 'pasteNodes',
-    } as any);
+    const payload: PasteNodesPayload = {
+      nodes: { [sourceId]: sourceNode },
+      nodeIds: [sourceId],
+      toParentId: 'target-parent' as NodeId,
+    };
+    const envelope: CommandEnvelope<'pasteNodes', PasteNodesPayload> = {
+      commandId: 'cmd-paste',
+      groupId: 'g1',
+      kind: 'pasteNodes',
+      payload,
+      issuedAt: Date.now() as Timestamp,
+      type: 'pasteNodes',
+    };
 
-    expect((await store.get(d1))?.data?.v).toBe(7);
+    await mgr.onPasteNodes(envelope);
+
+    expect((await store.get(targetId))?.data?.v).toBe(7);
   });
 });

@@ -4,22 +4,7 @@
 
 ## 機能フラグ
 
-`BATCH_CONTROL_API_V2` 環境変数またはグローバルフラグで新しいAPIを有効化できます：
-
-```bash
-# 環境変数での有効化
-export BATCH_CONTROL_API_V2=true
-
-# または
-export BATCH_CONTROL_API_V2=1
-```
-
-```javascript
-// グローバルフラグでの有効化
-globalThis.FEATURE_FLAGS = {
-  BATCH_CONTROL_API_V2: true
-};
-```
+バッチ制御 API v2 は常時有効化されており、追加のフラグ設定は不要です。
 
 ## 統一されたインターフェース
 
@@ -41,7 +26,7 @@ interface IBatchSessionManager {
 ### Location Plugin
 
 ```typescript
-import { createLocationBatchManager } from '@hierarchidb/location-plugin';
+import { createLocationBatchManager } from '@hierarchidb/plugins-location-plugin';
 
 const manager = createLocationBatchManager();
 
@@ -67,7 +52,7 @@ await manager.cancelBatchSession(sessionId);
 ### Shape Plugin
 
 ```typescript
-import { createShapeBatchManager } from '@hierarchidb/shape-plugin';
+import { createShapeBatchManager } from '@hierarchidb/plugins-shape-plugin';
 
 const manager = createShapeBatchManager();
 
@@ -83,7 +68,7 @@ const sessionId = await manager.startBatchSession(nodeId, {
 ### Route Plugin
 
 ```typescript
-import { createRouteBatchManager } from '@hierarchidb/route-plugin';
+import { createRouteBatchManager } from '@hierarchidb/plugins-route-plugin';
 
 const manager = createRouteBatchManager();
 
@@ -117,26 +102,7 @@ interface StandardProgressEvent {
 
 ## 下位互換性
 
-既存のバッチ管理クラスは引き続き動作します：
-
-- `LocationBatchSessionManager`
-- `BatchSessionManager` (shape)
-- `RouteBatchManager`
-
-フラグがOFFの場合、既存の動作が保持されます。
-
-## ロールバック手順
-
-問題が発生した場合：
-
-1. 環境変数を削除または `false` に設定
-2. グローバルフラグを `false` に設定
-3. 既存のマネージャークラスを直接使用
-
-```bash
-# フラグを無効化
-export BATCH_CONTROL_API_V2=false
-```
+旧来のマネージャークラス（`LocationBatchSessionManager` 等）は内部的に Unified 実装へ委譲されており、追加の設定なく最新 API を利用できます。
 
 ## 実装詳細
 

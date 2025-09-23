@@ -32,7 +32,7 @@ const createMockWorkerAPI = () =>
     pasteNodes: vi.fn(),
     moveToTrash: vi.fn(),
     remove: vi.fn(),
-    recoverFromTrash: vi.fn(),
+    restoreFromTrash: vi.fn(),
     importNodes: vi.fn(),
     undo: vi.fn(),
     redo: vi.fn(),
@@ -58,7 +58,7 @@ describe('WorkerAPIAdapter', () => {
       duplicateNodes: mockWorkerAPI.duplicateNodes,
       moveNodesToTrash: mockWorkerAPI.moveToTrash,
       removeNodes: mockWorkerAPI.remove,
-      recoverNodesFromTrash: mockWorkerAPI.recoverFromTrash,
+      restoreNodesFromTrash: mockWorkerAPI.restoreFromTrash,
     });
 
     workingCopyAPI = {

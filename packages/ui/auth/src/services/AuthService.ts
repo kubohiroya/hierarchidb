@@ -85,7 +85,7 @@ export class AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService(config);
     } else {
-      if ((import.meta as any)?.env?.DEV) {
+      if (import.meta.env.DEV) {
         console.warn('AuthService already initialized. Ignoring re-initialization attempt.');
       }
     }
@@ -111,7 +111,7 @@ export class AuthService {
   setAuthMethod(method: AuthMethod): void {
     // This method is intentionally left as a no-op for now
     // UI will show the option as disabled
-    if ((import.meta as any)?.env?.DEV) {
+    if (import.meta.env.DEV) {
       console.log(`Auth method change requested to ${method}, but currently locked to popup`);
     }
   }
@@ -157,7 +157,7 @@ export class AuthService {
       throw new Error('Popup blocked. Please allow popups for this site.');
     }
 
-    if ((import.meta as any)?.env?.DEV) {
+    if (import.meta.env.DEV) {
       console.log('Auth popup opened');
     }
 
@@ -187,14 +187,14 @@ export class AuthService {
       messageHandler = (event: MessageEvent) => {
         //  Security: Strict origin validation
         if (event.origin !== this.config.authOrigin) {
-          if ((import.meta as any)?.env?.DEV) {
+          if (import.meta.env.DEV) {
             console.log(`Ignoring message from untrusted origin: ${event.origin}`);
           }
           return;
         }
 
         if (event.data.type === 'auth-success') {
-          if ((import.meta as any)?.env?.DEV) {
+          if (import.meta.env.DEV) {
             console.log('Auth success received');
           }
 
@@ -212,7 +212,7 @@ export class AuthService {
           cleanup();
           resolve(result);
         } else if (event.data.type === 'auth-error') {
-          if ((import.meta as any)?.env?.DEV) {
+          if (import.meta.env.DEV) {
             console.error('Auth error received', event.data.error);
           }
           cleanup();

@@ -2,6 +2,11 @@ import React from 'react';
 import { Snackbar, Alert, AlertTitle } from '@mui/material';
 import { CrossViewStyles } from '../sync/CrossViewStyles.js';
 
+const logCrossViewSnackbarWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[CrossViewSnackbar]', message, error);
+};
+
 export function CrossViewSnackbar({ datasetId, autoHideDuration = 3000, format }: {
   datasetId: string;
   autoHideDuration?: number;
@@ -19,7 +24,13 @@ export function CrossViewSnackbar({ datasetId, autoHideDuration = 3000, format }
         setOpen(false);
       }
     });
-    return () => { try { (unsub as any)(); } catch {} };
+    return () => {
+      try {
+        unsub();
+      } catch (error) {
+        logCrossViewSnackbarWarning('Failed to unsubscribe focus listener', error);
+      }
+    };
   }, [datasetId]);
 
   const content = React.useMemo(() => {

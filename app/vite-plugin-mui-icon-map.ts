@@ -35,10 +35,10 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
   const VIRTUAL_ID = 'virtual:mui-icon-map';
   const RESOLVED = '\0' + VIRTUAL_ID;
   const rootDir = opts?.rootDir || path.resolve(__dirname, '..');
-  const include = opts?.include || /packages\/node-type\/.*-plugin\/package\.json$/;
+  const include = opts?.include || /packages\/plugins\/.*-plugin\/package\.json$/;
 
   function collectIconNames(): string[] {
-    const nodeTypeDir = path.resolve(rootDir, 'packages', 'node-type');
+    const nodeTypeDir = path.resolve(rootDir, 'packages', 'plugins');
     let icons = new Set<string>();
     try {
       const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
@@ -48,9 +48,9 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
         if (!fs.existsSync(pkgPath)) continue;
         const txt = fs.readFileSync(pkgPath, 'utf-8');
         try {
-          const json = JSON.parse(txt) as any;
-          const icon = json?.hierarchidb?.plugin?.icon || {};
-          const raw = icon.muiIconName || icon.mui || '';
+          const json = JSON.parse(txt) as NodeTypePackageJson;
+          const icon = json.hierarchidb?.plugin?.icon;
+          const raw = icon?.muiIconName || icon?.mui || '';
           const pascal = normalizeMuiName(raw);
           if (pascal) icons.add(pascal);
         } catch {
@@ -96,3 +96,14 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
     },
   };
 }
+
+type NodeTypePackageJson = {
+  hierarchidb?: {
+    plugin?: {
+      icon?: {
+        muiIconName?: string;
+        mui?: string;
+      };
+    };
+  };
+};

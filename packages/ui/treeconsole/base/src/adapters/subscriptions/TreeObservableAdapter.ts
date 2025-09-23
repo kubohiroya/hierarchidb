@@ -36,9 +36,12 @@ export class TreeObservableAdapter {
   ): Promise<UnsubscribeFunction> {
     try {
       // Prefer legacy observable-style API if present (for tests)
-      const maybeObserve = (this.workerAPI as any).observeSubtree as
-        | ((envelope: any) => Promise<{ subscribe: (cb: (e: TreeNodeEvent) => void) => { unsubscribe: () => void } }>)
-        | undefined;
+      const workerRecord = this.workerAPI as unknown as Record<string, unknown>;
+      const observeCandidate = workerRecord.observeSubtree;
+      const maybeObserve = typeof observeCandidate === 'function'
+        ? observeCandidate.bind(this.workerAPI) as
+          (envelope: unknown) => Promise<{ subscribe: (cb: (e: TreeNodeEvent) => void) => { unsubscribe: () => void } }>
+        : undefined;
 
       const internalSubscriptionId = `subtree_${nodeId}_${context.viewId}`;
 

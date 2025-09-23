@@ -95,13 +95,19 @@ export class FetchNetworkPort implements NetworkPort {
 
   private async mergeHeaders(extra?: HeadersInit): Promise<Headers> {
     const base = await this.resolveHeaders();
-    const h = new Headers(base as any);
-    if (extra) {
-      if (Array.isArray(extra)) for (const [k, v] of extra) h.set(k, v as any);
-      else if (extra instanceof Headers) (extra as Headers).forEach((v, k) => h.set(k, v));
-      else Object.entries(extra).forEach(([k, v]) => h.set(k, v as any));
+    const merged = new Headers(base);
+    if (!extra) return merged;
+    if (Array.isArray(extra)) {
+      for (const [key, value] of extra) merged.set(key, value);
+    } else if (extra instanceof Headers) {
+      extra.forEach((value, key) => merged.set(key, value));
+    } else {
+      Object.entries(extra as Record<string, string | number | readonly string[]>).forEach(([key, value]) => {
+        if (Array.isArray(value)) merged.set(key, value.join(', '));
+        else merged.set(key, String(value));
+      });
     }
-    return h;
+    return merged;
   }
 
   private shouldRetry(status: number): boolean {

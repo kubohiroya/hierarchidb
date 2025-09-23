@@ -10,7 +10,7 @@
 - ✅ **実装状況**: 完成済み（FolderEntity拡張パターン）
 - ✅ **主要機能**: CSV/Excel処理、データフィルタリング、バリデーション
 - ✅ **UI コンポーネント**: DataSourceStep, FilteringStep
-- ❌ **問題**: 型参照のみ（`@hierarchidb/node-type-folder-plugin`等）
+- ❌ **問題**: 型参照のみ（`@hierarchidb/plugins-folder-plugin`等）
 
 ### basemap-plugin  
 - ✅ **実装状況**: 完成済み（FolderEntity拡張パターン）
@@ -32,10 +32,10 @@
 ```typescript
 // src/extension/definition.ts
 // 修正前
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 
 // 修正後  
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 // または、新アーキテクチャでの正しい参照先に変更
 ```
 
@@ -70,8 +70,8 @@ export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/node-type-base-plugin": "workspace:*",  // 追加
-    "@hierarchidb/node-type-folder-plugin": "workspace:*", // 既存維持
+    "@hierarchidb/plugins-base-plugin": "workspace:*",  // 追加
+    "@hierarchidb/plugins-folder-plugin": "workspace:*", // 既存維持
     // その他は既存のまま保持
   }
 }
@@ -120,9 +120,9 @@ pnpm build
 ### 修正前の状態確認
 ```bash
 # 現在のエラー数を記録
-pnpm --filter @hierarchidb/node-type-spreadsheet-plugin typecheck 2>&1 | grep "error" | wc -l
-pnpm --filter @hierarchidb/node-type-basemap-plugin typecheck 2>&1 | grep "error" | wc -l  
-pnpm --filter @hierarchidb/node-type-styler-plugin typecheck 2>&1 | grep "error" | wc -l
+pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck 2>&1 | grep "error" | wc -l
+pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck 2>&1 | grep "error" | wc -l  
+pnpm --filter @hierarchidb/plugins-styler-plugin typecheck 2>&1 | grep "error" | wc -l
 ```
 
 ### 修正後の改善確認

@@ -32,6 +32,23 @@ interface ClientState<T> {
   error: Error | null;
 }
 
+type PingFunction = () => Promise<unknown>;
+
+const resolvePingFunction = <T,>(client: Remote<T>): PingFunction | null => {
+  if (typeof client !== 'object' && typeof client !== 'function') {
+    return null;
+  }
+  const record = client as Record<string, unknown>;
+  const candidate = record.ping;
+  if (typeof candidate !== 'function') {
+    return null;
+  }
+  return async () => {
+    const result = candidate.call(client);
+    return await Promise.resolve(result);
+  };
+};
+
 export function createWorkerClientProvider<T>() {
   // Create context for the specific Worker type
   const ClientContext = React.createContext<ClientState<T> | null>(null);
@@ -65,9 +82,10 @@ export function createWorkerClientProvider<T>() {
           if (!mounted) return;
 
           // Verify connection (assuming the Worker has a ping method)
-          if ('ping' in wrappedClient && typeof wrappedClient.ping === 'function') {
+          const ping = resolvePingFunction(wrappedClient);
+          if (ping) {
             try {
-              await (wrappedClient.ping as any)();
+              await ping();
 
               if (debug) {
                 console.log('[WorkerClientProvider] Comlink connection verified');
@@ -89,12 +107,12 @@ export function createWorkerClientProvider<T>() {
           onClientReady?.(wrappedClient);
 
           // Set up health check if enabled
-          if (healthCheckInterval > 0 && 'ping' in wrappedClient) {
+          if (healthCheckInterval > 0 && ping) {
             healthCheckTimer = window.setInterval(async () => {
               if (!mounted) return;
 
               try {
-                await (wrappedClient.ping as any)();
+                await ping();
 
                 setState(prev => {
                   if (!prev.isConnected) {

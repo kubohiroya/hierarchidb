@@ -15,6 +15,11 @@ export type {
   MapInteractionOptions,
   MapDimensionsProps,
   MapEventHandlers,
+  MapFeatureIdentifier,
+  MapClickEvent,
+  MapFeatureIdentifyResult,
+  MapFeatureIdentifyConfig,
+  MapIdentifyProps,
   BaseMapProps,
   VectorTileLayerConfig,
   VectorTileDataSource,
@@ -34,4 +39,22 @@ export type { DeckOverlayProps } from './components/MapWithDeckGL.js';
 export * from './presets/vectorLayers.js';
 
 //  Stable public typings do not leak upstream maplibre-gl types
-export type { MapLibreMapInstance, MapLibreStyle, MapLibreLayer, MapLibreFilter } from './types/maplibre-public.js';
+export type {
+  MapLibreMapInstance,
+  MapLibreStyle,
+  MapLibreLayer,
+  MapLibreFilter,
+  MapLibreGeoJSONFeature,
+  MapLibreFeatureIdentifier,
+  MapLibreMapMouseEvent,
+  MapLibrePoint,
+  MapLibreQueryGeometry,
+} from './types/maplibre-public.js';
+
+// Feature identification helpers
+export {
+  DEFAULT_IDENTIFY_RADIUS,
+  defaultFeatureIdAccessor,
+  resolveIdentifyCandidates,
+} from './lib/feature-identification.js';
+export type { MapFeatureIdentifyCandidates } from './lib/feature-identification.js';

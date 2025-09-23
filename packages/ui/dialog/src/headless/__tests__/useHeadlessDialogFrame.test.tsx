@@ -7,28 +7,28 @@ describe('useHeadlessDialogFrame', () => {
   it('updates display mode state and notifies listeners', () => {
     const onChange = vi.fn();
     const { result } = renderHook(() => useHeadlessDialogFrame({
-      initialDisplayMode: 'standard',
+      initialDisplayMode: 'normal',
       onDisplayModeChange: onChange,
     }));
 
-    expect(result.current.displayMode).toBe('standard');
-    expect(result.current.frameProps.displayMode).toBe('standard');
+    expect(result.current.displayMode).toBe('normal');
+    expect(result.current.frameProps.displayMode).toBe('normal');
 
     act(() => {
-      result.current.setDisplayMode('maximized');
+      result.current.setDisplayMode('maximize');
     });
 
-    expect(result.current.displayMode).toBe('maximized');
-    expect(result.current.frameProps.displayMode).toBe('maximized');
-    expect(onChange).toHaveBeenLastCalledWith('maximized');
+    expect(result.current.displayMode).toBe('maximize');
+    expect(result.current.frameProps.displayMode).toBe('maximize');
+    expect(onChange).toHaveBeenLastCalledWith('maximize');
 
     act(() => {
-      result.current.frameProps.onDisplayModeChange?.('fullscreen');
+      result.current.frameProps.onDisplayModeChange?.('full-screen');
     });
 
-    expect(result.current.displayMode).toBe('fullscreen');
-    expect(result.current.frameProps.displayMode).toBe('fullscreen');
-    expect(onChange).toHaveBeenLastCalledWith('fullscreen');
+    expect(result.current.displayMode).toBe('full-screen');
+    expect(result.current.frameProps.displayMode).toBe('full-screen');
+    expect(onChange).toHaveBeenLastCalledWith('full-screen');
   });
 
   it('tracks header and footer visibility via frame props', () => {
@@ -46,4 +46,3 @@ describe('useHeadlessDialogFrame', () => {
     expect(result.current.frameProps.footerDisplayMode).toBe('hidden');
   });
 });
-

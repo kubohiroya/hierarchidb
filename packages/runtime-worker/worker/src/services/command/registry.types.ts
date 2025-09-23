@@ -19,7 +19,7 @@ import type {
   NodeId,
   NodeType,
   PasteNodesPayload,
-  RecoverFromTrashPayload,
+  RestoreFromTrashPayload,
   RedoPayload,
   Timestamp,
   TreeId,
@@ -35,7 +35,7 @@ export interface CommandMap {
   pasteNodes: { payload: PasteNodesPayload; result: CoreCommandResult };
   remove: { payload: { nodeIds: NodeId[] }; result: CoreCommandResult };
   moveToTrash: { payload: MoveToTrashPayload; result: CoreCommandResult };
-  recoverFromTrash: { payload: RecoverFromTrashPayload; result: CoreCommandResult };
+  restoreFromTrash: { payload: RestoreFromTrashPayload; result: CoreCommandResult };
   importNodes: { payload: ImportNodesPayload; result: CoreCommandResult };
   copyNodes: { payload: CopyNodesPayload; result: CoreCommandResult };
   exportNodes: { payload: ExportNodesPayload; result: CoreCommandResult };

@@ -38,17 +38,17 @@ describe('peerDialogPersistence default provider', () => {
   it('stores and retrieves display mode for folder node type via override', async () => {
     const nodeId = 'peer-node-1';
 
-    await setPeerDisplayMode('folder', nodeId, 'maximized');
+    await setPeerDisplayMode('folder', nodeId, 'maximize');
     const mode = await getPeerDisplayMode('folder', nodeId);
 
-    expect(mode).toBe('maximized');
+    expect(mode).toBe('maximize');
   });
 });
 
 
 const fallbackRows = new Map<string, any>();
 
-vi.mock('@hierarchidb/folder-plugin/worker/folderEntitiesDB', () => ({
+vi.mock('@hierarchidb/plugins-folder-plugin/worker/folderEntitiesDB', () => ({
   FolderEntitiesDB: class {
     async open() { /* no-op */ }
     table() {
@@ -77,8 +77,8 @@ describe('peerDialogPersistence EntitiesDB fallback', () => {
 
   it('falls back to worker EntitiesDB export when no override is provided', async () => {
     const nodeId = 'fallback-node';
-    await setPeerDisplayMode('folder', nodeId, 'fullscreen');
+    await setPeerDisplayMode('folder', nodeId, 'full-screen');
     const mode = await getPeerDisplayMode('folder', nodeId);
-    expect(mode).toBe('fullscreen');
+    expect(mode).toBe('full-screen');
   });
 });

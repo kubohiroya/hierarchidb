@@ -1,6 +1,6 @@
 # リンカープラグイン（linker-plugin） - プロジェクト領域/メタ設定
 
-このドキュメントは、従来の「project-plugin」に対応していた機能群の名称変更（パッケージ名: `@hierarchidb/linker-plugin`、nodeType: `linker`）に合わせて更新したものです。機能の基本方針は従来と同様で、Projects ツリー（folder / linker / timeline）における「プロジェクト領域/メタ」の表示・集約・プレビューを担当します。
+このドキュメントは、従来の「project-plugin」に対応していた機能群の名称変更（パッケージ名: `@hierarchidb/plugins-linker-plugin`、nodeType: `linker`）に合わせて更新したものです。機能の基本方針は従来と同様で、Projects ツリー（folder / linker / timeline）における「プロジェクト領域/メタ」の表示・集約・プレビューを担当します。
 
 注記: 現時点では UI/機能は最小構成（表示中心）です。重い GIS の計算や合成は行いません。folder 配下の resource を link して、実際の地図として活用する位置付けです。
 
@@ -19,7 +19,7 @@
 
 ## 技術メモ
 
-- パッケージ名（import）: `@hierarchidb/linker-plugin/worker`
+- パッケージ名（import）: `@hierarchidb/plugins-linker-plugin/worker`
 - nodeType: `linker`
 - 参照しているマップ/ツリー UI は `@hierarchidb/ui-map` および `@hierarchidb/ui-treeconsole-trashbin`
 

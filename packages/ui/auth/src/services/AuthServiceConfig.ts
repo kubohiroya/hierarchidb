@@ -112,7 +112,7 @@ export class AuthConfigValidator {
       }
 
       //  HTTPS: HTTPSVite
-      if ((globalThis as any)?.import?.meta?.env?.PROD && !url.startsWith('https://')) {
+      if (import.meta.env.PROD && !url.startsWith('https://')) {
         throw new Error(`セキュリティエラー: 本番環境では${field}はHTTPSである必要があります`);
       }
     }

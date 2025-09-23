@@ -11,9 +11,11 @@ export class SeaRouteService {
   }
 }
 
-export const featureDefinition = {
-  manifest: { name: '@hierarchidb/route-searoute', provides: ['route-searoute'] },
-  init() {
-  },
-};
+export class FeatureDefinition {
+  static readonly manifest = { name: '@hierarchidb/route-searoute', provides: ['route-searoute'] };
+
+  static init(): void {
+    // no-op
+  }
+}
 

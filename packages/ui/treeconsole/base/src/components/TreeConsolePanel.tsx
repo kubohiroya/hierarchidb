@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import type { ComponentProps, ReactElement } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
@@ -6,7 +7,6 @@ import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treecons
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
-// import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeNodeData } from '../types/index.js';
 
 type PanelBreadcrumbNode = {
@@ -17,6 +17,15 @@ type PanelBreadcrumbNode = {
   name?: string;
   parentId?: string | null;
 };
+
+type DefaultBreadcrumbProps = ComponentProps<typeof TreeConsoleBreadcrumb>;
+type DefaultBreadcrumbNode = DefaultBreadcrumbProps['nodePath'] extends readonly (infer T)[] ? T : never;
+
+export interface TreeConsolePanelBreadcrumbRendererProps {
+  readonly items: readonly PanelBreadcrumbNode[];
+  readonly defaultRendererProps: DefaultBreadcrumbProps;
+  readonly defaultRenderer: () => ReactElement;
+}
 
 export interface TreeConsolePanelProps {
   readonly title?: string;
@@ -47,7 +56,7 @@ export interface TreeConsolePanelProps {
   readonly maxHeight?: number | string;
   readonly dense?: boolean;
   readonly onNodeClick?: (node: TreeNodeData) => void;
-  readonly onNodeSelect?: (nodeId: string, selected: boolean) => void;
+  readonly onNodeSelect?: (nodeIds: string[], selected: boolean) => void;
   readonly onNodeExpand?: (nodeId: string, expanded: boolean) => void;
   readonly onSearchChange: (term: string) => void;
   readonly onSearchClear: () => void;
@@ -72,11 +81,18 @@ export interface TreeConsolePanelProps {
   readonly treeIdForPersistence?: string;
   /** Row click action behavior */
   readonly rowClickAction?: 'Edit' | 'Select/Navigate';
+  /** Enable trash-specific columns and behaviours */
+  readonly useTrashColumns?: boolean;
+  readonly trashAction?: 'restore' | 'empty';
   /**
    * Whether to render the built-in static SpeedDial.
    * Set to false when an external DynamicSpeedDial is provided by the host app.
    */
   readonly renderBuiltInSpeedDial?: boolean;
+  /** Hide the drag handle column when true (e.g., Trash dialog). */
+  readonly hideDragHandler?: boolean;
+  /** Optional custom breadcrumb renderer for host-specific presentation. */
+  readonly breadcrumbRenderer?: (props: TreeConsolePanelBreadcrumbRendererProps) => ReactElement;
 }
 
 export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsolePanelProps) {
@@ -130,26 +146,17 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           props.onNodeClick(nodeData);
         }
       },
-      onNodeSelect: (nodeIds: string[], selected: boolean) => {
-        if (props.onNodeSelect) {
-          nodeIds.forEach((id) => props.onNodeSelect?.(id, selected));
-        }
-      },
+      onNodeSelect: props.onNodeSelect
+        ? (nodeIds: string[], selected: boolean) => {
+            props.onNodeSelect?.(nodeIds, selected);
+          }
+        : undefined,
       onNodeExpand: props.onNodeExpand,
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
     };
-  }, [
-    props.data,
-    props.selectedIds,
-    props.expandedIds,
-    props.onNodeClick,
-    props.onNodeSelect,
-    props.onNodeExpand,
-    props.onContextMenuAction,
-    props.onMoveNodes,
-  ]);
+  }, [props]);
 
   // No right-click handlers
 
@@ -180,30 +187,58 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        minWidth: 0,
       }}
     >
       {/* Breadcrumb Navigation with drop-to-parent support */}
-      <TreeConsoleBreadcrumb
-        nodePath={[...props.breadcrumbItems]}
-        onNodeClick={props.onBreadcrumbNavigate}
-        treeId={props.treeId}
-        variant="default"
-        onDropToNode={(targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)}
-      />
+      {(() => {
+        const defaultRendererProps: DefaultBreadcrumbProps = {
+          nodePath: [...props.breadcrumbItems] as readonly DefaultBreadcrumbNode[],
+          onNodeClick: props.onBreadcrumbNavigate,
+          treeId: props.treeId,
+          variant: 'default',
+          pageNodeId: props.pageNodeId,
+          useTrashColumns: props.useTrashColumns ?? false,
+          trashAction: props.trashAction,
+          iconInteractive: !Boolean(props.useTrashColumns),
+          onDropToNode: props.onMoveNodes
+            ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
+            : undefined,
+        };
+        const renderDefault = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
+        if (props.breadcrumbRenderer) {
+          return props.breadcrumbRenderer({
+            items: props.breadcrumbItems,
+            defaultRendererProps,
+            defaultRenderer: renderDefault,
+          });
+        }
+        return renderDefault();
+      })()}
       {/* Main Table Content */}
-      <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative', paddingLeft: '8px', paddingRight: '8px' }}>
-        <TreeTableCore
-          controller={controller}
-          viewHeight={600}
-          viewWidth={1200}
-          treeId={props.treeId}
-          pageNodeId={props.pageNodeId}
-          useTrashColumns={false}
-          depthOffset={0}
-          disableDragAndDrop={false}
-          hideDragHandler={false}
-          rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
-          selectionMode="multiple"
+      <Box
+        sx={{
+          flex: 1,
+          overflow: 'hidden',
+          position: 'relative',
+          paddingLeft: '8px',
+          paddingRight: '8px',
+          minWidth: 0,
+        }}
+      >
+      <TreeTableCore
+        controller={controller}
+        viewHeight={600}
+        viewWidth={1200}
+        treeId={props.treeId}
+        pageNodeId={props.pageNodeId}
+        useTrashColumns={props.useTrashColumns ?? false}
+        trashAction={props.trashAction}
+        depthOffset={0}
+        disableDragAndDrop={false}
+        hideDragHandler={props.hideDragHandler ?? false}
+        rowClickAction={props.rowClickAction ?? 'Select/Navigate'}
+        selectionMode="multiple"
           // Right-click disabled
         />
       </Box>

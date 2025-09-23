@@ -1,7 +1,17 @@
 /**
-  * Auto-load HierarchiDB plugins using virtual modules generated at build time.
- * - virtual:plugin-definitions metadata for plugins (includes hierarchidb.plugin)
- * - virtual:plugin-registry-ui dynamic import map per nodeType
+  * Auto-load HierarchiDB UI plugins using virtual modules generated at build time.
+  *
+  * Relationship to app/src/generated/loader.ts:
+  * - loader.ts is generated at prebuild time to wire EntitiesDB/persistence (worker-side DBs)
+  *   and to register UI persistence overrides. It does NOT load UI plugin modules.
+  * - This file (auto-load.ts) is responsible for discovering and importing UI plugin entry points
+  *   so that components, menus, and registrations are initialized in the browser.
+  *
+  * If, in the future, the generator is extended to create static UI imports as well,
+  * this module can be deprecated. For now, it remains required.
+  *
+  * - virtual:plugin-definitions metadata for plugins (includes hierarchidb.plugin)
+  * - virtual:plugin-registry-ui dynamic import map per nodeType
   */
 
 import type { NodeType } from '@hierarchidb/common-type';
@@ -25,6 +35,9 @@ type PluginDefinitionVM = {
   };
 };
 
+/**
+ * @deprecated
+ */
 export type PluginLoadResult = {
   plugins: string[]; // nodeType list
   loadOrder: string[]; // nodeType in dependency order
@@ -65,6 +78,7 @@ function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
 
 /**
  * Automatically discover and load plugins based on virtual modules
+ * @deprecated
  */
 export async function autoLoadPlugins(): Promise<PluginLoadResult> {
   console.log('🔍 Auto-discovering plugins via virtual modules...');
@@ -91,6 +105,7 @@ export async function autoLoadPlugins(): Promise<PluginLoadResult> {
 
 /**
  * Get the list of plugins discovered (nodeType list)
+ * @deprecated
  */
 export function getDiscoveredPlugins(): NodeType[] {
   const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
@@ -99,6 +114,7 @@ export function getDiscoveredPlugins(): NodeType[] {
 
 /**
  * Get the plan including dependency order
+ * @deprecated
  */
 export async function getPluginLoadPlan(): Promise<PluginLoadResult> {
   const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];

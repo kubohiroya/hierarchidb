@@ -107,7 +107,6 @@ const patchedDefaults = defaultPolicies.map((p) => {
 });
 
 export const policies = [...patchedDefaults, ...custom];
-export default policies;
 
 // Optional configuration for scripts/dep-prune-report.mjs
 // - Global ignore list for pruning report (dependencies to skip when checking usage)

@@ -61,19 +61,35 @@ export function flattenTree(
 /**
   * ID
   */
-export function getDescendantIds(nodeId: string | NodeId, allNodes: TreeNode[]): Set<NodeId> {
+export function getDescendantIds(nodeId: NodeId, allNodes: TreeNode[]): Set<NodeId> {
   const descendants = new Set<NodeId>();
+  const targetKey = String(nodeId);
 
-  function collectDescendants(currentId: NodeId) {
-    const children = allNodes.filter((node) => (node.parentId as unknown as string) === (currentId as unknown as string));
-
-    children.forEach((child) => {
-      descendants.add(child.id as NodeId);
-      collectDescendants(child.id as NodeId);
+  const collectDescendants = (currentId: NodeId) => {
+    const currentKey = String(currentId);
+    allNodes.forEach((node) => {
+      const parentKey = node.parentId == null ? null : String(node.parentId);
+      if (parentKey === currentKey) {
+        const childId = node.id as NodeId;
+        if (!descendants.has(childId)) {
+          descendants.add(childId);
+          collectDescendants(childId);
+        }
+      }
     });
+  };
+
+  collectDescendants(nodeId);
+  // Include the direct children of the root node when select-all is staged
+  // even if the nodeId itself does not exist within allNodes (safety guard)
+  if (descendants.size === 0) {
+    allNodes
+      .filter((node) => String(node.parentId ?? '') === targetKey)
+      .forEach((node) => {
+        descendants.add(node.id as NodeId);
+      });
   }
 
-  collectDescendants(nodeId as NodeId);
   return descendants;
 }
 
@@ -82,21 +98,24 @@ export { computeDescendants } from './descendants.js';
 /**
   * ID
   */
-export function getAncestorIds(nodeId: string | NodeId, allNodes: TreeNode[]): NodeId[] {
+export function getAncestorIds(nodeId: NodeId, allNodes: TreeNode[]): NodeId[] {
   const ancestors: NodeId[] = [];
 
-  function collectAncestors(currentId: NodeId) {
-    const node = allNodes.find((n) => (n.id as unknown as string) === (currentId as unknown as string));
-    if (!node) return;
+  const nodeMap = new Map<string, TreeNode>();
+  allNodes.forEach((node) => nodeMap.set(String(node.id), node));
 
-    const parentId = node.parentId as NodeId | undefined;
-    if (parentId) {
-      ancestors.unshift(parentId);
-      collectAncestors(parentId);
+  const collectAncestors = (currentKey: string) => {
+    const node = nodeMap.get(currentKey);
+    if (!node || node.parentId == null) {
+      return;
     }
-  }
 
-  collectAncestors(nodeId as NodeId);
+    const parentId = node.parentId as NodeId;
+    collectAncestors(String(parentId));
+    ancestors.push(parentId);
+  };
+
+  collectAncestors(String(nodeId));
   return ancestors;
 }
 
@@ -114,11 +133,11 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
     if (node.name.toLowerCase().includes(lowerSearchText)) {
       matchingNodes.add(node.id);
 
-      getAncestorIds(node.id, nodes).forEach((ancestorId) => {
+      getAncestorIds(node.id as NodeId, nodes).forEach((ancestorId) => {
         matchingNodes.add(String(ancestorId));
       });
 
-      getDescendantIds(node.id, nodes).forEach((descendantId) => {
+      getDescendantIds(node.id as NodeId, nodes).forEach((descendantId) => {
         matchingNodes.add(String(descendantId));
       });
     }
@@ -130,17 +149,19 @@ export function filterNodesBySearch(nodes: TreeNode[], searchText: string): Tree
 /**
     */
 export function getNodePath(
-  nodeId: string | NodeId,
+  nodeId: NodeId,
   allNodes: TreeNode[],
   separator: string = ' > ',
 ): string {
   const ancestors = getAncestorIds(nodeId, allNodes);
-  const node = allNodes.find((n) => (n.id as unknown as string) === (nodeId as unknown as string));
+  const node = allNodes.find((n) => String(n.id) === String(nodeId));
 
   if (!node) return '';
 
   const pathNodes = [
-    ...ancestors.map((id) => allNodes.find((n) => (n.id as unknown as string) === (id as unknown as string))).filter(Boolean),
+    ...ancestors
+      .map((id) => allNodes.find((n) => String(n.id) === String(id)))
+      .filter(Boolean),
     node,
   ];
 
@@ -157,17 +178,20 @@ export function getNodePath(
  * - For 'before'/'after', 同じく cycle/self のみをチェック（順序の正規化は上位で処理）。
  */
 export function canDropNode(
-  draggingNodeId: string | NodeId,
-  targetNodeId: string | NodeId,
+  draggingNodeId: NodeId,
+  targetNodeId: NodeId,
   position: 'before' | 'after' | 'into',
   allNodes: TreeNode[],
 ): boolean {
-  if ((draggingNodeId as unknown as string) === (targetNodeId as unknown as string)) {
+  const draggingKey = String(draggingNodeId);
+  const targetKey = String(targetNodeId);
+
+  if (draggingKey === targetKey) {
     return false;
   }
 
   const descendants = getDescendantIds(draggingNodeId, allNodes);
-  if (Array.from(descendants).some((id) => (id as unknown as string) === (targetNodeId as unknown as string))) {
+  if (Array.from(descendants).some((id) => String(id) === targetKey)) {
     return false;
   }
 

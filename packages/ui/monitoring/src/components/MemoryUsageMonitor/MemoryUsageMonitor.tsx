@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MemoryUsageBar } from '../MemoryUsageBar/MemoryUsageBar.js';
 import { DragIndicator } from '@mui/icons-material';
 import { MemoryUsageChart } from '../MemoryUsageBar/index.js';
+import { isProdEnv } from '../../utils/env.js';
 
 interface DevelopmentTimestampProps {
   className?: string;
@@ -191,7 +192,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
   }, []);
 
   // Only show in development environment and after client-side mount and when visible
-  if ((globalThis as any)?.import?.meta?.env?.PROD || !mounted || !visible) {
+  if (isProdEnv() || !mounted || !visible) {
     return null;
   }
 

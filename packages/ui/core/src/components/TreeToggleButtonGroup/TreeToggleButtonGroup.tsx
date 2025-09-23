@@ -88,8 +88,12 @@ export function TreeToggleButtonGroup({
   // Safe handling of loader data that might not be available
   let pageNodeId: string | undefined;
   try {
-    const loaderData = useLoaderData() as any;
-    pageNodeId = loaderData?.pageNodeId;
+    const loaderData = useLoaderData() as { pageNodeId?: unknown } | undefined;
+    if (loaderData && typeof loaderData.pageNodeId === 'string') {
+      pageNodeId = loaderData.pageNodeId;
+    } else {
+      pageNodeId = undefined;
+    }
   } catch {
     pageNodeId = undefined;
   }

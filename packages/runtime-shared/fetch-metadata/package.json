@@ -5,9 +5,6 @@
   "type": "module",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "fetch-metadata": "./bin/fetch-metadata"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -25,23 +22,9 @@
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "fetch:gadm": "node dist/cli.js fetch gadm output gadm.json",
-    "fetch:naturalearth": "node dist/cli.js fetch naturalearth output naturalearth.json",
-    "fetch:osm": "node dist/cli.js fetch osm output osm.json",
-    "fetch:geoboundaries": "node dist/cli.js fetch geoboundaries output geoboundaries.json",
-    "fetch": "npm run build ; npm run fetch:gadm ; npm run fetch:naturalearth ; npm run fetch:osm ; npm run fetch:geoboundaries",
-    "prefetch:gadm": "npm run build",
-    "prefetch:naturalearth": "npm run build",
-    "prefetch:osm": "npm run build",
-    "prefetch:geoboundaries": "npm run build"
-  },
-  "dependencies": {
-    "commander": "^11.1.0",
-    "node-fetch": "^3.3.2"
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "devDependencies": {
-    
     "@types/node": "^20.19.11",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
     "@typescript-eslint/parser": "^7.0.2",

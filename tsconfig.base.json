@@ -29,7 +29,51 @@
     "composite": false,
     "incremental": false,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "packages/runtime-shared/batch-processor/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor/*": [
+        "packages/runtime-shared/batch-processor/src/*"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata": [
+        "packages/runtime-shared/fetch-metadata/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata/*": [
+        "packages/runtime-shared/fetch-metadata/src/*"
+      ],
+      "@hierarchidb/common-type": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-type/*": [
+        "packages/common/types/src/*"
+      ],
+      "@hierarchidb/download": [
+        "packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/download/*": [
+        "packages/feature/download/src/*"
+      ],
+      "@hierarchidb/util": [
+        "packages/util/src/index.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "packages/util/src/*"
+      ],
+      "@hierarchidb/plugins-location-plugin/worker": [
+        "packages/plugins/location-plugin/src/worker/index.ts"
+      ],
+      "@hierarchidb/plugins-route-plugin/worker": [
+        "packages/plugins/route-plugin/src/worker/index.ts"
+      ],
+      "@hierarchidb/plugins-shape-plugin/worker": [
+        "packages/plugins/shape-plugin/src/worker/index.ts"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/worker": [
+        "packages/plugins/timeline-plugin/src/worker/index.ts"
+      ]
+    }
   },
   "exclude": [
     "node_modules",

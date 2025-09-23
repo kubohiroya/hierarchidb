@@ -19,10 +19,18 @@ export class NodeLifecycleManager {
 
   private events: LifecycleEvent[] = [];
 
+  private refCountRegistry?: ReferenceCountingRegistry;
+
   constructor(
     private coreDB: CoreDB,
     private plugins: Record<string, PluginDefinition>,
-  ) {
+  ) {}
+
+  private getLifecycleHooks(nodeType: NodeType): NodeLifecycleHooks | undefined {
+    const definition = this.plugins[nodeType as string];
+    if (!definition) return undefined;
+    const lifecycle = (definition as { lifecycle?: NodeLifecycleHooks }).lifecycle;
+    return lifecycle;
   }
 
   /**
@@ -31,10 +39,10 @@ export class NodeLifecycleManager {
   async executeLifecycleHook<THookName extends keyof NodeLifecycleHooks>(
     hookName: THookName,
     nodeType: NodeType,
-    ...args: any[]
+    ...args: unknown[]
   ): Promise<void> {
-    const config = this.plugins[nodeType as unknown as string];
-    const lifecycle = (config as any)?.lifecycle as NodeLifecycleHooks | undefined;
+    const config = this.plugins[nodeType as string];
+    const lifecycle = this.getLifecycleHooks(nodeType);
     const hook = lifecycle?.[hookName];
 
     if (!hook) {
@@ -46,7 +54,7 @@ export class NodeLifecycleManager {
     let error: string | undefined;
 
     try {
-      await (hook as Function)(...args);
+      await (hook as (...hookArgs: unknown[]) => unknown)(...args);
     } catch (e) {
       success = false;
       error = e instanceof Error ? e.message : 'Unknown error';
@@ -250,7 +258,7 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountIncrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      const handler = (this as any).refCountRegistry?.[nodeType];
+      const handler = this.refCountRegistry?.[nodeType];
       if (handler && typeof handler.incrementReferenceCount === 'function') {
         await handler.incrementReferenceCount(nodeId);
         return;
@@ -270,7 +278,7 @@ export class NodeLifecycleManager {
    */
   private async handleReferenceCountDecrement(nodeId: NodeId, nodeType: NodeType): Promise<void> {
     try {
-      const handler = (this as any).refCountRegistry?.[nodeType];
+      const handler = this.refCountRegistry?.[nodeType];
       if (handler && typeof handler.decrementReferenceCount === 'function') {
         await handler.decrementReferenceCount(nodeId);
         return;
@@ -302,7 +310,7 @@ export class NodeLifecycleManager {
     incrementReferenceCount(nodeId: NodeId): Promise<void>;
     decrementReferenceCount(nodeId: NodeId): Promise<void>
   }>) {
-    (this as any).refCountRegistry = registry;
+    this.refCountRegistry = registry;
   }
 
   /**
@@ -314,18 +322,25 @@ export class NodeLifecycleManager {
     context: LifecycleContext,
     ...args: any[]
   ): Promise<void> {
-    const enrichedContext = {
-      ...context,
-      nodeType,
-    };
-
-    // Store context for hook execution
-    (globalThis as any).__lifecycleContext = enrichedContext;
+    const enrichedContext = { ...context, nodeType };
+    const lifecycleGlobal = globalThis as LifecycleGlobal;
+    lifecycleGlobal.__lifecycleContext = enrichedContext;
 
     try {
       await this.executeLifecycleHook(hookName, nodeType, ...args);
     } finally {
-      delete (globalThis as any).__lifecycleContext;
+      delete lifecycleGlobal.__lifecycleContext;
     }
   }
+}
+
+type ReferenceCountingHandler = {
+  incrementReferenceCount(nodeId: NodeId): Promise<void>;
+  decrementReferenceCount(nodeId: NodeId): Promise<void>;
+};
+
+type ReferenceCountingRegistry = Record<string, ReferenceCountingHandler>;
+
+interface LifecycleGlobal {
+  __lifecycleContext?: LifecycleContext;
 }

@@ -47,7 +47,7 @@ export interface ReferenceProperties {
 export interface DraftProperties {
   /**
    * Indicates if this is a draft node where entities/sub-entities are incomplete
-   * Managed by node-type-specific extension modules
+   * Managed by plugins-specific extension modules
    */
   isDraft?: boolean;
 }
@@ -61,6 +61,9 @@ export type TreeNode = NodeBase &
     holderType: 'workingCopy' | 'trash';
     holderTargetId: NodeId; // WC: original nodeId, Trash: trashed nodeId
     holderMetaParentId: NodeId; // WC: target parentId, Trash: original parentId
+    originalName: string;
+    originalParentId: NodeId;
+    removedAt: Timestamp;
   }>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {

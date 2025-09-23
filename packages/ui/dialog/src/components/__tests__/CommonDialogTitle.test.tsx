@@ -15,43 +15,43 @@ describe('CommonDialogTitle', () => {
     const { rerender } = render(
       <CommonDialogTitle
         {...baseProps}
-        displayMode="standard"
+        displayMode="normal"
         onChangeDisplayMode={onChange}
       />,
     );
 
-    fireEvent.click(screen.getByLabelText('最大化'));
-    expect(onChange).toHaveBeenNthCalledWith(1, 'maximized');
-
-    rerender(
-      <CommonDialogTitle
-        {...baseProps}
-        displayMode="maximized"
-        onChangeDisplayMode={onChange}
-      />,
-    );
-    fireEvent.click(screen.getByLabelText('標準サイズに戻す'));
-    expect(onChange).toHaveBeenNthCalledWith(2, 'standard');
+    fireEvent.click(screen.getByLabelText('Maximize (最大)'));
+    expect(onChange).toHaveBeenNthCalledWith(1, 'maximize');
 
     rerender(
       <CommonDialogTitle
         {...baseProps}
-        displayMode="standard"
+        displayMode="maximize"
         onChangeDisplayMode={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText('フルスクリーン'));
-    expect(onChange).toHaveBeenNthCalledWith(3, 'fullscreen');
+    fireEvent.click(screen.getByLabelText('Normal (通常)'));
+    expect(onChange).toHaveBeenNthCalledWith(2, 'normal');
 
     rerender(
       <CommonDialogTitle
         {...baseProps}
-        displayMode="fullscreen"
+        displayMode="normal"
         onChangeDisplayMode={onChange}
       />,
     );
-    fireEvent.click(screen.getByLabelText('フルスクリーン解除'));
-    expect(onChange).toHaveBeenNthCalledWith(4, 'standard');
+    fireEvent.click(screen.getByLabelText('Full-screen (全画面)'));
+    expect(onChange).toHaveBeenNthCalledWith(3, 'full-screen');
+
+    rerender(
+      <CommonDialogTitle
+        {...baseProps}
+        displayMode="full-screen"
+        onChangeDisplayMode={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText('Normal (通常)'));
+    expect(onChange).toHaveBeenNthCalledWith(4, 'normal');
   });
 
   it('allows selecting display mode from the menu', async () => {
@@ -59,20 +59,20 @@ describe('CommonDialogTitle', () => {
     render(
       <CommonDialogTitle
         {...baseProps}
-        displayMode="standard"
+        displayMode="normal"
         onChangeDisplayMode={onChange}
       />,
     );
 
     fireEvent.click(screen.getByLabelText('Display mode'));
     const menu = await screen.findByRole('menu');
-    fireEvent.click(within(menu).getByText('最大化（ウィンドウ内）'));
-    expect(onChange).toHaveBeenNthCalledWith(1, 'maximized');
+    fireEvent.click(within(menu).getByText('Maximize (最大)'));
+    expect(onChange).toHaveBeenNthCalledWith(1, 'maximize');
 
     fireEvent.click(screen.getByLabelText('Display mode'));
     const menu2 = await screen.findByRole('menu');
-    fireEvent.click(within(menu2).getByText('フルスクリーン'));
-    expect(onChange).toHaveBeenNthCalledWith(2, 'fullscreen');
+    fireEvent.click(within(menu2).getByText('Full-screen (全画面)'));
+    expect(onChange).toHaveBeenNthCalledWith(2, 'full-screen');
   });
 });
 

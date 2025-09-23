@@ -1,9 +1,9 @@
-import { getRowStoreDB, type RowIndexEntry } from './RowStoreDB.js';
+import { getRowStoreDB, type RowIndexEntry, readChunkRows } from './RowStoreDB.js';
 
-function norm(v: any): string {
-  if (v === null || v === undefined) return '';
-  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
-  return String(v);
+function norm(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return String(value);
 }
 
 function makeKey(pluginId: string, tableId: string, column: string, value: string): string {
@@ -18,22 +18,30 @@ export class TabularIndexer {
 
   async indexRows(tableId: string, columns: string[], _chunkSize = 2000): Promise<void> {
     const db = getRowStoreDB();
-    const chunks = await db.table('rowChunks').where(['pluginId+tableId'] as any).equals([this.pluginId, tableId] as any).sortBy('chunkIndex');
+    const chunks = await db.rowChunks
+      .where('[pluginId+tableId]')
+      .equals([this.pluginId, tableId])
+      .sortBy('chunkIndex');
     for (const ch of chunks) {
-      const rows: any[] = JSON.parse(new TextDecoder().decode(new Uint8Array(ch.binaryData)));
+      const rows = readChunkRows(ch);
       let rowId = ch.startRowIndex;
       for (const r of rows) {
+        if (typeof r !== 'object' || r === null) {
+          rowId++;
+          continue;
+        }
+        const record = r as Record<string, unknown>;
         for (const c of columns) {
-          const value = norm(r[c]);
+          const value = norm(record[c]);
           const id = makeKey(this.pluginId, tableId, c, value);
-          const existing = (await db.table('rowIndexes').get(id as any)) as unknown as RowIndexEntry | undefined;
+          const existing = await db.rowIndexes.get(id);
           if (existing) {
             if (!existing.rowIds.includes(rowId)) {
               existing.rowIds.push(rowId);
               // Bound rowIds size to prevent unbounded growth in a single entry
               if (existing.rowIds.length > 5000) existing.rowIds = existing.rowIds.slice(-5000);
               existing.updatedAt = Date.now();
-              await db.table('rowIndexes').put(existing as any);
+              await db.rowIndexes.put(existing);
             }
           } else {
             const entry: RowIndexEntry = {
@@ -45,7 +53,7 @@ export class TabularIndexer {
               rowIds: [rowId],
               updatedAt: Date.now(),
             };
-            await db.table('rowIndexes').add(entry as any);
+            await db.rowIndexes.add(entry);
           }
         }
         rowId++;
@@ -53,24 +61,26 @@ export class TabularIndexer {
     }
   }
 
-  async getRowIds(tableId: string, column: string, value: any): Promise<number[]> {
+  async getRowIds(tableId: string, column: string, value: unknown): Promise<number[]> {
     const db = getRowStoreDB();
     const id = makeKey(this.pluginId, tableId, column, norm(value));
-    const entry = (await db.table('rowIndexes').get(id as any)) as unknown as RowIndexEntry | undefined;
+    const entry = await db.rowIndexes.get(id);
     return entry?.rowIds || [];
   }
 
   // Resolve rows by rowIds via chunk mapping
-  async getRowsByIds(tableId: string, rowIds: number[], limit = 1000): Promise<any[]> {
+  async getRowsByIds(tableId: string, rowIds: number[], limit = 1000): Promise<unknown[]> {
     const db = getRowStoreDB();
-    const chunks = await db.table('rowChunks').where(['pluginId+tableId'] as any).equals([this.pluginId, tableId] as any).sortBy('startRowIndex');
-    const out: any[] = [];
-    const decoder = new TextDecoder();
+    const chunks = await db.rowChunks
+      .where('[pluginId+tableId]')
+      .equals([this.pluginId, tableId])
+      .sortBy('startRowIndex');
+    const out: unknown[] = [];
     for (const rowId of rowIds) {
       if (out.length >= limit) break;
       const ch = chunks.find((c) => rowId >= c.startRowIndex && rowId <= c.endRowIndex);
       if (!ch) continue;
-      const rows: any[] = JSON.parse(decoder.decode(new Uint8Array(ch.binaryData)));
+      const rows = readChunkRows(ch);
       const idx = rowId - ch.startRowIndex;
       if (idx >= 0 && idx < rows.length) out.push(rows[idx]);
     }

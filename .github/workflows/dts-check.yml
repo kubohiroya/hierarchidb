@@ -40,5 +40,5 @@ jobs:
       - name: Sanity typecheck
         run: |
           pnpm --filter @hierarchidb/runtime-worker typecheck
-          pnpm --filter @hierarchidb/shape-plugin typecheck
+          pnpm --filter @hierarchidb/plugins-shape-plugin typecheck
 

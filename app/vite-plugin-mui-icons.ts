@@ -32,6 +32,9 @@ function normalizeMuiName(name?: string): string | undefined {
 export function muiIconsVirtualModule(): Plugin {
   const VIRTUAL_ID = 'virtual:mui-icon-map';
   const RESOLVED_ID = '\0' + VIRTUAL_ID;
+  const logWarn = (message: string, error: unknown): void => {
+    console.warn('[mui-icon-map]', message, error);
+  };
 
   return {
     name: 'hdb-mui-icons-virtual',
@@ -45,7 +48,7 @@ export function muiIconsVirtualModule(): Plugin {
 
       // Scan node-type plugin package.json files for hierarchidb.plugin.icon.mui
       const repoRoot = path.resolve(__dirname, '..');
-      const nodeTypeDir = path.join(repoRoot, 'packages', 'node-type');
+      const nodeTypeDir = path.join(repoRoot, 'packages', 'plugins');
       const names = new Set<string>();
       try {
         const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
@@ -54,14 +57,18 @@ export function muiIconsVirtualModule(): Plugin {
           const pkgJsonPath = path.join(nodeTypeDir, ent.name, 'package.json');
           if (!fs.existsSync(pkgJsonPath)) continue;
           try {
-            const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8')) as any;
-            const muiRaw = pkg?.hierarchidb?.plugin?.icon?.mui;
+            const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8')) as NodeTypePackageJson;
+            const muiRaw = pkg.hierarchidb?.plugin?.icon?.mui;
             const norm = normalizeMuiName(muiRaw);
             const pascal = toPascalCase(norm);
             if (pascal) names.add(pascal);
-          } catch {}
+          } catch (error) {
+            logWarn(`Failed to read icon metadata from ${pkgJsonPath}`, error);
+          }
         }
-      } catch {}
+      } catch (error) {
+        logWarn(`Failed to scan plugins directory ${nodeTypeDir}`, error);
+      }
 
       // Always include a minimal baseline we know we use widely
       ['Folder', 'Public', 'Hexagon', 'LocationOn', 'Route', 'Assessment', 'Palette', 'Extension', 'AccountTree']
@@ -88,3 +95,13 @@ export default iconMap;
     },
   };
 }
+
+type NodeTypePackageJson = {
+  hierarchidb?: {
+    plugin?: {
+      icon?: {
+        mui?: string;
+      };
+    };
+  };
+};

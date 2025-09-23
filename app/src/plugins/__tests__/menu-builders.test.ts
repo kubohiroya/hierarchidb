@@ -1,6 +1,6 @@
 import { TreeId } from '@hierarchidb/common-type';
 import { describe, it, expect } from 'vitest';
-import { buildMenuItemsForContext, buildMenuItemsForTreeId } from '~/plugins/menu-builders';
+import { buildMenuItemsForContext, buildMenuItemsForTreeId, PluginMenuItem } from '../menu-builders.js';
 
 describe('menu-builders', () => {
   it('maps treeId to context implicitly in buildMenuItemsForTreeId', () => {
@@ -9,12 +9,12 @@ describe('menu-builders', () => {
     const p = buildMenuItemsForTreeId('p' as TreeId);
     expect(r.length).toBeGreaterThan(0);
     expect(t.length).toBeGreaterThan(0);
-    expect(p.map((i) => i.nodeType)).toEqual(t.map((i) => i.nodeType));
+    expect(p.map((i: PluginMenuItem) => i.nodeType)).toEqual(t.map((i: PluginMenuItem) => i.nodeType));
   });
 
   it('builds resources (r) menu in specified order and groups', () => {
     const items = buildMenuItemsForTreeId('r' as TreeId);
-    const nodeTypes = items.map((i) => i.nodeType);
+    const nodeTypes = items.map((i: PluginMenuItem) => i.nodeType);
     expect(nodeTypes).toEqual([
       'folder',
       'basemap',

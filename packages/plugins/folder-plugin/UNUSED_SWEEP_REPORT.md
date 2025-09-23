@@ -1,0 +1,91 @@
+# Unused Sweep Report (auto-generated)
+- package: packages/plugins/folder-plugin
+- date: 2025-09-11T06:37:14.099Z
+
+## Unused Exports (0-ref across repo)
+- class FolderExtensionRegistry (packages/plugins/folder-plugin/src/api/FolderExtensionAPI.ts:119)
+- interface FolderStepData (packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx:19)
+- interface ExtensibleFolderDialogProps (packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx:27)
+- interface FolderSearchResult (packages/plugins/folder-plugin/src/shared/api.ts:60)
+- interface FolderPathInfo (packages/plugins/folder-plugin/src/shared/api.ts:69)
+- type FolderOperation (packages/plugins/folder-plugin/src/shared/api.ts:100)
+- interface EffectivePermissions (packages/plugins/folder-plugin/src/shared/api.ts:109)
+- interface FolderValidationResult (packages/plugins/folder-plugin/src/shared/api.ts:125)
+- interface FolderMoveValidationResult (packages/plugins/folder-plugin/src/shared/api.ts:131)
+- interface FolderAnalytics (packages/plugins/folder-plugin/src/shared/api.ts:141)
+- const FOLDER_PERMISSIONS (packages/plugins/folder-plugin/src/shared/constants.ts:50)
+- const FOLDER_SEARCH (packages/plugins/folder-plugin/src/shared/constants.ts:72)
+- const FOLDER_STATISTICS (packages/plugins/folder-plugin/src/shared/constants.ts:89)
+- const FOLDER_UI (packages/plugins/folder-plugin/src/shared/constants.ts:116)
+- const FOLDER_PERFORMANCE (packages/plugins/folder-plugin/src/shared/constants.ts:146)
+- const FOLDER_ERRORS (packages/plugins/folder-plugin/src/shared/constants.ts:168)
+- const FOLDER_MESSAGES (packages/plugins/folder-plugin/src/shared/constants.ts:204)
+- const FolderUIConfig (packages/plugins/folder-plugin/src/shared/metadata.ts:39)
+- const FolderPerformanceProfile (packages/plugins/folder-plugin/src/shared/metadata.ts:61)
+- interface FolderFormData (packages/plugins/folder-plugin/src/shared/types.ts:79)
+- enum FolderErrorType (packages/plugins/folder-plugin/src/shared/types.ts:138)
+- class FolderError (packages/plugins/folder-plugin/src/shared/types.ts:149)
+- const FOLDER_CONSTANTS (packages/plugins/folder-plugin/src/shared/types.ts:163)
+- function isFolderEntity (packages/plugins/folder-plugin/src/shared/types.ts:189)
+- function isValidFolderName (packages/plugins/folder-plugin/src/shared/types.ts:201)
+- function generateFolderId (packages/plugins/folder-plugin/src/shared/utils.ts:12)
+- function isValidIconColor (packages/plugins/folder-plugin/src/shared/utils.ts:78)
+- function getDefaultIconColor (packages/plugins/folder-plugin/src/shared/utils.ts:82)
+- function getRandomIconColor (packages/plugins/folder-plugin/src/shared/utils.ts:86)
+- function sanitizeFolderName (packages/plugins/folder-plugin/src/shared/utils.ts:91)
+- function createEmptyFolderEntity (packages/plugins/folder-plugin/src/shared/utils.ts:99)
+- function generateFolderPath (packages/plugins/folder-plugin/src/shared/utils.ts:114)
+- function generateFolderBreadcrumbs (packages/plugins/folder-plugin/src/shared/utils.ts:121)
+- function buildFolderTree (packages/plugins/folder-plugin/src/shared/utils.ts:135)
+- function flattenFolderTree (packages/plugins/folder-plugin/src/shared/utils.ts:160)
+- function findFolderInTree (packages/plugins/folder-plugin/src/shared/utils.ts:176)
+- function createFolderSearchIndex (packages/plugins/folder-plugin/src/shared/utils.ts:197)
+- function searchFoldersInIndex (packages/plugins/folder-plugin/src/shared/utils.ts:241)
+- function sortFolders (packages/plugins/folder-plugin/src/shared/utils.ts:296)
+- interface FormValidationResult (packages/plugins/folder-plugin/src/ui/hooks/useFormValidation.ts:9)
+- interface UseFormValidationOptions (packages/plugins/folder-plugin/src/ui/hooks/useFormValidation.ts:15)
+- function useValidation (packages/plugins/folder-plugin/src/ui/hooks/useFormValidation.ts:203)
+- function createFolderGroupStoreDexie (packages/plugins/folder-plugin/src/worker/folderGroupStore.dexie.ts:7)
+- function __clearFolderPeerStore (packages/plugins/folder-plugin/src/worker/folderPeerStore.ts:31)
+- function createFolderRelationStoreDexie (packages/plugins/folder-plugin/src/worker/folderRelationStore.dexie.ts:7)
+
+## Files Not Referenced In Imports (approx)
+- packages/plugins/folder-plugin/src/api/FolderExtensionAPI.ts
+- packages/plugins/folder-plugin/src/base/BaseFolderPlugin.ts
+- packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx
+- packages/plugins/folder-plugin/src/components/FolderCreateDialog.tsx
+- packages/plugins/folder-plugin/src/components/FolderEditDialog.tsx
+- packages/plugins/folder-plugin/src/components/FolderIcon.tsx
+- packages/plugins/folder-plugin/src/components/index.ts
+- packages/plugins/folder-plugin/src/definitions/FolderDefinition.ts
+- packages/plugins/folder-plugin/src/entities/FolderEntity.ts
+- packages/plugins/folder-plugin/src/index.ts
+- packages/plugins/folder-plugin/src/shared/api.ts
+- packages/plugins/folder-plugin/src/shared/constants.ts
+- packages/plugins/folder-plugin/src/shared/index.ts
+- packages/plugins/folder-plugin/src/shared/metadata.ts
+- packages/plugins/folder-plugin/src/shared/types.ts
+- packages/plugins/folder-plugin/src/shared/utils.ts
+- packages/plugins/folder-plugin/src/types/index.ts
+- packages/plugins/folder-plugin/src/types.ts
+- packages/plugins/folder-plugin/src/ui/FolderUIPlugin.tsx
+- packages/plugins/folder-plugin/src/ui/components/CategorySelector.tsx
+- packages/plugins/folder-plugin/src/ui/components/FolderBasicInfoStep.tsx
+- packages/plugins/folder-plugin/src/ui/components/TagInput.tsx
+- packages/plugins/folder-plugin/src/ui/components/index.ts
+- packages/plugins/folder-plugin/src/ui/hooks/index.ts
+- packages/plugins/folder-plugin/src/ui/hooks/useFolderAPI.ts
+- packages/plugins/folder-plugin/src/ui/hooks/useFolderData.ts
+- packages/plugins/folder-plugin/src/ui/hooks/useFormValidation.ts
+- packages/plugins/folder-plugin/src/ui/index.ts
+- packages/plugins/folder-plugin/src/ui/plugin.ts
+- packages/plugins/folder-plugin/src/worker/TagService.ts
+- packages/plugins/folder-plugin/src/worker/folderEntitiesDB.ts
+- packages/plugins/folder-plugin/src/worker/folderGroupStore.dexie.ts
+- packages/plugins/folder-plugin/src/worker/folderGroupStore.ts
+- packages/plugins/folder-plugin/src/worker/folderPeerStore.dexie.ts
+- packages/plugins/folder-plugin/src/worker/folderPeerStore.ts
+- packages/plugins/folder-plugin/src/worker/folderRelationStore.dexie.ts
+- packages/plugins/folder-plugin/src/worker/folderRelationStore.ts
+
+> Note: Heuristics only. Re-exports and dynamic usages may not be captured.

@@ -1,7 +1,7 @@
 # ResolverDialog ヘッドレス E2E テスト整備ノート
 
 ## 背景
-- `packages/node-type/resolver-plugin/src/components/ResolverDialog.tsx` は `@hierarchidb/ui-dialog` の `HeadlessMultiStepDialog` を直接利用するようになりました。
+- `packages/plugins/resolver-plugin/src/components/ResolverDialog.tsx` は `@hierarchidb/ui-dialog` の `HeadlessMultiStepDialog` を直接利用するようになりました。
 - 暫定対応として `describe.skip` されていた `ResolverDialog.e2e.test.tsx` を再有効化し、実装と同じコンポーネント構成でモックを撤去しています。
 - テストは `import.meta.env.MODE === 'test'` でのみ公開される隠しコントロール（`aria-label` に `Next` / `Complete` / `Cancel` を付与）を利用し、ヘッドレスダイアログのステップ遷移とコミットを検証します。
 
@@ -13,12 +13,12 @@
 
 ## 実行手順
 - パッケージローカルでの検証
-  - `pnpm --filter @hierarchidb/resolver-plugin test -- --run`
+  - `pnpm --filter @hierarchidb/plugins-resolver-plugin test -- --run`
 - ワークスペース全体での検証が必要な場合
   - `pnpm -w test -- --filter resolver-plugin`
 
 ## ロールバック手順
-- テストを一時停止する場合は `packages/node-type/resolver-plugin/src/components/__tests__/ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、タスク管理（TASKS.md）のチェックリストを更新してください。
+- テストを一時停止する場合は `packages/plugins/resolver-plugin/src/components/__tests__/ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、タスク管理（TASKS.md）のチェックリストを更新してください。
 - HeadlessMultiStepDialog 側の API 変更でテストが壊れた場合は、このノートを参照して隠しコントロールやフィクスチャの更新箇所を特定し、再調整してください。
 
 ## メモ

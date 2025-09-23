@@ -3,6 +3,7 @@ import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/mate
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 
 import { formatBytes } from '@hierarchidb/util';
+import { isDevEnv } from '../../utils/env.js';
 
 interface MemoryDataPoint {
   timestamp: number;
@@ -200,10 +201,8 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         return newPoints;
       });
     } catch (error) {
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (isDevEnv()) {
         console.warn('Memory measurement failed:', error);
-
       }
     }
   }, [isPaused, maxMemory, categorizeMemory, maxDataPoints]);

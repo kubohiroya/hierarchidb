@@ -8,6 +8,8 @@ import type {
   TabularPreview,
 } from '../types.js';
 
+type FileMeta = { name?: string };
+
 async function toText(input: FileLike): Promise<string> {
   if (typeof input === 'string') return input;
   if (typeof Blob !== 'undefined' && input instanceof Blob) return await input.text();
@@ -16,13 +18,22 @@ async function toText(input: FileLike): Promise<string> {
     const buf = input instanceof Uint8Array ? input : new Uint8Array(input);
     return dec.decode(buf);
   }
-  return String(input as any);
+  return String(input);
+}
+
+function getFileMeta(input: FileLike): FileMeta {
+  if (typeof input === 'object' && input !== null) {
+    const candidate = input as Partial<FileMeta>;
+    return { name: typeof candidate.name === 'string' ? candidate.name : undefined };
+  }
+  return {};
 }
 
 export const jsonlParser: TabularParserPort = {
   id: 'jsonl',
   detect(input: FileLike): DetectionResult {
-    const name = (input as any).name?.toLowerCase?.() || '';
+    const meta = getFileMeta(input);
+    const name = meta.name?.toLowerCase() ?? '';
     let confidence = name.endsWith('.jsonl') ? 0.8 : 0.2;
     return { format: 'jsonl', confidence };
   },

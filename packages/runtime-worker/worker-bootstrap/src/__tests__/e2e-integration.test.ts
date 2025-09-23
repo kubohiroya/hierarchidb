@@ -8,9 +8,12 @@ import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
 import type { WorkerInitMessage } from '../types.js';
 
+type MessageListener = (event: MessageEvent<WorkerInitMessage>) => void;
+type WorkerInboundMessage = WorkerInitMessage | { type: 'INIT_REQUEST' | 'PING' | 'START_INIT'; payload?: unknown };
+
 // Create a more complete MockWorker class
 class MockWorker implements Partial<Worker> {
-  private listeners: Map<string, Set<EventListener>> = new Map();
+  private listeners: Map<string, Set<MessageListener>> = new Map();
   private reporter: WorkerInitializationReporter | null = null;
   private initTimeout: ReturnType<typeof setTimeout> | null = null;
   public terminated = false;
@@ -27,18 +30,18 @@ class MockWorker implements Partial<Worker> {
     );
   }
 
-  addEventListener(type: string, listener: EventListener): void {
+  addEventListener(type: string, listener: MessageListener): void {
     if (!this.listeners.has(type)) {
       this.listeners.set(type, new Set());
     }
     this.listeners.get(type)!.add(listener);
   }
 
-  removeEventListener(type: string, listener: EventListener): void {
+  removeEventListener(type: string, listener: MessageListener): void {
     this.listeners.get(type)?.delete(listener);
   }
 
-  postMessage(data: any): void {
+  postMessage(data: WorkerInboundMessage): void {
     if (this.terminated) return;
 
     // Simulate Worker-side message handling
@@ -62,8 +65,8 @@ class MockWorker implements Partial<Worker> {
     if (this.terminated) return;
 
     const event = new MessageEvent('message', { data: message });
-    this.listeners.get('message')?.forEach(listener => {
-      (listener as any)(event);
+    this.listeners.get('message')?.forEach((listener) => {
+      listener(event);
     });
   }
 
@@ -149,7 +152,7 @@ describe('Worker Initialization Integration Tests', () => {
       const progressMessages: number[] = [];
 
       // Capture progress
-      worker.addEventListener('message', (event: any) => {
+      worker.addEventListener('message', (event) => {
         if (event.data.type === 'INIT_PROGRESS') {
           progressMessages.push(event.data.payload.progress);
         }

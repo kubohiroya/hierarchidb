@@ -70,10 +70,10 @@ export function getMuiIconComponent(muiIconName?: string, emoji?: string): React
   const normalized = normalizeMuiName(muiIconName);
   const pascal = toPascalCase(normalized);
   if (pascal) {
-    const G = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
-    if (G) return <G />;
-    const S = staticMap[pascal];
-    if (S) return <S />;
+    const GlobalIcon = __globalMuiIconMap?.[pascal];
+    if (GlobalIcon) return <GlobalIcon />;
+    const StaticIcon = staticMap[pascal];
+    if (StaticIcon) return <StaticIcon />;
   }
   if (emoji) return <span style={{ fontSize: '1.5rem' }}>{emoji}</span>;
   return <AddIcon />;
@@ -89,7 +89,7 @@ const _prefetched = new Set<string>();
 export async function prefetchMuiIcons(names: Array<string | undefined | null>): Promise<void> {
   // No-op with minimal bookkeeping: global/static maps are synchronous.
   const uniq = new Set((names || []).filter(Boolean).map((n) => toPascalCase(String(n))));
-  for (const n of uniq) _prefetched.add(n as string);
+  for (const name of uniq) _prefetched.add(name);
 }
 
 // Global icon map injection (to share app-generated static map)
@@ -104,11 +104,11 @@ export function getMuiIconWithColor(
   color?: string,
 ): ReactNode {
   const pascal = toPascalCase(normalizeMuiName(muiIconName));
-  const C = (__globalMuiIconMap as any)?.[pascal] as React.ComponentType<SvgIconProps> | undefined;
-  if (C) return <C sx={color ? { color } : undefined} />;
+  const GlobalIcon = __globalMuiIconMap?.[pascal];
+  if (GlobalIcon) return <GlobalIcon sx={color ? { color } : undefined} />;
   // Fallback to static map or emoji
-  const S = staticMap[pascal];
-  if (S) return <S sx={color ? { color } : undefined} />;
+  const StaticIcon = staticMap[pascal];
+  if (StaticIcon) return <StaticIcon sx={color ? { color } : undefined} />;
   if (emoji) {
     return <span style={{ fontSize: '1.5rem', color }}>{emoji}</span>;
   }

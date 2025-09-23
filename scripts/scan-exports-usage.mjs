@@ -47,7 +47,7 @@ function rg(pattern, cwd, extraArgs = []) {
 }
 
 function main() {
-  const pkgDir = process.argv[2] || 'packages/node-type/folder-plugin';
+  const pkgDir = process.argv[2] || 'packages/plugins/folder-plugin';
   if (!fs.existsSync(pkgDir)) {
     console.error(`Package dir not found: ${pkgDir}`);
     process.exit(1);

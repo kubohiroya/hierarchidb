@@ -44,12 +44,12 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
     if (params.sort && params.sort.length > 0) {
       result.sort((a, b) => {
         for (const sort of params.sort!) {
-          const aVal = (a as any)[sort.field];
-          const bVal = (b as any)[sort.field];
+          const aVal = this.readField(a, sort.field);
+          const bVal = this.readField(b, sort.field);
 
-          if (aVal === bVal) continue;
+          const comparison = this.compareValues(aVal, bVal);
+          if (comparison === 0) continue;
 
-          const comparison = aVal < bVal ? -1 : 1;
           return sort.direction === 'asc' ? comparison : -comparison;
         }
         return 0;
@@ -67,15 +67,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
 
     // Apply field selection
     if (params.fields && params.fields.length > 0) {
-      result = result.map((item) => {
-        const filtered: any = { id: item.id };
-        for (const field of params.fields!) {
-          if (field in item) {
-            filtered[field] = (item as any)[field];
-          }
-        }
-        return filtered;
-      });
+      result = result.map((item) => this.pickFields(item, params.fields!));
     }
 
     return {
@@ -184,7 +176,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
 
   // Private helper methods
   private applyFilter(item: T, filter: FilterParams): boolean {
-    const value = (item as any)[filter.field];
+    const value = this.readField(item, filter.field);
     const filterValue = filter.value;
 
     switch (filter.operator) {
@@ -192,31 +184,35 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
         return value === filterValue;
 
       case 'contains':
-        return String(value).toLowerCase().includes(String(filterValue).toLowerCase());
+        return this.toSearchString(value).includes(this.toSearchString(filterValue));
 
       case 'startsWith':
-        return String(value).toLowerCase().startsWith(String(filterValue).toLowerCase());
+        return this.toSearchString(value).startsWith(this.toSearchString(filterValue));
 
       case 'endsWith':
-        return String(value).toLowerCase().endsWith(String(filterValue).toLowerCase());
+        return this.toSearchString(value).endsWith(this.toSearchString(filterValue));
 
       case 'gt':
-        return value > filterValue;
+        return this.compareNumbers(value, filterValue, (left, right) => left > right);
 
       case 'gte':
-        return value >= filterValue;
+        return this.compareNumbers(value, filterValue, (left, right) => left >= right);
 
       case 'lt':
-        return value < filterValue;
+        return this.compareNumbers(value, filterValue, (left, right) => left < right);
 
       case 'lte':
-        return value <= filterValue;
+        return this.compareNumbers(value, filterValue, (left, right) => left <= right);
 
-      case 'between':
-        return value >= filterValue[0] && value <= filterValue[1];
+      case 'between': {
+        if (!Array.isArray(filterValue) || filterValue.length < 2) return false;
+        const [min, max] = filterValue;
+        return this.compareNumbers(value, min, (left, right) => left >= right) &&
+          this.compareNumbers(value, max, (left, right) => left <= right);
+      }
 
       case 'in':
-        return Array.isArray(filterValue) && filterValue.includes(value);
+        return Array.isArray(filterValue) && filterValue.some((candidate) => candidate === value);
 
       default:
         return true;
@@ -230,7 +226,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
     const rows = data.map((item) =>
       headers
         .map((header) => {
-          const value = (item as any)[header];
+          const value = this.readField(item, header);
           // Escape quotes and wrap in quotes if contains comma
           const stringValue = String(value || '');
           return stringValue.includes(',') || stringValue.includes('"')
@@ -245,5 +241,77 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
 
   private notifySubscribers(event: DataChangeEvent<T>): void {
     this.subscribers.forEach((callback) => callback(event));
+  }
+
+  private readField(item: T, field: string): unknown {
+    const record = item as Record<string, unknown>;
+    return Object.prototype.hasOwnProperty.call(record, field) ? record[field] : undefined;
+  }
+
+  private compareValues(a: unknown, b: unknown): number {
+    if (a === b) return 0;
+    if (a == null) return -1;
+    if (b == null) return 1;
+
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() - b.getTime();
+    }
+
+    if (typeof a === 'number' && typeof b === 'number') {
+      return a < b ? -1 : 1;
+    }
+
+    if (typeof a === 'string' && typeof b === 'string') {
+      return a.localeCompare(b);
+    }
+
+    return this.toComparableString(a).localeCompare(this.toComparableString(b));
+  }
+
+  private toNumber(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (value instanceof Date) return value.getTime();
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? Number.NaN : parsed;
+  }
+
+  private toComparableString(value: unknown): string {
+    if (value == null) return '';
+    return String(value);
+  }
+
+  private toSearchString(value: unknown): string {
+    return this.toComparableString(value).toLowerCase();
+  }
+
+  private compareNumbers(
+    leftValue: unknown,
+    rightValue: unknown,
+    comparator: (left: number, right: number) => boolean,
+  ): boolean {
+    const left = this.toNumber(leftValue);
+    const right = this.toNumber(rightValue);
+    if (Number.isNaN(left) || Number.isNaN(right)) {
+      return false;
+    }
+    return comparator(left, right);
+  }
+
+  private pickFields(item: T, fields: string[]): T {
+    if (fields.length === 0) {
+      return { ...item };
+    }
+
+    const allowed = new Set([...fields, 'id']);
+    const clone = { ...item } as T;
+    const record = clone as Record<string, unknown>;
+
+    Object.keys(record).forEach((key) => {
+      if (!allowed.has(key)) {
+        delete record[key];
+      }
+    });
+
+    return clone;
   }
 }

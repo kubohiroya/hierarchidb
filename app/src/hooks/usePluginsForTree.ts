@@ -10,7 +10,7 @@ import type { PluginDefinition, TreeId } from '@hierarchidb/common-type';
 import type { TreePluginInfo, WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 
-// Extend WorkerAPI with optional experimental facades to avoid `as any`
+// Extend WorkerAPI with optional experimental facades to avoid unsafe casts
 type NodeTypeRegistryAPI = { getPluginsForTree(treeId: TreeId): Promise<PluginDefinition[]> };
 type TreePluginAnalyzerAPI = {
   getPluginsForTree(args: {

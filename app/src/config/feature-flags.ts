@@ -1,23 +1,31 @@
 // UI-side feature flags with sensible defaults toward the latest implementation.
-// Reads from globalThis.FEATURE_FLAGS (preferred) and falls back to import.meta.env if needed.
+// Reads from globalThis.FEATURE_FLAGS (preferred) and falls back to environment variables if needed.
+
+import { readRuntimeEnvValue } from '@hierarchidb/util';
+
+type FeatureFlagContainer = {
+  FEATURE_FLAGS?: Record<string, unknown>;
+};
 
 function readFlag(key: string): string | undefined {
-  const g: any = (globalThis as any);
-  const v1 = g?.FEATURE_FLAGS?.[key];
-  if (v1 != null) return String(v1);
-  const v2 = (import.meta as any)?.env?.[key] ?? (import.meta as any)?.env?.[`VITE_${key}`];
-  if (v2 != null) return String(v2);
-  return undefined;
+  const globalValue = readFromGlobalFlags(key);
+  if (globalValue != null) return globalValue;
+
+  return readRuntimeEnvValue(key) ?? undefined;
 }
 
-function flagOn(key: string, def = false): boolean {
+function readFromGlobalFlags(key: string): string | undefined {
+  if (typeof globalThis === 'undefined') return undefined;
+  const candidate = globalThis as FeatureFlagContainer;
+  const value = candidate.FEATURE_FLAGS?.[key];
+  return value == null ? undefined : String(value);
+}
+
+function _flagOn(key: string, def = false): boolean {
   const raw = readFlag(key);
   if (raw == null) return !!def;
   const s = String(raw).toLowerCase();
   return s === '1' || s === 'true' || s === 'on' || s === 'enabled';
 }
 
-export const UI_FLAGS = {
-  // Default OFF (latest implementation does not allow legacy API by default)
-  get UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE() { return flagOn('UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE', false); },
-} as const;
+export const UI_FLAGS = {} as const;

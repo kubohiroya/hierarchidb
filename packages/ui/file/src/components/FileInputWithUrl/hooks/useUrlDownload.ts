@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { validateExternalURL } from '@hierarchidb/util';
 
 import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService.js';
+import { devError, devLog } from '../../../utils/logger.js';
 
 interface UseUrlDownloadProps {
   accept: string;
@@ -30,6 +31,21 @@ interface UseUrlDownloadReturn {
   isLoadingAuth: boolean;
   signIn: (provider?: string) => void;
 }
+
+const getCorsProxyBaseURL = (): string | undefined => {
+  const viteEnv = (import.meta as ImportMeta & { env?: { VITE_CORS_PROXY_BASE_URL?: string } }).env;
+  if (typeof viteEnv?.VITE_CORS_PROXY_BASE_URL === 'string' && viteEnv.VITE_CORS_PROXY_BASE_URL.length > 0) {
+    return viteEnv.VITE_CORS_PROXY_BASE_URL;
+  }
+  const globalProcess = typeof globalThis === 'object' && globalThis !== null && 'process' in globalThis
+    ? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+    : undefined;
+  const fromProcess = globalProcess?.env?.VITE_CORS_PROXY_BASE_URL;
+  if (typeof fromProcess === 'string' && fromProcess.length > 0) {
+    return fromProcess;
+  }
+  return undefined;
+};
 
 export function useUrlDownload({
                                  accept,
@@ -163,8 +179,9 @@ export function useUrlDownload({
         throw new Error(validationResult.error || 'Invalid URL');
       }
       const validatedUrl = validationResult.url || trimmedUrl;
-      const needsCorsProxy = !validatedUrl.startsWith(window.location.origin || '');
-      const corsProxyBaseURL = (globalThis as any)?.import?.meta?.env?.VITE_CORS_PROXY_BASE_URL as string | undefined;
+      const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+      const needsCorsProxy = origin ? !validatedUrl.startsWith(origin) : true;
+      const corsProxyBaseURL = getCorsProxyBaseURL();
 
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
@@ -211,11 +228,7 @@ export function useUrlDownload({
       if (errorMessage.includes('Authentication') || errorMessage.includes('401')) {
         // Try to refresh token once before giving up
         if (retryCountRef.current === 0) {
-          if (import.meta.env.DEV) {
-
-            console.log('Received auth error, attempting token refresh...');
-
-          }
+          devLog('Received auth error, attempting token refresh...');
           retryCountRef.current++;
 
           try {
@@ -236,11 +249,7 @@ export function useUrlDownload({
               }
             }
           } catch (refreshError) {
-            if (import.meta.env.DEV) {
-
-              console.log('Token refresh failed:', String(refreshError));
-
-            }
+            devError('Token refresh failed:', String(refreshError));
           }
         }
 

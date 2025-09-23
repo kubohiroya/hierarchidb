@@ -2,6 +2,11 @@ import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports
 import Dexie, { Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 
+const logDexieShapeWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[DexieShapePort]', message, error);
+};
+
 type RawBuffer = {
   id: string;
   sessionId: string;
@@ -37,7 +42,8 @@ export class DexieShapePort implements MapSourcePort {
         const fc = JSON.parse(it.data);
         if (fc?.type !== 'FeatureCollection') continue;
         for (const f of fc.features) if (intersectsBBox(f, bbox)) feats.push(f);
-      } catch {
+      } catch (error) {
+        logDexieShapeWarning(`Failed to parse buffered geojson for session ${it.sessionId}`, error);
       }
     }
     return { type: 'FeatureCollection', features: feats };

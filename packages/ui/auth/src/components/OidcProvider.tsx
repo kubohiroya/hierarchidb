@@ -5,12 +5,14 @@ import { AuthProvider, AuthProviderProps } from 'react-oidc-context';
 const getOAuthRedirectUri = () => `${window.location.origin}/auth/callback`;
 const getSilentRenewUri = () => `${window.location.origin}/auth/silent-renew`;
 // import { getSecureConfig, validateOAuthConfig } from "@/config/secureConfig";
+const env = import.meta.env;
+
 const getSecureConfig = () => ({
-  oidcAuthority: ((import.meta as any)?.env?.VITE_OIDC_AUTHORITY as string) || '',
-  oidcClientId: ((import.meta as any)?.env?.VITE_OIDC_CLIENT_ID as string) || '',
-  oidcScope: ((import.meta as any)?.env?.VITE_OIDC_SCOPE as string) || 'openid profile email',
-  oidcClientSecret: ((import.meta as any)?.env?.VITE_OIDC_CLIENT_SECRET as string) || '',
-  isProduction: Boolean((import.meta as any)?.env?.PROD),
+  oidcAuthority: env.VITE_OIDC_AUTHORITY ?? '',
+  oidcClientId: env.VITE_OIDC_CLIENT_ID ?? '',
+  oidcScope: env.VITE_OIDC_SCOPE ?? 'openid profile email',
+  oidcClientSecret: env.VITE_OIDC_CLIENT_SECRET ?? '',
+  isProduction: env.PROD,
   usePKCE: true,
 });
 const validateOAuthConfig = (_config: any) => true;
@@ -24,10 +26,8 @@ export const OidcProvider = ({ children }: { children: ReactNode }) => {
   // Validate OAuth configuration
   const isValid = validateOAuthConfig(secureConfig);
   if (!isValid && secureConfig.isProduction) {
-    if ((import.meta as any)?.env?.DEV) {
-
+    if (env.DEV) {
       console.error('OAuth configuration is invalid. Authentication may not work properly.');
-
     }
   }
 
@@ -87,10 +87,8 @@ export const OidcProvider = ({ children }: { children: ReactNode }) => {
 
   // Don't render AuthProvider if configuration is invalid
   if (!secureConfig.oidcAuthority || !secureConfig.oidcClientId) {
-    if ((import.meta as any)?.env?.DEV) {
-
+    if (env.DEV) {
       console.warn('OAuth is not configured. Authentication features will be disabled.');
-
     }
     return <>{children}</>;
   }

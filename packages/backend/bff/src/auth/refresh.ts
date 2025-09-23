@@ -1,12 +1,11 @@
-import { Context } from 'hono';
-import { Env } from '../types.js';
 import { createSessionToken, extractBearerToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
+import { getEnv, type BffContext } from '../utils/env.js';
 
 /**
  * Refresh token endpoint handler
  */
-export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>) {
+export async function refreshToken(c: BffContext) {
   try {
     const authHeader = c.req.header('Authorization');
     const token = extractBearerToken(authHeader);
@@ -19,13 +18,14 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
       return c.json({ error: 'Missing authorization token' }, 401);
     }
 
-    if (!c.env.AUTH_KV) {
+    const env = getEnv(c);
+
+    if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
       return c.json({ error: 'Token refresh is not available' }, 503);
     }
 
-    const env = c.env as any;
-    const kvManager = new KVStorageManager(c.env.AUTH_KV, env.JWT_SECRET);
+    const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
     const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
 
     // Create new session token first
@@ -103,7 +103,7 @@ export async function refreshToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNa
 /**
  * Revoke token endpoint
  */
-export async function revokeToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>) {
+export async function revokeToken(c: BffContext) {
   try {
     const authHeader = c.req.header('Authorization');
     const token = extractBearerToken(authHeader);
@@ -112,13 +112,14 @@ export async function revokeToken(c: Context<{ Bindings: Env & { AUTH_KV?: KVNam
       return c.json({ error: 'Missing authorization token' }, 401);
     }
 
-    if (!c.env.AUTH_KV) {
+    const env = getEnv(c);
+
+    if (!env.AUTH_KV) {
       console.error('KV namespace AUTH_KV is not configured');
       return c.json({ error: 'Token revocation is not available' }, 503);
     }
 
-    const env = c.env as any;
-    const kvManager = new KVStorageManager(c.env.AUTH_KV, env.JWT_SECRET);
+    const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
     const userData = await kvManager.getUserAuthBySession(token);
 
     if (!userData) {

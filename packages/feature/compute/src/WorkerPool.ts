@@ -1,7 +1,6 @@
 const randomUUIDCompat = (): string => {
-  const g: any = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
-  if (g.crypto && typeof g.crypto.randomUUID === 'function') {
-    return g.crypto.randomUUID();
+  if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -9,8 +8,16 @@ const randomUUIDCompat = (): string => {
     return v.toString(16);
   });
 };
-import type { ClockPort } from './ports.js';
+import type { ClockPort, TimeoutHandle } from './ports.js';
 import type { TaskHandle, TaskSpec, TaskStatus } from './types.js';
+
+const isAbortError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  if ('name' in error && typeof (error as { name?: unknown }).name === 'string') {
+    return (error as { name: string }).name === 'AbortError';
+  }
+  return false;
+};
 
 export interface WorkerPoolOptions {
   concurrency: number;
@@ -57,12 +64,12 @@ export class WorkerPool {
       const report = (p: number) => item.handle.emitProgress(p);
       const work = async () => {
         try {
-          const fn = item.spec.fn || (async (i: any) => i);
+          const fn = item.spec.fn || (async (input: unknown) => input);
           const out = await fn(item.spec.input, controller.signal, report);
           item.handle.setStatus('completed');
           item.resolve(out);
         } catch (e) {
-          if ((e as any)?.name === 'AbortError') {
+          if (isAbortError(e)) {
             item.handle.setStatus('cancelled');
             item.reject(e);
           } else {
@@ -132,5 +139,5 @@ class InternalHandle<O> implements TaskHandle<O> {
 const defaultClock: ClockPort = {
   now: () => Date.now(),
   setTimeout: (cb, ms) => setTimeout(cb, ms),
-  clearTimeout: (id) => clearTimeout(id as any),
+  clearTimeout: (id: TimeoutHandle) => clearTimeout(id),
 };

@@ -6,6 +6,7 @@
 import React, { useCallback } from 'react';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import { TagChipsInput } from '@hierarchidb/ui-core';
+import { LocalOffer } from '@mui/icons-material';
 
 export interface BasicInfoData {
   name: string;
@@ -88,7 +89,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       <FormControl fullWidth error={!!nameError}>
         <TextField
-          label="Name"
+          label='Name'
           value={name}
           onChange={handleNameChange}
           required
@@ -120,8 +121,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       {/* Tags input */}
       <FormControl fullWidth>
+
         <TagChipsInput
-          label="Tags"
+          name="tags"
+          label={<Box style={{gap: 1, justifyContent:"start", justifyItems:'start',  display:'flex', flexDirection:"row"}}><LocalOffer/><Box>Tags</Box></Box>}
           value={tags}
           onChange={handleTagsChange}
           suggestions={tagSuggestions}

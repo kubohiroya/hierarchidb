@@ -6,7 +6,14 @@
  * It handles real-time updates through event-driven notifications and manages subscription lifecycles.
  */
 
-import type { NodeId, SubscriptionId, SubscriptionOptions, TreeId, TreeNodeEvent } from '@hierarchidb/common-type';
+import type {
+  NodeId,
+  SubscriptionId,
+  SubscriptionOptions,
+  TreeId,
+  TreeNodeEvent,
+  UndoStateEvent,
+} from '@hierarchidb/common-type';
 
 /**
  * Real-time data subscription and monitoring API
@@ -82,6 +89,13 @@ export interface TreeSubscriptionAPI {
     callback: (event: TreeNodeEvent) => void,
     options?: SubscriptionOptions,
   ): Promise<SubscriptionId>;
+
+  /**
+   * Subscribe to undo/redo availability updates emitted by the command processor.
+   *
+   * Subscribers receive the current state immediately followed by subsequent changes.
+   */
+  subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId>;
 
   // ==================
   // Subscription Management

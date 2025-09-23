@@ -280,7 +280,7 @@ describe('Worker Initialization E2E Tests', () => {
   });
 
   it('should properly clean up resources on dispose', async () => {
-    const initPromise = channel.waitForInitialization({
+    void channel.waitForInitialization({
       worker,
       timeout: 10000,
       debug: false,

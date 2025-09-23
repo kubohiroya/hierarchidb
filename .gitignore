@@ -159,6 +159,9 @@ build/
 playwright-report/
 test-results/
 
+# Generated metadata snapshot (documentation reference only)
+packages/runtime-shared/fetch-metadata/docs/metadata.ts
+
 # pnpm
 .pnpm-store/
 pnpm-debug.log*
@@ -184,3 +187,7 @@ e2e-results.json
 e2e-results.xml
 tsup.config.bundled*.mjs
 vitest.config.ts.*.mjs
+/app/build-analysis/
+/app/.generated/
+/app/src/generated/
+/app/.generated/

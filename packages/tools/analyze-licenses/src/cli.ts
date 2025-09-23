@@ -8,6 +8,12 @@ type LicenseCheckerInit = (
   cb: (err: Error | null, packages: Record<string, any>) => void,
 ) => void;
 
+interface LicenseInfo {
+  path?: string;
+  licenses?: string | string[];
+  [key: string]: unknown;
+}
+
 async function main() {
   const cwd = process.cwd();
   const start = cwd; // analyze workspace root by default
@@ -42,14 +48,17 @@ async function main() {
 
       const entries = Object.entries(packages).filter(([_name, info]) => {
         // Ignore workspace paths (node_modules/.pnpm links still have paths)
-        const p = (info as any).path as string | undefined;
+        const candidate = info as LicenseInfo;
+        const p = candidate.path;
         return !p || !p.includes(path.sep + 'packages' + path.sep);
       });
 
       let missing = 0;
       for (const [pkgKey, info] of entries) {
-        const license = (info as any).licenses as string | undefined;
-        if (!license || license === 'UNLICENSED' || license === 'UNKNOWN') {
+        const candidate = info as LicenseInfo;
+        const licenses = candidate.licenses;
+        const primary = Array.isArray(licenses) ? licenses.join(', ') : licenses;
+        if (!primary || primary === 'UNLICENSED' || primary === 'UNKNOWN') {
           missing++;
           console.warn(`[licenses] Missing/unknown license: ${pkgKey}`);
         }

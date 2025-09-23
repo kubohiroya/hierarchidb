@@ -19,10 +19,16 @@ interface UseMultiSelectionProps {
   onMapFocus?: (result: SearchResult) => void;
 }
 
+interface SelectionModifiers {
+  shiftKey?: boolean;
+  metaKey?: boolean;
+  ctrlKey?: boolean;
+}
+
 interface UseMultiSelectionReturn {
   selectedResults: Set<NodeId>;
   selectedResultItems: SearchResult[];
-  handleResultSelect: (result: SearchResult, isMultiSelect: boolean) => void;
+  handleResultSelect: (result: SearchResult, modifiers?: SelectionModifiers) => void;
   handleMapFocus: (result: SearchResult) => void;
   selectAll: () => void;
   clearSelection: () => void;
@@ -56,19 +62,22 @@ export const useMultiSelection = ({
   }, [selectedResultItems, onSelectionChange]);
 
   const handleResultSelect = useCallback(
-    (result: SearchResult, isMultiSelect: boolean) => {
-      if (!isMultiSelect) {
+    (result: SearchResult, modifiers?: SelectionModifiers) => {
+      const shiftKey = modifiers?.shiftKey ?? false;
+      const metaKey = modifiers?.metaKey ?? false;
+      const ctrlKey = modifiers?.ctrlKey ?? false;
+
+      if (!shiftKey && !metaKey && !ctrlKey) {
         selectNode(result.nodeId);
-      } else {
-        //  Shift/Cmd+
-        if (event && (event as any).shiftKey) {
-          //  Shift+
-          selectRange(result.nodeId);
-        } else {
-          //  Cmd/Ctrl+
-          toggleNodeSelection(result.nodeId);
-        }
+        return;
       }
+
+      if (shiftKey) {
+        selectRange(result.nodeId);
+        return;
+      }
+
+      toggleNodeSelection(result.nodeId);
     },
     [selectNode, selectRange, toggleNodeSelection],
   );

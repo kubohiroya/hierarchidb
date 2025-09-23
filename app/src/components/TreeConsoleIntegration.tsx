@@ -16,15 +16,46 @@ import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js'
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
+import type { SubscriptionCallback } from '~/subscriptions/controller.js';
+
+const logIntegrationWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[TreeConsoleIntegration]', message, error);
+};
+
+const isSubscriptionDebug = (): boolean => {
+  try {
+    return ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_SUBSCRIPTION_DEBUG) === '1';
+  } catch (error) {
+    logIntegrationWarning('Failed to read VITE_SUBSCRIPTION_DEBUG flag', error);
+    return false;
+  }
+};
 
 export interface TreeConsoleIntegrationProps {
   readonly treeId?: string;
   readonly pageNodeId?: NodeId;
   readonly pageTreeNode?: TreeNode;
 }
+
+type TemplateNode = {
+  treeNodeId: string;
+  parentTreeNodeId?: string | null;
+  name: string;
+  treeNodeType?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+};
+
+type TemplateData = {
+  nodes?: Record<string, TemplateNode>;
+  rootNodeIds?: string[];
+};
+
+type ImportNode = ImportData['nodes'][number];
 
 // Inner component that uses the hook (client is guaranteed to be non-null)
 const TreeConsoleIntegrationInner: React.FC<
@@ -34,9 +65,11 @@ const TreeConsoleIntegrationInner: React.FC<
   const navigate = useNavigate();
   const [tourRun, setTourRun] = useState(false);
   const [hasTrashItems, setHasTrashItems] = useState(false);
+  const [trashRootId, setTrashRootId] = useState<NodeId | null>(null);
   const trashSubRef = useRef<string | null>(null);
-  const trashCallbackRef = useRef<any | null>(null);
+  const trashCallbackRef = useRef<SubscriptionCallback | null>(null);
   const trashRefreshTimerRef = useRef<number | null>(null);
+  const trashRootIdRef = useRef<NodeId | null>(null);
 
   const {
     loading: workerLoading,
@@ -58,7 +91,13 @@ const TreeConsoleIntegrationInner: React.FC<
     treeId,
     pageNodeId,
     pageTreeNode,
-    pushPath: (to: string | number) => navigate(to as any),
+    pushPath: (to: string | number) => {
+      if (typeof to === 'number') {
+        navigate(to);
+      } else {
+        navigate(to);
+      }
+    },
     locationSearch: location.search,
   });
 
@@ -69,21 +108,28 @@ const TreeConsoleIntegrationInner: React.FC<
   useEffect(() => {
     const checkTrashItems = async () => {
       if (workerClient && treeId) {
-        try {
+
           // Use facade APIs instead of deprecated direct methods
           const queryAPI = await workerClient.getQueryAPI();
           const tree = await queryAPI.getTree(treeId as TreeId);
           if (tree?.trashRootId) {
-            const trashChildren = await queryAPI.listChildren(tree.trashRootId as NodeId);
+            const trashNodeId = tree.trashRootId as NodeId;
+            setTrashRootId(trashNodeId);
+            const trashChildren = await queryAPI.listChildren(trashNodeId);
             setHasTrashItems(trashChildren.length > 0);
+          } else {
+            setTrashRootId(null);
+            setHasTrashItems(false);
           }
-        } catch (error) {
-          
-        }
+
       }
     };
     checkTrashItems();
   }, [workerClient, treeId]);
+
+  useEffect(() => {
+    trashRootIdRef.current = trashRootId;
+  }, [trashRootId]);
 
   // Subscribe to trash root changes and update hasTrashItems reactively
   useEffect(() => {
@@ -92,19 +138,21 @@ const TreeConsoleIntegrationInner: React.FC<
       if (!workerClient || !treeId) return;
       try {
         const queryAPI = await workerClient.getQueryAPI();
-        const subscriptionAPI = await workerClient.getSubscriptionAPI();
+        await workerClient.getSubscriptionAPI();
         const tree = await queryAPI.getTree(treeId as TreeId);
-        const trashRootId = tree?.trashRootId as NodeId | undefined;
-        if (!trashRootId) return;
+        const trashRootId = tree?.trashRootId;
+        if (!trashRootId) {
+          setTrashRootId(null);
+          return;
+        }
+        setTrashRootId(trashRootId as NodeId);
 
         // Avoid duplicate subscriptions to the same trash root
         if (trashSubRef.current && (typeof trashRootId === 'string')) {
           // Already subscribed for this root; skip
-          try {
-            if (import.meta.env && import.meta.env.VITE_SUBSCRIPTION_DEBUG === '1') {
-              console.log('[Subscription][trash] already active', { trashRootId, subId: trashSubRef.current });
-            }
-          } catch {}
+          if (isSubscriptionDebug()) {
+            console.log('[Subscription][trash] already active', { trashRootId, subId: trashSubRef.current });
+          }
         }
 
         // Debounced refresh to avoid bursty listChildren calls
@@ -114,10 +162,10 @@ const TreeConsoleIntegrationInner: React.FC<
           trashRefreshTimerRef.current = window.setTimeout(async () => {
             trashRefreshTimerRef.current = null;
             try {
-              const children = await queryAPI.listChildren(trashRootId as NodeId);
+              const children = await queryAPI.listChildren(trashRootId);
               setHasTrashItems((children?.length || 0) > 0);
-            } catch (e) {
-              
+            } catch (error) {
+              logIntegrationWarning('Failed to refresh trash children', error);
             }
           }, 80);
         };
@@ -126,31 +174,27 @@ const TreeConsoleIntegrationInner: React.FC<
         requestRefresh();
 
         // Subscribe to trash subtree notifications (worker-driven)
-        const cb = comlinkProxy((ev: any) => {
-          try {
-            if (import.meta.env && import.meta.env.VITE_SUBSCRIPTION_DEBUG === '1') {
-              console.log('[Subscription][trash] event', ev);
-            }
-          } catch {}
+        const cb = comlinkProxy((ev: unknown) => {
+          if (isSubscriptionDebug()) {
+            console.log('[Subscription][trash] event', ev);
+          }
           requestRefresh();
         });
         trashCallbackRef.current = cb;
         // Skip if already subscribed
-        const existing = Subscriptions.getActive('trash', trashRootId as NodeId);
+        const existing = Subscriptions.getActive('trash', trashRootId);
         if (existing) return;
-        const { subId: sid, created } = await Subscriptions.subscribe('trash', workerClient as any, trashRootId as NodeId, cb);
-        try {
-          if (created && import.meta.env && import.meta.env.VITE_SUBSCRIPTION_DEBUG === '1') {
-            console.log('[Subscription][trash] subscribed', { trashRootId, subId: sid });
-          }
-        } catch {}
+        const { subId: sid, created } = await Subscriptions.subscribe('trash', workerClient, trashRootId, cb);
+        if (created && isSubscriptionDebug()) {
+          console.log('[Subscription][trash] subscribed', { trashRootId, subId: sid });
+        }
         if (disposed) {
-          await Subscriptions.release('trash', workerClient as any, trashRootId as NodeId);
+          await Subscriptions.release('trash', workerClient, trashRootId);
           return;
         }
-        trashSubRef.current = (sid || null) as any;
+        trashSubRef.current = sid ?? null;
       } catch (error) {
-        
+        logIntegrationWarning('Failed to initialize trash subscription workflow', error);
       }
     };
 
@@ -165,11 +209,13 @@ const TreeConsoleIntegrationInner: React.FC<
         try {
           const queryAPI = await workerClient?.getQueryAPI();
           const tree = await queryAPI?.getTree(treeId as TreeId);
-          const trashRootId = tree?.trashRootId as NodeId | undefined;
+          const trashRootId = tree?.trashRootId;
           if (trashRootId) {
-            await Subscriptions.release('trash', workerClient as any, trashRootId);
+            await Subscriptions.release('trash', workerClient, trashRootId);
           }
-        } catch {}
+        } catch (error) {
+          logIntegrationWarning('Failed to release trash subscription', error);
+        }
         trashSubRef.current = null;
         trashCallbackRef.current = null;
       };
@@ -184,24 +230,23 @@ const TreeConsoleIntegrationInner: React.FC<
 
       const importTemplate = async (templateId: string) => {
         try {
-          const computeBase = () => {
-            try {
-              const envBase = (import.meta as any)?.env?.BASE_URL as string | undefined;
-              if (envBase && envBase.length > 0) return envBase;
-              if (typeof document !== 'undefined' && (document as any)?.baseURI) {
-                return new URL((document as any).baseURI).pathname || '/';
+          const computeBase = (): string => {
+            const envBase = import.meta.env.BASE_URL || '';
+            if (envBase.length > 0) return envBase;
+            if (typeof document !== 'undefined' && document.baseURI) {
+              try {
+                return new URL(document.baseURI).pathname || '/';
+              } catch (error) {
+                logIntegrationWarning('Failed to parse document.baseURI for import base', error);
+                return '/';
               }
-            } catch {}
+            }
             return '/';
           };
-          const base = String(computeBase()).replace(/\/+$/, '/');
-          const candidateBases = Array.from(new Set([
-            base,
-            '/hierarchidb/',
-            '/',
-          ]));
+          const base = computeBase().replace(/\/+$/, '/');
+          const candidateBases = Array.from(new Set([base, '/hierarchidb/', '/']));
 
-          const tryFetch = async (u: string): Promise<any> => {
+          const tryFetch = async (u: string): Promise<TemplateData> => {
             const res = await fetch(u, { cache: 'no-store' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const ct = res.headers.get('content-type') || '';
@@ -213,68 +258,71 @@ const TreeConsoleIntegrationInner: React.FC<
               }
               try { return JSON.parse(text); } catch { throw new Error('INVALID_JSON'); }
             }
-            return await res.json();
+            return (await res.json()) as TemplateData;
           };
 
-          let data: any | null = null;
-          let lastErr: any = null;
+          let templateData: TemplateData | undefined;
+          let lastErr: unknown;
           for (const b of candidateBases) {
             const u = `${String(b).replace(/\/+$/, '/') }templates/${templateId}/tree-nodes.json`;
             try {
-              data = await tryFetch(u);
+              templateData = await tryFetch(u);
               break;
             } catch (e) {
               lastErr = e;
               continue;
             }
           }
-          if (!data) {
+          if (!templateData) {
             throw new Error(`Failed to load template: ${templateId} (${String(lastErr)})`);
           }
 
           // Convert template structure (flat map + parent refs) to ImportData format
-          const nodesMap: Record<string, any> = data?.nodes || {};
-          const rootIds: string[] = data?.rootNodeIds || [];
+          const nodesMap: Record<string, TemplateNode> = templateData.nodes ?? {};
+          const rootIds: string[] = templateData.rootNodeIds ?? [];
 
           // Build nested nodes and set depth so that
           //  - top-level imported nodes (under current page node) start at depth 1
           //  - their children are depth 2, and so on
-          const buildTree = (id: string, depth: number): any => {
+          const buildTree = (id: string, depth: number): ImportNode | null => {
             const n = nodesMap[id];
             if (!n) return null;
             const children = Object.values(nodesMap)
-              .filter((c: any) => c?.parentTreeNodeId === id)
-              .map((c: any) => buildTree(c.treeNodeId, depth + 1))
-              .filter(Boolean);
+              .filter((child) => child?.parentTreeNodeId === id)
+              .map((child) => buildTree(child.treeNodeId, depth + 1))
+              .filter((child): child is ImportNode => Boolean(child));
             return {
               name: n.name,
-              nodeType: (n.treeNodeType || 'folder') as any,
+              nodeType: (n.treeNodeType ?? 'folder') as NodeType,
               description: n.description,
-              metadata: n.metadata,
-              depth, // explicitly set depth for imported items
-              children: children && children.length > 0 ? children : undefined,
+              metadata: { ...(n.metadata ?? {}), depth },
+              children: children.length > 0 ? children : undefined,
             };
           };
 
-          const importNodes = rootIds
+          const importNodes: ImportData['nodes'] = rootIds
             .map((rid) => buildTree(rid, 1))
-            .filter(Boolean);
+            .filter((node): node is ImportNode => node !== null);
 
           if (!workerClient) throw new Error('Worker client not ready');
           const importExportAPI = await workerClient.getImportExportAPI();
           await importExportAPI.importNodes({
             treeId: (treeId as TreeId) || ('' as TreeId),
             targetParentId: currentPageNodeId as NodeId,
-            data: { nodes: importNodes as any[] },
+            data: { nodes: importNodes },
             format: 'json',
             conflictResolution: 'rename',
           });
 
           await actions.handleRefresh?.();
-        } catch (e) {
-          
+        } catch (error) {
+          logIntegrationWarning('Import template handler failed', error);
           const hint = ' If this is a dev build under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
-          try { alert(`Import Template failed: ${String(e)}${hint}`); } catch {}
+          try {
+            alert(`Import Template failed: ${String(error)}${hint}`);
+          } catch (alertError) {
+            logIntegrationWarning('Failed to alert template import failure', alertError);
+          }
         }
       };
 
@@ -285,42 +333,28 @@ const TreeConsoleIntegrationInner: React.FC<
           }
           break;
         case 'import-template':
-          if (params && typeof params === 'object' && 'templateId' in params) {
-            void importTemplate((params as any).templateId);
-          } else {
-            
+          if (params && typeof params === 'object' && 'templateId' in params && typeof params.templateId === 'string') {
+            void importTemplate(params.templateId);
           }
           break;
-        case 'restore':
-          // Open trash dialog in recover mode
-          navigate(`/t/${treeId}/${currentPageNodeId}/trash/recover`);
+        case 'restore': {
+          if (!treeId) break;
+          const resolvedTrashNodeId =
+            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+              ? params.trashNodeId
+              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore`);
           break;
-        case 'empty':
-          // High-level API: removeSubtree(trashRootId)
-          (async () => {
-            try {
-              const ok = confirm('Trash will be permanently emptied. This cannot be undone. Continue?');
-              if (!ok) return;
-              const queryAPI = await workerClient.getQueryAPI();
-              const mutationAPI = await workerClient.getMutationAPI();
-              const t = await queryAPI.getTree(treeId as TreeId);
-              const trashRootId = t?.trashRootId as NodeId | undefined;
-              if (!trashRootId) {
-                alert('Trash root not found.');
-                return;
-              }
-              const res = await (mutationAPI as any).removeSubtree(trashRootId);
-              if (!res?.success) {
-                alert('Failed to empty trash: ' + (res?.error || 'Unknown error'));
-                return;
-              }
-              await actions.handleRefresh?.();
-            } catch (e) {
-              
-              alert('Empty trash failed: ' + String(e));
-            }
-          })();
+        }
+        case 'empty': {
+          if (!treeId) break;
+          const resolvedTrashNodeId =
+            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+              ? params.trashNodeId
+              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty`);
           break;
+        }
         case 'undo':
           actions.handleUndo?.();
           break;
@@ -349,7 +383,7 @@ const TreeConsoleIntegrationInner: React.FC<
           actions.handleExport?.();
           break;
         default:
-          
+          logIntegrationWarning(`Unhandled toolbar action: ${action}`, new Error('Unhandled action'));
       }
     },
     [pageNodeId, workerClient, treeId, actions, navigate],
@@ -363,6 +397,12 @@ const TreeConsoleIntegrationInner: React.FC<
   const handleTourFinish = useCallback(() => {
     setTourRun(false);
   }, []);
+
+  const lowerPageNodeId = pageNodeId ? String(pageNodeId).toLowerCase() : '';
+  const isTrashPage =
+    pageTreeNode?.nodeType === 'trash' ||
+    lowerPageNodeId.endsWith(':trash') ||
+    lowerPageNodeId === 'trash';
 
   
 
@@ -442,7 +482,7 @@ const TreeConsoleIntegrationInner: React.FC<
         availableTemplates={(() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
-            return [{ id: 'population-2023', label: 'Import Template: World Population by Countries' }];
+            return [{ id: 'population-2023', label: 'Import Template: Total Population by Country' }];
           }
           return [];
         })()}
@@ -496,6 +536,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canGoForward={state.canGoForward}
         onContextMenuAction={actions.handleContextMenuAction}
         onMoveNodes={actions.handleMoveNodes}
+        useTrashColumns={isTrashPage}
       />
       </Box>
 

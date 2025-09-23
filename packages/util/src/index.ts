@@ -15,4 +15,5 @@ export * from './validation.js';
 export { SingletonMixin } from './SingletonMixin.js';
 export { generateId } from './generateId.js';
 export * from './db-name.js';
+export * from './env.js';
 // Note: Dexie-specific helpers are internal; avoid leaking Dexie types to consumers

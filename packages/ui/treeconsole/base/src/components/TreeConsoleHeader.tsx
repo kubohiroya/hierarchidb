@@ -84,7 +84,7 @@ export function TreeConsoleHeader(props: TreeConsoleHeaderProps): React.JSX.Elem
             onNodeClick={(nodeId: string, node?: any) => {
               console.log('Navigate to node:', nodeId, node);
             }}
-            variant={'default' as any}
+            variant="default"
           />
         )}
         */}

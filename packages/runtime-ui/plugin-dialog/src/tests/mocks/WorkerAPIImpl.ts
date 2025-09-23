@@ -4,8 +4,8 @@ type WorkingCopy = {
   id: NodeId;
   nodeType: string;
   parentNodeId?: NodeId;
-  data: any;
-  metadata?: any;
+  data: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 };
 
 type Capabilities = {
@@ -77,11 +77,13 @@ export class WorkerAPIImpl {
 
       async updateWorkingCopy(workingCopyId: NodeId, updates: Partial<WorkingCopy>): Promise<WorkingCopy> {
         const wc = await get(workingCopyId);
+        const mergedData = updates.data ? { ...wc.data, ...updates.data } : wc.data;
+        const mergedMeta = updates.metadata ? { ...wc.metadata, ...updates.metadata } : wc.metadata;
         const next: WorkingCopy = {
           ...wc,
           ...updates,
-          data: { ...wc.data, ...(updates as any).data },
-          metadata: { ...wc.metadata, ...(updates as any).metadata },
+          data: mergedData,
+          metadata: mergedMeta,
         };
         self.store.set(workingCopyId, next);
         return next;

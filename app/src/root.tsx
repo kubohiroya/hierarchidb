@@ -1,9 +1,11 @@
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router-dom';
-import {useRouteError} from 'react-router';
+import { useRouteError } from 'react-router';
 import { CssBaseline } from '@mui/material';
 // Note: When using Emotion Cache with insertion point, do not also use StyledEngineProvider injectFirst
-import { StrictMode } from 'react';
+import { StrictMode, type ComponentType } from 'react';
 import { bootLog } from './utils/bootLog.js';
+// Ensure plugin EntitiesDB adapters are registered early (side-effect import)
+import './shared/peer-display-mode.js';
 import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
@@ -23,24 +25,41 @@ import { ServicesReadySnackbar } from './components/ServicesReadySnackbar.js';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters.js';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
-import { autoLoadPlugins } from './plugins/auto-load.js';
+// Generated static UI plugin loader: imports plugin UI entry points in dependency order
+import './generated/ui-loader.js';
+
+/**
+ * Global link descriptors shared across all routes (favicons, etc.)
+ */
+export function links() {
+  return [] as const;
+}
+
+const logRootWarning = (message: string, error?: unknown): void => {
+  if (typeof console === 'undefined') return;
+  if (typeof error === 'undefined') {
+    console.warn('[root]', message);
+  } else {
+    console.warn('[root]', message, error);
+  }
+};
 
 // Log version and build time at startup (local time)
 const localBuildTime = (() => {
   try {
     return new Date(BUILD_TIME).toLocaleString();
-  } catch {
+  } catch (error) {
+    logRootWarning('Failed to format BUILD_TIME', error);
     return String(BUILD_TIME);
   }
 })();
-// eslint-disable-next-line no-console
 console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 
 // Register the app-provided hook once at module load
 registerWorkerClientHook(useWorkerAPIClient);
 // Also expose the hook getter on window for plugin UIs that avoid static imports to keep bundling lean
 if (typeof window !== 'undefined') {
-  (window as any).__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
+  (window as Window & { __HDB_GET_WORKER_CLIENT_HOOK?: typeof getWorkerClientHook }).__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;
 }
 
 // No runtime globals for base; SSOT is Vite's BASE_URL consumed directly where needed.
@@ -53,25 +72,16 @@ declare global {
 
 // Initialize worker URL configuration
 
-// Register all UI plugins at startup (only once)
+// Register all UI plugins at startup (only once). UI plugins are statically imported via generated/ui-loader.
 if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
-  (async () => {
-    // Load plugins discovered by virtual modules unless explicitly skipped
-    if (!((import.meta as any)?.env?.VITE_SKIP_PLUGIN_AUTOLOAD === '1')) {
-      try { await autoLoadPlugins(); } catch (e) { console.warn('[root] autoLoadPlugins failed', e); }
-    } else {
-      console.warn('[root] autoLoadPlugins skipped by VITE_SKIP_PLUGIN_AUTOLOAD=1');
-    }
-    // Keep legacy/stub registration as a fallback (no-ops when already registered)
-    registerAllUIPlugins();
-    window.__uiPluginsRegistered = true;
-  })();
+  registerAllUIPlugins();
+  window.__uiPluginsRegistered = true;
 }
 
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
-  import('./WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
+  import('./WorkerAPIClient.js').then(() => {
 
   }).catch(error => {
     console.error('[root.tsx] Failed to load WorkerAPIClient module:', error);
@@ -81,11 +91,13 @@ if (typeof window !== 'undefined') {
   import('./plugins/menu-builders.js')
     .then(async (mod) => {
       // @eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__HDB_MENU_BUILDERS__ = mod;
+      (window as Window & { __HDB_MENU_BUILDERS__?: unknown }).__HDB_MENU_BUILDERS__ = mod;
       // prefetch remains available from original module; keep best-effort call
       try {
-        await (mod as any).prefetchIconsForAllContexts?.();
-      } catch {}
+        await (mod as { prefetchIconsForAllContexts?: () => Promise<void> }).prefetchIconsForAllContexts?.();
+      } catch (error) {
+        logRootWarning('Prefetching icon contexts failed', error);
+      }
     })
     .catch((err) => {
       console.warn('[root.tsx] menu-builders preload failed (will fallback to worker plugins):', err);
@@ -94,40 +106,59 @@ if (typeof window !== 'undefined') {
   // Provide plugin definitions to runtime-ui packages that rely on global injection
   // @ts-ignore virtual module provided by package-reader
   import('virtual:plugin-definitions')
-    .then((mod: any) => {
-      (window as any).__HDB_PLUGIN_DEFS__ = mod?.default || [];
+    .then((mod: { default?: unknown[] }) => {
+      (window as Window & { __HDB_PLUGIN_DEFS__?: unknown[] }).__HDB_PLUGIN_DEFS__ = mod?.default || [];
     })
-    .catch(() => {});
+    .catch((error) => {
+      logRootWarning('Failed to load virtual:plugin-definitions', error);
+    });
 
   // Expose TreeConsolePanel for plugin UIs that avoid static imports
-  (window as any).__HDB_TreeConsolePanel = TreeConsolePanel;
+  (window as Window & { __HDB_TreeConsolePanel?: typeof TreeConsolePanel }).__HDB_TreeConsolePanel = TreeConsolePanel;
 
 
   // Inject app-generated static MUI icon map for ui-icon to use globally
   import('virtual:mui-icon-map')
-    .then((mod: any) => {
-      setGlobalMuiIconMap(mod.default || mod.iconMap || {});
+    .then((mod: { default?: Record<string, ComponentType<any>>; iconMap?: Record<string, ComponentType<any>> }) => {
+      const map = (mod.default || mod.iconMap || {}) as Record<string, ComponentType<any>>;
+      setGlobalMuiIconMap(map);
     })
-    .catch(() => {
-      // ignore; ui-icon will fallback to its internal static map/dynamic import
+    .catch((error) => {
+      logRootWarning('Failed to load virtual:mui-icon-map', error);
     });
 
   // Optional: prewarm plugin services (DB/Shared/Services) in dev when enabled
-  if ((import.meta as any)?.env?.VITE_PREWARM_SERVICES) {
+  if (import.meta.env.VITE_PREWARM_SERVICES === '1') {
     import('~/services/databases.js').then(async (db) => {
+      const safeOpen = async (
+        label: string,
+        database: { open?: () => Promise<unknown> } | undefined,
+      ): Promise<string> => {
+        try {
+          await database?.open?.();
+        } catch (error) {
+          logRootWarning(`Prewarm database open failed for ${label}`, error);
+        }
+        return label;
+      };
+
       const results = await Promise.allSettled([
-        db.getBaseMapDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'basemap'; }),
-        db.getResolverDB().then(async (r) => { try { await (r as any)?.open?.(); } catch {} ; return 'resolver'; }),
-        db.getSpreadsheetDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'spreadsheet'; }),
-        db.getRouteDatabase().then(async (d) => { try { await (d as any)?.open?.(); } catch {} ; return 'route'; }),
-        db.getShapeDatabase().then(async (d) => { try { await d?.open(); } catch {} ; return 'shape'; }),
-        db.getLocationEphemeralDB().then(async (d) => { try { await (d as any)?.open?.(); } catch {} ; return 'location'; }),
+        db.getBaseMapDatabase().then(async (d) => safeOpen('basemap', d)),
+        db.getResolverDB().then(async (d) => safeOpen('resolver', d)),
+        db.getSpreadsheetDatabase().then(async (d) => safeOpen('spreadsheet', d)),
+        db.getRouteDatabase().then(async (d) => safeOpen('route', d)),
+        db.getShapeDatabase().then(async (d) => safeOpen('shape', d)),
+        db.getLocationEphemeralDB().then(async (d) => safeOpen('location', d)),
       ]);
-      const ok = results.filter(r => r.status === 'fulfilled').map((r:any) => r.value as string);
+      const ok = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+        .map(r => r.value);
 
         window.dispatchEvent(new CustomEvent('hdb-services-ready', { detail: { source: 'ui', at: Date.now(), nodeTypes: ok } }));
 
-    }).catch(() => {});
+    }).catch((error) => {
+      logRootWarning('Failed to prewarm plugin services', error);
+    });
   }
 }
 
@@ -139,8 +170,8 @@ if (typeof window !== 'undefined') {
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-    <head>
-      <Meta />
+      <head>
+        <Meta />
       <Links />
     </head>
     <body suppressHydrationWarning>

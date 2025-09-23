@@ -5,18 +5,15 @@ import {
   Chip,
   FormControl,
   IconButton,
-  InputAdornment,
   InputLabel,
   MenuItem,
   Select,
-  TextField,
   Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Clear as ClearIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   ExpandLess as ExpandLessIcon,
@@ -24,11 +21,11 @@ import {
   FilterList as FilterListIcon,
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
-  Search as SearchIcon,
   Sort as SortIcon,
   ViewComfy as ViewComfyIcon,
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
+import { TreeTableSearchInput } from './SearchInput.js';
 
 export interface TreeTableToolbarProps {
   readonly title?: string;
@@ -91,26 +88,11 @@ export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableT
 
       {/* Search Section */}
       <Box sx={{ display: 'flex', alignItems: 'center', mr: 2, minWidth: 200 }}>
-        <TextField
-          size="small"
-          placeholder="Search..."
+        <TreeTableSearchInput
           value={props.searchTerm}
-          onChange={(e) => props.onSearchChange(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-            endAdornment: props.searchTerm ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={props.onSearchClear} aria-label="Clear search">
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
-          sx={{ minWidth: 200 }}
+          onChange={props.onSearchChange}
+          onClear={props.onSearchClear}
+          sx={{ minWidth: 200, width: '100%' }}
         />
       </Box>
 

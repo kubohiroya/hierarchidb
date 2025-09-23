@@ -25,10 +25,7 @@
   "dependencies": {
     "@mui/x-date-pickers": "^8.10.2",
     "@hierarchidb/ui-date": "workspace:*",
-    "date-fns": "^4.1.0",
     "i18next": "22.5.0",
-    "i18next-browser-languagedetector": "^8.2.0",
-    "i18next-http-backend": "^3.0.2",
     "react-i18next": "12.3.1"
   },
   "devDependencies": {
@@ -39,14 +36,20 @@
     "@mui/material": "^7.3.2",
     "@vitejs/plugin-react": "4.3.4",
     "vite": "5.4.19",
-    "react": "^18.3.1"
+    "react": "^18.3.1",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
+    "date-fns": "^4.1.0"
   },
   "peerDependencies": {
     "react": "^18.3.1",
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0"
+    "@emotion/styled": "^11.14.0",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
+    "date-fns": "^4.1.0"
   },
   "license": "MIT",
   "tsup": {
@@ -55,7 +58,10 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
-      "react"
+      "react",
+      "i18next-browser-languagedetector",
+      "i18next-http-backend",
+      "date-fns"
     ]
   }
 }

@@ -31,7 +31,7 @@ export default function TagsPage() {
   const { client: workerClient, isConnected } = useWorkerClient();
 
   //  uuid
-  const { data: allTags, isLoading: isLoadingTags } = useQuery({
+  const { data: allTags = [], isLoading: isLoadingTags } = useQuery<TagEntity[]>({
     queryKey: ['tags', 'all'],
     queryFn: async () => {
       if (!workerClient) throw new Error('Worker not connected');
@@ -39,22 +39,25 @@ export default function TagsPage() {
       return await tagAPI.getAllTags();
     },
     enabled: !uuid && isConnected,
+    initialData: [],
   });
 
   //  uuid
-  const { data: specificTag, isLoading: isLoadingTag } = useQuery({
+  const { data: specificTag = null, isLoading: isLoadingTag } = useQuery<TagEntity | null>({
     queryKey: ['tag', uuid],
     queryFn: async () => {
       if (!uuid) return null;
       if (!workerClient) throw new Error('Worker not connected');
       const tagAPI = await workerClient.getTagAPI();
-      return await tagAPI.getTag(uuid as unknown as TagId);
+      const tag = await tagAPI.getTag(uuid as unknown as TagId);
+      return tag ?? null;
     },
     enabled: !!uuid && isConnected,
+    initialData: null,
   });
 
   //  uuid
-  const { data: taggedNodes, isLoading: isLoadingNodes } = useQuery({
+  const { data: taggedNodes = [], isLoading: isLoadingNodes } = useQuery<TaggedNode[]>({
     queryKey: ['tag', uuid, 'nodes'],
     queryFn: async (): Promise<TaggedNode[]> => {
       if (!uuid) return [];
@@ -96,6 +99,7 @@ export default function TagsPage() {
       return taggedNodesData;
     },
     enabled: !!uuid && isConnected,
+    initialData: [],
   });
 
   const renderTagList = () => {

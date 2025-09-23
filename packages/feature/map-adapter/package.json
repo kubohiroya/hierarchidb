@@ -22,7 +22,8 @@
     "deck.gl": "^9"
   },
   "dependencies": {
-    "@hierarchidb/map-source": "workspace:*"
+    "@hierarchidb/map-source": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
     "deck.gl": "^9.0.0",

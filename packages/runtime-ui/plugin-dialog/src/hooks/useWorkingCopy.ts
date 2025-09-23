@@ -11,7 +11,7 @@ export interface WorkingCopyData {
   treeNodeId: NodeId;
   name: string;
   description?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   isDraft?: boolean;
 }
 
@@ -52,12 +52,21 @@ export function useWorkingCopy({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const toWorkingCopyData = useCallback((node: any): WorkingCopyData => ({
-    treeNodeId: node?.id as NodeId,
-    name: node?.name || '',
-    description: (node as any)?.description || '',
-    data: (node as any)?.data || {},
-  }), []);
+  const isRecord = (value: unknown): value is Record<string, unknown> => (
+    typeof value === 'object' && value !== null
+  );
+
+  const toWorkingCopyData = useCallback((node: Partial<TreeNode> & { data?: unknown }): WorkingCopyData => {
+    const treeNodeId = (typeof node?.id === 'string' ? node.id : nodeId) as NodeId;
+    const description = typeof node?.description === 'string' ? node.description : undefined;
+    const data = isRecord(node.data) ? node.data : undefined;
+    return {
+      treeNodeId,
+      name: typeof node?.name === 'string' ? node.name : '',
+      description,
+      data,
+    };
+  }, [nodeId]);
 
   // Resolve WorkerAPI client provided by host (supports direct WorkerAPI only in this hook)
   const getClient = async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
@@ -79,11 +88,11 @@ export function useWorkingCopy({
       setError(null);
 
       try {
-        const { wc: wcAPI } = await getClient();
+      const { wc: wcAPI } = await getClient();
 
-        if (mode === 'edit' && nodeId) {
-          // Create WC from existing node and load it
-          await wcAPI.createWorkingCopyFromNode(nodeId);
+      if (mode === 'edit' && nodeId) {
+        // Create WC from existing node and load it
+        await wcAPI.createWorkingCopyFromNode(nodeId);
           const wc = await wcAPI.getWorkingCopy(nodeId);
           if (!wc) throw new Error('Failed to create working copy');
           const copy = toWorkingCopyData(wc);
@@ -105,7 +114,7 @@ export function useWorkingCopy({
 
           if (parentId) {
             // Create a draft WC under the parent when one does not exist yet
-            const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as unknown as NodeType, parentId, { name: '' } as Partial<TreeNode>);
+          const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, { name: '' });
             const copy = toWorkingCopyData(wcNode);
             setWorkingCopy(copy);
             setOriginalCopy(copy);
@@ -141,6 +150,7 @@ export function useWorkingCopy({
 
   // Save working copy
   const saveWorkingCopy = useCallback(async (data?: Partial<WorkingCopyData>): Promise<NodeId> => {
+    console.debug("[Folder-create]");
     if (!workingCopy) throw new Error('No working copy to save');
     const finalData = data ? { ...workingCopy, ...data } : workingCopy;
 
@@ -149,36 +159,38 @@ export function useWorkingCopy({
       const { wc: wcAPI, query } = await getClient();
 
       // Normalize data (convert Set to Array where necessary)
-      const normalizedData = (() => {
-        const d: any = finalData.data ?? {};
-        const out: any = { ...d };
-        if (d && d.likedNodeIdSet instanceof Set) {
-          out.likedNodeIdSet = Array.from(d.likedNodeIdSet as Set<string>);
-        }
-        return out;
-      })();
+      const normalizedData: Record<string, unknown> = { ...(finalData.data ?? {}) };
+      const likedSet = normalizedData['likedNodeIdSet'];
+      if (likedSet instanceof Set) {
+        normalizedData['likedNodeIdSet'] = Array.from(likedSet);
+      }
 
       // Update WC (name/description/data)
-      await wcAPI.updateWorkingCopy(finalData.treeNodeId, {
+      const updatePayload: Partial<TreeNode> & { data?: Record<string, unknown> } = {
         name: finalData.name,
         description: finalData.description,
         data: normalizedData,
-      } as Partial<TreeNode>);
+      };
+      await wcAPI.updateWorkingCopy(finalData.treeNodeId, updatePayload as Partial<TreeNode>);
 
       // Determine target node id before commit (read holder metadata)
       const wcNode = await query.getNode(finalData.treeNodeId);
       if (!wcNode) throw new Error('Working copy not found');
       const holder = await query.getNode(wcNode.parentId);
-      const targetNodeId: NodeId | undefined = (holder as any)?.holderTargetId as NodeId | undefined;
+      const targetNodeId: NodeId | undefined = holder?.holderTargetId;
 
       // Commit
       const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId);
       if (!res?.success) throw new Error(res?.error || 'Commit failed');
 
-      // Update original copy snapshot
-      setOriginalCopy(finalData);
+      const committedNodeId = (res.node?.id as NodeId | undefined)
+        ?? targetNodeId
+        ?? finalData.treeNodeId;
 
-      return (targetNodeId || finalData.treeNodeId) as NodeId;
+      // Update original copy snapshot with latest data
+      setOriginalCopy({ ...finalData, treeNodeId: committedNodeId });
+
+      return committedNodeId;
     } catch (err) {
       console.error('Failed to save working copy:', err);
       throw err;

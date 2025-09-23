@@ -37,11 +37,14 @@ export default [
     plugins: {
       deprecation,
       'react-hooks': reactHooks,
+      '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
+
     },
     rules: {
       ...js.configs.recommended.rules,
       // Keep repo green: prefer warnings for stylistic pitfalls in mixed JS/TS code
-      'no-unused-vars': ['warn', {
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         ignoreRestSiblings: true,
@@ -70,9 +73,21 @@ export default [
 
   // Browser-delivered code: forbid accidental `process` usage
   {
-    files: ['packages/{ui,runtime-worker,node-type}/**/*.{js,jsx,ts,tsx}'],
+    files: ['app/src/**/*.{js,jsx,ts,tsx}', 'packages/**/src/**/*.{js,jsx,ts,tsx}'],
+    ignores: ['packages/backend/**', '**/__tests__/**', '**/*.test.*', '**/*.spec.*', 'packages/**/scripts/**'],
     rules: {
       'no-restricted-globals': ['error', 'process'],
+    },
+  },
+
+  // Node-targeted tooling/CLI packages: allow deliberate `process` access
+  {
+    files: [
+      'packages/tools/vite-plugin-dev-health/src/**/*.{js,jsx,ts,tsx}',
+      'packages/tools/fetch-metadata-cli/src/**/*.{js,jsx,ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-globals': 'off',
     },
   },
 
@@ -92,11 +107,11 @@ export default [
 
   // Type-aware deprecation checks (shape-plugin)
   {
-    files: ['packages/node-type/shape-plugin/**/*.{ts,tsx}'],
+    files: ['packages/plugins/shape-plugin/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/node-type/shape-plugin/tsconfig.json'],
+        project: ['./packages/plugins/shape-plugin/tsconfig.json'],
       },
     },
     rules: {

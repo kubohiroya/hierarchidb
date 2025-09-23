@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Paper, Tooltip, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { formatBytes } from '@hierarchidb/util';
+import { isDevEnv } from '../../utils/env.js';
 
 export interface MemoryUsageBarProps {
   /**
@@ -148,10 +149,8 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
         setIsSupported(false);
       }
     } catch (error) {
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (isDevEnv()) {
         console.warn('Memory measurement failed:', String(error));
-
       }
 
       //  API

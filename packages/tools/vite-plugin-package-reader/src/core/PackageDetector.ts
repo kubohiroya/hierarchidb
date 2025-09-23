@@ -1,9 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { cwd } from 'node:process';
 import { glob } from 'glob';
 import type { MonorepoOptions, PackageDetectionStrategy, PackageJson } from '../types.js';
 import { Logger } from './Logger.js';
 import { PackageCache } from './PackageCache.js';
+
+const isErrnoException = (error: unknown): error is NodeJS.ErrnoException =>
+  typeof error === 'object' && error !== null && 'code' in error;
 
 export interface PackageDetectorOptions {
   rootDir?: string;
@@ -20,7 +24,7 @@ export class PackageDetector {
   private monorepo: MonorepoOptions;
 
   constructor(options: PackageDetectorOptions = {}) {
-    this.rootDir = options.rootDir || process.cwd();
+    this.rootDir = options.rootDir || cwd();
     this.cache = options.cache !== false ? new PackageCache(options.cacheTTL) : null;
     this.logger = options.logger || new Logger();
     this.monorepo = options.monorepo || {};
@@ -140,7 +144,7 @@ export class PackageDetector {
 
       return packageJson;
     } catch (error) {
-      if ((error as any).code !== 'ENOENT') {
+      if (!isErrnoException(error) || error.code !== 'ENOENT') {
         this.logger.error(`Failed to read ${filePath}:`, error);
       }
       return null;

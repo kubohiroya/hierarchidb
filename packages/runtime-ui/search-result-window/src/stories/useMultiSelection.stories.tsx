@@ -201,8 +201,11 @@ function MultiSelectionDemo() {
                   <ListItemButton
                     selected={isSelected}
                     onClick={(event) => {
-                      const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-                      handleResultSelect(result, isMultiSelect);
+                      handleResultSelect(result, {
+                        shiftKey: event.shiftKey,
+                        metaKey: event.metaKey,
+                        ctrlKey: event.ctrlKey,
+                      });
                     }}
                     onDoubleClick={() => {
                       handleMapFocus(result);
@@ -359,7 +362,11 @@ function LargeDataDemo() {
                     selected={isSelected}
                     onClick={(event) => {
                       const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
-                      handleResultSelect(result, isMultiSelect);
+                      handleResultSelect(result, {
+                        shiftKey: event.shiftKey,
+                        metaKey: event.metaKey,
+                        ctrlKey: event.ctrlKey,
+                      });
                     }}
                   >
                     <Checkbox edge="start" checked={isSelected} size="small" />

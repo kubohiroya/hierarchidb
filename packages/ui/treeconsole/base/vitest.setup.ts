@@ -1,1 +1,3 @@
-// No additional Vitest setup required for TreeConsole Base tests.
+import '@testing-library/jest-dom/vitest';
+
+// Centralized Testing Library matchers for TreeConsole Base package.

@@ -38,6 +38,10 @@ Motto: "Small, clear, safe steps — always grounded in real docs."
 * Avoid new dependencies unless necessary; remove when possible.
 
 ## Knowledge & Libraries
+## Testing Notes
+
+- **WFL (Worker-FIDB Loop)**: UI 統合テストで WorkerAPIClient を経由し、Worker 側の Fake IndexedDB (fake-indexeddb) 上で動作を検証する仕組み。従来の Worker テストと区別する用途で名称を統一。
+
 * Use context7 (MCP server) to fetch current docs before coding.
 * Call resolve-library-id, then get-library-docs to verify APls.
 * If uncertain, pause and request clarification.

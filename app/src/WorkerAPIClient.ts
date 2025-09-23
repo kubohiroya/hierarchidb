@@ -88,7 +88,7 @@ export class WorkerAPIClient {
       try {
         const initComplete = Boolean(isWorkerInitCompleted?.());
         if (!initComplete) {
-          const pingResult = await remoteWorker.ping();
+          await remoteWorker.ping();
           this.verified = true;
         } else {
           
@@ -106,9 +106,6 @@ export class WorkerAPIClient {
 
 
     } catch (error) {
-      
-      
-
       // Clean up on failure
       this.workerInstance = null;
       throw error;
@@ -123,12 +120,8 @@ export class WorkerAPIClient {
       
       throw new NotInitializedError();
     }
-    if (this.state !== 'initialized') {
-      try {
-        if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-          
-        }
-      } catch {}
+    if (this.state !== 'initialized' && import.meta ?.env?.VITE_WORKERAPI_LOG === '1') {
+      console.warn('[WorkerAPIClient] getSingleton called before initialization');
     }
     return this.workerInstance;
   }
@@ -167,7 +160,7 @@ export class WorkerAPIClient {
    */
   static isReady(): boolean {
     // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
-    const globalInit = (typeof window !== 'undefined') && (window as any).__HDB_INIT_COMPLETE__;
+    const globalInit = typeof window !== 'undefined' && (window as WorkerStatusWindow).__HDB_INIT_COMPLETE__ === true;
     if (!this.verified && globalInit) this.verified = true;
     if (this.state !== 'initialized' && this.workerInstance && globalInit) {
       this.state = 'initialized';
@@ -176,9 +169,6 @@ export class WorkerAPIClient {
     const ready = this.state === 'initialized' && this.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
-    if ((import.meta as any)?.env?.VITE_WORKERAPI_LOG === '1') {
-      
-    }
     return ready;
   }
 
@@ -194,3 +184,7 @@ export class WorkerAPIClient {
 
 // Export for compatibility
 export const getWorkerAPIClient = () => WorkerAPIClient.getSingleton();
+
+type WorkerStatusWindow = Window & {
+  __HDB_INIT_COMPLETE__?: boolean;
+};

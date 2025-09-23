@@ -3,14 +3,13 @@
  * Tests TreeConsole with WorkerAPIClient.getSingleton()
  */
 
-import { Alert, Box, CircularProgress, Container, Typography } from '@mui/material';
+import { Box, CircularProgress, Container, Typography } from '@mui/material';
 import { TreeConsolePanel, type TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { useWorkerAPIClient } from '~/hooks/useWorkerAPIClient.js';
 
 export default function TreeConsoleSimple() {
   // Get the Worker API client
-  const workerClientWrapper = useWorkerAPIClient();
-  const workerClient = workerClientWrapper?.getAPI();
+  const { client: workerClient } = useWorkerAPIClient();
 
   const handleNodeClick = (node: TreeNodeData) => {
     console.log('Node clicked:', node);
@@ -27,16 +26,6 @@ export default function TreeConsoleSimple() {
         }}
       >
         <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (!workerClient) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="warning">
-          <Typography>Worker client not available</Typography>
-        </Alert>
       </Container>
     );
   }

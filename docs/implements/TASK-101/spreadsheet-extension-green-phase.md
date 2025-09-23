@@ -10,7 +10,7 @@
 ## 実装ファイル一覧
 
 ### 1. SpreadsheetExtension定義
-**ファイル**: `packages/node-type/spreadsheet-plugin/src/extension/definition.ts`
+**ファイル**: `packages/plugins/spreadsheet-plugin/src/extension/definition.ts`
 
 主な実装内容：
 - ExtendableNodeTypeDefinition型に準拠した拡張定義
@@ -21,7 +21,7 @@
 - extendedValidationオブジェクト（fileFormatルール）
 
 ### 2. DataSourceStepコンポーネント
-**ファイル**: `packages/node-type/spreadsheet-plugin/src/steps/DataSourceStep.tsx`
+**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/DataSourceStep.tsx`
 
 スタブ実装内容：
 - React.FCコンポーネントとして最小実装
@@ -29,7 +29,7 @@
 - プレースホルダーUI
 
 ### 3. FilteringStepコンポーネント  
-**ファイル**: `packages/node-type/spreadsheet-plugin/src/steps/FilteringStep.tsx`
+**ファイル**: `packages/plugins/spreadsheet-plugin/src/steps/FilteringStep.tsx`
 
 スタブ実装内容：
 - React.FCコンポーネントとして最小実装

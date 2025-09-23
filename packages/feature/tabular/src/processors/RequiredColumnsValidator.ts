@@ -6,12 +6,13 @@ export function createRequiredColumnsValidator(id: string, required: string[]): 
     id,
     validateRow(row) {
       const missing: string[] = [];
-      for (const k of set) {
-        const v = (row as any)[k];
-        if (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) missing.push(k);
+      for (const key of set) {
+        const value = row[key];
+        if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+          missing.push(key);
+        }
       }
-      return missing.map(k => `Missing required column: ${k}`);
+      return missing.map((key) => `Missing required column: ${key}`);
     },
   };
 }
-

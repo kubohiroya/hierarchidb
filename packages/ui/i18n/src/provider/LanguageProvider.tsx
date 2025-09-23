@@ -9,6 +9,8 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from '
 import { useTranslation } from 'react-i18next';
 import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
 import { enUS, ja } from 'date-fns/locale';
+import { isDevEnv } from '../utils/env.js';
+import '../i18n/index.js';
 // Avoid hard type dependency on date-fns types during DTS build
 type Locale = unknown;
 
@@ -107,38 +109,15 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState<boolean>(typeof window === 'undefined');
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    if (!isMounted) {
+      setIsMounted(true);
+    }
+  }, [isMounted]);
 
-  // During SSR, provide default theme
   if (!isMounted) {
-    return (
-      <LanguageContext.Provider value={defaultContextValue}>{children}</LanguageContext.Provider>
-    );
-  }
-
-  return <LanguageProviderClient>{children}</LanguageProviderClient>;
-};
-
-const LanguageProviderClient: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [isI18nReady, setIsI18nReady] = useState(false);
-
-  // Ensure i18n is loaded
-  useEffect(() => {
-    // Delay i18n initialization to ensure React is ready
-    const timer = setTimeout(() => {
-      import('../i18n/index.js').then(() => {
-        setIsI18nReady(true);
-      });
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!isI18nReady) {
     return (
       <LanguageContext.Provider value={defaultContextValue}>{children}</LanguageContext.Provider>
     );
@@ -205,10 +184,8 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
   const changeLanguage = async (languageCode: string): Promise<void> => {
     const targetLanguage = SUPPORTED_LANGUAGES.find((lang) => lang.code === languageCode);
     if (!targetLanguage) {
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (isDevEnv()) {
         console.warn(`Language ${languageCode} not supported`);
-
       }
       return;
     }
@@ -230,10 +207,8 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
         localStorage.setItem('preferred-language', languageCode);
       }
     } catch (error) {
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (isDevEnv()) {
         console.error('Failed to change language:', error);
-
       }
     } finally {
       setIsLoading(false);

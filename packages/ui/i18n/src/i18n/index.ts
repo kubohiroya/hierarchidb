@@ -4,18 +4,28 @@
  * This file contains the i18next configuration for the Eria Cartograph application.
  */
 
-import i18n from 'i18next';
+import i18n, { type InitOptions, type InterpolationOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
+import type { HttpBackendOptions } from 'i18next-http-backend';
+import { getEnvString, isDevEnv } from '../utils/env.js';
 
+interface AppWindow extends Window {
+  __HDB_APP_BASE__?: unknown;
+}
 
-const isDevelopment = ((import.meta as any)?.env?.MODE as string) === 'development';
+const logI18nWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[ui-i18n]', message, error);
+};
+
+const isDevelopment = isDevEnv();
 
 // Language detection configuration
 const detectionOptions = {
   // Order and from where user language should be detected
-  order: ['localStorage', 'cookie', 'navigator'],
+  order: ['localStorage', 'cookie', 'navigator'] as string[],
 
   // Keys or params to lookup language from
   lookupQuerystring: 'lng',
@@ -24,11 +34,115 @@ const detectionOptions = {
   lookupSessionStorage: 'i18nextLng',
 
   // Cache user language
-  caches: ['localStorage'],
-  excludeCacheFor: ['cimode'], // Languages to not persist
+  caches: ['localStorage'] as string[],
+  excludeCacheFor: ['cimode'] as string[], // Languages to not persist
+};
 
-  // Only detect languages that are in the whitelist
-  checkAllowlist: true,
+const backendOptions: HttpBackendOptions = {
+  loadPath: (languages, namespaces) => {
+    const base = computeBasePath();
+    const lng = Array.isArray(languages) && languages.length ? languages[0] : 'en';
+    const ns = Array.isArray(namespaces) && namespaces.length ? namespaces[0] : 'common';
+    return `${base}locales/${lng}/${ns}.json`;
+  },
+  crossDomain: false,
+  withCredentials: false,
+  customHeaders: {},
+  reloadInterval: isDevelopment ? 60_000 : undefined,
+};
+
+interface ReactI18nOptions {
+  useSuspense?: boolean;
+  bindI18n?: string;
+  bindI18nStore?: string;
+  transSupportBasicHtmlNodes?: boolean;
+  transKeepBasicHtmlNodesFor?: string[];
+  unescape?: (value: string) => string;
+}
+
+const reactOptions: ReactI18nOptions = {
+  useSuspense: false,
+  bindI18n: 'languageChanged',
+  bindI18nStore: '',
+  transSupportBasicHtmlNodes: true,
+  transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'em'],
+  unescape: (str) => {
+    if (typeof DOMParser !== 'undefined') {
+      const doc = new DOMParser().parseFromString(str, 'text/html');
+      return doc.documentElement.textContent || str;
+    }
+    return str;
+  },
+};
+
+const interpolationOptions: InterpolationOptions = {
+  escapeValue: false,
+};
+
+const formatterEntries: Array<[string, (value: unknown, lng?: string) => string]> = [
+  ['uppercase', (value) => (typeof value === 'string' ? value.toUpperCase() : String(value))],
+  ['lowercase', (value) => (typeof value === 'string' ? value.toLowerCase() : String(value))],
+  [
+    'date',
+    (value, lng) => {
+      const dateValue = value instanceof Date ? value : new Date(String(value));
+      return new Intl.DateTimeFormat(lng).format(dateValue);
+    },
+  ],
+  [
+    'number',
+    (value, lng) =>
+      typeof value === 'number' ? new Intl.NumberFormat(lng).format(value) : String(value),
+  ],
+  [
+    'currency',
+    (value, lng) =>
+      typeof value === 'number'
+        ? new Intl.NumberFormat(lng, {
+          style: 'currency',
+          currency: 'USD',
+        }).format(value)
+        : String(value),
+  ],
+];
+
+const baseInitOptions: InitOptions = {
+  fallbackLng: 'en',
+  supportedLngs: ['en', 'ja'],
+  load: 'languageOnly',
+  defaultNS: 'common',
+  ns: ['guidedTour', 'common'],
+  debug: false,
+  interpolation: interpolationOptions,
+  react: reactOptions,
+  parseMissingKeyHandler: (key: string, defaultValue?: string) => {
+    if (isDevelopment) {
+      console.warn(`[ui-i18n] Missing translation key: ${key}`);
+    }
+    return defaultValue ?? key;
+  },
+  saveMissing: false,
+  saveMissingTo: 'fallback',
+  cleanCode: true,
+  postProcess: false,
+  initImmediate: false,
+};
+
+interface FormatterService {
+  add: (name: string, callback: (value: unknown, lng?: string) => string) => void;
+}
+
+const getFormatterService = (): FormatterService | undefined => {
+  const services = (i18n as unknown as { services?: { formatter?: FormatterService } }).services;
+  return services?.formatter;
+};
+
+const registerFormatters = (): void => {
+  const formatter = getFormatterService();
+  if (!formatter) return;
+  formatterEntries.forEach(([name, fn]) => {
+    formatter.add(name, fn);
+  });
 };
 
 // Compute absolute base path under which the app is served (e.g. "/hierarchidb/")
@@ -49,15 +163,18 @@ function computeBasePath(): string {
   // 1) Prefer explicit global hint set by the app to avoid bundler differences in import.meta.env handling
   try {
     if (typeof window !== 'undefined') {
-      const hinted = (window as any)?.__HDB_APP_BASE__ as string | undefined;
-      if (typeof hinted === 'string') return toAbs(hinted as string);
+      const hinted = (window as AppWindow).__HDB_APP_BASE__;
+      if (typeof hinted === 'string') return toAbs(hinted);
     }
-  } catch {}
+  } catch (error) {
+    logI18nWarning('Failed to read __HDB_APP_BASE__ hint', error);
+  }
   try {
-    // SSOT: Vite BASE_URL from the consuming app
-    const envBase = ((import.meta as any)?.env?.BASE_URL as string) || '';
+    const envBase = getEnvString('BASE_URL') ?? '';
     if (envBase) return toAbs(envBase);
-  } catch {}
+  } catch (error) {
+    logI18nWarning('Failed to read import.meta.env.BASE_URL', error);
+  }
 
   // Last resort: <base href> if present
   try {
@@ -83,7 +200,9 @@ function computeBasePath(): string {
             const prefix = path.slice(0, i + 1); // keep trailing '/'
             return toAbs(prefix);
           }
-        } catch {}
+        } catch (error) {
+          logI18nWarning('Failed to derive base from script src', error);
+        }
       }
 
       // Dev fallback: detect first path segment as base (e.g., /hierarchidb/...) when Vite serves under a subpath
@@ -97,30 +216,26 @@ function computeBasePath(): string {
             return toAbs(`/${seg}/`);
           }
         }
-      } catch {}
+      } catch (error) {
+        logI18nWarning('Failed to derive base path from window.location', error);
+      }
     }
-  } catch {}
+  } catch (error) {
+    logI18nWarning('Failed to compute base path from document context', error);
+  }
 
   return toAbs('/');
 }
 
-// Backend configuration for loading translation files (absolute path under app base)
-const backendOptions = {
-  loadPath: (languages: string[], namespaces: string[]) => {
-    const base = computeBasePath();
-    const lng = Array.isArray(languages) && languages.length ? languages[0] : 'en';
-    const ns = Array.isArray(namespaces) && namespaces.length ? namespaces[0] : 'common';
-    return `${base}locales/${lng}/${ns}.json`;
-  },
-  crossDomain: false,
-  withCredentials: false,
-  customHeaders: {},
-  reloadInterval: isDevelopment ? 60000 : false, // 1 minute in dev mode
-} as any;
-
 // Initialize i18n only on client side
 const initializeI18n = () => {
   if (typeof window === 'undefined') return;
+
+  const browserInitOptions: InitOptions = {
+    ...baseInitOptions,
+    detection: detectionOptions,
+    backend: backendOptions,
+  };
 
   i18n
     // Load translation using http -> see /public/locales
@@ -130,99 +245,10 @@ const initializeI18n = () => {
     // Pass the i18n instance to provider-i18next
     .use(initReactI18next)
     // Initialize i18next
-    .init({
-      // Fallback language
-      fallbackLng: 'en',
-
-      // Allowed languages
-      supportedLngs: ['en', 'ja'],
-
-      // Enable to check if language is in supported languages
-      load: 'languageOnly', // Remove region code (e.g., en-US -> en)
-
-      // Default namespace
-      defaultNS: 'common',
-
-      // Namespaces to load on init
-      ns: ['guidedTour', 'common'],
-
-      // Disable debug mode to reduce console noise
-      debug: false,
-
-      // Interpolation options
-      //  i18next v25 formatters
-      interpolation: {
-        escapeValue: false,
-        formatters: {
-          uppercase: (value: unknown) => (typeof value === 'string' ? value.toUpperCase() : value),
-          lowercase: (value: unknown) => (typeof value === 'string' ? value.toLowerCase() : value),
-          date: (value: unknown, lng?: string) => {
-            const dateValue = value instanceof Date ? value : new Date(String(value));
-            return new Intl.DateTimeFormat(lng).format(dateValue);
-          },
-          number: (value: unknown, lng?: string) =>
-            typeof value === 'number' ? new Intl.NumberFormat(lng).format(value) : value,
-          currency: (value: unknown, lng?: string) =>
-            typeof value === 'number'
-              ? new Intl.NumberFormat(lng, {
-                style: 'currency',
-                currency: 'USD',
-              }).format(value)
-              : value,
-        },
-      } as any,
-
-      // React options
-      react: {
-        // Wait for translation to be loaded before rendering
-        useSuspense: false,
-        // Bind the t function to a specific component
-        bindI18n: 'languageChanged',
-        // Bind the t function to the i18next store events
-        bindI18nStore: '',
-        // Set to false if you prefer to manage loading states manually
-        transSupportBasicHtmlNodes: true,
-        transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'em'],
-        // Unescape HTML entities
-        unescape: (str: string) => {
-          if (typeof DOMParser !== 'undefined') {
-            const doc = new DOMParser().parseFromString(str, 'text/html');
-            return doc.documentElement.textContent || str;
-          }
-          return str;
-        },
-      },
-
-      // Parser options
-      parseMissingKeyHandler: (key: string, defaultValue?: string) => {
-        if (isDevelopment) {
-          if ((import.meta as any)?.env?.DEV) {
-
-            console.warn(`Missing translation key: ${key}`);
-
-          }
-        }
-        return defaultValue || key;
-      },
-
-      // Save missing translations - disabled to prevent 404 errors
-      saveMissing: false,
-      saveMissingTo: 'fallback',
-
-      // Cleanup options
-      cleanCode: true,
-
-      // Post processor options
-      postProcess: false,
-
-      // Additional options for provider-i18next
-      initImmediate: false,
-
-      // Language detection configuration (for LanguageDetector plugin)
-      detection: detectionOptions,
-
-      // Backend configuration (for HttpBackend plugin)
-      backend: backendOptions,
+    .init(browserInitOptions)
+    .then(registerFormatters)
+    .catch((error) => {
+      logI18nWarning('Failed to initialize i18n', error);
     });
 };
 
@@ -230,36 +256,16 @@ const initializeI18n = () => {
 if (typeof window !== 'undefined') {
   initializeI18n();
 } else {
-  //  SSRwindow
-  i18n.use(initReactI18next).init({
-    fallbackLng: 'en',
-    supportedLngs: ['en', 'ja'],
-    defaultNS: 'common',
-    ns: ['guidedTour', 'common'],
-    interpolation: {
-      escapeValue: false,
-      formatters: {
-        uppercase: (value: unknown) => (typeof value === 'string' ? value.toUpperCase() : value),
-        lowercase: (value: unknown) => (typeof value === 'string' ? value.toLowerCase() : value),
-        date: (value: unknown, lng?: string) => {
-          const dateValue = value instanceof Date ? value : new Date(String(value));
-          return new Intl.DateTimeFormat(lng).format(dateValue);
-        },
-        number: (value: unknown, lng?: string) =>
-          typeof value === 'number' ? new Intl.NumberFormat(lng).format(value) : value,
-        currency: (value: unknown, lng?: string) =>
-          typeof value === 'number'
-            ? new Intl.NumberFormat(lng, {
-              style: 'currency',
-              currency: 'USD',
-            }).format(value)
-            : value,
-      },
-    } as any,
-    react: {
-      useSuspense: false,
-    },
-  });
+  const ssrInitOptions: InitOptions = {
+    ...baseInitOptions,
+  };
+  i18n
+    .use(initReactI18next)
+    .init(ssrInitOptions)
+    .then(registerFormatters)
+    .catch((error) => {
+      logI18nWarning('Failed to initialize i18n (SSR)', error);
+    });
 }
 
 export default i18n;

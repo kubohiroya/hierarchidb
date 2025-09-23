@@ -1,5 +1,3 @@
-import { Context } from 'hono';
-import { Env } from '../types.js';
 import { exchangeCodeForTokens, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
@@ -15,12 +13,13 @@ import { createSessionToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
 import { getAppCallbackUrlFromState, getDynamicRedirectUri, validateRedirectUri } from '../utils/redirect-uri.js';
 import { StateManager } from '../utils/state-manager.js';
+import { getEnv, type BffContext } from '../utils/env.js';
 
 /**
  * Handle OAuth2 callback from OAuth providers
  * This receives the authorization code and exchanges it for tokens
  */
-export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
+export async function handleOAuth2Callback(c: BffContext) {
   try {
     const url = new URL(c.req.url);
     const code = url.searchParams.get('code');
@@ -29,7 +28,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
 
     //  StateCSRF
     if (state) {
-      const env = c.env as any;
+      const env = getEnv(c);
       const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
       const stateData = await stateManager.validateState(state);
 
@@ -92,9 +91,7 @@ export async function handleOAuth2Callback(c: Context<{ Bindings: Env }>) {
  * Exchange authorization code for tokens (called by the client)
  * This is a POST endpoint that completes the OAuth2 flow
  */
-export async function exchangeCodeForToken(
-  c: Context<{ Bindings: Env & { AUTH_KV?: KVNamespace } }>,
-) {
+export async function exchangeCodeForToken(c: BffContext) {
   try {
     const body = await c.req.json();
     const { code, redirect_uri, provider = 'google' } = body;
@@ -115,7 +112,7 @@ export async function exchangeCodeForToken(
       );
     }
 
-    const env = c.env as any;
+    const env = getEnv(c);
     let tokens: any;
     let userInfo: any;
 
@@ -201,8 +198,8 @@ export async function exchangeCodeForToken(
     );
 
     // Store in KV if available
-    if (c.env.AUTH_KV) {
-      const kvManager = new KVStorageManager(c.env.AUTH_KV, env.JWT_SECRET);
+    if (env.AUTH_KV) {
+      const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
       await kvManager.storeUserAuth(userInfo.id, {
         email: userInfo.email,
         name: userInfo.name,

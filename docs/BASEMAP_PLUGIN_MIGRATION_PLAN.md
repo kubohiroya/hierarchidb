@@ -10,12 +10,12 @@ basemap-pluginをfolder-pluginの拡張として、新しいbase-pluginアーキ
 
 ### 1. 依存関係
 - **folder-pluginの状態**: 未移行（109個のTypeScriptエラー）
-- **basemap-pluginの依存**: `@hierarchidb/node-type-folder-plugin`に依存
-- **base-pluginの依存**: `@hierarchidb/node-type-base-plugin`への移行が必要
+- **basemap-pluginの依存**: `@hierarchidb/plugins-folder-plugin`に依存
+- **base-pluginの依存**: `@hierarchidb/plugins-base-plugin`への移行が必要
 
 ### 2. 現在の実装構造
 ```
-packages/node-type/basemap-plugin/
+packages/plugins/basemap-plugin/
 ├── src/
 │   ├── handlers/
 │   │   └── BaseMapEntityHandler.ts (FolderEntityHandlerを継承)
@@ -129,7 +129,7 @@ packages/node-type/basemap-plugin/
 ```typescript
 // BaseMapEntity.ts
 import type { NodeId } from '@hierarchidb/common-type';
-import type { FolderEntity } from '@hierarchidb/node-type-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 
 export interface BaseMapEntity extends FolderEntity {
   // BaseMap固有のフィールド
@@ -205,6 +205,6 @@ export class BaseMapEntityHandler extends FolderEntityHandler<
 
 ## 参考資料
 
-- [Base Plugin Architecture](../packages/node-type/base-plugin/README.md)
+- [Base Plugin Architecture](../packages/plugins/base-plugin/README.md)
 - [Folder Plugin Migration](./folder-plugin-migration.md)
-- [Plugin Status Report](../packages/node-type/plugin-status-report.md)
+- [Plugin Status Report](../packages/plugins/plugin-status-report.md)

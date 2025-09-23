@@ -10,7 +10,7 @@ import type {
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-type';
-import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 
@@ -51,8 +51,48 @@ export class TreeQueryService implements TreeQueryAPI {
     return await this.coreDB.getNode(nodeId);
   }
 
-  async listChildren(parentId: NodeId): Promise<TreeNode[]> {
-    return await this.coreDB.listChildren(parentId);
+  async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
+    const initial = await this.coreDB.listChildren(parentId, options);
+
+    const requestedDepth = options?.prefetch?.depth ?? 1;
+    if (requestedDepth <= 1) {
+      return initial;
+    }
+
+    const hasPrefetchedDescendants = initial.some(
+      (node) => node.parentId && node.parentId !== parentId,
+    );
+    if (hasPrefetchedDescendants) {
+      return initial;
+    }
+
+    const result = [...initial];
+    const queue: Array<{ node: TreeNode; depth: number }> = initial.map((node) => ({ node, depth: 1 }));
+    const visited = new Set<string>(initial.map((node) => String(node.id)));
+
+    while (queue.length > 0) {
+      const { node, depth } = queue.shift()!;
+      if (depth >= requestedDepth) {
+        continue;
+      }
+
+      const children = await this.coreDB.listChildren(node.id as NodeId);
+      if (!children || children.length === 0) {
+        continue;
+      }
+
+      for (const child of children) {
+        const key = String(child.id);
+        if (visited.has(key)) {
+          continue;
+        }
+        visited.add(key);
+        result.push(child);
+        queue.push({ node: child, depth: depth + 1 });
+      }
+    }
+
+    return result;
   }
 
   async listDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]> {
@@ -124,12 +164,10 @@ export class TreeQueryService implements TreeQueryAPI {
       if (maxResults && results.length >= maxResults) break;
 
       const nodeName = caseSensitive ? node.name : node.name.toLowerCase();
-      const nodeDesc =
-        searchInDescription && (node as any).description
-          ? caseSensitive
-            ? (node as any).description
-            : (node as any).description.toLowerCase()
-          : '';
+      const rawDescription = node.description ?? '';
+      const nodeDesc = searchInDescription
+        ? (caseSensitive ? rawDescription : rawDescription.toLowerCase())
+        : '';
 
       let matches = false;
 
@@ -167,20 +205,36 @@ export class TreeQueryService implements TreeQueryAPI {
 
     // Apply sorting
     if (sortBy) {
-      childNodes = childNodes.sort((a: any, b: any) => {
-        let valueA = a[sortBy];
-        let valueB = b[sortBy];
+      childNodes = childNodes.sort((a, b) => {
+        const getComparable = (node: TreeNode): string | number | undefined => {
+          switch (sortBy) {
+            case 'name':
+              return node.name?.toLowerCase();
+            case 'createdAt':
+              return node.createdAt;
+            case 'updatedAt':
+              return node.updatedAt;
+            default:
+              return undefined;
+          }
+        };
 
-        if (sortBy === 'name') {
-          valueA = valueA?.toLowerCase();
-          valueB = valueB?.toLowerCase();
+        const valueA = getComparable(a);
+        const valueB = getComparable(b);
+
+        if (valueA == null && valueB == null) return 0;
+        if (valueA == null) return sortOrder === 'desc' ? 1 : -1;
+        if (valueB == null) return sortOrder === 'desc' ? -1 : 1;
+
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          const comparison = valueA.localeCompare(valueB);
+          return sortOrder === 'desc' ? -comparison : comparison;
         }
 
-        if (sortOrder === 'desc') {
-          return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
-        } else {
-          return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-        }
+        const numericA = Number(valueA);
+        const numericB = Number(valueB);
+        const comparison = numericA === numericB ? 0 : numericA < numericB ? -1 : 1;
+        return sortOrder === 'desc' ? -comparison : comparison;
       });
     }
 

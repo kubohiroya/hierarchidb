@@ -1,7 +1,8 @@
-import type { NodeId, NodeType, TreeNode, ValidationErrors, ValidationResult } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-type';
 import type {
   ExportNodesParams,
   ExportResult,
+  ImportData,
   ImportExportAPI,
   ImportNodesParams,
   ImportResult,
@@ -11,6 +12,9 @@ import type {
 import { SingletonMixin } from '@hierarchidb/util';
 import crypto from 'crypto';
 import type { ImportExportDBPort } from './ports.js';
+
+type ImportNodeInput = ImportData['nodes'][number];
+type ValidationIssue = { code: string; message: string; path?: string };
 
 export class ImportExportService implements ImportExportAPI {
   private operations = new Map<string, OperationStatus>();
@@ -51,7 +55,7 @@ export class ImportExportService implements ImportExportAPI {
       const errors: string[] = [];
       let skippedCount = 0;
 
-      const nodes = params.data.nodes || [];
+      const nodes = params.data.nodes ?? [];
       const total = nodes.length;
       const depthCache = new Map<NodeId, number>();
       const resolveParentDepth = async (parentId: NodeId | null | undefined): Promise<number> => {
@@ -63,10 +67,10 @@ export class ImportExportService implements ImportExportAPI {
         return depth;
       };
 
-      const toCreate: { node: TreeNode; children?: any[] }[] = [];
+      const toCreate: { node: TreeNode; children?: ImportNodeInput[] }[] = [];
       for (let i = 0; i < nodes.length; i++) {
         if (abortController.signal.aborted) throw new Error('Import operation cancelled');
-        const nodeData = nodes[i];
+        const nodeData = nodes[i] as ImportNodeInput | undefined;
         if (!nodeData) continue;
         try {
           if (params.conflictResolution === 'skip') {
@@ -78,9 +82,10 @@ export class ImportExportService implements ImportExportAPI {
           }
           const nodeId = crypto.randomUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
+          const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
           const node: TreeNode = {
             id: nodeId,
-            parentId: params.targetParentId,
+            parentId,
             nodeType: (nodeData.nodeType || 'folder') as NodeType,
             name: nodeData.name,
             description: nodeData.description,
@@ -88,7 +93,7 @@ export class ImportExportService implements ImportExportAPI {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             version: 1,
-          } as any;
+          };
           toCreate.push({ node, children: nodeData.children });
         } catch (error) {
           errors.push(`Failed to prepare node "${nodeData?.name}": ${error}`);
@@ -237,32 +242,39 @@ export class ImportExportService implements ImportExportAPI {
   }
 
   async validateImportData(params: ValidateImportParams): Promise<ValidationResult> {
-    const errors: ValidationErrors<{ code: string; message: string; path?: string }>[] = [];
+    const issues: ValidationIssue[] = [];
     const nodeTypes = new Map<string, number>();
     let maxDepth = 0;
 
-    const validateNode = (node: any, path: string, depth: number) => {
+    const validateNode = (node: ImportNodeInput, path: string, depth: number) => {
       maxDepth = Math.max(maxDepth, depth);
-      if (!node.name) errors.push({ code: 'MISSING_NAME', message: 'Node name is required', path });
+      if (!node.name) issues.push({ code: 'MISSING_NAME', message: 'Node name is required', path });
       const nodeType = node.nodeType || 'folder';
       nodeTypes.set(nodeType, (nodeTypes.get(nodeType) || 0) + 1);
       if (node.children && Array.isArray(node.children)) {
-        node.children.forEach((child: any, index: number) => validateNode(child, `${path}.children[${index}]`, depth + 1));
+        node.children.forEach((child: ImportNodeInput, index: number) => {
+          validateNode(child, `${path}.children[${index}]`, depth + 1);
+        });
       }
     };
 
-    if (!params.data || !params.data.nodes) {
-      errors.push({ code: 'INVALID_STRUCTURE', message: 'Import data must contain a nodes array' } as any);
+    if (!params.data?.nodes) {
+      issues.push({ code: 'INVALID_STRUCTURE', message: 'Import data must contain a nodes array', path: 'nodes' });
     } else if (!Array.isArray(params.data.nodes)) {
-      errors.push({ code: 'INVALID_NODES', message: 'Nodes must be an array' } as any);
+      issues.push({ code: 'INVALID_NODES', message: 'Nodes must be an array', path: 'nodes' });
     } else {
-      params.data.nodes.forEach((node: any, index: number) => validateNode(node, `nodes[${index}]`, 0));
+      params.data.nodes.forEach((node: ImportNodeInput, index: number) => validateNode(node, `nodes[${index}]`, 0));
     }
 
-    return {
-      valid: errors.length === 0,
-      message: '',
-    } as any;
+    if (issues.length === 0) {
+      return { valid: true };
+    }
+
+    const summary = issues
+      .map((issue) => `${issue.code}: ${issue.message}${issue.path ? ` @ ${issue.path}` : ''}`)
+      .join('; ');
+
+    return { valid: false, message: summary };
   }
 
   async getOperationStatus(operationId: string): Promise<OperationStatus | null> {
@@ -304,19 +316,21 @@ export class ImportExportService implements ImportExportAPI {
       nodes: nodes.map((node) => ({
         name: node.name,
         nodeType: node.nodeType,
-        description: (node as any).description,
+        description: node.description ?? '',
       })),
     };
     return JSON.stringify(exportData, null, 2);
   }
 
   private formatAsCSV(nodes: TreeNode[], columns?: string[]): string {
-    const cols = columns || ['name', 'nodeType', 'description'];
+    const cols = columns ?? ['name', 'nodeType', 'description'];
     const headers = cols.join(',');
     const rows = nodes.map((node) =>
       cols
         .map((col) => {
-          const value = (node as any)[col] || '';
+          const record: Record<string, unknown> = node as unknown as Record<string, unknown>;
+          const value = record[col];
+          if (value === null || value === undefined) return '';
           if (
             typeof value === 'string' &&
             (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r'))
@@ -343,8 +357,9 @@ export class ImportExportService implements ImportExportAPI {
       xml.push('    <node>');
       xml.push(`      <name>${this.escapeXML(node.name)}</name>`);
       xml.push(`      <nodeType>${node.nodeType}</nodeType>`);
-      const desc = (node as any).description;
-      if (desc) xml.push(`      <description>${this.escapeXML(desc)}</description>`);
+      if (node.description) {
+        xml.push(`      <description>${this.escapeXML(node.description)}</description>`);
+      }
       xml.push('    </node>');
     }
     xml.push('  </nodes>');

@@ -9,16 +9,69 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/dist/worker/index.js"],
-      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/dist/worker/index.js"],
-      
-      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/dist/worker/index.mjs"],
-      "@hierarchidb/shape-plugin/worker": ["../packages/node-type/shape-plugin/dist/worker/index.js"],
-      "@hierarchidb/ui-auth": ["../packages/ui/auth/dist"],
-      "@hierarchidb/ui-icon": ["../packages/ui/icon/dist"],
-      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/dist"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist"]
+      "~/*": [
+        "src/*"
+      ],
+      "@hierarchidb/plugins-location-plugin/worker": [
+        "../packages/plugins/location-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/plugins-route-plugin/worker": [
+        "../packages/plugins/route-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/plugins-shape-plugin/worker": [
+        "../packages/plugins/shape-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/worker": [
+        "../packages/plugins/timeline-plugin/dist/worker/index.js"
+      ],
+      "@hierarchidb/ui-auth": [
+        "../packages/ui/auth/dist"
+      ],
+      "@hierarchidb/ui-icon": [
+        "../packages/ui/icon/dist"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../packages/runtime-worker/worker/dist"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../packages/runtime-worker/worker-bootstrap/dist"
+      ],
+      "@hierarchidb/common-api": [
+        "../packages/common/api/dist"
+      ],
+      "@hierarchidb/ui-dialog": [
+        "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "../packages/ui/treeconsole/treetable/dist"
+      ],
+      "@hierarchidb/plugins-basemap-plugin/database": [
+        "../packages/plugins/basemap-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-linker-plugin/services": [
+        "../packages/plugins/linker-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-location-plugin/services": [
+        "../packages/plugins/location-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-resolver-plugin/database": [
+        "../packages/plugins/resolver-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-route-plugin/database": [
+        "../packages/plugins/route-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-shape-plugin/services": [
+        "../packages/plugins/shape-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-spreadsheet-plugin/database": [
+        "../packages/plugins/spreadsheet-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-styler-plugin/services": [
+        "../packages/plugins/styler-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/services": [
+        "../packages/plugins/timeline-plugin/src/services/index.ts"
+      ]
     },
     "composite": false,
     "incremental": false,
@@ -32,8 +85,7 @@
     ],
     "esModuleInterop": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    
+    "noUnusedParameters": false
   },
   "include": [
     "src/**/*.ts",

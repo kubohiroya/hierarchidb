@@ -138,7 +138,7 @@ export interface MultiStepDialogProps {
   maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
 
   /** Initial display mode for uncontrolled usage */
-  initialDisplayMode?: 'standard' | 'maximized' | 'fullscreen';
+  initialDisplayMode?: import('../headless/types.js').DialogDisplayMode;
 
   /** Has unsaved changes */
   hasUnsavedChanges?: boolean;
@@ -184,13 +184,13 @@ export interface MultiStepDialogProps {
 
   /**
    * 表示モード（制御用）。指定時は内部 state をこの値に追従させる。
-   * - 'standard': 通常サイズ
-   * - 'maximized': ウィンドウ内で可能な限り拡大
-   * - 'fullscreen': ブラウザ Fullscreen API によるモニタ全面表示
+   * - 'normal': 通常サイズ
+   * - 'maximize': ウィンドウ内で可能な限り拡大
+   * - 'full-screen': ブラウザ Fullscreen API によるモニタ全面表示
    */
-  displayMode?: 'standard' | 'maximized' | 'fullscreen';
+  displayMode?: import('../headless/types.js').DialogDisplayMode;
   /** 表示モード変更時のコールバック（制御モードで利用） */
-  onDisplayModeChange?: (mode: 'standard' | 'maximized' | 'fullscreen') => void;
+  onDisplayModeChange?: (mode: import('../headless/types.js').DialogDisplayMode) => void;
   /** 表示モードのクイック切替 UI を表示するか（既定: true）。 */
   showDisplayModeControls?: boolean;
 

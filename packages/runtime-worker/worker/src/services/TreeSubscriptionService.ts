@@ -13,28 +13,13 @@ import type {
   TreeId,
   TreeNode,
   TreeNodeEvent,
+  UndoStateEvent,
 } from '@hierarchidb/common-type';
 import { bufferTime, concat, filter as rxFilter, from, map, mergeMap, type Observable, share, Subject } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
-import { TreeQueryService } from './TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
-
-interface SubscriptionInfo {
-  id: SubscriptionId;
-  type: 'node' | 'subtree' | 'tree' | 'childNodes' | 'working-copies';
-  nodeId?: NodeId;
-  treeId?: TreeId;
-  callback?: (event: TreeNodeEvent) => void;
-  options?: SubscriptionOptions;
-  isActive: boolean;
-  lastActivity: number;
-  createdAt: number;
-  // RxJS subscription for cleanup
-  subscription?: any;
-  // Backward compatibility fields
-  filter?: SubscriptionFilter;
-  subject?: Subject<TreeChangeEvent>;
-}
+import { TreeSearchService } from './TreeSearchService.js';
+import { SubscriptionRegistry, type SubscriptionInfo } from './SubscriptionRegistry.js';
 
 /**
  * TreeSubscriptionService - Implements TreeSubscriptionAPI
@@ -47,16 +32,26 @@ export class TreeSubscriptionService {
     });
   }
 
-  private subscriptions = new Map<SubscriptionId, SubscriptionInfo>();
+  private readonly registry = new SubscriptionRegistry();
   private globalChangeSubject = new Subject<TreeChangeEvent>();
-  private subscriptionCounter = 0;
   private eventHistory: TreeNodeEvent[] = [];
   private readonly maxEventHistory = 1000;
   private eventsProcessedToday = 0;
   private totalLatency = 0;
   private eventCount = 0;
 
+  private readonly undoStateSubscriptions = new Map<SubscriptionId, (event: UndoStateEvent) => void>();
+  private latestUndoState: UndoStateEvent = {
+    type: 'undo-state',
+    canUndo: false,
+    canRedo: false,
+    timestamp: Date.now() as Timestamp,
+  };
+
+  private readonly searchService: TreeSearchService;
+
   constructor(private coreDB: CoreDB) {
+    this.searchService = new TreeSearchService(coreDB);
     //  CoreDBchangeSubject
     this.coreDB.changeSubject.subscribe({
       next: (event) => {
@@ -77,16 +72,16 @@ export class TreeSubscriptionService {
     const subject = new Subject<TreeChangeEvent>();
 
     // Store subscription info
-    this.subscriptions.set(subscriptionId as SubscriptionId, {
+    const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId as SubscriptionId,
       type: 'node',
-      nodeId: nodeId,
-      callback: (event) => subject.next(event as any),
+      nodeId,
       options: { includeMetadata: includeInitialValue },
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
-    });
+    };
+    this.registry.register(subscriptionInfo);
 
     // Create observable that filters global changes for this specific node
     const nodeObservable = this.globalChangeSubject.pipe(
@@ -117,7 +112,7 @@ export class TreeSubscriptionService {
     const customSubscribe = (
       observer?: Parameters<Observable<TreeChangeEvent>['subscribe']>[0],
     ) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer });
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -147,7 +142,7 @@ export class TreeSubscriptionService {
     const subject = new Subject<TreeChangeEvent>();
 
     // Store subscription info
-    this.subscriptions.set(subscriptionId, {
+    const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId,
       type: 'childNodes',
       nodeId: parentId,
@@ -156,7 +151,8 @@ export class TreeSubscriptionService {
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
-    });
+    };
+    this.registry.register(subscriptionInfo);
 
     // Create observable that filters global changes for childNodes of this node
     const childNodesObservable = this.globalChangeSubject.pipe(
@@ -170,7 +166,7 @@ export class TreeSubscriptionService {
           children = children.filter((n) => filter.nodeTypes!.includes(n.nodeType));
         }
         const chunkSize = 200;
-        const events: TreeChangeEvent[] = [] as any;
+        const events: TreeChangeEvent[] = [];
         for (let i = 0; i < children.length; i += chunkSize) {
           const slice = children.slice(i, i + chunkSize);
           events.push({
@@ -178,7 +174,7 @@ export class TreeSubscriptionService {
             nodeId: parentId,
             affectedChildren: slice.map((c) => c.id),
             timestamp: Date.now() as Timestamp,
-          } as any);
+          });
         }
         if (children.length === 0) {
           events.push({
@@ -186,7 +182,7 @@ export class TreeSubscriptionService {
             nodeId: parentId,
             affectedChildren: [],
             timestamp: Date.now() as Timestamp,
-          } as any);
+          });
         }
         return events;
       }),
@@ -213,8 +209,8 @@ export class TreeSubscriptionService {
     // Set up unsubscribe handler
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+    resultObservable.subscribe = (observer) => {
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -231,22 +227,22 @@ export class TreeSubscriptionService {
   subscribeSubtreeCommand(
     cmd: CommandEnvelope<'subscribeSubtree', ObserveSubtreePayload>,
   ): Observable<TreeChangeEvent> {
-    const { rootId, maxDepth, filter, includeInitialSnapshot = false } = cmd.payload;
+    const { rootId, maxDepth, filter, includeInitialSnapshot = false, prefetch } = cmd.payload;
+    const depthLimit = prefetch?.depth ?? 1;
 
     const subscriptionId = this.generateSubscriptionId();
     const subject = new Subject<TreeChangeEvent>();
 
-    // Store subscription info
-    this.subscriptions.set(subscriptionId as SubscriptionId, {
+    const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId as SubscriptionId,
       type: 'subtree',
       nodeId: rootId,
-      callback: (event) => subject.next(event as any),
-      options: { ...filter, maxDepth } as any,
+      options: { ...filter, maxDepth, prefetch },
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
-    });
+    };
+    this.registry.register(subscriptionInfo);
 
     // Create observable that filters global changes for subtree
     const subtreeObservable = this.globalChangeSubject.pipe(
@@ -257,8 +253,8 @@ export class TreeSubscriptionService {
       bufferTime(30),
       rxFilter((batch) => batch.length > 0),
       mergeMap(async () => {
-        const events: TreeChangeEvent[] = [] as any;
-        for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth)) {
+        const events: TreeChangeEvent[] = [];
+        for await (const ev of this.createInitialSubtreeEvents(rootId, filter, maxDepth, 200, depthLimit)) {
           events.push(ev);
         }
         return events;
@@ -279,7 +275,7 @@ export class TreeSubscriptionService {
     let resultObservable: Observable<TreeChangeEvent> = subject.asObservable();
 
     if (includeInitialSnapshot) {
-      const initial$ = from(this.createInitialSubtreeEvents(rootId, filter, maxDepth));
+      const initial$ = from(this.createInitialSubtreeEvents(rootId, filter, maxDepth, 200, depthLimit));
       resultObservable = concat(initial$, resultObservable);
     }
 
@@ -287,7 +283,7 @@ export class TreeSubscriptionService {
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -309,8 +305,7 @@ export class TreeSubscriptionService {
     const subscriptionId = this.generateSubscriptionId();
     const subject = new Subject<TreeChangeEvent>();
 
-    // Store subscription info
-    this.subscriptions.set(subscriptionId, {
+    const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId,
       type: 'working-copies',
       nodeId: nodeId || ('all' as NodeId),
@@ -319,7 +314,8 @@ export class TreeSubscriptionService {
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
-    });
+    };
+    this.registry.register(subscriptionInfo);
 
     // For now, working copy events come through the same change stream
     // In a real implementation, this might have a separate event source
@@ -342,7 +338,7 @@ export class TreeSubscriptionService {
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer as any });
+      const sub = originalSubscribe({ next: observer});
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -357,46 +353,30 @@ export class TreeSubscriptionService {
   }
 
   getActiveSubscriptions(): Promise<number> {
-    return Promise.resolve(
-      Array.from(this.subscriptions.values()).filter((sub) => sub.isActive).length,
-    );
+    return Promise.resolve(this.registry.active().length);
   }
 
   cleanupInactiveSubscriptions(): Promise<void> {
     const now = Date.now();
     const maxInactiveTime = 5 * 60 * 1000; // 5 minutes
 
-    const toDelete: string[] = [];
-
-    for (const [id, subscription] of Array.from(this.subscriptions.entries())) {
-      if (!subscription.isActive || now - subscription.lastActivity > maxInactiveTime) {
-        subscription.subject?.complete();
-        toDelete.push(id);
-      }
-    }
-
-    toDelete.map((id) => this.subscriptions.delete(id as SubscriptionId));
+    const removed = this.registry.cleanupInactive(maxInactiveTime, now);
+    removed.forEach((subscription) => subscription.subject?.complete());
     return Promise.resolve();
   }
 
   // Private helper methods
 
   private generateSubscriptionId(): SubscriptionId {
-    return `sub_${++this.subscriptionCounter}_${Date.now()}` as SubscriptionId;
+    return this.registry.generateId();
   }
 
   private updateSubscriptionActivity(subscriptionId: SubscriptionId): void {
-    const subscription = this.subscriptions.get(subscriptionId);
-    if (subscription) {
-      subscription.lastActivity = Date.now();
-    }
+    this.registry.updateActivity(subscriptionId);
   }
 
   private deactivateSubscription(subscriptionId: SubscriptionId): void {
-    const subscription = this.subscriptions.get(subscriptionId);
-    if (subscription) {
-      subscription.isActive = false;
-    }
+    this.registry.markInactive(subscriptionId);
   }
 
   private isEventRelevantForNodeObservation(
@@ -556,28 +536,48 @@ export class TreeSubscriptionService {
     parentId: NodeId,
     filter?: SubscriptionFilter,
     chunkSize: number = 200,
+    depthLimit: number = 1,
   ): AsyncGenerator<TreeChangeEvent> {
-    let childNodes = await this.coreDB.listChildren(parentId);
-    if (filter?.nodeTypes?.length) {
-      childNodes = childNodes.filter((n) => filter.nodeTypes!.includes(n.nodeType));
-    }
-    for (let i = 0; i < childNodes.length; i += chunkSize) {
-      const slice = childNodes.slice(i, i + chunkSize);
-      yield {
-        type: 'children-changed',
-        nodeId: parentId,
-        affectedChildren: slice.map((c) => c.id),
-        timestamp: Date.now() as Timestamp,
-      };
-    }
-    if (childNodes.length === 0) {
-      // Send an empty snapshot to indicate completion for empty lists
-      yield {
-        type: 'children-changed',
-        nodeId: parentId,
-        affectedChildren: [],
-        timestamp: Date.now() as Timestamp,
-      };
+    const queue: Array<{ parent: NodeId; depth: number }> = [{ parent: parentId, depth: 0 }];
+    const visitedParents = new Set<string>();
+
+    while (queue.length > 0) {
+      const { parent, depth } = queue.shift()!;
+      const parentKey = String(parent);
+      if (visitedParents.has(parentKey)) {
+        continue;
+      }
+      visitedParents.add(parentKey);
+
+      const childrenRaw = await this.coreDB.listChildren(parent);
+      let childNodes = childrenRaw;
+      if (filter?.nodeTypes?.length) {
+        childNodes = childNodes.filter((n) => filter.nodeTypes!.includes(n.nodeType));
+      }
+
+      for (let i = 0; i < childNodes.length; i += chunkSize) {
+        const slice = childNodes.slice(i, i + chunkSize);
+        yield {
+          type: 'children-changed',
+          nodeId: parent,
+          affectedChildren: slice.map((c) => c.id),
+          timestamp: Date.now() as Timestamp,
+        };
+      }
+      if (childNodes.length === 0) {
+        yield {
+          type: 'children-changed',
+          nodeId: parent,
+          affectedChildren: [],
+          timestamp: Date.now() as Timestamp,
+        };
+      }
+
+      if (depth + 1 < depthLimit) {
+        for (const child of childrenRaw) {
+          queue.push({ parent: child.id, depth: depth + 1 });
+        }
+      }
     }
   }
 
@@ -586,10 +586,9 @@ export class TreeSubscriptionService {
     filter?: SubscriptionFilter,
     _maxDepth?: number,
     chunkSize: number = 200,
+    depthLimit: number = 1,
   ): AsyncGenerator<TreeChangeEvent> {
-    // Minimal progressive snapshot: emit root's direct children in chunks
-    // Future: walk BFS up to maxDepth and emit per-level chunks
-    yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize);
+    yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize, depthLimit);
   }
 
   private getNodeFromDB(nodeId: NodeId): TreeNode | undefined {
@@ -600,13 +599,13 @@ export class TreeSubscriptionService {
       const table = this.coreDB.nodes;
       if (table && '_Items' in table) {
         // In fake-indexeddb, the data is stored in _Items
-        const items = (table as any)._Items;
+        const items = (table)._Items;
         if (items instanceof Map) {
           return items.get(nodeId);
         }
         // Try alternative access patterns for fake-indexeddb
         for (const item of Object.values(items || {})) {
-          if ((item as any)?.id === nodeId) {
+          if ((item)?.id === nodeId) {
             return item as TreeNode;
           }
         }
@@ -674,27 +673,6 @@ export class TreeSubscriptionService {
 
   // getInitialSubtreeV1 omitted (legacy compat stub)
 
-  toggleNodeExpanded(pageNodeId: NodeId): Promise<void> {
-    console.log('toggleNodeExpanded (V1 compat)', pageNodeId);
-    return Promise.resolve();
-  }
-
-  listChildNodes(parentId: NodeId, doExpandNode?: boolean): Promise<any> {
-    console.log('listChildNodes (V1 compat)', parentId, doExpandNode);
-    return Promise.resolve({
-      treeId: '' as TreeId,
-      rootNodeId: '' as NodeId,
-      pageNodeId: parentId,
-      changes: {},
-      version: 0,
-    });
-  }
-
-  getNodeAncestors(pageNodeId: NodeId): Promise<TreeNode[]> {
-    console.log('getNodeAncestors (V1 compat)', pageNodeId);
-    return Promise.resolve([]);
-  }
-
   async searchByNameWithDepth(
     rootNodeId: NodeId,
     query: string,
@@ -704,26 +682,7 @@ export class TreeSubscriptionService {
       maxResults?: number; // New: maximum number of search results to return
     },
   ): Promise<TreeNode[]> {
-    try {
-      // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB);
-
-      const searchResults = await queryService.searchNodes({
-        query,
-        rootNodeId,
-        caseSensitive: false, // Default to case-insensitive for user-friendly search
-        searchInDescription: false,
-      });
-
-      // Apply result count limiting
-      const maxResults = opts.maxResults || opts.maxVisited || 100; // Default limit to prevent performance issues
-      const limitedResults = searchResults.slice(0, maxResults);
-
-      return limitedResults;
-    } catch (error) {
-      console.error('Search failed:', error);
-      return [];
-    }
+    return this.searchService.searchByNameWithDepth(rootNodeId, query, opts);
   }
 
   /**
@@ -744,59 +703,7 @@ export class TreeSubscriptionService {
       searchInDescription?: boolean;
     },
   ): Promise<TreeNode[]> {
-    try {
-      // Use TreeQueryService for actual search implementation
-      const queryService = new TreeQueryService(this.coreDB);
-
-      let searchPattern: string;
-
-      // Build search pattern based on match mode
-      switch (opts.matchMode) {
-        case 'exact':
-          // Exact match - use regex with start/end anchors
-          searchPattern = `^${this.escapeRegexChars(query)}$`;
-          break;
-
-        case 'prefix':
-          // Prefix match - starts with query
-          searchPattern = `^${this.escapeRegexChars(query)}`;
-          break;
-
-        case 'suffix':
-          // Suffix match - ends with query
-          searchPattern = `${this.escapeRegexChars(query)}$`;
-          break;
-
-        case 'partial':
-        default:
-          // Partial match - contains query (default behavior)
-          searchPattern = query;
-          break;
-      }
-
-      const searchResults = await queryService.searchNodes({
-        query: searchPattern,
-        rootNodeId,
-        caseSensitive: opts.caseSensitive || false,
-        searchInDescription: opts.searchInDescription || false,
-      });
-
-      // Apply result count limiting
-      const maxResults = opts.maxResults || 100;
-      const limitedResults = searchResults.slice(0, maxResults);
-
-      return limitedResults;
-    } catch (error) {
-      console.error('Enhanced search failed:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Escape special regex characters in search query
-   */
-  private escapeRegexChars(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.searchService.searchByNameWithMatchMode(rootNodeId, query, opts);
   }
 
   private calculateDepth(nodeId: NodeId, ancestorId: NodeId): number {
@@ -851,17 +758,13 @@ export class TreeSubscriptionService {
    * @returns Total number of subscriptions that were removed
    */
   unsubscribeAll(): Promise<number> {
-    const count = this.subscriptions.size;
-
-    // Complete all subjects
-    for (const subscription of Array.from(this.subscriptions.values())) {
+    const removed = this.registry.clear();
+    removed.forEach((subscription) => {
       subscription.subject?.complete();
-    }
-
-    // Clear all subscriptions
-    this.subscriptions.clear();
-
-    return Promise.resolve(count);
+      subscription.subscription?.unsubscribe?.();
+    });
+    this.undoStateSubscriptions.clear();
+    return Promise.resolve(removed.length);
   }
 
   // ==================
@@ -891,7 +794,7 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'node',
       nodeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
@@ -900,7 +803,7 @@ export class TreeSubscriptionService {
       subscription,
     };
 
-    this.subscriptions.set(subscriptionId, subscriptionInfo);
+    this.registry.register(subscriptionInfo);
 
     // Provide initial value if requested
     if (options?.includeMetadata) {
@@ -932,25 +835,51 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'subtree',
       nodeId: rootNodeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
     };
 
-    this.subscriptions.set(subscriptionId, subscriptionInfo);
+    this.registry.register(subscriptionInfo);
 
     // Set up the observable stream
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForSubtreeObservation(event, rootNodeId, options)),
       map((event) => this.convertToTreeNodeEvent(event)),
-    );
+    ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);
 
     // Store the subscription for cleanup
     subscriptionInfo.subscription = subscription;
+
+    if (options?.prefetch?.depth && options.prefetch.depth > 0) {
+      try {
+        const nodes = await this.coreDB.listChildren(rootNodeId, {
+          prefetch: { depth: options.prefetch.depth },
+        });
+        console.log('[TreeSubscriptionService.subscribeSubtree] prefetch snapshot', {
+          rootNodeId: String(rootNodeId),
+          depth: options.prefetch.depth,
+          total: nodes.length,
+          sample: nodes.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+        });
+        const timestamp = Date.now() as Timestamp;
+        for (const node of nodes) {
+          callback({
+            type: 'updated',
+            nodeId: node.id,
+            node,
+            parentId: node.parentId,
+            timestamp,
+          });
+        }
+      } catch (error) {
+        console.warn('[TreeSubscriptionService] Failed to deliver prefetch snapshot', error);
+      }
+    }
 
     return subscriptionId;
   }
@@ -969,20 +898,20 @@ export class TreeSubscriptionService {
       id: subscriptionId,
       type: 'tree',
       treeId,
-      callback,
+      callback: callback as (event: unknown) => void,
       options,
       isActive: true,
       lastActivity: Date.now(),
       createdAt: Date.now(),
     };
 
-    this.subscriptions.set(subscriptionId, subscriptionInfo);
+    this.registry.register(subscriptionInfo);
 
     // Set up the observable stream for entire tree
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForTreeObservation(event, treeId)),
       map((event) => this.convertToTreeNodeEvent(event)),
-    );
+    ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);
 
@@ -992,11 +921,35 @@ export class TreeSubscriptionService {
     return subscriptionId;
   }
 
+  async subscribeUndoState(callback: (event: UndoStateEvent) => void): Promise<SubscriptionId> {
+    const subscriptionId = this.generateSubscriptionId() as SubscriptionId;
+
+    const subscriptionInfo: SubscriptionInfo = {
+      id: subscriptionId,
+      type: 'undo-state',
+      callback: callback as (event: unknown) => void,
+      isActive: true,
+      lastActivity: Date.now(),
+      createdAt: Date.now(),
+    };
+
+    this.registry.register(subscriptionInfo);
+    this.undoStateSubscriptions.set(subscriptionId, callback);
+
+    try {
+      callback(this.latestUndoState);
+    } catch (error) {
+      console.warn('[TreeSubscriptionService] undo-state subscriber callback failed', error);
+    }
+
+    return subscriptionId;
+  }
+
   /**
    * Remove a specific subscription (TreeSubscriptionAPI)
    */
   async unsubscribe(subscriptionId: SubscriptionId): Promise<void> {
-    const subscription = this.subscriptions.get(subscriptionId);
+    const subscription = this.registry.get(subscriptionId);
     if (subscription) {
       subscription.isActive = false;
 
@@ -1010,7 +963,11 @@ export class TreeSubscriptionService {
         subscription.subject.complete();
       }
 
-      this.subscriptions.delete(subscriptionId);
+      this.registry.delete(subscriptionId);
+    }
+
+    if (this.undoStateSubscriptions.has(subscriptionId)) {
+      this.undoStateSubscriptions.delete(subscriptionId);
     }
   }
 
@@ -1019,9 +976,9 @@ export class TreeSubscriptionService {
    */
   async unsubscribeNode(nodeId: NodeId): Promise<number> {
     let count = 0;
-    const toRemove: SubscriptionId[] = [];
+    const toRemove: SubscriptionInfo[] = [];
 
-    for (const [id, subscription] of Array.from(this.subscriptions.entries())) {
+    for (const [, subscription] of this.registry.entries()) {
       if (subscription.nodeId === nodeId) {
         subscription.isActive = false;
 
@@ -1035,13 +992,13 @@ export class TreeSubscriptionService {
           subscription.subject.complete();
         }
 
-        toRemove.push(id);
+        toRemove.push(subscription);
         count++;
       }
     }
 
-    for (const id of toRemove) {
-      this.subscriptions.delete(id as SubscriptionId);
+    for (const info of toRemove) {
+      this.registry.delete(info.id);
     }
 
     return count;
@@ -1052,37 +1009,50 @@ export class TreeSubscriptionService {
    */
   async unsubscribeTree(treeId: TreeId): Promise<number> {
     let count = 0;
-    const toRemove: SubscriptionId[] = [];
+    const toRemove: SubscriptionInfo[] = [];
 
-    for (const [id, subscription] of Array.from(this.subscriptions.entries())) {
+    for (const [, subscription] of this.registry.entries()) {
       if (subscription.treeId === treeId) {
         subscription.isActive = false;
-        toRemove.push(id);
+        toRemove.push(subscription);
         count++;
       }
     }
 
-    for (const id of toRemove) {
-      this.subscriptions.delete(id);
+    for (const info of toRemove) {
+      this.registry.delete(info.id);
     }
 
     return count;
+  }
+
+  publishUndoState(event: UndoStateEvent): void {
+    this.latestUndoState = event;
+    for (const [subscriptionId, callback] of this.undoStateSubscriptions.entries()) {
+      try {
+        callback(event);
+      } catch (error) {
+        console.warn('[TreeSubscriptionService] undo-state callback threw', error);
+      }
+      const info = this.registry.get(subscriptionId);
+      if (info) {
+        info.lastActivity = Date.now();
+      }
+    }
   }
 
   /**
    * Get list of active subscription identifiers (TreeSubscriptionAPI)
    */
   async listActiveSubscriptions(): Promise<SubscriptionId[]> {
-    return Array.from(this.subscriptions.keys()).filter(
-      (id) => this.subscriptions.get(id)?.isActive,
-    );
+    return this.registry.listActiveIds();
   }
 
   /**
    * Check if a specific subscription is still active (TreeSubscriptionAPI)
    */
   async isSubscriptionActive(subscriptionId: SubscriptionId): Promise<boolean> {
-    const subscription = this.subscriptions.get(subscriptionId);
+    const subscription = this.registry.get(subscriptionId);
     return subscription ? subscription.isActive : false;
   }
 
@@ -1097,7 +1067,7 @@ export class TreeSubscriptionService {
     eventsProcessedToday: number;
     averageEventLatency: number;
   }> {
-    const activeSubscriptions = Array.from(this.subscriptions.values()).filter((s) => s.isActive);
+    const activeSubscriptions = this.registry.active();
 
     return {
       totalActive: activeSubscriptions.length,
@@ -1164,7 +1134,7 @@ export class TreeSubscriptionService {
 
     const nodeEvent: TreeNodeEvent = {
       nodeId: changeEvent.nodeId,
-      type: mapType(changeEvent.type as any),
+      type: mapType(changeEvent.type),
       timestamp: changeEvent.timestamp || Date.now(),
       node: changeEvent.node,
       parentId: changeEvent.node?.parentId,

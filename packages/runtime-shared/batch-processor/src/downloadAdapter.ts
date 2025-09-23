@@ -6,7 +6,13 @@ export interface SharedDownloadOptions {
   perHostConcurrency?: number;
 }
 
-export async function createSharedDownloadService(opts?: SharedDownloadOptions) {
+export interface SharedDownloadService {
+  service: DownloadService;
+  net: FetchNetworkPort;
+  readAll: (fileId: string) => Promise<ArrayBuffer>;
+}
+
+export async function createSharedDownloadService(opts?: SharedDownloadOptions): Promise<SharedDownloadService> {
   const auth = await AuthRecoveryService.getSingleton();
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
@@ -14,13 +20,17 @@ export async function createSharedDownloadService(opts?: SharedDownloadOptions) 
   });
   const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
   const integrity = new (class {
-    async compute(buf: ArrayBuffer, algo: 'sha256' = 'sha256') {
-      const d = await crypto.subtle.digest(algo.toUpperCase(), buf);
-      return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    async compute(buffer: ArrayBuffer, algo: 'sha256' = 'sha256'): Promise<string> {
+      const digest = await crypto.subtle.digest(algo.toUpperCase(), buffer);
+      return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
     }
   })();
-  const service = new DownloadService(net as any, storage as any, integrity as any);
-  return { service, net, readAll: (fileId: string) => storage.readAll!(fileId) };
+  const service = new DownloadService(net, storage, integrity);
+  if (!storage.readAll) {
+    throw new Error('DexieChunkStoragePort.readAll is not available');
+  }
+  const readAll = storage.readAll.bind(storage) as (fileId: string) => Promise<ArrayBuffer>;
+  return { service, net, readAll };
 }
 
 /**

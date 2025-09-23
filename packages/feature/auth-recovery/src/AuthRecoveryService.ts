@@ -1,12 +1,17 @@
 import { SingletonMixin } from '@hierarchidb/util';
 import type { AuthContext, AuthHeadersProvider, AuthPluginType } from './ports.js';
-import type { PluginType } from '@hierarchidb/common-auth/AuthNotificationSystem';
+import type {
+  AuthCancelledNotification,
+  AuthRequiredNotification,
+  AuthSuccessNotification,
+  PluginType,
+} from '@hierarchidb/common-auth/AuthNotificationSystem';
 import { AUTH_CONSTANTS, AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth/AuthNotificationSystem';
 
 type Pending = {
   resolve: (r: Response) => void;
   reject: (e: Error) => void;
-  timeout: any;
+  timeout: ReturnType<typeof setTimeout>;
   context: { requestId: string; url: string; init: RequestInit; ctx: AuthContext };
 };
 
@@ -22,10 +27,19 @@ export class AuthRecoveryService implements AuthHeadersProvider {
   constructor() {
     // Listen for success/cancel notifications from UI
     this.registry.register('feature-auth-recovery', {
-      onAuthRequired: async (_n: any) => {
+      onAuthRequired: async (_notification: AuthRequiredNotification) => {
+        // No-op: the worker initiates auth flows directly via awaitAuth
       },
-      onAuthSuccess: async (n: any) => this.onAuthSuccess(n.context.requestId, n.context.newToken, n.context.tokenType || 'Bearer', n.context.expiresAt),
-      onAuthCancelled: async (n: any) => this.onAuthCancelled(n.context.requestId, n.context.reason),
+      onAuthSuccess: async (notification: AuthSuccessNotification) => this.onAuthSuccess(
+        notification.context.requestId,
+        notification.context.newToken,
+        notification.context.tokenType || 'Bearer',
+        notification.context.expiresAt,
+      ),
+      onAuthCancelled: async (notification: AuthCancelledNotification) => this.onAuthCancelled(
+        notification.context.requestId,
+        notification.context.reason,
+      ),
     });
   }
 
@@ -41,10 +55,10 @@ export class AuthRecoveryService implements AuthHeadersProvider {
     const maxRetries = ctx.maxRetries ?? AUTH_CONSTANTS.MAX_RETRY_COUNT;
     const pluginType: AuthPluginType = ctx.pluginType ?? 'shape';
     let attempt = 0;
-    let lastErr: any;
+    let lastErr: unknown;
     for (; attempt <= maxRetries; attempt++) {
       try {
-        const headers = new Headers(init.headers as any);
+        const headers = new Headers(init.headers);
         const auth = this.getAuthHeaders();
         Object.entries(auth).forEach(([k, v]) => headers.set(k, v));
         const res = await fetch(url, { ...init, headers });
@@ -54,11 +68,14 @@ export class AuthRecoveryService implements AuthHeadersProvider {
         await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, pluginType, maxRetries });
         // retry after success
         continue;
-      } catch (e) {
-        lastErr = e;
+      } catch (error) {
+        lastErr = error;
       }
     }
-    throw lastErr ?? new Error('Authentication failed');
+    if (lastErr instanceof Error) {
+      throw lastErr;
+    }
+    throw new Error(lastErr === undefined ? 'Authentication failed' : String(lastErr));
   }
 
   private async awaitAuth(requestId: string, url: string, init: RequestInit, ctx: AuthContext): Promise<Response> {
@@ -97,12 +114,12 @@ export class AuthRecoveryService implements AuthHeadersProvider {
     this.pending.delete(requestId);
     this.setToken(token, type, expiresAt);
     try {
-      const headers = new Headers(p.context.init.headers as any);
+      const headers = new Headers(p.context.init.headers);
       headers.set('Authorization', `${type} ${token}`);
       const res = await fetch(p.context.url, { ...p.context.init, headers });
       p.resolve(res);
-    } catch (e: any) {
-      p.reject(e instanceof Error ? e : new Error(String(e)));
+    } catch (error) {
+      p.reject(error instanceof Error ? error : new Error(String(error)));
     }
   }
 

@@ -9,7 +9,7 @@ packages:
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/backend/*
-  - packages/node-type/*
+  - packages/plugins/*
   - packages/feature/*
   # Spreadsheet plugin now included for local build/test
 

@@ -21,6 +21,10 @@ interface DynamicSpeedDialProps {
   menuContext?: TreeContext; // Optional explicit context to build items from VM
 }
 
+type DynamicSpeedDialWindow = Window & {
+  __HDB_SD_HITBOX__?: boolean;
+};
+
 export function DynamicSpeedDial({
                                    treeId,
                                    onCreateAction,
@@ -35,7 +39,7 @@ export function DynamicSpeedDial({
       const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const urlOn = sp?.get('sdHitbox') === '1' || sp?.get('debug') === 'sd';
       const persisted = typeof localStorage !== 'undefined' ? localStorage.getItem('hdb.sd.hitbox') === '1' : false;
-      const globalOn = typeof window !== 'undefined' && (window as any).__HDB_SD_HITBOX__ === true;
+      const globalOn = typeof window !== 'undefined' && (window as DynamicSpeedDialWindow).__HDB_SD_HITBOX__ === true;
       return urlOn || persisted || globalOn;
     } catch {
       return false;
@@ -93,7 +97,7 @@ export function DynamicSpeedDial({
         setDebugHitbox((v) => {
           const nv = !v;
           localStorage.setItem('hdb.sd.hitbox', nv ? '1' : '0');
-          (window as any).__HDB_SD_HITBOX__ = nv;
+          (window as DynamicSpeedDialWindow).__HDB_SD_HITBOX__ = nv;
           return nv;
         });
       }

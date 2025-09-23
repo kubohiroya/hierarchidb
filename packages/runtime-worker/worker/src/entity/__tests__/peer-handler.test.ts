@@ -1,27 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-type';
 import { PeerEntityHandler } from '../handlers/PeerEntityHandler.js';
-import type { PeerStore } from '../store.js';
+import type { PeerEntity, PeerStore } from '../store.js';
 
-function makePeerStoreStub(): PeerStore<any> & { _map: Map<string, any> } {
-  const map = new Map<string, any>();
+function makePeerStoreStub<TData>(): PeerStore<TData> & { map: Map<NodeId, PeerEntity<TData>> } {
+  const map = new Map<NodeId, PeerEntity<TData>>();
   return {
     async get(id: NodeId) {
-      return map.get(id as unknown as string);
+      return map.get(id);
     },
-    async put(e: any) {
-      map.set(e.nodeId as unknown as string, e);
+    async put(entity: PeerEntity<TData>) {
+      map.set(entity.nodeId, { ...entity });
     },
     async delete(id: NodeId) {
-      map.delete(id as unknown as string);
+      map.delete(id);
     },
-    _map: map,
-  } as any;
+    map,
+  };
 }
 
 describe('PeerEntityHandler', () => {
   it('copies peer entity to wc and upserts to target, then deletes wc', async () => {
-    const store = makePeerStoreStub();
+    const store = makePeerStoreStub<{ foo: number }>();
     const handler = new PeerEntityHandler(store);
     const originalId = 'n1' as NodeId;
     const wcId = 'wc1' as NodeId;

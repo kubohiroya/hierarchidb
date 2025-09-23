@@ -1,5 +1,6 @@
-import { generateNodeId, NodeBase, NodeId, NodeType, Timestamp, TreeId, TreeNode } from '@hierarchidb/common-type';
-import type { CommandResult } from './command-types.js';
+import crypto from 'crypto';
+import { generateNodeId, NodeBase, NodeId, NodeType, Timestamp, TreeId, TreeNode, Seq } from '@hierarchidb/common-type';
+import type { CommandEnvelope, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
 import type { CoreDB } from './CoreDB.js';
 import { encodeWorkingCopyHolderName } from './utils/holder-encoding.js';
@@ -40,16 +41,16 @@ export async function createNewDraftWorkingCopy(
 
   // get-or-create using composite index [parentId+name]
   try {
-    const existing = await (coreDB.nodes as any)
-      .where?.('[parentId+name]')
+    const existing = await coreDB.nodes
+      .where('[parentId+name]')
       .equals([workingCopyNodeHolderParentId, holderName])
-      .first?.();
+      .first();
     if (existing) {
       // Reuse existing holder; return its id
       return (existing.id as NodeId) || workingCopyNodeHolderId;
     }
 
-    await (coreDB as any).transaction?.('rw', (coreDB as any).nodes, async () => {
+    await coreDB.transaction('rw', coreDB.nodes, async () => {
       const workingCopyNodeHolder: NodeBase & {
         holderType?: 'workingCopy' | 'trash';
         holderTargetId?: NodeId;
@@ -83,10 +84,10 @@ export async function createNewDraftWorkingCopy(
   } catch (err: any) {
     // ConstraintError: created concurrently; re-read existing
     if (err && (err.name === 'ConstraintError' || /Constraint/i.test(String(err?.message)))) {
-      const holder = await (coreDB.nodes as any)
-        .where?.('[parentId+name]')
+      const holder = await coreDB.nodes
+        .where('[parentId+name]')
         .equals([workingCopyNodeHolderParentId, holderName])
-        .first?.();
+        .first();
       if (holder) return holder.id as NodeId;
     }
     throw err;
@@ -105,10 +106,10 @@ export async function createDraftWorkingCopyGetOrCreate(
   const targetNodeId = generateNodeId();
   const holderName = encodeWorkingCopyHolderName(parentId, targetNodeId);
 
-  const existing = await (coreDB.nodes as any)
-    .where?.('[parentId+name]')
+  const existing = await coreDB.nodes
+    .where('[parentId+name]')
     .equals([workingCopyRootId, holderName])
-    .first?.();
+    .first();
 
   if (existing) {
     // Ensure holder metadata exists; if missing, backfill from encoded name
@@ -129,7 +130,7 @@ export async function createDraftWorkingCopyGetOrCreate(
     }
 
     // Ensure child exists; if missing, create a minimal WC child under holder
-    const children = await (coreDB.nodes as any).where?.('parentId').equals(existing.id).toArray?.();
+    const children = await coreDB.nodes.where('parentId').equals(existing.id).toArray();
     let child = Array.isArray(children) ? children[0] : undefined;
     if (!child) {
       const wcNodeId = generateNodeId();
@@ -144,9 +145,9 @@ export async function createDraftWorkingCopyGetOrCreate(
         createdAt: now,
         updatedAt: now,
         version: 1,
-      } as any);
+      });
       // Re-read
-      const arr = await (coreDB.nodes as any).where?.('parentId').equals(existing.id).toArray?.();
+      const arr = await coreDB.nodes.where('parentId').equals(existing.id).toArray();
       child = Array.isArray(arr) ? arr[0] : undefined;
     }
     return {
@@ -158,7 +159,7 @@ export async function createDraftWorkingCopyGetOrCreate(
 
   // Create new
   const wcHolderId = await createNewDraftWorkingCopy(coreDB, treeId, parentId, nodeType, baseName);
-  const children = await (coreDB.nodes as any).where?.('parentId').equals(wcHolderId).toArray?.();
+  const children = await coreDB.nodes.where('parentId').equals(wcHolderId).toArray();
   const child = Array.isArray(children) ? children[0] : undefined;
   return { wcHolderId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: false };
 }
@@ -182,10 +183,10 @@ export async function createWorkingCopyFromNode(
   }
 
   // get-or-create: reuse existing WC if present for this original node
-  const existingHolder = await (coreDB.nodes as any)
-    .where?.('[holderType+holderTargetId]')
+  const existingHolder = await coreDB.nodes
+    .where('[holderType+holderTargetId]')
     .equals(['workingCopy', sourceNode.id])
-    .first?.();
+    .first();
   if (existingHolder) {
     return nodeId; // WC already exists; return original id (behavior preserved)
   }
@@ -223,15 +224,15 @@ export async function createWorkingCopyFromNode(
 
   try {
     const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
-    const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
-    await lifecycle.handleCommand({
-      commandId: crypto.randomUUID() as any,
-      groupId: crypto.randomUUID() as any,
-      kind: 'createWorkingCopy' as any,
-      payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
-      issuedAt: Date.now() as any,
-      type: 'createWorkingCopy' as any,
-    } as any);
+      const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
+      await lifecycle.handleCommand({
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'createWorkingCopy',
+        payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
+        issuedAt: Date.now(),
+        type: 'createWorkingCopy',
+      });
   } catch {
   }
 
@@ -262,12 +263,14 @@ export async function commitWorkingCopyV2(
   if (!holder) throw new Error('Working copy holder not found');
 
   // Support both metadata fields (editing WC) and encoded holder name (draft WC)
-  let targetParentNodeId = (holder as any).holderMetaParentId as NodeId | undefined;
-  let targetNodeId = (holder as any).holderTargetId as NodeId | undefined;
+  const holderMetaParentId = (holder as { holderMetaParentId?: NodeId }).holderMetaParentId;
+  const holderTargetId = (holder as { holderTargetId?: NodeId }).holderTargetId;
+  let targetParentNodeId = holderMetaParentId;
+  let targetNodeId = holderTargetId;
   if (!targetParentNodeId || !targetNodeId) {
     try {
       const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
-      const parsed = decodeWorkingCopyHolderName((holder as any).name as string);
+      const parsed = decodeWorkingCopyHolderName(holder.name);
       targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
       targetNodeId = targetNodeId ?? parsed.targetNodeId;
     } catch {
@@ -294,14 +297,15 @@ export async function commitWorkingCopyV2(
       finalName = createNewName(siblingNames, finalName);
     }
 
-    await coreDB.createNode?.({
-      ...(wcNode as any),
+    const newNode: TreeNode = {
+      ...wcNode,
       id: targetNodeId,
       parentId: targetParentNodeId,
       name: finalName,
       updatedAt: now,
       version: (wcNode.version || 1) + 1,
-    });
+    };
+    await coreDB.createNode(newNode);
 
     // Cleanup WC (holder + child)
     await discardWorkingCopy(coreDB, [holder.id, wcNode.id]);
@@ -324,7 +328,7 @@ export async function commitWorkingCopyV2(
   }
 
   await coreDB.updateNode({
-    ...(wcNode as any),
+    ...wcNode,
     id: targetNodeId,
     parentId: targetParentNodeId,
     name: finalName,
@@ -370,8 +374,8 @@ export async function commitWorkingCopy(
       };
     }
 
-    const parentId = (workingCopyNodeHolder as any).holderMetaParentId as NodeId;
-    const nodeId = (workingCopyNodeHolder as any).holderTargetId as NodeId;
+    const parentId = (workingCopyNodeHolder as { holderMetaParentId?: NodeId }).holderMetaParentId;
+    const nodeId = (workingCopyNodeHolder as { holderTargetId?: NodeId }).holderTargetId;
     if (!parentId || !nodeId) {
       return {
         success: false,
@@ -438,7 +442,7 @@ export async function commitWorkingCopy(
 
     return {
       success: true,
-      seq: 1 as any,
+      seq: 1 as Seq,
       nodeId,
     };
 
@@ -466,15 +470,16 @@ export async function discardWorkingCopy(
     const wcId = workingCopyNodeIdPair?.[1];
     if (wcId) {
       const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
-      const lifecycle = EntityLifecycleManager.getSingleton(coreDB as any);
-      await lifecycle.handleCommand({
-        commandId: crypto.randomUUID() as any,
-        groupId: crypto.randomUUID() as any,
-        kind: 'discardWorkingCopy' as any,
+      const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
+      const envelope: CommandEnvelope<'discardWorkingCopy', { workingCopyId: NodeId }> = {
+        commandId: crypto.randomUUID(),
+        groupId: crypto.randomUUID(),
+        kind: 'discardWorkingCopy',
         payload: { workingCopyId: wcId },
-        issuedAt: Date.now() as any,
-        type: 'discardWorkingCopy' as any,
-      } as any);
+        issuedAt: Date.now() as Timestamp,
+        type: 'discardWorkingCopy',
+      };
+      await lifecycle.handleCommand(envelope);
     }
   } catch {
   }
@@ -487,13 +492,13 @@ export async function getWorkingCopy(
   coreDB: CoreDB,
   originalNodeId: NodeId,
 ): Promise<NodeBase | undefined> {
-  const holder = await (coreDB.nodes as any)
-    .where?.('[holderType+holderTargetId]')
+  const holder = await coreDB.nodes
+    .where('[holderType+holderTargetId]')
     .equals(['workingCopy', originalNodeId])
-    .first?.();
+    .first();
   if (!holder) return undefined;
-  const child = await (coreDB.nodes as any).where?.('parentId').equals(holder.id).first?.();
-  return (child || undefined) as NodeBase | undefined;
+  const child = await coreDB.nodes.where('parentId').equals(holder.id).first();
+  return child ?? undefined;
 }
 
 /**

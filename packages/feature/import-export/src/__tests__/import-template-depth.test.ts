@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { ImportData } from '@hierarchidb/common-api';
 import type { ImportExportDBPort } from '../ports.js';
 
 class InMemoryImportExportPort implements ImportExportDBPort {
@@ -10,8 +11,8 @@ class InMemoryImportExportPort implements ImportExportDBPort {
   constructor(rootId: NodeId, depth = 0) {
     this.nodes.set(rootId, {
       id: rootId,
-      parentId: null,
-      nodeType: 'folder' as any,
+      parentId: rootId,
+      nodeType: 'folder' as NodeType,
       name: 'root',
       description: '',
       depth,
@@ -52,33 +53,32 @@ async function loadPopulationTemplate() {
   const templateUrl = new URL('../../../../app/public/templates/population-2023/tree-nodes.json', import.meta.url);
   const raw = await readFile(templateUrl, 'utf-8');
   const json = JSON.parse(raw) as {
-    nodes: Record<string, any>;
+    nodes: Record<string, Record<string, unknown>>;
     rootNodeIds: string[];
   };
 
   const nodesMap = json.nodes || {};
   const rootIds = json.rootNodeIds || [];
 
-  const buildTree = (id: string, depth: number): any => {
+  const buildTree = (id: string, depth: number): ImportData['nodes'][number] | null => {
     const node = nodesMap[id];
     if (!node) return null;
     const children = Object.values(nodesMap)
-      .filter((child: any) => child?.parentTreeNodeId === id)
-      .map((child: any) => buildTree(child.treeNodeId, depth + 1))
-      .filter(Boolean);
+      .filter((child) => child?.parentTreeNodeId === id)
+      .map((child) => buildTree(child.treeNodeId as string, depth + 1))
+      .filter((child): child is ImportData['nodes'][number] => Boolean(child));
     return {
-      name: node.name,
-      nodeType: node.treeNodeType || 'folder',
-      description: node.description,
-      metadata: node.metadata,
-      depth,
+      name: String(node.name ?? ''),
+      nodeType: (node.treeNodeType ?? 'folder') as string,
+      description: typeof node.description === 'string' ? node.description : undefined,
+      metadata: nodesMap[id]?.metadata as Record<string, unknown> | undefined,
       children: children.length ? children : undefined,
     };
   };
 
   return rootIds
     .map((rid) => buildTree(rid, 1))
-    .filter(Boolean);
+    .filter((node): node is ImportData['nodes'][number] => Boolean(node));
 }
 
 describe('Import Template - depth assignment', () => {
@@ -90,9 +90,9 @@ describe('Import Template - depth assignment', () => {
     const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
 
     const result = await svc.importNodes({
-      treeId: 'r' as any,
+      treeId: 'r' as TreeId,
       targetParentId: 'root' as NodeId,
-      data: { nodes: payloadNodes as any[] },
+      data: { nodes: payloadNodes },
       format: 'json',
       validateFirst: false,
     });

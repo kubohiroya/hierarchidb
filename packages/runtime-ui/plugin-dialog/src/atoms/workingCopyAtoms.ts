@@ -16,7 +16,7 @@ export interface WorkingCopyData {
   nodeType: string;
   name: string;
   description?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   isDraft?: boolean;
   lastModified: number;
 }

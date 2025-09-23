@@ -5,7 +5,7 @@
  * This component is purely UI-focused and knows nothing about HierarchiDB's data structures.
  */
 
-import React, { ReactNode, useMemo, useState, type ReactElement } from 'react';
+import React, { useMemo, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import {
   Box,
   Checkbox,
@@ -26,6 +26,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 // import { useVirtualizer } from '@tanstack/provider-virtual';
 
@@ -33,7 +34,39 @@ import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Sear
  * Generic column definition
  * @template T The row data type
  */
-export interface GridColumn<T = any> {
+type RowRecord = { id?: string | number } & Record<PropertyKey, unknown>;
+
+const getCellValue = <T extends RowRecord>(row: T, columnId: GridColumn<T>['id']): unknown => {
+  const propertyKey = columnId as PropertyKey;
+  return Object.prototype.hasOwnProperty.call(row, propertyKey) ? row[propertyKey] : undefined;
+};
+
+const toDefaultRowId = <T extends RowRecord>(row: T, index?: number): string | number => {
+  const candidate = row.id;
+  if (typeof candidate === 'string' || typeof candidate === 'number') {
+    return candidate;
+  }
+  return index ?? 0;
+};
+
+const renderDefaultCell = (value: unknown): ReactNode => {
+  if (React.isValidElement(value)) {
+    return value;
+  }
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '[object]';
+    }
+  }
+  return String(value);
+};
+
+export interface GridColumn<T extends RowRecord = RowRecord> {
   /** Unique identifier for the column */
   id: keyof T | string;
   /** Display label */
@@ -43,13 +76,13 @@ export interface GridColumn<T = any> {
   /** Text alignment */
   align?: 'left' | 'center' | 'right';
   /** Custom value formatter */
-  format?: (value: any, row: T) => ReactNode;
+  format?: (value: unknown, row: T) => ReactNode;
   /** Enable sorting for this column */
   sortable?: boolean;
   /** Enable filtering for this column */
   filterable?: boolean;
   /** Custom filter predicate */
-  filterPredicate?: (value: any, filterValue: string) => boolean;
+  filterPredicate?: (value: unknown, filterValue: string) => boolean;
   /** Hide column */
   hidden?: boolean;
 }
@@ -58,7 +91,7 @@ export interface GridColumn<T = any> {
  * Generic data grid props
  * @template T The row data type
  */
-export interface GenericDataGridProps<T = any> {
+export interface GenericDataGridProps<T extends RowRecord = RowRecord> {
   /** Column definitions */
   columns: GridColumn<T>[];
   /** Data rows */
@@ -72,7 +105,7 @@ export interface GenericDataGridProps<T = any> {
 
   // Identification
   /** Function to get unique ID for each row */
-  getRowId?: (row: T) => string | number;
+  getRowId?: (row: T, index?: number) => string | number;
 
   // Pagination
   /** Current page (0-indexed) */
@@ -128,11 +161,11 @@ export interface GenericDataGridProps<T = any> {
 
   // Row visual customization
   /** Compute per-row inline style from row state */
-  rowStyle?: (state: RowState<T>) => React.CSSProperties | undefined;
+  rowStyle?: (state: RowState<T>) => CSSProperties | undefined;
   /** Compute per-row css class from row state */
   rowClassName?: (state: RowState<T>) => string | undefined;
   /** Compute per-row MUI sx from row state */
-  rowSx?: (state: RowState<T>) => any;
+  rowSx?: (state: RowState<T>) => SxProps<Theme> | undefined;
 
   // Actions
   /** Export handler */
@@ -179,7 +212,7 @@ export interface GenericDataGridProps<T = any> {
   toolbarComponent?: ReactNode;
 }
 
-export interface RowState<T = any> {
+export interface RowState<T extends RowRecord = RowRecord> {
   row: T;
   rowId: string | number;
   index: number;
@@ -194,13 +227,13 @@ export interface RowState<T = any> {
 /**
  * Generic data grid component
  */
-export function GenericDataGrid<T = any>({
+export function GenericDataGrid<T extends RowRecord = RowRecord>({
                                            columns,
                                            rows,
                                            totalRows,
                                            loading = false,
                                            error,
-                                           getRowId = (row: any, index?: number) => row.id ?? index,
+                                           getRowId = toDefaultRowId,
                                            page = 0,
                                            rowsPerPage = 50,
                                            rowsPerPageOptions = [25, 50, 100, 250],
@@ -269,7 +302,7 @@ export function GenericDataGrid<T = any>({
       result = result.filter((row) => {
         return columns.some((col) => {
           if (col.hidden) return false;
-          const value = (row as any)[col.id];
+          const value = getCellValue(row, col.id);
           if (value == null) return false;
           return String(value).toLowerCase().includes(searchTerm.toLowerCase());
         });
@@ -284,7 +317,7 @@ export function GenericDataGrid<T = any>({
       if (!column) return;
 
       result = result.filter((row) => {
-        const value = (row as any)[columnId];
+        const value = getCellValue(row, columnId);
         if (column.filterPredicate) {
           return column.filterPredicate(value, filterValue);
         }
@@ -325,17 +358,20 @@ export function GenericDataGrid<T = any>({
     if (!onSelectionChange) return;
 
     if (event.target.checked) {
-      const allIds = new Set(displayRows.map((row) => getRowId(row)));
+      const startIndex = page * rowsPerPage;
+      const allIds = new Set(
+        displayRows.map((row, index) => getRowId(row, startIndex + index)),
+      );
       onSelectionChange(allIds);
     } else {
       onSelectionChange(new Set());
     }
   };
 
-  const handleSelectRow = (row: T) => {
+  const handleSelectRow = (row: T, absoluteIndex: number) => {
     if (!onSelectionChange) return;
 
-    const rowId = getRowId(row);
+    const rowId = getRowId(row, absoluteIndex);
     const newSelection = new Set(selectedRows);
 
     if (selectionMode === 'single') {
@@ -517,7 +553,8 @@ export function GenericDataGrid<T = any>({
           </TableHead>
           <TableBody>
             {displayRows.map((row, index) => {
-              const rowId = getRowId(row);
+              const globalRowIndex = page * rowsPerPage + index;
+              const rowId = getRowId(row, globalRowIndex);
               const state: RowState<T> = {
                 row,
                 rowId,
@@ -530,8 +567,7 @@ export function GenericDataGrid<T = any>({
                 dropTarget: !!dropTargetRows?.has(rowId),
               };
 
-              // Default layered styles (can be overridden via rowSx/rowStyle)
-              const layeredSx: any[] = [];
+              const layeredSx: SxProps<Theme>[] = [];
               if (striped && index % 2 === 0) layeredSx.push({ backgroundColor: 'action.hover' });
               if (state.matched) layeredSx.push({ boxShadow: 'inset 3px 0 0 0 rgba(25, 118, 210, 0.9)' });
               if (state.selected) layeredSx.push({ backgroundColor: 'primary.light', '&:hover': { backgroundColor: 'primary.light' } });
@@ -539,7 +575,28 @@ export function GenericDataGrid<T = any>({
               if (state.dragging) layeredSx.push({ opacity: 0.7 });
               if (state.dropTarget) layeredSx.push({ outline: '2px dashed rgba(25,118,210,0.8)' });
               if (state.disabled) layeredSx.push({ opacity: 0.5, pointerEvents: 'none', filter: 'grayscale(0.2)' });
-              if (rowSx) layeredSx.push(rowSx(state));
+              if (rowSx) {
+                const sx = rowSx(state);
+                if (sx) {
+                  if (Array.isArray(sx)) {
+                    layeredSx.push(...(sx as SxProps<Theme>[]));
+                  } else {
+                    layeredSx.push(sx);
+                  }
+                }
+              }
+
+              const rowInlineStyle = rowStyle?.(state);
+              const sxParts: SxProps<Theme>[] = [];
+              if (onRowClick || onRowDoubleClick) {
+                sxParts.push({ cursor: 'pointer' });
+              }
+              if (layeredSx.length > 0) {
+                sxParts.push(...layeredSx);
+              }
+              const sxValue: SxProps<Theme> | undefined = sxParts.length > 0
+                ? (sxParts as unknown as SxProps<Theme>)
+                : undefined;
 
               return (
                 <TableRow
@@ -549,22 +606,24 @@ export function GenericDataGrid<T = any>({
                   onClick={() => !state.disabled && onRowClick?.(row)}
                   onDoubleClick={() => !state.disabled && onRowDoubleClick?.(row)}
                   className={rowClassName?.(state)}
-                  sx={{
-                    cursor: onRowClick || onRowDoubleClick ? 'pointer' : undefined,
-                    ...(layeredSx.length > 0 ? layeredSx : undefined),
-                    ...(rowStyle ? (rowStyle(state) as any) : undefined),
-                  }}
+                  sx={sxValue}
+                  style={rowInlineStyle}
                 >
                   {selectable && (
                     <TableCell padding="checkbox">
-                      <Checkbox checked={state.selected} disabled={state.disabled} onChange={() => handleSelectRow(row)} />
+                      <Checkbox
+                        checked={state.selected}
+                        disabled={state.disabled}
+                        onChange={() => handleSelectRow(row, globalRowIndex)}
+                      />
                     </TableCell>
                   )}
                   {visibleColumns.map((column) => {
-                    const value = (row as any)[column.id];
+                    const value = getCellValue(row, column.id);
+                    const cellContent = column.format ? column.format(value, row) : renderDefaultCell(value);
                     return (
                       <TableCell key={String(column.id)} align={column.align}>
-                        {column.format ? column.format(value, row) : value}
+                        {cellContent}
                       </TableCell>
                     );
                   })}

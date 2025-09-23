@@ -62,5 +62,10 @@
     "fake-indexeddb": "^6.2.2",
     "vitest": "^3.2.4"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "tsup": {
+    "external": [
+      "jotai"
+    ]
+  }
 }

@@ -5,9 +5,20 @@ import type { MapAdapterPort } from '../ports.js';
 import type { DeckLayerSpec, MapStyleSpec, ViewState } from '../types.js';
 import type * as MapLibreNS from 'maplibre-gl';
 import type { Deck, LayersList } from 'deck.gl';
+import { readRuntimeEnvValue } from '@hierarchidb/util';
 
 type MapLibreCtor = typeof import('maplibre-gl');
 type DeckCtor = typeof import('deck.gl').Deck;
+
+interface EnvOverrides {
+  MAP_ADAPTER_MAPLIBRE_PKG?: string;
+  MAP_ADAPTER_DECK_PKG?: string;
+}
+
+interface ViteEnvOverrides {
+  VITE_MAP_ADAPTER_MAPLIBRE_PKG?: string;
+  VITE_MAP_ADAPTER_DECK_PKG?: string;
+}
 
 export interface MapLibreDeckAdapterOptions {
   maplibregl?: MapLibreCtor;
@@ -76,11 +87,9 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
   }
 
   addDeckLayers(layers: DeckLayerSpec[]): void {
-    const merged: unknown[] = [
-      ...((this.deck?.props.layers as unknown[]) || []),
-      ...toLayers(layers),
-    ];
-    this.setDeckLayersRaw(merged);
+    if (!this.deck) return;
+    const existing = (this.deck.props.layers ?? []) as LayersList;
+    this.setDeckLayersRaw([...existing, ...toLayers(layers)]);
   }
 
   updateDeckLayers(layers: DeckLayerSpec[]): void {
@@ -89,14 +98,17 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
 
   removeDeckLayers(ids: string[]): void {
     if (!this.deck) return;
-    const current: any[] = ([] as any[]).concat((this.deck.props.layers as unknown) || []);
-    const rest = current.filter((l) => !ids.includes(String(l?.id)));
-    this.setDeckLayersRaw(rest);
+    const current = (this.deck.props.layers ?? []) as LayersList;
+    const filtered = current.filter((layer) => {
+      if (!layer) return true;
+      return !ids.includes(String((layer as { id?: unknown }).id));
+    }) as LayersList;
+    this.setDeckLayersRaw(filtered);
   }
 
-  private setDeckLayersRaw(layers: unknown[]): void {
+  private setDeckLayersRaw(layers: LayersList): void {
     if (!this.deck) return;
-    this.deck.setProps({ layers: layers as unknown as LayersList });
+    this.deck.setProps({ layers });
   }
 
   private async ensureLibs(): Promise<{ maplibregl: MapLibreCtor; Deck: DeckCtor }> {
@@ -108,26 +120,31 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
       return { maplibregl: this._maplibregl, Deck: this._Deck };
     }
     // Lazy load at runtime. Allow overrides via env/global or options.
-    const g: any = (globalThis as any);
-    const viteEnv: any = (typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined) || {};
-    const nodeEnv: any = (typeof process !== 'undefined' ? (process as any).env : undefined) || {};
+    const globalOverrides = globalThis as EnvOverrides;
+    const viteEnv = (typeof import.meta !== 'undefined'
+      ? ((import.meta as { env?: ViteEnvOverrides }).env ?? {})
+      : {}) as ViteEnvOverrides;
+    const envOverrides: EnvOverrides = {
+      MAP_ADAPTER_MAPLIBRE_PKG: readRuntimeEnvValue('MAP_ADAPTER_MAPLIBRE_PKG', { prefixes: [''] }),
+      MAP_ADAPTER_DECK_PKG: readRuntimeEnvValue('MAP_ADAPTER_DECK_PKG', { prefixes: [''] }),
+    };
     const maplibreName =
       this.opts.maplibrePackageName ||
-      viteEnv?.VITE_MAP_ADAPTER_MAPLIBRE_PKG ||
-      g?.MAP_ADAPTER_MAPLIBRE_PKG ||
-      nodeEnv?.MAP_ADAPTER_MAPLIBRE_PKG ||
+      viteEnv.VITE_MAP_ADAPTER_MAPLIBRE_PKG ||
+      globalOverrides.MAP_ADAPTER_MAPLIBRE_PKG ||
+      envOverrides.MAP_ADAPTER_MAPLIBRE_PKG ||
       'maplibre-gl';
     const deckName =
       this.opts.deckPackageName ||
-      viteEnv?.VITE_MAP_ADAPTER_DECK_PKG ||
-      g?.MAP_ADAPTER_DECK_PKG ||
-      nodeEnv?.MAP_ADAPTER_DECK_PKG ||
+      viteEnv.VITE_MAP_ADAPTER_DECK_PKG ||
+      globalOverrides.MAP_ADAPTER_DECK_PKG ||
+      envOverrides.MAP_ADAPTER_DECK_PKG ||
       'deck.gl';
     // Use vite-ignore + computed names to avoid bundler pre-bundling
-    const modMap = (await import(/* @vite-ignore */ maplibreName)) as any;
-    const modDeck = (await import(/* @vite-ignore */ deckName)) as any;
-    const maplibregl = (modMap?.default ?? modMap) as MapLibreCtor;
-    const Deck = (modDeck?.Deck ?? modDeck?.default ?? modDeck) as DeckCtor;
+    const modMap = await import(/* @vite-ignore */ maplibreName);
+    const modDeck = await import(/* @vite-ignore */ deckName);
+    const maplibregl = resolveMapLibreCtor(modMap);
+    const Deck = resolveDeckCtor(modDeck);
     if (!maplibregl?.Map || !Deck) throw new Error('Failed to load maplibre-gl/deck.gl at runtime');
     this._maplibregl = maplibregl;
     this._Deck = Deck;
@@ -135,8 +152,28 @@ export class MapLibreDeckAdapter implements MapAdapterPort {
   }
 }
 
-function toLayers(specs: DeckLayerSpec[]): unknown[] {
-  // Caller should pass prebound layer constructors in specs.props if desired.
-  // Avoid duplicating properties like 'id' by spreading only once.
-  return specs.map((s) => ({ ...s }));
+function toLayers(specs: DeckLayerSpec[]): LayersList {
+  return specs.map((spec) => ({ ...spec })) as unknown as LayersList;
+}
+
+function resolveMapLibreCtor(mod: unknown): MapLibreCtor {
+  const candidate = mod as Partial<MapLibreCtor> & { default?: MapLibreCtor } | undefined;
+  if (candidate && candidate.Map) {
+    return candidate as MapLibreCtor;
+  }
+  if (candidate && candidate.default) {
+    return candidate.default;
+  }
+  throw new Error('maplibre-gl module missing Map export');
+}
+
+function resolveDeckCtor(mod: unknown): DeckCtor {
+  const candidate = mod as { Deck?: DeckCtor; default?: DeckCtor } | undefined;
+  if (candidate?.Deck) {
+    return candidate.Deck;
+  }
+  if (candidate?.default) {
+    return candidate.default;
+  }
+  throw new Error('deck.gl module missing Deck export');
 }

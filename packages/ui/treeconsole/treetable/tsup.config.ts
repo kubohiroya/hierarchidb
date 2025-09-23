@@ -9,5 +9,6 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
+    'jotai',
   ],
 });

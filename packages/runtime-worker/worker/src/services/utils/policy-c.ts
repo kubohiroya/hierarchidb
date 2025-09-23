@@ -21,17 +21,16 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
 
   // Optimization: use workingCopy root IDs from trees table if available,
   // then query holders via parentId index (anyOf).
-  const treeRows: Array<{ workingCopyRootId: NodeId }> | undefined = await (coreDB.trees as any)
-    ?.toArray?.()
+  const treeRows: Array<{ workingCopyRootId: NodeId }> | undefined = await coreDB.trees?.toArray?.()
     .catch?.(() => undefined);
 
   if (Array.isArray(treeRows) && treeRows.length > 0) {
     const wcRootIds = treeRows.map((t) => t.workingCopyRootId).filter(Boolean) as NodeId[];
     if (wcRootIds.length > 0) {
-      const holders = (await (coreDB.nodes as any)
+      const holders = (await coreDB.nodes
         .where?.('parentId')
         .anyOf?.(wcRootIds)
-        .toArray?.()) as any[] | undefined;
+        .toArray?.()) as TreeNode[] | undefined;
       if (Array.isArray(holders)) {
         for (const h of holders) {
           try {
@@ -47,9 +46,9 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
   }
 
   // Fallback: full scan (older behavior)
-  const nodesTable: any = (coreDB as any).nodes;
+  const nodesTable = coreDB.nodes;
   if (!nodesTable || typeof nodesTable.toArray !== 'function') return false;
-  const all = (await nodesTable.toArray()) as any[] | undefined;
+  const all = (await nodesTable.toArray()) as TreeNode[] | undefined;
   if (!Array.isArray(all)) return false;
   const holders = all.filter((n) => typeof n?.parentId === 'string' && (n.parentId as string).endsWith(':workingCopy'));
   for (const h of holders) {

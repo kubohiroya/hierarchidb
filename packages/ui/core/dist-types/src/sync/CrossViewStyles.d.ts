@@ -63,14 +63,14 @@ export declare const CrossViewStyles: {
      * @param cb 状態変更時に呼ばれるコールバック
      * @returns 解除関数
      */
-    subscribe(datasetId: DatasetId, cb: () => void): () => boolean;
+    subscribe(datasetId: DatasetId, cb: () => void): () => void;
     /**
      * フォーカスイベント（hover/selection に紐づく詳細情報）を購読します。
      * @param datasetId チャネル識別子
      * @param cb フォーカス発生/解除で呼ばれる（解除時は null）
      * @returns 解除関数
      */
-    subscribeFocus(datasetId: DatasetId, cb: (ev: FocusEventPayload | null) => void): () => boolean;
+    subscribeFocus(datasetId: DatasetId, cb: (ev: FocusEventPayload | null) => void): () => void;
     /**
      * 行IDとフィーチャIDの対応付けをセットします（1:n / n:n いずれも可）。
      */

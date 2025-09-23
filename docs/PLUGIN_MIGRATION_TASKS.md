@@ -2,7 +2,7 @@
 
 ## 概要
 
-アーキテクチャリファクタリング後、全プラグインパッケージで型エラーが発生している状況を修正するための作業計画です。各プラグインを新しい`@hierarchidb/node-type-base-plugin`アーキテクチャに移行し、削除されたmetadata/tagsフィールドに依存しない構造に変更します。
+アーキテクチャリファクタリング後、全プラグインパッケージで型エラーが発生している状況を修正するための作業計画です。各プラグインを新しい`@hierarchidb/plugins-base-plugin`アーキテクチャに移行し、削除されたmetadata/tagsフィールドに依存しない構造に変更します。
 
 ## 共通修正方針
 
@@ -12,7 +12,7 @@
    ```json
    // package.json の dependencies を更新
    "@hierarchidb/common-plugin-base": "workspace:*"  // 削除
-   "@hierarchidb/node-type-base-plugin": "workspace:*"  // 追加
+   "@hierarchidb/plugins-base-plugin": "workspace:*"  // 追加
    ```
 
 2. **import文の修正**
@@ -21,7 +21,7 @@
    import { MetadataEntityHandler } from '@hierarchidb/common-plugin-base';
    
    // 修正後  
-   import { HierarchicalEntityHandler } from '@hierarchidb/node-type-base-plugin';
+   import { HierarchicalEntityHandler } from '@hierarchidb/plugins-base-plugin';
    ```
 
 3. **Entity定義の簡略化**
@@ -61,7 +61,7 @@
 
 ### タスク1: folder-plugin の修正
 
-**対象**: `packages/node-type/folder-plugin`
+**対象**: `packages/plugins/folder-plugin`
 
 **具体的な修正手順**:
 
@@ -80,11 +80,11 @@
 
 4. `package.json`の修正
    - `@hierarchidb/common-plugin-base`依存関係を削除
-   - `@hierarchidb/node-type-base-plugin`依存関係を追加
+   - `@hierarchidb/plugins-base-plugin`依存関係を追加
 
 ### タスク2: shape-plugin の修正
 
-**対象**: `packages/node-type/shape-plugin`
+**対象**: `packages/plugins/shape-plugin`
 
 **具体的な修正手順**:
 
@@ -98,7 +98,7 @@
 
 ### タスク3: location-plugin の修正
 
-**対象**: `packages/node-type/location-plugin`
+**対象**: `packages/plugins/location-plugin`
 
 **具体的な修正手順**:
 
@@ -114,7 +114,7 @@
 
 ### タスク4: route-plugin の修正
 
-**対象**: `packages/node-type/route-plugin`
+**対象**: `packages/plugins/route-plugin`
 
 **具体的な修正手順**:
 
@@ -128,7 +128,7 @@
 
 ### タスク5: basemap-plugin の修正
 
-**対象**: `packages/node-type/basemap-plugin`
+**対象**: `packages/plugins/basemap-plugin`
 
 **具体的な修正手順**:
 
@@ -141,9 +141,9 @@
 
 ### タスク6: project-plugin の修正（アーカイブ）
 
-> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
+> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/plugins-linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
 
-**対象**: `packages/node-type/linker-plugin`（旧 `project-plugin`）
+**対象**: `packages/plugins/linker-plugin`（旧 `project-plugin`）
 
 **具体的な修正手順**:
 
@@ -156,7 +156,7 @@
 
 ### タスク7: styler-plugin の修正
 
-**対象**: `packages/node-type/styler-plugin`
+**対象**: `packages/plugins/styler-plugin`
 
 **具体的な修正手順**:
 
@@ -169,7 +169,7 @@
 
 ### タスク8: propertyresolver-plugin の修正
 
-**対象**: `packages/node-type/propertyresolver-plugin`
+**対象**: `packages/plugins/propertyresolver-plugin`
 
 **具体的な修正手順**:
 
@@ -179,7 +179,7 @@
 
 ### タスク9: spreadsheet-plugin の修正
 
-**対象**: `packages/node-type/spreadsheet-plugin`
+**対象**: `packages/plugins/spreadsheet-plugin`
 
 **具体的な修正手順**:
 
@@ -198,7 +198,7 @@
 1. **型チェック実行**
    ```bash
    # 特定プラグインの型チェック
-   pnpm --filter @hierarchidb/node-type-folder-plugin typecheck
+   pnpm --filter @hierarchidb/plugins-folder-plugin typecheck
    
    # 全体の型チェック  
    pnpm typecheck
@@ -207,7 +207,7 @@
 2. **ビルドテスト**
    ```bash
    # 特定プラグインのビルド
-   pnpm --filter @hierarchidb/node-type-folder-plugin build
+   pnpm --filter @hierarchidb/plugins-folder-plugin build
    
    # 全体ビルド
    pnpm build

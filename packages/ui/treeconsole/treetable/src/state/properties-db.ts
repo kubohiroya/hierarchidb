@@ -1,5 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 
+type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
+
 export type TreeTableProperties = {
   pageNodeId: string; // primary key
   // property bag (extend freely without schema churn)
@@ -9,19 +11,21 @@ export type TreeTableProperties = {
   rowClickAction?: 'Select/Navigate' | 'Edit';
   viewMode?: 'list' | 'grid';
   filterBy?: string;
+  selectAll?: boolean;
+  dialogPosition?: { x: number; y: number };
+  dialogSize?: { width: number; height: number };
+  dialogDisplayMode?: DialogDisplayMode;
   updatedAt: number;
 };
 
 class UIStateDB extends Dexie {
   treetable_properties!: Table<TreeTableProperties, string>;
-  treetable_colwidths!: Table<{ pageNodeId: string; widths: Record<string, number>; updatedAt: number }, string>;
 
   constructor() {
     super('hdb_ui_state');
-    // v1: introduced treetable_colwidths (legacy, used only for migration)
-    // v2: treetable_properties (current). Dexie will auto-migrate store additions.
-    this.version(1).stores({ treetable_colwidths: '&pageNodeId' });
-    this.version(2).stores({ treetable_properties: '&pageNodeId' });
+    // v2: current store (also handles migrating and removing legacy table)
+    this.version(3)
+      .stores({ treetable_properties: '&pageNodeId' });
   }
 }
 
@@ -32,15 +36,20 @@ export async function getProperties(pageNodeId: string | undefined): Promise<Tre
   if (!pageNodeId) return null;
   const d = db();
   // Try new store first
-  let row = await d.treetable_properties.get(pageNodeId);
-  if (row) return row;
-  // Migrate from legacy colwidths store if present
-  const legacy = await d.treetable_colwidths.get(pageNodeId);
-  if (legacy) {
-    const migrated: TreeTableProperties = { pageNodeId, columnWidths: legacy.widths, updatedAt: legacy.updatedAt };
-    await d.treetable_properties.put(migrated);
-    try { await d.treetable_colwidths.delete(pageNodeId); } catch {}
-    return migrated;
+  const row = await d.treetable_properties.get(pageNodeId);
+  if (row) {
+    const rawMode = row.dialogDisplayMode as string | undefined;
+    if (rawMode === 'standard' || rawMode === 'maximized' || rawMode === 'fullscreen') {
+      const migrated: TreeTableProperties = {
+        ...row,
+        dialogDisplayMode:
+          rawMode === 'standard' ? 'normal' : rawMode === 'maximized' ? 'maximize' : 'full-screen',
+        updatedAt: Date.now(),
+      };
+      await d.treetable_properties.put(migrated);
+      return migrated;
+    }
+    return row;
   }
   return null;
 }
@@ -80,4 +89,13 @@ export async function removeColumnWidths(pageNodeId: string | undefined): Promis
 
 export async function removeColumnWidthsMany(pageNodeIds: readonly string[]): Promise<void> {
   await removePropertiesMany(pageNodeIds);
+}
+
+export async function getSelectAll(pageNodeId: string | undefined): Promise<boolean | null> {
+  const props = await getProperties(pageNodeId);
+  return typeof props?.selectAll === 'boolean' ? props.selectAll : null;
+}
+
+export async function saveSelectAll(pageNodeId: string | undefined, value: boolean): Promise<void> {
+  await saveProperties(pageNodeId, { selectAll: value });
 }

@@ -9,8 +9,8 @@
 ## 関連ファイル
 
 - テストケース定義: `docs/implements/TASK-101/spreadsheet-extension-testcases.md`
-- 実装ファイル: `packages/node-type/spreadsheet-plugin/src/extension/definition.ts`（未作成）
-- テストファイル: `packages/node-type/spreadsheet-plugin/src/extension/definition.test.ts`
+- 実装ファイル: `packages/plugins/spreadsheet-plugin/src/extension/definition.ts`（未作成）
+- テストファイル: `packages/plugins/spreadsheet-plugin/src/extension/definition.test.ts`
 
 ## Redフェーズ（失敗するテスト作成）
 
@@ -34,7 +34,7 @@
 
 ### テストコード
 
-`packages/node-type/spreadsheet-plugin/src/extension/definition.test.ts`に作成完了。
+`packages/plugins/spreadsheet-plugin/src/extension/definition.test.ts`に作成完了。
 
 主な特徴：
 - Vitestフレームワーク使用

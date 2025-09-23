@@ -17,11 +17,7 @@ import { StepValidation } from './validation-types.js';
  * : DialogStepDefinition
  * : React
   */
-export interface StepComponent {
-  //  :
-  //  : RefactorReact
-  [key: string]: any;
-}
+export type StepComponent = (...args: unknown[]) => unknown;
 
 /**
   * :

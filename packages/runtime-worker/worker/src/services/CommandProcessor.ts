@@ -1,26 +1,59 @@
 import crypto from 'crypto';
-import type { CommandId, NodeId, NodeType, Seq, Timestamp, TreeNode } from '@hierarchidb/common-type';
-import { commitWorkingCopyV2, createNewName } from './WorkingCopyTreeNodeOperations.js';
+import type { CommandId, NodeId, Seq, Timestamp } from '@hierarchidb/common-type';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
 import type { CoreDB } from './CoreDB.js';
-import { SingletonMixin } from '@hierarchidb/util';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
-import { commandRegistry } from './command/registry.js';
-import { validateAndNormalizeEnvelope } from './validation/envelope.js';
-import { FEATURE_FLAGS } from '../config/feature-flags.js';
-import { encodeTrashHolderName } from './utils/holder-encoding.js';
-import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
+import { commandRegistry, type CommandHandlerContext } from './command/registry.js';
+import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
+import {
+  CommandExecutionRunner,
+  type CommandExecutionContext,
+} from './command/execution/CommandExecutionRunner.js';
+import { executeCoreCommand } from './command/core-handlers/index.js';
+import { validateAndNormalizeEnvelope, isValidationFailure } from './validation/envelope.js';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { recordCommandLatency } from '../utils/metrics.js';
+import { TreeSubscriptionService } from './TreeSubscriptionService.js';
 
-// Sanitized result shape used for logging only (no sensitive fields)
-type SanitizedLogResult = {
-  success: boolean;
-  seq?: number;
-  code?: string;
-  error?: string;
+type EntitiesDbTable = {
+  delete(id: NodeId): Promise<void> | void;
 };
+
+type EntitiesDbAdapter = {
+  table(name: string): EntitiesDbTable | undefined;
+};
+
+type EntitiesOverrideFactory =
+  | EntitiesDbAdapter
+  | (() => EntitiesDbAdapter | Promise<EntitiesDbAdapter | undefined> | undefined)
+  | (() => Promise<EntitiesDbAdapter | undefined>);
+
+type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
+
+function getEntitiesOverrides(): EntitiesOverrideRegistry | undefined {
+  const globalWithOverrides = globalThis as typeof globalThis & {
+    __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
+  };
+  return globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__;
+}
+
+async function resolveEntitiesOverride(
+  factory: EntitiesOverrideFactory | undefined,
+): Promise<EntitiesDbAdapter | null> {
+  if (!factory) return null;
+  try {
+    if (typeof factory === 'function') {
+      const resolved = await factory();
+      return resolved ?? null;
+    }
+    return factory;
+  } catch (error) {
+    console.warn('[CommandProcessor] override resolution failed:', error);
+    return null;
+  }
+}
 
 export class CommandProcessor {
   static async getSingleton(coreDB: CoreDB): Promise<CommandProcessor> {
@@ -33,16 +66,11 @@ export class CommandProcessor {
   private readonly MAX_EVENT_HISTORY_SIZE = PERFORMANCE_CONFIG.MAX_EVENT_HISTORY_SIZE;
 
   // Internal state
-  private undoStack: CommandEnvelope<string, unknown>[] = [];
-  private redoStack: CommandEnvelope<string, unknown>[] = [];
-  private eventHistory: CommandEvent[] = [];
-  private sequenceNumber: number = 0;
-  // Track created node ids by command for reliable undo/redo of create
-  private createdNodeIdByCommand = new Map<CommandId, NodeId>();
-  private preUpdateState = new Map<string, import('@hierarchidb/common-type').TreeNode>();
-  private preMoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
-  private preRemoveState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
-  private preRecoverState = new Map<string, Array<import('@hierarchidb/common-type').TreeNode>>();
+  private readonly history: CommandHistoryManager;
+  private readonly runner: CommandExecutionRunner;
+  private sequenceNumber = 0;
+  private undoStateServicePromise?: Promise<TreeSubscriptionService>;
+  private lastUndoState = { canUndo: false, canRedo: false };
 
   /**
    * Create a command envelope with auto-output metadata
@@ -80,14 +108,11 @@ export class CommandProcessor {
     try {
       const startedAt = Date.now();
       // Validate and normalize envelope
-      const checked = validateAndNormalizeEnvelope(envelope);
-      if ((checked as any).ok === false) {
-        return this.createErrorResult(
-          (checked as ReturnType<typeof validateAndNormalizeEnvelope> & { error: string }).error,
-          WorkerErrorCode.VALIDATION_ERROR,
-        );
+      const validation = validateAndNormalizeEnvelope(envelope);
+      if (isValidationFailure(validation)) {
+        return this.createErrorResult(validation.error, WorkerErrorCode.VALIDATION_ERROR);
       }
-      envelope = (checked as { ok: true; envelope: CommandEnvelope<TType, TPayload> }).envelope;
+      envelope = validation.envelope as CommandEnvelope<TType, TPayload>;
 
       // Guard against unusually long IDs
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
@@ -109,31 +134,34 @@ export class CommandProcessor {
       const result = await this.executeCommand(envelope);
 
       // Record undo (and clear redo) for undoable commands
-      if (result.success && this.isUndoableCommand(envelope.kind)) {
-        this.addToUndoStackSafely(envelope);
-        this.clearRedoStack();
+      if (result.success && this.history.isUndoableCommand(envelope.kind)) {
+        this.history.recordUndoableCommand(envelope as CommandEnvelope<string, unknown>);
       }
 
       // Track event with sanitized payload
-      this.recordEventSafely(envelope, result);
+      this.history.recordEvent(envelope as CommandEnvelope<string, unknown>, result);
 
       const endedAt = Date.now();
       recordCommandLatency(envelope.kind, endedAt - startedAt);
-      // Notify entity lifecycle (behind-the-flag). Best-effort, non-blocking in base skeleton.
-      if (FEATURE_FLAGS.WORKER_ENTITY_UNIFIED && result.success) {
+      // Notify entity lifecycle. Best-effort, non-blocking in base skeleton.
+      if (result.success) {
         try {
           const lifecycle = EntityLifecycleManager.getSingleton(this.coreDB);
-          await lifecycle.handleCommand(envelope as any);
+          await lifecycle.handleCommand(envelope as CommandEnvelope<string, unknown>);
         } catch {
           // ignore lifecycle errors in base skeleton
         }
       }
+
+      await this.emitUndoStateIfChanged();
       return result;
     } catch (error) {
       // Do not leak internal details in error message
       const sanitizedMessage = this.sanitizeErrorMessage(error);
       console.error('CommandProcessor error:', error);
-      return this.createErrorResult(sanitizedMessage, WorkerErrorCode.INVALID_OPERATION);
+      const failure = this.createErrorResult(sanitizedMessage, WorkerErrorCode.INVALID_OPERATION);
+      await this.emitUndoStateIfChanged();
+      return failure;
     }
   }
 
@@ -143,20 +171,7 @@ export class CommandProcessor {
   private async executeCommand<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
   ): Promise<CommandResult> {
-    // Prefer transactional path when enabled AND supported by the CoreDB mock/impl.
-    // In unit tests, CoreDB is often a lightweight stub without runInTx; fall back gracefully.
-    const db: any = this.coreDB as any;
-    if (FEATURE_FLAGS.WORKER_TX_ENABLED && typeof db?.runInTx === 'function') {
-      // Some commands perform dynamic imports / multi-phase operations that do not play well with Dexie TX scopes.
-      // Execute those without wrapping in a single TX to avoid PrematureCommitError.
-      const NON_TX: Set<string> = new Set([
-        'commitWorkingCopy',
-      ]);
-      if (!NON_TX.has(envelope.kind)) {
-        return await db.runInTx('rw', ['nodes'], () => this.executeCommandNoTx(envelope));
-      }
-    }
-    return this.executeCommandNoTx(envelope);
+    return this.runner.run(envelope, (context) => this.executeCommandNoTx(envelope, context));
   }
 
   /**
@@ -165,407 +180,46 @@ export class CommandProcessor {
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
+    context: CommandExecutionContext,
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
     if (handler) {
       try {
         if (handler.validate) {
-          const valid = await handler.validate(envelope.payload as any);
+          const valid = await handler.validate(envelope.payload);
           if (!valid) {
             return this.createErrorResult('Validation failed', WorkerErrorCode.VALIDATION_ERROR);
           }
         }
-        const result = await handler.execute({
+        const contextForHandler: CommandHandlerContext<TType, TPayload> = {
           envelope,
           nextSeq: () => this.getNextSeq(),
-        } as any);
-        return result;
+        };
+        return await handler.execute(contextForHandler);
       } catch (err) {
         return this.createErrorResult(this.sanitizeErrorMessage(err), WorkerErrorCode.UNKNOWN_ERROR);
       }
     }
 
-    // Fallback to legacy behavior (no functional change)
-    switch (envelope.kind) {
-      case 'createNode':
-        try {
-          const p = envelope.payload as unknown as {
-            nodeType: NodeType;
-            treeId: string;
-            parentId: NodeId;
-            name: string;
-            description?: string;
-          };
-          const nodeId = (await this.coreDB.createNode({
-            id: (crypto.randomUUID() as unknown) as NodeId,
-            parentId: p.parentId,
-            nodeType: p.nodeType,
-            name: p.name,
-            depth: 0,
-            createdAt: (Date.now() as unknown) as Timestamp,
-            updatedAt: (Date.now() as unknown) as Timestamp,
-            version: 1,
-            ...(p.description ? { description: p.description } : {}),
-          })) as NodeId;
-          // Record mapping for undo/redo
-          this.createdNodeIdByCommand.set(envelope.commandId, nodeId);
-          return { success: true, seq: this.getNextSeq(), nodeId };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Create failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'updateNode':
-        try {
-          const p = envelope.payload as unknown as {
-            nodeId: NodeId;
-            name?: string;
-            description?: string;
-          };
-          const node = await this.coreDB.getNode?.(p.nodeId);
-          if (!node) {
-            return this.createErrorResult('Node not found', WorkerErrorCode.INVALID_OPERATION);
-          }
-          // Save pre-state for undo
-          this.preUpdateState.set(envelope.commandId, { ...node });
-          await this.coreDB.updateNode?.({
-            ...node,
-            ...(p.name && { name: p.name }),
-            ...(p.description !== undefined && { description: p.description }),
-            updatedAt: (Date.now() as unknown) as Timestamp,
-            version: node.version + 1,
-          });
-          return { success: true, seq: this.getNextSeq(), nodeId: p.nodeId };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Update failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'ping':
-      case 'test':
-      case 'bulkCreate':
-        return { success: true, seq: this.getNextSeq() };
-      case 'moveNodes':
-        try {
-          const p = envelope.payload as unknown as {
-            nodeIds: NodeId[];
-            toParentId: NodeId;
-            onNameConflict?: 'error' | 'auto-rename';
-          };
-          // Parent existence check relaxed for tests: if parent not found, proceed with reassignment
-          // This mirrors previous permissive behavior used by unit tests
-          // (real CoreDB paths may still enforce referential integrity).
-          // const parentNode = await this.coreDB.getNode?.(p.toParentId);
-          // if (!parentNode) {
-          //   return this.createErrorResult('Parent node not found', WorkerErrorCode.NODE_NOT_FOUND);
-          // }
-          // Policy C: block when subtree has working copies
-          if (FEATURE_FLAGS.WORKER_POLICY_C) {
-            for (const id of p.nodeIds) {
-              if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
-                return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
-              }
-            }
-          }
-          // Save pre-state for undo and prepare bulk updates
-          const beforeList: TreeNode[] = [];
-          const toUpdate: TreeNode[] = [];
-          const siblings = (await this.coreDB.listChildren?.(p.toParentId)) || [];
-          const siblingNames = new Set<string>(siblings.map((s: TreeNode) => s.name));
-          for (const nodeId of p.nodeIds) {
-            const node = await this.coreDB.getNode?.(nodeId);
-            if (!node) continue;
-            beforeList.push({ ...node });
-            let newName = node.name;
-            if (p.onNameConflict === 'auto-rename') {
-              if (siblingNames.has(newName)) {
-                const next = createNewName(Array.from(siblingNames), newName);
-                newName = next;
-              }
-              siblingNames.add(newName);
-            }
-            toUpdate.push({
-              ...node,
-              parentId: p.toParentId,
-              name: newName,
-              updatedAt: (Date.now() as unknown) as Timestamp,
-            } as TreeNode);
-          }
-          if (toUpdate.length === 1) {
-            await this.coreDB.updateNode?.(toUpdate[0]!);
-          } else if (toUpdate.length > 1) {
-            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-            for (let i = 0; i < toUpdate.length; i += size) {
-              await (this.coreDB as any).bulkUpdateNodes?.(toUpdate.slice(i, i + size));
-            }
-          }
-          if (beforeList.length > 0) this.preMoveState.set(envelope.commandId, beforeList);
-          return { success: true, seq: this.getNextSeq() };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Move failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'moveToTrash':
-        try {
-          const p = envelope.payload as unknown as { nodeIds: NodeId[] };
-          //  Legacy path removed always use holder-based Trash
+    const coreResult = await executeCoreCommand(
+      envelope as CommandEnvelope<string, unknown>,
+      context,
+      {
+        coreDB: this.coreDB,
+        history: this.history,
+        batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
+        deletePeerEntitiesForNodes: (nodes) => this.deletePeerEntitiesForNodes(nodes),
+        createErrorResult: (message, code) => this.createErrorResult(message, code),
+        getNextSeq: () => this.getNextSeq(),
+      },
+    );
 
-          // Holder path: create holder under trash root and move node beneath
-          const trees = (await (this.coreDB.trees as any)?.toArray?.()) as
-            | Array<{ rootId: NodeId; trashRootId: NodeId }>
-            | undefined;
-          const rootToTrash = new Map<NodeId, NodeId>(
-            Array.isArray(trees) ? trees.map((t) => [t.rootId, t.trashRootId]) : [],
-          );
-          for (const id of p.nodeIds) {
-            const node = await this.coreDB.getNode?.(id);
-            if (!node) continue;
-            // ascend to find rootId
-            let cursor: NodeId | undefined = node.parentId;
-            let trashRootId: NodeId | undefined = undefined;
-            while (cursor) {
-              if (rootToTrash.has(cursor)) {
-                trashRootId = rootToTrash.get(cursor)!;
-                break;
-              }
-              const parent = await this.coreDB.getNode?.(cursor);
-              if (!parent || parent.parentId === cursor) break;
-              cursor = parent.parentId;
-            }
-            // Fallback: derive trash root id from discovered root id pattern (e.g., r:root -> r:trash)
-            if (!trashRootId) {
-              // If cursor stopped at a root-like id, try to replace suffix
-              const candidateRoot = cursor;
-              if (typeof candidateRoot === 'string' && candidateRoot.endsWith(':root')) {
-                const alt = (candidateRoot.slice(0, -(':root'.length)) + ':trash') as NodeId;
-                trashRootId = alt;
-              }
-            }
-            if (!trashRootId) continue;
-            const holderId = (crypto.randomUUID() as unknown) as NodeId;
-            const holderName = encodeTrashHolderName(node.parentId, node.id);
-            const now = (Date.now() as unknown) as Timestamp;
-            // create holder with metadata
-            await this.coreDB.createNode?.({
-              id: holderId,
-              parentId: trashRootId,
-              nodeType: ('trash' as unknown) as NodeType,
-              name: holderName,
-              depth: 0,
-              createdAt: now,
-              updatedAt: now,
-              version: 1,
-              holderType: 'trash' as const,
-              holderTargetId: node.id,
-              holderMetaParentId: node.parentId,
-            } as any);
-            // move node under holder
-            await this.coreDB.updateNode?.({
-              ...node,
-              parentId: holderId,
-              updatedAt: now,
-              version: (node.version || 1) + 1,
-            } as any);
-          }
-          return { success: true, seq: this.getNextSeq() };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'MoveToTrash failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'remove':
-        try {
-          const p = envelope.payload as unknown as { nodeIds: NodeId[] };
-          if (FEATURE_FLAGS.WORKER_POLICY_C) {
-            for (const id of p.nodeIds) {
-              if (await hasWorkingCopyInSubtree(this.coreDB as any, id)) {
-                return this.createErrorResult('Blocked by Policy C: working copy exists in subtree', WorkerErrorCode.INVALID_OPERATION);
-              }
-            }
-          }
-          // Collect full deletion set: targets + all descendants (bottom-up)
-          const beforeList: TreeNode[] = [];
-          const toDeleteSet = new Set<NodeId>();
-          const queue: NodeId[] = [...p.nodeIds];
-          while (queue.length) {
-            const cur = queue.shift()!;
-            if (toDeleteSet.has(cur)) continue;
-            toDeleteSet.add(cur);
-            const node = await this.coreDB.getNode?.(cur);
-            if (node) beforeList.push({ ...node });
-            const children = (await this.coreDB.listChildren?.(cur)) || [];
-            for (const c of children) queue.push(c.id);
-          }
-          // Delete in chunks (order doesn’t matter for Dexie, but descendants included ensures no dangling lookups)
-          const ids = Array.from(toDeleteSet.values());
-          const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-          for (let i = 0; i < ids.length; i += size) {
-            const slice = ids.slice(i, i + size);
-            if (slice.length === 1) {
-              await this.coreDB.deleteNode?.(slice[0]!);
-            } else {
-              await (this.coreDB as any).bulkDeleteNodes?.(slice);
-            }
-          }
-          if (beforeList.length > 0) this.preRemoveState.set(envelope.commandId, beforeList);
-          // Also remove plugin peer entities tied to the removed nodeIds.
-          // Note: This is for permanent deletion (empty trash), not for moveToTrash/recoverFromTrash).
-          // In headless tests some plugin DB modules may not be build-resolvable; treat failures as non-fatal.
-          try {
-            await this.deletePeerEntitiesForNodes(beforeList);
-          } catch (e) {
-            console.warn('[CommandProcessor/remove] peer-entity cleanup skipped:', (e as Error)?.message || e);
-          }
-          return { success: true, seq: this.getNextSeq() };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Remove failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'removeSubtree':
-        try {
-          const p = envelope.payload as unknown as { rootId: NodeId };
-          // Recursively collect descendants using coreDB.listChildren (post-order), then bulk delete
-          const toDelete: TreeNode[] = [];
-          const visit = async (parent: NodeId): Promise<void> => {
-            const children = (await (this.coreDB as any).listChildren?.(parent)) as Array<TreeNode> | undefined;
-            if (!children || children.length === 0) return;
-            for (const ch of children) {
-              await visit(ch.id as NodeId);
-              toDelete.push(ch);
-            }
-          };
-          await visit(p.rootId);
-
-          if (toDelete.length > 0) {
-            const ids = toDelete.map((n) => n.id);
-            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-            for (let i = 0; i < ids.length; i += size) {
-              const slice = ids.slice(i, i + size);
-              if ((this.coreDB as any).bulkDeleteNodes) {
-                await (this.coreDB as any).bulkDeleteNodes(slice);
-              } else {
-                for (const id of slice) await (this.coreDB as any).deleteNode?.(id);
-              }
-            }
-            try {
-              await this.deletePeerEntitiesForNodes(toDelete);
-            } catch (e) {
-              console.warn('[CommandProcessor/removeSubtree] peer-entity cleanup skipped:', (e as Error)?.message || e);
-            }
-          }
-          return { success: true, seq: this.getNextSeq() };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'RemoveSubtree failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'recoverFromTrash':
-        try {
-          const p = envelope.payload as unknown as {
-            nodeIds: NodeId[];
-            toParentId?: NodeId;
-            onNameConflict?: 'error' | 'auto-rename';
-          };
-          const beforeList: TreeNode[] = [];
-          const toUpdate: TreeNode[] = [];
-          const holdersToDelete: NodeId[] = [];
-          for (const id of p.nodeIds) {
-            const node = await this.coreDB.getNode?.(id);
-            if (!node) continue;
-            beforeList.push({ ...node });
-
-            let targetParentId: NodeId | undefined = p.toParentId;
-            if (!targetParentId) {
-              const holder = await this.coreDB.getNode?.(node.parentId);
-              targetParentId = (holder as any)?.holderMetaParentId as NodeId;
-            }
-            targetParentId = targetParentId ?? node.parentId;
-            if (!targetParentId) continue;
-            let name = node.name;
-            if (p.onNameConflict === 'auto-rename') {
-              const siblings = (await this.coreDB.listChildren?.(targetParentId)) || [];
-              const siblingNames = siblings.map((s) => s.name);
-              name = createNewName(siblingNames, name);
-            }
-            toUpdate.push({
-              ...node,
-              parentId: targetParentId,
-              name,
-              updatedAt: (Date.now() as unknown) as Timestamp,
-              version: (node.version || 1) + 1,
-              // Clear trash marker on recover
-              removedAt: undefined as unknown as Timestamp,
-            } as TreeNode);
-            holdersToDelete.push(node.parentId);
-          }
-          if (toUpdate.length === 1) {
-            await this.coreDB.updateNode?.(toUpdate[0]!);
-          } else if (toUpdate.length > 1) {
-            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-            for (let i = 0; i < toUpdate.length; i += size) {
-              await (this.coreDB as any).bulkUpdateNodes?.(toUpdate.slice(i, i + size));
-            }
-          }
-          if (holdersToDelete.length > 0) {
-            const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-            for (let i = 0; i < holdersToDelete.length; i += size) {
-              await (this.coreDB as any).bulkDeleteNodes?.(holdersToDelete.slice(i, i + size));
-            }
-          }
-          if (beforeList.length > 0) this.preRecoverState.set(envelope.commandId, beforeList);
-          return { success: true, seq: this.getNextSeq() };
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Recover failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'commitWorkingCopy':
-        try {
-          const p = envelope.payload as unknown as {
-            workingCopyId: NodeId;
-            expectedUpdatedAt?: Timestamp;
-            onNameConflict?: 'error' | 'auto-rename';
-          };
-          if (!FEATURE_FLAGS.WORKER_WC_COMMIT_V2) {
-            // Legacy placeholder: treat as success without side effects
-            return { success: true, seq: this.getNextSeq(), nodeId: p.workingCopyId };
-          }
-          const result = await commitWorkingCopyV2(this.coreDB as any, p.workingCopyId, p.onNameConflict ?? 'error');
-          if (result.status === 'ok') {
-            return { success: true, seq: this.getNextSeq(), nodeId: p.workingCopyId };
-          }
-          if (result.status === 'COMMIT_CONFLICT') {
-            return this.createErrorResult(
-              `Commit conflict (original=${result.originalVersion}, wc=${result.wcVersion})`,
-              WorkerErrorCode.COMMIT_CONFLICT,
-            );
-          }
-          //  NAME_CONFLICT VALIDATION_ERROR with suggestion
-          return this.createErrorResult(
-            `Name conflict. Suggested: ${result.suggestedName}`,
-            WorkerErrorCode.VALIDATION_ERROR,
-          );
-        } catch (e) {
-          return this.createErrorResult(
-            e instanceof Error ? e.message : 'Commit failed',
-            WorkerErrorCode.DATABASE_ERROR,
-          );
-        }
-      case 'invalidCommand':
-        return this.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
-      default:
-        return this.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
+    if (coreResult) {
+      return coreResult;
     }
+
+    return this.createErrorResult('Command not supported', WorkerErrorCode.INVALID_OPERATION);
   }
 
   /**
@@ -574,49 +228,20 @@ export class CommandProcessor {
   private isValidCommand(type: string): boolean {
     // Registered commands are always valid
     if (commandRegistry.get(type)) return true;
-    // Allow legacy commands handled by the fallback switch
+    // Allow core commands handled by the internal fallback handlers
     const LEGACY_SUPPORTED = new Set([
       'createNode',
       'updateNode',
       'moveNodes',
       'moveToTrash',
       'remove',
-      'recoverFromTrash',
+      'restoreFromTrash',
       'removeSubtree',
       'commitWorkingCopy',
     ]);
     return LEGACY_SUPPORTED.has(type);
   }
 
-  /**
-      * : Undo
-   * :
-   * :
-   * : Command Pattern
-      */
-  private static readonly UNDOABLE_COMMANDS = new Set([
-    // Mutations in current command set
-    'createNode',
-    'updateNode',
-    'moveNodes',
-    'moveToTrash',
-    'remove',
-    'recoverFromTrash',
-    'commitWorkingCopy',
-  ]);
-
-  /**
-      * : Undo
-   * : SetO(1)
-   * : includes()Sethas()
-   * :
-   * @param type
-   * @returns Undo
-      */
-  private isUndoableCommand(type: string): boolean {
-    //  : Set
-    return CommandProcessor.UNDOABLE_COMMANDS.has(type);
-  }
 
   /**
    * Get next sequence number
@@ -638,65 +263,6 @@ export class CommandProcessor {
   }
 
   /**
-   * Add to undo stack with ring buffer semantics.
-   */
-  private addToUndoStackSafely<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
-  ): void {
-    if (this.undoStack.length >= this.MAX_UNDO_STACK_SIZE) {
-      this.undoStack.shift();
-    }
-
-    this.undoStack.push(envelope);
-  }
-
-  /**
-   * Add to redo stack with ring buffer semantics.
-   */
-  private addToRedoStackSafely<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
-  ): void {
-    if (this.redoStack.length >= this.MAX_REDO_STACK_SIZE) {
-      this.redoStack.shift();
-    }
-
-    this.redoStack.push(envelope);
-  }
-
-  /**
-   * Clear redo stack.
-   */
-  private clearRedoStack(): void {
-    this.redoStack = [];
-  }
-
-  /**
-   * Record sanitized command event with ring buffer semantics.
-   */
-  private recordEventSafely<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
-    result: CommandResult,
-  ): void {
-    if (!envelope?.commandId) {
-      return;
-    }
-
-    const event: CommandEvent = {
-      commandId: envelope.commandId,
-      timestamp: envelope.issuedAt,
-      correlationId: envelope.meta?.correlationId,
-      // Store sanitized result only
-      result: (this._sanitizeResultForLogging(result) as unknown) as CommandResult,
-    };
-
-    if (this.eventHistory.length >= this.MAX_EVENT_HISTORY_SIZE) {
-      this.eventHistory.shift();
-    }
-
-    this.eventHistory.push(event);
-  }
-
-  /**
    * Sanitize error message for user-visible or log-safe contexts.
    */
   private sanitizeErrorMessage(error: unknown): string {
@@ -710,22 +276,30 @@ export class CommandProcessor {
     return 'An unexpected error occurred';
   }
 
-  /**
-   * Sanitize result for logging: omit sensitive fields.
-   */
-  private _sanitizeResultForLogging(result: CommandResult): SanitizedLogResult {
-    if (result.success) {
-      return {
-        success: result.success,
-        seq: result.seq,
-      };
-    } else {
-      return {
-        success: result.success,
-        seq: result.seq ?? undefined,
-        code: 'code' in result ? result.code : undefined,
-        error: 'Error details omitted for security',
-      };
+  private async getUndoStateService(): Promise<TreeSubscriptionService> {
+    if (!this.undoStateServicePromise) {
+      this.undoStateServicePromise = TreeSubscriptionService.getSingleton(this.coreDB);
+    }
+    return this.undoStateServicePromise;
+  }
+
+  private async emitUndoStateIfChanged(force = false): Promise<void> {
+    try {
+      const canUndo = this.history.canUndo();
+      const canRedo = this.history.canRedo();
+      if (!force && this.lastUndoState.canUndo === canUndo && this.lastUndoState.canRedo === canRedo) {
+        return;
+      }
+      this.lastUndoState = { canUndo, canRedo };
+      const service = await this.getUndoStateService();
+      service.publishUndoState({
+        type: 'undo-state',
+        canUndo,
+        canRedo,
+        timestamp: Date.now() as Timestamp,
+      });
+    } catch (error) {
+      console.warn('[CommandProcessor] failed to publish undo state', error);
     }
   }
 
@@ -733,184 +307,59 @@ export class CommandProcessor {
    * Check if undo is available
    */
   canUndo(): boolean {
-    return this.undoStack.length > 0;
+    return this.history.canUndo();
   }
 
   /**
    * Check if redo is available
    */
   canRedo(): boolean {
-    return this.redoStack.length > 0;
+    return this.history.canRedo();
   }
 
   /**
    * Get undo stack size
    */
   getUndoStackSize(): number {
-    return this.undoStack.length;
+    return this.history.getUndoStackSize();
   }
 
   /**
    * Get redo stack size
    */
   getRedoStackSize(): number {
-    return this.redoStack.length;
+    return this.history.getRedoStackSize();
   }
 
   /**
    * Get last event
    */
   getLastEvent(): CommandEvent | undefined {
-    return this.eventHistory[this.eventHistory.length - 1];
+    return this.history.getLastEvent();
   }
 
-  /**
-      * : Undo
-   * : Undo
-   * : Undo
-   * :
-   * @returns Undo
-      */
   async undo(): Promise<CommandResult> {
-    //  Undo: Undo
-    const command = this.undoStack.pop();
-    if (!command) {
-      return this.createErrorResult('No command to undo', WorkerErrorCode.INVALID_OPERATION);
-    }
-
-    try {
-      //  :
-      await this.executeReverseCommand(command);
-
-      //  Ring Buffer: Redo
-      this.addToRedoStackSafely(command);
-
-      return {
-        success: true,
-        seq: this.getNextSeq(),
-      };
-    } catch (error) {
-      //  : Undo
-      this.undoStack.push(command);
-      return this.createErrorResult(
-        error instanceof Error ? error.message : 'Undo operation failed',
-        WorkerErrorCode.INVALID_OPERATION,
-      );
-    }
+    const result = await this.history.undo();
+    await this.emitUndoStateIfChanged();
+    return result;
   }
 
-  /**
-      * : UndoRedo
-   * : Redo
-   * : Redo
-   * :
-   * @returns Redo
-      */
   async redo(): Promise<CommandResult> {
-    //  Redo: Redo
-    const command = this.redoStack.pop();
-    if (!command) {
-      return this.createErrorResult('No command to redo', WorkerErrorCode.INVALID_OPERATION);
-    }
-
-    try {
-      //  : Undo
-      await this.executeRedoCommand(command);
-
-      //  Undo: RedoUndo
-      this.undoStack.push(command);
-
-      return {
-        success: true,
-        seq: this.getNextSeq(),
-      };
-    } catch (error) {
-      //  : Redo
-      this.redoStack.push(command);
-      return this.createErrorResult(
-        error instanceof Error ? error.message : 'Redo operation failed',
-        WorkerErrorCode.INVALID_OPERATION,
-      );
-    }
+    const result = await this.history.redo();
+    await this.emitUndoStateIfChanged();
+    return result;
   }
 
-  /**
-   * Clear all history
-   */
   clearHistory(): void {
-    this.undoStack = [];
-    this.redoStack = [];
-    this.eventHistory = [];
-  }
-
-  /**
-      * :
-   * :
-   * : Undo
-   * :
-   * @param command
-      */
-  private async executeReverseCommand<TType extends string, TPayload>(
-    command: CommandEnvelope<TType, TPayload>,
-  ): Promise<void> {
-    //  :
-    switch (command.kind) {
-      case 'createNode':
-      case 'create': {
-        // Delete the node that was created by this command
-        const created = this.createdNodeIdByCommand.get(command.commandId);
-        if (!created) throw new Error('No created node id recorded for create command');
-        await this.coreDB.deleteNode(created);
-        break;
-      }
-
-      case 'updateNode': {
-        const prev = this.preUpdateState.get(command.commandId);
-        if (!prev) throw new Error('No previous state recorded for updateNode');
-        await this.coreDB.updateNode?.({ ...prev });
-        this.preUpdateState.delete(command.commandId);
-        break;
-      }
-
-      case 'moveNodes': {
-        const prevList = this.preMoveState.get(command.commandId) || [];
-        for (const prev of prevList) {
-          await this.coreDB.updateNode?.({ ...prev });
-        }
-        this.preMoveState.delete(command.commandId);
-        break;
-      }
-
-      case 'remove': {
-        const beforeList = this.preRemoveState.get(command.commandId) || [];
-        for (const n of beforeList) {
-          // recreate node as best-effort
-          await this.coreDB.createNode({ ...(n as any) });
-        }
-        this.preRemoveState.delete(command.commandId);
-        break;
-      }
-
-      case 'recoverFromTrash': {
-        const prevList = this.preRecoverState.get(command.commandId) || [];
-        for (const prev of prevList) {
-          await this.coreDB.updateNode?.({ ...prev });
-        }
-        this.preRecoverState.delete(command.commandId);
-        break;
-      }
-
-      default:
-        //  : Refactor
-        throw new Error(`Reverse operation not implemented for command type: ${command.kind}`);
-    }
+    this.history.clearHistory();
+    void this.emitUndoStateIfChanged();
   }
 
   // Best-effort deletion of peerEntities (permanent delete only)
   private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
     const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
-      const nodeType = (n as any).nodeType as string;
+      const nodeType = n.nodeType;
       const nodeId = n.id as NodeId;
       const store = storeRegistry.getPeer(nodeType);
       if (store) {
@@ -923,144 +372,24 @@ export class CommandProcessor {
   }
 
   private async deletePeerEntityDirect(nodeType: string, nodeId: NodeId): Promise<void> {
-    // Map known node types to their EntitiesDB modules
-    const map: Record<string, () => Promise<{ del(nodeId: NodeId): Promise<void> }>> = {
-      folder: async () => { const name = '@' + 'hierarchidb/folder-plugin/src/worker/folderEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.FolderEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      route: async () => { const name = '@' + 'hierarchidb/route-plugin/src/worker/routeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.RouteEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      resolver: async () => { const name = '@' + 'hierarchidb/resolver-plugin/src/worker/resolverEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ResolverEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      
-      shape: async () => { const name = '@' + 'hierarchidb/shape-plugin/src/worker/shapeEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.ShapeEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      location: async () => { const name = '@' + 'hierarchidb/location-plugin/src/worker/locationEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.LocationEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      spreadsheet: async () => { const name = '@' + 'hierarchidb/spreadsheet-plugin/src/worker/spreadsheetEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.SpreadsheetEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      styler: async () => { const name = '@' + 'hierarchidb/styler-plugin/src/worker/stylerEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.StylerEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-      basemap: async () => { const name = '@' + 'hierarchidb/basemap-plugin/src/worker/basemapEntitiesDB'; const mod: any = await import(/* @vite-ignore */ (name as string)); const db = new mod.BasemapEntitiesDB(); await db.open(); return { del: async (id) => { await db.table('peerEntities').delete(id as any); } }; },
-    };
-    const fn = map[nodeType];
-    if (!fn) return;
-    const adapter = await fn();
-    await adapter.del(nodeId);
-  }
-
-  /**
-      * : Undo
-   * : Redo
-   * : Redo
-   * :
-   * @param command
-      */
-  private async executeRedoCommand<TType extends string, TPayload>(
-    command: CommandEnvelope<TType, TPayload>,
-  ): Promise<void> {
-    //  :
-    switch (command.kind) {
-      case 'createNode':
-      case 'create': {
-        // Re-create the node that was created by this command
-        const created = this.createdNodeIdByCommand.get(command.commandId);
-        const p = (command.payload as unknown) as {
-          parentId: NodeId;
-          nodeType?: string;
-          name: string;
-          description?: string;
-        };
-        if (!created) throw new Error('No created node id recorded for create command');
-        const restoredNode = {
-          id: created,
-          parentId: p.parentId,
-          nodeType: (p.nodeType || 'folder') as NodeType,
-          name: p.name,
-          description: p.description,
-          depth: 0,
-          createdAt: (Date.now() as unknown) as Timestamp,
-          updatedAt: (Date.now() as unknown) as Timestamp,
-          version: 1,
-        } as TreeNode;
-        await this.coreDB.createNode(restoredNode);
-        break;
+    const overrideFactory = getEntitiesOverrides()?.[nodeType];
+    if (!overrideFactory) {
+      console.warn(
+        '[CommandProcessor] peer-entity cleanup skipped: no override registered for nodeType=',
+        nodeType,
+      );
+      return;
+    }
+    try {
+      const db = await resolveEntitiesOverride(overrideFactory);
+      if (db && typeof db.table === 'function') {
+        const table = db.table('peerEntities');
+        await table?.delete?.(nodeId);
+        return;
       }
-
-      case 'updateNode': {
-        const p = (command.payload as unknown) as {
-          nodeId: NodeId;
-          name?: string;
-          description?: string;
-        };
-        const node = await this.coreDB.getNode?.(p.nodeId);
-        if (!node) throw new Error('Node not found');
-        await this.coreDB.updateNode?.({
-          ...node,
-          ...(p.name && { name: p.name }),
-          ...(p.description !== undefined && { description: p.description }),
-          updatedAt: (Date.now() as unknown) as Timestamp,
-          version: node.version + 1,
-        });
-        break;
-      }
-
-      case 'moveNodes': {
-        const p = (command.payload as unknown) as {
-          nodeIds: NodeId[];
-          toParentId: NodeId;
-          onNameConflict?: 'error' | 'auto-rename';
-        };
-        for (const nodeId of p.nodeIds) {
-          const node = await this.coreDB.getNode?.(nodeId);
-          if (!node) continue;
-          let newName = node.name;
-          if (p.onNameConflict === 'auto-rename') {
-            const siblings = (await this.coreDB.listChildren?.(p.toParentId)) || [];
-            const siblingNames = siblings.map((s: TreeNode) => s.name);
-            newName = createNewName(siblingNames, node.name);
-          }
-          await this.coreDB.updateNode?.({
-            ...node,
-            parentId: p.toParentId,
-            name: newName,
-            updatedAt: (Date.now() as unknown) as Timestamp,
-          });
-        }
-        break;
-      }
-
-      case 'remove': {
-        const p = (command.payload as unknown) as { nodeIds: NodeId[] };
-        for (const id of p.nodeIds) {
-          await this.coreDB.deleteNode?.(id);
-        }
-        break;
-      }
-
-      case 'recoverFromTrash': {
-        const p = (command.payload as unknown) as {
-          nodeIds: NodeId[];
-          toParentId?: NodeId;
-          onNameConflict?: 'error' | 'auto-rename';
-        };
-        for (const id of p.nodeIds) {
-          const node = await this.coreDB.getNode?.(id);
-          if (!node) continue;
-          const targetParentId = p.toParentId ?? node.parentId;
-          if (!targetParentId) continue;
-          let name = node.name;
-          if (p.onNameConflict === 'auto-rename') {
-            const siblings = (await this.coreDB.listChildren?.(targetParentId)) || [];
-            const siblingNames = siblings.map((s) => s.name);
-            name = createNewName(siblingNames, name);
-          }
-          await this.coreDB.updateNode?.({
-            ...node,
-            parentId: targetParentId,
-            name,
-            updatedAt: (Date.now() as unknown) as Timestamp,
-            version: (node.version || 1) + 1,
-          });
-        }
-        break;
-      }
-
-      default:
-        //  : Refactor
-        throw new Error(`Redo operation not implemented for command type: ${command.kind}`);
+      console.warn('[CommandProcessor] override provided for', nodeType, 'but no table() interface found');
+    } catch (err) {
+      console.warn('[CommandProcessor] override peer-entity cleanup failed:', err);
     }
   }
 
@@ -1071,6 +400,16 @@ export class CommandProcessor {
    * : any
    * : DI
       */
-  constructor(private coreDB: CoreDB) {
+  constructor(private readonly coreDB: CoreDB) {
+    this.history = new CommandHistoryManager({
+      coreDB,
+      getNextSeq: () => this.getNextSeq(),
+      createErrorResult: (message, code) => this.createErrorResult(message, code),
+      maxUndoStackSize: this.MAX_UNDO_STACK_SIZE,
+      maxRedoStackSize: this.MAX_REDO_STACK_SIZE,
+      maxEventHistorySize: this.MAX_EVENT_HISTORY_SIZE,
+    });
+    this.runner = new CommandExecutionRunner(coreDB);
+    void this.emitUndoStateIfChanged(true);
   }
 }

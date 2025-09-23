@@ -395,8 +395,9 @@ function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
   }
 
   nodes.forEach((node) => {
+    const nodeRecord = node as unknown as Record<string, unknown>;
     const row = columns.map((col) => {
-      const value = (node as any)[col] || '';
+      const value = nodeRecord[col] ?? '';
       // Escape values containing delimiter or quotes
       if (typeof value === 'string' && (value.includes(delimiter) || value.includes('"'))) {
         return `"${value.replace(/"/g, '""')}"`;

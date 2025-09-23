@@ -1,5 +1,5 @@
 import type { WorkingCopyAPI } from '@hierarchidb/common-api';
-import type { CommitResult, NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-type';
+import type { CommitResult, NodeId, NodeType, TreeId, TreeNode, ValidationResult } from '@hierarchidb/common-type';
 import { CoreDB } from './CoreDB.js';
 import {
   createDraftWorkingCopyGetOrCreate,
@@ -16,8 +16,7 @@ import { CommandProcessor } from './CommandProcessor.js';
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
-  constructor(private coreDB: CoreDB, _ephemeralDB: unknown, private commandProcessor?: CommandProcessor) {
-  }
+  constructor(private coreDB: CoreDB, _ephemeralDB: unknown, private commandProcessor?: CommandProcessor) {}
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
@@ -25,46 +24,55 @@ export class WorkingCopyService implements WorkingCopyAPI {
     initialData?: Partial<TreeNode>,
   ): Promise<TreeNode> {
     // Use holder-based create (get-or-create)
-    const treeId = (parentId.split(':')[0] as unknown) as any; // expected 'r'|'p' format
-    const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(this.coreDB as any, treeId, parentId, nodeType, initialData?.name ?? `New ${nodeType}`);
-    const wc = (await this.coreDB.nodes.get(wcNodeId)) as unknown as TreeNode;
+    const treeId = parentId.split(':')[0] as TreeId;
+    const { wcNodeId } = await createDraftWorkingCopyGetOrCreate(
+      this.coreDB,
+      treeId,
+      parentId,
+      nodeType,
+      initialData?.name ?? `New ${nodeType}`,
+    );
+    const wc = await this.coreDB.nodes.get(wcNodeId);
+    if (!wc) throw new Error('Working copy creation failed');
     return wc;
   }
 
   async createWorkingCopyFromNode(nodeId: NodeId): Promise<TreeNode> {
-    const treeId = (nodeId.split(':')[0] as unknown) as any;
-    await createWcFromNode(this.coreDB as any, treeId, nodeId);
-    const wc = await getWc(this.coreDB as any, nodeId);
+    const treeId = nodeId.split(':')[0] as TreeId;
+    await createWcFromNode(this.coreDB, treeId, nodeId);
+    const wc = await getWc(this.coreDB, nodeId);
     if (!wc) throw new Error('Working copy not created');
-    return wc as TreeNode;
+    return wc;
   }
 
   async getWorkingCopy(nodeId: NodeId): Promise<TreeNode | undefined> {
-    return (await getWc(this.coreDB as any, nodeId)) as unknown as TreeNode | undefined;
+    return getWc(this.coreDB, nodeId);
   }
 
   async updateWorkingCopy(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode> {
-    const current = (await getWc(this.coreDB as any, nodeId)) as any;
+    const current = await getWc(this.coreDB, nodeId);
     if (!current) throw new Error(`Working copy for ${nodeId} not found`);
-    await updateWc(this.coreDB as any, nodeId, { ...updates });
-    const next = (await this.coreDB.nodes.get(nodeId)) as any;
-    return next as TreeNode;
+    await updateWc(this.coreDB, nodeId, { ...updates });
+    const next = await this.coreDB.nodes.get(nodeId);
+    if (!next) throw new Error('Working copy update failed');
+    return next;
   }
 
   async listWorkingCopies(): Promise<TreeNode[]> {
     // Dev path: scan holders and return children
-    const all: any[] = ((await (this.coreDB.nodes as any).toArray?.()) as any[]) || [];
-    const holders = all.filter((n) => n?.holderType === 'workingCopy');
-    const children: any[] = [];
-    for (const h of holders) {
-      const child = all.find((n) => n?.parentId === h.id);
+    const allNodes = await this.coreDB.nodes.toArray();
+    const holders = allNodes.filter((node) => node.holderType === 'workingCopy');
+    const children: TreeNode[] = [];
+    for (const holder of holders) {
+      const child = allNodes.find((node) => node.parentId === holder.id);
       if (child) children.push(child);
     }
-    return children as TreeNode[];
+    return children;
   }
 
   async hasWorkingCopy(nodeId: NodeId): Promise<boolean> {
-    return !!(await getWc(this.coreDB as any, nodeId));
+    const wc = await getWc(this.coreDB, nodeId);
+    return !!wc;
   }
 
   async commitWorkingCopy(workingCopyId: NodeId): Promise<CommitResult> {
@@ -72,17 +80,20 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
     // Prefer CommandProcessor V2 when available, otherwise call V2 helper directly.
     if (this.commandProcessor) {
-      const env = this.commandProcessor.createEnvelope('commitWorkingCopy', { workingCopyId, onNameConflict: 'auto-rename' } as any);
-      const res = await this.commandProcessor.processCommand(env as any);
+      const env = this.commandProcessor.createEnvelope('commitWorkingCopy', {
+        workingCopyId,
+        onNameConflict: 'auto-rename',
+      });
+      const res = await this.commandProcessor.processCommand(env);
       if (res.success) {
-        const committed = await this.loadCommittedNode((res as any).nodeId as NodeId | undefined, context);
+        const committed = await this.loadCommittedNode((res).nodeId as NodeId | undefined, context);
         return committed ? { success: true, node: committed } : { success: true };
       }
     }
     // Fallback: try direct V2 commit when CP is unavailable or fails
     try {
       const { commitWorkingCopyV2 } = await import('./WorkingCopyTreeNodeOperations.js');
-      const r = await commitWorkingCopyV2(this.coreDB as any, workingCopyId, 'auto-rename');
+      const r = await commitWorkingCopyV2(this.coreDB, workingCopyId, 'auto-rename');
       if (r.status === 'ok') {
         const committed = await this.loadCommittedNode(r.nodeId, context);
         return committed ? { success: true, node: committed } : { success: true };
@@ -98,74 +109,72 @@ export class WorkingCopyService implements WorkingCopyAPI {
       let targetNodeId = context?.targetNodeId;
       if (!wcNode || !holder) return { success: false, error: 'Working copy not found' };
       if (!targetParentNodeId || !targetNodeId) return { success: false, error: 'Holder metadata missing' };
-      const parent = await (this.coreDB as any).nodes.get(targetParentNodeId);
+      const parent = await (this.coreDB).nodes.get(targetParentNodeId);
       if (!parent) return { success: false, error: 'Parent node not found' };
       // name conflict auto-rename
-      const siblings = await (this.coreDB as any).listChildren(targetParentNodeId);
-      const names = (siblings || []).map((n: any) => n.name);
+      const siblings = await this.coreDB.listChildren(targetParentNodeId);
+      const names = siblings.map((n) => n.name);
       let finalName = wcNode.name;
       if (names.includes(finalName)) {
         const { createNewName } = await import('./WorkingCopyTreeNodeOperations.js');
         finalName = createNewName(names, finalName);
       }
-      await (this.coreDB as any).createNode({ ...(wcNode as any), id: targetNodeId, parentId: targetParentNodeId, name: finalName });
+      await this.coreDB.createNode({ ...wcNode, id: targetNodeId, parentId: targetParentNodeId, name: finalName });
       const { discardWorkingCopy } = await import('./WorkingCopyTreeNodeOperations.js');
-      await discardWorkingCopy(this.coreDB as any, [holder.id, wcNode.id]);
+      await discardWorkingCopy(this.coreDB, [holder.id, wcNode.id]);
       const committed = await this.loadCommittedNode(targetNodeId, context);
       return committed ? { success: true, node: committed } : { success: true };
     } catch (e) {
       const holderId = context?.wcNode?.parentId as NodeId | undefined;
-      if (holderId) await discardWc(this.coreDB as any, [holderId, workingCopyId]);
+      if (holderId) await discardWc(this.coreDB, [holderId, workingCopyId]);
       return { success: false, error: (e as Error)?.message || 'Commit failed' };
     }
   }
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
-    const wc = (await getWc(this.coreDB as any, nodeId)) as any;
+    const wc = (await getWc(this.coreDB, nodeId));
     if (!wc) return;
-    await discardWc(this.coreDB as any, [wc.parentId, nodeId]);
+    await discardWc(this.coreDB, [wc.parentId, nodeId]);
   }
 
   async discardAllWorkingCopies(): Promise<number> {
     const list = await this.listWorkingCopies();
-    for (const wc of list) await discardWc(this.coreDB as any, [wc.parentId as NodeId, wc.id as NodeId]);
+    for (const wc of list) await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
     return list.length;
   }
 
   async validateWorkingCopy(nodeId: NodeId): Promise<ValidationResult> {
-    const exists = await getWc(this.coreDB as any, nodeId);
+    const exists = await getWc(this.coreDB, nodeId);
     return exists ? { valid: true } : { valid: false, message: 'Working copy not found' };
   }
 
   async hasUnsavedChanges(nodeId: NodeId): Promise<boolean> {
-    return !!(await getWc(this.coreDB as any, nodeId));
+    return !!(await getWc(this.coreDB, nodeId));
   }
 
   async commitMultipleWorkingCopies(nodeIds: NodeId[]): Promise<CommitResult[]> {
     const results: CommitResult[] = [];
-    for (const id of nodeIds) results.push(await this.commitWorkingCopy(id));
+    for (const id of nodeIds) {
+      const res = await this.commitWorkingCopy(id);
+      results.push(res);
+    }
     return results;
   }
 
-  private async getWorkingCopyContext(workingCopyId: NodeId): Promise<{
-    wcNode?: any;
-    holder?: any;
-    targetNodeId?: NodeId;
-    targetParentNodeId?: NodeId;
-  } | undefined> {
+  private async getWorkingCopyContext(workingCopyId: NodeId): Promise<WorkingCopyContext | undefined> {
     try {
-      const wcNode = await (this.coreDB as any).nodes.get(workingCopyId);
+      const wcNode = await this.coreDB.nodes.get(workingCopyId);
       if (!wcNode) return undefined;
-      const holder = await (this.coreDB as any).nodes.get(wcNode.parentId);
+      const holder = await this.coreDB.nodes.get(wcNode.parentId);
       if (!holder) return { wcNode };
       let targetNodeId = holder.holderTargetId as NodeId | undefined;
       let targetParentNodeId = holder.holderMetaParentId as NodeId | undefined;
       if (!targetNodeId || !targetParentNodeId) {
         try {
           const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
-          const parsed = decodeWorkingCopyHolderName(holder.name as string);
-          targetNodeId = targetNodeId ?? (parsed.targetNodeId as NodeId);
-          targetParentNodeId = targetParentNodeId ?? (parsed.targetParentNodeId as NodeId);
+          const parsed = decodeWorkingCopyHolderName(holder.name);
+          targetNodeId = targetNodeId ?? parsed.targetNodeId;
+          targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
         } catch {
         }
       }
@@ -175,13 +184,10 @@ export class WorkingCopyService implements WorkingCopyAPI {
     }
   }
 
-  private async loadCommittedNode(explicitId: NodeId | undefined, context?: {
-    targetNodeId?: NodeId;
-  }): Promise<TreeNode | undefined> {
+  private async loadCommittedNode(explicitId: NodeId | undefined, context?: WorkingCopyContext): Promise<TreeNode | undefined> {
     const candidate = explicitId ?? context?.targetNodeId;
     if (!candidate) return undefined;
-    const node = await this.coreDB.nodes.get(candidate);
-    return node as TreeNode | undefined;
+    return this.coreDB.nodes.get(candidate) ?? undefined;
   }
 
   async createMultipleWorkingCopies(nodeIds: NodeId[]): Promise<TreeNode[]> {
@@ -214,7 +220,20 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async cleanupOldWorkingCopies(olderThan: number): Promise<number> {
     const list = await this.listWorkingCopies();
     const toDelete = list.filter((x) => x.updatedAt < olderThan);
-    for (const wc of toDelete) await discardWc(this.coreDB as any, [wc.parentId as NodeId, wc.id as NodeId]);
+    for (const wc of toDelete) await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
     return toDelete.length;
   }
 }
+
+type WorkingCopyHolderNode = TreeNode & {
+  holderType?: 'workingCopy' | 'trash';
+  holderTargetId?: NodeId;
+  holderMetaParentId?: NodeId;
+};
+
+type WorkingCopyContext = {
+  wcNode?: TreeNode;
+  holder?: WorkingCopyHolderNode;
+  targetNodeId?: NodeId;
+  targetParentNodeId?: NodeId;
+};

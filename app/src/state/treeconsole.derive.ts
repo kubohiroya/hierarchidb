@@ -74,10 +74,8 @@ export function buildVisibleRows(
     for (const childId of children) {
       const node = nodesById.get(childId);
       if (!node) continue;
-      const enriched =
-        node && typeof (node as any).depth === 'number'
-          ? { ...node }
-          : { ...node, depth };
+      const hasDepth = node && typeof node?.depth === 'number';
+      const enriched = hasDepth ? { ...node } : { ...node, depth };
       if (typeof enriched.depth !== 'number') {
         enriched.depth = depth;
       }

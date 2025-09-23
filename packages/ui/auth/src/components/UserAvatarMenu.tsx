@@ -65,7 +65,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       setClearCacheDialogOpen(false);
       window.location.reload();
     } catch (error) {
-      if ((import.meta as any)?.env?.DEV) {
+      if (import.meta.env.DEV) {
         console.error('Failed to clear cache:', error);
       }
       alert('Failed to clear some cache data. Please try again.');
@@ -90,26 +90,28 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   //  : DropdownMenuItemType
   //  : nameDropdownMenulabel
   //  : DropdownMenuItemType
-  const userMenu = [
+  type MenuItem = {
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+  };
+
+  const userMenu: Array<MenuItem | null> = [
     {
       id: 'logout',
       label: 'Logout', //  : namelabel
-      name: 'Logout', //  : name
       icon: <LogoutIcon />,
       onClick: () => signOut(),
-    } as any,
-    {
-      id: 'separator',
-      divider: true, //  : nulldivider
-    } as any,
+    },
+    null,
     {
       id: 'clear-cache',
       label: 'Clear All Cache', //  : namelabel
-      name: 'Clear All Cache', //  : name
       icon: <DeleteForever />,
       onClick: () => setClearCacheDialogOpen(true),
-      color: 'error',
-    } as any,
+    },
   ];
   return (
     <Box

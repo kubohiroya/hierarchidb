@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
@@ -78,34 +78,70 @@ export function useTreeConsoleSSOT(pageNodeId: string | undefined) {
   const key = pageNodeId || '';
   const state = key ? (store[key] ?? defaults(key)) : defaults('');
 
-  const set = (patch: Partial<TreeConsoleSSOTEntry>) => {
-    if (!key) return;
-    updateStore((prev) => ({
-      ...prev,
-      [key]: {
-        ...((prev[key] as TreeConsoleSSOTEntry) ?? defaults(key)),
-        ...patch,
-        pageNodeId: key,
-      },
-    }));
-  };
+  const api = useMemo(() => {
+    if (!key) {
+      const noop = () => {};
+      const noopReplace = (_next: TreeConsoleSSOTEntry) => {};
+      return {
+        set: noop,
+        replace: noopReplace,
+        clear: noop,
+        incRef: noop,
+        decRef: noop,
+      };
+    }
 
-  const replace = (next: TreeConsoleSSOTEntry) => {
-    if (!key) return;
-    updateStore((prev) => ({ ...prev, [key]: next }));
-  };
+    const set = (patch: Partial<TreeConsoleSSOTEntry>) => {
+      updateStore((prev) => ({
+        ...prev,
+        [key]: {
+          ...((prev[key] as TreeConsoleSSOTEntry) ?? defaults(key)),
+          ...patch,
+          pageNodeId: key,
+        },
+      }));
+    };
 
-  const clear = () => {
-    if (!key) return;
-    updateStore((prev) => {
-      const copy = { ...prev } as TreeConsoleSSOT;
-      delete copy[key];
-      return copy;
-    });
-  };
+    const replace = (next: TreeConsoleSSOTEntry) => {
+      updateStore((prev) => ({ ...prev, [key]: next }));
+    };
 
-  const incRef = () => set({ refCount: (state.refCount || 0) + 1 });
-  const decRef = () => set({ refCount: Math.max(0, (state.refCount || 0) - 1) });
+    const clear = () => {
+      updateStore((prev) => {
+        const copy = { ...prev } as TreeConsoleSSOT;
+        delete copy[key];
+        return copy;
+      });
+    };
 
-  return { state, set, replace, clear, incRef, decRef };
+    const incRef = () => {
+      updateStore((prev) => {
+        const prevEntry = (prev[key] as TreeConsoleSSOTEntry) ?? defaults(key);
+        return {
+          ...prev,
+          [key]: {
+            ...prevEntry,
+            refCount: (prevEntry.refCount ?? 0) + 1,
+          },
+        };
+      });
+    };
+
+    const decRef = () => {
+      updateStore((prev) => {
+        const prevEntry = (prev[key] as TreeConsoleSSOTEntry) ?? defaults(key);
+        return {
+          ...prev,
+          [key]: {
+            ...prevEntry,
+            refCount: Math.max(0, (prevEntry.refCount ?? 0) - 1),
+          },
+        };
+      });
+    };
+
+    return { set, replace, clear, incRef, decRef };
+  }, [key]);
+
+  return { state, ...api };
 }

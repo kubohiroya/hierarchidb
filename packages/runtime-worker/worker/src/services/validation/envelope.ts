@@ -1,4 +1,4 @@
-import type { CommandEnvelope } from '../command-types.js';
+import type { CommandEnvelope, CommandMeta } from '../command-types.js';
 
 // Common constraints (kept consistent with previous zod-based checks)
 const ID_MAX = 100;
@@ -27,13 +27,13 @@ export type ValidationFailure = {
 };
 
 export function isValidationFailure(x: ValidationSuccess | ValidationFailure): x is ValidationFailure {
-  return (x as any)?.ok === false;
+  return x?.ok === false;
 }
 
 export function isValidationSuccess<TType extends string = string, TPayload = unknown>(
   x: ValidationSuccess<TType, TPayload> | ValidationFailure,
 ): x is ValidationSuccess<TType, TPayload> {
-  return (x as any)?.ok === true;
+  return x?.ok === true;
 }
 
 // Strict parse + normalization: ensure `kind` exists, preserve alias `type` for compatibility.
@@ -87,11 +87,32 @@ export function validateAndNormalizeEnvelope(
     }
   }
 
+  const metaSource = obj.meta as Record<string, unknown> | undefined;
+  let normalizedMeta: CommandMeta | undefined;
+  if (metaSource) {
+    normalizedMeta = {
+      commandId: typeof metaSource.commandId === 'string' && metaSource.commandId.length > 0
+        ? metaSource.commandId
+        : (obj.commandId as string),
+      timestamp: typeof metaSource.timestamp === 'number'
+        ? metaSource.timestamp
+        : (obj.issuedAt as number),
+      userId: typeof metaSource.userId === 'string' ? metaSource.userId : undefined,
+      correlationId: typeof metaSource.correlationId === 'string' ? metaSource.correlationId : undefined,
+    };
+  }
+
   const normalized: CommandEnvelope<string, unknown> = {
-    ...(obj as any),
+    commandId: obj.commandId as string,
+    groupId: obj.groupId as string,
     kind: kind as string,
+    payload: obj.payload,
+    issuedAt: obj.issuedAt as number,
+    sourceViewId: typeof obj.sourceViewId === 'string' ? obj.sourceViewId : undefined,
+    onNameConflict: obj.onNameConflict as 'error' | 'auto-rename' | undefined,
     type: (obj.type ?? kind) as string,
-  } as CommandEnvelope<string, unknown>;
+    meta: normalizedMeta,
+  };
 
   return { ok: true, envelope: normalized };
 }

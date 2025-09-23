@@ -2,5 +2,25 @@
   "navigation": {
     "selectLanguage": "Select Language",
     "language": "Language"
+  },
+  "dialogs": {
+    "trash": {
+      "modeMenu": {
+        "ariaLabel": "Display mode",
+        "normal": "Normal (windowed)",
+        "maximize": "Maximize (browser window)",
+        "fullScreen": "Full-screen (system)"
+      },
+      "actions": {
+        "close": "Close dialog",
+        "exitFullscreen": "Exit full screen"
+      }
+    }
+  },
+  "treeTable": {
+    "selectAll": {
+      "select": "Select all",
+      "clear": "Clear all"
+    }
   }
 }

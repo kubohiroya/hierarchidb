@@ -10,6 +10,10 @@ export interface BreadcrumbNode {
   name?: string;
   parentId?: string | null;
   isClickable?: boolean;
+  depth?: number;
+  holderType?: 'workingCopy' | 'trash';
+  holderTargetId?: string;
+  holderMetaParentId?: string;
 }
 
 export interface TreeConsoleBreadcrumbContext {
@@ -68,4 +72,25 @@ export interface TreeConsoleBreadcrumbProps {
    * Enables reparenting via drag & drop onto the breadcrumb.
    */
   onDropToNode?: (targetNodeId: string, draggedNodeId: string) => void;
+
+  /**
+   * Optional page node id (e.g., Trash dialog context)
+   */
+  pageNodeId?: string;
+
+  /**
+   * Enable trash-specific link generation for breadcrumb items.
+   */
+  useTrashColumns?: boolean;
+
+  /**
+   * Trash action context when useTrashColumns is true.
+   */
+  trashAction?: 'restore' | 'empty';
+
+  /**
+   * Whether node-type icons should respond to clicks (context menu).
+   * Defaults to true.
+   */
+  iconInteractive?: boolean;
 }

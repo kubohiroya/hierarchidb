@@ -6,6 +6,7 @@ import {
   getThemeBackgroundColor,
   getThemeTextColor,
 } from '../utils/theme.js';
+import { isDev } from '../utils/env.js';
 
 interface ThemedLoadingScreenProps {
   variant?: 'linear' | 'circular';
@@ -57,7 +58,7 @@ export function ThemedLoadingScreen({
       }
     } catch (error) {
       // Log error in development, but fail gracefully in production
-      if ((globalThis as any)?.import?.meta?.env?.DEV) {
+      if (isDev()) {
         console.warn('[ThemedLoadingScreen] Theme utility error:', error);
         setThemeError(`Theme error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -133,7 +134,7 @@ export function ThemedLoadingScreen({
       {children}
 
       {/* Development-only error display */}
-      {(globalThis as any)?.import?.meta?.env?.DEV && themeError && (
+      {isDev() && themeError && (
         <Box
           sx={{
             position: 'absolute',

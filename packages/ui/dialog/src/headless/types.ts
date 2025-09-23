@@ -1,4 +1,4 @@
-import type { ReactNode, ComponentType } from 'react';
+import type { ReactNode, ComponentType, PointerEvent as ReactPointerEvent } from 'react';
 
 /** Step navigation commands emitted by the dialog shell. */
 export type StepNavigationEvent =
@@ -7,7 +7,7 @@ export type StepNavigationEvent =
   | { type: 'back' };
 
 /** Display mode handled by the dialog frame. */
-export type DialogDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+export type DialogDisplayMode = 'normal' | 'maximize' | 'full-screen';
 
 /** Visibility policy for header / footer elements. */
 export type SectionVisibilityMode = 'visible' | 'hidden' | 'auto';
@@ -52,6 +52,7 @@ export interface HeadlessHeaderRenderProps<TData> {
   onDisplayModeChange?: (mode: DialogDisplayMode) => void;
   stepNavigation: (event: StepNavigationEvent) => void;
   isDirty: boolean;
+  onRequestClose: (reason?: 'close' | 'discard') => void;
 }
 
 export interface HeadlessContentRenderProps<TData> {
@@ -89,6 +90,8 @@ export interface MultiDialogFrameProps {
   footerHoverZoneHeight?: number;
   onHeaderVisibilityChange?: (visible: boolean) => void;
   onFooterVisibilityChange?: (visible: boolean) => void;
+  onDragHandlePointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
+  onResizeHandlePointerDown?: (event: ReactPointerEvent<HTMLElement>) => void;
 }
 
 export interface HeadlessMultiStepDialogProps<TData> extends MultiDialogFrameProps {

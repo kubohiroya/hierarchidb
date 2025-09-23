@@ -3,9 +3,28 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
+
+type BootWindow = Window & {
+  __HDB_INIT_COMPLETE__?: boolean;
+  __HDB_INIT_STARTED__?: boolean;
+};
+
+function normalizeError(error: unknown): Error {
+  if (error instanceof Error) return error;
+  if (error && typeof error === 'object' && 'error' in (error as Record<string, unknown>)) {
+    const inner = (error as Record<string, unknown>).error;
+    return normalizeError(inner);
+  }
+  return new Error(String(error));
+}
 import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
+
+const logWorkerProviderWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[WorkerProvider]', message, error);
+};
 
 type WorkerContextValue = {
   client: Remote<WorkerAPI> | null;
@@ -179,7 +198,7 @@ export const WorkerProvider = ({
         error: null,
       });
     } catch (error) {
-      const normalized = error instanceof Error ? error : new Error(String(error));
+      const normalized = normalizeError(error);
       setState(prev => ({ ...prev, error: normalized }));
     }
   }, []);
@@ -193,9 +212,11 @@ export const WorkerProvider = ({
     initCompleted = true;
     try {
       if (typeof window !== 'undefined') {
-        (window as any).__HDB_INIT_COMPLETE__ = true;
+        (window as BootWindow).__HDB_INIT_COMPLETE__ = true;
       }
-    } catch {}
+    } catch (error) {
+      logWorkerProviderWarning('Failed to set __HDB_INIT_COMPLETE__ flag', error);
+    }
     bootProgress?.setStepProgress('Worker', 100, 'Worker ready');
     bootProgress?.markStepDone('Worker', 'Worker ready');
     await finalizeInitialized();
@@ -217,14 +238,16 @@ export const WorkerProvider = ({
 
     try {
       if (typeof window !== 'undefined') {
-        (window as any).__HDB_INIT_STARTED__ = true;
+        (window as BootWindow).__HDB_INIT_STARTED__ = true;
       }
-    } catch {}
+    } catch (error) {
+      logWorkerProviderWarning('Failed to set __HDB_INIT_STARTED__ flag', error);
+    }
 
     try {
       await WorkerAPIClient.initialize();
     } catch (error) {
-      const normalized = error instanceof Error ? error : new Error(String(error));
+      const normalized = normalizeError(error);
       setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
       return;
     }
@@ -267,11 +290,7 @@ export const WorkerProvider = ({
       await channel.waitForInitialization({ worker: rawWorker, timeout, debug });
       await markComplete();
     } catch (error) {
-      const normalized = error instanceof Error
-        ? error
-        : (error && typeof error === 'object' && 'error' in (error as Record<string, unknown>) && (error as any).error)
-          ? ((error as any).error instanceof Error ? (error as any).error : new Error(String((error as any).error)))
-          : new Error('Worker initialization failed');
+      const normalized = normalizeError(error);
       setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
     } finally {
       rawWorker.removeEventListener('message', progressHandler);
@@ -299,9 +318,9 @@ export const WorkerProvider = ({
     };
 
     if (typeof window !== 'undefined') {
-      const globalAny = window as any;
-      if (!globalAny.__HDB_WORKER_EVT_BOUND__) {
-        globalAny.__HDB_WORKER_EVT_BOUND__ = true;
+      const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
+      if (!globalWin.__HDB_WORKER_EVT_BOUND__) {
+        globalWin.__HDB_WORKER_EVT_BOUND__ = true;
         window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
       }
     }
@@ -319,7 +338,9 @@ export const WorkerProvider = ({
           await markComplete();
           if (pollTimer) window.clearInterval(pollTimer);
         }
-      } catch {}
+      } catch (error) {
+        logWorkerProviderWarning('Polling worker readiness failed', error);
+      }
     };
     pollTimer = window.setInterval(poll, 150);
 
@@ -336,8 +357,8 @@ export const WorkerProvider = ({
       initChannelRef.current = null;
       if (typeof window !== 'undefined') {
         window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
-        const globalAny = window as any;
-        globalAny.__HDB_WORKER_EVT_BOUND__ = false;
+        const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
+        globalWin.__HDB_WORKER_EVT_BOUND__ = false;
       }
       if (pollTimer) window.clearInterval(pollTimer);
       if (devFallbackTimer) window.clearTimeout(devFallbackTimer);

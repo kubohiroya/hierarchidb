@@ -6,6 +6,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-type';
+import { readRuntimeMode } from '@hierarchidb/util';
 
 const NT = (s: string) => s as NodeType;
 
@@ -114,8 +115,12 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
  * Get plugin configuration for current environment
  */
 export function getPluginConfig(): PluginConfig {
-  const mode = (import.meta as any)?.env?.MODE || 'development';
+  const mode = resolveRuntimeMode();
   return PLUGIN_CONFIGS[mode] || DEFAULT_PLUGIN_CONFIG;
+}
+
+function resolveRuntimeMode(): string {
+  return readRuntimeMode() ?? 'development';
 }
 
 /**

@@ -43,7 +43,7 @@ export interface HierarchiDBStrategyOptions {
 export function createHierarchiDBStrategy(
   options: HierarchiDBStrategyOptions = {},
 ): PackageDetectionStrategy {
-  const pattern = options.pattern || /@hierarchidb\/node-type-.*-plugin$/;
+  const pattern = options.pattern || /@hierarchidb\/plugins-.*-plugin$/;
   const priorityPlugin = options.priorityPlugin || 'folder';
   const priorityBoost = options.priorityBoost || 100;
 
@@ -54,7 +54,7 @@ export function createHierarchiDBStrategy(
       const metadata: Record<string, any> = {};
 
       //  node-type
-      const match = packageJson.name.match(/node-type-(.+)-plugin$/);
+      const match = packageJson.name.match(/plugins-(.+)-plugin$/);
       if (match) {
         metadata.nodeType = match[1];
       }
@@ -79,7 +79,7 @@ export function createHierarchiDBStrategy(
     if (packageName.includes(priorityPlugin)) {
       priority = 1;
     } else {
-      const match = packageName.match(/node-type-(.+)-plugin$/);
+      const match = packageName.match(/plugins-(.+)-plugin$/);
       if (match && match[1]) {
         priority = match[1].charCodeAt(0) + priorityBoost;
       }
@@ -235,7 +235,7 @@ export function hierarchiDBPreset(
     pipeline: createPluginDefinitionPipeline(),
     virtualModules: [createPluginVirtualModule()],
     monorepo: {
-      packages: ['packages/node-type/*'],
+      packages: ['packages/plugins/*'],
       resolveWorkspace: true,
       usePnpmWorkspace: true,
     },

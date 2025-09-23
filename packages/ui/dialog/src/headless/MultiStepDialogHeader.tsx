@@ -9,10 +9,11 @@ function buildHeaderRenderProps<TData>(ctx: ReturnType<typeof useMultiStepDialog
     enabledStepIndices: ctx.enabledStepIndices,
     validatedStepIndices: ctx.validatedStepIndices,
     committableStepIndices: ctx.committableStepIndices,
-    displayMode: ctx.displayMode ?? 'standard',
+    displayMode: ctx.displayMode ?? 'normal',
     onDisplayModeChange: ctx.onDisplayModeChange,
     stepNavigation: ctx.onStepNavigate,
     isDirty: ctx.isDirty,
+    onRequestClose: ctx.onRequestClose,
   };
 }
 

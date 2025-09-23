@@ -7,7 +7,6 @@ import { commandMetrics } from '../utils/metrics.js';
 
 describe('Headless metrics (command latency)', () => {
   beforeEach(() => {
-    (process as any).env.WORKER_METRICS_ENABLED = '1';
     commandMetrics.reset();
   });
 
@@ -29,7 +28,8 @@ describe('Headless metrics (command latency)', () => {
       }),
     );
     // Ping (registered success)
-    await cp.processCommand(cp.createEnvelope('ping', {} as any));
+    const pingPayload: Record<string, never> = {};
+    await cp.processCommand(cp.createEnvelope('ping', pingPayload));
 
     const snap = commandMetrics.snapshot();
     expect(snap['createNode']?.count ?? 0).toBeGreaterThan(0);

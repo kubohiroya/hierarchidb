@@ -37,6 +37,42 @@ export interface UseMemoryDataResult {
   error: string | null;
 }
 
+type MemoryBreakdownEntry = { bytes?: number; types?: string[]; url?: string };
+
+type UserAgentSpecificMemoryResult = {
+  breakdown: MemoryBreakdownEntry[];
+};
+
+type HeapMemoryDetails = {
+  usedJSHeapSize?: number;
+  jsHeapSizeLimit?: number;
+};
+
+const isHeapMemoryDetails = (value: unknown): value is HeapMemoryDetails => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return 'usedJSHeapSize' in candidate || 'jsHeapSizeLimit' in candidate;
+};
+
+const hasAdvancedMemory = (
+  perf: Performance,
+): perf is Performance & { measureUserAgentSpecificMemory: () => Promise<UserAgentSpecificMemoryResult> } => {
+  return typeof (perf as { measureUserAgentSpecificMemory?: unknown }).measureUserAgentSpecificMemory === 'function';
+};
+
+const getHeapMemoryDetails = (perf: Performance): HeapMemoryDetails | undefined => {
+  if (!('memory' in perf)) {
+    return undefined;
+  }
+  const candidate = (perf as { memory?: unknown }).memory;
+  if (isHeapMemoryDetails(candidate)) {
+    return candidate;
+  }
+  return undefined;
+};
+
 /**
   * :
  * :
@@ -67,7 +103,7 @@ export function useMemoryData({
    * :
       */
   const categorizeMemory = useCallback(
-    (breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>): MemoryBreakdown => {
+    (breakdown?: MemoryBreakdownEntry[]): MemoryBreakdown => {
       //  :
       const categories: MemoryBreakdown = {
         JavaScript: 0,
@@ -121,20 +157,20 @@ export function useMemoryData({
       setError(null);
 
       //  API: measureUserAgentSpecificMemory
-      if ('measureUserAgentSpecificMemory' in performance) {
+      const perf = performance;
+
+      if (hasAdvancedMemory(perf)) {
         try {
-          const result = await (performance as any).measureUserAgentSpecificMemory();
+          const result = await perf.measureUserAgentSpecificMemory();
           const totalUsed = result.breakdown.reduce(
-            (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
+            (sum: number, entry: MemoryBreakdownEntry) => sum + (entry.bytes || 0),
             0,
           );
 
           let totalMemory = maxMemory;
-          if ('memory' in performance) {
-            const memory = (performance as any).memory;
-            if (memory?.jsHeapSizeLimit) {
-              totalMemory = memory.jsHeapSizeLimit;
-            }
+          const heapDetails = getHeapMemoryDetails(perf);
+          if (heapDetails?.jsHeapSizeLimit) {
+            totalMemory = heapDetails.jsHeapSizeLimit;
           }
 
           //  :
@@ -154,10 +190,10 @@ export function useMemoryData({
       }
 
       //  API: performance.memory API
-      if ('memory' in performance && (performance as any).memory) {
-        const memory = (performance as any).memory;
-        const used = memory?.usedJSHeapSize || 0;
-        const total = memory?.jsHeapSizeLimit || maxMemory;
+      const heapDetails = getHeapMemoryDetails(performance);
+      if (heapDetails) {
+        const used = heapDetails.usedJSHeapSize || 0;
+        const total = heapDetails.jsHeapSizeLimit || maxMemory;
 
         //  : API
         const memoryInfo: MemoryData = {

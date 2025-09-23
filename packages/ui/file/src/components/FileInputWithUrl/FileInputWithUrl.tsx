@@ -6,6 +6,7 @@ import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
 import { DragDropSection } from './DragDropSection.js';
 import { UrlDownloadSection } from './UrlDownloadSection.js';
 import { LoadingOverlay } from './LoadingOverlay.js';
+import { devError, devLog } from '../../utils/logger.js';
 
 export interface FileInputWithUrlProps {
   /**
@@ -188,7 +189,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
               handleDownload={handleDownload}
               onKeyPress={handleKeyPress}
               onSignIn={(provider) => {
-                console.log('FileInputWithUrl onSignIn prop:', {
+                devLog('FileInputWithUrl onSignIn prop:', {
                   signIn,
                   typeof: typeof signIn,
                   provider,
@@ -196,11 +197,7 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
                 if (typeof signIn === 'function') {
                   signIn(provider);
                 } else {
-                  if ((import.meta as any)?.env?.DEV) {
-
-                    console.error('signIn is not a function in onSignIn:', signIn);
-
-                  }
+                  devError('signIn is not a function in onSignIn:', signIn);
                 }
               }}
               onMouseEnter={() => setHoveredSection('url')}
@@ -226,18 +223,14 @@ export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
                   size="small"
                   startIcon={<Login />}
                   onClick={() => {
-                    console.log('FileInputWithUrl signIn click:', {
+                    devLog('FileInputWithUrl signIn click:', {
                       signIn,
                       typeof: typeof signIn,
                     });
                     if (typeof signIn === 'function') {
                       signIn();
                     } else {
-                      if ((import.meta as any)?.env?.DEV) {
-
-                        console.error('signIn is not a function:', signIn);
-
-                      }
+                      devError('signIn is not a function:', signIn);
                     }
                   }}
                   disabled={isLoadingAuth}

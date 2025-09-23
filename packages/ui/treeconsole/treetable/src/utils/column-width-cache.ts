@@ -47,6 +47,14 @@ function sanitizeColumnWidths(input: unknown): ColumnWidthMap | null {
   return hasValue ? next : null;
 }
 
+function safeRemoveItem(storage: Storage, key: string): void {
+  try {
+    storage.removeItem(key);
+  } catch {
+    // Silently ignore storage removal errors (e.g. quota/sandbox restrictions)
+  }
+}
+
 export function mergeWithDefaults(overrides: Record<string, unknown> | null | undefined): ColumnWidthMap {
   const sanitized = sanitizeColumnWidths(overrides);
   return sanitized ? { ...DEFAULT_COLUMN_WIDTHS, ...sanitized } : { ...DEFAULT_COLUMN_WIDTHS };
@@ -72,13 +80,13 @@ export function loadCachedColumnWidths(pageNodeId: string | undefined): ColumnWi
     const parsed = JSON.parse(raw) as unknown;
     const sanitized = sanitizeColumnWidths(parsed);
     if (!sanitized) {
-      storage.removeItem(cacheKey(pageNodeId));
+      safeRemoveItem(storage, cacheKey(pageNodeId));
       return null;
     }
     memoryCache.set(pageNodeId, sanitized);
     return { ...sanitized };
   } catch {
-    storage.removeItem(cacheKey(pageNodeId));
+    safeRemoveItem(storage, cacheKey(pageNodeId));
     return null;
   }
 }

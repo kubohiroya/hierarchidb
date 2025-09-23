@@ -34,10 +34,8 @@ export class PopupDetectionService {
     const stored = localStorage.getItem(POPUP_CAPABILITY_KEY);
     if (stored === 'supported' || stored === 'blocked') {
       this.capability = stored;
-      if ((import.meta as any)?.env?.DEV) {
-
+      if (import.meta.env.DEV) {
         console.log(`Loaded popup capability: ${stored}`);
-
       }
     }
   }
@@ -87,10 +85,8 @@ export class PopupDetectionService {
 
         if (!popup) {
           // Popup was blocked
-          if ((import.meta as any)?.env?.DEV) {
-
+          if (import.meta.env.DEV) {
             console.warn('Popup blocked by browser');
-
           }
           this.saveCapability('blocked');
           resolve('blocked');
@@ -107,10 +103,8 @@ export class PopupDetectionService {
           }
         } catch (e) {
           // COOP error detected
-          if ((import.meta as any)?.env?.DEV) {
-
+          if (import.meta.env.DEV) {
             console.warn('COOP restrictions detected:', e);
-
           }
           hasCOOPIssue = true;
         }
@@ -164,10 +158,8 @@ export class PopupDetectionService {
         }, POPUP_TEST_TIMEOUT);
       } catch (error) {
         // Any error means popups are blocked
-        if ((import.meta as any)?.env?.DEV) {
-
+        if (import.meta.env.DEV) {
           console.warn('Popup test failed:', error);
-
         }
         this.saveCapability('blocked');
         resolve('blocked');

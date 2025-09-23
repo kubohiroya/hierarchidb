@@ -25,12 +25,20 @@ const translations: Record<string, Record<string, string>> = {
 };
 
 // Get current language from storage (if available) or default to English
+interface MinimalStorage {
+  getItem(key: string): string | null;
+}
+
+const resolveStorage = (): MinimalStorage | null => {
+  if (typeof globalThis === 'undefined') return null;
+  const candidate = (globalThis as { localStorage?: MinimalStorage }).localStorage;
+  return typeof candidate !== 'undefined' ? candidate : null;
+};
+
 const getCurrentLanguage = (): string => {
   try {
-    const storage: any = (typeof globalThis !== 'undefined' && (globalThis as any).localStorage)
-      ? (globalThis as any).localStorage
-      : null;
-    const stored = storage ? storage.getItem('i18nextLng') : null;
+    const storage = resolveStorage();
+    const stored = storage?.getItem('i18nextLng');
     if (typeof stored === 'string' && stored.length > 0) return stored;
     return 'en';
   } catch {

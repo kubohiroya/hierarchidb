@@ -191,7 +191,7 @@ export interface LocationFilterCriteria extends MetadataSearchCriteria {
 ### 検証方法
 ```bash
 # 各Phase後にエラー数確認
-pnpm --filter @hierarchidb/node-type-location-plugin typecheck
+pnpm --filter @hierarchidb/plugins-location-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 65件 → 24件（Grid props修正）
@@ -200,7 +200,7 @@ pnpm --filter @hierarchidb/node-type-location-plugin typecheck
 # Phase 4完了後: 4件 → 0件（未定義型修正）
 
 # 最終確認
-pnpm --filter @hierarchidb/node-type-location-plugin build
+pnpm --filter @hierarchidb/plugins-location-plugin build
 ```
 
 ## 依存関係と注意点

@@ -8,8 +8,10 @@ export * from './processor.js';
 export * from './processors/ColumnRenameProcessor.js';
 export * from './processors/NumberCoerceProcessor.js';
 export * from './processors/RequiredColumnsValidator.js';
-export const featureDefinition = {
-  manifest: { name: '@hierarchidb/tabular', provides: ['tabular'] },
-  init() {
-  },
-};
+export class FeatureDefinition {
+  static readonly manifest = { name: '@hierarchidb/tabular', provides: ['tabular'] };
+
+  static init(): void {
+    // no-op
+  }
+}

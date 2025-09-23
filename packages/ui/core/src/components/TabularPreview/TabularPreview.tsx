@@ -14,16 +14,25 @@ import {
   TextField,
   Tooltip,
   Typography,
+  type SelectChangeEvent,
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from '@hierarchidb/ui-data-grid';
 import { CrossViewStyles } from '../../sync/CrossViewStyles.js';
+import type { Id } from '../../sync/CrossViewStyles.js';
 import { useCrossHighlightSync } from '../../hooks/useCrossHighlightSync.js';
 import { ensureDefaultStyles } from '../../utils/ensureDefaultStyles.js';
 import { CrossViewSnackbar } from '../CrossViewSnackbar.js';
 import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
 import { type ColumnFilter, TabularQueryService } from '@hierarchidb/tabular-store';
 import { getDBName } from '@hierarchidb/util';
+
+const logTabularPreviewWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[TabularPreview]', message, error);
+};
+
+const isValidId = (value: unknown): value is Id => typeof value === 'string' || typeof value === 'number';
 
 type Op = ColumnFilter['op'];
 
@@ -64,7 +73,11 @@ export function TabularPreview({ pluginId, tableId }: {
   // Ensure default styles exist for basic hover/select/match visuals
   useEffect(() => {
     if (!tableId) return;
-    try { ensureDefaultStyles(datasetId, { includeRow: true, includeMap: true }); } catch {}
+    try {
+      ensureDefaultStyles(datasetId, { includeRow: true, includeMap: true });
+    } catch (error) {
+      logTabularPreviewWarning('Failed to ensure default styles', error);
+    }
   }, [datasetId, tableId]);
 
   useEffect(() => {
@@ -80,29 +93,49 @@ export function TabularPreview({ pluginId, tableId }: {
       try {
         const manager = new SimpleTableMetadataManager(getDBName(`${pluginId}-metadata-db`));
         const meta = await manager.get(tableId);
-        const cols = Array.isArray(meta?.columns) && meta!.columns!.length > 0
-          ? (meta!.columns as any[]).map((c: any) => typeof c === 'string' ? c : (c.name || c.id || String(c)))
-          : [];
+        const rawColumns = Array.isArray(meta?.columns) ? meta.columns : [];
+        const cols = rawColumns
+          .map((col) => {
+            if (typeof col === 'string') return col;
+            if (col && typeof col === 'object') {
+              if ('name' in col && typeof col.name === 'string') {
+                return col.name;
+              }
+              if ('id' in col) {
+                const identifier = col.id;
+                if (typeof identifier === 'string' || typeof identifier === 'number') {
+                  return String(identifier);
+                }
+              }
+            }
+            return undefined;
+          })
+          .filter((value): value is string => typeof value === 'string');
         if (!cancelled) {
           setColumns(cols);
           if (!visibleCols) setVisibleCols(cols);
         }
         const svc = new TabularQueryService(pluginId);
-        const data = await svc.query(tableId, filters as ColumnFilter[], 1000);
+        const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({ column, op, value }));
+        const data = await svc.query(tableId, filterArgs, 1000);
         if (!cancelled) setRows(data);
         // Auto-detect row→feature mapping when possible
         try {
-          const pairs: Array<{ rowId: any; featureIds: any[] }> = [];
+          const pairs: Array<{ rowId: Id; featureIds: Id[] }> = [];
           for (let i = 0; i < Math.min(500, data.length); i++) {
-            const row: any = data[i];
-            const rowId = (row?.id ?? i) as any;
-            const featureIds: any[] = Array.isArray(row?.featureIds)
-              ? row.featureIds
-              : (row?.featureId != null ? [row.featureId] : []);
+            const row = data[i] as Record<string, unknown> | undefined;
+            const rowId = isValidId(row?.id) ? row!.id : (i as Id);
+            const featureIds = Array.isArray(row?.featureIds)
+              ? row!.featureIds.filter(isValidId)
+              : isValidId(row?.featureId)
+                ? [row!.featureId]
+                : [];
             if (featureIds.length > 0) pairs.push({ rowId, featureIds });
           }
           if (pairs.length > 0) CrossViewStyles.setMapping(datasetId, pairs);
-        } catch {}
+        } catch (error) {
+          logTabularPreviewWarning('Failed to set row to feature mapping', error);
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || String(e));
       } finally {
@@ -112,7 +145,20 @@ export function TabularPreview({ pluginId, tableId }: {
     return () => {
       cancelled = true;
     };
-  }, [pluginId, tableId, JSON.stringify(filters), JSON.stringify(visibleCols)]);
+  }, [datasetId, filters, pluginId, tableId, visibleCols]);
+
+  const matchedRowSet = useMemo(() => {
+    if (rowSets.matched.size > 0) {
+      return rowSets.matched;
+    }
+    const derived = new Set<Id>();
+    rows.forEach((row, index) => {
+      const rowObj = row as Record<string, unknown> | undefined;
+      const identifier = isValidId(rowObj?.id) ? rowObj!.id : (index as Id);
+      derived.add(identifier);
+    });
+    return derived;
+  }, [rowSets.matched, rows]);
 
   const addFilter = () => setFilters((fs) => [...fs, { column: '', op: 'contains', value: '' }]);
   const removeFilter = (i: number) => setFilters((fs) => fs.filter((_, idx) => idx !== i));
@@ -126,9 +172,16 @@ export function TabularPreview({ pluginId, tableId }: {
         {/* Visible columns selector */}
         <FormControl size="small" sx={{ minWidth: 180 }}>
           <InputLabel id="tp-cols-label"><ViewColumn fontSize="small" sx={{ mr: 0.5 }} />表示列</InputLabel>
-          <Select multiple labelId="tp-cols-label" input={<OutlinedInput label="表示列" />} value={visibleCols || []}
-                  onChange={(e) => setVisibleCols(e.target.value as string[])}
-                  renderValue={(sel) => (sel as string[]).slice(0, 3).join(', ') + (((sel as string[]).length > 3) ? '…' : '')}>
+          <Select<string[]> multiple labelId="tp-cols-label" input={<OutlinedInput label="表示列" />} value={visibleCols || []}
+                  onChange={(e: SelectChangeEvent<string[]>) => {
+                    const value = e.target.value;
+                    setVisibleCols(Array.isArray(value) ? value : [value]);
+                  }}
+                  renderValue={(selected) => {
+                    const values = Array.isArray(selected) ? selected : [];
+                    const preview = values.slice(0, 3).join(', ');
+                    return `${preview}${values.length > 3 ? '…' : ''}`;
+                  }}>
             {columns.map((name) => (
               <MenuItem key={name} value={name}>
                 <Checkbox checked={(visibleCols || []).indexOf(name) > -1} />
@@ -187,7 +240,7 @@ export function TabularPreview({ pluginId, tableId }: {
           // Cross-view synced row state and handlers
           selectedRows={rowSets.selected}
           hoveredRows={rowSets.hovered}
-          matchedRows={rowSets.matched.size > 0 ? rowSets.matched : new Set(rows.map((r, i) => (r as any)?.id ?? i))}
+          matchedRows={matchedRowSet}
           disabledRows={rowSets.disabled}
           rowSx={dataGrid.rowSx}
           onRowHover={dataGrid.onRowHover}

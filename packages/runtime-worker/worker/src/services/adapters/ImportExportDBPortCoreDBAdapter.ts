@@ -6,6 +6,10 @@ export class ImportExportDBPortCoreDBAdapter implements ImportExportDBPort {
   constructor(private coreDB: CoreDB) {
   }
 
+  getCoreDB(): CoreDB {
+    return this.coreDB;
+  }
+
   bulkCreateNodes(nodes: TreeNode[]): Promise<void> {
     return this.coreDB.bulkCreateNodes(nodes);
   }
@@ -18,4 +22,3 @@ export class ImportExportDBPortCoreDBAdapter implements ImportExportDBPort {
     return this.coreDB.getNode(nodeId);
   }
 }
-

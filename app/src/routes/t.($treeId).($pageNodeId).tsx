@@ -1,5 +1,6 @@
-import type { LoaderFunctionArgs } from 'react-router';
-import { Suspense, useEffect, useState } from 'react';
+import type { LoaderFunctionArgs, ShouldRevalidateFunction } from 'react-router';
+import type { MouseEvent, ReactNode } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import {
   AppBar,
@@ -17,34 +18,42 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { loadPageNode, type LoadPageNodeArgs } from '~/loader.js';
+import { loadPageNode } from '~/loader.js';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
 import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 
-export async function clientLoader(args: LoaderFunctionArgs) {
-  const params = args.params as LoadPageNodeArgs;
-  const pageNodeId = params.pageNodeId || (`${params.treeId}:root` as NodeId);
-  return await loadPageNode({ ...params, pageNodeId });
+type LoaderData = Awaited<ReturnType<typeof loadPageNode>>;
+
+export async function clientLoader({ params }: LoaderFunctionArgs) {
+  const { treeId } = params;
+  if (!treeId) {
+    throw new Response('Missing treeId parameter.', { status: 400 });
+  }
+  const pageNodeId: NodeId = (params.pageNodeId ?? `${treeId}:root`) as NodeId;
+  return await loadPageNode({ treeId, pageNodeId });
 }
 
 export default function TLayout() {
-  const data = useLoaderData() as Awaited<ReturnType<typeof clientLoader>>;
+  const data = useLoaderData<LoaderData>();
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
   const [notFoundOpen, setNotFoundOpen] = useState<boolean>(nodeNotFound);
-  useEffect(() => { setNotFoundOpen(nodeNotFound); }, [nodeNotFound]);
+  useEffect(() => {
+    setNotFoundOpen(nodeNotFound);
+  }, [nodeNotFound]);
 
   useEffect(() => {
     const loadTrees = async () => {
       try {
-        const client = await WorkerAPIClient.getSingleton();
+        const client = await WorkerAPIClient.getOrInit();
         const queryAPI = await client.getQueryAPI();
         const availableTrees = await queryAPI.listTrees();
         setTrees(availableTrees);
@@ -61,7 +70,7 @@ export default function TLayout() {
     }
   }, [data.tree?.id]);
 
-  const handleTreeChange = (_event: React.MouseEvent<HTMLElement>, newTreeId: string | null) => {
+  const handleTreeChange = (_event: MouseEvent<HTMLElement>, newTreeId: string | null) => {
     if (newTreeId && newTreeId !== selectedTreeId) {
       setSelectedTreeId(newTreeId);
       navigate(`/t/${newTreeId}`);
@@ -71,9 +80,10 @@ export default function TLayout() {
   const pageName = data.pageNode?.name || data.tree?.name || 'TreeTypes Console';
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
+    <TreeConsoleThemeBoundary treeId={data.tree?.id}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <AppBar position="static" color="default" elevation={1}>
+          <Toolbar>
           <IconButton
             onClick={() => navigate('/')}
             edge="start"
@@ -144,18 +154,18 @@ export default function TLayout() {
               <UserLoginButton />
             </Box>
           </Stack>
-        </Toolbar>
-      </AppBar>
+          </Toolbar>
+        </AppBar>
 
       <Box sx={{ flex: 1, overflow: 'hidden' }}>
         {nodeNotFound ? (
-          <Dialog open={notFoundOpen} onClose={() => navigate(`/t/${data.tree?.id || 'r'}`)}>
+          <Dialog open={notFoundOpen} onClose={() => navigate(`/t/${data.tree?.id ?? 'r'}`)}>
             <DialogTitle>Node Not Found</DialogTitle>
             <DialogContent>
-              <Typography>Node Not Found: ({data.pageNodeId || 'Unknown'})</Typography>
+              <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => navigate(`/t/${data.tree?.id || 'r'}`)} variant="contained" autoFocus>
+              <Button onClick={() => navigate(`/t/${data.tree?.id ?? 'r'}`)} variant="contained" autoFocus>
                 Go to Tree Root
               </Button>
             </DialogActions>
@@ -163,7 +173,7 @@ export default function TLayout() {
         ) : (
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}>
             <TreeConsoleIntegration
-              key={`${data.tree?.id || ''}:${data.pageNodeId || ''}`}
+              key={`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`}
               treeId={data.tree?.id}
               pageNodeId={data.pageNodeId}
               pageTreeNode={data.pageNode}
@@ -173,14 +183,43 @@ export default function TLayout() {
           </Suspense>
         )}
       </Box>
-    </Box>
+      </Box>
+    </TreeConsoleThemeBoundary>
   );
 }
 
-export function shouldRevalidate(args: any) {
-  try {
-    return args.currentParams?.pageNodeId !== args.nextParams?.pageNodeId || args.currentParams?.treeId !== args.nextParams?.treeId;
-  } catch {
-    return true;
+export const shouldRevalidate: ShouldRevalidateFunction = ({ currentParams, nextParams }) => {
+  return (
+    currentParams?.pageNodeId !== nextParams?.pageNodeId ||
+    currentParams?.treeId !== nextParams?.treeId
+  );
+};
+
+function TreeConsoleThemeBoundary({
+  treeId,
+  children,
+}: {
+  treeId?: string;
+  children: ReactNode;
+}) {
+  const baseTheme = useTheme();
+
+  const themed = useMemo(() => {
+    if (treeId !== 'p') {
+      return baseTheme;
+    }
+
+    return createTheme(baseTheme, {
+      palette: {
+        primary: { ...baseTheme.palette.secondary },
+        secondary: { ...baseTheme.palette.primary },
+      },
+    });
+  }, [baseTheme, treeId]);
+
+  if (themed === baseTheme) {
+    return <>{children}</>;
   }
+
+  return <ThemeProvider theme={themed}>{children}</ThemeProvider>;
 }

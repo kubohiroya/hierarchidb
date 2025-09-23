@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { CoreDB } from '../../services/CoreDB.js';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 
@@ -16,8 +16,8 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
     const cp = new CommandProcessor(core);
 
     // create parent P2
-    const p2 = await core.createNode({
-      id: ('p2-' + Date.now()) as NodeId,
+    const parentNode: TreeNode = {
+      id: (`p2-${Date.now()}`) as NodeId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'P2',
@@ -25,10 +25,11 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
-    } as any);
+    };
+    const p2 = await core.createNode(parentNode);
 
     // create A
-    const cRes = await cp.processCommand(
+    const createResult = await cp.processCommand(
       cp.createEnvelope('createNode', {
         nodeType: 'folder' as NodeType,
         treeId: rTree,
@@ -36,8 +37,11 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
         name: 'A',
       }),
     );
-    expect(cRes.success).toBe(true);
-    const aId = (cRes as any).nodeId as NodeId;
+    expect(createResult.success).toBe(true);
+    if (!createResult.success || !createResult.nodeId) {
+      throw new Error('Expected createNode to succeed with nodeId');
+    }
+    const aId = createResult.nodeId;
 
     // rename A -> A1
     const u1 = await cp.processCommand(cp.createEnvelope('updateNode', { nodeId: aId, name: 'A1' }));
@@ -48,17 +52,17 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
     expect(m1.success).toBe(true);
 
     // undo: move back
-    const undo1 = await cp.processCommand(cp.createEnvelope('undo', { steps: 1 } as any));
+    const undo1 = await cp.processCommand(cp.createEnvelope('undo', { groupId: 'default-group' }));
     expect(undo1.success).toBe(true);
     // undo: rename back
-    const undo2 = await cp.processCommand(cp.createEnvelope('undo', { steps: 1 } as any));
+    const undo2 = await cp.processCommand(cp.createEnvelope('undo', { groupId: 'default-group' }));
     expect(undo2.success).toBe(true);
 
     // redo: rename A -> A1
-    const redo1 = await cp.processCommand(cp.createEnvelope('redo', { steps: 1 } as any));
+    const redo1 = await cp.processCommand(cp.createEnvelope('redo', { groupId: 'default-group' }));
     expect(redo1.success).toBe(true);
     // redo: move under P2
-    const redo2 = await cp.processCommand(cp.createEnvelope('redo', { steps: 1 } as any));
+    const redo2 = await cp.processCommand(cp.createEnvelope('redo', { groupId: 'default-group' }));
     expect(redo2.success).toBe(true);
 
     // final assertions

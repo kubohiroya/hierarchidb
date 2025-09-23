@@ -5,16 +5,16 @@ export ENABLE_INTEGRATION_TESTS=false
 export ENABLE_SHAPE_DEEP_TESTS=false
 
 PLUGINS=(
-  packages/node-type/base-plugin
-  packages/node-type/basemap-plugin
-  packages/node-type/folder-plugin
-  packages/node-type/location-plugin
-  packages/node-type/linker-plugin
-  packages/node-type/resolver-plugin
-  packages/node-type/route-plugin
-  packages/node-type/shape-plugin
-  packages/node-type/spreadsheet-plugin
-  packages/node-type/styler-plugin
+  packages/plugins/base-plugin
+  packages/plugins/basemap-plugin
+  packages/plugins/folder-plugin
+  packages/plugins/location-plugin
+  packages/plugins/linker-plugin
+  packages/plugins/resolver-plugin
+  packages/plugins/route-plugin
+  packages/plugins/shape-plugin
+  packages/plugins/spreadsheet-plugin
+  packages/plugins/styler-plugin
 )
 
 RESULT_JSON=plugin-test-results.json
@@ -60,7 +60,15 @@ for P in "${PLUGINS[@]}"; do
     const typeStatus=process.argv[3];
     const testStatus=process.argv[4];
     const covPath=process.argv[5];
-    let cov=null; try{ cov=JSON.parse(fs.readFileSync(covPath,"utf8")); } catch(e){}
+    let cov=null;
+    try {
+      const raw=fs.readFileSync(covPath,"utf8");
+      cov=JSON.parse(raw);
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        console.warn(`[run-plugin-tests] Failed to load coverage summary for ${pkg}:`, error);
+      }
+    }
     const obj={ package: pkg, dir, typecheck: typeStatus, test: testStatus, coverage: cov };
     process.stdout.write(JSON.stringify(obj));
   ' "$PKG_NAME" "$P" "$TYPE_STATUS" "$TEST_STATUS" "$COV_FILE" >> $RESULT_JSON

@@ -24,8 +24,8 @@ export interface RowIndexEntry {
 }
 
 export class RowStoreDB extends Dexie {
-  rowChunks!: Table<RowChunk>;
-  rowIndexes!: Table<RowIndexEntry>;
+  rowChunks!: Table<RowChunk, string>;
+  rowIndexes!: Table<RowIndexEntry, string>;
 
   constructor(name: string = getDBName('tabular-rowstore-db')) {
     super(name);
@@ -53,5 +53,17 @@ export async function closeRowStoreDB(): Promise<void> {
   if (singleton) {
     await singleton.close();
     singleton = null;
+  }
+}
+
+const decoder = new TextDecoder();
+
+export function readChunkRows(chunk: RowChunk): unknown[] {
+  try {
+    const json = decoder.decode(new Uint8Array(chunk.binaryData));
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
 }

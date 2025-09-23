@@ -1,9 +1,12 @@
 // Main containers
 export { TreeConsolePanel } from './components/TreeConsolePanel.js';
-export type { TreeConsolePanelProps } from './components/TreeConsolePanel.js';
+export type {
+  TreeConsolePanelProps,
+  TreeConsolePanelBreadcrumbRendererProps,
+} from './components/TreeConsolePanel.js';
 
 // TreeTable containers
-export { TreeTableView, TreeTableFooter, RowContextMenu } from './components/TreeTable/index.js';
+export { TreeTableView, TreeTableFooter, RowContextMenu, TreeTableSearchInput } from './components/TreeTable/index.js';
 
 export type {
   TreeTableViewProps,
@@ -11,6 +14,7 @@ export type {
   TreeTableToolbarProps,
   TreeTableFooterProps,
   RowContextMenuProps,
+  TreeTableSearchInputProps,
 } from './components/TreeTable/index.js';
 
 // Types

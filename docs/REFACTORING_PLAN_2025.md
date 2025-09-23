@@ -42,7 +42,7 @@ HierarchiDBのコードベースにおける重複・不整合を解消し、責
 - 継承専用の基盤と、ユーザー向け機能を明確に分離すべき
 
 #### 作業内容
-1. **新規作成**: `packages/node-type/base-plugin/`
+1. **新規作成**: `packages/plugins/base-plugin/`
    - BaseEntityHandler（plugin-baseから移動）
    - HierarchicalEntityHandler（plugin-baseから移動）
    - 基本型定義
@@ -148,7 +148,7 @@ visibility?: {
 ### Phase 4: TagServiceのプラグイン化
 
 #### 対象ファイル
-- 移動: `packages/runtime/worker/src/services/TagService.ts` → `packages/node-type/folder-plugin/src/services/`
+- 移動: `packages/runtime/worker/src/services/TagService.ts` → `packages/plugins/folder-plugin/src/services/`
 
 #### 作業内容
 1. TagServiceをfolder-pluginへ移動
@@ -158,7 +158,7 @@ visibility?: {
 ### Phase 5: SpreadsheetWorkerHandlerの移動
 
 #### 対象ファイル
-- 移動: `packages/runtime/worker/src/handlers/SpreadsheetWorkerHandler.ts` → `packages/node-type/spreadsheet-plugin/src/handlers/`
+- 移動: `packages/runtime/worker/src/handlers/SpreadsheetWorkerHandler.ts` → `packages/plugins/spreadsheet-plugin/src/handlers/`
 
 #### 作業内容
 1. SpreadsheetWorkerHandlerをspreadsheet-pluginへ移動
@@ -168,7 +168,7 @@ visibility?: {
 ### Phase 6: StylerWorkerHandlerの移動
 
 #### 対象ファイル
-- 移動: `packages/runtime/worker/src/handlers/StylerWorkerHandler.ts` → `packages/node-type/styler-plugin/src/handlers/`
+- 移動: `packages/runtime/worker/src/handlers/StylerWorkerHandler.ts` → `packages/plugins/styler-plugin/src/handlers/`
 
 #### 作業内容
 1. StylerWorkerHandlerをstyler-pluginへ移動
@@ -181,7 +181,7 @@ visibility?: {
 - 移動: `packages/runtime/worker/src/handlers/BasePeerEntityHandler.ts` → 新規example-pluginパッケージへ
 
 #### 作業内容
-1. `packages/node-type/example-plugin`パッケージを作成
+1. `packages/plugins/example-plugin`パッケージを作成
 2. BasePeerEntityHandlerをサンプル実装として移動
 3. テストコードも含めて移動
 
@@ -217,7 +217,7 @@ packages/runtime/plugin-registry/
 
 ### Plugin層（拡張機能）
 ```
-packages/node-type/
+packages/plugins/
 ├── base-plugin/                  # 新規：継承専用基盤
 │   ├── src/
 │   │   ├── handlers/
@@ -277,7 +277,7 @@ packages/node-type/
 3. `packages/runtime/router` → 過剰実装のため削除
 
 ### 新規作成パッケージ
-1. `packages/node-type/base-plugin` → 継承専用の基盤機能
+1. `packages/plugins/base-plugin` → 継承専用の基盤機能
 
 ### 主要な変更点
 1. **plugin-baseの分離**

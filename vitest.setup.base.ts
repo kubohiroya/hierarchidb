@@ -10,6 +10,11 @@ import { beforeEach, vi } from 'vitest';
 // Testing Library matchers (toBeInTheDocument, toHaveClass, etc.)
 import '@testing-library/jest-dom/vitest';
 
+const logVitestSetupWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[vitest.setup.base]', message, error);
+};
+
 // ========================
 // Comlink Mock Setup
 // ========================
@@ -113,7 +118,9 @@ try {
     configurable: true,
     writable: true,
   });
-} catch {}
+} catch (error) {
+  logVitestSetupWarning('Failed to mark window.crypto as configurable', error);
+}
 
 // CompressionStream mock for compression tests
 if (!globalThis.CompressionStream) {
@@ -138,7 +145,9 @@ try {
     writable: true,
     value: current,
   });
-} catch {}
+} catch (error) {
+  logVitestSetupWarning('Failed to mark window.location as configurable', error);
+}
 
 // ========================
 // Test Cleanup Utilities

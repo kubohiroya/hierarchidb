@@ -13,6 +13,7 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     '@emotion/styled',
     'react-router',
     'react-router-dom',
+    'jotai',
     'maplibre-gl',
     'dexie',
     'react-i18next',
@@ -57,7 +58,8 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
         // Do not fail DTS bundling on local unuseds; keep tsc typecheck strict
         noUnusedLocals: false,
         noUnusedParameters: false,
-        types: ['react', 'node'],
+        // Include Vite's ambient definitions so packages using import.meta.env compile during DTS bundling.
+        types: ['react', 'node', 'vite/client'],
       },
     },
 

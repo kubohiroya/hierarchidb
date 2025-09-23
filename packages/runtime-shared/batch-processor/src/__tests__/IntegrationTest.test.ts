@@ -3,26 +3,17 @@
  * Tests that all plugin managers implement the same interface correctly
  */
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-
-// Set feature flag globally for testing
-beforeEach(() => {
-  if (typeof globalThis !== 'undefined') {
-    (globalThis as any).FEATURE_FLAGS = {
-      BATCH_CONTROL_API_V2: true,
-    };
-  }
-});
 
 describe('Unified Batch Manager Integration', () => {
   it('should have unified interface signatures', () => {
     // Test that we can import the factory functions
     expect(() => {
       // These imports will validate that the interfaces are correctly defined
-      const { createLocationBatchManager } = require('@hierarchidb/location-plugin');
-      const { createShapeBatchManager } = require('@hierarchidb/shape-plugin');
-      const { createRouteBatchManager } = require('@hierarchidb/route-plugin');
+      const { createLocationBatchManager } = require('@hierarchidb/plugins-location-plugin');
+      const { createShapeBatchManager } = require('@hierarchidb/plugins-shape-plugin');
+      const { createRouteBatchManager } = require('@hierarchidb/plugins-route-plugin');
 
       // Check that factory functions exist
       expect(typeof createLocationBatchManager).toBe('function');
@@ -34,9 +25,9 @@ describe('Unified Batch Manager Integration', () => {
 
   it('should create managers with unified interface', async () => {
     // This test verifies that all managers implement IBatchSessionManager
-    const { createLocationBatchManager } = await import('@hierarchidb/location-plugin');
-    const { createShapeBatchManager } = await import('@hierarchidb/shape-plugin');
-    const { createRouteBatchManager } = await import('@hierarchidb/route-plugin');
+    const { createLocationBatchManager } = await import('@hierarchidb/plugins-location-plugin');
+    const { createShapeBatchManager } = await import('@hierarchidb/plugins-shape-plugin');
+    const { createRouteBatchManager } = await import('@hierarchidb/plugins-route-plugin');
 
     const locationManager = createLocationBatchManager();
     const shapeManager = createShapeBatchManager();
@@ -62,9 +53,9 @@ describe('Unified Batch Manager Integration', () => {
 
 describe('Feature Flag Integration', () => {
   it('should detect feature flag correctly across plugins', async () => {
-    const { isLocationBatchAPIV2Enabled } = await import('@hierarchidb/location-plugin');
-    const { isShapeBatchAPIV2Enabled } = await import('@hierarchidb/shape-plugin');
-    const { isRouteBatchAPIV2Enabled } = await import('@hierarchidb/route-plugin');
+    const { isLocationBatchAPIV2Enabled } = await import('@hierarchidb/plugins-location-plugin');
+    const { isShapeBatchAPIV2Enabled } = await import('@hierarchidb/plugins-shape-plugin');
+    const { isRouteBatchAPIV2Enabled } = await import('@hierarchidb/plugins-route-plugin');
 
     expect(isLocationBatchAPIV2Enabled()).toBe(true);
     expect(isShapeBatchAPIV2Enabled()).toBe(true);

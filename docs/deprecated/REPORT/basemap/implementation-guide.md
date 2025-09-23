@@ -630,7 +630,7 @@ test.describe('BaseMap Plugin E2E', () => {
     
     // Open create base-dialog
     await page.click('[data-testid="create-node-button"]');
-    await page.click('[data-testid="node-type-basemap"]');
+    await page.click('[data-testid="plugins-basemap"]');
     
     // Step 1: Basic Information
     await page.fill('[data-testid="map-name"]', 'Test Map');

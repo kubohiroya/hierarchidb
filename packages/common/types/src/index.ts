@@ -20,7 +20,7 @@ export type {
   PasteNodesPayload,
   MoveToTrashPayload,
   RemovePayload,
-  RecoverFromTrashPayload,
+  RestoreFromTrashPayload,
   ImportNodesPayload,
   CopyNodesPayload,
   ExportNodesPayload,
@@ -79,6 +79,7 @@ export * from './registry.js';
 export type { StepComponentProps, BaseDialogProps } from './stepper-dialog-types.js';
 export * from './subscription-types.js';
 export * from './tree-node-event-types.js';
+export * from './undo-state-events.js';
 export * from './tree-node-lifecycle-hooks.js';
 export { NODE_TYPES } from './tree-node-types.js';
 export type { NodeBase, TreeNode, TreeNodeWithChildren } from './tree-node-types.js';

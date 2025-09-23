@@ -40,9 +40,7 @@ vk:doc kind=design audience=dev scope=worker
 - バルクは `PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE` でチャンク分割（既定 50）。
 
 フラグ運用
-- 統一 Entity ライフサイクルは常時有効。
-- `WORKER_TX_ENABLED=1`: コマンド境界 Tx の有効化（既定OFF）。
-- `WORKER_METRICS_ENABLED=1`: コマンド別レイテンシ観測（開発時）。
+- 統一 Entity ライフサイクルおよびコマンド境界 Tx / メトリクスは常時有効です。
 
 スキーマ案（CoreDB 例）
 ```ts

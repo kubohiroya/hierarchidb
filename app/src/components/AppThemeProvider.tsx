@@ -22,7 +22,7 @@ export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
     if (mode) setMode(mode);
     // Back-compat fallback
     const legacy = localStorage.getItem('app.theme');
-    if (legacy === 'light' || legacy === 'dark' || legacy === 'system') setMode(legacy as any);
+    if (legacy === 'light' || legacy === 'dark' || legacy === 'system') setMode(legacy);
   }, [setMode]);
 
   const muiTheme = useMemo(() => createAppTheme(actualTheme), [actualTheme]);

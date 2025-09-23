@@ -9,8 +9,10 @@ import {
   TreeNode,
   TreeRootState,
 } from '@hierarchidb/common-type';
+import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';
+import type { BulkError } from 'dexie';
 import { Subject } from 'rxjs';
 
 export class CoreDB extends Dexie {
@@ -33,13 +35,21 @@ export class CoreDB extends Dexie {
     tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
     fn: () => Promise<T>,
   ): Promise<T> {
+    const tableMap = {
+      trees: this.trees,
+      nodes: this.nodes,
+      rootStates: this.rootStates,
+      tags: this.tags,
+      tagAssociations: this.tagAssociations,
+    } as const;
+
     const tables = tableNames
-      .map((n) => (this as any)[n])
-      .filter((t) => !!t);
+      .map((name) => tableMap[name])
+      .filter((table): table is NonNullable<typeof table> => Boolean(table));
     // If no tables provided, just run function without a transaction
     if (tables.length === 0) return await fn();
     // Use Dexie's variadic or array form; cast to any to avoid TS tuple spread issues
-    return await (this as any).transaction(mode, tables, fn);
+    return await this.transaction(mode, tables, fn);
   }
 
   static async getSingleton(_name?: string): Promise<CoreDB> {
@@ -162,8 +172,8 @@ export class CoreDB extends Dexie {
           console.error('Data that failed:', rootStateData);
 
           // Try to get more details about the error
-          if ((error as any).failures) {
-            console.error('Bulk add failures:', (error as any).failures);
+          if (isBulkError(error) && error.failures) {
+            console.error('Bulk add failures:', error.failures);
           }
           throw error;
         }
@@ -233,6 +243,18 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
+        ...('holderType' in node && node.holderType !== undefined ? { holderType: node.holderType } : {}),
+        ...('holderTargetId' in node && node.holderTargetId !== undefined
+          ? { holderTargetId: node.holderTargetId }
+          : {}),
+        ...('holderMetaParentId' in node && node.holderMetaParentId !== undefined
+          ? { holderMetaParentId: node.holderMetaParentId }
+          : {}),
+        ...('originalName' in node && node.originalName !== undefined ? { originalName: node.originalName } : {}),
+        ...('originalParentId' in node && node.originalParentId !== undefined
+          ? { originalParentId: node.originalParentId }
+          : {}),
+        ...('removedAt' in node && node.removedAt !== undefined ? { removedAt: node.removedAt } : {}),
       };
       return plainNode;
     }
@@ -318,10 +340,56 @@ export class CoreDB extends Dexie {
     });
   }
 
-  async listChildren(parentId: NodeId): Promise<TreeNode[]> {
-    const children = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
+  async listChildren(parentId: NodeId, options?: ListChildrenOptions): Promise<TreeNode[]> {
+    const directChildren = await this.nodes.where('parentId').equals(parentId).sortBy('createdAt');
+    console.log('[CoreDB.listChildren] direct', {
+      parentId: String(parentId),
+      requestedDepth: options?.prefetch?.depth ?? 1,
+      directCount: directChildren.length,
+      sample: directChildren.slice(0, 5).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+    });
 
-    return children;
+    const depth = options?.prefetch?.depth;
+    if (!depth || depth <= 1) {
+      console.log('[CoreDB.listChildren] returning direct children only', {
+        parentId: String(parentId),
+        total: directChildren.length,
+      });
+      return directChildren;
+    }
+
+    const result = [...directChildren];
+    const visited = new Set<string>(directChildren.map((node) => String(node.id)));
+    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({ node, depth: 1 }));
+
+    while (queue.length > 0) {
+      const { node, depth: currentDepth } = queue.shift()!;
+      if (currentDepth >= depth) {
+        continue;
+      }
+
+      const nested = await this.nodes.where('parentId').equals(node.id).sortBy('createdAt');
+      if (!nested || nested.length === 0) {
+        continue;
+      }
+
+      for (const child of nested) {
+        const key = String(child.id);
+        if (!visited.has(key)) {
+          visited.add(key);
+          result.push(child);
+          queue.push({ node: child, depth: currentDepth + 1 });
+        }
+      }
+    }
+
+    console.log('[CoreDB.listChildren] returning with descendants', {
+      parentId: String(parentId),
+      requestedDepth: depth,
+      total: result.length,
+      sample: result.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+    });
+    return result;
   }
 
   /**
@@ -663,6 +731,7 @@ export class CoreDB extends Dexie {
   async duplicateSubtreeWithMap(
     sourceRootId: NodeId,
     targetParentId: NodeId,
+    options?: { rootNameOverride?: string },
   ): Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }> {
     const sourceRoot = await this.nodes.get(sourceRootId);
     if (!sourceRoot) {
@@ -724,6 +793,10 @@ export class CoreDB extends Dexie {
         id: newNodeId,
         parentId: newParentId,
         depth: newDepth,
+        name:
+          originalNode.id === sourceRootId && options?.rootNameOverride
+            ? options.rootNameOverride
+            : originalNode.name,
         createdAt: Date.now(),
         updatedAt: Date.now(),
         version: 1,
@@ -736,7 +809,7 @@ export class CoreDB extends Dexie {
     return { newRootId, idMap: idMapping };
   }
 
-  // Legacy restoreFromTrash removed. Use CommandProcessor.recoverFromTrash with holder-based model.
+  // Legacy restoreFromTrash removed. Use CommandProcessor.restoreFromTrash with holder-based model.
 
   /**
    * Paste nodes with correct depth calculation
@@ -964,4 +1037,8 @@ export class CoreDB extends Dexie {
   static resetInstance(): void {
     SingletonMixin.terminate(CoreDB.name);
   }
+}
+
+function isBulkError(error: unknown): error is BulkError {
+  return error instanceof Dexie.BulkError;
 }

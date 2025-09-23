@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../envelope.util.js';
 import type { PayloadOf, ResultOf } from '../registry.types.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
 
 describe('CommandRegistry types: envelope inference', () => {
   it('infers payload type from kind (moveNodes)', () => {
@@ -16,8 +16,8 @@ describe('CommandRegistry types: envelope inference', () => {
   });
 
   it('infers payload type from kind (undo/redo)', () => {
-    const undoEnv = createEnvelope('undo', { groupId: 'g1' as unknown as string } as PayloadOf<'undo'>);
-    const redoEnv = createEnvelope('redo', { groupId: 'g2' as unknown as string } as PayloadOf<'redo'>);
+    const undoEnv = createEnvelope('undo', { groupId: 'g1' } satisfies PayloadOf<'undo'>);
+    const redoEnv = createEnvelope('redo', { groupId: 'g2' } satisfies PayloadOf<'redo'>);
     expectTypeOf(undoEnv.payload).toEqualTypeOf<PayloadOf<'undo'>>();
     expectTypeOf(redoEnv.payload).toEqualTypeOf<PayloadOf<'redo'>>();
   });
@@ -35,7 +35,7 @@ describe('CommandRegistry types: envelope inference', () => {
         nodes: {} as Record<NodeId, unknown>,
         nodeIds: [] as NodeId[],
         toParentId: 'p' as NodeId,
-      } as PayloadOf<'pasteNodes'>,
+      },
       { commandId: 'c1', groupId: 'g1', sourceViewId: 'view-1' },
     );
     expectTypeOf(env.payload).toEqualTypeOf<PayloadOf<'pasteNodes'>>();
@@ -43,22 +43,28 @@ describe('CommandRegistry types: envelope inference', () => {
 
   it('includes working copy lifecycle and trash ops in CommandMap', () => {
     // Working copy lifecycle
-    const c1 = createEnvelope('createWorkingCopyForCreate', {
-      workingCopyOf: 'n1' as any,
-      parentId: 'p1' as any,
-      name: 'x',
-      description: 'd',
-      nodeType: 'folder' as any,
-    } as PayloadOf<'createWorkingCopyForCreate'>);
+    const c1 = createEnvelope(
+      'createWorkingCopyForCreate',
+      {
+        workingCopyOf: 'n1' as NodeId,
+        parentId: 'p1' as NodeId,
+        name: 'x',
+        description: 'd',
+        nodeType: 'folder' as NodeType,
+      } satisfies PayloadOf<'createWorkingCopyForCreate'>,
+    );
     expectTypeOf(c1.payload).toEqualTypeOf<PayloadOf<'createWorkingCopyForCreate'>>();
 
     // Trash related
-    const mt = createEnvelope('moveToTrash', { nodeIds: [] as any } as PayloadOf<'moveToTrash'>);
+    const mt = createEnvelope('moveToTrash', { nodeIds: [] as NodeId[] } satisfies PayloadOf<'moveToTrash'>);
     expectTypeOf(mt.payload).toEqualTypeOf<PayloadOf<'moveToTrash'>>();
 
-    const rt = createEnvelope('recoverFromTrash', {
-      nodeIds: [] as any,
-    } as PayloadOf<'recoverFromTrash'>);
-    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'recoverFromTrash'>>();
+    const rt = createEnvelope(
+      'restoreFromTrash',
+      {
+        nodeIds: [] as NodeId[],
+      } satisfies PayloadOf<'restoreFromTrash'>,
+    );
+    expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'restoreFromTrash'>>();
   });
 });

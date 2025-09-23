@@ -1,5 +1,11 @@
 import * as React from 'react';
 import { CrossViewStyles } from '../sync/CrossViewStyles.js';
+import type { Id } from '../sync/CrossViewStyles.js';
+
+const logCrossHighlightWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[useCrossHighlightSync]', message, error);
+};
 
 export interface UseCrossHighlightSyncOptions {
   datasetId: string;
@@ -10,9 +16,22 @@ export interface UseCrossHighlightSyncOptions {
 export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: UseCrossHighlightSyncOptions) {
   const [, force] = React.useReducer((x) => x + 1, 0);
 
+  const toFeatureId = React.useCallback((value: unknown): Id | null => {
+    if (typeof value === 'string' || typeof value === 'number') {
+      return value;
+    }
+    return null;
+  }, []);
+
   React.useEffect(() => {
     const unsub = CrossViewStyles.subscribe(datasetId, () => force());
-    return () => { try { (unsub as any)(); } catch {} };
+    return () => {
+      try {
+        unsub();
+      } catch (error) {
+        logCrossHighlightWarning('Failed to unsubscribe CrossViewStyles listener', error);
+      }
+    };
   }, [datasetId]);
 
   const rowSets = React.useMemo(() => CrossViewStyles.getRowSets(datasetId), [datasetId, force]);
@@ -26,7 +45,7 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
     draggingRows: rowSets.dragging,
     dropTargetRows: rowSets.dropTarget,
     onRowHover: (row: any, rowId: string | number) => {
-      CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set([rowId]));
+      CrossViewStyles.setState(datasetId, 'rows', 'hovered', new Set<Id>([rowId]));
       CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'row', id: rowId, data: row });
     },
     onRowLeave: (_row: any, _rowId: string | number) => {
@@ -42,9 +61,9 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
     return {
       ...(acc || {}),
       onHover: (info: any) => {
-        const fid = info?.object?.id;
+        const fid = toFeatureId(info?.object?.id);
         if (fid != null) {
-          CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set([fid]));
+          CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
           CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'feature', id: fid, data: info.object?.properties });
         } else {
           CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set());
@@ -52,29 +71,34 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
         }
       },
       onClick: (info: any) => {
-        const fid = info?.object?.id;
+        const fid = toFeatureId(info?.object?.id);
         if (fid != null) {
-          CrossViewStyles.setState(datasetId, 'features', 'selected', new Set([fid]));
+          CrossViewStyles.setState(datasetId, 'features', 'selected', new Set<Id>([fid]));
         }
       },
     };
-  }, [datasetId, withDeckAccessors]);
+  }, [datasetId, toFeatureId, withDeckAccessors]);
 
   // MapLibre helpers
   function bindMapLibre(map: any, sourceId: string, layerIds: string[], opts?: { selectOnClick?: boolean }) {
     const onMove = (e: any) => {
       const f = e.features?.[0];
-      if (!f?.id) { CrossViewStyles.emitBlur(datasetId); return; }
-      CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set([f.id as any]));
-      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'feature', id: f.id as any, data: f.properties });
+      const fid = toFeatureId(f?.id);
+      if (fid == null) {
+        CrossViewStyles.emitBlur(datasetId);
+        return;
+      }
+      CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
+      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'feature', id: fid, data: f.properties });
       CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
     };
     const onLeave = () => { CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set()); CrossViewStyles.emitBlur(datasetId); CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId); };
     const onClick = (e: any) => {
       if (!opts?.selectOnClick) return;
       const f = e.features?.[0];
-      if (!f?.id) return;
-      CrossViewStyles.setState(datasetId, 'features', 'selected', new Set([f.id as any]));
+      const fid = toFeatureId(f?.id);
+      if (fid == null) return;
+      CrossViewStyles.setState(datasetId, 'features', 'selected', new Set<Id>([fid]));
       CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
     };
     layerIds.forEach((lid) => {
@@ -84,9 +108,21 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
     });
     return () => {
       layerIds.forEach((lid) => {
-        try { map.off('mousemove', lid, onMove); } catch {}
-        try { map.off('mouseleave', lid, onLeave); } catch {}
-        try { map.off('click', lid, onClick); } catch {}
+        try {
+          map.off('mousemove', lid, onMove);
+        } catch (error) {
+          logCrossHighlightWarning(`Failed to detach mousemove handler for ${lid}`, error);
+        }
+        try {
+          map.off('mouseleave', lid, onLeave);
+        } catch (error) {
+          logCrossHighlightWarning(`Failed to detach mouseleave handler for ${lid}`, error);
+        }
+        try {
+          map.off('click', lid, onClick);
+        } catch (error) {
+          logCrossHighlightWarning(`Failed to detach click handler for ${lid}`, error);
+        }
       });
     };
   }

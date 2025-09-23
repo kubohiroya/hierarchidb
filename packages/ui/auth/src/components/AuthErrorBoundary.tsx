@@ -41,7 +41,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
     //}
 
     // During development, if it's an HMR-related error, try to recover
-    if ((import.meta as any).hot && error.message.includes('SimpleBFFAuthProvider')) {
+    if (import.meta.hot && error.message.includes('SimpleBFFAuthProvider')) {
       // if (import.meta.env.DEV) {
       console.log('HMR-related auth error detected, attempting recovery...');
       // }
@@ -59,7 +59,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       // During HMR in development, show a simpler message
-      if ((import.meta as any).hot && this.state.error?.message.includes('SimpleBFFAuthProvider')) {
+      if (import.meta.hot && this.state.error?.message.includes('SimpleBFFAuthProvider')) {
         return (
           <Box
             sx={{
@@ -101,7 +101,7 @@ export class AuthErrorBoundary extends Component<Props, State> {
           <Typography variant="body1" paragraph>
             An error occurred with the authentication system.
           </Typography>
-          {(globalThis as any)?.import?.meta?.env?.DEV && (
+          {import.meta.env.DEV && (
             <Typography
               variant="body2"
               color="text.secondary"

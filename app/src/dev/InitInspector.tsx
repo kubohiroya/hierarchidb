@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 
 type Status = 'unknown' | 'starting' | 'ready' | 'error';
+const WORKER_INIT_EVENT = 'hierarchidb-worker-init-complete' as const;
+
+type IndexedDBWithDatabases = IDBFactory & {
+  databases?: () => Promise<Array<{ name?: string | null }>>;
+};
 
 export const InitInspector: React.FC = () => {
   const [state, setState] = useState({
@@ -15,27 +20,38 @@ export const InitInspector: React.FC = () => {
     route: typeof location !== 'undefined' ? location.pathname + location.search : '',
   });
 
+  const logDevWarning = (message: string, error?: unknown) => {
+    if (typeof console === 'undefined') return;
+    if (typeof error === 'undefined') {
+      console.warn(`[InitInspector] ${message}`);
+    } else {
+      console.warn(`[InitInspector] ${message}`, error);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
     const update = async () => {
       try {
-        const mod = await import('../WorkerAPIClient.js');
-        const initMod = await import('../client.js');
-        const clientReady = mod.WorkerAPIClient.isReady();
-        const hasInstance = !!mod['WorkerAPIClient'] && (mod as any)['WorkerAPIClient']['getRawWorkerInstance']?.() != null;
-        const workerState = (mod as any)['WorkerAPIClient']?.['state'] ?? 'unknown';
-        const initCompleteFlag = typeof (initMod as any)?.isWorkerInitCompleted === 'function' ? Boolean((initMod as any).isWorkerInitCompleted()) : false;
+        const [{ WorkerAPIClient }, { isWorkerInitCompleted }] = await Promise.all([
+          import('../WorkerAPIClient.js'),
+          import('../client.js'),
+        ]);
+        const clientReady = WorkerAPIClient.isReady();
+        const hasInstance = WorkerAPIClient.getRawWorkerInstance() != null;
+        const initCompleteFlag = isWorkerInitCompleted();
         if (!mounted) return;
         setState(s => ({
           ...s,
           clientReady,
           workerHasInstance: hasInstance,
           // state is private; mirror via isReady/hasInstance into coarse state
-          workerState: clientReady ? 'initialized' : (hasInstance ? 'initializing' : 'uninitialized'),
+          workerState: clientReady ? 'initialized' : hasInstance ? 'initializing' : 'uninitialized',
           initCompleteFlag,
           route: location.pathname + location.search,
         }));
-      } catch {
+      } catch (error) {
+        logDevWarning('Failed to refresh worker init state', error);
       }
     };
     update();
@@ -46,15 +62,17 @@ export const InitInspector: React.FC = () => {
       channelMessageCount: s.channelMessageCount + 1,
     }));
     try {
-      window.addEventListener('hierarchidb-worker-init-complete', onEvt as any);
-    } catch {
+      window.addEventListener(WORKER_INIT_EVENT, onEvt);
+    } catch (error) {
+      logDevWarning('Failed to register worker init event listener', error);
     }
     return () => {
       mounted = false;
       window.clearInterval(id);
       try {
-        window.removeEventListener('hierarchidb-worker-init-complete', onEvt as any);
-      } catch {
+        window.removeEventListener(WORKER_INIT_EVENT, onEvt);
+      } catch (error) {
+        logDevWarning('Failed to remove worker init event listener', error);
       }
       ;
     };
@@ -71,7 +89,8 @@ export const InitInspector: React.FC = () => {
   const forceEvent = () => {
     try {
       window.dispatchEvent(new Event('hierarchidb-worker-init-complete'));
-    } catch {
+    } catch (error) {
+      logDevWarning('Failed to dispatch synthetic init event', error);
     }
   };
 
@@ -90,32 +109,38 @@ export const InitInspector: React.FC = () => {
   const clearCaches = async () => {
     try {
       localStorage.clear();
-    } catch {
+    } catch (error) {
+      logDevWarning('Failed to clear localStorage', error);
     }
     try {
       sessionStorage.clear();
-    } catch {
+    } catch (error) {
+      logDevWarning('Failed to clear sessionStorage', error);
     }
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
-    } catch {
+    } catch (error) {
+      logDevWarning('Failed to purge Cache Storage entries', error);
     }
     try {
       // Some browsers expose indexedDB.databases() as a function; feature-detect safely
-      const hasDatabasesFn = typeof (indexedDB as any)?.databases === 'function';
-      if (indexedDB && hasDatabasesFn) {
-        const dbs = await (indexedDB as any).databases();
+      const indexedDBWithExtras = indexedDB as IndexedDBWithDatabases;
+      const hasDatabasesFn = typeof indexedDBWithExtras?.databases === 'function';
+      if (indexedDB && hasDatabasesFn && indexedDBWithExtras.databases) {
+        const dbs = await indexedDBWithExtras.databases();
         for (const db of dbs) {
           try {
             if (db.name) indexedDB.deleteDatabase(db.name);
-          } catch {
+          } catch (error) {
+            logDevWarning(`Failed to delete IndexedDB database ${db.name ?? '<unknown>'}`, error);
           }
         }
       }
-    } catch {
+    } catch (error) {
+      logDevWarning('Failed to enumerate IndexedDB databases for cleanup', error);
     }
     console.log('[InitInspector] caches cleared. Reloading…');
     location.replace(location.pathname + '?nocache=' + Date.now());

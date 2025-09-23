@@ -41,7 +41,7 @@ describe('filterNodesBySearch + getNodePath', () => {
   });
 
   it('produces a readable path', () => {
-    const path = getNodePath('c', nodes, ' / ');
+    const path = getNodePath(toNodeId('c'), nodes, ' / ');
     expect(path).toBe('root / alpha / charlie');
   });
 });

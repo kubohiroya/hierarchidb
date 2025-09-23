@@ -1,8 +1,10 @@
 export * from './ImportExportService.js';
 export * from './ports.js';
 export * from './capability.js';
-export const featureDefinition = {
-  manifest: { name: '@hierarchidb/import-export', provides: ['import', 'export'] },
-  init() {
-  },
-};
+export class FeatureDefinition {
+  static readonly manifest = { name: '@hierarchidb/import-export', provides: ['import', 'export'] };
+
+  static init(): void {
+    // no-op
+  }
+}

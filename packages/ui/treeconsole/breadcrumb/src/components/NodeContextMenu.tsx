@@ -12,6 +12,11 @@ type CreateMenuEntry = { key: string; nodeType: string; label: string; icon?: { 
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 
+const logNodeContextMenuWarning = (message: string, error: unknown): void => {
+  if (typeof console === 'undefined') return;
+  console.warn('[NodeContextMenu]', message, error);
+};
+
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -101,7 +106,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     try {
       const el = (globalThis?.document?.activeElement ?? null) as HTMLElement | null;
       el?.blur?.();
-    } catch {}
+    } catch (error) {
+      logNodeContextMenuWarning('Failed to blur active element', error);
+    }
   };
 
   const handleOpenClick = () => {
@@ -175,7 +182,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       if (!anchorEl) return null;
       const doc = anchorEl.ownerDocument || document;
       return doc.contains(anchorEl) ? anchorEl : null;
-    } catch {
+    } catch (error) {
+      logNodeContextMenuWarning('Failed to validate context menu anchor', error);
       return null;
     }
   })();
@@ -201,7 +209,9 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         const items = builder(treeId) as CreateMenuEntry[];
         return (items || []).map((i) => ({ type: i.nodeType, label: i.label, icon: i.icon }));
       }
-    } catch {}
+    } catch (error) {
+      logNodeContextMenuWarning('Failed to build dynamic create menu items', error);
+    }
     // Fallback minimal entries
     return [
       { type: 'folder', label: 'Folder', icon: { muiIconName: 'Folder' } },

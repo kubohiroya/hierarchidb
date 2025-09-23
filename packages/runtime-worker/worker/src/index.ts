@@ -11,7 +11,7 @@ import { CoreDB } from './services/CoreDB.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
-import { PluginDefinition } from '@hierarchidb/common-type';
+import { NodeId, NodeType, PluginDefinition, Tree, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService.js';
@@ -23,6 +23,22 @@ import { bootstrapFeatures } from './services/FeatureBootstrap.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
+
+interface PerformanceMemoryStats {
+  usedJSHeapSize?: number;
+  jsHeapSizeLimit?: number;
+}
+
+const readHeapStats = (): { used: number; limit: number } => {
+  const perf = typeof globalThis !== 'undefined'
+    ? (globalThis as { performance?: Performance & { memory?: PerformanceMemoryStats } }).performance
+    : undefined;
+  const memory = perf?.memory;
+  return {
+    used: memory?.usedJSHeapSize ?? 0,
+    limit: memory?.jsHeapSizeLimit ?? 0,
+  };
+};
 
 export class WorkerService{
   private readonly startTime = Date.now();
@@ -56,7 +72,7 @@ export class WorkerService{
       }
       // Tag service
       const tagDBPort = new TagDBPortCoreDBAdapter(coreDB);
-      const tagService: TagAPI = await TagService.getSingleton(tagDBPort as any);
+      const tagService: TagAPI = await TagService.getSingleton(tagDBPort);
 
       // Query/Mutation services
       const commandProcessor: CommandProcessor = await CommandProcessor.getSingleton(coreDB);
@@ -79,7 +95,7 @@ export class WorkerService{
 
       // Import/Export services
       const iePort = new ImportExportDBPortCoreDBAdapter(coreDB);
-      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort as any);
+      const importExportService: ImportExportAPI = await ImportExportService.getSingleton(iePort);
 
       // WorkingCopy service (ephemeral-backed)
       const workingCopyService: WorkingCopyAPI = new WorkingCopyService(
@@ -115,7 +131,19 @@ export class WorkerService{
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
   ) {
+    this.queryApiFacade = {
+      getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
+      listTrees: () => this.queryService.listTrees(),
+      getNode: (nodeId: NodeId) => this.queryService.getNode(nodeId),
+      listChildren: (parentId: NodeId) => this.queryService.listChildren(parentId),
+      listDescendants: (nodeId: NodeId, maxDepth?: number) =>
+        this.queryService.listDescendants(nodeId, maxDepth),
+      listAncestors: (nodeId: NodeId) => this.queryService.listAncestors(nodeId),
+      searchNodes: (options) => this.queryService.searchNodes(options),
+    } satisfies TreeQueryAPI;
   }
+
+  private readonly queryApiFacade: TreeQueryAPI;
 
   ping(): { response: 'pong'; timestamp: number } {
     console.log('[WorkerAPIImpl] ping() called');
@@ -138,8 +166,8 @@ export class WorkerService{
     // Initialization is handled in getSingleton; nothing to do.
   }
 
-  getQueryAPI() {
-    return this.queryService;
+  getQueryAPI(): TreeQueryAPI {
+    return this.queryApiFacade;
   }
 
   getMutationAPI() {
@@ -192,13 +220,13 @@ export class WorkerService{
         return { successful: [], failed: [], summary: { total: 0, success: 0, failed: 0 } };
       },
       async resetPlugin(options) {
-        return { success: false, nodeType: options.nodeType, deletedEntities: {} } as any;
+        return { success: false, nodeType: options.nodeType, deletedEntities: {} };
       },
       async deletePlugin(nodeType) {
         return { success: false, nodeType };
       },
       async resetSystem() {
-        return { success: false, nodeType: 'folder' as any, deletedEntities: {} } as any;
+        return { success: false, nodeType: 'folder' as NodeType, deletedEntities: {} };
       },
     };
   }
@@ -223,12 +251,11 @@ export class WorkerService{
     memory: { used: number; limit: number };
     uptime: number;
   }> {
-    const used = (globalThis as any).performance?.memory?.usedJSHeapSize ?? 0;
-    const limit = (globalThis as any).performance?.memory?.jsHeapSizeLimit ?? 0;
+    const { used, limit } = readHeapStats();
     return {
       databases: {
-        coreDB: (this.coreDB as any).isOpen?.() ?? true,
-        ephemeralDB: (this.ephemeralDB as any).isOpen?.() ?? true,
+        coreDB: this.coreDB.isOpen?.() ?? true,
+        ephemeralDB: this.ephemeralDB.isOpen?.() ?? true,
       },
       services: {
         query: !!this.queryService,

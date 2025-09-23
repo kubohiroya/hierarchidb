@@ -9,25 +9,101 @@
     "moduleResolution": "Node16",
     "resolveJsonModule": true,
     "baseUrl": ".",
-    // Override workspace path mappings to avoid pulling source from other packages during app typecheck.
-    // Keep only local alias and resolve workspace deps via their published type entries in package.json.
     "paths": {
-      "~/*": ["src/*"],
-      "@hierarchidb/runtime-worker": ["../packages/runtime-worker/worker/dist"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../packages/runtime-worker/worker-bootstrap/dist"],
-      "@hierarchidb/ui-auth": ["../packages/ui/auth/dist"],
-      "@hierarchidb/ui-icon": ["../packages/ui/icon/dist"],
-      "@hierarchidb/location-plugin/worker": ["../packages/node-type/location-plugin/dist/worker"],
-      "@hierarchidb/location-plugin/services": ["../packages/node-type/location-plugin/dist/services"],
-      "@hierarchidb/linker-plugin/services": ["../packages/node-type/linker-plugin/dist/services"],
-      "@hierarchidb/route-plugin/worker": ["../packages/node-type/route-plugin/dist/worker"],
-      "@hierarchidb/timeline-plugin/worker": ["../packages/node-type/timeline-plugin/dist/worker"]
+      "~/*": [
+        "src/*"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../packages/runtime-worker/worker/dist"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../packages/runtime-worker/worker-bootstrap/dist"
+      ],
+      "@hierarchidb/common-api": [
+        "../packages/common/api/dist"
+      ],
+      "@hierarchidb/ui-dialog": [
+        "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "../packages/ui/treeconsole/treetable/dist"
+      ],
+      "@hierarchidb/ui-auth": [
+        "../packages/ui/auth/dist"
+      ],
+      "@hierarchidb/ui-icon": [
+        "../packages/ui/icon/dist"
+      ],
+      "@hierarchidb/plugins-location-plugin/worker": [
+        "../packages/plugins/location-plugin/dist/worker"
+      ],
+      "@hierarchidb/plugins-location-plugin/services": [
+        "../packages/plugins/location-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-linker-plugin/services": [
+        "../packages/plugins/linker-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-route-plugin/worker": [
+        "../packages/plugins/route-plugin/dist/worker"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/worker": [
+        "../packages/plugins/timeline-plugin/dist/worker"
+      ],
+      "@hierarchidb/plugins-basemap-plugin/database": [
+        "../packages/plugins/basemap-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-resolver-plugin/database": [
+        "../packages/plugins/resolver-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-route-plugin/database": [
+        "../packages/plugins/route-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-shape-plugin/services": [
+        "../packages/plugins/shape-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-spreadsheet-plugin/database": [
+        "../packages/plugins/spreadsheet-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-styler-plugin/services": [
+        "../packages/plugins/styler-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/services": [
+        "../packages/plugins/timeline-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-basemap-plugin/database": [
+        "../packages/plugins/basemap-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-linker-plugin/services": [
+        "../packages/plugins/linker-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-location-plugin/services": [
+        "../packages/plugins/location-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-resolver-plugin/database": [
+        "../packages/plugins/resolver-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-route-plugin/database": [
+        "../packages/plugins/route-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-shape-plugin/services": [
+        "../packages/plugins/shape-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-spreadsheet-plugin/database": [
+        "../packages/plugins/spreadsheet-plugin/src/database/index.ts"
+      ],
+      "@hierarchidb/plugins-styler-plugin/services": [
+        "../packages/plugins/styler-plugin/src/services/index.ts"
+      ],
+      "@hierarchidb/plugins-timeline-plugin/services": [
+        "../packages/plugins/timeline-plugin/src/services/index.ts"
+      ]
     },
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    ".generated/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
