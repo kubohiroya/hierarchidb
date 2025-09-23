@@ -3,7 +3,7 @@ import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 
 export interface PluginDialogFooterProps {
-  intent: 'create' | 'edit';
+  mode: 'create' | 'edit';
   canCommit: boolean;
   onSaveDraft?: () => void;
   saveDraftLabel?: string;
@@ -17,7 +17,7 @@ const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) =>
 };
 
 export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
-  intent,
+  mode,
   canCommit,
   onSaveDraft,
   saveDraftLabel = 'Save Draft',
@@ -27,7 +27,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
 
-  const commitLabel = intent === 'create' ? 'Create' : 'Save';
+  const commitLabel = mode === 'create' ? 'Create' : 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
   const canNavigateBack = !isFirstStep && (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) || ctx.enabledStepIndices.length === 0);

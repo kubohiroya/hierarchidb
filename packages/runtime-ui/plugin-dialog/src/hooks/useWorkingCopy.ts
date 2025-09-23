@@ -5,15 +5,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
-import type { WorkerAPI, WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
-export interface WorkingCopyData {
+export type WorkingCopyData = Partial<{
   treeNodeId: NodeId;
   name: string;
   description?: string;
   data?: Record<string, unknown>;
   isDraft?: boolean;
-}
+}>;
 
 export interface UseWorkingCopyOptions {
   mode: 'create' | 'edit';
@@ -21,8 +21,7 @@ export interface UseWorkingCopyOptions {
   nodeId?: NodeId;
   parentId?: NodeId;
   treeId: TreeId;
-  /** Optional WorkerAPI provided by host component; if omitted, falls back to app hook. */
-  client?: WorkerAPI | null;
+  workerAPI: WorkerAPI|null;
 }
 
 export interface UseWorkingCopyResult {
@@ -45,10 +44,10 @@ export function useWorkingCopy({
                                  nodeId,
                                  parentId,
                                  treeId,
-                                 client,
+                                 workerAPI,
                                }: UseWorkingCopyOptions): UseWorkingCopyResult {
-  const [workingCopy, setWorkingCopy] = useState<WorkingCopyData | null>(null);
-  const [originalCopy, setOriginalCopy] = useState<WorkingCopyData | null>(null);
+  const [workingCopy, setWorkingCopy] = useState<WorkingCopyData>({});
+  const [originalCopy, setOriginalCopy] = useState<WorkingCopyData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -68,32 +67,26 @@ export function useWorkingCopy({
     };
   }, [nodeId]);
 
-  // Resolve WorkerAPI client provided by host (supports direct WorkerAPI only in this hook)
-  const getClient = async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
-    // Prefer explicitly provided client from host (valid React hook context)
-    let api: WorkerAPI | null = client ?? null;
-    // No fallback to calling hooks here: hooks must be invoked only by the host component.
-    if (!api) throw new Error('Worker client not initialized');
-    const wc = await api.getWorkingCopyAPI();
-    const query = await api.getQueryAPI();
-    return { wc, query, raw: api };
-  };
-
   // Initialize working copy (wait until client is available)
   useEffect(() => {
     async function initializeWorkingCopy() {
       // Defer until host provided Worker client is ready
-      if (!client) return;
+
       setLoading(true);
       setError(null);
 
       try {
-      const { wc: wcAPI } = await getClient();
+        console.log("[initialize-working-copy] 0");
+        const workingCopyAPI = workerAPI?.getWorkingCopyAPI();
+        if (!workingCopyAPI) {
+          throw new Error('WorkingCopyAPI not available from WorkerAPI');
+        }
+        if (mode === 'edit' && nodeId) {
+          // Create WC from existing node and load it
+          console.log("[initialize-working-copy] edit");
 
-      if (mode === 'edit' && nodeId) {
-        // Create WC from existing node and load it
-        await wcAPI.createWorkingCopyFromNode(nodeId);
-          const wc = await wcAPI.getWorkingCopy(nodeId);
+          await workingCopyAPI.createWorkingCopyFromNode(nodeId);
+          const wc = await workingCopyAPI.getWorkingCopy(nodeId);
           if (!wc) throw new Error('Failed to create working copy');
           const copy = toWorkingCopyData(wc);
           setWorkingCopy(copy);
@@ -103,7 +96,8 @@ export function useWorkingCopy({
 
         if (mode === 'create') {
           if (nodeId) {
-            const existing = await wcAPI.getWorkingCopy(nodeId);
+            console.log("[initialize-working-copy] create");
+            const existing = await workingCopyAPI.getWorkingCopy(nodeId);
             if (existing) {
               const copy = toWorkingCopyData(existing);
               setWorkingCopy(copy);
@@ -114,7 +108,7 @@ export function useWorkingCopy({
 
           if (parentId) {
             // Create a draft WC under the parent when one does not exist yet
-          const wcNode = await wcAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, { name: '' });
+            const wcNode = await workingCopyAPI.createDraftWorkingCopy(nodeType as NodeType, parentId, { name: '' });
             const copy = toWorkingCopyData(wcNode);
             setWorkingCopy(copy);
             setOriginalCopy(copy);
@@ -130,9 +124,8 @@ export function useWorkingCopy({
         setLoading(false);
       }
     }
-
     initializeWorkingCopy();
-  }, [client, mode, nodeId, parentId, nodeType, treeId, toWorkingCopyData]);
+  }, [workerAPI, mode, nodeId, parentId, nodeType, treeId, toWorkingCopyData]);
 
   // Check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {
@@ -143,21 +136,17 @@ export function useWorkingCopy({
   // Update working copy
   const updateWorkingCopy = useCallback((data: Partial<WorkingCopyData>) => {
     setWorkingCopy(prev => {
-      if (!prev) return null;
+      if (!prev) return {};
       return { ...prev, ...data };
     });
   }, []);
 
   // Save working copy
-  const saveWorkingCopy = useCallback(async (data?: Partial<WorkingCopyData>): Promise<NodeId> => {
-    console.debug("[Folder-create]");
+  const saveWorkingCopy = useCallback(async (data?: WorkingCopyData): Promise<NodeId> => {
     if (!workingCopy) throw new Error('No working copy to save');
-    const finalData = data ? { ...workingCopy, ...data } : workingCopy;
-
+    const finalData = { ...workingCopy, ...data };
     try {
       setLoading(true);
-      const { wc: wcAPI, query } = await getClient();
-
       // Normalize data (convert Set to Array where necessary)
       const normalizedData: Record<string, unknown> = { ...(finalData.data ?? {}) };
       const likedSet = normalizedData['likedNodeIdSet'];
@@ -171,16 +160,19 @@ export function useWorkingCopy({
         description: finalData.description,
         data: normalizedData,
       };
-      await wcAPI.updateWorkingCopy(finalData.treeNodeId, updatePayload as Partial<TreeNode>);
+
+      if(!workerAPI) throw new Error('WorkerAPI not available');
+      if(!finalData.treeNodeId)throw new Error('finalData.treeNodeId is undefined');
+      await workerAPI.getWorkingCopyAPI().updateWorkingCopy(finalData.treeNodeId, updatePayload as Partial<TreeNode>);
 
       // Determine target node id before commit (read holder metadata)
-      const wcNode = await query.getNode(finalData.treeNodeId);
+      const wcNode = await workerAPI.getQueryAPI().getNode(finalData.treeNodeId);
       if (!wcNode) throw new Error('Working copy not found');
-      const holder = await query.getNode(wcNode.parentId);
+      const holder = await workerAPI.getQueryAPI().getNode(wcNode.parentId);
       const targetNodeId: NodeId | undefined = holder?.holderTargetId;
 
       // Commit
-      const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId);
+      const res = await workerAPI.getWorkingCopyAPI().commitWorkingCopy(finalData.treeNodeId);
       if (!res?.success) throw new Error(res?.error || 'Commit failed');
 
       const committedNodeId = (res.node?.id as NodeId | undefined)
@@ -210,13 +202,13 @@ export function useWorkingCopy({
 
   // Discard working copy
   const discardWorkingCopy = useCallback(async () => {
-    if (!workingCopy) return;
+    if (! workingCopy || ! workingCopy.treeNodeId) return;
+    //if(!workingCopy.treeNodeId)throw new Error('workingCopy.treeNodeId is undefined');
     try {
       setLoading(true);
-      const { wc: wcAPI } = await getClient();
-      await wcAPI.discardWorkingCopy(workingCopy.treeNodeId);
-      setWorkingCopy(null);
-      setOriginalCopy(null);
+      await workerAPI?.getWorkingCopyAPI().discardWorkingCopy(workingCopy.treeNodeId);
+      setWorkingCopy({});
+      setOriginalCopy({});
     } catch (err) {
       console.error('Failed to discard working copy:', err);
       throw err;

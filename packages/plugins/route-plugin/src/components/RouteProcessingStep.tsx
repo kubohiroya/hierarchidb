@@ -59,13 +59,13 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     stage: '',
     message: '',
   });
-
+  const version = workingCopy.version? workingCopy.version+ 1:0;
   const handleCategoryChange = (newCategory: RouteCategory) => {
     setCategory(newCategory);
     onUpdate({
       category: newCategory,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -76,7 +76,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     }
     onUpdate({
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -84,7 +84,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     const updates: Partial<RouteWorkingCopy> = {
       [option]: value,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     };
 
     onUpdate(updates);
@@ -149,10 +149,11 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         message: t('base-dialog.processing.completed', 'Route processing completed!'),
       });
 
+    const version = workingCopy.version ? workingCopy.version + 1 : 0;
       // Update working copy with processing results
       onUpdate({
         updatedAt: Date.now(),
-        version: workingCopy.version + 1,
+        version,
       });
 
       onValidationChange(true);

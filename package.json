@@ -113,8 +113,8 @@
     "@biomejs/biome": "^2.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/common-type": "workspace:*",
     "@eslint/js": "^9.34.0",
+    "@hierarchidb/common-type": "workspace:*",
     "@mui/material": "^7.3.2",
     "@playwright/test": "^1.55.0",
     "@storybook/addon-essentials": "9.0.0-alpha.12",
@@ -184,7 +184,7 @@
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@9.14.4",
+  "packageManager": "pnpm@10.17.1",
   "pnpm": {
     "overrides": {
       "@biomejs/biome": "2.2.0",

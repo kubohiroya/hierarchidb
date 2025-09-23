@@ -43,19 +43,20 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
   // Validation logic
   useEffect(() => {
     const isValid =
-      workingCopy.name.trim() !== '' &&
+      (workingCopy.name?.trim() !== '' &&
       workingCopy.routeType &&
       workingCopy.transportModes &&
-      workingCopy.transportModes.length > 0;
+      workingCopy.transportModes.length > 0) ?? false;
 
     onValidationChange(isValid);
   }, [workingCopy.name, workingCopy.routeType, workingCopy.transportModes, onValidationChange]);
 
+  const version = workingCopy.version ? workingCopy.version + 1 : 0;
   const handleTagChange = (tags: TagId[]) => {
     onUpdate({
       tags,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -63,7 +64,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
     onUpdate({
       category,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -71,7 +72,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
     onUpdate({
       name,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -79,7 +80,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
     onUpdate({
       description,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -88,7 +89,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
       routeType,
       routeTypes: [routeType],
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 
@@ -99,7 +100,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
     onUpdate({
       transportModes,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version,
     });
   };
 

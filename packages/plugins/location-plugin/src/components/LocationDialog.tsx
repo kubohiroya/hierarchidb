@@ -136,7 +136,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     onClose();
   }, [discard, onClose]);
 
-  const updateWorkingCopy = useCallback((updates: Partial<LocationWorkingCopy>) => {
+  const updateWorkingCopy = useCallback((updates: LocationWorkingCopy) => {
     setWorkingCopy((prev) => ({ ...prev, ...updates }));
   }, [setWorkingCopy]);
 

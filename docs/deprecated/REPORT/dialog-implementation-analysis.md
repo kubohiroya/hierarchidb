@@ -93,7 +93,7 @@ packages/ui-dialog/
 │   │   ├── StepperDialog.tsx           # マルチステップ基盤
 │   │   └── DraftIndicator.tsx          # ドラフト状態表示
 │   ├── hooks/
-│   │   ├── useWorkingCopy.ts           # ワーキングコピー管理
+│   │   ├── useWorkingCopyDeprecated.ts           # ワーキングコピー管理
 │   │   ├── useDialogState.ts           # ダイアログ状態管理
 │   │   ├── useFormValidation.ts        # バリデーション
 │   │   └── useUnsavedChanges.ts        # 未保存変更検知

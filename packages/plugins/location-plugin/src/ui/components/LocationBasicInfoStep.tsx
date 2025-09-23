@@ -27,7 +27,7 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
     onUpdate({
       tags,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version: workingCopy.version ? workingCopy.version + 1 : 0,
     });
   };
 
@@ -35,7 +35,7 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
     onUpdate({
       category,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version: workingCopy.version ? workingCopy.version + 1 : 0,
     });
   };
 
@@ -43,7 +43,7 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
     onUpdate({
       name,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version: workingCopy.version ? workingCopy.version + 1 : 0,
     });
   };
 
@@ -51,7 +51,7 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({
     onUpdate({
       description,
       updatedAt: Date.now(),
-      version: workingCopy.version + 1,
+      version: workingCopy.version ? workingCopy.version + 1 : 0,
     });
   };
 

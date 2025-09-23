@@ -99,13 +99,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <ListItem>
                   <ListItemText
                     primary="作成日時"
-                    secondary={new Date(entity.createdAt).toLocaleString('ja-JP')}
+                    secondary={entity?.createdAt ? new Date(entity.createdAt).toLocaleString('ja-JP'):'-'}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
                     primary="更新日時"
-                    secondary={new Date(entity.updatedAt).toLocaleString('ja-JP')}
+                    secondary={entity?.updatedAt ? new Date(entity?.updatedAt).toLocaleString('ja-JP'): '-'}
                   />
                 </ListItem>
               </List>
@@ -124,7 +124,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                     並行ダウンロード数
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig.concurrentDownloads}
+                    {entity.processingConfig?.concurrentDownloads}
                   </Typography>
                 </Grid>
                 <Grid size={6}>
@@ -132,7 +132,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                     フィルタリング
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig.enableLocationFiltering ? '有効' : '無効'}
+                    {entity.processingConfig?.enableLocationFiltering ? '有効' : '無効'}
                   </Typography>
                 </Grid>
                 <Grid size={6}>
@@ -140,7 +140,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                     クラスタリング
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig.enableClustering ? '有効' : '無効'}
+                    {entity.processingConfig?.enableClustering ? '有効' : '無効'}
                   </Typography>
                 </Grid>
                 <Grid size={6}>
@@ -148,7 +148,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                     ジオコーディング
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig.enableGeocoding ? '有効' : '無効'}
+                    {entity.processingConfig?.enableGeocoding ? '有効' : '無効'}
                   </Typography>
                 </Grid>
               </Grid>

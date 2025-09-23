@@ -23,10 +23,10 @@ export interface UseWorkingCopyOptions {
   parentId?: string;   // when create
 }
 
-export interface UseWorkingCopyResult<T = any> {
+export interface UseWorkingCopyResult<T> {
   wcId: string | null;
-  workingCopy: T | null;
-  setWorkingCopy: (updater: (prev: T) => T) => void;
+  workingCopy: T;
+  setWorkingCopy: (updater: (prev: T ) => T) => void;
   init: () => Promise<void>;
   commit: () => Promise<void>;
   discard: () => Promise<void>;
@@ -43,11 +43,11 @@ const extractWorkingCopyId = (value: unknown, fallback: string): string => {
   return fallback;
 };
 
-export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorkingCopyResult<T> {
+export function useWorkingCopy<T>(opts: UseWorkingCopyOptions): UseWorkingCopyResult<T> {
   const { nodeType, mode, nodeId, parentId } = opts;
   const useWorker = getWorkerClientHook<WorkerClientProvider>();
   const [wcId, setWcId] = useState<string | null>(null);
-  const [workingCopy, _setWorkingCopy] = useState<T | null>(null);
+  const [workingCopy, setWorkingCopy] = useState<T>({} as T);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const committedRef = useRef(false);
@@ -59,9 +59,11 @@ export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorking
     return wc as unknown as WorkingCopyAPI;
   }, [useWorker]);
 
+  /*
   const setWorkingCopy = useCallback((updater: (prev: T) => T) => {
     _setWorkingCopy((prev) => (prev ? updater(prev) : prev));
   }, []);
+   */
 
   const init = useCallback(async () => {
     setLoading(true);
@@ -70,12 +72,12 @@ export function useWorkingCopy<T = any>(opts: UseWorkingCopyOptions): UseWorking
       const wc = await getAPI();
       if (mode === 'edit' && nodeId) {
         const data = await wc.getWorkingCopy(nodeId);
-        _setWorkingCopy((data ?? null) as T | null);
+        setWorkingCopy(data);
         setWcId(extractWorkingCopyId(data, nodeId));
       } else if (mode === 'create' && parentId) {
         const id = await wc.createDraftWorkingCopy(nodeType, parentId, {});
         const data = await wc.getWorkingCopy(id);
-        _setWorkingCopy((data ?? null) as T | null);
+        setWorkingCopy(data);
         setWcId(id);
       }
     } catch (e) {

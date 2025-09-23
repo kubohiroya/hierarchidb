@@ -24,7 +24,7 @@ import type { BBox, Geometry } from 'geojson';
 // Core Entity Types
 // ================================
 
-export interface ShapeEntity extends PeerEntity {
+export type ShapeEntity = Partial<PeerEntity & {
   // Basic Information (Step 1)
   name: string;
   description?: string;
@@ -56,11 +56,11 @@ export interface ShapeEntity extends PeerEntity {
   createdAt: number;
   updatedAt: number;
   version: number;
-}
+}>
 
 // ShapeWorkingCopy extends the entity with working copy properties
 // To satisfy the WorkingCopy constraint, we need TreeNode properties
-export interface ShapeWorkingCopy extends Omit<ShapeEntity, 'id' | 'nodeId'> {
+export type ShapeWorkingCopy = Partial<{
   // TreeNode required properties (from NodeBase)
   id: NodeId; // NodeId instead of EntityId to match TreeNode
   parentId: NodeId;
@@ -80,7 +80,7 @@ export interface ShapeWorkingCopy extends Omit<ShapeEntity, 'id' | 'nodeId'> {
   // Shape-specific working copy properties
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
-}
+}>;
 
 export interface StepProps {
   workingCopy: Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };

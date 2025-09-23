@@ -23,7 +23,7 @@ import type {
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TagEntity } from '@hierarchidb/common-type';
-import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
+import { PluginStepRegistry } from '../registry/PluginStepRegistry.js';
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import { composeStepConfigs } from '../services/StepComposer.js';
 import { useWorkingCopy } from '../hooks/useWorkingCopy.js';
@@ -40,10 +40,10 @@ import {
 } from '../utils/peerDialogPersistence.js';
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { StepAdapter } from './StepAdapter.js';
 
 export interface PluginDialogControllerOptions {
-  intent: 'create' | 'edit';
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId: NodeId;
@@ -77,19 +77,6 @@ const clampIndex = (index: number, length: number) => {
   return Math.min(Math.max(index, 0), length - 1);
 };
 
-const isWorkerAPI = (value: unknown): value is WorkerAPI => (
-  typeof value === 'object'
-  && value !== null
-  && 'getQueryAPI' in value
-  && typeof (value as { getQueryAPI: unknown }).getQueryAPI === 'function'
-);
-
-const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } => (
-  typeof value === 'object'
-  && value !== null
-  && 'client' in value
-);
-
 const toRecord = (value: unknown): Record<string, unknown> | undefined => (
   typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
 );
@@ -100,7 +87,6 @@ const toStringArray = (value: unknown): string[] => (
 
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
-    intent,
     mode,
     nodeType,
     nodeId,
@@ -116,15 +102,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
 
-  type WorkerRef = WorkerAPI | { client?: WorkerAPI | null } | null;
-  const useClientHook = getWorkerClientHook<WorkerRef>() ?? (() => null);
-  const ref = useClientHook();
-  const client: WorkerAPI | null = useMemo(() => {
-    if (isWorkerAPI(ref)) return ref;
-    if (isWorkerHolder(ref) && ref.client && isWorkerAPI(ref.client)) return ref.client;
-    return null;
-  }, [ref]);
-
+  const workerClientHook: WorkerClientHook<WorkerAPI> = getWorkerClientHook<WorkerAPI>();
+  const workerAPI: WorkerAPI | null = workerClientHook();
   const {
     workingCopy,
     hasUnsavedChanges,
@@ -134,7 +113,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     discardWorkingCopy,
     loading,
     error,
-  } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, client });
+  } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, workerAPI });
 
   const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },
@@ -358,8 +337,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     let disposed = false;
     (async () => {
       try {
-        if (!client) return;
-        const tagAPI = await client.getTagAPI();
+        if (!workerAPI) return;
+        const tagAPI = await workerAPI.getTagAPI();
         const all = await tagAPI.getAllTags();
         if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter((name): name is string => typeof name === 'string'));
         if (mode === 'edit' && nodeId) {
@@ -372,14 +351,14 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       }
     })();
     return () => { disposed = true; };
-  }, [client, nodeId, mode]);
+  }, [workerAPI, nodeId, mode]);
 
   useEffect(() => {
     let disposed = false;
     (async () => {
       try {
-        if (!client || !nodeId) return;
-        const query = await client.getQueryAPI();
+        if (!workerAPI || !nodeId) return;
+        const query = workerAPI.getQueryAPI();
         const node = await query.getNode(nodeId);
         if (!node || disposed) return;
         const nodeData = toRecord((node as unknown as { data?: unknown }).data);
@@ -394,7 +373,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       }
     })();
     return () => { disposed = true; };
-  }, [client, nodeId]);
+  }, [workerAPI, nodeId]);
 
   const [regTick, setRegTick] = useState(0);
   const [hostTick, setHostTick] = useState(0);
@@ -410,36 +389,12 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   }, [nodeType, mode, regTick, hostTick]);
 
   const pluginConfigSteps = useMemo(() => {
-    void regTick;
-    if (mode === 'create') return stepRegistry.getCreateSteps(nodeType);
+    if (mode=== 'create') return stepRegistry.getCreateSteps(nodeType);
     if (mode === 'edit') return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopy?.data);
     return [];
-  }, [mode, nodeType, nodeId, workingCopy?.data, stepRegistry, regTick]);
-
-  const StepAdapter: React.FC<{ cfg: PluginStepConfig }> = useCallback(({ cfg }) => {
-    const [, setValid] = useState<boolean | undefined>();
-    const [, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-      if (typeof cfg.validate === 'function') {
-        Promise.resolve(cfg.validate()).then(res => setValid(!!res)).catch(() => setValid(false));
-      }
-    }, [cfg]);
-
-    return (
-      <>
-        {cfg.componentFactory({
-          mode,
-          nodeId: String(nodeId),
-          parentId: String(pageNodeId),
-          data: workingCopy?.data,
-          onChange: (data: unknown) => updateWorkingCopy({ data: data as Record<string, unknown> }),
-          setValid,
-          setError,
-        })}
-      </>
-    );
-  }, [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]);
+  }, [
+    mode, stepRegistry, nodeType, nodeId, workingCopy?.data,
+  ]);
 
   const steps: DialogStep[] = useMemo(() => {
     const result: DialogStep[] = [];
@@ -470,23 +425,32 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
           label: cfg.label ?? cfg.id,
           optional: !!cfg.optional,
           validate: validateFn ? () => validateFn(workingCopy?.data) : undefined,
-          component: <StepAdapter cfg={cfg} />,
+          component: (
+            <StepAdapter
+              cfg={cfg}
+              mode={mode}
+              nodeId={String(nodeId)}
+              parentId={String(pageNodeId)}
+              data={workingCopy?.data}
+              updateWorkingCopy={updateWorkingCopy}
+            />
+          ),
         });
       });
       return result;
     }
 
     return result.concat(pluginConfigSteps);
-  }, [composedConfigs, basicInfo, tagSuggestions, mode, StepAdapter, pluginConfigSteps, workingCopy?.data]);
+  }, [composedConfigs.hasHostBase, composedConfigs.configs, pluginConfigSteps, basicInfo.name, basicInfo.description, basicInfo.tags, tagSuggestions, mode, nodeId, pageNodeId, workingCopy?.data, updateWorkingCopy]);
 
   const presentation = useMemo(() => getPresentation(nodeType), [nodeType]);
   const icon = useMemo(() => getIconComponent(nodeType), [nodeType]);
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
-    const modeLabel = intent === 'create' ? 'Create' : 'Edit';
+    const modeLabel = mode === 'create' ? 'Create' : 'Edit';
     return `${modeLabel} ${label}`;
-  }, [presentation?.label, nodeType, intent]);
+  }, [presentation?.label, nodeType, mode]);
 
   const [evaluatedState, setEvaluatedState] = useState<{ navigable?: boolean[]; filled?: boolean[] }>({});
   useEffect(() => {
@@ -642,12 +606,12 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
     <PluginDialogFooter
-      intent={intent}
+      mode={mode}
       canCommit={allStepsComplete}
       onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
       disableDraft={!hasUnsavedChanges}
     />
-  ), [intent, allStepsComplete, handleSaveDraft, hasUnsavedChanges]);
+  ), [mode, allStepsComplete, handleSaveDraft, hasUnsavedChanges]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {

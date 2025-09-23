@@ -1,11 +1,11 @@
-import React, { KeyboardEvent, useMemo, useState } from 'react';
+import React, { KeyboardEvent, useMemo, useState, ReactNode } from 'react';
 import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
 
 export interface TagChipsInputProps {
   value?: string[];
   onChange?: (tags: string[]) => void;
   placeholder?: string;
-  label?: string;
+  label?: ReactNode;
   maxTags?: number;
   disabled?: boolean;
   helperText?: string;

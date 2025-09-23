@@ -54,7 +54,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeId: existing.id,
       parentId: 'parent-1' as NodeId,
       treeId: 'tree-1' as TreeId,
-      client,
+      workerAPI: client,
     }));
 
     await waitFor(() => result.current.loading === false);
@@ -74,7 +74,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeId: 'wc-missing' as NodeId,
       parentId: 'parent-2' as NodeId,
       treeId: 'tree-1' as TreeId,
-      client,
+      workerAPI: client,
     }));
 
     await waitFor(() => result.current.loading === false);

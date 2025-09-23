@@ -352,22 +352,14 @@ export function createWorkingCopyFromEntity(
   entity: import('./types.js').ShapeEntity,
 ): import('./types.js').ShapeWorkingCopy {
   const obj = {
-    id: entity.id,
-    nodeId: entity.nodeId,
-    name: entity.name,
-    description: entity.description,
-    dataSourceName: entity.dataSourceName,
-    licenseAgreement: false,
+    ...entity,
     processingConfig: { ...entity.processingConfig },
     checkboxState: [],
-    selectedCountries: [...entity.selectedCountries],
-    adminLevels: [...entity.adminLevels],
-    urlMetadata: [...entity.urlMetadata],
+    selectedCountries: [...entity.selectedCountries||[]],
+    adminLevels: [...entity.adminLevels||[]],
+    urlMetadata: [...entity.urlMetadata||[]],
     isDraft: false,
-    createdAt: entity.createdAt,
-    updatedAt: entity.updatedAt,
-    version: entity.version,
-  } as const;
+  };
   return obj as unknown as import('./types.js').ShapeWorkingCopy;
 }
 
@@ -378,14 +370,7 @@ export function mapWorkingCopyToUpdates(
   workingCopy: import('./types.js').ShapeWorkingCopy,
 ): Partial<import('./types.js').ShapeEntity> {
   const updates: Partial<import('./types.js').ShapeEntity> = {
-    name: workingCopy.name,
-    description: workingCopy.description,
-    dataSourceName: workingCopy.dataSourceName,
-    processingConfig: workingCopy.processingConfig,
-    selectedCountries: workingCopy.selectedCountries,
-    adminLevels: workingCopy.adminLevels,
-    urlMetadata: workingCopy.urlMetadata,
-    checkboxState: workingCopy.checkboxState,
+    ...workingCopy
   };
   return updates;
 }

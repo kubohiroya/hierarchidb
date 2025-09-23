@@ -80,7 +80,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
     setStepProgress(name, 100, message);
   }, [steps, setStepProgress]);
 
-  const isStepDone = (name: StepName) => steps[name]?.done === true;
+  const isStepDone = useMemo(()=>(name: StepName) => steps[name]?.done === true, [steps]);
 
   const overallProgress = useMemo(() => {
     const list = Object.values(steps);
@@ -109,7 +109,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
     isStepDone,
     overallProgress,
     isAllDone,
-  }), [steps, setStepProgress, markStepDone, isAllDone, overallProgress]);
+  }), [steps, setStepProgress, markStepDone, isStepDone, overallProgress, isAllDone]);
 
   // Global worker-done fail-safe: if INIT_COMPLETE is already set globally or event fires,
   // ensure Step Worker becomes done even if reporter timing races.

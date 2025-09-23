@@ -7,7 +7,7 @@ import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions 
 import { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  GeoBoundaries
-export interface GeoBoundariesRawData {
+export type GeoBoundariesRawData = Partial<{
   geojson?: any;
   shapefile?: Map<string, ArrayBuffer>;
   metadata: {
@@ -15,23 +15,24 @@ export interface GeoBoundariesRawData {
     downloadedAt: string;
     country: string;
     adminLevel: string;
+
     releaseType: 'gbOpen' | 'gbHumanitarian' | 'gbAuthoritative';
-    version: string;
+    version: number;
     format: 'geojson' | 'shapefile' | 'kml' | 'topojson';
     apiResponse?: any;
   };
-}
+}>;
 
 //  GeoBoundaries
-export interface GeoBoundariesProcessedData extends Array<ShapeEntity> {
+export type GeoBoundariesProcessedData = Array<ShapeEntity> & {
   metadata?: {
     source: 'geoboundaries';
     processedAt: string;
     count: number;
-    country: string;
-    adminLevel: string;
-    releaseType: string;
-    version: string;
+    country?: string;
+    adminLevel?: string;
+    releaseType?: string;
+    version: number;
     license?: string;
   };
 }
@@ -178,35 +179,36 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
           properties: {
             ...properties,
             source: 'geoboundaries',
-            country: rawData.metadata.country,
-            adminLevel: rawData.metadata.adminLevel,
-            releaseType: rawData.metadata.releaseType,
-            boundaryYear: rawData.metadata.version,
+            country: rawData.metadata?.country,
+            adminLevel: rawData.metadata?.adminLevel,
+            releaseType: rawData.metadata?.releaseType,
+            boundaryYear: rawData.metadata?.version,
           },
           metadata: {
             source: 'geoboundaries',
             originalIndex: index,
-            downloadedAt: rawData.metadata.downloadedAt,
+            downloadedAt: rawData.metadata?.downloadedAt,
             processedAt: new Date().toISOString(),
-            geoboundariesVersion: rawData.metadata.version,
-            license: rawData.metadata.apiResponse?.licenseDetail || 'Open Data',
+            geoboundariesVersion: rawData.metadata?.version,
+            license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
-        } as ShapeEntity;
+        };
       });
 
+      const version = rawData.metadata? rawData.metadata.version + 1 : 1;
       const result = entities as GeoBoundariesProcessedData;
       result.metadata = {
         source: 'geoboundaries',
         processedAt: new Date().toISOString(),
         count: entities.length,
-        country: rawData.metadata.country,
-        adminLevel: rawData.metadata.adminLevel,
-        releaseType: rawData.metadata.releaseType,
-        version: rawData.metadata.version,
-        license: rawData.metadata.apiResponse?.licenseDetail || 'Open Data',
+        country: rawData.metadata?.country,
+        adminLevel: rawData.metadata?.adminLevel,
+        releaseType: rawData.metadata?.releaseType,
+        version,
+        license: rawData.metadata?.apiResponse?.licenseDetail || 'Open Data',
       };
 
       return result;
