@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
-import type { TreeQueryAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
 // Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
 // Avoid static import to keep this plugin decoupled from host bundling; read from app global if provided
@@ -89,22 +89,20 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
   const toNodeId = (value: string): NodeId => value as NodeId;
   const toTreeId = (value: string): TreeId => value as TreeId;
 
-  const isWorkerAPI = (value: unknown): value is WorkerAPI => {
-    return typeof value === 'object' && value !== null && typeof (value as WorkerAPI).getQueryAPI === 'function';
-  };
-
-  const isWorkerClientHolder = (value: unknown): value is { client?: WorkerAPI | null } => {
-    return typeof value === 'object' && value !== null && 'client' in value;
-  };
-
   const ensureChildren = useCallback(async (parentId: string) => {
     if (cacheRef.current.has(parentId)) return;
     try {
-      const getClient = getWorkerClientHook<any>() || null;
-      const ref = getClient ? getClient() : null;
-      const client = ref && ('getQueryAPI' in ref) ? ref : (ref?.client ?? null);
-      if (!client) return;
-      const query: TreeQueryAPI = await client.getQueryAPI();
+      const hook = getWorkerClientHook<WorkerClientRef>() ?? null;
+      const ref = hook ? hook() : null;
+      if (!ref) return;
+      let query: TreeQueryAPI | null = null;
+      try {
+        const api = ref.getAPI();
+        query = await api.getQueryAPI();
+      } catch {
+        return;
+      }
+      if (!query) return;
       const children = await query.listChildren(toNodeId(parentId));
       cacheRef.current.set(parentId, toRows(children, breadcrumb.length + 1));
     } catch { /* noop */ }
@@ -222,15 +220,16 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     let disposed = false;
     (async () => {
       try {
-        const hook = getWorkerClientHook<WorkerAPI | { client?: WorkerAPI | null }>() ?? null;
+        const hook = getWorkerClientHook<WorkerClientRef>() ?? null;
         const ref = hook ? hook() : null;
-        const client = isWorkerAPI(ref)
-          ? ref
-          : isWorkerClientHolder(ref)
-            ? ref.client ?? null
-            : null;
-        if (!client) return;
-        const query: TreeQueryAPI = await client.getQueryAPI();
+        if (!ref) return;
+        let query: TreeQueryAPI;
+        try {
+          const api = ref.getAPI();
+          query = await api.getQueryAPI();
+        } catch {
+          return;
+        }
         const resourcesTreeId = toTreeId('r');
         const tree = await query.getTree(resourcesTreeId);
         const rootId = tree?.rootId ? String(tree.rootId) : undefined;

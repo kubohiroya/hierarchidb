@@ -40,7 +40,7 @@ import {
 } from '../utils/peerDialogPersistence.js';
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 export interface PluginDialogControllerOptions {
   intent: 'create' | 'edit';
@@ -77,19 +77,6 @@ const clampIndex = (index: number, length: number) => {
   return Math.min(Math.max(index, 0), length - 1);
 };
 
-const isWorkerAPI = (value: unknown): value is WorkerAPI => (
-  typeof value === 'object'
-  && value !== null
-  && 'getQueryAPI' in value
-  && typeof (value as { getQueryAPI: unknown }).getQueryAPI === 'function'
-);
-
-const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } => (
-  typeof value === 'object'
-  && value !== null
-  && 'client' in value
-);
-
 const toRecord = (value: unknown): Record<string, unknown> | undefined => (
   typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
 );
@@ -116,14 +103,9 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
 
-  type WorkerRef = WorkerAPI | { client?: WorkerAPI | null } | null;
-  const useClientHook = getWorkerClientHook<WorkerRef>() ?? (() => null);
+  const useClientHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
   const ref = useClientHook();
-  const client: WorkerAPI | null = useMemo(() => {
-    if (isWorkerAPI(ref)) return ref;
-    if (isWorkerHolder(ref) && ref.client && isWorkerAPI(ref.client)) return ref.client;
-    return null;
-  }, [ref]);
+  const client: WorkerAPI | null = useMemo(() => ref?.client ?? null, [ref]);
 
   const {
     workingCopy,
@@ -134,7 +116,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     discardWorkingCopy,
     loading,
     error,
-  } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, client });
+  } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, workerClient: ref ?? null });
 
   const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },

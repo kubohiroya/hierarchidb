@@ -18,7 +18,7 @@ export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonPr
 
 // UI: App-provided Worker client hook registration (shared for plugins)
 export { registerWorkerClientHook, getWorkerClientHook } from './ui/workerClientHook.js';
-export type { WorkerClientHook } from './ui/workerClientHook.js';
+export type { WorkerClientHook, WorkerClientRef } from './ui/workerClientHook.js';
 
 // Wiring utilities (plugin capability bootstrap)
 export { wirePluginsFromModules } from './wiring/wirePlugins.js';

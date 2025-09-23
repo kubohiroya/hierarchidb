@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerInitializationChannel, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -26,13 +26,15 @@ const logWorkerProviderWarning = (message: string, error: unknown): void => {
   console.warn('[WorkerProvider]', message, error);
 };
 
-type WorkerContextValue = {
+type WorkerStatusState = {
   client: Remote<WorkerAPI> | null;
   isInitialized: boolean;
   initProgress: number;
   initMessage: string;
   error: Error | null;
 };
+
+type WorkerContextValue = WorkerClientRef;
 
 type WorkerProviderProps = {
   children: ReactNode;
@@ -175,7 +177,7 @@ export const WorkerProvider = ({
   renderOverlay = true,
 }: WorkerProviderProps) => {
   const bootProgress = useBootProgressSafe();
-  const [state, setState] = useState<WorkerContextValue>({
+  const [status, setStatus] = useState<WorkerStatusState>({
     client: null,
     isInitialized: false,
     initProgress: 0,
@@ -185,12 +187,22 @@ export const WorkerProvider = ({
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
 
+  const resetState = useCallback(() => {
+    setStatus({
+      client: null,
+      isInitialized: false,
+      initProgress: 0,
+      initMessage: 'Worker初期化を開始しています...',
+      error: null,
+    });
+  }, []);
+
   const finalizeInitialized = useCallback(async () => {
     try {
       bootLog('WorkerProvider finalize');
       const client = await WorkerAPIClient.getSingleton();
       latestProgressRef.current = 100;
-      setState({
+      setStatus({
         client,
         isInitialized: true,
         initProgress: 100,
@@ -199,7 +211,7 @@ export const WorkerProvider = ({
       });
     } catch (error) {
       const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized }));
+      setStatus(prev => ({ ...prev, error: normalized }));
     }
   }, []);
 
@@ -227,7 +239,7 @@ export const WorkerProvider = ({
     initChannelRef.current?.dispose();
     initChannelRef.current = null;
     latestProgressRef.current = 0;
-    setState(prev => ({
+    setStatus(prev => ({
       ...prev,
       error: null,
       initProgress: 0,
@@ -248,7 +260,7 @@ export const WorkerProvider = ({
       await WorkerAPIClient.initialize();
     } catch (error) {
       const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
       return;
     }
 
@@ -261,7 +273,7 @@ export const WorkerProvider = ({
     const rawWorker = WorkerAPIClient.getRawWorkerInstance();
     if (!rawWorker) {
       const normalized = new Error('Worker instance is not available');
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
       return;
     }
 
@@ -273,7 +285,7 @@ export const WorkerProvider = ({
         ? Math.max(0, Math.min(100, data.payload.progress))
         : latestProgressRef.current;
       latestProgressRef.current = progress;
-      setState(prev => ({
+      setStatus(prev => ({
         ...prev,
         initProgress: progress,
         initMessage: message,
@@ -291,7 +303,7 @@ export const WorkerProvider = ({
       await markComplete();
     } catch (error) {
       const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
     } finally {
       rawWorker.removeEventListener('message', progressHandler);
       channel.dispose();
@@ -303,10 +315,32 @@ export const WorkerProvider = ({
     bootLog('WorkerProvider retry requested');
     WorkerAPIClient.reset();
     initCompleted = false;
+    initStarted = false;
     latestProgressRef.current = 0;
+    resetState();
     bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
     void runInitialization();
-  }, [bootProgress, runInitialization]);
+  }, [bootProgress, resetState, runInitialization]);
+
+  const getAPI = useCallback((): Remote<WorkerAPI> => {
+    if (!status.client) {
+      throw new Error('Worker client not initialized');
+    }
+    return status.client;
+  }, [status.client]);
+
+  const reset = useCallback(() => {
+    bootLog('WorkerProvider reset requested');
+    WorkerAPIClient.reset();
+    initCompleted = false;
+    initStarted = false;
+    latestProgressRef.current = 0;
+    resetState();
+  }, [resetState]);
+
+  const initialize = useCallback(async () => {
+    await runInitialization();
+  }, [runInitialization]);
 
   useEffect(() => {
     bootLog('WorkerProvider mount');
@@ -365,15 +399,25 @@ export const WorkerProvider = ({
     };
   }, [markComplete, runInitialization]);
 
-  const contextValue = useMemo<WorkerContextValue>(() => state, [state]);
+  const contextValue = useMemo<WorkerContextValue>(() => ({
+    client: status.client,
+    isInitialized: status.isInitialized,
+    isConnected: Boolean(status.client && status.isInitialized),
+    initProgress: status.initProgress,
+    initMessage: status.initMessage,
+    error: status.error,
+    initialize,
+    reset,
+    getAPI,
+  }), [status, getAPI, initialize, reset]);
 
   return (
     <WorkerContext.Provider value={contextValue}>
-      {renderOverlay && !state.isInitialized && !state.error ? (
-        <InitializingOverlay progress={state.initProgress} message={state.initMessage} />
+      {renderOverlay && !status.isInitialized && !status.error ? (
+        <InitializingOverlay progress={status.initProgress} message={status.initMessage} />
       ) : null}
-      {renderOverlay && state.error ? (
-        <ErrorOverlay error={state.error} onRetry={retryInitialization} />
+      {renderOverlay && status.error ? (
+        <ErrorOverlay error={status.error} onRetry={retryInitialization} />
       ) : null}
       {children}
     </WorkerContext.Provider>
@@ -388,10 +432,6 @@ export const useWorker = (): WorkerContextValue => {
   return context;
 };
 
-export const useWorkerClient = () => {
-  const { client, isInitialized } = useWorker();
-  return {
-    client,
-    isConnected: isInitialized,
-  };
+export const useWorkerClient = (): WorkerContextValue => {
+  return useWorker();
 };

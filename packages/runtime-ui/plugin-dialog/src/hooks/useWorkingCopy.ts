@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 import type { WorkerAPI, WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
+import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 export interface WorkingCopyData {
   treeNodeId: NodeId;
@@ -21,8 +22,8 @@ export interface UseWorkingCopyOptions {
   nodeId?: NodeId;
   parentId?: NodeId;
   treeId: TreeId;
-  /** Optional WorkerAPI provided by host component; if omitted, falls back to app hook. */
-  client?: WorkerAPI | null;
+  /** Optional Worker client holder provided by host component */
+  workerClient?: WorkerClientRef | null;
 }
 
 export interface UseWorkingCopyResult {
@@ -45,7 +46,7 @@ export function useWorkingCopy({
                                  nodeId,
                                  parentId,
                                  treeId,
-                                 client,
+                                 workerClient,
                                }: UseWorkingCopyOptions): UseWorkingCopyResult {
   const [workingCopy, setWorkingCopy] = useState<WorkingCopyData | null>(null);
   const [originalCopy, setOriginalCopy] = useState<WorkingCopyData | null>(null);
@@ -68,22 +69,26 @@ export function useWorkingCopy({
     };
   }, [nodeId]);
 
-  // Resolve WorkerAPI client provided by host (supports direct WorkerAPI only in this hook)
-  const getClient = async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
-    // Prefer explicitly provided client from host (valid React hook context)
-    let api: WorkerAPI | null = client ?? null;
-    // No fallback to calling hooks here: hooks must be invoked only by the host component.
-    if (!api) throw new Error('Worker client not initialized');
+  // Resolve WorkerAPI client provided by host-supplied Worker client holder
+  const getClient = useCallback(async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
+    if (!workerClient) throw new Error('Worker client not initialized');
+    let api: WorkerAPI;
+    try {
+      api = workerClient.getAPI();
+    } catch (error) {
+      const normalized = error instanceof Error ? error : new Error(String(error));
+      throw normalized;
+    }
     const wc = await api.getWorkingCopyAPI();
     const query = await api.getQueryAPI();
     return { wc, query, raw: api };
-  };
+  }, [workerClient]);
 
   // Initialize working copy (wait until client is available)
   useEffect(() => {
     async function initializeWorkingCopy() {
       // Defer until host provided Worker client is ready
-      if (!client) return;
+      if (!workerClient) return;
       setLoading(true);
       setError(null);
 
@@ -132,7 +137,7 @@ export function useWorkingCopy({
     }
 
     initializeWorkingCopy();
-  }, [client, mode, nodeId, parentId, nodeType, treeId, toWorkingCopyData]);
+  }, [workerClient, mode, nodeId, parentId, nodeType, treeId, toWorkingCopyData, getClient]);
 
   // Check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {

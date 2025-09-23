@@ -3,7 +3,7 @@ import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
 import type { ResourceSummary } from './ResourcePicker.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 
 export interface AggregatedListProps {
@@ -13,19 +13,15 @@ export interface AggregatedListProps {
 
 type LinkerNode = TreeNode & { data?: { likedNodeIdSet?: string[] | Set<string> } };
 
-type WorkerClientRef = { client?: WorkerAPI } | WorkerAPI | null;
 function resolveWorkerClient(): WorkerAPI | null {
-  const hook = getWorkerClientHook<WorkerClientRef>() || null;
+  const hook = getWorkerClientHook<WorkerClientRef>() ?? null;
   const ref = hook ? hook() : null;
   if (!ref) return null;
-  if (typeof ref === 'object' && ref !== null && 'getQueryAPI' in ref && typeof (ref as WorkerAPI).getQueryAPI === 'function') {
-    return ref as WorkerAPI;
+  try {
+    return ref.getAPI();
+  } catch {
+    return ref.client ?? null;
   }
-  if (typeof ref === 'object' && ref !== null && 'client' in ref) {
-    const maybeClient = (ref as { client?: WorkerAPI }).client;
-    return maybeClient ?? null;
-  }
-  return null;
 }
 
 export const AggregatedList: React.FC<AggregatedListProps> = ({ selfNodeId, selected }) => {

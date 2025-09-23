@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 type WorkingCopyAPI = {
   createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: any) => Promise<string>;
@@ -10,12 +10,15 @@ type WorkingCopyAPI = {
 
 export function useWorkingCopyApiGetter(): () => Promise<WorkingCopyAPI> {
   return useMemo(() => {
-    const useWorkerAPIClientHook = getWorkerClientHook();
+    const useWorkerAPIClientHook = getWorkerClientHook<WorkerClientRef>();
     return async (): Promise<WorkingCopyAPI> => {
       if (!useWorkerAPIClientHook) {
         throw new Error('useWorkingCopyApiGetter requires Worker client context');
       }
       const client = useWorkerAPIClientHook();
+      if (!client) {
+        throw new Error('Worker client not initialized');
+      }
       const api = client.getAPI();
       const wc = await api.getWorkingCopyAPI();
       return wc as unknown as WorkingCopyAPI;
