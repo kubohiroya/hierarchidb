@@ -58,7 +58,6 @@ import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '..
 const SearchTextFieldContainer = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
-  // padding: '8px 16px',
   borderBottom: 1,
   borderColor: 'divider',
   backgroundColor: 'background.paper',

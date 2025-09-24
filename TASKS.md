@@ -168,6 +168,43 @@
     - progress: 2025-09-24 12:16 辺ハンドルの適用範囲をフルレングスに変更し、角ハンドルを約 1.5 倍へ拡大
     - progress: 2025-09-24 12:20 `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認はローカル制限のため未実施）
     - progress: 2025-09-24 12:32 ドラッグ/リサイズ中はフレームの CSS トランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 成功）
+
+- fix/ui-treeconsole/trash-row-contrast — Trash ダイアログ TreeTable 行のダークモード背景調整
+  - ブランチ: `fix/ui-treeconsole/trash-row-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] ダークテーマの Trash ダイアログで TreeTable 行背景が従来より一段暗くなり、ホバー時も段階的に暗さが変化する
+    - [x] 他コンテキストの TreeTable 行背景が変わらないことを単体テストで担保する
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm -C app typecheck` が成功する
+  - チェックリスト：
+    - [x] TreeTableRows に Trash 専用のダークモード背景スタイルを実装
+    - [x] スタイルを検証する単体テストを追加
+    - [x] 関連パッケージの typecheck を実行
+  - ロールバック手順：
+    - TreeTableRows のスタイルおよび追加テストを差分前へ戻し、検証コマンドを再実行
+  - 運用ログ：
+    - start: 2025-09-24 14:10 Trash 用 TreeTable 行のダークモード背景調整に着手
+    - progress: 2025-09-24 14:18 TreeTableRows にダークモード専用スタイルを追加し、`trashRowStyles.test.ts` を新設して背景色の段階差を検証
+    - progress: 2025-09-24 14:24 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable test:run` / `pnpm -C app typecheck` を実行し成功
+
+- chore/dep-fence/peer-and-shim-cleanup — dep-fence 警告（peer external / local shim）の解消
+  - ブランチ: `chore/dep-fence/peer-and-shim-cleanup`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-linker-plugin`, `@hierarchidb/plugins-timeline-plugin`, `dep-fence`
+  - 受け入れ基準（DoD）：
+    - [ ] `dep-fence` 実行時に `peer not in tsup.external` および `local type shims present` 警告が発生しない
+    - [ ] `@hierarchidb/plugins-linker-plugin` の `tsup.external` に peer 依存 `comlink` が含まれる
+    - [ ] `@hierarchidb/plugins-timeline-plugin` からローカル型シム `src/types/react-transition-group*.d.ts` を撤去し、代替の公式型参照で型チェックが成功する
+  - チェックリスト：
+    - [ ] linker-plugin の tsup 設定に `comlink` を追加
+    - [ ] timeline-plugin で react-transition-group の型シムを削除し、必要に応じて依存/tsconfig を調整
+    - [ ] `pnpm --filter @hierarchidb/plugins-{linker-plugin,timeline-plugin} typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin build` を実行
+    - [ ] `dep-fence` を再実行し、結果を記録
+  - ロールバック手順：
+    - tsup 設定変更および型ファイル削除を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-{linker-plugin,timeline-plugin} typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-24 14:36 dep-fence peer external / local shim 警告の解消タスクに着手
+    - progress: 2025-09-24 14:44 linker-plugin の tsup external に `comlink` を追加し、timeline-plugin のローカル shim を撤去して共通 ambient 型へ統合
+    - blocked: 2025-09-24 15:05 `pnpm --filter @hierarchidb/plugins-timeline-plugin {typecheck,build}` / `pnpm exec dep-fence` は sandbox 環境で node_modules 再構築が必要だが、`pnpm install` がネットワーク制限で失敗したため未実行（ユーザー環境での再インストールと検証を要請予定）
 - fix/ui-toolbar/settings-menu-autoclose — TreeConsole ツールバー設定メニューの自動クローズ対応
   - ブランチ: `fix/ui-toolbar/settings-menu-autoclose`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-toolbar`, `@hierarchidb/app`
@@ -3979,6 +4016,12 @@ P2:
 - 2025-09-24 12:57 progress: fix/ui-toolbar/settings-menu-autoclose — Theme / Language の選択後に設定メニューを閉じる処理を追加
 - 2025-09-24 13:00 progress: fix/ui-toolbar/settings-menu-autoclose — `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` を実行し成功（UI 実機確認は未実施）
 - 2025-09-24 13:35 progress: fix/ui-toolbar/settings-menu-autoclose — メニュークローズ処理を非同期化し、Row/Theme/Language 選択後に親メニューが確実に閉じるよう調整（`pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` 再実行で成功）
+- 2025-09-24 14:10 start: fix/ui-treeconsole/trash-row-contrast — Trash ダイアログ TreeTable 行のダークモード背景調整に着手
+- 2025-09-24 14:18 progress: fix/ui-treeconsole/trash-row-contrast — TreeTableRows にダークモード用スタイルと `trashRowStyles.test.ts` を追加
+- 2025-09-24 14:24 progress: fix/ui-treeconsole/trash-row-contrast — `ui-treeconsole-treetable` / `app` の typecheck と該当パッケージのテストを実行し成功
+- 2025-09-24 14:36 start: chore/dep-fence/peer-and-shim-cleanup — dep-fence peer external / local shim 警告の解消タスクに着手
+- 2025-09-24 14:44 progress: chore/dep-fence/peer-and-shim-cleanup — linker-plugin external 更新と timeline-plugin 型シムの共通 ambient への移管を実施
+- 2025-09-24 15:05 blocked: chore/dep-fence/peer-and-shim-cleanup — サンドボックスのネットワーク制約で `pnpm install` が行えず、typecheck/build/dep-fence の再実行を保留
 - 2025-09-24 13:05 start: fix/ui-tour/resources-targets — Resources Guided Tour のターゲット不一致調査に着手
 - 2025-09-24 13:12 progress: fix/ui-tour/resources-targets — TreeConsoleToolbar の輸出入ボタンへ `aria-label="Import and export options"` を付与
 - 2025-09-24 13:14 progress: fix/ui-tour/resources-targets — TreeConsolePanel のテーブルラッパーに `data-tour-id="tree-table"` を追加

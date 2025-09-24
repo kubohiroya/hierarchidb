@@ -1621,6 +1621,9 @@ importers:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
+      '@types/react-transition-group':
+        specifier: ^4.4.12
+        version: 4.4.12(@types/react@18.3.24)
       react:
         specifier: '>=18.0.0'
         version: 18.3.1

@@ -224,6 +224,7 @@ export function TreeTableCore({
           controller={controller}
           disableDragAndDrop={disableDragAndDrop}
           visualSelectionSet={visualSelectionSet}
+          useTrashColumns={useTrashColumns}
           trashAction={trashAction}
         />
       </StyledTable>

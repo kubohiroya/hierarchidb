@@ -1,5 +1,6 @@
 // Ambient UI type declarations shared across packages
 // Centralizing these avoids per-package local shims that dep-fence flags.
+/// <reference path="./@types/react-transition-group/index.d.ts" />
 
 // CSS Modules (e.g., *.module.css)
 declare module '*.module.css' {

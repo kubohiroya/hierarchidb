@@ -1,6 +1,9 @@
 import type { Dispatch, SetStateAction, MouseEvent as ReactMouseEvent } from 'react';
 import { useCallback } from 'react';
 import { TableBody, TableCell, TableRow, Checkbox, Box } from '@mui/material';
+import type { SxProps } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
+import { darken } from '@mui/material/styles';
 import type { TreeNode, NodeId } from '@hierarchidb/common-type';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
@@ -31,7 +34,24 @@ export interface TreeTableRowsProps {
   controller: any;
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
-  trashAction?: 'restore'|'empty';
+  useTrashColumns: boolean;
+  trashAction?: 'restore' | 'empty';
+}
+
+export function getTrashRowSx(theme: Theme): Record<string, unknown> {
+  if (theme.palette.mode !== 'dark') {
+    return {};
+  }
+
+  const base = darken(theme.palette.background.paper, 0.08);
+  const hover = darken(theme.palette.background.paper, 0.14);
+
+  return {
+    backgroundColor: base,
+    '&:hover': {
+      backgroundColor: hover,
+    },
+  };
 }
 
 export function TreeTableRows({
@@ -57,6 +77,7 @@ export function TreeTableRows({
   controller,
   disableDragAndDrop,
   visualSelectionSet,
+  useTrashColumns,
 }: TreeTableRowsProps) {
   const renderFallbackRow = useCallback((node: TreeNode) => {
     const inheritedSelection = hasSelectedAncestor(node.id as NodeId);
@@ -70,6 +91,7 @@ export function TreeTableRows({
         selected={visualSelectionSet.has(node.id as NodeId)}
         draggable={false}
         onClick={(e) => handleRowClick(node, e)}
+        sx={useTrashColumns ? ((theme: Theme) => getTrashRowSx(theme)) : undefined}
       >
         <TableCell sx={{ width: `${columnWidths.selection}px`, minWidth: `${columnWidths.selection}px`, maxWidth: `${columnWidths.selection}px` }}>
           <Checkbox
@@ -126,7 +148,7 @@ export function TreeTableRows({
         </TableCell>
       </StyledTableRow>
     );
-  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, visualSelectionSet]);
+  }, [batchSelect, collectDescendantIds, columnWidths, depthOffset, handleRowClick, hasSelectedAncestor, pageNodeId, selectAll, selectAllHydrated, treeId, useTrashColumns, visualSelectionSet]);
 
   return (
     <TableBody>
@@ -144,8 +166,29 @@ export function TreeTableRows({
 
       {table.getRowModel().rows.map((row) => {
         const node = row.original;
-    const isSelected = visualSelectionSet.has(node.id as NodeId) || selectAll;
-    const isBlockedTarget = forbiddenTargets.has(row.original.id as NodeId);
+        const isSelected = visualSelectionSet.has(node.id as NodeId) || selectAll;
+        const isBlockedTarget = forbiddenTargets.has(row.original.id as NodeId);
+
+        const baseRowSx: SxProps<Theme> = {
+          cursor:
+            hoverDropTargetId === row.original.id && isBlockedTarget
+              ? 'not-allowed'
+              : 'pointer',
+          outline:
+            hoverDropTargetId === row.original.id
+              ? isBlockedTarget
+                ? '2px dashed rgba(211,47,47,0.7)'
+                : '2px dashed rgba(25,118,210,0.6)'
+              : 'none',
+          outlineOffset: '-2px',
+        };
+
+        const appliedRowSx: SxProps<Theme> = useTrashColumns
+          ? (theme: Theme) => ({
+              ...getTrashRowSx(theme),
+              ...baseRowSx,
+            })
+          : baseRowSx;
 
         return (
           <StyledTableRow
@@ -194,19 +237,7 @@ export function TreeTableRows({
             }}
             onClick={(e) => handleRowClick(node, e)}
             onDoubleClick={(e) => handleRowDoubleClick(node, e)}
-            sx={{
-              cursor:
-                hoverDropTargetId === row.original.id && isBlockedTarget
-                  ? 'not-allowed'
-                  : 'pointer',
-              outline:
-                hoverDropTargetId === row.original.id
-                  ? isBlockedTarget
-                    ? '2px dashed rgba(211,47,47,0.7)'
-                    : '2px dashed rgba(25,118,210,0.6)'
-                  : 'none',
-              outlineOffset: '-2px',
-            }}
+            sx={appliedRowSx}
             aria-disabled={hoverDropTargetId === row.original.id && isBlockedTarget ? true : undefined}
             title={hoverDropTargetId === row.original.id && isBlockedTarget ? 'Cannot move to descendants' : undefined}
           >

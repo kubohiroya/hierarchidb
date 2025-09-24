@@ -22,6 +22,7 @@ export default createTsupConfig({
     '@emotion/react',
     '@emotion/styled',
     '@hierarchidb/runtime-worker-bootstrap',
+    'comlink',
     // Deck.gl family kept as peer-provided
     '@deck.gl/core',
     '@deck.gl/layers',

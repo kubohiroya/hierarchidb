@@ -100,6 +100,7 @@
       "@emotion/styled",
       "@hierarchidb/runtime-worker",
       "@hierarchidb/runtime-worker-bootstrap",
+      "comlink",
       "@mui/icons-material",
       "@mui/material",
       "dexie",
