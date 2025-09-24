@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useLoaderData, useNavigate, useParams } from 'react-router';
 import {
   Box,
@@ -19,12 +18,12 @@ import {
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import {
-  HeadlessMultiStepDialog,
+  MultiDialogFrame,
   FRAME_CONSTANTS,
   getViewportSize,
   normalizeDialogState,
   initialPosition,
-  useDialogInteractionGuards,
+  useMultiStepDialogContext,
   type DialogDisplayMode,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
@@ -33,6 +32,7 @@ import {
   type MultiDialogPosition,
   type MultiDialogSize,
 } from '@hierarchidb/ui-dialog';
+import { alpha } from '@mui/material/styles';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
@@ -47,6 +47,8 @@ import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
 import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';
+
+const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 
 // ----------------------------------------
 // Loader & data types
@@ -228,127 +230,6 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
   } as const;
 }
 
-function useFramePointerHandlers(options: {
-  displayMode: DialogDisplayMode;
-  sizeRef: React.MutableRefObject<MultiDialogSize>;
-  positionRef: React.MutableRefObject<MultiDialogPosition>;
-  setSize: (next?: MultiDialogSize) => void;
-  setPosition: (next?: MultiDialogPosition) => void;
-  onBackdropClick: () => void;
-}) {
-  const { displayMode, sizeRef, positionRef, setSize, setPosition, onBackdropClick } = options;
-  const dragStateRef = useRef<{
-    pointerId: number;
-    originX: number;
-    originY: number;
-    start: MultiDialogPosition;
-    size: MultiDialogSize;
-    mode: DialogDisplayMode;
-  } | null>(null);
-  const resizeStateRef = useRef<{
-    pointerId: number;
-    originX: number;
-    originY: number;
-    startSize: MultiDialogSize;
-    startPosition: MultiDialogPosition;
-    mode: DialogDisplayMode;
-  } | null>(null);
-
-  const guards = useDialogInteractionGuards({ onBackdropClick });
-
-  const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (displayMode === 'full-screen') return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pointerId = event.pointerId;
-    dragStateRef.current = {
-      pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      start: positionRef.current,
-      size: sizeRef.current,
-      mode: displayMode,
-    };
-
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = dragStateRef.current;
-      if (!state || moveEvent.pointerId !== pointerId) return;
-      const next: MultiDialogPosition = {
-        x: state.start.x + (moveEvent.clientX - state.originX),
-        y: state.start.y + (moveEvent.clientY - state.originY),
-      };
-      setPosition(next);
-    };
-
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (endEvent.pointerId !== pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-      dragStateRef.current = null;
-      guards.registerDragEnd();
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-  }, [displayMode, guards, positionRef, setPosition, sizeRef]);
-
-  const handleResizePointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (displayMode === 'full-screen') return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pointerId = event.pointerId;
-    resizeStateRef.current = {
-      pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      startSize: sizeRef.current,
-      startPosition: positionRef.current,
-      mode: displayMode,
-    };
-
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state || moveEvent.pointerId !== pointerId) return;
-      const deltaX = moveEvent.clientX - state.originX;
-      const deltaY = moveEvent.clientY - state.originY;
-      const nextSize: MultiDialogSize = {
-        width: Math.max(state.startSize.width + deltaX, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(state.startSize.height + deltaY, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
-      };
-      setSize(nextSize);
-    };
-
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (endEvent.pointerId !== pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-      resizeStateRef.current = null;
-      guards.registerDragEnd();
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-  }, [displayMode, guards, setSize, sizeRef, positionRef]);
-
-  return {
-    guards,
-    handleDragPointerDown,
-    handleResizePointerDown,
-  } as const;
-}
-
 // ----------------------------------------
 // Presentation components
 // ----------------------------------------
@@ -364,20 +245,52 @@ function TrashDialogHeader({
   onRequestClose,
   isDirty,
 }: TrashDialogHeaderProps) {
+  const ctx = useMultiStepDialogContext<TrashStepData>();
+
+  const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    ctx.onDragHandlePointerDown?.(event);
+  }, [ctx]);
+
+  const stopPropagation = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+  }, []);
+
   return (
     <Box
-      sx={{
+      data-dialog-drag-handle="true"
+      onPointerDown={handleDragPointerDown}
+      sx={(theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         px: 2,
         py: 1.5,
         borderBottom: '1px solid',
-        borderColor: 'divider',
+        borderColor: theme.palette.divider,
         gap: 2,
-      }}
+        cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
+        userSelect: 'none',
+        transition: theme.transitions.create('background-color', {
+          duration: theme.transitions.duration.shorter,
+        }),
+        backgroundColor: theme.palette.mode === 'dark'
+          ? alpha(theme.palette.common.white, 0.04)
+          : theme.palette.background.paper,
+        '&:hover': {
+          backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(theme.palette.common.white, 0.1)
+            : theme.palette.action.hover,
+        },
+      })}
     >
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+        <Box
+          component="span"
+          sx={{ fontSize: 24, lineHeight: 1, pointerEvents: 'none' }}
+          aria-hidden
+        >
+          🗑️
+        </Box>
         <Typography variant="h6" noWrap>{title}</Typography>
         {isDirty && (
           <Typography variant="caption" color="text.secondary">
@@ -386,13 +299,25 @@ function TrashDialogHeader({
         )}
       </Box>
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <IconButton size="small" onClick={() => onDisplayModeChange?.(displayMode === 'maximize' ? 'normal' : 'maximize')}>
+        <IconButton
+          size="small"
+          onClick={() => onDisplayModeChange?.(displayMode === 'maximize' ? 'normal' : 'maximize')}
+          onPointerDown={stopPropagation}
+        >
           {displayMode === 'maximize' ? <RestoreIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
         </IconButton>
-        <IconButton size="small" onClick={() => onDisplayModeChange?.(displayMode === 'full-screen' ? 'normal' : 'full-screen')}>
+        <IconButton
+          size="small"
+          onClick={() => onDisplayModeChange?.(displayMode === 'full-screen' ? 'normal' : 'full-screen')}
+          onPointerDown={stopPropagation}
+        >
           {displayMode === 'full-screen' ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
         </IconButton>
-        <IconButton size="small" onClick={() => onRequestClose('close')}>
+        <IconButton
+          size="small"
+          onClick={() => onRequestClose('close')}
+          onPointerDown={stopPropagation}
+        >
           <CloseIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -435,6 +360,7 @@ function TrashDialogFooter({
         borderTop: '1px solid',
         borderColor: 'divider',
         gap: 1.5,
+        minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
       }}
     >
       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -534,7 +460,16 @@ function TrashDialogContent({
   }
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        marginTop: '8px',
+        marginBottom: `${TRASH_DIALOG_FOOTER_HEIGHT}px`,
+      }}
+    >
       <Box sx={{ px: 2, pt: 0, pb: 1 }}>
         <TreeTableSearchInput
           value={searchTerm}
@@ -544,7 +479,15 @@ function TrashDialogContent({
           sx={{ width: 260 }}
         />
       </Box>
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          '& > *': {
+            height: '100%',
+          },
+        }}
+      >
         <TreeConsolePanel
           title="Trash"
           treeId={treeId}
@@ -658,14 +601,6 @@ export default function TrashDialogV2() {
   }, [navigate]);
 
   const frameState = useTrashFrameState('normal');
-  const { guards, handleDragPointerDown, handleResizePointerDown } = useFramePointerHandlers({
-    displayMode: frameState.displayMode,
-    sizeRef: frameState.sizeRef,
-    positionRef: frameState.positionRef,
-    setSize: frameState.setSize,
-    setPosition: frameState.setPosition,
-    onBackdropClick: handleClose,
-  });
 
   const handleRestore = useCallback(async () => {
     if (selectedIds.length === 0) return;
@@ -773,79 +708,16 @@ export default function TrashDialogV2() {
     ),
   }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
 
-  const augmentedHeadlessProps = useMemo(() => ({
-    ...headlessProps,
-    onDragHandlePointerDown: handleDragPointerDown,
-    onResizeHandlePointerDown: handleResizePointerDown,
-  }), [headlessProps, handleDragPointerDown, handleResizePointerDown]);
+  const frameSx = useMemo(() => ({
+    borderRadius: frameState.displayMode === 'full-screen' ? 0 : 4,
+    boxShadow: frameState.displayMode === 'full-screen' ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
+    maxWidth: frameState.displayMode === 'full-screen' ? '100%' : 'min(calc(100vw - 48px), 1280px)',
+  }), [frameState.displayMode]);
 
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-
-  const frameStyle = useMemo(() => {
-    const fullScreen = frameState.displayMode === 'full-screen';
-    return {
-      width: fullScreen ? '100%' : `${frameState.dialogSize.width}px`,
-      height: fullScreen ? '100%' : `${frameState.dialogSize.height}px`,
-      maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
-      maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
-      borderRadius: fullScreen ? 0 : 12,
-      boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
-      overflow: 'hidden',
-      backgroundColor: '#fff',
-      position: 'absolute' as const,
-      top: frameState.displayMode === 'full-screen' ? 0 : frameState.dialogPosition.y,
-      left: frameState.displayMode === 'full-screen' ? 0 : frameState.dialogPosition.x,
-      display: 'flex',
-      flexDirection: 'column' as const,
-    };
-  }, [frameState.displayMode, frameState.dialogPosition.x, frameState.dialogPosition.y, frameState.dialogSize.height, frameState.dialogSize.width]);
-
-  const handleBackdropPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.target !== event.currentTarget) return;
-      if (guards.isDraggingRef.current) return;
-      guards.handleBackdropClick();
-    },
-    [guards],
+  return (
+    <MultiDialogFrame
+      headlessProps={headlessProps}
+      frameSx={frameSx}
+    />
   );
-
-  const backdrop = (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1600,
-        backgroundColor: 'rgba(9, 12, 28, 0.45)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'auto',
-      }}
-      onPointerDown={handleBackdropPointerDown}
-      onWheelCapture={guards.handleWheelCapture}
-    >
-      <Box
-        role="dialog"
-        aria-modal="true"
-        sx={frameStyle}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
-      </Box>
-    </Box>
-  );
-
-  if (typeof document === 'undefined') {
-    return backdrop;
-  }
-
-  return createPortal(backdrop, document.body);
 }

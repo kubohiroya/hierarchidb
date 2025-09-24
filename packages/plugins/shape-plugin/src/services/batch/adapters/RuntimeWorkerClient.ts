@@ -1,4 +1,4 @@
-import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
+//import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
 // Re-export worker API types so they are public in this package's .d.ts
 export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
 import { getStageProcessingClient } from '@hierarchidb/runtime-worker';

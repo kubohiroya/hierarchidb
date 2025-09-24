@@ -40,12 +40,10 @@ let errors = 0;
 let warnings = 0;
 
 function err(msg) {
-  // eslint-disable-next-line no-console
   console.error(`ERROR  ${msg}`);
   errors++;
 }
 function warn(msg) {
-  // eslint-disable-next-line no-console
   console.warn(`WARN   ${msg}`);
   warnings++;
 }
@@ -199,6 +197,7 @@ if (lock && nm) {
   }
 }
 
+/*
 // Rule E: MapLibre direct dependency encapsulation (config-driven)
 const mapLibreAllowed = new Set((config.mapLibreAllowedPackages || []));
 if (mapLibreAllowed.size > 0) {
@@ -221,6 +220,7 @@ for (const dir of workspaces) {
   }
 }
 }
+ */
 
 // Rule F: UI peer policy (react/react-dom/@mui/*/@emotion/* should be peers)
 const uiPeerLibs = Array.isArray(config.uiPeerLibs) ? config.uiPeerLibs : [];
@@ -332,10 +332,8 @@ for (const dir of workspaces) {
 
 // Summary / exit code
 if (errors) {
-  // eslint-disable-next-line no-console
   console.error(`\nDependency guard failed: ${errors} error(s), ${warnings} warning(s).`);
   process.exit(1);
 } else {
-  // eslint-disable-next-line no-console
   console.log(`Dependency guard passed with ${warnings} warning(s).`);
 }

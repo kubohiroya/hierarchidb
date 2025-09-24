@@ -5,6 +5,7 @@ import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import type {Remote} from 'comlink';
 
 export interface AggregatedListProps {
   selfNodeId?: NodeId; // Linker node (edit時)
@@ -13,7 +14,7 @@ export interface AggregatedListProps {
 
 type LinkerNode = TreeNode & { data?: { likedNodeIdSet?: string[] | Set<string> } };
 
-function resolveWorkerClient(): WorkerAPI | null {
+function resolveWorkerClient():Remote<WorkerAPI> | null {
   const hook = getWorkerClientHook<WorkerClientRef>() ?? null;
   const ref = hook ? hook() : null;
   if (!ref) return null;

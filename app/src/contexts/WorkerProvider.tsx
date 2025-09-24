@@ -261,7 +261,7 @@ export const WorkerProvider = ({
   const finalizeInitialized = useCallback(async () => {
     try {
       bootLog('WorkerProvider finalize');
-      const client = await WorkerAPIClient.getSingleton();
+      const client = WorkerAPIClient.getSingleton();
       latestProgressRef.current = 100;
       setStatus({
         client,

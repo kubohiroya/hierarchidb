@@ -75,7 +75,6 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
-    if (!workingCopy) return false;
     const { name, routeType, transportModes } = workingCopy;
     return Boolean(name?.trim()) && Boolean(routeType) && Array.isArray(transportModes) && transportModes.length > 0;
   }, [workingCopy]);

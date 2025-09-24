@@ -16,7 +16,7 @@ import {
   FullscreenExit as FullscreenExitIcon,
   OpenInFull as OpenInFullIcon,
 } from '@mui/icons-material';
-import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Link, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
 
@@ -81,7 +81,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         borderBottom: `1px solid ${theme.palette.divider}`,
         cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
         userSelect: 'none',
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: getDialogSurfaceColor(theme),
         transition: theme.transitions.create(['background-color'], { duration: theme.transitions.duration.shorter }),
         '&:hover': {
           backgroundColor:

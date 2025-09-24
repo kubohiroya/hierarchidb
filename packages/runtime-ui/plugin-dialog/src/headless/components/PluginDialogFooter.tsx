@@ -7,10 +7,10 @@
  */
 import React from 'react';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
-import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 
 export interface PluginDialogFooterProps {
-  intent: 'create' | 'edit';
+  mode: 'create' | 'edit';
   canCommit: boolean;
   onSaveDraft?: () => void;
   saveDraftLabel?: string;
@@ -24,7 +24,7 @@ const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) =>
 };
 
 export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
-  intent,
+  mode,
   canCommit,
   onSaveDraft,
   saveDraftLabel = 'Save Draft',
@@ -34,7 +34,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
 
-  const commitLabel = intent === 'create' ? 'Create' : 'Save';
+  const commitLabel = mode === 'create' ? 'Create' : 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
   const canNavigateBack = !isFirstStep && (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) || ctx.enabledStepIndices.length === 0);
@@ -71,7 +71,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
       sx={(theme) => ({
         borderTop: `1px solid ${theme.palette.divider}`,
         padding: theme.spacing(1.5, 2),
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: getDialogSurfaceColor(theme),
       })}
     >
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>

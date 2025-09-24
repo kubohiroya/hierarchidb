@@ -37,7 +37,10 @@ export function registerWorkerClientHook<T = any>(hook: WorkerClientHook<T>) {
   currentHook = hook as WorkerClientHook;
 }
 
-export function getWorkerClientHook<T = any>(): WorkerClientHook<T> | null {
-  return currentHook as WorkerClientHook<T> | null;
+export function getWorkerClientHook<T = any>(): WorkerClientHook<T> {
+  if(!currentHook){
+    throw new Error('Worker client hook is not registered. Please ensure registerWorkerClientHook is called at app startup.');
+  }
+  return currentHook as WorkerClientHook<T>;
 }
 

@@ -96,7 +96,6 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   useEffect(() => {
     // Initialize from URL once
     readUrl();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const writeUrl = useCallback(

@@ -86,6 +86,88 @@
     - start: 2025-09-22 10:15 フォルダ作成ダイアログの配色をテーマトークンへ統一する作業に着手
     - progress: 2025-09-22 10:33 `ExtensibleFolderDialog` の背景・ステップインジケータ配色を MUI テーマ参照へ更新し、HEX ハードコードを除去。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` を実行して成功
     - blocked: 2025-09-22 10:37 `pnpm -C app typecheck` が TrashDialog 系 `originalName` 型未定義エラーで失敗（既知の別タスク依存）。新規変更による追加エラーは発生せず
+- chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告/Hook 違反の是正
+  - ブランチ: `chore/runtime-ui-dialog/lint-fixes`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`
+  - 受け入れ基準（DoD）：
+    - [x] `SamplePluginProvider` の lint 警告（未使用引数）が解消されている
+    - [x] `usePluginDialogController` で React Hooks の規約違反が発生しない
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` が成功する（警告なし）
+  - チェックリスト：
+    - [x] 未使用の `data` 引数を `_data` へリネームするなどして警告を防止
+    - [x] StepAdapter 実装を再構成し、Hook をコールバック内部で実行しない構造に変更
+    - [x] lint 実行結果を確認し、運用ログに記録
+  - ロールバック手順：
+    - `packages/runtime-ui/plugin-dialog/src/examples/SamplePluginProvider.tsx` と `packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx` の変更を差分前へ戻し、再度 lint を実行して元の状態を確認
+  - 運用ログ：
+    - start: 2025-09-24 09:05 Runtime UI Plugin Dialog の lint 警告対応に着手（環境: Codex CLI sandbox）
+    - progress: 2025-09-24 09:18 SamplePluginProvider の未使用引数を `_data` 化し、lint 警告を除去
+    - progress: 2025-09-24 09:24 StepAdapter を独立コンポーネント化し、Hooks 規約違反を解消
+    - progress: 2025-09-24 09:30 useDialogUrlSync の未使用 `eslint-disable` を削除し、lint を再実行して警告ゼロを確認
+    - blocked: 2025-09-24 09:38 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がパッケージ既知の `intent` 引数不足 / `WorkerAPI` Remote 型不整合で失敗（既存課題）。差分による新規エラーなし。
+    - blocked: 2025-09-24 09:41 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が同型エラーで停止（tsup DTS フェーズ）。
+- feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
+  - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] ゴミ箱ダイアログ（TrashDialog）とプラグインダイアログの背景色が共通スタイルで、ライトモードでは従来よりわずかに暗く、ダークモードではわずかに明るい色味になる
+    - [ ] テーマ切替時に背景色が瞬時に反映され、コントラスト比の低下がないことを手動確認
+    - [x] `pnpm --filter @hierarchidb/ui-dialog typecheck` が成功し、関連 lint が通る
+  - チェックリスト：
+    - [x] `@hierarchidb/ui-dialog` のベーススタイルにモード依存の背景色ロジックを追加
+    - [x] `@hierarchidb/runtime-ui-plugin-dialog` / TrashDialog 側で新スタイルを適用し重複スタイルを除去
+    - [ ] 手動でダーク/ライト両モードを確認し、必要なら微調整
+  - ロールバック手順：
+    - 変更したスタイル設定を差分前へ戻し、`pnpm --filter @hierarchidb/ui-dialog typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-24 09:55 ダイアログ背景コントラスト調整タスクに着手（対象: TrashDialog, PluginDialog）
+    - blocked: 2025-09-24 10:45 TrashDialog が独自フレームを維持しているため背景同期が不十分
+    - progress: 2025-09-24 10:08 `@hierarchidb/ui-dialog` に `getDialogSurfaceColor` を追加し、ダイアログフレームの背景色をモード別に強調
+    - progress: 2025-09-24 10:14 PluginDialogShell / Header / Footer と TrashDialogV2 で共通色を適用
+    - progress: 2025-09-24 10:20 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` / `pnpm -C app typecheck` を実行し成功（UI実機確認は未実施）
+    - blocked: 2025-09-24 10:45 TrashDialog が独自フレームを維持しているため、テーマ切替が完全に同期せず追加対応が必要
+- feat/ui-dialog/dialog-frame-unification — TrashDialog をプラグインダイアログ共通フレームへ統合
+  - ブランチ: `feat/ui-dialog/dialog-frame-unification`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/ui-dialog` に共通フレームコンポーネント（仮称 `MultiDialogFrame`）を追加し、ドラッグ/リサイズ/BG スタイルを提供
+    - [x] プラグインダイアログと TrashDialog の双方が新フレームを利用し、背景色・インタラクションが統一される
+    - [x] 既存のフレームロジックから重複コードを削除し、`pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` / `pnpm -C app typecheck` が成功
+  - チェックリスト：
+    - [x] `MultiDialogFrame`（仮）を実装し、ドラッグ/リサイズ/position 監視 API を整理
+    - [x] PluginDialogShell を新フレームでラップするよう更新
+    - [x] TrashDialogV2 のフレーム実装を除去し、新フレームへ移行
+    - [ ] 共通化後のテーマ切替と操作性を手動確認（リモート環境につき未実施）
+  - ロールバック手順：
+    - 新規コンポーネントと呼び出し変更を差分前に戻し、旧フレームの実装へ復帰
+  - 運用ログ：
+    - start: 2025-09-24 10:47 TrashDialog を共通フレームへ統合する作業に着手
+    - progress: 2025-09-24 11:02 ui-dialog に `MultiDialogFrame` を追加し、PluginDialogShell を共通フレーム利用へ更新
+    - progress: 2025-09-24 11:08 TrashDialogV2 を共通フレームへ移行し、独自フレーム/ポインタ処理を除去
+    - progress: 2025-09-24 11:12 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` / `pnpm -C app typecheck` を実行し成功（テーマ切替の手動確認は未実施）
+    - progress: 2025-09-24 11:28 TrashDialog ヘッダーにゴミ箱アイコンを追加し、`pnpm -C app typecheck` を再実行（成功）
+    - progress: 2025-09-24 11:36 TrashDialog ヘッダーにホバー演出を追加し、TreeTable をダイアログ残り高へフィットさせる調整を実施（`pnpm -C app typecheck` 成功）
+    - progress: 2025-09-24 11:42 ダークテーマのヘッダー通常色を柔らかくし、ホバー時はやや明るいトーンになるよう微調整（`pnpm -C app typecheck` 成功）
+    - progress: 2025-09-24 11:55 共通フレームのリサイズハンドルを上下左右・四隅へ拡張し、`pnpm --filter @hierarchidb/ui-dialog typecheck` を実行（成功）
+    - progress: 2025-09-24 11:25 TrashDialog の角丸を 4px に調整し、共通フレーム経由でドラッグ/リサイズを行える構成へ整理（手動ドラッグ確認は環境制約で未実施）
+- fix/ui-dialog/frame-handle-area — MultiDialogFrame のリサイズハンドル領域改善
+  - ブランチ: `fix/ui-dialog/frame-handle-area`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] MultiDialogFrame の上下左右各辺が端から端までリサイズハンドルとして機能し、既存のドラッグ/ホバー挙動が維持されている
+    - [x] 左右上下の四隅ハンドルが従来比で約 1.5 倍の領域となり、カーソル表示とリサイズ操作が容易になる
+    - [x] `pnpm --filter @hierarchidb/ui-dialog typecheck` が成功する
+  - チェックリスト：
+    - [x] MultiDialogFrame の辺ハンドル領域スタイルを全長カバーへ変更する
+    - [x] 角ハンドルを拡張し、辺ハンドルより優先してポインタを表示できるよう重なり順を調整する
+    - [x] 手動確認が困難な場合は差分と意図を運用ログへ記録する
+  - ロールバック手順：
+    - ハンドル関連スタイルの変更を差分前へ戻し、`pnpm --filter @hierarchidb/ui-dialog typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-24 12:05 MultiDialogFrame のリサイズハンドル領域拡張対応に着手
+    - progress: 2025-09-24 12:16 辺ハンドルの適用範囲をフルレングスに変更し、角ハンドルを約 1.5 倍へ拡大
+    - progress: 2025-09-24 12:20 `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認はローカル制限のため未実施）
+    - progress: 2025-09-24 12:32 ドラッグ/リサイズ中はフレームの CSS トランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 成功）
 - feat/runtime-dialog/unified-frame — プラグインダイアログの MUI ボタン化とフレーム標準化
   - ブランチ: `feat/runtime-dialog/unified-frame`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-dialog`, `@hierarchidb/plugins-folder-plugin`
@@ -3838,6 +3920,22 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-24 09:05 start: chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告・Hook 規約違反の修正に着手（対象: SamplePluginProvider, usePluginDialogController）
+- 2025-09-24 09:18 progress: chore/runtime-ui-dialog/lint-fixes — SamplePluginProvider の未使用引数を `_data` へ置換し lint 警告を解消
+- 2025-09-24 09:24 progress: chore/runtime-ui-dialog/lint-fixes — StepAdapter を分離コンポーネント化して Hooks 規約違反を解消
+- 2025-09-24 09:30 progress: chore/runtime-ui-dialog/lint-fixes — useDialogUrlSync の未使用 eslint-disable を撤去し lint を再実行（警告なし）
+- 2025-09-24 09:38 blocked: chore/runtime-ui-dialog/lint-fixes — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` が `PluginDialogRoute.tsx` の `intent` 未指定と `WorkerAPI` Remote 型不整合で失敗（既存課題）
+- 2025-09-24 09:41 blocked: chore/runtime-ui-dialog/lint-fixes — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が同型エラーで停止（tsup DTS フェーズ）
+- 2025-09-24 09:55 start: feat/ui-dialog/dialog-surface-contrast — Trash/Plugin ダイアログの背景色をテーマモード別に調整する検討を開始
+- 2025-09-24 10:45 blocked: feat/ui-dialog/dialog-surface-contrast — TrashDialog が独自フレーム継続のため背景同期が不十分
+- 2025-09-24 10:47 start: feat/ui-dialog/dialog-frame-unification — 共通フレーム化タスクを開始
+- 2025-09-24 11:02 progress: feat/ui-dialog/dialog-frame-unification — `MultiDialogFrame` を実装し PluginDialogShell へ適用
+- 2025-09-24 11:08 progress: feat/ui-dialog/dialog-frame-unification — TrashDialogV2 を共通フレームへ移行し旧フレームコードを削除
+- 2025-09-24 11:12 progress: feat/ui-dialog/dialog-frame-unification — 共通フレーム化後の typecheck/lint を実行し成功（テーマ切替は未確認）
+- 2025-09-24 12:05 start: fix/ui-dialog/frame-handle-area — MultiDialogFrame のリサイズハンドル領域拡張対応に着手
+- 2025-09-24 12:16 progress: fix/ui-dialog/frame-handle-area — 辺ハンドルを全長カバーに調整し、角ハンドルを約 1.5 倍へ拡大
+- 2025-09-24 12:20 progress: fix/ui-dialog/frame-handle-area — `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認は環境制約のため未実施）
+- 2025-09-24 12:32 progress: fix/ui-dialog/frame-handle-area — ドラッグ/リサイズ中のトランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 再実行で成功）
 - 2025-09-22 10:24 start: chore/app/map-chunk-warning-limit — map.js チャンク警告を抑制する閾値調整に着手。
 - 2025-09-22 10:26 progress: chore/app/map-chunk-warning-limit — `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加。
 - 2025-09-22 10:27 blocked: chore/app/map-chunk-warning-limit — `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（差分影響なし）。

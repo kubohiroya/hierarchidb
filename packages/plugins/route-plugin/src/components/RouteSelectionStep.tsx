@@ -116,13 +116,14 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
       // Simulate route calculation
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
+      const version = workingCopy.version ? workingCopy.version + 1 : 0;
       // Update working copy with route configuration
       onUpdate({
         waypoints: waypoints
           .map((wp) => wp.coordinates)
           .filter((coords) => coords !== undefined) as [number, number][],
         updatedAt: Date.now(),
-        version: workingCopy.version + 1,
+        version,
       });
     } catch (error) {
       console.error('Route calculation error:', error);

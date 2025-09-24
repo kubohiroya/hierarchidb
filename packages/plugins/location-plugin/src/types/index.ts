@@ -40,45 +40,45 @@ export enum LocationType {
 // Entity Types
 // ================================
 
-export interface LocationEntity {
+export type LocationEntity = Partial<{
   id: NodeId;
   nodeId: NodeId;
 
   // Basic Information
   name: string;
   description?: string;
-  tags?: TagId[];
-  category?: LocationCategory;
+  tags: TagId[];
+  category: LocationCategory;
 
   // Map Position
-  zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)]
+  zxy: [number, number, number]; // [zoom, x(longitude), y(latitude)]
 
   // Data Source
   dataSourceName: 'openstreetmap' | 'geonames' | 'wikidata' | 'overpass';
 
   // License Agreement
   licenseAgreement: boolean;
-  licenseAgreedAt?: string;
+  licenseAgreedAt: string;
 
   // Processing Configuration
   processingConfig: LocationProcessingConfig;
 
   // Processing Status
-  batchSessionId?: string;
-  processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  batchSessionId: string;
+  processingStatus: 'idle' | 'processing' | 'completed' | 'failed';
 
   // Metadata
   createdAt: number;
   updatedAt: number;
   version: number;
-}
+}>;
 
-export interface LocationWorkingCopy extends LocationEntity {
-  isDraft?: boolean;
+export type LocationWorkingCopy = Partial<LocationEntity & {
+  isDraft: boolean;
   checkboxState: Record<string, Record<LocationType, boolean>>;
   selectedCountries: string[];
   locationTypes: LocationType[];
-}
+}>;
 
 // ================================
 // Processing Configuration

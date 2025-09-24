@@ -20,6 +20,7 @@ export interface UseFormValidationOptions {
 
 /**
  * Form validation hook for folder-plugin forms
+ * @deprecated
  */
 export function useFormValidation(
   data: Partial<CreateFolderData | UpdateFolderData>,

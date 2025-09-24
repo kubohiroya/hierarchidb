@@ -7,7 +7,7 @@ import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
-import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 
 interface PluginDialogLoaderData {
   tree: { id: TreeId };
@@ -27,7 +27,7 @@ export const PluginDialogRoute: React.FC = () => {
   const { tree, pageNodeId, targetNodeId, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
 
   const navigate = useNavigate();
-  const useWorkerHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
+  const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
   const client = ref?.client ?? null;
 
@@ -38,8 +38,7 @@ export const PluginDialogRoute: React.FC = () => {
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
-  const intent: 'create' | 'edit' = action === 'create' ? 'create' : 'edit';
-  const mode: 'create' | 'edit' = intent;
+  const mode: 'create' | 'edit' = action === 'create' ? 'create' : 'edit';
 
   // targetNodeId is the working copy ID (UUID) for both create and edit
   const workingCopyId = targetNodeId;
@@ -100,7 +99,6 @@ export const PluginDialogRoute: React.FC = () => {
   return (
     <PluginDialogShell
       mode={mode}
-      intent={intent}
       nodeType={nodeType}
       nodeId={workingCopyId}
       pageNodeId={pageNodeId}

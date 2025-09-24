@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 export interface TagChipsInputProps {
     value?: string[];
     onChange?: (tags: string[]) => void;
     placeholder?: string;
-    label?: string;
+    label?: ReactNode;
     maxTags?: number;
     disabled?: boolean;
     helperText?: string;

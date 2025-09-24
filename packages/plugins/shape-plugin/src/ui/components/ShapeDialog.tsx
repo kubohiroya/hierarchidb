@@ -52,7 +52,7 @@ export function ShapeDialog({
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy | null>(null);
+  const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy>({});
   const [initializing, setInitializing] = useState(false);
 
   const createInitialWorkingCopy = useCallback((): ShapeWorkingCopy => {
@@ -164,9 +164,9 @@ export function ShapeDialog({
       <DialogTitle>{mode === 'create' ? 'Create Shape' : 'Edit Shape'}</DialogTitle>
       <DialogContent sx={{ minHeight: 320 }}>
         <Stepper activeStep={activeStep} alternativeLabel>
-          {UI_CONSTANTS.STEPPER_STEPS.map((step) => (
-            <Step key={step.label} completed={isStepComplete(step.index)}>
-              <StepLabel>{step.label}</StepLabel>
+          {UI_CONSTANTS.STEPPER_STEPS.map((step, index) => (
+            <Step key={step} completed={isStepComplete(index)}>
+              <StepLabel>{step}</StepLabel>
             </Step>
           ))}
         </Stepper>

@@ -200,7 +200,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           pageNodeId: props.pageNodeId,
           useTrashColumns: props.useTrashColumns ?? false,
           trashAction: props.trashAction,
-          iconInteractive: !Boolean(props.useTrashColumns),
+          iconInteractive: !props.useTrashColumns,
           onDropToNode: props.onMoveNodes
             ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
             : undefined,
@@ -244,20 +244,22 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       </Box>
 
       {/* Footer */}
-      <TreeConsoleFooter
-        controller={null} // TODO: Convert TreeTableController to TreeViewController
-        onStartTour={props.onStartTour}
-        height={32}
-        loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
-        loadingTooltip={(
-          <Box sx={{ p: 0.5 }}>
-            <Typography variant="caption" display="block">左から順に:</Typography>
-            <Typography variant="caption" display="block">- 購読中サブツリーの最上位の子の数</Typography>
-            <Typography variant="caption" display="block">- 読み込み済みのノード数（表示中＋展開分）</Typography>
-            <Typography variant="caption" display="block">- 選択されているノード数</Typography>
-          </Box>
-        )}
-      />
+      {!props.useTrashColumns &&
+        <TreeConsoleFooter
+          controller={null} // TODO: Convert TreeTableController to TreeViewController
+          onStartTour={props.onStartTour}
+          height={32}
+          loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
+          loadingTooltip={(
+            <Box sx={{ p: 0.5 }}>
+              <Typography variant="caption" display="block">左から順に:</Typography>
+              <Typography variant="caption" display="block">- 購読中サブツリーの最上位の子の数</Typography>
+              <Typography variant="caption" display="block">- 読み込み済みのノード数（表示中＋展開分）</Typography>
+              <Typography variant="caption" display="block">- 選択されているノード数</Typography>
+            </Box>
+          )}
+        />
+      }
 
       {/* Right-click context menu removed per policy */}
 

@@ -46,6 +46,7 @@
     "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
+    "comlink": "^4.3.2",
     "dexie": "^4.2.0",
     "@hierarchidb/runtime-worker": "workspace:*",
     "react": "^18.3.1",

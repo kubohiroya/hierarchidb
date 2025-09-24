@@ -48,7 +48,7 @@ export enum TransportMode {
 // Route Entity Types
 // ================================
 
-export interface RouteEntity {
+export type RouteEntity = {
   id: NodeId;
   nodeId: NodeId;
 
@@ -98,13 +98,13 @@ export interface RouteEntity {
   version: number;
 }
 
-export interface RouteWorkingCopy extends RouteEntity {
+export type RouteWorkingCopy = Partial<RouteEntity & {
   isDraft?: boolean;
   selectedCountries: string[];
   routeTypes: RouteType[];
   transportModes: TransportMode[];
   routeParameters: RouteParameters;
-}
+}>;
 
 /**
  * Peer payload stored for route nodes in peerEntities.

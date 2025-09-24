@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 import type { WorkerAPI, WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
+import { Remote } from 'comlink';
 
 export interface WorkingCopyData {
   treeNodeId: NodeId;
@@ -70,9 +71,9 @@ export function useWorkingCopy({
   }, [nodeId]);
 
   // Resolve WorkerAPI client provided by host-supplied Worker client holder
-  const getClient = useCallback(async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; raw: WorkerAPI }> => {
+  const getClient = useCallback(async (): Promise<{ wc: WorkingCopyAPI; query: TreeQueryAPI; remote: Remote<WorkerAPI> }> => {
     if (!workerClient) throw new Error('Worker client not initialized');
-    let api: WorkerAPI;
+    let api: Remote<WorkerAPI>;
     try {
       api = workerClient.getAPI();
     } catch (error) {
@@ -81,7 +82,7 @@ export function useWorkingCopy({
     }
     const wc = await api.getWorkingCopyAPI();
     const query = await api.getQueryAPI();
-    return { wc, query, raw: api };
+    return { wc, query, remote: api };
   }, [workerClient]);
 
   // Initialize working copy (wait until client is available)

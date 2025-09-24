@@ -33,7 +33,7 @@ import type { TagEntity } from '@hierarchidb/common-type';
 import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import { composeStepConfigs } from '../services/StepComposer.js';
-import { useWorkingCopy } from '../hooks/useWorkingCopy.js';
+import { useWorkingCopy, type WorkingCopyData } from '../hooks/useWorkingCopy.js';
 import { getIconComponent, getPresentation } from '../utils/pluginPresentation.js';
 import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
 import {
@@ -48,9 +48,9 @@ import {
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
+import { Remote } from 'comlink';
 
 export interface PluginDialogControllerOptions {
-  intent: 'create' | 'edit';
   mode: 'create' | 'edit';
   nodeType: string;
   nodeId: NodeId;
@@ -108,6 +108,49 @@ const emptyGuards: StepGuardState = {
   canProceedNext: false,
   canGoBack: false,
   canStartBatch: false,
+};
+
+type StepAdapterProps = {
+  cfg: PluginStepConfig;
+  mode: 'create' | 'edit';
+  nodeId: string;
+  parentId: string;
+  workingData: Record<string, unknown> | undefined;
+  updateWorkingCopy: (patch: Partial<WorkingCopyData>) => void;
+};
+
+const StepAdapterComponent: React.FC<StepAdapterProps> = ({
+  cfg,
+  mode,
+  nodeId,
+  parentId,
+  workingData,
+  updateWorkingCopy,
+}) => {
+  const [, setValid] = useState<boolean | undefined>();
+  const [, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof cfg.validate === 'function') {
+      Promise.resolve(cfg.validate())
+        .then(res => setValid(Boolean(res)))
+        .catch(() => setValid(false));
+    }
+  }, [cfg]);
+
+  return (
+    <>
+      {cfg.componentFactory({
+        mode,
+        nodeId,
+        parentId,
+        data: workingData,
+        onChange: (data: unknown) => updateWorkingCopy({ data: data as Record<string, unknown> }),
+        setValid,
+        setError,
+      })}
+    </>
+  );
 };
 
 function mergeDialogData(basic: BasicInfoState, workingData: Record<string, unknown> | null | undefined): Record<string, unknown> {
@@ -255,7 +298,6 @@ async function evaluateStepGuards({
 
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
-    intent,
     mode,
     nodeType,
     nodeId,
@@ -273,7 +315,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const useClientHook = getWorkerClientHook<WorkerClientRef | null>() ?? (() => null);
   const ref = useClientHook();
-  const client: WorkerAPI | null = useMemo(() => ref?.client ?? null, [ref]);
+  const client: Remote<WorkerAPI> | null = useMemo(() => ref?.client ?? null, [ref]);
 
   const {
     workingCopy,
@@ -566,30 +608,16 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return [];
   }, [mode, nodeType, nodeId, workingCopy?.data, stepRegistry, regTick]);
 
-  const StepAdapter: React.FC<{ cfg: PluginStepConfig }> = useCallback(({ cfg }) => {
-    const [, setValid] = useState<boolean | undefined>();
-    const [, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-      if (typeof cfg.validate === 'function') {
-        Promise.resolve(cfg.validate()).then(res => setValid(!!res)).catch(() => setValid(false));
-      }
-    }, [cfg]);
-
-    return (
-      <>
-        {cfg.componentFactory({
-          mode,
-          nodeId: String(nodeId),
-          parentId: String(pageNodeId),
-          data: workingCopy?.data,
-          onChange: (data: unknown) => updateWorkingCopy({ data: data as Record<string, unknown> }),
-          setValid,
-          setError,
-        })}
-      </>
-    );
-  }, [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]);
+  const renderStep = useCallback((cfg: PluginStepConfig) => (
+    <StepAdapterComponent
+      cfg={cfg}
+      mode={mode}
+      nodeId={String(nodeId)}
+      parentId={String(pageNodeId)}
+      workingData={workingCopy?.data}
+      updateWorkingCopy={updateWorkingCopy}
+    />
+  ), [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]);
 
   const steps: DialogStep[] = useMemo(() => {
     const result: DialogStep[] = [];
@@ -620,23 +648,23 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
           label: cfg.label ?? cfg.id,
           optional: !!cfg.optional,
           validate: validateFn ? () => validateFn(workingCopy?.data) : undefined,
-          component: <StepAdapter cfg={cfg} />,
+          component: renderStep(cfg),
         });
       });
       return result;
     }
 
     return result.concat(pluginConfigSteps);
-  }, [composedConfigs, basicInfo, tagSuggestions, mode, StepAdapter, pluginConfigSteps, workingCopy?.data]);
+  }, [composedConfigs, basicInfo, tagSuggestions, mode, renderStep, pluginConfigSteps, workingCopy?.data]);
 
   const presentation = useMemo(() => getPresentation(nodeType), [nodeType]);
   const icon = useMemo(() => getIconComponent(nodeType), [nodeType]);
 
   const dialogTitle = useMemo(() => {
     const label = presentation?.label || nodeType;
-    const modeLabel = intent === 'create' ? 'Create' : 'Edit';
+    const modeLabel = mode === 'create' ? 'Create' : 'Edit';
     return `${modeLabel} ${label}`;
-  }, [presentation?.label, nodeType, intent]);
+  }, [presentation?.label, nodeType, mode]);
 
   const [evaluatedState, setEvaluatedState] = useState<{ filled: boolean[]; guards: StepGuardState }>({
     filled: [],
@@ -804,13 +832,13 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
     <PluginDialogFooter
-      intent={intent}
+      mode={mode}
       canCommit={canSaveCurrent}
       onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
       disableDraft={!hasUnsavedChanges}
       canStartBatch={canStartBatch}
     />
-  ), [intent, canSaveCurrent, handleSaveDraft, hasUnsavedChanges, canStartBatch]);
+  ), [mode, canSaveCurrent, handleSaveDraft, hasUnsavedChanges, canStartBatch]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
