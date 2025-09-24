@@ -252,10 +252,11 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
           loadingTooltip={(
             <Box sx={{ p: 0.5 }}>
-              <Typography variant="caption" display="block">左から順に:</Typography>
-              <Typography variant="caption" display="block">- 購読中サブツリーの最上位の子の数</Typography>
-              <Typography variant="caption" display="block">- 読み込み済みのノード数（表示中＋展開分）</Typography>
-              <Typography variant="caption" display="block">- 選択されているノード数</Typography>
+              <Typography variant="caption" display="block">From left to right:</Typography>
+              <Typography variant="caption" display="block">- Number of top-level children in the subscribed
+                subtree</Typography>
+              <Typography variant="caption" display="block">- Number of loaded nodes (visible + expanded)</Typography>
+              <Typography variant="caption" display="block">- Number of selected nodes</Typography>
             </Box>
           )}
         />
