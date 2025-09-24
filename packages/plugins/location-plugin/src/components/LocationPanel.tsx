@@ -2,11 +2,12 @@
   * Location Panel Component
    */
 
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Box, Chip, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types/index.js';
+import { useTranslation } from '../i18n/index.js';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -14,11 +15,13 @@ export interface LocationPanelProps {
 }
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
-  const [entity] = useState<LocationEntity>({
+  const { translations, locale } = useTranslation();
+
+  const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
     nodeId,
-    name: 'サンプル地点情報',
-    description: 'これはサンプルの地点情報です',
+    name: translations.panel.sampleName,
+    description: translations.panel.sampleDescription,
     dataSourceName: 'openstreetmap',
     licenseAgreement: true,
     processingConfig: {
@@ -31,7 +34,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,
-  });
+  }), [nodeId, translations]);
+
+  const formatDate = (timestamp?: number) => {
+    if (!timestamp) return '-';
+    const formatterLocale = locale === 'ja' ? 'ja-JP' : 'en-US';
+    return new Date(timestamp).toLocaleString(formatterLocale);
+  };
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -52,13 +61,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
             />
           </Box>
           <Box display="flex" gap={1}>
-            <Tooltip title="更新">
+            <Tooltip title={translations.panel.refresh}>
               <IconButton size="small">
                 <Refresh />
               </IconButton>
             </Tooltip>
             {onEdit && (
-              <Tooltip title="編集">
+              <Tooltip title={translations.panel.edit}>
                 <IconButton size="small" onClick={onEdit}>
                   <Edit />
                 </IconButton>
@@ -81,31 +90,33 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           <Grid size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                基本情報
+                {translations.panel.basicInfo}
               </Typography>
               <List dense>
                 <ListItem>
                   <ListItemText
-                    primary="データソース"
+                    primary={translations.panel.dataSource}
                     secondary={entity.dataSourceName}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="ライセンス同意"
-                    secondary={entity.licenseAgreement ? '同意済み' : '未同意'}
+                    primary={translations.panel.licenseAgreement}
+                    secondary={entity.licenseAgreement
+                      ? translations.panel.licenseAgreed
+                      : translations.panel.licensePending}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="作成日時"
-                    secondary={entity?.createdAt ? new Date(entity.createdAt).toLocaleString('ja-JP'):'-'}
+                    primary={translations.panel.createdAt}
+                    secondary={formatDate(entity.createdAt)}
                   />
                 </ListItem>
                 <ListItem>
                   <ListItemText
-                    primary="更新日時"
-                    secondary={entity?.updatedAt ? new Date(entity?.updatedAt).toLocaleString('ja-JP'): '-'}
+                    primary={translations.panel.updatedAt}
+                    secondary={formatDate(entity.updatedAt)}
                   />
                 </ListItem>
               </List>
@@ -116,12 +127,12 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           <Grid size={12}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
-                処理設定
+                {translations.panel.processingSettings}
               </Typography>
               <Grid container spacing={2}>
                 <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
-                    並行ダウンロード数
+                    {translations.panel.concurrentDownloads}
                   </Typography>
                   <Typography variant="body1">
                     {entity.processingConfig?.concurrentDownloads}
@@ -129,26 +140,32 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 </Grid>
                 <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
-                    フィルタリング
+                    {translations.panel.filtering}
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig?.enableLocationFiltering ? '有効' : '無効'}
+                    {entity.processingConfig?.enableLocationFiltering
+                      ? translations.common.enabled
+                      : translations.common.disabled}
                   </Typography>
                 </Grid>
                 <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
-                    クラスタリング
+                    {translations.panel.clustering}
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig?.enableClustering ? '有効' : '無効'}
+                    {entity.processingConfig?.enableClustering
+                      ? translations.common.enabled
+                      : translations.common.disabled}
                   </Typography>
                 </Grid>
                 <Grid size={6}>
                   <Typography variant="body2" color="text.secondary">
-                    ジオコーディング
+                    {translations.panel.geocoding}
                   </Typography>
                   <Typography variant="body1">
-                    {entity.processingConfig?.enableGeocoding ? '有効' : '無効'}
+                    {entity.processingConfig?.enableGeocoding
+                      ? translations.common.enabled
+                      : translations.common.disabled}
                   </Typography>
                 </Grid>
               </Grid>
