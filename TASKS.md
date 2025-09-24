@@ -168,6 +168,44 @@
     - progress: 2025-09-24 12:16 辺ハンドルの適用範囲をフルレングスに変更し、角ハンドルを約 1.5 倍へ拡大
     - progress: 2025-09-24 12:20 `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認はローカル制限のため未実施）
     - progress: 2025-09-24 12:32 ドラッグ/リサイズ中はフレームの CSS トランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 成功）
+- fix/ui-toolbar/settings-menu-autoclose — TreeConsole ツールバー設定メニューの自動クローズ対応
+  - ブランチ: `fix/ui-toolbar/settings-menu-autoclose`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/ui-treeconsole-toolbar`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [x] Row Click Action のラジオを選択すると設定メニュー全体が閉じる
+    - [x] Theme / Language の各メニュー項目（およびサブメニューでの選択）で設定メニューが閉じる
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` が成功する（該当パッケージにスクリプトがない場合は `tsc --noEmit` 代替を記録）
+  - チェックリスト：
+    - [x] Row Click Action のハンドラでメニュークローズを呼び出す
+    - [x] Theme / Language の選択処理から設定メニューをクローズ
+    - [x] 運用ログに検証と制限事項を記録
+  - ロールバック手順：
+    - 設定メニュー関連のハンドラ変更を元に戻し、`pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-24 12:48 TreeConsole 設定メニューの自動クローズ対応に着手
+    - progress: 2025-09-24 12:55 Row Click Action 変更時に設定メニューが閉じるようハンドラを更新
+    - progress: 2025-09-24 12:57 Theme / Language 選択後に設定メニューを閉じる処理を追加
+    - progress: 2025-09-24 13:00 `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` を実行し成功（UI 実機確認は未実施）
+- fix/ui-tour/resources-targets — Resources ガイドツアーのターゲット不一致修正
+  - ブランチ: `fix/ui-tour/resources-targets`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-tour`, `@hierarchidb/ui-treeconsole-{toolbar,base}`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [ ] Resources Guided Tour のすべてのステップが存在する要素をターゲットとし、`Target not mounted` エラーが発生しない
+    - [ ] Projects / TopPage ガイドツアーでも同様のターゲット整合性を維持する
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-tour typecheck` が成功する
+    - [ ] UI 手動確認が未実施の場合は運用ログに明記する
+  - チェックリスト：
+    - [ ] TreeConsoleToolbar の輸出入ボタンに安定した `aria-label` を付与する
+    - [ ] TreeConsolePanel にテーブル領域用の `data-tour-id` を追加する
+    - [ ] GuidedTour コンポーネントのターゲットセレクタを更新し、必要に応じて共有部分も修正する
+  - ロールバック手順：
+    - 追加したラベル・属性・ツアー定義の変更を差分前へ戻し、`pnpm --filter @hierarchidb/runtime-ui-tour typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-24 13:05 Resources Guided Tour のターゲット不一致調査に着手
+    - progress: 2025-09-24 13:12 TreeConsoleToolbar の輸出入ボタンへ `aria-label="Import and export options"` を付与
+    - progress: 2025-09-24 13:14 TreeConsolePanel のテーブルラッパーに `data-tour-id="tree-table"` を追加
+    - progress: 2025-09-24 13:18 各 Guided Tour（Resources/Projects/TopPage）のターゲットセレクタを更新
+    - progress: 2025-09-24 13:22 `pnpm --filter @hierarchidb/{ui-treeconsole-base,ui-treeconsole-toolbar,runtime-ui-tour} typecheck` を順次実行し成功（UI 実機確認は未実施）
 - feat/runtime-dialog/unified-frame — プラグインダイアログの MUI ボタン化とフレーム標準化
   - ブランチ: `feat/runtime-dialog/unified-frame`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-dialog`, `@hierarchidb/plugins-folder-plugin`
@@ -3936,6 +3974,16 @@ P2:
 - 2025-09-24 12:16 progress: fix/ui-dialog/frame-handle-area — 辺ハンドルを全長カバーに調整し、角ハンドルを約 1.5 倍へ拡大
 - 2025-09-24 12:20 progress: fix/ui-dialog/frame-handle-area — `pnpm --filter @hierarchidb/ui-dialog typecheck` を実行し成功（手動操作確認は環境制約のため未実施）
 - 2025-09-24 12:32 progress: fix/ui-dialog/frame-handle-area — ドラッグ/リサイズ中のトランジションを無効化し、追従遅延を抑制（`pnpm --filter @hierarchidb/ui-dialog typecheck` 再実行で成功）
+- 2025-09-24 12:48 start: fix/ui-toolbar/settings-menu-autoclose — TreeConsole 設定メニューの自動クローズ対応に着手
+- 2025-09-24 12:55 progress: fix/ui-toolbar/settings-menu-autoclose — Row Click Action の選択時に設定メニューを閉じるよう更新
+- 2025-09-24 12:57 progress: fix/ui-toolbar/settings-menu-autoclose — Theme / Language の選択後に設定メニューを閉じる処理を追加
+- 2025-09-24 13:00 progress: fix/ui-toolbar/settings-menu-autoclose — `pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` を実行し成功（UI 実機確認は未実施）
+- 2025-09-24 13:35 progress: fix/ui-toolbar/settings-menu-autoclose — メニュークローズ処理を非同期化し、Row/Theme/Language 選択後に親メニューが確実に閉じるよう調整（`pnpm --filter @hierarchidb/ui-treeconsole-toolbar typecheck` 再実行で成功）
+- 2025-09-24 13:05 start: fix/ui-tour/resources-targets — Resources Guided Tour のターゲット不一致調査に着手
+- 2025-09-24 13:12 progress: fix/ui-tour/resources-targets — TreeConsoleToolbar の輸出入ボタンへ `aria-label="Import and export options"` を付与
+- 2025-09-24 13:14 progress: fix/ui-tour/resources-targets — TreeConsolePanel のテーブルラッパーに `data-tour-id="tree-table"` を追加
+- 2025-09-24 13:18 progress: fix/ui-tour/resources-targets — ガイドツアー（Resources/Projects/TopPage）のターゲットセレクタを更新
+- 2025-09-24 13:22 progress: fix/ui-tour/resources-targets — `pnpm --filter @hierarchidb/{ui-treeconsole-base,ui-treeconsole-toolbar,runtime-ui-tour} typecheck` を順次実行し成功（UI 実機確認は未実施）
 - 2025-09-22 10:24 start: chore/app/map-chunk-warning-limit — map.js チャンク警告を抑制する閾値調整に着手。
 - 2025-09-22 10:26 progress: chore/app/map-chunk-warning-limit — `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加。
 - 2025-09-22 10:27 blocked: chore/app/map-chunk-warning-limit — `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（差分影響なし）。

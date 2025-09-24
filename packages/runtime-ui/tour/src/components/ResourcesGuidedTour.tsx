@@ -93,7 +93,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({ run, o
       disableBeacon: true,
     },
     {
-      target: '[aria-label="Create Action"]',
+      target: '[aria-label="Create new item"]',
       content: (
         <div>
           <h3>Quick Resource Creation ⚡</h3>
@@ -125,7 +125,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({ run, o
       disableBeacon: true,
     },
     {
-      target: '[data-testid="tree-table"]',
+      target: '[data-tour-id="tree-table"]',
       content: (
         <div>
           <h3>Resource Table View 📋</h3>

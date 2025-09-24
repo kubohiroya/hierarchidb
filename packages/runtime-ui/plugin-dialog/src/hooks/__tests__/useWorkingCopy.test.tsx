@@ -4,6 +4,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-type';
 import { useWorkingCopy } from '../useWorkingCopy.js';
+import {Remote} from "comlink";
 
 function createMockClient(options: {
   existingWorkingCopy?: { id: NodeId; name?: string; description?: string; data?: Record<string, unknown> };
@@ -35,7 +36,7 @@ function createMockClient(options: {
   const client = {
     getWorkingCopyAPI: vi.fn(async () => wcAPI),
     getQueryAPI: vi.fn(async () => queryAPI),
-  } as unknown as WorkerAPI;
+  } as unknown as Remote<WorkerAPI>;
 
   const workerClient: WorkerClientRef = {
     client,

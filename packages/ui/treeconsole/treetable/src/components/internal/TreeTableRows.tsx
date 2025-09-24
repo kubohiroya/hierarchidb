@@ -31,6 +31,7 @@ export interface TreeTableRowsProps {
   controller: any;
   disableDragAndDrop: boolean;
   visualSelectionSet: Set<NodeId>;
+  trashAction?: 'restore'|'empty';
 }
 
 export function TreeTableRows({

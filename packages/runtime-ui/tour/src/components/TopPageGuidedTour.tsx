@@ -107,7 +107,7 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       placement: 'bottom',
     },
     {
-      target: '[aria-label="Create Action"]',
+      target: '[aria-label="Create new item"]',
       content: (
         <div>
           <h3>Quick Create ⚡</h3>

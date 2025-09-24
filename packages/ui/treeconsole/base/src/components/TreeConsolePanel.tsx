@@ -225,6 +225,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           paddingRight: '8px',
           minWidth: 0,
         }}
+        data-tour-id="tree-table"
       >
       <TreeTableCore
         controller={controller}
