@@ -7,6 +7,7 @@
   */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   AlertTitle,
@@ -99,6 +100,60 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   const [dataAnalysis, setDataAnalysis] = useState<DataAnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showRecommendation, setShowRecommendation] = useState(true);
+
+  const { t } = useTranslation('styler-plugin');
+  const tStr = useCallback((key: string, defaultValue: string) => {
+    const result = t(key, { defaultValue });
+    return typeof result === 'string' ? result : defaultValue;
+  }, [t]);
+
+  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) => {
+    return Object.entries(values).reduce(
+      (acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)),
+      template,
+    );
+  }, []);
+
+  const algorithmLabels = useMemo(() => ({
+    linear: tStr('step5.algorithms.linear', 'Linear'),
+    quantile: tStr('step5.algorithms.quantile', 'Quantile'),
+    jenks: tStr('step5.algorithms.jenks', 'Jenks Natural Breaks'),
+    equal: tStr('step5.algorithms.equal', 'Equal Interval'),
+  }) as Record<ColorAlgorithm, string>, [tStr]);
+
+  const algorithmDescriptions = useMemo(() => ({
+    linear: tStr(
+      'step5.algorithms.linearDescription',
+      'Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.',
+    ),
+    quantile: tStr(
+      'step5.algorithms.quantileDescription',
+      'Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.',
+    ),
+    jenks: tStr(
+      'step5.algorithms.jenksDescription',
+      'Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.',
+    ),
+    equal: tStr(
+      'step5.algorithms.equalDescription',
+      'Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.',
+    ),
+  }) as Record<ColorAlgorithm, string>, [tStr]);
+
+  const recommendation = dataAnalysis?.recommendation || null;
+  const recommendationTitle = recommendation
+    ? formatTemplate(
+      tStr('step5.recommendation.summary', 'Recommended algorithm: {algorithm}'),
+      { algorithm: algorithmLabels[recommendation.algorithm] || recommendation.algorithm },
+    )
+    : '';
+  const recommendationConfidence = recommendation
+    ? formatTemplate(
+      tStr('step5.recommendation.confidence', 'Confidence: {confidence}%'),
+      { confidence: Math.round(recommendation.confidence * 100) },
+    )
+    : '';
+  const currentSuitability = recommendation ? recommendation.suitability[localConfig.algorithm] : null;
 
   useEffect(() => {
     if (selectedValueColumn && csvData.length > 0) {
@@ -306,7 +361,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <AutoFixHighIcon color="info" />
                     <Typography variant="subtitle2" color="info.main">
-                      アルゴリズム自動推奨
+                      {tStr('step5.recommendation.title', 'Algorithm Recommendation')}
                     </Typography>
                   </Stack>
 
@@ -321,20 +376,19 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                         disabled={isAnalyzing}
                         startIcon={isAnalyzing ? <CircularProgress size={16} /> : null}
                       >
-                        適用
+                        {tStr('step5.recommendation.apply', 'Apply')}
                       </Button>
                     }
                   >
                     <AlertTitle>
-                      「{dataAnalysis.recommendation.algorithm === 'linear' ? '線形' :
-                      dataAnalysis.recommendation.algorithm === 'quantile' ? '分位数' :
-                        dataAnalysis.recommendation.algorithm === 'jenks' ? '自然分類（Jenks）' :
-                          '等間隔'}」を推奨
+                      {recommendationTitle}
                     </AlertTitle>
-                    {dataAnalysis.recommendation.reasoning}
-                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                      信頼度: {Math.round(dataAnalysis.recommendation.confidence * 100)}%
-                    </Typography>
+                    {recommendation?.reasoning}
+                    {recommendationConfidence && (
+                      <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                        {recommendationConfidence}
+                      </Typography>
+                    )}
                   </Alert>
                 </Stack>
               </Paper>
@@ -346,7 +400,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
 */}
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
-              色分類アルゴリズム
+              {tStr('step5.algorithmSection.title', 'Color Classification Algorithms')}
             </Typography>
             <ToggleButtonGroup
               value={localConfig.algorithm}
@@ -358,13 +412,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <ToggleButton value="linear">
                 <Stack alignItems="center" spacing={0.5}>
                   <ShowChartIcon fontSize="small" />
-                  <Typography variant="caption">線形</Typography>
-                  {dataAnalysis && (
+                  <Typography variant="caption">{algorithmLabels.linear}</Typography>
+                  {recommendation && (
                     <Chip
-                      label={`${dataAnalysis.recommendation.suitability.linear}%`}
+                      label={`${recommendation.suitability.linear}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.linear > 70 ? 'success' :
-                        dataAnalysis.recommendation.suitability.linear > 40 ? 'default' : 'error'}
+                      color={recommendation.suitability.linear > 70 ? 'success' :
+                        recommendation.suitability.linear > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -374,13 +428,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <ToggleButton value="quantile">
                 <Stack alignItems="center" spacing={0.5}>
                   <BarChartIcon fontSize="small" />
-                  <Typography variant="caption">分位数</Typography>
-                  {dataAnalysis && (
+                  <Typography variant="caption">{algorithmLabels.quantile}</Typography>
+                  {recommendation && (
                     <Chip
-                      label={`${dataAnalysis.recommendation.suitability.quantile}%`}
+                      label={`${recommendation.suitability.quantile}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.quantile > 70 ? 'success' :
-                        dataAnalysis.recommendation.suitability.quantile > 40 ? 'default' : 'error'}
+                      color={recommendation.suitability.quantile > 70 ? 'success' :
+                        recommendation.suitability.quantile > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -390,13 +444,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <ToggleButton value="jenks">
                 <Stack alignItems="center" spacing={0.5}>
                   <InsightsIcon fontSize="small" />
-                  <Typography variant="caption">自然分類</Typography>
-                  {dataAnalysis && (
+                  <Typography variant="caption">{algorithmLabels.jenks}</Typography>
+                  {recommendation && (
                     <Chip
-                      label={`${dataAnalysis.recommendation.suitability.jenks}%`}
+                      label={`${recommendation.suitability.jenks}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.jenks > 70 ? 'success' :
-                        dataAnalysis.recommendation.suitability.jenks > 40 ? 'default' : 'error'}
+                      color={recommendation.suitability.jenks > 70 ? 'success' :
+                        recommendation.suitability.jenks > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -406,13 +460,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <ToggleButton value="equal">
                 <Stack alignItems="center" spacing={0.5}>
                   <ViewColumnIcon fontSize="small" />
-                  <Typography variant="caption">等間隔</Typography>
-                  {dataAnalysis && (
+                  <Typography variant="caption">{algorithmLabels.equal}</Typography>
+                  {recommendation && (
                     <Chip
-                      label={`${dataAnalysis.recommendation.suitability.equal}%`}
+                      label={`${recommendation.suitability.equal}%`}
                       size="small"
-                      color={dataAnalysis.recommendation.suitability.equal > 70 ? 'success' :
-                        dataAnalysis.recommendation.suitability.equal > 40 ? 'default' : 'error'}
+                      color={recommendation.suitability.equal > 70 ? 'success' :
+                        recommendation.suitability.equal > 40 ? 'default' : 'error'}
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -427,33 +481,21 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                 <InfoIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
                 <Box>
                   <Typography variant="body2" fontWeight="medium" gutterBottom>
-                    {localConfig.algorithm === 'linear' && '線形補間'}
-                    {localConfig.algorithm === 'quantile' && '分位数分類'}
-                    {localConfig.algorithm === 'jenks' && '自然分類（Jenks Natural Breaks）'}
-                    {localConfig.algorithm === 'equal' && '等間隔分類'}
+                    {algorithmLabels[localConfig.algorithm] || localConfig.algorithm}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" component="div">
-                    {localConfig.algorithm === 'linear' &&
-                      '最小値から最大値まで連続的に色を変化させます。データが均等に分布している場合や、連続的な変化を表現したい場合に適しています。'}
-                    {localConfig.algorithm === 'quantile' &&
-                      '各クラスに同じ数の要素が入るように分類します。データに偏りがある場合でも、バランスの取れた視覚表現が可能です。外れ値の影響を受けにくい特徴があります。'}
-                    {localConfig.algorithm === 'jenks' &&
-                      'データの自然な区切りを見つけて分類します。クラス内の分散を最小化し、クラス間の分散を最大化することで、データの持つ自然なグループを発見します。計算コストは高いですが、最も意味のある分類が可能です。'}
-                    {localConfig.algorithm === 'equal' &&
-                      '値の範囲を等間隔に分割します。温度や標高など、連続的で線形な分布のデータに適しています。計算が高速で、理解しやすい分類方法です。'}
+                    {algorithmDescriptions[localConfig.algorithm]}
                   </Typography>
 
                   {/*
 */}
-                  {dataAnalysis && (
+                  {currentSuitability !== null && (
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="caption" color="primary">
-                        あなたのデータでの適合度: {
-                        localConfig.algorithm === 'linear' ? dataAnalysis.recommendation.suitability.linear :
-                          localConfig.algorithm === 'quantile' ? dataAnalysis.recommendation.suitability.quantile :
-                            localConfig.algorithm === 'jenks' ? dataAnalysis.recommendation.suitability.jenks :
-                              dataAnalysis.recommendation.suitability.equal
-                      }%
+                        {formatTemplate(
+                          tStr('step5.recommendation.suitability', 'Suitability for your data: {value}%'),
+                          { value: currentSuitability },
+                        )}
                       </Typography>
                     </Box>
                   )}

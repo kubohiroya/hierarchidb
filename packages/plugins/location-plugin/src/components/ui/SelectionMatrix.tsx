@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { Search, SelectAll } from '@mui/icons-material';
 import type { LocationType } from '../../types/index.js';
+import { useTranslation } from '../../i18n/index.js';
 
 export interface Country {
   code: string;           // ISO 3166-1 alpha-3
@@ -81,10 +82,15 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
                                                                   onSelectionChange,
                                                                   disabled = false,
                                                                 }) => {
+  const { translations } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [continentFilter, setContinentFilter] = useState<string[]>([]);
 
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+
+  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) => {
+    return Object.entries(values).reduce((acc, [key, val]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(val)), template);
+  }, []);
 
   const filteredCountries = useMemo(() => {
     return countries.filter(country => {
@@ -189,11 +195,19 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
 
   const estimateProcessingTime = (selections: number): string => {
     const minutes = Math.ceil(selections / 100); //  1001
-    if (minutes < 1) return '1分未満';
-    if (minutes < 60) return `約 ${minutes} 分`;
+    if (minutes < 1) return translations.selectionMatrix.processingLessThanMinute;
+    if (minutes < 60) {
+      return formatTemplate(translations.selectionMatrix.processingAboutMinutes, { minutes });
+    }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `約 ${hours}時間${mins > 0 ? mins + '分' : ''}`;
+    const minutesText = mins > 0
+      ? formatTemplate(translations.selectionMatrix.processingMinutesText, { minutes: mins })
+      : '';
+    return formatTemplate(translations.selectionMatrix.processingAboutHours, {
+      hours,
+      minutesText,
+    });
   };
 
   return (
@@ -206,7 +220,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
         <Box display="flex" gap={2} alignItems="center" mb={2}>
           <TextField
             size="small"
-            placeholder="国名で検索..."
+            placeholder={translations.selection.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             InputProps={{
@@ -223,7 +237,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
                 size="small"
               />
             }
-            label="選択済みのみ"
+            label={translations.selection.showSelectedOnly}
           />
         </Box>
 
@@ -248,17 +262,23 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
 */}
         <Box display="flex" gap={2} alignItems="center" flexWrap="wrap">
           <Chip
-            label={`${statistics.totalSelections} 選択中`}
+            label={formatTemplate(translations.selectionMatrix.selectedCountLabel, {
+              count: statistics.totalSelections.toLocaleString(),
+            })}
             color="primary"
             variant="outlined"
           />
           <Chip
-            label={`推定 ${formatDataSize(statistics.estimatedDataSize)}`}
+            label={formatTemplate(translations.selectionMatrix.estimatedSizeLabel, {
+              size: formatDataSize(statistics.estimatedDataSize),
+            })}
             color="info"
             variant="outlined"
           />
           <Chip
-            label={`処理時間: ${estimateProcessingTime(statistics.totalSelections)}`}
+            label={formatTemplate(translations.selectionMatrix.processingTimeLabel, {
+              time: estimateProcessingTime(statistics.totalSelections),
+            })}
             color="warning"
             variant="outlined"
           />
@@ -267,7 +287,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
  /
 */}
           <Box flex={1} display="flex" justifyContent="flex-end" gap={1}>
-            <Tooltip title="全選択">
+            <Tooltip title={translations.selectionMatrix.tooltipSelectAll}>
               <IconButton size="small" onClick={handleSelectAll} disabled={disabled}>
                 <SelectAll />
               </IconButton>
@@ -296,7 +316,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
                     size="small"
                   />
                   <Typography variant="body2" fontWeight="bold">
-                    国 / タイプ
+                    {translations.selectionMatrix.columnHeader}
                   </Typography>
                 </Box>
               </TableCell>
@@ -388,8 +408,13 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
                       >
                         <Tooltip title={
                           estimatedCount
-                            ? `推定 ${estimatedCount} 件の${type.name}データ`
-                            : `${type.name}データ`
+                            ? formatTemplate(translations.selectionMatrix.tooltipEstimated, {
+                              count: estimatedCount.toLocaleString(),
+                              type: type.name,
+                            })
+                            : formatTemplate(translations.selectionMatrix.tooltipData, {
+                              type: type.name,
+                            })
                         }>
                           <Checkbox
                             checked={isSelected}
@@ -410,7 +435,7 @@ export const SelectionMatrix: React.FC<SelectionMatrixProps> = ({
               <TableRow>
                 <TableCell colSpan={locationTypes.length + 1} sx={{ textAlign: 'center', py: 4 }}>
                   <Typography color="text.secondary">
-                    条件に一致する国がありません
+                    {translations.selectionMatrix.noResults}
                   </Typography>
                 </TableCell>
               </TableRow>

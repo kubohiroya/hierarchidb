@@ -1,5 +1,5 @@
 /**
-  * Route Dialog Component (ui-dialog 版)
+  * Route Dialog Component (ui-dialog variant)
    */
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
