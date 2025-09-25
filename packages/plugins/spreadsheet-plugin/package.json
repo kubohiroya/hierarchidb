@@ -21,6 +21,11 @@
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
     },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
@@ -31,6 +36,9 @@
     "*": {
       "worker": [
         "dist/worker/index.d.ts"
+      ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
       ],
       "ui": [
         "dist/ui/index.d.ts"

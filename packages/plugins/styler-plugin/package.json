@@ -17,6 +17,9 @@
       "worker": [
         "dist/worker/index.d.ts"
       ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ]
@@ -43,6 +46,11 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
     }
   },
   "scripts": {
@@ -69,7 +77,8 @@
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*"
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.1",

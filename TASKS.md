@@ -1992,7 +1992,7 @@
     - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` が成功
     - [x] Phase 2a の検証結果・課題を `TASKS.md` と `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ反映
   - チェックリスト：
-    - [ ] フォルダ/Resolver プラグインに `worker-factory` ディレクトリと `worker-public-types.ts`（型のみ）を新設
+    - [x] フォルダ/Resolver プラグインに `worker-factory` ディレクトリと `worker-public-types.ts`（型のみ）を新設
     - [x] `WorkerModuleLoader` から新ファクトリーを呼び出すコードパスを追加し、テストで await するヘルパーを整備
     - [x] プラグインのビルド/テスト/型チェックを実行し結果を運用ログへ記録
   - ロールバック手順：
@@ -2002,6 +2002,7 @@
     - progress: 2025-09-25 19:45 folder/resolver の `worker/index.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
     - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
     - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
+    - progress: 2025-09-25 21:40 basemap/route/spreadsheet/styler の構成テンプレートをフォルダ/Resolver に合わせて整理し、`worker-public-types.ts` と型エントリを追加入力（ビルドは Phase 2b で一括再検証予定）
 
 - feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b: 全プラグイン展開）
   - ブランチ: `feat/plugins/worker-factory-rollout`
@@ -2015,6 +2016,12 @@
     - [ ] Phase 2a テンプレートをベースに残りプラグインへ適用
     - [ ] ESLint ルールと codemod を併用し、旧パス参照を検出・修正
     - [ ] 全プラグインのビルド/テストコマンドを実行し、結果を記録
+  - 運用ログ：
+    - start: 2025-09-25 19:58 Phase 2b 全プラグイン展開に向けて着手（テンプレート整備と残プラグイン確認）
+    - progress: 2025-09-25 20:12 basemap/route/spreadsheet/styler の `worker/index.ts` を薄い re-export に刷新し、Dexie 登録処理を `src/worker-factory/` へ移行
+    - progress: 2025-09-25 22:05 shape プラグインも `worker-factory` 方式へ移行し、`WorkerModuleLoader` の `PLUGIN_LOADER_EXPORTS` に全プラグインの `register*WorkerStores` を追加。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` 成功を確認
+    - progress: 2025-09-25 22:58 Dexie v4 の型差異に合わせて `tsup.base.config.ts` に `esModuleInterop` を追加し、`shapeEntitiesDB.ts` の import を named へ修正。`pnpm --filter @hierarchidb/plugins-shape-plugin build` を再実行しグリーンを確認
+    - progress: 2025-09-25 23:05 各 `register*WorkerStores.ts` へ `/// <reference types="vite/client" />` を追加し、`tsconfig.base.json` に `@hierarchidb/runtime-worker` のパスエイリアスを登録。`pnpm --filter @hierarchidb/app build` が WARN のみで完走することを確認
   - ロールバック手順：
     - プラグイン単位で git revert を行い旧 `worker/index.ts` を復元。ESLint ルールは再度緩和してビルド通過を確保
 

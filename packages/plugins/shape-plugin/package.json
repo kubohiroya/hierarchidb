@@ -16,6 +16,9 @@
       "worker": [
         "dist/worker/index.d.ts"
       ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ]
@@ -42,6 +45,10 @@
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js"
     }
   },
   "files": [

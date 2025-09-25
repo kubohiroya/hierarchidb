@@ -14,13 +14,13 @@ const PLUGINS_TO_PRELOAD: PluginWorkerId[] = [
 ];
 
 const PLUGIN_LOADER_EXPORTS: Partial<Record<PluginWorkerId, string[]>> = {
-  basemap: ['loadBasemapEntitiesDbModule'],
+  basemap: ['registerBasemapWorkerStores', 'loadBasemapEntitiesDbModule'],
   folder: ['registerFolderWorkerStores', 'loadFolderEntitiesDbModule'],
   resolver: ['registerResolverWorkerStores', 'loadResolverEntitiesDbModule'],
-  route: ['loadRouteEntitiesDbModule'],
-  spreadsheet: ['loadSpreadsheetEntitiesDbModule'],
-  styler: ['loadStylerEntitiesDbModule'],
-  shape: ['loadShapeEntitiesDbModule'],
+  route: ['registerRouteWorkerStores', 'loadRouteEntitiesDbModule'],
+  spreadsheet: ['registerSpreadsheetWorkerStores', 'loadSpreadsheetEntitiesDbModule'],
+  styler: ['registerStylerWorkerStores', 'loadStylerEntitiesDbModule'],
+  shape: ['registerShapeWorkerStores', 'loadShapeEntitiesDbModule'],
 };
 
 let runtimePromise: Promise<Remote<WorkerAPI>> | null = null;

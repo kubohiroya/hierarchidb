@@ -5,12 +5,14 @@ export default createTsupConfig({
     index: 'src/index.ts',
     'database/index': 'src/database/index.ts',
     'worker/index': 'src/worker/index.ts',
+    'worker-factory/index': 'src/worker-factory/index.ts',
   },
   dts: {
     entry: {
       index: 'src/index.ts',
       'database/index': 'src/database/index.ts',
       'worker/index': 'src/worker/index.ts',
+      'worker-factory/index': 'src/worker-factory/index.ts',
     },
   },
   external: [

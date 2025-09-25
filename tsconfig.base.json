@@ -55,6 +55,12 @@
       "@hierarchidb/download/*": [
         "packages/feature/download/src/*"
       ],
+      "@hierarchidb/runtime-worker": [
+        "packages/runtime/worker-core/src/index.ts"
+      ],
+      "@hierarchidb/runtime-worker/*": [
+        "packages/runtime/worker-core/src/*"
+      ],
       "@hierarchidb/util": [
         "packages/util/src/index.ts"
       ],

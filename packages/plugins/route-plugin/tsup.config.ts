@@ -1,19 +1,20 @@
 import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
-  // JS build entries
-  entry: [
-    'src/index.ts',
-    'src/worker/index.ts',
-    'src/ui/index.ts',
-    'src/database/index.ts',
-  ],
+  entry: {
+    index: 'src/index.ts',
+    'worker/index': 'src/worker/index.ts',
+    'worker-factory/index': 'src/worker-factory/index.ts',
+    'ui/index': 'src/ui/index.ts',
+    'database/index': 'src/database/index.ts',
+  },
   dts: {
     entry: {
       'index': 'src/index.ts',
-      'database/index': 'src/database/index.ts',
-      'ui/index': 'src/ui/index.ts',
       'worker/index': 'src/worker/index.ts',
+      'worker-factory/index': 'src/worker-factory/index.ts',
+      'ui/index': 'src/ui/index.ts',
+      'database/index': 'src/database/index.ts',
     },
   },
   external: [

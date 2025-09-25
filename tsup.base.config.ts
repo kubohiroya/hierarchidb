@@ -55,6 +55,8 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
         // Keep JSX types external to avoid leaking jsx-runtime symbols
         jsx: 'react-jsx',
         skipLibCheck: true,
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
         // Do not fail DTS bundling on local unuseds; keep tsc typecheck strict
         noUnusedLocals: false,
         noUnusedParameters: false,

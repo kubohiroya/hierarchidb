@@ -385,6 +385,12 @@ flowchart LR
 - [ ] `pnpm -r typecheck` / `pnpm -r lint` を実行し、警告・エラーがないかを確認
 - [ ] 旧ディレクトリ構成での import を検出する ESLint ルールがある場合は、この段階で有効化
 
+進捗ログ（Phase 2b）
+- 2025-09-25: basemap / route / spreadsheet / styler プラグインを `worker-factory` 構成へ移行し、`register*WorkerStores` を標準化。`WorkerModuleLoader` 側も該当 `register` 関数を順次呼び出すよう更新
+- 2025-09-25: shape プラグインを同テンプレートへ展開し、`worker/index.ts` を薄い re-export 化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` は成功するが、Dexie 4.x の型互換問題で `pnpm build` の DTS バンドルが失敗（`ShapeEntitiesDB` 継承で constructor/`version` が検出されない）。要対応メモとして残す
+- 2025-09-25: Dexie 4.x の型差異に `tsup.base.config.ts` の `esModuleInterop` 追記と `shapeEntitiesDB.ts` の named import 変更で対処。`pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認
+- 2025-09-25: `register*WorkerStores.ts` に `vite/client` 型参照を付与し、`tsconfig.base.json` に `@hierarchidb/runtime-worker` のパスエイリアスを追加。`pnpm --filter @hierarchidb/app build` は WARN のみ（動的 import 既知警告）で通過
+
 ### 12.6 Phase 3 – 互換層整理と CI 強化
 - [ ] 旧 API を参照しているコードが残っていないかを検索し、必要に応じて互換ラッパーを削除
 - [ ] `eslint --rule '@typescript-eslint/no-restricted-imports'` で旧パスを禁止する設定を追加
