@@ -62,13 +62,14 @@
   - チェックリスト：
     - [x] `vitest.setup.base.ts` の fetch ポリフィルを Node 組み込み `node:undici` ベースへ移行
     - [x] polyfill 適用結果を確認するテストを実行し、bundler が `node-fetch` を要求しないことを確認
-    - [ ] 必要に応じてドキュメントまたは TODO を更新
+    - [x] 必要に応じてドキュメントまたは TODO を更新
   - ロールバック手順：
     - 変更した polyfill ロジックを差分前へ戻し、再度テストを実行して現状復帰を確認
   - 運用ログ：
     - start: 2025-09-26 01:00 Node 実行時の fetch 未定義エラー対策として polyfill を見直す作業に着手（前回実行で `node-fetch` 解決失敗を確認）
     - progress: 2025-09-26 01:02 `vitest.setup.base.ts` の fetch ポリフィルを `node:undici` ベースへ更新し、`Headers`/`Request`/`Response`/`FormData`/`Blob`/`File` の提供状況を確認
     - progress: 2025-09-26 01:03 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` を実行し、fetch 解決エラーなく 10 件のテストが成功
+    - progress: 2025-09-26 01:20 `docs/testing/vitest-runtime.md` を追加し、Node 環境向け fetch ポリフィル方針とトラブルシューティングを明文化
 - fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/common-type`, `tsup`
@@ -129,12 +130,12 @@
     - [x] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
     - [x] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
     - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
-    - [ ] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
+    - [x] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
   - チェックリスト：
-    - [ ] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
-    - [ ] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
-    - [ ] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
-    - [ ] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
+    - [x] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
+    - [x] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
+    - [x] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
+    - [x] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
   - ロールバック手順：
     - 新設した `packages/runtime/worker-core` を削除し、`packages/runtime-worker/worker*` を元のディレクトリへ戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
   - 運用ログ：
@@ -150,6 +151,7 @@
     - progress: 2025-09-25 19:27 spreadsheet-plugin の worker 型参照を Node16 方式へ修正し、`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build` が成功
     - progress: 2025-09-25 19:32 app build で `@hierarchidb/runtime-shared-module-paths` を解決するため alias/path を追加し、`pnpm --filter @hierarchidb/app build` を実行し成功（既知の dynamic import chunk 警告のみ）
     - progress: 2025-09-25 21:46 残務検証として型チェックを再実行：`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` / `pnpm -C app typecheck` いずれもグリーン。DoD 1〜3 を満たすことを確認
+    - progress: 2025-09-26 01:25 Phase 1 の検証結果を `docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に反映し、DoD を全て完了扱いへ更新
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -209,20 +211,21 @@
   - ブランチ: `feat/runtime-ui/dialog-state-channel`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `feat/plugins/worker-factory-rollout`, `@hierarchidb/runtime-worker`
   - 受け入れ基準（DoD）：
-    - [ ] Worker API に DialogState API を追加し、UI からステップ状態を購読・更新できる
-    - [ ] PluginDialogHeader / Stepper が Worker 提供の状態とローカライズ済みタイトルを反映する
-    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` が成功する
-    - [ ] 必要なドキュメント更新とロールバック手順を TASKS.md に記載
+    - [x] Worker API に DialogState API を追加し、UI からステップ状態を購読・更新できる
+    - [x] PluginDialogHeader / Stepper が Worker 提供の状態とローカライズ済みタイトルを反映する
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` が成功する
+    - [x] 必要なドキュメント更新とロールバック手順を TASKS.md に記載
   - チェックリスト：
-    - [ ] 共有型 `MultiStepDialogState` を `@hierarchidb/common-type` に追加
-    - [ ] `DialogStateAPI` と Worker 側サービスを実装し、PeerStore に状態を永続化
-    - [ ] runtime-ui で状態購読フックと Publish 処理を追加し、Stepper/タイトル/UI へ反映
-    - [ ] 主要プラグインのステップ定義をローカライズレジストリへ登録
+    - [x] 共有型 `MultiStepDialogState` を `@hierarchidb/common-type` に追加
+    - [x] `DialogStateAPI` と Worker 側サービスを実装し、PeerStore に状態を永続化
+    - [x] runtime-ui で状態購読フックと Publish 処理を追加し、Stepper/タイトル/UI へ反映
+    - [x] 主要プラグインのステップ定義をローカライズレジストリへ登録
   - ロールバック手順：
     - Worker API 拡張および関連サービスを revert し、UI 側の購読コードとローカライズ登録を元に戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-25 23:42 MultiStepDialog 状態通知共通化タスクに着手（現状調査と要件整理を実施）
     - progress: 2025-09-25 23:58 共有型/Worker API/Runtime UI を実装し、`pnpm --filter @hierarchidb/common-type build` → `@hierarchidb/common-api build` → `@hierarchidb/runtime-worker {typecheck,build}` → `@hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` を順次実行してグリーンを確認
+    - progress: 2025-09-26 01:28 `packages/runtime-ui/plugin-dialog/README.md` に Dialog State Channel の利用方法とロールバック手順を追記
 - feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
   - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
