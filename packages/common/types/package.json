@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Core types and data models for hierarchidb",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/ambient-ui-global.ts"
+  ],
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

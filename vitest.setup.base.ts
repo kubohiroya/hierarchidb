@@ -122,6 +122,31 @@ try {
   logVitestSetupWarning('Failed to mark window.crypto as configurable', error);
 }
 
+// fetch polyfill (only when not provided by the runtime)
+void (async () => {
+  if (typeof globalThis.fetch !== 'function') {
+    try {
+      const fetchModule = await import('node-fetch');
+      const { default: nodeFetch, Headers, Request, Response, FormData } = fetchModule as unknown as {
+        default: typeof fetch;
+        Headers: typeof globalThis.Headers;
+        Request: typeof globalThis.Request;
+        Response: typeof globalThis.Response;
+        FormData?: typeof globalThis.FormData;
+      };
+      Object.assign(globalThis, {
+        fetch: nodeFetch,
+        Headers: Headers ?? globalThis.Headers,
+        Request: Request ?? globalThis.Request,
+        Response: Response ?? globalThis.Response,
+        FormData: FormData ?? globalThis.FormData,
+      });
+    } catch (error) {
+      logVitestSetupWarning('Failed to polyfill fetch via node-fetch', error);
+    }
+  }
+})();
+
 // CompressionStream mock for compression tests
 if (!globalThis.CompressionStream) {
   globalThis.CompressionStream = class CompressionStream {

@@ -52,6 +52,39 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
+  - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/common-type`, `tsup`
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/common-type` の `sideEffects` 設定が ambient ファイルを保持する形に更新される
+    - [x] `pnpm --filter @hierarchidb/common-type build` 実行時に `ignored-bare-import` 警告が発生しない
+    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
+  - チェックリスト：
+    - [x] `package.json` の `sideEffects` を `./src/ambient-ui-global.ts` を含む配列へ更新
+    - [x] ビルドを実行し警告が消えたことを確認（サンドボックス制約がある場合は失敗理由を記録）
+  - ロールバック手順：
+    - `packages/common/types/package.json` の `sideEffects` を元の `false` に戻し、ビルドを再実行
+  - 運用ログ：
+    - start: 2025-09-24 16:05 ambient-ui-global import の副作用警告解消に着手
+    - progress: 2025-09-24 16:08 `sideEffects` を ambient ファイル指定の配列へ更新
+    - progress: 2025-09-24 16:12 `pnpm --filter @hierarchidb/common-type build` を実行し、警告が出ないことを確認
+- fix/spreadsheet/authfetch-dynamic-import — Spreadsheet CSV API の authFetch ロード方式統一
+  - ブランチ: `fix/spreadsheet/authfetch-dynamic-import`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-spreadsheet-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `SpreadsheetCSVApiAdapter` から `authFetch` の静的 import を撤去し、動的 import のみに統一
+    - [x] `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` が成功する
+    - [ ] `TASKS.md` の運用ログに実施内容と検証結果を記録
+  - チェックリスト：
+    - [x] `downloadCSVFromUrl` など `authFetch` 利用箇所を動的 import 化
+    - [x] 型推論が崩れないことを確認
+  - ロールバック手順：
+    - 変更した import を元の静的 import に戻し、typecheck を再実行
+  - 運用ログ：
+    - start: 2025-09-24 16:20 Spreadsheet CSV API の authFetch 動的 import 化に着手
+    - progress: 2025-09-24 16:24 `SpreadsheetCSVApiAdapter` から静的 import を削除し、動的 import ラッパーを実装
+    - progress: 2025-09-24 16:26 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` を実行し成功
+    - progress: 2025-09-24 16:30 `vitest.setup.base.ts` で fetch 非対応環境向けに `node-fetch` ポリフィルを条件付き適用
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -1863,6 +1896,25 @@
     - start: 2025-09-21 00:00 CommandProcessor undo/redo フローの WFL テスト設計に着手
     - progress: 2025-09-21 00:02 CommandHistoryManager に moveToTrash/commitWorkingCopy の逆操作実装を追加
     - done: 2025-09-21 00:03 `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を実行しグリーン
+
+- chore/turbo/build-outputs — Turbo build での出力ディレクトリ警告を解消
+  - ブランチ: `chore/turbo/build-outputs`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/bff`, `@hierarchidb/cors-proxy`, `turbo`
+  - 受け入れ基準（DoD）：
+    - [x] `turbo run build`（対象パッケージ）で `no output files found` 警告が発生しない
+    - [x] BFF/CORS Proxy の build コマンドが dist 出力を生成し、Turbo のキャッシュ対象になる
+    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
+  - チェックリスト：
+    - [x] `@hierarchidb/bff` の build スクリプトを dist プレースホルダー生成付きに更新
+    - [x] `@hierarchidb/cors-proxy` の build スクリプトを dist プレースホルダー生成付きに更新
+    - [x] `turbo run build --filter` を実行し、該当警告が消えたことを確認（環境制約時は理由を記録）
+  - ロールバック手順：
+    - `packages/backend/bff/package.json` と `packages/backend/cors-proxy/package.json` の build スクリプト変更を元に戻し、`pnpm install` 等は不要
+  - 運用ログ：
+    - start: 2025-09-24 15:40 Turbo build outputs 警告解消タスクに着手（対象: bff, cors-proxy）
+    - progress: 2025-09-24 15:45 bff/cors-proxy の build スクリプトを dist プレースホルダー生成付きに更新
+    - progress: 2025-09-24 15:50 bff/cors-proxy の build コマンドを実行し、`dist/.placeholder` 出力と typecheck グリーンを確認
+    - progress: 2025-09-24 15:55 `pnpm turbo run build --filter=@hierarchidb/{bff,cors-proxy}` を実行し、`no output files found` 警告が発生しないことを確認
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -4022,6 +4074,13 @@ P2:
 - 2025-09-24 14:36 start: chore/dep-fence/peer-and-shim-cleanup — dep-fence peer external / local shim 警告の解消タスクに着手
 - 2025-09-24 14:44 progress: chore/dep-fence/peer-and-shim-cleanup — linker-plugin external 更新と timeline-plugin 型シムの共通 ambient への移管を実施
 - 2025-09-24 15:05 blocked: chore/dep-fence/peer-and-shim-cleanup — サンドボックスのネットワーク制約で `pnpm install` が行えず、typecheck/build/dep-fence の再実行を保留
+- 2025-09-24 15:40 start: chore/turbo/build-outputs — Turbo build outputs 警告解消タスクに着手（対象: bff, cors-proxy）
+- 2025-09-24 15:45 progress: chore/turbo/build-outputs — bff/cors-proxy の build スクリプトを dist プレースホルダー生成付きに更新
+- 2025-09-24 15:50 progress: chore/turbo/build-outputs — bff/cors-proxy の build コマンドを実行し、`dist/.placeholder` 生成と typecheck 成功を確認
+- 2025-09-24 15:55 progress: chore/turbo/build-outputs — `pnpm turbo run build --filter=@hierarchidb/{bff,cors-proxy}` で警告が消えたことを確認
+- 2025-09-24 16:05 start: fix/common-type/ambient-side-effects — ambient import 削除警告の解消に着手
+- 2025-09-24 16:08 progress: fix/common-type/ambient-side-effects — `sideEffects` を `./src/ambient-ui-global.ts` を含む配列へ更新
+- 2025-09-24 16:12 progress: fix/common-type/ambient-side-effects — `pnpm --filter @hierarchidb/common-type build` を実行し警告が出ないことを確認
 - 2025-09-24 13:05 start: fix/ui-tour/resources-targets — Resources Guided Tour のターゲット不一致調査に着手
 - 2025-09-24 13:12 progress: fix/ui-tour/resources-targets — TreeConsoleToolbar の輸出入ボタンへ `aria-label="Import and export options"` を付与
 - 2025-09-24 13:14 progress: fix/ui-tour/resources-targets — TreeConsolePanel のテーブルラッパーに `data-tour-id="tree-table"` を追加

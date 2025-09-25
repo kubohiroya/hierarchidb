@@ -11,7 +11,12 @@ import type {
 } from '@hierarchidb/ui-csv-extract';
 import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
 import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
-import { authFetch } from './utils/authFetch.js';
+type AuthFetch = typeof import('./utils/authFetch.js')['authFetch'];
+
+const loadAuthFetch = async (): Promise<AuthFetch> => {
+  const mod = await import('./utils/authFetch.js');
+  return mod.authFetch;
+};
 
 export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   constructor(private pluginId: string = 'spreadsheet') {
@@ -24,6 +29,7 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   }
 
   async downloadCSVFromUrl(url: string, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
+    const authFetch = await loadAuthFetch();
     const res = await authFetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = await res.arrayBuffer();
