@@ -69,7 +69,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * Math.pow(2, z));
   }
 
-  async generateTiles(inputBufferId: string, config: { format: 'mvt'; compression?: 'gzip' | 'none' }) {
+  async generateTiles(inputBufferId: string, _config: { format: 'mvt'; compression?: 'gzip' | 'none' }) {
     const buf = await this.readBuffer(inputBufferId);
     if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
     const txt = new TextDecoder().decode(buf);

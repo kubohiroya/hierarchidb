@@ -1331,6 +1331,9 @@ importers:
       '@hierarchidb/runtime-shared-fetch-metadata':
         specifier: workspace:*
         version: link:../../runtime-shared/fetch-metadata
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-datasource':
         specifier: workspace:*
         version: link:../../runtime-ui/datasource
@@ -1546,6 +1549,9 @@ importers:
       '@hierarchidb/runtime-shared-module-paths':
         specifier: workspace:*
         version: link:../../runtime-shared/module-paths
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../../runtime/worker-core
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata

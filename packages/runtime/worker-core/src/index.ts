@@ -4,14 +4,13 @@ import {
   TreeMutationAPI,
   TreeQueryAPI,
   TreeSubscriptionAPI,
-  WorkerAPI,
   WorkingCopyAPI,
 } from '@hierarchidb/common-api';
 import { CoreDB } from './services/CoreDB.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
-import { NodeId, NodeType, PluginDefinition, Tree, TreeId, TreeNode } from '@hierarchidb/common-type';
+import { NodeId, NodeType, PluginDefinition, TreeId } from '@hierarchidb/common-type';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService.js';

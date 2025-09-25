@@ -41,7 +41,6 @@ export class NodeLifecycleManager {
     nodeType: NodeType,
     ...args: unknown[]
   ): Promise<void> {
-    const config = this.plugins[nodeType as string];
     const lifecycle = this.getLifecycleHooks(nodeType);
     const hook = lifecycle?.[hookName];
 

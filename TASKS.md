@@ -2022,6 +2022,7 @@
     - progress: 2025-09-25 22:05 shape プラグインも `worker-factory` 方式へ移行し、`WorkerModuleLoader` の `PLUGIN_LOADER_EXPORTS` に全プラグインの `register*WorkerStores` を追加。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` 成功を確認
     - progress: 2025-09-25 22:58 Dexie v4 の型差異に合わせて `tsup.base.config.ts` に `esModuleInterop` を追加し、`shapeEntitiesDB.ts` の import を named へ修正。`pnpm --filter @hierarchidb/plugins-shape-plugin build` を再実行しグリーンを確認
     - progress: 2025-09-25 23:05 各 `register*WorkerStores.ts` へ `/// <reference types="vite/client" />` を追加し、`tsconfig.base.json` に `@hierarchidb/runtime-worker` のパスエイリアスを登録。`pnpm --filter @hierarchidb/app build` が WARN のみで完走することを確認
+    - progress: 2025-09-25 23:20 runtime-worker-core の未使用型/パラメータを整理し、`TreeSubscriptionService` の subscribe ラッパーを型安全に更新。`pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を再実行して TS6133/TS2769/TS2322 系エラーが解消されたことを確認
   - ロールバック手順：
     - プラグイン単位で git revert を行い旧 `worker/index.ts` を復元。ESLint ルールは再度緩和してビルド通過を確保
 

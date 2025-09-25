@@ -113,7 +113,6 @@ export async function createDraftWorkingCopyGetOrCreate(
 
   if (existing) {
     // Ensure holder metadata exists; if missing, backfill from encoded name
-    let holderPatched = false;
     const ex: any = existing;
     if (!ex.holderType || !ex.holderTargetId || !ex.holderMetaParentId) {
       try {
@@ -123,7 +122,6 @@ export async function createDraftWorkingCopyGetOrCreate(
         ex.holderTargetId = parsed.targetNodeId;
         ex.holderMetaParentId = parsed.targetParentNodeId;
         await coreDB.nodes.put(ex);
-        holderPatched = true;
       } catch {
         // ignore; commit will still be able to decode from name
       }

@@ -110,9 +110,9 @@ export class TreeSubscriptionService {
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
     const customSubscribe = (
-      observer?: Parameters<Observable<TreeChangeEvent>['subscribe']>[0],
-    ) => {
-      const sub = originalSubscribe({ next: observer });
+      ...args: Parameters<typeof originalSubscribe>
+    ): ReturnType<typeof originalSubscribe> => {
+      const sub = originalSubscribe(...args);
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -209,8 +209,8 @@ export class TreeSubscriptionService {
     // Set up unsubscribe handler
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = (observer) => {
-      const sub = originalSubscribe({ next: observer});
+    resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
+      const sub = originalSubscribe(...args);
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -218,7 +218,7 @@ export class TreeSubscriptionService {
         originalUnsubscribe();
       };
       return sub;
-    };
+    }) as typeof resultObservable.subscribe;
     /* eslint-enable deprecation/deprecation */
 
     return resultObservable;
@@ -282,8 +282,8 @@ export class TreeSubscriptionService {
     // Set up unsubscribe handler
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer});
+    resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
+      const sub = originalSubscribe(...args);
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -291,7 +291,7 @@ export class TreeSubscriptionService {
         originalUnsubscribe();
       };
       return sub;
-    };
+    }) as typeof resultObservable.subscribe;
     /* eslint-enable deprecation/deprecation */
 
     return resultObservable;
@@ -337,8 +337,8 @@ export class TreeSubscriptionService {
     const resultObservable = subject.asObservable();
     /* eslint-disable deprecation/deprecation */
     const originalSubscribe = resultObservable.subscribe.bind(resultObservable);
-    resultObservable.subscribe = (observer: any) => {
-      const sub = originalSubscribe({ next: observer});
+    resultObservable.subscribe = ((...args: Parameters<typeof originalSubscribe>) => {
+      const sub = originalSubscribe(...args);
       const originalUnsubscribe = sub.unsubscribe.bind(sub);
       sub.unsubscribe = () => {
         subscription.unsubscribe();
@@ -346,7 +346,7 @@ export class TreeSubscriptionService {
         originalUnsubscribe();
       };
       return sub;
-    };
+    }) as typeof resultObservable.subscribe;
     /* eslint-enable deprecation/deprecation */
 
     return resultObservable;

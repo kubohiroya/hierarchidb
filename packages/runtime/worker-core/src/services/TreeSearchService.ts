@@ -25,7 +25,7 @@ type MatchModeOptions = {
 export class TreeSearchService {
   private readonly treeQuery: TreeQueryService;
 
-  constructor(private readonly coreDB: CoreDB) {
+  constructor(coreDB: CoreDB) {
     this.treeQuery = new TreeQueryService(coreDB);
   }
 

@@ -34,8 +34,6 @@ type SourceNodeMap = Map<NodeId, TreeNode>;
 type PeerEntitiesDb = Dexie & { peerEntities: Table<unknown, NodeId> };
 type PeerDbLoader = () => Promise<PeerEntitiesDb | undefined>;
 
-type Constructor<T> = new (...args: never[]) => T;
-
 const toNodeId = (value: string): NodeId => value as NodeId;
 const toNodeType = (value: string): NodeType => value as NodeType;
 const maybeNodeId = (value: unknown): NodeId | undefined => (typeof value === 'string' && value.length > 0 ? (value as NodeId) : undefined);
@@ -48,26 +46,6 @@ const buildSourceNodeMap = (nodes?: Record<string, TreeNode | undefined>): Sourc
     map.set(toNodeId(rawId), snapshot);
   }
   return map;
-};
-
-const maybeOpenDexie = async (db: Dexie): Promise<void> => {
-  if (typeof db.isOpen === 'function' && db.isOpen()) return;
-  if (typeof db.open === 'function') {
-    await db.open();
-  }
-};
-
-const loadPeerDb = async (importer: () => Promise<Record<string, unknown>>, exportName: string): Promise<PeerEntitiesDb | undefined> => {
-  try {
-    const module = await importer();
-    const Candidate = module[exportName];
-    if (typeof Candidate !== 'function') return undefined;
-    const db = new (Candidate as Constructor<PeerEntitiesDb>)();
-    await maybeOpenDexie(db);
-    return db;
-  } catch {
-    return undefined;
-  }
 };
 
 // Plugin-specific EntitiesDB loaders are not wired in the worker package to avoid

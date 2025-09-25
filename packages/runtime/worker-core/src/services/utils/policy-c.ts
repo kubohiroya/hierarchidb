@@ -21,11 +21,14 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
 
   // Optimization: use workingCopy root IDs from trees table if available,
   // then query holders via parentId index (anyOf).
-  const treeRows: Array<{ workingCopyRootId: NodeId }> | undefined = await coreDB.trees?.toArray?.()
-    .catch?.(() => undefined);
+  const treeRows = (await coreDB.trees?.toArray?.().catch?.(() => undefined)) as
+    | Array<{ workingCopyRootId?: NodeId }>
+    | undefined;
 
   if (Array.isArray(treeRows) && treeRows.length > 0) {
-    const wcRootIds = treeRows.map((t) => t.workingCopyRootId).filter(Boolean) as NodeId[];
+    const wcRootIds = treeRows
+      .map((t) => t.workingCopyRootId)
+      .filter((id): id is NodeId => typeof id === 'string' && id.length > 0);
     if (wcRootIds.length > 0) {
       const holders = (await coreDB.nodes
         .where?.('parentId')
