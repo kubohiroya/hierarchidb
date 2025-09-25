@@ -27,6 +27,10 @@ registry.registerConfigProvider({
       {
         id: 'frames',
         label: 'Frames Preview',
+        localization: {
+          defaultTitle: 'Frames Preview',
+          titles: { en: 'Frames Preview', ja: 'フレームプレビュー' },
+        },
         componentFactory: (p: P) => (
           <FramesPreviewStep frames={p.data?.frames || []} />
         ),
@@ -34,6 +38,10 @@ registry.registerConfigProvider({
       {
         id: 'map',
         label: 'Map Preview',
+        localization: {
+          defaultTitle: 'Map Preview',
+          titles: { en: 'Map Preview', ja: '地図プレビュー' },
+        },
         componentFactory: (p: P) => (
           <MapPreviewStep frames={p.data?.frames || []} />
         ),
@@ -41,6 +49,10 @@ registry.registerConfigProvider({
       {
         id: 'final',
         label: 'Final Animation',
+        localization: {
+          defaultTitle: 'Final Animation',
+          titles: { en: 'Final Animation', ja: 'アニメーション確認' },
+        },
         componentFactory: (p: P) => (
           <AnimationViewerStep frames={p.data?.frames || []} />
         ),

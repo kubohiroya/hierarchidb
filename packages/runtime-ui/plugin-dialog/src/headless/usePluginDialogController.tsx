@@ -28,7 +28,7 @@ import type {
   MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { DialogStateAPI, DialogStateSubscriptionId, WorkerAPI } from '@hierarchidb/common-api';
 import type { TagEntity } from '@hierarchidb/common-type';
 import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
@@ -48,7 +48,8 @@ import {
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
-import { Remote } from 'comlink';
+import { Remote, proxy } from 'comlink';
+import type { MultiStepDialogState } from '@hierarchidb/common-type';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -73,6 +74,7 @@ export interface PluginDialogControllerState {
     description?: string;
   };
   hasUnsavedChanges: boolean;
+  dialogState?: MultiStepDialogState | null;
 }
 
 const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
@@ -317,6 +319,40 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const ref = useClientHook();
   const client: Remote<WorkerAPI> | null = useMemo(() => ref?.client ?? null, [ref]);
 
+  const [dialogStateApi, setDialogStateApi] = useState<Remote<DialogStateAPI> | null>(null);
+  const [workerDialogState, setWorkerDialogState] = useState<MultiStepDialogState | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!client) {
+      setDialogStateApi(null);
+      setWorkerDialogState(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    (async () => {
+      try {
+        const api = await client.getDialogStateAPI();
+        if (!cancelled) {
+          setDialogStateApi(api);
+        }
+      } catch (error) {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[PluginDialogShell] failed to acquire DialogStateAPI', error);
+        }
+        if (!cancelled) {
+          setDialogStateApi(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client]);
+
   const {
     workingCopy,
     hasUnsavedChanges,
@@ -327,6 +363,41 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     loading,
     error,
   } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, workerClient: ref ?? null });
+
+  useEffect(() => {
+    if (!dialogStateApi) return;
+    if (!nodeType || !nodeId) {
+      setWorkerDialogState(null);
+      return;
+    }
+
+    let disposed = false;
+    let subscriptionId: DialogStateSubscriptionId | null = null;
+    const callback = proxy((snapshot: MultiStepDialogState | null) => {
+      if (disposed) return;
+      setWorkerDialogState(snapshot);
+    });
+
+    dialogStateApi.subscribeState({ nodeType, nodeId }, callback)
+      .then((id) => {
+        if (!disposed) {
+          subscriptionId = id;
+        }
+      })
+      .catch((error) => {
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[PluginDialogShell] dialog state subscription failed', error);
+        }
+      });
+
+    return () => {
+      disposed = true;
+      setWorkerDialogState(null);
+      if (subscriptionId) {
+        dialogStateApi.unsubscribeState(subscriptionId).catch(() => {});
+      }
+    };
+  }, [dialogStateApi, nodeType, nodeId]);
 
   const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },
@@ -666,6 +737,16 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return `${modeLabel} ${label}`;
   }, [presentation?.label, nodeType, mode]);
 
+  const headerSubtitle = useMemo(() => {
+    if (mode === 'edit') {
+      const desc = presentation?.description?.trim();
+      if (desc) {
+        return desc;
+      }
+    }
+    return undefined;
+  }, [mode, presentation?.description]);
+
   const [evaluatedState, setEvaluatedState] = useState<{ filled: boolean[]; guards: StepGuardState }>({
     filled: [],
     guards: emptyGuards,
@@ -714,6 +795,76 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const committableStepIndices = useMemo(() => (
     steps.length ? [steps.length - 1] : []
   ), [steps.length]);
+
+  useEffect(() => {
+    if (!dialogStateApi) return;
+    if (!nodeType || !nodeId) return;
+    if (!steps.length) return;
+    if (!open) return;
+
+    const enabledSet = new Set(enabledStepIndices);
+    const validatedSet = new Set(validatedStepIndices);
+
+    const stepStatuses = steps.map((step, idx) => ({
+      id: step.id,
+      title: step.label ?? step.id,
+      enabled: enabledSet.has(idx) || idx === activeStepIndex,
+      completed: validatedSet.has(idx),
+      error: undefined as string | null | undefined,
+    }));
+
+    const snapshot: MultiStepDialogState = {
+      nodeId,
+      activeStepIndex,
+      steps: stepStatuses,
+      canProceedNext: evaluatedState.guards.canProceedNext,
+      canGoBack: evaluatedState.guards.canGoBack,
+      canSave: evaluatedState.guards.canSave,
+      canStartBatch: evaluatedState.guards.canStartBatch,
+      validationErrors: undefined,
+      updatedAt: Date.now(),
+      metadata: {
+        title: dialogTitle,
+        subtitle: headerSubtitle,
+        committableStepIndices,
+      },
+    };
+
+    dialogStateApi.publishState({ nodeType, nodeId, state: snapshot }).catch((error) => {
+      if (typeof console !== 'undefined' && console.warn) {
+        console.warn('[PluginDialogShell] failed to publish dialog state', error);
+      }
+    });
+  }, [
+    dialogStateApi,
+    nodeType,
+    nodeId,
+    steps,
+    activeStepIndex,
+    enabledStepIndices,
+    validatedStepIndices,
+    evaluatedState.guards.canProceedNext,
+    evaluatedState.guards.canGoBack,
+    evaluatedState.guards.canSave,
+    evaluatedState.guards.canStartBatch,
+    dialogTitle,
+    headerSubtitle,
+    committableStepIndices,
+    open,
+  ]);
+
+  useEffect(() => {
+    if (!dialogStateApi) return;
+    if (!nodeType || !nodeId) return;
+    if (open) return;
+
+    dialogStateApi.publishState({ nodeType, nodeId, state: null }).catch(() => {});
+  }, [dialogStateApi, nodeType, nodeId, open]);
+
+  useEffect(() => () => {
+    if (!dialogStateApi || !nodeType || !nodeId) return;
+    dialogStateApi.publishState({ nodeType, nodeId, state: null }).catch(() => {});
+  }, [dialogStateApi, nodeType, nodeId]);
 
   const handleNavigation = useCallback((event: StepNavigationEvent) => {
     let nextIndex = activeStepIndex;
@@ -796,23 +947,14 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;
 
-  const headerSubtitle = useMemo(() => {
-    if (mode === 'edit') {
-      const desc = presentation?.description?.trim();
-      if (desc) {
-        return desc;
-      }
-    }
-    return undefined;
-  }, [mode, presentation?.description]);
-
   const HeaderComponent: HeadlessMultiStepDialogProps<any>['HeaderComponent'] = useCallback(() => (
     <PluginDialogHeader
       title={dialogTitle}
       subtitle={headerSubtitle}
       icon={icon || undefined}
+      dialogState={workerDialogState}
     />
-  ), [dialogTitle, headerSubtitle, icon]);
+  ), [dialogTitle, headerSubtitle, icon, workerDialogState]);
 
   const renderContent = useCallback((propsContent: HeadlessContentRenderProps<any>) => {
     const step = steps[propsContent.activeStepIndex];
@@ -924,5 +1066,6 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     icon: icon ?? undefined,
     presentation,
     hasUnsavedChanges,
+    dialogState: workerDialogState,
   };
 }

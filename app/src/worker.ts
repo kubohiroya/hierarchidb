@@ -161,6 +161,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
+        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI()),
       } as const;
 
       reporter.reportStepProgress('Create API facade', 100);

@@ -52,6 +52,23 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- fix/test-env/fetch-polyfill — Vitest Node fetch ポリフィル安定化
+  - ブランチ: `fix/test-env/fetch-polyfill`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `vitest.setup.base.ts`, `@hierarchidb/plugins-location-plugin`, `@hierarchidb/plugins-*`
+  - 受け入れ基準（DoD）：
+    - [x] Node.js 実行環境で fetch 未提供の場合でも、`vitest.setup.base.ts` により `fetch` / `Headers` / `Request` / `Response` / `FormData` が同期的に提供される
+    - [x] `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` が `node-fetch` 解決エラーなしで開始し、少なくとも準備段階を通過する（テスト本体の別要因による失敗はログへ記録）
+    - [x] `TASKS.md` の運用ログに検証結果とロールバック手順を記録
+  - チェックリスト：
+    - [x] `vitest.setup.base.ts` の fetch ポリフィルを Node 組み込み `node:undici` ベースへ移行
+    - [x] polyfill 適用結果を確認するテストを実行し、bundler が `node-fetch` を要求しないことを確認
+    - [ ] 必要に応じてドキュメントまたは TODO を更新
+  - ロールバック手順：
+    - 変更した polyfill ロジックを差分前へ戻し、再度テストを実行して現状復帰を確認
+  - 運用ログ：
+    - start: 2025-09-26 01:00 Node 実行時の fetch 未定義エラー対策として polyfill を見直す作業に着手（前回実行で `node-fetch` 解決失敗を確認）
+    - progress: 2025-09-26 01:02 `vitest.setup.base.ts` の fetch ポリフィルを `node:undici` ベースへ更新し、`Headers`/`Request`/`Response`/`FormData`/`Blob`/`File` の提供状況を確認
+    - progress: 2025-09-26 01:03 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` を実行し、fetch 解決エラーなく 10 件のテストが成功
 - fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/common-type`, `tsup`
@@ -188,6 +205,24 @@
     - progress: 2025-09-24 09:30 useDialogUrlSync の未使用 `eslint-disable` を削除し、lint を再実行して警告ゼロを確認
     - blocked: 2025-09-24 09:38 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がパッケージ既知の `intent` 引数不足 / `WorkerAPI` Remote 型不整合で失敗（既存課題）。差分による新規エラーなし。
     - blocked: 2025-09-24 09:41 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が同型エラーで停止（tsup DTS フェーズ）。
+- feat/runtime-ui/dialog-state-channel — MultiStepDialog 状態通知とローカライズ統合
+  - ブランチ: `feat/runtime-ui/dialog-state-channel`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `feat/plugins/worker-factory-rollout`, `@hierarchidb/runtime-worker`
+  - 受け入れ基準（DoD）：
+    - [ ] Worker API に DialogState API を追加し、UI からステップ状態を購読・更新できる
+    - [ ] PluginDialogHeader / Stepper が Worker 提供の状態とローカライズ済みタイトルを反映する
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` が成功する
+    - [ ] 必要なドキュメント更新とロールバック手順を TASKS.md に記載
+  - チェックリスト：
+    - [ ] 共有型 `MultiStepDialogState` を `@hierarchidb/common-type` に追加
+    - [ ] `DialogStateAPI` と Worker 側サービスを実装し、PeerStore に状態を永続化
+    - [ ] runtime-ui で状態購読フックと Publish 処理を追加し、Stepper/タイトル/UI へ反映
+    - [ ] 主要プラグインのステップ定義をローカライズレジストリへ登録
+  - ロールバック手順：
+    - Worker API 拡張および関連サービスを revert し、UI 側の購読コードとローカライズ登録を元に戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-25 23:42 MultiStepDialog 状態通知共通化タスクに着手（現状調査と要件整理を実施）
+    - progress: 2025-09-25 23:58 共有型/Worker API/Runtime UI を実装し、`pnpm --filter @hierarchidb/common-type build` → `@hierarchidb/common-api build` → `@hierarchidb/runtime-worker {typecheck,build}` → `@hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` を順次実行してグリーンを確認
 - feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
   - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`

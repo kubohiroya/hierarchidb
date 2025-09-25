@@ -1,4 +1,5 @@
 import {
+  DialogStateAPI,
   ImportExportAPI,
   TagAPI,
   TreeMutationAPI,
@@ -23,6 +24,7 @@ import { bootstrapFeatures } from './services/FeatureBootstrap.js';
 import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
+import { DialogStateService } from './services/DialogStateService.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -103,6 +105,8 @@ export class WorkerService{
         commandProcessor,
       );
 
+      const dialogStateService: DialogStateAPI = new DialogStateService();
+
       return new WorkerService(
         coreDB,
         ephemeralDB,
@@ -114,6 +118,7 @@ export class WorkerService{
         tagService,
         nodeLifecycleManager,
         commandProcessor,
+        dialogStateService,
       );
     });
   }
@@ -129,6 +134,7 @@ export class WorkerService{
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
+    private dialogStateService: DialogStateAPI,
   ) {
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
@@ -187,6 +193,10 @@ export class WorkerService{
 
   getTagAPI() {
     return this.tagService;
+  }
+
+  getDialogStateAPI(): DialogStateAPI {
+    return this.dialogStateService;
   }
 
   // Minimal stub to satisfy interface; not yet wired.

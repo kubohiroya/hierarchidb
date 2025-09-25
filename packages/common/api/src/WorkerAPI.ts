@@ -15,6 +15,7 @@ import type { ImportExportAPI } from './ImportExportAPI.js';
 import type { WorkingCopyAPI } from './WorkingCopyAPI.js';
 
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI.js';
+import type { DialogStateAPI } from './DialogStateAPI.js';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI.js';
 import { TagAPI } from './TagAPI.js';
 import type { Remote } from 'comlink';
@@ -95,6 +96,11 @@ export interface WorkerAPI {
    * @returns Proxy to PluginLifecycleAPI implementation
    */
   getPluginLifecycleAPI(): Remote<PluginLifecycleAPI>;
+
+  /**
+   * Get DialogStateAPI for multi-step dialog state publication and subscription
+   */
+  getDialogStateAPI(): Remote<DialogStateAPI>;
 
   /**
    * Get Plugin TreeTypes API facade

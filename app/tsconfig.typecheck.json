@@ -14,13 +14,13 @@
         "src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker-core"
+        "../packages/runtime/worker-core/src/index.ts"
       ],
       "@hierarchidb/runtime-worker-bootstrap": [
-        "../packages/runtime/worker-bootstrap"
+        "../packages/runtime/worker-bootstrap/src/index.ts"
       ],
       "@hierarchidb/runtime-shared-module-paths": [
-        "../packages/runtime-shared/module-paths"
+        "../packages/runtime-shared/module-paths/src/index.ts"
       ],
       "@hierarchidb/runtime-shared-module-paths/*": [
         "../packages/runtime-shared/module-paths/*"

@@ -2,6 +2,7 @@ import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtim
 import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
 import { RouteProcessingStep } from '../components/RouteProcessingStep.js';
 import type { RouteWorkingCopy } from '../types/index.js';
+import { translations as routeTranslations } from '../i18n/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -10,10 +11,18 @@ type P = StepComponentProps & { data: RouteWorkingCopy };
 registry.registerConfigProvider({
   nodeType: 'route',
   getCreateStepConfigs() {
+    const selectionTitles = {
+      en: routeTranslations.en.routeSelection.title,
+      ja: routeTranslations.ja.routeSelection.title,
+    } as const;
     return [
       {
         id: 'route-selection',
-        label: 'Route Selection',
+        label: selectionTitles.en ?? 'Route Selection',
+        localization: {
+          defaultTitle: selectionTitles.en ?? 'Route Selection',
+          titles: selectionTitles,
+        },
         componentFactory: (p: P) => (
           <RouteSelectionStep
             workingCopy={p.data}
@@ -26,6 +35,10 @@ registry.registerConfigProvider({
       {
         id: 'processing',
         label: 'Processing',
+        localization: {
+          defaultTitle: 'Processing',
+          titles: { en: 'Processing', ja: '処理' },
+        },
         componentFactory: (p: P) => (
           <RouteProcessingStep
             workingCopy={p.data}

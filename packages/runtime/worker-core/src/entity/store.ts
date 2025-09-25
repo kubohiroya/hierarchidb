@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, MultiStepDialogState } from '@hierarchidb/common-type';
 
 /**
  * Abstractions for plugin entity stores (Peer/Group/Relational).
@@ -23,6 +23,8 @@ export interface PeerEntity<TData = unknown> {
   // Optional persisted dialog window position/size for UI
   dialogPosition?: { x: number; y: number } | null;
   dialogSize?: { width: number; height: number } | null;
+  // Worker-published multi-step dialog state snapshot
+  dialogState?: MultiStepDialogState | null;
 }
 
 export interface PeerStore<TData = unknown> {

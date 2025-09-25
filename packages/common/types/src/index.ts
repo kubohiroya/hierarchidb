@@ -42,6 +42,7 @@ export * from './entity-backup-types.js';
 export * from './entity-handler-types.js';
 // entity-manager-types: no externally-used exports; stop re-exporting
 export * from './entity-types.js';
+export * from './dialog-state.js';
 export * from './id-types.js';
 // Ensure key branded IDs and core entity interfaces are explicitly exported for DTS bundling
 export type { NodeId, TreeId, TagId } from './id-types.js';

@@ -3,7 +3,7 @@
 import 'fake-indexeddb/auto';
 import {proxy, expose, Remote} from 'comlink';
 import { WorkerService } from '../index.js';
-import { ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
+import { DialogStateAPI, ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
 import { CommandProcessor } from '../services/CommandProcessor.js';
 
 type Endpoint = MessagePort | Worker;
@@ -19,6 +19,7 @@ async function main(endpoint?: Endpoint): Promise<void> {
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),
     getWorkingCopyAPI: (): WorkingCopyAPI => proxy(svc.getWorkingCopyAPI()),
+    getDialogStateAPI: (): DialogStateAPI => proxy(svc.getDialogStateAPI()),
     getCommandProcessor: (): CommandProcessor => proxy(svc.getCommandProcessor()),
   };
   // When used in-process via MessageChannel, a test passes an explicit endpoint.

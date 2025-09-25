@@ -5,6 +5,13 @@
 
 import { ReactNode } from 'react';
 import { DialogStep } from '@hierarchidb/ui-dialog';
+import { dialogStepLocalizationRegistry } from './DialogStepLocalizationRegistry.js';
+
+export interface StepLocalizationConfig {
+  defaultTitle?: string;
+  titles?: Partial<Record<string, string>>;
+  translationKey?: string;
+}
 
 /**
  * Plugin step provider interface
@@ -42,6 +49,9 @@ export interface PluginStepConfig {
 
   /** Step label */
   label: string;
+
+  /** Optional localization metadata */
+  localization?: StepLocalizationConfig;
 
   /** Step component factory */
   componentFactory: (props: StepComponentProps) => ReactNode;
@@ -90,6 +100,17 @@ export interface StepComponentProps {
   /** Set step error message */
   setError: (error: string | null) => void;
 }
+
+const registerAndResolveLabel = (nodeType: string, cfg: PluginStepConfig): string => {
+  const defaultTitle = cfg.localization?.defaultTitle ?? cfg.label ?? cfg.id;
+  dialogStepLocalizationRegistry.register(nodeType, {
+    id: cfg.id,
+    defaultTitle,
+    titles: cfg.localization?.titles,
+    translationKey: cfg.localization?.translationKey,
+  });
+  return dialogStepLocalizationRegistry.resolveTitle(nodeType, cfg.id);
+};
 
 /**
  * Plugin Step Registry
@@ -170,7 +191,13 @@ export class PluginStepRegistry {
     if (cfgp) {
       // Bridge to DialogStep: host側で componentFactory をラップして描画する
       const cfgs = cfgp.getCreateStepConfigs();
-      return cfgs.map((c) => ({ id: c.id, label: c.label, component: null, validate: c.validate } as DialogStep));
+      return cfgs.map((c) => ({
+        id: c.id,
+        label: registerAndResolveLabel(nodeType, c),
+        component: null,
+        validate: c.validate,
+        optional: c.optional,
+      } as DialogStep));
     }
     const provider = this.providers.get(nodeType);
     return provider ? provider.getCreateSteps() : [];
@@ -183,7 +210,13 @@ export class PluginStepRegistry {
     const cfgp = this.configProviders.get(nodeType);
     if (cfgp) {
       const cfgs = cfgp.getEditStepConfigs(nodeId, data);
-      return cfgs.map((c) => ({ id: c.id, label: c.label, component: null, validate: c.validate } as DialogStep));
+      return cfgs.map((c) => ({
+        id: c.id,
+        label: registerAndResolveLabel(nodeType, c),
+        component: null,
+        validate: c.validate,
+        optional: c.optional,
+      } as DialogStep));
     }
     const provider = this.providers.get(nodeType);
     return provider ? provider.getEditSteps(nodeId, data) : [];
