@@ -10,7 +10,7 @@
 - `ProxyMarked` の露出を最小化（返り値はシリアライズ可能なプレーンオブジェクト/プリミティブに揃える）。
 
 提案ファイル/変更箇所
-- `packages/runtime-worker/worker/src/index.ts`（`WorkerService` の公開インターフェース確認）
+- `packages/runtime/worker-core/src/index.ts`（`WorkerService` の公開インターフェース確認）
 - `@hierarchidb/common-api`（必要時、契約の明確化と型の更新）
 
 実施手順

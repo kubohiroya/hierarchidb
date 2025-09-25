@@ -26,6 +26,11 @@ overrides:
   react-i18next: 12.3.1
   '@mui/icons-material': ^7.3.2
 
+patchedDependencies:
+  ast-types@0.16.1:
+    hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
+    path: patches/ast-types@0.16.1.patch
+
 importers:
 
   .:
@@ -298,6 +303,9 @@ importers:
       '@hierarchidb/plugins-timeline-plugin':
         specifier: workspace:*
         version: link:../packages/plugins/timeline-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../packages/runtime-shared/module-paths
       '@hierarchidb/runtime-ui-landingpage':
         specifier: workspace:*
         version: link:../packages/runtime-ui/landingpage
@@ -309,10 +317,10 @@ importers:
         version: link:../packages/runtime-ui/tour
       '@hierarchidb/runtime-worker':
         specifier: workspace:^
-        version: link:../packages/runtime-worker/worker
+        version: link:../packages/runtime/worker-core
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../packages/runtime-worker/worker-bootstrap
+        version: link:../packages/runtime/worker-bootstrap
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../packages/ui/auth
@@ -831,12 +839,15 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
@@ -889,15 +900,18 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@hierarchidb/tag':
         specifier: workspace:*
         version: link:../../feature/tag
@@ -1010,10 +1024,10 @@ importers:
         version: 9.1.14(@deck.gl/core@9.1.14)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.1.9)(@luma.gl/engine@9.1.9(@luma.gl/core@9.1.9)(@luma.gl/shadertools@9.1.9(@luma.gl/core@9.1.9)))
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.2(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -1082,7 +1096,7 @@ importers:
         version: link:../../runtime-ui/plugin-dialog
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../feature/tabular-store
@@ -1141,6 +1155,9 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1159,7 +1176,7 @@ importers:
     devDependencies:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.2(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -1229,6 +1246,9 @@ importers:
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1250,10 +1270,10 @@ importers:
     devDependencies:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../ui/dialog
@@ -1319,7 +1339,7 @@ importers:
         version: link:../../runtime-ui/plugin-dialog
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../feature/tabular-store
@@ -1374,7 +1394,7 @@ importers:
     devDependencies:
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.2(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
@@ -1447,9 +1467,12 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker
+        version: link:../../runtime/worker-core
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata
@@ -1520,6 +1543,9 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata
@@ -1683,6 +1709,12 @@ importers:
         specifier: ^7.15.0
         version: 7.16.0
 
+  packages/runtime-shared/module-paths:
+    devDependencies:
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+
   packages/runtime-ui/appbar:
     dependencies:
       '@hierarchidb/common-type':
@@ -1771,7 +1803,7 @@ importers:
         version: link:../../common/types
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
@@ -1899,7 +1931,56 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
 
-  packages/runtime-worker/worker:
+  packages/runtime/worker-bootstrap:
+    dependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../../common/api
+      '@hierarchidb/common-type':
+        specifier: workspace:*
+        version: link:../../common/types
+    devDependencies:
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
+      '@types/react':
+        specifier: ^18.3.24
+        version: 18.3.24
+      '@types/react-dom':
+        specifier: ^18.3.7
+        version: 18.3.7(@types/react@18.3.24)
+      '@vitest/ui':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+      comlink:
+        specifier: ^4.4.1
+        version: 4.4.2
+      fake-indexeddb:
+        specifier: ^5.0.2
+        version: 5.0.2
+      prettier:
+        specifier: ^3.2.4
+        version: 3.6.2
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      tsup:
+        specifier: ^8.0.1
+        version: 8.5.0(@microsoft/api-extractor@7.52.13(@types/node@18.19.123))(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.2)(yaml@2.8.1)
+      typescript:
+        specifier: 5.6.2
+        version: 5.6.2
+      vite:
+        specifier: 5.4.19
+        version: 5.4.19(@types/node@18.19.123)
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+
+  packages/runtime/worker-core:
     dependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
@@ -1934,6 +2015,9 @@ importers:
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/tabular':
         specifier: workspace:*
         version: link:../../feature/tabular
@@ -1990,55 +2074,6 @@ importers:
       '@hierarchidb/tabular-xlsx':
         specifier: workspace:*
         version: link:../../feature/tabular-xlsx
-
-  packages/runtime-worker/worker-bootstrap:
-    dependencies:
-      '@hierarchidb/common-api':
-        specifier: workspace:*
-        version: link:../../common/api
-      '@hierarchidb/common-type':
-        specifier: workspace:*
-        version: link:../../common/types
-    devDependencies:
-      '@types/node':
-        specifier: 18.19.123
-        version: 18.19.123
-      '@types/react':
-        specifier: ^18.3.24
-        version: 18.3.24
-      '@types/react-dom':
-        specifier: ^18.3.7
-        version: 18.3.7(@types/react@18.3.24)
-      '@vitest/ui':
-        specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
-      comlink:
-        specifier: ^4.4.1
-        version: 4.4.2
-      fake-indexeddb:
-        specifier: ^5.0.2
-        version: 5.0.2
-      prettier:
-        specifier: ^3.2.4
-        version: 3.6.2
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
-      tsup:
-        specifier: ^8.0.1
-        version: 8.5.0(@microsoft/api-extractor@7.52.13(@types/node@18.19.123))(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.6.2)(yaml@2.8.1)
-      typescript:
-        specifier: 5.6.2
-        version: 5.6.2
-      vite:
-        specifier: 5.4.19
-        version: 5.4.19(@types/node@18.19.123)
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
   packages/tools/analyze-licenses:
     dependencies:
@@ -2217,7 +2252,7 @@ importers:
         version: link:../../common/types
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
-        version: link:../../runtime-worker/worker-bootstrap
+        version: link:../../runtime/worker-bootstrap
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata
@@ -13900,7 +13935,7 @@ snapshots:
 
   '@types/jscodeshift@17.3.0':
     dependencies:
-      ast-types: 0.16.1
+      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
       recast: 0.23.11
 
   '@types/json-schema@7.0.15': {}
@@ -14570,7 +14605,7 @@ snapshots:
 
   assign-symbols@1.0.0: {}
 
-  ast-types@0.16.1:
+  ast-types@0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142):
     dependencies:
       tslib: 2.8.1
 
@@ -17489,7 +17524,7 @@ snapshots:
 
   recast@0.23.11:
     dependencies:
-      ast-types: 0.16.1
+      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
       esprima: 4.0.1
       source-map: 0.6.1
       tiny-invariant: 1.3.3

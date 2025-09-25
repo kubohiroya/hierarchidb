@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-type';
 import { type CreateResolverData, ResolverEntityHandler } from '../handlers/ResolverEntityHandler.js';
@@ -12,9 +12,13 @@ describe('ResolverEntityHandler', () => {
   });
 
   afterEach(async () => {
-    // Clean up database after each test
     await resolverDB.resolvers.clear();
     await resolverDB.workingCopies.clear();
+  });
+
+  afterAll(async () => {
+    await resolverDB.delete();
+    resolverDB.close();
   });
 
   describe('createEntity', () => {

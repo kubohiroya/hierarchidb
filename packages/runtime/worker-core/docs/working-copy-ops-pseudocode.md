@@ -63,7 +63,7 @@ async function commitWorkingCopy(treeId: string, wcHolderId: string): Promise<Co
   const { targetParentNodeId, targetNodeId } = decodeHolderName(holder.name);
   const wcNode = await getSingleChild(holder.id);
 
-  return db.transaction('rw', db.nodes, /* entity tables... */, async () => {
+  return db.transaction('rw', db.nodes, /* entity tables... */  async () => {
     const original = await db.nodes.get(targetNodeId);
     const isDraft = !original; // draft if original does not exist yet
 

@@ -11,6 +11,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  codemod-check:
+    name: Codemod Dry-Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile --force
+
+      - name: Codemod dry-run (styler plugin)
+        run: pnpm codemod:run --codemod migrate-plugin-worker --dry-run --plugin styler
+
   typecheck-all:
     name: Typecheck All (workspace)
     runs-on: ubuntu-latest

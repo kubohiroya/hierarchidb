@@ -7,6 +7,18 @@
 
 import type { InitializationResult, WorkerInitConfig, WorkerInitMessage, WorkerInitRequest } from './types.js';
 
+const INIT_EVENT_START = 'hierarchidb-worker-init-start';
+const INIT_EVENT_PROGRESS = 'hierarchidb-worker-init-progress';
+const INIT_EVENT_ERROR = 'hierarchidb-worker-init-error';
+const INIT_EVENT_COMPLETE = 'hierarchidb-worker-init-complete';
+
+const dispatchInitEvent = (eventName: string, detail?: unknown) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(eventName, { detail }));
+};
+
 export class WorkerInitializationChannel {
   private worker: Worker | null = null;
   private initPromise: Promise<InitializationResult> | null = null;
@@ -27,6 +39,8 @@ export class WorkerInitializationChannel {
     this.debug = debug;
     const startTime = Date.now();
 
+    dispatchInitEvent(INIT_EVENT_START, { timestamp: startTime });
+
     this.initPromise = new Promise<InitializationResult>((resolve, reject) => {
       let timeoutId: number | null = null;
 
@@ -34,6 +48,7 @@ export class WorkerInitializationChannel {
       timeoutId = window.setTimeout(() => {
         this.cleanup();
         const error = new Error(`Worker initialization timeout after ${timeout}ms`);
+        dispatchInitEvent(INIT_EVENT_ERROR, { error: error.message });
         reject({ success: false, error, duration: Date.now() - startTime });
       }, timeout);
 
@@ -46,15 +61,18 @@ export class WorkerInitializationChannel {
         }
 
         switch (message.type) {
-          case 'INIT_COMPLETE':
-            if (timeoutId) {
-              clearTimeout(timeoutId);
+          case 'INIT_COMPLETE': {
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+              }
+              this.cleanup();
+              const duration = Date.now() - startTime;
+              dispatchInitEvent(INIT_EVENT_COMPLETE, { duration });
+              resolve({
+                success: true,
+                duration,
+              });
             }
-            this.cleanup();
-            resolve({
-              success: true,
-              duration: Date.now() - startTime,
-            });
             break;
 
           case 'INIT_ERROR': {
@@ -62,7 +80,9 @@ export class WorkerInitializationChannel {
               clearTimeout(timeoutId);
             }
             this.cleanup();
-            const error = new Error(message.payload?.error || 'Worker initialization failed');
+            const errorMessage = message.payload?.error || 'Worker initialization failed';
+            const error = new Error(errorMessage);
+            dispatchInitEvent(INIT_EVENT_ERROR, { error: errorMessage });
             reject({
               success: false,
               error,
@@ -77,6 +97,10 @@ export class WorkerInitializationChannel {
                 `[WorkerInitChannel] Progress: ${message.payload?.progress}% - ${message.payload?.message}`,
               );
             }
+            dispatchInitEvent(INIT_EVENT_PROGRESS, {
+              progress: message.payload?.progress,
+              message: message.payload?.message,
+            });
             break;
 
           case 'PING_RESPONSE':

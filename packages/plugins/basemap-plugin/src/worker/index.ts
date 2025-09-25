@@ -1,8 +1,12 @@
 // Dexie-backed PeerStore auto-registration for basemap plugin
-try {
-  const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-  import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
+const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
+
+importRuntimeWorker()
+  .then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
+
     try {
       const { BasemapEntitiesDB } = await import('./basemapEntitiesDB.js');
       const db = new BasemapEntitiesDB();
@@ -14,12 +18,9 @@ try {
     } catch {
       // ignore
     }
-  }).catch(() => {
-    // ignore
-  });
-} catch {
-  // ignore (SSR/tests)
-}
+  })
+  .catch(() => {});
 
-// Ensure this file is treated as a module under --isolatedModules
-export {};
+export async function loadBasemapEntitiesDbModule() {
+  return import(/* @vite-ignore */ './basemapEntitiesDB.js');
+}

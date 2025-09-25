@@ -1,17 +1,83 @@
-// Worker registration for folder-plugin Dexie stores
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
-  if (!hasIndexedDB) return;
+
+type StoreRegistry = {
+  getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
+  registerPeer<T = unknown>(nodeType: string, store: PeerStore<T>): void;
+  getGroup<T extends GroupItemBase<any> = GroupItemBase<any>>(nodeType: string): GroupStore<T> | undefined;
+  registerGroup<T extends GroupItemBase<any>>(nodeType: string, store: GroupStore<T>): void;
+  getRelations<T extends RelationBase<any> = RelationBase<any>>(nodeType: string): RelationStore<T> | undefined;
+  registerRelations<T extends RelationBase<any>>(nodeType: string, store: RelationStore<T>): void;
+};
+
+export interface RegisterFolderWorkerStoresOptions {
+  storeRegistry?: StoreRegistry;
+  signal?: AbortSignal;
+}
+
+async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
+  if (options.storeRegistry) {
+    return options.storeRegistry;
+  }
+
+  try {
+    const runtime = await importRuntimeWorker();
+    return runtime.storeRegistry as StoreRegistry;
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[folder-worker] Failed to import runtime worker for store registry', error);
+    }
+    return null;
+  }
+}
+
+async function ensureFolderStores(registry: StoreRegistry): Promise<void> {
   const { FolderEntitiesDB } = await import('./folderEntitiesDB.js');
   const db = new FolderEntitiesDB();
-  const dexieLike = db as unknown as { open?: () => Promise<unknown> };
-  if (typeof dexieLike.open === 'function') {
-    await dexieLike.open();
-  }
-  if (!storeRegistry.getPeer('folder')) {
+  await db.open?.();
+
+  if (!registry.getPeer('folder')) {
     const { createFolderPeerStoreDexie } = await import('./folderPeerStore.dexie.js');
-    storeRegistry.registerPeer('folder', createFolderPeerStoreDexie(db));
+    registry.registerPeer('folder', createFolderPeerStoreDexie(db));
   }
-}).catch(() => {});
+
+  if (!registry.getGroup('folder')) {
+    const { createFolderGroupStoreDexie } = await import('./folderGroupStore.dexie.js');
+    registry.registerGroup('folder', createFolderGroupStoreDexie(db));
+  }
+
+  if (!registry.getRelations('folder')) {
+    const { createFolderRelationStoreDexie } = await import('./folderRelationStore.dexie.js');
+    registry.registerRelations('folder', createFolderRelationStoreDexie(db));
+  }
+}
+
+export async function registerFolderWorkerStores(options: RegisterFolderWorkerStoresOptions = {}): Promise<void> {
+  if (!hasIndexedDB || options.signal?.aborted) {
+    return;
+  }
+
+  const registry = await resolveStoreRegistry(options);
+  if (!registry) {
+    return;
+  }
+
+  try {
+    await ensureFolderStores(registry);
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[folder-worker] Failed to register Dexie stores', error);
+    }
+  }
+}
+
+// Legacy auto-registration to support existing import side-effects
+registerFolderWorkerStores().catch(() => {});
 
 export { FolderEntitiesDB } from './folderEntitiesDB.js';
+
+export async function loadFolderEntitiesDbModule() {
+  return import(/* @vite-ignore */ './folderEntitiesDB.js');
+}

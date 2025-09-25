@@ -14,10 +14,16 @@
         "src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime-worker/worker/dist"
+        "../packages/runtime/worker-core"
       ],
       "@hierarchidb/runtime-worker-bootstrap": [
-        "../packages/runtime-worker/worker-bootstrap/dist"
+        "../packages/runtime/worker-bootstrap"
+      ],
+      "@hierarchidb/runtime-shared-module-paths": [
+        "../packages/runtime-shared/module-paths"
+      ],
+      "@hierarchidb/runtime-shared-module-paths/*": [
+        "../packages/runtime-shared/module-paths/*"
       ],
       "@hierarchidb/common-api": [
         "../packages/common/api/dist"

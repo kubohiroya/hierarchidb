@@ -59,6 +59,7 @@
     "@hierarchidb/plugins-shape-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",

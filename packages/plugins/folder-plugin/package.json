@@ -63,6 +63,7 @@
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",

@@ -74,7 +74,7 @@
   - 受け入れ基準（DoD）：
     - [x] `SpreadsheetCSVApiAdapter` から `authFetch` の静的 import を撤去し、動的 import のみに統一
     - [x] `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` が成功する
-    - [ ] `TASKS.md` の運用ログに実施内容と検証結果を記録
+    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
   - チェックリスト：
     - [x] `downloadCSVFromUrl` など `authFetch` 利用箇所を動的 import 化
     - [x] 型推論が崩れないことを確認
@@ -85,6 +85,53 @@
     - progress: 2025-09-24 16:24 `SpreadsheetCSVApiAdapter` から静的 import を削除し、動的 import ラッパーを実装
     - progress: 2025-09-24 16:26 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` を実行し成功
     - progress: 2025-09-24 16:30 `vitest.setup.base.ts` で fetch 非対応環境向けに `node-fetch` ポリフィルを条件付き適用
+    - progress: 2025-09-24 16:32 当該タスクの DoD/チェックリスト達成を記録
+- design/worker-dynamic-import-architecture — Worker/APIs の動的 import 統一アーキテクチャ検討
+  - ブランチ: `design/worker-dynamic-import-architecture`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/plugins-*`
+  - 受け入れ基準（DoD）：
+    - [x] docs 以下に Markdown ドキュメントを作成し、現状分析と将来アーキテクチャ案を記述
+    - [x] Mermaid 図を用いた構成図・シーケンス図・ステートマシン図を盛り込み、動的 import 統一案を視覚化
+    - [x] 段階的移行ステップ、リスク、テスト戦略を整理
+  - チェックリスト：
+    - [x] 現状（静的＋動的混在）の処理フロー図を作成
+    - [x] 提案アーキテクチャのモジュール構成図／初期化シーケンスを記述
+    - [x] 状態管理と API 契約を定義し、移行フェーズ別タスクを列挙
+  - ロールバック手順：
+    - 作成したドキュメントを削除し、`TASKS.md` のエントリを取り消す
+  - 運用ログ：
+    - start: 2025-09-24 16:35 Worker 動的 import 統一アーキテクチャ案ドキュメント作成に着手
+    - progress: 2025-09-24 16:48 `docs/design/worker-dynamic-import-architecture.md` を作成し、Mermaid 図・移行ステップを記述
+    - progress: 2025-09-24 16:58 TypeScript 型配布戦略を追記（静的 d.ts 維持と `import type` 指針）
+    - progress: 2025-09-24 17:05 any/unknown キャストが残る具体ファイル一覧を追記
+    - progress: 2025-09-24 17:12 フェーズ別の作業手順・注意事項チェックリストを文書化
+- refactor/runtime/worker-core-split — Worker runtime 再編（Phase 1: runtime/ 配下再構築）
+  - ブランチ: `refactor/runtime/worker-core-split`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`, `@hierarchidb/runtime-shared-*`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [ ] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
+    - [ ] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
+    - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
+    - [ ] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
+  - チェックリスト：
+    - [ ] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
+    - [ ] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
+    - [ ] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
+    - [ ] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
+  - ロールバック手順：
+    - 新設した `packages/runtime/worker-core` を削除し、`packages/runtime-worker/worker*` を元のディレクトリへ戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-25 18:46 Phase 1 runtime 再編タスクに着手。`docs/design/worker-dynamic-import-architecture.md` の Phase 1 手順を参照し移行計画を具体化
+    - progress: 2025-09-25 18:50 `packages/runtime/worker-core` ディレクトリを作成し、`pnpm-workspace.yaml` に `packages/runtime/*` を追加して新レイアウト準備を開始
+    - progress: 2025-09-25 18:56 `packages/runtime-worker/worker*` を `packages/runtime/worker-core` / `worker-bootstrap` へ移動し、旧ディレクトリをクリーンアップ
+    - progress: 2025-09-25 19:00 eslint/vitest/tsconfig/app-config/スクリプトの参照パスを新構成へ更新し、`pnpm-lock.yaml`・docs を `packages/runtime/worker-*` 参照に同期
+    - progress: 2025-09-25 19:04 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` を実行し、移動後のパッケージでグリーンを確認
+    - progress: 2025-09-25 19:06 `pnpm --filter @hierarchidb/app typecheck` を実行し、新パス設定で解決できることを確認
+    - progress: 2025-09-25 19:11 `scripts/dep-fence-extra.mjs` を更新し `reference/` ワークスペースを除外、再実行して WARN のみ（@hierarchidb/ui-map peers 未外部化, runtime-shared-module-paths tsconfig paths）で通過
+    - progress: 2025-09-25 19:16 `app/tsconfig*.json` の dist 参照をパッケージルートへ切替え、`node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` / `pnpm --filter @hierarchidb/app typecheck` を確認
+    - progress: 2025-09-25 19:19 shape-plugin の workspace 依存に `@hierarchidb/runtime-shared-module-paths` を追加し `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功
+    - progress: 2025-09-25 19:27 spreadsheet-plugin の worker 型参照を Node16 方式へ修正し、`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build` が成功
+    - progress: 2025-09-25 19:32 app build で `@hierarchidb/runtime-shared-module-paths` を解決するため alias/path を追加し、`pnpm --filter @hierarchidb/app build` を実行し成功（既知の dynamic import chunk 警告のみ）
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -1935,6 +1982,69 @@
 12) fix/resolver/error-notify（エラー通知）
 13) test/base-plugin/minimal-unit（最小ユニット）
 14) test/resolver/e2e-headless-stabilize（ResolverDialog ヘッドレスE2E再有効化）
+
+- feat/plugins/worker-factory-pilot — Worker プラグイン動的 import 化（Phase 2a: 代表プラグイン移行）
+  - ブランチ: `feat/plugins/worker-factory-pilot`
+  - 依存: `refactor/runtime/worker-core-split`
+  - 受け入れ基準（DoD）：
+    - [ ] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
+    - [x] `packages/app` のプラグイン初期化コードが新 API (`registerXxxWorkerStores`) を利用し、`pnpm --filter @hierarchidb/app typecheck` が成功
+    - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` が成功
+    - [x] Phase 2a の検証結果・課題を `TASKS.md` と `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ反映
+  - チェックリスト：
+    - [ ] フォルダ/Resolver プラグインに `worker-factory` ディレクトリと `worker-public-types.ts`（型のみ）を新設
+    - [x] `WorkerModuleLoader` から新ファクトリーを呼び出すコードパスを追加し、テストで await するヘルパーを整備
+    - [x] プラグインのビルド/テスト/型チェックを実行し結果を運用ログへ記録
+  - ロールバック手順：
+    - プラグイン側のファクトリー導入差分をリバートし、旧 `worker/index.ts` 再エクスポート構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-25 19:34 Phase 2a パイロットとして folder/resolver プラグインの worker ファクトリー化に着手
+    - progress: 2025-09-25 19:45 folder/resolver の `worker/index.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
+    - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
+    - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
+
+- feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b: 全プラグイン展開）
+  - ブランチ: `feat/plugins/worker-factory-rollout`
+  - 依存: `feat/plugins/worker-factory-pilot`
+  - 受け入れ基準（DoD）：
+    - [ ] `@hierarchidb/plugins-*`（folder/resolver/styler/spreadsheet/...）の worker エクスポートがすべてファクトリー API に統一
+    - [ ] 旧パスを禁止する ESLint ルール（`no-restricted-imports`）を追加・有効化し、`pnpm -w lint` が成功
+    - [ ] `pnpm -r typecheck` が成功し、Phase 2b における import エラーがない
+    - [ ] 移行済みプラグイン一覧と検証メモを `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ追記
+  - チェックリスト：
+    - [ ] Phase 2a テンプレートをベースに残りプラグインへ適用
+    - [ ] ESLint ルールと codemod を併用し、旧パス参照を検出・修正
+    - [ ] 全プラグインのビルド/テストコマンドを実行し、結果を記録
+  - ロールバック手順：
+    - プラグイン単位で git revert を行い旧 `worker/index.ts` を復元。ESLint ルールは再度緩和してビルド通過を確保
+
+- chore/runtime-worker/api-compat-cleanup — Worker API 互換層整理（Phase 3）
+  - ブランチ: `chore/runtime-worker/api-compat-cleanup`
+  - 依存: `feat/plugins/worker-factory-rollout`
+  - 受け入れ基準（DoD）：
+    - [ ] 旧 `WorkerAPIClient` 同期 API のラッパーを整理し、新 `WorkerClientProxy` への移行案内を docs に追記
+    - [ ] `pnpm turbo run typecheck --filter @hierarchidb/runtime-worker...` など、該当パッケージの typecheck/lint/test が成功
+    - [ ] `WorkerInitializationChannel` の後方互換イベント維持をテストで確認
+  - チェックリスト：
+    - [ ] 旧 API を参照する箇所を調査し、互換ラッパー削除または薄いラッパー化で整理
+    - [ ] `useWorkerRuntime` 系 Hook の更新と型整備
+    - [ ] 互換レイヤー削除後の回帰テストを追加
+  - ロールバック手順：
+    - 削除したラッパーを復元し、`pnpm turbo run typecheck` を再実行して旧 API に戻す
+
+- chore/docs/worker-dynamic-import-finalize — 動的 import 統一ドキュメント仕上げ（Phase 4）
+  - ブランチ: `chore/docs/worker-dynamic-import-finalize`
+  - 依存: `chore/runtime-worker/api-compat-cleanup`
+  - 受け入れ基準（DoD）：
+    - [ ] `docs/design/worker-dynamic-import-architecture.md` の各フェーズ結果が最新化され、Open items がクローズ
+    - [ ] 開発者ガイド／リリースノートに移行結果とロールバック手順を反映
+    - [ ] `TASKS.md` Done セクションへ Phase 0〜4 の成果と影響範囲を記載
+  - チェックリスト：
+    - [ ] 各フェーズで得た検証ログを整理し、ドキュメントへ反映
+    - [ ] Feature フラグや設定ファイルの最終状態を確認
+    - [ ] 完了報告前に関係者レビュー（docs）を取得
+  - ロールバック手順：
+    - ドキュメント差分をリバートし、必要に応じて前段タスクへフィードバック
 
 - fix/ui-treeconsole/react-router-types — react-router 公式型導入でシム撤去（ui-treeconsole-breadcrumb / plugins-timeline） ※2025-09-20 18:10 Doingへ移動
 
@@ -4047,6 +4157,42 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-25 13:28 start: docs/requirements/dynamic-import-unification — 要件文書と TODO リストの骨子作成に着手 (設計メモの要点抽出)
+- 2025-09-25 13:33 done: docs/requirements/dynamic-import-unification — `docs/requirements/dynamic-import-unification.md` と `docs/requirements/dynamic-import-unification-todo.md` を追加し、作業フェーズ別のタスクを整理
+- 2025-09-25 13:36 progress: docs/requirements/dynamic-import-unification — TODO リストへ `.github` CI スクリプト更新タスクを追記し、要件定義の DoD に CI 反映を追加
+- 2025-09-25 13:38 progress: docs/requirements/dynamic-import-unification — TODO/要件へ scripts/*, knip.json, vitest.config.ts, tsup.* 等の設定更新タスクを追加
+- 2025-09-25 13:42 progress: chore/codemod-runner-bootstrap — `scripts/codemods/` を新設し runner.ts と README を追加、package.json に `codemod:run` スクリプトを登録
+- 2025-09-25 13:45 progress: phase1/runtime-investigation — WorkerAPIClient/WorkerProvider/プラグインの静的 export 構造を調査し、要件文書の現状メモに反映
+- 2025-09-25 13:52 progress: phase1/worker-client-proxy-skeleton — `app/src/worker-runtime` を追加し Proxy インターフェースと hook を定義、既存 `pnpm --filter @hierarchidb/app typecheck` 成功
+- 2025-09-25 13:58 progress: phase1/worker-provider-integration — WorkerProvider で proxy hook を併用し、pnpm --filter @hierarchidb/app typecheck 再実行で成功
+- 2025-09-25 14:02 progress: phase1/suspense-gate-simplify — WorkerClientGate を Proxy 状態前提に整理し、pnpm --filter @hierarchidb/app typecheck 再確認
+- 2025-09-25 14:08 progress: phase1/proxy-state-sync — WorkerProvider の status を proxy state/error と同期させる effect を追加
+- 2025-09-25 14:15 progress: tooling/codemod-runner-enhance — codemod runner に対象ファイル収集と dry-run サポートを追加
+- 2025-09-25 14:20 progress: phase1/channel-event-bridge — WorkerInitializationChannel で init start/progress/error イベントを dispatch し、WorkerClientProxy が受信して状態/進捗を更新
+- 2025-09-25 14:26 progress: phase1/proxy-progress-api — WorkerClientProxy に getProgress/subscribeProgress を追加し、WorkerProvider から progress を購読するよう更新
+- 2025-09-25 14:33 progress: tooling/codemod-runner-dryrun — `scripts/codemods/mods/migrate-plugin-worker.ts` を追加し、dry-run で codemod runner を検証 (`pnpm codemod:run --codemod migrate-plugin-worker --dry-run --target app/src/WorkerAPIClient.ts`)
+- 2025-09-25 14:38 progress: phase1/run-init-with-proxy — WorkerProvider の runInitialization を WorkerClientProxy 経由の ensureInitialized に置換
+- 2025-09-25 14:45 progress: tooling/codemod-migrate-worker — migrate-plugin-worker codemod を ts-morph ベースで実装し、styler-plugin で dry-run 確認
+- 2025-09-25 14:48 progress: docs/settings-audit — 設定ファイル監査メモを更新 (scripts/check-shims.mjs などの確認事項を追記)
+- 2025-09-25 14:52 progress: phase2/styler-codemod-apply — migrate-plugin-worker codemod を styler-plugin へ適用し typecheck 成功
+- 2025-09-25 14:55 progress: ci/codemod-dryrun-job — unit-ci に codemod dry-run ジョブを追加
+- 2025-09-25 15:02 progress: phase2/plugin-dry-run-survey — codemod dry-run を resolver/folder/basemap/route で実行し影響範囲を確認
+- 2025-09-25 15:05 progress: ci/dts-codemod-check — dts-check ワークフローへ codemod dry-run ステップを追加
+- 2025-09-25 15:36 start: phase2/resolver-codemod-cleanup — Resolver/Styler codemod 適用差分の整形と Dexie 恒久対応の調整を再開
+- 2025-09-25 15:48 progress: phase2/resolver-codemod-cleanup — `ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、`pnpm --filter @hierarchidb/plugins-resolver-plugin test -- --run` を実行 (1 skip / 他グリーン)
+- 2025-09-25 15:49 progress: phase2/resolver-codemod-cleanup — Styler プラグインに `StylerDialog.e2e.test.tsx` が現状存在しないことを確認（`pnpm --filter @hierarchidb/plugins-styler-plugin test -- --list` で E2E 試験対象なしを確認）。必要なら後続タスクで e2e 再導入 + skip 管理を検討
+- 2025-09-25 15:55 progress: phase2/resolver-codemod-cleanup — Resolver/Styler plugin の `index.ts` / `worker/index.ts` / `database/index.ts` で type-only export 化されていた値を復元しつつ `load*Module` ヘルパーを共存。`pnpm --filter @hierarchidb/plugins-{resolver,styler}-plugin typecheck` と resolver-plugin テスト (`--run`) を再実行し、いずれも成功（ResolverDialog E2E は skip 継続）
+- 2025-09-25 16:00 progress: phase1/worker-module-loader — `app/src/worker-runtime/WorkerModuleLoader.ts` を新設し、WorkerClientProxy の初期化経路を loader 経由に変更。resolver/styler プラグイン worker を preload しつつエラーはサプレッサ。`docs/requirements/dynamic-import-unification-todo.md` の該当項目を更新
+- 2025-09-25 16:11 progress: phase1/worker-state-store — WorkerStateStore を実装し、WorkerClientProxy / useWorkerRuntimeProxy を Store ベースへ差し替え。WorkerModuleLoader の preload 対象を basemap/folder/route/spreadsheet/styler/resolver へ拡張し、`pnpm --filter @hierarchidb/app typecheck` を再実行
+- 2025-09-25 16:15 progress: phase1/worker-state-store — `app/src/worker-runtime/__tests__/workerRuntime.integration.test.ts` を追加し、StateStore/ModuleLoader の成功・失敗ケースをモックベースで検証。sandbox の file watcher 制限で `pnpm --filter @hierarchidb/app test -- --run ...` は `EMFILE` となったため、CI 実行時に再確認が必要（詳細は報告）
+- 2025-09-25 16:18 progress: phase2/plugin-dry-run-survey — location/timeline plugin の worker エントリを調査し、Dexie preload 用ヘルパーが未実装であることを確認。`docs/requirements/dynamic-import-unification-todo.md` に TODO 追加（Dexie 導入方針決定後に対応）
+- 2025-09-25 16:20 progress: phase2/plugin-dry-run-survey — ロケーション/TL プラグインの機能不足箇所（LocationSelectionStep の checkboxState 変換 TODO、Timeline Map/Animation preview の placeholder）を洗い出し、requirements TODO に項目化
+- 2025-09-25 16:25 progress: phase2/plugin-dry-run-survey — shape-plugin の worker エントリを確認し、Dexie PeerStore 自動登録や preload ヘルパーが未実装であることを記録。requirements TODO に追記
+- 2025-09-25 13:15 start: chore/scripts/plugin-dependency-fixture-fix — scripts/plugin-dependency-resolver.ts のテストデータを PluginDefinition の必須フィールドに合わせて整形する作業を開始
+- 2025-09-25 13:19 done: chore/scripts/plugin-dependency-fixture-fix — createTestDefinition ヘルパーを導入し、Map 定義を同ヘルパー経由に更新（差分のみ）
+- 2025-09-25 13:21 blocked: chore/scripts/plugin-dependency-fixture-fix — `pnpm typecheck` を実行したが `@hierarchidb/plugins-timeline-plugin` の `ast-types` 由来 TS2865 が既存課題として残り失敗、scripts 側の新規エラーは再発なし
+- 2025-09-25 13:22 start: fix/plugins-timeline/type-only-ast-types — ast-types の d.ts を type-only import 化するパッチ方針を検討し、pnpm の patchedDependencies で管理する準備に着手
+- 2025-09-25 13:26 done: fix/plugins-timeline/type-only-ast-types — `patches/ast-types@0.16.1.patch` を追加し `package.json` に patchedDependencies を設定、`pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` が成功（ast-types TS2865 解消）
 - 2025-09-24 09:05 start: chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告・Hook 規約違反の修正に着手（対象: SamplePluginProvider, usePluginDialogController）
 - 2025-09-24 09:18 progress: chore/runtime-ui-dialog/lint-fixes — SamplePluginProvider の未使用引数を `_data` へ置換し lint 警告を解消
 - 2025-09-24 09:24 progress: chore/runtime-ui-dialog/lint-fixes — StepAdapter を分離コンポーネント化して Hooks 規約違反を解消

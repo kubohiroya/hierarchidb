@@ -17,6 +17,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TagService } from '@hierarchidb/tag';
+import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
@@ -59,17 +60,16 @@ export class WorkerService{
       enableAllExporters();
 
       // Optionally install XLSX parser for tabular if available
-      try {
-        // Optional dependency; suppress Vite analysis for dynamic import
-        // @ts-ignore
-        const mod = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');
-        if (mod && typeof mod.installTabularXlsx === 'function') {
-          mod.installTabularXlsx();
-          if (typeof mod.markTabularXlsxInstalled === 'function') mod.markTabularXlsxInstalled();
-        }
-      } catch {
-        // XLSX support not installed; proceed without it
-      }
+      await importOptionalFeature('tabularXlsx')
+        .then((mod: any) => {
+          if (mod && typeof mod.installTabularXlsx === 'function') {
+            mod.installTabularXlsx();
+            if (typeof mod.markTabularXlsxInstalled === 'function') mod.markTabularXlsxInstalled();
+          }
+        })
+        .catch(() => {
+          // XLSX support not installed; proceed without it
+        });
       // Tag service
       const tagDBPort = new TagDBPortCoreDBAdapter(coreDB);
       const tagService: TagAPI = await TagService.getSingleton(tagDBPort);

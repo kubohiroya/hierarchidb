@@ -25,6 +25,8 @@ function normalizeError(error: unknown): Error {
   return new Error(String(error));
 }
 import { WorkerAPIClient } from '../WorkerAPIClient.js';
+import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
+import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
 
@@ -144,42 +146,22 @@ const secondaryButtonStyle: CSSProperties = {
   backgroundColor: '#607d8b',
 };
 
-type SuspendHandle = {
-  promise: Promise<void>;
-  resolve: () => void;
-};
-
-function createSuspendHandle(): SuspendHandle {
-  let resolve!: () => void;
-  const promise = new Promise<void>((res) => {
-    resolve = res;
-  });
-  return { promise, resolve };
-}
-
 type WorkerClientGateProps = {
   status: WorkerStatusState;
   renderOverlay: boolean;
   onRetry: () => void;
+  proxy: WorkerClientProxy;
   children: ReactNode;
 };
 
-function WorkerClientGate({ status, renderOverlay, onRetry, children }: WorkerClientGateProps) {
-  const suspendRef = useRef<SuspendHandle | null>(null);
+function WorkerClientGate({ status, renderOverlay, onRetry, proxy, children }: WorkerClientGateProps) {
+  const initPromiseRef = useRef<Promise<Remote<WorkerAPI>> | null>(null);
 
   useEffect(() => {
-    if (status.client && status.isInitialized && suspendRef.current) {
-      suspendRef.current.resolve();
-      suspendRef.current = null;
+    if (status.isInitialized) {
+      initPromiseRef.current = null;
     }
-  }, [status.client, status.isInitialized]);
-
-  useEffect(() => {
-    if (status.error && suspendRef.current) {
-      suspendRef.current.resolve();
-      suspendRef.current = null;
-    }
-  }, [status.error]);
+  }, [status.isInitialized]);
 
   if (status.error) {
     if (renderOverlay) {
@@ -189,10 +171,10 @@ function WorkerClientGate({ status, renderOverlay, onRetry, children }: WorkerCl
   }
 
   if (!status.client || !status.isInitialized) {
-    if (!suspendRef.current) {
-      suspendRef.current = createSuspendHandle();
+    if (!initPromiseRef.current) {
+      initPromiseRef.current = proxy.ensureInitialized();
     }
-    throw suspendRef.current.promise;
+    throw initPromiseRef.current;
   }
 
   return <>{children}</>;
@@ -233,18 +215,18 @@ function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void })
 
 export const WorkerProvider = ({
   children,
-  timeout = 30000,
-  debug = false,
   renderOverlay = true,
 }: WorkerProviderProps) => {
   const bootProgress = useBootProgressSafe();
-  const [status, setStatus] = useState<WorkerStatusState>({
-    client: null,
-    isInitialized: false,
-    initProgress: 0,
-    initMessage: 'Worker初期化を開始しています...',
-    error: null,
-  });
+  const { proxy, state: proxyState, error: proxyError } = useWorkerRuntimeProxy();
+  const initialProgress = proxy.getProgress();
+  const [status, setStatus] = useState<WorkerStatusState>(() => ({
+    client: proxy.getCachedClient(),
+    isInitialized: proxyState === 'ready',
+    initProgress: initialProgress.progress,
+    initMessage: initialProgress.message,
+    error: proxyError,
+  }));
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
 
@@ -257,6 +239,58 @@ export const WorkerProvider = ({
       error: null,
     });
   }, []);
+
+
+  useEffect(() => {
+    const unsubscribe = proxy.subscribeProgress((detail: WorkerInitializationProgress) => {
+      setStatus((prev) => ({
+        ...prev,
+        initProgress: detail.progress,
+        initMessage: detail.message,
+      }));
+      bootProgress?.setStepProgress('Worker', detail.progress, detail.message);
+    });
+    return unsubscribe;
+  }, [proxy, bootProgress]);
+  useEffect(() => {
+    setStatus(prev => {
+      let next = prev;
+      let changed = false;
+
+      if (proxyState === 'ready') {
+        const client = proxy.getCachedClient();
+        if (client && (!prev.client || !prev.isInitialized)) {
+          next = {
+            ...prev,
+            client,
+            isInitialized: true,
+            initProgress: 100,
+            initMessage: 'Worker初期化完了',
+            error: proxyError ?? null,
+          };
+          changed = true;
+        }
+      } else if (proxyState === 'initializing' && prev.isInitialized) {
+        next = {
+          ...prev,
+          isInitialized: false,
+          initProgress: 0,
+          initMessage: 'Worker初期化を開始しています...',
+        };
+        changed = true;
+      }
+
+      if (proxyState === 'failed' && proxyError && prev.error !== proxyError) {
+        next = { ...next, error: proxyError, isInitialized: false };
+        changed = true;
+      }
+
+      if (!changed) {
+        return prev;
+      }
+      return next;
+    });
+  }, [proxy, proxyState, proxyError]);
 
   const finalizeInitialized = useCallback(async () => {
     try {
@@ -297,8 +331,6 @@ export const WorkerProvider = ({
 
   const runInitialization = useCallback(async () => {
     bootLog('WorkerProvider initialize() start');
-    initChannelRef.current?.dispose();
-    initChannelRef.current = null;
     latestProgressRef.current = 0;
     setStatus(prev => ({
       ...prev,
@@ -318,59 +350,20 @@ export const WorkerProvider = ({
     }
 
     try {
-      await WorkerAPIClient.initialize();
-    } catch (error) {
-      const normalized = normalizeError(error);
-      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
-      return;
-    }
-
-    if (WorkerAPIClient.isReady()) {
-      bootLog('WorkerProvider fast-path (isReady)');
-      await markComplete();
-      return;
-    }
-
-    const rawWorker = WorkerAPIClient.getRawWorkerInstance();
-    if (!rawWorker) {
-      const normalized = new Error('Worker instance is not available');
-      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
-      return;
-    }
-
-    const progressHandler = (event: MessageEvent) => {
-      const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
-      if (data?.type !== 'INIT_PROGRESS') return;
-      const message = data.payload?.message || 'Worker initializing';
-      const progress = typeof data.payload?.progress === 'number'
-        ? Math.max(0, Math.min(100, data.payload.progress))
-        : latestProgressRef.current;
-      latestProgressRef.current = progress;
+      const client = await proxy.ensureInitialized();
       setStatus(prev => ({
         ...prev,
-        initProgress: progress,
-        initMessage: message,
+        client,
+        isInitialized: true,
+        error: null,
       }));
-      bootProgress?.setStepProgress('Worker', progress, message);
-    };
-
-    rawWorker.addEventListener('message', progressHandler);
-
-    const channel = new WorkerInitializationChannel();
-    initChannelRef.current = channel;
-
-    try {
-      await channel.waitForInitialization({ worker: rawWorker, timeout, debug });
       await markComplete();
     } catch (error) {
       const normalized = normalizeError(error);
       setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
-    } finally {
-      rawWorker.removeEventListener('message', progressHandler);
-      channel.dispose();
-      initChannelRef.current = null;
+      bootProgress?.setStepProgress('Worker', latestProgressRef.current, normalized.message);
     }
-  }, [bootProgress, debug, markComplete, timeout]);
+  }, [bootProgress, markComplete, proxy]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
@@ -480,7 +473,7 @@ export const WorkerProvider = ({
   return (
     <WorkerContext.Provider value={contextValue}>
       <Suspense fallback={suspenseFallback}>
-        <WorkerClientGate status={status} renderOverlay={renderOverlay} onRetry={retryInitialization}>
+        <WorkerClientGate status={status} renderOverlay={renderOverlay} onRetry={retryInitialization} proxy={proxy}>
           {children}
         </WorkerClientGate>
       </Suspense>

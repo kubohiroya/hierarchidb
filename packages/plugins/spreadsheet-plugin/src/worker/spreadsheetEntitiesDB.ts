@@ -1,7 +1,8 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { SpreadsheetGroupItemData, SpreadsheetPeerData, SpreadsheetRelationMeta } from '../types';
+import type { SpreadsheetPeerData } from '../types/index.js';
+import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities.js';
 
 export type SheetPeerRow = {
   nodeId: NodeId;

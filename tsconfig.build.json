@@ -19,8 +19,8 @@
     { "path": "./packages/feature/map-adapter/tsconfig.typecheck.json" },
     { "path": "./packages/feature/route-resolver/tsconfig.typecheck.json" }
     ,{ "path": "./packages/plugins/route-plugin/tsconfig.typecheck.json" }
-    ,{ "path": "./packages/runtime-worker/worker/tsconfig.typecheck.json" }
-    ,{ "path": "./packages/runtime-worker/worker-bootstrap/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/runtime/worker-core/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/runtime/worker-bootstrap/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/core/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/dialog/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/data-grid/tsconfig.typecheck.json" }

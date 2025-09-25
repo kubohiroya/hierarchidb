@@ -10,8 +10,8 @@
 - 既存の `CommandProcessor.executeCommand` の実装は触らない（今後の置換準備）。
 
 提案ファイル/配置
-- `packages/runtime-worker/worker/src/services/command/registry.types.ts`
-- `packages/runtime-worker/worker/src/services/command/envelope.util.ts`
+- `packages/runtime/worker-core/src/services/command/registry.types.ts`
+- `packages/runtime/worker-core/src/services/command/envelope.util.ts`
 
 仕様詳細
 - CommandMap は当面コア種別のみ（createNode/updateNode/moveNodes/removeNodes）を定義。将来、重複/貼付け/インポート等を段階的に追加。

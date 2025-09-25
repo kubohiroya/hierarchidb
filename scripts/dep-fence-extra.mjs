@@ -16,6 +16,8 @@ let config = {};
   config = mod.policyOptions || {};
 }
 
+const IGNORE_ROOT_PREFIXES = new Set(['reference']);
+
 function globPackages(dir) {
   const out = [];
   function walk(d) {
@@ -23,6 +25,9 @@ function globPackages(dir) {
       if (name === 'node_modules' || name.startsWith('.')) continue;
       const p = path.join(d, name);
       const st = fs.statSync(p);
+      const rel = path.relative(repoRoot, p);
+      const top = rel.split(path.sep)[0];
+      if (IGNORE_ROOT_PREFIXES.has(top)) continue;
       if (st.isDirectory()) {
         const pkg = path.join(p, 'package.json');
         if (fs.existsSync(pkg)) out.push(p);

@@ -1,4 +1,5 @@
 import { FeatureRegistry } from '@hierarchidb/feature-registry';
+import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
 
 // Import feature definitions (static list for now; scanning can be added later)
 import { FeatureDefinition as TagFeatureDefinition } from '@hierarchidb/tag';
@@ -24,20 +25,23 @@ export async function bootstrapFeatures(): Promise<FeatureRegistry> {
     AuthRecoveryFeatureDefinition,
   ].forEach((definition) => registry.register(definition));
   // Optional: map-adapter (UI adapter only)
-  try {
-    const name = '@' + 'hierarchidb/map-adapter';
-    const mod: any = await import(/* @vite-ignore */ (name as string));
-    if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
-  } catch {
-    // optional, ignore
-  }
+  // Optional module: map-adapter
+  await importOptionalFeature('mapAdapter')
+    .then((mod: any) => {
+      if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
+    })
+    .catch(() => {
+      // optional, ignore
+    });
+
   // Optional feature: tabular-xlsx
-  try {
-    const mod: any = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');
-    if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
-  } catch {
-    // optional, ignore
-  }
+  await importOptionalFeature('tabularXlsx')
+    .then((mod: any) => {
+      if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
+    })
+    .catch(() => {
+      // optional, ignore
+    });
   await registry.startAll();
   return registry;
 }

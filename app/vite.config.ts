@@ -431,12 +431,16 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // We point to the built dist to let Vite trace its internal worker entry (stageWorker.entry.js)
         {
           find: '@hierarchidb/runtime-worker',
-          replacement: path.resolve(__dirname, '../packages/runtime-worker/worker/dist/index.js'),
+          replacement: path.resolve(__dirname, '../packages/runtime/worker-core/dist/index.js'),
         },
         // Ensure bootstrap utils resolve to built dist in app build
         {
           find: '@hierarchidb/runtime-worker-bootstrap',
-          replacement: path.resolve(__dirname, '../packages/runtime-worker/worker-bootstrap/dist/index.js'),
+          replacement: path.resolve(__dirname, '../packages/runtime/worker-bootstrap/dist/index.js'),
+        },
+        {
+          find: '@hierarchidb/runtime-shared-module-paths',
+          replacement: path.resolve(__dirname, '../packages/runtime-shared/module-paths/dist/index.js'),
         },
         // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugins
         // Rationale: location-plugin bundles it as external; alias points to built dist

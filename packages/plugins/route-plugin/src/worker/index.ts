@@ -1,17 +1,25 @@
 // Worker registration for route-plugin Dexie stores + standard worker exports
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
-  if (!hasIndexedDB) return;
-  const { RouteEntitiesDB } = await import('./routeEntitiesDB.js');
-  const db = new RouteEntitiesDB();
-  await db.open();
-  if (!storeRegistry.getPeer('route')) {
-    const { createRoutePeerStoreDexie } = await import('./routePeerStore.dexie.js');
-    storeRegistry.registerPeer('route', createRoutePeerStoreDexie(db));
-  }
-}).catch(() => {});
+importRuntimeWorker()
+  .then(async ({ storeRegistry }) => {
+    if (!hasIndexedDB) return;
+    const { RouteEntitiesDB } = await import('./routeEntitiesDB.js');
+    const db = new RouteEntitiesDB();
+    await db.open();
+    if (!storeRegistry.getPeer('route')) {
+      const { createRoutePeerStoreDexie } = await import('./routePeerStore.dexie.js');
+      storeRegistry.registerPeer('route', createRoutePeerStoreDexie(db));
+    }
+  })
+  .catch(() => {});
+
+export async function loadRouteEntitiesDbModule() {
+  return import(/* @vite-ignore */ './routeEntitiesDB.js');
+}
 
 // Standardized worker-side factory exports (polymorphic contract)
 export async function createEntityHandler() {

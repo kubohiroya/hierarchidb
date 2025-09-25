@@ -1,9 +1,9 @@
 // Dexie-backed PeerStore auto-registration for styler plugin
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
 try {
   const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-  // Build specifier dynamically to avoid TS attempting resolution during DTS
-  const workerModName: string = '@hierarchidb' + '/runtime-worker';
-  import(/* @vite-ignore */ (workerModName as string)).then(async ({ storeRegistry }) => {
+  importRuntimeWorker().then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
       const { StylerEntitiesDB } = await import('./stylerEntitiesDB.js');
@@ -26,3 +26,7 @@ try {
 }
 
 export { StylerEntitiesDB } from './stylerEntitiesDB.js';
+
+export async function loadStylerEntitiesDbModule() {
+  return import(/* @vite-ignore */ './stylerEntitiesDB.js');
+}

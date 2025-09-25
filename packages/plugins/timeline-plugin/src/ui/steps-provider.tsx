@@ -5,7 +5,19 @@ import { AnimationViewerStep } from './steps/AnimationViewerStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 
-type TimelineData = { basic: { name: string; description?: string }; frames: { id: string; name: string }[] };
+type TimelineFrameConfig = {
+  id: string;
+  name: string;
+  viewState?: {
+    longitude: number;
+    latitude: number;
+    zoom?: number;
+    bearing?: number;
+    pitch?: number;
+  };
+};
+
+type TimelineData = { basic: { name: string; description?: string }; frames: TimelineFrameConfig[] };
 type P = StepComponentProps & { data: TimelineData };
 
 registry.registerConfigProvider({

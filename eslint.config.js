@@ -93,11 +93,11 @@ export default [
 
   // Type-aware deprecation checks (runtime-worker)
   {
-    files: ['packages/runtime-worker/worker/**/*.{ts,tsx}'],
+    files: ['packages/runtime/worker-core/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/runtime-worker/worker/tsconfig.json'],
+        project: ['./packages/runtime/worker-core/tsconfig.json'],
       },
     },
     rules: {
