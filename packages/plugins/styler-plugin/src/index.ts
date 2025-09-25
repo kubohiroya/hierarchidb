@@ -67,7 +67,12 @@ export {
   generateColorGradient,
   valueToColor,
   adjustBrightness,
+  createColorVariations,
   getContrastRatio,
+} from './utils/colorUtils.js';
+export type {
+  ColorVariationOptions,
+  ColorVariations,
 } from './utils/colorUtils.js';
 
 // UI components are exported from subpath to avoid worker-time deps

@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog.js';
 import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
+import type { ExtensibleFolderDialogProps } from '../components/ExtensibleFolderDialog.js';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
+import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 
 describe('ExtensibleFolderDialog', () => {
   const mockOnSubmit = vi.fn();
@@ -31,6 +35,11 @@ describe('ExtensibleFolderDialog', () => {
     });
 
     it('should validate required name field', async () => {
+      const guardStep: DialogStepDefinition = {
+        stepNumber: 2,
+        title: 'Guard',
+        component: () => <div>Guard Step</div>,
+      };
       render(
         <ExtensibleFolderDialog
           mode="create"
@@ -38,16 +47,17 @@ describe('ExtensibleFolderDialog', () => {
           onSubmit={mockOnSubmit}
           onCancel={mockOnCancel}
           open={true}
+          additionalSteps={[guardStep]}
         />,
       );
 
-      // Try to submit without entering name
-      const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
-      await userEvent.click(submitButton);
+      const nextButton = screen.getByRole('button', { name: /Next/i });
+      await userEvent.click(nextButton);
 
-      // Should show validation error
       await waitFor(() => {
-        expect(screen.getByText(/Folder name is required/i)).toBeInTheDocument();
+        const helperId = screen.getByLabelText(/Folder Name/i).getAttribute('aria-describedby');
+        const helper = helperId ? document.getElementById(helperId) : null;
+        expect(helper?.textContent).toContain('Folder name is required');
       });
 
       expect(mockOnSubmit).not.toHaveBeenCalled();
@@ -66,11 +76,10 @@ describe('ExtensibleFolderDialog', () => {
 
       // Enter folder-plugin name
       const nameInput = screen.getByLabelText(/Folder Name/i);
-      await userEvent.type(nameInput, 'My New Folder');
+      fireEvent.change(nameInput, { target: { value: 'My New Folder' } });
 
-      // Enter description
       const descInput = screen.getByLabelText(/Description/i);
-      await userEvent.type(descInput, 'This is a test folder-plugin');
+      fireEvent.change(descInput, { target: { value: 'This is a test folder-plugin' } });
 
       // Submit
       const [submitButton] = screen.getAllByRole('button', { name: /Complete/i, hidden: true });
@@ -305,6 +314,71 @@ describe('ExtensibleFolderDialog', () => {
       await waitFor(() => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Theme integration', () => {
+    const renderWithTheme = (theme: Theme, options: Partial<Pick<ExtensibleFolderDialogProps, 'additionalSteps'>> = {}) =>
+      render(
+        <ThemeProvider theme={theme}>
+          <ExtensibleFolderDialog
+            mode="create"
+            parentId={'parent-theme' as NodeId}
+            onSubmit={mockOnSubmit}
+            onCancel={mockOnCancel}
+            open={true}
+            additionalSteps={options.additionalSteps ?? []}
+          />
+        </ThemeProvider>,
+      );
+
+    const resolveCssColor = (color: string) => {
+      const probe = document.createElement('div');
+      probe.style.color = color;
+      document.body.appendChild(probe);
+      const resolved = window.getComputedStyle(probe).color;
+      document.body.removeChild(probe);
+      return resolved;
+    };
+
+    it.each([
+      ['light', createTheme({ palette: { mode: 'light' } })],
+      ['dark', createTheme({ palette: { mode: 'dark' } })],
+    ])('applies themed dialog surface in %s mode', (_, theme) => {
+      renderWithTheme(theme);
+      const dialog = screen.getByRole('dialog');
+      const background = window.getComputedStyle(dialog).backgroundColor;
+      const expected = resolveCssColor(getDialogSurfaceColor(theme));
+      expect(background).toBe(expected);
+    });
+
+    it('uses primary palette tokens for active step indicator', () => {
+      const theme = createTheme({ palette: { mode: 'light', primary: { main: '#3949ab' } } });
+      renderWithTheme(theme);
+      const [activeStep] = screen.getAllByRole('listitem');
+      const computed = window.getComputedStyle(activeStep);
+      expect(computed.backgroundColor).toBe(resolveCssColor(theme.palette.primary.main));
+      expect(computed.color).toBe(resolveCssColor(theme.palette.primary.contrastText));
+    });
+
+    it('renders validation feedback using theme error color', async () => {
+      const theme = createTheme({ palette: { mode: 'dark', error: { main: '#ff7043' } } });
+      const guardStep: DialogStepDefinition = {
+        stepNumber: 2,
+        title: 'Guard',
+        component: () => <div>Guard Step</div>,
+      };
+      renderWithTheme(theme, { additionalSteps: [guardStep] });
+
+      const nextButton = screen.getByRole('button', { name: /Next/i });
+      await userEvent.click(nextButton);
+
+      const errorCandidates = await screen.findAllByText(/Folder name is required/i);
+      const summaryNode = errorCandidates.find((node) => !(node as HTMLElement).id);
+      expect(summaryNode).toBeDefined();
+      const errorContainer = (summaryNode as HTMLElement).parentElement as HTMLElement;
+      const computed = window.getComputedStyle(errorContainer);
+      expect(computed.color).toBe(resolveCssColor(theme.palette.error.main));
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   generateColorGradient,
   getContrastRatio,
   hexToRgb,
+  createColorVariations,
   hsvToRgb,
   rgbToHex,
   rgbToHsv,
@@ -50,7 +51,7 @@ describe('Color Utils', () => {
       expect(v2).toBeCloseTo(1, 2);
 
       // Gray: RGB(128, 128, 128) -> HSV(0, 0, 0.5)
-      const [h3, s3, v3] = rgbToHsv(128, 128, 128);
+      const [_h3, s3, v3] = rgbToHsv(128, 128, 128);
       expect(s3).toBeCloseTo(0, 2);
       expect(v3).toBeCloseTo(0.5, 2);
     });
@@ -324,6 +325,40 @@ describe('Color Utils', () => {
       const ratio2 = getContrastRatio(color2, color1);
 
       expect(ratio1).toBeCloseTo(ratio2, 2);
+    });
+  });
+
+  describe('Color Variations', () => {
+    it('should create darker and saturated variants using HSV adjustments', () => {
+      const base = '#6699cc';
+      const variations = createColorVariations(base);
+
+      expect(variations.base).toBe('#6699cc');
+      expect(variations.darker).toMatch(/^#[a-f0-9]{6}$/i);
+      expect(variations.saturated).toMatch(/^#[a-f0-9]{6}$/i);
+
+      const [baseH, baseS, baseV] = rgbToHsv(...hexToRgb(base));
+      const [, , darkerV] = rgbToHsv(...hexToRgb(variations.darker));
+      const [, saturatedS] = rgbToHsv(...hexToRgb(variations.saturated));
+
+      expect(darkerV).toBeLessThan(baseV);
+      expect(saturatedS).toBeGreaterThanOrEqual(baseS);
+
+      // Hue should stay close to original (minor drift due to rounding acceptable)
+      const [saturatedH] = rgbToHsv(...hexToRgb(variations.saturated));
+      expect(Math.abs(saturatedH - baseH)).toBeLessThan(1.5);
+    });
+
+    it('should honor custom deltas for stronger adjustments', () => {
+      const base = '#778899';
+      const variations = createColorVariations(base, { valueDelta: -0.25, saturationDelta: 0.2 });
+
+      const [, baseS, baseV] = rgbToHsv(...hexToRgb(base));
+      const [, , darkerV] = rgbToHsv(...hexToRgb(variations.darker));
+      const [, saturatedS] = rgbToHsv(...hexToRgb(variations.saturated));
+
+      expect(baseV - darkerV).toBeGreaterThan(0.2);
+      expect(saturatedS - baseS).toBeGreaterThan(0.15);
     });
   });
 });

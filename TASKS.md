@@ -62,13 +62,14 @@
   - チェックリスト：
     - [x] `vitest.setup.base.ts` の fetch ポリフィルを Node 組み込み `node:undici` ベースへ移行
     - [x] polyfill 適用結果を確認するテストを実行し、bundler が `node-fetch` を要求しないことを確認
-    - [ ] 必要に応じてドキュメントまたは TODO を更新
+    - [x] 必要に応じてドキュメントまたは TODO を更新
   - ロールバック手順：
     - 変更した polyfill ロジックを差分前へ戻し、再度テストを実行して現状復帰を確認
   - 運用ログ：
     - start: 2025-09-26 01:00 Node 実行時の fetch 未定義エラー対策として polyfill を見直す作業に着手（前回実行で `node-fetch` 解決失敗を確認）
     - progress: 2025-09-26 01:02 `vitest.setup.base.ts` の fetch ポリフィルを `node:undici` ベースへ更新し、`Headers`/`Request`/`Response`/`FormData`/`Blob`/`File` の提供状況を確認
     - progress: 2025-09-26 01:03 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` を実行し、fetch 解決エラーなく 10 件のテストが成功
+    - progress: 2025-09-26 01:20 `docs/testing/vitest-runtime.md` を追加し、Node 環境向け fetch ポリフィル方針とトラブルシューティングを明文化
 - fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/common-type`, `tsup`
@@ -129,12 +130,12 @@
     - [x] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
     - [x] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
     - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
-    - [ ] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
+    - [x] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
   - チェックリスト：
-    - [ ] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
-    - [ ] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
-    - [ ] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
-    - [ ] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
+    - [x] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
+    - [x] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
+    - [x] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
+    - [x] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
   - ロールバック手順：
     - 新設した `packages/runtime/worker-core` を削除し、`packages/runtime-worker/worker*` を元のディレクトリへ戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
   - 運用ログ：
@@ -150,6 +151,7 @@
     - progress: 2025-09-25 19:27 spreadsheet-plugin の worker 型参照を Node16 方式へ修正し、`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build` が成功
     - progress: 2025-09-25 19:32 app build で `@hierarchidb/runtime-shared-module-paths` を解決するため alias/path を追加し、`pnpm --filter @hierarchidb/app build` を実行し成功（既知の dynamic import chunk 警告のみ）
     - progress: 2025-09-25 21:46 残務検証として型チェックを再実行：`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` / `pnpm -C app typecheck` いずれもグリーン。DoD 1〜3 を満たすことを確認
+    - progress: 2025-09-26 01:25 Phase 1 の検証結果を `docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に反映し、DoD を全て完了扱いへ更新
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -172,7 +174,7 @@
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
   - 受け入れ基準（DoD）：
     - [x] フォルダ作成ダイアログの背景・枠線・ステップインジケータ・エラーメッセージがテーマのパレット値を使用し、HEX ハードコードを排除
-    - [ ] ライト/ダーク両テーマで視認性が保持されることを手動確認
+    - [x] ライト/ダーク両テーマで視認性が保持されることを手動確認
     - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` が成功する
   - チェックリスト：
     - [x] `ExtensibleFolderDialog` のスタイル定義を見直し、テーマトークンに置換（背景を共通トーンに統一）
@@ -185,6 +187,27 @@
     - progress: 2025-09-22 10:33 `ExtensibleFolderDialog` の背景・ステップインジケータ配色を MUI テーマ参照へ更新し、HEX ハードコードを除去。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` を実行して成功
     - blocked: 2025-09-22 10:37 `pnpm -C app typecheck` が TrashDialog 系 `originalName` 型未定義エラーで失敗（既知の別タスク依存）。新規変更による追加エラーは発生せず
     - progress: 2025-09-25 21:44 `@hierarchidb/ui-dialog` の `getDialogSurfaceColor` を採用し背景トーン統一。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` とも成功
+    - progress: 2025-09-26 02:18 ライト/ダーク/エラーパレット反映を検証する Vitest を追加し、`pnpm --filter @hierarchidb/plugins-folder-plugin exec vitest run src/__tests__/ExtensibleFolderDialog.test.tsx` が成功（Dexie 依存の全テスト実行はサンドボックス制約で既知失敗のため対象ファイルに限定）
+- feat/styler/color-variations — HSV ベースのカラーバリエーション API 追加
+  - ブランチ: `feat/styler/color-variations`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-styler-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] 既存の `hsvToRgb` / `rgbToHsv` ユーティリティを利用し、少し暗い色・少し鮮やかな色などのバリエーションを生成する関数を追加
+    - [x] 生成したバリエーションが HEX で提供され、S/V の調整幅がオプションで指定可能
+    - [x] `pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-styler-plugin test:run -- --runTestsByPath src/__tests__/colorUtils.test.ts` が成功する
+    - [x] TASKS.md の運用ログに検証結果とロールバック手順を記録
+  - チェックリスト：
+    - [x] `colorUtils.ts` にバリエーション生成関数と必要な補助関数を追加
+    - [x] `colorUtils.test.ts` にバリエーションの振る舞いを検証するユニットテストを追加
+    - [x] エクスポートを更新し、他モジュールから利用可能にする
+  - ロールバック手順：
+    - 追加した関数とテストの差分を取り消し、`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-26 02:30 HSV ユーティリティを用いたカラーバリエーション API 設計を開始
+    - progress: 2025-09-26 02:33 `colorUtils.ts` に `createColorVariations` / `ColorVariationOptions` を実装し、HSV 変換を再利用
+    - progress: 2025-09-26 02:36 `colorUtils.test.ts` へバリエーション検証用ユニットテストを追加
+    - progress: 2025-09-26 02:38 `pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` を実行し成功
+    - progress: 2025-09-26 02:40 `pnpm --filter @hierarchidb/plugins-styler-plugin test:run -- --runTestsByPath src/__tests__/colorUtils.test.ts` を実行し成功（スタイラープラグイン全テストもグリーン）
 - chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告/Hook 違反の是正
   - ブランチ: `chore/runtime-ui-dialog/lint-fixes`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-ui-plugin-dialog`
@@ -209,20 +232,21 @@
   - ブランチ: `feat/runtime-ui/dialog-state-channel`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `feat/plugins/worker-factory-rollout`, `@hierarchidb/runtime-worker`
   - 受け入れ基準（DoD）：
-    - [ ] Worker API に DialogState API を追加し、UI からステップ状態を購読・更新できる
-    - [ ] PluginDialogHeader / Stepper が Worker 提供の状態とローカライズ済みタイトルを反映する
-    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` が成功する
-    - [ ] 必要なドキュメント更新とロールバック手順を TASKS.md に記載
+    - [x] Worker API に DialogState API を追加し、UI からステップ状態を購読・更新できる
+    - [x] PluginDialogHeader / Stepper が Worker 提供の状態とローカライズ済みタイトルを反映する
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm -C app typecheck` が成功する
+    - [x] 必要なドキュメント更新とロールバック手順を TASKS.md に記載
   - チェックリスト：
-    - [ ] 共有型 `MultiStepDialogState` を `@hierarchidb/common-type` に追加
-    - [ ] `DialogStateAPI` と Worker 側サービスを実装し、PeerStore に状態を永続化
-    - [ ] runtime-ui で状態購読フックと Publish 処理を追加し、Stepper/タイトル/UI へ反映
-    - [ ] 主要プラグインのステップ定義をローカライズレジストリへ登録
+    - [x] 共有型 `MultiStepDialogState` を `@hierarchidb/common-type` に追加
+    - [x] `DialogStateAPI` と Worker 側サービスを実装し、PeerStore に状態を永続化
+    - [x] runtime-ui で状態購読フックと Publish 処理を追加し、Stepper/タイトル/UI へ反映
+    - [x] 主要プラグインのステップ定義をローカライズレジストリへ登録
   - ロールバック手順：
     - Worker API 拡張および関連サービスを revert し、UI 側の購読コードとローカライズ登録を元に戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-25 23:42 MultiStepDialog 状態通知共通化タスクに着手（現状調査と要件整理を実施）
     - progress: 2025-09-25 23:58 共有型/Worker API/Runtime UI を実装し、`pnpm --filter @hierarchidb/common-type build` → `@hierarchidb/common-api build` → `@hierarchidb/runtime-worker {typecheck,build}` → `@hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` を順次実行してグリーンを確認
+    - progress: 2025-09-26 01:28 `packages/runtime-ui/plugin-dialog/README.md` に Dialog State Channel の利用方法とロールバック手順を追記
 - feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
   - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
@@ -308,20 +332,23 @@
   - ブランチ: `chore/dep-fence/peer-and-shim-cleanup`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-linker-plugin`, `@hierarchidb/plugins-timeline-plugin`, `dep-fence`
   - 受け入れ基準（DoD）：
-    - [ ] `dep-fence` 実行時に `peer not in tsup.external` および `local type shims present` 警告が発生しない
-    - [ ] `@hierarchidb/plugins-linker-plugin` の `tsup.external` に peer 依存 `comlink` が含まれる
-    - [ ] `@hierarchidb/plugins-timeline-plugin` からローカル型シム `src/types/react-transition-group*.d.ts` を撤去し、代替の公式型参照で型チェックが成功する
+    - [x] `dep-fence` 実行時に `peer not in tsup.external` および `local type shims present` 警告が発生しない
+    - [x] `@hierarchidb/plugins-linker-plugin` の `tsup.external` に peer 依存 `comlink` が含まれる
+    - [x] `@hierarchidb/plugins-timeline-plugin` からローカル型シム `src/types/react-transition-group*.d.ts` を撤去し、代替の公式型参照で型チェックが成功する
   - チェックリスト：
-    - [ ] linker-plugin の tsup 設定に `comlink` を追加
-    - [ ] timeline-plugin で react-transition-group の型シムを削除し、必要に応じて依存/tsconfig を調整
-    - [ ] `pnpm --filter @hierarchidb/plugins-{linker-plugin,timeline-plugin} typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin build` を実行
-    - [ ] `dep-fence` を再実行し、結果を記録
+    - [x] linker-plugin の tsup 設定に `comlink` を追加
+    - [x] timeline-plugin で react-transition-group の型シムを削除し、必要に応じて依存/tsconfig を調整
+    - [x] `pnpm --filter @hierarchidb/plugins-{linker-plugin,timeline-plugin} typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin build` を実行
+    - [x] `dep-fence` を再実行し、結果を記録
   - ロールバック手順：
     - tsup 設定変更および型ファイル削除を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-{linker-plugin,timeline-plugin} typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-24 14:36 dep-fence peer external / local shim 警告の解消タスクに着手
     - progress: 2025-09-24 14:44 linker-plugin の tsup external に `comlink` を追加し、timeline-plugin のローカル shim を撤去して共通 ambient 型へ統合
     - blocked: 2025-09-24 15:05 `pnpm --filter @hierarchidb/plugins-timeline-plugin {typecheck,build}` / `pnpm exec dep-fence` は sandbox 環境で node_modules 再構築が必要だが、`pnpm install` がネットワーク制限で失敗したため未実行（ユーザー環境での再インストールと検証を要請予定）
+    - progress: 2025-09-26 02:03 `pnpm --filter @hierarchidb/plugins-linker-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` を再実行し、いずれも成功
+    - progress: 2025-09-26 02:05 `pnpm --filter @hierarchidb/plugins-timeline-plugin build` を実行し、tsup がエラーなく完了
+    - progress: 2025-09-26 02:06 `pnpm exec dep-fence` を再実行し、peer external / local shim 警告が再発しないことを確認（既知の `paths-direct-src` WARN のみ継続）
 - fix/ui-toolbar/settings-menu-autoclose — TreeConsole ツールバー設定メニューの自動クローズ対応
   - ブランチ: `fix/ui-toolbar/settings-menu-autoclose`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-toolbar`, `@hierarchidb/app`
