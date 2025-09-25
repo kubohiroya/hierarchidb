@@ -61,7 +61,9 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -95,8 +97,10 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
-      "@hierarchidb/ui-dialog",
-      "react"
-    ]
-  }
+    "@hierarchidb/ui-dialog",
+    "@hierarchidb/runtime-worker",
+    "@hierarchidb/runtime-shared-module-paths",
+    "react"
+  ]
+}
 }

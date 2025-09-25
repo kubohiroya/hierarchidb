@@ -61,6 +61,12 @@
       "@hierarchidb/runtime-worker/*": [
         "packages/runtime/worker-core/src/*"
       ],
+      "@hierarchidb/runtime-shared-module-paths": [
+        "packages/runtime-shared/module-paths/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-module-paths/*": [
+        "packages/runtime-shared/module-paths/src/*"
+      ],
       "@hierarchidb/util": [
         "packages/util/src/index.ts"
       ],
