@@ -54,6 +54,10 @@ Motto: "Small, clear, safe steps — always grounded in real docs."
 * Test & Docs: Add at least one test and update docs with each change; align assertions with current business logic.
 * Reflect: Fix at the root cause; consider adjacent risks to prevent regressions.
 
+## 依存管理
+* ブランチ切り替えやリモート更新後は必ず `pnpm install --frozen-lockfile` または `pnpm -w install --frozen-lockfile` を実行して `pnpm-lock.yaml` と `node_modules` を同期させる。単一パッケージの変更でもルートでの再インストールを推奨する。
+* ネットワーク制約が想定される環境では、事前に `pnpm fetch` でグローバルストアを温め、再同期時は `pnpm install --offline --frozen-lockfile`（または `--prefer-offline`）で差分展開して依存取得の待ち時間を抑制する。
+
 ## Code Style & Limits
 * Files ≤ 300 LOC; keep modules single-purpose.
 * Comments: Add a brief header at the top of every file (where, what, why). Prefer clear, simple explanations; comment non-obvious logic.
