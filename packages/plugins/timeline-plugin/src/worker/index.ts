@@ -1,6 +1,14 @@
-// Worker registration stub for timeline-plugin
-// This allows app/src/worker.ts to lazy-load '@hierarchidb/plugins-timeline-plugin/worker'
-export function register(): void {}
+import { registerTimelineWorkerStores, loadTimelineEntitiesDbModule } from '../worker-factory/registerTimelineWorkerStores.js';
+
 export { lifecycle } from './lifecycle.js';
-export default { register };
-export {};
+export { registerTimelineWorkerStores, loadTimelineEntitiesDbModule };
+export type { RegisterTimelineWorkerStoresOptions } from '../worker-factory/registerTimelineWorkerStores.js';
+
+export function register(): void {
+  void registerTimelineWorkerStores();
+}
+
+export default {
+  registerTimelineWorkerStores,
+  loadTimelineEntitiesDbModule,
+};

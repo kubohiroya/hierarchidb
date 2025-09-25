@@ -16,13 +16,16 @@ export const OPTIONAL_FEATURE_MODULE_IDS = {
 } as const;
 
 export const PLUGIN_WORKER_MODULE_IDS = {
-  basemap: '@hierarchidb/plugins-basemap-plugin/worker',
-  folder: '@hierarchidb/plugins-folder-plugin/worker',
-  resolver: '@hierarchidb/plugins-resolver-plugin/worker',
-  route: '@hierarchidb/plugins-route-plugin/worker',
-  spreadsheet: '@hierarchidb/plugins-spreadsheet-plugin/worker',
-  styler: '@hierarchidb/plugins-styler-plugin/worker',
-  shape: '@hierarchidb/plugins-shape-plugin/worker',
+  basemap: '@hierarchidb/plugins-basemap-plugin/worker-factory',
+  folder: '@hierarchidb/plugins-folder-plugin/worker-factory',
+  resolver: '@hierarchidb/plugins-resolver-plugin/worker-factory',
+  route: '@hierarchidb/plugins-route-plugin/worker-factory',
+  spreadsheet: '@hierarchidb/plugins-spreadsheet-plugin/worker-factory',
+  styler: '@hierarchidb/plugins-styler-plugin/worker-factory',
+  shape: '@hierarchidb/plugins-shape-plugin/worker-factory',
+  location: '@hierarchidb/plugins-location-plugin/worker-factory',
+  linker: '@hierarchidb/plugins-linker-plugin/worker-factory',
+  timeline: '@hierarchidb/plugins-timeline-plugin/worker-factory',
 } as const;
 
 export type OptionalFeatureId = keyof typeof OPTIONAL_FEATURE_MODULE_IDS;

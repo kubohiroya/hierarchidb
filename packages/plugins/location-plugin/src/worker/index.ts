@@ -5,11 +5,12 @@
  * - Provides standardized worker exports (factory + lifecycle)
  */
 
-export function register(): void {
-  // No-op wiring placeholder (kept for backward compatibility)
-}
+import { registerLocationWorkerStores, loadLocationEntitiesDbModule } from '../worker-factory/registerLocationWorkerStores.js';
 
-// Standardized worker-side factory exports (polymorphic contract)
+export { registerLocationWorkerStores, loadLocationEntitiesDbModule };
+export type { RegisterLocationWorkerStoresOptions } from '../worker-factory/registerLocationWorkerStores.js';
+
+// Legacy exports kept for backward compatibility (scheduled for removal once app loader migrates)
 export async function createEntityHandler() {
   const { LocationEntityHandler } = await import('../entities/LocationEntityHandler.js');
   return new LocationEntityHandler();
@@ -26,5 +27,7 @@ export class Lifecycle {
   }
 }
 
-const mod = { register };
-export default mod;
+export default {
+  registerLocationWorkerStores,
+  loadLocationEntitiesDbModule,
+};

@@ -165,15 +165,13 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
 ## 6. プラグイン側の対応
 
 ### 6.1 参照方式の統一
-- 各プラグインの `worker/index.ts` から再エクスポートを削除し、代わりに `export async function load<Plugin>Worker()` の形式でファクトリーを提供する。
-- 例: `packages/plugins/styler-plugin/src/worker/index.ts`
+- 各プラグインの `src/worker-factory/` にファクトリー関数を集約し、`register<Plugin>WorkerStores`/`load<Plugin>EntitiesDbModule` のような API を提供する。
+- 例: `packages/plugins/styler-plugin/src/worker-factory/registerStylerWorkerStores.ts`
   ```ts
-  export async function loadStylerWorkerPeer(storeRegistry: StoreRegistry) {
-    if (typeof indexedDB === 'undefined') return;
-    const [{ StylerEntitiesDB }, { createStylerPeerStoreDexie }] = await Promise.all([
-      import('./stylerEntitiesDB.js'),
-      import('./stylerPeerStore.dexie.js'),
-    ]);
+  export async function registerStylerWorkerStores({ storeRegistry }: RegisterStylerWorkerStoresOptions = {}) {
+    if (!storeRegistry || typeof indexedDB === 'undefined') return;
+    const { StylerEntitiesDB } = await import('../worker/stylerEntitiesDB.js');
+    const { createStylerPeerStoreDexie } = await import('../worker/stylerPeerStore.dexie.js');
     const db = new StylerEntitiesDB();
     await db.open?.();
     if (!storeRegistry.getPeer('styler')) {
@@ -181,7 +179,7 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   }
   ```
-- `WorkerModuleLoader` は上記ファクトリー関数を `await import('@hierarchidb/plugins-styler-plugin/worker')` で取得し、実行時に呼び出す。
+- `WorkerModuleLoader` は上記ファクトリー関数を `await import('@hierarchidb/plugins-styler-plugin/worker-factory')` で取得し、実行時に呼び出す。
 
 ### 6.2 型定義
 - `dist/worker/index.d.ts` は再エクスポートから関数エクスポートへ更新する必要がある。
@@ -235,7 +233,7 @@ sequenceDiagram
 
 3. **API Contract の分離**
    - ランタイム側に `worker-public-types.ts` (純粋に型のみを export) を新設し、`index.d.ts` から再エクスポートする。
-   - 実装を動的 import するときは `import type { StylerPeerFactory } from '@hierarchidb/plugins-styler-plugin/worker-types';` → `const { loadStylerWorkerPeer }: StylerPeerFactoryModule = await import(...)` のように `as` でキャストせず型安全に取得する。
+   - 実装を動的 import するときは `import type { StylerWorkerFactoryModule } from '@hierarchidb/plugins-styler-plugin/worker-types';` → `const mod: StylerWorkerFactoryModule = await import(...)` のように `as` でキャストせず型安全に取得する。
 
 4. **Caller 側ユーティリティ**
    - `WorkerClientProxy.ensureInitialized()` の戻り値型は `Promise<WorkerClientRef>` で固定し、`WorkerClientRef` は `@hierarchidb/runtime-worker-bootstrap` の型を静的に参照する。呼び出し側で `await` すれば `any` を介さず利用できる。
@@ -275,7 +273,7 @@ export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
   const runtimeMod = await import('@hierarchidb/runtime-worker');
   const storeRegistry: StoreRegistry = runtimeMod.storeRegistry;
 
-  const stylerPeerMod = await import('@hierarchidb/plugins-styler-plugin/worker');
+  const stylerPeerMod = await import('@hierarchidb/plugins-styler-plugin/worker-factory');
   const loadStylerPeer = stylerPeerMod.loadStylerWorkerPeer as WorkerPeerLoader;
   await loadStylerPeer(storeRegistry);
 

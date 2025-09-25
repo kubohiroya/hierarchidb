@@ -40,20 +40,14 @@
       "@hierarchidb/ui-icon": [
         "../packages/ui/icon/dist"
       ],
-      "@hierarchidb/plugins-location-plugin/worker": [
-        "../packages/plugins/location-plugin/dist/worker"
-      ],
       "@hierarchidb/plugins-location-plugin/services": [
         "../packages/plugins/location-plugin/src/services/index.ts"
       ],
       "@hierarchidb/plugins-linker-plugin/services": [
         "../packages/plugins/linker-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-route-plugin/worker": [
-        "../packages/plugins/route-plugin/dist/worker"
-      ],
-      "@hierarchidb/plugins-timeline-plugin/worker": [
-        "../packages/plugins/timeline-plugin/dist/worker"
+      "@hierarchidb/plugins-*-plugin/worker-factory": [
+        "../packages/plugins/*-plugin/src/worker-factory/index.ts"
       ],
       "@hierarchidb/plugins-basemap-plugin/database": [
         "../packages/plugins/basemap-plugin/src/database/index.ts"

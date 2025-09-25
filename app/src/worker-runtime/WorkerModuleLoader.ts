@@ -11,6 +11,9 @@ const PLUGINS_TO_PRELOAD: PluginWorkerId[] = [
   'spreadsheet',
   'styler',
   'shape',
+  'location',
+  'linker',
+  'timeline',
 ];
 
 const PLUGIN_LOADER_EXPORTS: Partial<Record<PluginWorkerId, string[]>> = {
@@ -21,6 +24,9 @@ const PLUGIN_LOADER_EXPORTS: Partial<Record<PluginWorkerId, string[]>> = {
   spreadsheet: ['registerSpreadsheetWorkerStores', 'loadSpreadsheetEntitiesDbModule'],
   styler: ['registerStylerWorkerStores', 'loadStylerEntitiesDbModule'],
   shape: ['registerShapeWorkerStores', 'loadShapeEntitiesDbModule'],
+  location: ['registerLocationWorkerStores', 'loadLocationEntitiesDbModule'],
+  linker: ['registerLinkerWorkerStores', 'loadLinkerEntitiesDbModule'],
+  timeline: ['registerTimelineWorkerStores', 'loadTimelineEntitiesDbModule'],
 };
 
 let runtimePromise: Promise<Remote<WorkerAPI>> | null = null;

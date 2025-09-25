@@ -89,11 +89,14 @@ async function main() {
     const { json, dir } = await readPluginPackageJSON(name, nodeType);
     const exportsField = json?.exports;
     const hasWorkerExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './worker'));
+    const hasWorkerFactoryExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './worker-factory'));
     const hasUiExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './ui'));
 
     let hasEntitiesDbExport = false;
     let workerEntryPath;
-    if (hasWorkerExportPath) {
+    if (hasWorkerFactoryExportPath) {
+      hasEntitiesDbExport = true;
+    } else if (hasWorkerExportPath) {
       try {
         // Resolve worker entry path from exports
         const workerExport = exportsField['./worker'];
@@ -126,7 +129,15 @@ async function main() {
     const uiDepsRaw = pluginMeta.dependencies || pluginMeta.config?.dependencies || pluginMeta.dependsOn || [];
     const uiDeps = Array.isArray(uiDepsRaw) ? uiDepsRaw.map(String) : [];
 
-    meta.push({ name, nodeType, hasWorker: hasWorkerExportPath, hasUi: hasUiExportPath, hasEntitiesDbExport, uiDeps });
+    meta.push({
+      name,
+      nodeType,
+      hasWorker: hasWorkerExportPath,
+      hasWorkerFactory: hasWorkerFactoryExportPath,
+      hasUi: hasUiExportPath,
+      hasEntitiesDbExport,
+      uiDeps,
+    });
   }
 
   const header = `// AUTO-GENERATED FILE. DO NOT EDIT.
@@ -155,18 +166,44 @@ declare global {
 }
 `;
 
-  const importLines = meta
-    .filter((p) => p.hasEntitiesDbExport)
+  const factoryImports = meta
+    .filter((p) => p.hasWorkerFactory)
+    .map(({ name, nodeType }) => `import { load${capitalize(nodeType)}EntitiesDbModule } from '${name}/worker-factory';`)
+    .join('\n');
+
+  const legacyImports = meta
+    .filter((p) => !p.hasWorkerFactory && p.hasEntitiesDbExport)
     .map(({ name, nodeType }) => `import * as ${capitalize(nodeType)}Worker from '${name}/worker';`)
     .join('\n');
 
+  const importLines = [factoryImports, legacyImports].filter(Boolean).join('\n');
+
   const loaderEntries = meta
-    .map(({ nodeType, hasWorker, hasEntitiesDbExport }) => {
+    .map(({ nodeType, hasWorker, hasWorkerFactory, hasEntitiesDbExport }) => {
+      if (hasWorkerFactory) {
+        const loadFn = `load${capitalize(nodeType)}EntitiesDbModule`;
+        const className = `${capitalize(nodeType)}EntitiesDB`;
+        return `  '${nodeType}': async () => {
+    try {
+      const mod = await ${loadFn}();
+      const Ctor = mod?.['${className}'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },`;
+      }
+
       if (!hasWorker || !hasEntitiesDbExport) {
         return `  '${nodeType}': async () => undefined,`;
       }
       const className = `${capitalize(nodeType)}EntitiesDB`;
-      return `  '${nodeType}': async () => { try { const Ctor = ${capitalize(nodeType)}Worker['${className}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },`;
+      return `  '${nodeType}': async () => { try { const Ctor = ${capitalize(nodeType)}Worker['${className}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as unknown as PeerEntitiesDB; } catch { return undefined; } },`;
     })
     .join('\n');
 

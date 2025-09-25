@@ -126,6 +126,9 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
+  const vectorTileService = React.useMemo(() => new LocationVectorTileService(), []);
+  const { progress: locationProgress } = useLocationProgress(vectorTileService, sessionId, { autoSubscribe: true });
+  const showAuthRequired = locationProgress?.stage === 'auth-required';
   const [progress, setProgress] = useState<ProgressInfo>({
     percentage: 0,
     phase: 'download',
@@ -221,7 +224,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         const db = getEphemeralLocationDB();
         const session = (await db.sessions?.get(sessionId)) ?? null;
         if (!cancelled) setTableId(session?.tableId ?? null);
-      } catch {
+      } catch (error) {
+        if (import.meta.env?.DEV) {
+          console.warn('[BatchProgressDialog] failed to load session metadata', error);
+        }
       }
     })();
     return () => {
@@ -325,16 +331,11 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 
       <DialogContent sx={{ flex: 1, overflow: 'hidden', p: 0 }}>
         {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
-        {(() => {
-          const svc = new LocationVectorTileService();
-          const { progress: realProgress } = useLocationProgress(svc, sessionId, { autoSubscribe: true });
-          const showAuthRequired = realProgress?.stage === 'auth-required';
-          return showAuthRequired ? (
-            <Alert severity="warning" sx={{ m: 2 }}>
-              🔐 認証が必要です — {realProgress?.currentTask || 'Authentication required to continue'}
-            </Alert>
-          ) : null;
-        })()}
+        {showAuthRequired ? (
+          <Alert severity="warning" sx={{ m: 2 }}>
+            🔐 認証が必要です — {locationProgress?.currentTask || 'Authentication required to continue'}
+          </Alert>
+        ) : null}
         {/*
  Tab 1:
 */}

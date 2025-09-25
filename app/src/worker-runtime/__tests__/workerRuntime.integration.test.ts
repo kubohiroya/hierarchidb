@@ -102,6 +102,9 @@ describe('WorkerModuleLoader', () => {
     const routeLoader = vi.fn().mockResolvedValue(undefined);
     const spreadsheetLoader = vi.fn().mockResolvedValue(undefined);
     const stylerLoader = vi.fn().mockResolvedValue(undefined);
+    const locationLoader = vi.fn().mockResolvedValue(undefined);
+    const linkerLoader = vi.fn().mockResolvedValue(undefined);
+    const timelineLoader = vi.fn().mockResolvedValue(undefined);
 
     const importPluginWorkerMock = vi.fn(async (id: string) => {
       switch (id) {
@@ -117,6 +120,12 @@ describe('WorkerModuleLoader', () => {
           return { loadSpreadsheetEntitiesDbModule: spreadsheetLoader };
         case 'styler':
           return { loadStylerEntitiesDbModule: stylerLoader };
+        case 'location':
+          return { loadLocationEntitiesDbModule: locationLoader };
+        case 'linker':
+          return { loadLinkerEntitiesDbModule: linkerLoader };
+        case 'timeline':
+          return { loadTimelineEntitiesDbModule: timelineLoader };
         default:
           return {};
       }
@@ -133,13 +142,16 @@ describe('WorkerModuleLoader', () => {
     await ensureWorkerRuntime();
     await ensureWorkerRuntime();
 
-    expect(importPluginWorkerMock).toHaveBeenCalledTimes(6);
+    expect(importPluginWorkerMock).toHaveBeenCalledTimes(9);
     expect(basemapLoader).toHaveBeenCalledTimes(1);
     expect(folderLoader).toHaveBeenCalledTimes(1);
     expect(resolverLoader).toHaveBeenCalledTimes(1);
     expect(routeLoader).toHaveBeenCalledTimes(1);
     expect(spreadsheetLoader).toHaveBeenCalledTimes(1);
     expect(stylerLoader).toHaveBeenCalledTimes(1);
+    expect(locationLoader).toHaveBeenCalledTimes(1);
+    expect(linkerLoader).toHaveBeenCalledTimes(1);
+    expect(timelineLoader).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();

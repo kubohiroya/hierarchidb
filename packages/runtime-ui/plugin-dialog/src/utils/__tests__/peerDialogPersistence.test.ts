@@ -48,16 +48,18 @@ describe('peerDialogPersistence default provider', () => {
 
 const fallbackRows = new Map<string, any>();
 
-vi.mock('@hierarchidb/plugins-folder-plugin/worker/folderEntitiesDB', () => ({
-  FolderEntitiesDB: class {
-    async open() { /* no-op */ }
-    table() {
-      return {
-        get: async (id: string) => fallbackRows.get(id) ?? null,
-        put: async (row: any) => { fallbackRows.set(row.nodeId, row); },
-      };
-    }
-  },
+vi.mock('@hierarchidb/plugins-folder-plugin/worker-factory', () => ({
+  loadFolderEntitiesDbModule: async () => ({
+    FolderEntitiesDB: class {
+      async open() { /* no-op */ }
+      table() {
+        return {
+          get: async (id: string) => fallbackRows.get(id) ?? null,
+          put: async (row: any) => { fallbackRows.set(row.nodeId, row); },
+        };
+      }
+    },
+  }),
 }));
 
 describe('peerDialogPersistence EntitiesDB fallback', () => {

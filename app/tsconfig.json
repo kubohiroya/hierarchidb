@@ -12,18 +12,6 @@
       "~/*": [
         "src/*"
       ],
-      "@hierarchidb/plugins-location-plugin/worker": [
-        "../packages/plugins/location-plugin/dist/worker/index.js"
-      ],
-      "@hierarchidb/plugins-route-plugin/worker": [
-        "../packages/plugins/route-plugin/dist/worker/index.js"
-      ],
-      "@hierarchidb/plugins-shape-plugin/worker": [
-        "../packages/plugins/shape-plugin/dist/worker/index.js"
-      ],
-      "@hierarchidb/plugins-timeline-plugin/worker": [
-        "../packages/plugins/timeline-plugin/dist/worker/index.js"
-      ],
       "@hierarchidb/ui-auth": [
         "../packages/ui/auth/dist"
       ],

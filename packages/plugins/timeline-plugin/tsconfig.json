@@ -5,7 +5,6 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "skipLibCheck": false,
     "jsx": "react-jsx",
     "moduleResolution": "Node16",
     "module": "Node16",

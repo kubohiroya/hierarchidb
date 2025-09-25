@@ -12,6 +12,10 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js"
+    },
     "./services": {
       "types": "./dist/services/index.d.ts",
       "import": "./dist/services/index.js"
@@ -19,6 +23,9 @@
   },
   "typesVersions": {
     "*": {
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "services": [
         "dist/services/index.d.ts"
       ],

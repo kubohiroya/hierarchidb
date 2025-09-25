@@ -67,17 +67,8 @@
       "@hierarchidb/util/*": [
         "packages/util/src/*"
       ],
-      "@hierarchidb/plugins-location-plugin/worker": [
-        "packages/plugins/location-plugin/src/worker/index.ts"
-      ],
-      "@hierarchidb/plugins-route-plugin/worker": [
-        "packages/plugins/route-plugin/src/worker/index.ts"
-      ],
-      "@hierarchidb/plugins-shape-plugin/worker": [
-        "packages/plugins/shape-plugin/src/worker/index.ts"
-      ],
-      "@hierarchidb/plugins-timeline-plugin/worker": [
-        "packages/plugins/timeline-plugin/src/worker/index.ts"
+      "@hierarchidb/plugins-*-plugin/worker-factory": [
+        "packages/plugins/*-plugin/src/worker-factory/index.ts"
       ]
     }
   },

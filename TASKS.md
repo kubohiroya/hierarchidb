@@ -109,9 +109,9 @@
   - ブランチ: `refactor/runtime/worker-core-split`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`, `@hierarchidb/runtime-shared-*`, `@hierarchidb/app`
   - 受け入れ基準（DoD）：
-    - [ ] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
-    - [ ] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
+    - [x] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
+    - [x] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
+    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
     - [ ] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
   - チェックリスト：
     - [ ] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
@@ -132,6 +132,7 @@
     - progress: 2025-09-25 19:19 shape-plugin の workspace 依存に `@hierarchidb/runtime-shared-module-paths` を追加し `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功
     - progress: 2025-09-25 19:27 spreadsheet-plugin の worker 型参照を Node16 方式へ修正し、`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build` が成功
     - progress: 2025-09-25 19:32 app build で `@hierarchidb/runtime-shared-module-paths` を解決するため alias/path を追加し、`pnpm --filter @hierarchidb/app build` を実行し成功（既知の dynamic import chunk 警告のみ）
+    - progress: 2025-09-25 21:46 残務検証として型チェックを再実行：`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` / `pnpm -C app typecheck` いずれもグリーン。DoD 1〜3 を満たすことを確認
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -153,19 +154,20 @@
   - ブランチ: `fix/ui-folder/dialog-theme-tokens`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
   - 受け入れ基準（DoD）：
-    - [ ] フォルダ作成ダイアログの背景・枠線・ステップインジケータ・エラーメッセージがテーマのパレット値を使用し、HEX ハードコードを排除
+    - [x] フォルダ作成ダイアログの背景・枠線・ステップインジケータ・エラーメッセージがテーマのパレット値を使用し、HEX ハードコードを排除
     - [ ] ライト/ダーク両テーマで視認性が保持されることを手動確認
-    - [ ] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` が成功する
+    - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` が成功する
   - チェックリスト：
-    - [ ] `ExtensibleFolderDialog` のスタイル定義を見直し、テーマトークンに置換
-    - [ ] ステップバッジやエラーテキストで MUI パレットを参照するよう更新
-    - [ ] ダイアログラッパーで `@hierarchidb/ui-dialog` 共通スタイルとの整合を確認
+    - [x] `ExtensibleFolderDialog` のスタイル定義を見直し、テーマトークンに置換（背景を共通トーンに統一）
+    - [x] ステップバッジやエラーテキストで MUI パレットを参照するよう更新（既存実装が基準を満たすことを確認）
+    - [x] ダイアログラッパーで `@hierarchidb/ui-dialog` 共通スタイルとの整合を確認
   - ロールバック手順：
     - `packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx` の変更を元に戻し、型チェックを再実行
   - 運用ログ：
     - start: 2025-09-22 10:15 フォルダ作成ダイアログの配色をテーマトークンへ統一する作業に着手
     - progress: 2025-09-22 10:33 `ExtensibleFolderDialog` の背景・ステップインジケータ配色を MUI テーマ参照へ更新し、HEX ハードコードを除去。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` を実行して成功
     - blocked: 2025-09-22 10:37 `pnpm -C app typecheck` が TrashDialog 系 `originalName` 型未定義エラーで失敗（既知の別タスク依存）。新規変更による追加エラーは発生せず
+    - progress: 2025-09-25 21:44 `@hierarchidb/ui-dialog` の `getDialogSurfaceColor` を採用し背景トーン統一。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` とも成功
 - chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告/Hook 違反の是正
   - ブランチ: `chore/runtime-ui-dialog/lint-fixes`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-ui-plugin-dialog`
@@ -1987,7 +1989,7 @@
   - ブランチ: `feat/plugins/worker-factory-pilot`
   - 依存: `refactor/runtime/worker-core-split`
   - 受け入れ基準（DoD）：
-    - [ ] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
+    - [x] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
     - [x] `packages/app` のプラグイン初期化コードが新 API (`registerXxxWorkerStores`) を利用し、`pnpm --filter @hierarchidb/app typecheck` が成功
     - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` が成功
     - [x] Phase 2a の検証結果・課題を `TASKS.md` と `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ反映
@@ -2003,6 +2005,7 @@
     - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
     - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
     - progress: 2025-09-25 21:40 basemap/route/spreadsheet/styler の構成テンプレートをフォルダ/Resolver に合わせて整理し、`worker-public-types.ts` と型エントリを追加入力（ビルドは Phase 2b で一括再検証予定）
+    - progress: 2025-09-25 21:48 残務検証として再エクスポート残存を検索し、`packages/plugins/{folder,resolver}-plugin/src/worker/index.ts` がいずれも `worker-factory` 経由でのエクスポートに統一されていることを確認（旧 `export { … } from '../worker/*'` は不在）
 
 - feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b: 全プラグイン展開）
   - ブランチ: `feat/plugins/worker-factory-rollout`
@@ -2018,6 +2021,15 @@
     - [ ] 全プラグインのビルド/テストコマンドを実行し、結果を記録
   - 運用ログ：
     - start: 2025-09-25 19:58 Phase 2b 全プラグイン展開に向けて着手（テンプレート整備と残プラグイン確認）
+    - progress: 2025-09-25 21:58 旧 `../worker/*` / `*/worker` 参照を禁止する ESLint ルールを追加（plugins 配下 src に適用、tests は除外）。folder/resolver で lint 実行し、旧参照が検出されないことを確認（警告のみ）
+    - progress: 2025-09-25 22:10 幅優先で共通 API を整備：location/linker/timeline に `src/worker-factory/` を追加し、`package.json` の `exports`/`typesVersions` と `tsup.config.ts` の `entry/dts.entry` を揃えた
+    - progress: 2025-09-25 22:18 型検証：`pnpm --filter @hierarchidb/plugins-{location,linker,timeline}-plugin typecheck` が成功（timeline は `tsconfig.json` から `skipLibCheck: false` を削除し、ベース設定の `true` を採用して重複ambientを回避）。lint は location 既存エラーで失敗するため別タスク管理
+    - progress: 2025-09-25 22:26 `scripts/generate-plugin-loader.mjs` を更新し、UI 側の EntitiesDB 取得を `@hierarchidb/plugins-*/worker-factory` 経由へ統一。`app/tsconfig.typecheck.json` / `tsconfig.base.json` にワイルドカードパスを追加し、`pnpm -C app typecheck` を再実行してグリーンを確認（shape/spreadsheet の Dexie Row 定義は `dialogPosition`/`dialogSize` を null 許容に合わせて調整）
+    - progress: 2025-09-25 22:34 app 設定を worker-factory ベースへ刷新：`app/tsconfig*.json` から `@hierarchidb/plugins-*/worker` パスを撤去し、`app/src/types/external.d.ts` のレガシー宣言を整理。`pnpm -C app typecheck` を再実行し影響がないことを確認
+    - progress: 2025-09-25 22:38 location-plugin の lint エラーを解消（`BatchProgressDialog` の Hooks 使用位置と空 `catch` を修正、`BatchSessionManager` の例外処理をロギング化）。`pnpm exec eslint packages/plugins/location-plugin` でエラーゼロ（警告のみ）を確認
+    - progress: 2025-09-25 22:45 runtime-shared module paths を `@hierarchidb/plugins-*/worker-factory` 指定へ更新し、設計ドキュメント/アプリドキュメントの参照も最新化。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` を実行して成功を確認
+    - progress: 2025-09-25 22:52 plugin worker エクスポートの段階撤去を開始：folder/resolver/styler の `worker/index.ts` から `*EntitiesDB` 再エクスポートを削除し、`packages/runtime-ui/plugin-dialog/src/utils/__tests__/peerDialogPersistence.test.ts` を worker-factory モックへ切替。`pnpm --filter @hierarchidb/plugins-{folder,resolver,styler}-plugin typecheck` および `pnpm exec eslint packages/plugins/{location,linker,timeline}-plugin` が成功
+    - progress: 2025-09-25 22:58 `WorkerModuleLoader` の preload 対象を location/linker/timeline まで拡張し、対応するテストを更新。`pnpm --filter @hierarchidb/runtime-shared-module-paths build` / `typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再実行し、すべてグリーン
     - progress: 2025-09-25 20:12 basemap/route/spreadsheet/styler の `worker/index.ts` を薄い re-export に刷新し、Dexie 登録処理を `src/worker-factory/` へ移行
     - progress: 2025-09-25 22:05 shape プラグインも `worker-factory` 方式へ移行し、`WorkerModuleLoader` の `PLUGIN_LOADER_EXPORTS` に全プラグインの `register*WorkerStores` を追加。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` 成功を確認
     - progress: 2025-09-25 22:58 Dexie v4 の型差異に合わせて `tsup.base.config.ts` に `esModuleInterop` を追加し、`shapeEntitiesDB.ts` の import を named へ修正。`pnpm --filter @hierarchidb/plugins-shape-plugin build` を再実行しグリーンを確認

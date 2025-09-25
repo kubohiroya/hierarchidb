@@ -23,21 +23,158 @@ declare global {
   var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, any> | undefined;
 }
 
-import * as FolderWorker from '@hierarchidb/plugins-folder-plugin/worker';
-import * as ResolverWorker from '@hierarchidb/plugins-resolver-plugin/worker';
-import * as StylerWorker from '@hierarchidb/plugins-styler-plugin/worker';
+import { loadBasemapEntitiesDbModule } from '@hierarchidb/plugins-basemap-plugin/worker-factory';
+import { loadFolderEntitiesDbModule } from '@hierarchidb/plugins-folder-plugin/worker-factory';
+import { loadLinkerEntitiesDbModule } from '@hierarchidb/plugins-linker-plugin/worker-factory';
+import { loadLocationEntitiesDbModule } from '@hierarchidb/plugins-location-plugin/worker-factory';
+import { loadResolverEntitiesDbModule } from '@hierarchidb/plugins-resolver-plugin/worker-factory';
+import { loadRouteEntitiesDbModule } from '@hierarchidb/plugins-route-plugin/worker-factory';
+import { loadShapeEntitiesDbModule } from '@hierarchidb/plugins-shape-plugin/worker-factory';
+import { loadSpreadsheetEntitiesDbModule } from '@hierarchidb/plugins-spreadsheet-plugin/worker-factory';
+import { loadStylerEntitiesDbModule } from '@hierarchidb/plugins-styler-plugin/worker-factory';
+import { loadTimelineEntitiesDbModule } from '@hierarchidb/plugins-timeline-plugin/worker-factory';
 
 export const peerDbLoaders: Record<string, PeerDbLoader> = {
-  'basemap': async () => undefined,
-  'folder': async () => { try { const Ctor = FolderWorker['FolderEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
-  'linker': async () => undefined,
-  'location': async () => undefined,
-  'resolver': async () => { try { const Ctor = ResolverWorker['ResolverEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
-  'route': async () => undefined,
-  'shape': async () => undefined,
-  'spreadsheet': async () => undefined,
-  'styler': async () => { try { const Ctor = StylerWorker['StylerEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
-  'timeline': async () => undefined,
+  'basemap': async () => {
+    try {
+      const mod = await loadBasemapEntitiesDbModule();
+      const Ctor = mod?.['BasemapEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'folder': async () => {
+    try {
+      const mod = await loadFolderEntitiesDbModule();
+      const Ctor = mod?.['FolderEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'linker': async () => {
+    try {
+      const mod = await loadLinkerEntitiesDbModule();
+      const Ctor = mod?.['LinkerEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'location': async () => {
+    try {
+      const mod = await loadLocationEntitiesDbModule();
+      const Ctor = mod?.['LocationEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'resolver': async () => {
+    try {
+      const mod = await loadResolverEntitiesDbModule();
+      const Ctor = mod?.['ResolverEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'route': async () => {
+    try {
+      const mod = await loadRouteEntitiesDbModule();
+      const Ctor = mod?.['RouteEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'shape': async () => {
+    try {
+      const mod = await loadShapeEntitiesDbModule();
+      const Ctor = mod?.['ShapeEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'spreadsheet': async () => {
+    try {
+      const mod = await loadSpreadsheetEntitiesDbModule();
+      const Ctor = mod?.['SpreadsheetEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'styler': async () => {
+    try {
+      const mod = await loadStylerEntitiesDbModule();
+      const Ctor = mod?.['StylerEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'timeline': async () => {
+    try {
+      const mod = await loadTimelineEntitiesDbModule();
+      const Ctor = mod?.['TimelineEntitiesDB'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
 };
 
 export function registerUIPersistenceOverrides(): void {

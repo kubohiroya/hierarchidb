@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography, TextField, Stack } from '@mui/material';
+import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types.js';
@@ -178,7 +179,8 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
         padding: 3,
         maxWidth: 520,
         margin: '24px auto',
-        backgroundColor: theme.palette.background.paper,
+        // Align surface tone with shared ui-dialog styling
+        backgroundColor: getDialogSurfaceColor(theme),
         boxShadow: theme.shadows[8],
       })}
     >

@@ -9,8 +9,8 @@ export type SheetPeerRow = {
   data?: SpreadsheetPeerData;
   updatedAt?: number;
   displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number };
-  dialogSize?: { width: number; height: number };
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
 };
 export type SheetGroupRow = { nodeId: NodeId; id: string; data?: SpreadsheetGroupItemData; updatedAt?: number };
 export type SheetRelationRow = {
