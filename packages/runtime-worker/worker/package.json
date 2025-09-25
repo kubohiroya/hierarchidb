@@ -37,6 +37,7 @@
     "@hierarchidb/map-adapter": "workspace:*",
     "@hierarchidb/map-source": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/tabular": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/util": "workspace:*",

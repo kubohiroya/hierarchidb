@@ -11,7 +11,7 @@
   "compilerOptions": {
     "downlevelIteration": false,
     "target": "es2022",
-    "module": "es2022",
+    "module": "Node16",
     "jsx": "react-jsx"
   },
   "include": [

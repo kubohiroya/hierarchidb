@@ -10,7 +10,7 @@
     ],
     "composite": true,
     "incremental": true,
-    "noEmit": true,
+    "noEmit": false,
     "outDir": "./dist",
     "rootDir": "./src",
     "types": [

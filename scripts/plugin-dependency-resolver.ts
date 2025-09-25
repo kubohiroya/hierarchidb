@@ -211,6 +211,36 @@ export class PluginDependencyResolver {
   }
 }
 
+
+function createTestDefinition(
+  nodeType: NodeType,
+  options: {
+    dependencies?: (NodeType | string)[];
+    extends?: NodeType | string;
+    priority?: number;
+    version?: string;
+    description?: string;
+  } = {}
+): PluginDefinition {
+  const label = String(nodeType);
+  return {
+    nodeType,
+    name: `${label}-plugin`,
+    displayName: `${label} plugin`,
+    description: options.description ?? `${label} plugin fixture used for dependency resolver tests`,
+    category: { treeId: '*' },
+    database: {
+      dbName: `${label}-db`,
+      schema: {},
+      version: 1,
+    },
+    dependencies: options.dependencies?.map(dep => String(dep)) ?? [],
+    priority: options.priority ?? Number.MAX_SAFE_INTEGER,
+    version: options.version ?? '0.0.0-test',
+    ...(options.extends ? { extends: String(options.extends) } : {}),
+  };
+}
+
 //  ESM
 if (import.meta.url === `file://${process.argv[1]}`) {
   console.log('=== Plugin Dependency Resolver Test ===\n');
@@ -218,28 +248,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //  1:
   console.log('Test Case 1: Normal Dependencies');
   const definitions1 = new Map<NodeType, PluginDefinition>([
-    ['folder' as NodeType, {
-      nodeType: 'folder' as NodeType,
-      pluginLabel: 'Folder Plugin',
-      priority: 0
-    }],
-    ['shape' as NodeType, {
-      nodeType: 'shape' as NodeType,
-      pluginLabel: 'Shape Plugin',
-      dependencies: ['folder'],
-      priority: 100
-    }],
-    ['project' as NodeType, {
-      nodeType: 'project' as NodeType,
-      pluginLabel: 'Project Plugin',
-      extends: 'folder',
-      priority: 50
-    }],
-    ['basemap' as NodeType, {
-      nodeType: 'basemap' as NodeType,
-      pluginLabel: 'Basemap Plugin',
-      priority: 10
-    }]
+    ['folder' as NodeType, createTestDefinition('folder' as NodeType, { priority: 0 })],
+    ['shape' as NodeType, createTestDefinition('shape' as NodeType, { dependencies: ['folder'], priority: 100 })],
+    ['project' as NodeType, createTestDefinition('project' as NodeType, { extends: 'folder', priority: 50 })],
+    ['basemap' as NodeType, createTestDefinition('basemap' as NodeType, { priority: 10 })],
   ]);
 
   const resolver = new PluginDependencyResolver();
@@ -250,21 +262,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //  2:
   console.log('Test Case 2: Circular Dependencies');
   const definitions2 = new Map<NodeType, PluginDefinition>([
-    ['a' as NodeType, {
-      nodeType: 'a' as NodeType,
-      pluginLabel: 'Plugin A',
-      dependencies: ['b']
-    }],
-    ['b' as NodeType, {
-      nodeType: 'b' as NodeType,
-      pluginLabel: 'Plugin B',
-      dependencies: ['c']
-    }],
-    ['c' as NodeType, {
-      nodeType: 'c' as NodeType,
-      pluginLabel: 'Plugin C',
-      dependencies: ['a']
-    }]
+    ['a' as NodeType, createTestDefinition('a' as NodeType, { dependencies: ['b'] })],
+    ['b' as NodeType, createTestDefinition('b' as NodeType, { dependencies: ['c'] })],
+    ['c' as NodeType, createTestDefinition('c' as NodeType, { dependencies: ['a'] })],
   ]);
 
   const errors = resolver.checkCircularDependencies(definitions2);
@@ -274,43 +274,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //  3:
   console.log('Test Case 3: Complex Dependencies with Priority');
   const definitions3 = new Map<NodeType, PluginDefinition>([
-    ['folder' as NodeType, {
-      nodeType: 'folder' as NodeType,
-      pluginLabel: 'Folder Plugin',
-      priority: 0
-    }],
-    ['layer' as NodeType, {
-      nodeType: 'layer' as NodeType,
-      pluginLabel: 'Layer Plugin',
-      extends: 'folder',
-      priority: 20
-    }],
-    ['shape' as NodeType, {
-      nodeType: 'shape' as NodeType,
-      pluginLabel: 'Shape Plugin',
-      extends: 'folder',
-      dependencies: ['basemap'],
-      priority: 100
-    }],
-    ['basemap' as NodeType, {
-      nodeType: 'basemap' as NodeType,
-      pluginLabel: 'Basemap Plugin',
-      priority: 10
-    }],
-    ['project' as NodeType, {
-      nodeType: 'project' as NodeType,
-      pluginLabel: 'Project Plugin',
-      extends: 'folder',
-      dependencies: ['layer', 'shape'],
-      priority: 200
-    }]
+    ['folder' as NodeType, createTestDefinition('folder' as NodeType, { priority: 0 })],
+    ['layer' as NodeType, createTestDefinition('layer' as NodeType, { extends: 'folder', priority: 20 })],
+    ['shape' as NodeType, createTestDefinition('shape' as NodeType, { extends: 'folder', dependencies: ['basemap'], priority: 100 })],
+    ['basemap' as NodeType, createTestDefinition('basemap' as NodeType, { priority: 10 })],
+    ['project' as NodeType, createTestDefinition('project' as NodeType, { extends: 'folder', dependencies: ['layer', 'shape'], priority: 200 })],
   ]);
 
   const loadOrder3 = resolver.resolveLoadOrder(definitions3);
   console.log('Load order:', loadOrder3);
   console.log('Expected: folder, basemap, layer, shape, project\n');
 
-    const errors3 = resolver.checkCircularDependencies(definitions3);
+  const errors3 = resolver.checkCircularDependencies(definitions3);
   if (errors3.length === 0) {
     console.log('✓ No circular dependencies detected');
   } else {
@@ -320,13 +295,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //  4:
   console.log('\nTest Case 4: Non-existent Dependencies');
   const definitions4 = new Map<NodeType, PluginDefinition>([
-    ['shape' as NodeType, {
-      nodeType: 'shape' as NodeType,
-      pluginLabel: 'Shape Plugin',
-      dependencies: ['nonexistent'],
-      extends: 'alsonotexist',
-      priority: 100
-    }]
+    ['shape' as NodeType, createTestDefinition('shape' as NodeType, { dependencies: ['nonexistent'], extends: 'alsonotexist', priority: 100 })],
   ]);
 
   console.log('Testing with non-existent dependencies...');

@@ -831,6 +831,9 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -889,6 +892,9 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1141,6 +1147,9 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1229,6 +1238,9 @@ importers:
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1447,6 +1459,9 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime-worker/worker
@@ -1520,6 +1535,9 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/table-metadata':
         specifier: workspace:*
         version: link:../../feature/table-metadata
@@ -1682,6 +1700,12 @@ importers:
       undici-types:
         specifier: ^7.15.0
         version: 7.16.0
+
+  packages/runtime-shared/module-paths:
+    devDependencies:
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
 
   packages/runtime-ui/appbar:
     dependencies:
@@ -1934,6 +1958,9 @@ importers:
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/tabular':
         specifier: workspace:*
         version: link:../../feature/tabular

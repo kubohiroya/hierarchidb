@@ -1,8 +1,10 @@
 // Worker registration for route-plugin Dexie stores + standard worker exports
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
+importRuntimeWorker().then(async ({ storeRegistry }) => {
   if (!hasIndexedDB) return;
   const { RouteEntitiesDB } = await import('./routeEntitiesDB.js');
   const db = new RouteEntitiesDB();

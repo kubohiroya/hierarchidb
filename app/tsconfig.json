@@ -73,11 +73,11 @@
         "../packages/plugins/timeline-plugin/src/services/index.ts"
       ]
     },
-    "composite": false,
-    "incremental": false,
+    "composite": true,
+    "incremental": true,
     "declaration": false,
     "declarationMap": false,
-    "noEmit": true,
+    "noEmit": false,
     "jsx": "react-jsx",
     "types": [
       "vite/client",

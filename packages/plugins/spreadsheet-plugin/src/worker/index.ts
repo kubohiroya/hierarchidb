@@ -1,7 +1,9 @@
 // Dexie-backed stores auto-registration for spreadsheet plugin
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
 try {
   const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-  import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
+  importRuntimeWorker().then(async ({ storeRegistry }) => {
     if (!hasIndexedDB) return;
     try {
       const { SpreadsheetEntitiesDB } = await import('./spreadsheetEntitiesDB.js');

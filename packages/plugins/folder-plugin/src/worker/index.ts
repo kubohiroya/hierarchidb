@@ -1,6 +1,9 @@
 // Worker registration for folder-plugin Dexie stores
+import { importRuntimeWorker } from '@hierarchidb/runtime-shared-module-paths';
+
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
-import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
+
+importRuntimeWorker().then(async ({ storeRegistry }) => {
   if (!hasIndexedDB) return;
   const { FolderEntitiesDB } = await import('./folderEntitiesDB.js');
   const db = new FolderEntitiesDB();

@@ -74,7 +74,7 @@
   - 受け入れ基準（DoD）：
     - [x] `SpreadsheetCSVApiAdapter` から `authFetch` の静的 import を撤去し、動的 import のみに統一
     - [x] `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` が成功する
-    - [ ] `TASKS.md` の運用ログに実施内容と検証結果を記録
+    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
   - チェックリスト：
     - [x] `downloadCSVFromUrl` など `authFetch` 利用箇所を動的 import 化
     - [x] 型推論が崩れないことを確認
@@ -85,6 +85,26 @@
     - progress: 2025-09-24 16:24 `SpreadsheetCSVApiAdapter` から静的 import を削除し、動的 import ラッパーを実装
     - progress: 2025-09-24 16:26 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` を実行し成功
     - progress: 2025-09-24 16:30 `vitest.setup.base.ts` で fetch 非対応環境向けに `node-fetch` ポリフィルを条件付き適用
+    - progress: 2025-09-24 16:32 当該タスクの DoD/チェックリスト達成を記録
+- design/worker-dynamic-import-architecture — Worker/APIs の動的 import 統一アーキテクチャ検討
+  - ブランチ: `design/worker-dynamic-import-architecture`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/plugins-*`
+  - 受け入れ基準（DoD）：
+    - [x] docs 以下に Markdown ドキュメントを作成し、現状分析と将来アーキテクチャ案を記述
+    - [x] Mermaid 図を用いた構成図・シーケンス図・ステートマシン図を盛り込み、動的 import 統一案を視覚化
+    - [x] 段階的移行ステップ、リスク、テスト戦略を整理
+  - チェックリスト：
+    - [x] 現状（静的＋動的混在）の処理フロー図を作成
+    - [x] 提案アーキテクチャのモジュール構成図／初期化シーケンスを記述
+    - [x] 状態管理と API 契約を定義し、移行フェーズ別タスクを列挙
+  - ロールバック手順：
+    - 作成したドキュメントを削除し、`TASKS.md` のエントリを取り消す
+  - 運用ログ：
+    - start: 2025-09-24 16:35 Worker 動的 import 統一アーキテクチャ案ドキュメント作成に着手
+    - progress: 2025-09-24 16:48 `docs/design/worker-dynamic-import-architecture.md` を作成し、Mermaid 図・移行ステップを記述
+    - progress: 2025-09-24 16:58 TypeScript 型配布戦略を追記（静的 d.ts 維持と `import type` 指針）
+    - progress: 2025-09-24 17:05 any/unknown キャストが残る具体ファイル一覧を追記
+    - progress: 2025-09-24 17:12 フェーズ別の作業手順・注意事項チェックリストを文書化
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -4047,6 +4067,11 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-25 13:15 start: chore/scripts/plugin-dependency-fixture-fix — scripts/plugin-dependency-resolver.ts のテストデータを PluginDefinition の必須フィールドに合わせて整形する作業を開始
+- 2025-09-25 13:19 done: chore/scripts/plugin-dependency-fixture-fix — createTestDefinition ヘルパーを導入し、Map 定義を同ヘルパー経由に更新（差分のみ）
+- 2025-09-25 13:21 blocked: chore/scripts/plugin-dependency-fixture-fix — `pnpm typecheck` を実行したが `@hierarchidb/plugins-timeline-plugin` の `ast-types` 由来 TS2865 が既存課題として残り失敗、scripts 側の新規エラーは再発なし
+- 2025-09-25 13:22 start: fix/plugins-timeline/type-only-ast-types — ast-types の d.ts を type-only import 化するパッチ方針を検討し、pnpm の patchedDependencies で管理する準備に着手
+- 2025-09-25 13:26 done: fix/plugins-timeline/type-only-ast-types — `patches/ast-types@0.16.1.patch` を追加し `package.json` に patchedDependencies を設定、`pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` が成功（ast-types TS2865 解消）
 - 2025-09-24 09:05 start: chore/runtime-ui-dialog/lint-fixes — Runtime UI Plugin Dialog の lint 警告・Hook 規約違反の修正に着手（対象: SamplePluginProvider, usePluginDialogController）
 - 2025-09-24 09:18 progress: chore/runtime-ui-dialog/lint-fixes — SamplePluginProvider の未使用引数を `_data` へ置換し lint 警告を解消
 - 2025-09-24 09:24 progress: chore/runtime-ui-dialog/lint-fixes — StepAdapter を分離コンポーネント化して Hooks 規約違反を解消

@@ -16,6 +16,12 @@
   - `pnpm -w build`（必要に応じて）
 - 失敗があれば、原因を特定して修正し、再度すべてが通ることを確認してから完了報告すること。
 
+### 1.1 型チェック実行ポリシー
+- グローバルな型検証は **Turbo 経由** で実行する。原則として `pnpm turbo run typecheck` または対象パッケージの `pnpm -C <package> typecheck` を利用すること。
+- ルートで直接 `pnpm exec tsc --noEmit` を実行すると、検証対象外のスクリプト（例: `scripts/plugin-dependency-resolver.ts`）で型エラーが発生し、不要な失敗となるため **禁止**。
+- プロジェクトリファレンスは `composite: true` / `noEmit: true` を維持し、出力が必要なビルドは Turbo の `build` パイプラインに任せる。
+- 例外的にローカルで `tsc --noEmit` を使う場合は、対象パッケージを絞ったコマンド（例: `pnpm --filter @hierarchidb/common-type typecheck`）を用いること。
+
 ## 2. 実行結果の明示
 - 完了報告時は、どのコマンドをどのパッケージに対して実行し、結果がグリーンであったかを簡潔に記載すること。
 - もし環境制約（サンドボックス/権限/ネットワーク）で実行できない場合は、その理由を明記し、代替の検証（局所 `tsc --noEmit` など）を行ったうえで、ユーザーに承認/実行を依頼すること。原則として「未検証のまま完了報告」は不可。
@@ -47,12 +53,33 @@ Motto: "Small, clear, safe steps — always grounded in real docs."
 * If uncertain, pause and request clarification.
 
 ## Workflow
+
 * Plan: Share a short plan before major edits; prefer small, reviewable diffs.
 * Read: Identify and read all relevant files fully before changing anything.
 * Verify: Confirm external APIs/assumptions against docs; after edits, re-read affected code to ensure syntax/indentation is valid.
 * Implement: Keep scope tight; write modular, single-purpose files.
 * Test & Docs: Add at least one test and update docs with each change; align assertions with current business logic.
 * Reflect: Fix at the root cause; consider adjacent risks to prevent regressions.
+
+## Codemod / ts-morph 運用指針
+* scripts/ 配下に `scripts/codemods/` を新設し、codemod はここへ配置すること。共通の CLI ラッパーで「対象ファイル収集 → ts-morph 変換 → Prettier / ESLint --fix」を自動化する。
+* ツール構成
+  - `ts-morph`: TypeScript AST 変換の薄いラッパーとして採用。既存コードの import 置換や関数導入を安全に行う。
+  - `prettier` / `eslint`: codemod 実行後の整形と最終チェックを必須とする。
+* 具体的な適用例
+  - import パスの一括置換: `SourceFile.getImportDeclarations()` で対象を取得し、`.setModuleSpecifier()` で新しいパスへ切り替える。静的/動的 import の差し替えも AST 操作で行う。
+  - ファクトリ関数導入: 既存の `export { EntityDB } from …` を削除し、`addFunction()` で `loadXxx()` を追加する。必要な `export type` も同時に追記する。
+  - 型モジュール切り出し: `.getTypeAliasDeclarations()` などで抽出した型を別ファイルへ移し、呼び出し側に `import type` を追加する。
+* 実行フロー テンプレート
+  - `pnpm ts-node scripts/codemods/move-to-worker-factory.ts --plugin resolver`
+  - `pnpm lint --fix`
+  - `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck`
+* 導入手順
+  1. `scripts/codemods/README.md` を用意し、実行方法・注意点をまとめる。
+  2. `ts-morph` と整形ツールを codemod 用の devDependencies に追加する。
+  3. 小規模タスク（例: authFetch の動的 import 化）で codemod を試作し、差分と手順をレビューする。
+  4. 大規模リファクタリングでは codemod + 自動整形を基本とし、フェーズごとのスクリプトで再利用可能にする。
+  5. `package.json` に `pnpm codemod:worker-factory --plugin=styler` のようなスクリプトを登録し、再実行を容易にする。
 
 ## 依存管理
 * ブランチ切り替えやリモート更新後は必ず `pnpm install --frozen-lockfile` または `pnpm -w install --frozen-lockfile` を実行して `pnpm-lock.yaml` と `node_modules` を同期させる。単一パッケージの変更でもルートでの再インストールを推奨する。
