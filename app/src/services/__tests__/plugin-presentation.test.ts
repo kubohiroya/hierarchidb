@@ -88,4 +88,26 @@ describe('plugin-presentation', () => {
     const missing = getPresentation('unknown-node');
     expect(missing).toBeUndefined();
   });
+
+  it('refreshes cache after plugin definitions update (import template scenario)', () => {
+    const first = getPresentation('folder');
+    expect(first?.icon.color).toBe('#c0eeff');
+
+    globalWithDefs.__HDB_PLUGIN_DEFS__ = [
+      {
+        nodeType: 'folder',
+        name: 'Folder Plugin',
+        config: {
+          displayName: 'Folder',
+          icon: {
+            mui: 'Folder',
+            color: '#ffeeaa',
+          },
+        },
+      },
+    ];
+
+    const updated = getPresentation('folder');
+    expect(updated?.icon.color).toBe('#ffeeaa');
+  });
 });

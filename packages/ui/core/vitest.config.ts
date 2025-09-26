@@ -22,6 +22,7 @@ export default defineConfig({
       '~': path.resolve(__dirname, './src'),
       // Provide bootstrap at source for unit tests
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/src/index.ts'),
+      'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
     },
   },
 });
