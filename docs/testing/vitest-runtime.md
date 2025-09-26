@@ -46,6 +46,17 @@
 3. **Blob/File を使うテストが失敗する**
    - Node.js が `Blob`/`File` をネイティブ提供している場合はそのまま利用します。`undici` 側に実装がない場合は既存グローバルを保持するため、必要に応じて individual テストで `@web-std/file` などをインラインで import してください。
 
+## 4. 部分的に Vitest を実行する手順
+
+アプリケーション配下 (`/app`) のテストだけを素早く検証したい場合は、新設した `app/vitest.config.ts` を利用できます。ルートで下記を実行すると、`~` や `virtual:plugin-definitions` エイリアス、`node-fetch` スタブなどが自動適用された状態で対象ファイルのみを走らせられます。
+
+```bash
+# 例: plugin-presentation と worker-runtime のテスト群のみ実行
+pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts
+```
+
+`--run`/`--include` にパスを列挙すれば複数ファイルをまとめて実行できます。アプリ以外のパッケージを含む全体テストを行いたい場合は、従来どおりルートの `vitest.config.ts` を使用した `pnpm test` または `pnpm --filter <pkg> test` を利用してください。
+
 ---
 
 > 補足: このガイドは `TASKS.md` の `fix/test-env/fetch-polyfill` タスクと連動しています。追加のポリフィルやサードパーティ依存を導入した場合は、このファイルに手順と理由を追記し、再発防止に役立ててください。
