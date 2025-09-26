@@ -5,7 +5,6 @@ import { StylerStep6 } from '../components/steps/StylerStep6.js';
 import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/plugins-spreadsheet-plugin';
 import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/plugins-spreadsheet-plugin';
 
-type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();
 
 registry.registerConfigProvider({
@@ -16,42 +15,48 @@ registry.registerConfigProvider({
       {
         id: 'data-source',
         label: 'Data Source',
-        componentFactory: (p: P) => (
-          <SpreadsheetDataSourceStep
-            data={p.data}
-            onNext={() => void 0}
-            onPrevious={() => void 0}
-            errors={[]}
-          />
+        componentFactory: (p: StepComponentProps) => (
+          <SpreadsheetDataSourceStep {...p} />
         ),
       },
       // Step 3: Spreadsheet Filtering
       {
         id: 'filtering',
         label: 'Filtering',
-        componentFactory: (p: P) => (
-          <SpreadsheetFilteringStep
-            data={p.data}
-            onNext={() => void 0}
-            onPrevious={() => void 0}
-            errors={[]}
-          />
+        componentFactory: (p: StepComponentProps) => (
+          <SpreadsheetFilteringStep {...p} />
         ),
       },
       // Step 4: Styler mapping (original Step2)
       {
         id: 'style-mapping',
         label: 'Style Mapping',
-        componentFactory: (p: P) => (
-          <StylerStep5 data={p.data} onChange={p.onChange} />
+        componentFactory: (p: StepComponentProps) => (
+          <StylerStep5
+            data={p.data}
+            onChange={p.onChange}
+            onValidate={(valid) => {
+              p.setValid(valid);
+              p.setError(valid ? null : 'Configure styling targets before continuing.');
+            }}
+          />
         ),
       },
       // Step 5: Preview (original Step3)
       {
         id: 'preview',
         label: 'Preview',
-        componentFactory: (p: P) => (
-          <StylerStep6 data={p.data} onChange={p.onChange} />
+        componentFactory: (p: StepComponentProps) => (
+          <StylerStep6
+            data={p.data}
+            onChange={p.onChange}
+            onValidate={(valid) => {
+              p.setValid(valid);
+              if (valid) {
+                p.setError(null);
+              }
+            }}
+          />
         ),
       },
     ];

@@ -4,11 +4,11 @@
  * Includes name, description, tags, and category selection
  */
 
-import React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { BasicInfoFields, CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';
 import type { SpreadsheetCategory } from '../types/category-types.js';
+import type { FC } from 'react';
 
 export interface BasicInfoStepProps {
   data: {
@@ -25,7 +25,7 @@ export interface BasicInfoStepProps {
 
 /**
     */
-export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
+export const BasicInfoStep: FC<BasicInfoStepProps> = ({
                                                               data,
                                                               onNext,
                                                               disabled = false,

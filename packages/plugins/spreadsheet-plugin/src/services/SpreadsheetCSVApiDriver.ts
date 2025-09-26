@@ -276,7 +276,12 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       //  Styler
       if (!('removeReference' in this.tableManager)) {
         // Type cast to ensure TypeScript knows forceDelete exists
-        await (this.tableManager as SimpleTableMetadataManager).forceDelete(tableId);
+        const manager = this.tableManager as SimpleTableMetadataManager;
+        if (typeof manager.forceDelete === 'function') {
+          await manager.forceDelete(tableId);
+        } else {
+          await manager.removeReference(tableId, this.pluginId);
+        }
       }
     }
   }

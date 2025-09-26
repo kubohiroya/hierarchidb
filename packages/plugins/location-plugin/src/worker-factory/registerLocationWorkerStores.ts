@@ -3,6 +3,7 @@
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
+import { isDevEnvironment } from '../utils/env.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -49,7 +50,7 @@ export async function registerLocationWorkerStores(options: RegisterLocationWork
   try {
     await ensureLocationStores(registry);
   } catch (error) {
-    if (import.meta.env?.DEV) console.warn('[location-worker] store registration failed', error);
+    if (isDevEnvironment) console.warn('[location-worker] store registration failed', error);
   }
 }
 

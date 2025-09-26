@@ -1,6 +1,6 @@
 /**
- * ShapeFolderExtension
- * - Provides folder-plugin dialog steps (same as ShapeExtension) and a step state evaluator.
+ * ShapeDialogExtension
+ * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
 import { BaseFolderPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-folder-plugin';
@@ -12,10 +12,10 @@ import { LicenseStep } from '../extension/components/LicenseStep.js';
 import { ProcessingStep } from '../extension/components/ProcessingStep.js';
 import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
-export class ShapeFolderExtension extends BaseFolderPlugin {
-  readonly pluginId = 'shape-plugin-folder-extension';
-  readonly pluginName = 'Shape (Folder Extension)';
-  readonly pluginDescription = 'Adds shape-related steps to folder dialog';
+export class ShapeDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'shape-plugin-dialog-extension';
+  readonly pluginName = 'Shape Dialog Extension';
+  readonly pluginDescription = 'Adds shape-related dialog steps for the Shape plugin';
   readonly pluginVersion = '1.0.0';
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
@@ -78,7 +78,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
 
   protected getStepStateEvaluator() {
     return {
-      getFilledSteps: (data: any, stepNumbers?: number[]) => {
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
         const nums = stepNumbers || [];
         return nums.map((n) => {
           switch (n) {
@@ -99,7 +99,7 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
           }
         });
       },
-      getNavigableSteps: (data: any, stepNumbers?: number[]) => {
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
         const nums = stepNumbers || [];
         const filledByNumber = new Map<number, boolean>();
         // Evaluate filled quickly for dependency checks
@@ -148,8 +148,8 @@ export class ShapeFolderExtension extends BaseFolderPlugin {
   }
 }
 
-export const shapeFolderExtension = new ShapeFolderExtension();
+export const shapeDialogExtension = new ShapeDialogExtension();
 
-export async function initializeShapeFolderExtension() {
-  await shapeFolderExtension.initialize();
+export async function initializeShapeDialogExtension() {
+  await shapeDialogExtension.initialize();
 }

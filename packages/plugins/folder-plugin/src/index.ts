@@ -6,6 +6,7 @@
 // Export types
 export * from './types/index.js';
 export * from './entities/FolderEntity.js';
+export { PLUGIN_MANIFEST as FolderPluginManifest } from './extension/plugin-manifest.js';
 
 // Export plugin definition for worker consumption
 // Plugin definition export removed: metadata is sourced from package.json

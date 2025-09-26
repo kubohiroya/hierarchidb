@@ -31,19 +31,19 @@ async function registerNodeDialogDefaults(): Promise<void> {
   await Promise.all([
     tryInit<ShapeExtensionModule>(
       () => import(/* @vite-ignore */ SHAPE) as Promise<ShapeExtensionModule>,
-      (mod) => mod.initializeShapeFolderExtension,
+      (mod) => mod.initializeShapeDialogExtension,
     ),
     tryInit<SpreadsheetExtensionModule>(
       () => import(/* @vite-ignore */ SHEET) as Promise<SpreadsheetExtensionModule>,
-      (mod) => mod.initializeSpreadsheetFolderExtension,
+      (mod) => mod.initializeSpreadsheetDialogExtension,
     ),
     tryInit<BaseMapExtensionModule>(
       () => import(/* @vite-ignore */ BASEMAP) as Promise<BaseMapExtensionModule>,
-      (mod) => mod.initializeBaseMapFolderExtension,
+      (mod) => mod.initializeBaseMapDialogExtension,
     ),
     tryInit<StylerExtensionModule>(
       () => import(/* @vite-ignore */ STYLER) as Promise<StylerExtensionModule>,
-      (mod) => mod.initializeStylerFolderExtension,
+      (mod) => mod.initializeStylerDialogExtension,
     ),
   ]);
 
@@ -53,19 +53,19 @@ async function registerNodeDialogDefaults(): Promise<void> {
 }
 
 interface ShapeExtensionModule {
-  initializeShapeFolderExtension?: () => Promise<void>;
+  initializeShapeDialogExtension?: () => Promise<void>;
 }
 
 interface SpreadsheetExtensionModule {
-  initializeSpreadsheetFolderExtension?: () => Promise<void>;
+  initializeSpreadsheetDialogExtension?: () => Promise<void>;
 }
 
 interface BaseMapExtensionModule {
-  initializeBaseMapFolderExtension?: () => Promise<void>;
+  initializeBaseMapDialogExtension?: () => Promise<void>;
 }
 
 interface StylerExtensionModule {
-  initializeStylerFolderExtension?: () => Promise<void>;
+  initializeStylerDialogExtension?: () => Promise<void>;
 }
 
 /**

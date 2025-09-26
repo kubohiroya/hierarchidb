@@ -1,6 +1,7 @@
 import type { Plugin } from 'vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadPluginManifestFromFile } from '../tools/plugin-manifest-loader.js';
 
 function toPascalCase(name?: string): string {
   if (!name) return '';
@@ -46,7 +47,7 @@ export function muiIconsVirtualModule(): Plugin {
     load(id) {
       if (id !== RESOLVED_ID) return undefined;
 
-      // Scan node-type plugin package.json files for hierarchidb.plugin.icon.mui
+      // Scan plugin manifest files for icon hints
       const repoRoot = path.resolve(__dirname, '..');
       const nodeTypeDir = path.join(repoRoot, 'packages', 'plugins');
       const names = new Set<string>();
@@ -54,16 +55,18 @@ export function muiIconsVirtualModule(): Plugin {
         const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
         for (const ent of entries) {
           if (!ent.isDirectory()) continue;
-          const pkgJsonPath = path.join(nodeTypeDir, ent.name, 'package.json');
-          if (!fs.existsSync(pkgJsonPath)) continue;
+          const manifestPath = path.join(nodeTypeDir, ent.name, 'src', 'extension', 'plugin-manifest.ts');
+          if (!fs.existsSync(manifestPath)) continue;
           try {
-            const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8')) as NodeTypePackageJson;
-            const muiRaw = pkg.hierarchidb?.plugin?.icon?.mui;
+            const manifest = loadPluginManifestFromFile(manifestPath, { silent: true });
+            if (!manifest) continue;
+            const icon = manifest.icon as Record<string, unknown> | undefined;
+            const muiRaw = (icon?.muiIconName ?? icon?.mui ?? '') as string;
             const norm = normalizeMuiName(muiRaw);
             const pascal = toPascalCase(norm);
             if (pascal) names.add(pascal);
           } catch (error) {
-            logWarn(`Failed to read icon metadata from ${pkgJsonPath}`, error);
+            logWarn(`Failed to read icon metadata from ${manifestPath}`, error);
           }
         }
       } catch (error) {
@@ -95,13 +98,3 @@ export default iconMap;
     },
   };
 }
-
-type NodeTypePackageJson = {
-  hierarchidb?: {
-    plugin?: {
-      icon?: {
-        mui?: string;
-      };
-    };
-  };
-};

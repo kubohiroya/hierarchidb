@@ -1,47 +1,54 @@
 #!/usr/bin/env node
 
-import { PluginDefinitionBuilder, type PackageJsonContent } from './plugin-definition-builder.js';
+import { PluginDefinitionBuilder, type PluginManifestContent } from './plugin-definition-builder.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadPluginManifestFromFile } from '../tools/plugin-manifest-loader.js';
 
-//  PackageJsonReader
-class MockPackageJsonReader {
-  async readAllPluginPackageJsons(): Promise<Map<string, PackageJsonContent>> {
-    const packages = new Map<string, PackageJsonContent>();
-    
-        const pluginPackages = [
+const repoRoot = path.resolve(process.cwd());
+
+// Plugin manifest reader (utility for manual verification)
+class MockPluginManifestReader {
+  async readAllPluginManifests(): Promise<Map<string, PluginManifestContent | undefined>> {
+    const packages = new Map<string, PluginManifestContent | undefined>();
+
+    const pluginPackages = [
       'folder-plugin',
-          'basemap-plugin',
+      'basemap-plugin',
       'shape-plugin',
       'location-plugin',
       'route-plugin',
       'resolver-plugin',
-          'styler-plugin',
-          'linker-plugin',
-          'timeline-plugin'
+      'styler-plugin',
+      'linker-plugin',
+      'timeline-plugin',
+      'spreadsheet-plugin',
     ];
-    
+
     for (const pkg of pluginPackages) {
-      const packagePath = path.join(
-        process.cwd(),
-        '..',
+      const manifestPath = path.join(
+        repoRoot,
         'packages',
         'plugins',
         pkg,
-        'package.json'
+        'src',
+        'extension',
+        'plugin-manifest.ts'
       );
-      
-      if (fs.existsSync(packagePath)) {
+
+      if (fs.existsSync(manifestPath)) {
         try {
-          const content = fs.readFileSync(packagePath, 'utf-8');
-          const packageJson = JSON.parse(content) as PackageJsonContent;
-          packages.set(`@hierarchidb/plugins-${pkg}`, packageJson);
+          const manifest = loadPluginManifestFromFile(manifestPath, { silent: true }) as PluginManifestContent | undefined;
+          packages.set(`@hierarchidb/plugins-${pkg}`, manifest);
         } catch (error) {
-          console.error(`Failed to read ${packagePath}:`, error);
+          console.error(`Failed to load manifest ${manifestPath}:`, error);
         }
+      } else {
+        console.warn(`Manifest not found for ${pkg} (${manifestPath})`);
+        packages.set(`@hierarchidb/plugins-${pkg}`, undefined);
       }
     }
-    
+
     return packages;
   }
 }
@@ -49,9 +56,9 @@ class MockPackageJsonReader {
 async function runTest() {
   console.log('=== PluginDefinitionBuilder Test ===\n');
   
-  //  PackageJsonReader
-  const reader = new MockPackageJsonReader();
-  const packages = await reader.readAllPluginPackageJsons();
+  // Read manifests
+  const reader = new MockPluginManifestReader();
+  const packages = await reader.readAllPluginManifests();
   
   console.log(`Found ${packages.size} plugin packages\n`);
   
@@ -109,7 +116,7 @@ async function runTest() {
   
   //  1. PluginDefinition
   const convertedCount = definitions.size;
-  const expectedCount = packages.size;
+  const expectedCount = Array.from(packages.values()).filter((m): m is PluginManifestContent => !!m).length;
   console.log(`✓ Converted ${convertedCount}/${expectedCount} plugins`);
   
   //  2. folderfolder

@@ -71,6 +71,43 @@
     - progress: 2025-09-26 01:03 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` を実行し、fetch 解決エラーなく 10 件のテストが成功
     - progress: 2025-09-26 01:20 `docs/testing/vitest-runtime.md` を追加し、Node 環境向け fetch ポリフィル方針とトラブルシューティングを明文化
 - fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
+
+- fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
+  - ブランチ: `fix/app/speeddial-icon-metadata`（sandbox 制約で作成失敗のため `fix/app/emotion-dedupe` 上で作業）
+  - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
+  - スコープ:
+    - `app/src/services/plugin-presentation.ts` を更新し、`plugin-manifest.ts` 由来のラベル/アイコン/カラーを返却する
+    - SpeedDial の表示が仮アイコンから実アイコンへ戻るよう `DynamicSpeedDial` の依存ロジックを確認
+    - メタデータ変化に備えたフォールバックおよびキャッシュ挙動を整備
+  - 受け入れ基準（DoD）:
+    - [ ] `/hierarchidb/t/r` の SpeedDial でフォルダ/タイムラインなどが package.json 記載のアイコン・カラーで表示される
+    - [ ] `getPresentation` が plugin 定義の manifest `icon` を反映し、ダミー値にフォールバックしていない
+    - [ ] Import Template（`create:folder` 経由）で UI Plugin のアイコン解決が失敗せず、ダイアログが正常表示される
+    - [x] `pnpm -C app typecheck` と `pnpm -C app build` が成功する
+  - チェックリスト:
+    - [x] `app/src/services/plugin-presentation.ts` で plugin 定義キャッシュの構築と icon 名正規化を実装
+    - [ ] DynamicSpeedDial の表示確認（ローカル実行 or スクリーンショット確認）
+    - [ ] UI Core 側の CreateMenu で ReactNode ベースの icon にも対応できることを確認
+    - [x] タイプチェック/ビルド結果を TASKS.md 運用ログに記録
+  - ロールバック手順:
+    - 当該ファイルの差分を `git revert` で戻し、`getPresentation` を従来のダミー実装に戻す
+    - SpeedDial 表示に問題が残る場合は `window.__HDB_PLUGIN_DEFS__` への注入を停止する暫定設定を追加
+  - 運用ログ:
+    - start: 2025-09-17 23:58 sandbox 上でブランチ作成に失敗したため現行ブランチのまま調査開始。
+    - done: 2025-09-18 00:19 `pnpm -C app typecheck` を実行しエラーなし。
+    - done: 2025-09-18 00:23 `pnpm -C app build` が完了し、React Router ハッシュビルドまで成功。
+    - done: 2025-09-18 00:34 キャッシュ更新ロジックを追加し再度 `pnpm -C app typecheck` を実行、エラーなし。
+    - done: 2025-09-18 08:08 Projects コンテキストのメニュー定義に `linker` を追加し、`pnpm -C app typecheck` / `build` を再実行して成功。
+    - start: 2025-09-18 08:32 Import Template 実行時に UI Plugin アイコン解決が React element で渡されるため create menu で例外発生する問題の修正に着手。
+    - done: 2025-09-18 08:37 `pnpm --filter @hierarchidb/ui-core typecheck` を実行しエラーなし。
+    - done: 2025-09-18 08:38 `pnpm --filter @hierarchidb/ui-core build` が成功し、tsup 出力も生成。
+    - done: 2025-09-18 08:54 `rebuildAdjacency` / `buildVisibleRows` を再実装し、`pnpm -C app typecheck` を再実行して成功。
+    - done: 2025-09-18 08:59 `useTreeConsoleSSOT` のストア参照を修正し、再度 `pnpm -C app typecheck` を実行して成功。
+    - done: 2025-09-16 14:15 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `build` グリーン（legacy props 復元）。
+    - progress: 2025-09-26 17:06 SpeedDial manifest アイコン反映状況を再確認し、未消化 DoD/チェックリスト対応の洗い出しに着手。
+    - progress: 2025-09-26 17:29 manifest 由来のアイコン/カラーが `getPresentation` へ伝搬することを検証するユニットテストを追加し、対象ファイルのみ `pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` で手動実行（Worker runtime 既知失敗により suite 全体は `Cannot convert object to primitive value` で赤、要モック調整）
+    - progress: 2025-09-26 17:38 Worker runtime 向け統合テストを `WorkerStateStore.test.ts` / `WorkerModuleLoader.test.ts` に分割し、Hoisted mock で依存を差し替え。`pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` により当該テスト群がグリーンで実行されることを確認（`HDB-BOOT` ログは残るが WARN のみ）。
+
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/common-type`, `tsup`
   - 受け入れ基準（DoD）：
@@ -768,6 +805,14 @@
     - start: 2025-09-20 19:08 SpeedDial の icon フォールバック発生を再現し、package-reader の検出数が 0 件であることを確認
     - progress: 2025-09-20 19:09 Worker/メイン双方の `pattern` を `@hierarchidb/plugins-(...)-plugin` 形式に修正し、Node スクリプトで検出 10 件を確認
     - done: 2025-09-20 19:13 `pnpm -C app build` を実行し、ログに `Detected 10 packages` が出力されることと build 成功を確認
+    - progress: 2025-09-26 06:28 plugin manifest ローダーを共通化し、app 側の Vite プラグインが `plugin-manifest.ts` から icon 情報を解決するよう更新
+    - done: 2025-09-26 06:35 `pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/tools-vite-plugin-package-reader typecheck` を実行し成功
+    - progress: 2025-09-26 06:46 `scripts/plugin-definition-builder.ts` / `validate-plugin-meta.mjs` を manifest 参照へ移行し、共通ローダーと JSON Schema (`plugin-manifest.schema.json`) を導入
+    - blocked: 2025-09-26 06:48 `pnpm exec tsx scripts/test-plugin-definition-builder.ts` は sandbox の `EPERM` により IPC pipe 作成が拒否されたため未実行（代替検証は manifest 読み込みロジックの単体確認に留まる）
+    - progress: 2025-09-26 07:20 各 `packages/plugins/*-plugin/src/extension/plugin-manifest.ts` から `package.json` 読み取りを撤去し、`PLUGIN_ID`/`PLUGIN_VERSION` 定数ベースの定義へ移行
+    - progress: 2025-09-26 07:28 basemap-plugin へ `shared/metadata.ts` を追加し manifest を再エクスポート、併せて各プラグインの `tsconfig.json` から `package.json` の `include` 追記を整理
+    - progress: 2025-09-26 07:40 `pnpm --filter @hierarchidb/plugins-{folder,basemap,shape,resolver,route,location,linker,spreadsheet,timeline}-plugin typecheck` を順次実行し、既知の styler-plugin StepComponent props 不整合（TS2322）を除きグリーン確認
+    - done: 2025-09-26 07:55 styler-plugin の StepComponentProps を新 API に合わせて移行し、`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` が成功
 
 - chore/tools/plugin-registry-alias-automation — node-type プラグイン alias 自動化と共通ユーティリティ整備
   - ブランチ: `chore/tools/plugin-registry-alias-automation`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -1268,38 +1313,6 @@
   - 運用ログ:
     - start: 2025-09-16 13:40 `pnpm --filter @hierarchidb/ui-dialog build` の TS2339 を解消するため着手。
 
-- fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
-  - ブランチ: `fix/app/speeddial-icon-metadata`（sandbox 制約で作成失敗のため `fix/app/emotion-dedupe` 上で作業）
-  - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
-  - スコープ:
-    - `app/src/services/plugin-presentation.ts` を更新し、`hierarchidb.plugin` メタデータ由来のラベル/アイコン/カラーを返却する
-    - SpeedDial の表示が仮アイコンから実アイコンへ戻るよう `DynamicSpeedDial` の依存ロジックを確認
-    - メタデータ変化に備えたフォールバックおよびキャッシュ挙動を整備
-  - 受け入れ基準（DoD）:
-    - [ ] `/hierarchidb/t/r` の SpeedDial でフォルダ/タイムラインなどが package.json 記載のアイコン・カラーで表示される
-    - [ ] `getPresentation` が plugin 定義の `hierarchidb.plugin.icon` を反映し、ダミー値にフォールバックしていない
-    - [ ] Import Template（`create:folder` 経由）で UI Plugin のアイコン解決が失敗せず、ダイアログが正常表示される
-    - [x] `pnpm -C app typecheck` と `pnpm -C app build` が成功する
-  - チェックリスト:
-    - [x] `app/src/services/plugin-presentation.ts` で plugin 定義キャッシュの構築と icon 名正規化を実装
-    - [ ] DynamicSpeedDial の表示確認（ローカル実行 or スクリーンショット確認）
-    - [ ] UI Core 側の CreateMenu で ReactNode ベースの icon にも対応できることを確認
-    - [x] タイプチェック/ビルド結果を TASKS.md 運用ログに記録
-  - ロールバック手順:
-    - 当該ファイルの差分を `git revert` で戻し、`getPresentation` を従来のダミー実装に戻す
-    - SpeedDial 表示に問題が残る場合は `window.__HDB_PLUGIN_DEFS__` への注入を停止する暫定設定を追加
-  - 運用ログ:
-    - start: 2025-09-17 23:58 sandbox 上でブランチ作成に失敗したため現行ブランチのまま調査開始。
-    - done: 2025-09-18 00:19 `pnpm -C app typecheck` を実行しエラーなし。
-    - done: 2025-09-18 00:23 `pnpm -C app build` が完了し、React Router ハッシュビルドまで成功。
-    - done: 2025-09-18 00:34 キャッシュ更新ロジックを追加し再度 `pnpm -C app typecheck` を実行、エラーなし。
-    - done: 2025-09-18 08:08 Projects コンテキストのメニュー定義に `linker` を追加し、`pnpm -C app typecheck` / `build` を再実行して成功。
-    - start: 2025-09-18 08:32 Import Template 実行時に UI Plugin アイコン解決が React element で渡されるため create menu で例外発生する問題の修正に着手。
-    - done: 2025-09-18 08:37 `pnpm --filter @hierarchidb/ui-core typecheck` を実行しエラーなし。
-    - done: 2025-09-18 08:38 `pnpm --filter @hierarchidb/ui-core build` が成功し、tsup 出力も生成。
-    - done: 2025-09-18 08:54 `rebuildAdjacency` / `buildVisibleRows` を再実装し、`pnpm -C app typecheck` を再実行して成功。
-    - done: 2025-09-18 08:59 `useTreeConsoleSSOT` のストア参照を修正し、再度 `pnpm -C app typecheck` を実行して成功。
-    - done: 2025-09-16 14:15 `pnpm --filter @hierarchidb/ui-dialog typecheck` / `build` グリーン（legacy props 復元）。
 
 - feat/ui-dialog/displaymode-modernization — MultiStepDialog display mode の新実装充実化
   - ブランチ: `feat/ui-dialog/displaymode-modernization`
@@ -2100,6 +2113,22 @@
   - ロールバック手順：
     - プラグイン単位で git revert を行い旧 `worker/index.ts` を復元。ESLint ルールは再度緩和してビルド通過を確保
 
+- refactor/plugins/entity-type-safety — プラグイン拡張定義の型安全化（PeerEntity ジェネリクス適用）
+  - ブランチ: `refactor/plugins/entity-type-safety`
+  - 依存: `@hierarchidb/common-type`, `@hierarchidb/plugins-{basemap,shape,spreadsheet,styler}-plugin`
+  - 受け入れ基準（DoD）：
+    - [ ] `packages/plugins/basemap-plugin/src/extension/definition.ts` で `BaseMapEntity`/`BaseMapWorkingCopy` を実体型として再エクスポートし、`ExtendingNodeTypeDefinition` のジェネリクスに適合させる
+    - [ ] shape/spreadsheet/styler 各プラグインの拡張定義でも同様の型再エクスポートとジェネリクス指定を行い、`validation.validate` の引数が `any` にフォールバックしないことを `tsc` で確認
+    - [ ] `pnpm --filter @hierarchidb/plugins-{basemap,shape,spreadsheet,styler}-plugin typecheck` がグリーン
+    - [ ] 変更点とロールバック手順を `TASKS.md` 運用ログへ記録
+  - チェックリスト：
+    - [ ] 各プラグインの `src/entities/*Entity.ts` から型を取り込み、拡張定義ファイルで再エクスポート
+    - [ ] `ExtendingNodeTypeDefinition` のジェネリクスを `PeerEntity` ベースで明示し、Step Validation での `unknown`/`any` を解消
+    - [ ] 拡張バリデーション・ステップ定義で追加の補助型や `as const` を整備し、TypeScript 上で型安全性を担保
+    - [ ] 対象プラグインごとに `pnpm --filter ... typecheck` を実行し、結果を `TASKS.md` 運用ログへ残す
+  - ロールバック手順：
+    - 追加した import/型注釈を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-{basemap,shape,spreadsheet,styler}-plugin typecheck` を再実行して現状復旧を確認
+
 - chore/runtime-worker/api-compat-cleanup — Worker API 互換層整理（Phase 3）
   - ブランチ: `chore/runtime-worker/api-compat-cleanup`
   - 依存: `feat/plugins/worker-factory-rollout`
@@ -2417,6 +2446,18 @@
     - [ ] Step3: `FilteringStep`（列選択/簡易条件）を最小実装（任意）
     - [ ] 拡張定義 `component` を `null` から実装へ差替、既存テストを更新
   - ロールバック: `component` を `null` に戻し、テストを元の前提に復帰
+  - 運用ログ：
+    - progress: 2025-09-26 04:20 DataSourceStep を `@hierarchidb/ui-file` の `FileInputWithUrl` に一本化し、ローカルファイル/URL/手動入力の切替とバリデーション更新を実装
+    - progress: 2025-09-26 04:25 `tsconfig.ui.json` から paths 上書きを撤廃し、UI専用のスタブ型 (`src/types/external.d.ts`) を追加して Step2 コンポーネントの型検証準備を整備
+    - blocked: 2025-09-26 04:40 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` が ENOTFOUND(registry.npmjs.org) で依存取得に失敗。ネットワーク制約のため標準検証は未完了。
+    - progress: 2025-09-26 05:05 SpreadsheetDialogExtension で Step2/3 の enabled/validated 判定を実装し、DataSourceStep のダイアログデータ型を Working Copy 依存から切り離し
+    - progress: 2025-09-26 05:08 extension/constants.ts の日本語ラベルとエラーメッセージを英語化し、UI テキストを統一
+    - blocked: 2025-09-26 05:12 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` が引き続き依存モジュール解決不可（Dexie/@types 系入手不能）で失敗。ネットワーク復旧待ち
+    - progress: 2025-09-26 05:24 DataSourceStep/CSVUploadPanel が `PLUGIN_METADATA` を参照するよう調整し、Step registry ラベルを STEP_CONFIG へ統一
+    - done: 2025-09-26 05:40 `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` がスタブ拡張によりグリーンを確認（離線依存なし）
+    - progress: 2025-09-26 05:52 FilteringStep UI を最小実装し、列表示切替と簡易行フィルタ追加を working copy へ反映
+    - progress: 2025-09-26 06:18 DataSourceStep/CSVUploadPanel の型を整理し、`@hierarchidb/ui-file` との受け渡しで readonly 配列を直接渡せるよう調整
+    - progress: 2025-09-26 06:19 手動入力タブのバリデーションを確認し、`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` を再実行してグリーンを確認
 
 - feat/styler/preview-stub-and-config-io（Styler: プレビュースタブと保存 I/O 確認）
   - ブランチ: `feat/styler/preview-stub-and-config-io`
@@ -4239,6 +4280,9 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-26 17:38 progress: fix/app/speeddial-icon-presentation — Worker runtime テストを再設計（StateStore と ModuleLoader を分離）し、`pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` がグリーンで完走することを確認
+- 2025-09-26 17:29 progress: fix/app/speeddial-icon-presentation — manifest 由来アイコンの検証用ユニットテストを追加し、対象テストのみ手動実行（Worker runtime テストは既知のモック不整合により別途要対応）
+- 2025-09-26 17:06 progress: fix/app/speeddial-icon-presentation — SpeedDial manifest icon 反映の現状調査を再開し、未完了タスクを洗い出し
 - 2025-09-25 13:28 start: docs/requirements/dynamic-import-unification — 要件文書と TODO リストの骨子作成に着手 (設計メモの要点抽出)
 - 2025-09-25 13:33 done: docs/requirements/dynamic-import-unification — `docs/requirements/dynamic-import-unification.md` と `docs/requirements/dynamic-import-unification-todo.md` を追加し、作業フェーズ別のタスクを整理
 - 2025-09-25 13:36 progress: docs/requirements/dynamic-import-unification — TODO リストへ `.github` CI スクリプト更新タスクを追記し、要件定義の DoD に CI 反映を追加

@@ -3,6 +3,7 @@
  */
 
 import { readRuntimeEnvNumber } from '@hierarchidb/util';
+export { PLUGIN_MANIFEST as LocationPluginManifest } from './extension/plugin-manifest.js';
 
 export * from './types/index.js';
 export type { CreateLocationData } from './entities/LocationEntityHandler.js';
@@ -23,7 +24,7 @@ export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaul
 export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 
 // Import and re-export the plugin definition
-// Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
+// Plugin definition exports removed: metadata is provided via src/extension/plugin-manifest.ts
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 type GlobalScope = Record<string, unknown>;

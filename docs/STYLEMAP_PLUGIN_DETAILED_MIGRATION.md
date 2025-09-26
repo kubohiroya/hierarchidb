@@ -80,7 +80,7 @@ src/components/steps/StylerStep6.tsx
 
 #### 2.1 folder-plugin参照の修正
 ```typescript
-// src/extensions/StylerFolderExtension.tsx
+// src/extensions/StylerDialogExtension.tsx
 // 修正前（エラーの原因）
 import { FolderEntityHandler } from '@hierarchidb/plugins-folder-plugin';
 

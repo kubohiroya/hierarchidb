@@ -238,7 +238,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 ホスト側ダイアログ（ExtensibleFolderDialog）は、レジストリ経由で各プラグインが提供する「ステップ評価」と「サブミット可否」を取り込み、UI に反映します。
 
 - ステップ評価（充足/ナビ）
-  - `evaluateSteps: { getFilledSteps(data), getNavigableSteps(data) }`
+  - `evaluateSteps: { getValidatedSteps(data), getEnabledSteps(data) }`
   - 複数プラグイン提供時は AND 合成。`dependsOn`（宣言的依存）も併せてガード。
 - サブミット可否
   - `canSubmit(data): boolean | Promise<boolean>` を拡張側が定義可能。

@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { FolderEntity } from '../entities/FolderEntity.js';
-import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI.js';
-import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI.js';
+import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.js';
+import { createFolderExtension, folderExtensionRegistry } from '../api/DialogExtensionAPI.js';
 import type {
   DialogStepDefinition,
   NodeId,
@@ -176,8 +176,8 @@ export abstract class BaseFolderPlugin {
    * the second argument to map by stepNumber.
    */
   protected getStepStateEvaluator?(): {
-    getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
-    getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+    getEnabledSteps?: (data: any, stepNumbers?: number[]) => boolean[];
+    getValidatedSteps?: (data: any, stepNumbers?: number[]) => boolean[];
   };
 
   /**

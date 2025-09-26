@@ -9,6 +9,7 @@ import type {
 } from '../types.js';
 import { RegexStrategy } from '../strategies/index.js';
 import { DependencyResolver } from '../pipeline/DependencyResolver.js';
+import { loadPluginManifestFromPackageJson } from '../../../../../tools/plugin-manifest-loader.js';
 
 /**
   * HierarchiDB
@@ -19,7 +20,7 @@ export interface PluginDefinition {
   packageName: string;
   nodeType: string;
   priority: number;
-  config?: any;
+  config?: Record<string, unknown>;
   dependencies?: string[];
   // Absolute file paths to dist entries resolved via /@fs for Vite to load reliably
   resolvedImport?: string; // generic (dist/index.js)
@@ -53,17 +54,10 @@ export function createHierarchiDBStrategy(
     metadataExtractor: (packageJson: PackageJson) => {
       const metadata: Record<string, any> = {};
 
-      //  node-type
       const match = packageJson.name.match(/plugins-(.+)-plugin$/);
       if (match) {
         metadata.nodeType = match[1];
       }
-
-      //  hierarchidb
-      if (options.extractPluginConfig && packageJson.hierarchidb?.plugin) {
-        metadata.pluginConfig = packageJson.hierarchidb.plugin;
-      }
-
       return metadata;
     },
   });
@@ -102,8 +96,9 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
       const definitions: PluginDefinition[] = [];
 
       for (const [name, pkg] of packages) {
-        const nodeType = pkg.__metadata?.nodeType ||
-          name.replace('@hierarchidb/', '').replace('-plugin', '');
+        const nodeTypeFromName = name.replace('@hierarchidb/', '').replace('-plugin', '');
+        const manifest = loadPluginManifestFromPackageJson(pkg);
+        const nodeType = manifest?.nodeType || pkg.__metadata?.nodeType || nodeTypeFromName;
         // Resolve dist entries for Vite dev via /@fs
         let resolvedImport: string | undefined;
         let resolvedWorkerImport: string | undefined;
@@ -153,14 +148,20 @@ export function createPluginDefinitionPipeline(): TransformPipelineOptions<Plugi
           resolvedUiImport = toFs(uiByExport || uiByScan);
         }
 
+        const depsFromManifest = Array.isArray(manifest?.dependencies)
+          ? [...manifest!.dependencies as string[]]
+          : [];
+
         definitions.push({
           name: nodeType,
           version: pkg.version,
           packageName: name,
           nodeType,
-          priority: pkg.__priority || 1000,
-          config: pkg.__metadata?.pluginConfig || pkg.hierarchidb?.plugin,
-          dependencies: DependencyResolver.getDependencies(pkg),
+          priority: manifest?.priority ?? pkg.__priority ?? 1000,
+          config: manifest ?? undefined,
+          dependencies: depsFromManifest.length > 0
+            ? depsFromManifest
+            : DependencyResolver.getDependencies(pkg),
           resolvedImport,
           resolvedWorkerImport,
           resolvedUiImport,

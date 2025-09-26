@@ -85,7 +85,7 @@
 
 更新（Evaluator/Submit 可否/命名の一般化）
 - ステップ評価:
-  - 追加 API: `evaluateSteps: { getFilledSteps(data), getNavigableSteps(data) }`
+  - 追加 API: `evaluateSteps: { getValidatedSteps(data), getEnabledSteps(data) }`
   - Host（ExtensibleFolderDialog）はレジストリの evaluator と `dependsOn` を合成。
 - サブミット評価:
   - 追加 API: `canSubmit(data)`（プラグイン側）→ Host で AND 合成し `evaluateSubmit(data)` として UI に渡す。

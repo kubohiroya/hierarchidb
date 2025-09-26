@@ -10,6 +10,7 @@ import {
   type SessionSummary,
 } from './SessionController.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
+import { isDevEnvironment } from '../../utils/env.js';
 
 export class LocationBatchSessionManager {
   private shared = new Map<string, LocationBatchSession>();
@@ -43,7 +44,7 @@ export class LocationBatchSessionManager {
       try {
         await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000);
       } catch (error) {
-        if (import.meta.env?.DEV) {
+        if (isDevEnvironment) {
           console.warn('[LocationBatchSessionManager] clearExpiredSessions failed', error);
         }
       }
@@ -58,7 +59,7 @@ export class LocationBatchSessionManager {
         status: 'running',
       });
     } catch (error) {
-      if (import.meta.env?.DEV) {
+      if (isDevEnvironment) {
         console.warn('[LocationBatchSessionManager] failed to persist session metadata', error);
       }
     }
@@ -76,7 +77,7 @@ export class LocationBatchSessionManager {
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'completed' });
       } catch (error) {
-        if (import.meta.env?.DEV) {
+        if (isDevEnvironment) {
           console.warn('[LocationBatchSessionManager] failed to mark session completed', error);
         }
       }
@@ -87,7 +88,7 @@ export class LocationBatchSessionManager {
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'failed' });
       } catch (error) {
-        if (import.meta.env?.DEV) {
+        if (isDevEnvironment) {
           console.warn('[LocationBatchSessionManager] failed to mark session failed', error);
         }
       }

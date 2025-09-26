@@ -288,12 +288,12 @@ const CategoryMappingStep: React.FC<{
 };
 
 /**
- * Styler extension for the Folder plugin
+ * Styler extension for plugin dialogs
  */
-export class StylerFolderExtension extends BaseFolderPlugin {
-  readonly pluginId = 'styler-plugin-folder-plugin-extension';
-  readonly pluginName = 'Styler for Folders';
-  readonly pluginDescription = 'Adds map visualization capabilities to folders';
+export class StylerDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'styler-plugin-dialog-extension';
+  readonly pluginName = 'Styler Dialog Extension';
+  readonly pluginDescription = 'Adds map visualization capabilities to plugin dialogs';
   readonly pluginVersion = '1.0.0';
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
@@ -370,7 +370,7 @@ export class StylerFolderExtension extends BaseFolderPlugin {
 
   protected getStepStateEvaluator() {
     return {
-      getFilledSteps: (data: any, stepNumbers?: number[]) => {
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
         const steps = stepNumbers || [];
         return steps.map((num) => {
           // style-config (order 10):
@@ -395,7 +395,7 @@ export class StylerFolderExtension extends BaseFolderPlugin {
           return true;
         });
       },
-      getNavigableSteps: (data: any, stepNumbers?: number[]) => {
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
         const steps = stepNumbers || [];
         // Allow navigation to style-config always; category-mapping requires style-config decision
         const hasStyleDecision = !data?.styleType || !!data?.dataSource;
@@ -494,8 +494,8 @@ export class StylerFolderExtension extends BaseFolderPlugin {
 }
 
 // Create and export singleton instance
-export const stylerFolderExtension = new StylerFolderExtension();
+export const stylerDialogExtension = new StylerDialogExtension();
 
-export async function initializeStylerFolderExtension() {
-  await stylerFolderExtension.initialize();
+export async function initializeStylerDialogExtension() {
+  await stylerDialogExtension.initialize();
 }

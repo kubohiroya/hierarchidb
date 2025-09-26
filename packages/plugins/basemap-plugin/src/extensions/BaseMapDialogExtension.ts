@@ -1,5 +1,5 @@
 /**
- * BaseMapFolderExtension
+ * BaseMapDialogExtension
  * - Provides step state evaluator for BaseMap steps (style, viewport, display)
  * - Steps themselves may be provided by host; evaluator aligns by stepNumber [2,3,4].
  */
@@ -11,15 +11,15 @@ function isValidUrl(u: string | undefined): boolean {
   try { new URL(u); return true; } catch { return false; }
 }
 
-export class BaseMapFolderExtension extends BaseFolderPlugin {
-  readonly pluginId = 'basemap-plugin-folder-extension';
-  readonly pluginName = 'BaseMap (Folder Extension)';
-  readonly pluginDescription = 'Adds BaseMap step evaluators to folder dialog';
+export class BaseMapDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'basemap-plugin-dialog-extension';
+  readonly pluginName = 'BaseMap Dialog Extension';
+  readonly pluginDescription = 'Adds BaseMap step evaluators to plugin dialogs';
   readonly pluginVersion = '1.0.0';
 
   protected getStepStateEvaluator() {
     return {
-      getFilledSteps: (data: any, stepNumbers?: number[]) => {
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
         const nums = stepNumbers || [];
         return nums.map((n) => {
           if (n === 2) {
@@ -44,7 +44,7 @@ export class BaseMapFolderExtension extends BaseFolderPlugin {
           return true;
         });
       },
-      getNavigableSteps: (data: any, stepNumbers?: number[]) => {
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
         const nums = stepNumbers || [];
         // sequential gating: 2 -> 3 -> 4
         const filled = new Map<number, boolean>();
@@ -94,5 +94,5 @@ export class BaseMapFolderExtension extends BaseFolderPlugin {
   }
 }
 
-export const baseMapFolderExtension = new BaseMapFolderExtension();
-export async function initializeBaseMapFolderExtension() { await baseMapFolderExtension.initialize(); }
+export const baseMapDialogExtension = new BaseMapDialogExtension();
+export async function initializeBaseMapDialogExtension() { await baseMapDialogExtension.initialize(); }

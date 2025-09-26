@@ -13,8 +13,8 @@ import type { FolderEntity } from '../entities/FolderEntity.js';
  * Mirrors ui-dialog's StepStateEvaluator but stays local to avoid tight coupling.
  */
 export interface StepArrayEvaluator {
-  getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
-  getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  getEnabledSteps?: (data: any, stepNumbers?: number[]) => boolean[];
+  getValidatedSteps?: (data: any, stepNumbers?: number[]) => boolean[];
 }
 
 /**

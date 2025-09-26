@@ -10,6 +10,7 @@ import {
   resolveAuthRegistry,
 } from './services/download/registry.js';
 import { readRuntimeEnvNumber, readRuntimeEnvValue } from '@hierarchidb/util';
+export { PLUGIN_MANIFEST as RoutePluginManifest } from './extension/plugin-manifest.js';
 import type { RouteAuthNotification as DownloadAuthNotification } from './services/download/registry.js';
 type RouteAuthNotification = DownloadAuthNotification;
 
@@ -46,7 +47,7 @@ export type { RouteAuthNotification } from './services/download/registry.js';
 /**
  * Route Plugin Definition
  */
-// Plugin definition exports removed: metadata is sourced from package.json (hierarchidb.plugin)
+// Plugin definition exports removed: metadata is exposed via src/extension/plugin-manifest.ts
 
 // Optional runtime wiring for shared bootstrap (no shared imports)
 function readNumberEnv(name: string, fallback: number): number {

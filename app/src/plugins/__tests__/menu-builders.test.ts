@@ -42,9 +42,9 @@ describe('menu-builders', () => {
   it('builds projects (t) menu in specified order and groups', () => {
     const items = buildMenuItemsForTreeId('t' as TreeId);
     const nodeTypes = items.map((i) => i.nodeType);
-    expect(nodeTypes).toEqual(['folder', 'project']);
+    expect(nodeTypes).toEqual(['folder', 'linker', 'timeline']);
     const groups = items.map((i) => i.group);
-    expect(groups).toEqual(['core', 'project']);
+    expect(groups).toEqual(['core', 'project', 'project']);
   });
 
   it('builds by context explicitly and matches treeId mapping', () => {

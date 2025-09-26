@@ -67,6 +67,12 @@
       "@hierarchidb/runtime-shared-module-paths/*": [
         "packages/runtime-shared/module-paths/src/*"
       ],
+      "@hierarchidb/ui-file": [
+        "packages/ui/file/src/index.ts"
+      ],
+      "@hierarchidb/ui-file/*": [
+        "packages/ui/file/src/*"
+      ],
       "@hierarchidb/util": [
         "packages/util/src/index.ts"
       ],
@@ -75,6 +81,48 @@
       ],
       "@hierarchidb/plugins-*-plugin/worker-factory": [
         "packages/plugins/*-plugin/src/worker-factory/index.ts"
+      ],
+      "@hierarchidb/common-api": [
+        "packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "packages/common/api/src/*"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog": [
+        "packages/runtime-ui/plugin-dialog/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog/*": [
+        "packages/runtime-ui/plugin-dialog/src/*"
+      ],
+      "@hierarchidb/ui-core": [
+        "packages/ui/core/src/index.ts"
+      ],
+      "@hierarchidb/ui-core/*": [
+        "packages/ui/core/src/*"
+      ],
+      "@hierarchidb/ui-csv-extract": [
+        "packages/ui/csv-extract/src/index.ts"
+      ],
+      "@hierarchidb/ui-csv-extract/*": [
+        "packages/ui/csv-extract/src/*"
+      ],
+      "@hierarchidb/auth-recovery": [
+        "packages/feature/auth-recovery/src/index.ts"
+      ],
+      "@hierarchidb/auth-recovery/*": [
+        "packages/feature/auth-recovery/src/*"
+      ],
+      "@hierarchidb/tabular": [
+        "packages/feature/tabular/src/index.ts"
+      ],
+      "@hierarchidb/tabular/*": [
+        "packages/feature/tabular/src/*"
+      ],
+      "@hierarchidb/table-metadata": [
+        "packages/feature/table-metadata/src/index.ts"
+      ],
+      "@hierarchidb/table-metadata/*": [
+        "packages/feature/table-metadata/src/*"
       ]
     }
   },

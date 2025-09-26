@@ -27,10 +27,10 @@ export type StepTransitionHook = (
  * Returns boolean arrays (length = steps.length).
  */
 export interface StepStateEvaluator {
-  /** Which steps are navigable at this moment (index-based). */
-  getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
-  /** Which steps are currently filled (all required inputs satisfied). */
-  getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  /** Which steps are currently enabled for navigation (index-based). */
+  getEnabledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+  /** Which steps are currently validated (all required inputs satisfied). */
+  getValidatedSteps: (data: any, stepNumbers?: number[]) => boolean[];
 }
 
 /** Submit eligibility evaluator */

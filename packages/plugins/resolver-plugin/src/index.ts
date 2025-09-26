@@ -54,6 +54,8 @@ export async function getDialogComponent(): Promise<ComponentType<ResolverDialog
 // Register host-composed steps on import (idempotent)
 import './ui/steps-provider';
 
+export { PLUGIN_MANIFEST as ResolverPluginManifest } from './extension/plugin-manifest.js';
+
 // Export services (to be implemented)
 // export { MappingCompiler } from './services/MappingCompiler.js';
 // export { ChainManager } from './services/ChainManager.js';

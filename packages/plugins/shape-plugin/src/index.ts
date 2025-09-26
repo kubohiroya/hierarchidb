@@ -15,6 +15,7 @@ export * from './shared/index.js';
 
 //  Backward compatibility -
 export { ShapeMetadata } from './shared/metadata.js';
+export { PLUGIN_MANIFEST as ShapePluginManifest } from './extension/plugin-manifest.js';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types.js';
 export type { ShapeAPI } from './shared/api.js';
 
@@ -41,4 +42,4 @@ export class RuntimeWiring {
 }
 
 // Folder dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
-export { initializeShapeFolderExtension, shapeFolderExtension } from './extensions/ShapeFolderExtension.js';
+export { initializeShapeDialogExtension, shapeDialogExtension } from './extensions/ShapeDialogExtension.js';

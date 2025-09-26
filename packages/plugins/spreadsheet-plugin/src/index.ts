@@ -12,12 +12,13 @@ export type {
 } from './extension/types.js';
 export type { SpreadsheetEntity, SpreadsheetWorkingCopy } from './extension/definition.js';
 export * from './extension/constants.js';
+export { PLUGIN_MANIFEST as SpreadsheetPluginManifest } from './extension/plugin-manifest.js';
 export * from './steps/DataSourceStep.js';
 export * from './steps/FilteringStep.js';
 export * from './services/index.js';
 
 // Folder dialog extension initializer (optional)
-export { initializeSpreadsheetFolderExtension, spreadsheetFolderExtension } from './extensions/SpreadsheetFolderExtension.js';
+export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './extensions/SpreadsheetDialogExtension.js';
 
 // Register UI steps-provider for host-composed dialog (idempotent)
 import './ui/steps-provider';

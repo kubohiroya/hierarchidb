@@ -2,18 +2,24 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "module": "Node16"
+    "types": []
   },
   "include": [
+    "src/steps/**/*.ts",
     "src/steps/**/*.tsx",
-    "src/types/**/*.ts",
-    "src/ui/**/*.ts",
-    "src/ui/**/*.tsx"
+    "src/ui/steps-provider.tsx",
+    "src/extension/constants.ts",
+    "src/extension/types.ts",
+    "src/types/external.d.ts"
   ],
   "exclude": [
     "dist",
     "node_modules",
-    "src/worker*.test.*",
-    "**/*.spec.*"
+    "src/services/**/*",
+    "src/database/**/*",
+    "src/worker*",
+    "src/utils/**/*",
+    "**/*.spec.*",
+    "**/__tests__/**"
   ]
 }

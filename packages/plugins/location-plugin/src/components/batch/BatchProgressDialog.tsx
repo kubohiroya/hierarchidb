@@ -53,6 +53,7 @@ import { LocationVectorTileService } from '../../services/tiles/LocationVectorTi
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
+import { isDevEnvironment } from '../../utils/env.js';
 
 interface ProgressInfo {
   percentage: number;
@@ -225,7 +226,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         const session = (await db.sessions?.get(sessionId)) ?? null;
         if (!cancelled) setTableId(session?.tableId ?? null);
       } catch (error) {
-        if (import.meta.env?.DEV) {
+        if (isDevEnvironment) {
           console.warn('[BatchProgressDialog] failed to load session metadata', error);
         }
       }

@@ -67,6 +67,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/tabular": "workspace:*",

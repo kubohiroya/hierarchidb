@@ -8,20 +8,55 @@ import type { NodeType } from './id-types.js';
 export interface PluginMetadata {
   /** Unique plugin ID (reverse‑DNS or npm style is fine) */
   id: string;
-  /** Human‑readable name */
+  /** Human‑readable package name */
   name: string;
+  /** Display label shown in UI */
+  displayName?: string;
   /** Node type this plugin registers */
   nodeType: NodeType;
   /** Semver string */
   version: string;
 
-  /** Optional fields used by catalogs/registries */
+  /** Optional descriptive fields */
   description?: string;
   author?: string;
   status?: 'active' | 'inactive' | 'error';
   tags?: string[];
-  /** Declared plugin dependencies (by plugin id) */
+
+  /** Plugin inheritance / dependency graph */
+  extends?: string;
+  /** Declared plugin dependencies (by nodeType or plugin id) */
   dependencies?: string[];
+  /** Sorting hint (lower = loaded first) */
+  priority?: number;
+
+  /** Icon hints consumed by UI */
+  icon?: {
+    muiIconName?: string;
+    mui?: string;
+    emoji?: string;
+    color?: string;
+    svg?: string;
+    description?: string;
+  };
+
+  /** Category hint used by menus/catalogs */
+  category?: unknown;
+
+  /** Capability flags surfaced in UI */
+  capabilities?: unknown;
+
+  /** Schema metadata (kept loose to avoid coupling) */
+  schema?: unknown;
+
+  /** Database configuration hints */
+  database?: unknown;
+
+  /** UI configuration hints */
+  ui?: unknown;
+
+  /** Arbitrary additional metadata */
+  extra?: Record<string, unknown>;
 
   /**
    * Hints for entity cross‑references. For example, a field name that stores
@@ -32,4 +67,3 @@ export interface PluginMetadata {
     relRefField?: string;
   };
 }
-
