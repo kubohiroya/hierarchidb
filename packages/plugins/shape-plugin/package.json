@@ -55,7 +55,9 @@
     "dist"
   ],
   "scripts": {
+    "prebuild": "pnpm --filter @hierarchidb/runtime-shared-module-paths build",
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
+    "pretypecheck": "pnpm --filter @hierarchidb/runtime-shared-module-paths build",
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",

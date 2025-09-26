@@ -9,7 +9,14 @@ import type {
 } from '../types.js';
 import { RegexStrategy } from '../strategies/index.js';
 import { DependencyResolver } from '../pipeline/DependencyResolver.js';
-import { loadPluginManifestFromPackageJson } from '../../../../../tools/plugin-manifest-loader.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const {
+  loadPluginManifestFromPackageJson,
+}: typeof import('../../../../../tools/plugin-manifest-loader.js') = require(
+  '../../../../../tools/plugin-manifest-loader.js',
+);
 
 /**
   * HierarchiDB

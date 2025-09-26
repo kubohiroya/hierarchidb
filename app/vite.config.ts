@@ -5,7 +5,7 @@ import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as path from 'path';
-import * as fs from 'fs';
+import {readFileSync} from 'fs';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
@@ -175,7 +175,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   let appVersion = '0.0.0-dev';
   try {
     const pkgPath = path.resolve(__dirname, 'package.json');
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { version?: string };
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version?: string };
     if (pkg?.version) appVersion = pkg.version;
   } catch {
     // no-op: fallback to default version when package.json is not accessible

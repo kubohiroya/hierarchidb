@@ -2,15 +2,20 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": []
+    "types": [
+      "react",
+      "react/jsx-runtime",
+      "react-dom",
+      "react-i18next",
+      "vite/client"
+    ]
   },
   "include": [
     "src/steps/**/*.ts",
     "src/steps/**/*.tsx",
     "src/ui/steps-provider.tsx",
     "src/extension/constants.ts",
-    "src/extension/types.ts",
-    "src/types/external.d.ts"
+    "src/extension/types.ts"
   ],
   "exclude": [
     "dist",

@@ -107,6 +107,10 @@
     - progress: 2025-09-26 17:06 SpeedDial manifest アイコン反映状況を再確認し、未消化 DoD/チェックリスト対応の洗い出しに着手。
     - progress: 2025-09-26 17:29 manifest 由来のアイコン/カラーが `getPresentation` へ伝搬することを検証するユニットテストを追加し、対象ファイルのみ `pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` で手動実行（Worker runtime 既知失敗により suite 全体は `Cannot convert object to primitive value` で赤、要モック調整）
     - progress: 2025-09-26 17:38 Worker runtime 向け統合テストを `WorkerStateStore.test.ts` / `WorkerModuleLoader.test.ts` に分割し、Hoisted mock で依存を差し替え。`pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` により当該テスト群がグリーンで実行されることを確認（`HDB-BOOT` ログは残るが WARN のみ）。
+    - progress: 2025-09-26 18:32 `packages/tools/vite-plugin-package-reader` から `tools/plugin-manifest-loader` を `createRequire` 経由で読み込むよう修正し、`pnpm --filter @hierarchidb/app build` 実行時の `Dynamic require of "fs" is not supported` エラーを解消（`worker-factory` サブパス解決で別途 ENOTDIR が発生するため後続対応が必要）
+    - progress: 2025-09-26 19:44 `@hierarchidb/tools-vite-plugin-package-reader` の CJS 出力を無効化（tsup format を `esm` のみに設定し、`package.json` exports から `require`/`main` を削除）し、`pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build` および `pnpm --filter @hierarchidb/app build` が警告なしで成功することを確認
+    - progress: 2025-09-26 20:05 `@hierarchidb/plugins-shape-plugin/tsconfig.json` で `@hierarchidb/runtime-shared-module-paths` のパスを `dist/index.js` 参照へ切替えて src 直参照を解消し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功することを確認
+    - progress: 2025-09-26 20:07 `@hierarchidb/plugins-spreadsheet-plugin` のローカル型シム `src/types/external.d.ts` を撤去し、`tsconfig.ui.json` で React 系公式型を読み込むよう更新。`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` がグリーンで通ることを確認
 
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/common-type`, `tsup`
@@ -813,6 +817,10 @@
     - progress: 2025-09-26 07:28 basemap-plugin へ `shared/metadata.ts` を追加し manifest を再エクスポート、併せて各プラグインの `tsconfig.json` から `package.json` の `include` 追記を整理
     - progress: 2025-09-26 07:40 `pnpm --filter @hierarchidb/plugins-{folder,basemap,shape,resolver,route,location,linker,spreadsheet,timeline}-plugin typecheck` を順次実行し、既知の styler-plugin StepComponent props 不整合（TS2322）を除きグリーン確認
     - done: 2025-09-26 07:55 styler-plugin の StepComponentProps を新 API に合わせて移行し、`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` が成功
+    - progress: 2025-09-26 08:05 各 plugin-manifest から `toNodeType` 依存を排除し、`NodeType` 型のリテラル定数 (`PLUGIN_NODE_TYPE`) ベースへ移行
+    - progress: 2025-09-26 08:07 `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` を再実行しグリーンを確認
+    - done: 2025-09-26 08:25 node 環境向け vitest 結合テスト（plugin-manifest-integration）を追加し、`pnpm --filter @hierarchidb/tools-plugin-registry-utils test` が成功
+    - done: 2025-09-26 08:30 Vite preset 結合テスト（hierarchidb virtual modules）を追加し、`pnpm --filter @hierarchidb/tools-vite-plugin-package-reader test` が成功
 
 - chore/tools/plugin-registry-alias-automation — node-type プラグイン alias 自動化と共通ユーティリティ整備
   - ブランチ: `chore/tools/plugin-registry-alias-automation`（サンドボックス制約によりローカルでは `main` 上で作業）

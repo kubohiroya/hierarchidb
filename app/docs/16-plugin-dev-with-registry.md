@@ -53,17 +53,18 @@
 ### 2) plugin-manifest.ts（拡張メタデータ）
 ```ts
 // src/extension/plugin-manifest.ts
-import { toNodeType, type PluginMetadata } from '@hierarchidb/common-type';
+import type { NodeType, PluginMetadata } from '@hierarchidb/common-type';
 
 export const PLUGIN_ID = '@hierarchidb/foo-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;
 export const PLUGIN_DESCRIPTION = 'Foo nodes for HierarchiDB' as const;
+export const PLUGIN_NODE_TYPE = 'foo' as NodeType;
 
 export const PLUGIN_MANIFEST: PluginMetadata = {
   id: PLUGIN_ID,
   name: 'Foo Plugin',
   displayName: 'Foo',
-  nodeType: toNodeType('foo'),
+  nodeType: PLUGIN_NODE_TYPE,
   version: PLUGIN_VERSION,
   priority: 10,
   icon: {
@@ -78,7 +79,7 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
 
 export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 ```
-- `nodeType` はプラグインを識別する文字列。`toNodeType()` で型整合性を確保
+- `nodeType` はプラグインを識別する文字列。文字列リテラルに `as NodeType` でブランド型を付与する
 - バージョンや説明などのメタデータは `PACKAGE_VERSION` 定数などとして TypeScript 内で管理する（`package.json` import は不要）
 - `icon.mui`（または `muiIconName`）は MUI Icons の PascalCase 名称
 - 追加の capability/schema などもこのオブジェクトに追記する
