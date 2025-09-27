@@ -52,6 +52,23 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- feat/runtime-ui/dialog-state-channel — PluginDialog と Worker イベントの状態チャネル整備
+  - ブランチ: `feat/runtime-ui/dialog-state-channel`
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/plugins-base-plugin`, `@hierarchidb/ui-dialog`, `@hierarchidb/app`
+  - 受け入れ基準（DoD）：
+    - [ ] Runtime UI に `DialogStateChannel` 型を追加し、`usePluginDialogController` がステップ遷移・閉鎖を購読できる
+    - [ ] Worker からの progress / validation / dismiss イベントが UI に反映され、レースコンディションが発生しない
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck && pnpm --filter @hierarchidb/app typecheck` が成功
+    - [ ] 利用ガイドを `docs/runtime-ui/dialog-state-channel.md`（新規）として整備
+  - チェックリスト：
+    - [ ] `@hierarchidb/plugins-base-plugin` にチャネル用の型定義と登録ヘルパーを追加
+    - [ ] `PluginDialogShell` / `usePluginDialogController` に subscribe/unsubscribe ロジックとクリーンアップ処理を実装
+    - [ ] HeadlessMultiStepDialog の Story/テストでチャネル連携を検証
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test` を実行しグリーンを確認
+  - ロールバック手順：
+    - 追加したチャネル定義・購読処理・ドキュメントをリバートし、従来の props ベース連携へ戻してから `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-27 21:30 DialogStateChannel 型定義と購読実装の設計に着手（Playwright テスト実行は指示により保留）
 - chore/plugins/dialog-naming-align — Folder 拡張の命名を Dialog ベースへ改称し整合性を取る
   - ブランチ: `chore/plugins/dialog-naming-align`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-spreadsheet-plugin`

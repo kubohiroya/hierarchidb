@@ -28,6 +28,7 @@ export type {
   StepArrayEvaluator,
 } from './dialog/NodeDialogExtensionAPI.js';
 export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
+export * from './dialog/DialogStateChannel.js';
 export * from './dialog/NodeDialogPlugin.js';
 export { BaseDialogPlugin } from './dialog/BaseDialogPlugin.js';
 

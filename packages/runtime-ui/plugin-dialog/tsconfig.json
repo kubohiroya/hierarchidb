@@ -18,6 +18,9 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/plugins-base-plugin": [
+        "../../plugins/base-plugin/src/index.ts"
       ]
     }
   },

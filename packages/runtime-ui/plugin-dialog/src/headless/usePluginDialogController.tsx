@@ -43,6 +43,7 @@ import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { StepAdapter } from './StepAdapter.js';
+import { subscribeDialogStateChannel, type DialogStateEvent } from '@hierarchidb/plugins-base-plugin';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -627,6 +628,83 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
     handleCancel().catch(() => void 0);
   }, [handleCancel, onClose]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const dialogKey = typeof nodeId === 'string' && nodeId.length > 0 ? nodeId : String(nodeId);
+    if (!dialogKey) return undefined;
+
+    let disposed = false;
+
+    const unsubscribe = subscribeDialogStateChannel(
+      nodeType,
+      dialogKey,
+      (event: DialogStateEvent) => {
+        if (disposed) return;
+
+        if (event.type === 'progress') {
+          const nextIndex = typeof event.stepIndex === 'number'
+            ? clampIndex(event.stepIndex, steps.length)
+            : event.stepId
+              ? steps.findIndex((step) => step.id === event.stepId)
+              : -1;
+
+          if (nextIndex >= 0 && nextIndex !== activeStepIndex) {
+            setActiveStepIndex(nextIndex);
+            setUrlStep(nextIndex);
+          }
+          return;
+        }
+
+        if (event.type === 'validation') {
+          const targetIndex = typeof event.stepIndex === 'number'
+            ? clampIndex(event.stepIndex, steps.length)
+            : event.stepId
+              ? steps.findIndex((step) => step.id === event.stepId)
+              : -1;
+
+          if (targetIndex >= 0) {
+            setEvaluatedState((prev) => {
+              const previousValidated = Array.from({ length: steps.length }, (_, idx) => prev.validated?.[idx] ?? false);
+              previousValidated[targetIndex] = event.isValid;
+
+              const nextEnabled = Array.from({ length: steps.length }, (_, idx) => {
+                if (idx === 0) return true;
+                return steps
+                  .slice(0, idx)
+                  .every((step, index) => step.optional || previousValidated[index]);
+              });
+              nextEnabled[targetIndex] = true;
+
+              return {
+                enabled: nextEnabled,
+                validated: previousValidated,
+              };
+            });
+          }
+          return;
+        }
+
+        if (event.type === 'dismiss') {
+          handleCloseRequest();
+        }
+      },
+    );
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
+  }, [
+    activeStepIndex,
+    handleCloseRequest,
+    nodeId,
+    nodeType,
+    open,
+    setEvaluatedState,
+    setUrlStep,
+    steps,
+  ]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
