@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 export type Tag = { id: string; name: string; color?: string };
 
@@ -8,7 +8,7 @@ export interface TagInputProps {
   placeholder?: string;
 }
 
-export const TagInput: React.FC<TagInputProps> = ({ value = [], onChange, placeholder }) => {
+export const TagInput: React.FC<TagInputProps> = ({ value = [], placeholder }) => {
   // Minimal stub: render a readonly list to avoid runtime crashes in plugins that expect TagInput.
   return (
     <div data-stub="TagInput" style={{ border: '1px dashed #ccc', padding: 8, borderRadius: 4 }}>

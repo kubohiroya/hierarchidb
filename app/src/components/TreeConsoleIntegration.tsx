@@ -270,7 +270,6 @@ const TreeConsoleIntegrationInner: React.FC<
               break;
             } catch (e) {
               lastErr = e;
-              continue;
             }
           }
           if (!templateData) {

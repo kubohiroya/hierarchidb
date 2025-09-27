@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 
 type Manifest = {
   languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr' | 'rtl' }>
@@ -77,7 +78,6 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
       }
       // Try update without reload if i18next is available
       // Attempt lazy i18n change without hard dependency
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const languageWindow = window as LanguageWindow;
       if (languageWindow.i18next?.changeLanguage) {
         languageWindow.i18next.changeLanguage(next);

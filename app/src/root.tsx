@@ -104,8 +104,7 @@ if (typeof window !== 'undefined') {
     });
 
   // Provide plugin definitions to runtime-ui packages that rely on global injection
-  // @ts-ignore virtual module provided by package-reader
-  import('virtual:plugin-definitions')
+    import('virtual:plugin-definitions')
     .then((mod: { default?: unknown[] }) => {
       (window as Window & { __HDB_PLUGIN_DEFS__?: unknown[] }).__HDB_PLUGIN_DEFS__ = mod?.default || [];
     })
@@ -225,7 +224,7 @@ export function HydrateFallback() {
 }
 
 export function ErrorBoundary() {
-  let error: unknown = useRouteError();
+  const error: unknown = useRouteError();
 
   const isDevelopment = import.meta.env.MODE === 'development';
 

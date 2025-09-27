@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -45,11 +46,11 @@ import {
   Refresh as RefreshIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
-import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+// import { WorkerAPIClient } from '../WorkerAPIClient.js';
+// import type { Remote } from 'comlink';
+// import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeType, TreeId } from '@hierarchidb/common-type';
-import { type PluginDefinition } from '@hierarchidb/common-type';
+import type { PluginDefinition } from '@hierarchidb/common-type';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
@@ -545,7 +546,7 @@ export default function PluginsPage() {
 
     setOperationInProgress(true);
     try {
-      const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
+      // const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
 
       // Delete plugin and its descendants
       for (const plugin of affectedPlugins) {
@@ -581,7 +582,7 @@ export default function PluginsPage() {
 
     setOperationInProgress(true);
     try {
-      const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
+      // const client: Remote<WorkerAPI> = await WorkerAPIClient.getSingleton();
       const affected = affectedPlugins;
 
       // Reset plugin and its descendants
@@ -627,14 +628,15 @@ export default function PluginsPage() {
   };
 
   // Handle reload plugin operation (deprecated - replaced by reset)
+  /*
   const handleReloadPlugin = async (pluginName: string, clearDatabase: boolean) => {
     // This is now handled by handleResetPlugin
     if (clearDatabase) {
       handleResetPlugin(pluginName);
     }
   };
-
-  async function loadPlugins() {
+   */
+  const loadPlugins = useCallback(async function() {
     try {
       setLoading(true);
       // Source of truth: vite virtual module `virtual:plugin-definitions`
@@ -658,11 +660,11 @@ export default function PluginsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadPlugins();
-  }, []);
+  }, [loadPlugins]);
 
   // UI plugins list now comes from vite metadata (uiPluginsList)
 

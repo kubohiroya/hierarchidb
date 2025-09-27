@@ -1,10 +1,10 @@
-import {
-  type NodeAction,
-  type NodeId,
-  type NodeType,
-  type Tree,
-  type TreeId,
-  type TreeNode,
+import type {
+  NodeAction,
+  NodeId,
+  NodeType,
+  Tree,
+  TreeId,
+  TreeNode,
 } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';

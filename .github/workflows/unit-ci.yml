@@ -129,6 +129,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile --force
 
+      - name: Pre-build shared packages
+        run: |
+          pnpm --filter @hierarchidb/plugins-base-plugin build
+          pnpm --filter @hierarchidb/plugins-folder-plugin build
+          pnpm --filter @hierarchidb/ui-icon build
+          pnpm --filter @hierarchidb/ui-data-grid build
+
       - name: Run unit/integration tests
         env:
           # Ensure deep/integration tests stay gated unless explicitly enabled
@@ -175,6 +182,13 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile --force
+
+      - name: Pre-build shared packages
+        run: |
+          pnpm --filter @hierarchidb/plugins-base-plugin build
+          pnpm --filter @hierarchidb/plugins-folder-plugin build
+          pnpm --filter @hierarchidb/ui-icon build
+          pnpm --filter @hierarchidb/ui-data-grid build
 
       - name: Run coverage
         env:

@@ -1,7 +1,7 @@
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
-import { LoadAppConfigReturn } from '~/loader.js';
+import type { LoadAppConfigReturn } from '~/loader.js';
 import { LicenseInfo } from '~/components/LicenseInfo.js';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 
@@ -19,7 +19,7 @@ export function InfoPage({ appConfig }: { appConfig: LoadAppConfigReturn }) {
     <FullScreenDialog
       open={true}
       onClose={() => navigate('/')}
-      title={`About ${appConfig.appTitle}` || 'About ...'}
+      title={appConfig.appTitle ? `About ${appConfig.appTitle}` : 'About ...'}
       subtitle="Application information and licenses"
       icon={<InfoIcon />}
     >

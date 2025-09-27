@@ -3,7 +3,6 @@ import { startTransition, StrictMode } from 'react';
 if (import.meta.env.DEV) import('./dev-health-client.js');
 import { hydrateRoot } from 'react-dom/client';
 import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/plugins-folder-plugin';
-// @ts-ignore
 import { HydratedRouter } from 'react-router/dom';
 
 // Do not wrap HydratedRouter with providers here; SSR markup must match exactly.

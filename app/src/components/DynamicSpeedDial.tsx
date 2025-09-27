@@ -5,13 +5,13 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
 import type { TreeContext } from '~/plugins/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-type';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
@@ -59,7 +59,7 @@ export function DynamicSpeedDial({
   const useVM = vmItems.length > 0;
 
   const handleClose = () => setOpen(false);
-  const handleToggle = () => setOpen((v) => !v);
+  // const handleToggle = () => setOpen((v) => !v);
 
   // Custom outside-click behavior:
   // - Keep menu open on mouse leave/blur
@@ -119,7 +119,7 @@ export function DynamicSpeedDial({
       const rectRoot = root.getBoundingClientRect();
       const rectFab = fab?.getBoundingClientRect();
       const rectActs = actions.map((a) => a.getBoundingClientRect());
-      let topAtFab: string | undefined = undefined;
+      let topAtFab: string | undefined ;
       if (rectFab) {
         const cx = rectFab.left + rectFab.width / 2;
         const cy = rectFab.top + rectFab.height / 2;

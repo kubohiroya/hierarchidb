@@ -1,6 +1,6 @@
-import { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-type';
 import { describe, it, expect } from 'vitest';
-import { buildMenuItemsForContext, buildMenuItemsForTreeId, PluginMenuItem } from '../menu-builders.js';
+import { buildMenuItemsForContext, buildMenuItemsForTreeId, type PluginMenuItem } from '../menu-builders.js';
 
 describe('menu-builders', () => {
   it('maps treeId to context implicitly in buildMenuItemsForTreeId', () => {

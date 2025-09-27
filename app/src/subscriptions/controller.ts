@@ -25,7 +25,7 @@ export class Subscriptions {
   }
 
   static getActive(kind: SubscriptionKind, nodeId: NodeId): SubscriptionInfo | undefined {
-    return this.registry.get(this.key(kind, nodeId));
+    return Subscriptions.registry.get(Subscriptions.key(kind, nodeId));
   }
 
   static async subscribe(
@@ -34,8 +34,8 @@ export class Subscriptions {
     nodeId: NodeId,
     callback: SubscriptionCallback,
   ): Promise<{ subId: SubscriptionId; created: boolean }> {
-    const key = this.key(kind, nodeId);
-    const existing = this.registry.get(key);
+    const key = Subscriptions.key(kind, nodeId);
+    const existing = Subscriptions.registry.get(key);
     if (existing) {
       // Update stored callback reference so callers always get the latest handler
       existing.callback = callback;
@@ -61,7 +61,7 @@ export class Subscriptions {
       throw error;
     }
 
-    this.registry.set(key, {
+    Subscriptions.registry.set(key, {
       subId,
       createdAt: Date.now(),
       callback,
@@ -72,9 +72,9 @@ export class Subscriptions {
   }
 
   static async release(kind: SubscriptionKind, client: Remote<WorkerAPI>, nodeId: NodeId): Promise<void> {
-    const key = this.key(kind, nodeId);
-    const info = this.registry.get(key);
-    this.registry.delete(key);
+    const key = Subscriptions.key(kind, nodeId);
+    const info = Subscriptions.registry.get(key);
+    Subscriptions.registry.delete(key);
     if (!info) return;
 
     try {

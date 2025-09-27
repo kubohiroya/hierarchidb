@@ -25,7 +25,7 @@ interface PeerEntityRecord {
 }
 
 // Generated static plugin loader (prebuild)
-import { peerDbLoaders as generatedPeerDbLoaders, PeerDbLoader, registerUIPersistenceOverrides, type PeerEntitiesDB } from '../generated/loader.js';
+import { peerDbLoaders as generatedPeerDbLoaders, type PeerDbLoader, registerUIPersistenceOverrides, type PeerEntitiesDB } from '../generated/loader.js';
 
 // Initialize UI persistence overrides at module load
 try { registerUIPersistenceOverrides(); } catch { /* ignore */ }

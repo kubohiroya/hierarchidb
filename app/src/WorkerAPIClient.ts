@@ -29,14 +29,14 @@ export class WorkerAPIClient {
    */
   static async initialize(): Promise<void> {
     // Handle based on current state
-    switch (this.state) {
+    switch (WorkerAPIClient.state) {
       case 'initialized':
 
         return;
 
       case 'initializing':
-        if (this.initializationPromise) {
-          return this.initializationPromise;
+        if (WorkerAPIClient.initializationPromise) {
+          return WorkerAPIClient.initializationPromise;
         }
         // If promise is somehow null, fall through to reinitialize
         
@@ -53,24 +53,24 @@ export class WorkerAPIClient {
 
     // Start new initialization
 
-    this.state = 'initializing';
+    WorkerAPIClient.state = 'initializing';
 
-    this.initializationPromise = this.doInitialize()
+    WorkerAPIClient.initializationPromise = WorkerAPIClient.doInitialize()
       .then(() => {
         // Only mark initialized when we've verified readiness (ping or INIT_COMPLETE observed)
-        this.state = this.verified ? 'initialized' : 'initializing';
-        this.lastError = null;
-        this.initializationPromise = null;
+        WorkerAPIClient.state = WorkerAPIClient.verified ? 'initialized' : 'initializing';
+        WorkerAPIClient.lastError = null;
+        WorkerAPIClient.initializationPromise = null;
       })
       .catch((error) => {
         
-        this.state = 'error';
-        this.lastError = error instanceof Error ? error : new Error(String(error));
-        this.initializationPromise = null;
+        WorkerAPIClient.state = 'error';
+        WorkerAPIClient.lastError = error instanceof Error ? error : new Error(String(error));
+        WorkerAPIClient.initializationPromise = null;
         throw error;
       });
 
-    return this.initializationPromise;
+    return WorkerAPIClient.initializationPromise;
   }
 
   private static async doInitialize(): Promise<void> {
@@ -81,7 +81,7 @@ export class WorkerAPIClient {
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
 
       // Set the instance early so Provider fast-paths can see it
-      this.workerInstance = remoteWorker;
+      WorkerAPIClient.workerInstance = remoteWorker;
 
 
       // Test the connection (best-effort). Skip if we already saw INIT_COMPLETE.
@@ -89,10 +89,10 @@ export class WorkerAPIClient {
         const initComplete = Boolean(isWorkerInitCompleted?.());
         if (!initComplete) {
           await remoteWorker.ping();
-          this.verified = true;
+          WorkerAPIClient.verified = true;
         } else {
           
-          this.verified = true;
+          WorkerAPIClient.verified = true;
         }
         
       } catch (pingError) {
@@ -100,14 +100,14 @@ export class WorkerAPIClient {
         // Leave this.verified as false; Provider will wait on channel/event.
       }
 
-      if (!this.workerInstance) {
+      if (!WorkerAPIClient.workerInstance) {
         throw new Error('getWorkerClient returned null');
       }
 
 
     } catch (error) {
       // Clean up on failure
-      this.workerInstance = null;
+      WorkerAPIClient.workerInstance = null;
       throw error;
     }
   }
@@ -116,14 +116,14 @@ export class WorkerAPIClient {
    * Get singleton Worker instance directly
    */
   static getSingleton(): WorkerInterface {
-    if (!this.workerInstance) {
+    if (!WorkerAPIClient.workerInstance) {
       
       throw new NotInitializedError();
     }
-    if (this.state !== 'initialized' && import.meta ?.env?.VITE_WORKERAPI_LOG === '1') {
+    if (WorkerAPIClient.state !== 'initialized' && import.meta ?.env?.VITE_WORKERAPI_LOG === '1') {
       console.warn('[WorkerAPIClient] getSingleton called before initialization');
     }
-    return this.workerInstance;
+    return WorkerAPIClient.workerInstance;
   }
 
   /**
@@ -131,10 +131,10 @@ export class WorkerAPIClient {
    * Safe to call anywhere you would have used getSingleton() + initialize().
    */
   static async getOrInit(): Promise<WorkerInterface> {
-    if (!this.isReady()) {
-      await this.initialize();
+    if (!WorkerAPIClient.isReady()) {
+      await WorkerAPIClient.initialize();
     }
-    return this.getSingleton();
+    return WorkerAPIClient.getSingleton();
   }
 
   /**
@@ -142,16 +142,16 @@ export class WorkerAPIClient {
    * Useful when connection fails and needs to be retried
    */
   static reset(): void {
-    if (this.workerInstance) {
+    if (WorkerAPIClient.workerInstance) {
       // Attempt to terminate raw worker if possible
       const raw = WorkerAPIClient.getRawWorkerInstance();
       raw?.terminate();
     }
-    this.workerInstance = null;
-    this.state = 'uninitialized';
-    this.initializationPromise = null;
-    this.lastError = null;
-    this.verified = false;
+    WorkerAPIClient.workerInstance = null;
+    WorkerAPIClient.state = 'uninitialized';
+    WorkerAPIClient.initializationPromise = null;
+    WorkerAPIClient.lastError = null;
+    WorkerAPIClient.verified = false;
   }
 
 
@@ -161,12 +161,12 @@ export class WorkerAPIClient {
   static isReady(): boolean {
     // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
     const globalInit = typeof window !== 'undefined' && (window as WorkerStatusWindow).__HDB_INIT_COMPLETE__ === true;
-    if (!this.verified && globalInit) this.verified = true;
-    if (this.state !== 'initialized' && this.workerInstance && globalInit) {
-      this.state = 'initialized';
+    if (!WorkerAPIClient.verified && globalInit) WorkerAPIClient.verified = true;
+    if (WorkerAPIClient.state !== 'initialized' && WorkerAPIClient.workerInstance && globalInit) {
+      WorkerAPIClient.state = 'initialized';
       
     }
-    const ready = this.state === 'initialized' && this.workerInstance !== null;
+    const ready = WorkerAPIClient.state === 'initialized' && WorkerAPIClient.workerInstance !== null;
     // Reduce console noise: only log when explicitly enabled
     // To re-enable: set VITE_WORKERAPI_LOG=1
     return ready;

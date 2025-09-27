@@ -4,8 +4,7 @@
  */
 
 // Vite virtual module (types are declared in src/types/shims.d.ts)
-// @ts-ignore
-import { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-type';
 import pluginDefinitions from 'virtual:plugin-definitions';
 import { getPresentation, prefetchAllIcons } from '~/services/plugin-presentation.js';
 import { getMenuSpec } from '~/plugins/menu-spec.js';
@@ -41,6 +40,11 @@ type VMDef = {
   config?: any;
 };
 
+function toArray(): VMDef[] {
+  return (pluginDefinitions as VMDef[]) || [];
+}
+
+/*
 // Category string to default context mapping (fallback when treeId is not provided)
 const CATEGORY_TO_CONTEXT: Record<string, TreeContext | '*'> = {
   core: '*',
@@ -56,10 +60,6 @@ const CATEGORY_TO_GROUP: Record<string, PluginMenuItem['group']> = {
   data: 'document',
   project: 'container',
 };
-
-function toArray(): VMDef[] {
-  return (pluginDefinitions as VMDef[]) || [];
-}
 
 function isForContext(def: VMDef, context: TreeContext): boolean {
   const cfg = def.config || {};
@@ -107,6 +107,7 @@ type MenuSpec = {
   order: string[]; // list of nodeType in display order
   groupOf: Record<string, NonNullable<PluginMenuItem['group']>>; // nodeType -> group
 };
+ */
 
 export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuItem[] {
   const spec = getMenuSpec(treeContext);

@@ -11,7 +11,7 @@ import { BaseMapExtension } from '../extension/definition.js';
 describe('BaseMap Plugin Integration', () => {
   describe('Extension Definition', () => {
     it('should have correct basic structure', () => {
-      expect(BaseMapExtension.extends).toBe('folder-plugin');
+      expect(BaseMapExtension.extends).toBe('folder');
       expect(BaseMapExtension.nodeType).toBe('basemap');
       expect(BaseMapExtension.name).toBe('BaseMap');
       expect(BaseMapExtension.displayName).toBe('ベースマップ');

@@ -1,7 +1,7 @@
 /**
  * React hook to get SpeedDial/Menu items based on tree context
  */
-import { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-type';
 import { useEffect, useState } from 'react';
 import { prefetchMuiIcons } from '@hierarchidb/ui-icon';
 import type { TreeContext } from '~/plugins/menu-builders.js';

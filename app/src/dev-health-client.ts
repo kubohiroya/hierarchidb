@@ -146,11 +146,13 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     return banner;
   };
 
+  /*
   const show = (msg: string) => {
     const el = ensureBanner();
     el.textContent = msg;
     el.style.display = 'block';
   };
+   */
   const showHtml = (html: string) => {
     const el = ensureBanner();
     el.innerHTML = html;
@@ -163,7 +165,6 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   const fmtTime = (ms: number | null) => (ms ? new Date(ms).toLocaleTimeString() : 'n/a');
 
   // 1) Listen to Vite HMR error/success to signal stale runtime
-  // @ts-ignore — Vite HMR event typings are not public
   import.meta.hot?.on('vite:error', (e: any) => {
     errorActive = true;
     console.error('[dev-health] Vite build error — HMR stalled', e);
@@ -174,7 +175,6 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
       : '';
     showHtml(`<span>HMR stalled due to build error. See console.</span>${buildPart}`);
   });
-  // @ts-ignore
   import.meta.hot?.on('vite:afterUpdate', () => {
     errorActive = false;
     hide();
@@ -233,6 +233,5 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     .catch(() => {});
 
   // push updates from server
-  // @ts-ignore
   import.meta.hot?.on('dev-health:update', (payload: any) => updateFromStatus(payload));
 }

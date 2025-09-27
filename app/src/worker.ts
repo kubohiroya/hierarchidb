@@ -70,7 +70,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     }
 
     const registryModule = await import('virtual:plugin-registry-worker').catch(() => null);
-    let pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
+    const pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
 
     // Note: Legacy workerModuleLoaders are no longer generated; pluginMapWorker now provides all loaders.
 

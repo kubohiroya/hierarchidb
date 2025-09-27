@@ -1,6 +1,5 @@
 export function randomUUID(): string {
   if (typeof globalThis !== 'undefined' && globalThis.crypto && 'randomUUID' in globalThis.crypto) {
-    // @ts-ignore
     return globalThis.crypto.randomUUID();
   }
   // Fallback: RFC4122 v4-ish (not cryptographically strong)

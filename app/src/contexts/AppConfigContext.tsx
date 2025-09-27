@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 
 import { loadAppConfig } from '~/loadAppConfig.js';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
