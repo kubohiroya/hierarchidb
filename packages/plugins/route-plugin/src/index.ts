@@ -20,6 +20,7 @@ export type { RouteEntity, RouteWorkingCopy, RouteProcessingConfig, RouteParamet
 export * from './entities/RouteEntityHandler.js';
 export * from './i18n/index.js';
 export { ThrottledPort } from './services/net/ThrottledPort.js';
+export * as worker from './worker/index.js';
 export * from './services/engines/OsrmEngine.js';
 export * from './services/engines/SearouteEngine.js';
 export { createRouteBatchManager } from './services/createRouteBatchManager.js';

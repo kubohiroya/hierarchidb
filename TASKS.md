@@ -126,6 +126,121 @@
     - [x] `ExtensibleFolderDialog` のスタイル定義を見直し、テーマトークンに置換
     - [x] ステップバッジやエラーテキストで MUI パレットを参照するよう更新
     - [x] ダイアログラッパーで `@hierarchidb/ui-dialog` 共通スタイルとの整合を確認
+
+- feat/plugins/worker-factory-rollout（Worker アーキテクチャ整備エピック）
+  - ブランチ: `feat/plugins/worker-factory-rollout`
+  - 対象: `feat/plugins/worker-factory-rollout`, `feat/plugins/progress-type-extract`, `feat/plugins/download-strategy`, `feat/worker/tx-enabled-rollout`, `feat/worker/metrics-default-on`, `test/runtime-worker/regression-hardening`
+  - 目的: Worker 側の動的 import / Progress / Download 戦略 / TX 既定 ON / メトリクスを段階導入し、フラグ OFF の legacy コードを整理する準備
+  - 成果: Worker 周辺フラグが既定 ON で安定し、`chore/worker/remove-*` 系削除タスクに移れる状態
+
+  - feat/plugins/worker-factory-rollout — RuntimeWorkerFactory ベースのプラグイン配線を段階導入
+    - フラグ: `SHAPE_RUNTIME_WORKER`, `LOCATION_RUNTIME_WORKER`, `ROUTE_RUNTIME_WORKER`（既定OFF）
+    - 依存: `@hierarchidb/runtime-worker`, `packages/runtime-worker/worker-bootstrap`, 各プラグイン (`shape`, `location`, `route`)
+    - 受け入れ基準（DoD）:
+      - [ ] 各プラグインの `index.ts` が `worker` 名前空間を輸出し、`createEntityHandler`/`createBatchManager`/`lifecycle` を `wirePluginsFromModules` へ提供
+      - [ ] `RuntimeWiring.registerRuntimeWorkerAdapters` が動的 import で runtime-worker へ接続し、flag ON 時に `wirePluginsFromModules` 経由で実行される
+      - [ ] `pnpm --filter @hierarchidb/plugins-{shape,location,route}-plugin typecheck && pnpm --filter @hierarchidb/runtime-worker typecheck` がグリーン
+    - チェックリスト:
+      - [ ] shape-plugin の worker export を `worker` 名前空間へ整理し、既存実装を移設
+      - [ ] location-plugin へ `worker` export と `registerRuntimeWorkerAdapters` を追加、既存 register ファイルを統合
+      - [ ] route-plugin へ同様の export/配線を実装
+      - [ ] `packages/runtime-worker/worker-bootstrap/src/wiring/wirePlugins.ts` に対応テストを追加
+      - [ ] プラグイン README / docs に runtime worker の有効化手順を追記
+    - ロールバック手順:
+      - 各プラグインの `worker` 名前空間 export をリバートし、`RuntimeWiring.registerRuntimeWorkerAdapters` の import を削除して flag 既定値を 0 に戻す
+
+  - feat/plugins/progress-type-extract — 進捗データ型を common-type へ抽出（UI/Worker 共通化）
+    - フラグ: `WORKER_PROGRESS_COMMON_TYPES`（既定OFF）
+    - 依存: `@hierarchidb/common-type`, `@hierarchidb/runtime-worker`, `@hierarchidb/ui-core`
+    - 受け入れ基準（DoD）:
+      - [ ] フラグ ON で runtime-worker → UI (WorkerAPIClient) の progress イベントが `BatchProgress` で統一され、UI snapshot テストが更新される
+      - [x] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
+      - [x] フラグ OFF で旧 UnifiedProgressInfo 系の挙動が完全非回帰
+    - チェックリスト:
+      - [ ] runtime-worker の `ProgressEventEmitter` を `BatchProgress` 型へリファクタ
+      - [ ] location/shape/route の進捗マッピングを `progressAdapters.ts` 経由に統一
+      - [ ] UI の `useBatchProgress` / `BatchProgressPanel` snapshot を更新
+      - [ ] E2E/統合テストで progress payload schema を検証
+    - ロールバック手順:
+      - フラグを OFF に戻し、adapter/resolver の差分を revert
+    - 現状:
+      - 型定義の抽出は完了。`ui-core` に変換アダプタ（`progressAdapters.ts`）を追加し、location の `useLocationProgress` をアダプタ経由に統一。shape は既存のセッション実装で `ProgressEvent` をシンクしており互換。フラグ ON 時の E2E 確認は未。
+    - 運用ログ:
+      - updated: 2025-09-07 19:55 `progress-types.ts` 追加済を確認。
+      - updated: 2025-09-07 20:20 `ui-core` にアダプタ追加、location フックをアダプタ化、typecheck 緑を確認。
+
+  - feat/plugins/download-strategy — Download 戦略の Strategy 化と runtime-worker 対応
+    - フラグ: `LOCATION_DOWNLOAD_STRATEGY`, `SHAPE_DOWNLOAD_STRATEGY`（既定OFF）
+    - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/download`, `@hierarchidb/util`
+    - 受け入れ基準（DoD）:
+      - [ ] Location: `StrategyRegistry` 経由で download 戦略を差し替え可能になり、flag ON で runtime-worker が Strategy を呼び出す
+      - [ ] Shape: `IShapeDownloadStrategy`/Registry の雛形を追加し、flag ON で worker API が新戦略に到達する
+      - [ ] OFF 時は switch 実装に戻り、`pnpm --filter @hierarchidb/plugins-{location,shape}-plugin test` がグリーン
+    - チェックリスト:
+      - [ ] download strategy interface/registry の型を `@hierarchidb/common-type` へ公開
+      - [ ] runtime-worker の download pipeline を Strategy 化（fallback を含む）
+      - [ ] 既存ダウンロードログのメトリクス出力を更新
+      - [ ] ドキュメント（download 戦略ガイド）を更新
+    - ロールバック手順:
+      - *_DOWNLOAD_STRATEGY フラグを OFF に戻し、Registry 呼び出しと Strategy インポート差分を revert
+    - 現状:
+      - location/shape 双方で Strategy/Registry 実装済（Done へ反映, 2025-09-07）。
+
+  - feat/worker/tx-enabled-rollout — CommandProcessor TX 経路の既定ON化準備
+    - フラグ: `WORKER_TX_ENABLED`（既定OFF）
+    - 依存: runtime-worker の CoreDB 実装（Dexie runInTx 対応）、`feat/plugins/worker-factory-rollout`
+    - 受け入れ基準（DoD）:
+      - [ ] `CommandProcessor` / `StageWorkerClient` の TX 実行経路が flag ON で既定化され、衝突ケースの統合テストが緑
+      - [ ] PrematureCommitError のリトライ/フォールバック方針を docs に明記し、メトリクスで検知可能
+      - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/runtime-worker test` を `WORKER_TX_ENABLED=1` で実行しグリーン
+    - チェックリスト:
+      - [ ] runInTx 対応コマンドの棚卸しと非対応コマンドの TODO 化
+      - [ ] Dexie runInTx の multi-table/upgrade パス検証
+      - [ ] WorkerBootstrap で flag 既定値を true に変更し、UI 側 fallback を整理
+      - [ ] Docs（PLAN-2025-09-10-worker-tx-enabled-default-on.md）を更新
+    - ロールバック手順:
+      - flag 既定を false に戻し、追加したテストを skip
+    - 運用ログ:
+      - start: 2025-09-19 09:30 CommandProcessor からトランザクション内非同期処理を排除する改修要件を整理開始
+      - progress: 2025-09-19 10:05 CommandProcessor にトランザクション実行コンテキストを導入し、peer-entity cleanup をポストコミットに退避
+      - progress: 2025-09-19 10:20 `tx-wrapper.test.ts` にポストコミット検証テストを追加し、非同期処理がトランザクション外で実行されることを確認
+      - progress: 2025-09-19 10:44 fake-indexeddb 向けの `WORKER_TX_ENABLED` 強制 OFF を撤去し、トランザクション有効化状態でテストが安定することを確認
+      - progress: 2025-09-19 10:48 Dexie PrematureCommitError 発生時に非TXへフォールバックするリトライ処理を追加し、fake-indexeddb 環境でも TX ON のまま成功することを確認
+      - progress: 2025-09-19 11:20 Batch Control API v2 を常時有効化し、`BATCH_CONTROL_API_V2` フラグ依存を撤去（ドキュメント更新含む）
+      - progress: 2025-09-19 11:24 Shape/Location/Route 向けの node-type フラグ（tabular/searoute/lane caps/download strategy）を恒久 ON 化し、関連ドキュメントを更新
+      - progress: 2025-09-19 11:28 UI Dialog legacy display mode フラグ `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE` を撤去し、ドキュメントをアーカイブ扱いに整理
+      - done: 2025-09-19 11:29 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test` / `pnpm --filter @hierarchidb/plugins-location-plugin test` を実行しグリーンを確認
+
+  - feat/worker/metrics-default-on — メトリクス機能成熟化
+    - フラグ: `WORKER_METRICS_ENABLED`（既定OFF）
+    - 依存: metrics collector, `feat/worker/tx-enabled-rollout`, `feat/plugins/progress-type-extract`
+    - 受け入れ基準（DoD）:
+      - [ ] 主要コマンドにレイテンシ/件数計測が追加され、UI/CLI のメトリクス画面で確認可能
+      - [ ] 集計結果の上限/リセット戦略を実装し、TX/Retry 時の重複計測を排除
+      - [ ] `WORKER_METRICS_ENABLED` 既定 ON で `pnpm --filter @hierarchidb/runtime-worker test` および `pnpm --filter @hierarchidb/app test` がグリーン
+    - チェックリスト:
+      - [ ] 計測対象コマンドの網羅リストを策定し、Instrumentation を実装
+      - [ ] メトリクス出力の snapshot / integration テストを追加
+      - [ ] 運用ドキュメントとダッシュボード設定を更新
+    - ロールバック手順:
+      - flag 既定を false に戻し、Instrumentation 差分を revert
+    - 後続: `chore/worker/remove-metrics-flag`
+
+  - test/runtime-worker/regression-hardening — Worker TX/Progress/Download/メトリクスの回帰テスト拡充
+    - 依存: 上記 Worker アーキテクチャ系 feat ブランチ
+    - 受け入れ基準（DoD）:
+      - [ ] runtime-worker の統合テストで TX ON / Metrics ON / Download Strategy ON を切り替えるマトリクステストを追加
+      - [ ] `pnpm --filter @hierarchidb/runtime-worker test -- --runInBand` が安定し、fake-indexeddb を含む CI でフレークしない
+      - [ ] WorkerAPIClient 経由の Progress payload の schema バリデーションテストを追加
+    - チェックリスト:
+      - [ ] Jest/Vitest の shared fixtures を整理し、flag 切替 helper を導入
+      - [ ] Metrics collector の e2e テストを追加（統計がリセットされることを確認）
+      - [ ] Download Strategy の回帰テスト（HTTP mock, retry）を追加
+    - ロールバック手順:
+      - 追加テストを revert し、既存の `runtime-worker` テストセットへ戻す
+
+  - 運用ログ:
+    - start: 2025-09-27 14:10 Worker アーキテクチャ整備エピックをブランチ `feat/plugins/worker-factory-rollout` で開始
   - ロールバック手順：
     - `packages/plugins/folder-plugin/src/components/ExtensibleFolderDialog.tsx` の変更を元に戻し、型チェックを再実行
   - 運用ログ：
@@ -1445,120 +1560,7 @@
     - done: 2025-09-14 10:43 `pnpm typecheck:graph` 成功
 
 
-— Worker アーキテクチャ整備（epic） —
-  - 対象: `feat/plugins/worker-factory-rollout`, `feat/plugins/progress-type-extract`, `feat/plugins/download-strategy`, `feat/worker/tx-enabled-rollout`, `feat/worker/metrics-default-on`, `test/runtime-worker/regression-hardening`
-  - 目的: Worker 側の動的 import / Progress / Download 戦略 / TX 既定 ON / メトリクスを段階導入し、フラグ OFF の legacy コードを整理する準備
-  - 成果: Worker 周辺フラグが既定 ON で安定し、`chore/worker/remove-*` 系削除タスクに移れる状態
-
-- feat/plugins/worker-factory-rollout — RuntimeWorkerFactory ベースのプラグイン配線を段階導入
-  - ブランチ: `feat/plugins/worker-factory-rollout`
-  - フラグ: `SHAPE_RUNTIME_WORKER`, `LOCATION_RUNTIME_WORKER`, `ROUTE_RUNTIME_WORKER`（既定OFF）
-  - 依存: `@hierarchidb/runtime-worker`, `packages/runtime-worker/worker-bootstrap`, 各プラグイン (`shape`, `location`, `route`)
-  - 受け入れ基準（DoD）:
-    - [ ] 各プラグインの `index.ts` が `worker` 名前空間を輸出し、`createEntityHandler`/`createBatchManager`/`lifecycle` を `wirePluginsFromModules` へ提供
-    - [ ] `RuntimeWiring.registerRuntimeWorkerAdapters` が動的 import で runtime-worker へ接続し、flag ON 時に `wirePluginsFromModules` 経由で実行される
-    - [ ] `pnpm --filter @hierarchidb/plugins-{shape,location,route}-plugin typecheck && pnpm --filter @hierarchidb/runtime-worker typecheck` がグリーン
-  - チェックリスト:
-    - [ ] shape-plugin の worker export を `worker` 名前空間へ整理し、既存実装を移設
-    - [ ] location-plugin へ `worker` export と `registerRuntimeWorkerAdapters` を追加、既存 register ファイルを統合
-    - [ ] route-plugin へ同様の export/配線を実装
-    - [ ] `packages/runtime-worker/worker-bootstrap/src/wiring/wirePlugins.ts` に対応テストを追加
-    - [ ] プラグイン README / docs に runtime worker の有効化手順を追記
-  - ロールバック手順:
-    - 各プラグインの `worker` 名前空間 export をリバートし、`RuntimeWiring.registerRuntimeWorkerAdapters` の import を削除して flag 既定値を 0 に戻す
-
-- feat/plugins/progress-type-extract — 進捗データ型を common-type へ抽出（UI/Worker 共通化）
-  - ブランチ: `feat/plugins/progress-type-extract`
-  - フラグ: `WORKER_PROGRESS_COMMON_TYPES`（既定OFF）
-  - 依存: `@hierarchidb/common-type`, `@hierarchidb/runtime-worker`, `@hierarchidb/ui-core`
-  - 受け入れ基準（DoD）:
-    - [ ] フラグ ON で runtime-worker → UI (WorkerAPIClient) の progress イベントが `BatchProgress` で統一され、UI snapshot テストが更新される
-    - [x] `pnpm --filter @hierarchidb/common-type build && pnpm -r --filter @hierarchidb/{ui-core,location-plugin,shape-plugin} typecheck` がグリーン
-    - [x] フラグ OFF で旧 UnifiedProgressInfo 系の挙動が完全非回帰
-  - チェックリスト:
-    - [ ] runtime-worker の `ProgressEventEmitter` を `BatchProgress` 型へリファクタ
-    - [ ] location/shape/route の進捗マッピングを `progressAdapters.ts` 経由に統一
-    - [ ] UI の `useBatchProgress` / `BatchProgressPanel` snapshot を更新
-    - [ ] E2E/統合テストで progress payload schema を検証
-  - ロールバック手順:
-    - フラグを OFF に戻し、adapter/resolver の差分を revert
-  - 現状: 型定義の抽出は完了。`ui-core` に変換アダプタ（`progressAdapters.ts`）を追加し、location の `useLocationProgress` をアダプタ経由に統一。shape は既存のセッション実装で `ProgressEvent` をシンクしており互換。フラグ ON 時の E2E 確認は未。
-  - 運用ログ:
-    - updated: 2025-09-07 19:55 `progress-types.ts` 追加済を確認。
-    - updated: 2025-09-07 20:20 `ui-core` にアダプタ追加、location フックをアダプタ化、typecheck 緑を確認。
-
-- feat/plugins/download-strategy — Download 戦略の Strategy 化と runtime-worker 対応
-  - ブランチ: `feat/plugins/download-strategy`
-  - フラグ: `LOCATION_DOWNLOAD_STRATEGY`, `SHAPE_DOWNLOAD_STRATEGY`（既定OFF）
-  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/download`, `@hierarchidb/util`
-  - 受け入れ基準（DoD）:
-    - [ ] Location: `StrategyRegistry` 経由で download 戦略を差し替え可能になり、flag ON で runtime-worker が Strategy を呼び出す
-    - [ ] Shape: `IShapeDownloadStrategy`/Registry の雛形を追加し、flag ON で worker API が新戦略に到達する
-    - [ ] OFF 時は switch 実装に戻り、`pnpm --filter @hierarchidb/plugins-{location,shape}-plugin test` がグリーン
-  - チェックリスト:
-    - [ ] download strategy interface/registry の型を `@hierarchidb/common-type` へ公開
-    - [ ] runtime-worker の download pipeline を Strategy 化（fallback を含む）
-    - [ ] 既存ダウンロードログのメトリクス出力を更新
-    - [ ] ドキュメント（download 戦略ガイド）を更新
-  - ロールバック手順:
-    - *_DOWNLOAD_STRATEGY フラグを OFF に戻し、Registry 呼び出しと Strategy インポート差分を revert
-  - 現状: location/shape 双方で Strategy/Registry 実装済（Done へ反映, 2025-09-07）。
-
-- feat/worker/tx-enabled-rollout（CommandProcessor TX 経路の既定ON化準備）
-  - ブランチ: `feat/worker/tx-enabled-rollout`（サンドボックス制約によりローカルでは `main` 上で作業）
-  - フラグ: `WORKER_TX_ENABLED`（既定OFF）
-  - 依存: runtime-worker の CoreDB 実装（Dexie runInTx 対応）、`feat/plugins/worker-factory-rollout`
-  - 受け入れ基準（DoD）:
-    - [ ] `CommandProcessor` / `StageWorkerClient` の TX 実行経路が flag ON で既定化され、衝突ケースの統合テストが緑
-    - [ ] PrematureCommitError のリトライ/フォールバック方針を docs に明記し、メトリクスで検知可能
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/runtime-worker test` を `WORKER_TX_ENABLED=1` で実行しグリーン
-  - チェックリスト:
-    - [ ] runInTx 対応コマンドの棚卸しと非対応コマンドの TODO 化
-    - [ ] Dexie runInTx の multi-table/upgrade パス検証
-    - [ ] WorkerBootstrap で flag 既定値を true に変更し、UI 側 fallback を整理
-    - [ ] Docs（PLAN-2025-09-10-worker-tx-enabled-default-on.md）を更新
-  - ロールバック手順:
-    - flag 既定を false に戻し、追加したテストを skip
-  - 運用ログ:
-    - start: 2025-09-19 09:30 CommandProcessor からトランザクション内非同期処理を排除する改修要件を整理開始
-    - progress: 2025-09-19 10:05 CommandProcessor にトランザクション実行コンテキストを導入し、peer-entity cleanup をポストコミットに退避
-    - progress: 2025-09-19 10:20 `tx-wrapper.test.ts` にポストコミット検証テストを追加し、非同期処理がトランザクション外で実行されることを確認
-    - progress: 2025-09-19 10:44 fake-indexeddb 向けの `WORKER_TX_ENABLED` 強制 OFF を撤去し、トランザクション有効化状態でテストが安定することを確認
-    - progress: 2025-09-19 10:48 Dexie PrematureCommitError 発生時に非TXへフォールバックするリトライ処理を追加し、fake-indexeddb 環境でも TX ON のまま成功することを確認
-    - progress: 2025-09-19 11:20 Batch Control API v2 を常時有効化し、`BATCH_CONTROL_API_V2` フラグ依存を撤去（ドキュメント更新含む）
-    - progress: 2025-09-19 11:24 Shape/Location/Route 向けの node-type フラグ（tabular/searoute/lane caps/download strategy）を恒久 ON 化し、関連ドキュメントを更新
-    - progress: 2025-09-19 11:28 UI Dialog legacy display mode フラグ `UI_DIALOG_ALLOW_LEGACY_DISPLAYMODE` を撤去し、ドキュメントをアーカイブ扱いに整理
-    - done: 2025-09-19 11:29 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test` / `pnpm --filter @hierarchidb/plugins-location-plugin test` を実行しグリーンを確認
-
-- feat/worker/metrics-default-on（メトリクス機能成熟化）
-  - ブランチ: `feat/worker/metrics-default-on`
-  - フラグ: `WORKER_METRICS_ENABLED`（既定OFF）
-  - 依存: metrics collector, `feat/worker/tx-enabled-rollout`, `feat/plugins/progress-type-extract`
-  - 受け入れ基準（DoD）:
-    - [ ] 主要コマンドにレイテンシ/件数計測が追加され、UI/CLI のメトリクス画面で確認可能
-    - [ ] 集計結果の上限/リセット戦略を実装し、TX/Retry 時の重複計測を排除
-    - [ ] `WORKER_METRICS_ENABLED` 既定 ON で `pnpm --filter @hierarchidb/runtime-worker test` および `pnpm --filter @hierarchidb/app test` がグリーン
-  - チェックリスト:
-    - [ ] 計測対象コマンドの網羅リストを策定し、Instrumentation を実装
-    - [ ] メトリクス出力の snapshot / integration テストを追加
-    - [ ] 運用ドキュメントとダッシュボード設定を更新
-  - ロールバック手順:
-    - flag 既定を false に戻し、Instrumentation 差分を revert
-  - 後続: `chore/worker/remove-metrics-flag`
-
-- test/runtime-worker/regression-hardening（Worker TX/Progress/Download/メトリクスの回帰テスト拡充）
-  - ブランチ: `test/runtime-worker/regression-hardening`
-  - 依存: 上記 Worker アーキテクチャ系 feat ブランチ
-  - 受け入れ基準（DoD）:
-    - [ ] runtime-worker の統合テストで TX ON / Metrics ON / Download Strategy ON を切り替えるマトリクステストを追加
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker test -- --runInBand` が安定し、fake-indexeddb を含む CI でフレークしない
-    - [ ] WorkerAPIClient 経由の Progress payload の schema バリデーションテストを追加
-  - チェックリスト:
-    - [ ] Jest/Vitest の shared fixtures を整理し、flag 切替 helper を導入
-    - [ ] Metrics collector の e2e テストを追加（統計がリセットされることを確認）
-    - [ ] Download Strategy の回帰テスト（HTTP mock, retry）を追加
-  - ロールバック手順:
-    - 追加テストを revert し、既存の `runtime-worker` テストセットへ戻す
+— Worker アーキテクチャ整備（epic） — ※2025-09-27 Doing へ移動（詳細は Doing セクションを参照）
 
 
 - chore/tests/add-vitest-coverage（Vitest カバレッジ基盤導入）
