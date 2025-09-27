@@ -20,6 +20,8 @@ test('switches between normal, maximize, and full-screen', async ({ page }) => {
     const dialog = iframe.locator('div', { hasText: 'Headless dialog' }).first();
     await expect(dialog).toBeVisible();
 
+    await expect(iframe.locator('select')).toHaveValue('normal');
+
     const backButton = iframe.getByRole('button', { name: 'Back' });
     await expect(backButton).toBeDisabled();
 
@@ -35,9 +37,22 @@ test('switches between normal, maximize, and full-screen', async ({ page }) => {
     await iframe.locator('select').selectOption('maximize');
     await expect(iframe.locator('select')).toHaveValue('maximize');
 
-  await iframe.locator('select').selectOption('full-screen');
-  await expect(iframe.locator('select')).toHaveValue('full-screen');
+    await iframe.locator('select').selectOption('full-screen');
+    await expect(iframe.locator('select')).toHaveValue('full-screen');
 
+    await iframe.locator('select').selectOption('normal');
+    await expect(iframe.locator('select')).toHaveValue('normal');
+  });
+
+  test('defaults to maximize when story args set', async ({ page }) => {
+    await page.goto(storyUrl('ui-headless-headlessmultistepdialog--maximized-by-default'));
+    const iframe = page.frameLocator('iframe[title="storybook-preview"]');
+
+    await iframe.getByRole('button', { name: 'Open dialog' }).click();
+
+    await expect(iframe.locator('select')).toHaveValue('maximize');
+
+    // ensure we can still toggle back to normal for regression coverage
     await iframe.locator('select').selectOption('normal');
     await expect(iframe.locator('select')).toHaveValue('normal');
   });

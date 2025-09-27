@@ -191,3 +191,4 @@ vitest.config.ts.*.mjs
 /app/.generated/
 /app/src/generated/
 /app/.generated/
+/packages/ui/dialog/storybook-static/

@@ -8,6 +8,7 @@ import {
   useHeadlessStepComponents,
   type StepComponentDescriptor,
   type StepComponentProps,
+  type DialogDisplayMode,
 } from '../index.js';
 
 interface ExampleDraft {
@@ -73,7 +74,6 @@ const steps: ExampleStep[] = [
 
 const meta: Meta<typeof HeadlessStory> = {
   title: 'ui/headless/HeadlessMultiStepDialog',
-  component: HeadlessStory,
 };
 
 export default meta;
@@ -81,16 +81,30 @@ export default meta;
 type Story = StoryObj<typeof HeadlessStory>;
 
 export const Default: Story = {
-  render: () => <HeadlessStory />,
+  args: {
+    initialDisplayMode: 'normal',
+  },
+  render: args => <HeadlessStory {...args} />,
 };
 
-function HeadlessStory() {
+export const MaximizedByDefault: Story = {
+  args: {
+    initialDisplayMode: 'maximize',
+  },
+  render: args => <HeadlessStory {...args} />,
+};
+
+type HeadlessStoryProps = {
+  initialDisplayMode?: DialogDisplayMode;
+};
+
+function HeadlessStory({ initialDisplayMode = 'normal' }: HeadlessStoryProps) {
   const [draft, setDraft] = useState<ExampleDraft>(INITIAL_DRAFT);
   const [open, setOpen] = useState(true);
 
   const stepDescriptors = useHeadlessStepComponents(steps);
   const { dialogProps: navProps, activeStepIndex } = useHeadlessStepNavigation({ stepCount: stepDescriptors.length });
-  const frame = useHeadlessDialogFrame();
+  const frame = useHeadlessDialogFrame({ initialDisplayMode });
   const { isDirty, markDirty, resetDirty } = useHeadlessDirtyFlag();
 
   const invalidMessageMap = useMemo(() => {
@@ -144,11 +158,11 @@ function HeadlessStory() {
                 <div style={{ display: 'flex', gap: 8 }}>
                   <select
                     value={displayMode}
-                    onChange={evt => frame.setDisplayMode(evt.target.value as typeof displayMode)}
+                    onChange={evt => frame.setDisplayMode(evt.target.value as DialogDisplayMode)}
                   >
-                    <option value="standard">Standard</option>
-                    <option value="maximized">Maximized</option>
-                    <option value="fullscreen">Fullscreen</option>
+                    <option value="normal">Normal</option>
+                    <option value="maximize">Maximize</option>
+                    <option value="full-screen">Full screen</option>
                   </select>
                   <button type="button" onClick={() => stepNavigation({ type: 'back' })} disabled={idx === 0}>
                     Back

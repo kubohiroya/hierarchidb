@@ -21,6 +21,12 @@ HierarchiDBの拡張可能なノードタイププラグインシステムです
 | **依存管理** | プラグイン間依存関係の自動解決 | ✅ 完成 |
 | **データベース抽象化** | Dexie.jsベースの自動スキーマ管理 | ✅ 完成 |
 
+#### Runtime Worker Factory 連携
+
+- 各プラグインの `index.ts` は `export * as worker from './worker/index.js'` を公開し、`createEntityHandler` / `createBatchManager` / `lifecycle` を Runtime Worker Factory へ提供します。
+- Worker 側では `wirePluginsFromModules` が上記エクスポートを検出し、`@hierarchidb/runtime-worker` の `entityRegistry` へハンドラを登録します。
+- `RuntimeWiring.registerRuntimeWorkerAdapters` は `SHAPE_RUNTIME_WORKER` や `LOCATION_RUNTIME_WORKER` 等のフラグが有効な場合にだけ runtime-worker を遅延読み込みし、安全に初期化します。
+
 ### 3層アーキテクチャ
 
 ```

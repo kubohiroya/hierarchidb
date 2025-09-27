@@ -1751,6 +1751,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/plugins-base-plugin':
+        specifier: workspace:*
+        version: link:../../plugins/base-plugin
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
         version: link:../../runtime-worker/worker-bootstrap
@@ -2379,31 +2382,6 @@ importers:
       '@types/react-resizable':
         specifier: ^3.0.8
         version: 3.0.8
-
-  packages/ui/dialog2:
-    dependencies:
-      '@emotion/react':
-        specifier: 11.14.0
-        version: 11.14.0(@types/react@18.3.24)(react@18.3.1)
-      '@emotion/styled':
-        specifier: 11.14.0
-        version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)
-      '@mui/material':
-        specifier: ^7.3.2
-        version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-    devDependencies:
-      '@types/react':
-        specifier: ^18.3.24
-        version: 18.3.24
-      '@types/react-dom':
-        specifier: ^18.3.7
-        version: 18.3.7(@types/react@18.3.24)
 
   packages/ui/file:
     dependencies:
