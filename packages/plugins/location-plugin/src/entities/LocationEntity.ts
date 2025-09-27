@@ -59,7 +59,9 @@ export type LocationType =
   // Natural
   | 'mountain'
   | 'lake'
-  | 'river';
+  | 'river'
+  // Interchanges / transportation hubs
+  | 'interchange';
 
 /**
  * Data source for location data

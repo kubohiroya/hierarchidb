@@ -21,8 +21,9 @@ import {
   Grid,
 } from '@mui/material';
 import { Settings } from '@mui/icons-material';
-import type { LocationType, LocationWorkingCopy } from '../../types/index.js';
+import { LocationType, type LocationWorkingCopy } from '../../types/index.js';
 import { type Country, type LocationTypeConfig, SelectionMatrix, type SelectionState } from '../ui/SelectionMatrix.js';
+import { useTranslation } from '../../i18n/index.js';
 
 interface LocationSelectionStepProps {
   workingCopy: LocationWorkingCopy;
@@ -30,10 +31,10 @@ interface LocationSelectionStepProps {
 }
 
 const SAMPLE_COUNTRIES: Country[] = [
-  { code: 'INTL', name: 'その他 (International/Maritime)', continent: 'International' },
-  { code: 'JPN', name: 'Japan', localName: '日本', continent: 'Asia' },
-  { code: 'KOR', name: 'South Korea', localName: '대한민국', continent: 'Asia' },
-  { code: 'CHN', name: 'China', localName: '中国', continent: 'Asia' },
+  { code: 'INTL', name: 'Other (International/Maritime)', continent: 'International' },
+  { code: 'JPN', name: 'Japan', localName: 'Nihon', continent: 'Asia' },
+  { code: 'KOR', name: 'South Korea', localName: 'Daehanminguk', continent: 'Asia' },
+  { code: 'CHN', name: 'China', localName: 'Zhongguo', continent: 'Asia' },
   { code: 'USA', name: 'United States', continent: 'North America' },
   { code: 'GBR', name: 'United Kingdom', continent: 'Europe' },
   { code: 'DEU', name: 'Germany', localName: 'Deutschland', continent: 'Europe' },
@@ -43,51 +44,24 @@ const SAMPLE_COUNTRIES: Country[] = [
   { code: 'CAN', name: 'Canada', continent: 'North America' },
   { code: 'AUS', name: 'Australia', continent: 'Oceania' },
   { code: 'BRA', name: 'Brazil', localName: 'Brasil', continent: 'South America' },
-  { code: 'IND', name: 'India', localName: 'भारत', continent: 'Asia' },
-  { code: 'RUS', name: 'Russia', localName: 'Россия', continent: 'Europe' },
+  { code: 'IND', name: 'India', localName: 'Bharat', continent: 'Asia' },
+  { code: 'RUS', name: 'Russia', localName: 'Rossiya', continent: 'Europe' },
 ];
 
-const LOCATION_TYPES: LocationTypeConfig[] = [
-  {
-    id: 'airport' as LocationType,
-    name: '空港',
-    icon: '✈️',
-    color: '#2196F3',
-    description: '民間・軍用空港、飛行場',
-    estimatedCount: 28000,
-  },
-  {
-    id: 'railway_station' as LocationType,
-    name: '駅',
-    icon: '🚂',
-    color: '#4CAF50',
-    description: '鉄道駅、地下鉄駅',
-    estimatedCount: 45000,
-  },
-  {
-    id: 'port' as LocationType,
-    name: '港',
-    icon: '🚢',
-    color: '#FF9800',
-    description: '商港、漁港、マリーナ',
-    estimatedCount: 12000,
-  },
-  {
-    id: 'government' as LocationType,
-    name: '行政センター',
-    icon: '🏛️',
-    color: '#9C27B0',
-    description: '首都、県庁所在地、市役所',
-    estimatedCount: 8000,
-  },
-  {
-    id: 'government' as LocationType,
-    name: 'IC',
-    icon: '🛣️',
-    color: '#607D8B',
-    description: 'インターチェンジ、ジャンクション',
-    estimatedCount: 15000,
-  },
+interface LocationTypeBaseConfig {
+  id: LocationType;
+  icon: string;
+  color: string;
+  estimatedCount?: number;
+  descriptionKey: string;
+}
+
+const LOCATION_TYPE_BASE: LocationTypeBaseConfig[] = [
+  { id: LocationType.AIRPORT, icon: '✈️', color: '#2196F3', descriptionKey: 'airport', estimatedCount: 28000 },
+  { id: LocationType.RAILWAY_STATION, icon: '🚂', color: '#4CAF50', descriptionKey: 'railway_station', estimatedCount: 45000 },
+  { id: LocationType.PORT, icon: '🚢', color: '#FF9800', descriptionKey: 'port', estimatedCount: 12000 },
+  { id: LocationType.GOVERNMENT, icon: '🏛️', color: '#9C27B0', descriptionKey: 'government', estimatedCount: 8000 },
+  { id: LocationType.INTERCHANGE, icon: '🛣️', color: '#607D8B', descriptionKey: 'interchange', estimatedCount: 15000 },
 ];
 
 interface LocationTypeDetailConfig {
@@ -114,6 +88,11 @@ interface LocationTypeDetailConfig {
     populationMin: number;
     capitalOnly: boolean;
     includeHistorical: boolean;
+  };
+  interchange: {
+    includeInterchanges: boolean;
+    namedOnly: boolean;
+    excludeServiceAreas: boolean;
   };
 }
 
@@ -142,19 +121,37 @@ const DEFAULT_TYPE_CONFIG: LocationTypeDetailConfig = {
     capitalOnly: false,
     includeHistorical: false,
   },
+  interchange: {
+    includeInterchanges: true,
+    namedOnly: false,
+    excludeServiceAreas: false,
+  },
 };
 
 export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                                                                               workingCopy,
                                                                               onUpdate,
                                                                             }) => {
+  const { translations } = useTranslation();
+  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
+  []);
+  const locationTypes = useMemo<LocationTypeConfig[]>(() => LOCATION_TYPE_BASE.map((type) => ({
+    id: type.id,
+    icon: type.icon,
+    color: type.color,
+    estimatedCount: type.estimatedCount,
+    name: translations.locationTypes[type.id] ?? type.id,
+    description: translations.selection.typeDescriptions?.[type.descriptionKey] ?? '',
+  })), [translations]);
+
   const [activeTab, setActiveTab] = useState(0);
   const [typeConfig, setTypeConfig] = useState<LocationTypeDetailConfig>(DEFAULT_TYPE_CONFIG);
 
   const selectionMatrix = useMemo(() => {
     // Convert checkboxState to boolean matrix format
     const matrix: boolean[][] = Array(SAMPLE_COUNTRIES.length).fill(null).map(() =>
-      Array(LOCATION_TYPES.length).fill(false),
+      Array(locationTypes.length).fill(false),
     );
 
     // Fill matrix based on checkboxState
@@ -162,7 +159,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       const countryIndex = SAMPLE_COUNTRIES.findIndex(c => c.code === countryCode);
       if (countryIndex >= 0) {
         Object.entries(typeState as Record<string, boolean>).forEach(([typeId, selected]) => {
-          const typeIndex = LOCATION_TYPES.findIndex(t => t.id === typeId);
+          const typeIndex = locationTypes.findIndex(t => t.id === typeId);
           if (typeIndex >= 0 && countryIndex < matrix.length) {
             matrix[countryIndex]![typeIndex] = !!selected;
           }
@@ -171,7 +168,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     });
 
     return matrix;
-  }, [workingCopy.checkboxState]);
+  }, [locationTypes, workingCopy.checkboxState]);
 
   const handleMatrixChange = useCallback(async () => {
     // Convert matrix to checkboxState format
@@ -200,12 +197,12 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     setActiveTab(newValue);
   };
 
-  const activeType = LOCATION_TYPES[activeTab];
+  const activeType = locationTypes[activeTab];
 
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
-        取得する地点データを選択してください。国と地点タイプの組み合わせでデータを指定できます。
+        {translations.selection.alertMessage}
       </Alert>
 
       {/*
@@ -213,7 +210,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       <Box mb={3}>
         <SelectionMatrix
           countries={SAMPLE_COUNTRIES}
-          locationTypes={LOCATION_TYPES}
+          locationTypes={locationTypes}
           value={selectionMatrix}
           onChange={handleMatrixChange}
           onSelectionChange={handleSelectionChange}
@@ -225,7 +222,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
       <Paper elevation={1} sx={{ p: 3 }}>
         <Box display="flex" alignItems="center" gap={1} mb={2}>
           <Settings color="primary" />
-          <Typography variant="h6">地点タイプ別詳細設定</Typography>
+          <Typography variant="h6">{translations.selection.settingsTitle}</Typography>
         </Box>
 
         <Tabs
@@ -235,7 +232,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
           scrollButtons="auto"
           sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
         >
-          {LOCATION_TYPES.map((type) => (
+          {locationTypes.map((type) => (
             <Tab
               key={type.id}
               label={
@@ -253,7 +250,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
         {activeType && (
           <Box>
             <Typography variant="subtitle1" gutterBottom>
-              {activeType.icon} {activeType.name}の詳細設定
+              {activeType.icon} {formatTemplate(translations.selectionSettings.typeDetailTitle, { type: activeType.name })}
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               {activeType.description}
@@ -271,7 +268,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('airport', { includeHeliports: e.target.checked })}
                       />
                     }
-                    label="ヘリポートを含む"
+                    label={translations.selectionSettings.airport.includeHeliports}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -282,7 +279,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('airport', { activeOnly: e.target.checked })}
                       />
                     }
-                    label="運航中のみ"
+                    label={translations.selectionSettings.airport.activeOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -293,12 +290,16 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('airport', { commercialOnly: e.target.checked })}
                       />
                     }
-                    label="商業便のみ"
+                    label={translations.selectionSettings.airport.commercialOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <Box>
-                    <Typography gutterBottom>最小滑走路長: {typeConfig.airport.minRunwayLength}m</Typography>
+                    <Typography gutterBottom>
+                      {formatTemplate(translations.selectionSettings.airport.minRunwayLengthLabel, {
+                        value: typeConfig.airport.minRunwayLength,
+                      })}
+                    </Typography>
                     <Slider
                       value={typeConfig.airport.minRunwayLength}
                       onChange={(_, value) => handleTypeConfigChange('airport', { minRunwayLength: value })}
@@ -306,9 +307,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                       max={5000}
                       step={100}
                       marks={[
-                        { value: 500, label: '500m' },
-                        { value: 1500, label: '1.5km' },
-                        { value: 3000, label: '3km' },
+                        { value: 500, label: translations.selectionSettings.airport.minRunwayLengthShort },
+                        { value: 1500, label: translations.selectionSettings.airport.minRunwayLengthMedium },
+                        { value: 3000, label: translations.selectionSettings.airport.minRunwayLengthLong },
                       ]}
                     />
                   </Box>
@@ -328,7 +329,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('railway_station', { includeMetro: e.target.checked })}
                       />
                     }
-                    label="地下鉄駅を含む"
+                    label={translations.selectionSettings.railwayStation.includeMetro}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -339,7 +340,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('railway_station', { includeAbandoned: e.target.checked })}
                       />
                     }
-                    label="廃駅を含む"
+                    label={translations.selectionSettings.railwayStation.includeAbandoned}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -350,13 +351,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('railway_station', { intercityOnly: e.target.checked })}
                       />
                     }
-                    label="都市間路線のみ"
+                    label={translations.selectionSettings.railwayStation.intercityOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
-                    label="最小ホーム数"
+                    label={translations.selectionSettings.railwayStation.minPlatformsLabel}
                     value={typeConfig.railway_station.minPlatforms}
                     onChange={(e) => handleTypeConfigChange('railway_station', { minPlatforms: parseInt(e.target.value) || 1 })}
                     size="small"
@@ -378,7 +379,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('port', { includeMarinas: e.target.checked })}
                       />
                     }
-                    label="マリーナを含む"
+                    label={translations.selectionSettings.port.includeMarinas}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -389,7 +390,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('port', { cargoOnly: e.target.checked })}
                       />
                     }
-                    label="貨物港のみ"
+                    label={translations.selectionSettings.port.cargoOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -400,13 +401,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('port', { activeOnly: e.target.checked })}
                       />
                     }
-                    label="稼働中のみ"
+                    label={translations.selectionSettings.port.activeOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
-                    label="最小水深 (m)"
+                    label={translations.selectionSettings.port.minDepthLabel}
                     value={typeConfig.port.minDepth}
                     onChange={(e) => handleTypeConfigChange('port', { minDepth: parseFloat(e.target.value) || 5 })}
                     size="small"
@@ -422,26 +423,26 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth size="small">
-                    <InputLabel>行政レベル</InputLabel>
+                    <InputLabel>{translations.selectionSettings.administrative.adminLevelLabel}</InputLabel>
                     <Select
                       multiple
                       value={typeConfig.government.adminLevels}
                       onChange={(e) => handleTypeConfigChange('government', {
                         adminLevels: Array.isArray(e.target.value) ? e.target.value : [],
                       })}
-                      label="行政レベル"
+                      label={translations.selectionSettings.administrative.adminLevelLabel}
                     >
-                      <MenuItem value={2}>国レベル (2)</MenuItem>
-                      <MenuItem value={4}>州/県レベル (4)</MenuItem>
-                      <MenuItem value={6}>市レベル (6)</MenuItem>
-                      <MenuItem value={8}>区レベル (8)</MenuItem>
+                      <MenuItem value={2}>{formatTemplate(translations.selectionSettings.administrative.adminLevelCountry, { value: 2 })}</MenuItem>
+                      <MenuItem value={4}>{formatTemplate(translations.selectionSettings.administrative.adminLevelState, { value: 4 })}</MenuItem>
+                      <MenuItem value={6}>{formatTemplate(translations.selectionSettings.administrative.adminLevelCity, { value: 6 })}</MenuItem>
+                      <MenuItem value={8}>{formatTemplate(translations.selectionSettings.administrative.adminLevelDistrict, { value: 8 })}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
                     type="number"
-                    label="最小人口"
+                    label={translations.selectionSettings.administrative.minPopulationLabel}
                     value={typeConfig.government.populationMin}
                     onChange={(e) => handleTypeConfigChange('government', { populationMin: parseInt(e.target.value) || 1000 })}
                     size="small"
@@ -456,7 +457,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('government', { capitalOnly: e.target.checked })}
                       />
                     }
-                    label="首都のみ"
+                    label={translations.selectionSettings.administrative.capitalOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -467,7 +468,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
                         onChange={(e) => handleTypeConfigChange('government', { includeHistorical: e.target.checked })}
                       />
                     }
-                    label="過去の首都を含む"
+                    label={translations.selectionSettings.administrative.includeHistorical}
                   />
                 </Grid>
               </Grid>
@@ -475,39 +476,39 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
 
             {/*
 */}
-            {activeType.id === 'government' && (
+            {activeType.id === LocationType.INTERCHANGE && (
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={typeConfig.government.capitalOnly}
-                        onChange={(e) => handleTypeConfigChange('government', { capitalOnly: e.target.checked })}
+                        checked={typeConfig.interchange.includeInterchanges}
+                        onChange={(e) => handleTypeConfigChange('interchange', { includeInterchanges: e.target.checked })}
                       />
                     }
-                    label="インターチェンジのみ"
+                    label={translations.selectionSettings.interchange.includeInterchanges}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={typeConfig.government.includeHistorical}
-                        onChange={(e) => handleTypeConfigChange('government', { includeHistorical: e.target.checked })}
+                        checked={typeConfig.interchange.namedOnly}
+                        onChange={(e) => handleTypeConfigChange('interchange', { namedOnly: e.target.checked })}
                       />
                     }
-                    label="名称付きのみ"
+                    label={translations.selectionSettings.interchange.namedOnly}
                   />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <FormControlLabel
                     control={
                       <Switch
-                        checked={typeConfig.government.includeHistorical}
-                        onChange={(e) => handleTypeConfigChange('government', { includeHistorical: e.target.checked })}
+                        checked={typeConfig.interchange.excludeServiceAreas}
+                        onChange={(e) => handleTypeConfigChange('interchange', { excludeServiceAreas: e.target.checked })}
                       />
                     }
-                    label="SA/PA除外"
+                    label={translations.selectionSettings.interchange.excludeServiceAreas}
                   />
                 </Grid>
               </Grid>

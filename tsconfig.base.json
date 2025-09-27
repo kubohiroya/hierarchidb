@@ -29,60 +29,7 @@
     "composite": false,
     "incremental": false,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "paths": {
-      "@hierarchidb/runtime-shared-batch-processor": [
-        "packages/runtime-shared/batch-processor/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-shared-batch-processor/*": [
-        "packages/runtime-shared/batch-processor/dist/*"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata": [
-        "packages/runtime-shared/fetch-metadata/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata/*": [
-        "packages/runtime-shared/fetch-metadata/dist/*"
-      ],
-      "@hierarchidb/common-type": [
-        "packages/common/types/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-type/*": [
-        "packages/common/types/dist/*"
-      ],
-      "@hierarchidb/download": [
-        "packages/feature/download/dist/index.d.ts"
-      ],
-      "@hierarchidb/download/*": [
-        "packages/feature/download/dist/*"
-      ],
-      "@hierarchidb/util": [
-        "packages/util/dist/index.d.ts"
-      ],
-      "@hierarchidb/util/*": [
-        "packages/util/dist/*"
-      ],
-      "@hierarchidb/plugins-location-plugin/worker": [
-        "packages/plugins/location-plugin/dist/worker/index.d.ts"
-      ],
-      "@hierarchidb/plugins-route-plugin/worker": [
-        "packages/plugins/route-plugin/dist/src/worker/index.d.ts"
-      ],
-      "@hierarchidb/plugins-shape-plugin/worker": [
-        "packages/plugins/shape-plugin/dist/worker/index.d.ts"
-      ],
-      "@hierarchidb/plugins-timeline-plugin/worker": [
-        "packages/plugins/timeline-plugin/dist/worker/index.d.ts"
-      ],
-      "@hierarchidb/ui-core": [
-        "packages/ui/core/dist/src/index.d.ts"
-      ],
-      "@hierarchidb/ui-core/*": [
-        "packages/ui/core/dist/src/*"
-      ],
-      "@hierarchidb/runtime-worker-bootstrap": [
-        "packages/runtime-worker/worker-bootstrap/dist/index.d.ts"
-      ]
-    }
+    "jsx": "react-jsx"
   },
   "exclude": [
     "node_modules",

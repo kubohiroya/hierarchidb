@@ -40,5 +40,5 @@ export class RuntimeWiring {
   }
 }
 
-// Folder dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
-export { initializeShapeFolderExtension, shapeFolderExtension } from './extensions/ShapeFolderExtension.js';
+// Dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
+export { initializeShapeDialogExtension, shapeDialogExtension } from './extensions/ShapeDialogExtension.js';

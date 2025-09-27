@@ -2,7 +2,7 @@
   * Batch Progress Dialog
    */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -53,6 +53,7 @@ import { LocationVectorTileService } from '../../services/tiles/LocationVectorTi
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
+import { useTranslation } from '../../i18n/index.js';
 
 interface ProgressInfo {
   percentage: number;
@@ -123,26 +124,39 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                                                                           onClose,
                                                                           sessionId,
                                                                         }) => {
+  const { translations } = useTranslation();
+  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
+  []);
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
-  const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
+  const datasetId = useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
+  const locationVectorTileService = useMemo(() => new LocationVectorTileService(), []);
+  const { progress: realProgress } = useLocationProgress(locationVectorTileService, sessionId, { autoSubscribe: true });
+  const phaseLabelMap = useMemo(() => ({
+    download: translations.batch.stages.download,
+    filter: translations.batch.stages.filtering,
+    cluster: translations.batch.stages.clustering,
+    index: translations.batch.stages.indexing,
+    complete: translations.batch.progressTitle,
+  }), [translations]);
   const [progress, setProgress] = useState<ProgressInfo>({
     percentage: 0,
     phase: 'download',
-    currentTask: '初期化中...',
+    currentTask: 'Initializing...',
     timeElapsed: '00:00:00',
-    timeRemaining: '計算中...',
+    timeRemaining: 'Calculating...',
     estimatedCompletion: '--:--',
     itemsPerSecond: 0,
     bytesPerSecond: 0,
   });
 
-  const stages: StageInfo[] = [
-    { name: 'ダウンロード', status: 'running', progress: 25, itemsProcessed: 123, totalItems: 500, errors: 0 },
-    { name: 'フィルタリング', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 400, errors: 0 },
-    { name: 'クラスタリング', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 },
-    { name: 'インデックス作成', status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 },
-  ];
+  const stages: StageInfo[] = useMemo(() => [
+    { name: translations.batch.stages.download, status: 'running', progress: 25, itemsProcessed: 123, totalItems: 500, errors: 0 },
+    { name: translations.batch.stages.filtering, status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 400, errors: 0 },
+    { name: translations.batch.stages.clustering, status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 },
+    { name: translations.batch.stages.indexing, status: 'waiting', progress: 0, itemsProcessed: 0, totalItems: 350, errors: 0 },
+  ], [translations]);
 
   const activeTasks: ActiveTask[] = [
     {
@@ -178,13 +192,13 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   ];
 
   const logs: LogEntry[] = [
-    { timestamp: new Date(), level: 'info', source: 'Downloader', message: '日本の空港データダウンロード開始' },
-    { timestamp: new Date(), level: 'info', source: 'Downloader', message: '韓国の鉄道駅データダウンロード開始' },
+    { timestamp: new Date(), level: 'info', source: 'Downloader', message: 'Started downloading Japan airport dataset' },
+    { timestamp: new Date(), level: 'info', source: 'Downloader', message: 'Started downloading South Korea railway dataset' },
     {
       timestamp: new Date(),
       level: 'warning',
       source: 'Downloader',
-      message: '中国の港データでタイムアウト発生、リトライ中',
+      message: 'Timeout detected for China port dataset, retrying',
     },
   ];
 
@@ -222,6 +236,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         const session = (await db.sessions?.get(sessionId)) ?? null;
         if (!cancelled) setTableId(session?.tableId ?? null);
       } catch {
+        // Ignore errors
       }
     })();
     return () => {
@@ -278,10 +293,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     >
       <DialogTitle>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">バッチ処理進捗</Typography>
+          <Typography variant="h6">{translations.batch.dialogTitle}</Typography>
           <Box display="flex" alignItems="center" gap={1}>
             <Chip
-              label={progress.phase}
+              label={phaseLabelMap[progress.phase] ?? progress.phase}
               color="primary"
               size="small"
             />
@@ -305,10 +320,10 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
           />
           <Box display="flex" justifyContent="space-between" mt={1}>
             <Typography variant="caption" color="text.secondary">
-              経過時間: {progress.timeElapsed}
+              {`${translations.batch.elapsed}: ${progress.timeElapsed}`}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              残り時間: {progress.timeRemaining}
+              {`${translations.batch.remaining}: ${progress.timeRemaining}`}
             </Typography>
           </Box>
         </Box>
@@ -316,25 +331,22 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab icon={<Timeline />} label="進捗状況" />
-          <Tab icon={<Assessment />} label="ログ" />
-          <Tab icon={<Map />} label="マッププレビュー" />
-          <Tab icon={<TableView />} label="データテーブル" />
+          <Tab icon={<Timeline />} label={translations.batch.progressTitle} />
+          <Tab icon={<Assessment />} label={translations.batch.logsTitle} />
+          <Tab icon={<Map />} label={translations.batch.mapPreviewTitle} />
+          <Tab icon={<TableView />} label={translations.batch.dataTableTitle} />
         </Tabs>
       </Box>
 
       <DialogContent sx={{ flex: 1, overflow: 'hidden', p: 0 }}>
         {datasetId && <CrossViewSnackbar datasetId={datasetId} />}
-        {(() => {
-          const svc = new LocationVectorTileService();
-          const { progress: realProgress } = useLocationProgress(svc, sessionId, { autoSubscribe: true });
-          const showAuthRequired = realProgress?.stage === 'auth-required';
-          return showAuthRequired ? (
-            <Alert severity="warning" sx={{ m: 2 }}>
-              🔐 認証が必要です — {realProgress?.currentTask || 'Authentication required to continue'}
-            </Alert>
-          ) : null;
-        })()}
+        {realProgress?.stage === 'auth-required' && (
+          <Alert severity="warning" sx={{ m: 2 }}>
+            {formatTemplate(translations.batch.authRequired, {
+              message: realProgress?.currentTask || 'Authentication required to continue',
+            })}
+          </Alert>
+        )}
         {/*
  Tab 1:
 */}
@@ -347,13 +359,13 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      処理済み
+                      {translations.batch.processedLabel}
                     </Typography>
                     <Typography variant="h4" color="primary">
                       {stages.reduce((sum, stage) => sum + stage.itemsProcessed, 0).toLocaleString()}
                     </Typography>
                     <Typography color="textSecondary">
-                      / {stages.reduce((sum, stage) => sum + stage.totalItems, 0).toLocaleString()} 地点
+                      / {stages.reduce((sum, stage) => sum + stage.totalItems, 0).toLocaleString()} {translations.common.points}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -363,13 +375,15 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      スループット
+                      {translations.batch.throughputLabel}
                     </Typography>
                     <Typography variant="h4" color="success.main">
                       {progress.itemsPerSecond.toFixed(1)}
                     </Typography>
                     <Typography color="textSecondary">
-                      地点/秒 ({formatBytes(progress.bytesPerSecond)}/s)
+                      {formatTemplate(translations.batch.throughputUnit, {
+                        rate: formatBytes(progress.bytesPerSecond),
+                      })}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -379,13 +393,13 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                 <Card>
                   <CardContent>
                     <Typography color="textSecondary" gutterBottom>
-                      エラー
+                      {translations.batch.errorsLabel}
                     </Typography>
                     <Typography variant="h4" color="error.main">
                       {stages.reduce((sum, stage) => sum + stage.errors, 0)}
                     </Typography>
                     <Typography color="textSecondary">
-                      件
+                      {translations.common.items}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -395,7 +409,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
-                  処理ステージ
+                  {translations.batch.stageListTitle}
                 </Typography>
                 <Stepper orientation="vertical">
                   {stages.map((stage) => (
@@ -414,7 +428,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                       <StepContent>
                         <Box>
                           <Typography variant="body2" color="text.secondary">
-                            {stage.itemsProcessed.toLocaleString()} / {stage.totalItems.toLocaleString()} 完了
+                            {stage.itemsProcessed.toLocaleString()} / {stage.totalItems.toLocaleString()} {translations.common.points}
                           </Typography>
                           {stage.status === 'running' && (
                             <LinearProgress
@@ -425,7 +439,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
                           )}
                           {stage.errors > 0 && (
                             <Typography variant="body2" color="error">
-                              エラー: {stage.errors} 件
+                              {translations.batch.errorsLabel}: {stage.errors} {translations.common.items}
                             </Typography>
                           )}
                         </Box>
@@ -439,7 +453,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="h6" gutterBottom>
-                  アクティブタスク
+                  {translations.batch.tasksTitle}
                 </Typography>
                 <List>
                   {activeTasks.map(task => (
@@ -523,7 +537,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Alert severity="info">
-              マッププレビューは後続の実装で追加されます
+              {translations.batch.mapPlaceholder}
             </Alert>
           </Box>
         </TabPanel>
@@ -540,31 +554,31 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
 
       <DialogActions>
         <Button onClick={onClose}>
-          閉じる
+          {translations.batch.close}
         </Button>
       </DialogActions>
 
       {/*
 */}
       <SpeedDial
-        ariaLabel="バッチ処理操作"
+        ariaLabel={translations.batch.ariaLabel}
         sx={{ position: 'absolute', bottom: 16, right: 16 }}
         icon={<SpeedDialIcon />}
         direction="up"
       >
         <SpeedDialAction
           icon={isPaused ? <PlayArrow /> : <Pause />}
-          tooltipTitle={isPaused ? '再開' : '一時停止'}
+          tooltipTitle={isPaused ? translations.batch.resumeTooltip : translations.batch.pauseTooltip}
           onClick={isPaused ? handleResume : handlePause}
         />
         <SpeedDialAction
           icon={<Stop />}
-          tooltipTitle="キャンセル"
+          tooltipTitle={translations.batch.cancelTooltip}
           onClick={handleCancel}
         />
         <SpeedDialAction
           icon={<Download />}
-          tooltipTitle="ログエクスポート"
+          tooltipTitle={translations.batch.exportTooltip}
           onClick={() => console.log('Export logs')}
         />
       </SpeedDial>

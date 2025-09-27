@@ -8,13 +8,14 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 import type { DialogStepDefinition } from '@hierarchidb/common-type';
-import { BaseFolderPlugin } from '@hierarchidb/plugins-folder-plugin';
+import { BaseDialogPlugin } from '@hierarchidb/plugins-folder-plugin';
 
 /**
  * Styler extension data
@@ -42,8 +43,9 @@ const StylerConfigStep: React.FC<{
   isSubmitting?: boolean;
 }> = ({ data, onChange, errors, isSubmitting }) => {
   const handleStyleTypeChange = useCallback(
-    (e: any) => {
-      onChange({ ...data, styleType: e.target.value });
+    (event: SelectChangeEvent<StylerData['styleType']>) => {
+      const value = event.target.value;
+      onChange({ ...data, styleType: value === '' ? undefined : value });
     },
     [data, onChange],
   );
@@ -56,8 +58,8 @@ const StylerConfigStep: React.FC<{
   );
 
   const handleColorSchemeChange = useCallback(
-    (e: any) => {
-      onChange({ ...data, colorScheme: e.target.value });
+    (event: SelectChangeEvent<StylerData['colorScheme']>) => {
+      onChange({ ...data, colorScheme: event.target.value as StylerData['colorScheme'] });
     },
     [data, onChange],
   );
@@ -288,12 +290,12 @@ const CategoryMappingStep: React.FC<{
 };
 
 /**
- * Styler extension for the Folder plugin
+ * Styler dialog extension for node configuration
  */
-export class StylerFolderExtension extends BaseFolderPlugin {
+export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
   readonly pluginId = 'styler-plugin-folder-plugin-extension';
-  readonly pluginName = 'Styler for Folders';
-  readonly pluginDescription = 'Adds map visualization capabilities to folders';
+  readonly pluginName = 'Styler Dialog Extension';
+  readonly pluginDescription = 'Adds map visualization capabilities to the shared node dialog';
   readonly pluginVersion = '1.0.0';
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
@@ -369,47 +371,46 @@ export class StylerFolderExtension extends BaseFolderPlugin {
   }
 
   protected getStepStateEvaluator() {
+    const evaluateValidated = (data: StylerData, stepNumbers?: number[]) => {
+      const steps = stepNumbers || [];
+      return steps.map((num) => {
+        if (num === 10) {
+          if (!data?.styleType) return true;
+          if (!data?.dataSource) return false;
+          if (data.minValue !== undefined && data.maxValue !== undefined) {
+            return data.minValue < data.maxValue;
+          }
+          return true;
+        }
+        if (num === 20) {
+          const cats: string[] | undefined = data?.categories;
+          if (!cats) return true;
+          if (cats.length > 50) return false;
+          const unique = new Set(cats);
+          return unique.size === cats.length;
+        }
+        return true;
+      });
+    };
+
+    const evaluateEnabled = (data: StylerData, stepNumbers?: number[]) => {
+      const steps = stepNumbers || [];
+      const hasStyleDecision = !data?.styleType || !!data?.dataSource;
+      return steps.map((num) => {
+        if (num === 10) return true;
+        if (num === 20) return hasStyleDecision;
+        return true;
+      });
+    };
+
     return {
-      getFilledSteps: (data: any, stepNumbers?: number[]) => {
-        const steps = stepNumbers || [];
-        return steps.map((num) => {
-          // style-config (order 10):
-          if (num === 10) {
-            // If styleType is selected, dataSource must be present and min<max when both provided
-            if (!data?.styleType) return true; // not selecting style keeps it optional/filled
-            if (!data?.dataSource) return false;
-            if (data.minValue !== undefined && data.maxValue !== undefined) {
-              return data.minValue < data.maxValue;
-            }
-            return true;
-          }
-          // category-mapping (order 20): duplicates not allowed, <=50 items
-          if (num === 20) {
-            const cats: string[] | undefined = data?.categories;
-            if (!cats) return true; // optional
-            if (cats.length > 50) return false;
-            const unique = new Set(cats);
-            return unique.size === cats.length;
-          }
-          // Other steps unaffected
-          return true;
-        });
-      },
-      getNavigableSteps: (data: any, stepNumbers?: number[]) => {
-        const steps = stepNumbers || [];
-        // Allow navigation to style-config always; category-mapping requires style-config decision
-        const hasStyleDecision = !data?.styleType || !!data?.dataSource;
-        return steps.map((num, _idx) => {
-          if (num === 10) return true;
-          if (num === 20) return hasStyleDecision;
-          return true;
-        });
-      },
+      getEnabledSteps: evaluateEnabled,
+      getValidatedSteps: evaluateValidated,
     };
   }
 
   protected getSubmitEligibility() {
-    return (data: any) => {
+    return (data: StylerData) => {
       // If styleType selected, enforce dataSource present and min<max (when both present)
       if (data?.styleType) {
         if (!data?.dataSource) return false;
@@ -494,8 +495,8 @@ export class StylerFolderExtension extends BaseFolderPlugin {
 }
 
 // Create and export singleton instance
-export const stylerFolderExtension = new StylerFolderExtension();
+export const stylerDialogExtension = new StylerDialogExtension();
 
-export async function initializeStylerFolderExtension() {
-  await stylerFolderExtension.initialize();
+export async function initializeStylerDialogExtension() {
+  await stylerDialogExtension.initialize();
 }

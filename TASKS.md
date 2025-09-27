@@ -52,6 +52,35 @@
 ## Kanban（このファイルで運用） <a id="kanban"></a>
 
 ### Doing（進行中） <a id="kanban-doing"></a>
+- chore/plugins/dialog-naming-align — Folder 拡張の命名を Dialog ベースへ改称し整合性を取る
+  - ブランチ: `chore/plugins/dialog-naming-align`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-spreadsheet-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `BaseFolderPlugin` を `BaseDialogPlugin` に改称し、関連ファイル/エクスポートを更新
+    - [x] basemap/spreadsheet 拡張を `*DialogExtension` 命名へ統一し、関連初期化関数とエイリアスを整備
+    - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-{basemap,spreadsheet}-plugin build` が成功
+    - [x] 変更内容と検証結果を `TASKS.md` の運用ログに記録
+  - チェックリスト：
+    - [x] フォルダ拡張ベースクラス/ファイル名/コメントを Dialog 前提で更新
+    - [x] basemap/spreadsheet 拡張ファイル名・クラス名・エクスポートを改称
+    - [x] 既存初期化ヘルパーや register-default-extensions の参照を更新
+  - ロールバック手順：
+    - ファイル名とクラス名を元に戻し、関連 import/export を復旧させた後、各パッケージの build/typecheck を再実行
+
+- fix/basemap/step-evaluator-contract — BaseMapDialogExtension のステップ評価APIを BaseDialogPlugin に整合させる修正
+  - ブランチ: `fix/basemap/step-evaluator-contract`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-folder-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `pnpm --filter @hierarchidb/plugins-basemap-plugin build` が成功し、TS2416 が再発しない
+    - [x] `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` が成功する
+    - [x] 修正内容と検証結果を `TASKS.md` の運用ログに記録
+  - チェックリスト：
+    - [x] `getStepStateEvaluator` の戻り値を `getNavigableSteps` / `getFilledSteps` へ改名し契約を満たす
+    - [x] basemap extension の評価ロジックが従来どおり機能することを手動確認
+    - [x] 依存する folder-plugin 側の API 変更有無を確認
+  - ロールバック手順：
+    - 変更をリバートし、必要に応じて folder-plugin の契約を再確認後 `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行
+
 - chore/app/map-chunk-warning-limit — Map モジュールのビルドチャンク警告を抑制
   - ブランチ: `chore/app/map-chunk-warning-limit`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`
@@ -424,7 +453,7 @@
     - 追加したヘルパーと import を削除して既存 `component` 設定へ戻し、`pnpm --filter @hierarchidb/plugins-*-plugin typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-20 14:10 StepComponent ラッパー統合作業に着手
-    - progress: 2025-09-20 14:22 folder-plugin に `wrapDialogStepComponent` を追加し BaseFolderPlugin / ExtensibleFolderDialog へ適用
+    - progress: 2025-09-20 14:22 folder-plugin に `wrapDialogStepComponent` を追加し BaseDialogPlugin / ExtensibleFolderDialog へ適用
     - progress: 2025-09-20 14:30 shape/styler のフォルダ拡張と extension 定義を共通ヘルパー経由に統一
     - progress: 2025-09-20 14:38 `pnpm --filter @hierarchidb/plugins-folder-plugin build` を実行し新エクスポートを dist へ反映
     - done: 2025-09-20 14:40 `pnpm --filter @hierarchidb/plugins-{folder,shape,styler}-plugin typecheck` を順次実行し全て成功
@@ -841,7 +870,7 @@
     - progress: 2025-09-20 01:35 shape-plugin の GroupStore / バッチ起動 API を型安全化し、shape-plugin 26 件 / ワークスペース 693 件を確認。
     - progress: 2025-09-20 01:55 shape-plugin の Map preview / BatchProgressSplitView / Worker API / utils を型安全化し、shape-plugin 11 件 / ワークスペース 678 件を確認 (残りはテスト・モック)。
     - progress: 2025-09-20 02:10 shape-plugin の extension handler / dialog steps の `as any` を解消し、実装コードは 0 件・ワークスペース合計 667 件を確認 (残りはテスト/モック)。
-    - progress: 2025-09-20 02:25 folder-plugin の BaseFolderPlugin / folder-host / group store / default extension init を型安全化し、フォルダ系実装の `as any` を排除。ワークスペース 651 件を確認。
+    - progress: 2025-09-20 02:25 folder-plugin の BaseDialogPlugin / folder-host / group store / default extension init を型安全化し、フォルダ系実装の `as any` を排除。ワークスペース 651 件を確認。
     - progress: 2025-09-20 02:45 location-plugin の Dialog/Panel/BatchProgress UI を公式型へ揃え、公開アダプタと Dexie 参照から `as any` を撤廃。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` 実行および `pnpm as-any:report` で location-plugin 0 件 / ワークスペース 533 件を確認。
     - progress: 2025-09-20 07:50 runtime-worker CommandProcessor のバッチ操作／Trash ホルダー処理を正式型へ統一し、superRoot 系ノードの Trash 解決も型安全に対応。`pnpm --filter @hierarchidb/runtime-worker typecheck`・`pnpm --filter @hierarchidb/runtime-worker test:run`・`pnpm as-any:report` を実行し、runtime-worker 66 件 / ワークスペース 469 件を確認。
     - progress: 2025-09-20 07:55 styler-plugin の StylerEntityHandler から `as any` を除去し、Spreadsheet ハンドラ戻り値を正式型でアンラップ。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` → `pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` を実行し、`pnpm as-any:report` で styler-plugin 18 件 / ワークスペース 421 件を確認。
@@ -1238,6 +1267,13 @@
     - blocked: 2025-09-14 10:49 route-plugin 追加で `rootDir` 越境/`paths` 直参照により多数エラー。
       - B-対応: 2025-09-14 10:52 ルート `tsconfig.base.json` の `paths`（workspace src 直参照）を撤去。
       - 再検証: 2025-09-14 10:54 `packages/plugins/route-plugin` を references に追加 → `pnpm typecheck:graph` 成功。
+    - progress: 2025-09-27 09:22 `tsconfig.base.json` から dist/*.d.ts を参照する `paths` ブロックを除去し、`node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` が `[policy] OK` となることを確認。
+      - 検証: 2025-09-27 09:24 `pnpm -w typecheck` / `pnpm typecheck:graph` を実行し、いずれもグリーンであることを確認。
+    - progress: 2025-09-27 10:05 ルート `dts:quick` を location/route/timeline 系パッケージまで拡充し、`pretypecheck*` フックで `pnpm run dts:quick` を自動実行するよう統合。
+      - メモ: `@hierarchidb/plugins-shape-plugin` は `getStepStateEvaluator` 未更新で `tsup` が失敗するため一時除外（別タスクで解消予定）。
+    - progress: 2025-09-27 10:18 `@hierarchidb/plugins-shape-plugin` の `getStepStateEvaluator` を新/旧両インターフェース両対応に更新し、`pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認。
+      - 検証: 2025-09-27 10:20 `pnpm dts:quick` を再実行し、全対象パッケージの宣言ビルドが成功。
+    - progress: 2025-09-27 10:23 `pnpm -w lint` を実行し、既知の TypeScript バージョン警告のみで全ワークスペースがグリーンであることを確認。
 
 - chore/build/tsc-project-refs-phase11 — runtime-worker と UI コア層を solution 参照に追加
   - ブランチ: `chore/build/tsc-project-refs-phase11`
@@ -3837,7 +3873,24 @@ P2:
   - [ ] tools（Vite）側の feature 自動検出（仮想モジュール）検討（後続）
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
+- 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
+- 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
+- 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新
+- 2025-09-27 18:38 progress: chore/plugins/dialog-naming-align — `pnpm --filter @hierarchidb/plugins-folder-plugin {typecheck,build}` を順次実行し、新しい `BaseDialogPlugin` エクスポートが生成されることを確認
+- 2025-09-27 18:42 progress: chore/plugins/dialog-naming-align — `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行し、`BaseMapDialogExtension` への置き換え後もビルドが成功することを確認
+- 2025-09-27 18:45 progress: chore/plugins/dialog-naming-align — `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build` を実行し、新しい `SpreadsheetDialogExtension` の型が問題なく生成されることを確認
+- 2025-09-27 18:50 progress: chore/plugins/dialog-naming-align — `pnpm --filter @hierarchidb/plugins-shape-plugin build` / `pnpm --filter @hierarchidb/plugins-styler-plugin build` を実行し、改称後も関連パッケージがビルドできることを確認
+- 2025-09-27 18:55 done: chore/plugins/dialog-naming-align — Dialog 系命名への改称とビルド検証が完了
+- 2025-09-27 18:07 start: fix/basemap/step-evaluator-contract — @hierarchidb/plugins-basemap-plugin の build 失敗 (TS2416) を再現し、BaseDialogPlugin 契約の差分を調査開始
+- 2025-09-27 18:15 progress: fix/basemap/step-evaluator-contract — `BaseMapDialogExtension.getStepStateEvaluator` の戻り値を `getNavigableSteps`/`getFilledSteps` へ改名し、フォルダ拡張 API と整合させる修正を適用
+- 2025-09-27 18:19 progress: fix/basemap/step-evaluator-contract — `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行し、TS2416 が解消されたことを確認
+- 2025-09-27 18:22 progress: fix/basemap/step-evaluator-contract — `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` を実行し、追加エラーがないことを確認
 
+- 2025-09-27 09:05 start: chore/build/tsc-project-refs-phase10 — dist/*.d.ts パス別名の再発調査に着手。
+- 2025-09-27 09:26 done: chore/build/tsc-project-refs-phase10 — `tsconfig.base.json` から dist 参照の `paths` を削除し、`node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` / `pnpm -w typecheck` / `pnpm typecheck:graph` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` を実行してすべてグリーンを確認。
+- 2025-09-27 10:05 progress: chore/build/tsc-project-refs-phase10 — `dts:quick` を location/route/timeline パッケージまで拡充し、`pretypecheck*` フックで型検証前に自動実行するよう統合（shape-plugin は既知課題のため除外）。
+- 2025-09-27 10:18 progress: chore/build/tsc-project-refs-phase10 — shape-plugin の `getStepStateEvaluator` を両インターフェース対応へ更新し、`pnpm --filter @hierarchidb/plugins-shape-plugin build` と `pnpm dts:quick` が成功することを確認。
+- 2025-09-27 10:23 progress: chore/build/tsc-project-refs-phase10 — `pnpm -w lint` を実行し、共有 lint DoD を満たすことを確認。
 - 2025-09-22 10:24 start: chore/app/map-chunk-warning-limit — map.js チャンク警告を抑制する閾値調整に着手。
 - 2025-09-22 10:26 progress: chore/app/map-chunk-warning-limit — `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加。
 - 2025-09-22 10:27 blocked: chore/app/map-chunk-warning-limit — `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（差分影響なし）。
@@ -4151,3 +4204,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - progress: `pnpm dts:quick` を再実行し、UI Core / Runtime UI Plugin Dialog を含む 25 パッケージのビルド＆宣言出力が CI スクリプト経由でグリーンで完了することを確認。
 - progress: `rg "\\.pnpm/node_modules" -n` で全リポジトリを棚卸しし、Runtime Worker 系以外に `.pnpm` 直参照がないことを確認。Runtime Worker での参照はいずれも公式型宣言（comlink / rxjs / @types/vt-pbf / @maplibre/vt-pbf）向けである点も再確認。
 - next: Runtime Worker 以外で外部ベンダ型が必要になった場合は、dist 参照またはベンダ提供の公式 .d.ts を優先採用する方針を共有。
+- progress: `pnpm exec dep-fence --strict` を再実行し、全パッケージが policy チェックを通過することを確認（`@hierarchidb/ui-core` の dist 参照統一と timeline-plugin のローカル shim 削除後）。
+- progress: `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` / `pnpm dts:quick` を再走させ、型定義の参照調整がグリーンで完了することを確認。
+- note: `packages/common/types/scripts/emit-ambient.mjs` を拡張し、`src/@types` 配下の宣言を dist にコピー＆ `index.d.ts` へ参照追加することで、局所 shim に頼らず `react-transition-group/Transition` 型を解決できるようにした。
+- progress: `pnpm -w typecheck` / `pnpm -w lint` を実行し、ともに成功を確認（location-plugin/styler-plugin の型修正後）。
+- progress: location-plugin と styler-plugin の `getStepStateEvaluator` を新インターフェース（`getEnabledSteps`/`getValidatedSteps`）へ合わせ、app ローダーの型警告も `Record<string, unknown>` 経由で解消。
+- progress: `scripts/dep-fence-extra.mjs` で検知されていた各パッケージの `tsconfig` パス上書きを整理し、`~/*` のみ残す形に統一。再度 `node scripts/dep-fence-extra.mjs` を実行して警告ゼロを確認。

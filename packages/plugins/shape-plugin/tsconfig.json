@@ -13,20 +13,7 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/ui-core": ["../../ui/core/dist/src/index.d.ts"],
-      "@hierarchidb/runtime-ui-plugin-dialog": ["../../runtime-ui/plugin-dialog/dist/index.d.ts"],
-      "@hierarchidb/runtime-worker": ["../../runtime-worker/worker/dist/index.d.ts"],
-      "@hierarchidb/runtime-worker-bootstrap": ["../../runtime-worker/worker-bootstrap/dist/index.d.ts"],
-      "@hierarchidb/common-api": ["../../common/api/dist/index.d.ts"],
-      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
-      "@hierarchidb/util": ["../../util/dist/index.d.ts"],
-      "@hierarchidb/runtime-shared-batch-processor": ["../../runtime-shared/batch-processor/dist/index.d.ts"],
-      "@hierarchidb/download": ["../../feature/download/dist/index.d.ts"],
-      "@hierarchidb/tabular-store": ["../../feature/tabular-store/dist/index.d.ts"],
-      "@hierarchidb/auth-recovery": ["../../feature/auth-recovery/dist/index.d.ts"],
-      "@hierarchidb/batch": ["../../feature/batch/dist/index.d.ts"],
-      "@hierarchidb/plugins-folder-plugin": ["../folder-plugin/dist/index.d.ts"]
+      ]
     },
     "module": "Node16"
   },

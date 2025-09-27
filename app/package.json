@@ -6,10 +6,9 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "predev": "node ../scripts/generate-plugin-loader.mjs && pnpm -w run check:deps:extra",
-    "prebuild": "node ../scripts/generate-plugin-loader.mjs",
+    "prebuild": "node ../scripts/generate-plugin-loader.mjs && node ../scripts/prebuild-app.mjs",
     "dev": "react-router dev",
     "test": "vitest run",
-    "prebuild": "node ../scripts/prebuild-app.mjs",
     "build": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode production && node scripts/fix-spa-build.js && touch build/client/assets/.nojekyll",
     "build:dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",

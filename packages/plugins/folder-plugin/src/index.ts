@@ -10,8 +10,8 @@ export * from './entities/FolderEntity.js';
 // Export plugin definition for worker consumption
 // Plugin definition export removed: metadata is sourced from package.json
 
-// Export BaseFolderPlugin for extensions to extend
-export * from './base/BaseFolderPlugin.js';
+// Export BaseDialogPlugin for dialog-based extensions
+export * from './base/BaseDialogPlugin.js';
 export { wrapDialogStepComponent } from './base/wrapDialogStepComponent.js';
 
 // Convenience initializer to register common extensions

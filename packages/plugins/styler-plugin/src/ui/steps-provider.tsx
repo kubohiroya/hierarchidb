@@ -2,8 +2,30 @@ import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtim
 import { StylerStep5 } from '../components/steps/StylerStep5.js';
 import { StylerStep6 } from '../components/steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
-import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/plugins-spreadsheet-plugin';
-import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/plugins-spreadsheet-plugin';
+import {
+  DataSourceStep as SpreadsheetDataSourceStep,
+  FilteringStep as SpreadsheetFilteringStep,
+} from '@hierarchidb/plugins-spreadsheet-plugin';
+
+type SpreadsheetDataSourceProps = {
+  data: any;
+  onNext: (data: any) => void;
+  onPrevious: () => void;
+  errors?: string[];
+};
+
+type SpreadsheetFilteringProps = {
+  data: any;
+  onNext: (data: any) => void;
+  onPrevious: () => void;
+  errors?: string[];
+};
+
+type ISpreadsheetDataSourceComponent = (props: SpreadsheetDataSourceProps) => JSX.Element;
+type ISpreadsheetFilteringComponent = (props: SpreadsheetFilteringProps) => JSX.Element;
+
+const SpreadsheetDataSourceComponent = SpreadsheetDataSourceStep as unknown as ISpreadsheetDataSourceComponent;
+const SpreadsheetFilteringComponent = SpreadsheetFilteringStep as unknown as ISpreadsheetFilteringComponent;
 
 type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();
@@ -17,10 +39,16 @@ registry.registerConfigProvider({
         id: 'data-source',
         label: 'Data Source',
         componentFactory: (p: P) => (
-          <SpreadsheetDataSourceStep
+          <SpreadsheetDataSourceComponent
             data={p.data}
-            onNext={() => void 0}
-            onPrevious={() => void 0}
+            onNext={(next: unknown) => {
+              p.onChange(next);
+              p.setValid(true);
+              p.setError(null);
+            }}
+            onPrevious={() => {
+              p.setValid(false);
+            }}
             errors={[]}
           />
         ),
@@ -30,10 +58,16 @@ registry.registerConfigProvider({
         id: 'filtering',
         label: 'Filtering',
         componentFactory: (p: P) => (
-          <SpreadsheetFilteringStep
+          <SpreadsheetFilteringComponent
             data={p.data}
-            onNext={() => void 0}
-            onPrevious={() => void 0}
+            onNext={(next: unknown) => {
+              p.onChange(next);
+              p.setValid(true);
+              p.setError(null);
+            }}
+            onPrevious={() => {
+              p.setValid(false);
+            }}
             errors={[]}
           />
         ),

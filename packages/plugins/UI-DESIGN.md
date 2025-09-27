@@ -301,7 +301,7 @@
   - 既存の定義テストを更新（`component !== null` 前提に変更）。
 
 ## styler-plugin（Folder拡張: create/edit ダイアログへの追加ステップ）
-- 実装: `packages/plugins/styler-plugin/src/extensions/StylerFolderExtension.tsx`
+- 実装: `packages/plugins/styler-plugin/src/extensions/StylerDialogExtension.tsx`
 - ステップ: Folder ダイアログに 2 ステップを追加（`order` により相対配置。一般的には 5,6 相当）
   - Map Style（label: "Map Style"）
     - 画面構成: スタイル種別、データソース、カラースキーム、opacity、閾値等。

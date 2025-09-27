@@ -18,12 +18,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/runtime-worker-bootstrap": [
-        "../../runtime-worker/worker-bootstrap/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-core": [
-        "../../ui/core/dist-types/src/index.d.ts"
       ]
     }
   },

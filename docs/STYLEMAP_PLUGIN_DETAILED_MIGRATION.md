@@ -80,7 +80,7 @@ src/components/steps/StylerStep6.tsx
 
 #### 2.1 folder-plugin参照の修正
 ```typescript
-// src/extensions/StylerFolderExtension.tsx
+// src/extensions/StylerDialogExtension.tsx
 // 修正前（エラーの原因）
 import { FolderEntityHandler } from '@hierarchidb/plugins-folder-plugin';
 
@@ -153,11 +153,14 @@ import { StylerCSVProcessor } from './StylerCSVProcessor';
 // 修正前（テスト型定義不備）
 describe('CSV Parser Tests', () => {
   // test実装
+});
 
 // 修正後（Vitest型定義追加）
 import { describe, it, expect } from 'vitest';
 
 describe('CSV Parser Tests', () => {
+  //...
+});
   // 既存テスト実装を維持
 ```
 

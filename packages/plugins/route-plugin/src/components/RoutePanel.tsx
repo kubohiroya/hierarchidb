@@ -356,7 +356,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
         <Card sx={{ mt: 2 }}>
           <CardContent>
             <Typography variant="subtitle1" gutterBottom>
-              データテーブル
+              {t('batch.routeTableTitle', 'Route Table')}
             </Typography>
             <RouteTablePreview sessionId={lastJobId} />
           </CardContent>

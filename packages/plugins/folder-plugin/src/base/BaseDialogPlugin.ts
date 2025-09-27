@@ -14,9 +14,9 @@ import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
 import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
 
 /**
- * Base class for plugins that extend the folder-plugin plugin
+ * Base class for dialog-based extensions wired into the folder-plugin dialog system
  */
-export abstract class BaseFolderPlugin {
+export abstract class BaseDialogPlugin {
   /**
    * Unique identifier for this plugin
    */
@@ -38,12 +38,12 @@ export abstract class BaseFolderPlugin {
   abstract readonly pluginVersion: string;
 
   /**
-   * Other folder-plugin extensions this plugin depends on
+   * Other dialog extensions this plugin depends on
    */
   readonly dependencies: string[] = [];
 
   /**
-   * Initialize the plugin and register with folder-plugin extension system
+   * Initialize the plugin and register with the dialog extension system
    */
   async initialize(): Promise<void> {
     const extension = this.createExtension();
@@ -70,7 +70,7 @@ export abstract class BaseFolderPlugin {
   }
 
   /**
-   * Create the folder-plugin extension configuration
+   * Create the dialog extension configuration
    */
   protected createExtension(): FolderExtension {
     return createFolderExtension({
@@ -176,8 +176,8 @@ export abstract class BaseFolderPlugin {
    * the second argument to map by stepNumber.
    */
   protected getStepStateEvaluator?(): {
-    getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
-    getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+    getEnabledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+    getValidatedSteps: (data: any, stepNumbers?: number[]) => boolean[];
   };
 
   /**

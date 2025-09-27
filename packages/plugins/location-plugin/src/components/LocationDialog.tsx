@@ -20,6 +20,7 @@ import { LocationOn } from '@mui/icons-material';
 import { notify } from '@hierarchidb/ui-core';
 import type { LocationDialogProps, LocationWorkingCopy } from '../types/index.js';
 import { useWorkingCopy } from '@hierarchidb/ui-core';
+import { useTranslation } from '../i18n/index.js';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -71,6 +72,10 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     nodeId: toIdString(nodeId),
     parentId: toIdString(parentId),
   });
+  const { translations } = useTranslation();
+  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
+  []);
 
   useEffect(() => { if (open) void init(); }, [open, init]);
   useEffect(() => { return () => { void discard().catch(() => {}); }; }, [discard]);
@@ -314,10 +319,13 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         <LocationOn color="primary" />
         <Box>
           <Typography variant="h6" component="div">
-            {mode === 'create' ? '地点情報ノードの作成' : '地点情報ノードの編集'}
+            {mode === 'create' ? translations.dialog.createTitle : translations.dialog.editTitle}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            ステップ {propsHeader.activeStepIndex + 1} / {steps.length}
+            {formatTemplate(translations.dialog.stepLabel, {
+              current: propsHeader.activeStepIndex + 1,
+              total: steps.length,
+            })}
           </Typography>
         </Box>
       </Box>
@@ -325,14 +333,14 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         Back
       </Button>
     </Box>
-  ), [mode, steps.length]);
+  ), [formatTemplate, mode, steps.length, translations.dialog.createTitle, translations.dialog.editTitle, translations.dialog.stepLabel]);
 
   const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy | null>['renderContent'] = useCallback((_: HeadlessContentRenderProps<LocationWorkingCopy | null>) => (
     <Box sx={{ pt: 2, px: 2 }}>
       <TextField
         fullWidth
         required
-        label="名前"
+        label={translations.dialog.nameLabel}
         value={nameValue}
         onChange={(e) => updateWorkingCopy({ name: e.target.value })}
         disabled={!workingCopy}
@@ -343,7 +351,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         fullWidth
         multiline
         rows={3}
-        label="説明"
+        label={translations.dialog.descriptionLabel}
         value={descriptionValue}
         onChange={(e) => updateWorkingCopy({ description: e.target.value })}
         disabled={!workingCopy}
@@ -351,11 +359,11 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       />
 
       <FormControl fullWidth sx={{ mb: 3 }}>
-        <InputLabel>データソース</InputLabel>
+        <InputLabel>{translations.dialog.dataSourceLabel}</InputLabel>
         <Select<DataSourceName>
           value={dataSourceValue}
           onChange={handleDataSourceChange}
-          label="データソース"
+          label={translations.dialog.dataSourceLabel}
           disabled={!workingCopy}
         >
           {dataSourceOptions.map((value) => (
@@ -374,26 +382,26 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             disabled={!workingCopy}
           />
         }
-        label="ライセンスに同意する"
+        label={translations.dialog.licenseAgreementLabel}
         sx={{ mb: 2 }}
       />
     </Box>
-  ), [dataSourceValue, descriptionValue, handleDataSourceChange, licenseAgreementValue, nameValue, updateWorkingCopy, workingCopy]);
+  ), [dataSourceValue, descriptionValue, handleDataSourceChange, licenseAgreementValue, nameValue, translations.dialog.dataSourceLabel, translations.dialog.descriptionLabel, translations.dialog.licenseAgreementLabel, translations.dialog.nameLabel, updateWorkingCopy, workingCopy]);
 
   const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy | null>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy | null>) => (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
       <Button onClick={() => propsFooter.onRequestClose('close')} color="inherit">
-        キャンセル
+        {translations.dialog.cancel}
       </Button>
       <Button
         variant="contained"
         onClick={() => propsFooter.onRequestCommit?.()}
         disabled={!workingCopy || !nameValue || !licenseAgreementValue}
       >
-        保存
+        {translations.dialog.save}
       </Button>
     </Box>
-  ), [licenseAgreementValue, nameValue, workingCopy]);
+  ), [licenseAgreementValue, nameValue, translations.dialog.cancel, translations.dialog.save, workingCopy]);
 
   const invalidMessageMap = useMemo(() => ({} as Record<string, string>), []);
 

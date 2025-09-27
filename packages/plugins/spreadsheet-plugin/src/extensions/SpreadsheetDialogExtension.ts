@@ -1,14 +1,14 @@
 /**
- * SpreadsheetFolderExtension
+ * SpreadsheetDialogExtension
  * - Provides step state evaluator for Spreadsheet steps (2: data source, 3: filtering)
  */
 
-import { BaseFolderPlugin } from '@hierarchidb/plugins-folder-plugin';
+import { BaseDialogPlugin } from '@hierarchidb/plugins-folder-plugin';
 
-export class SpreadsheetFolderExtension extends BaseFolderPlugin {
+export class SpreadsheetDialogExtension extends BaseDialogPlugin {
   readonly pluginId = 'spreadsheet-plugin-folder-extension';
-  readonly pluginName = 'Spreadsheet (Folder Extension)';
-  readonly pluginDescription = 'Adds Spreadsheet step evaluators to folder dialog';
+  readonly pluginName = 'Spreadsheet (Dialog Extension)';
+  readonly pluginDescription = 'Adds Spreadsheet step evaluators to the shared dialog';
   readonly pluginVersion = '1.0.0';
 
   protected getStepStateEvaluator() {
@@ -64,5 +64,5 @@ export class SpreadsheetFolderExtension extends BaseFolderPlugin {
   }
 }
 
-export const spreadsheetFolderExtension = new SpreadsheetFolderExtension();
-export async function initializeSpreadsheetFolderExtension() { await spreadsheetFolderExtension.initialize(); }
+export const spreadsheetDialogExtension = new SpreadsheetDialogExtension();
+export async function initializeSpreadsheetDialogExtension() { await spreadsheetDialogExtension.initialize(); }

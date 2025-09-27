@@ -512,6 +512,7 @@ export class LocationBatchManager {
       'mountain': { key: 'natural', value: 'peak' },
       'lake': { key: 'natural', value: 'water' },
       'river': { key: 'waterway', value: 'river' },
+      'interchange': { key: 'highway', value: 'motorway_junction' },
     };
 
     return typeToTag[type] || null;

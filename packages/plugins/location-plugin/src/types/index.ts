@@ -33,7 +33,8 @@ export enum LocationType {
   FIRE_STATION = 'fire_station',
   POLICE = 'police',
   GOVERNMENT = 'government',
-  RELIGIOUS = 'religious'
+  RELIGIOUS = 'religious',
+  INTERCHANGE = 'interchange'
 }
 
 // ================================
