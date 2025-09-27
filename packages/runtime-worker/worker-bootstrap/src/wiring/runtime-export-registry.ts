@@ -31,3 +31,6 @@ export function getAllRuntimeExports(): Record<string, RuntimeExports> {
   return out;
 }
 
+export function clearRuntimeExportsForTests(): void {
+  registry.clear();
+}

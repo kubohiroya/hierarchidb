@@ -5,6 +5,7 @@
 
 //  Shared layer -
 export * from './shared/index.js';
+export * as worker from './worker/index.js';
 
 // UI layer is internal to app; not exported in package API
 

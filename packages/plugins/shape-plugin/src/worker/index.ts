@@ -4,5 +4,9 @@ export async function createEntityHandler() {
   return new ShapeEntityHandler();
 }
 
-export const lifecycle = {} as const;
+export async function createBatchManager() {
+  const { createShapeBatchManager } = await import('../services/batch/UnifiedShapeBatchManager.js');
+  return createShapeBatchManager();
+}
 
+export const lifecycle = {} as const;

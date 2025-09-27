@@ -8,6 +8,7 @@ export * from './types/index.js';
 export type { CreateLocationData } from './entities/LocationEntityHandler.js';
 export * from './entities/LocationEntityHandler.js';
 export { TabularQueryService as LocationTableQueryService } from '@hierarchidb/tabular-store';
+export * as worker from './worker/index.js';
 export * from './components/LocationDialog.js';
 export * from './components/LocationPanel.js';
 export * from './components/ui/SelectionMatrix.js';
