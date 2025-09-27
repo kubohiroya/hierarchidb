@@ -16,6 +16,7 @@
   },
   "scripts": {
     "dev": "tsup --watch",
+    "prebuild": "pnpm --filter @hierarchidb/ui-core build",
     "build": "tsup && pnpm run build:tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",

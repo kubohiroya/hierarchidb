@@ -15,6 +15,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { Box } from '@mui/material';
 import type {
+  DialogData,
   DialogStep,
   DialogDisplayMode,
   MultiDialogSize,
@@ -456,11 +457,16 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   useEffect(() => {
     let disposed = false;
     const handle = window.setTimeout(async () => {
+      const dialogData = (workingCopy?.data ?? {}) as DialogData;
       const validated: boolean[] = [];
       for (let i = 0; i < steps.length; i++) {
         const v = steps[i]?.validate;
         if (typeof v === 'function') {
-          try { validated[i] = !!(await Promise.resolve(v())); } catch { validated[i] = false; }
+          try {
+            validated[i] = !!(await Promise.resolve(v(dialogData)));
+          } catch {
+            validated[i] = false;
+          }
         } else {
           validated[i] = true;
         }

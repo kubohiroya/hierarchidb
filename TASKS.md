@@ -139,6 +139,8 @@
     - progress: 2025-09-22 12:08 プラグイン/Trash 双方のヘッダーを Stepper + React Router Link ナビゲーションへ更新し、単一ステップ時の余分な表示を除去
     - progress: 2025-09-22 12:12 非ゴミ箱ダイアログのフッターを Cancel/Back・Save Draft・Start Batch（条件付き）・Next/Save 配置へ統一。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `test` および `pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-22 12:24 create アクション時も UI が “Create …” と表示されるよう `intent` を導入し、作成完了後にツリーへ反映されるよう WorkingCopy コミット処理とナビゲーションを調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {typecheck,test}` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` を実行し成功
+    - progress: 2025-09-27 19:42 ExtensibleFolderDialog を HeadlessMultiStepDialog ベースへ移行し、専用 Header/Footer で標準フレームに統合。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` を再実行しグリーンを確認
+    - progress: 2025-09-27 19:55 runtime-ui-plugin-dialog の build 前に ui-core の d.ts を確実に生成する `prebuild` を追加し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が成功することを確認
 - feat/ui/dialog-hover-feedback — ダイアログタイトルのドラッグハンドルにホバー演出を追加
   - ブランチ: `feat/ui/dialog-hover-feedback`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`

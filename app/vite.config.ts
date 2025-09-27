@@ -28,7 +28,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const base = appPrefix ? `/${appPrefix}/` : '/';
   // const isDev = mode === 'development';
 
-  const ssrExternalDeps = ['maplibre-gl', '@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
+  const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
 
   /**
    * HDB_DEV 運用ドキュメント（開発者向け）
