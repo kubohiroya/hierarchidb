@@ -3959,6 +3959,7 @@ P2:
 - 2025-09-27 18:15 progress: fix/basemap/step-evaluator-contract — `BaseMapDialogExtension.getStepStateEvaluator` の戻り値を `getEnabledSteps`/`getValidatedSteps` へ改名し、フォルダ拡張 API と整合させる修正を適用
 - 2025-09-27 18:19 progress: fix/basemap/step-evaluator-contract — `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行し、TS2416 が解消されたことを確認
 - 2025-09-27 18:22 progress: fix/basemap/step-evaluator-contract — `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` を実行し、追加エラーがないことを確認
+- 2025-09-27 15:40 done: epic/ui-treeconsole-trash-workflow — UI TreeConsole / Trash 系改善は既存修正が完了済みと確認（追加タスクなし）
 
 - 2025-09-27 09:05 start: chore/build/tsc-project-refs-phase10 — dist/*.d.ts パス別名の再発調査に着手。
 - 2025-09-27 09:26 done: chore/build/tsc-project-refs-phase10 — `tsconfig.base.json` から dist 参照の `paths` を削除し、`node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` / `pnpm -w typecheck` / `pnpm typecheck:graph` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` を実行してすべてグリーンを確認。

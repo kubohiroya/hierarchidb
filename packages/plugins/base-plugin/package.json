@@ -39,7 +39,8 @@
   },
   "tsup": {
     "external": [
-      "dexie"
+      "dexie",
+      "react"
     ]
   }
 }
