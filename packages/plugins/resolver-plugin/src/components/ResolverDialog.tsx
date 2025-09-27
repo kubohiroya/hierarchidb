@@ -254,7 +254,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     true,
   ], [workingCopy]);
 
-  const navigableSteps = useMemo(() => [
+  const enabledMatrix = useMemo(() => [
     true,
     filledSteps[0],
     filledSteps[1],
@@ -263,9 +263,9 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
     filledSteps[4],
   ], [filledSteps]);
 
-  const enabledStepIndices = useMemo(() => navigableSteps
+  const enabledStepIndices = useMemo(() => enabledMatrix
     .map((allow, idx) => (allow ? idx : -1))
-    .filter((idx) => idx >= 0), [navigableSteps]);
+    .filter((idx) => idx >= 0), [enabledMatrix]);
 
   const validatedStepIndices = useMemo(() => filledSteps
     .map((valid, idx) => (valid ? idx : -1))

@@ -85,7 +85,7 @@
 
 更新（Evaluator/Submit 可否/命名の一般化）
 - ステップ評価:
-  - 追加 API: `evaluateSteps: { getFilledSteps(data), getNavigableSteps(data) }`
+  - 追加 API: `evaluateSteps: { getValidatedSteps(data), getEnabledSteps(data) }`
   - Host（ExtensibleFolderDialog）はレジストリの evaluator と `dependsOn` を合成。
 - サブミット評価:
   - 追加 API: `canSubmit(data)`（プラグイン側）→ Host で AND 合成し `evaluateSubmit(data)` として UI に渡す。
@@ -95,4 +95,4 @@
 - 型/名前の一般化（段階導入）:
   - `StepArrayEvaluator` の別名として `NodeDialogStepEvaluator` を追加。
   - `FolderDialogExtension` の別名として `NodeDialogExtension` を追加。
-  - `FolderExtensionRegistry` の別名として `NodeDialogExtensionRegistry` とそのインスタンス `nodeDialogExtensionRegistry` を追加。
+- `NodeDialogExtensionRegistry`（旧称 `DialogExtensionRegistry`）とそのインスタンス `nodeDialogExtensionRegistry` を追加。旧名のエイリアスは @deprecated。

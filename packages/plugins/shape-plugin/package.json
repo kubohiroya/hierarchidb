@@ -65,7 +65,6 @@
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-datasource": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",

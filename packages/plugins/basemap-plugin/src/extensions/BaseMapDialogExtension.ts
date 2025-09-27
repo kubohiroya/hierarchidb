@@ -4,7 +4,8 @@
  * - Steps themselves may be provided by host; evaluator aligns by stepNumber [2,3,4].
  */
 
-import { BaseDialogPlugin } from '@hierarchidb/plugins-folder-plugin';
+import { BaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
+import type { DraftPeerEntity } from '@hierarchidb/common-type';
 
 interface MapStyleSelection {
   style?: string;
@@ -16,18 +17,20 @@ interface MapViewportSelection {
   zoom?: number;
 }
 
-interface BaseMapDialogData {
+interface BaseMapDialogFields {
   mapStyle?: MapStyleSelection;
   viewport?: MapViewportSelection;
   [key: string]: unknown;
 }
+
+type BaseMapDialogDraft = DraftPeerEntity<BaseMapDialogFields>;
 
 function isValidUrl(u: string | undefined): boolean {
   if (!u) return false;
   try { new URL(u); return true; } catch { return false; }
 }
 
-export class BaseMapDialogExtension extends BaseDialogPlugin<BaseMapDialogData> {
+export class BaseMapDialogExtension extends BaseDialogPlugin<BaseMapDialogDraft> {
   readonly pluginId = 'basemap-plugin-folder-extension';
   readonly pluginName = 'BaseMap (Dialog Extension)';
   readonly pluginDescription = 'Adds BaseMap step evaluators to the shared dialog';
@@ -35,8 +38,8 @@ export class BaseMapDialogExtension extends BaseDialogPlugin<BaseMapDialogData> 
 
   protected getStepStateEvaluator() {
     return {
-      getEnabledSteps: (data: BaseMapDialogData, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
+      getEnabledSteps: (data: BaseMapDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
+        const nums = stepNumbers ? [...stepNumbers] : [];
         // sequential gating: 2 -> 3 -> 4
         const filled = new Map<number, boolean>();
         const ok2 = (() => {
@@ -63,8 +66,8 @@ export class BaseMapDialogExtension extends BaseDialogPlugin<BaseMapDialogData> 
           return true;
         });
       },
-      getValidatedSteps: (data: BaseMapDialogData, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
+      getValidatedSteps: (data: BaseMapDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
+        const nums = stepNumbers ? [...stepNumbers] : [];
         return nums.map((n) => {
           if (n === 2) {
             const style = data?.mapStyle?.style;
@@ -92,7 +95,7 @@ export class BaseMapDialogExtension extends BaseDialogPlugin<BaseMapDialogData> 
   }
 
   protected getSubmitEligibility() {
-    return (data: BaseMapDialogData) => {
+    return (data: BaseMapDialogDraft) => {
       // Require style step and viewport step to be valid
       const style = data?.mapStyle?.style;
       if (!style) return false;

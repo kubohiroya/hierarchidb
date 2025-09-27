@@ -14,8 +14,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';
 import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
-import type { DialogStepDefinition } from '@hierarchidb/common-type';
-import { BaseDialogPlugin } from '@hierarchidb/plugins-folder-plugin';
+import type { DialogStepDefinition, DraftPeerEntity } from '@hierarchidb/common-type';
+import { BaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
 
 /**
  * Styler extension data
@@ -29,6 +29,7 @@ export interface StylerData {
   opacity?: number;
   strokeWidth?: number;
   categories?: string[];
+  stylerConfig?: Record<string, unknown>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -36,16 +37,32 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 /**
  * Styler configuration step component
  */
+type StyleTypeValue = NonNullable<StylerData['styleType']>;
+
+const isStyleTypeValue = (value: string): value is StyleTypeValue => {
+  return value === 'choropleth' || value === 'heatmap' || value === 'points' || value === 'lines';
+};
+
+type StylerDialogDraft = DraftPeerEntity<StylerData> & Record<string, unknown>;
+type StylerStepProps = React.ComponentProps<typeof StylerConfigStep>;
+type StylerCategoryStepProps = React.ComponentProps<typeof CategoryMappingStep>;
+
 const StylerConfigStep: React.FC<{
-  data: StylerData;
-  onChange: (data: StylerData) => void;
+  data: StylerDialogDraft;
+  onChange: (data: StylerDialogDraft) => void;
   errors?: string[];
   isSubmitting?: boolean;
 }> = ({ data, onChange, errors, isSubmitting }) => {
   const handleStyleTypeChange = useCallback(
-    (event: SelectChangeEvent<StylerData['styleType']>) => {
+    (event: SelectChangeEvent<string>) => {
       const value = event.target.value;
-      onChange({ ...data, styleType: value === '' ? undefined : value });
+      if (value === '') {
+        onChange({ ...data, styleType: undefined });
+        return;
+      }
+      if (isStyleTypeValue(value)) {
+        onChange({ ...data, styleType: value });
+      }
     },
     [data, onChange],
   );
@@ -58,7 +75,7 @@ const StylerConfigStep: React.FC<{
   );
 
   const handleColorSchemeChange = useCallback(
-    (event: SelectChangeEvent<StylerData['colorScheme']>) => {
+    (event: SelectChangeEvent<string>) => {
       onChange({ ...data, colorScheme: event.target.value as StylerData['colorScheme'] });
     },
     [data, onChange],
@@ -205,8 +222,8 @@ const StylerConfigStep: React.FC<{
  * Category mapping step component
  */
 const CategoryMappingStep: React.FC<{
-  data: { categories?: string[] };
-  onChange: (data: { categories?: string[] }) => void;
+  data: StylerDialogDraft;
+  onChange: (data: StylerDialogDraft) => void;
   errors?: string[];
   isSubmitting?: boolean;
 }> = ({ data, onChange, errors, isSubmitting }) => {
@@ -292,7 +309,7 @@ const CategoryMappingStep: React.FC<{
 /**
  * Styler dialog extension for node configuration
  */
-export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
+export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
   readonly pluginId = 'styler-plugin-folder-plugin-extension';
   readonly pluginName = 'Styler Dialog Extension';
   readonly pluginDescription = 'Adds map visualization capabilities to the shared node dialog';
@@ -300,13 +317,12 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
     return [
-      this.createDialogStep<StylerData>({
+      this.createDialogStep<StylerStepProps>({
         id: 'style-config',
         label: 'Map Style',
-        description: 'Configure map visualization style',
-        component: StylerConfigStep as ComponentType<any>,
+        component: StylerConfigStep as ComponentType<StylerStepProps>,
         validation: {
-          validate: async (data: StylerData) => {
+          validate: async ({ data }: StylerStepProps) => {
             const errors: string[] = [];
 
             if (data.styleType && !data.dataSource) {
@@ -324,7 +340,7 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
               errors,
             };
           },
-          canProceed: (data: StylerData) => {
+          canProceed: ({ data }: StylerStepProps) => {
             // Can proceed if no style type selected, or if both style type and data source are provided
             return !data.styleType || !!data.dataSource;
           },
@@ -332,13 +348,12 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
         required: false,
         order: 10,
       }),
-      this.createDialogStep<{ categories?: string[] }>({
+      this.createDialogStep<StylerCategoryStepProps>({
         id: 'category-mapping',
         label: 'Categories',
-        description: 'Define data categories',
-        component: CategoryMappingStep as ComponentType<any>,
+        component: CategoryMappingStep as ComponentType<StylerCategoryStepProps>,
         validation: {
-          validate: async (data: { categories?: string[] }) => {
+          validate: async ({ data }: StylerCategoryStepProps) => {
             const errors: string[] = [];
 
             if (data.categories && data.categories.length > 50) {
@@ -371,8 +386,11 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
   }
 
   protected getStepStateEvaluator() {
-    const evaluateValidated = (data: StylerData, stepNumbers?: number[]) => {
-      const steps = stepNumbers || [];
+    const evaluateValidated = (
+      data: StylerDialogDraft,
+      stepNumbers?: ReadonlyArray<number>,
+    ) => {
+      const steps = stepNumbers ? [...stepNumbers] : [];
       return steps.map((num) => {
         if (num === 10) {
           if (!data?.styleType) return true;
@@ -393,8 +411,11 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
       });
     };
 
-    const evaluateEnabled = (data: StylerData, stepNumbers?: number[]) => {
-      const steps = stepNumbers || [];
+    const evaluateEnabled = (
+      data: StylerDialogDraft,
+      stepNumbers?: ReadonlyArray<number>,
+    ) => {
+      const steps = stepNumbers ? [...stepNumbers] : [];
       const hasStyleDecision = !data?.styleType || !!data?.dataSource;
       return steps.map((num) => {
         if (num === 10) return true;
@@ -410,7 +431,7 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
   }
 
   protected getSubmitEligibility() {
-    return (data: StylerData) => {
+    return (data: StylerDialogDraft) => {
       // If styleType selected, enforce dataSource present and min<max (when both present)
       if (data?.styleType) {
         if (!data?.dataSource) return false;
@@ -429,7 +450,7 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerData> {
     };
   }
 
-  protected transformDialogData(data: StylerData & Record<string, unknown>): Record<string, unknown> {
+  protected transformDialogData(data: StylerDialogDraft): StylerDialogDraft {
     // Transform the data to store Styler configuration
     const stylerConfig: Record<string, unknown> = {};
 

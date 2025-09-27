@@ -57,7 +57,7 @@
   "dependencies": {
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugins-folder-plugin": "workspace:*",
+    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",

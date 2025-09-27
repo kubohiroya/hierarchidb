@@ -3,8 +3,8 @@
  * - Provides folder-plugin dialog steps (same as ShapeExtension) and a step state evaluator.
  */
 
-import { BaseDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-folder-plugin';
-import type { DialogStepDefinition } from '@hierarchidb/common-type';
+import { BaseDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+import type { DialogStepDefinition, DraftPeerEntity } from '@hierarchidb/common-type';
 
 // Reuse existing step components from the Shape plugin
 import { DataSourceStep } from '../extension/components/DataSourceStep.js';
@@ -12,7 +12,7 @@ import { LicenseStep } from '../extension/components/LicenseStep.js';
 import { ProcessingStep } from '../extension/components/ProcessingStep.js';
 import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
-interface ShapeDialogData {
+interface ShapeDialogFields {
   dataSourceName?: string;
   licenseAgreement?: boolean;
   selectedAdminLevels?: number[];
@@ -20,7 +20,9 @@ interface ShapeDialogData {
   [key: string]: unknown;
 }
 
-export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
+type ShapeDialogDraft = DraftPeerEntity<ShapeDialogFields>;
+
+export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
   readonly pluginId = 'shape-plugin-folder-extension';
   readonly pluginName = 'Shape (Dialog Extension)';
   readonly pluginDescription = 'Adds shape-related steps to the shared node dialog';
@@ -33,7 +35,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
         title: 'Data Source',
         component: wrapDialogStepComponent(DataSourceStep),
         validation: {
-          validate: async (data: ShapeDialogData) => {
+          validate: async (value: unknown) => {
+            const data = value as ShapeDialogDraft;
             const ok = !!data?.dataSourceName;
             return ok ? { valid: true } : { valid: false, message: 'Data source selection is required' };
           },
@@ -45,7 +48,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
         component: wrapDialogStepComponent(LicenseStep),
         dependsOn: [2],
         validation: {
-          validate: async (data: ShapeDialogData) => {
+          validate: async (value: unknown) => {
+            const data = value as ShapeDialogDraft;
             const ok = data?.licenseAgreement === true;
             return ok ? { valid: true } : { valid: false, message: 'You must accept the license agreement' };
           },
@@ -57,7 +61,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
         component: wrapDialogStepComponent(ProcessingStep),
         dependsOn: [3],
         validation: {
-          validate: async (data: ShapeDialogData) => {
+          validate: async (value: unknown) => {
+            const data = value as ShapeDialogDraft;
             const levels: number[] | undefined = data?.selectedAdminLevels;
             const ok = Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
             return ok ? { valid: true } : { valid: false, message: 'Select administrative levels (0-3) — at least one' };
@@ -70,7 +75,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
         component: wrapDialogStepComponent(CountrySelectionStep),
         dependsOn: [4],
         validation: {
-          validate: async (data: ShapeDialogData) => {
+          validate: async (value: unknown) => {
+            const data = value as ShapeDialogDraft;
             const countries: string[] | undefined = data?.selectedCountries;
             const ok = Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2);
             return ok ? { valid: true } : { valid: false, message: 'Select at least one country' };
@@ -85,8 +91,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
   }
 
   protected getStepStateEvaluator() {
-    const evaluateValidated = (data: ShapeDialogData, stepNumbers?: number[]) => {
-      const nums = stepNumbers ?? [];
+    const evaluateValidated = (data: ShapeDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
+      const nums = stepNumbers ? [...stepNumbers] : [];
       return nums.map((stepNumber) => {
         switch (stepNumber) {
           case 2:
@@ -107,8 +113,8 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
       });
     };
 
-    const evaluateEnabled = (data: ShapeDialogData, stepNumbers?: number[]) => {
-      const nums = stepNumbers ?? [];
+    const evaluateEnabled = (data: ShapeDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
+      const nums = stepNumbers ? [...stepNumbers] : [];
       const validatedByNumber = new Map<number, boolean>();
 
       // Pre-compute validation state for dependency evaluation
@@ -143,16 +149,13 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogData> {
     };
 
     return {
-      getNavigableSteps: evaluateEnabled,
-      getFilledSteps: evaluateValidated,
-      // TODO: drop legacy keys once all callers migrate to the new interface
       getEnabledSteps: evaluateEnabled,
       getValidatedSteps: evaluateValidated,
     };
   }
 
   protected getSubmitEligibility() {
-    return (data: ShapeDialogData) => {
+    return (data: ShapeDialogDraft) => {
       const hasDataSource = !!data?.dataSourceName;
       const accepted = data?.licenseAgreement === true;
       const levels: number[] | undefined = data?.selectedAdminLevels;

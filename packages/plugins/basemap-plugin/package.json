@@ -55,7 +55,6 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
-    "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",

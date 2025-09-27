@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { DialogData } from '../types/MultiStepDialog.types.js';
 
 export type StepLike = {
   id: string;
   optional?: boolean;
-  component?: any;
   validate?: () => boolean | Promise<boolean>;
   onEnter?: () => void | Promise<void>;
   onLeave?: () => void | Promise<void>;
 };
 
 export interface EvaluatedSteps {
-  navigable?: boolean[];
-  filled?: boolean[];
+  enabled?: ReadonlyArray<boolean>;
+  validated?: ReadonlyArray<boolean>;
 }
 
-export interface ControllerOptions<TData = any> {
+export interface ControllerOptions<TData = DialogData> {
   steps: StepLike[];
   currentData?: TData;
   evaluateSubmit?: (data: TData) => boolean | Promise<boolean>;
@@ -22,7 +22,7 @@ export interface ControllerOptions<TData = any> {
   loading?: boolean;
   activeStep?: number;
   onStepChange?: (next: number) => void;
-  onStepTransition?: (from: number, to: number) => boolean | Promise<boolean>;
+  onStepTransition?: (from: number, to: number, data: TData) => boolean | Promise<boolean>;
   onSubmit: () => Promise<void> | void;
   evaluated?: EvaluatedSteps;
 }
@@ -45,7 +45,7 @@ export interface Controller {
   validateCurrentStep: () => Promise<boolean>;
 }
 
-export function useMultiStepController<TData = any>(opts: ControllerOptions<TData>): Controller {
+export function useMultiStepController<TData = DialogData>(opts: ControllerOptions<TData>): Controller {
   const {
     steps,
     currentData: data,
@@ -90,19 +90,19 @@ export function useMultiStepController<TData = any>(opts: ControllerOptions<TDat
   useEffect(() => {
     if (!evaluateSubmit) { setExternalSubmitEligible(true); return; }
     let mounted = true;
-    Promise.resolve(evaluateSubmit(data as TData))
+    Promise.resolve(evaluateSubmit((data ?? {}) as TData))
       .then((ok) => { if (mounted) setExternalSubmitEligible(!!ok); })
       .catch(() => { if (mounted) setExternalSubmitEligible(false); });
     return () => { mounted = false; };
   }, [evaluateSubmit, data]);
 
   const canSubmit = useMemo(() => {
-    const filled = evaluated?.filled;
+    const filled = evaluated?.validated;
     const requiredOk = Array.isArray(filled)
       ? steps.every((s, i) => s.optional ? true : !!filled[i])
       : steps.every((s, i) => (s.optional ? true : (i === currentStep ? !stepErrors.has(i) : completedSteps.has(i))));
     return requiredOk && !loading && externalSubmitEligible;
-  }, [evaluated?.filled, steps, currentStep, stepErrors, completedSteps, loading, externalSubmitEligible]);
+  }, [evaluated?.validated, steps, currentStep, stepErrors, completedSteps, loading, externalSubmitEligible]);
 
   const validateCurrentStep = useCallback(async () => {
     const validator = currentStepConfig?.validate;
@@ -119,7 +119,7 @@ export function useMultiStepController<TData = any>(opts: ControllerOptions<TDat
 
   const doStepChange = useCallback(async (next: number) => {
     if (typeof onStepTransition === 'function') {
-      const ok = await Promise.resolve(onStepTransition(currentStep, next));
+      const ok = await Promise.resolve(onStepTransition(currentStep, next, (data ?? {}) as TData));
       if (!ok) return;
     }
     await currentStepConfig?.onLeave?.();
@@ -146,8 +146,8 @@ export function useMultiStepController<TData = any>(opts: ControllerOptions<TDat
   const handleStepClick = useCallback(async (index: number) => {
     if (!nonLinear || index === currentStep) return;
     let canNav: boolean;
-    if (Array.isArray(evaluated?.navigable) && typeof evaluated!.navigable![index] === 'boolean') {
-      canNav = !!evaluated!.navigable![index];
+    if (Array.isArray(evaluated?.enabled) && typeof evaluated!.enabled![index] === 'boolean') {
+      canNav = !!evaluated!.enabled![index];
     } else {
       canNav = completedSteps.has(index) || index === currentStep + 1;
     }
@@ -157,7 +157,7 @@ export function useMultiStepController<TData = any>(opts: ControllerOptions<TDat
       setCompletedSteps((prev) => new Set(prev).add(currentStep));
     }
     if (canNav) await doStepChange(index);
-  }, [nonLinear, evaluated?.navigable, completedSteps, currentStep, validateCurrentStep, doStepChange]);
+  }, [nonLinear, evaluated?.enabled, completedSteps, currentStep, validateCurrentStep, doStepChange]);
 
   const isSubmittingRef = useRef(false);
   const handleSubmit = useCallback(async () => {

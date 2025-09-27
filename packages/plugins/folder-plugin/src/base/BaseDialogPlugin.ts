@@ -1,22 +1,22 @@
-import type { ComponentType } from 'react';
 import type { FolderEntity } from '../entities/FolderEntity.js';
-import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/FolderExtensionAPI.js';
-import { createFolderExtension, folderExtensionRegistry } from '../api/FolderExtensionAPI.js';
 import type {
-  DialogStepDefinition,
+  FolderEntityExtension,
+  FolderExtension,
+} from '../api/FolderDialogExtensionAPI.js';
+import { createFolderExtension, folderExtensionRegistry } from '../api/FolderDialogExtensionAPI.js';
+import type {
   NodeId,
   NodeType,
-  StepValidation,
-  ValidationExtension,
-  ValidationResult,
+  PeerEntity,
+  TreeNode,
 } from '@hierarchidb/common-type';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
+import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
 
 /**
  * Base class for dialog-based extensions wired into the folder-plugin dialog system
  */
-export abstract class BaseDialogPlugin {
+export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity> extends CoreBaseDialogPlugin<TDialog> {
   /**
    * Unique identifier for this plugin
    */
@@ -40,46 +40,33 @@ export abstract class BaseDialogPlugin {
   /**
    * Other dialog extensions this plugin depends on
    */
-  readonly dependencies: string[] = [];
+  protected readonly dependencies: string[] = [];
 
-  /**
-   * Initialize the plugin and register with the dialog extension system
-   */
   async initialize(): Promise<void> {
     const extension = this.createExtension();
     folderExtensionRegistry.register(extension);
-
-    // Allow subclasses to perform additional initialization
-    await this.onInitialize();
-
-    // Register folder as taggable by default
+    await super.onInitialize();
     registerTaggable('folder' as NodeType);
   }
 
-  /**
-   * Cleanup when plugin is unloaded
-   */
   async cleanup(): Promise<void> {
-    // Allow subclasses to perform cleanup first
-    await this.onCleanup();
-
+    await super.onCleanup();
     folderExtensionRegistry.unregister(this.pluginId);
-
-    // Unregister capability
     unregisterTaggable('folder' as NodeType);
   }
 
   /**
    * Create the dialog extension configuration
    */
-  protected createExtension(): FolderExtension {
-    return createFolderExtension({
-      id: this.pluginId,
-      name: this.pluginName,
-      description: this.pluginDescription,
-      version: this.pluginVersion,
-      dependencies: this.dependencies,
-      dialog: this.createDialogExtension(),
+  protected createExtension(): FolderExtension<TDialog> {
+    const base = super.createExtension();
+    return createFolderExtension<TDialog>({
+      id: base.id,
+      name: base.name,
+      description: base.description,
+      version: base.metadata.version,
+      dependencies: base.metadata.dependencies,
+      dialog: base.dialog,
       entity: this.createEntityExtension(),
       lifecycle: {
         afterCreate: this.afterCreate?.bind(this),
@@ -88,31 +75,6 @@ export abstract class BaseDialogPlugin {
         beforeDelete: this.beforeDelete?.bind(this),
       },
     });
-  }
-
-  /**
-   * Create base-dialog extension configuration
-   */
-  protected createDialogExtension(): FolderDialogExtension | undefined {
-    const createSteps = this.getCreateDialogSteps();
-    const editSteps = this.getEditDialogSteps();
-    const transformData = this.transformDialogData?.bind(this);
-    const validation = this.getValidationExtension();
-    const evaluateSteps = this.getStepStateEvaluator?.bind(this)();
-    const canSubmit = this.getSubmitEligibility?.bind(this)();
-
-    if (!createSteps && !editSteps && !transformData && !validation && !evaluateSteps && !canSubmit) {
-      return undefined;
-    }
-
-    return {
-      createSteps,
-      editSteps,
-      transformData,
-      validation,
-      evaluateSteps,
-      canSubmit,
-    };
   }
 
   /**
@@ -125,7 +87,7 @@ export abstract class BaseDialogPlugin {
     const validateEntity = this.validateEntity?.bind(this);
     const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({}));
     const saveExtendedData =
-      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, any>) => {
+      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, unknown>) => {
       });
 
     if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity) {
@@ -141,49 +103,6 @@ export abstract class BaseDialogPlugin {
       saveExtendedData,
     };
   }
-
-  /**
-   * Override to provide additional base-dialog steps for create mode
-   */
-  protected getCreateDialogSteps(): DialogStepDefinition[] | undefined {
-    return undefined;
-  }
-
-  /**
-   * Override to provide additional base-dialog steps for edit mode
-   */
-  protected getEditDialogSteps(): DialogStepDefinition[] | undefined {
-    return undefined;
-  }
-
-  /**
-   * Override to transform base-dialog data before submission
-   */
-  protected transformDialogData?(data: Record<string, any>): Record<string, any> {
-    return data;
-  }
-
-  /**
-   * Override to provide validation extension
-   */
-  protected getValidationExtension(): ValidationExtension | undefined {
-    return undefined;
-  }
-
-  /**
-   * Override to provide explicit step state evaluator (navigable/filled arrays based on entity/form data).
-   * The returned arrays should align with the final step sequence (by index) or accept stepNumbers via
-   * the second argument to map by stepNumber.
-   */
-  protected getStepStateEvaluator?(): {
-    getEnabledSteps: (data: any, stepNumbers?: number[]) => boolean[];
-    getValidatedSteps: (data: any, stepNumbers?: number[]) => boolean[];
-  };
-
-  /**
-   * Override to provide overall submit eligibility check (AND-composed across extensions).
-   */
-  protected getSubmitEligibility?(): (data: any) => boolean | Promise<boolean>;
 
   /**
    * Override to specify additional entity fields
@@ -216,21 +135,24 @@ export abstract class BaseDialogPlugin {
   /**
    * Override to get extended data from entity
    */
-  protected async getExtendedData?(_nodeId: NodeId): Promise<Record<string, any>> {
+  protected async getExtendedData?(_nodeId: NodeId): Promise<Record<string, unknown>> {
     return {};
   }
 
   /**
    * Override to save extended data to entity
    */
-  protected async saveExtendedData?(_nodeId: NodeId, _data: Record<string, any>): Promise<void> {
+  protected async saveExtendedData?(
+    _nodeId: NodeId,
+    _data: Record<string, unknown>,
+  ): Promise<void> {
     // Default implementation does nothing
   }
 
   /**
    * Lifecycle hook: called after folder-plugin creation
    */
-  protected async afterCreate?(_node: any, _entity: FolderEntity): Promise<void> {
+  protected async afterCreate?(_node: TreeNode, _entity: FolderEntity): Promise<void> {
     // Default implementation does nothing
   }
 
@@ -238,7 +160,7 @@ export abstract class BaseDialogPlugin {
    * Lifecycle hook: called before folder-plugin update
    */
   protected async beforeUpdate?(
-    _node: any,
+    _node: TreeNode,
     _entity: FolderEntity,
     _changes: Partial<FolderEntity>,
   ): Promise<void> {
@@ -248,65 +170,15 @@ export abstract class BaseDialogPlugin {
   /**
    * Lifecycle hook: called after folder-plugin update
    */
-  protected async afterUpdate?(_node: any, _entity: FolderEntity): Promise<void> {
+  protected async afterUpdate?(_node: TreeNode, _entity: FolderEntity): Promise<void> {
     // Default implementation does nothing
   }
 
   /**
    * Lifecycle hook: called before folder-plugin deletion
    */
-  protected async beforeDelete?(_node: any, _entity: FolderEntity): Promise<void> {
+  protected async beforeDelete?(_node: TreeNode, _entity: FolderEntity): Promise<void> {
     // Default implementation does nothing
-  }
-
-  /**
-   * Override to perform additional initialization
-   */
-  protected async onInitialize(): Promise<void> {
-    // Default implementation does nothing
-  }
-
-  /**
-   * Override to perform additional cleanup
-   */
-  protected async onCleanup(): Promise<void> {
-    // Default implementation does nothing
-  }
-
-  /**
-   * Helper method to create a base-dialog step definition
-   */
-  protected createDialogStep<T extends object>(config: {
-    id: string;
-    label: string;
-    description?: string;
-    component: ComponentType<any>;
-    validation?: {
-      validate: (data: T) => Promise<{ isValid: boolean; errors?: string[] }>;
-      canProceed?: (data: T) => boolean;
-    };
-    required?: boolean;
-    order?: number;
-    //dependsOn?: string[];
-  }): DialogStepDefinition {
-    const StepWrapper = wrapDialogStepComponent(config.component);
-
-    return {
-      stepNumber: config.order ?? 0,
-      title: config.label,
-      component: StepWrapper,
-      validation: (config.validation
-        ? ({
-          validate: async (data: unknown): Promise<ValidationResult> => {
-            const result = await config.validation!.validate(data as T);
-            return result.isValid
-              ? { valid: true }
-              : { valid: false, message: (result.errors || []).join(', ') };
-          },
-        } as StepValidation<unknown>)
-        : undefined),
-      //dependsOn: config.dependsOn?.map((dep) => (typeof dep === 'string' ? parseInt(dep) : dep)),
-    };
   }
 
   /**
@@ -318,9 +190,9 @@ export abstract class BaseDialogPlugin {
     label: string;
     description?: string;
     required?: boolean;
-    defaultValue?: any;
-    validation?: (value: any) => string | undefined;
-  }): any {
+    defaultValue?: unknown;
+    validation?: (value: unknown) => string | undefined;
+  }): Record<string, unknown> {
     return {
       fieldName: `${this.pluginId}_${config.fieldName}`,
       fieldType: config.fieldType,

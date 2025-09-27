@@ -16,6 +16,21 @@ export type {
   OperationResult,
 } from './types.js';
 
+export {
+  NodeDialogExtensionRegistry,
+  nodeDialogExtensionRegistry,
+  dialogExtensionRegistry,
+} from './dialog/NodeDialogExtensionAPI.js';
+export type {
+  NodeDialogExtension,
+  NodeDialogExtensionMetadata,
+  NodeDialogHooks,
+  StepArrayEvaluator,
+} from './dialog/NodeDialogExtensionAPI.js';
+export { wrapDialogStepComponent } from './dialog/wrapDialogStepComponent.js';
+export * from './dialog/NodeDialogPlugin.js';
+export { BaseDialogPlugin } from './dialog/BaseDialogPlugin.js';
+
 // Plugin definition (for inheritance only)
 export const BasePluginDefinition = {
   nodeType: 'base',

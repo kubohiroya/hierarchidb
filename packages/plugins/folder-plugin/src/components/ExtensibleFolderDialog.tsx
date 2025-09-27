@@ -1,9 +1,11 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Box, Button, Typography, TextField, Stack } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { TextField, Stack } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, NodeId, PeerEntity } from '@hierarchidb/common-type';
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types.js';
-import { wrapDialogStepComponent } from '../base/wrapDialogStepComponent.js';
+import { wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+import { folderExtensionRegistry } from '../api/FolderDialogExtensionAPI.js';
+import BaseDialog from './BaseDialog.js';
 
 interface FolderStepData {
   name: string;
@@ -99,6 +101,8 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
     return Array.from(byNumber.values()).sort((a, b) => a.stepNumber - b.stepNumber);
   }, [additionalSteps, baseStepDefinition]);
 
+  const stepNumbers = useMemo(() => sortedSteps.map((step) => step.stepNumber), [sortedSteps]);
+
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [baseData, setBaseData] = useState<FolderStepData>(() => ({
     name: mode === 'edit' && currentData ? currentData.name : '',
@@ -106,17 +110,126 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
   }));
   const [extensionState, setExtensionState] = useState<Record<number, Record<string, unknown>>>({});
   const [errors, setErrors] = useState<string[]>([]);
-  const currentStep = sortedSteps[activeStepIndex];
-
   const handleExtensionChange = useCallback((stepNumber: number, next: Record<string, unknown>) => {
     setExtensionState((prev) => ({ ...prev, [stepNumber]: next }));
   }, []);
 
-  const canSubmitBase = useMemo(() => validateBaseStep(baseData).length === 0, [baseData]);
+  const baseStepValid = useMemo(() => validateBaseStep(baseData).length === 0, [baseData]);
 
   const handleBack = useCallback(() => {
     setActiveStepIndex((idx) => Math.max(idx - 1, 0));
   }, []);
+
+  const extensionPayload = useMemo(() => Object.assign({}, ...Object.values(extensionState)), [extensionState]);
+
+  const peerEntity = useMemo<PeerEntity<Record<string, unknown>>>(() => {
+    const candidate = currentData as unknown as PeerEntity<Record<string, unknown>> | undefined;
+    const fallbackId = candidate?.id ?? ('folder-draft-id' as NodeId);
+    const fallbackNodeId = candidate?.nodeId ?? ('folder-draft-node' as NodeId);
+    const fallbackCreatedAt = candidate?.createdAt ?? Date.now();
+    const fallbackUpdatedAt = candidate?.updatedAt ?? Date.now();
+    const fallbackVersion = candidate?.version ?? 0;
+
+    return {
+      id: fallbackId,
+      nodeId: fallbackNodeId,
+      createdAt: fallbackCreatedAt,
+      updatedAt: fallbackUpdatedAt,
+      version: fallbackVersion,
+      name: baseData.name,
+      description: baseData.description,
+      ...extensionPayload,
+    };
+  }, [baseData.description, baseData.name, currentData, extensionPayload]);
+
+  const stepEvaluation = useMemo(() => {
+    const enabledMap = new Map<number, boolean>();
+    const validatedMap = new Map<number, boolean>();
+
+    stepNumbers.forEach((num, index) => {
+      if (index === 0) {
+        enabledMap.set(num, true);
+        validatedMap.set(num, baseStepValid);
+      } else {
+        enabledMap.set(num, baseStepValid);
+        validatedMap.set(num, true);
+      }
+    });
+
+    const evaluators = folderExtensionRegistry.getDialogEvaluators();
+    for (const evaluator of evaluators) {
+      try {
+        const enabledResults = evaluator.getEnabledSteps(peerEntity, stepNumbers);
+        stepNumbers.forEach((num, idx) => {
+          const current = enabledMap.get(num) ?? true;
+          const candidate = enabledResults?.[idx];
+          enabledMap.set(num, current && (candidate !== false));
+        });
+
+        const validatedResults = evaluator.getValidatedSteps(peerEntity, stepNumbers);
+        stepNumbers.forEach((num, idx) => {
+          const current = validatedMap.get(num) ?? true;
+          const candidate = validatedResults?.[idx];
+          validatedMap.set(num, current && (candidate !== false));
+        });
+      } catch (error) {
+        console.warn('[ExtensibleFolderDialog] step evaluator failed', error);
+      }
+    }
+
+    sortedSteps.forEach((step) => {
+      if (!step.dependsOn?.length) return;
+      const depsSatisfied = step.dependsOn.every((dep) => validatedMap.get(dep) !== false);
+      if (!depsSatisfied) {
+        enabledMap.set(step.stepNumber, false);
+      }
+    });
+
+    return { enabledMap, validatedMap };
+  }, [baseStepValid, peerEntity, sortedSteps, stepNumbers]);
+
+  const enabledByIndex = useMemo(
+    () => sortedSteps.map((step) => stepEvaluation.enabledMap.get(step.stepNumber) !== false),
+    [sortedSteps, stepEvaluation.enabledMap],
+  );
+
+  const validatedByIndex = useMemo(
+    () => sortedSteps.map((step) => stepEvaluation.validatedMap.get(step.stepNumber) !== false),
+    [sortedSteps, stepEvaluation.validatedMap],
+  );
+
+  const [submitEligibility, setSubmitEligibility] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const submitEvaluators = folderExtensionRegistry.getSubmitEvaluators();
+    if (!submitEvaluators.length) {
+      setSubmitEligibility(true);
+      return;
+    }
+
+    Promise.all(submitEvaluators.map((fn) => Promise.resolve(fn(peerEntity))))
+      .then((results) => {
+        if (!cancelled) {
+          setSubmitEligibility(results.every(Boolean));
+        }
+      })
+      .catch((error) => {
+        console.warn('[ExtensibleFolderDialog] submit evaluator failed', error);
+        if (!cancelled) {
+          setSubmitEligibility(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [peerEntity]);
+
+  const canSubmitDialog = useMemo(
+    () => baseStepValid && validatedByIndex.every(Boolean) && submitEligibility,
+    [baseStepValid, submitEligibility, validatedByIndex],
+  );
 
   const handleNext = useCallback(() => {
     if (activeStepIndex === 0) {
@@ -124,15 +237,15 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
       setErrors(validationErrors);
       if (validationErrors.length > 0) return;
     }
-    setActiveStepIndex((idx) => Math.min(idx + 1, sortedSteps.length - 1));
-  }, [activeStepIndex, baseData, sortedSteps.length]);
-
-  const extensionPayload = useMemo(() => Object.assign({}, ...Object.values(extensionState)), [extensionState]);
+    const nextIndex = Math.min(activeStepIndex + 1, sortedSteps.length - 1);
+    if (!enabledByIndex[nextIndex]) return;
+    setActiveStepIndex(nextIndex);
+  }, [activeStepIndex, baseData, enabledByIndex, sortedSteps.length]);
 
   const handleComplete = useCallback(async () => {
     const validationErrors = validateBaseStep(baseData);
     setErrors(validationErrors);
-    if (validationErrors.length > 0) return;
+    if (validationErrors.length > 0 || !canSubmitDialog) return;
 
     const trimmedName = baseData.name.trim();
     const description = baseData.description?.trim() || undefined;
@@ -157,96 +270,52 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
         : payload;
       await onSubmit(merged);
     }
-  }, [baseData, currentData, extensionPayload, mode, onSubmit]);
+  }, [baseData, canSubmitDialog, currentData, extensionPayload, mode, onSubmit]);
 
-  if (!open) return null;
+  const renderStepContent = useCallback(
+    (step: DialogStepDefinition | undefined) => {
+      if (!step) return null;
+      if (step.stepNumber === baseStepDefinition.stepNumber) {
+        return <FolderBaseStepComponent data={baseData} onChange={setBaseData} errors={errors} />;
+      }
 
-  const StepComponent = currentStep?.component as React.ComponentType<any> | undefined;
-  const stepKey = currentStep?.stepNumber ?? 0;
-  const extensionDataForStep = extensionState[stepKey] ?? {};
-  const validationErrors = errors;
+      const StepComponent = step.component as React.ComponentType<{
+        data: Record<string, unknown>;
+        onChange: (next: Record<string, unknown>) => void;
+      }>;
+      if (!StepComponent) return null;
+      const stepData = extensionState[step.stepNumber] ?? {};
+      return (
+        <StepComponent
+          data={stepData}
+          onChange={(next) => handleExtensionChange(step.stepNumber, next)}
+        />
+      );
+    },
+    [baseData, baseStepDefinition, errors, extensionState, handleExtensionChange],
+  );
+
+  const canNext = activeStepIndex < sortedSteps.length - 1
+    ? Boolean(enabledByIndex[Math.min(activeStepIndex + 1, sortedSteps.length - 1)])
+    : false;
 
   return (
-    <Box
-      role="dialog"
-      aria-modal="true"
-      sx={(theme) => ({
-        borderWidth: 1,
-        borderStyle: 'solid',
-        borderColor: theme.palette.divider,
-        borderRadius: 2,
-        padding: 3,
-        maxWidth: 520,
-        margin: '24px auto',
-        backgroundColor: theme.palette.background.paper,
-        boxShadow: theme.shadows[8],
-      })}
-    >
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        {icon}
-        <Typography variant="h5">{dialogTitle}</Typography>
-      </Stack>
-
-      <Box component="ol" sx={{ listStyle: 'none', padding: 0, display: 'flex', gap: 2, mb: 3 }}>
-        {sortedSteps.map((step, idx) => (
-          <Box
-            key={step.stepNumber}
-            component="li"
-            sx={(theme) => ({
-              padding: '8px 12px',
-              borderRadius: 1,
-              backgroundColor: idx === activeStepIndex
-                ? theme.palette.primary.main
-                : theme.palette.action.selected,
-              color: idx === activeStepIndex
-                ? theme.palette.primary.contrastText
-                : theme.palette.text.primary,
-              fontWeight: 600,
-            })}
-          >
-            {step.title ?? `Step ${step.stepNumber}`}
-          </Box>
-        ))}
-      </Box>
-
-      {errors.length > 0 && (
-        <Box
-          mb={2}
-          sx={(theme) => ({
-            color: theme.palette.error.main,
-          })}
-        >
-          {errors.map((err, i) => (
-            <Typography key={i} variant="body2">{err}</Typography>
-          ))}
-        </Box>
-      )}
-
-      <Box mb={3}>
-        {activeStepIndex === 0 ? (
-          <FolderBaseStepComponent data={baseData} onChange={setBaseData} errors={validationErrors} />
-        ) : StepComponent ? (
-          <StepComponent
-            data={extensionDataForStep}
-            onChange={(next: Record<string, unknown>) => handleExtensionChange(stepKey, next)}
-          />
-        ) : null}
-      </Box>
-
-      <Stack direction="row" spacing={2} justifyContent="flex-end">
-        <Button variant="text" onClick={onCancel}>Cancel</Button>
-        <Button variant="outlined" onClick={handleBack} disabled={activeStepIndex === 0}>Back</Button>
-        {activeStepIndex < sortedSteps.length - 1 ? (
-          <Button variant="contained" onClick={handleNext}>
-            Next
-          </Button>
-        ) : (
-          <Button variant="contained" onClick={handleComplete} disabled={!canSubmitBase}>
-            Complete
-          </Button>
-        )}
-      </Stack>
-    </Box>
+    <BaseDialog
+      title={dialogTitle}
+      icon={icon}
+      steps={sortedSteps}
+      activeStepIndex={activeStepIndex}
+      open={open}
+      errors={errors}
+      onCancel={onCancel}
+      onBack={handleBack}
+      onNext={handleNext}
+      onComplete={handleComplete}
+      canBack={activeStepIndex !== 0}
+      canNext={canNext}
+      canComplete={canSubmitDialog}
+      renderStepContent={renderStepContent}
+    />
   );
 };
 

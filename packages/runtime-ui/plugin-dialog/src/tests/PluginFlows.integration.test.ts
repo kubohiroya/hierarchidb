@@ -107,9 +107,8 @@ describe('Resolver plugin flow', () => {
 });
 
 describe('Project plugin flow', () => {
-  it('all steps considered navigable/savable in mock', async () => {
+  it('all steps considered enabled/savable in mock', async () => {
     const id = await dialogAPI.createWorkingCopy('project');
     await driveToSavable(id, 6, async () => {});
   });
 });
-

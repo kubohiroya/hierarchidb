@@ -62,7 +62,7 @@
   "dependencies": {
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
-    "@hierarchidb/plugins-folder-plugin": "workspace:*",
+    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "jszip": "^3.10.1",

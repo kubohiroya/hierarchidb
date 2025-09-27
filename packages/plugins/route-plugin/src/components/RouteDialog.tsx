@@ -125,10 +125,10 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
   }, [applyUpdates, isBasicValid, isProcessingValid, isSelectionValid, t, workingCopy]);
 
   const filledSteps = useMemo(() => [isBasicValid, isSelectionValid, isProcessingValid], [isBasicValid, isProcessingValid, isSelectionValid]);
-  const navigableSteps = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid, isSelectionValid]);
-  const enabledStepIndices = useMemo(() => navigableSteps
+  const enabledMatrix = useMemo(() => [true, isBasicValid, isSelectionValid], [isBasicValid, isSelectionValid]);
+  const enabledStepIndices = useMemo(() => enabledMatrix
     .map((allow, idx) => (allow ? idx : -1))
-    .filter((idx) => idx >= 0), [navigableSteps]);
+    .filter((idx) => idx >= 0), [enabledMatrix]);
   const validatedStepIndices = useMemo(() => filledSteps
     .map((valid, idx) => (valid ? idx : -1))
     .filter((idx) => idx >= 0), [filledSteps]);

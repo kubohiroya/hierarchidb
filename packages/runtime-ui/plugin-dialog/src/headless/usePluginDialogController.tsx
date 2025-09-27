@@ -452,39 +452,39 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return `${modeLabel} ${label}`;
   }, [presentation?.label, nodeType, mode]);
 
-  const [evaluatedState, setEvaluatedState] = useState<{ navigable?: boolean[]; filled?: boolean[] }>({});
+  const [evaluatedState, setEvaluatedState] = useState<{ enabled?: boolean[]; validated?: boolean[] }>({});
   useEffect(() => {
     let disposed = false;
     const handle = window.setTimeout(async () => {
-      const filled: boolean[] = [];
+      const validated: boolean[] = [];
       for (let i = 0; i < steps.length; i++) {
         const v = steps[i]?.validate;
         if (typeof v === 'function') {
-          try { filled[i] = !!(await Promise.resolve(v())); } catch { filled[i] = false; }
+          try { validated[i] = !!(await Promise.resolve(v())); } catch { validated[i] = false; }
         } else {
-          filled[i] = true;
+          validated[i] = true;
         }
       }
-      const navigable: boolean[] = [];
+      const enabled: boolean[] = [];
       for (let i = 0; i < steps.length; i++) {
-        if (i === 0) { navigable[i] = true; continue; }
-        const prevOk = steps.slice(0, i).every((s, idx) => (s?.optional ?? false) ? true : !!filled[idx]);
-        navigable[i] = prevOk;
+        if (i === 0) { enabled[i] = true; continue; }
+        const prevOk = steps.slice(0, i).every((s, idx) => (s?.optional ?? false) ? true : !!validated[idx]);
+        enabled[i] = prevOk;
       }
-      if (!disposed) setEvaluatedState({ navigable, filled });
+      if (!disposed) setEvaluatedState({ enabled, validated });
     }, 200);
     return () => { disposed = true; window.clearTimeout(handle); };
   }, [steps, basicInfo, workingCopy]);
 
   const enabledStepIndices = useMemo(() => {
-    const nav = evaluatedState.navigable || [];
+    const nav = evaluatedState.enabled || [];
     return nav.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
-  }, [evaluatedState.navigable]);
+  }, [evaluatedState.enabled]);
 
   const validatedStepIndices = useMemo(() => {
-    const filled = evaluatedState.filled || [];
-    return filled.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
-  }, [evaluatedState.filled]);
+    const validated = evaluatedState.validated || [];
+    return validated.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
+  }, [evaluatedState.validated]);
 
   const committableStepIndices = useMemo(() => (
     steps.length ? [steps.length - 1] : []
@@ -568,7 +568,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
   ), [steps]);
 
-  const allStepsComplete = useMemo(() => (evaluatedState.filled || []).every(Boolean), [evaluatedState.filled]);
+  const allStepsComplete = useMemo(() => (evaluatedState.validated || []).every(Boolean), [evaluatedState.validated]);
 
   const headerSubtitle = useMemo(() => {
     if (mode === 'edit') {

@@ -7,7 +7,7 @@
   */
 
 import React, { useCallback, useMemo } from 'react';
-import { wrapDialogStepComponent } from '@hierarchidb/plugins-folder-plugin';
+import { wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
 import { Alert, AlertTitle, Box } from '@mui/material';
 import { StylerTablePreview } from '../../components/step6/StylerTablePreview.js';
 import type { StylerConfig } from '../../types/stylerTypes.js';

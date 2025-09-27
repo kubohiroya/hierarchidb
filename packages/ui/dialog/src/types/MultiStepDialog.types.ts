@@ -5,6 +5,11 @@
 import { ReactNode } from 'react';
 
 /**
+ * Canonical data shape handed to dialog evaluators when a concrete type parameter is not supplied.
+ */
+export type DialogData = Record<string, unknown>;
+
+/**
  * Dialog mode - create or edit
  */
 export type DialogMode = 'create' | 'edit';
@@ -12,54 +17,55 @@ export type DialogMode = 'create' | 'edit';
 /**
  * Step validation function signature
  */
-export type StepValidationFn = () => boolean | Promise<boolean>;
+export type StepValidationFn<TData> = (data: TData) => boolean | Promise<boolean>;
 
 /**
  * Step transition hook signature
  */
-export type StepTransitionHook = (
+export type StepTransitionHook<TData> = (
   fromStep: number,
   toStep: number,
+  data: TData,
 ) => boolean | Promise<boolean>;
 
 /**
  * External step state evaluator supplied by plugins/hosts.
  * Returns boolean arrays (length = steps.length).
  */
-export interface StepStateEvaluator {
-  /** Which steps are navigable at this moment (index-based). */
-  getNavigableSteps: (data: any, stepNumbers?: number[]) => boolean[];
-  /** Which steps are currently filled (all required inputs satisfied). */
-  getFilledSteps: (data: any, stepNumbers?: number[]) => boolean[];
+export interface StepStateEvaluator<TData = DialogData> {
+  /** Which steps are enabled at this moment (index-based). */
+  getEnabledSteps: (data: TData, stepNumbers?: ReadonlyArray<number>) => boolean[];
+  /** Which steps are currently validated (all required inputs satisfied). */
+  getValidatedSteps: (data: TData, stepNumbers?: ReadonlyArray<number>) => boolean[];
 }
 
 /** Submit eligibility evaluator */
-export type SubmitEligibilityFn = (data: any) => boolean | Promise<boolean>;
+export type SubmitEligibilityFn<TData = DialogData> = (data: TData) => boolean | Promise<boolean>;
 
 /**
  * Step capability checks
  */
-export interface StepCapabilities {
+export interface StepCapabilities<TData = DialogData> {
   /** Whether this step can be navigated to directly */
-  canNavigateTo: (fromStep: number, data: any) => boolean | Promise<boolean>;
+  canNavigateTo: (fromStep: number, data: TData) => boolean | Promise<boolean>;
 
   /** Whether batch processing can start from this step */
-  canStartBatch: (data: any) => boolean | Promise<boolean>;
+  canStartBatch: (data: TData) => boolean | Promise<boolean>;
 
   /** Whether the dialog can be saved and closed from this step */
-  canSave: (data: any) => boolean | Promise<boolean>;
+  canSave: (data: TData) => boolean | Promise<boolean>;
 
   /** Whether can proceed to next step */
-  canProceedToNext: (data: any) => boolean | Promise<boolean>;
+  canProceedToNext: (data: TData) => boolean | Promise<boolean>;
 
   /** Whether can go back to previous step */
-  canBackToPrevious: (data: any) => boolean | Promise<boolean>;
+  canBackToPrevious: (data: TData) => boolean | Promise<boolean>;
 }
 
 /**
  * Individual step configuration
  */
-export interface DialogStep {
+export interface DialogStep<TData = DialogData> {
   /** Step identifier */
   id: string;
 
@@ -73,10 +79,10 @@ export interface DialogStep {
   component: ReactNode;
 
   /** Validation function for this step */
-  validate?: StepValidationFn;
+  validate?: StepValidationFn<TData>;
 
   /** Step capability checks */
-  capabilities?: StepCapabilities;
+  capabilities?: StepCapabilities<TData>;
 
   /** Whether this step is optional */
   optional?: boolean;
@@ -97,7 +103,7 @@ export interface DialogStep {
 /**
  * Multi-step dialog props
  */
-export interface MultiStepDialogProps {
+export interface MultiStepDialogProps<TData = DialogData> {
   /** Dialog open state */
   open: boolean;
 
@@ -114,16 +120,16 @@ export interface MultiStepDialogProps {
   icon?: ReactNode;
 
   /** Array of step configurations */
-  steps: DialogStep[];
+  steps: Array<DialogStep<TData>>;
 
   /** Current form/entity data for evaluation */
-  currentData?: any;
+  currentData?: TData;
 
   /** External evaluator to decide navigability and filled states */
-  evaluateSteps?: StepStateEvaluator;
+  evaluateSteps?: StepStateEvaluator<TData>;
 
   /** External submit eligibility evaluator */
-  evaluateSubmit?: SubmitEligibilityFn;
+  evaluateSubmit?: SubmitEligibilityFn<TData>;
 
   /** Current active step (for controlled mode) */
   activeStep?: number;
@@ -147,10 +153,10 @@ export interface MultiStepDialogProps {
   supportsDraft?: boolean;
 
   /** Submit handler */
-  onSubmit: (data?: any) => void | Promise<void>;
+  onSubmit: (data?: TData) => void | Promise<void>;
 
   /** Save as draft handler */
-  onSaveDraft?: (data?: any) => void | Promise<void>;
+  onSaveDraft?: (data?: TData) => void | Promise<void>;
 
   /** Cancel handler */
   onCancel: () => void;
@@ -165,7 +171,7 @@ export interface MultiStepDialogProps {
   headerActions?: ReactNode;
 
   /** Step transition hook */
-  onStepTransition?: StepTransitionHook;
+  onStepTransition?: StepTransitionHook<TData>;
 
   /** Loading state */
   loading?: boolean;
@@ -274,9 +280,9 @@ export interface FooterRenderProps {
 /**
  * Stepper component props
  */
-export interface StepperProps {
+export interface StepperProps<TData = DialogData> {
   /** Array of steps */
-  steps: DialogStep[];
+  steps: Array<DialogStep<TData>>;
 
   /** Current active step */
   activeStep: number;

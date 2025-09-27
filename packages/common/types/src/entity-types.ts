@@ -87,23 +87,22 @@ export interface BaseEntity<ID = NodeId> {
  * TreeNode1PeerEntity
   * @example StylerEntity, BaseMapEntity
   */
-export interface PeerEntity<ID = NodeId> extends BaseEntity<ID> {
-  //  TreeNode11
-  //  TreeNode
-  nodeId: NodeId;
-  dialogMode?: 'normal' | 'full';
-  resumeStep?: number;
-  //  zoom, lng, lat
-
-  mapParams?: {
-    zoom: number;
-    lng: number;
-    lat: number;
+export type PeerEntity<TData extends object = {}, ID = NodeId> = BaseEntity<ID> &
+  TData & {
+    nodeId: NodeId;
+    dialogMode?: 'normal' | 'full';
+    resumeStep?: number;
+    mapParams?: {
+      zoom: number;
+      lng: number;
+      lat: number;
+    };
+    disabled?: boolean;
   };
-  //  : undefined
-  //  true:
-  disabled?: boolean;
-}
+
+export type SavedPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<TData, ID>;
+
+export type DraftPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<Partial<TData>, ID>;
 
 /**
   * GroupEntity - TreeNode1N
