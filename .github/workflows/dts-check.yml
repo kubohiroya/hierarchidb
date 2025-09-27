@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile --force
 
+      - name: Pre-build shared UI dependencies
+        run: |
+          pnpm --filter @hierarchidb/ui-data-grid build
+
       - name: DTS quick check
         run: pnpm dts:quick
 
@@ -43,4 +47,3 @@ jobs:
         run: |
           pnpm --filter @hierarchidb/runtime-worker typecheck
           pnpm --filter @hierarchidb/plugins-shape-plugin typecheck
-
