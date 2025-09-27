@@ -16,7 +16,7 @@
   },
   "include": [
     "src/**/*",
-    "../../common/types/src/**/*.ts"
+    "../../common/types/dist/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

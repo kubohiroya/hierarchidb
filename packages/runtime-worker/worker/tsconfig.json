@@ -22,6 +22,45 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/common-type": ["../../common/types/dist/index.d.ts"],
+      "@hierarchidb/common-api": ["../../common/api/dist/index.d.ts"],
+      "@hierarchidb/util": ["../../util/dist/index.d.ts"],
+      "@hierarchidb/runtime-shared-batch-processor": ["../../runtime-shared/batch-processor/dist/index.d.ts"],
+      "@hierarchidb/feature-registry": ["../../feature/feature-registry/dist/index.d.ts"],
+      "@hierarchidb/download": ["../../feature/download/dist/index.d.ts"],
+      "@hierarchidb/import-export": ["../../feature/import-export/dist/index.d.ts"],
+      "@hierarchidb/map-adapter": ["../../feature/map-adapter/dist/index.d.ts"],
+      "@hierarchidb/map-source": ["../../feature/map-source/dist/index.d.ts"],
+      "@hierarchidb/tabular": ["../../feature/tabular/dist/index.d.ts"],
+      "@hierarchidb/tag": ["../../feature/tag/dist/index.d.ts"],
+      "@hierarchidb/batch": ["../../feature/batch/dist/index.d.ts"],
+      "@hierarchidb/auth-recovery": ["../../feature/auth-recovery/dist/index.d.ts"],
+      "@hierarchidb/tabular-xlsx": ["../../feature/tabular-xlsx/dist/index.d.ts"],
+      "@hierarchidb/compute": ["../../feature/compute/dist/index.d.ts"],
+      "comlink": [
+        "../../../node_modules/.pnpm/node_modules/comlink/dist/esm/comlink.d.ts"
+      ],
+      "comlink/*": [
+        "../../../node_modules/.pnpm/node_modules/comlink/dist/esm/*"
+      ],
+      "rxjs": [
+        "../../../node_modules/.pnpm/node_modules/rxjs/dist/types/index.d.ts"
+      ],
+      "rxjs/*": [
+        "../../../node_modules/.pnpm/node_modules/rxjs/dist/types/*"
+      ],
+      "vt-pbf": [
+        "../../../node_modules/.pnpm/node_modules/@types/vt-pbf/index.d.ts"
+      ],
+      "vt-pbf/*": [
+        "../../../node_modules/.pnpm/node_modules/@types/vt-pbf/*"
+      ],
+      "@maplibre/vt-pbf": [
+        "../../../node_modules/.pnpm/node_modules/@maplibre/vt-pbf/dist/index.d.ts"
+      ],
+      "@maplibre/vt-pbf/*": [
+        "../../../node_modules/.pnpm/node_modules/@maplibre/vt-pbf/dist/*"
       ]
     },
     "jsx": "react-jsx"

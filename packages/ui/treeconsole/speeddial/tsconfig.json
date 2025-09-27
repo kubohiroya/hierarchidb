@@ -17,6 +17,15 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/ui-core": [
+        "../../core/dist/src/index.d.ts"
+      ],
+      "@hierarchidb/ui-core/*": [
+        "../../core/dist/src/*"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../../../runtime-worker/worker-bootstrap/dist/index.d.ts"
       ]
     },
     "tsBuildInfoFile": "./dist/.tsbuildinfo"

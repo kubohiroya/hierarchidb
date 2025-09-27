@@ -41,9 +41,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/src'),
-      '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/src'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src'),
+      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/dist'),
+      '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist'),
       '~': path.resolve(__dirname, './src'),
     },
   },

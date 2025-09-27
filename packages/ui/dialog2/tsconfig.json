@@ -11,6 +11,15 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/ui-core": [
+        "../core/dist/src/index.d.ts"
+      ],
+      "@hierarchidb/ui-core/*": [
+        "../core/dist/src/*"
+      ],
+      "@hierarchidb/runtime-worker-bootstrap": [
+        "../../runtime-worker/worker-bootstrap/dist/index.d.ts"
       ]
     },
     "lib": [
@@ -22,7 +31,7 @@
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
-    "reason": "Storybook 型定義依存の一時的な警告回避"
+    "reason": "Storybook \u578b\u5b9a\u7fa9\u4f9d\u5b58\u306e\u4e00\u6642\u7684\u306a\u8b66\u544a\u56de\u907f"
   },
   "include": [
     "src/**/*"

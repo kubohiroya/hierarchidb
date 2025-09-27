@@ -11,6 +11,12 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "comlink": [
+        "../../../node_modules/.pnpm/node_modules/comlink/dist/esm/comlink.d.ts"
+      ],
+      "comlink/*": [
+        "../../../node_modules/.pnpm/node_modules/comlink/dist/esm/*"
       ]
     },
     "jsx": "react-jsx"

@@ -4146,3 +4146,8 @@ ToDo（Phase 2/3: any の完全撤去）
     - 2025-09-16 13:05 done: spreadsheet-plugin の Dexie import/steps-provider を Node16 仕様へ更新。`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` グリーン。
     - 2025-09-16 13:10 done: `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog run build` で ESM 出力を再生成し、UI ステップ登録の型参照を復旧。
     - 2025-09-16 13:15 done: `pnpm -w typecheck` が全パッケージで成功。
+
+2025-09-27
+- progress: `pnpm dts:quick` を再実行し、UI Core / Runtime UI Plugin Dialog を含む 25 パッケージのビルド＆宣言出力が CI スクリプト経由でグリーンで完了することを確認。
+- progress: `rg "\\.pnpm/node_modules" -n` で全リポジトリを棚卸しし、Runtime Worker 系以外に `.pnpm` 直参照がないことを確認。Runtime Worker での参照はいずれも公式型宣言（comlink / rxjs / @types/vt-pbf / @maplibre/vt-pbf）向けである点も再確認。
+- next: Runtime Worker 以外で外部ベンダ型が必要になった場合は、dist 参照またはベンダ提供の公式 .d.ts を優先採用する方針を共有。
