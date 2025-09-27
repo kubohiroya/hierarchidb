@@ -1,6 +1,6 @@
 /**
-  * Japanese translations for Location Plugin
-   */
+ * Japanese translations for Location Plugin
+ */
 
 import type { LocationPluginTranslations } from './types.js';
 
@@ -19,6 +19,31 @@ export const ja: LocationPluginTranslations = {
     error: 'エラー',
     success: '成功',
     warning: '警告',
+    yes: 'はい',
+    no: 'いいえ',
+    enabled: '有効',
+    disabled: '無効',
+    points: '地点',
+    items: '件',
+  },
+
+  panel: {
+    sampleName: 'サンプル地点データセット',
+    sampleDescription: 'プレビュー用に表示しているサンプルのデータセットです。',
+    refresh: '更新',
+    edit: '編集',
+    basicInfo: '基本情報',
+    dataSource: 'データソース',
+    licenseAgreement: 'ライセンス同意',
+    licenseAgreed: '同意済み',
+    licensePending: '未同意',
+    createdAt: '作成日時',
+    updatedAt: '更新日時',
+    processingSettings: '処理設定',
+    concurrentDownloads: '並行ダウンロード数',
+    filtering: 'フィルタリング',
+    clustering: 'クラスタリング',
+    geocoding: 'ジオコーディング',
   },
 
   basicInfo: {
@@ -50,6 +75,69 @@ export const ja: LocationPluginTranslations = {
     deselectAll: 'すべて解除',
     selectedCount: '選択数',
     estimatedSize: '推定データサイズ',
+    typeDescriptions: {
+      airport: '民間・軍用空港、飛行場',
+      railway_station: '鉄道駅、地下鉄駅',
+      port: '商港、漁港、マリーナ',
+      government: '首都、県庁所在地、市役所',
+      interchange: 'インターチェンジ、ジャンクション',
+    },
+  },
+
+  selectionMatrix: {
+    selectedCountLabel: '{count} 件選択',
+    estimatedSizeLabel: '推定 {size}',
+    processingTimeLabel: '処理時間: {time}',
+    processingLessThanMinute: '1分未満',
+    processingAboutMinutes: '約 {minutes}分',
+    processingMinutesText: ' {minutes}分',
+    processingAboutHours: '約 {hours}時間{minutesText}',
+    columnHeader: '国 / タイプ',
+    tooltipSelectAll: '全選択',
+    tooltipEstimated: '推定 {count} 件の{type}データ',
+    tooltipData: '{type}データ',
+    noResults: '条件に一致する国がありません',
+  },
+
+  selectionSettings: {
+    detailSettingsTitle: '地点タイプ別詳細設定',
+    typeDetailTitle: '{type}の詳細設定',
+    airport: {
+      includeHeliports: 'ヘリポートを含む',
+      activeOnly: '運航中のみ',
+      commercialOnly: '商業便のみ',
+      minRunwayLengthLabel: '最小滑走路長: {value}m',
+      minRunwayLengthShort: '500m',
+      minRunwayLengthMedium: '1.5km',
+      minRunwayLengthLong: '3km',
+    },
+    railwayStation: {
+      includeMetro: '地下鉄駅を含む',
+      includeAbandoned: '廃駅を含む',
+      intercityOnly: '都市間路線のみ',
+      minPlatformsLabel: '最小ホーム数',
+    },
+    port: {
+      includeMarinas: 'マリーナを含む',
+      cargoOnly: '貨物港のみ',
+      activeOnly: '稼働中のみ',
+      minDepthLabel: '最小水深 (m)',
+    },
+    administrative: {
+      adminLevelLabel: '行政レベル',
+      adminLevelCountry: '国レベル ({value})',
+      adminLevelState: '州/県レベル ({value})',
+      adminLevelCity: '市レベル ({value})',
+      adminLevelDistrict: '区レベル ({value})',
+      minPopulationLabel: '最小人口',
+      capitalOnly: '首都のみ',
+      includeHistorical: '過去の首都を含む',
+    },
+    interchange: {
+      includeInterchanges: 'インターチェンジを含む',
+      namedOnly: '名称付きのみ',
+      excludeServiceAreas: 'SA/PA除外',
+    },
   },
 
   batch: {
@@ -62,12 +150,76 @@ export const ja: LocationPluginTranslations = {
     cancel: 'キャンセル',
     download: 'ダウンロード',
     exportLogs: 'ログエクスポート',
+    dialogTitle: 'バッチ処理進捗',
+    elapsed: '経過時間',
+    remaining: '残り時間',
+    processedLabel: '処理済み',
+    throughputLabel: 'スループット',
+    throughputUnit: '地点/秒 ({rate}/s)',
+    errorsLabel: 'エラー',
+    errorCountUnit: '{count} 件',
+    stageListTitle: '処理ステージ',
+    tasksTitle: 'アクティブタスク',
+    authRequired: '🔐 認証が必要です — {message}',
+    mapPlaceholder: 'マッププレビューは後続の実装で追加されます',
+    close: '閉じる',
+    ariaLabel: 'バッチ処理操作',
+    resumeTooltip: '再開',
+    pauseTooltip: '一時停止',
+    cancelTooltip: 'キャンセル',
+    exportTooltip: 'ログエクスポート',
     stages: {
       download: 'ダウンロード',
       filtering: 'フィルタリング',
       clustering: 'クラスタリング',
       indexing: 'インデックス作成',
     },
+  },
+
+  mapPreview: {
+    searchPlaceholder: '地点を検索...',
+    visiblePointsLabel: '{visible} / {total}',
+    clustersLabel: '{count} クラスター',
+    title: '地図プレビュー',
+    displayModeLabel: '表示モード: {mode}',
+    visibleCountLabel: '表示地点数: {count}',
+    centerLabel: '中心座標: {lat}, {lng}',
+    zoomLabel: 'ズーム: {zoom}',
+    menuSettings: '表示設定',
+    menuAnalytics: '統計情報',
+    dialogTitle: 'マップ表示設定',
+    heatmapSettings: 'ヒートマップ設定',
+    heatmapIntensityLabel: '強度: {value}',
+    heatmapRadiusLabel: '半径: {value}px',
+    clusterSettings: 'クラスタリング設定',
+    clusterRadiusLabel: 'クラスタ半径: {value}px',
+    maxZoomLabel: '最大ズーム: {value}',
+    close: '閉じる',
+    details: {
+      englishName: '英語名',
+      countryCode: '国コード',
+      latitude: '緯度',
+      longitude: '経度',
+    },
+    tooltips: {
+      zoomIn: 'ズームイン',
+      zoomOut: 'ズームアウト',
+      fitToData: 'データ範囲に合わせる',
+      currentLocation: '現在位置',
+      settings: '設定',
+    },
+  },
+
+  dialog: {
+    createTitle: '地点情報ノードの作成',
+    editTitle: '地点情報ノードの編集',
+    stepLabel: 'ステップ {current} / {total}',
+    nameLabel: '名前',
+    descriptionLabel: '説明',
+    dataSourceLabel: 'データソース',
+    licenseAgreementLabel: 'ライセンスに同意する',
+    save: '保存',
+    cancel: 'キャンセル',
   },
 
   locationTypes: {
@@ -91,6 +243,7 @@ export const ja: LocationPluginTranslations = {
     police: '警察',
     government: '行政',
     religious: '宗教施設',
+    interchange: 'インターチェンジ',
   },
 
   categories: {
