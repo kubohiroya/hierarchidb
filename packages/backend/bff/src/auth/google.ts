@@ -34,11 +34,17 @@ export async function initiateGoogleAuth(config: GoogleOAuth2Config) {
   };
 }
 
+export type ExchangeCodeForTokensReturn = {
+  access_token: string;
+  id_token?: string;
+  refresh_token?: string;
+}
+
 export async function exchangeCodeForTokens(
   code: string,
   config: GoogleOAuth2Config,
   codeVerifier?: string,
-): Promise<{ access_token: string; id_token?: string; refresh_token?: string }> {
+): Promise<ExchangeCodeForTokensReturn> {
   const params: Record<string, string> = {
     code,
     client_id: config.clientId,

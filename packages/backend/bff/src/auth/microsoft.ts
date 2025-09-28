@@ -9,7 +9,7 @@ export interface MicrosoftOAuth2Config {
 export interface MicrosoftUserInfo {
   id: string;
   displayName: string;
-  mail: string | null;
+  mail: string;
   userPrincipalName: string;
 }
 

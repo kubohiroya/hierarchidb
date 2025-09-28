@@ -1,4 +1,4 @@
-import { Env } from './types.js';
+import type { Env } from './types.js';
 
 export type PrefixedEnv = {
   BFF_JWT_ISSUER?: string;

@@ -2,7 +2,7 @@
  * Origin validation middleware
  */
 
-import { Next } from 'hono';
+import type { Next } from 'hono';
 import { parseAllowedOrigins } from '../utils/cors.js';
 import { getEnv, type BffContext } from '../utils/env.js';
 

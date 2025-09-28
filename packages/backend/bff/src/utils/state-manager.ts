@@ -3,7 +3,7 @@
  * HMACKVS
   */
 
-import { Context } from 'hono';
+import type { Context } from 'hono';
 
 interface StateData {
   origin?: string;

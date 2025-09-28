@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { Context, Hono } from 'hono';
+import { type Context, Hono } from 'hono';
 import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
 import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
 import {
@@ -8,8 +8,8 @@ import {
   getGoogleUserInfo,
   type GoogleOAuth2Config,
 } from './auth/google.js';
-import { type GitHubOAuth2Config } from './auth/github.js';
-import { type MicrosoftOAuth2Config } from './auth/microsoft.js';
+import type { GitHubOAuth2Config } from './auth/github.js';
+import type { MicrosoftOAuth2Config } from './auth/microsoft.js';
 import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
 import { refreshToken, revokeToken } from './auth/refresh.js';
 import { mapEnvironmentVariables } from './env-mapper.js';

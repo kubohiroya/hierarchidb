@@ -1,4 +1,4 @@
-import { exchangeCodeForTokens, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
+import { exchangeCodeForTokens, ExchangeCodeForTokensReturn, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   getGitHubUserInfo,
@@ -87,6 +87,113 @@ export async function handleOAuth2Callback(c: BffContext) {
   }
 }
 
+type UserInfo = {
+  id: string,
+  email: string,
+  name: string,
+  picture: string | undefined,
+}
+
+type GetAuthorizationCodeReturn = {
+  tokens: ExchangeCodeForTokensReturn,
+  userInfo: UserInfo;
+}
+
+const getAuthorizationCode = async ({
+                                      provider,
+                                      env,
+                                      redirect_uri,
+                                      code,
+                                      c
+                                    }:{
+  provider : string
+  env: {
+    GOOGLE_CLIENT_ID?: string,
+    GOOGLE_CLIENT_SECRET?: string,
+    GITHUB_CLIENT_ID?: string
+    GITHUB_CLIENT_SECRET?: string
+    MICROSOFT_CLIENT_ID?: string
+    MICROSOFT_CLIENT_SECRET?: string
+  },
+  redirect_uri: string,
+  code: string,
+  c: BffContext
+}): Promise<GetAuthorizationCodeReturn> => {
+
+  switch (provider) {
+    case 'google': {
+      if(!env.GOOGLE_CLIENT_ID ||!env.GOOGLE_CLIENT_SECRET){
+        throw new Error('Google OAuth not configured');
+      }
+      const config: GoogleOAuth2Config = {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'google'),
+      };
+
+      const tokens = await exchangeCodeForTokens(code, config);
+      const userInfo = await getGoogleUserInfo(tokens.access_token);
+      return {
+        tokens, userInfo
+      }
+    }
+
+    case 'github': {
+      if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
+        throw new Error('GitHub OAuth not configured');
+      }
+
+      const config: GitHubOAuth2Config = {
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'github'),
+      };
+
+      const tokens = await exchangeGitHubCodeForTokens(code, config);
+      const userInfo = await getGitHubUserInfo(tokens.access_token);
+
+      return {
+        tokens,
+        userInfo: {
+          id: userInfo.id.toString(),
+          email: userInfo.email || `${userInfo.login}@users.noreply.github.com`,
+          name: userInfo.name || userInfo.login,
+          picture: userInfo.avatar_url,
+        },
+      }
+    }
+
+    case 'microsoft': {
+      if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
+        throw new Error('Microsoft OAuth not configured');
+      }
+
+      const config: MicrosoftOAuth2Config = {
+        clientId: env.MICROSOFT_CLIENT_ID,
+        clientSecret: env.MICROSOFT_CLIENT_SECRET,
+        redirectUri: redirect_uri || getDynamicRedirectUri(c, 'microsoft'),
+      };
+
+      const tokens = await exchangeMicrosoftCodeForTokens(code, config);
+      const userInfo = await getMicrosoftUserInfo(tokens.access_token);
+
+      // Normalize Microsoft user info
+      return {
+        tokens, userInfo: {
+          id: userInfo.id,
+          email: userInfo.mail ?? undefined,
+          name: userInfo.displayName || userInfo.userPrincipalName,
+          picture: undefined
+        }
+      };
+    }
+
+    default:
+      throw new Error('Invalid provider');
+      //return c.json({ error:  }, 400);
+  }
+}
+
 /**
  * Exchange authorization code for tokens (called by the client)
  * This is a POST endpoint that completes the OAuth2 flow
@@ -113,74 +220,14 @@ export async function exchangeCodeForToken(c: BffContext) {
     }
 
     const env = getEnv(c);
-    let tokens: any;
-    let userInfo: any;
 
-    // Handle different providers
-    switch (provider) {
-      case 'google': {
-        const config: GoogleOAuth2Config = {
-          clientId: env.GOOGLE_CLIENT_ID,
-          clientSecret: env.GOOGLE_CLIENT_SECRET,
-          redirectUri: redirect_uri || getDynamicRedirectUri(c, 'google'),
-        };
-
-        tokens = await exchangeCodeForTokens(code, config);
-        userInfo = await getGoogleUserInfo(tokens.access_token);
-        break;
-      }
-
-      case 'github': {
-        if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) {
-          return c.json({ error: 'GitHub OAuth not configured' }, 501);
-        }
-
-        const config: GitHubOAuth2Config = {
-          clientId: env.GITHUB_CLIENT_ID,
-          clientSecret: env.GITHUB_CLIENT_SECRET,
-          redirectUri: redirect_uri || getDynamicRedirectUri(c, 'github'),
-        };
-
-        tokens = await exchangeGitHubCodeForTokens(code, config);
-        userInfo = await getGitHubUserInfo(tokens.access_token);
-
-        // Normalize GitHub user info
-        userInfo = {
-          id: userInfo.id.toString(),
-          email: userInfo.email || `${userInfo.login}@users.noreply.github.com`,
-          name: userInfo.name || userInfo.login,
-          picture: userInfo.avatar_url,
-        };
-        break;
-      }
-
-      case 'microsoft': {
-        if (!env.MICROSOFT_CLIENT_ID || !env.MICROSOFT_CLIENT_SECRET) {
-          return c.json({ error: 'Microsoft OAuth not configured' }, 501);
-        }
-
-        const config: MicrosoftOAuth2Config = {
-          clientId: env.MICROSOFT_CLIENT_ID,
-          clientSecret: env.MICROSOFT_CLIENT_SECRET,
-          redirectUri: redirect_uri || getDynamicRedirectUri(c, 'microsoft'),
-        };
-
-        tokens = await exchangeMicrosoftCodeForTokens(code, config);
-        userInfo = await getMicrosoftUserInfo(tokens.access_token);
-
-        // Normalize Microsoft user info
-        userInfo = {
-          id: userInfo.id,
-          email: userInfo.mail || userInfo.userPrincipalName,
-          name: userInfo.displayName,
-          picture: undefined,
-        };
-        break;
-      }
-
-      default:
-        return c.json({ error: 'Invalid provider' }, 400);
-    }
+    const { userInfo, tokens } = await getAuthorizationCode({
+      provider,
+      redirect_uri,
+      code,
+      c,
+      env,
+    });
 
     // Create session JWT
     const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
