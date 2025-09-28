@@ -3986,6 +3986,10 @@ P2:
 - 2025-09-28 11:42 progress: fix/build/runtime-ui-types-resolution — plugin-dialog 分割PR向けに `tsconfig.base.json` を最小構成へ見直し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功を確認
 - 2025-09-28 11:55 progress: fix/build/runtime-ui-types-resolution — appbar/datasource 用の `paths` を追加し、`pnpm --filter @hierarchidb/runtime-ui-{appbar,datasource,plugin-dialog} typecheck` を順次実行して alias 後退が無いことを再確認
 - 2025-09-28 12:08 progress: fix/build/runtime-ui-types-resolution — landingpage/search-result-window/tour の `paths` を追加し、該当パッケージ＋依存（appbar/datasource/plugin-dialog）で `pnpm --filter … typecheck` を再実行して成功を確認
+- 2025-09-28 14:20 start: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` で `@hierarchidb/runtime-ui-datasource` 解決失敗を再現し、tsconfig alias の調整に着手
+- 2025-09-28 14:32 progress: fix/plugins/shape-datasource-alias — `packages/plugins/shape-plugin/tsconfig.build.json` に `baseUrl` と runtime-ui datasource の `paths` を追加し、型解決経路を明示
+- 2025-09-28 14:36 progress: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行し、runtime-ui datasource 解決エラーが解消されたことを確認
+- 2025-09-28 14:44 done: fix/plugins/shape-datasource-alias — 変更済み tsconfig と TASKS.md を `main` ブランチへ取り込み、作業完了を記録
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新
