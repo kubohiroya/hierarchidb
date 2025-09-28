@@ -13,6 +13,42 @@
       "~/*": [
         "src/*"
       ],
+      "@hierarchidb/runtime-ui-appbar": [
+        "../packages/runtime-ui/appbar/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-appbar/*": [
+        "../packages/runtime-ui/appbar/src/*"
+      ],
+      "@hierarchidb/runtime-ui-datasource": [
+        "../packages/runtime-ui/datasource/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-datasource/*": [
+        "../packages/runtime-ui/datasource/src/*"
+      ],
+      "@hierarchidb/runtime-ui-landingpage": [
+        "../packages/runtime-ui/landingpage/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-landingpage/*": [
+        "../packages/runtime-ui/landingpage/src/*"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog": [
+        "../packages/runtime-ui/plugin-dialog/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog/*": [
+        "../packages/runtime-ui/plugin-dialog/src/*"
+      ],
+      "@hierarchidb/runtime-ui-search-result-window": [
+        "../packages/runtime-ui/search-result-window/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-search-result-window/*": [
+        "../packages/runtime-ui/search-result-window/src/*"
+      ],
+      "@hierarchidb/runtime-ui-tour": [
+        "../packages/runtime-ui/tour/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-tour/*": [
+        "../packages/runtime-ui/tour/src/*"
+      ],
       "@hierarchidb/runtime-worker": [
         "../packages/runtime-worker/worker/dist"
       ],

@@ -23,6 +23,7 @@ import {
   getViewportSize,
   normalizeDialogState,
   initialPosition,
+  useMultiStepDialogContext,
   type DialogDisplayMode,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
@@ -241,6 +242,9 @@ function TrashDialogHeader({
   onRequestClose,
   isDirty,
 }: TrashDialogHeaderProps) {
+  const ctx = useMultiStepDialogContext<TrashStepData>();
+  const handlePointerDown = ctx.onDragHandlePointerDown;
+
   return (
     <Box
       sx={{
@@ -252,7 +256,11 @@ function TrashDialogHeader({
         borderBottom: '1px solid',
         borderColor: 'divider',
         gap: 2,
+        cursor: displayMode === 'full-screen' ? 'default' : 'move',
+        userSelect: 'none',
       }}
+      onPointerDown={handlePointerDown}
+      data-dialog-drag-handle="true"
     >
       <Box sx={{ minWidth: 0 }}>
         <Typography variant="h6" noWrap>{title}</Typography>

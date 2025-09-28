@@ -16,6 +16,22 @@ import type {
   MultiDialogSize,
 } from './types.js';
 
+type ResizeDirection =
+  | 'top'
+  | 'bottom'
+  | 'left'
+  | 'right'
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right';
+
+interface ResizeHandleConfig {
+  key: string;
+  direction: ResizeDirection;
+  style: React.CSSProperties;
+}
+
 export interface DialogOverlayFrameProps {
   headlessProps: HeadlessMultiStepDialogProps<any>;
   defaultSize?: MultiDialogSize;
@@ -65,6 +81,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     startSize: MultiDialogSize;
     startPosition: MultiDialogPosition;
     displayMode: 'normal' | 'maximize' | 'full-screen';
+    direction: ResizeDirection;
   } | null>(null);
 
   const effectiveDisplayMode = headlessProps.displayMode ?? 'normal';
@@ -140,7 +157,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     window.addEventListener('pointercancel', handlePointerEnd);
   }, [enableDrag, effectiveDisplayMode, fallbackPosition, guards, headlessProps, defaultSize]);
 
-  const handleResizePointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+  const handleResizePointerDown = useCallback((event: React.PointerEvent<HTMLElement>, direction: ResizeDirection) => {
     if (!enableResize) return;
     if (effectiveDisplayMode === 'full-screen') return;
     if (!headlessProps.onSizeChange) return;
@@ -160,6 +177,7 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       startSize: sizeSnapshot,
       startPosition: positionSnapshot,
       displayMode: modeSnapshot,
+      direction,
     };
 
     guards.registerDragStart();
@@ -168,12 +186,42 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       const state = resizeStateRef.current;
       if (!state || moveEvent.pointerId !== pointerId) return;
       const viewport = getViewportSize();
-      const width = Math.max(state.startSize.width + (moveEvent.clientX - state.originX), FRAME_CONSTANTS.MIN_DIALOG_WIDTH);
-      const height = Math.max(state.startSize.height + (moveEvent.clientY - state.originY), FRAME_CONSTANTS.MIN_DIALOG_HEIGHT);
-      const proposedSize: MultiDialogSize = { width, height };
+      const deltaX = moveEvent.clientX - state.originX;
+      const deltaY = moveEvent.clientY - state.originY;
+
+      let nextWidth = state.startSize.width;
+      let nextHeight = state.startSize.height;
+      let nextX = state.startPosition.x;
+      let nextY = state.startPosition.y;
+
+      if (state.direction.includes('right')) {
+        nextWidth = state.startSize.width + deltaX;
+      }
+      if (state.direction.includes('left')) {
+        nextWidth = state.startSize.width - deltaX;
+        nextX = state.startPosition.x + deltaX;
+      }
+      if (state.direction.includes('bottom')) {
+        nextHeight = state.startSize.height + deltaY;
+      }
+      if (state.direction.includes('top')) {
+        nextHeight = state.startSize.height - deltaY;
+        nextY = state.startPosition.y + deltaY;
+      }
+
+      const proposedSize: MultiDialogSize = {
+        width: Math.max(nextWidth, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+        height: Math.max(nextHeight, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+      };
+
+      const proposedPosition: MultiDialogPosition = {
+        x: nextX,
+        y: nextY,
+      };
+
       const normalized = normalizeDialogState(
         proposedSize,
-        state.startPosition,
+        proposedPosition,
         viewport,
         {
           enforceTopLeftMargin: state.displayMode === 'normal',
@@ -181,13 +229,9 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
           clampSizeToViewport: true,
         },
       );
+
       headlessProps.onSizeChange?.(normalized.size);
-      if (
-        headlessProps.onPositionChange
-        && (normalized.position.x !== state.startPosition.x || normalized.position.y !== state.startPosition.y)
-      ) {
-        headlessProps.onPositionChange(normalized.position);
-      }
+      headlessProps.onPositionChange?.(normalized.position);
     };
 
     const handlePointerEnd = (endEvent: PointerEvent) => {
@@ -204,14 +248,38 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
     window.addEventListener('pointercancel', handlePointerEnd);
   }, [defaultSize, enableResize, fallbackPosition, guards, headlessProps, effectiveDisplayMode]);
 
+  const makeResizePointerDown = useCallback((direction: ResizeDirection) => (
+    (event: React.PointerEvent<HTMLElement>) => handleResizePointerDown(event, direction)
+  ), [handleResizePointerDown]);
+
+  const resizeHandles = useMemo(() => {
+    if (!enableResize) return [] as ResizeHandleConfig[];
+    const transparent = { backgroundColor: 'transparent', touchAction: 'none' } as const;
+    const base: Array<ResizeHandleConfig> = [
+      { key: 'top', direction: 'top', style: { top: -4, left: '12px', right: '12px', height: 12, cursor: 'ns-resize', ...transparent } },
+      { key: 'bottom', direction: 'bottom', style: { bottom: -4, left: '12px', right: '12px', height: 12, cursor: 'ns-resize', ...transparent } },
+      { key: 'left', direction: 'left', style: { left: -4, top: '12px', bottom: '12px', width: 12, cursor: 'ew-resize', ...transparent } },
+      { key: 'right', direction: 'right', style: { right: -4, top: '12px', bottom: '12px', width: 12, cursor: 'ew-resize', ...transparent } },
+      { key: 'top-left', direction: 'top-left', style: { top: -4, left: -4, width: 16, height: 16, cursor: 'nwse-resize', ...transparent } },
+      { key: 'top-right', direction: 'top-right', style: { top: -4, right: -4, width: 16, height: 16, cursor: 'nesw-resize', ...transparent } },
+      { key: 'bottom-left', direction: 'bottom-left', style: { bottom: -4, left: -4, width: 16, height: 16, cursor: 'nesw-resize', ...transparent } },
+      { key: 'bottom-right', direction: 'bottom-right', style: { bottom: -4, right: -4, width: 16, height: 16, cursor: 'nwse-resize', ...transparent } },
+    ];
+    return base;
+  }, [enableResize]);
+
+  const bottomRightResize = useMemo(() => (
+    enableResize ? makeResizePointerDown('bottom-right') : undefined
+  ), [enableResize, makeResizePointerDown]);
+
   const augmentedHeadlessProps = useMemo<HeadlessMultiStepDialogProps<any>>(() => ({
     ...headlessProps,
     size: headlessProps.size ?? defaultSize,
     position: headlessProps.position ?? fallbackPosition,
     displayMode: headlessProps.displayMode ?? 'normal',
     onDragHandlePointerDown: enableDrag ? handleDragPointerDown : undefined,
-    onResizeHandlePointerDown: enableResize ? handleResizePointerDown : undefined,
-  }), [defaultSize, enableDrag, enableResize, fallbackPosition, handleDragPointerDown, handleResizePointerDown, headlessProps]);
+    onResizeHandlePointerDown: bottomRightResize,
+  }), [bottomRightResize, defaultSize, enableDrag, fallbackPosition, handleDragPointerDown, headlessProps]);
 
   const handleBackdropPointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return;
@@ -249,19 +317,17 @@ export const DialogOverlayFrame: React.FC<DialogOverlayFrameProps> = ({
       aria-modal="true"
     >
       <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
-      {enableResize && !fullScreen && (
+      {enableResize && !fullScreen && resizeHandles.map((handle) => (
         <Box
+          key={handle.key}
           sx={{
             position: 'absolute',
-            width: 16,
-            height: 16,
-            bottom: 0,
-            right: 0,
-            cursor: 'nwse-resize',
+            zIndex: 1,
+            ...handle.style,
           }}
-          onPointerDown={handleResizePointerDown}
+          onPointerDown={makeResizePointerDown(handle.direction)}
         />
-      )}
+      ))}
     </Box>
   );
 
