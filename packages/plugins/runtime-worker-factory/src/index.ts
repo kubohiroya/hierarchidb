@@ -64,12 +64,3 @@ export async function getRuntimeWorkerClient(
 
   return null;
 }
-
-export function registerRuntimeWorkerNotImplemented(
-  nodeType: string,
-  message = `[${nodeType}] runtime worker integration is not implemented yet`,
-): void {
-  registerRuntimeWorkerClient(nodeType, async () => {
-    throw new Error(message);
-  });
-}

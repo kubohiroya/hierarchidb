@@ -1,5 +1,3 @@
-import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
-
 export { SpreadsheetExtension } from './extension/definition.js';
 export type {
   DataSourceConfig,
@@ -26,6 +24,6 @@ import './ui/steps-provider';
 
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
-    registerRuntimeWorkerNotImplemented('spreadsheet', '[spreadsheet-plugin] runtime worker integration is not implemented yet');
+    // Spreadsheet plugin does not expose runtime worker adapters yet.
   }
 }

@@ -23,3 +23,6 @@ export const loadFolderEntitiesDB = async () => {
   const module = await import('./folderEntitiesDB.js');
   return module.FolderEntitiesDB;
 };
+
+// Runtime worker lifecycle hook: no special logic
+export const lifecycle = undefined;

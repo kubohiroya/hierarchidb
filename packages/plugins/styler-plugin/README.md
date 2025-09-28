@@ -785,3 +785,13 @@ const RealTimeStyler: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Spreadsheet プラグインとの連携
+
+Styler は spreadsheet-plugin を拡張する設計になっており、以下のコンポーネントを再利用します。
+
+- `createSpreadsheetCSVApi()`・`SpreadsheetCSVApiAdapter` を経由して CSV/Excel 等の取り込み処理を委譲します。
+- `SpreadsheetTabularDriver`／`SpreadsheetStorePort` が提供するチャンク保存ロジックを利用し、Styler 側ではスタイル設定に専念します。
+- Spreadsheet のエンティティ／ワーキングコピー管理（3×2 ライフサイクル）はそのまま継承しており、Styler 固有の処理は `StylerDataService` と `StylerEntityHandler` に追加する形です。
+
+この構造により、データの読み込み・保存は spreadsheet-plugin に一任し、Styler はスタイル生成や可視化に関する独自機能だけを実装しています。

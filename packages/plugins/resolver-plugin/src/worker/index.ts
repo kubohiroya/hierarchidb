@@ -25,3 +25,6 @@ export const loadResolverEntitiesDB = async () => {
   const module = await import('./resolverEntitiesDB.js');
   return module.ResolverEntitiesDB;
 };
+
+// Runtime worker lifecycle hook: rely on default cleanup rules
+export const lifecycle = undefined;

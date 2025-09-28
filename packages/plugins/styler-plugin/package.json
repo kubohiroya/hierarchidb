@@ -61,7 +61,6 @@
   },
   "dependencies": {
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",

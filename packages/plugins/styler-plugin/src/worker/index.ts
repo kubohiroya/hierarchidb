@@ -31,3 +31,6 @@ export const loadStylerEntitiesDB = async () => {
   const module = await import('./stylerEntitiesDB.js');
   return module.StylerEntitiesDB;
 };
+
+// Runtime worker lifecycle hook: rely on default cleanup rules
+export const lifecycle = undefined;

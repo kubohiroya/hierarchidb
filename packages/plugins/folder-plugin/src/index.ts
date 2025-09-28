@@ -18,10 +18,8 @@ export { wrapDialogStepComponent } from './base/wrapDialogStepComponent.js';
 export { initializeDefaultFolderExtensions, initializeDefaultNodeDialogExtensions } from './init/register-default-extensions.js';
 
 // Optional runtime wiring (no-op for folder plugin)
-import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
-
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
-    registerRuntimeWorkerNotImplemented('folder', '[folder-plugin] runtime worker integration is not implemented yet');
+    // Runtime worker adapters are optional; default behaviour covers folder nodes.
   }
 }

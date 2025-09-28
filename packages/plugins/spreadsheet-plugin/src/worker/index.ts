@@ -25,4 +25,8 @@ try {
   }).catch(() => {
   });
 } catch {
+  // ignore
 }
+
+// Runtime worker lifecycle hook: rely on default cleanup rules
+export const lifecycle = undefined;

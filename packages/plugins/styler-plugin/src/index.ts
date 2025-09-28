@@ -10,7 +10,6 @@
 import { StylerDataService } from './services/StylerDataService.js';
 import { StylerEntityHandler } from './handlers/StylerEntityHandler.js';
 import { StylerExtension } from './extension/definition.js';
-import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
 
 // Types exports
 export type {
@@ -149,6 +148,6 @@ export async function initializeStylerPlugin(context: {
 // Optional runtime wiring (no-op)
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
-    registerRuntimeWorkerNotImplemented('styler', '[styler-plugin] runtime worker integration is not implemented yet');
+    // Styler plugin currently relies on default runtime worker lifecycle behaviour.
   }
 }

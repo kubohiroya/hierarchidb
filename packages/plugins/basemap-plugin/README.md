@@ -679,3 +679,15 @@ const MapDashboard: React.FC<{ nodeId: NodeId }> = ({ nodeId }) => {
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Runtime Worker Integration Status
+
+- 現状: DX のために Dexie ピアストア (`createBasemapPeerStoreDexie`) を登録するのみで、Runtime Worker (entity handler / batch manager) 自体は未実装です。
+- 影響: `RuntimeWiring.registerRuntimeWorkerAdapters` は @hierarchidb/plugins-runtime-worker-factory の "not implemented" スタブを登録しており、Runtime Worker 経由で basemap をロードしようとすると例外が発生します。
+- 参考実装: `@eria-cartograph/app0/src/domains/resources/basemap` に旧実装があり、将来的な機能移植の際の参考になります。困った場合はまずそちらを参照してください。
+- TODO: エンティティハンドラ/サービス/batch 処理を整備し、共通ファクトリから実際の Runtime Worker クライアントを返すようにすること。
+
+### Runtime Worker Perspective
+
+- Basemap plugin registers shared Dexie peer stores (`createBasemapPeerStoreDexie`) so the standard 3×2 lifecycle can manage entities without plugin-specific code.
+- Dedicated runtime worker adapters（entity handler / batch manager） are still未移植です。必要になった際は `@eria-cartograph/app0/src/domains/resources/basemap` の旧実装を参考にモジュール化します。

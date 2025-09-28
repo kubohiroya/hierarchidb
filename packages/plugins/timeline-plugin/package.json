@@ -54,8 +54,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*"
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

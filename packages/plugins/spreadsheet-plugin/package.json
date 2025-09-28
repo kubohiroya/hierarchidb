@@ -66,8 +66,7 @@
     "@types/pako": "^2.0.3",
     "pako": "^2.1.0",
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*"
+    "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
     "react-i18next": "12.3.1",

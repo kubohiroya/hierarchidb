@@ -192,3 +192,4 @@ vitest.config.ts.*.mjs
 /app/src/generated/
 /app/.generated/
 /packages/ui/dialog/storybook-static/
+/eria-cartograph/

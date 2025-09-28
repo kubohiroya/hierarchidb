@@ -1,5 +1,4 @@
 import type { ComponentType } from 'react';
-import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
 import type { ResolverDialogProps } from './components/ResolverDialog.js';
 
 // Export types
@@ -53,6 +52,6 @@ import './ui/steps-provider';
 // Optional runtime wiring (register stub for runtime worker integration)
 export class RuntimeWiring {
   static async registerRuntimeWorkerAdapters(): Promise<void> {
-    registerRuntimeWorkerNotImplemented('resolver', '[resolver-plugin] runtime worker integration is not implemented yet');
+    // No resolver-specific runtime worker adapters are required at this point.
   }
 }

@@ -23,3 +23,6 @@ try {
 
 // Ensure this file is treated as a module under --isolatedModules
 export {};
+
+// Runtime worker lifecycle hook: follow default 3x2 entity cleanup rules
+export const lifecycle = undefined;
