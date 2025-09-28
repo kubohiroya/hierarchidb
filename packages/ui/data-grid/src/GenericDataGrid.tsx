@@ -38,7 +38,7 @@ type RowRecord = { id?: string | number } & Record<PropertyKey, unknown>;
 
 const getCellValue = <T extends RowRecord>(row: T, columnId: GridColumn<T>['id']): unknown => {
   const propertyKey = columnId as PropertyKey;
-  return Object.prototype.hasOwnProperty.call(row, propertyKey) ? row[propertyKey] : undefined;
+  return  Object.hasOwn(row, propertyKey) ? row[propertyKey] : undefined;
 };
 
 const toDefaultRowId = <T extends RowRecord>(row: T, index?: number): string | number => {

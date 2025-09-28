@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 

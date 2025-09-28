@@ -3,7 +3,8 @@
  * Displays Shape node information and provides management controls
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -29,7 +30,7 @@ import {
   Storage as StorageIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { ShapeEntity } from '../shared';
 import type { BatchStatus } from '../services/types';
 

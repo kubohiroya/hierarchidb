@@ -4,7 +4,8 @@
  * Renders the configured basemap with all settings applied
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import {
   type MapLibreLayer,

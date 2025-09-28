@@ -3,7 +3,7 @@
   */
 
 import type { NodeId } from './types.js';
-import {
+import type {
   BatchSession,
   BatchTask,
   CountryMetadata,

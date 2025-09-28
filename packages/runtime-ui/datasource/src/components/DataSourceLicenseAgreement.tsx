@@ -3,7 +3,8 @@
  * @module @hierarchidb/ui-datasource/components
  */
 
-import React, { useCallback } from 'react';
+import type React from 'react';
+import { useCallback } from 'react';
 import { Alert, AlertTitle, Box, Button, Chip, Link, Stack, Typography } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
@@ -12,7 +13,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 
-import { DataSourceConfig, DataSourceConfigs, DataSourceName, getLicenseColor } from '../types/DataSource.js';
+import { type DataSourceConfig, DataSourceConfigs, type DataSourceName, getLicenseColor } from '../types/DataSource.js';
 
 export interface DataSourceLicenseAgreementProps {
   /**

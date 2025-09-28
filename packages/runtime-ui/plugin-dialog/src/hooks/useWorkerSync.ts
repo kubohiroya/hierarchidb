@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import {
   dialogStateAtom,
   dialogStepsAtom,

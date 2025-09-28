@@ -3,7 +3,8 @@
  * @description File upload/URL download interface for CSV processing
  */
 
-import React, { useRef, useState } from 'react';
+import type React from 'react';
+import { useRef, useState } from 'react';
 import {
   Alert,
   Box,

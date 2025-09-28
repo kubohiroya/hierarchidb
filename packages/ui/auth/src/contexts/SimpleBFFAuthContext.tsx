@@ -1,10 +1,10 @@
 import React from 'react';
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 import { PopupDetectionService } from '../services/PopupDetectionService.js';
 
-import { AuthContextType } from '../types/AuthContextType.js';
-import { AuthUser } from '../types/AuthUser.js';
+import type { AuthContextType } from '../types/AuthContextType.js';
+import type { AuthUser } from '../types/AuthUser.js';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
 
@@ -432,24 +432,18 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           windowWithAuth.handleAuthSuccess = () => {
             cleanupPopupListeners();
             setIsAuthenticating(false);
-            try {
               if (!popup.closed) {
                 popup.close();
               }
-            } catch (e) {
-            }
           };
 
           windowWithAuth.handleAuthError = (_error: string) => {
             cleanupPopupListeners();
             setIsAuthenticating(false);
 
-            try {
               if (!popup.closed) {
                 popup.close();
               }
-            } catch (e) {
-            }
           };
 
           // Additional COOP-safe mechanism: Use a shared timestamp to detect completion
@@ -507,6 +501,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
 
               // COOP error - we can't check popup.closed, so rely on other methods
               if (consecutiveErrors === 1) {
+                // do somthing
               }
 
               if (popupCheckCount % 20 === 0) {
@@ -730,7 +725,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       }
 
       if (userInfo && accessToken) {
-        try {
           const userData = JSON.parse(userInfo);
           const authUser: AuthUser = {
             id: userData.sub || userData.id,
@@ -764,8 +758,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           sessionStorage.removeItem('pkce_timestamp');
           sessionStorage.removeItem('auth_callback_processing');
           sessionStorage.removeItem('auth_processing_code');
-        } catch (_error) {
-        }
       }
     };
 
@@ -807,7 +799,6 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       handleStorageChange();
     } else if (isAuthenticating) {
       startAuthMonitoring();
-    } else {
     }
 
     // Listen for storage changes (this works across tabs/windows)

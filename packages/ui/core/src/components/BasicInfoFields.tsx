@@ -3,7 +3,8 @@
  * Shared name/description form fields for Step1 across plugins.
  */
 
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Box, FormControl, TextField, Typography } from '@mui/material';
 
 export interface BasicInfoValue {

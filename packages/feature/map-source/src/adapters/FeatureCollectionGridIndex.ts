@@ -96,7 +96,7 @@ function union(a: BBox | undefined, b: BBox): BBox {
 }
 
 function tileToBBox({ z, x, y }: TileCoord): BBox {
-  const n = Math.pow(2, z);
+  const n = 2 ** z;
   const lon1 = x / n * 360 - 180, lon2 = (x + 1) / n * 360 - 180;
   const toDeg = (r: number) => r * 180 / Math.PI;
   const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));

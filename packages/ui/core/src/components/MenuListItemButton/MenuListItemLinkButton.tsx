@@ -1,5 +1,6 @@
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, SpeedDialIcon } from '@mui/material';
-import React, { MouseEvent, type ReactNode, useCallback, useState } from 'react';
+import type React from 'react';
+import { type MouseEvent, type ReactNode, useCallback, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom';
 
 export type MenuItemLinkType = {

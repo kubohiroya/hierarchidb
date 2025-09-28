@@ -3,7 +3,7 @@
  * @module @hierarchidb/ui-lru-splitview/components
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box, Chip, IconButton, Stack, Typography, useTheme } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,

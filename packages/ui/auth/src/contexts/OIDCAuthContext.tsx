@@ -106,7 +106,7 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
       // Fallback: redirect to home page
       window.location.href = fallbackPath;
     }
-  }, [auth]);
+  }, [auth, fallbackPath]);
 
   const getAccessToken = useCallback(() => {
     if (!user || !auth.user) return null;

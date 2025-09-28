@@ -1,7 +1,7 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 import { ThemeContext } from './ThemeContext.js';
-import { ThemeContextType, ThemeMode } from '../types.js';
+import type { ThemeContextType, ThemeMode } from '../types.js';
 import { getStoredThemeMode, getSystemTheme, storeThemeMode } from '../utils/storage.js';
 
 export interface ThemeProviderProps {

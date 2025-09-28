@@ -1,6 +1,6 @@
-import { EntityBackup } from './entity-backup-types.js';
-import { GroupEntity, PeerEntity } from './entity-types.js';
-import { NodeId } from './id-types.js';
+import type { EntityBackup } from './entity-backup-types.js';
+import type { GroupEntity, PeerEntity } from './entity-types.js';
+import type { NodeId } from './id-types.js';
 
 export interface EntityHandler<
   TEntity extends PeerEntity = PeerEntity,

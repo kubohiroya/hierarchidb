@@ -4,7 +4,7 @@
  * Includes name, description, tags, and category selection
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { BasicInfoFields, CategorySelector, TagChipsInput } from '@hierarchidb/ui-core';

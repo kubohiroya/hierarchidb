@@ -4,7 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
-import { FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy.js';
+import type { FetchOptions, ProcessOptions, SaveTarget } from '../DataSourceStrategy.js';
 
 // Mock AuthRecoveryService used by authFetch so strategies avoid real network
 vi.mock('@hierarchidb/auth-recovery', () => {

@@ -4,7 +4,7 @@
 
 import type { NodeId, TagId } from './id-types.js';
 import type { RelationalEntity } from './entity-types.js';
-import { Timestamp } from './primitive-types.js';
+import type { Timestamp } from './primitive-types.js';
 
 /**
   * TagEntity -

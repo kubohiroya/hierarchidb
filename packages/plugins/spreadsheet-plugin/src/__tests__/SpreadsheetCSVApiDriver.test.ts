@@ -93,7 +93,7 @@ vi.mock('../utils/filterUtils', () => ({
 }));
 
 // Mock SimpleTableMetadataManager to avoid database conflicts
-let mockTables = new Map();
+const mockTables = new Map();
 
 vi.mock('../services/SimpleTableMetadataManager', () => ({
   SimpleTableMetadataManager: vi.fn().mockImplementation(() => ({
@@ -111,7 +111,7 @@ vi.mock('../services/SimpleTableMetadataManager', () => ({
 }));
 
 // Mock SpreadsheetDatabase to provide expected methods
-let mockHashToMetadata = new Map();
+const mockHashToMetadata = new Map();
 let duplicateCount = 0;
 
 vi.mock('../database/SpreadsheetDatabase', () => ({

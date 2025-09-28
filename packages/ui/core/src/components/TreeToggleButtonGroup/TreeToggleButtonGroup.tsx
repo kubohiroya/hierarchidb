@@ -3,14 +3,14 @@
  * @description Flexible button group for toggling between multiple tree pages
  */
 
-import React from 'react';
-import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
+import type React from 'react';
+import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // import { SvgIconComponent } from '@mui/icon-material';
 
-// @ts-ignore - provider-router not available in ui-core
+// @ts-expect-error - provider-router not available in ui-core
 const useNavigate = () => (_path: string, _options?: any) => {
 }; // Placeholder until moved to proper package
-// @ts-ignore - provider-router not available in ui-core
+// @ts-expect-error - provider-router not available in ui-core
 const useLoaderData = () => ({}); // Placeholder until moved to proper package
 
 export type ButtonGroupOrientation = 'horizontal' | 'vertical';

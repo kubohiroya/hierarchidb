@@ -4,7 +4,7 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { MouseEvent, useEffect, useRef, useState } from 'react';
+import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';

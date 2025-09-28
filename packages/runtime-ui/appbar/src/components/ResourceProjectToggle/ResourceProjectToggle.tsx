@@ -3,8 +3,8 @@
  * @description Toggle button group for switching between Resources and Projects pages
  */
 
-import { Button, ButtonGroup, ButtonProps } from '@mui/material';
-import { NodeId } from '@hierarchidb/common-type';
+import { Button, ButtonGroup, type ButtonProps } from '@mui/material';
+import type { NodeId } from '@hierarchidb/common-type';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import { Folder as FolderIcon, AccountTree as AccountTreeIcon } from '@mui/icons-material';
 

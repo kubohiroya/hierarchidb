@@ -1,7 +1,7 @@
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 // import { devError } from "@/shared/utils/logger";
 // const devError = (msg: string, ...args: any[]) => console.error(msg, ...args);
-import { AuthUser } from '../types/AuthUser.js';
+import type { AuthUser } from '../types/AuthUser.js';
 // Temporary implementation for secureConfig
 const getSecureConfig = () => ({
   microsoftClientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
@@ -72,13 +72,13 @@ export class AuthCallbackHandler {
         };
       } else if (code) {
         // Exchange code for token
-        tokenData = await this.exchangeCodeForToken(code, provider);
+        tokenData = await AuthCallbackHandler.exchangeCodeForToken(code, provider);
       } else {
         throw new Error('No authentication data found');
       }
 
       // Fetch user info
-      const user = await this.fetchUserInfo(tokenData.access_token, provider);
+      const user = await AuthCallbackHandler.fetchUserInfo(tokenData.access_token, provider);
 
       // Save user data
       const authUser: AuthUser = {

@@ -1,4 +1,5 @@
-import React, { memo } from 'react';
+import type React from 'react';
+import { memo } from 'react';
 import type { TreeNode } from '@hierarchidb/common-type';
 import {
   Box,
@@ -22,7 +23,7 @@ import {
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
 import { rainbowColors } from '@hierarchidb/ui-core';
-import { TreeNodeData } from '../../../types/index.js';
+import type { TreeNodeData } from '../../../types/index.js';
 
 export interface TreeTableColumn {
   readonly id: string;

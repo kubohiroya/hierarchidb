@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
-import { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import type { WorkerAPI } from '@hierarchidb/common-api';

@@ -3,15 +3,16 @@
  * @description Integrated map component with vector tile support
  */
 
-import React, { useCallback, useState } from 'react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import MapLibreMap from './MapLibreMap.js';
 import VectorTileLayer from './VectorTileLayer.js';
 import {
-  BaseMapProps,
+  type BaseMapProps,
   DEFAULT_MAP_CONFIG,
-  VectorTileDataSource,
-  VectorTileLayerConfig,
+  type VectorTileDataSource,
+  type VectorTileLayerConfig,
 } from '../types/unified-map-props.js';
 
 // Re-export for backward compatibility - but mark as deprecated

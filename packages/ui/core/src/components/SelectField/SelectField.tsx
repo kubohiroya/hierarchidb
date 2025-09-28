@@ -17,11 +17,11 @@
  * - React: SelectChangeEvent type for event handling
  */
 
-import React from 'react';
+import type React from 'react';
 import {
   FormControl,
   FormHelperText,
-  FormLabelProps,
+  type FormLabelProps,
   InputLabel,
   MenuItem,
   Select,

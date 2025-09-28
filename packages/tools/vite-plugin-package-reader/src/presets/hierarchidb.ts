@@ -70,7 +70,7 @@ export function createHierarchiDBStrategy(
 
   //  test
   const originalTest = strategy.test.bind(strategy);
-  strategy.test = function(packageName: string, packageJson: PackageJson): boolean {
+  strategy.test = (packageName: string, packageJson: PackageJson): boolean => {
     if (!originalTest(packageName, packageJson)) {
       return false;
     }

@@ -3,7 +3,8 @@
  * @description Vector tile layer component for MapLibre GL
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   GetResourceResponse,
   RequestParameters,

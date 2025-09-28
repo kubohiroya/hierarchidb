@@ -8,7 +8,7 @@
  */
 import type { ReactNode } from 'react';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import React from 'react';
+import type React from 'react';
 import {
   Add as AddIcon,
   Folder as FolderIcon,

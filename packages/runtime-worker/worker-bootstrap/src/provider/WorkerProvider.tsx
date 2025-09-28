@@ -6,7 +6,7 @@
  * lazy singleton initialization support.
  */
 
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import type { Remote } from 'comlink';
 // import { WorkerSingletonProvider } from './WorkerSingletonProvider.js'; // Temporarily disabled
 import { createWorkerClientProvider } from './WorkerClientProvider.js';

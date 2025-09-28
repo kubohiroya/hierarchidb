@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Alert, Card, CardContent, Chip, IconButton, LinearProgress, Stack, Typography } from '@mui/material';
 import {
   Cancel as CancelIcon,

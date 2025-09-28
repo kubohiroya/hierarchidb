@@ -6,7 +6,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { TreeTablePlugin } from './plugin/types.js';
-import { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-type';
 //import { TreeNode } from '@hierarchidb/common-type';
 
 // Base TreeNode interface (simplified from core)

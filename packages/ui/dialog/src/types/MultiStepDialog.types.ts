@@ -2,7 +2,7 @@
  * Multi-step dialog type definitions
  */
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 /**
  * Canonical data shape handed to dialog evaluators when a concrete type parameter is not supplied.

@@ -2,7 +2,7 @@
   * TrashbinTable -
     */
 
-import { MouseEvent, useMemo } from 'react';
+import { type MouseEvent, useMemo } from 'react';
 import { Box, Checkbox, Chip, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TrashbinTableProps, TrashItem } from '../types.js';
@@ -100,7 +100,7 @@ export function TrashbinTable({
   // No context menu state
 
   // Get data from controller
-  const trashItems = controller?.trashItems || [];
+  const trashItems = useMemo(()=> controller?.trashItems || [], [controller?.trashItems]);
   const selectedItemIds = controller?.selectedItemIds || new Set();
   const searchText = controller?.searchText || '';
 

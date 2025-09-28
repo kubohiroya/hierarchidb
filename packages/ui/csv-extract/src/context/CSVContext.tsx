@@ -3,7 +3,8 @@
  * @description React Context for CSV API dependency injection
  */
 
-import React, { createContext, useContext } from 'react';
+import type React from 'react';
+import { createContext, useContext } from 'react';
 import type { ICSVDataApi } from '../types/index.js';
 
 /**

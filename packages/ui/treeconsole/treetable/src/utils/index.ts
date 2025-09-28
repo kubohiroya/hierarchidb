@@ -4,7 +4,7 @@
   */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-type';
 
 // import type { TreeNode } from '../types.js';
 

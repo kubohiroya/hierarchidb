@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Button, Paper, Typography } from '@mui/material';
 import { InsertDriveFile } from '@mui/icons-material';
 

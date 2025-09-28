@@ -22,7 +22,7 @@ export class TimelineFramesService {
   /** Return indices [i0, i1] for frames bracketing time t */
   bracket(t: number): [number, number] | null {
     if (this.frames.length === 0) return null;
-    let i1 = this.frames.findIndex((f) => f.t >= t);
+    const i1 = this.frames.findIndex((f) => f.t >= t);
     if (i1 < 0) return [this.frames.length - 1, this.frames.length - 1];
     if (i1 === 0) return [0, 0];
     return [i1 - 1, i1];

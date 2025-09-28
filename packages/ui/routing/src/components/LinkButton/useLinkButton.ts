@@ -5,7 +5,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LinkButtonProps, ToastConfig } from './LinkButton.js';
+import type { LinkButtonProps, ToastConfig } from './LinkButton.js';
 // Mock toast hook
 const useToast = () => ({
   showToast: (config: any) => console.log('Toast:', config),

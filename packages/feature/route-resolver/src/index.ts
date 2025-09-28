@@ -1,13 +1,9 @@
 // Placeholder implementation for @hierarchidb/route-resolver
 // Spec-only package for now; this file exists to satisfy build tooling.
 
-export interface GraphPort {
-  // Placeholder for graph access methods (CSR/COO providers etc.)
-}
+export type GraphPort = {}
 
-export interface StorePort {
-  // Placeholder for block matrix persistence methods
-}
+export type StorePort = {}
 
 export class ResolverService {
   // Placeholder APSP runner

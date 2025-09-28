@@ -4,7 +4,8 @@
  * Shows a live preview of the configured basemap settings
  */
 
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { type MapLibreLayer, MapLibreMap, type MapLibreStyle, type MapViewState } from '@hierarchidb/ui-map';

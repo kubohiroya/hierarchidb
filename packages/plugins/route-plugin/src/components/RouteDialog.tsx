@@ -2,7 +2,8 @@
   * Route Dialog Component (ui-dialog variant)
    */
 
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import type React from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteWorkingCopy } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';

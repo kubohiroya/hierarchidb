@@ -4,7 +4,8 @@
  * The Deck.gl dependency stays optional via peerDependencies.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { MapLibreMap } from './MapLibreMap.js';
 import type { IControl } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';

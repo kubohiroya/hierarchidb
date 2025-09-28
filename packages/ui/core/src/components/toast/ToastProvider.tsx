@@ -3,8 +3,8 @@
  * @description Customizable toast notification provider with hide/show functionality
  */
 
-import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
-import { Alert, AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import { Alert, type AlertColor, Box, Button, IconButton, Snackbar } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
 /**

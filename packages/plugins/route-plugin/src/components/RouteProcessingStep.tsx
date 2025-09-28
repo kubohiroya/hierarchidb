@@ -3,7 +3,8 @@
  * Shows processing configuration and batch processing options
  */
 
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Box,

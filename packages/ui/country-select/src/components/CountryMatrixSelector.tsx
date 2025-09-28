@@ -3,7 +3,8 @@
  * @module @hierarchidb/ui-country-select/components
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import type React from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Box,
   Button,

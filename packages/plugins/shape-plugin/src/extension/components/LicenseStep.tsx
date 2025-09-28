@@ -6,7 +6,7 @@
  * with the plugin extension base-dialog interface.
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box, Button } from '@mui/material';
 import { Step3License } from '../../components/steps/Step3License.js';
 import type { ShapeWorkingCopy } from '../../shared/index.js';

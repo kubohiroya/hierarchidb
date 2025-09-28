@@ -61,21 +61,21 @@ export class AuthConfigValidator {
       */
   static validate(config: AuthConfig): void {
     //  :
-    if (this.validatedConfigs.has(config)) {
+    if (AuthConfigValidator.validatedConfigs.has(config)) {
       return;
     }
 
     //  :
-    this.validateRequiredFields(config);
+    AuthConfigValidator.validateRequiredFields(config);
 
     //  URL: URL
-    this.validateUrls(config);
+    AuthConfigValidator.validateUrls(config);
 
     //  : OAuth2.0
-    this.validateAuthParams(config);
+    AuthConfigValidator.validateAuthParams(config);
 
     //  :
-    this.validatedConfigs.set(config, true);
+    AuthConfigValidator.validatedConfigs.set(config, true);
   }
 
   /**
@@ -107,7 +107,7 @@ export class AuthConfigValidator {
 
     for (const field of urlFields) {
       const url = config[field] as string;
-      if (!this.isValidUrl(url)) {
+      if (!AuthConfigValidator.isValidUrl(url)) {
         throw new Error(`設定エラー: ${field}のURL形式が不正です: ${url}`);
       }
 
@@ -118,7 +118,7 @@ export class AuthConfigValidator {
     }
 
     //  Origin: Origin
-    if (!this.isValidOrigin(config.authOrigin)) {
+    if (!AuthConfigValidator.isValidOrigin(config.authOrigin)) {
       throw new Error(`設定エラー: authOriginの形式が不正です: ${config.authOrigin}`);
     }
   }

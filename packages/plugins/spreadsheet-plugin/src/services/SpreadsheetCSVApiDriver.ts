@@ -520,7 +520,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     rowCount: number,
     startRow: number,
   ): Promise<{ filteredRows: Array<Record<string, any>>; totalFilteredRows: number }> {
-    let filteredRows: Array<Record<string, any>> = [];
+    const filteredRows: Array<Record<string, any>> = [];
     let totalFilteredRows = 0;
     let currentRow = 0;
 

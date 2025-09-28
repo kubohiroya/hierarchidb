@@ -2,8 +2,8 @@
   * Folder API interface - UI-Worker
   */
 
-import { NodeId } from '@hierarchidb/common-type';
-import { CreateFolderData, FolderEntity, FolderSearchQuery, FolderSettings, UpdateFolderData } from './types.js';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { CreateFolderData, FolderEntity, FolderSearchQuery, FolderSettings, UpdateFolderData } from './types.js';
 
 /**
  * Main Folder API interface for UI-Worker communication via PluginRegistryImpl

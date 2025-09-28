@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Typography } from '@mui/material';
 //  @hierarchidb/_app-datasource
 //  import_app-datasource

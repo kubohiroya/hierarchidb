@@ -3,8 +3,8 @@
  * https://www.naturalearthdata.com/ Shapefile
   */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy.js';
-import { ShapeEntity } from '../../types/ShapeEntity.js';
+import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import type { ShapeEntity } from '../../types/ShapeEntity.js';
 import JSZip from 'jszip';
 
 //  Natural Earth
@@ -236,7 +236,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
         if (attempt === count - 1) throw error;
 
         const waitTime = backoff === 'exponential'
-          ? delay * Math.pow(2, attempt)
+          ? delay * 2 ** attempt
           : delay * (attempt + 1);
 
         console.warn(`[NaturalEarth] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);

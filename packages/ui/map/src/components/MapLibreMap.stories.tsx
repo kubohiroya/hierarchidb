@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React, { useCallback, useState } from 'react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material';
 import { MapLibreMap } from './MapLibreMap.js';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';

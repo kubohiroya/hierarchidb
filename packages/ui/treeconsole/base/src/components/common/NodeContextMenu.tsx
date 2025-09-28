@@ -4,7 +4,7 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { MouseEvent, useEffect, useRef, useState, type ReactElement } from 'react';
+import { type MouseEvent, useEffect, useRef, useState, type ReactElement } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import {
   Add as AddIcon,

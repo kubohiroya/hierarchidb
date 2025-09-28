@@ -78,7 +78,6 @@ export class SessionController {
       const { tableId: committedId } = await writer.commit();
       // Link tableId to session (best-effort)
         const db = getEphemeralLocationDB();
-        // @ts-ignore
         await db.table('sessions').update(this.sessionId, { tableId: committedId });
     } catch (e) {
       console.warn('[Location][Session] tabular persist skipped:', e);

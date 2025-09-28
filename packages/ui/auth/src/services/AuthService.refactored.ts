@@ -1,5 +1,5 @@
-import { AUTH_CONSTANTS, AuthConfig, AuthConfigValidator } from './AuthServiceConfig.js';
-import { AuthToken, AuthTokenManager } from './AuthTokenManager.js';
+import { AUTH_CONSTANTS, type AuthConfig, AuthConfigValidator } from './AuthServiceConfig.js';
+import { type AuthToken, AuthTokenManager } from './AuthTokenManager.js';
 import { AuthSecurityUtils } from './AuthSecurityUtils.js';
 
 export type AuthMethod = 'popup' | 'redirect';
@@ -323,7 +323,7 @@ export class AuthService {
 
         if (attempt < this.maxRetries) {
           //  : 2^attempt * 1000ms
-          const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
+          const delay = Math.min(2 ** attempt * 1000, 30000);
           if (import.meta.env.DEV) {
 
             console.log(`${delay}ms後にリトライします...`);

@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import type { StepProps } from '../../shared';
 

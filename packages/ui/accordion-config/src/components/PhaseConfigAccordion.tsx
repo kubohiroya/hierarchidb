@@ -1,5 +1,5 @@
 import { useTheme } from '@mui/material';
-import { ConfigAccordion, ConfigAccordionProps } from './ConfigAccordion.js';
+import { ConfigAccordion, type ConfigAccordionProps } from './ConfigAccordion.js';
 
 export interface PhaseConfig {
   /** Phase number (used for consistent coloring) */

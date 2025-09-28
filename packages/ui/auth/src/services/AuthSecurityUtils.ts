@@ -23,7 +23,7 @@ export class AuthSecurityUtils {
   static generateState(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
-    return this.base64UrlEncode(array);
+    return AuthSecurityUtils.base64UrlEncode(array);
   }
 
   /**
@@ -35,7 +35,7 @@ export class AuthSecurityUtils {
   static generateNonce(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
-    return this.base64UrlEncode(array);
+    return AuthSecurityUtils.base64UrlEncode(array);
   }
 
   /**
@@ -47,7 +47,7 @@ export class AuthSecurityUtils {
   static generateCodeVerifier(): string {
     const array = new Uint8Array(AUTH_CONSTANTS.CODE_VERIFIER_LENGTH / 2);
     crypto.getRandomValues(array);
-    return this.base64UrlEncode(array);
+    return AuthSecurityUtils.base64UrlEncode(array);
   }
 
   /**
@@ -69,7 +69,7 @@ export class AuthSecurityUtils {
 
     //  Base64URL: Base64URL
     const hashArray = new Uint8Array(hashBuffer);
-    return this.base64UrlEncode(hashArray);
+    return AuthSecurityUtils.base64UrlEncode(hashArray);
   }
 
   /**

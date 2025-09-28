@@ -3,12 +3,12 @@
  * @description Unified button group for Resources, Projects, and PreviewStep navigation
  */
 
-import { Button, ButtonGroup, ButtonProps, Tooltip } from '@mui/material';
+import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // Placeholder until moved to proper package
 // import { AttachmentIcon, MapIcon } from '~/icon';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
-// @ts-ignore - provider-router not available in ui-core
+// @ts-expect-error - provider-router not available in ui-core
 const useNavigate = () => (_path: string, _options?: any) => {
 };
 

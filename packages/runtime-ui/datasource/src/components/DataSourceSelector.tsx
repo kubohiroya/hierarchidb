@@ -3,14 +3,15 @@
  * @module @hierarchidb/ui-datasource/components
  */
 
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Box, Chip, FormControl, FormControlLabel, Link, Radio, RadioGroup, Stack, Typography } from '@mui/material';
 import { Info as InfoIcon, Layers as LayersIcon, Public as PublicIcon } from '@mui/icons-material';
 
 import {
   DataSourceConfigs,
-  DataSourceInfo,
-  DataSourceName,
+  type DataSourceInfo,
+  type DataSourceName,
   getLicenseColor,
   getLicenseLimitations,
 } from '../types/DataSource.js';

@@ -1,6 +1,6 @@
 import type { WorkingCopyAPI } from '@hierarchidb/common-api';
 import type { CommitResult, NodeId, NodeType, TreeId, TreeNode, ValidationResult } from '@hierarchidb/common-type';
-import { CoreDB } from './CoreDB.js';
+import type { CoreDB } from './CoreDB.js';
 import {
   createDraftWorkingCopyGetOrCreate,
   createWorkingCopyFromNode as createWcFromNode,
@@ -8,7 +8,7 @@ import {
   getWorkingCopy as getWc,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
-import { CommandProcessor } from './CommandProcessor.js';
+import type { CommandProcessor } from './CommandProcessor.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -105,8 +105,8 @@ export class WorkingCopyService implements WorkingCopyAPI {
     try {
       const wcNode = context?.wcNode;
       const holder = context?.holder;
-      let targetParentNodeId = context?.targetParentNodeId;
-      let targetNodeId = context?.targetNodeId;
+      const targetParentNodeId = context?.targetParentNodeId;
+      const targetNodeId = context?.targetNodeId;
       if (!wcNode || !holder) return { success: false, error: 'Working copy not found' };
       if (!targetParentNodeId || !targetNodeId) return { success: false, error: 'Holder metadata missing' };
       const parent = await (this.coreDB).nodes.get(targetParentNodeId);

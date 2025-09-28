@@ -183,7 +183,7 @@ function sleep(ms: number) {
 }
 
 function backoff(attempt: number, base: number, max: number): number {
-  const exp = Math.min(max, base * Math.pow(2, attempt));
+  const exp = Math.min(max, base * 2 ** attempt);
   const jitter = Math.random() * base;
   return Math.min(max, exp + jitter);
 }

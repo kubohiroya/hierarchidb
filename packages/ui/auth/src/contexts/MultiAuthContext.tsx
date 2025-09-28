@@ -1,10 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 // import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
-import { AuthProviderType } from '../types/AuthProviderType.js';
-import { AuthContextType } from '../types/AuthContextType.js';
-import { AuthProviderConfig } from '../types/AuthProviderConfig.js';
-import { AuthUser } from '../types/AuthUser.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthContextType } from '../types/AuthContextType.js';
+import type { AuthProviderConfig } from '../types/AuthProviderConfig.js';
+import type { AuthUser } from '../types/AuthUser.js';
 // import { getSecureConfig } from "@/config/secureConfig"; // TODO: Fix config import
 // import { notify } from "@/shared/containers/NotificationSystem/NotificationSystem"; // TODO: Fix notification import
 

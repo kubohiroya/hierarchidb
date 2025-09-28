@@ -3,7 +3,8 @@
  * Allows users to select waypoints and configure route options
  */
 
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Box,

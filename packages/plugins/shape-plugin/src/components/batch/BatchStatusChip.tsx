@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Chip } from '@mui/material';
 import type { BatchStatus } from '../../shared';
 

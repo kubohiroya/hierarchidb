@@ -2,7 +2,7 @@
   * Location Basic Info Step Component
    */
 
-import React from 'react';
+import type React from 'react';
 import { Box, Divider, Stack, TextField, Typography } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import type { LocationCategory, LocationWorkingCopy, TagId } from '../../types/index.js';

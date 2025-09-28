@@ -7,5 +7,4 @@ interface SparkleAnimationProps {
     duration?: number;
 }
 export declare const SparkleAnimation: React.FC<SparkleAnimationProps>;
-export {};
 //# sourceMappingURL=SparkleAnimation.d.ts.map

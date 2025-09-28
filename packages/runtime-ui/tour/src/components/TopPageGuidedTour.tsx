@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { Step } from 'react-joyride';
+import type { Step } from 'react-joyride';
 import { GenericGuidedTour } from '@hierarchidb/ui-tour';
 
 interface TopPageGuidedTourProps {

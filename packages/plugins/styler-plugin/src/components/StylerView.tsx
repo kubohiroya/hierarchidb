@@ -3,7 +3,7 @@
  * @description Styler view component
  */
 
-import React from 'react';
+import type React from 'react';
 
 export interface StylerViewProps {
   nodeId: string;

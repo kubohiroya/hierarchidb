@@ -1,4 +1,4 @@
-import { PluginDefinition } from './plugin-definition.js';
+import type { PluginDefinition } from './plugin-definition.js';
 
 /**
  * Package.json structure for plugin discovery

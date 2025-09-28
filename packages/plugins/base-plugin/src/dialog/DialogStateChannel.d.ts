@@ -51,5 +51,4 @@ export declare const registerDialogStateChannel: (nodeType: string, dialogId: st
 export declare const subscribeDialogStateChannel: (nodeType: string, dialogId: string, listener: DialogStateChannelListener, options?: SubscribeOptions) => () => void;
 export declare const emitDialogStateEvent: (nodeType: string, dialogId: string, event: DialogStateEventInput) => DialogStateEvent;
 export declare const clearDialogStateChannel: (nodeType: string, dialogId: string) => void;
-export {};
 //# sourceMappingURL=DialogStateChannel.d.ts.map

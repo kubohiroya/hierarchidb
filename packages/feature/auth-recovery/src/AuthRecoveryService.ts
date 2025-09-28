@@ -66,8 +66,6 @@ export class AuthRecoveryService implements AuthHeadersProvider {
         // Trigger auth flow and await token
         const requestId = `auth-req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         await this.awaitAuth(requestId, url, init, { sessionId: ctx.sessionId, pluginType, maxRetries });
-        // retry after success
-        continue;
       } catch (error) {
         lastErr = error;
       }

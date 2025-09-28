@@ -2,7 +2,8 @@
   * Route Basic Info Step Component
    */
 
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import {
   Box,
   Chip,
@@ -12,7 +13,7 @@ import {
   MenuItem,
   OutlinedInput,
   Select,
-  SelectChangeEvent,
+  type SelectChangeEvent,
   Stack,
   TextField,
   Typography,

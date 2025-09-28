@@ -3,11 +3,12 @@
  * @description Shared MapLibre GL map component for HierarchiDB
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import {
-  BaseMapProps,
+  type BaseMapProps,
   DEFAULT_MAP_CONFIG,
   type MapClickEvent,
   type MapFeatureIdentifyResult,

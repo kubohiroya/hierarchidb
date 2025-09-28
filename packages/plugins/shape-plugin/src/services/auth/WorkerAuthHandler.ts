@@ -8,11 +8,11 @@
 
 import {
   AUTH_CONSTANTS,
-  AuthNotification,
+  type AuthNotification,
   AuthNotificationFactory,
   AuthNotificationRegistry,
-  AuthRequiredNotification,
-  AuthSuccessNotification,
+  type AuthRequiredNotification,
+  type AuthSuccessNotification,
   detectAuthSource,
   generateRequestId,
 } from '@hierarchidb/common-auth';

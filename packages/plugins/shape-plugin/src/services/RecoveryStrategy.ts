@@ -112,7 +112,7 @@ export class ExponentialBackoffRetryStrategy implements RecoveryStrategy {
   calculateDelay(attemptNumber: number): number {
     const jitter = Math.random() * 0.3; //  0-30%
     const delay = Math.min(
-      this.baseDelay * Math.pow(this.multiplier, attemptNumber) * (1 + jitter),
+      this.baseDelay * this.multiplier ** attemptNumber * (1 + jitter),
       this.maxDelay,
     );
     return Math.floor(delay);

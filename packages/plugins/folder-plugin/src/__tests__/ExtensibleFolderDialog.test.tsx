@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import type React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog.js';
 import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
 

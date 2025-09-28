@@ -48,7 +48,7 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
   useEffect(() => {
     const isValid = validateStep();
     onValidationChange(isValid);
-  }, [data.name, data.description, onValidationChange]);
+  }, [data.name, data.description, onValidationChange, validateStep]);
 
   const handleBasicChange = (updates: Partial<ResolverWorkingCopyEntity>) => {
     if (updates.name !== undefined) {

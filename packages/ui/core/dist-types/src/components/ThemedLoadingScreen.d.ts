@@ -11,5 +11,4 @@ export declare function ThemedCircularProgress({ message, size }: {
     message?: string;
     size?: number;
 }): JSX.Element;
-export {};
 //# sourceMappingURL=ThemedLoadingScreen.d.ts.map

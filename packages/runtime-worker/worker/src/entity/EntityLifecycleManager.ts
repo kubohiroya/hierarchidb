@@ -132,8 +132,8 @@ export class EntityLifecycleManager {
   private static idMappingByCommand = new Map<string, NodeMapping>();
 
   static getSingleton(coreDB: CoreDB): EntityLifecycleManager {
-    if (!this.instance) this.instance = new EntityLifecycleManager(coreDB);
-    return this.instance;
+    if (!EntityLifecycleManager.instance) EntityLifecycleManager.instance = new EntityLifecycleManager(coreDB);
+    return EntityLifecycleManager.instance;
   }
 
   static setIdMapping(commandId: string, mapping: NodeMappingSource): void {
@@ -145,12 +145,12 @@ export class EntityLifecycleManager {
       normalized.set(sourceId, targetId);
     }
     if (normalized.size === 0) return;
-    this.idMappingByCommand.set(commandId, normalized);
+    EntityLifecycleManager.idMappingByCommand.set(commandId, normalized);
   }
 
   private static takeIdMapping(commandId: string): NodeMapping | undefined {
-    const mapping = this.idMappingByCommand.get(commandId);
-    if (mapping) this.idMappingByCommand.delete(commandId);
+    const mapping = EntityLifecycleManager.idMappingByCommand.get(commandId);
+    if (mapping) EntityLifecycleManager.idMappingByCommand.delete(commandId);
     return mapping;
   }
 
@@ -272,7 +272,6 @@ export class EntityLifecycleManager {
         list.push({ src, dst });
         byType.set(nodeType, list);
       } catch {
-        continue;
       }
     }
 

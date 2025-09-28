@@ -1,4 +1,5 @@
-import React, { ReactNode, useCallback } from 'react';
+import type React from 'react';
+import { type ReactNode, useCallback } from 'react'
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 

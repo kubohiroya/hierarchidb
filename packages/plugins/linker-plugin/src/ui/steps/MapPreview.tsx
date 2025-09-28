@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { MapLibreMap } from '@hierarchidb/ui-map';
 import type { ResourceSummary } from './ResourcePicker.js';

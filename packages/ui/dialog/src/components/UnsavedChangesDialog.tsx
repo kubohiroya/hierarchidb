@@ -2,7 +2,7 @@
  * @fileoverview UnsavedChangesDialog - Confirmation base-dialog for discarding unsaved changes
  */
 
-import React from 'react';
+import type React from 'react';
 import {
   Alert,
   AlertTitle,

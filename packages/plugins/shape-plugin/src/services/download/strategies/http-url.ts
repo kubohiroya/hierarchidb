@@ -34,12 +34,14 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
     switch (dataSource) {
       case 'gadm':
         return `https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_${country}_${level}.json`;
-      case 'naturalearth':
+      case 'naturalearth': {
         const scale = level === 0 ? '10m' : level === 1 ? '50m' : '110m';
         return `https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/${scale}/cultural/ne_${scale}_admin_${level}_countries.geojson`;
-      case 'geoboundaries':
+      }
+      case 'geoboundaries': {
         const levels = ['ADM0', 'ADM1', 'ADM2', 'ADM3', 'ADM4'];
         return `https://www.geoboundaries.org/api/current/gbOpen/${country}/${levels[level]}/`;
+      }
       default:
         return `https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_${country}_${level}.json`;
     }

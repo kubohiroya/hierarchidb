@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Alert, Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 import { type MapViewState, MapWithVectorTiles } from '@hierarchidb/ui-map';
@@ -52,7 +53,7 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
   const handleOpenMap = () => {
     const baseUrl = window.location.origin;
     const appPrefix = import.meta.env?.VITE_APP_PREFIX ?? '';
-    const trimmedPrefix = appPrefix.replace(/^[\/]+|[\/]+$/g, '');
+    const trimmedPrefix = appPrefix.replace(/^[/]+|[/]+$/g, '');
     const basePath = trimmedPrefix ? `/${trimmedPrefix}/` : '/';
     const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
     window.open(mapUrl, '_blank');

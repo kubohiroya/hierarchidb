@@ -1,11 +1,11 @@
 import { Fragment } from 'react';
 import { MultiStepDialogProvider } from './context.js';
-import {
+import type {
   HeadlessContentRenderProps,
   HeadlessFooterRenderProps,
   HeadlessHeaderRenderProps,
-  type HeadlessMultiStepDialogProps,
-  type HeadlessMultiStepDialogContextValue,
+  HeadlessMultiStepDialogProps,
+  HeadlessMultiStepDialogContextValue,
 } from './types.js';
 import { MultiStepDialogHeader } from './MultiStepDialogHeader.js';
 import { MultiDialogContent } from './MultiDialogContent.js';

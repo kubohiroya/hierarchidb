@@ -5,7 +5,7 @@
  *             uses worker-based APIs (services/ShapesPluginAPI.ts and worker/api.ts).
  */
 
-import { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type {
   BatchProcessConfig,
   BatchSession,

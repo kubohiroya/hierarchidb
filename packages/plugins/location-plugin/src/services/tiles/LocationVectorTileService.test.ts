@@ -5,12 +5,12 @@ import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 
 function long2tile(lon: number, z: number) {
-  return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
+  return Math.floor(((lon + 180) / 360) * 2 ** z);
 }
 
 function lat2tile(lat: number, z: number) {
   const rad = (lat * Math.PI) / 180;
-  return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, z));
+  return Math.floor((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * 2 ** z);
 }
 
 async function waitForCompleted(on: (cb: (p: ProgressInfo) => void) => void, timeoutMs = 5000): Promise<ProgressInfo> {

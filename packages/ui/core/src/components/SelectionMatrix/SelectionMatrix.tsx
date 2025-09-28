@@ -3,7 +3,8 @@
  * Reusable checkbox matrix for multi-dimensional selection
  */
 
-import React, { useCallback, useMemo } from 'react';
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Box,
   Checkbox,

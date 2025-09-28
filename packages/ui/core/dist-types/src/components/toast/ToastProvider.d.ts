@@ -124,5 +124,4 @@ export declare function useToastNotifications(): {
     info: (message: ReactNode, options?: Partial<ToastConfig>) => string;
     custom: (config: ToastConfig) => string;
 };
-export {};
 //# sourceMappingURL=ToastProvider.d.ts.map

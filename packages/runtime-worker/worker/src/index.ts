@@ -1,17 +1,17 @@
 import {
-  ImportExportAPI,
-  TagAPI,
-  TreeMutationAPI,
-  TreeQueryAPI,
-  TreeSubscriptionAPI,
+  type ImportExportAPI,
+  type TagAPI,
+  type TreeMutationAPI,
+  type TreeQueryAPI,
+  type TreeSubscriptionAPI,
   WorkerAPI,
-  WorkingCopyAPI,
+  type WorkingCopyAPI,
 } from '@hierarchidb/common-api';
 import { CoreDB } from './services/CoreDB.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
-import { NodeId, NodeType, PluginDefinition, Tree, TreeId, TreeNode } from '@hierarchidb/common-type';
+import { type NodeId, type NodeType, type PluginDefinition, Tree, type TreeId, TreeNode } from '@hierarchidb/common-type';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
 import { TreeMutationService } from './services/TreeMutationService.js';
@@ -61,7 +61,7 @@ export class WorkerService{
       // Optionally install XLSX parser for tabular if available
       try {
         // Optional dependency; suppress Vite analysis for dynamic import
-        // @ts-ignore
+        // @ts-expect-error
         const mod = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');
         if (mod && typeof mod.installTabularXlsx === 'function') {
           mod.installTabularXlsx();

@@ -88,7 +88,7 @@ export function calculateStatistics(values: number[]): DataStatistics {
     ? (((sorted[n / 2 - 1] ?? min) + (sorted[n / 2] ?? max)) / 2)
     : (sorted[Math.floor(n / 2)] ?? min);
 
-  const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / n;
+  const variance = values.reduce((acc, val) => acc + (val - mean) ** 2, 0) / n;
   const stdDev = Math.sqrt(variance);
 
   const q1Index = Math.floor(n * 0.25);
@@ -100,12 +100,12 @@ export function calculateStatistics(values: number[]): DataStatistics {
 
   //  Skewness
   const skewness = n > 2 && stdDev > 0
-    ? values.reduce((acc, val) => acc + Math.pow((val - mean) / stdDev, 3), 0) / n
+    ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 3, 0) / n
     : 0;
 
   //  Kurtosis
   const kurtosis = n > 3 && stdDev > 0
-    ? values.reduce((acc, val) => acc + Math.pow((val - mean) / stdDev, 4), 0) / n - 3
+    ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 4, 0) / n - 3
     : 0;
 
   //  IQR

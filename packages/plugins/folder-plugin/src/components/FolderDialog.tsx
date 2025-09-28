@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import type React from 'react';
+import { useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import { ExtensibleFolderDialog } from './ExtensibleFolderDialog.js';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';

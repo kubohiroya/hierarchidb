@@ -1,7 +1,7 @@
 import { Box, Card, CardContent, Chip, LinearProgress, Stack, Typography } from '@mui/material';
 import { Allotment } from 'allotment';
 import 'allotment/dist/style.css';
-import { BatchTaskStage, DownloadTask, ProcessingConfig, SimplifyTask, VectorTileTask } from '../../shared';
+import { BatchTaskStage, type DownloadTask, type ProcessingConfig, type SimplifyTask, type VectorTileTask } from '../../shared';
 import { TaskMonitor } from './TaskMonitor.js';
 
 // Temporary JSX typing workaround for Allotment with React 19 types

@@ -4,7 +4,7 @@
  * Handles OAuth2 authentication flow with Cloudflare Worker BFF
  */
 
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 export interface BFFUser {
   id: string;
@@ -37,14 +37,14 @@ class PKCEUtils {
   static generateCodeVerifier(): string {
     const array = new Uint8Array(64);
     crypto.getRandomValues(array);
-    return this.base64UrlEncode(array);
+    return PKCEUtils.base64UrlEncode(array);
   }
 
   static async generateCodeChallenge(verifier: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(verifier);
     const hash = await crypto.subtle.digest('SHA-256', data);
-    return this.base64UrlEncode(new Uint8Array(hash));
+    return PKCEUtils.base64UrlEncode(new Uint8Array(hash));
   }
 
   private static base64UrlEncode(array: Uint8Array): string {

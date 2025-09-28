@@ -3,8 +3,8 @@
  * Connects with HierarchiDB Worker layer via Comlink
  */
 
-import { NodeId } from '@hierarchidb/common-type';
-import { ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI.js';
+import type { NodeId } from '@hierarchidb/common-type';
+import { type ShapePluginAPI, shapePluginAPI } from './ShapePluginAPI.js';
 import type { CacheType } from '../services/types.js';
 
 /**

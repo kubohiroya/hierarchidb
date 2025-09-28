@@ -2,7 +2,7 @@
  * Type definitions for Shape plugin services
  */
 
-import { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import type { Feature as GeoJSONFeature } from 'geojson';
 import type {
   BoundingBox,

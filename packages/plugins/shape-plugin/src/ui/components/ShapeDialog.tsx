@@ -21,8 +21,8 @@ import type { NodeId } from '../../shared/index.js';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import {
   CreateShapeData,
-  ShapeEntity,
-  ShapeWorkingCopy,
+  type ShapeEntity,
+  type ShapeWorkingCopy,
   UI_CONSTANTS,
   UpdateShapeData,
   DEFAULT_PROCESSING_CONFIG,

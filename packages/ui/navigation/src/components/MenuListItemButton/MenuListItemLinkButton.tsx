@@ -1,7 +1,7 @@
 // Local implementation - using provider-router-dom directly
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
-import { MouseEvent, type ReactNode, useCallback, useState } from 'react';
+import { type MouseEvent, type ReactNode, useCallback, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 export type MenuItemLinkType = {

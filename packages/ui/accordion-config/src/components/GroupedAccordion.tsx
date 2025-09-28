@@ -1,6 +1,6 @@
 import React from 'react';
-import { Box, Divider, SxProps, Theme, Typography } from '@mui/material';
-import { BaseAccordion, BaseAccordionProps } from './BaseAccordion.js';
+import { Box, Divider, type SxProps, type Theme, Typography } from '@mui/material';
+import { BaseAccordion, type BaseAccordionProps } from './BaseAccordion.js';
 
 export interface AccordionGroupItem extends Omit<BaseAccordionProps, 'children'> {
   /** Unique key for the accordion */

@@ -3,4 +3,3 @@
 export function register(): void {}
 export { lifecycle } from './lifecycle.js';
 export default { register };
-export {};

@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceStrategyFactory } from '../DataSourceStrategyFactory.js';
-import { FetchOptions } from '../DataSourceStrategy.js';
+import type { FetchOptions } from '../DataSourceStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
 import { GeoBoundariesStrategy } from '../GeoBoundariesStrategy.js';
 

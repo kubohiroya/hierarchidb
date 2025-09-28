@@ -1,6 +1,6 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import { AuthProviderOptions } from './AuthProviderOptions.js';
 
 interface AuthProviderPromptProps {

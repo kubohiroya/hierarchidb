@@ -6,5 +6,4 @@ interface BackActionButtonProps {
     children: React.ReactNode;
 }
 export declare function BackActionButton({ isResourcesPage, isProjectsPage: _isProjectsPage, children, to, }: BackActionButtonProps): JSX.Element;
-export {};
 //# sourceMappingURL=BackActionButton.d.ts.map

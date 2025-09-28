@@ -3,7 +3,8 @@
  * @description Filter rule creation and preview for CSV data
  */
 
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,

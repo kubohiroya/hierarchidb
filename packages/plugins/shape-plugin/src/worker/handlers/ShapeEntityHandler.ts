@@ -9,9 +9,9 @@ import {
   buildShapeEntityFromCreate,
   DEFAULT_PROCESSING_CONFIG,
   mapWorkingCopyToUpdates,
-  ProcessingConfig,
-  ShapeEntity,
-  ShapeWorkingCopy,
+  type ProcessingConfig,
+  type ShapeEntity,
+  type ShapeWorkingCopy,
 } from '../../shared/index.js';
 import { BaseEntityHandler } from '@hierarchidb/plugins-base-plugin';
 

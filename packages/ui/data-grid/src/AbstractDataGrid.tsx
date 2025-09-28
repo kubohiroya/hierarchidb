@@ -50,7 +50,7 @@ import type {
 const getItemValue = <T extends DataItem>(item: T, field: ColumnDefinition<T>['field']): unknown => {
   const key = typeof field === 'string' ? field : String(field);
   const record = item as Record<string, unknown>;
-  return Object.prototype.hasOwnProperty.call(record, key) ? record[key] : undefined;
+  return  Object.hasOwn(record, key) ? record[key] : undefined;
 };
 
 const renderDefaultValue = (value: unknown): React.ReactNode => {

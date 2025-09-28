@@ -5,7 +5,7 @@
  * Reduces duplication across icon containers by providing common functionality.
  */
 
-import React from 'react';
+import type React from 'react';
 import type { SvgIconProps } from '@mui/material';
 
 /**

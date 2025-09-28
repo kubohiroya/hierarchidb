@@ -4,7 +4,8 @@
  * Processes OAuth callbacks and exchanges authorization codes for tokens
  */
 
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BFFAuthService } from '../services/BFFAuthService.js';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';

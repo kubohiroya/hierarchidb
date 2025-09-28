@@ -1,5 +1,5 @@
 import { Folder as FolderIconMUI, FolderOpen } from '@mui/icons-material';
-import React from 'react';
+import type React from 'react';
 
 export interface FolderIconProps {
   /**

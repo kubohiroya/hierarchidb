@@ -2,7 +2,7 @@
   * NodeTypeIcon -
     */
 
-import { MouseEvent } from 'react';
+import type { MouseEvent } from 'react';
 import { Box, IconButton } from '@mui/material';
 import {
   Delete as TrashIcon,

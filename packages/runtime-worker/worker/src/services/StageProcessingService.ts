@@ -62,11 +62,11 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   }
 
   private long2tile(lon: number, z: number) {
-    return Math.floor(((lon + 180) / 360) * Math.pow(2, z));
+    return Math.floor(((lon + 180) / 360) * 2 ** z);
   }
   private lat2tile(lat: number, z: number) {
     const rad = (lat * Math.PI) / 180;
-    return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * Math.pow(2, z));
+    return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
   }
 
   async generateTiles(inputBufferId: string, config: { format: 'mvt'; compression?: 'gzip' | 'none' }) {
@@ -199,7 +199,7 @@ export async function createStageWorkerClient(): Promise<StageProcessingService>
   // Note: stageWorker.entry is built to JS and emitted alongside index.js
   const worker = new Worker(new URL('./stageWorker.entry.js', import.meta.url), { type: 'module' });
   const mod = await import('comlink');
-  // @ts-ignore
+  // @ts-expect-error
   const client = mod.wrap<StageProcessingService>(worker);
   return client as unknown as StageProcessingService;
 }

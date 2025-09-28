@@ -1,4 +1,5 @@
-import React, { MouseEvent, ReactNode, useCallback } from 'react';
+import type React from 'react';
+import { type MouseEvent, type ReactNode, useCallback } from 'react'
 import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 

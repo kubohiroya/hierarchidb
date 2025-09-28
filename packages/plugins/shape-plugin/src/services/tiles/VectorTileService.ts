@@ -17,7 +17,7 @@ import type { NodeId } from '@hierarchidb/common-type';
 import type { BoundingBox, TileMetadata } from '../../shared/index.js';
 import type { Feature } from '../../shared/types.js';
 import type { LayerConfig } from '../types.js';
-import { Geometry } from 'geojson';
+import type { Geometry } from 'geojson';
 
 export interface TileRequest {
   nodeId: NodeId;
@@ -288,7 +288,7 @@ export class VectorTileService {
   }
 
   private tileToBbox(x: number, y: number, z: number): BoundingBox {
-    const n = Math.pow(2, z);
+    const n = 2 ** z;
     const lonMin = (x / n) * 360 - 180;
     const latMax = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
     const lonMax = ((x + 1) / n) * 360 - 180;
@@ -341,7 +341,7 @@ export class VectorTileService {
   }
 
   private lonToTileX(lon: number, zoom: number): number {
-    return ((lon + 180) / 360) * Math.pow(2, zoom);
+    return ((lon + 180) / 360) * 2 ** zoom;
   }
 
   private latToTileY(lat: number, zoom: number): number {
@@ -349,7 +349,7 @@ export class VectorTileService {
       ((1 -
           Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
         2) *
-      Math.pow(2, zoom)
+      2 ** zoom
     );
   }
 
@@ -372,7 +372,7 @@ export class VectorTileService {
 
   private getToleranceForZoom(zoom: number): number {
     // Higher zoom = lower tolerance (more detail)
-    return Math.max(0.0001, 0.01 / Math.pow(2, zoom - 8));
+    return Math.max(0.0001, 0.01 / 2 ** (zoom - 8));
   }
 
   private featureMatchesLayer(_feature: Feature, _layerConfig: LayerConfig): boolean {

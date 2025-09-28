@@ -2,7 +2,8 @@
  * @fileoverview CommonDialog - Base base-dialog component for plugins
  */
 
-import React, { useCallback, useState } from 'react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 import { Dialog, DialogContent } from '@mui/material';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog.js';
 import { CommonDialogActions } from './CommonDialogActions.js';

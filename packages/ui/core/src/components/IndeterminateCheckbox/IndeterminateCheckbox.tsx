@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import { Checkbox, SxProps, Theme } from '@mui/material';
+import { Checkbox, type SxProps, type Theme } from '@mui/material';
 
 interface IndeterminateCheckboxProps {
   id: string;

@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export type WorkingCopyData = Partial<{

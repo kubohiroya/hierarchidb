@@ -3,11 +3,11 @@
  * Combines core node definition with worker-side entity handler
  */
 
-import { EntityHandler } from './entity-handler-types.js';
-import { PeerEntity } from './entity-types.js';
-import { NodeType, TreeId } from './id-types.js';
-import { NodeLifecycleHooks } from './tree-node-lifecycle-hooks.js';
-import { ValidationRule } from './validation-types.js';
+import type { EntityHandler } from './entity-handler-types.js';
+import type { PeerEntity } from './entity-types.js';
+import type { NodeType, TreeId } from './id-types.js';
+import type { NodeLifecycleHooks } from './tree-node-lifecycle-hooks.js';
+import type { ValidationRule } from './validation-types.js';
 
 export interface PluginDefinition {
   // Basic node information

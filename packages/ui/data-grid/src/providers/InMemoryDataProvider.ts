@@ -245,7 +245,7 @@ export class InMemoryDataProvider<T extends DataItem = DataItem> implements Data
 
   private readField(item: T, field: string): unknown {
     const record = item as Record<string, unknown>;
-    return Object.prototype.hasOwnProperty.call(record, field) ? record[field] : undefined;
+    return  Object.hasOwn(record, field) ? record[field] : undefined;
   }
 
   private compareValues(a: unknown, b: unknown): number {

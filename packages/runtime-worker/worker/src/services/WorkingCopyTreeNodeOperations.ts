@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { generateNodeId, NodeBase, NodeId, NodeType, Timestamp, TreeId, TreeNode, Seq } from '@hierarchidb/common-type';
+import { generateNodeId, type NodeBase, type NodeId, type NodeType, type Timestamp, type TreeId, type TreeNode, type Seq } from '@hierarchidb/common-type';
 import type { CommandEnvelope, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
 import type { CoreDB } from './CoreDB.js';

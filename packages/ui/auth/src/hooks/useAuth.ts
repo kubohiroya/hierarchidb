@@ -5,9 +5,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import { PopupDetectionService } from '../services/PopupDetectionService.js';
-import { BFFAuthService, BFFSignInOptions, BFFUser } from '../services/BFFAuthService.js';
+import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '../services/BFFAuthService.js';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -50,8 +50,6 @@ const useBFFAuthService = () => {
       try {
         const authenticatedUser = await authService.signIn(options || {});
         setUser(authenticatedUser);
-      } catch (error) {
-        throw error;
       } finally {
         setIsLoading(false);
       }

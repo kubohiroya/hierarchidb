@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 
 export const EriaCartLogo: React.FC<{ size?: number }> = ({ size = 24 }) => {
   return (

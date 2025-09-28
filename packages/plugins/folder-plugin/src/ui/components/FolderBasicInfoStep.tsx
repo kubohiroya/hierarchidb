@@ -3,7 +3,8 @@
  * Step1
   */
 
-import React, { useCallback } from 'react';
+import type React from 'react';
+import { useCallback } from 'react';
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { Folder as FolderIcon, LocalOffer } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import type React from 'react';
+import { Box, FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent, Typography } from '@mui/material';
 import type { LanguageConfig } from '../provider/LanguageProvider.js';
 import { useLanguage } from '../provider/LanguageProvider.js';
 

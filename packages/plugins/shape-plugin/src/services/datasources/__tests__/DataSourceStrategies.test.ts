@@ -3,7 +3,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory.js';
-import { BaseDataSourceStrategy, FetchOptions, ProcessOptions, SaveTarget, DataSourceConfig } from '../DataSourceStrategy.js';
+import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions, type SaveTarget, type DataSourceConfig } from '../DataSourceStrategy.js';
 import { NaturalEarthStrategy } from '../NaturalEarthStrategy.js';
 import { GADMStrategy } from '../GADMStrategy.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';

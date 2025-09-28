@@ -5,12 +5,12 @@
 
 import {
   BaseDataSourceStrategy,
-  BoundingBox,
-  DataSourceConfig,
-  FetchOptions,
-  ProcessOptions,
+  type BoundingBox,
+  type DataSourceConfig,
+  type FetchOptions,
+  type ProcessOptions,
 } from './DataSourceStrategy.js';
-import { ShapeEntity } from '../../types/ShapeEntity.js';
+import type { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  OSM
 export interface OSMRawData {

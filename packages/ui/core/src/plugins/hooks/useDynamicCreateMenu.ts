@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CreateMenuItem, CreateMenuItemOrDivider, IconComponent, NodeId } from '@hierarchidb/common-type';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry.js';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
+import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 
 /**
  * Dynamic Create Menu Hook

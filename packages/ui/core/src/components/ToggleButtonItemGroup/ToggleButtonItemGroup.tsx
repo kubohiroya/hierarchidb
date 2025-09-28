@@ -1,5 +1,5 @@
 import type { FC, MouseEvent } from 'react';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { type SxProps, type Theme, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
 export type ButtonGroupItemType = {

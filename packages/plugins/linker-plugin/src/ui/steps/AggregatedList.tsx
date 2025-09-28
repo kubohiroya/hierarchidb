@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
 import type { ResourceSummary } from './ResourcePicker.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';

@@ -1,6 +1,6 @@
 import { GenericGuidedTour } from '@hierarchidb/ui-tour';
 import type { Step } from 'react-joyride';
-import React from 'react';
+import type React from 'react';
 
 interface ProjectsGuidedTourProps {
   run: boolean;

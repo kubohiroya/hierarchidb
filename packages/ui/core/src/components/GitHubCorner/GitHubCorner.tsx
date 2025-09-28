@@ -16,7 +16,7 @@
  * - CSS: Hover animations defined in global styles
  */
 
-import React from 'react';
+import type React from 'react';
 
 interface GitHubCornerProps {
   url: string;

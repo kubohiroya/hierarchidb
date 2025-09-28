@@ -532,7 +532,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canBackToPrevious: false,
         };
 
-      case 1:
+      case 1: {
         const hasBasicInfo = !!(data.name && data.name.trim().length > 0 && data.locationType);
         const hasLocation = !!(
           (data.latitude !== undefined && data.longitude !== undefined) ||
@@ -546,8 +546,9 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canProceedToNext: hasLocation,
           canBackToPrevious: true,
         };
+      }
 
-      case 2:
+      case 2: {
         const hasMinimalInfo = !!(
           data.name && data.name.trim().length > 0 &&
           data.locationType &&
@@ -562,8 +563,9 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canProceedToNext: hasMinimalInfo,
           canBackToPrevious: true,
         };
+      }
 
-      case 3:
+      case 3: {
         const isComplete = !!(
           data.name && data.name.trim().length > 0 &&
           data.locationType &&
@@ -577,6 +579,7 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canSave: isComplete,
           canProceedToNext: false, canBackToPrevious: true,
         };
+      }
 
       default:
         return {

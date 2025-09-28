@@ -2,7 +2,8 @@
   * Location Selection Step
    */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import type React from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,

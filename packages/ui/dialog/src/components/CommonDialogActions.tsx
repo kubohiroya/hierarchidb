@@ -2,7 +2,7 @@
  * @fileoverview CommonDialogActions - Standardized base-dialog action buttons
  */
 
-import React from 'react';
+import type React from 'react';
 import { Button, DialogActions, Stack } from '@mui/material';
 
 export interface CommonDialogActionsProps {

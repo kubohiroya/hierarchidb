@@ -6,7 +6,7 @@
  * with the plugin extension base-dialog interface.
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box, Button } from '@mui/material';
 
 import { Step4Processing } from '../../components/steps/Step4Processing.js';

@@ -3,8 +3,8 @@
  * Manages plugin-provided dialog steps
  */
 
-import { ReactNode } from 'react';
-import { DialogStep } from '@hierarchidb/ui-dialog';
+import type { ReactNode } from 'react';
+import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 /**
  * Plugin step provider interface

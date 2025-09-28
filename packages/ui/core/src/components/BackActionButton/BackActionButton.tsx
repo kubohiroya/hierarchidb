@@ -1,5 +1,5 @@
 // import { LinkButton } from "@hierarchidb/ui-routing";
-import React from 'react';
+import type React from 'react';
 import { Button } from '@mui/material';
 //import { APP_PREFIX } from "@/config/appDescription";
 //import { EriaCartLogo } from "@/domains/src-config/containers/info/EriaCartLogo";

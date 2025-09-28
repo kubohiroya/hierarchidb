@@ -3,7 +3,8 @@
  * @description Simple error report panel with chronological error log
  */
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import type React from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Alert, AlertTitle, Box, Chip, Divider, IconButton, Paper, Stack, Typography } from '@mui/material';
 import {
   BugReport as CriticalIcon,

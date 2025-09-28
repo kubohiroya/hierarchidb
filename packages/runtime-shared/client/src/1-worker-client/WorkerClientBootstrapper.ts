@@ -3,7 +3,7 @@
  * UIWorker
   */
 
-import { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { WorkerLauncher } from './WorkerLauncher.js';
 import { WorkerConnector } from './WorkerConnector.js';
 import { ComlinkBridge } from './ComlinkBridge.js';

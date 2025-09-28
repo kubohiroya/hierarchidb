@@ -8,7 +8,7 @@ import type { NodeId } from '@hierarchidb/common-type';
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
 import type { StylerEntity } from '../entities/StylerEntity.js';
 import { StylerConfigDefault } from '../types/stylerTypes.js';
-import { StylerDataService } from '../services/StylerDataService.js';
+import type { StylerDataService } from '../services/StylerDataService.js';
 
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 type HandlerPayload<T> =

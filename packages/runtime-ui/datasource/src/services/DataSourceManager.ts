@@ -659,7 +659,7 @@ export class OpenStreetMapStrategy implements DataSourceStrategy {
     const counts = baseCounts[countryCode] || [
       1, 20, 200, 1000, 5000, 10000, 20000, 40000, 80000, 160000, 320000,
     ];
-    return counts[adminLevel] || Math.pow(2, adminLevel) * 1000;
+    return counts[adminLevel] || 2 ** adminLevel * 1000;
   }
 
   private estimateDataSize(countryCode: string, adminLevel: number): number {
@@ -672,7 +672,7 @@ export class OpenStreetMapStrategy implements DataSourceStrategy {
     const sizes = baseSizes[countryCode] || [
       0.1, 2, 20, 80, 160, 320, 640, 1280, 2560, 5120, 10240,
     ];
-    return sizes[adminLevel] || Math.pow(2, adminLevel) * 20;
+    return sizes[adminLevel] || 2 ** adminLevel * 20;
   }
 
   private calculateCenter(bbox: BoundingBox): [number, number] {

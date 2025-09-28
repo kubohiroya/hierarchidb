@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Stack, Step, StepButton, StepLabel, Stepper, TextField, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { DialogStepDefinition, NodeId, PeerEntity } from '@hierarchidb/common-type';

@@ -3,7 +3,7 @@
  * Manages automatic cleanup of expired WorkingCopies and batch processing data
  */
 
-import { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared/index.js';
+import type { BatchSession, NodeId, ShapeWorkingCopy } from '../../shared/index.js';
 
 export interface CleanupStatistics {
   workingCopiesDeleted: number;
@@ -292,7 +292,7 @@ export class EphemeralDataCleanupService {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / k ** i).toFixed(2)) + ' ' + sizes[i];
   }
 }
 

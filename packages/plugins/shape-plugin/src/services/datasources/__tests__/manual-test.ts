@@ -4,8 +4,8 @@
 
 import { DataSourceStrategyFactory, defaultDataSourceFactory } from '../DataSourceStrategyFactory.js';
 import { OpenStreetMapStrategy } from '../OpenStreetMapStrategy.js';
-import { BaseDataSourceStrategy, FetchOptions, ProcessOptions } from '../DataSourceStrategy.js';
-import { ShapeEntity } from '../../../types/ShapeEntity.js';
+import { BaseDataSourceStrategy, type FetchOptions, type ProcessOptions } from '../DataSourceStrategy.js';
+import type { ShapeEntity } from '../../../types/ShapeEntity.js';
 
 interface TestResult {
   name: string;

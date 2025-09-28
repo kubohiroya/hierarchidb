@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import { Login } from '@mui/icons-material';
 

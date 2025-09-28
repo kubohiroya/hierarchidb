@@ -18,16 +18,16 @@ import type { VectorTileLayerProps } from '../components/VectorTileLayer.js';
 // 1. BASIC MAP USAGE - Now Identical Across Components
 // ========================
 
-// @ts-ignore - Example only
-const basicMapLibreConfig: MapLibreMapProps = {
+// @ts-expect-error - Example only
+const _basicMapLibreConfig: MapLibreMapProps = {
   initialViewState: { longitude: 139.7, latitude: 35.7, zoom: 10 },
   onLoad: (_map) => console.log('Map loaded'),
   onViewStateChange: (viewState) => console.log('View changed', viewState),
   onClick: (event) => console.log('Map clicked', event),
 };
 
-// @ts-ignore - Example only
-const basicVectorTilesConfig: MapWithVectorTilesProps = {
+// @ts-expect-error - Example only
+const _basicVectorTilesConfig: MapWithVectorTilesProps = {
   // SAME base props as MapLibreMap - no learning curve!
   initialViewState: { longitude: 139.7, latitude: 35.7, zoom: 10 },
   onLoad: (_map) => console.log('Map loaded'),           // NOT onMapLoad
@@ -43,8 +43,8 @@ const basicVectorTilesConfig: MapWithVectorTilesProps = {
 // 2. ADVANCED CONFIGURATION - Consistent Structure
 // ========================
 
-// @ts-ignore - Example only
-const advancedConfig: MapWithVectorTilesProps = {
+// @ts-expect-error - Example only
+const _advancedConfig: MapWithVectorTilesProps = {
   // Base map configuration (consistent with MapLibreMap)
   initialViewState: { longitude: 139.7, latitude: 35.7, zoom: 10 },
   mapStyle: 'mapbox://styles/mapbox/streets-v11',
@@ -99,8 +99,8 @@ const advancedConfig: MapWithVectorTilesProps = {
 
 // NEW API (consistent):
 */
-// @ts-ignore - Example only
-const unifiedProps = {
+// @ts-expect-error - Example only
+const _unifiedProps = {
   // Same event handlers across all components
   onLoad: (_map: any) => console.log('loaded'),
   onClick: (_event: any) => console.log('clicked'),

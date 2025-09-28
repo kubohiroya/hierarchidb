@@ -5,7 +5,7 @@
  * providing the wrapped client to child components.
  */
 
-import React, { ReactNode, useContext, useEffect, useState } from 'react';
+import React, { type ReactNode, useContext, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
 
 export interface WorkerClientProviderProps<T> {

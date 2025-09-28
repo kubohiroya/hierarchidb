@@ -4,7 +4,8 @@
   * eria-cartographTreeTableCore
   */
 
-import React, { memo, useEffect, useState } from 'react';
+import type React from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TreeConsoleContentProps } from '../types/index.js';

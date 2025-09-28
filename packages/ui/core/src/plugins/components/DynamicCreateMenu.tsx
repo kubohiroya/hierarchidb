@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import {
   Alert,
   CircularProgress,
@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import type { CreateMenuItem, NodeId } from '@hierarchidb/common-type';
 import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu.js';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
+import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
 
 export interface DynamicCreateMenuProps {

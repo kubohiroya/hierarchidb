@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Alert, Box, Button, CircularProgress, LinearProgress, Paper, TextField, Typography } from '@mui/material';
 import { CheckCircle, CloudDownload, Link as LinkIcon } from '@mui/icons-material';
 // import { AuthRequiredPrompt } from "@/shared/auth/containers/AuthProviderPrompt";

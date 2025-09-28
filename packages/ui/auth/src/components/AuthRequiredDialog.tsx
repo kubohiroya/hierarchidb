@@ -6,7 +6,8 @@
  * and needs user intervention to continue.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -41,7 +42,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth.js';
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/common-auth AuthRequiredNotification shape used here.
 type AuthRequiredNotification = {

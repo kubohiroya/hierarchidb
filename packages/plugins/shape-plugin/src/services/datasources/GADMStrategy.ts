@@ -3,8 +3,8 @@
  * https://gadm.org/
   */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy.js';
-import { ShapeEntity } from '../../types/ShapeEntity.js';
+import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import type { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  GADM
 export interface GADMRawData {
@@ -267,7 +267,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
         if (attempt === count - 1) throw error;
 
         const waitTime = backoff === 'exponential'
-          ? delay * Math.pow(2, attempt)
+          ? delay * 2 ** attempt
           : delay * (attempt + 1);
 
         console.warn(`[GADM] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);

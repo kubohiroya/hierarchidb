@@ -3,7 +3,7 @@
  * Example implementation of a plugin step provider
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { PluginStepProvider, StepComponentProps } from '../registry/PluginStepRegistry.js';

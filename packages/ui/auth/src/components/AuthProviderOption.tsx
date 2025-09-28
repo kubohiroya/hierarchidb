@@ -1,5 +1,5 @@
-import React from 'react';
-import { AuthProviderType } from '../types/AuthProviderType.js';
+import type React from 'react';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 export interface AuthProviderOption {
   type: AuthProviderType;

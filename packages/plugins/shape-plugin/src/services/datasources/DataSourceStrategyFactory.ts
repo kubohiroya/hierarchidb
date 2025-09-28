@@ -2,7 +2,7 @@
    * DATA_SOURCE_STRATEGY_DESIGN.md
   */
 
-import { DataSourceStrategy } from './DataSourceStrategy.js';
+import type { DataSourceStrategy } from './DataSourceStrategy.js';
 import { NaturalEarthStrategy } from './NaturalEarthStrategy.js';
 import { GADMStrategy } from './GADMStrategy.js';
 import { OpenStreetMapStrategy } from './OpenStreetMapStrategy.js';

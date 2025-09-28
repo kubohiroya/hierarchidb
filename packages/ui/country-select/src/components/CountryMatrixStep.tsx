@@ -3,7 +3,8 @@
  * @module @hierarchidb/ui-country-select/components
  */
 
-import React, { useMemo } from 'react';
+import type React from 'react';
+import { useMemo } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Chip, Stack, Typography } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, Info as InfoIcon } from '@mui/icons-material';
 

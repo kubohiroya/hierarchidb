@@ -60,7 +60,7 @@ export type ShapeEntity = Partial<PeerEntity & {
 
 // ShapeWorkingCopy extends the entity with working copy properties
 // To satisfy the WorkingCopy constraint, we need TreeNode properties
-export type ShapeWorkingCopy = Partial<{
+export type ShapeWorkingCopy = ShapeEntity & Partial<{
   // TreeNode required properties (from NodeBase)
   id: NodeId; // NodeId instead of EntityId to match TreeNode
   parentId: NodeId;
@@ -77,7 +77,7 @@ export type ShapeWorkingCopy = Partial<{
   originalVersion?: number;
   hasGroupEntityCopy?: Record<string, boolean>;
 
-  // Shape-specific working copy properties
+  // Shape-specific working copy metadata
   isDraft?: boolean;
   downloadedMatrix?: boolean[][]; // Cache status
 }>;

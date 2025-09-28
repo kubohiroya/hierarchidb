@@ -38,7 +38,7 @@ export class DependencyResolver {
     for (const [name, pkg] of packages) {
       const deps = new Set<string>();
 
-      const allDeps = this.getDependencies(pkg);
+      const allDeps = DependencyResolver.getDependencies(pkg);
       for (const dep of allDeps) {
         if (packages.has(dep)) {
           deps.add(dep);
@@ -95,7 +95,7 @@ export class DependencyResolver {
   static topologicalSort(
     packages: Map<string, PackageJson>,
   ): string[] {
-    const graph = this.buildDependencyGraph(packages);
+    const graph = DependencyResolver.buildDependencyGraph(packages);
     const visited = new Set<string>();
     const result: string[] = [];
 
@@ -127,7 +127,7 @@ export class DependencyResolver {
     packageName: string,
     packages: Map<string, PackageJson>,
   ): Set<string> {
-    const graph = this.buildDependencyGraph(packages);
+    const graph = DependencyResolver.buildDependencyGraph(packages);
     const visited = new Set<string>();
 
     const dfs = (node: string): void => {

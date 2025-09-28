@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
 import { formatBytes } from '@hierarchidb/util';

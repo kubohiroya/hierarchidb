@@ -1,5 +1,5 @@
 import type { BBox, FeatureCollection, MapSourcePort, TileCoord } from '../ports.js';
-import Dexie, { Table } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 
 const logDexieShapeWarning = (message: string, error: unknown): void => {
@@ -108,7 +108,7 @@ function featureBBox(f: any): BBox | undefined {
 }
 
 function tileToBBox({ z, x, y }: TileCoord): BBox {
-  const n = Math.pow(2, z);
+  const n = 2 ** z;
   const lon1 = x / n * 360 - 180;
   const lon2 = (x + 1) / n * 360 - 180;
   const lat1 = toDeg(Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))));

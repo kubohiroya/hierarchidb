@@ -21,10 +21,10 @@ export class PopupDetectionService {
   }
 
   static getInstance(): PopupDetectionService {
-    if (!this.instance) {
-      this.instance = new PopupDetectionService();
+    if (!PopupDetectionService.instance) {
+      PopupDetectionService.instance = new PopupDetectionService();
     }
-    return this.instance;
+    return PopupDetectionService.instance;
   }
 
   /**

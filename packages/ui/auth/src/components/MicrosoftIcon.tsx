@@ -1,5 +1,5 @@
-import React from 'react';
-import { SvgIcon, SvgIconProps } from '@mui/material';
+import type React from 'react';
+import { SvgIcon, type SvgIconProps } from '@mui/material';
 
 export const MicrosoftIcon: React.FC<SvgIconProps> = (props) => {
   return (

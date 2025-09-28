@@ -3,8 +3,8 @@
 import 'fake-indexeddb/auto';
 import {proxy, expose, Remote} from 'comlink';
 import { WorkerService } from '../index.js';
-import { ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
-import { CommandProcessor } from '../services/CommandProcessor.js';
+import type { ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
+import type { CommandProcessor } from '../services/CommandProcessor.js';
 
 type Endpoint = MessagePort | Worker;
 

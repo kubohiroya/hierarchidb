@@ -1,9 +1,9 @@
 // containers/LinkButton.tsx
 
-import React from 'react';
+import type React from 'react';
 import {
   Button,
-  ButtonProps,
+  type ButtonProps,
   CircularProgress,
   Dialog,
   DialogActions,

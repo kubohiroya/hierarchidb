@@ -54,5 +54,4 @@ export declare const nodeDialogExtensionRegistry: NodeDialogExtensionRegistry;
  * @deprecated Use `NodeDialogExtensionRegistry` / `nodeDialogExtensionRegistry` instead.
  */
 export declare const dialogExtensionRegistry: NodeDialogExtensionRegistry;
-export {};
 //# sourceMappingURL=NodeDialogExtensionAPI.d.ts.map

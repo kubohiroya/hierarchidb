@@ -3,8 +3,8 @@
  * https://www.geoboundaries.org/
   */
 
-import { BaseDataSourceStrategy, DataSourceConfig, FetchOptions, ProcessOptions } from './DataSourceStrategy.js';
-import { ShapeEntity } from '../../types/ShapeEntity.js';
+import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
+import type { ShapeEntity } from '../../types/ShapeEntity.js';
 
 //  GeoBoundaries
 export type GeoBoundariesRawData = Partial<{
@@ -241,13 +241,11 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
           return data;
         } else if (response.status === 404) {
           console.warn(`[GeoBoundaries] ${releaseType} not available for ${country} ${adminLevel}`);
-          continue;
         } else {
           throw new Error(`API error ${response.status}: ${response.statusText}`);
         }
       } catch (error) {
         console.warn(`[GeoBoundaries] Failed to fetch ${releaseType}:`, error);
-        continue;
       }
     }
 
@@ -327,7 +325,7 @@ export class GeoBoundariesStrategy extends BaseDataSourceStrategy<GeoBoundariesR
         if (attempt === count - 1) throw error;
 
         const waitTime = backoff === 'exponential'
-          ? delay * Math.pow(2, attempt)
+          ? delay * 2 ** attempt
           : delay * (attempt + 1);
 
         console.warn(`[GeoBoundaries] Attempt ${attempt + 1} failed, retrying in ${waitTime}ms...`);

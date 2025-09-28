@@ -2,7 +2,8 @@
   * Batch Progress Dialog
    */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -278,7 +279,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / k ** i).toFixed(1)) + ' ' + sizes[i];
   };
 
   return (

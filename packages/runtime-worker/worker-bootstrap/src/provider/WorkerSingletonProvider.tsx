@@ -6,7 +6,8 @@
  * and verification that the Worker-side initialization is complete.
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import type React from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 interface WorkerState {

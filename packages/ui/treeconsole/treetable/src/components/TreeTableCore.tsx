@@ -10,7 +10,7 @@ import {
   getExpandedRowModel,
   getFilteredRowModel,
   getSortedRowModel,
-  SortingState,
+  type SortingState,
   useReactTable,
 } from '@tanstack/react-table';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';

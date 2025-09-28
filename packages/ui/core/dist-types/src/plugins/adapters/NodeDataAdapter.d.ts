@@ -141,5 +141,4 @@ interface WorkerAPI {
     updateEntity(nodeId: NodeId, entityType: string, changes: any): Promise<void>;
     getAllowedChildTypes?(nodeType: string): Promise<string[]>;
 }
-export {};
 //# sourceMappingURL=NodeDataAdapter.d.ts.map

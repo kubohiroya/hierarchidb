@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Alert, AlertTitle, Box, Button, Stack, Typography } from '@mui/material';
 import { CheckCircle as CheckCircleIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import type { StepProps } from '../../shared';

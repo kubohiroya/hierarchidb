@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Source, Layer } from '@vis.gl/react-maplibre';
 import { MapLibreMap } from '../components/MapLibreMap.js';

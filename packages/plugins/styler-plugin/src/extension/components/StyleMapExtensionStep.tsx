@@ -2,7 +2,8 @@
  * Styler extension step component for folder-plugin base-dialog
  */
 
-import React, { useCallback } from 'react';
+import type React from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, FormControl, InputLabel, MenuItem, Select, Slider, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/GridLegacy';

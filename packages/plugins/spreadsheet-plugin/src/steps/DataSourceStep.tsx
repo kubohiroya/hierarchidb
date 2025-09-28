@@ -5,7 +5,7 @@
  * :
   */
 
-import React from 'react';
+import type React from 'react';
 import { CSVUploadPanel } from './CSVUploadPanel.js';
 import { useTranslation } from 'react-i18next';
 

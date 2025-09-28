@@ -1,4 +1,4 @@
-import { exchangeCodeForTokens, ExchangeCodeForTokensReturn, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
+import { exchangeCodeForTokens, type ExchangeCodeForTokensReturn, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
   getGitHubUserInfo,

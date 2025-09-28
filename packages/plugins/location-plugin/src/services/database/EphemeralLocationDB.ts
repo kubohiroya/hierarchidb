@@ -52,7 +52,6 @@ export class EphemeralLocationDB extends Dexie {
     });
 
     this.vectorTiles = this.table('vectorTiles');
-    // @ts-ignore: assigned after version(2)
     this.sessions = this.table('sessions');
   }
 

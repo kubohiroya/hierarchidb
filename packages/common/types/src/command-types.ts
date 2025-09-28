@@ -1,6 +1,6 @@
-import { NodeId, NodeType, TreeId } from './id-types.js';
-import { Timestamp } from './primitive-types.js';
-import { TreeNode } from './tree-node-types.js';
+import type { NodeId, NodeType, TreeId } from './id-types.js';
+import type { Timestamp } from './primitive-types.js';
+import type { TreeNode } from './tree-node-types.js';
 
 /**
  * @deprecated Unused across the repository; scheduled for removal.

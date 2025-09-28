@@ -130,7 +130,7 @@ function hasSubpathExport(exportsField: PackageJsonShape['exports'], exportKey: 
     return exportKey === '.';
   }
   if (typeof exportsField === 'object') {
-    return Object.prototype.hasOwnProperty.call(exportsField, exportKey);
+    return  Object.hasOwn(exportsField, exportKey);
   }
   return false;
 }

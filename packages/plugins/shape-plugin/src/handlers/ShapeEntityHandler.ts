@@ -75,13 +75,14 @@ export class ShapeEntityHandler {
     if (!existing) {
       throw new Error('Shape entity not found');
     }
+    const currentVersion = existing.version ?? 0;
     const updated: ShapeEntity = {
       ...existing,
       ...updates,
       id: existing.id,
       nodeId: existing.nodeId,
       updatedAt: Date.now(),
-      version: existing.version + 1,
+      version: currentVersion + 1,
     };
     this.entitiesById.set(nodeId, updated);
     return updated;
@@ -146,12 +147,12 @@ export class ShapeEntityHandler {
       // Shape fields
       description: entity.description,
       dataSourceName: entity.dataSourceName,
-      licenseAgreement: false,
+      licenseAgreement: entity.licenseAgreement ?? false,
       processingConfig: entity.processingConfig,
       checkboxState: entity.checkboxState,
-      selectedCountries: [...entity.selectedCountries],
-      adminLevels: [...entity.adminLevels],
-      urlMetadata: [...entity.urlMetadata],
+      selectedCountries: [...(entity.selectedCountries ?? [])],
+      adminLevels: [...(entity.adminLevels ?? [])],
+      urlMetadata: [...(entity.urlMetadata ?? [])],
       isDraft: false,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -197,9 +198,9 @@ export class ShapeEntityHandler {
       licenseAgreement: workingCopy.licenseAgreement,
       processingConfig: workingCopy.processingConfig,
       checkboxState: workingCopy.checkboxState,
-      selectedCountries: workingCopy.selectedCountries,
-      adminLevels: workingCopy.adminLevels,
-      urlMetadata: workingCopy.urlMetadata,
+      selectedCountries: workingCopy.selectedCountries ?? [],
+      adminLevels: workingCopy.adminLevels ?? [],
+      urlMetadata: workingCopy.urlMetadata ?? [],
     };
     return this.updateEntity(nodeId, updates);
   }

@@ -1,4 +1,5 @@
-import React, { KeyboardEvent, useMemo, useState, ReactNode } from 'react';
+import type React from 'react';
+import { type KeyboardEvent, useMemo, useState, type ReactNode } from 'react'
 import { Box, Chip, Stack, TextField, Typography, useTheme } from '@mui/material';
 
 export interface TagChipsInputProps {

@@ -4,7 +4,7 @@ import { ImportExportService as BaseImportExportService } from '@hierarchidb/imp
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import type { CoreDB } from './CoreDB.js';
 import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/common-type';
-import { Timestamp } from '@hierarchidb/common-type';
+import type { Timestamp } from '@hierarchidb/common-type';
 import { SingletonMixin } from '@hierarchidb/util';
 
 // Augment base ImportExportService with lifecycle notifications.

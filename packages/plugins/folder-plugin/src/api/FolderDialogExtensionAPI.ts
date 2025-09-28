@@ -5,7 +5,7 @@ import type {
   StepArrayEvaluator,
 } from '@hierarchidb/plugins-base-plugin';
 import {
-  NodeDialogExtensionRegistry,
+  type NodeDialogExtensionRegistry,
   nodeDialogExtensionRegistry as baseNodeDialogRegistry,
   dialogExtensionRegistry as deprecatedDialogRegistry,
 } from '@hierarchidb/plugins-base-plugin';

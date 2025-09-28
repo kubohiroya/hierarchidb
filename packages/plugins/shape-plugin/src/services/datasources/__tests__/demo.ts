@@ -1,7 +1,7 @@
 /**
      */
 
-import { defaultDataSourceFactory, FetchOptions, OpenStreetMapStrategy } from '../index.js';
+import { defaultDataSourceFactory, type FetchOptions, type OpenStreetMapStrategy } from '../index.js';
 
 async function main() {
   console.log('=== Data Source Strategy Demo ===\n');

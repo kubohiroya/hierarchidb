@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import type { DialogStepDefinition } from '@hierarchidb/common-type';
 

@@ -3,7 +3,7 @@
  * @module @hierarchidb/ui-lru-splitview/components
  */
 
-import React from 'react';
+import type React from 'react';
 import { Box } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material';
 import { Allotment } from 'allotment';

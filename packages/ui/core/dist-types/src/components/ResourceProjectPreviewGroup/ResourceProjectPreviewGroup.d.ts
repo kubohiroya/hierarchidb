@@ -26,5 +26,4 @@ interface ResourceProjectPreviewGroupProps {
     size?: ButtonGroupSize;
 }
 export declare function ResourceProjectPreviewGroup({ selected, currentPageNodeId, appPrefix: _appPrefix, getSavedPageNodeId, savePageNodeId, previewEnabled: _previewEnabled, onPreviewClick: _onPreviewClick, orientation, size, }: ResourceProjectPreviewGroupProps): JSX.Element;
-export {};
 //# sourceMappingURL=ResourceProjectPreviewGroup.d.ts.map

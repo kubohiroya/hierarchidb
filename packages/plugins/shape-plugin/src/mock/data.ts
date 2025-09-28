@@ -328,7 +328,7 @@ export function generateMockVectorTileTasks(countries: string[], adminLevels: nu
           countryCode,
           adminLevel: level,
           zoomLevel: zoom,
-          tileCount: Math.pow(4, zoom - 8) * 10,
+          tileCount: 4 ** (zoom - 8) * 10,
           generatedTiles: 0,
         });
       }
@@ -369,7 +369,7 @@ export function formatBytes(bytes: number): string {
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return Math.round(bytes / k ** i * 100) / 100 + ' ' + sizes[i];
 }
 
 export function formatNumber(num: number): string {

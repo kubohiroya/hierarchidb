@@ -3,7 +3,7 @@
   * TreeTableReact
    */
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { PluginRegistry } from './PluginRegistry.js';
 import type {
   PluginContext as IPluginContext,

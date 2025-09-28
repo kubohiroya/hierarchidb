@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import type React from 'react';
+import { useCallback, useState } from 'react';
 import { Check, ContentCopy, ReportProblem } from '@mui/icons-material';
 import { IconButton, Typography } from '@mui/material';
 

@@ -1,5 +1,5 @@
-import { ReactNode, useState } from 'react';
-import { AuthContextProps, withAuth } from 'react-oidc-context';
+import { type ReactNode, useState } from 'react';
+import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import {
   Box,
   Button,

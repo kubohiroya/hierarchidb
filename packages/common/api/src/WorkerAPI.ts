@@ -16,7 +16,7 @@ import type { WorkingCopyAPI } from './WorkingCopyAPI.js';
 
 import type { PluginLifecycleAPI } from './PluginLifecycleAPI.js';
 //import type { PluginExtensionAPI } from './PluginExtensionAPI.js';
-import { TagAPI } from './TagAPI.js';
+import type { TagAPI } from './TagAPI.js';
 import type { Remote } from 'comlink';
 
 /**

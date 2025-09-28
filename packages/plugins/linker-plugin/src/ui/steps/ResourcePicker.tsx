@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import type { TreeQueryAPI, WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';

@@ -67,7 +67,7 @@ export const StyledAccordion: React.FC<StyledAccordionProps> = ({
           border: `1px solid ${theme.palette.divider}`,
         };
 
-      case 'filled':
+      case 'filled': {
         const schemeColors = {
           default: isDark ? theme.palette.grey[800] : theme.palette.grey[100],
           primary: theme.palette.primary.main,
@@ -86,6 +86,7 @@ export const StyledAccordion: React.FC<StyledAccordionProps> = ({
             ? theme.palette.text.primary
             : theme.palette.getContrastText(bgColor),
         };
+      }
 
       case 'elevated':
         return {

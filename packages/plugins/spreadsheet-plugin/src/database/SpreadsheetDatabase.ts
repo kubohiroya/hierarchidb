@@ -303,7 +303,7 @@ export class SpreadsheetDatabase extends Dexie {
     spreadsheetEntityId: NodeId,
     limit?: number,
   ): Promise<SpreadsheetRow[]> {
-    let query = this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId);
+    const query = this.spreadsheetRows.where('spreadsheetEntityId').equals(spreadsheetEntityId);
 
     const results = await query.sortBy('filterScore');
 

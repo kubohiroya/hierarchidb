@@ -50,5 +50,4 @@ export interface LicenseInfoProps {
     initialOrderDirection?: OrderDirection;
 }
 export declare const LicenseInfo: React.FC<LicenseInfoProps>;
-export {};
 //# sourceMappingURL=LicenseInfo.d.ts.map

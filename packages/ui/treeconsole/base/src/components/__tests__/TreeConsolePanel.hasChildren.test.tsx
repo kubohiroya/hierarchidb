@@ -6,8 +6,8 @@ import { TreeConsolePanel } from '../TreeConsolePanel.js';
 
 import { render, cleanup } from '@testing-library/react';
 import React = require('react');
-import { TreeNodeData } from '../../types/index.js';
-import { TreeTableColumn } from '../TreeTable/index.js';
+import type { TreeNodeData } from '../../types/index.js';
+import type { TreeTableColumn } from '../TreeTable/index.js';
 
 vi.mock('react-router-dom', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,

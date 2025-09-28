@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
 import type { RouteBatchSpec } from './types.js';
-import { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
+import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
 import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks, type RouteTaskInput } from './TaskMapper.js';
 import { createRouteBatchManager, type NetworkPortLike } from '../services/createRouteBatchManager.js';
 

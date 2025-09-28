@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { alpha, Box, CircularProgress, Typography, useTheme } from '@mui/material';
 
 interface LoadingOverlayProps {

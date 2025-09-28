@@ -34,7 +34,7 @@ export const jsonlParser: TabularParserPort = {
   detect(input: FileLike): DetectionResult {
     const meta = getFileMeta(input);
     const name = meta.name?.toLowerCase() ?? '';
-    let confidence = name.endsWith('.jsonl') ? 0.8 : 0.2;
+    const confidence = name.endsWith('.jsonl') ? 0.8 : 0.2;
     return { format: 'jsonl', confidence };
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Collapse, IconButton, SxProps, Theme, Typography } from '@mui/material';
+import { Box, Collapse, IconButton, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
 export interface CollapsibleSectionProps {

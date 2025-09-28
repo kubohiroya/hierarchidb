@@ -66,7 +66,7 @@ export class TreeSubscriptionService {
   subscribeNodeCommand(
     cmd: CommandEnvelope<'subscribeNode', ObserveNodePayload>,
   ): Observable<TreeChangeEvent> {
-    const { nodeId: nodeId, includeInitialValue = false } = cmd.payload;
+    const { nodeId, includeInitialValue = false } = cmd.payload;
 
     const subscriptionId = this.generateSubscriptionId();
     const subject = new Subject<TreeChangeEvent>();

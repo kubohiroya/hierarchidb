@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  HeadlessMultiStepDialogProps,
-  HeadlessContentRenderProps,
-  StepComponentDescriptor,
-  StepNavigationEvent,
+  type HeadlessMultiStepDialogProps,
+  type HeadlessContentRenderProps,
+  type StepComponentDescriptor,
+  type StepNavigationEvent,
   FRAME_CONSTANTS,
   getViewportSize,
   getPresetSize,
@@ -41,7 +42,7 @@ import {
 } from '../utils/peerDialogPersistence.js';
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
-import { getWorkerClientHook, WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { StepAdapter } from './StepAdapter.js';
 import { subscribeDialogStateChannel, type DialogStateEvent } from '@hierarchidb/plugins-base-plugin';
 

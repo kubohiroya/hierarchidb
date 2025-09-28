@@ -1,7 +1,7 @@
-import { NodeId, NodeType, TreeId } from './id-types.js';
-import { Timestamp } from './primitive-types.js';
-import { TreeNodeWithChildren } from './tree-node-types.js';
-import { SortOrder } from './tree-root-state-types.js';
+import type { NodeId, NodeType, TreeId } from './id-types.js';
+import type { Timestamp } from './primitive-types.js';
+import type { TreeNodeWithChildren } from './tree-node-types.js';
+import type { SortOrder } from './tree-root-state-types.js';
 
 export interface SubTreeChanges {
   treeId: TreeId;

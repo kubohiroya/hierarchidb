@@ -1,5 +1,5 @@
 import React from 'react';
-import { Accordion, AccordionDetails, AccordionSummary, Box, SxProps, Theme, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, type SxProps, type Theme, Typography } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
 export interface BaseAccordionProps {

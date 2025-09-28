@@ -3,7 +3,7 @@
  * UI
   */
 
-import React from 'react';
+import type React from 'react';
 import {
   Box,
   Chip,
