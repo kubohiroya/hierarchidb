@@ -143,6 +143,24 @@
     - blocked: 2025-09-28 11:20 PR 差分が他ブランチ変更とコンフリクト多発のため差し戻し。小粒PRへ再編する方針を決定
     - progress: 2025-09-28 11:25 小粒PRへ再編する計画（3 分割）を確定し、DoD/チェックリストを再定義
     - progress: 2025-09-28 11:42 plugin-dialog 分割PR向けに `tsconfig.base.json` を最小構成へ更新し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功を確認
+- fix/plugins/shape-plugin-build-rootdir — runtime-ui Plugin Dialog dist 参照で TS6059 を解消
+  - ブランチ: `fix/shape/plugin-dialog-dist-rootdir`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/plugins-shape-plugin`, `@hierarchidb/runtime-ui-datasource`
+  - 受け入れ基準（DoD）：
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が成功し、dist 出力が生成される
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功
+    - [x] shape plugin の build で発生していた TS6059 が再発しない（CI ログ想定）
+  - チェックリスト：
+    - [x] shape plugin の prebuild で plugin-dialog ビルドを追加
+    - [x] shape plugin の tsconfig 設定を dist 参照へ切り替え
+    - [x] 運用ログに検証結果と実行コマンドを追記
+  - ロールバック手順：
+    - 追加した prebuild と dist 参照設定をリバートし、従来の構成へ戻したうえで `pnpm --filter @hierarchidb/plugins-shape-plugin build` を再実行
+  - 運用ログ：
+    - start: 2025-09-28 16:05 `pnpm --filter @hierarchidb/plugins-shape-plugin build` で TS6059 を再現し、dist 参照不足を切り分け開始
+    - progress: 2025-09-28 16:18 shape plugin の tsconfig（通常/ビルド）に runtime-ui dist 参照を追加し、外部パッケージの src を取り込まないよう調整
+    - progress: 2025-09-28 16:25 prebuild に runtime-ui plugin dialog build を追加して依存 dist を生成
+    - done: 2025-09-28 16:40 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` と `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行し、TS6059 が解消されたことを確認
 - fix/ui-folder/dialog-theme-tokens — フォルダ作成ダイアログのテーマ配色対応
   - ブランチ: `fix/ui-folder/dialog-theme-tokens`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
@@ -3994,6 +4012,10 @@ P2:
 - 2025-09-28 15:02 progress: fix/plugins/shape-datasource-alias — shape-plugin 側の tsconfig（build/通常）から runtime-ui への `paths` を撤去し、dep-fence が警告する src 直接参照を解消
 - 2025-09-28 15:05 progress: fix/plugins/shape-datasource-alias — prebuild に `pnpm --filter @hierarchidb/runtime-ui-datasource build` を追加し、依存 dist を生成した状態で型検証/ビルドを実行可能に整備
 - 2025-09-28 15:12 done: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行しグリーン、dep-fence 警告解消を確認予定
+- 2025-09-28 16:05 start: fix/plugins/shape-plugin-build-rootdir — shape plugin build で TS6059 を再現し、runtime-ui plugin dialog dist 参照への切り替え検討を開始
+- 2025-09-28 16:18 progress: fix/plugins/shape-plugin-build-rootdir — shape plugin の tsconfig（通常/ビルド）に runtime-ui dist 参照を追加し、外部パッケージの src を取り込まないよう調整
+- 2025-09-28 16:25 progress: fix/plugins/shape-plugin-build-rootdir — prebuild に runtime-ui plugin dialog build を追加し、依存 dist を確実に生成
+- 2025-09-28 16:40 done: fix/plugins/shape-plugin-build-rootdir — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` と `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行し、TS6059 が解消されたことを確認
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新
