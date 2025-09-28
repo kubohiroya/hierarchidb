@@ -48,7 +48,7 @@
     "dist"
   ],
   "scripts": {
-    "prebuild": "pnpm --filter @hierarchidb/util build && pnpm --filter @hierarchidb/tabular-store build",
+    "prebuild": "pnpm --filter @hierarchidb/util build && pnpm --filter @hierarchidb/tabular-store build && pnpm --filter @hierarchidb/runtime-ui-datasource build",
     "typecheck:worker": "pnpm run prebuild && tsc -p tsconfig.worker.json --noEmit",
     "dev": "tsup --watch",
     "build": "pnpm run prebuild && tsup",
