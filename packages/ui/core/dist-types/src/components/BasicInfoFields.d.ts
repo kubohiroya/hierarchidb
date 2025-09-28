@@ -2,7 +2,7 @@
  * BasicInfoFields
  * Shared name/description form fields for Step1 across plugins.
  */
-import React from 'react';
+import type React from 'react';
 export interface BasicInfoValue {
     name?: string;
     description?: string;

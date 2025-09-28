@@ -61,7 +61,6 @@ export class WorkerService{
       // Optionally install XLSX parser for tabular if available
       try {
         // Optional dependency; suppress Vite analysis for dynamic import
-        // @ts-expect-error
         const mod = await import(/* @vite-ignore */ '@hierarchidb/tabular-xlsx');
         if (mod && typeof mod.installTabularXlsx === 'function') {
           mod.installTabularXlsx();

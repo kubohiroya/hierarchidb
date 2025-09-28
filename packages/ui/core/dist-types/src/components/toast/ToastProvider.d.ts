@@ -2,8 +2,8 @@
  * @file ToastProvider.tsx
  * @description Customizable toast notification provider with hide/show functionality
  */
-import { ReactNode } from 'react';
-import { AlertColor } from '@mui/material';
+import { type ReactNode } from 'react';
+import { type AlertColor } from '@mui/material';
 /**
  * Toast notification configuration with enhanced customization
  */
@@ -124,4 +124,5 @@ export declare function useToastNotifications(): {
     info: (message: ReactNode, options?: Partial<ToastConfig>) => string;
     custom: (config: ToastConfig) => string;
 };
+export {};
 //# sourceMappingURL=ToastProvider.d.ts.map

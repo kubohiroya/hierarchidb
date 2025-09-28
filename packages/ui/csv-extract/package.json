@@ -25,7 +25,8 @@
   },
   "dependencies": {
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*"
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/table-metadata": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

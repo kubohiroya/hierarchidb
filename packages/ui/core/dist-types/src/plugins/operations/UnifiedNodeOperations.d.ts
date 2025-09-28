@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-type';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
+import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 /**
  * Unified Node Operations
  *
@@ -90,4 +90,5 @@ interface DialogService {
         cancelText: string;
     }): Promise<boolean>;
 }
+export {};
 //# sourceMappingURL=UnifiedNodeOperations.d.ts.map

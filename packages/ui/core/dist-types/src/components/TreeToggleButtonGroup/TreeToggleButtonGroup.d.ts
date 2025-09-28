@@ -2,7 +2,7 @@
  * @file TreeToggleButtonGroup.tsx
  * @description Flexible button group for toggling between multiple tree pages
  */
-import React from 'react';
+import type React from 'react';
 export type ButtonGroupOrientation = 'horizontal' | 'vertical';
 export type ButtonGroupSize = 'small' | 'medium' | 'large';
 /**

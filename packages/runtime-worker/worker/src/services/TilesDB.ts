@@ -29,7 +29,6 @@ export class TilesDB extends Dexie {
     this.version(1).stores({
       tiles: '&key, sessionId, [sessionId+z+x+y], z, x, y, timestamp',
     });
-    // @ts-expect-error
     this.tiles = this.table('tiles');
   }
 }

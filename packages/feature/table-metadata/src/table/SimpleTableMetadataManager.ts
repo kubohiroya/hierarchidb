@@ -1,21 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-
-// Minimal structural type to avoid coupling to UI packages
-export type CSVTableMetadataLike = {
-  id: string;
-  filename?: string;
-  columns?: any[];
-  totalRows?: number;
-  contentHash?: string;
-  createdAt?: number;
-  fileSizeBytes?: number;
-  referencingPlugins?: string[];
-  referenceCount?: number;
-  isChunked?: boolean;
-  chunkCount?: number;
-  [key: string]: any;
-};
+import type { CSVTableMetadataLike } from './types.js';
 
 class CSVMetadataDB extends Dexie {
   csvMetadata!: Table<CSVTableMetadataLike, string>;

@@ -1,5 +1,5 @@
 import type { CreateMenuItem, CreateMenuItemOrDivider, NodeId } from '@hierarchidb/common-type';
-import { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
+import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 /**
  * Dynamic Create Menu Hook
  *

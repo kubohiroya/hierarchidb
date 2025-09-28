@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { type SxProps, type Theme } from '@mui/material';
 export type ButtonGroupItemType = {
     icon?: ReactNode;

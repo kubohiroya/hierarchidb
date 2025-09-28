@@ -7,11 +7,15 @@ import type React from 'react';
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // import { SvgIconComponent } from '@mui/icon-material';
 
-// @ts-expect-error - provider-router not available in ui-core
-const useNavigate = () => (_path: string, _options?: any) => {
-}; // Placeholder until moved to proper package
-// @ts-expect-error - provider-router not available in ui-core
-const useLoaderData = () => ({}); // Placeholder until moved to proper package
+const useNavigate = (): ((path: string, options?: any) => void) => {
+  return () => {
+    /* no-op placeholder */
+  };
+};
+
+const useLoaderData = <T extends Record<string, unknown> | undefined>(): T => {
+  return {} as T;
+};
 
 export type ButtonGroupOrientation = 'horizontal' | 'vertical';
 export type ButtonGroupSize = 'small' | 'medium' | 'large';

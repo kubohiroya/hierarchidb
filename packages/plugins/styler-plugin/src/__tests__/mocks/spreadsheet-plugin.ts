@@ -7,7 +7,7 @@ import type {
   CSVTableListResult,
   CSVTableMetadata,
 } from '@hierarchidb/ui-csv-extract';
-import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
+import type { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
 import * as XLSX from 'xlsx';
 import * as JSZipNS from 'jszip';
 
@@ -136,17 +136,11 @@ export class SpreadsheetCSVApiDriver {
     if (name.endsWith('.zip') || file.type.includes('zip')) {
       if (size > 100 * 1024 * 1024) throw new Error('File size exceeds 100MB limit for ZIP files');
       const mod: any = JSZipNS as any;
-      let zipLoader: any = undefined;
-      try {
+      let zipLoader: any ;
         if (typeof mod.loadAsync === 'function') zipLoader = mod.loadAsync;
-      } catch {
-      }
       if (!zipLoader) {
-        try {
           const def = (mod as any).default;
           if (def && typeof def.loadAsync === 'function') zipLoader = def.loadAsync;
-        } catch {
-        }
       }
       let text: string | undefined;
       let csvName: string | undefined;

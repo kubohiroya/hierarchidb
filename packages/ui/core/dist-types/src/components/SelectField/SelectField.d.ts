@@ -16,8 +16,8 @@
  * - @mui/material: FormControl, Select, MenuItem, InputLabel, FormHelperText containers
  * - React: SelectChangeEvent type for event handling
  */
-import React from 'react';
-import { FormLabelProps } from '@mui/material';
+import type React from 'react';
+import { type FormLabelProps } from '@mui/material';
 export declare const SelectField: ({ id, label, value, handleChange, helperText, items, formLabelProps, disabled, ...props }: {
     id: string;
     value: string;

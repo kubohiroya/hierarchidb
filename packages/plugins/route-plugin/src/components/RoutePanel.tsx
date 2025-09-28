@@ -373,7 +373,6 @@ function RouteTablePreview({ sessionId }: { sessionId: string }) {
     (async () => {
       try {
         const db = new RouteDatabase();
-        // @ts-expect-error
         const cursor = await db.routeCursors.get(sessionId);
         if (!cancelled) setTableId(cursor?.tableId ?? null);
       } catch (error) {

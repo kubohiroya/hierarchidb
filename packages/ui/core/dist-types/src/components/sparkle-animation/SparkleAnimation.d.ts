@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 interface SparkleAnimationProps {
     showSparkle: boolean;
     /**
@@ -7,4 +7,5 @@ interface SparkleAnimationProps {
     duration?: number;
 }
 export declare const SparkleAnimation: React.FC<SparkleAnimationProps>;
+export {};
 //# sourceMappingURL=SparkleAnimation.d.ts.map

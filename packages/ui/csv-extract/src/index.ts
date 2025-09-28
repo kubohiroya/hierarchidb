@@ -7,6 +7,7 @@
 export type {
   CSVColumnInfo,
   CSVColumnType,
+  CSVTableMetadataLike,
   CSVTableMetadata,
   CSVFilterOperator,
   CSVFilterRule,

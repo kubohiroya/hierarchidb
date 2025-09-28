@@ -6,6 +6,9 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/table-metadata": [
+        "../../feature/table-metadata/src/index.ts"
       ]
     },
     "jsx": "react-jsx"

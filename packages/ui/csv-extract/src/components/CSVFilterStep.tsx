@@ -36,7 +36,14 @@ import {
   FilterList as FilterListIcon,
   Preview as PreviewIcon,
 } from '@mui/icons-material';
-import type { CSVColumnType, CSVDataResult, CSVFilterOperator, CSVFilterRule, CSVTableMetadata } from '../types/index.js';
+import type {
+  CSVColumnInfo,
+  CSVColumnType,
+  CSVDataResult,
+  CSVFilterOperator,
+  CSVFilterRule,
+  CSVTableMetadata,
+} from '../types/index.js';
 import { useCSVFilter } from '../hooks/useCSVFilter.js';
 
 export interface CSVFilterStepProps {
@@ -102,11 +109,14 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
     }
   }, [previewData, onPreviewData]);
 
+  const normalizeType = (type?: CSVColumnType): CSVColumnType => type ?? 'string';
+
   const getAvailableOperators = (columnName: string) => {
-    const column = tableMetadata.columns.find(col => col.name === columnName);
+    const column = tableMetadata.columns?.find((col: CSVColumnInfo) => col.name === columnName);
     if (!column) return FILTER_OPERATORS;
 
-    return FILTER_OPERATORS.filter(op => op.types.includes(column.type));
+    const columnType = normalizeType(column.type);
+    return FILTER_OPERATORS.filter(op => op.types.includes(columnType));
   };
 
   const handleAddFilter = () => {
@@ -166,7 +176,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
       return null; // No value input needed for null checks
     }
 
-    const column = tableMetadata.columns.find(col => col.name === filter.column);
+    const column = tableMetadata.columns?.find((col: CSVColumnInfo) => col.name === filter.column);
 
     if (column?.type === 'boolean') {
       return (
@@ -243,7 +253,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
               label="Column"
               onChange={(e) => setNewFilter(prev => ({ ...prev, column: e.target.value }))}
             >
-              {tableMetadata.columns.map(col => (
+              {(tableMetadata.columns ?? []).map((col: CSVColumnInfo) => (
                 <MenuItem key={col.name} value={col.name}>
                   {col.name} ({col.type})
                 </MenuItem>
@@ -371,13 +381,13 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    {previewData.columns.map((col: { name: string; type: string }) => (
+                    {previewData.columns.map((col: CSVColumnInfo) => (
                       <TableCell key={col.name}>
                         <Typography variant="subtitle2">
                           {col.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {col.type}
+                          {normalizeType(col.type)}
                         </Typography>
                       </TableCell>
                     ))}
@@ -386,7 +396,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
                 <TableBody>
                   {previewData.rows.map((row: Record<string, string | number | null>, index: number) => (
                     <TableRow key={index}>
-                      {previewData.columns.map((col: { name: string }) => (
+                      {previewData.columns.map((col: CSVColumnInfo) => (
                         <TableCell key={col.name}>
                           {row[col.name]?.toString() || ''}
                         </TableCell>

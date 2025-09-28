@@ -4,7 +4,7 @@
  * A standardized base component for creating plugin icon with consistent props.
  * Reduces duplication across icon containers by providing common functionality.
  */
-import React from 'react';
+import type React from 'react';
 import type { SvgIconProps } from '@mui/material';
 /**
  * Base props for all plugin icon containers

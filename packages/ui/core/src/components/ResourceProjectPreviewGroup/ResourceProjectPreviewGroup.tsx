@@ -8,8 +8,10 @@ import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
 // import { AttachmentIcon, MapIcon } from '~/icon';
 import AttachmentIcon from '@mui/icons-material/Attachment';
 import MapIcon from '@mui/icons-material/Map';
-// @ts-expect-error - provider-router not available in ui-core
-const useNavigate = () => (_path: string, _options?: any) => {
+const useNavigate = (): ((path: string, options?: any) => void) => {
+  return () => {
+    /* no-op placeholder */
+  };
 };
 
 export type ResourceProjectType = 'resources' | 'projects';

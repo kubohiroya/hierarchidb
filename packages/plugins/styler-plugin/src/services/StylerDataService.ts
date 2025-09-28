@@ -7,6 +7,7 @@
   */
 
 import type {
+  CSVColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
@@ -218,7 +219,7 @@ export class StylerDataService {
    * :
       */
   private generateInitialStylerConfig(tableMetadata: CSVTableMetadata): Partial<StylerConfig> {
-    const numericColumns = tableMetadata.columns.filter((col) => col.type === 'number');
+    const numericColumns = tableMetadata.columns.filter((col: CSVColumnInfo) => col.type === 'number');
     const selectedValueColumn = numericColumns[0]?.name;
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
@@ -238,7 +239,7 @@ export class StylerDataService {
       enabled: true,
       valueColumn: selectedValueColumn,
       keyColumn:
-        tableMetadata.columns.find((c) => c.name === 'id')?.name ??
+        tableMetadata.columns.find((col: CSVColumnInfo) => col.name === 'id')?.name ??
         tableMetadata.columns[0]?.name,
     };
     if (cfg.valueColumn) {

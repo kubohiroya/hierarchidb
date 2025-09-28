@@ -3,62 +3,19 @@
  * @description Type definitions for CSV data extraction system
  */
 
-/**
- * CSV Column Information
- */
-export interface CSVColumnInfo {
-  /** Column name */
-  name: string;
-  /** Column index in the original CSV */
-  index: number;
-  /** Detected data type */
-  type: 'string' | 'number' | 'boolean' | 'date';
-  /** Number of unique values in this column */
-  uniqueValues: number;
-  /** Whether this column contains null/empty values */
-  hasNullValues: boolean;
-  /** Sample values for preview */
-  sampleValues: (string | number)[];
-}
+import type {
+  CSVColumnInfo,
+  CSVColumnType,
+  CSVTableMetadata,
+  CSVTableMetadataLike,
+} from '@hierarchidb/table-metadata';
 
-/**
- * Column type alias for convenience
- */
-export type CSVColumnType = 'string' | 'number' | 'boolean' | 'date';
-
-/**
- * CSV Table Metadata - RelationalEntity that can be shared across plugins
- */
-export interface CSVTableMetadata {
-  /** Unique identifier */
-  id: string;
-  /** Original filename */
-  filename: string;
-  /** Download URL if file was fetched from external source */
-  fileUrl?: string;
-  /** Content hash for deduplication */
-  contentHash: string;
-  /** File size in bytes */
-  fileSizeBytes: number;
-  /** Total number of rows (excluding headers) */
-  totalRows: number;
-  /** Column information */
-  columns: CSVColumnInfo[];
-  /** Creation timestamp */
-  createdAt: number;
-  /** Last update timestamp */
-  updatedAt?: number;
-
-  /** Reference management (RelationalEntity) */
-  referenceCount: number;
-  /** List of plugin IDs that reference this table */
-  referencingPlugins: string[];
-
-  /** Whether data is stored in chunks for large files */
-  isChunked?: boolean;
-  /** Number of chunks if data is chunked */
-  chunkCount?: number;
-}
+export type {
+  CSVColumnInfo,
+  CSVColumnType,
+  CSVTableMetadata,
+  CSVTableMetadataLike,
+} from '@hierarchidb/table-metadata';
 
 /**
  * CSV Filter Rule for row filtering
@@ -204,7 +161,7 @@ export interface PaginationOptions {
  */
 export interface CSVTableListResult {
   /** List of tables */
-  tables: CSVTableMetadata[];
+  tables: CSVTableMetadataLike[];
   /** Total number of tables */
   total: number;
 }

@@ -2,7 +2,7 @@
  * Generic Selection Matrix Component
  * Reusable checkbox matrix for multi-dimensional selection
  */
-import React from 'react';
+import type React from 'react';
 export interface SelectionMatrixColumn {
     id: string;
     label: string;

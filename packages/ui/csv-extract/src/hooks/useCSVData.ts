@@ -5,7 +5,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useCSVApi } from '../context/CSVContext.js';
-import type { CSVProcessingConfig, CSVTableListResult, CSVTableMetadata, PaginationOptions } from '../types/index.js';
+import type {
+  CSVProcessingConfig,
+  CSVTableListResult,
+  CSVTableMetadata,
+  CSVTableMetadataLike,
+  PaginationOptions,
+} from '../types/index.js';
 
 /**
  * Options for useCSVData hook
@@ -256,7 +262,7 @@ export interface UseCSVTableListOptions {
  */
 export interface UseCSVTableListResult {
   /** List of tables */
-  tables: CSVTableMetadata[];
+  tables: CSVTableMetadataLike[];
   /** Total number of tables */
   total: number;
   /** Loading state */

@@ -33,7 +33,13 @@ import {
   SwapHoriz as SwapHorizIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import type { CSVColumnMapping, CSVColumnType, CSVDataResult, CSVTableMetadata } from '../types/index.js';
+import type {
+  CSVColumnInfo,
+  CSVColumnMapping,
+  CSVColumnType,
+  CSVDataResult,
+  CSVTableMetadata,
+} from '../types/index.js';
 
 export interface CSVColumnSelectionStepProps {
   tableMetadata: CSVTableMetadata;
@@ -62,11 +68,13 @@ export const CSVColumnSelectionStep: React.FC<CSVColumnSelectionStepProps> = ({
 
   // Initialize column mappings
   useEffect(() => {
-    const initialMappings: CSVColumnMapping[] = tableMetadata.columns.map((col, index) => ({
+    const normalizeType = (type?: CSVColumnType): CSVColumnType => type ?? 'string';
+    const cols: CSVColumnInfo[] = tableMetadata.columns ?? [];
+    const initialMappings: CSVColumnMapping[] = cols.map((col: CSVColumnInfo, index: number) => ({
       sourceColumn: col.name,
-      sourceType: col.type,
+      sourceType: normalizeType(col.type),
       targetColumn: col.name,
-      targetType: col.type,
+      targetType: normalizeType(col.type),
       included: true,
       order: index,
       transform: 'none',
