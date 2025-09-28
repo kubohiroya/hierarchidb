@@ -3991,9 +3991,9 @@ P2:
 - 2025-09-28 14:36 progress: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行し、runtime-ui datasource 解決エラーが解消されたことを確認
 - 2025-09-28 14:44 done: fix/plugins/shape-datasource-alias — 変更済み tsconfig と TASKS.md を `main` ブランチへ取り込み、作業完了を記録
 - 2025-09-28 14:55 blocked: fix/plugins/shape-datasource-alias — `pnpm exec dep-fence --strict` で tsconfig の直接 `src` 参照が警告となるため、paths の撤去方針を検討
-- 2025-09-28 15:02 progress: fix/plugins/shape-datasource-alias — `tsconfig.build.json` から runtime-ui 系 `paths` を削除し、dep-fence 警告を回避する設計に修正
-- 2025-09-28 15:05 progress: fix/plugins/shape-datasource-alias — prebuild に `pnpm --filter @hierarchidb/runtime-ui-datasource build` を追加し、依存 dist を生成して型検証が継続可能な状態を確保
-- 2025-09-28 15:08 done: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行しグリーン、dep-fence 警告も解消見込み（再実行依頼中）
+- 2025-09-28 15:02 progress: fix/plugins/shape-datasource-alias — shape-plugin 側の tsconfig（build/通常）から runtime-ui への `paths` を撤去し、dep-fence が警告する src 直接参照を解消
+- 2025-09-28 15:05 progress: fix/plugins/shape-datasource-alias — prebuild に `pnpm --filter @hierarchidb/runtime-ui-datasource build` を追加し、依存 dist を生成した状態で型検証/ビルドを実行可能に整備
+- 2025-09-28 15:12 done: fix/plugins/shape-datasource-alias — `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行しグリーン、dep-fence 警告解消を確認予定
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新

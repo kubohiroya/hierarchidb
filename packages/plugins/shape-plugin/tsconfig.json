@@ -13,18 +13,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/runtime-ui-datasource": [
-        "../../runtime-ui/datasource/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "../../runtime-ui/datasource/src/*"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "../../runtime-ui/plugin-dialog/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "../../runtime-ui/plugin-dialog/src/*"
       ]
     },
     "module": "Node16"
