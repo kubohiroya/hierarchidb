@@ -27,6 +27,8 @@ export { composeStepConfigs } from './services/StepComposer.js';
 // Components (headless shell)
 export { PluginDialogShell } from './headless/PluginDialogShell.js';
 export type { PluginDialogShellProps } from './headless/PluginDialogShell.js';
+export type { PluginDialogFooterOptions } from './headless/usePluginDialogController.js';
+export type { PluginDialogFooterPrimaryButtonOptions } from './headless/components/PluginDialogFooter.js';
 
 // Legacy exports retained temporarily (will be removed after migration)
 export { PluginDialogRoute, createPluginDialogRoutes } from './components/PluginDialogRoute.js';

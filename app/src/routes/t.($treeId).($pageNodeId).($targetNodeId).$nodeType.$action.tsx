@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs } from 'react-router';
 import { useParams } from 'react-router';
 import { loadNodeAction, type LoadNodeActionArgs } from '~/loader.js';
 import { PluginDialogRoute } from '@hierarchidb/runtime-ui-plugin-dialog';
-import TrashDialogV2, { clientLoader as trashDialogClientLoader } from '~/components/dialogs/TrashDialogV2.js';
+import TrashDialog, { clientLoader as trashDialogClientLoader } from '~/components/dialogs/TrashDialog.js';
 
 export async function clientLoader(args: LoaderFunctionArgs) {
   const { nodeType } = args.params ?? {};
@@ -16,7 +16,7 @@ export default function DialogRouteGuarded() {
   const { nodeType, action } = useParams();
   if (nodeType === 'trash') {
     if (!action) return null;
-    return <TrashDialogV2 />;
+    return <TrashDialog />;
   }
   if (!nodeType || !action) return null;
   return <PluginDialogRoute />;

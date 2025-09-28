@@ -115,6 +115,27 @@
     - progress: 2025-09-22 10:26 `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加し、MapLibre/Deck.gl を含むチャンクの閾値を引き上げ
     - blocked: 2025-09-22 10:27 `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（本差分による悪化なし）
     - progress: 2025-09-22 10:32 `pnpm -C app build` を実行し、チャンク警告なしで完了（map.js 828 kB / 閾値 900 kB）
+- fix/build/runtime-ui-types-resolution — CI で runtime-ui 依存が型解決できない問題の恒久対応
+  - ブランチ: `fix/build/runtime-ui-types-resolution`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/runtime-ui-*` パッケージの最新 `typecheck` 成功ログ（2025-09-27 19:55 確認済）
+  - 受け入れ基準（DoD）：
+    - [x] `tsconfig.base.json` で runtime-ui 系パッケージをビルドなしで解決できる `paths` を整備
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が CI 相当のクリーン環境で成功
+    - [x] runtime-ui 各パッケージの `pnpm typecheck` が成功し、`TASKS.md` の運用ログに結果を記録
+  - チェックリスト：
+    - [x] `@hierarchidb/runtime-ui-` プレフィックスの各パッケージについて base tsconfig へ `paths` を追加
+    - [x] 追加した `paths` が他パッケージのローカル別名設定を壊していないことを `pnpm --filter @hierarchidb/runtime-ui-* typecheck` と関連依存の検証で確認
+    - [x] 代表的な依存パッケージ（plugins-shape-plugin 等）の型検証を実行し結果を記録
+  - ロールバック手順：
+    - `tsconfig.base.json` の `compilerOptions.paths` 追加分を元に戻し、該当パッケージの型検証を再実行して従来状態へ復旧
+  - 現状：
+    - 2025-09-28 10:34 時点で runtime-ui 6 パッケージ（appbar / datasource / landingpage / plugin-dialog / search-result-window / tour）の `paths` を base tsconfig に追加済み
+    - 2025-09-28 10:56 時点で `pnpm --filter @hierarchidb/runtime-ui-{appbar,datasource,landingpage,plugin-dialog,search-result-window,tour} typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を順次実行し全て成功を確認
+  - 運用ログ：
+    - start: 2025-09-28 10:12 CI での runtime-ui 型解決失敗の再現条件を整理し、対策方針の洗い出しを開始
+    - progress: 2025-09-28 10:34 base tsconfig へ runtime-ui 系 `paths` を追加し、ビルド済み宣言に依存しない解決パスを導入
+    - progress: 2025-09-28 10:56 runtime-ui 各パッケージおよび plugins-shape-plugin で `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
+    - progress: 2025-09-28 11:10 追加した `paths` が他ワークスペース alias を壊さないことを確認し、DoD チェックボックスを全て完了扱いへ更新
 - fix/ui-folder/dialog-theme-tokens — フォルダ作成ダイアログのテーマ配色対応
   - ブランチ: `fix/ui-folder/dialog-theme-tokens`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
@@ -3817,6 +3838,7 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
+- 2025-09-28: runtime-ui 系パッケージの型解決恒久化 — `tsconfig.base.json` に appbar/datasource/landingpage/plugin-dialog/search-result-window/tour の `paths` を追加し、ビルド済み `dist` に依存しないモジュール解決へ切替。`pnpm --filter @hierarchidb/runtime-ui-{appbar,datasource,landingpage,plugin-dialog,search-result-window,tour} typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、CI 再現環境と同じ構成でグリーンを確認。
 - 2025-09-20: ui-map デッキストーリーの公式型適用 — `@deck.gl/{geo-layers,layers,mapbox}` と `@types/geojson` を devDependencies として追加し、`tsconfig.json` の他パッケージ node_modules 参照を整理。`MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式シグネチャに沿って書き換え、`src/types/story-shims.d.ts` を削除。`pnpm install` → `pnpm --filter @hierarchidb/ui-map typecheck` → `node scripts/check-shims.mjs` → `pnpm as-any:report` まで成功。
 - 2025-09-20: runtime env 読み出しの共通化 — `@hierarchidb/util` に `readRuntimeEnvValue` / `readRuntimeMode` などのヘルパーを追加し、app / map-adapter / node-type plugins からの `process.env` 参照を排除。`eslint.config.js` の `no-restricted-globals: process` を `app/src` と `packages/**/src` へ拡張し、`pnpm --filter` {app,plugins-route-plugin,plugins-location-plugin,plugins-resolver-plugin,map-adapter} `typecheck` を実行してグリーンを確認。
 - 2025-09-20: Workspace `as any` ゼロ化 — ui-map / ui-monitoring / ui-lru-splitview / runtime-worker-bootstrap / feature-compute / runtime-shared-batch-processor / plugins-linker-plugin ほか残存パッケージから `as any` を全面撤廃。`pnpm --filter` による個別 typecheck（compute/util/runtime-worker-bootstrap/tools-vite-plugin-package-reader/auth-recovery/tabular-xlsx/runtime-shared-batch-processor/plugins-linker-plugin/analyze-licenses/ui-icon/ui-lru-splitview/ui-monitoring/ui-map/ui-accordion-config/ui-import-export/ui-treeconsole-base/ui-treeconsole-treetable/runtime-ui-search-result-window/ui-auth/ui-file/tag）と `pnpm as-any:report` で 0 件を確認。
@@ -3947,6 +3969,10 @@ P2:
   - [ ] tools（Vite）側の feature 自動検出（仮想モジュール）検討（後続）
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
+- 2025-09-28 10:12 start: fix/build/runtime-ui-types-resolution — CI で再現する runtime-ui 系モジュールの型解決失敗を恒久対応するため、原因調査と tsconfig 調整案の洗い出しを開始
+- 2025-09-28 10:34 progress: fix/build/runtime-ui-types-resolution — `tsconfig.base.json` に runtime-ui 系パッケージの `paths` を追加し、ビルド済み宣言に依存しない型解決へ切り替え
+- 2025-09-28 10:56 progress: fix/build/runtime-ui-types-resolution — runtime-ui 各パッケージおよび plugins-shape-plugin の `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
+- 2025-09-28 11:10 done: fix/build/runtime-ui-types-resolution — `paths` 追加後の差分をダブルチェックし、runtime-ui 系/shape plugin の typecheck ログを TASKS.md へ反映して DoD 達成を明記
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新

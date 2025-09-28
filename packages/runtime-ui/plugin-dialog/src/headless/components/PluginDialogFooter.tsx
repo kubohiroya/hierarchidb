@@ -2,6 +2,13 @@ import type React from 'react';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 
+export interface PluginDialogFooterPrimaryButtonOptions {
+  leftVisibility?: 'auto' | 'hidden';
+  rightVisibility?: 'auto' | 'hidden';
+  leftLabelOverride?: string;
+  rightLabelOverride?: string;
+}
+
 export interface PluginDialogFooterProps {
   mode: 'create' | 'edit';
   canCommit: boolean;
@@ -10,6 +17,7 @@ export interface PluginDialogFooterProps {
   disableDraft?: boolean;
   onStartBatch?: () => void;
   canStartBatch?: boolean;
+  primaryButtonOptions?: PluginDialogFooterPrimaryButtonOptions;
 }
 
 const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) => {
@@ -24,6 +32,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   disableDraft,
   onStartBatch,
   canStartBatch = true,
+  primaryButtonOptions,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
 
@@ -51,13 +60,15 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     ctx.onStepNavigate({ type: 'next' });
   };
 
-  const leftPrimaryLabel = isFirstStep ? 'Cancel' : 'Back';
-  const rightPrimaryLabel = isLastStep ? commitLabel : 'Next';
+  const leftPrimaryLabel = primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
+  const rightPrimaryLabel = primaryButtonOptions?.rightLabelOverride ?? (isLastStep ? commitLabel : 'Next');
   const disableLeftPrimary = isFirstStep ? false : !canNavigateBack;
   const disableRightPrimary = isLastStep ? !canCommit : !canNavigateNext;
   const showSaveDraft = typeof onSaveDraft === 'function';
   const showStartBatch = typeof onStartBatch === 'function';
   const disableDraftButton = disableDraft ?? !isDirty;
+  const showLeftPrimary = primaryButtonOptions?.leftVisibility !== 'hidden';
+  const showRightPrimary = primaryButtonOptions?.rightVisibility !== 'hidden';
 
   return (
     <Box
@@ -69,16 +80,18 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     >
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button
-            variant="contained"
-            size="large"
-            color={isFirstStep ? 'inherit' : 'secondary'}
-            onClick={handleBackOrCancel}
-            onPointerDown={stopPointerPropagation}
-            disabled={disableLeftPrimary}
-          >
-            {leftPrimaryLabel}
-          </Button>
+          {showLeftPrimary && (
+            <Button
+              variant="contained"
+              size="large"
+              color={isFirstStep ? 'inherit' : 'secondary'}
+              onClick={handleBackOrCancel}
+              onPointerDown={stopPointerPropagation}
+              disabled={disableLeftPrimary}
+            >
+              {leftPrimaryLabel}
+            </Button>
+          )}
           {showSaveDraft && (
             <Tooltip title={disableDraftButton ? 'No changes to save' : ''} disableHoverListener={!disableDraftButton}>
               <span>
@@ -109,16 +122,18 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
               Start Batch
             </Button>
           )}
-          <Button
-            variant="contained"
-            size="large"
-            color="primary"
-            onClick={handleNextOrSave}
-            onPointerDown={stopPointerPropagation}
-            disabled={disableRightPrimary}
-          >
-            {rightPrimaryLabel}
-          </Button>
+          {showRightPrimary && (
+            <Button
+              variant="contained"
+              size="large"
+              color="primary"
+              onClick={handleNextOrSave}
+              onPointerDown={stopPointerPropagation}
+              disabled={disableRightPrimary}
+            >
+              {rightPrimaryLabel}
+            </Button>
+          )}
         </Stack>
       </Stack>
     </Box>

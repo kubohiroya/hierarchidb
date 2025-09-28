@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useLoaderData, useNavigate, useParams } from 'react-router';
 import {
   Box,
@@ -19,12 +18,11 @@ import {
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import {
-  HeadlessMultiStepDialog,
+  DialogOverlayFrame,
   FRAME_CONSTANTS,
   getViewportSize,
   normalizeDialogState,
   initialPosition,
-  useDialogInteractionGuards,
   type DialogDisplayMode,
   type HeadlessMultiStepDialogProps,
   type HeadlessHeaderRenderProps,
@@ -225,127 +223,6 @@ function useTrashFrameState(initialMode: DialogDisplayMode = 'normal') {
     setDisplayMode: transitionDisplayMode,
     setSize: handleSizeChange,
     setPosition: handlePositionChange,
-  } as const;
-}
-
-function useFramePointerHandlers(options: {
-  displayMode: DialogDisplayMode;
-  sizeRef: React.MutableRefObject<MultiDialogSize>;
-  positionRef: React.MutableRefObject<MultiDialogPosition>;
-  setSize: (next?: MultiDialogSize) => void;
-  setPosition: (next?: MultiDialogPosition) => void;
-  onBackdropClick: () => void;
-}) {
-  const { displayMode, sizeRef, positionRef, setSize, setPosition, onBackdropClick } = options;
-  const dragStateRef = useRef<{
-    pointerId: number;
-    originX: number;
-    originY: number;
-    start: MultiDialogPosition;
-    size: MultiDialogSize;
-    mode: DialogDisplayMode;
-  } | null>(null);
-  const resizeStateRef = useRef<{
-    pointerId: number;
-    originX: number;
-    originY: number;
-    startSize: MultiDialogSize;
-    startPosition: MultiDialogPosition;
-    mode: DialogDisplayMode;
-  } | null>(null);
-
-  const guards = useDialogInteractionGuards({ onBackdropClick });
-
-  const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (displayMode === 'full-screen') return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pointerId = event.pointerId;
-    dragStateRef.current = {
-      pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      start: positionRef.current,
-      size: sizeRef.current,
-      mode: displayMode,
-    };
-
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = dragStateRef.current;
-      if (!state || moveEvent.pointerId !== pointerId) return;
-      const next: MultiDialogPosition = {
-        x: state.start.x + (moveEvent.clientX - state.originX),
-        y: state.start.y + (moveEvent.clientY - state.originY),
-      };
-      setPosition(next);
-    };
-
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (endEvent.pointerId !== pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-      dragStateRef.current = null;
-      guards.registerDragEnd();
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-  }, [displayMode, guards, positionRef, setPosition, sizeRef]);
-
-  const handleResizePointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    if (displayMode === 'full-screen') return;
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-
-    const pointerId = event.pointerId;
-    resizeStateRef.current = {
-      pointerId,
-      originX: event.clientX,
-      originY: event.clientY,
-      startSize: sizeRef.current,
-      startPosition: positionRef.current,
-      mode: displayMode,
-    };
-
-    guards.registerDragStart();
-
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      const state = resizeStateRef.current;
-      if (!state || moveEvent.pointerId !== pointerId) return;
-      const deltaX = moveEvent.clientX - state.originX;
-      const deltaY = moveEvent.clientY - state.originY;
-      const nextSize: MultiDialogSize = {
-        width: Math.max(state.startSize.width + deltaX, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(state.startSize.height + deltaY, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
-      };
-      setSize(nextSize);
-    };
-
-    const handlePointerEnd = (endEvent: PointerEvent) => {
-      if (endEvent.pointerId !== pointerId) return;
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerEnd);
-      window.removeEventListener('pointercancel', handlePointerEnd);
-      resizeStateRef.current = null;
-      guards.registerDragEnd();
-    };
-
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerEnd);
-    window.addEventListener('pointercancel', handlePointerEnd);
-  }, [displayMode, guards, setSize, sizeRef, positionRef]);
-
-  return {
-    guards,
-    handleDragPointerDown,
-    handleResizePointerDown,
   } as const;
 }
 
@@ -608,7 +485,7 @@ function TrashDialogContent({
 // Main component
 // ----------------------------------------
 
-export default function TrashDialogV2() {
+export default function TrashDialog() {
   const data = useLoaderData<TrashDialogData>();
   const navigate = useNavigate();
   const params = useParams();
@@ -658,15 +535,14 @@ export default function TrashDialogV2() {
   }, [navigate]);
 
   const frameState = useTrashFrameState('normal');
-  const { guards, handleDragPointerDown, handleResizePointerDown } = useFramePointerHandlers({
-    displayMode: frameState.displayMode,
-    sizeRef: frameState.sizeRef,
-    positionRef: frameState.positionRef,
-    setSize: frameState.setSize,
-    setPosition: frameState.setPosition,
-    onBackdropClick: handleClose,
-  });
-
+  const {
+    dialogPosition,
+    dialogSize,
+    displayMode,
+    setDisplayMode,
+    setSize,
+    setPosition,
+  } = frameState;
   const handleRestore = useCallback(async () => {
     if (selectedIds.length === 0) return;
     setLoading(true);
@@ -721,7 +597,7 @@ export default function TrashDialogV2() {
     });
   }, []);
 
-  const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(()=>({
+  const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(() => ({
     open: true,
     stepComponents: STEP_ARRAY,
     stepData: {},
@@ -730,12 +606,12 @@ export default function TrashDialogV2() {
     onStepNavigate: () => undefined,
     onRequestClose: () => handleClose(),
     isDirty: selectedIds.length > 0,
-    position: frameState.dialogPosition,
-    size: frameState.dialogSize,
-    displayMode: frameState.displayMode,
-    onPositionChange: (next) => frameState.setPosition(next),
-    onSizeChange: (next) => frameState.setSize(next),
-    onDisplayModeChange: (mode) => frameState.setDisplayMode(mode),
+    position: dialogPosition,
+    size: dialogSize,
+    displayMode,
+    onPositionChange: (next) => setPosition(next),
+    onSizeChange: (next) => setSize(next),
+    onDisplayModeChange: (mode) => setDisplayMode(mode),
     renderHeader: (props) => (
       <TrashDialogHeader
         {...props}
@@ -771,81 +647,28 @@ export default function TrashDialogV2() {
         onEmptyAll={handleEmptyAll}
       />
     ),
-  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
+  }), [
+    breadcrumbItems,
+    columns,
+    dialogPosition,
+    dialogSize,
+    displayMode,
+    expandedIds,
+    handleClose,
+    handleEmptyAll,
+    handleRestore,
+    loading,
+    mode,
+    onToggleExpand,
+    pageNodeId,
+    searchTerm,
+    selectedIds,
+    setDisplayMode,
+    setPosition,
+    setSize,
+    treeData,
+    treeId,
+  ]);
 
-  const augmentedHeadlessProps = useMemo(() => ({
-    ...headlessProps,
-    onDragHandlePointerDown: handleDragPointerDown,
-    onResizeHandlePointerDown: handleResizePointerDown,
-  }), [headlessProps, handleDragPointerDown, handleResizePointerDown]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
-
-  const frameStyle = useMemo(() => {
-    const fullScreen = frameState.displayMode === 'full-screen';
-    return {
-      width: fullScreen ? '100%' : `${frameState.dialogSize.width}px`,
-      height: fullScreen ? '100%' : `${frameState.dialogSize.height}px`,
-      maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
-      maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
-      borderRadius: fullScreen ? 0 : 12,
-      boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
-      overflow: 'hidden',
-      backgroundColor: '#fff',
-      position: 'absolute' as const,
-      top: frameState.displayMode === 'full-screen' ? 0 : frameState.dialogPosition.y,
-      left: frameState.displayMode === 'full-screen' ? 0 : frameState.dialogPosition.x,
-      display: 'flex',
-      flexDirection: 'column' as const,
-    };
-  }, [frameState.displayMode, frameState.dialogPosition.x, frameState.dialogPosition.y, frameState.dialogSize.height, frameState.dialogSize.width]);
-
-  const handleBackdropPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.target !== event.currentTarget) return;
-      if (guards.isDraggingRef.current) return;
-      guards.handleBackdropClick();
-    },
-    [guards],
-  );
-
-  const backdrop = (
-    <Box
-      sx={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 1600,
-        backgroundColor: 'rgba(9, 12, 28, 0.45)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'auto',
-      }}
-      onPointerDown={handleBackdropPointerDown}
-      onWheelCapture={guards.handleWheelCapture}
-    >
-      <Box
-        role="dialog"
-        aria-modal="true"
-        sx={frameStyle}
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <HeadlessMultiStepDialog {...augmentedHeadlessProps} />
-      </Box>
-    </Box>
-  );
-
-  if (typeof document === 'undefined') {
-    return backdrop;
-  }
-
-  return createPortal(backdrop, document.body);
+  return <DialogOverlayFrame headlessProps={headlessProps} backdropZIndex={1600} />;
 }

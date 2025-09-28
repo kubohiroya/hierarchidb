@@ -31,6 +31,7 @@ import { composeStepConfigs } from '../services/StepComposer.js';
 import { useWorkingCopy } from '../hooks/useWorkingCopy.js';
 import { getIconComponent, getPresentation } from '../utils/pluginPresentation.js';
 import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
+import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 import {
   getPeerDisplayMode,
   setPeerDisplayMode,
@@ -56,6 +57,12 @@ export interface PluginDialogControllerOptions {
   initialStep?: number;
   onClose: () => void;
   onSuccess?: (nodeId: NodeId) => void;
+  footerOptions?: PluginDialogFooterOptions;
+}
+
+export interface PluginDialogFooterOptions {
+  primaryButtons?: PluginDialogFooterPrimaryButtonOptions;
+  saveDraftLabel?: string;
 }
 
 export interface PluginDialogControllerState {
@@ -99,6 +106,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     initialStep = 0,
     onClose,
     onSuccess,
+    footerOptions,
   } = options;
 
   const navigate = useNavigate();
@@ -612,14 +620,19 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     );
   }, [steps]);
 
+  const footerPrimaryOptions = footerOptions?.primaryButtons;
+  const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
+
   const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
     <PluginDialogFooter
       mode={mode}
       canCommit={allStepsComplete}
       onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
+      saveDraftLabel={footerSaveDraftLabel}
       disableDraft={!hasUnsavedChanges}
+      primaryButtonOptions={footerPrimaryOptions}
     />
-  ), [mode, allStepsComplete, handleSaveDraft, hasUnsavedChanges]);
+  ), [mode, allStepsComplete, handleSaveDraft, hasUnsavedChanges, footerPrimaryOptions, footerSaveDraftLabel]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
