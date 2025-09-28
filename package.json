@@ -1,7 +1,7 @@
 {
   "name": "hierarchidb",
   "private": true,
-  "version": "2..0.0",
+  "version": "2.0.0",
   "description": "High-performance tree-structured data management framework for browsers",
   "type": "module",
   "scripts": {
@@ -21,6 +21,7 @@
     "preinstall": "npx only-allow pnpm",
     "predev": "pnpm types:virtual:generate",
     "dev": "./scripts/start-env.sh development",
+    "dev:with-watch": "node ./scripts/run-dev-with-turbo-watch.mjs",
     "dev:diagnose": "node tools/dev-diagnose-runner.mjs",
     "predev:production": "pnpm types:virtual:generate",
     "dev:production": "./scripts/start-env.sh production dev",
@@ -34,6 +35,8 @@
     "build": "./scripts/start-env.sh production build",
     "build:turbo": "turbo run build",
     "build:watch": "turbo run build --parallel -- --watch",
+    "turbo:watch": "pnpm run turbo:watch:internal",
+    "turbo:watch:internal": "turbo run build --filter @hierarchidb/app^... --watch",
     "build:app": "turbo run build --filter=@hierarchidb/app",
     "prebuild:app": "pnpm types:virtual:generate",
     "preview": "turbo run preview",

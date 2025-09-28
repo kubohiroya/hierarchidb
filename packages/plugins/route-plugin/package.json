@@ -52,6 +52,7 @@
   "dependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",

@@ -6,17 +6,18 @@ declare module '@hierarchidb/plugins-route-plugin/worker' {
 
 declare module '@hierarchidb/runtime-worker-bootstrap' {
   export class WorkerInitializationReporter {
-    constructor(steps: Array<{ name: string; weight: number }>, debug?: boolean);
+    constructor(steps?: Array<{ name: string; weight: number }>, debug?: boolean);
+    addSteps(steps: Array<{ name: string; weight: number }>): void;
     reportStepProgress(step: string, progress: number, message?: string): void;
-    markStepDone(step: string, message?: string): void;
     reportComplete(): void;
     reportError(message: string, error?: unknown): void;
+    trackInitialization<T>(step: string, operation: () => Promise<T>): Promise<T>;
+    isReady(): boolean;
   }
 
   export class WorkerInitializationChannel {
-    subscribe(listener: (progress: number, message?: string) => void): () => void;
-    next(progress: number, message?: string): void;
-    waitForInitialization(options?: { worker: Worker; timeout?: number; debug?: boolean }): Promise<void>;
+    waitForInitialization(options: { worker: Worker; timeout?: number; debug?: boolean }): Promise<void>;
+    ping(): Promise<boolean>;
     dispose(): void;
   }
 
@@ -24,8 +25,9 @@ declare module '@hierarchidb/runtime-worker-bootstrap' {
 
   export function getAllRuntimeExports(): Record<string, { lifecycle?: unknown; createEntityHandler?: () => Promise<unknown> }>;
 
-  export function registerWorkerClientHook(callback: (client: unknown) => void): void;
-  export function getWorkerClientHook(): ((client: unknown) => void) | undefined;
+  export type WorkerClientHook<T = unknown> = () => T;
+  export function registerWorkerClientHook<T = unknown>(hook: WorkerClientHook<T>): void;
+  export function getWorkerClientHook<T = unknown>(): WorkerClientHook<T>;
 }
 declare module '@hierarchidb/ui-i18n';
 declare module '@hierarchidb/runtime-ui-plugin-dialog';

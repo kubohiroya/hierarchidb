@@ -7,7 +7,7 @@ import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
 interface PluginDialogLoaderData {
@@ -40,10 +40,17 @@ const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } 
  */
 
 export const PluginDialogRoute: React.FC = () => {
-  const { tree, pageNodeId, targetNodeId, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
+  const loaderData = useLoaderData() as PluginDialogLoaderData;
+  const { tree, pageNodeId, targetNodeId, nodeType, action } = loaderData;
 
   const navigate = useNavigate();
-  const useWorkerHook = getWorkerClientHook<WorkerHookValue>() ?? (() => null);
+  let useWorkerHook: WorkerClientHook<WorkerHookValue>;
+  try {
+    useWorkerHook = getWorkerClientHook<WorkerHookValue>();
+  } catch (error) {
+    console.warn('[PluginDialogRoute] Worker client hook unavailable', error);
+    useWorkerHook = () => null;
+  }
   const ref = useWorkerHook();
   const client = isWorkerAPI(ref)
     ? ref

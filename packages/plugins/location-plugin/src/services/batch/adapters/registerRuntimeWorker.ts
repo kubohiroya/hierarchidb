@@ -4,6 +4,8 @@
  */
 
 import { readRuntimeEnvValue } from '@hierarchidb/util';
+import type { LocationRuntimeWorkerClient } from './RuntimeWorkerClient.js';
+import { registerLocationRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 type RuntimeScope = Record<string, unknown> & {
   AuthNotificationRegistry?: unknown;
@@ -25,18 +27,21 @@ function isFlagEnabled(name: string, fallback = false): boolean {
  * - Safe to call even if runtime-worker package is unavailable
  */
 export async function registerLocationRuntimeWorkerAdapters(): Promise<void> {
-  if (!isFlagEnabled('LOCATION_RUNTIME_WORKER', false)) return;
-  try {
-    // Lazy import to avoid bundling when flag is off
-    const name = '@' + 'hierarchidb/runtime-worker';
-    const mod = await import(/* @vite-ignore */ (name as string)) as {
-      createStageWorkerClient?: () => Promise<unknown>;
-    };
-    if (typeof mod.createStageWorkerClient === 'function') {
-      // Create client instance once (caller can store if needed)
-      await mod.createStageWorkerClient();
+  registerLocationRuntimeWorkerClient(async (): Promise<LocationRuntimeWorkerClient | null> => {
+    if (!isFlagEnabled('LOCATION_RUNTIME_WORKER', false)) {
+      return null;
     }
-  } catch {
-    // Silently ignore when runtime-worker is not available (dev/offline)
-  }
+    try {
+      const name = '@' + 'hierarchidb/runtime-worker';
+      const mod = await import(/* @vite-ignore */ (name as string)) as {
+        createStageWorkerClient?: () => Promise<LocationRuntimeWorkerClient>;
+      };
+      if (typeof mod.createStageWorkerClient === 'function') {
+        return await mod.createStageWorkerClient();
+      }
+    } catch {
+      // Silently ignore when runtime-worker is not available (dev/offline)
+    }
+    return null;
+  });
 }

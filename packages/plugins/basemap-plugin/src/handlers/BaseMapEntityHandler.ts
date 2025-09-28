@@ -41,6 +41,88 @@ const DEFAULT_DISPLAY_OPTIONS: DisplayOptions = {
   showLabels: true,
 };
 
+const STYLE_SPECIFIC_DEFAULTS: Partial<Record<MapStyle['style'], Partial<DisplayOptions>>> = {
+  satellite: {
+    show3dBuildings: true,
+    showLabels: false,
+  },
+};
+
+const CITY_COUNTRY_TAGS: Record<string, string[]> = {
+  tokyo: ['japan', 'jp'],
+  'new york': ['usa', 'united-states', 'us'],
+  london: ['uk', 'united-kingdom', 'gb'],
+};
+
+const WORD_BREAK_REGEX = /[^a-z0-9]+/gi;
+const TAG_STOP_WORDS = new Set(['new', 'base', 'basemap', 'map', 'maps', 'default']);
+
+function normalizeMapStyle(mapStyle?: Partial<MapStyle>): MapStyle {
+  return {
+    ...DEFAULT_MAP_STYLE,
+    ...(mapStyle ?? {}),
+  };
+}
+
+function normalizeViewport(viewport?: Partial<MapViewport>): MapViewport {
+  return {
+    ...DEFAULT_VIEWPORT,
+    ...(viewport ?? {}),
+  };
+}
+
+function resolveDisplayOptions(mapStyle: MapStyle, overrides?: Partial<DisplayOptions>): DisplayOptions {
+  const base: DisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS };
+  const styleDefaults = STYLE_SPECIFIC_DEFAULTS[mapStyle.style];
+  if (styleDefaults) {
+    Object.assign(base, styleDefaults);
+  }
+  if (overrides) {
+    Object.assign(base, overrides);
+  }
+  return base;
+}
+
+function normalizeTags(input: { explicitTags?: string[]; displayTags?: string[]; name?: string }): string[] {
+  const tags = new Set<string>();
+  const push = (value?: string | null) => {
+    if (!value) return;
+    const normalized = value.trim().toLowerCase();
+    if (!normalized || normalized === '-') return;
+    tags.add(normalized);
+  };
+
+  input.explicitTags?.forEach(push);
+  input.displayTags?.forEach(push);
+
+  const hasExplicit = (input.explicitTags?.length ?? 0) > 0;
+  const hasDisplay = (input.displayTags?.length ?? 0) > 0;
+  const allowNameHeuristics = !(hasExplicit || hasDisplay);
+
+  if (input.name && allowNameHeuristics) {
+    const lowerName = input.name.toLowerCase();
+    lowerName
+      .split(WORD_BREAK_REGEX)
+      .filter((token) => token && !TAG_STOP_WORDS.has(token))
+      .forEach(push);
+    for (const [needle, mapped] of Object.entries(CITY_COUNTRY_TAGS)) {
+      if (lowerName.includes(needle)) {
+        mapped.forEach(push);
+      }
+    }
+  }
+
+  return Array.from(tags);
+}
+
+function collectEntityTags(entity: Pick<BaseMapEntity, 'tags' | 'name' | 'displayOptions'>): string[] {
+  return normalizeTags({
+    explicitTags: entity.tags,
+    displayTags: entity.displayOptions?.tags,
+    name: entity.name,
+  });
+}
+
 export interface BaseMapExtendedSearchCriteria extends BaseMapSearchCriteria {}
 
 /**
@@ -73,6 +155,16 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
     data: Partial<BaseMapEntity>,
   ): BaseMapEntity {
     const now = Date.now();
+    const mapStyle = normalizeMapStyle(data.mapStyle);
+    const viewport = normalizeViewport(data.viewport);
+    const displayOptions = resolveDisplayOptions(mapStyle, data.displayOptions);
+    const tags = normalizeTags({
+      explicitTags: data.tags,
+      displayTags: data.displayOptions?.tags,
+      name: data.name,
+    });
+    const entityTags = tags.length > 0 ? [...tags] : [];
+    const displayOptionsWithTags = tags.length > 0 ? { ...displayOptions, tags: [...tags] } : displayOptions;
     return {
       id: entityId,
       nodeId,
@@ -84,7 +176,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
         maxDepth: 10,
         sortOrder: 'name',
       },
-      tags: data.tags || [],
+      tags: entityTags,
       createdAt: data.createdAt || now,
       updatedAt: data.updatedAt || now,
       version: data.version || 1,
@@ -95,9 +187,9 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       childCount: 0,
       // basemap-specific
       baseMapMetadataId: data.baseMapMetadataId,
-      mapStyle: data.mapStyle || DEFAULT_MAP_STYLE,
-      viewport: data.viewport || DEFAULT_VIEWPORT,
-      displayOptions: data.displayOptions || DEFAULT_DISPLAY_OPTIONS,
+      mapStyle,
+      viewport,
+      displayOptions: displayOptionsWithTags,
     } as BaseMapEntity;
   }
 
@@ -107,6 +199,16 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   /** Create BaseMap entity */
   async createEntity(nodeId: NodeId, data?: CreateBaseMapData): Promise<BaseMapEntity> {
     const now = Date.now();
+    const mapStyle = normalizeMapStyle(data?.mapStyle);
+    const viewport = normalizeViewport(data?.viewport);
+    const baseDisplayOptions = resolveDisplayOptions(mapStyle, data?.displayOptions);
+    const tags = normalizeTags({
+      explicitTags: data?.tags,
+      displayTags: data?.displayOptions?.tags,
+      name: data?.name,
+    });
+    const entityTags = tags.length > 0 ? [...tags] : [];
+    const displayOptions = tags.length > 0 ? { ...baseDisplayOptions, tags: [...tags] } : baseDisplayOptions;
     const entity: BaseMapEntity = {
       id: nodeId,
       nodeId,
@@ -114,7 +216,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       description: data?.description || '',
       category: data?.category,
       settings: data?.settings || { allowNestedFolders: true, maxDepth: 10, sortOrder: 'name' },
-      tags: data?.tags || [],
+      tags: entityTags,
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -123,9 +225,9 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       path: `/${nodeId}`,
       childCount: 0,
       baseMapMetadataId: data?.baseMapMetadataId,
-      mapStyle: data?.mapStyle || DEFAULT_MAP_STYLE,
-      viewport: data?.viewport || DEFAULT_VIEWPORT,
-      displayOptions: data?.displayOptions || DEFAULT_DISPLAY_OPTIONS,
+      mapStyle,
+      viewport,
+      displayOptions,
     } as BaseMapEntity;
     await this.table.add(entity);
     await this.mirrorToPeerStore(entity).catch(() => {});
@@ -152,6 +254,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       return workingCopy;
     }
 
+    const defaultMapStyle = normalizeMapStyle();
+    const defaultViewport = normalizeViewport();
+    const defaultDisplayOptions = resolveDisplayOptions(defaultMapStyle);
+
     const workingCopy: BaseMapWorkingCopy = {
       id: workingCopyId,
       workingCopyId: workingCopyId,
@@ -164,9 +270,9 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
         sortOrder: 'name',
       },
       baseMapMetadataId: undefined,
-      mapStyle: DEFAULT_MAP_STYLE,
-      viewport: DEFAULT_VIEWPORT,
-      displayOptions: DEFAULT_DISPLAY_OPTIONS,
+      mapStyle: defaultMapStyle,
+      viewport: defaultViewport,
+      displayOptions: defaultDisplayOptions,
       isDraft: true,
       createdAt: now,
       updatedAt: now,
@@ -186,12 +292,25 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   async commitWorkingCopy(_nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<BaseMapEntity> {
     // If original exists, update it; otherwise create a new entity for provided nodeId
     if (workingCopy.originalId) {
+      const mapStyle = normalizeMapStyle(workingCopy.mapStyle);
+      const viewport = normalizeViewport(workingCopy.viewport);
+      const baseDisplayOptions = resolveDisplayOptions(mapStyle, workingCopy.displayOptions);
+      const normalizedTags = normalizeTags({
+        explicitTags: (workingCopy as BaseMapEntity).tags,
+        displayTags: workingCopy.displayOptions?.tags,
+        name: workingCopy.name,
+      });
+      const displayOptions = normalizedTags.length > 0
+        ? { ...baseDisplayOptions, tags: [...normalizedTags] }
+        : baseDisplayOptions;
+      const tags = normalizedTags.length > 0 ? [...normalizedTags] : [];
       const updated = await this.updateEntity(workingCopy.originalId as NodeId, {
         name: workingCopy.name,
-        mapStyle: workingCopy.mapStyle,
-        viewport: workingCopy.viewport,
-        displayOptions: workingCopy.displayOptions,
-      } as Partial<BaseMapEntity>);
+        mapStyle,
+        viewport,
+        displayOptions,
+        tags,
+      });
       await this.mirrorToPeerStore(updated).catch(() => {});
       return updated;
     }
@@ -239,7 +358,22 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   ): Promise<BaseMapEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) throw new Error(`BaseMap entity for node ${nodeId} not found`);
-    return await this.updateEntity(entity.id, { displayOptions });
+    const baseOptions = resolveDisplayOptions(entity.mapStyle, displayOptions);
+    const normalizedTags = normalizeTags({
+      explicitTags: displayOptions.tags ?? entity.tags,
+      displayTags: baseOptions.tags,
+      name: entity.name,
+    });
+    const nextDisplayOptions = normalizedTags.length > 0
+      ? { ...baseOptions, tags: [...normalizedTags] }
+      : baseOptions;
+    const tags = normalizedTags.length > 0 ? [...normalizedTags] : [];
+    const updated = await this.updateEntity(entity.id, {
+      displayOptions: nextDisplayOptions,
+      tags,
+    });
+    await this.mirrorToPeerStore(updated).catch(() => {});
+    return updated;
   }
 
   async getConfiguration(nodeId: NodeId): Promise<{
@@ -249,10 +383,21 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   } | null> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) return null;
+    const mapStyle = normalizeMapStyle(entity.mapStyle);
+    const viewport = normalizeViewport(entity.viewport);
+    const baseDisplayOptions = resolveDisplayOptions(mapStyle, entity.displayOptions);
+    const normalizedTags = normalizeTags({
+      explicitTags: entity.tags,
+      displayTags: baseDisplayOptions.tags,
+      name: entity.name,
+    });
+    const displayOptions = normalizedTags.length > 0
+      ? { ...baseDisplayOptions, tags: [...normalizedTags] }
+      : baseDisplayOptions;
     return {
-      mapStyle: entity.mapStyle,
-      viewport: entity.viewport,
-      displayOptions: entity.displayOptions,
+      mapStyle,
+      viewport,
+      displayOptions,
     };
   }
 
@@ -311,11 +456,11 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       collection = collection.filter((entity: BaseMapEntity) => entity.mapStyle.style === criteria.mapStyle);
     }
 
-    if (criteria.tags) {
-      const tags = criteria.tags;
+    if (criteria.tags && criteria.tags.length > 0) {
+      const expected = criteria.tags.map((tag) => tag.toLowerCase());
       collection = collection.filter((entity: BaseMapEntity) => {
-        const entityTags = entity.displayOptions?.tags || [];
-        return tags.every((t) => entityTags.includes(t));
+        const entityTags = collectEntityTags(entity).map((tag) => tag.toLowerCase());
+        return expected.every((tag) => entityTags.includes(tag));
       });
     }
 

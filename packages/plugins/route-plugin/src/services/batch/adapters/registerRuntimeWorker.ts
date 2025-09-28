@@ -4,6 +4,8 @@
  */
 
 import { readRuntimeEnvValue } from '@hierarchidb/util';
+import type { RouteRuntimeWorkerClient } from './RuntimeWorkerClient.js';
+import { registerRouteRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 function isFlagEnabled(name: string, fallback = false): boolean {
   const value = readFlagValue(name);
@@ -18,16 +20,22 @@ function isFlagEnabled(name: string, fallback = false): boolean {
  * - Safe to call even if runtime-worker package is unavailable
  */
 export async function registerRouteRuntimeWorkerAdapters(): Promise<void> {
-  if (!isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) return;
-  try {
-    const name = '@' + 'hierarchidb/runtime-worker';
-    const mod: unknown = await import(/* @vite-ignore */ name);
-    if (isRuntimeWorkerModule(mod) && typeof mod.createStageWorkerClient === 'function') {
-      await mod.createStageWorkerClient();
+  registerRouteRuntimeWorkerClient(async (): Promise<RouteRuntimeWorkerClient | null> => {
+    if (!isFlagEnabled('ROUTE_RUNTIME_WORKER', false)) {
+      return null;
     }
-  } catch {
-    // Silently ignore when runtime-worker is not available (dev/offline)
-  }
+    try {
+      const name = '@' + 'hierarchidb/runtime-worker';
+      const mod: unknown = await import(/* @vite-ignore */ name);
+      if (isRuntimeWorkerModule(mod) && typeof mod.createStageWorkerClient === 'function') {
+        const client = await mod.createStageWorkerClient();
+        return client as RouteRuntimeWorkerClient;
+      }
+    } catch {
+      // Silently ignore when runtime-worker is not available (dev/offline)
+    }
+    return null;
+  });
 }
 
 function readFlagValue(name: string): string | undefined {

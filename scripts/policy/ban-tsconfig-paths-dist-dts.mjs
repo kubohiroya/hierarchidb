@@ -20,6 +20,40 @@ function stripJsonComments(text) {
   return noComments.replace(/,(\s*[}\]])/g, '$1');
 }
 
+function isAllowedDistReference(tsconfigPath, value) {
+  const tsconfigDir = path.dirname(tsconfigPath);
+  const absolute = path.resolve(tsconfigDir, value);
+  let cursor = absolute;
+
+  while (true) {
+    const pkgJsonPath = path.join(cursor, 'package.json');
+    if (fs.existsSync(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+        const rel = path.posix.normalize(path.relative(cursor, absolute).split(path.sep).join('/'));
+
+        const declaredTypes = typeof pkg.types === 'string' ? pkg.types.replace(/^\.\//, '') : null;
+        const exportTypes = typeof pkg?.exports?.['.']?.types === 'string'
+          ? pkg.exports['.'].types.replace(/^\.\//, '')
+          : null;
+
+        if (rel === declaredTypes || rel === exportTypes) {
+          return true;
+        }
+      } catch {
+        // fall through to violation
+      }
+      return false;
+    }
+
+    const parent = path.dirname(cursor);
+    if (parent === cursor) {
+      return false;
+    }
+    cursor = parent;
+  }
+}
+
 function findViolations(obj, file) {
   const violations = [];
   const paths = obj?.compilerOptions?.paths;
@@ -28,6 +62,7 @@ function findViolations(obj, file) {
     if (!Array.isArray(arr)) continue;
     for (const p of arr) {
       if (typeof p === 'string' && DIST_DTS_RE.test(p)) {
+        if (isAllowedDistReference(file, p)) continue;
         violations.push({ file, alias, value: p });
       }
     }
@@ -57,7 +92,10 @@ async function main() {
               // Try to extract alias and value heuristically
               const aliasMatch = line.match(/"([^"]+)"\s*:/);
               const valueMatch = line.match(/"([^\"]*dist[\/][^\"]*\.d\.ts)"/);
-              all.push({ file, alias: aliasMatch?.[1] ?? '(unknown)', value: valueMatch?.[1] ?? line });
+              const alias = aliasMatch?.[1] ?? '(unknown)';
+              const value = valueMatch?.[1] ?? line;
+              if (isAllowedDistReference(file, value)) continue;
+              all.push({ file, alias, value });
             }
           }
         }

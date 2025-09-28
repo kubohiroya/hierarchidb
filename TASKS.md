@@ -69,6 +69,7 @@
     - 追加したチャネル定義・購読処理・ドキュメントをリバートし、従来の props ベース連携へ戻してから `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-27 21:30 DialogStateChannel 型定義と購読実装の設計に着手（Playwright テスト実行は指示により保留）
+    - progress: 2025-09-28 18:45 Worker client hook の ambient 型定義を刷新し、PluginDialogRoute / usePluginDialogController / peerDialogPersistence の型整備を実施。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` と `pnpm --filter @hierarchidb/app typecheck` がいずれも成功。
 - chore/plugins/dialog-naming-align — Folder 拡張の命名を Dialog ベースへ改称し整合性を取る
   - ブランチ: `chore/plugins/dialog-naming-align`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-spreadsheet-plugin`

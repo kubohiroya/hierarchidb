@@ -113,8 +113,21 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const stepRegistry = PluginStepRegistry.getInstance();
   const hostRegistry = HostProfileRegistry.getInstance();
 
-  const workerClientHook: WorkerClientHook<WorkerAPI> = getWorkerClientHook<WorkerAPI>();
-  const workerAPI: WorkerAPI | null = workerClientHook();
+  let workerClientHook: WorkerClientHook<WorkerAPI | null>;
+  try {
+    workerClientHook = getWorkerClientHook<WorkerAPI | null>();
+  } catch (error) {
+    console.warn('[usePluginDialogController] Worker client hook unavailable', error);
+    workerClientHook = () => null;
+  }
+  const workerAPI: WorkerAPI | null = (() => {
+    try {
+      return workerClientHook() ?? null;
+    } catch (error) {
+      console.warn('[usePluginDialogController] Worker client call failed', error);
+      return null;
+    }
+  })();
   const {
     workingCopy,
     hasUnsavedChanges,

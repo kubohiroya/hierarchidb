@@ -1,31 +1,19 @@
-//import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
-// Re-export worker API types so they are public in this package's .d.ts
+// Re-export worker API types so they remain part of the public surface
 export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
-import { getStageProcessingClient } from '@hierarchidb/runtime-worker';
 
-export interface ShapeRuntimeWorkerClient {
-  // Use inline import() types to avoid TS4033 private name issues in DTS
-  download: import('@hierarchidb/runtime-worker').DownloadWorkerAPI;
-  simplify: import('@hierarchidb/runtime-worker').SimplifyWorkerAPI;
-  vectortile: import('@hierarchidb/runtime-worker').VectorTileWorkerAPI;
-}
+import {
+  getRuntimeWorkerClient,
+  registerRuntimeWorkerClient,
+  type RuntimeWorkerClientProvider,
+  type RuntimeWorkerStageClient,
+} from '@hierarchidb/plugins-runtime-worker-factory';
 
-type Provider = () => Promise<ShapeRuntimeWorkerClient | null> | ShapeRuntimeWorkerClient | null;
-let provider: Provider | null = null;
+export type ShapeRuntimeWorkerClient = RuntimeWorkerStageClient;
 
-export function registerShapeRuntimeWorkerClient(p: Provider) {
-  provider = p;
+export function registerShapeRuntimeWorkerClient(provider: RuntimeWorkerClientProvider): void {
+  registerRuntimeWorkerClient('shape', provider);
 }
 
 export async function getShapeRuntimeWorkerClient(): Promise<ShapeRuntimeWorkerClient | null> {
-  if (typeof provider === 'function') {
-    const v = await provider();
-    if (v) return v;
-  }
-  try {
-    // Fallback: use in-process stage processing client (no threads)
-    return await getStageProcessingClient();
-  } catch {
-    return null;
-  }
+  return getRuntimeWorkerClient('shape');
 }

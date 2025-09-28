@@ -23,21 +23,28 @@ type PeerDialogRow = {
 type PeerEntitiesTable = {
   get: (id: string) => Promise<PeerDialogRow | undefined>;
   put: (row: PeerDialogRow) => Promise<void>;
+  delete?: (id: string) => Promise<void> | void;
 };
 
-type EntitiesDBAdapter = {
+type PeerEntitiesDBAdapter = {
+  open?: () => Promise<void> | void;
   table: (name: string) => PeerEntitiesTable;
 };
 
+type EntitiesOverrideFactory =
+  | PeerEntitiesDBAdapter
+  | (() => PeerEntitiesDBAdapter | Promise<PeerEntitiesDBAdapter | undefined> | undefined)
+  | (() => Promise<PeerEntitiesDBAdapter | undefined>);
+
+type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
+
 declare global {
-  var __HDB_PLUGIN_ENTITY_OVERRIDES__:
-    | Record<string, EntitiesDBAdapter | (() => EntitiesDBAdapter | Promise<EntitiesDBAdapter>)>
-    | undefined;
+  var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, any> | undefined;
 }
 
 class UIPersistenceRegistry {
   private providers = new Map<string, PeerDialogPersistence>();
-  private dbCache = new Map<string, EntitiesDBAdapter | null>();
+  private dbCache = new Map<string, PeerEntitiesDBAdapter | null>();
 
   register(nodeType: string, provider: PeerDialogPersistence) {
     this.providers.set(nodeType, provider);
@@ -66,15 +73,19 @@ class UIPersistenceRegistry {
       if (!nodeType || typeof nodeType !== 'string') { this.dbCache.set(nodeType, null); return null; }
 
       const overrides = typeof globalThis !== 'undefined' ? (globalThis as typeof globalThis & {
-        __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesDBAdapter | (() => EntitiesDBAdapter | Promise<EntitiesDBAdapter>)>;
+        __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
       }) : undefined;
       const overrideFactory = overrides?.__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
       if (overrideFactory) {
         const instance = typeof overrideFactory === 'function'
           ? await Promise.resolve(overrideFactory())
           : overrideFactory;
-        this.dbCache.set(nodeType, instance);
-        return instance;
+        if (instance) {
+          this.dbCache.set(nodeType, instance);
+          return instance;
+        }
+        this.dbCache.set(nodeType, null);
+        return null;
       }
 
       const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
@@ -113,7 +124,7 @@ class UIPersistenceRegistry {
           }
           const db = new Ctor();
           await db.open?.();
-          const adapter: EntitiesDBAdapter = {
+          const adapter: PeerEntitiesDBAdapter = {
             table: (name: string): PeerEntitiesTable => {
               const tbl = db.table(name);
               return {

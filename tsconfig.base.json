@@ -44,6 +44,18 @@
       ],
       "@hierarchidb/runtime-ui-tour/*": [
         "packages/runtime-ui/tour/src/*"
+      ],
+      "@hierarchidb/plugins-runtime-worker-factory": [
+        "packages/plugins/runtime-worker-factory/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugins-runtime-worker-factory/*": [
+        "packages/plugins/runtime-worker-factory/dist/*"
+      ],
+      "@hierarchidb/tabular-store": [
+        "packages/feature/tabular-store/src/index.ts"
+      ],
+      "@hierarchidb/tabular-store/*": [
+        "packages/feature/tabular-store/src/*"
       ]
     },
     "strict": true,

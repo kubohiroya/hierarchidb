@@ -1,0 +1,29 @@
+{
+  "name": "@hierarchidb/plugins-runtime-worker-factory",
+  "version": "0.1.0",
+  "description": "Shared runtime worker client registry for HierarchiDB plugins",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+  },
+  "dependencies": {
+    "@hierarchidb/runtime-worker": "workspace:*"
+  }
+}

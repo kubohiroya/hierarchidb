@@ -6,7 +6,7 @@ import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
-import { getStageProcessingClient } from '@hierarchidb/runtime-worker';
+import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 
 export interface LocationPointInput {
   lon: number;
@@ -120,7 +120,11 @@ export class SessionController {
     }
 
     // 2) Delegate tile generation to runtime-worker
-    const client = await getStageProcessingClient();
+    const client = await getLocationRuntimeWorkerClient();
+    if (!client) {
+      console.warn('[Location][Session] runtime worker client unavailable; skipping worker delegation');
+      return;
+    }
     await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
 
     // 3) Import generated tiles back into location DB for compatibility
