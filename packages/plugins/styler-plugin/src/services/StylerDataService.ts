@@ -12,6 +12,7 @@ import type {
   CSVFilterRule,
   CSVProcessingConfig,
   CSVTableMetadata,
+  CSVTableMetadataLike,
   ICSVDataApi,
 } from '@hierarchidb/ui-csv-extract';
 
@@ -209,8 +210,8 @@ export class StylerDataService {
       */
   async listStylerTables(): Promise<CSVTableMetadata[]> {
     const allTables = await this.csvApiDriver.listTables();
-    //  Styler
-    return allTables.tables.filter((table) => table.referencingPlugins?.includes(this.pluginId));
+    const filtered = allTables.tables.filter((table) => table.referencingPlugins?.includes(this.pluginId));
+    return filtered.map((table) => this.ensureFullMetadata(table));
   }
 
   /**
@@ -249,5 +250,23 @@ export class StylerDataService {
       cfg.selectedKeyColumn = cfg.keyColumn;
     }
     return cfg;
+  }
+
+  private ensureFullMetadata(table: CSVTableMetadataLike): CSVTableMetadata {
+    return {
+      id: table.id,
+      filename: table.filename ?? `${table.id}.csv`,
+      fileUrl: table.fileUrl,
+      contentHash: table.contentHash ?? '',
+      fileSizeBytes: table.fileSizeBytes ?? 0,
+      totalRows: table.totalRows ?? 0,
+      columns: table.columns ?? [],
+      createdAt: table.createdAt ?? Date.now(),
+      updatedAt: table.updatedAt,
+      referenceCount: table.referenceCount ?? (table.referencingPlugins?.length ?? 0),
+      referencingPlugins: table.referencingPlugins ?? [],
+      isChunked: table.isChunked ?? false,
+      chunkCount: table.chunkCount ?? 0,
+    };
   }
 }
