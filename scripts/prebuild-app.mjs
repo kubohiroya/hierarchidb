@@ -16,6 +16,7 @@ const args = [
   '-w',
   'run',
   '-r',
+  '--workspace-concurrency=1',
   '--filter',
   '@hierarchidb/app^...',
   '--filter',

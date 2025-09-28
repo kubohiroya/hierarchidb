@@ -1,14 +1,18 @@
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { VectorTileTask } from '../../types.js';
 import type { VectorTileStageAdapter } from './VectorTileStageAdapter.js';
+import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
-  async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void) {
+  async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const client = await getShapeRuntimeWorkerClient();
     if (!client) throw new Error('Runtime worker vectortile not available');
     let completed = 0, failed = 0;
     for (const task of tasks) {
+      if (controls?.waitIfPaused) {
+        await controls.waitIfPaused();
+      }
       try {
         await client.vectortile.generateTiles(task.inputBufferId, {
           format: 'mvt',

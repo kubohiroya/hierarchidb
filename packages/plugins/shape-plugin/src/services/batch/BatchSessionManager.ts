@@ -15,12 +15,14 @@ import { SessionController } from './SessionController.js';
 import { ShapeBatchSession } from './ShapeBatchSession.js';
 import type { BatchSession, BatchStatus, ProcessingStage, ProgressInfo, StageStatus } from '../types.js';
 import type { BatchProcessConfig } from './types.js';
-import type { UrlMetadata } from '../../shared/types.js';
+import type { UrlMetadata, ShapeBatchCommandMap } from '../../shared/types.js';
 
 const logBatchSessionWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[ShapeBatchSessionManager]', message, error);
 };
+
+const STAGES: ProcessingStage[] = ['download', 'simplify1', 'simplify2', 'vectortile'];
 
 export interface BatchSessionOptions {
   maxConcurrentTasks?: number;
@@ -198,6 +200,41 @@ export class BatchSessionManager {
   // Progress Tracking
   onProgress(sessionId: string, callback: (progress: ProgressInfo) => void): void {
     this.progressCallbacks.set(sessionId, callback);
+  }
+
+  async dispatchCommand<K extends keyof ShapeBatchCommandMap>(
+    command: K,
+    payload: ShapeBatchCommandMap[K],
+  ): Promise<void> {
+    const sessionId = payload.sessionId as string;
+    const shared = this.sharedSessions.get(sessionId);
+    if (!shared) {
+      throw new Error(`Batch session ${sessionId} not found`);
+    }
+
+    switch (command) {
+      case 'session/pause':
+        STAGES.forEach((stage) => shared.pauseStage(stage));
+        await this.pauseSession(sessionId);
+        break;
+      case 'session/resume':
+        shared.resumeAllStages();
+        await this.resumeSession(sessionId);
+        break;
+      case 'session/cancel':
+        shared.resumeAllStages();
+        await this.cancelSession(sessionId);
+        break;
+      case 'stage/pause':
+        shared.pauseStage(payload.stage);
+        break;
+      case 'stage/resume':
+        shared.resumeStage(payload.stage);
+        break;
+      default:
+        logBatchSessionWarning(`Unknown batch command ${String(command)}`, undefined);
+        break;
+    }
   }
 
   /*

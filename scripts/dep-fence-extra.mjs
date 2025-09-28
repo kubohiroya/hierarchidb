@@ -40,12 +40,10 @@ let errors = 0;
 let warnings = 0;
 
 function err(msg) {
-  // eslint-disable-next-line no-console
   console.error(`ERROR  ${msg}`);
   errors++;
 }
 function warn(msg) {
-  // eslint-disable-next-line no-console
   console.warn(`WARN   ${msg}`);
   warnings++;
 }
@@ -281,7 +279,13 @@ for (const dir of workspaces) {
       warn(`${path.relative(repoRoot, tsconfigPath)}: could not be parsed as JSON (comments/trailing commas?). Skipping strict checks.`);
     } else {
       const co = ts?.compilerOptions || {};
-      const baseUrl = co.baseUrl;
+      const normalizeBaseUrl = (value) => {
+        if (typeof value !== 'string') return value;
+        const trimmed = value.trim();
+        if (trimmed === './' || trimmed === '.\\') return '.';
+        return trimmed;
+      };
+      const baseUrl = normalizeBaseUrl(co.baseUrl);
       const paths = co.paths || {};
 
       // Allow baseUrl only if '.' or undefined
@@ -332,10 +336,8 @@ for (const dir of workspaces) {
 
 // Summary / exit code
 if (errors) {
-  // eslint-disable-next-line no-console
   console.error(`\nDependency guard failed: ${errors} error(s), ${warnings} warning(s).`);
   process.exit(1);
 } else {
-  // eslint-disable-next-line no-console
   console.log(`Dependency guard passed with ${warnings} warning(s).`);
 }

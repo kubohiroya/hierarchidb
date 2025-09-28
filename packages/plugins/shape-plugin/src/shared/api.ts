@@ -11,6 +11,8 @@ import type {
   DataSourceConfig,
   ProcessingConfig,
   ProgressInfo,
+  ShapeBatchCommand,
+  ShapeBatchCommandPayload,
   SelectionStats,
   ShapeEntity,
   UpdateShapeData,
@@ -76,6 +78,8 @@ export interface ShapeAPI {
   resumeBatchProcessing(workingCopyId: NodeId): Promise<void>;
 
   cancelBatchProcessing(workingCopyId: NodeId): Promise<void>;
+
+  invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
 
   getBatchSession(sessionId: string): Promise<BatchSession | undefined>;
 

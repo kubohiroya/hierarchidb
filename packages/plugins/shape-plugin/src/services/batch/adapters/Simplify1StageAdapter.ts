@@ -1,5 +1,6 @@
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { Simplify1Task } from '../../types.js';
+import type { StageControls } from './StageControls.js';
 
 export interface SimplifyStageAdapterResult {
   processed: number;
@@ -7,6 +8,9 @@ export interface SimplifyStageAdapterResult {
 }
 
 export interface Simplify1StageAdapter {
-  process(tasks: Simplify1Task[], onProgress: (p: ProgressInfo) => void): Promise<SimplifyStageAdapterResult>;
+  process(
+    tasks: Simplify1Task[],
+    onProgress: (p: ProgressInfo) => void,
+    controls?: StageControls,
+  ): Promise<SimplifyStageAdapterResult>;
 }
-

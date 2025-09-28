@@ -22,6 +22,7 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     '@hierarchidb/ui-icon',
     '@hierarchidb/ui-treeconsole-trashbin',
     '@hierarchidb/ui-map',
+    '@hierarchidb/util',
   ];
 
   const mergedExternal = Array.from(

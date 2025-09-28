@@ -48,6 +48,7 @@ export default defineConfig({
       '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/dist/index.js'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.js'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.js'),
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
       '~': path.resolve(__dirname, './src'),
       // App client hook is now injected via registerWorkerClientHook in tests
     },

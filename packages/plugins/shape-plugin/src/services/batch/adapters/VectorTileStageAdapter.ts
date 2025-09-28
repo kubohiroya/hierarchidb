@@ -1,5 +1,6 @@
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { VectorTileTask } from '../../types.js';
+import type { StageControls } from './StageControls.js';
 
 export interface VectorTileStageAdapterResult {
   processed: number;
@@ -7,6 +8,9 @@ export interface VectorTileStageAdapterResult {
 }
 
 export interface VectorTileStageAdapter {
-  process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void): Promise<VectorTileStageAdapterResult>;
+  process(
+    tasks: VectorTileTask[],
+    onProgress: (p: ProgressInfo) => void,
+    controls?: StageControls,
+  ): Promise<VectorTileStageAdapterResult>;
 }
-

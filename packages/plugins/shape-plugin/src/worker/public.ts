@@ -2,6 +2,7 @@
 // Keep this file type-only and decoupled from internal Dexie types
 
 import type {
+  BatchProgressEvent,
   BatchSession,
   BatchTask,
   CountryMetadata,
@@ -11,6 +12,8 @@ import type {
   ProcessingConfig,
   ProcessingStatus,
   SelectionStats,
+  ShapeBatchCommand,
+  ShapeBatchCommandPayload,
   ShapeEntity,
   TileInfo,
   UpdateShapeData,
@@ -47,15 +50,16 @@ export interface ShapeWorkerAPI {
     workingCopyId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
-    progressCallback?: (event: any) => void,
+    progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string>; // returns sessionId
   pauseBatchProcessing(workingCopyId: NodeId): Promise<void>;
   resumeBatchProcessing(workingCopyId: NodeId): Promise<string>;
   cancelBatchProcessing(workingCopyId: NodeId): Promise<void>;
+  invokeBatchCommand<K extends ShapeBatchCommand>(command: K, payload: ShapeBatchCommandPayload<K>): Promise<void>;
   getBatchSession(sessionId: string): Promise<BatchSession | undefined>;
   listBatchTasks(sessionId: string): Promise<BatchTask[]>;
   getBatchStatus(sessionId: string): Promise<ProcessingStatus>;
-  subscribeToProgress(sessionId: string, callback: (event: any) => void): () => void;
+  subscribeToProgress(sessionId: string, callback: (event: BatchProgressEvent) => void): () => void;
 
   // Tiles / features
   getProcessedFeatureCount(nodeId: NodeId): Promise<number>;

@@ -3,6 +3,7 @@ import { BatchService } from '@hierarchidb/batch';
 import type { DownloadTask } from '../../types.js';
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
+import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 
 /**
@@ -18,6 +19,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     _nodeId: NodeId,
     tasks: DownloadTask[],
     onProgress: (p: ProgressInfo) => void,
+    controls?: StageControls,
   ): Promise<DownloadStageAdapterResult> {
     // Require a runtime worker client (no fallback here)
     const client = await getShapeRuntimeWorkerClient();
@@ -30,6 +32,9 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     await batch.mapChunks(
       tasks,
       async (task, index) => {
+        if (controls?.waitIfPaused) {
+          await controls.waitIfPaused();
+        }
         const fileId = `${sessionId}-download-${index}`;
         try {
           const res = await client.download.download(task.url, fileId);

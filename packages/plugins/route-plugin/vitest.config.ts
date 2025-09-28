@@ -20,4 +20,9 @@ export default defineConfig({
       ...(RUN_ROUTE_TESTS ? [] : ['src/**/__tests__/**', 'src/**/*.test.{ts,tsx}']),
     ],
   },
+  resolve: {
+    alias: {
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
+    },
+  },
 });

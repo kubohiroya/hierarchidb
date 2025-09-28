@@ -27,6 +27,7 @@ export default defineConfig({
     alias: {
       '~': 'src/*',
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
       '@hierarchidb/plugins-folder-plugin': path.resolve(__dirname, '../folder-plugin/dist/index.js'),
     },
   },

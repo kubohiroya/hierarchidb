@@ -31,6 +31,7 @@ const mockShapeAPI: ShapeAPI = {
   pauseBatchProcessing: vi.fn(),
   resumeBatchProcessing: vi.fn(),
   cancelBatchProcessing: vi.fn(),
+  invokeBatchCommand: vi.fn(),
   getBatchSession: vi.fn(),
   getBatchTasks: vi.fn(),
   getBatchProgress: vi.fn(),

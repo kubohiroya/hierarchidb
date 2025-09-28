@@ -24,6 +24,32 @@ export type { WorkerClientHook } from './ui/workerClientHook.js';
 export { wirePluginsFromModules } from './wiring/wirePlugins.js';
 export { getRuntimeExports, getAllRuntimeExports, registerRuntimeExports } from './wiring/runtime-export-registry.js';
 
+// Event bridging helpers (UI ↔ runtime worker ↔ stage worker)
+export {
+  createComlinkEventBridge,
+} from './events/comlinkEventBridge.js';
+export type {
+  ComlinkEventBridge,
+  ComlinkEventBridgeOptions,
+  EventListener,
+  EventTransformer,
+  PhaseEvent,
+  PhaseEventMap,
+  RemoteEventListener,
+} from './events/comlinkEventBridge.js';
+
+// Command bridging helpers (UI ↔ runtime ↔ stage workers)
+export {
+  createComlinkCommandBridge,
+} from './events/comlinkCommandBridge.js';
+export type {
+  ComlinkCommandBridge,
+  CommandInvoker,
+  CommandMap,
+  CommandTransformerOptions,
+  RemoteCommandInvoker,
+} from './events/comlinkCommandBridge.js';
+
 
 // Re-export types for convenience
 export type {

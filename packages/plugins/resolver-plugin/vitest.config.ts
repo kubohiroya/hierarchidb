@@ -22,6 +22,7 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
       // Needed when ui/core (dist) imports runtime-worker-bootstrap
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(
         __dirname,

@@ -44,6 +44,8 @@ export class SessionController {
   private simplify1Adapter?: Simplify1StageAdapter;
   private simplify2Adapter?: Simplify2StageAdapter;
   private vectorTileAdapter?: VectorTileStageAdapter;
+  private readonly pausedStages = new Set<ProcessingStage>();
+  private readonly stageWaiters = new Map<ProcessingStage, Array<() => void>>();
 
   constructor(
     sessionId: string,
@@ -138,6 +140,7 @@ export class SessionController {
 
     this.isPaused = false;
     console.log(`[Session ${this.sessionId}] Session resumed`);
+    this.resumeAllStages();
 
     // Continue from current stage
     await this.start();
@@ -149,6 +152,7 @@ export class SessionController {
   async abort(): Promise<void> {
     this.isAborted = true;
     console.log(`[Session ${this.sessionId}] Session aborted`);
+    this.resumeAllStages();
     await this.cleanup();
   }
 
@@ -162,6 +166,7 @@ export class SessionController {
       this.workerPool = null;
       console.log(`[Session ${this.sessionId}] WorkerPool terminated`);
     }
+    this.resumeAllStages();
   }
 
   /**
@@ -179,7 +184,13 @@ export class SessionController {
       adminLevel: metadata.adminLevel,
       expectedFormat: 'geojson',
     }));
-    const res = await this.downloadAdapter.process(this.sessionId, this.nodeId, tasks, (p) => this.progressCallback?.(p));
+    const res = await this.downloadAdapter.process(
+      this.sessionId,
+      this.nodeId,
+      tasks,
+      (p) => this.progressCallback?.(p),
+      { waitIfPaused: () => this.waitForStageResume('download') },
+    );
     console.log(`[Session ${this.sessionId}] Download stage completed: ${res.processed} successful, ${res.failed} failed`);
     const percentage = (res.processed / tasks.length) * 100;
     this.progressCallback?.({
@@ -207,7 +218,9 @@ export class SessionController {
       minArea: this.config.minArea || 100,
     }));
 
-    const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p));
+    const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
+      waitIfPaused: () => this.waitForStageResume('simplify1'),
+    });
     console.log(`[Session ${this.sessionId}] Simplify1 stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
@@ -225,7 +238,9 @@ export class SessionController {
       tileSize: this.config.tileSize || 512,
     }));
 
-    const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p));
+    const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
+      waitIfPaused: () => this.waitForStageResume('simplify2'),
+    });
     console.log(`[Session ${this.sessionId}] Simplify2 stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
@@ -243,7 +258,9 @@ export class SessionController {
       compression: 'gzip',
     }));
 
-    const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p));
+    const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {
+      waitIfPaused: () => this.waitForStageResume('vectortile'),
+    });
     console.log(`[Session ${this.sessionId}] Vector tile stage completed: ${r.processed}/${tasks.length} successful`);
   }
 
@@ -252,6 +269,40 @@ export class SessionController {
    */
   setProgressCallback(callback: (progress: ProgressInfo) => void): void {
     this.progressCallback = callback;
+  }
+
+  pauseStage(stage: ProcessingStage): void {
+    this.pausedStages.add(stage);
+  }
+
+  resumeStage(stage: ProcessingStage): void {
+    if (!this.pausedStages.delete(stage)) return;
+    this.resolveStageWaiters(stage);
+  }
+
+  resumeAllStages(): void {
+    for (const stage of [...this.pausedStages]) {
+      this.pausedStages.delete(stage);
+      this.resolveStageWaiters(stage);
+    }
+  }
+
+  private async waitForStageResume(stage: ProcessingStage): Promise<void> {
+    if (!this.pausedStages.has(stage)) {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      const waiters = this.stageWaiters.get(stage) ?? [];
+      waiters.push(resolve);
+      this.stageWaiters.set(stage, waiters);
+    });
+  }
+
+  private resolveStageWaiters(stage: ProcessingStage): void {
+    const waiters = this.stageWaiters.get(stage);
+    if (!waiters) return;
+    for (const release of waiters) release();
+    this.stageWaiters.delete(stage);
   }
 
   /**

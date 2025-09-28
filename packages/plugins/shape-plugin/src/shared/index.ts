@@ -9,6 +9,11 @@ export * from './api.js';
 export * from './types.js';
 // Bridge legacy worker/UI event types used by hooks/components
 export type { BatchProgressEvent } from '../types/BatchProgressEvent.js';
+export type {
+  ShapeBatchCommand,
+  ShapeBatchCommandMap,
+  ShapeBatchCommandPayload,
+} from './types.js';
 
 // Metadata
 export * from './metadata.js';

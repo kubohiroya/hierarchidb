@@ -81,4 +81,16 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
     };
     this.sink?.(legacyEvent);
   }
+
+  pauseStage(stage: ProcessingStage): void {
+    this.controller.pauseStage(stage);
+  }
+
+  resumeStage(stage: ProcessingStage): void {
+    this.controller.resumeStage(stage);
+  }
+
+  resumeAllStages(): void {
+    this.controller.resumeAllStages();
+  }
 }

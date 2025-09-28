@@ -268,6 +268,18 @@ export interface ProgressInfo {
   currentTask?: string;
 }
 
+export type ShapeBatchCommandMap = {
+  'session/pause': { sessionId: NodeId };
+  'session/resume': { sessionId: NodeId };
+  'session/cancel': { sessionId: NodeId };
+  'stage/pause': { sessionId: NodeId; stage: ProcessingStage };
+  'stage/resume': { sessionId: NodeId; stage: ProcessingStage };
+};
+
+export type ShapeBatchCommand = keyof ShapeBatchCommandMap;
+
+export type ShapeBatchCommandPayload<K extends ShapeBatchCommand> = ShapeBatchCommandMap[K];
+
 export interface StageStatus {
   status: 'waiting' | 'running' | 'completed' | 'failed';
   progress: number;

@@ -1,6 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { DownloadTask } from '../../types.js';
 import type { ProgressInfo } from '../../../shared/index.js';
+import type { StageControls } from './StageControls.js';
 
 export interface DownloadStageAdapterResult {
   processed: number;
@@ -15,6 +16,6 @@ export interface DownloadStageAdapter {
     nodeId: NodeId,
     tasks: DownloadTask[],
     onProgress: (p: ProgressInfo) => void,
+    controls?: StageControls,
   ): Promise<DownloadStageAdapterResult>;
 }
-

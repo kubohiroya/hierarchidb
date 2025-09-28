@@ -25,6 +25,7 @@ export default defineConfig({
       '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
     },
   },
 });

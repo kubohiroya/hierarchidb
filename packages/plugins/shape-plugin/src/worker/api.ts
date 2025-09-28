@@ -16,6 +16,10 @@ import {
   type NodeId,
   type ProcessingConfig,
   type ProcessingStatus,
+  type BatchProgressEvent,
+  type ShapeBatchCommand,
+  type ShapeBatchCommandPayload,
+  type ShapeBatchCommandMap,
   type ProgressInfo,
   type SelectionStats,
   type ShapeEntity,
@@ -31,13 +35,100 @@ import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
-import * as Comlink from 'comlink';
+import type { TreeNodeId } from '@hierarchidb/common-type';
+import type { BatchStage, BatchTaskStatus } from '../types/BatchTaskLike.js';
+import { createComlinkEventBridge, type RemoteEventListener } from '@hierarchidb/runtime-worker-bootstrap';
+import type { StandardProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 
 // Create singleton unified batch manager
 const batchSessionManager = createShapeBatchManager();
 
-// Progress callback registry
-const progressCallbacks = new Map<string, (event: any) => void>();
+interface ProgressSubscription {
+  proxy: RemoteEventListener<ProgressInfo>;
+  unsubscribe?: () => void;
+}
+
+interface ProgressSessionMeta {
+  treeNodeId?: TreeNodeId;
+}
+
+const progressCallbacks = new Map<string, ProgressSubscription>();
+const progressSessionMeta = new Map<string, ProgressSessionMeta>();
+
+const getOrCreateSessionMeta = (sessionId: string): ProgressSessionMeta => {
+  let meta = progressSessionMeta.get(sessionId);
+  if (!meta) {
+    meta = {};
+    progressSessionMeta.set(sessionId, meta);
+  }
+  return meta;
+};
+
+const mapStageToBatchStage = (stage?: string): BatchStage => {
+  switch (stage) {
+    case 'simplify1':
+      return 'simplify1';
+    case 'simplify2':
+      return 'simplify2';
+    case 'vectortile':
+    case 'vectorTiles':
+      return 'vectorTiles';
+    case 'download':
+    default:
+      return 'download';
+  }
+};
+
+const mapProgressToStatus = (progress: ProgressInfo): BatchTaskStatus => {
+  if (progress.failed > 0) return 'failed';
+  if (progress.total > 0 && progress.completed >= progress.total) return 'completed';
+  return 'running';
+};
+
+const buildBatchProgressEvent = (
+  sessionId: string,
+  progress: ProgressInfo,
+  meta: ProgressSessionMeta,
+): BatchProgressEvent => {
+  const status = mapProgressToStatus(progress);
+  return {
+    sessionId,
+    treeNodeId: (meta.treeNodeId ?? sessionId) as TreeNodeId,
+    stage: mapStageToBatchStage(progress.currentStage),
+    status,
+    progress: Math.round(progress.percentage ?? 0),
+    completedTasks: progress.completed,
+    totalTasks: progress.total,
+    currentTask: progress.currentTask ?? '',
+    message: progress.currentTask,
+    timestamp: Date.now(),
+    type: status === 'completed' ? 'complete' : status === 'failed' ? 'error' : 'progress',
+  };
+};
+
+const standardToProgressInfo = (event: StandardProgressEvent): ProgressInfo => ({
+  total: event.total,
+  completed: event.completed,
+  failed: event.failed,
+  skipped: Math.max(event.total - event.completed - event.failed, 0),
+  percentage: event.percentage,
+  currentStage: event.stage,
+  currentTask: event.currentTask,
+});
+
+const hydrateSessionMeta = async (sessionId: string): Promise<void> => {
+  const meta = getOrCreateSessionMeta(sessionId);
+  if (meta.treeNodeId) return;
+  try {
+    const db = getEphemeralShapeDB();
+    const record = await db.sessions.get(sessionId);
+    if (record?.nodeId) {
+      meta.treeNodeId = record.nodeId as TreeNodeId;
+    }
+  } catch (error) {
+    console.warn('[shapePluginAPI] Failed to hydrate session metadata', error);
+  }
+};
 
 export const shapePluginAPI = {
   // ===================================
@@ -195,7 +286,7 @@ export const shapePluginAPI = {
     workingCopyId: NodeId,
     config: ProcessingConfig,
     urlMetadata: UrlMetadata[],
-    progressCallback?: (event: any) => void,
+    progressCallback?: (event: BatchProgressEvent) => void,
   ): Promise<string> => {
     const validation = validateProcessingConfig(config);
     if (!validation.isValid) {
@@ -253,14 +344,21 @@ export const shapePluginAPI = {
     // Start batch session using unified manager
     const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId, batchConfig, batchSessionData);
 
+    const sessionMeta = getOrCreateSessionMeta(sessionId);
+    sessionMeta.treeNodeId = workingCopy.nodeId as TreeNodeId;
+
     // Register progress callback if provided
     if (progressCallback) {
-      const proxiedCallback = Comlink.proxy(progressCallback);
-      progressCallbacks.set(sessionId, proxiedCallback);
-      // Unified manager progress subscription
-      const off = batchSessionManager.onBatchProgress(sessionId, (e) => proxiedCallback(e));
-      // Store unregister if needed
-      // (we keep the map for compatibility with later unsubscribe)
+      const bridge = createComlinkEventBridge<BatchProgressEvent, ProgressInfo, StandardProgressEvent>({
+        runtimeToUi: (progress) => buildBatchProgressEvent(sessionId, progress, sessionMeta),
+        workerToRuntime: standardToProgressInfo,
+      });
+      const proxiedCallback = bridge.createUiProxy(progressCallback);
+      const runtimeListener = bridge.toRuntimeListener(proxiedCallback);
+      const existing = progressCallbacks.get(sessionId);
+      existing?.unsubscribe?.();
+      const unsubscribe = batchSessionManager.onBatchProgress(sessionId, runtimeListener);
+      progressCallbacks.set(sessionId, { proxy: proxiedCallback, unsubscribe });
     }
 
     // Save session ID to working copy
@@ -278,7 +376,9 @@ export const shapePluginAPI = {
       throw new Error(`No active batch session for working copy: ${workingCopyId}`);
     }
 
-    await batchSessionManager.pauseBatchSession(workingCopy.batchSessionId);
+    await batchSessionManager.dispatchCommand('session/pause', {
+      sessionId: workingCopy.batchSessionId,
+    });
   },
 
   resumeBatchProcessing: async (workingCopyId: NodeId): Promise<string> => {
@@ -288,7 +388,9 @@ export const shapePluginAPI = {
       throw new Error(`No batch session to resume for working copy: ${workingCopyId}`);
     }
 
-    await batchSessionManager.resumeBatchSession(workingCopy.batchSessionId);
+    await batchSessionManager.dispatchCommand('session/resume', {
+      sessionId: workingCopy.batchSessionId,
+    });
     return workingCopy.batchSessionId;
   },
 
@@ -299,12 +401,25 @@ export const shapePluginAPI = {
       throw new Error(`No active batch session for working copy: ${workingCopyId}`);
     }
 
-    await batchSessionManager.cancelBatchSession(workingCopy.batchSessionId);
+    await batchSessionManager.dispatchCommand('session/cancel', {
+      sessionId: workingCopy.batchSessionId,
+    });
+    const subscription = progressCallbacks.get(workingCopy.batchSessionId);
+    subscription?.unsubscribe?.();
+    progressCallbacks.delete(workingCopy.batchSessionId);
+    progressSessionMeta.delete(workingCopy.batchSessionId);
 
     // Clear session ID from working copy
     await handler.updateWorkingCopy(workingCopyId, {
       batchSessionId: undefined,
     });
+  },
+
+  invokeBatchCommand: async <K extends ShapeBatchCommand>(
+    command: K,
+    payload: ShapeBatchCommandPayload<K>,
+  ): Promise<void> => {
+    await batchSessionManager.dispatchCommand(command, payload);
   },
 
   getBatchSession: async (sessionId: string): Promise<BatchSession | undefined> => {
@@ -475,16 +590,27 @@ export const shapePluginAPI = {
   // Real-time Progress Subscription
   // ===================================
 
-  subscribeToProgress: (sessionId: string, callback: (event: any) => void): (() => void) => {
-    // Register callback with Comlink proxy
-    const proxiedCallback = Comlink.proxy(callback);
-    progressCallbacks.set(sessionId, proxiedCallback);
-    batchSessionManager.onBatchProgress(sessionId, (e) => proxiedCallback(e));
+  subscribeToProgress: (sessionId: string, callback: (event: BatchProgressEvent) => void): (() => void) => {
+    const sessionMeta = getOrCreateSessionMeta(sessionId);
+    if (!sessionMeta.treeNodeId) {
+      void hydrateSessionMeta(sessionId);
+    }
 
-    // Return unsubscribe function
+    const bridge = createComlinkEventBridge<BatchProgressEvent, ProgressInfo, StandardProgressEvent>({
+      runtimeToUi: (progress) => buildBatchProgressEvent(sessionId, progress, sessionMeta),
+      workerToRuntime: standardToProgressInfo,
+    });
+    const proxiedCallback = bridge.createUiProxy(callback);
+    const runtimeListener = bridge.toRuntimeListener(proxiedCallback);
+    const existing = progressCallbacks.get(sessionId);
+    existing?.unsubscribe?.();
+    const unsubscribe = batchSessionManager.onBatchProgress(sessionId, runtimeListener);
+    progressCallbacks.set(sessionId, { proxy: proxiedCallback, unsubscribe });
+
     return () => {
+      const active = progressCallbacks.get(sessionId);
+      active?.unsubscribe?.();
       progressCallbacks.delete(sessionId);
-      // No-op: unified manager returns an unsubscribe when needed
     };
   },
 

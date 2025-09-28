@@ -67,27 +67,65 @@ export function useShapeProgress(
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isRealTimeActiveRef = useRef(false);
 
+  const mapEventToProgress = useCallback((event: BatchProgressEvent): ProgressInfo => {
+    const total = event.totalTasks ?? 0;
+    const completed = event.completedTasks ?? 0;
+    const isFailed = event.type === 'error' || event.status === 'failed';
+    const failed = isFailed ? Math.max(total - completed, 1) : 0;
+    const skippedCandidate = total - completed - failed;
+    const skipped = skippedCandidate > 0 ? skippedCandidate : 0;
+    const percentage = event.progress ?? (total > 0 ? (completed / total) * 100 : 0);
+
+    return {
+      total,
+      completed,
+      failed,
+      skipped,
+      percentage,
+      currentStage: event.stage,
+      currentTask: event.currentTask,
+    };
+  }, []);
+
+  const mapEventToStatus = useCallback((event: BatchProgressEvent): ProcessingStatus => {
+    const complete = event.type === 'complete' || event.status === 'completed';
+    const failed = event.type === 'error' || event.status === 'failed';
+    const cancelled = event.type === 'cancelled' || event.status === 'cancelled';
+
+    const status: ProcessingStatus['status'] = complete
+      ? 'completed'
+      : failed
+      ? 'failed'
+      : cancelled
+      ? 'cancelled'
+      : 'processing';
+
+    const hasErrors = failed || Boolean(event.error);
+    const errorMessages = event.error ? [event.error] : [];
+
+    return {
+      status,
+      stage: event.stage,
+      progress: complete ? 100 : event.progress ?? 0,
+      lastUpdated: event.timestamp,
+      error: event.error,
+      hasErrors,
+      errorMessages,
+    };
+  }, []);
+
   // Handle progress events
   const handleProgressEvent = useCallback((event: BatchProgressEvent) => {
-    switch (event.type) {
-      case 'progress':
-        setProgress(event.progress);
-        break;
-      case 'stage-change':
-        setStatus((prev) => (prev ? { ...prev, stage: event.stage } : null));
-        break;
-      case 'complete':
-        setStatus((prev) => (prev ? { ...prev, status: 'completed' } : null));
-        setProgress((prev) => (prev ? { ...prev, percentage: 100 } : null));
-        break;
-      case 'error':
-        setError(new Error(event.error));
-        setStatus((prev) => (prev ? { ...prev, status: 'failed', error: event.error } : null));
-        break;
-    }
+    const nextProgress = mapEventToProgress(event);
+    setProgress(nextProgress);
+
+    const nextStatus = mapEventToStatus(event);
+    setStatus(nextStatus);
+
+    setError(event.error ? new Error(event.error) : null);
 
     isRealTimeActiveRef.current = true;
-  }, []);
+  }, [mapEventToProgress, mapEventToStatus]);
 
   // Polling fallback function
   const pollProgress = useCallback(async () => {
@@ -98,32 +136,29 @@ export function useShapeProgress(
       const session = await api.getBatchSession(sessionId);
 
       if (session) {
-        const progressData: ProgressInfo = {
-          total: session.totalTasks || 0,
-          completed: session.completedTasks || 0,
-          failed: session.failedTasks || 0,
-          skipped: 0,
-          percentage: session.progress || 0,
-          currentStage: session.stage,
+        const fallbackEvent: BatchProgressEvent = {
+          sessionId,
+          treeNodeId: (session.workingCopyId ?? session.sessionId) as NodeId,
+          stage: session.stage ?? 'processing',
+          status: session.status === 'completed' ? 'completed' : session.status === 'failed' ? 'failed' : undefined,
+          progress: session.progress ?? 0,
+          completedTasks: session.completedTasks ?? 0,
+          totalTasks: session.totalTasks ?? 0,
+          currentTask: session.stage ?? 'processing',
+          timestamp: Date.now(),
+          type: session.status === 'completed' ? 'complete' : session.status === 'failed' ? 'error' : 'progress',
+          error: session.error ?? undefined,
         };
 
-        const statusData: ProcessingStatus = {
-          status: session.status,
-          stage: session.stage,
-          progress: session.progress,
-          lastUpdated: Date.now(),
-          error: session.error,
-        };
-
-        setProgress(progressData);
-        setStatus(statusData);
-        setError(null);
+        setProgress(mapEventToProgress(fallbackEvent));
+        setStatus(mapEventToStatus(fallbackEvent));
+        setError(session.error ? new Error(session.error) : null);
       }
     } catch (err) {
       console.error('Failed to poll progress:', err);
       setError(err instanceof Error ? err : new Error('Failed to poll progress'));
     }
-  }, [sessionId, getShapeAPI]);
+  }, [sessionId, getShapeAPI, mapEventToProgress, mapEventToStatus]);
 
   // Subscribe to real-time updates
   const subscribe = useCallback(async () => {

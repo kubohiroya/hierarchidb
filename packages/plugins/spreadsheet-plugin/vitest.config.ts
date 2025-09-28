@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
@@ -12,6 +13,11 @@ export default defineConfig({
       all: true,
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**', '**/*.stories.{ts,tsx}', '**/dist/**'],
+    },
+  },
+  resolve: {
+    alias: {
+      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
     },
   },
 });
