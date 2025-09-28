@@ -1,4 +1,3 @@
-import type React from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 export interface DynamicCreateMenuProps {

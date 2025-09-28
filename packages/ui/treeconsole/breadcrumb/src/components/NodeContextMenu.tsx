@@ -51,7 +51,7 @@ export interface NodeContextMenuProps {
   * NodeContextMenu
  * eria-cartographRowContextMenuMUI
   */
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
@@ -367,7 +367,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         }}
       >
         {builtCreateItems.map((ci) => {
-          const IconEl = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color) as React.ReactNode;
+          const IconEl: ReactNode = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color);
           return (
             <MenuItem key={ci.type} onClick={() => handleCreateClick(ci.type)} aria-label={ci.label}>
               <ListItemIcon>{IconEl}</ListItemIcon>

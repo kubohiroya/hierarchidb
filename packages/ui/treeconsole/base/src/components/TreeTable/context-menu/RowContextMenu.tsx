@@ -1,4 +1,4 @@
-import React, { memo, type MouseEvent, useEffect, useRef, useState } from 'react';
+import React, { memo, type MouseEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-type';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
@@ -322,7 +322,7 @@ export const RowContextMenu = memo(
               // Build items from treeId (resources/projects context)
               const items = builder(props.treeId) as CreateMenuEntry[];
               return (items || []).map((i) => {
-                const IconEl = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color) as React.ReactNode;
+                const IconEl: ReactNode = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color);
                 return (
                   <MenuItem key={i.key} onClick={() => handleCreateClick(i.nodeType)} aria-label={i.nodeType}>
                     <ListItemIcon>{IconEl}</ListItemIcon>

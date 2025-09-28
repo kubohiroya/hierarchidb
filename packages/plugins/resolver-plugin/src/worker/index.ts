@@ -19,7 +19,7 @@ import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
 // @hierarchidb/plugins-runtime-worker-factory for client registration when
 // runtime-worker adapters become available (aligned with shape/location/route).
 
-export type { ResolverEntitiesDB } from './resolverEntitiesDB.js';
+export type ResolverEntitiesDB = import('./resolverEntitiesDB.js').ResolverEntitiesDB;
 
 export const loadResolverEntitiesDB = async () => {
   const module = await import('./resolverEntitiesDB.js');

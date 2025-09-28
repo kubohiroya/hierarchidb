@@ -16,8 +16,10 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/index.d.ts"
   ],
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "module": "dist/index.js",
   "peerDependencies": {

@@ -1,4 +1,4 @@
-import type React from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import {
   Alert,
   CircularProgress,
@@ -189,11 +189,11 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
         const createItem = item as CreateMenuItem;
         const { icon: iconSpec } = createItem;
 
-        let iconNode: React.ReactNode = null;
+        let iconNode: ReactNode = null;
         if (typeof iconSpec === 'string') {
           iconNode = getMuiIconWithColor(iconSpec);
         } else if (typeof iconSpec === 'function') {
-          const IconComponent = iconSpec as React.ComponentType<{ fontSize?: string }>;
+          const IconComponent = iconSpec as ComponentType<{ fontSize?: string }>;
           iconNode = <IconComponent fontSize="small" />;
         } else if (iconSpec) {
           iconNode = iconSpec;
