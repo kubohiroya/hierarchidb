@@ -4020,6 +4020,9 @@ P2:
 - 2025-09-28 16:18 progress: fix/plugins/shape-plugin-build-rootdir — shape plugin の tsconfig（通常/ビルド）に runtime-ui dist 参照を追加し、外部パッケージの src を取り込まないよう調整
 - 2025-09-28 16:25 progress: fix/plugins/shape-plugin-build-rootdir — prebuild に runtime-ui plugin dialog build を追加し、依存 dist を確実に生成
 - 2025-09-28 16:40 done: fix/plugins/shape-plugin-build-rootdir — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` と `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行し、TS6059 が解消されたことを確認
+- 2025-09-28 19:05 progress: fix/app/dynamic-import-cleanup — `tsup.base.config.ts` の既定 external に `@hierarchidb/util` を追加し、UI/TreeConsole 系での DTS bundling 時に util のソースを誤ってバンドルしないよう調整。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build` を再実行し、型生成・ビルドがともに成功することを確認
+- 2025-09-28 19:12 done: dep-management/dep-fence — `pnpm exec dep-fence --strict` をルートで実行し、全パッケージが policy チェックを通過することを確認
+- 2025-09-28 19:20 blocked: fix/app/dynamic-import-cleanup — `pnpm --filter @hierarchidb/app build` は `@hierarchidb/ui-core` の宣言検出が不安定な既知事象で停止（tsup 経由の project reference 解決待ち）。`pnpm --filter @hierarchidb/app typecheck` はグリーンのため、恒久対応は別タスクで継続予定
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新
