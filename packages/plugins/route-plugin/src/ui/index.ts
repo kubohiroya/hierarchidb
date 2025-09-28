@@ -8,13 +8,15 @@ import type { RoutePanelProps } from '../components/RoutePanel.js';
 
 export async function getDialogComponent(): Promise<PluginDialogComponent> {
   const { RouteDialog } = await import('../components/RouteDialog.js');
-  const Adapter: PluginDialogComponent = (props) => createElement(RouteDialog, adaptDialogProps(props));
+  const Adapter: PluginDialogComponent = (props: PluginDialogProps) =>
+    createElement(RouteDialog, adaptDialogProps(props));
   return Adapter;
 }
 
 export async function getPanelComponent(): Promise<PluginPanelComponent> {
   const { RoutePanel } = await import('../components/RoutePanel.js');
-  const Adapter: PluginPanelComponent = (props) => createElement(RoutePanel, toRoutePanelProps(props));
+  const Adapter: PluginPanelComponent = (props: PluginPanelProps) =>
+    createElement(RoutePanel, toRoutePanelProps(props));
   return Adapter;
 }
 

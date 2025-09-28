@@ -17,9 +17,11 @@
     "src/**/*"
   ],
   "scripts": {
-    "build": "tsup",
+    "prebuild": "pnpm --filter @hierarchidb/table-metadata build",
+    "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
+    "build:tsc": "tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm run prebuild && tsc --noEmit",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },

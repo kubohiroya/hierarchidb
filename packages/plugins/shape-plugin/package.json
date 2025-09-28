@@ -48,10 +48,11 @@
     "dist"
   ],
   "scripts": {
-    "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
+    "prebuild": "pnpm --filter @hierarchidb/util build && pnpm --filter @hierarchidb/tabular-store build",
+    "typecheck:worker": "pnpm run prebuild && tsc -p tsconfig.worker.json --noEmit",
     "dev": "tsup --watch",
-    "build": "tsup",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "build": "pnpm run prebuild && tsup",
+    "typecheck": "pnpm run prebuild && tsc -p tsconfig.build.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

@@ -16,9 +16,10 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "prebuild": "pnpm --filter @hierarchidb/ui-core build",
-    "build": "tsup && pnpm run build:tsc",
-    "typecheck": "tsc --noEmit",
+    "prebuild": "pnpm --filter @hierarchidb/plugins-base-plugin build && pnpm --filter @hierarchidb/ui-core build && pnpm --filter @hierarchidb/ui-dialog build",
+    "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
+    "build:tsc": "tsc -p tsconfig.build.json",
+    "typecheck": "pnpm run prebuild && tsc --noEmit",
     "lint": "eslint src",
     "format": "prettier --write src",
     "clean": "rm -rf dist",

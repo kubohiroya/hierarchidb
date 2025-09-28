@@ -43,11 +43,12 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "prebuild": "pnpm --filter @hierarchidb/util build",
+    "build": "pnpm run prebuild && tsup",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "pnpm run prebuild && tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
