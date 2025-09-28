@@ -1,3 +1,5 @@
+import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
+
 export { SpreadsheetExtension } from './extension/definition.js';
 export type {
   DataSourceConfig,
@@ -21,3 +23,9 @@ export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from
 
 // Register UI steps-provider for host-composed dialog (idempotent)
 import './ui/steps-provider';
+
+export class RuntimeWiring {
+  static async registerRuntimeWorkerAdapters(): Promise<void> {
+    registerRuntimeWorkerNotImplemented('spreadsheet', '[spreadsheet-plugin] runtime worker integration is not implemented yet');
+  }
+}

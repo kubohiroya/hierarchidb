@@ -1,5 +1,13 @@
 import { getStageProcessingClient } from '@hierarchidb/runtime-worker';
 
+/**
+ * TODO(plugins-runtime-worker-factory): add vitest coverage for
+ * register/get/unregister (positive + fallback) and ensure the new
+ * registry works across multiple nodeType consumers without leaking
+ * per-package state. Tests should live under `src/__tests__` once
+ * the shared factory design is finalised.
+ */
+
 type StageProcessingClient = Awaited<ReturnType<typeof getStageProcessingClient>>;
 
 export type RuntimeWorkerStageClient = StageProcessingClient;
@@ -55,4 +63,13 @@ export async function getRuntimeWorkerClient(
   }
 
   return null;
+}
+
+export function registerRuntimeWorkerNotImplemented(
+  nodeType: string,
+  message = `[${nodeType}] runtime worker integration is not implemented yet`,
+): void {
+  registerRuntimeWorkerClient(nodeType, async () => {
+    throw new Error(message);
+  });
 }

@@ -4,6 +4,13 @@ import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography 
 import type { TreeQueryAPI, WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+
+/**
+ * TODO(linker-runtime-worker-integration): replace runtime-worker-bootstrap
+ * direct usage with @hierarchidb/plugins-runtime-worker-factory once linker
+ * plugin exposes runtime worker adapters. This will align linker with the
+ * shared factory introduced for shape/location/route.
+ */
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
 // Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
 // Avoid static import to keep this plugin decoupled from host bundling; read from app global if provided

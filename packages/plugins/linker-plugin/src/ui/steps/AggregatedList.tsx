@@ -5,6 +5,12 @@ import type { ResourceSummary } from './ResourcePicker.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+
+/**
+ * TODO(linker-runtime-worker-integration): migrate to
+ * @hierarchidb/plugins-runtime-worker-factory when linker plugin adds
+ * runtime worker adapters.
+ */
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 
 export interface AggregatedListProps {

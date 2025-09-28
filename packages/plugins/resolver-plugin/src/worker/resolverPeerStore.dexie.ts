@@ -3,6 +3,11 @@ import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB.js';
 import type { ResolverPeerData } from '../types/index.js';
 
+// TODO(resolver-runtime-worker-integration): once resolver plugin has runtime
+// worker adapters, expose its client through
+// @hierarchidb/plugins-runtime-worker-factory instead of manual peer store
+// registration.
+
 const normalizeResolverPeerData = (data?: ResolverPeerData | null): ResolverPeerData => ({
   schemaVersion: 1,
   lastExecutedAt: data?.lastExecutedAt,

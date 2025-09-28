@@ -3,6 +3,11 @@ import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
 import type { BasemapPeerData } from '../types/BaseMapEntity.js';
 
+// TODO(basemap-runtime-worker-integration): when basemap adopts the shared
+// runtime worker factory, register its client via
+// @hierarchidb/plugins-runtime-worker-factory rather than manual peer store
+// wiring.
+
 export function createBasemapPeerStoreDexie(db: BasemapEntitiesDB): PeerStore<BasemapPeerData> {
   return {
     async get(nodeId: NodeId) {

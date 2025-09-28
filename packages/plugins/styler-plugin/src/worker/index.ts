@@ -25,4 +25,9 @@ try {
   // ignore (SSR/tests)
 }
 
-export { StylerEntitiesDB } from './stylerEntitiesDB.js';
+export type { StylerEntitiesDB } from './stylerEntitiesDB.js';
+
+export const loadStylerEntitiesDB = async () => {
+  const module = await import('./stylerEntitiesDB.js');
+  return module.StylerEntitiesDB;
+};

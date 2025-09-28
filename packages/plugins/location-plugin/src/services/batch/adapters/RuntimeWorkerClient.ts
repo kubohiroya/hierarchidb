@@ -5,6 +5,14 @@ import {
   type RuntimeWorkerStageClient,
 } from '@hierarchidb/plugins-runtime-worker-factory';
 
+/**
+ * TODO(location-runtime-worker-integration): consider adding a local
+ * smoke test that ensures getLocationRuntimeWorkerClient returns a
+ * runner configured via registerLocationRuntimeWorkerAdapters when the
+ * LOCATION_RUNTIME_WORKER flag is enabled. This will replace the manual
+ * verification currently required after factory unification.
+ */
+
 export type LocationRuntimeWorkerClient = RuntimeWorkerStageClient;
 
 export function registerLocationRuntimeWorkerClient(provider: RuntimeWorkerClientProvider): void {

@@ -17,9 +17,26 @@ function normalizeError(error: unknown): Error {
   }
   return new Error(String(error));
 }
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
+
+type WorkerApiModule = typeof import('../WorkerAPIClient.js');
+
+// let workerApiModule: WorkerApiModule | null = null;
+let workerApiModulePromise: Promise<WorkerApiModule> | null = null;
+
+async function loadWorkerApiModule(): Promise<WorkerApiModule> {
+  if (!workerApiModulePromise) {
+    workerApiModulePromise = import('../WorkerAPIClient.js').then((module) => {
+      // workerApiModule = module;
+      return module;
+    }).catch((error) => {
+      workerApiModulePromise = null;
+      throw error;
+    });
+  }
+  return workerApiModulePromise;
+}
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -188,6 +205,7 @@ export const WorkerProvider = ({
   const finalizeInitialized = useCallback(async () => {
     try {
       bootLog('WorkerProvider finalize');
+      const { WorkerAPIClient } = await loadWorkerApiModule();
       const client = WorkerAPIClient.getSingleton();
       latestProgressRef.current = 100;
       setState({
@@ -204,6 +222,7 @@ export const WorkerProvider = ({
   }, []);
 
   const markComplete = useCallback(async () => {
+    const { WorkerAPIClient } = await loadWorkerApiModule();
     if (initCompleted) {
       if (!WorkerAPIClient.isReady()) {
         return;
@@ -224,6 +243,7 @@ export const WorkerProvider = ({
 
   const runInitialization = useCallback(async () => {
     bootLog('WorkerProvider initialize() start');
+    const { WorkerAPIClient } = await loadWorkerApiModule();
     initChannelRef.current?.dispose();
     initChannelRef.current = null;
     latestProgressRef.current = 0;
@@ -301,61 +321,86 @@ export const WorkerProvider = ({
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
-    WorkerAPIClient.reset();
-    initCompleted = false;
-    latestProgressRef.current = 0;
-    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
-    void runInitialization();
+    void (async () => {
+      const { WorkerAPIClient } = await loadWorkerApiModule();
+      WorkerAPIClient.reset();
+      initCompleted = false;
+      latestProgressRef.current = 0;
+      bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+      await runInitialization();
+    })();
   }, [bootProgress, runInitialization]);
 
   useEffect(() => {
     bootLog('WorkerProvider mount');
     let pollTimer: number | null = null;
     let devFallbackTimer: number | null = null;
+    let listenerAttached = false;
+    let disposed = false;
 
     const onInitComplete = () => {
       void markComplete();
     };
 
-    if (typeof window !== 'undefined') {
-      const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
-      if (!globalWin.__HDB_WORKER_EVT_BOUND__) {
-        globalWin.__HDB_WORKER_EVT_BOUND__ = true;
-        window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
-      }
-    }
-
-    if (!initStarted) {
-      initStarted = true;
-      void runInitialization();
-    } else if (initCompleted || WorkerAPIClient.isReady()) {
-      void markComplete();
-    }
-
-    const poll = async () => {
+    const setup = async () => {
       try {
-        if (WorkerAPIClient.isReady()) {
-          await markComplete();
-          if (pollTimer) window.clearInterval(pollTimer);
-        }
-      } catch (error) {
-        logWorkerProviderWarning('Polling worker readiness failed', error);
-      }
-    };
-    pollTimer = window.setInterval(poll, 150);
+        const { WorkerAPIClient } = await loadWorkerApiModule();
+        if (disposed) return;
 
-    if (import.meta.env.DEV) {
-      devFallbackTimer = window.setTimeout(() => {
-        if (WorkerAPIClient.isReady()) {
+        if (typeof window !== 'undefined') {
+          const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
+          if (!globalWin.__HDB_WORKER_EVT_BOUND__) {
+            globalWin.__HDB_WORKER_EVT_BOUND__ = true;
+            window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
+            listenerAttached = true;
+          }
+        }
+
+        if (!initStarted) {
+          initStarted = true;
+          void runInitialization();
+        } else if (initCompleted || WorkerAPIClient.isReady()) {
           void markComplete();
         }
-      }, 1500);
-    }
+
+        const poll = async () => {
+          if (disposed) return;
+          try {
+            const module = await loadWorkerApiModule();
+            if (module.WorkerAPIClient.isReady()) {
+              await markComplete();
+              if (pollTimer) window.clearInterval(pollTimer);
+            }
+          } catch (error) {
+            logWorkerProviderWarning('Polling worker readiness failed', error);
+          }
+        };
+
+        pollTimer = window.setInterval(poll, 150);
+
+        if (import.meta.env.DEV) {
+          devFallbackTimer = window.setTimeout(() => {
+            void loadWorkerApiModule().then(({ WorkerAPIClient }) => {
+              if (WorkerAPIClient.isReady()) {
+                void markComplete();
+              }
+            }).catch(() => {
+              // ignore
+            });
+          }, 1500);
+        }
+      } catch (error) {
+        logWorkerProviderWarning('Failed to prepare worker provider setup', error);
+      }
+    };
+
+    void setup();
 
     return () => {
+      disposed = true;
       initChannelRef.current?.dispose();
       initChannelRef.current = null;
-      if (typeof window !== 'undefined') {
+      if (listenerAttached && typeof window !== 'undefined') {
         window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
         const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
         globalWin.__HDB_WORKER_EVT_BOUND__ = false;

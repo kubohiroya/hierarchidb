@@ -193,6 +193,9 @@
       - [ ] route-plugin へ同様の export/配線を実装
       - [ ] `packages/runtime-worker/worker-bootstrap/src/wiring/wirePlugins.ts` に対応テストを追加
       - [ ] プラグイン README / docs に runtime worker の有効化手順を追記
+      - [ ] `@hierarchidb/plugins-runtime-worker-factory` の単体テストを追加し、nodeType 別の登録/解除/フォールバック挙動を検証
+      - [ ] shape/location/route 以外のプラグインについて、Runtime Worker クライアント取得箇所を新ファクトリ経由へ移行し、旧クライアント実装に `TODO` を入れた箇所を解消
+      - [ ] `pnpm install` → `pnpm --filter @hierarchidb/plugins-runtime-worker-factory build` → `pnpm --filter @hierarchidb/plugins-{shape,location,route}-plugin typecheck` を実行し、公式型参照のみで通ることを確認（実行結果を運用ログへ記録）
     - ロールバック手順:
       - 各プラグインの `worker` 名前空間 export をリバートし、`RuntimeWiring.registerRuntimeWorkerAdapters` の import を削除して flag 既定値を 0 に戻す
 

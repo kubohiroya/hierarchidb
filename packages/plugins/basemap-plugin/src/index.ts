@@ -64,7 +64,13 @@ export const PLUGIN_INFO = {
 } as const;
 
 // Optional runtime wiring (no-op)
-export class RuntimeWiring {}
+import { registerRuntimeWorkerNotImplemented } from '@hierarchidb/plugins-runtime-worker-factory';
+
+export class RuntimeWiring {
+  static async registerRuntimeWorkerAdapters(): Promise<void> {
+    registerRuntimeWorkerNotImplemented('basemap', '[basemap-plugin] runtime worker adapters are not implemented yet');
+  }
+}
 
 // Dialog extension initializer (optional)
 export { initializeBaseMapDialogExtension, baseMapDialogExtension } from './extensions/BaseMapDialogExtension.js';

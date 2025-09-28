@@ -2,7 +2,6 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import { getWorkerClient, getRawWorkerInstance, isWorkerInitCompleted } from './client.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -78,6 +77,7 @@ export class WorkerAPIClient {
 
     try {
 
+      const { getWorkerClient, isWorkerInitCompleted } = await loadClientModule();
       const remoteWorker = await getWorkerClient(); // getWorkerClient now has retry logic
 
       // Set the instance early so Provider fast-paths can see it
@@ -159,10 +159,17 @@ export class WorkerAPIClient {
    * Check if initialized
    */
   static isReady(): boolean {
+    const module = getClientModuleOrNull();
+    const initComplete = module?.isWorkerInitCompleted?.();
+
+    if (!WorkerAPIClient.verified && initComplete) {
+      WorkerAPIClient.verified = true;
+    }
+
     // Cross-module safeguard: if global INIT_COMPLETE observed and we have an instance, promote to initialized
     const globalInit = typeof window !== 'undefined' && (window as WorkerStatusWindow).__HDB_INIT_COMPLETE__ === true;
     if (!WorkerAPIClient.verified && globalInit) WorkerAPIClient.verified = true;
-    if (WorkerAPIClient.state !== 'initialized' && WorkerAPIClient.workerInstance && globalInit) {
+    if (WorkerAPIClient.state !== 'initialized' && WorkerAPIClient.workerInstance && (globalInit || initComplete)) {
       WorkerAPIClient.state = 'initialized';
       
     }
@@ -176,7 +183,8 @@ export class WorkerAPIClient {
    * Get raw Worker instance for initialization detection
    */
   static getRawWorkerInstance(): Worker | null {
-    return getRawWorkerInstance?.() ?? null;
+    const module = getClientModuleOrNull();
+    return module?.getRawWorkerInstance?.() ?? null;
   }
 
 
@@ -188,3 +196,24 @@ export const getWorkerAPIClient = () => WorkerAPIClient.getSingleton();
 type WorkerStatusWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
+type ClientModule = typeof import('./client.js');
+
+let clientModule: ClientModule | null = null;
+let clientModulePromise: Promise<ClientModule> | null = null;
+
+async function loadClientModule(): Promise<ClientModule> {
+  if (!clientModulePromise) {
+    clientModulePromise = import('./client.js').then((module) => {
+      clientModule = module;
+      return module;
+    }).catch((error) => {
+      clientModulePromise = null;
+      throw error;
+    });
+  }
+  return clientModulePromise;
+}
+
+function getClientModuleOrNull(): ClientModule | null {
+  return clientModule;
+}

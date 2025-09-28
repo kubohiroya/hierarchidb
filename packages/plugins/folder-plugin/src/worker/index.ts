@@ -14,4 +14,12 @@ import('@hierarchidb/runtime-worker').then(async ({ storeRegistry }) => {
   }
 }).catch(() => {});
 
-export { FolderEntitiesDB } from './folderEntitiesDB.js';
+// TODO(folder-runtime-worker-integration): tie this peer registration into the
+// shared runtime worker factory when worker adapters are implemented.
+
+export type { FolderEntitiesDB } from './folderEntitiesDB.js';
+
+export const loadFolderEntitiesDB = async () => {
+  const module = await import('./folderEntitiesDB.js');
+  return module.FolderEntitiesDB;
+};
