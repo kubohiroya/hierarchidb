@@ -115,33 +115,34 @@
     - progress: 2025-09-22 10:26 `app/vite.config.ts` に `chunkSizeWarningLimit: 900` を追加し、MapLibre/Deck.gl を含むチャンクの閾値を引き上げ
     - blocked: 2025-09-22 10:27 `pnpm -C app typecheck` が `TrashDialogV2` の既知未解消型エラーで失敗（本差分による悪化なし）
     - progress: 2025-09-22 10:32 `pnpm -C app build` を実行し、チャンク警告なしで完了（map.js 828 kB / 閾値 900 kB）
-- fix/build/runtime-ui-types-resolution — CI で runtime-ui 依存が型解決できない問題の恒久対応
-  - ブランチ: `fix/build/runtime-ui-types-resolution`（一度ドラフトPRを作成したがコンフリクト多発で返却済）
+- fix/build/runtime-ui-types-resolution — CI で runtime-ui 依存が型解決できない問題の恒久対応（小粒PRへ再編）
+  - ブランチ: `fix/build/runtime-ui-types-resolution`
   - 依存: `@hierarchidb/runtime-ui-*` パッケージの最新 `typecheck` 成功ログ（2025-09-27 19:55 確認済）
   - 受け入れ基準（DoD）：
-    - [ ] `tsconfig.base.json` で runtime-ui 系パッケージをビルドなしで解決できる `paths` を整備（小粒PRへ分割して段階導入）
+    - [ ] `tsconfig.base.json` で runtime-ui 系パッケージをビルドなしで解決できる `paths` を整備（小粒PRで段階導入）
     - [ ] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が CI 相当のクリーン環境で成功
     - [ ] runtime-ui 各パッケージの `pnpm typecheck` が成功し、`TASKS.md` の運用ログに結果を記録
   - チェックリスト：
-    - [ ] runtime-ui パッケージ群をグループ化し、パッケージ単位で `paths` 追加 PR を分割（第一弾: plugin-dialog 単体）
+    - [ ] runtime-ui パッケージ群をグループ化し、パッケージ単位で `paths` 追加 PR を分割（第一弾: plugin-dialog）
     - [ ] 各PRで対象パッケージの `pnpm --filter … typecheck` を実行し結果を記録
     - [ ] 代表的な依存パッケージ（plugins-shape-plugin 等）の型検証を実行し結果を記録
     - [ ] `paths` 導入済パッケージが重複しないよう運用ログに PR 単位で刻む
-  - ロールバック手順：
-    - `tsconfig.base.json` の `compilerOptions.paths` 追加分を対象PR単位で戻し、該当パッケージの型検証を再実行して従来状態へ復旧
-  - 現状：
-    - 2025-09-28 11:25 時点で初回PRは差し戻し。tsconfig の暫定差分はローカルで保持中のため、PR再編後に改めて提出予定
-    - 小粒PR案：① plugin-dialog ② appbar/datasource ③ landingpage/search-result-window/tour（段階的に実施）
   - サブタスク（小粒PR単位）：
-    - chore/tsconfig/runtime-ui-plugin-dialog-paths — `@hierarchidb/runtime-ui-plugin-dialog` 単体の `paths` 追加と typecheck（ブランチ: `chore/tsconfig/runtime-ui-plugin-dialog-paths`、DoD: plugin-dialog の `paths` 追加＋ `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 成功を記録）
-    - chore/tsconfig/runtime-ui-appbar-datasource-paths — appbar/datasource の `paths` 追加と typecheck（ブランチ: `chore/tsconfig/runtime-ui-appbar-datasource-paths`、DoD: 両パッケージ typecheck ログ記録＋他 alias 非後退を確認）
-    - chore/tsconfig/runtime-ui-landing-search-tour-paths — landingpage/search-result-window/tour の `paths` 追加と typecheck（ブランチ: `chore/tsconfig/runtime-ui-landing-search-tour-paths`、DoD: 3 パッケージ typecheck ログ記録＋ shape plugin 依存を再確認）
+    - [x] chore/tsconfig/runtime-ui-plugin-dialog-paths — `@hierarchidb/runtime-ui-plugin-dialog` 単体の `paths` 追加と typecheck（DoD: `tsconfig.base.json` に該当 `paths` を追加し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 成功を記録）
+    - [x] chore/tsconfig/runtime-ui-appbar-datasource-paths — appbar/datasource の `paths` 追加と typecheck（DoD: 両パッケージ typecheck ログ記録＋他 alias 非後退を確認）
+    - [x] chore/tsconfig/runtime-ui-landing-search-tour-paths — landingpage/search-result-window/tour の `paths` 追加と typecheck（DoD: 3 パッケージ typecheck ログ記録＋ plugins-shape-plugin 等の依存を再確認）
+  - ロールバック手順：
+    - 各小粒PRで追加する `paths` を個別に revert し、対応パッケージの型検証を再実行して従来状態へ復旧
+  - 現状：
+    - 2025-09-28 11:25 時点で初回PRは差し戻し。`tsconfig.base.json` は plugin-dialog 分のみに縮小済みで、残りは後続PRで追加予定
+    - 小粒PR案：① plugin-dialog（完了）② appbar/datasource（これから）③ landingpage/search-result-window/tour（これから）
   - 運用ログ：
-    - start: 2025-09-28 10:12 CI での runtime-ui 型解決失敗の再現条件を整理し、対策方針の洗い出しを開始
-    - progress: 2025-09-28 10:34 base tsconfig へ runtime-ui 系 `paths` を追加し、ビルド済み宣言に依存しない解決パスを導入（暫定）
-    - progress: 2025-09-28 10:56 runtime-ui 各パッケージおよび plugins-shape-plugin で `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
-    - blocked: 2025-09-28 11:20 PR 差分が他ブランチ変更とコンフリクト多発のため差し戻し。改めて小粒PRへ再編する方針を決定
-    - progress: 2025-09-28 11:25 小粒PRへ再編する計画（3 分割）を確定し、ブランチ/DoD を本項に追記
+    - start: 2025-09-28 10:12 CI での runtime-ui 型解決失敗を再現し、対策方針を検討
+    - progress: 2025-09-28 10:34 `tsconfig.base.json` に runtime-ui 系 `paths` を追加してビルド済み宣言依存を排除（初回PR・差戻し前）
+    - progress: 2025-09-28 10:56 runtime-ui 各パッケージおよび plugins-shape-plugin の `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
+    - blocked: 2025-09-28 11:20 PR 差分が他ブランチ変更とコンフリクト多発のため差し戻し。小粒PRへ再編する方針を決定
+    - progress: 2025-09-28 11:25 小粒PRへ再編する計画（3 分割）を確定し、DoD/チェックリストを再定義
+    - progress: 2025-09-28 11:42 plugin-dialog 分割PR向けに `tsconfig.base.json` を最小構成へ更新し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功を確認
 - fix/ui-folder/dialog-theme-tokens — フォルダ作成ダイアログのテーマ配色対応
   - ブランチ: `fix/ui-folder/dialog-theme-tokens`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/plugins-folder-plugin`, `@hierarchidb/ui-dialog`
@@ -3844,7 +3845,7 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
-- 2025-09-28: runtime-ui 系パッケージの型解決恒久化 — `tsconfig.base.json` に appbar/datasource/landingpage/plugin-dialog/search-result-window/tour の `paths` を追加し、ビルド済み `dist` に依存しないモジュール解決へ切替。`pnpm --filter @hierarchidb/runtime-ui-{appbar,datasource,landingpage,plugin-dialog,search-result-window,tour} typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、CI 再現環境と同じ構成でグリーンを確認。初回PRはコンフリクト過多で返却されたため、パッケージ群ごとにPRを分割して再提出予定。
+- 2025-09-28: runtime-ui 系パッケージの型解決恒久化（再編） — 初回PRで `tsconfig.base.json` に runtime-ui 6 パッケージ分の `paths` を追加する PoC を実施（typecheck 成功）。差し戻し後、`plugin-dialog` 分のみを保持した最小構成へ再調整し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行してグリーンを確認。appbar/datasource・landing/search/tour は後続の小粒PRで順次追加予定。
 - 2025-09-20: ui-map デッキストーリーの公式型適用 — `@deck.gl/{geo-layers,layers,mapbox}` と `@types/geojson` を devDependencies として追加し、`tsconfig.json` の他パッケージ node_modules 参照を整理。`MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式シグネチャに沿って書き換え、`src/types/story-shims.d.ts` を削除。`pnpm install` → `pnpm --filter @hierarchidb/ui-map typecheck` → `node scripts/check-shims.mjs` → `pnpm as-any:report` まで成功。
 - 2025-09-20: runtime env 読み出しの共通化 — `@hierarchidb/util` に `readRuntimeEnvValue` / `readRuntimeMode` などのヘルパーを追加し、app / map-adapter / node-type plugins からの `process.env` 参照を排除。`eslint.config.js` の `no-restricted-globals: process` を `app/src` と `packages/**/src` へ拡張し、`pnpm --filter` {app,plugins-route-plugin,plugins-location-plugin,plugins-resolver-plugin,map-adapter} `typecheck` を実行してグリーンを確認。
 - 2025-09-20: Workspace `as any` ゼロ化 — ui-map / ui-monitoring / ui-lru-splitview / runtime-worker-bootstrap / feature-compute / runtime-shared-batch-processor / plugins-linker-plugin ほか残存パッケージから `as any` を全面撤廃。`pnpm --filter` による個別 typecheck（compute/util/runtime-worker-bootstrap/tools-vite-plugin-package-reader/auth-recovery/tabular-xlsx/runtime-shared-batch-processor/plugins-linker-plugin/analyze-licenses/ui-icon/ui-lru-splitview/ui-monitoring/ui-map/ui-accordion-config/ui-import-export/ui-treeconsole-base/ui-treeconsole-treetable/runtime-ui-search-result-window/ui-auth/ui-file/tag）と `pnpm as-any:report` で 0 件を確認。
@@ -3976,10 +3977,14 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 - 2025-09-28 10:12 start: fix/build/runtime-ui-types-resolution — CI で再現する runtime-ui 系モジュールの型解決失敗を恒久対応するため、原因調査と tsconfig 調整案の洗い出しを開始
-- 2025-09-28 10:34 progress: fix/build/runtime-ui-types-resolution — `tsconfig.base.json` に runtime-ui 系パッケージの `paths` を追加し、ビルド済み宣言に依存しない型解決へ切り替え
+- 2025-09-28 10:34 progress: fix/build/runtime-ui-types-resolution — `tsconfig.base.json` に runtime-ui 系パッケージの `paths` を一括追加し、ビルド済み宣言に依存しない型解決へ切り替え（初回PR）
 - 2025-09-28 10:56 progress: fix/build/runtime-ui-types-resolution — runtime-ui 各パッケージおよび plugins-shape-plugin の `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
-- 2025-09-28 11:20 blocked: fix/build/runtime-ui-types-resolution — 初回PR差分が他タスクの進行中ブランチと衝突し差し戻し。小粒PRへ分割した上で再提出する方針へ変更
+- 2025-09-28 11:20 blocked: fix/build/runtime-ui-types-resolution — 初回PR差分が他タスクの進行中ブランチとコンフリクト多発のため差し戻し。小粒PRへ分割して再提出する方針へ変更
 - 2025-09-28 11:25 progress: fix/build/runtime-ui-types-resolution — 分割方針（① plugin-dialog 単体 ② appbar/datasource ③ landingpage/search-result-window/tour）を整理し、TASKS.md の DoD/チェックリストを再定義
+- 2025-09-28 11:32 blocked: fix/build/runtime-ui-types-resolution — `pnpm -C app typecheck` が既存の runtime-ui plugin-dialog 差分による型エラーで停止（本タスク差分は非原因）。状況を別タスクへ引き継ぎ予定
+- 2025-09-28 11:42 progress: fix/build/runtime-ui-types-resolution — plugin-dialog 分割PR向けに `tsconfig.base.json` を最小構成へ見直し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功を確認
+- 2025-09-28 11:55 progress: fix/build/runtime-ui-types-resolution — appbar/datasource 用の `paths` を追加し、`pnpm --filter @hierarchidb/runtime-ui-{appbar,datasource,plugin-dialog} typecheck` を順次実行して alias 後退が無いことを再確認
+- 2025-09-28 12:08 progress: fix/build/runtime-ui-types-resolution — landingpage/search-result-window/tour の `paths` を追加し、該当パッケージ＋依存（appbar/datasource/plugin-dialog）で `pnpm --filter … typecheck` を再実行して成功を確認
 - 2025-09-27 18:14 start: chore/plugins/dialog-naming-align — BaseFolderPlugin の命名が誤っている既知課題への対応を開始し、影響範囲と関連パッケージを調査
 - 2025-09-27 18:24 progress: chore/plugins/dialog-naming-align — `BaseFolderPlugin.ts` を `BaseDialogPlugin.ts` へリネームし、クラス名・コメント・インデックスエクスポートを更新
 - 2025-09-27 18:32 progress: chore/plugins/dialog-naming-align — basemap/spreadsheet/shape/styler の拡張を `*DialogExtension` 命名へ改称し、関連インデックスと初期化ヘルパーを更新
