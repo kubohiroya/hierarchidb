@@ -23,7 +23,6 @@ import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-materi
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { loadPageNode } from '~/loader.js';
 import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 
@@ -53,6 +52,7 @@ export default function TLayout() {
   useEffect(() => {
     const loadTrees = async () => {
       try {
+        const WorkerAPIClient = await loadWorkerAPIClient();
         const client = await WorkerAPIClient.getOrInit();
         const queryAPI = await client.getQueryAPI();
         const availableTrees = await queryAPI.listTrees();
@@ -222,4 +222,8 @@ function TreeConsoleThemeBoundary({
   }
 
   return <ThemeProvider theme={themed}>{children}</ThemeProvider>;
+}
+async function loadWorkerAPIClient() {
+  const module = await import('../WorkerAPIClient.js');
+  return module.WorkerAPIClient;
 }

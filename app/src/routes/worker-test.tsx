@@ -6,7 +6,6 @@
 
 import { useState } from 'react';
 import { Alert, Box, Button, Container, Typography } from '@mui/material';
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -20,6 +19,7 @@ export default function WorkerTest() {
     setError(null);
 
     try {
+      const { WorkerAPIClient } = await import('../WorkerAPIClient.js');
       // Step 1: Test WorkerAPIClient.getSingleton
       setStatus('Getting WorkerAPIClient singleton...');
       const client = await WorkerAPIClient.getSingleton();

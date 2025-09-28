@@ -38,7 +38,6 @@ import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
-import { WorkerAPIClient } from '../../WorkerAPIClient.js';
 import type { LoaderFunctionArgs } from 'react-router';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
@@ -102,6 +101,11 @@ const STEP_DESCRIPTOR = {
   label: 'Trash',
   component: () => null,
 };
+
+async function loadWorkerAPIClient() {
+  const module = await import('../../WorkerAPIClient.js');
+  return module.WorkerAPIClient;
+}
 
 const STEP_ARRAY = [STEP_DESCRIPTOR] as const;
 
@@ -555,6 +559,7 @@ export default function TrashDialog() {
     if (selectedIds.length === 0) return;
     setLoading(true);
     try {
+      const WorkerAPIClient = await loadWorkerAPIClient();
       const client = WorkerAPIClient.getSingleton();
       const mutationAPI = await client.getMutationAPI();
       const result = await mutationAPI.restoreNodesFromTrash({ nodeIds: selectedIds });
@@ -576,6 +581,7 @@ export default function TrashDialog() {
     if (!confirmed) return;
     setLoading(true);
     try {
+      const WorkerAPIClient = await loadWorkerAPIClient();
       const client = WorkerAPIClient.getSingleton();
       const mutationAPI = await client.getMutationAPI();
       const nodes = treeData.map((node) => node.id as NodeId);
