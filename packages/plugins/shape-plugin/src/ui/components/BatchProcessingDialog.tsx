@@ -31,8 +31,8 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
-import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
 import { useShapeProgress } from '../hooks/useShapeProgress.js';
+import { useShapeBatchCommand } from '../hooks/useShapeBatchCommand.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 
@@ -60,14 +60,14 @@ const BATCH_STAGES = [
 ];
 
 export function BatchProcessingDialog({
-                                        open,
-                                        onClose,
-                                        sessionId,
-                                        workingCopyId,
-                                        onComplete,
-                                        onError,
-                                      }: BatchProcessingDialogProps) {
-  const getShapeAPI = useShapeAPIGetter();
+  open,
+  onClose,
+  sessionId,
+  workingCopyId,
+  onComplete,
+  onError,
+}: BatchProcessingDialogProps) {
+  const invokeCommand = useShapeBatchCommand();
 
   const [isPaused, setIsPaused] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -125,37 +125,34 @@ export function BatchProcessingDialog({
   // Control handlers
   const handlePause = useCallback(async () => {
     try {
-      const api = await getShapeAPI();
-      await api.pauseBatchProcessing(workingCopyId);
+      await invokeCommand('session/pause', { sessionId, workingCopyId });
       setIsPaused(true);
     } catch (error) {
       console.error('Failed to pause processing:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to pause'));
     }
-  }, [getShapeAPI, workingCopyId, onError]);
+  }, [invokeCommand, sessionId, workingCopyId, onError]);
 
   const handleResume = useCallback(async () => {
     try {
-      const api = await getShapeAPI();
-      await api.resumeBatchProcessing(workingCopyId);
+      await invokeCommand('session/resume', { sessionId, workingCopyId });
       setIsPaused(false);
     } catch (error) {
       console.error('Failed to resume processing:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to resume'));
     }
-  }, [getShapeAPI, workingCopyId, onError]);
+  }, [invokeCommand, sessionId, workingCopyId, onError]);
 
   const handleCancel = useCallback(async () => {
     try {
-      const api = await getShapeAPI();
-      await api.cancelBatchProcessing(workingCopyId);
+      await invokeCommand('session/cancel', { sessionId, workingCopyId });
       onComplete?.('cancelled');
       onClose();
     } catch (error) {
       console.error('Failed to cancel processing:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to cancel'));
     }
-  }, [getShapeAPI, workingCopyId, onComplete, onClose, onError]);
+  }, [invokeCommand, sessionId, workingCopyId, onComplete, onClose, onError]);
 
   const handleClose = useCallback(() => {
     if (isProcessing && !isPaused) {
