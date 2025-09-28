@@ -156,6 +156,7 @@
     - start: 2025-09-28 14:20 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` で `@hierarchidb/runtime-ui-datasource` 解決失敗を再現し、tsconfig の paths 設定を調査開始
     - progress: 2025-09-28 14:32 `packages/plugins/shape-plugin/tsconfig.build.json` に `baseUrl`/`paths` を追加し、runtime-ui datasource の型解決を明示的に許可
     - done: 2025-09-28 14:36 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、`@hierarchidb/runtime-ui-datasource` 解決エラーが消失したことを確認
+    - done: 2025-09-28 14:44 `main` ブランチへマージし、作業成果を反映
     - progress: 2025-09-28 10:34 `tsconfig.base.json` に runtime-ui 系 `paths` を追加してビルド済み宣言依存を排除（初回PR・差戻し前）
     - progress: 2025-09-28 10:56 runtime-ui 各パッケージおよび plugins-shape-plugin の `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
     - blocked: 2025-09-28 11:20 PR 差分が他ブランチ変更とコンフリクト多発のため差し戻し。小粒PRへ再編する方針を決定
