@@ -5,7 +5,16 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "module": "Node16",
-    "moduleResolution": "Node16"
+    "moduleResolution": "Node16",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/runtime-ui-datasource": [
+        "../../runtime-ui/datasource/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-datasource/*": [
+        "../../runtime-ui/datasource/src/*"
+      ]
+    }
   },
   "include": [
     "src/types/**/*.ts",

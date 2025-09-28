@@ -138,6 +138,24 @@
     - 小粒PR案：① plugin-dialog（完了）② appbar/datasource（これから）③ landingpage/search-result-window/tour（これから）
   - 運用ログ：
     - start: 2025-09-28 10:12 CI での runtime-ui 型解決失敗を再現し、対策方針を検討
+    
+- fix/plugins/shape-datasource-alias — plugins-shape-plugin の型検証で runtime-ui datasource を解決できない問題の修正
+  - ブランチ: `fix/plugins/shape-datasource-alias`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-shape-plugin`, `@hierarchidb/runtime-ui-datasource`, `tsconfig.base.json`
+  - 受け入れ基準（DoD）：
+    - [x] `tsconfig.build.json` で `@hierarchidb/runtime-ui-datasource` へのエイリアス解決が可能になり、追加のビルドなしで型参照できる
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、結果を運用ログに記録
+    - [x] 本対応の概要と検証結果を `TASKS.md` に反映
+  - チェックリスト：
+    - [x] `tsconfig.build.json` の解決設定を調査し、欠落している `baseUrl`/`paths` を補完
+    - [x] 必要な設定を更新して `@hierarchidb/runtime-ui-datasource` 型参照を復旧
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、グリーンを確認
+  - ロールバック手順：
+    - `packages/plugins/shape-plugin/tsconfig.build.json` など本対応で更新した設定ファイルを差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行してエラー再現を確認
+  - 運用ログ：
+    - start: 2025-09-28 14:20 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` で `@hierarchidb/runtime-ui-datasource` 解決失敗を再現し、tsconfig の paths 設定を調査開始
+    - progress: 2025-09-28 14:32 `packages/plugins/shape-plugin/tsconfig.build.json` に `baseUrl`/`paths` を追加し、runtime-ui datasource の型解決を明示的に許可
+    - done: 2025-09-28 14:36 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、`@hierarchidb/runtime-ui-datasource` 解決エラーが消失したことを確認
     - progress: 2025-09-28 10:34 `tsconfig.base.json` に runtime-ui 系 `paths` を追加してビルド済み宣言依存を排除（初回PR・差戻し前）
     - progress: 2025-09-28 10:56 runtime-ui 各パッケージおよび plugins-shape-plugin の `pnpm --filter … typecheck` を実行し、いずれも成功（datasource/appbar/landingpage/plugin-dialog/search-result-window/tour, plugins-shape-plugin）
     - blocked: 2025-09-28 11:20 PR 差分が他ブランチ変更とコンフリクト多発のため差し戻し。小粒PRへ再編する方針を決定
