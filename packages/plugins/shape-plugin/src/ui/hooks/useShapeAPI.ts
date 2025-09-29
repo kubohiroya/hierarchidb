@@ -6,7 +6,7 @@
 
 import { useMemo } from 'react';
 import type { ShapeAPI } from '../../shared/index.js';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 /**
   * Shape APIhook
@@ -14,7 +14,7 @@ import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
   */
 export function useShapeAPI(): Promise<ShapeAPI> {
   return useMemo(async () => {
-    const useWorkerAPIClientHook = getWorkerClientHook();
+    const useWorkerAPIClientHook = getWorkerClientHook<WorkerClientRef>();
     if (!useWorkerAPIClientHook) {
       throw new Error('useShapeAPI requires application context - WorkerAPIClient not available');
     }
@@ -47,7 +47,7 @@ export function useShapeAPI(): Promise<ShapeAPI> {
  */
 export function useShapeAPIGetter(): () => Promise<ShapeAPI> {
   return useMemo(() => {
-    const useWorkerAPIClientHook = getWorkerClientHook();
+    const useWorkerAPIClientHook = getWorkerClientHook<WorkerClientRef>();
     return async (): Promise<ShapeAPI> => {
       if (!useWorkerAPIClientHook) {
         throw new Error('useShapeAPIGetter requires application context - WorkerAPIClient not available');

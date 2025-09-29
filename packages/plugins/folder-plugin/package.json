@@ -14,6 +14,9 @@
       "worker": [
         "dist/worker/index.d.ts"
       ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ]
@@ -40,6 +43,11 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
     }
   },
   "scripts": {
@@ -68,6 +76,7 @@
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",

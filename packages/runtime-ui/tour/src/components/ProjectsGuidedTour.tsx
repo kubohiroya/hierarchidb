@@ -94,7 +94,7 @@ export const ProjectsGuidedTour: React.FC<ProjectsGuidedTourProps> = ({ run, onF
       disableBeacon: true,
     },
     {
-      target: '[aria-label="Create Action"]',
+      target: '[aria-label="Create new item"]',
       content: (
         <div>
           <h3>Quick Actions ⚡</h3>

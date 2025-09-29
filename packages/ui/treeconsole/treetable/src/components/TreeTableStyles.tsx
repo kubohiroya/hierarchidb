@@ -76,7 +76,7 @@ export const StyledTableHead = ({ sx, ...props }: TableHeadProps) => (
           fontWeight: 600,
           borderBottom: (theme) => `3px solid ${theme.palette.divider}`,
           borderRight: (theme) => `2px solid ${theme.palette.divider}`,
-          padding: '4px 6px',
+          padding: '4px 0',
           userSelect: 'none',
           position: 'relative',
           '&:last-child': {
@@ -130,7 +130,7 @@ export const StyledTableRow = ({ sx, selected, ...props }: StyledRowProps) => (
             }
           : {}),
         '& .MuiTableCell-root': {
-          padding: '4px 6px',
+          padding: '4px 0',
           borderRight: (theme) => `1px solid ${theme.palette.divider}`,
           borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
           transition: 'outline-color 120ms ease, background-color 120ms ease',
@@ -153,7 +153,7 @@ export const NameCell = ({ sx, ...props }: WithSx<BoxProps>) => (
         alignItems: 'center',
         gap: 0.5,
         minHeight: 24,
-        paddingLeft: 1,
+        paddingLeft: 0,
       },
       sx,
     )}

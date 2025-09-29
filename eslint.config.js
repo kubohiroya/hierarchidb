@@ -93,11 +93,11 @@ export default [
 
   // Type-aware deprecation checks (runtime-worker)
   {
-    files: ['packages/runtime-worker/worker/**/*.{ts,tsx}'],
+    files: ['packages/runtime/worker-core/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/runtime-worker/worker/tsconfig.json'],
+        project: ['./packages/runtime/worker-core/tsconfig.json'],
       },
     },
     rules: {
@@ -134,6 +134,32 @@ export default [
     rules: {
       'react-hooks/rules-of-hooks': 'off',
       'react-hooks/exhaustive-deps': 'off',
+    },
+  },
+
+  // Plugin packages: forbid legacy worker direct paths
+  // Purpose: during Phase 2b rollout, ensure all plugins use `worker-factory`
+  // and avoid direct `../worker/*` or package `*/worker` imports.
+  {
+    files: ['packages/plugins/**/src/**/*.{ts,tsx,js,jsx}'],
+    ignores: ['packages/plugins/**/src/**/__tests__/**', 'packages/plugins/**/src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: '@mui/material/Unstable_Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
+          { name: '@mui/material/Grid2', message: 'Use @mui/material/Grid (MUI v7).' },
+        ],
+        patterns: [
+          {
+            group: ['../worker/*', './worker/*'],
+            message: 'Use the worker-factory entry instead of direct ../worker/*.',
+          },
+          {
+            group: ['@hierarchidb/*/worker', '@hierarchidb/*/worker/*'],
+            message: 'Import from the package\'s worker-factory export, not */worker.',
+          },
+        ],
+      }],
     },
   },
 ];

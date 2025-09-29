@@ -12,6 +12,10 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js"
+    },
     "./services": {
       "types": "./dist/services/index.d.ts",
       "import": "./dist/services/index.js"
@@ -27,6 +31,9 @@
   },
   "typesVersions": {
     "*": {
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "worker": [
         "dist/worker/index.d.ts"
       ],
@@ -60,7 +67,9 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -71,11 +80,11 @@
     "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@types/react-transition-group": "^4.4.12",
     "@types/node": "^20.10.5",
     "react": ">=18.0.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3",
-    "react-transition-group": "^4.4.5"
+    "typescript": "^5.3.3"
   },
   "hierarchidb": {
     "plugin": {
@@ -94,8 +103,10 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
-      "@hierarchidb/ui-dialog",
-      "react"
-    ]
-  }
+    "@hierarchidb/ui-dialog",
+    "@hierarchidb/runtime-worker",
+    "@hierarchidb/runtime-shared-module-paths",
+    "react"
+  ]
+}
 }

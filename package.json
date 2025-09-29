@@ -58,8 +58,8 @@
     "lint": "turbo run lint",
     "biome:check": "biome check --reporter summary",
     "biome:fix": "biome check --write",
-    "biome:check:core": "biome check --reporter summary packages/runtime-worker/worker packages/plugins/shape-plugin",
-    "eslint:deprecations": "eslint -f stylish --max-warnings=0 packages/runtime-worker/worker packages/plugins/shape-plugin",
+    "biome:check:core": "biome check --reporter summary packages/runtime/worker-core packages/plugins/shape-plugin",
+    "eslint:deprecations": "eslint -f stylish --max-warnings=0 packages/runtime/worker-core packages/plugins/shape-plugin",
     "format": "turbo run format",
     "clean": "npx turbo run clean",
     "storybook": "storybook dev -p 6006",
@@ -91,7 +91,7 @@
     "vk:task": "node scripts/vk-task.mjs",
     "vk:task:commit-grouping": "node scripts/vk-task.mjs --preset grouped-commits",
     "vk:sync": "node scripts/vk-sync.mjs",
-    "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime-worker/worker/docs",
+    "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime/worker-core/docs",
     "treeconsole:shims:remove": "find packages/ui/treeconsole -type f -name comlink.d.ts -delete",
     "codemod:esm-ext": "node tools/esm-ext-codemod.mjs",
     "typecheck:esm": "tsc -b tsconfig.esm-node16.json",
@@ -114,7 +114,8 @@
     "task:done": "npx mrtask done",
     "task:cancel": "npx mrtask cancel",
     "deps:cycles": "npx dependency-cruiser -c .dependency-cruiser.cjs packages app",
-    "deps:cycles:graph": "npx dependency-cruiser -c .dependency-cruiser.cjs --output-type dot --output-to reports/dependency-graph.dot packages app"
+    "deps:cycles:graph": "npx dependency-cruiser -c .dependency-cruiser.cjs --output-type dot --output-to reports/dependency-graph.dot packages app",
+    "codemod:run": "node --loader ts-node/esm scripts/codemods/runner.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.0",
@@ -180,7 +181,7 @@
     "tsc-alias": "^1.8.16",
     "tsup": "^8.5.0",
     "tsx": "^4.20.5",
-    "turbo": "^2.5.6",
+    "turbo": "^2.5.8",
     "typescript": "5.6.2",
     "vite": "^6.3.5",
     "vite-plugin-checker": "^0.8.0",
@@ -214,6 +215,16 @@
       "i18next": "22.5.0",
       "react-i18next": "12.3.1",
       "@mui/icons-material": "^7.3.2"
+    },
+    "ignoredBuiltDependencies": [
+      "@vaadin/vaadin-usage-statistics",
+      "esbuild",
+      "oxc-resolver",
+      "sharp",
+      "workerd"
+    ],
+    "patchedDependencies": {
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
     }
   },
   "keywords": [

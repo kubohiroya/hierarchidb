@@ -65,7 +65,7 @@
 | `packages/ui/core` | 25 | UI foundation（入力フォーム/ダイアログ） |
 | `packages/plugins/styler-plugin` | 18 | UI steps・dialog |
 | `packages/backend/bff` | 16 | API ゲートウェイのレスポンス整形レイヤー |
-| `packages/runtime-worker/worker` | 14 | Worker API / Dexie ラッパ（テスト含む） |
+| `packages/runtime/worker-core` | 14 | Worker API / Dexie ラッパ（テスト含む） |
 | `packages/ui/treeconsole` | 12 | Tree コンポーネントでの構造体 any |
 | `packages/plugins/basemap-plugin` | 10 | Map preview / Store 旧ロジック |
 | `packages/plugins/resolver-plugin` | 10 | ResolverDialog UI |
@@ -84,7 +84,7 @@ total occurrences: 719
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/plugins/shape-plugin             52
   packages/plugins/location-plugin          48
   packages/ui/treeconsole                     42
@@ -102,7 +102,7 @@ total occurrences: 678
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/plugins/location-plugin          48
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
@@ -121,7 +121,7 @@ total occurrences: 667
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/plugins/location-plugin          48
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
@@ -144,7 +144,7 @@ total occurrences: 651
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/plugins/location-plugin          48
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
@@ -170,7 +170,7 @@ total occurrences: 644
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/location-plugin          41
   packages/plugins/styler-plugin            37
@@ -228,7 +228,7 @@ total occurrences: 533
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             108
+  packages/runtime/worker-core             108
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -254,7 +254,7 @@ top packages:
   packages/ui/auth                            32
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
-  packages/runtime-worker/worker              21
+  packages/runtime/worker-core              21
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
   packages/ui/treeconsole                     12
@@ -269,7 +269,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             120
+  packages/runtime/worker-core             120
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -287,7 +287,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -305,7 +305,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -323,7 +323,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -341,7 +341,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -359,7 +359,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -377,7 +377,7 @@ top packages:
 
 top packages:
   app                                        144
-  packages/runtime-worker/worker             127
+  packages/runtime/worker-core             127
   packages/ui/treeconsole                     42
   packages/plugins/styler-plugin            37
   packages/plugins/location-plugin          33
@@ -400,7 +400,7 @@ total occurrences: 469
 
 top packages:
   app                                        123
-  packages/runtime-worker/worker              66
+  packages/runtime/worker-core              66
   packages/ui/treeconsole                     41
   packages/plugins/styler-plugin            37
   packages/ui/auth                            32
@@ -423,7 +423,7 @@ total occurrences: 421
 
 top packages:
   app                                        123
-  packages/runtime-worker/worker              66
+  packages/runtime/worker-core              66
   packages/ui/auth                            32
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
@@ -446,7 +446,7 @@ total occurrences: 388
 
 top packages:
   app                                        123
-  packages/runtime-worker/worker              33
+  packages/runtime/worker-core              33
   packages/ui/auth                            32
   packages/plugins/spreadsheet-plugin       30
   packages/ui/core                            25
@@ -497,7 +497,7 @@ top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages/plugins/basemap-plugin           10
   packages/node-type.resolver-plugin          10
@@ -519,7 +519,7 @@ top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages.node-type.basemap-plugin           10
   packages.node-type.resolver-plugin          10
@@ -541,7 +541,7 @@ top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages.node-type.basemap-plugin           10
   packages.node-type.resolver-plugin          10
@@ -563,7 +563,7 @@ top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages.node-type.basemap-plugin           10
   packages.node-type.resolver-plugin          10
@@ -585,7 +585,7 @@ top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
   packages/backend/bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages.node-type.basemap-plugin           10
   packages.node-type.resolver-plugin          10
@@ -606,7 +606,7 @@ top packages:
   packages/ui.core                            25
   packages/node-type.styler-plugin            18
   packages/backend.bff                        16
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/ui.treeconsole                     12
   packages.node-type.basemap-plugin           10
   packages.node-type.resolver-plugin          10
@@ -896,7 +896,7 @@ total occurrences: 194
 top packages:
   packages/ui/core                            25
   packages/plugins/styler-plugin            18
-  packages/runtime-worker/worker              14
+  packages/runtime/worker-core              14
   packages/plugins/spreadsheet-plugin       12
   packages/ui.treeconsole                     12
   packages/backend/bff                        10

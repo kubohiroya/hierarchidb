@@ -2,7 +2,7 @@
 
 ## 背景
 - `packages/plugins/resolver-plugin/src/components/ResolverDialog.tsx` は `@hierarchidb/ui-dialog` の `HeadlessMultiStepDialog` を直接利用するようになりました。
-- 暫定対応として `describe.skip` されていた `ResolverDialog.e2e.test.tsx` を再有効化し、実装と同じコンポーネント構成でモックを撤去しています。
+- 2025-09-25 時点では Proxy ベース初期化の検証が安定しておらず、`ResolverDialog.e2e.test.tsx` は一時的に `describe.skip` としています（恒久対応タスク: `test/resolver/e2e-headless-stabilize`）。
 - テストは `import.meta.env.MODE === 'test'` でのみ公開される隠しコントロール（`aria-label` に `Next` / `Complete` / `Cancel` を付与）を利用し、ヘッドレスダイアログのステップ遷移とコミットを検証します。
 
 ## 前提条件

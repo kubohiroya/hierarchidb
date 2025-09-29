@@ -5,9 +5,11 @@
 
 // === Core Exports (Standard Structure) ===
 
+import { PLUGIN_MANIFEST as BaseMapPluginManifest } from './extension/plugin-manifest.js';
+
 // Entity/handler/definition exports
 export * from './handlers/index.js';
-// Plugin metadata is sourced from package.json (hierarchidb.plugin); no definitions export
+export { PLUGIN_MANIFEST as BaseMapPluginManifest } from './extension/plugin-manifest.js';
 
 // UI components
 // UI components moved under subpath to keep root worker-safe
@@ -55,20 +57,10 @@ export const BASEMAP_CONSTANTS = {
 } as const;
 
 // Plugin information
-export const PLUGIN_INFO = {
-  id: 'com.hierarchidb.basemap',
-  name: 'BaseMap Plugin',
-  version: '1.0.0',
-  extends: 'folder',
-  architecture: 'extension',
-} as const;
+export const PLUGIN_INFO = BaseMapPluginManifest;
 
 // Optional runtime wiring (no-op)
-export class RuntimeWiring {
-  static async registerRuntimeWorkerAdapters(): Promise<void> {
-    // Runtime worker specific adapters are not required at this stage.
-  }
-}
+export class RuntimeWiring {}
 
-// Dialog extension initializer (optional)
+// Folder dialog extension initializer (optional)
 export { initializeBaseMapDialogExtension, baseMapDialogExtension } from './extensions/BaseMapDialogExtension.js';

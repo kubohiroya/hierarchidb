@@ -1,8 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-type';
 import { useWorkingCopy } from '../useWorkingCopy.js';
+import {Remote} from "comlink";
 
 function createMockClient(options: {
   existingWorkingCopy?: { id: NodeId; name?: string; description?: string; data?: Record<string, unknown> };
@@ -34,9 +36,21 @@ function createMockClient(options: {
   const client = {
     getWorkingCopyAPI: vi.fn(async () => wcAPI),
     getQueryAPI: vi.fn(async () => queryAPI),
-  } as unknown as WorkerAPI;
+  } as unknown as Remote<WorkerAPI>;
 
-  return { client, wcAPI, queryAPI };
+  const workerClient: WorkerClientRef = {
+    client,
+    isInitialized: true,
+    isConnected: true,
+    initProgress: 100,
+    initMessage: 'ready',
+    error: null,
+    initialize: async () => {},
+    reset: () => {},
+    getAPI: () => client,
+  };
+
+  return { client, wcAPI, queryAPI, workerClient };
 }
 
 afterEach(() => {
@@ -46,7 +60,7 @@ afterEach(() => {
 describe('useWorkingCopy (create mode)', () => {
   it('reuses an existing working copy when nodeId already references one', async () => {
     const existing = { id: 'wc-existing' as NodeId, name: 'Existing', description: 'desc', data: { foo: 'bar' } };
-    const { client, wcAPI } = createMockClient({ existingWorkingCopy: existing });
+    const { workerClient, wcAPI } = createMockClient({ existingWorkingCopy: existing });
 
     const { result } = renderHook(() => useWorkingCopy({
       mode: 'create',
@@ -54,7 +68,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeId: existing.id,
       parentId: 'parent-1' as NodeId,
       treeId: 'tree-1' as TreeId,
-      workerAPI: client,
+      workerClient,
     }));
 
     await waitFor(() => result.current.loading === false);
@@ -66,7 +80,7 @@ describe('useWorkingCopy (create mode)', () => {
   });
 
   it('creates a draft working copy when none exists yet', async () => {
-    const { client, wcAPI } = createMockClient({ existingWorkingCopy: undefined });
+    const { workerClient, wcAPI } = createMockClient({ existingWorkingCopy: undefined });
 
     const { result } = renderHook(() => useWorkingCopy({
       mode: 'create',
@@ -74,7 +88,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeId: 'wc-missing' as NodeId,
       parentId: 'parent-2' as NodeId,
       treeId: 'tree-1' as TreeId,
-      workerAPI: client,
+      workerClient,
     }));
 
     await waitFor(() => result.current.loading === false);

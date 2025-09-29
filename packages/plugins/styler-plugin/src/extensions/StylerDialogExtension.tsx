@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import type { ComponentType } from 'react';
 import {
   Box,
@@ -9,14 +8,13 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  type SelectChangeEvent,
-  Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
-import type { DialogStepDefinition, DraftPeerEntity } from '@hierarchidb/common-type';
-import { BaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
+import type { DialogStepDefinition } from '@hierarchidb/common-type';
+import { BaseFolderPlugin } from '@hierarchidb/plugins-folder-plugin';
 
 /**
  * Styler extension data
@@ -30,7 +28,6 @@ export interface StylerData {
   opacity?: number;
   strokeWidth?: number;
   categories?: string[];
-  stylerConfig?: Record<string, unknown>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -38,32 +35,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 /**
  * Styler configuration step component
  */
-type StyleTypeValue = NonNullable<StylerData['styleType']>;
-
-const isStyleTypeValue = (value: string): value is StyleTypeValue => {
-  return value === 'choropleth' || value === 'heatmap' || value === 'points' || value === 'lines';
-};
-
-type StylerDialogDraft = DraftPeerEntity<StylerData> & Record<string, unknown>;
-type StylerStepProps = React.ComponentProps<typeof StylerConfigStep>;
-type StylerCategoryStepProps = React.ComponentProps<typeof CategoryMappingStep>;
-
 const StylerConfigStep: React.FC<{
-  data: StylerDialogDraft;
-  onChange: (data: StylerDialogDraft) => void;
+  data: StylerData;
+  onChange: (data: StylerData) => void;
   errors?: string[];
   isSubmitting?: boolean;
 }> = ({ data, onChange, errors, isSubmitting }) => {
   const handleStyleTypeChange = useCallback(
-    (event: SelectChangeEvent<string>) => {
-      const value = event.target.value;
-      if (value === '') {
-        onChange({ ...data, styleType: undefined });
-        return;
-      }
-      if (isStyleTypeValue(value)) {
-        onChange({ ...data, styleType: value });
-      }
+    (e: any) => {
+      onChange({ ...data, styleType: e.target.value });
     },
     [data, onChange],
   );
@@ -76,8 +56,8 @@ const StylerConfigStep: React.FC<{
   );
 
   const handleColorSchemeChange = useCallback(
-    (event: SelectChangeEvent<string>) => {
-      onChange({ ...data, colorScheme: event.target.value as StylerData['colorScheme'] });
+    (e: any) => {
+      onChange({ ...data, colorScheme: e.target.value });
     },
     [data, onChange],
   );
@@ -111,119 +91,111 @@ const StylerConfigStep: React.FC<{
   const rangeError = errors?.find(e => e.includes('range'));
 
   return (
-    <Box
-      sx={{
-        display: 'grid',
-        gap: 2,
-        gridTemplateColumns: {
-          xs: '1fr',
-          md: 'repeat(2, minmax(0, 1fr))',
-        },
-      }}
-    >
-      <Typography variant="subtitle2" gutterBottom sx={{ gridColumn: '1 / -1' }}>
-        Configure map visualization style
-      </Typography>
+    <Grid container spacing={2}>
+      <Grid item xs={12}>
+        <Typography variant="subtitle2" gutterBottom>
+          Configure map visualization style
+        </Typography>
+      </Grid>
 
-      <FormControl
-        fullWidth
-        error={!!styleTypeError}
-        disabled={isSubmitting}
-        sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-      >
-        <InputLabel>Style Type</InputLabel>
-        <Select
-          value={data.styleType || ''}
-          onChange={handleStyleTypeChange}
-          label="Style Type"
-        >
-          <MenuItem value="">None</MenuItem>
-          <MenuItem value="choropleth">Choropleth Map</MenuItem>
-          <MenuItem value="heatmap">Heat Map</MenuItem>
-          <MenuItem value="points">Point Markers</MenuItem>
-          <MenuItem value="lines">Line Features</MenuItem>
-        </Select>
-        {styleTypeError && <FormHelperText>{styleTypeError}</FormHelperText>}
-      </FormControl>
+      <Grid item xs={12} md={6}>
+        <FormControl fullWidth error={!!styleTypeError} disabled={isSubmitting}>
+          <InputLabel>Style Type</InputLabel>
+          <Select
+            value={data.styleType || ''}
+            onChange={handleStyleTypeChange}
+            label="Style Type"
+          >
+            <MenuItem value="">None</MenuItem>
+            <MenuItem value="choropleth">Choropleth Map</MenuItem>
+            <MenuItem value="heatmap">Heat Map</MenuItem>
+            <MenuItem value="points">Point Markers</MenuItem>
+            <MenuItem value="lines">Line Features</MenuItem>
+          </Select>
+          {styleTypeError && <FormHelperText>{styleTypeError}</FormHelperText>}
+        </FormControl>
+      </Grid>
 
-      <TextField
-        fullWidth
-        label="Data Source"
-        value={data.dataSource || ''}
-        onChange={handleDataSourceChange}
-        error={!!dataSourceError}
-        helperText={dataSourceError || 'CSV file or API endpoint'}
-        disabled={isSubmitting}
-        placeholder="e.g., data.csv or https://api.example.com/data"
-        sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-      />
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Data Source"
+          value={data.dataSource || ''}
+          onChange={handleDataSourceChange}
+          error={!!dataSourceError}
+          helperText={dataSourceError || 'CSV file or API endpoint'}
+          disabled={isSubmitting}
+          placeholder="e.g., data.csv or https://api.example.com/data"
+        />
+      </Grid>
 
       {data.styleType && (
         <>
-          <FormControl
-            fullWidth
-            disabled={isSubmitting}
-            sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-          >
-            <InputLabel>Color Scheme</InputLabel>
-            <Select
-              value={data.colorScheme || 'blues'}
-              onChange={handleColorSchemeChange}
-              label="Color Scheme"
-            >
-              <MenuItem value="blues">Blues</MenuItem>
-              <MenuItem value="reds">Reds</MenuItem>
-              <MenuItem value="greens">Greens</MenuItem>
-              <MenuItem value="purples">Purples</MenuItem>
-              <MenuItem value="viridis">Viridis</MenuItem>
-              <MenuItem value="plasma">Plasma</MenuItem>
-              <MenuItem value="rainbow">Rainbow</MenuItem>
-            </Select>
-          </FormControl>
+          <Grid item xs={12} md={6}>
+            <FormControl fullWidth disabled={isSubmitting}>
+              <InputLabel>Color Scheme</InputLabel>
+              <Select
+                value={data.colorScheme || 'blues'}
+                onChange={handleColorSchemeChange}
+                label="Color Scheme"
+              >
+                <MenuItem value="blues">Blues</MenuItem>
+                <MenuItem value="reds">Reds</MenuItem>
+                <MenuItem value="greens">Greens</MenuItem>
+                <MenuItem value="purples">Purples</MenuItem>
+                <MenuItem value="viridis">Viridis</MenuItem>
+                <MenuItem value="plasma">Plasma</MenuItem>
+                <MenuItem value="rainbow">Rainbow</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
 
-          <TextField
-            fullWidth
-            label="Opacity"
-            type="number"
-            value={data.opacity || 0.7}
-            onChange={handleOpacityChange}
-            inputProps={{ min: 0, max: 1, step: 0.1 }}
-            disabled={isSubmitting}
-            helperText="0 (transparent) to 1 (opaque)"
-            sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-          />
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="Opacity"
+              type="number"
+              value={data.opacity || 0.7}
+              onChange={handleOpacityChange}
+              inputProps={{ min: 0, max: 1, step: 0.1 }}
+              disabled={isSubmitting}
+              helperText="0 (transparent) to 1 (opaque)"
+            />
+          </Grid>
 
           {(data.styleType === 'choropleth' || data.styleType === 'heatmap') && (
             <>
-              <TextField
-                fullWidth
-                label="Min Value"
-                type="number"
-                value={data.minValue || ''}
-                onChange={handleMinValueChange}
-                error={!!rangeError}
-                disabled={isSubmitting}
-                placeholder="Minimum data value"
-                sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-              />
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Min Value"
+                  type="number"
+                  value={data.minValue || ''}
+                  onChange={handleMinValueChange}
+                  error={!!rangeError}
+                  disabled={isSubmitting}
+                  placeholder="Minimum data value"
+                />
+              </Grid>
 
-              <TextField
-                fullWidth
-                label="Max Value"
-                type="number"
-                value={data.maxValue || ''}
-                onChange={handleMaxValueChange}
-                error={!!rangeError}
-                helperText={rangeError}
-                disabled={isSubmitting}
-                placeholder="Maximum data value"
-                sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-              />
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Max Value"
+                  type="number"
+                  value={data.maxValue || ''}
+                  onChange={handleMaxValueChange}
+                  error={!!rangeError}
+                  helperText={rangeError}
+                  disabled={isSubmitting}
+                  placeholder="Maximum data value"
+                />
+              </Grid>
             </>
           )}
         </>
       )}
-    </Box>
+    </Grid>
   );
 };
 
@@ -231,8 +203,8 @@ const StylerConfigStep: React.FC<{
  * Category mapping step component
  */
 const CategoryMappingStep: React.FC<{
-  data: StylerDialogDraft;
-  onChange: (data: StylerDialogDraft) => void;
+  data: { categories?: string[] };
+  onChange: (data: { categories?: string[] }) => void;
   errors?: string[];
   isSubmitting?: boolean;
 }> = ({ data, onChange, errors, isSubmitting }) => {
@@ -265,24 +237,28 @@ const CategoryMappingStep: React.FC<{
   );
 
   return (
-    <Stack spacing={2}>
-      <Typography variant="subtitle2" gutterBottom>
-        Define data categories for mapping
-      </Typography>
+    <Grid container spacing={2}>
+      <Grid item xs={12}>
+        <Typography variant="subtitle2" gutterBottom>
+          Define data categories for mapping
+        </Typography>
+      </Grid>
 
-      <TextField
-        fullWidth
-        label="Add Category"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyPress={handleKeyPress}
-        disabled={isSubmitting}
-        placeholder="Type category name and press Enter"
-        helperText="Categories will be mapped to different colors/styles"
-      />
+      <Grid item xs={12}>
+        <TextField
+          fullWidth
+          label="Add Category"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          disabled={isSubmitting}
+          placeholder="Type category name and press Enter"
+          helperText="Categories will be mapped to different colors/styles"
+        />
+      </Grid>
 
       {data.categories && data.categories.length > 0 && (
-        <Box>
+        <Grid item xs={12}>
           <Typography variant="body2" gutterBottom>
             Categories ({data.categories.length}):
           </Typography>
@@ -297,35 +273,38 @@ const CategoryMappingStep: React.FC<{
               />
             ))}
           </Box>
-        </Box>
+        </Grid>
       )}
 
       {errors?.length && (
-        <Typography color="error" variant="caption">
-          {errors.join(', ')}
-        </Typography>
+        <Grid item xs={12}>
+          <Typography color="error" variant="caption">
+            {errors.join(', ')}
+          </Typography>
+        </Grid>
       )}
-    </Stack>
+    </Grid>
   );
 };
 
 /**
- * Styler dialog extension for node configuration
+ * Styler extension for plugin dialogs
  */
-export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
-  readonly pluginId = 'styler-plugin-folder-plugin-extension';
+export class StylerDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'styler-plugin-dialog-extension';
   readonly pluginName = 'Styler Dialog Extension';
-  readonly pluginDescription = 'Adds map visualization capabilities to the shared node dialog';
+  readonly pluginDescription = 'Adds map visualization capabilities to plugin dialogs';
   readonly pluginVersion = '1.0.0';
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
     return [
-      this.createDialogStep<StylerStepProps>({
+      this.createDialogStep<StylerData>({
         id: 'style-config',
         label: 'Map Style',
-        component: StylerConfigStep as ComponentType<StylerStepProps>,
+        description: 'Configure map visualization style',
+        component: StylerConfigStep as ComponentType<any>,
         validation: {
-          validate: async ({ data }: StylerStepProps) => {
+          validate: async (data: StylerData) => {
             const errors: string[] = [];
 
             if (data.styleType && !data.dataSource) {
@@ -343,7 +322,7 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
               errors,
             };
           },
-          canProceed: ({ data }: StylerStepProps) => {
+          canProceed: (data: StylerData) => {
             // Can proceed if no style type selected, or if both style type and data source are provided
             return !data.styleType || !!data.dataSource;
           },
@@ -351,12 +330,13 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
         required: false,
         order: 10,
       }),
-      this.createDialogStep<StylerCategoryStepProps>({
+      this.createDialogStep<{ categories?: string[] }>({
         id: 'category-mapping',
         label: 'Categories',
-        component: CategoryMappingStep as ComponentType<StylerCategoryStepProps>,
+        description: 'Define data categories',
+        component: CategoryMappingStep as ComponentType<any>,
         validation: {
-          validate: async ({ data }: StylerCategoryStepProps) => {
+          validate: async (data: { categories?: string[] }) => {
             const errors: string[] = [];
 
             if (data.categories && data.categories.length > 50) {
@@ -389,52 +369,47 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
   }
 
   protected getStepStateEvaluator() {
-    const evaluateValidated = (
-      data: StylerDialogDraft,
-      stepNumbers?: ReadonlyArray<number>,
-    ) => {
-      const steps = stepNumbers ? [...stepNumbers] : [];
-      return steps.map((num) => {
-        if (num === 10) {
-          if (!data?.styleType) return true;
-          if (!data?.dataSource) return false;
-          if (data.minValue !== undefined && data.maxValue !== undefined) {
-            return data.minValue < data.maxValue;
-          }
-          return true;
-        }
-        if (num === 20) {
-          const cats: string[] | undefined = data?.categories;
-          if (!cats) return true;
-          if (cats.length > 50) return false;
-          const unique = new Set(cats);
-          return unique.size === cats.length;
-        }
-        return true;
-      });
-    };
-
-    const evaluateEnabled = (
-      data: StylerDialogDraft,
-      stepNumbers?: ReadonlyArray<number>,
-    ) => {
-      const steps = stepNumbers ? [...stepNumbers] : [];
-      const hasStyleDecision = !data?.styleType || !!data?.dataSource;
-      return steps.map((num) => {
-        if (num === 10) return true;
-        if (num === 20) return hasStyleDecision;
-        return true;
-      });
-    };
-
     return {
-      getEnabledSteps: evaluateEnabled,
-      getValidatedSteps: evaluateValidated,
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
+        const steps = stepNumbers || [];
+        return steps.map((num) => {
+          // style-config (order 10):
+          if (num === 10) {
+            // If styleType is selected, dataSource must be present and min<max when both provided
+            if (!data?.styleType) return true; // not selecting style keeps it optional/filled
+            if (!data?.dataSource) return false;
+            if (data.minValue !== undefined && data.maxValue !== undefined) {
+              return data.minValue < data.maxValue;
+            }
+            return true;
+          }
+          // category-mapping (order 20): duplicates not allowed, <=50 items
+          if (num === 20) {
+            const cats: string[] | undefined = data?.categories;
+            if (!cats) return true; // optional
+            if (cats.length > 50) return false;
+            const unique = new Set(cats);
+            return unique.size === cats.length;
+          }
+          // Other steps unaffected
+          return true;
+        });
+      },
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
+        const steps = stepNumbers || [];
+        // Allow navigation to style-config always; category-mapping requires style-config decision
+        const hasStyleDecision = !data?.styleType || !!data?.dataSource;
+        return steps.map((num, _idx) => {
+          if (num === 10) return true;
+          if (num === 20) return hasStyleDecision;
+          return true;
+        });
+      },
     };
   }
 
   protected getSubmitEligibility() {
-    return (data: StylerDialogDraft) => {
+    return (data: any) => {
       // If styleType selected, enforce dataSource present and min<max (when both present)
       if (data?.styleType) {
         if (!data?.dataSource) return false;
@@ -453,7 +428,7 @@ export class StylerDialogExtension extends BaseDialogPlugin<StylerDialogDraft> {
     };
   }
 
-  protected transformDialogData(data: StylerDialogDraft): StylerDialogDraft {
+  protected transformDialogData(data: StylerData & Record<string, unknown>): Record<string, unknown> {
     // Transform the data to store Styler configuration
     const stylerConfig: Record<string, unknown> = {};
 

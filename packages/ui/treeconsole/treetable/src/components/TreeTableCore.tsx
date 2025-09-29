@@ -159,40 +159,7 @@ export function TreeTableCore({
     visualSelectionSet,
     useTrashColumns,
     trashAction,
-  }), [
-    columnWidths,
-    selectAll,
-    allRowsSelected,
-    someSelected,
-    handleSelectAll,
-    pageNodeId,
-    selectAllHydrated,
-    t,
-    structure.hasSelectedAncestor,
-    structure.rowSelection,
-    structure.collectDescendantIds,
-    batchSelect,
-    depthOffset,
-    structure.nodesWithChildren,
-    structure.expandedRowIds,
-    editingNodeId,
-    hideDragHandler,
-    disableDragAndDrop,
-    IconComponent,
-    rowClickAction,
-    selectionMode,
-    controller,
-    validateInline,
-    handleStartEdit,
-    editingField,
-    editingValue,
-    editingError,
-    treeId,
-    setContextMenuState,
-    visualSelectionSet,
-    useTrashColumns,
-    trashAction,
-  ]);
+  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, setEditingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
 
   const table = useReactTable({
     data: structure.visibleData,
@@ -257,6 +224,8 @@ export function TreeTableCore({
           controller={controller}
           disableDragAndDrop={disableDragAndDrop}
           visualSelectionSet={visualSelectionSet}
+          useTrashColumns={useTrashColumns}
+          trashAction={trashAction}
         />
       </StyledTable>
 

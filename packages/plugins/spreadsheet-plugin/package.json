@@ -21,6 +21,11 @@
       "import": "./dist/worker/index.js",
       "default": "./dist/worker/index.js"
     },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
@@ -31,6 +36,9 @@
     "*": {
       "worker": [
         "dist/worker/index.d.ts"
+      ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
       ],
       "ui": [
         "dist/ui/index.d.ts"
@@ -65,10 +73,12 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/tabular": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@types/pako": "^2.0.3",
     "pako": "^2.1.0",
     "@hierarchidb/common-type": "workspace:*",

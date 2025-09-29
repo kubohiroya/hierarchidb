@@ -20,6 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, './src'),
+      'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
     },
   },
 });

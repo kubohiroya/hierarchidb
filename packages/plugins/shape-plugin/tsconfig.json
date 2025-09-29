@@ -1,32 +1,28 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "WebWorker"
-    ],
-    "outDir": "./dist",
-    "rootDir": "./src",
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
     "jsx": "react-jsx",
+    "baseUrl": ".",
     "paths": {
       "~/*": [
         "./src/*"
       ],
-      "@hierarchidb/runtime-ui-datasource": [
-        "../../runtime-ui/datasource/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "../../runtime-ui/datasource/dist/*"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "../../runtime-ui/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "../../runtime-ui/plugin-dialog/dist/*"
+      "@hierarchidb/runtime-shared-module-paths": [
+        "../../runtime-shared/module-paths/dist/index.d.ts"
       ]
     },
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "vite/client",
+      "node"
+    ],
     "module": "Node16"
   },
   "include": [
@@ -35,17 +31,17 @@
     "src/services/**/*",
     "src/worker/api.ts",
     "src/worker/handlers/**/*",
-    "src/worker/plugin.ts"
+    "src/worker/plugin.ts",
+    "src/worker-factory/**/*"
   ],
   "exclude": [
-    "node_modules",
     "dist",
-    "**/__tests__/**",
-    "**/*.test.*",
-    "**/*.spec.*",
-    "src/ui/**",
-    "src/components/**",
-    "src/worker/**",
-    "src/extension/handler.ts"
+    "node_modules",
+    "src/__tests__/**",
+    "src/**/*.stories.ts",
+    "src/**/*.stories.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/vite-env.d.ts"
   ]
 }

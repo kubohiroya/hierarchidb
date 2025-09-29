@@ -12,6 +12,10 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js"
+    },
     "./services": {
       "types": "./dist/services/index.d.ts",
       "import": "./dist/services/index.js"
@@ -19,6 +23,9 @@
   },
   "typesVersions": {
     "*": {
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
       "services": [
         "dist/services/index.d.ts"
       ],
@@ -52,6 +59,7 @@
     "@hierarchidb/util": "workspace:*"
   },
   "peerDependencies": {
+    "comlink": "^4.3.2",
     "dexie": "^4.2.0",
     "@hierarchidb/runtime-worker": "workspace:*",
     "react": "^18.3.1",
@@ -105,6 +113,7 @@
       "@emotion/styled",
       "@hierarchidb/runtime-worker",
       "@hierarchidb/runtime-worker-bootstrap",
+      "comlink",
       "@mui/icons-material",
       "@mui/material",
       "dexie",

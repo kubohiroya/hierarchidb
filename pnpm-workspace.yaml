@@ -4,7 +4,7 @@ packages:
   - packages/tools/*
   - packages/common/*
   - packages/runtime-ui/*
-  - packages/runtime-worker/*
+  - packages/runtime/*
   - packages/runtime-shared/*
   - packages/ui/*
   - packages/ui/treeconsole/*

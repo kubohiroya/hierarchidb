@@ -30,8 +30,8 @@
   - UI: `virtual:plugin-registry-ui` を取り込み、メニューやダイアログ等のロードに使用
   - アイコン: `virtual:mui-icon-map` を `setGlobalMuiIconMap()` で注入（実描画は静的解決）
 - メタデータ
-  - 一次情報は各プラグインの `package.json`（`hierarchidb.plugin`）
-  - 既存の `virtual:plugin-definitions`（tools-vite-plugin-package-reader 由来）は表示名/順序などに利用可
+  - 一次情報は各プラグインの `src/extension/plugin-manifest.ts`
+  - `virtual:plugin-definitions`（tools-vite-plugin-package-reader 由来）は manifest から収集した表示名/順序などを提供
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
@@ -44,29 +44,53 @@
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
     "./worker": { "import": "./dist/worker/index.js" } // Worker不要なら省略可
   },
-  "hierarchidb": {
-    "plugin": {
-      "nodeType": "foo",
-      "name": "Foo Plugin",
-      "displayName": "Foo",
-      "icon": { "muiIconName": "Extension", "emoji": "🧩", "color": "#607d8b" },
-      "priority": 10
-    }
-  },
   "scripts": { "build": "tsup" }
 }
 ```
 - `exports["./worker"]` は Worker を公開する場合のみ必要（Linker のように不要なら省略）
-- `hierarchidb.plugin.nodeType` はツリー上の識別子。`*-plugin` の短縮形を推奨
-- `icon.muiIconName` は MUI Icons 名（PascalCase）。`emoji`/`color` は任意
+- メタデータは `src/extension/plugin-manifest.ts` に記述する（次項）。`package.json` からは撤去済み
 
-### 2) エントリ配置
+### 2) plugin-manifest.ts（拡張メタデータ）
+```ts
+// src/extension/plugin-manifest.ts
+import type { NodeType, PluginMetadata } from '@hierarchidb/common-type';
+
+export const PLUGIN_ID = '@hierarchidb/foo-plugin' as const;
+export const PLUGIN_VERSION = '0.0.1' as const;
+export const PLUGIN_DESCRIPTION = 'Foo nodes for HierarchiDB' as const;
+export const PLUGIN_NODE_TYPE = 'foo' as NodeType;
+
+export const PLUGIN_MANIFEST: PluginMetadata = {
+  id: PLUGIN_ID,
+  name: 'Foo Plugin',
+  displayName: 'Foo',
+  nodeType: PLUGIN_NODE_TYPE,
+  version: PLUGIN_VERSION,
+  priority: 10,
+  icon: {
+    mui: 'Extension',
+    emoji: '🧩',
+    color: '#607d8b'
+  },
+  dependencies: ['folder'],
+  extends: 'folder',
+  description: PLUGIN_DESCRIPTION,
+};
+
+export type FooPluginManifest = typeof PLUGIN_MANIFEST;
+```
+- `nodeType` はプラグインを識別する文字列。文字列リテラルに `as NodeType` でブランド型を付与する
+- バージョンや説明などのメタデータは `PACKAGE_VERSION` 定数などとして TypeScript 内で管理する（`package.json` import は不要）
+- `icon.mui`（または `muiIconName`）は MUI Icons の PascalCase 名称
+- 追加の capability/schema などもこのオブジェクトに追記する
+
+### 3) エントリ配置
 - UI: `src/index.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
 - Worker（任意）: `src/worker/index.ts`（アプリが `@hierarchidb/<foo>-plugin/worker` を動的 import）
 - ビルド: tsup で `dist/` に出力（exports に合わせる）
 
 ## アプリへの接続（自動）
-- 開発時は Vite が `packages/plugins/*-plugin/package.json` を監視し、以下を再生成します。
+- 開発時は Vite が `packages/plugins/*-plugin/src/extension/plugin-manifest.ts` を監視し、以下を再生成します。
   - `virtual:plugin-registry-ui` … UI ローダ
   - `virtual:plugin-registry-worker` … Worker ローダ
   - `virtual:mui-icon-map` … アイコンマップ
@@ -186,7 +210,7 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
 
 ## よくある落とし穴と対処
 - アイコンが表示されない
-  - `package.json` の `hierarchidb.plugin.icon.muiIconName` を PascalCase で記述（例: `AccountTree`）
+  - `src/extension/plugin-manifest.ts` の `icon.mui`（または `muiIconName`）を PascalCase で記述（例: `AccountTree`）
   - 変更後は devサーバが自動再生成（HMR）。表示が変わらなければ一度再起動
 - Worker が期待どおり動かない
   - `exports["./worker"]` が存在するか確認。`dist/worker/index.js` を export しているか
@@ -211,7 +235,7 @@ packages/plugins/foo-plugin/
 ```
 
 ## 既存プロジェクトへの導入手順（要約）
-1) プラグインごとの `package.json` に `hierarchidb.plugin` と `exports` を整備
+1) プラグインごとの `package.json` に `exports` を整備し、`src/extension/plugin-manifest.ts` を追加
 2) アプリの Vite 設定に `pluginRegistryPlugin` と `muiIconMapPlugin` を追加（本リポジトリは導入済み）
 3) 旧来の `virtual:plugin-map` 依存を `virtual:plugin-registry-ui/worker` に置き換え
 4) 旧来の動的 bare specifier import を撤去（本ガイドの方式へ移行）

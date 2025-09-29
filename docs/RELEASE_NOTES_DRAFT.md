@@ -24,15 +24,15 @@ Compatibility & Rollback
 - WorkingCopyService.commit delegates to CP when V2 enabled; legacy path still works
 
 Migration (Trash)
-- Use `packages/runtime-worker/worker/src/tools/trash-migrate.ts`
+- Use `packages/runtime/worker-core/src/tools/trash-migrate.ts`
   - Dry-run: `--dry-run --limit=100`
   - Commit: `--limit=1000 [--verbose] [--retries=2]`
   - Rollback: `--rollback --limit=1000`
-- See `packages/runtime-worker/worker/docs/trash-migration-runbook.md` for details
+- See `packages/runtime/worker-core/docs/trash-migration-runbook.md` for details
 
 Testing (Headless)
 - Policy C and CP routing verified under Node + fake-indexeddb
-- See `packages/runtime-worker/worker/src/e2e/__tests__/*.headless.test.ts`
+- See `packages/runtime/worker-core/src/e2e/__tests__/*.headless.test.ts`
 
 Known Items / Next Steps
 - Reference counting: port provided (registry injection), per-plugin implementation can follow

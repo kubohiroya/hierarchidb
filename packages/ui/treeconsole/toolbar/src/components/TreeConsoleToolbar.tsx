@@ -58,7 +58,6 @@ import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '..
 const SearchTextFieldContainer = styled(Box)(() => ({
   display: 'flex',
   alignItems: 'center',
-  // padding: '8px 16px',
   borderBottom: 1,
   borderColor: 'divider',
   backgroundColor: 'background.paper',
@@ -194,8 +193,24 @@ function TreeConsoleToolbarContent({
     setSettingsAnchorEl(event.currentTarget);
   };
 
-  const handleSettingsClose = () => {
+  const closeSettingsMenu = useCallback(() => {
     setSettingsAnchorEl(null);
+    setThemeAnchorEl(null);
+    setLanguageAnchorEl(null);
+  }, []);
+
+  const scheduleCloseSettingsMenu = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        closeSettingsMenu();
+      }, 0);
+    } else {
+      closeSettingsMenu();
+    }
+  }, [closeSettingsMenu]);
+
+  const handleSettingsClose = () => {
+    closeSettingsMenu();
   };
 
   const handleImportExportClick = (event: MouseEvent<HTMLElement>) => {
@@ -241,7 +256,8 @@ function TreeConsoleToolbarContent({
     } else {
       handleAction('setRowClickAction', action);
     }
-  }, [handleAction, onRowClickActionChange]);
+    scheduleCloseSettingsMenu();
+  }, [handleAction, onRowClickActionChange, scheduleCloseSettingsMenu]);
 
 
   const handleSearch = useCallback((value: string) => {
@@ -267,6 +283,7 @@ function TreeConsoleToolbarContent({
     localStorage.setItem('app.theme', mode);
     window.dispatchEvent(new CustomEvent('hierarchidb-theme-change', { detail: { mode } }));
     closeThemeMenu();
+    scheduleCloseSettingsMenu();
   };
 
   // Language submenu handlers
@@ -280,6 +297,7 @@ function TreeConsoleToolbarContent({
     localStorage.setItem('app.lang', lang);
     window.dispatchEvent(new CustomEvent('hierarchidb-language-change', { detail: { lang } }));
     closeLanguageMenu();
+    scheduleCloseSettingsMenu();
   };
 
   return (
@@ -376,6 +394,7 @@ function TreeConsoleToolbarContent({
             endIcon={<KeyboardArrowDownIcon />}
             onClick={handleImportExportClick}
             color="primary"
+            aria-label="Import and export options"
           >
             <SaveIcon fontSize="small" />
           </Button>

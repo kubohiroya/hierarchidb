@@ -2,32 +2,9 @@ import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtim
 import { StylerStep5 } from '../components/steps/StylerStep5.js';
 import { StylerStep6 } from '../components/steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
-import {
-  DataSourceStep as SpreadsheetDataSourceStep,
-  FilteringStep as SpreadsheetFilteringStep,
-} from '@hierarchidb/plugins-spreadsheet-plugin';
+import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/plugins-spreadsheet-plugin';
+import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/plugins-spreadsheet-plugin';
 
-type SpreadsheetDataSourceProps = {
-  data: any;
-  onNext: (data: any) => void;
-  onPrevious: () => void;
-  errors?: string[];
-};
-
-type SpreadsheetFilteringProps = {
-  data: any;
-  onNext: (data: any) => void;
-  onPrevious: () => void;
-  errors?: string[];
-};
-
-type ISpreadsheetDataSourceComponent = (props: SpreadsheetDataSourceProps) => JSX.Element;
-type ISpreadsheetFilteringComponent = (props: SpreadsheetFilteringProps) => JSX.Element;
-
-const SpreadsheetDataSourceComponent = SpreadsheetDataSourceStep as unknown as ISpreadsheetDataSourceComponent;
-const SpreadsheetFilteringComponent = SpreadsheetFilteringStep as unknown as ISpreadsheetFilteringComponent;
-
-type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();
 
 registry.registerConfigProvider({
@@ -38,54 +15,48 @@ registry.registerConfigProvider({
       {
         id: 'data-source',
         label: 'Data Source',
-        componentFactory: (p: P) => (
-          <SpreadsheetDataSourceComponent
-            data={p.data}
-            onNext={(next: unknown) => {
-              p.onChange(next);
-              p.setValid(true);
-              p.setError(null);
-            }}
-            onPrevious={() => {
-              p.setValid(false);
-            }}
-            errors={[]}
-          />
+        componentFactory: (p: StepComponentProps) => (
+          <SpreadsheetDataSourceStep {...p} />
         ),
       },
       // Step 3: Spreadsheet Filtering
       {
         id: 'filtering',
         label: 'Filtering',
-        componentFactory: (p: P) => (
-          <SpreadsheetFilteringComponent
-            data={p.data}
-            onNext={(next: unknown) => {
-              p.onChange(next);
-              p.setValid(true);
-              p.setError(null);
-            }}
-            onPrevious={() => {
-              p.setValid(false);
-            }}
-            errors={[]}
-          />
+        componentFactory: (p: StepComponentProps) => (
+          <SpreadsheetFilteringStep {...p} />
         ),
       },
       // Step 4: Styler mapping (original Step2)
       {
         id: 'style-mapping',
         label: 'Style Mapping',
-        componentFactory: (p: P) => (
-          <StylerStep5 data={p.data} onChange={p.onChange} />
+        componentFactory: (p: StepComponentProps) => (
+          <StylerStep5
+            data={p.data}
+            onChange={p.onChange}
+            onValidate={(valid) => {
+              p.setValid(valid);
+              p.setError(valid ? null : 'Configure styling targets before continuing.');
+            }}
+          />
         ),
       },
       // Step 5: Preview (original Step3)
       {
         id: 'preview',
         label: 'Preview',
-        componentFactory: (p: P) => (
-          <StylerStep6 data={p.data} onChange={p.onChange} />
+        componentFactory: (p: StepComponentProps) => (
+          <StylerStep6
+            data={p.data}
+            onChange={p.onChange}
+            onValidate={(valid) => {
+              p.setValid(valid);
+              if (valid) {
+                p.setError(null);
+              }
+            }}
+          />
         ),
       },
     ];

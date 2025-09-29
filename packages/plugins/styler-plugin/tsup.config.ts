@@ -7,6 +7,7 @@ export default createTsupConfig({
     'shared/index': 'src/shared/index.ts',
     'services/index': 'src/services/index.ts',
     'worker/index': 'src/worker/index.ts',
+    'worker-factory/index': 'src/worker-factory/index.ts',
   },
   dts: {
     entry: {
@@ -15,6 +16,7 @@ export default createTsupConfig({
       'shared/index': 'src/shared/index.ts',
       'services/index': 'src/services/index.ts',
       'worker/index': 'src/worker/index.ts',
+      'worker-factory/index': 'src/worker-factory/index.ts',
     },
   },
   external: [

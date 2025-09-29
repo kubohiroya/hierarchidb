@@ -319,3 +319,22 @@ Access shared dialog state within dialog components.
 ## License
 
 Proprietary - Part of HierarchiDB
+
+## Dialog State Channel Integration
+
+2025-09-26 以降、プラグインダイアログは Worker 側と UI 側でマルチステップの状態を共有する "Dialog State Channel" を利用できます。
+
+### 使い方の概要
+
+1. **型定義** — `@hierarchidb/common-type` が提供する `MultiStepDialogState` / `DialogStateUpdateInput` などの型を参照します。
+2. **Worker API** — `WorkerClientProxy` から取得できる `DialogStateAPI`（`@hierarchidb/common-api`）を通じて、`publishState` / `getState` / `subscribeState` を呼び出します。
+3. **UI 連携** — `usePluginDialogController` は起動時に `DialogStateAPI` を取得し、購読結果を `workerDialogState` としてヘッダーやステッパーに反映します。
+4. **ステップ定義のローカライズ** — `PluginStepRegistry` にステップ ID とローカライズ済みタイトルを登録すると、Worker から配信されるスナップショットにタイトルが含まれ、UI 側でそのまま表示されます。
+
+### ロールバック手順
+
+- Dialog State Channel を無効化したい場合は、`WorkerClientProxy#getDialogStateAPI` の呼び出し部分をガードし、`DialogStateService` への書き込みを停止してください。
+- 既存のローカル状態ハンドリング（例: `useWorkingCopy` のみでステップ管理）に戻す場合は、`MultiStepDialogState` の publish 呼び出しを削除し、ヘッダー/ステッパーへ `workerDialogState` を渡している箇所を元に戻してください。
+
+詳細な API 定義は `packages/common/api/src/DialogStateAPI.ts` を参照してください。
+

@@ -1,6 +1,7 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import { LocationSelectionStep } from '../components/steps/LocationSelectionStep.js';
 import type { LocationWorkingCopy } from '../types/index.js';
+import { translations as locationTranslations } from '../i18n/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -9,9 +10,19 @@ type P = StepComponentProps & { data: LocationWorkingCopy };
 registry.registerConfigProvider({
   nodeType: 'location',
   getCreateStepConfigs() {
+    const selectionTitles = {
+      en: locationTranslations.en.selection.title,
+      ja: locationTranslations.ja.selection.title,
+    } as const;
     return [
       {
-        id: 'selection', label: 'Location Selection', validate: () => true,
+        id: 'selection',
+        label: selectionTitles.en ?? 'Location Selection',
+        localization: {
+          defaultTitle: selectionTitles.en ?? 'Location Selection',
+          titles: selectionTitles,
+        },
+        validate: () => true,
         componentFactory: (p: P) => (
           <LocationSelectionStep
             workingCopy={p.data}

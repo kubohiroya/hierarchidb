@@ -10,7 +10,7 @@
   * If, in the future, the generator is extended to create static UI imports as well,
   * this module can be deprecated. For now, it remains required.
   *
-  * - virtual:plugin-definitions metadata for plugins (includes hierarchidb.plugin)
+ * - virtual:plugin-definitions metadata for plugins (sourced from plugin-manifest.ts)
   * - virtual:plugin-registry-ui dynamic import map per nodeType
   */
 

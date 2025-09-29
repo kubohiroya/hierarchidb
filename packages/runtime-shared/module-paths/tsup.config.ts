@@ -1,0 +1,3 @@
+import { createTsupConfig } from '../../../tsup.base.config.js';
+
+export default createTsupConfig();

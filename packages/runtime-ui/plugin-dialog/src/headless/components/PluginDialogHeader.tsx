@@ -17,14 +17,18 @@ import {
   FullscreenExit as FullscreenExitIcon,
   OpenInFull as OpenInFullIcon,
 } from '@mui/icons-material';
-import { useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Link, useLocation } from 'react-router-dom';
 import { alpha } from '@mui/material/styles';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
 
 export interface PluginDialogHeaderProps {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
+  dialogState?: MultiStepDialogState | null;
+  nodeType?: string;
+  nodeId?: NodeId;
 }
 
 const stopPointerPropagation = (event: React.PointerEvent | React.MouseEvent) => {
@@ -35,9 +39,21 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   title,
   subtitle,
   icon,
+  dialogState,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
   const location = useLocation();
+
+  const workerStepMap = useMemo(() => {
+    if (!dialogState?.steps?.length) {
+      return null;
+    }
+    const map = new Map<string, MultiStepDialogState['steps'][number]>();
+    dialogState.steps.forEach((step) => {
+      map.set(step.id, step);
+    });
+    return map;
+  }, [dialogState?.steps]);
 
 
   const toggleMaximize = useCallback(() => {
@@ -82,7 +98,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         borderBottom: `1px solid ${theme.palette.divider}`,
         cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
         userSelect: 'none',
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: getDialogSurfaceColor(theme),
         transition: theme.transitions.create(['background-color'], { duration: theme.transitions.duration.shorter }),
         '&:hover': {
           backgroundColor:
@@ -114,8 +130,11 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           <Box onPointerDown={stopPointerPropagation}>
             <Stepper nonLinear activeStep={ctx.activeStepIndex} alternativeLabel>
               {ctx.stepComponents.map((step, index) => {
-                const canNavigate = ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
-                const completed = ctx.validatedStepIndices.includes(index);
+                const workerStep = workerStepMap?.get(step.id) ?? dialogState?.steps?.[index];
+                const fallbackCanNavigate = ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
+                const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
+                const completed = workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
+                const label = workerStep?.title ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
                 return (
                   <Step key={step.id} completed={completed}>
@@ -127,7 +146,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                     >
                       <StepLabel>
                         <Typography variant="caption" noWrap>
-                          {step.label}
+                          {label}
                         </Typography>
                       </StepLabel>
                     </StepButton>

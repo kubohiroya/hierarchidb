@@ -1,41 +1,7 @@
+import type { PluginMetadata } from '@hierarchidb/common-type';
+import { PLUGIN_MANIFEST } from '../extension/plugin-manifest.js';
+
 /**
- * @file shared/metadata.ts
- * @description BaseMap plugin metadata
+ * Re-export plugin manifest for shared layer consumers.
  */
-
-export const PLUGIN_METADATA = {
-  id: 'com.hierarchidb.basemap',
-  name: 'BaseMap Plugin',
-  version: '1.0.0',
-  description: 'BaseMap visualization plugin extending folder functionality',
-  extends: 'folder',
-  architecture: 'extension',
-
-  // Extension metadata
-  extensionInfo: {
-    basePlugin: 'folder',
-    extensionType: 'visualization',
-    stepsAdded: 4,
-    fieldsAdded: 9,
-  },
-
-  // Capabilities
-  capabilities: {
-    mapVisualization: true,
-    styleCustomization: true,
-    viewportControl: true,
-    interactionControl: true,
-  },
-
-  // Requirements
-  requirements: {
-    browser: {
-      webgl: true,
-      canvas: true,
-    },
-    dependencies: [
-      '@hierarchidb/plugins-folder-plugin',
-      '@hierarchidb/ui-map',
-    ],
-  },
-} as const;
+export const BaseMapPluginMetadata: PluginMetadata = PLUGIN_MANIFEST;

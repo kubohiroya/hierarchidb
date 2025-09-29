@@ -1,19 +1,15 @@
 import type { Plugin } from 'vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadPluginManifestFromFile, resolvePluginManifestPath } from '../tools/plugin-manifest-loader.js';
 
 type PlugPkg = {
   name?: string;
   exports?: Record<string, unknown> | string;
-  hierarchidb?: { plugin?: { nodeType?: string } };
 };
 
 function readJsonSafe<T>(p: string): T | null {
   try { return JSON.parse(fs.readFileSync(p, 'utf-8')) as T; } catch { return null; }
-}
-
-function getNodeType(pkg: PlugPkg, fallback: string): string {
-  return pkg?.hierarchidb?.plugin?.nodeType || fallback.replace(/-plugin$/, '');
 }
 
 function hasSubpathExport(pkg: PlugPkg, sub: string): boolean {
@@ -42,9 +38,14 @@ export function pluginRegistryPlugin(opts?: { rootDir?: string }): Plugin {
       if (!fs.existsSync(pkgJsonPath)) continue;
       const pkg = readJsonSafe<PlugPkg>(pkgJsonPath);
       if (!pkg?.name) continue;
-      // Only include real UI-loadable plugins that declare hierarchidb.plugin metadata
-      if (!pkg?.hierarchidb?.plugin) continue;
-      const nodeType = getNodeType(pkg, dirent.name.replace(/-plugin$/, ''));
+      const manifestPath = resolvePluginManifestPath({ __path: pkgJsonPath });
+      if (!manifestPath) continue;
+      const manifest = loadPluginManifestFromFile(manifestPath, { silent: true });
+      if (!manifest) continue;
+      const nodeTypeRaw = manifest.nodeType as string | undefined;
+      const nodeType = nodeTypeRaw && typeof nodeTypeRaw === 'string'
+        ? nodeTypeRaw
+        : dirent.name.replace(/-plugin$/, '');
       const hasWorker = hasSubpathExport(pkg, './worker');
       const hasUI = hasSubpathExport(pkg, './ui');
       out.push({ nodeType, pkgName: pkg.name, hasWorker, hasUI });
@@ -94,7 +95,9 @@ export function pluginRegistryPlugin(opts?: { rootDir?: string }): Plugin {
       return null;
     },
     handleHotUpdate(ctx) {
-      if (/packages\/plugins\/.*-plugin\/package\.json$/.test(ctx.file)) {
+      const isPackage = /packages\/plugins\/.*-plugin\/package\.json$/.test(ctx.file);
+      const isManifest = /packages\/plugins\/.*-plugin\/src\/extension\/plugin-manifest\.ts$/.test(ctx.file);
+      if (isPackage || isManifest) {
         const modUI = ctx.server.moduleGraph.getModuleById(RES_UI);
         const modW = ctx.server.moduleGraph.getModuleById(RES_WORKER);
         if (modUI) ctx.server.moduleGraph.invalidateModule(modUI);

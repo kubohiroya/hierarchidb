@@ -262,3 +262,5 @@ export interface ProcessingStats {
   memoryUsage: number;
   diskUsage: number;
 }
+
+export type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from './entities.js';

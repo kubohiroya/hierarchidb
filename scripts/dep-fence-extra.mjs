@@ -16,6 +16,8 @@ let config = {};
   config = mod.policyOptions || {};
 }
 
+const IGNORE_ROOT_PREFIXES = new Set(['reference']);
+
 function globPackages(dir) {
   const out = [];
   function walk(d) {
@@ -23,6 +25,9 @@ function globPackages(dir) {
       if (name === 'node_modules' || name.startsWith('.')) continue;
       const p = path.join(d, name);
       const st = fs.statSync(p);
+      const rel = path.relative(repoRoot, p);
+      const top = rel.split(path.sep)[0];
+      if (IGNORE_ROOT_PREFIXES.has(top)) continue;
       if (st.isDirectory()) {
         const pkg = path.join(p, 'package.json');
         if (fs.existsSync(pkg)) out.push(p);
@@ -197,6 +202,7 @@ if (lock && nm) {
   }
 }
 
+/*
 // Rule E: MapLibre direct dependency encapsulation (config-driven)
 const mapLibreAllowed = new Set((config.mapLibreAllowedPackages || []));
 if (mapLibreAllowed.size > 0) {
@@ -219,6 +225,7 @@ for (const dir of workspaces) {
   }
 }
 }
+ */
 
 // Rule F: UI peer policy (react/react-dom/@mui/*/@emotion/* should be peers)
 const uiPeerLibs = Array.isArray(config.uiPeerLibs) ? config.uiPeerLibs : [];

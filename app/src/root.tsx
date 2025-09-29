@@ -10,14 +10,13 @@ import { AppConfigProvider } from './contexts/AppConfigContext.js';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
-import { WorkerProvider } from './contexts/WorkerProvider.js';
+import { WorkerProvider, useWorkerClient } from './contexts/WorkerProvider.js';
 import { InitInspector } from './dev/InitInspector.js';
 // Initialize UI plugins
 import { NotificationSystem, registerAllUIPlugins } from '@hierarchidb/ui-core';
 import { APP_VERSION, BUILD_TIME } from './version.js';
 // Bridge: provide app's Worker client hook to shape-plugin UI hooks
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
-import { useWorkerAPIClient } from './hooks/useWorkerAPIClient.js';
 import { BootProgressProvider } from './contexts/BootProgressProvider.js';
 import { AppThemeProvider } from './components/AppThemeProvider.js';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
@@ -56,7 +55,7 @@ const localBuildTime = (() => {
 console.log(`[App] Version: ${APP_VERSION} | Build Time (local): ${localBuildTime}`);
 
 // Register the app-provided hook once at module load
-registerWorkerClientHook(useWorkerAPIClient);
+registerWorkerClientHook(useWorkerClient);
 // Also expose the hook getter on window for plugin UIs that avoid static imports to keep bundling lean
 if (typeof window !== 'undefined') {
   (window as Window & { __HDB_GET_WORKER_CLIENT_HOOK?: typeof getWorkerClientHook }).__HDB_GET_WORKER_CLIENT_HOOK = getWorkerClientHook;

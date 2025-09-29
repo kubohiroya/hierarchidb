@@ -195,6 +195,19 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
         } else if (typeof iconSpec === 'function') {
           const IconComponent = iconSpec as ComponentType<{ fontSize?: string }>;
           iconNode = <IconComponent fontSize="small" />;
+        } else if (iconSpec && typeof iconSpec === 'object' && !React.isValidElement(iconSpec)) {
+          const iconMeta = iconSpec as {
+            muiIconName?: string;
+            mui?: string;
+            emoji?: string;
+            color?: string;
+          };
+          const resolvedName = iconMeta.muiIconName ?? iconMeta.mui;
+          if (resolvedName || iconMeta.emoji || iconMeta.color) {
+            iconNode = getMuiIconWithColor(resolvedName, iconMeta.emoji, iconMeta.color);
+          } else {
+            iconNode = iconSpec as React.ReactNode;
+          }
         } else if (iconSpec) {
           iconNode = iconSpec;
         }

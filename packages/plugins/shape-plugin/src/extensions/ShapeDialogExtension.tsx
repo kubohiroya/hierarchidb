@@ -1,10 +1,10 @@
 /**
  * ShapeDialogExtension
- * - Provides folder-plugin dialog steps (same as ShapeExtension) and a step state evaluator.
+ * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
-import { BaseDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
-import type { DialogStepDefinition, DraftPeerEntity } from '@hierarchidb/common-type';
+import { BaseFolderPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-folder-plugin';
+import type { DialogStepDefinition } from '@hierarchidb/common-type';
 
 // Reuse existing step components from the Shape plugin
 import { DataSourceStep } from '../extension/components/DataSourceStep.js';
@@ -12,20 +12,10 @@ import { LicenseStep } from '../extension/components/LicenseStep.js';
 import { ProcessingStep } from '../extension/components/ProcessingStep.js';
 import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
-interface ShapeDialogFields {
-  dataSourceName?: string;
-  licenseAgreement?: boolean;
-  selectedAdminLevels?: number[];
-  selectedCountries?: string[];
-  [key: string]: unknown;
-}
-
-type ShapeDialogDraft = DraftPeerEntity<ShapeDialogFields>;
-
-export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
-  readonly pluginId = 'shape-plugin-folder-extension';
-  readonly pluginName = 'Shape (Dialog Extension)';
-  readonly pluginDescription = 'Adds shape-related steps to the shared node dialog';
+export class ShapeDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'shape-plugin-dialog-extension';
+  readonly pluginName = 'Shape Dialog Extension';
+  readonly pluginDescription = 'Adds shape-related dialog steps for the Shape plugin';
   readonly pluginVersion = '1.0.0';
 
   protected getCreateDialogSteps(): DialogStepDefinition[] {
@@ -35,8 +25,7 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
         title: 'Data Source',
         component: wrapDialogStepComponent(DataSourceStep),
         validation: {
-          validate: async (value: unknown) => {
-            const data = value as ShapeDialogDraft;
+          validate: async (data: any) => {
             const ok = !!data?.dataSourceName;
             return ok ? { valid: true } : { valid: false, message: 'Data source selection is required' };
           },
@@ -48,8 +37,7 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
         component: wrapDialogStepComponent(LicenseStep),
         dependsOn: [2],
         validation: {
-          validate: async (value: unknown) => {
-            const data = value as ShapeDialogDraft;
+          validate: async (data: any) => {
             const ok = data?.licenseAgreement === true;
             return ok ? { valid: true } : { valid: false, message: 'You must accept the license agreement' };
           },
@@ -61,8 +49,7 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
         component: wrapDialogStepComponent(ProcessingStep),
         dependsOn: [3],
         validation: {
-          validate: async (value: unknown) => {
-            const data = value as ShapeDialogDraft;
+          validate: async (data: any) => {
             const levels: number[] | undefined = data?.selectedAdminLevels;
             const ok = Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
             return ok ? { valid: true } : { valid: false, message: 'Select administrative levels (0-3) — at least one' };
@@ -75,8 +62,7 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
         component: wrapDialogStepComponent(CountrySelectionStep),
         dependsOn: [4],
         validation: {
-          validate: async (value: unknown) => {
-            const data = value as ShapeDialogDraft;
+          validate: async (data: any) => {
             const countries: string[] | undefined = data?.selectedCountries;
             const ok = Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2);
             return ok ? { valid: true } : { valid: false, message: 'Select at least one country' };
@@ -91,71 +77,66 @@ export class ShapeDialogExtension extends BaseDialogPlugin<ShapeDialogDraft> {
   }
 
   protected getStepStateEvaluator() {
-    const evaluateValidated = (data: ShapeDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
-      const nums = stepNumbers ? [...stepNumbers] : [];
-      return nums.map((stepNumber) => {
-        switch (stepNumber) {
-          case 2:
-            return !!data?.dataSourceName;
-          case 3:
-            return data?.licenseAgreement === true;
-          case 4: {
-            const levels: number[] | undefined = data?.selectedAdminLevels;
-            return Array.isArray(levels) && levels.length > 0 && levels.every((level) => level >= 0 && level <= 3);
-          }
-          case 5: {
-            const countries: string[] | undefined = data?.selectedCountries;
-            return Array.isArray(countries) && countries.length > 0 && countries.every((country) => typeof country === 'string' && country.length >= 2);
-          }
-          default:
-            return true;
-        }
-      });
-    };
-
-    const evaluateEnabled = (data: ShapeDialogDraft, stepNumbers?: ReadonlyArray<number>) => {
-      const nums = stepNumbers ? [...stepNumbers] : [];
-      const validatedByNumber = new Map<number, boolean>();
-
-      // Pre-compute validation state for dependency evaluation
-      [2, 3, 4, 5].forEach((stepNumber) => {
-        switch (stepNumber) {
-          case 2:
-            validatedByNumber.set(2, !!data?.dataSourceName);
-            break;
-          case 3:
-            validatedByNumber.set(3, data?.licenseAgreement === true);
-            break;
-          case 4: {
-            const levels: number[] | undefined = data?.selectedAdminLevels;
-            validatedByNumber.set(4, Array.isArray(levels) && levels.length > 0 && levels.every((level) => level >= 0 && level <= 3));
-            break;
-          }
-          case 5: {
-            const countries: string[] | undefined = data?.selectedCountries;
-            validatedByNumber.set(5, Array.isArray(countries) && countries.length > 0 && countries.every((country) => typeof country === 'string' && country.length >= 2));
-            break;
-          }
-        }
-      });
-
-      return nums.map((stepNumber) => {
-        if (stepNumber === 2) return true;
-        if (stepNumber === 3) return validatedByNumber.get(2) === true;
-        if (stepNumber === 4) return validatedByNumber.get(3) === true;
-        if (stepNumber === 5) return validatedByNumber.get(4) === true;
-        return true;
-      });
-    };
-
     return {
-      getEnabledSteps: evaluateEnabled,
-      getValidatedSteps: evaluateValidated,
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
+        const nums = stepNumbers || [];
+        return nums.map((n) => {
+          switch (n) {
+            case 2:
+              return !!data?.dataSourceName;
+            case 3:
+              return data?.licenseAgreement === true;
+            case 4: {
+              const levels: number[] | undefined = data?.selectedAdminLevels;
+              return Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
+            }
+            case 5: {
+              const countries: string[] | undefined = data?.selectedCountries;
+              return Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2);
+            }
+            default:
+              return true;
+          }
+        });
+      },
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
+        const nums = stepNumbers || [];
+        const filledByNumber = new Map<number, boolean>();
+        // Evaluate filled quickly for dependency checks
+        [2, 3, 4, 5].forEach((n) => {
+          switch (n) {
+            case 2:
+              filledByNumber.set(2, !!data?.dataSourceName);
+              break;
+            case 3:
+              filledByNumber.set(3, data?.licenseAgreement === true);
+              break;
+            case 4: {
+              const levels: number[] | undefined = data?.selectedAdminLevels;
+              filledByNumber.set(4, Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3));
+              break;
+            }
+            case 5: {
+              const countries: string[] | undefined = data?.selectedCountries;
+              filledByNumber.set(5, Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2));
+              break;
+            }
+          }
+        });
+
+        return nums.map((n) => {
+          if (n === 2) return true;
+          if (n === 3) return filledByNumber.get(2) === true;
+          if (n === 4) return filledByNumber.get(3) === true;
+          if (n === 5) return filledByNumber.get(4) === true;
+          return true;
+        });
+      },
     };
   }
 
   protected getSubmitEligibility() {
-    return (data: ShapeDialogDraft) => {
+    return (data: any) => {
       const hasDataSource = !!data?.dataSourceName;
       const accepted = data?.licenseAgreement === true;
       const levels: number[] | undefined = data?.selectedAdminLevels;

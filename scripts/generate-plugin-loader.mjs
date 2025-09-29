@@ -89,12 +89,14 @@ async function main() {
     const { json, dir } = await readPluginPackageJSON(name, nodeType);
     const exportsField = json?.exports;
     const hasWorkerExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './worker'));
+    const hasWorkerFactoryExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './worker-factory'));
     const hasUiExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './ui'));
 
-    let entityLoaderKind = 'none';
-    let entityLoaderSymbol = undefined;
+    let hasEntitiesDbExport = false;
     let workerEntryPath;
-    if (hasWorkerExportPath) {
+    if (hasWorkerFactoryExportPath) {
+      hasEntitiesDbExport = true;
+    } else if (hasWorkerExportPath) {
       try {
         // Resolve worker entry path from exports
         const workerExport = exportsField['./worker'];
@@ -108,32 +110,34 @@ async function main() {
         }
         // Robust check: dynamically import the worker entry and verify named export exists
         const className = `${capitalize(nodeType)}EntitiesDB`;
-        const loaderName = `load${capitalize(nodeType)}EntitiesDB`;
         try {
           const urlStr = url.pathToFileURL(workerEntryPath).href;
           const mod = await import(urlStr);
-          if (typeof mod[loaderName] === 'function') {
-            entityLoaderKind = 'load';
-            entityLoaderSymbol = loaderName;
-          } else if (typeof mod[className] === 'function') {
-            entityLoaderKind = 'class';
-            entityLoaderSymbol = className;
+          if (typeof mod[className] === 'function') {
+            hasEntitiesDbExport = true;
           }
         } catch {
-          // ignore import-time errors; leave entityLoaderKind as 'none'
+          // ignore import-time errors; leave hasEntitiesDbExport as false
         }
       } catch {
         // ignore resolution errors
       }
     }
-    const hasEntitiesDbExport = entityLoaderKind !== 'none';
 
     // Read plugin metadata to compute UI dependency order
     const pluginMeta = json?.hierarchidb?.plugin || {};
     const uiDepsRaw = pluginMeta.dependencies || pluginMeta.config?.dependencies || pluginMeta.dependsOn || [];
     const uiDeps = Array.isArray(uiDepsRaw) ? uiDepsRaw.map(String) : [];
 
-    meta.push({ name, nodeType, hasWorker: hasWorkerExportPath, hasUi: hasUiExportPath, hasEntitiesDbExport, entityLoaderKind, entityLoaderSymbol, uiDeps });
+    meta.push({
+      name,
+      nodeType,
+      hasWorker: hasWorkerExportPath,
+      hasWorkerFactory: hasWorkerFactoryExportPath,
+      hasUi: hasUiExportPath,
+      hasEntitiesDbExport,
+      uiDeps,
+    });
   }
 
   const header = `// AUTO-GENERATED FILE. DO NOT EDIT.
@@ -162,25 +166,44 @@ declare global {
 }
 `;
 
-  const importLines = meta
-    .filter((p) => p.hasEntitiesDbExport)
+  const factoryImports = meta
+    .filter((p) => p.hasWorkerFactory)
+    .map(({ name, nodeType }) => `import { load${capitalize(nodeType)}EntitiesDbModule } from '${name}/worker-factory';`)
+    .join('\n');
+
+  const legacyImports = meta
+    .filter((p) => !p.hasWorkerFactory && p.hasEntitiesDbExport)
     .map(({ name, nodeType }) => `import * as ${capitalize(nodeType)}Worker from '${name}/worker';`)
     .join('\n');
 
+  const importLines = [factoryImports, legacyImports].filter(Boolean).join('\n');
 
   const loaderEntries = meta
-    .map(({ nodeType, hasWorker, hasEntitiesDbExport, entityLoaderKind, entityLoaderSymbol }) => {
+    .map(({ nodeType, hasWorker, hasWorkerFactory, hasEntitiesDbExport }) => {
+      if (hasWorkerFactory) {
+        const loadFn = `load${capitalize(nodeType)}EntitiesDbModule`;
+        const className = `${capitalize(nodeType)}EntitiesDB`;
+        return `  '${nodeType}': async () => {
+    try {
+      const mod = await ${loadFn}();
+      const Ctor = mod?.['${className}'];
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },`;
+      }
+
       if (!hasWorker || !hasEntitiesDbExport) {
         return `  '${nodeType}': async () => undefined,`;
       }
-      const workerNamespace = `${capitalize(nodeType)}Worker`;
       const className = `${capitalize(nodeType)}EntitiesDB`;
-      if (entityLoaderKind === 'load') {
-        const loaderSymbol = entityLoaderSymbol || `load${capitalize(nodeType)}EntitiesDB`;
-        return `  '${nodeType}': async () => { try { const load = ${workerNamespace}['${loaderSymbol}'] as undefined | (() => Promise<unknown>); if (typeof load !== 'function') return undefined; const Ctor = await load(); if (typeof Ctor !== 'function') return undefined; const db = new (Ctor as any)(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },`;
-      }
-      const symbol = entityLoaderSymbol || className;
-      return `  '${nodeType}': async () => { try { const Ctor = ${workerNamespace}['${symbol}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },`;
+      return `  '${nodeType}': async () => { try { const Ctor = ${capitalize(nodeType)}Worker['${className}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as unknown as PeerEntitiesDB; } catch { return undefined; } },`;
     })
     .join('\n');
 

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hierarchidb.dev/schemas/plugin-manifest.schema.json",
+  "title": "HierarchiDB Plugin Manifest",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string" },
+    "displayName": { "type": "string" },
+    "description": { "type": "string" },
+    "nodeType": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "extends": { "type": "string" },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "priority": { "type": "number" },
+    "icon": {
+      "type": "object",
+      "properties": {
+        "mui": { "type": "string" },
+        "muiIconName": { "type": "string" },
+        "emoji": { "type": "string" },
+        "color": { "type": "string" },
+        "svg": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "category": {
+      "type": ["object", "string"],
+      "properties": {
+        "treeId": { "type": "string" },
+        "menuGroup": { "enum": ["basic", "container", "document", "advanced"] },
+        "createOrder": { "type": "number" }
+      },
+      "additionalProperties": true
+    },
+    "capabilities": { "type": "object" },
+    "schema": { "type": "object" },
+    "database": { "type": "object" },
+    "ui": { "type": "object" },
+    "api": { "type": "object" },
+    "validation": { "type": "object" },
+    "extra": { "type": "object" }
+  },
+  "required": ["id", "nodeType", "version"],
+  "additionalProperties": true
+}

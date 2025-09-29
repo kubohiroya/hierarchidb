@@ -333,6 +333,56 @@ export function adjustBrightness(color: string, factor: number): string {
   return rgbToHex(newR, newG, newB);
 }
 
+const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
+
+export interface ColorVariationOptions {
+  /** Saturation delta (added to current saturation). Defaults to +0.12. */
+  saturationDelta?: number;
+  /** Value/Brightness delta (added to current value). Defaults to -0.1 (slightly darker). */
+  valueDelta?: number;
+}
+
+export interface ColorVariations {
+  /** Normalized base color (hex). */
+  base: string;
+  /** Darkened variant (hex). */
+  darker: string;
+  /** Saturated variant (hex). */
+  saturated: string;
+}
+
+/**
+  * Generate simple color variations (darker / more saturated) using existing HSV utilities.
+  *
+  * @param color - Base color (hex form; 3 or 6 digits allowed)
+  * @param options - Adjustment deltas for saturation/value
+  * @returns Variations containing the normalized base plus adjusted variants
+  */
+export function createColorVariations(
+  color: string,
+  options: ColorVariationOptions = {},
+): ColorVariations {
+  const { saturationDelta = 0.12, valueDelta = -0.1 } = options;
+
+  const [r, g, b] = hexToRgb(color);
+  const baseHex = rgbToHex(r, g, b);
+  const [h, s, v] = rgbToHsv(r, g, b);
+
+  const darkerV = clamp01(v + valueDelta);
+  const [darkR, darkG, darkB] = hsvToRgb(h, s, darkerV);
+  const darkerHex = rgbToHex(darkR, darkG, darkB);
+
+  const saturatedS = clamp01(s + saturationDelta);
+  const [satR, satG, satB] = hsvToRgb(h, saturatedS, v);
+  const saturatedHex = rgbToHex(satR, satG, satB);
+
+  return {
+    base: baseHex,
+    darker: darkerHex,
+    saturated: saturatedHex,
+  };
+}
+
 /**
   * :
  * : WCAG

@@ -577,7 +577,8 @@ export class LocationEntityHandler extends BaseEntityHandler<LocationEntity, Cre
           canNavigateTo: isComplete,
           canStartBatch: isComplete,
           canSave: isComplete,
-          canProceedToNext: false, canBackToPrevious: true,
+          canProceedToNext: false,
+          canBackToPrevious: true,
         };
       }
 

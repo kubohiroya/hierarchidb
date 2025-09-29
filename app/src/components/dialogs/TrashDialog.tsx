@@ -18,7 +18,7 @@ import {
 } from '@mui/icons-material';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import {
-  DialogOverlayFrame,
+  MultiDialogFrame,
   FRAME_CONSTANTS,
   getViewportSize,
   normalizeDialogState,
@@ -32,12 +32,14 @@ import {
   type MultiDialogPosition,
   type MultiDialogSize,
 } from '@hierarchidb/ui-dialog';
+import { alpha } from '@mui/material/styles';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
+import { WorkerAPIClient } from '../../WorkerAPIClient.js';
 import type { LoaderFunctionArgs } from 'react-router';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
@@ -45,6 +47,8 @@ import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
 import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';
+
+const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 
 // ----------------------------------------
 // Loader & data types
@@ -101,11 +105,6 @@ const STEP_DESCRIPTOR = {
   label: 'Trash',
   component: () => null,
 };
-
-async function loadWorkerAPIClient() {
-  const module = await import('../../WorkerAPIClient.js');
-  return module.WorkerAPIClient;
-}
 
 const STEP_ARRAY = [STEP_DESCRIPTOR] as const;
 
@@ -247,26 +246,51 @@ function TrashDialogHeader({
   isDirty,
 }: TrashDialogHeaderProps) {
   const ctx = useMultiStepDialogContext<TrashStepData>();
-  const handlePointerDown = ctx.onDragHandlePointerDown;
+
+  const handleDragPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    ctx.onDragHandlePointerDown?.(event);
+  }, [ctx]);
+
+  const stopPropagation = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+  }, []);
 
   return (
     <Box
-      sx={{
+      data-dialog-drag-handle="true"
+      onPointerDown={handleDragPointerDown}
+      sx={(theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         px: 2,
         py: 1.5,
         borderBottom: '1px solid',
-        borderColor: 'divider',
+        borderColor: theme.palette.divider,
         gap: 2,
-        cursor: displayMode === 'full-screen' ? 'default' : 'move',
+        cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
         userSelect: 'none',
-      }}
-      onPointerDown={handlePointerDown}
-      data-dialog-drag-handle="true"
+        transition: theme.transitions.create('background-color', {
+          duration: theme.transitions.duration.shorter,
+        }),
+        backgroundColor: theme.palette.mode === 'dark'
+          ? alpha(theme.palette.common.white, 0.04)
+          : theme.palette.background.paper,
+        '&:hover': {
+          backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(theme.palette.common.white, 0.1)
+            : theme.palette.action.hover,
+        },
+      })}
     >
-      <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+        <Box
+          component="span"
+          sx={{ fontSize: 24, lineHeight: 1, pointerEvents: 'none' }}
+          aria-hidden
+        >
+          🗑️
+        </Box>
         <Typography variant="h6" noWrap>{title}</Typography>
         {isDirty && (
           <Typography variant="caption" color="text.secondary">
@@ -275,13 +299,25 @@ function TrashDialogHeader({
         )}
       </Box>
       <Box sx={{ display: 'flex', gap: 1 }}>
-        <IconButton size="small" onClick={() => onDisplayModeChange?.(displayMode === 'maximize' ? 'normal' : 'maximize')}>
+        <IconButton
+          size="small"
+          onClick={() => onDisplayModeChange?.(displayMode === 'maximize' ? 'normal' : 'maximize')}
+          onPointerDown={stopPropagation}
+        >
           {displayMode === 'maximize' ? <RestoreIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
         </IconButton>
-        <IconButton size="small" onClick={() => onDisplayModeChange?.(displayMode === 'full-screen' ? 'normal' : 'full-screen')}>
+        <IconButton
+          size="small"
+          onClick={() => onDisplayModeChange?.(displayMode === 'full-screen' ? 'normal' : 'full-screen')}
+          onPointerDown={stopPropagation}
+        >
           {displayMode === 'full-screen' ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
         </IconButton>
-        <IconButton size="small" onClick={() => onRequestClose('close')}>
+        <IconButton
+          size="small"
+          onClick={() => onRequestClose('close')}
+          onPointerDown={stopPropagation}
+        >
           <CloseIcon fontSize="small" />
         </IconButton>
       </Box>
@@ -324,6 +360,7 @@ function TrashDialogFooter({
         borderTop: '1px solid',
         borderColor: 'divider',
         gap: 1.5,
+        minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
       }}
     >
       <Box sx={{ display: 'flex', gap: 1 }}>
@@ -423,7 +460,16 @@ function TrashDialogContent({
   }
 
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        marginTop: '8px',
+        marginBottom: `${TRASH_DIALOG_FOOTER_HEIGHT}px`,
+      }}
+    >
       <Box sx={{ px: 2, pt: 0, pb: 1 }}>
         <TreeTableSearchInput
           value={searchTerm}
@@ -433,7 +479,15 @@ function TrashDialogContent({
           sx={{ width: 260 }}
         />
       </Box>
-      <Box sx={{ flex: 1, minHeight: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          '& > *': {
+            height: '100%',
+          },
+        }}
+      >
         <TreeConsolePanel
           title="Trash"
           treeId={treeId}
@@ -497,7 +551,7 @@ function TrashDialogContent({
 // Main component
 // ----------------------------------------
 
-export default function TrashDialog() {
+export default function TrashDialogV2() {
   const data = useLoaderData<TrashDialogData>();
   const navigate = useNavigate();
   const params = useParams();
@@ -547,19 +601,11 @@ export default function TrashDialog() {
   }, [navigate]);
 
   const frameState = useTrashFrameState('normal');
-  const {
-    dialogPosition,
-    dialogSize,
-    displayMode,
-    setDisplayMode,
-    setSize,
-    setPosition,
-  } = frameState;
+
   const handleRestore = useCallback(async () => {
     if (selectedIds.length === 0) return;
     setLoading(true);
     try {
-      const WorkerAPIClient = await loadWorkerAPIClient();
       const client = WorkerAPIClient.getSingleton();
       const mutationAPI = await client.getMutationAPI();
       const result = await mutationAPI.restoreNodesFromTrash({ nodeIds: selectedIds });
@@ -581,7 +627,6 @@ export default function TrashDialog() {
     if (!confirmed) return;
     setLoading(true);
     try {
-      const WorkerAPIClient = await loadWorkerAPIClient();
       const client = WorkerAPIClient.getSingleton();
       const mutationAPI = await client.getMutationAPI();
       const nodes = treeData.map((node) => node.id as NodeId);
@@ -611,7 +656,7 @@ export default function TrashDialog() {
     });
   }, []);
 
-  const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(() => ({
+  const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(()=>({
     open: true,
     stepComponents: STEP_ARRAY,
     stepData: {},
@@ -620,12 +665,12 @@ export default function TrashDialog() {
     onStepNavigate: () => undefined,
     onRequestClose: () => handleClose(),
     isDirty: selectedIds.length > 0,
-    position: dialogPosition,
-    size: dialogSize,
-    displayMode,
-    onPositionChange: (next) => setPosition(next),
-    onSizeChange: (next) => setSize(next),
-    onDisplayModeChange: (mode) => setDisplayMode(mode),
+    position: frameState.dialogPosition,
+    size: frameState.dialogSize,
+    displayMode: frameState.displayMode,
+    onPositionChange: (next) => frameState.setPosition(next),
+    onSizeChange: (next) => frameState.setSize(next),
+    onDisplayModeChange: (mode) => frameState.setDisplayMode(mode),
     renderHeader: (props) => (
       <TrashDialogHeader
         {...props}
@@ -661,28 +706,18 @@ export default function TrashDialog() {
         onEmptyAll={handleEmptyAll}
       />
     ),
-  }), [
-    breadcrumbItems,
-    columns,
-    dialogPosition,
-    dialogSize,
-    displayMode,
-    expandedIds,
-    handleClose,
-    handleEmptyAll,
-    handleRestore,
-    loading,
-    mode,
-    onToggleExpand,
-    pageNodeId,
-    searchTerm,
-    selectedIds,
-    setDisplayMode,
-    setPosition,
-    setSize,
-    treeData,
-    treeId,
-  ]);
+  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
 
-  return <DialogOverlayFrame headlessProps={headlessProps} backdropZIndex={1600} />;
+  const frameSx = useMemo(() => ({
+    borderRadius: frameState.displayMode === 'full-screen' ? 0 : 4,
+    boxShadow: frameState.displayMode === 'full-screen' ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
+    maxWidth: frameState.displayMode === 'full-screen' ? '100%' : 'min(calc(100vw - 48px), 1280px)',
+  }), [frameState.displayMode]);
+
+  return (
+    <MultiDialogFrame
+      headlessProps={headlessProps}
+      frameSx={frameSx}
+    />
+  );
 }

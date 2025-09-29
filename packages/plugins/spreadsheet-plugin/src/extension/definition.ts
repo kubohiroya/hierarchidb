@@ -70,7 +70,7 @@ export const SpreadsheetExtension = {
   //  :
   nodeType: 'spreadsheet',
   name: 'Spreadsheet',
-  displayName: 'スプレッドシート',
+  displayName: 'Spreadsheet',
   icon: 'table_chart', //  : Material Icon
   color: '#2196F3', //  : Material Designblue[500]
 
@@ -78,17 +78,15 @@ export const SpreadsheetExtension = {
   extendedSteps: [
     {
       stepNumber: 2,
-      title: 'データソース選択', //  :
+      title: 'Data Source Selection',
       component: null, // DataSourceStep,
       validation: {
         validate: async (_data: any) => {
-          //  :
           if (!_data.dataSource) {
-            return { isValid: false, errors: ['データソースを選択してください'] };
+            return { isValid: false, errors: ['Select a data source'] };
           }
-          //  : file
           if (_data.dataSource.type === 'file' && !_data.file?.name && !_data.dataSource.source) {
-            return { isValid: false, errors: ['ファイルを選択してください'] };
+            return { isValid: false, errors: ['Select a file to continue'] };
           }
           return { isValid: true, errors: [] };
         },
@@ -96,7 +94,7 @@ export const SpreadsheetExtension = {
     },
     {
       stepNumber: 3,
-      title: 'フィルタリング',
+      title: 'Filtering',
       component: null, // FilteringStep,
       validation: {
         validate: async (_data: any) => {
@@ -141,9 +139,9 @@ export const SpreadsheetExtension = {
           if (!fileName) return true;
           const lowerFileName = fileName.toLowerCase();
           const supportedExtensions = ['.csv', '.tsv', '.xlsx', '.xls'];
-          return supportedExtensions.some(ext => lowerFileName.endsWith(ext));
+          return supportedExtensions.some((ext) => lowerFileName.endsWith(ext));
         },
-        message: 'CSV、TSV、またはExcelファイルを選択してください',
+        message: 'Choose a CSV, TSV, or Excel file',
       },
     },
     chainMode: 'all',

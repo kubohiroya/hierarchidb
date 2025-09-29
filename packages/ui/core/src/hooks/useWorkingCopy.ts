@@ -1,19 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 type WorkingCopyAPI = {
   createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: any) => Promise<string>;
   getWorkingCopy: (nodeId: string) => Promise<any>;
   commitWorkingCopy: (nodeId: string) => Promise<string>;
   discardWorkingCopy: (nodeId: string) => Promise<void>;
-};
-
-type WorkerClient = {
-  getWorkingCopyAPI: () => Promise<WorkingCopyAPI>;
-};
-
-type WorkerClientProvider = {
-  client: WorkerClient;
 };
 
 export interface UseWorkingCopyOptions {
@@ -45,7 +37,7 @@ const extractWorkingCopyId = (value: unknown, fallback: string): string => {
 
 export function useWorkingCopy<T>(opts: UseWorkingCopyOptions): UseWorkingCopyResult<T> {
   const { nodeType, mode, nodeId, parentId } = opts;
-  const useWorker = getWorkerClientHook<WorkerClientProvider>();
+  const useWorker = getWorkerClientHook<WorkerClientRef>();
   const [wcId, setWcId] = useState<string | null>(null);
   const [workingCopy, setWorkingCopy] = useState<T>({} as T);
   const [loading, setLoading] = useState(false);
@@ -54,8 +46,10 @@ export function useWorkingCopy<T>(opts: UseWorkingCopyOptions): UseWorkingCopyRe
 
   const getAPI = useMemo(() => async (): Promise<WorkingCopyAPI> => {
     if (!useWorker) throw new Error('Worker client not available');
-    const { client } = useWorker();
-    const wc = await client.getWorkingCopyAPI();
+    const ref = useWorker();
+    if (!ref) throw new Error('Worker client not initialized');
+    const api = ref.getAPI();
+    const wc = await api.getWorkingCopyAPI();
     return wc as unknown as WorkingCopyAPI;
   }, [useWorker]);
 

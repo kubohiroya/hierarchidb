@@ -7,16 +7,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     },
     "./presets": {
       "types": "./dist/presets/index.d.ts",
-      "import": "./dist/presets/index.js",
-      "require": "./dist/presets/index.cjs"
+      "import": "./dist/presets/index.js"
     }
   },
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "typesVersions": {

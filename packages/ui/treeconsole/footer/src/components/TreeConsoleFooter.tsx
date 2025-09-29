@@ -42,7 +42,8 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
           height,
         }}
       >
-        {showTour && onStartTour ? (
+        {
+          showTour && onStartTour ? (
           <IconButton
             size="small"
             onClick={onStartTour}
@@ -57,6 +58,7 @@ export function TreeConsoleFooter(props: TreeConsoleFooterProps): React.JSX.Elem
           >
             <HelpOutline fontSize="small" />
           </IconButton>
+
         ) : (
           <Box sx={{ width: 16, color: 'text.secondary' }} />
         )}

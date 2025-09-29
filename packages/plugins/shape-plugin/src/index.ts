@@ -5,7 +5,6 @@
 
 //  Shared layer -
 export * from './shared/index.js';
-export * as worker from './worker/index.js';
 
 // UI layer is internal to app; not exported in package API
 
@@ -16,6 +15,7 @@ export * as worker from './worker/index.js';
 
 //  Backward compatibility -
 export { ShapeMetadata } from './shared/metadata.js';
+export { PLUGIN_MANIFEST as ShapePluginManifest } from './extension/plugin-manifest.js';
 export type { ShapeEntity, CreateShapeData, UpdateShapeData } from './shared/types.js';
 export type { ShapeAPI } from './shared/api.js';
 
@@ -41,5 +41,5 @@ export class RuntimeWiring {
   }
 }
 
-// Dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
+// Folder dialog extension (optional): expose initializer so hosts can register evaluateSteps/steps
 export { initializeShapeDialogExtension, shapeDialogExtension } from './extensions/ShapeDialogExtension.js';

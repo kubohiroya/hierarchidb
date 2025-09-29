@@ -144,8 +144,8 @@ ensure_built "@hierarchidb/ui-treeconsole-treetable" "packages/ui/treeconsole/tr
 ensure_built "@hierarchidb/ui-treeconsole-trashbin" "packages/ui/treeconsole/trashbin/dist/index.js"
 ensure_built "@hierarchidb/ui-treeconsole-footer" "packages/ui/treeconsole/footer/dist/index.js"
 ensure_built "@hierarchidb/ui-treeconsole-speeddial" "packages/ui/treeconsole/speeddial/dist/index.js"
-ensure_built "@hierarchidb/runtime-worker" "packages/runtime-worker/worker/dist/index.js"
-ensure_built "@hierarchidb/runtime-worker-bootstrap" "packages/runtime-worker/worker-bootstrap/dist/index.js"
+ensure_built "@hierarchidb/runtime-worker" "packages/runtime/worker-core/dist/index.js"
+ensure_built "@hierarchidb/runtime-worker-bootstrap" "packages/runtime/worker-bootstrap/dist/index.js"
 # Core util library used across many packages
 ensure_built "@hierarchidb/util" "packages/util/dist/index.js"
 # Feature registry (referenced by worker dist)

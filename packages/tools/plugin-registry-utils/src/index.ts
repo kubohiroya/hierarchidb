@@ -8,7 +8,8 @@ export type NodeTypePluginSubpath =
   | 'database'
   | 'shared'
   | 'ui'
-  | 'worker';
+  | 'worker'
+  | 'worker-factory';
 
 export interface NodeTypePluginSubpathInfo {
   readonly type: NodeTypePluginSubpath;
@@ -87,6 +88,14 @@ const SUBPATH_CONFIGS: readonly SubpathConfig[] = [
     priority: 50,
     requireExport: true,
     candidateBases: ['src/worker/index'],
+  },
+  {
+    type: 'worker-factory',
+    exportKey: './worker-factory',
+    aliasSuffix: '/worker-factory',
+    priority: 55,
+    requireExport: true,
+    candidateBases: ['src/worker-factory/index'],
   },
   {
     type: 'root',
@@ -196,6 +205,12 @@ export function discoverNodeTypePlugins({ rootDir }: DiscoverNodeTypePluginsOpti
       worker: {
         type: 'worker',
         exportKey: './worker',
+        hasExport: false,
+        srcPath: null,
+      },
+      'worker-factory': {
+        type: 'worker-factory',
+        exportKey: './worker-factory',
         hasExport: false,
         srcPath: null,
       },

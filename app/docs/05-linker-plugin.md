@@ -19,7 +19,6 @@
 
 ## 技術メモ
 
-- パッケージ名（import）: `@hierarchidb/plugins-linker-plugin/worker`
+- パッケージ名（import）: `@hierarchidb/plugins-linker-plugin/worker-factory`
 - nodeType: `linker`
 - 参照しているマップ/ツリー UI は `@hierarchidb/ui-map` および `@hierarchidb/ui-treeconsole-trashbin`
-

@@ -4,11 +4,13 @@ export default createTsupConfig({
   entry: {
     index: 'src/index.ts',
     'services/index': 'src/services/index.ts',
+    'worker-factory/index': 'src/worker-factory/index.ts',
   },
   dts: {
     entry: {
       index: 'src/index.ts',
       'services/index': 'src/services/index.ts',
+      'worker-factory/index': 'src/worker-factory/index.ts',
     },
   },
   external: [
@@ -22,6 +24,7 @@ export default createTsupConfig({
     '@emotion/react',
     '@emotion/styled',
     '@hierarchidb/runtime-worker-bootstrap',
+    'comlink',
     // Deck.gl family kept as peer-provided
     '@deck.gl/core',
     '@deck.gl/layers',

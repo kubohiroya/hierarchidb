@@ -1,8 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * WorkerProvider – React context for the shared worker lifecycle.
+ *
+ * Exposes initialization progress, errors, and the `WorkerClientRef` bundle
+ * to any descendant component while coordinating suspense for the worker
+ * bootstrap flow so that consumers never observe a null client reference.
+ */
+import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerInitializationChannel, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -17,39 +24,26 @@ function normalizeError(error: unknown): Error {
   }
   return new Error(String(error));
 }
+import { WorkerAPIClient } from '../WorkerAPIClient.js';
+import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
+import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
-
-type WorkerApiModule = typeof import('../WorkerAPIClient.js');
-
-// let workerApiModule: WorkerApiModule | null = null;
-let workerApiModulePromise: Promise<WorkerApiModule> | null = null;
-
-async function loadWorkerApiModule(): Promise<WorkerApiModule> {
-  if (!workerApiModulePromise) {
-    workerApiModulePromise = import('../WorkerAPIClient.js').then((module) => {
-      // workerApiModule = module;
-      return module;
-    }).catch((error) => {
-      workerApiModulePromise = null;
-      throw error;
-    });
-  }
-  return workerApiModulePromise;
-}
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[WorkerProvider]', message, error);
 };
 
-type WorkerContextValue = {
+type WorkerStatusState = {
   client: Remote<WorkerAPI> | null;
   isInitialized: boolean;
   initProgress: number;
   initMessage: string;
   error: Error | null;
 };
+
+type WorkerContextValue = WorkerClientRef;
 
 type WorkerProviderProps = {
   children: ReactNode;
@@ -152,6 +146,40 @@ const secondaryButtonStyle: CSSProperties = {
   backgroundColor: '#607d8b',
 };
 
+type WorkerClientGateProps = {
+  status: WorkerStatusState;
+  renderOverlay: boolean;
+  onRetry: () => void;
+  proxy: WorkerClientProxy;
+  children: ReactNode;
+};
+
+function WorkerClientGate({ status, renderOverlay, onRetry, proxy, children }: WorkerClientGateProps) {
+  const initPromiseRef = useRef<Promise<Remote<WorkerAPI>> | null>(null);
+
+  useEffect(() => {
+    if (status.isInitialized) {
+      initPromiseRef.current = null;
+    }
+  }, [status.isInitialized]);
+
+  if (status.error) {
+    if (renderOverlay) {
+      return <ErrorOverlay error={status.error} onRetry={onRetry} />;
+    }
+    throw status.error;
+  }
+
+  if (!status.client || !status.isInitialized) {
+    if (!initPromiseRef.current) {
+      initPromiseRef.current = proxy.ensureInitialized();
+    }
+    throw initPromiseRef.current;
+  }
+
+  return <>{children}</>;
+}
+
 function InitializingOverlay({ progress, message }: { progress: number; message: string }) {
   const clamped = Math.max(0, Math.min(100, Math.round(progress)));
   return (
@@ -187,28 +215,89 @@ function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void })
 
 export const WorkerProvider = ({
   children,
-  timeout = 30000,
-  debug = false,
   renderOverlay = true,
 }: WorkerProviderProps) => {
   const bootProgress = useBootProgressSafe();
-  const [state, setState] = useState<WorkerContextValue>({
-    client: null,
-    isInitialized: false,
-    initProgress: 0,
-    initMessage: 'Worker初期化を開始しています...',
-    error: null,
-  });
+  const { proxy, state: proxyState, error: proxyError } = useWorkerRuntimeProxy();
+  const initialProgress = proxy.getProgress();
+  const [status, setStatus] = useState<WorkerStatusState>(() => ({
+    client: proxy.getCachedClient(),
+    isInitialized: proxyState === 'ready',
+    initProgress: initialProgress.progress,
+    initMessage: initialProgress.message,
+    error: proxyError,
+  }));
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
   const latestProgressRef = useRef(0);
+
+  const resetState = useCallback(() => {
+    setStatus({
+      client: null,
+      isInitialized: false,
+      initProgress: 0,
+      initMessage: 'Worker初期化を開始しています...',
+      error: null,
+    });
+  }, []);
+
+
+  useEffect(() => {
+    const unsubscribe = proxy.subscribeProgress((detail: WorkerInitializationProgress) => {
+      setStatus((prev) => ({
+        ...prev,
+        initProgress: detail.progress,
+        initMessage: detail.message,
+      }));
+      bootProgress?.setStepProgress('Worker', detail.progress, detail.message);
+    });
+    return unsubscribe;
+  }, [proxy, bootProgress]);
+  useEffect(() => {
+    setStatus(prev => {
+      let next = prev;
+      let changed = false;
+
+      if (proxyState === 'ready') {
+        const client = proxy.getCachedClient();
+        if (client && (!prev.client || !prev.isInitialized)) {
+          next = {
+            ...prev,
+            client,
+            isInitialized: true,
+            initProgress: 100,
+            initMessage: 'Worker初期化完了',
+            error: proxyError ?? null,
+          };
+          changed = true;
+        }
+      } else if (proxyState === 'initializing' && prev.isInitialized) {
+        next = {
+          ...prev,
+          isInitialized: false,
+          initProgress: 0,
+          initMessage: 'Worker初期化を開始しています...',
+        };
+        changed = true;
+      }
+
+      if (proxyState === 'failed' && proxyError && prev.error !== proxyError) {
+        next = { ...next, error: proxyError, isInitialized: false };
+        changed = true;
+      }
+
+      if (!changed) {
+        return prev;
+      }
+      return next;
+    });
+  }, [proxy, proxyState, proxyError]);
 
   const finalizeInitialized = useCallback(async () => {
     try {
       bootLog('WorkerProvider finalize');
-      const { WorkerAPIClient } = await loadWorkerApiModule();
       const client = WorkerAPIClient.getSingleton();
       latestProgressRef.current = 100;
-      setState({
+      setStatus({
         client,
         isInitialized: true,
         initProgress: 100,
@@ -217,12 +306,11 @@ export const WorkerProvider = ({
       });
     } catch (error) {
       const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized }));
+      setStatus(prev => ({ ...prev, error: normalized }));
     }
   }, []);
 
   const markComplete = useCallback(async () => {
-    const { WorkerAPIClient } = await loadWorkerApiModule();
     if (initCompleted) {
       if (!WorkerAPIClient.isReady()) {
         return;
@@ -243,11 +331,8 @@ export const WorkerProvider = ({
 
   const runInitialization = useCallback(async () => {
     bootLog('WorkerProvider initialize() start');
-    const { WorkerAPIClient } = await loadWorkerApiModule();
-    initChannelRef.current?.dispose();
-    initChannelRef.current = null;
     latestProgressRef.current = 0;
-    setState(prev => ({
+    setStatus(prev => ({
       ...prev,
       error: null,
       initProgress: 0,
@@ -265,142 +350,100 @@ export const WorkerProvider = ({
     }
 
     try {
-      await WorkerAPIClient.initialize();
-    } catch (error) {
-      const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
-      return;
-    }
-
-    if (WorkerAPIClient.isReady()) {
-      bootLog('WorkerProvider fast-path (isReady)');
-      await markComplete();
-      return;
-    }
-
-    const rawWorker = WorkerAPIClient.getRawWorkerInstance();
-    if (!rawWorker) {
-      const normalized = new Error('Worker instance is not available');
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
-      return;
-    }
-
-    const progressHandler = (event: MessageEvent) => {
-      const data = event.data as { type?: string; payload?: { progress?: number; message?: string } };
-      if (data?.type !== 'INIT_PROGRESS') return;
-      const message = data.payload?.message || 'Worker initializing';
-      const progress = typeof data.payload?.progress === 'number'
-        ? Math.max(0, Math.min(100, data.payload.progress))
-        : latestProgressRef.current;
-      latestProgressRef.current = progress;
-      setState(prev => ({
+      const client = await proxy.ensureInitialized();
+      setStatus(prev => ({
         ...prev,
-        initProgress: progress,
-        initMessage: message,
+        client,
+        isInitialized: true,
+        error: null,
       }));
-      bootProgress?.setStepProgress('Worker', progress, message);
-    };
-
-    rawWorker.addEventListener('message', progressHandler);
-
-    const channel = new WorkerInitializationChannel();
-    initChannelRef.current = channel;
-
-    try {
-      await channel.waitForInitialization({ worker: rawWorker, timeout, debug });
       await markComplete();
     } catch (error) {
       const normalized = normalizeError(error);
-      setState(prev => ({ ...prev, error: normalized, isInitialized: false }));
-    } finally {
-      rawWorker.removeEventListener('message', progressHandler);
-      channel.dispose();
-      initChannelRef.current = null;
+      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      bootProgress?.setStepProgress('Worker', latestProgressRef.current, normalized.message);
     }
-  }, [bootProgress, debug, markComplete, timeout]);
+  }, [bootProgress, markComplete, proxy]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
-    void (async () => {
-      const { WorkerAPIClient } = await loadWorkerApiModule();
-      WorkerAPIClient.reset();
-      initCompleted = false;
-      latestProgressRef.current = 0;
-      bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
-      await runInitialization();
-    })();
-  }, [bootProgress, runInitialization]);
+    WorkerAPIClient.reset();
+    initCompleted = false;
+    initStarted = false;
+    latestProgressRef.current = 0;
+    resetState();
+    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+    void runInitialization();
+  }, [bootProgress, resetState, runInitialization]);
+
+  const getAPI = useCallback((): Remote<WorkerAPI> => {
+    if (!status.client) {
+      throw new Error('Worker client not initialized');
+    }
+    return status.client;
+  }, [status.client]);
+
+  const reset = useCallback(() => {
+    bootLog('WorkerProvider reset requested');
+    WorkerAPIClient.reset();
+    initCompleted = false;
+    initStarted = false;
+    latestProgressRef.current = 0;
+    resetState();
+  }, [resetState]);
+
+  const initialize = useCallback(async () => {
+    await runInitialization();
+  }, [runInitialization]);
 
   useEffect(() => {
     bootLog('WorkerProvider mount');
     let pollTimer: number | null = null;
     let devFallbackTimer: number | null = null;
-    let listenerAttached = false;
-    let disposed = false;
 
     const onInitComplete = () => {
       void markComplete();
     };
 
-    const setup = async () => {
+    if (typeof window !== 'undefined') {
+      const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
+      if (!globalWin.__HDB_WORKER_EVT_BOUND__) {
+        globalWin.__HDB_WORKER_EVT_BOUND__ = true;
+        window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
+      }
+    }
+
+    if (!initStarted) {
+      initStarted = true;
+      void runInitialization();
+    } else if (initCompleted || WorkerAPIClient.isReady()) {
+      void markComplete();
+    }
+
+    const poll = async () => {
       try {
-        const { WorkerAPIClient } = await loadWorkerApiModule();
-        if (disposed) return;
-
-        if (typeof window !== 'undefined') {
-          const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
-          if (!globalWin.__HDB_WORKER_EVT_BOUND__) {
-            globalWin.__HDB_WORKER_EVT_BOUND__ = true;
-            window.addEventListener('hierarchidb-worker-init-complete', onInitComplete, { once: true });
-            listenerAttached = true;
-          }
-        }
-
-        if (!initStarted) {
-          initStarted = true;
-          void runInitialization();
-        } else if (initCompleted || WorkerAPIClient.isReady()) {
-          void markComplete();
-        }
-
-        const poll = async () => {
-          if (disposed) return;
-          try {
-            const module = await loadWorkerApiModule();
-            if (module.WorkerAPIClient.isReady()) {
-              await markComplete();
-              if (pollTimer) window.clearInterval(pollTimer);
-            }
-          } catch (error) {
-            logWorkerProviderWarning('Polling worker readiness failed', error);
-          }
-        };
-
-        pollTimer = window.setInterval(poll, 150);
-
-        if (import.meta.env.DEV) {
-          devFallbackTimer = window.setTimeout(() => {
-            void loadWorkerApiModule().then(({ WorkerAPIClient }) => {
-              if (WorkerAPIClient.isReady()) {
-                void markComplete();
-              }
-            }).catch(() => {
-              // ignore
-            });
-          }, 1500);
+        if (WorkerAPIClient.isReady()) {
+          await markComplete();
+          if (pollTimer) window.clearInterval(pollTimer);
         }
       } catch (error) {
-        logWorkerProviderWarning('Failed to prepare worker provider setup', error);
+        logWorkerProviderWarning('Polling worker readiness failed', error);
       }
     };
+    pollTimer = window.setInterval(poll, 150);
 
-    void setup();
+    if (import.meta.env.DEV) {
+      devFallbackTimer = window.setTimeout(() => {
+        if (WorkerAPIClient.isReady()) {
+          void markComplete();
+        }
+      }, 1500);
+    }
 
     return () => {
-      disposed = true;
       initChannelRef.current?.dispose();
       initChannelRef.current = null;
-      if (listenerAttached && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined') {
         window.removeEventListener('hierarchidb-worker-init-complete', onInitComplete);
         const globalWin = window as BootWindow & { __HDB_WORKER_EVT_BOUND__?: boolean };
         globalWin.__HDB_WORKER_EVT_BOUND__ = false;
@@ -410,17 +453,30 @@ export const WorkerProvider = ({
     };
   }, [markComplete, runInitialization]);
 
-  const contextValue = useMemo<WorkerContextValue>(() => state, [state]);
+  const contextValue = useMemo<WorkerContextValue>(() => ({
+    client: status.client,
+    isInitialized: status.isInitialized,
+    isConnected: Boolean(status.client && status.isInitialized),
+    initProgress: status.initProgress,
+    initMessage: status.initMessage,
+    error: status.error,
+    initialize,
+    reset,
+    getAPI,
+  }), [status, getAPI, initialize, reset]);
+
+  const suspenseFallback = useMemo(() => {
+    if (!renderOverlay || status.error) return null;
+    return <InitializingOverlay progress={status.initProgress} message={status.initMessage} />;
+  }, [renderOverlay, status.error, status.initMessage, status.initProgress]);
 
   return (
     <WorkerContext.Provider value={contextValue}>
-      {renderOverlay && !state.isInitialized && !state.error ? (
-        <InitializingOverlay progress={state.initProgress} message={state.initMessage} />
-      ) : null}
-      {renderOverlay && state.error ? (
-        <ErrorOverlay error={state.error} onRetry={retryInitialization} />
-      ) : null}
-      {children}
+      <Suspense fallback={suspenseFallback}>
+        <WorkerClientGate status={status} renderOverlay={renderOverlay} onRetry={retryInitialization} proxy={proxy}>
+          {children}
+        </WorkerClientGate>
+      </Suspense>
     </WorkerContext.Provider>
   );
 };
@@ -433,10 +489,6 @@ export const useWorker = (): WorkerContextValue => {
   return context;
 };
 
-export const useWorkerClient = () => {
-  const { client, isInitialized } = useWorker();
-  return {
-    client,
-    isConnected: isInitialized,
-  };
+export const useWorkerClient = (): WorkerContextValue => {
+  return useWorker();
 };

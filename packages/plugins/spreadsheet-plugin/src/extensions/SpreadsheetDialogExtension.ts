@@ -3,89 +3,57 @@
  * - Provides step state evaluator for Spreadsheet steps (2: data source, 3: filtering)
  */
 
-import { BaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
-import type { DraftPeerEntity } from '@hierarchidb/common-type';
+import { BaseFolderPlugin } from '@hierarchidb/plugins-folder-plugin';
+import { isDataSourceComplete, type SpreadsheetDialogData } from '../steps/DataSourceStep.js';
+import { STEP_CONFIG } from '../extension/constants.js';
 
-interface SpreadsheetDialogFields {
-  dataSource?: {
-    type: 'file' | 'url' | 'manual' | string;
-    source?: string;
-  };
-  file?: {
-    name?: string;
-  };
-  [key: string]: unknown;
-}
-
-type SpreadsheetDialogDraft = DraftPeerEntity<SpreadsheetDialogFields>;
-
-export class SpreadsheetDialogExtension extends BaseDialogPlugin<SpreadsheetDialogDraft> {
-  readonly pluginId = 'spreadsheet-plugin-folder-extension';
-  readonly pluginName = 'Spreadsheet (Dialog Extension)';
-  readonly pluginDescription = 'Adds Spreadsheet step evaluators to the shared dialog';
+export class SpreadsheetDialogExtension extends BaseFolderPlugin {
+  readonly pluginId = 'spreadsheet-plugin-dialog-extension';
+  readonly pluginName = 'Spreadsheet Dialog Extension';
+  readonly pluginDescription = 'Adds Spreadsheet step evaluators to plugin dialogs';
   readonly pluginVersion = '1.0.0';
 
   protected getStepStateEvaluator() {
-    const evaluateValidated = (
-      data: SpreadsheetDialogDraft,
-      stepNumbers?: ReadonlyArray<number>,
-    ) => {
-      const nums = stepNumbers ? [...stepNumbers] : [];
-      return nums.map((n) => {
-        if (n === 2) {
-          const ds = data?.dataSource;
-          if (!ds) return false;
-          if (ds.type === 'file') {
-            const hasFile = !!data?.file?.name || !!ds.source;
-            return !!hasFile;
-          }
-          // url/manual require presence of source
-          if (ds.type === 'url' || ds.type === 'manual') {
-            return !!ds.source;
-          }
-          return true;
-        }
-        if (n === 3) {
-          return true; // filtering step is optional / always passable
-        }
-        return true;
-      });
+    const dataSourceStep = STEP_CONFIG.DATA_SOURCE.NUMBER;
+    const filteringStep = STEP_CONFIG.FILTERING.NUMBER;
+
+    const evaluate = (rawData: unknown) => {
+      const dialogData = (typeof rawData === 'object' && rawData !== null)
+        ? rawData as Partial<SpreadsheetDialogData>
+        : {};
+
+      const dataSourceValid = isDataSourceComplete(dialogData);
+
+      return new Map<number, { enabled: boolean; validated: boolean }>([
+        [dataSourceStep, { enabled: true, validated: dataSourceValid }],
+        [filteringStep, { enabled: dataSourceValid, validated: true }],
+      ]);
     };
 
-    const evaluateEnabled = (
-      data: SpreadsheetDialogDraft,
-      stepNumbers?: ReadonlyArray<number>,
-    ) => {
-      const nums = stepNumbers ? [...stepNumbers] : [];
-      const isSourceConfigured = (() => {
-        const ds = data?.dataSource;
-        if (!ds) return false;
-        if (ds.type === 'file') return !!data?.file?.name || !!ds.source;
-        if (ds.type === 'url' || ds.type === 'manual') return !!ds.source;
-        return true;
-      })();
-
-      return nums.map((n) => {
-        if (n === 2) return true;
-        if (n === 3) return isSourceConfigured;
-        return true;
-      });
-    };
+    const resolveStepNumbers = (stepNumbers?: number[]) => (
+      Array.isArray(stepNumbers) && stepNumbers.length > 0
+        ? stepNumbers
+        : [dataSourceStep, filteringStep]
+    );
 
     return {
-      getEnabledSteps: evaluateEnabled,
-      getValidatedSteps: evaluateValidated,
+      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
+        const state = evaluate(data);
+        return resolveStepNumbers(stepNumbers).map((num) => state.get(num)?.validated ?? true);
+      },
+      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
+        const state = evaluate(data);
+        return resolveStepNumbers(stepNumbers).map((num) => state.get(num)?.enabled ?? true);
+      },
     };
   }
 
   protected getSubmitEligibility() {
-    return (data: SpreadsheetDialogDraft) => {
-      const ds = data?.dataSource;
-      if (!ds) return false;
-      if (ds.type === 'file') return !!data?.file?.name || !!ds.source;
-      if (ds.type === 'url' || ds.type === 'manual') return !!ds.source;
-      return true;
-    };
+    return (data: any) => isDataSourceComplete(
+      (typeof data === 'object' && data !== null)
+        ? data as Partial<SpreadsheetDialogData>
+        : {},
+    );
   }
 }
 

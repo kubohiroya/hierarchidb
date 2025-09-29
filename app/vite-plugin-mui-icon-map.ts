@@ -1,6 +1,7 @@
 import type { Plugin } from 'vite';
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadPluginManifestFromFile } from '../tools/plugin-manifest-loader.js';
 
 function toPascalCase(name?: string): string {
   if (!name) return '';
@@ -35,7 +36,7 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
   const VIRTUAL_ID = 'virtual:mui-icon-map';
   const RESOLVED = '\0' + VIRTUAL_ID;
   const rootDir = opts?.rootDir || path.resolve(__dirname, '..');
-  const include = opts?.include || /packages\/plugins\/.*-plugin\/package\.json$/;
+  const include = opts?.include || /packages\/plugins\/.*-plugin\/src\/extension\/plugin-manifest\.ts$/;
 
   function collectIconNames(): string[] {
     const nodeTypeDir = path.resolve(rootDir, 'packages', 'plugins');
@@ -44,18 +45,13 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
       const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
       for (const ent of entries) {
         if (!ent.isDirectory() || !/-plugin$/.test(ent.name)) continue;
-        const pkgPath = path.join(nodeTypeDir, ent.name, 'package.json');
-        if (!fs.existsSync(pkgPath)) continue;
-        const txt = fs.readFileSync(pkgPath, 'utf-8');
-        try {
-          const json = JSON.parse(txt) as NodeTypePackageJson;
-          const icon = json.hierarchidb?.plugin?.icon;
-          const raw = icon?.muiIconName || icon?.mui || '';
-          const pascal = normalizeMuiName(raw);
-          if (pascal) icons.add(pascal);
-        } catch {
-          // ignore malformed package.json
-        }
+        const manifestPath = path.join(nodeTypeDir, ent.name, 'src', 'extension', 'plugin-manifest.ts');
+        const manifest = loadPluginManifestFromFile(manifestPath, { silent: true });
+        if (!manifest) continue;
+        const icon = manifest.icon as Record<string, unknown> | undefined;
+        const raw = (icon?.muiIconName ?? icon?.mui ?? '') as string;
+        const pascal = normalizeMuiName(raw);
+        if (pascal) icons.add(pascal);
       }
     } catch {
       // ignore FS errors
@@ -88,7 +84,7 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
       return null;
     },
     handleHotUpdate(ctx) {
-      // Regenerate when any plugin package.json changes
+      // Regenerate when any plugin manifest changes
       if (include.test(ctx.file)) {
         ctx.server.moduleGraph.invalidateModule(ctx.server.moduleGraph.getModuleById(RESOLVED)!);
         return [];
@@ -96,14 +92,3 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
     },
   };
 }
-
-type NodeTypePackageJson = {
-  hierarchidb?: {
-    plugin?: {
-      icon?: {
-        muiIconName?: string;
-        mui?: string;
-      };
-    };
-  };
-};

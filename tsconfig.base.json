@@ -8,62 +8,6 @@
     ],
     "moduleResolution": "Node16",
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/runtime-ui-appbar": [
-        "packages/runtime-ui/appbar/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-appbar/*": [
-        "packages/runtime-ui/appbar/src/*"
-      ],
-      "@hierarchidb/runtime-ui-datasource": [
-        "packages/runtime-ui/datasource/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "packages/runtime-ui/datasource/src/*"
-      ],
-      "@hierarchidb/runtime-ui-landingpage": [
-        "packages/runtime-ui/landingpage/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-landingpage/*": [
-        "packages/runtime-ui/landingpage/src/*"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "packages/runtime-ui/plugin-dialog/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "packages/runtime-ui/plugin-dialog/src/*"
-      ],
-      "@hierarchidb/runtime-ui-search-result-window": [
-        "packages/runtime-ui/search-result-window/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-search-result-window/*": [
-        "packages/runtime-ui/search-result-window/src/*"
-      ],
-      "@hierarchidb/runtime-ui-tour": [
-        "packages/runtime-ui/tour/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-tour/*": [
-        "packages/runtime-ui/tour/src/*"
-      ],
-      "@hierarchidb/runtime-shared-batch-processor": [
-        "packages/runtime-shared/batch-processor/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-shared-batch-processor/*": [
-        "packages/runtime-shared/batch-processor/dist/*"
-      ],
-      "@hierarchidb/plugins-runtime-worker-factory": [
-        "packages/plugins/runtime-worker-factory/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugins-runtime-worker-factory/*": [
-        "packages/plugins/runtime-worker-factory/dist/*"
-      ],
-      "@hierarchidb/tabular-store": [
-        "packages/feature/tabular-store/src/index.ts"
-      ],
-      "@hierarchidb/tabular-store/*": [
-        "packages/feature/tabular-store/src/*"
-      ]
-    },
     "strict": true,
     "noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
@@ -85,7 +29,102 @@
     "composite": false,
     "incremental": false,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "paths": {
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "packages/runtime-shared/batch-processor/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor/*": [
+        "packages/runtime-shared/batch-processor/src/*"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata": [
+        "packages/runtime-shared/fetch-metadata/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata/*": [
+        "packages/runtime-shared/fetch-metadata/src/*"
+      ],
+      "@hierarchidb/common-type": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-type/*": [
+        "packages/common/types/src/*"
+      ],
+      "@hierarchidb/download": [
+        "packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/download/*": [
+        "packages/feature/download/src/*"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "packages/runtime/worker-core/src/index.ts"
+      ],
+      "@hierarchidb/runtime-worker/*": [
+        "packages/runtime/worker-core/src/*"
+      ],
+      "@hierarchidb/runtime-shared-module-paths": [
+        "packages/runtime-shared/module-paths/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-module-paths/*": [
+        "packages/runtime-shared/module-paths/src/*"
+      ],
+      "@hierarchidb/ui-file": [
+        "packages/ui/file/src/index.ts"
+      ],
+      "@hierarchidb/ui-file/*": [
+        "packages/ui/file/src/*"
+      ],
+      "@hierarchidb/util": [
+        "packages/util/src/index.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "packages/util/src/*"
+      ],
+      "@hierarchidb/plugins-*-plugin/worker-factory": [
+        "packages/plugins/*-plugin/src/worker-factory/index.ts"
+      ],
+      "@hierarchidb/common-api": [
+        "packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "packages/common/api/src/*"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog": [
+        "packages/runtime-ui/plugin-dialog/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog/*": [
+        "packages/runtime-ui/plugin-dialog/src/*"
+      ],
+      "@hierarchidb/ui-core": [
+        "packages/ui/core/src/index.ts"
+      ],
+      "@hierarchidb/ui-core/*": [
+        "packages/ui/core/src/*"
+      ],
+      "@hierarchidb/ui-csv-extract": [
+        "packages/ui/csv-extract/src/index.ts"
+      ],
+      "@hierarchidb/ui-csv-extract/*": [
+        "packages/ui/csv-extract/src/*"
+      ],
+      "@hierarchidb/auth-recovery": [
+        "packages/feature/auth-recovery/src/index.ts"
+      ],
+      "@hierarchidb/auth-recovery/*": [
+        "packages/feature/auth-recovery/src/*"
+      ],
+      "@hierarchidb/tabular": [
+        "packages/feature/tabular/src/index.ts"
+      ],
+      "@hierarchidb/tabular/*": [
+        "packages/feature/tabular/src/*"
+      ],
+      "@hierarchidb/table-metadata": [
+        "packages/feature/table-metadata/src/index.ts"
+      ],
+      "@hierarchidb/table-metadata/*": [
+        "packages/feature/table-metadata/src/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules",

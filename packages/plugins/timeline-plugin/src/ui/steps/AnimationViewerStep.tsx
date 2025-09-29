@@ -1,9 +1,15 @@
-import { Box, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
-import { PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
+import { useMemo } from 'react';
+import { Box, Chip, IconButton, Paper, Slider, Stack, Switch, TextField, Tooltip, Typography } from '@mui/material';
+import { Map as MapIcon, PlayArrow, Pause, SkipNext, SkipPrevious } from '@mui/icons-material';
 import { useFramePlayer } from '../utils/useFramePlayer.js';
+import type { TimelineFrameViewState } from './MapPreviewStep.js';
 
 export interface AnimationViewerStepProps {
-  frames: Array<{ id: string; name: string }>;
+  frames: Array<{
+    id: string;
+    name: string;
+    viewState?: TimelineFrameViewState;
+  }>;
   initialIndex?: number;
   initialFps?: number;
   loop?: boolean;
@@ -12,16 +18,78 @@ export interface AnimationViewerStepProps {
 export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12, loop = true }: AnimationViewerStepProps) {
   const player = useFramePlayer({ length: frames.length, initialIndex, initialFps, loop });
   const current = frames[player.index] || null;
+  const viewState = useMemo(() => {
+    if (current?.viewState) {
+      const { longitude, latitude, zoom = 4, bearing = 0, pitch = 0 } = current.viewState;
+      return { longitude, latitude, zoom, bearing, pitch };
+    }
+    return { longitude: 139.7671, latitude: 35.6812, zoom: 4, bearing: 0, pitch: 0 };
+  }, [current]);
 
   return (
     <Stack spacing={2}>
       <Typography variant="subtitle1">Final Animation Preview</Typography>
 
-      <Paper variant="outlined" sx={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {/* Map or scene preview placeholder; integrate real map later */}
-        <Typography variant="body2" color="text.secondary">
-          Frame: {current?.name || 'N/A'} ({player.index + 1}/{Math.max(1, frames.length)})
-        </Typography>
+      <Paper
+        variant="outlined"
+        sx={{
+          height: 280,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 2,
+          background: 'radial-gradient(circle at 15% 25%, rgba(33,150,243,0.35), transparent 60%),\
+            radial-gradient(circle at 82% 25%, rgba(156,39,176,0.32), transparent 55%),\
+            linear-gradient(145deg, rgba(33,150,243,0.25), rgba(0,0,0,0.45))',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(160deg, rgba(0,0,0,0.15), transparent 65%)',
+          },
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 1.5,
+            py: 0.75,
+            borderRadius: 1,
+            bgcolor: (theme) => theme.palette.background.paper,
+            boxShadow: 1,
+          }}
+        >
+          <MapIcon fontSize="small" color="action" />
+          <Typography variant="body2" fontWeight={600}>
+            {current?.name ?? 'Frame'} ({player.index + 1}/{Math.max(1, frames.length)})
+          </Typography>
+          <Chip
+            size="small"
+            label={`${viewState.longitude.toFixed(2)}, ${viewState.latitude.toFixed(2)} / z${viewState.zoom.toFixed(1)}`}
+            sx={{ fontWeight: 500 }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            left: 16,
+            color: 'common.white',
+            textShadow: '0 0 10px rgba(0,0,0,0.45)',
+          }}
+        >
+          <Typography variant="body2">
+            Playback {player.playing ? 'running' : 'paused'} at {player.fps} fps
+          </Typography>
+          <Typography variant="caption" display="block">
+            Bearing {viewState.bearing?.toFixed?.(1) ?? '0'}°, Pitch {viewState.pitch?.toFixed?.(1) ?? '0'}°
+          </Typography>
+        </Box>
       </Paper>
 
       <Stack direction="row" spacing={1} alignItems="center">
@@ -66,4 +134,3 @@ export function AnimationViewerStep({ frames, initialIndex = 0, initialFps = 12,
     </Stack>
   );
 }
-

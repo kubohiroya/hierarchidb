@@ -168,10 +168,10 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
 
       return (
         <NameCell>
-          <IndentSpace depth={depth} />
+          <IndentSpace depth={trashAction ? depth - 1 : depth} />
 
           {!hideDragHandler && !disableDragAndDrop && (
-            <IconButton size="small" sx={{ padding: 0.25, cursor: 'grab' }} onClick={(e) => e.stopPropagation()}>
+            <IconButton size="small" sx={{ padding: 0, cursor: 'grab' }} onClick={(e) => e.stopPropagation()}>
               <DragIndicatorIcon fontSize="small" />
             </IconButton>
           )}

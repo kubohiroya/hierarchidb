@@ -11,6 +11,6 @@ export default createTsupConfig({
     index: 'src/index.ts',
     'presets/index': 'src/presets/index.ts',
   },
-  format: ['esm', 'cjs'],
+  format: ['esm'],
   external: ['vite'],
 });

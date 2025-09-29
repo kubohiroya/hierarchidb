@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { ShapePeerData } from '../types/entities.js';
@@ -8,8 +8,8 @@ export type ShapePeerRow = {
   data?: ShapePeerData;
   updatedAt?: number;
   displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number };
-  dialogSize?: { width: number; height: number };
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
 };
 export type ShapeGroupRow = { nodeId: NodeId; id: string; data?: unknown; updatedAt?: number };
 export type ShapeRelationRow = {

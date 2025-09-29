@@ -9,6 +9,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 const ALLOW_LIST = new Set([
   'app/src/types/shims.d.ts',
+  'packages/plugins/styler-plugin/src/worker/stylerEntitiesDB-shim.d.ts',
 ]);
 
 const matches = [];

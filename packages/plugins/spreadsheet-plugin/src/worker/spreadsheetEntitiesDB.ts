@@ -1,15 +1,16 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { SpreadsheetGroupItemData, SpreadsheetPeerData, SpreadsheetRelationMeta } from '../types';
+import type { SpreadsheetPeerData } from '../types/index.js';
+import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities.js';
 
 export type SheetPeerRow = {
   nodeId: NodeId;
   data?: SpreadsheetPeerData;
   updatedAt?: number;
   displayMode?: 'normal' | 'maximize' | 'full-screen';
-  dialogPosition?: { x: number; y: number };
-  dialogSize?: { width: number; height: number };
+  dialogPosition?: { x: number; y: number } | null;
+  dialogSize?: { width: number; height: number } | null;
 };
 export type SheetGroupRow = { nodeId: NodeId; id: string; data?: SpreadsheetGroupItemData; updatedAt?: number };
 export type SheetRelationRow = {

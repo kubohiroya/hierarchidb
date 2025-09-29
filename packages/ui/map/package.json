@@ -27,8 +27,6 @@
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@vis.gl/react-maplibre": "^8.0.4",
-    "maplibre-gl": "^4.0.0",
     "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
@@ -36,14 +34,15 @@
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^7.3.2",
     "react": ">=18.0.0",
+    "@vis.gl/react-maplibre": "^8.0.4",
+    "maplibre-gl": "^5.7.3",
+    "@deck.gl/geo-layers": "^9.1.14",
+    "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14"
   },
   "devDependencies": {
     "react": ">=18.0.0",
     "@mui/material": "^7.3.1",
-    "@deck.gl/geo-layers": "^9.1.14",
-    "@deck.gl/layers": "^9.1.14",
-    "@deck.gl/mapbox": "^9.1.14",
     "@types/geojson": "^7946.0.8"
   },
   "license": "MIT",

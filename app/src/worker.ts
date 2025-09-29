@@ -4,19 +4,12 @@
  */
 
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
-import type { PluginDefinition, NodeId, NodeType } from '@hierarchidb/common-type';
-import type {
-  BatchProgressEvent,
-  BatchSessionId,
-  BatchSessionStatus,
-  IBatchSessionManager,
-} from '@hierarchidb/runtime-shared-batch-processor';
+import type { PluginDefinition } from '@hierarchidb/common-type';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
   lifecycle?: unknown;
   createEntityHandler?: () => Promise<unknown>;
-  createBatchManager?: () => Promise<IBatchSessionManager> | IBatchSessionManager;
 };
 
 type ManualPluginSelf = typeof self & {
@@ -77,7 +70,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     }
 
     const registryModule = await import('virtual:plugin-registry-worker').catch(() => null);
-    const pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
+    let pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
 
     // Note: Legacy workerModuleLoaders are no longer generated; pluginMapWorker now provides all loaders.
 
@@ -148,7 +141,6 @@ reporter.reportStepProgress('Load Comlink', 0);
       const { WorkerService } = runtime;
       const services = await WorkerService.getSingleton(
         enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions,
-        exportsByType,
       );
       reporter.reportStepProgress('Bootstrap services', 100);
 
@@ -169,25 +161,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
         getTagAPI: () => Comlink.proxy(services.getTagAPI()),
-        startBatchSession: (nodeType: NodeType, nodeId: NodeId) =>
-          services.startBatchSession(nodeType, nodeId),
-        getBatchSessionStatus: (nodeType: NodeType, sessionId: BatchSessionId) =>
-          services.getBatchSessionStatus(nodeType, sessionId),
-        pauseBatchSession: (nodeType: NodeType, sessionId: BatchSessionId) =>
-          services.pauseBatchSession(nodeType, sessionId),
-        resumeBatchSession: (nodeType: NodeType, sessionId: BatchSessionId) =>
-          services.resumeBatchSession(nodeType, sessionId),
-        cancelBatchSession: (nodeType: NodeType, sessionId: BatchSessionId) =>
-          services.cancelBatchSession(nodeType, sessionId),
-        subscribeBatchProgress: (
-          nodeType: NodeType,
-          sessionId: BatchSessionId,
-          cb: (event: BatchProgressEvent) => void,
-        ) =>
-          services
-            .subscribeBatchProgress(nodeType, sessionId, Comlink.proxy(cb))
-            .then((teardown) => (typeof teardown === 'function' ? Comlink.proxy(teardown) : () => {
-            })),
+        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI()),
       } as const;
 
       reporter.reportStepProgress('Create API facade', 100);

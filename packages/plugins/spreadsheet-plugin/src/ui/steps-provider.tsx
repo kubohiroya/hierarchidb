@@ -1,11 +1,14 @@
-// Types-only import to avoid pulling runtime at DTS time
 import type { PluginStepConfig, StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import { PluginStepRegistry } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { DataSourceStep } from '../steps/DataSourceStep.js';
+import { DataSourceStep, isDataSourceComplete, type SpreadsheetDialogData } from '../steps/DataSourceStep.js';
 import { FilteringStep } from '../steps/FilteringStep.js';
+import { STEP_CONFIG } from '../extension/constants.js';
 
-type P = StepComponentProps & { data: any };
 const registry = PluginStepRegistry.getInstance();
+
+const toDialogData = (value: unknown): Partial<SpreadsheetDialogData> => (
+  typeof value === 'object' && value !== null ? value as Partial<SpreadsheetDialogData> : {}
+);
 
 registry.registerConfigProvider({
   nodeType: 'spreadsheet',
@@ -13,19 +16,23 @@ registry.registerConfigProvider({
     return [
       {
         id: 'data-source',
-        label: 'Data Source',
-        componentFactory: (p: P) => (
-          <DataSourceStep data={p.data} onNext={() => void 0} onPrevious={() => void 0} errors={[]} />
+        label: STEP_CONFIG.DATA_SOURCE.TITLE,
+        componentFactory: (props: StepComponentProps) => (
+          <DataSourceStep {...props} />
         ),
-        validate: () => true,
+        validate: (dialogData?: unknown) => isDataSourceComplete(toDialogData(dialogData)),
+        capabilities: {
+          canProceedToNext: (dialogData?: unknown) => isDataSourceComplete(toDialogData(dialogData)),
+        },
       },
       {
         id: 'filtering',
-        label: 'Filtering',
-        componentFactory: (p: P) => (
-          <FilteringStep data={p.data} onNext={() => void 0} onPrevious={() => void 0} />
+        label: STEP_CONFIG.FILTERING.TITLE,
+        componentFactory: (props: StepComponentProps) => (
+          <FilteringStep {...props} />
         ),
         validate: () => true,
+        optional: STEP_CONFIG.FILTERING.IS_OPTIONAL,
       },
     ];
   },

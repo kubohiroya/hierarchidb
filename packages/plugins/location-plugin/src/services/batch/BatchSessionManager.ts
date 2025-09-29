@@ -10,6 +10,7 @@ import {
   type SessionSummary,
 } from './SessionController.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
+import { isDevEnvironment } from '../../utils/env.js';
 
 export class LocationBatchSessionManager {
   private shared = new Map<string, LocationBatchSession>();
@@ -42,7 +43,10 @@ export class LocationBatchSessionManager {
       const db = getEphemeralLocationDB();
       try {
         await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000);
-      } catch {
+      } catch (error) {
+        if (isDevEnvironment) {
+          console.warn('[LocationBatchSessionManager] clearExpiredSessions failed', error);
+        }
       }
       await db.sessions?.put({
         sessionId,
@@ -54,7 +58,10 @@ export class LocationBatchSessionManager {
         createdAt: Date.now(),
         status: 'running',
       });
-    } catch {
+    } catch (error) {
+      if (isDevEnvironment) {
+        console.warn('[LocationBatchSessionManager] failed to persist session metadata', error);
+      }
     }
     //  Fire and forget
     const shared = new LocationBatchSession(sessionId, nodeId, { concurrency: options?.concurrency ?? 4 }, controller, (ev) => {
@@ -69,7 +76,10 @@ export class LocationBatchSessionManager {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'completed' });
-      } catch {
+      } catch (error) {
+        if (isDevEnvironment) {
+          console.warn('[LocationBatchSessionManager] failed to mark session completed', error);
+        }
       }
     }).catch(async (e: any) => {
       console.error('Location session failed', e);
@@ -77,7 +87,10 @@ export class LocationBatchSessionManager {
         const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
         const db = getEphemeralLocationDB();
         await db.sessions?.update(sessionId, { status: 'failed' });
-      } catch {
+      } catch (error) {
+        if (isDevEnvironment) {
+          console.warn('[LocationBatchSessionManager] failed to mark session failed', error);
+        }
       }
     });
     return summary;

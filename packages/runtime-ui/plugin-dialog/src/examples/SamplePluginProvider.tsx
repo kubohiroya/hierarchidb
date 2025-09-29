@@ -3,7 +3,6 @@
  * Example implementation of a plugin step provider
  */
 
-import type React from 'react';
 import { Box, TextField, Typography } from '@mui/material';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { PluginStepProvider, StepComponentProps } from '../registry/PluginStepRegistry.js';
@@ -114,7 +113,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can proceed if required fields are filled
             return !!(data?.setting1 && data?.setting1.trim());
           },
-          canBackToPrevious: (data) => {
+          canBackToPrevious: (_data) => {
             // Can always go back from configuration (though it's the first step)
             return true;
           },
@@ -122,7 +121,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can save if all required fields are filled
             return !!(data?.setting1 && data?.setting1.trim());
           },
-          canStartBatch: (data) => {
+          canStartBatch: (_data) => {
             // Batch is not available from configuration step
             return false;
           },
@@ -157,7 +156,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can go back unless batch is currently running
             return !data?.batchRunning;
           },
-          canSave: (data) => {
+          canSave: (_data) => {
             // Can save from batch step
             return true;
           },
@@ -193,7 +192,7 @@ export class SamplePluginProvider implements PluginStepProvider {
             // Can go back from review unless saving is in progress
             return !data?.saving;
           },
-          canSave: (data) => {
+          canSave: (_data) => {
             // Can always save from review
             return true;
           },

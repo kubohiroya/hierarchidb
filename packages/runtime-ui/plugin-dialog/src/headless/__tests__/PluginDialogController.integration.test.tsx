@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { usePluginDialogController } from '../usePluginDialogController.js';
@@ -11,7 +12,7 @@ vi.mock('@hierarchidb/runtime-worker-bootstrap', () => ({
   getWorkerClientHook: () => () => mockWorkerRef,
 }));
 
-let mockWorkerRef: WorkerAPI | null;
+let mockWorkerRef: WorkerClientRef | null;
 
 const CHECKLIST = [
   'prefills working copy values into basic info form',
@@ -64,7 +65,19 @@ function createMockWorker(options: {
     getTagAPI: async () => tagAPI,
   } as unknown as WorkerAPI;
 
-  return { worker, workingCopyAPI, commitSpy };
+  const workerClient: WorkerClientRef = {
+    client: worker,
+    isInitialized: true,
+    isConnected: true,
+    initProgress: 100,
+    initMessage: 'ready',
+    error: null,
+    initialize: async () => {},
+    reset: () => {},
+    getAPI: () => worker,
+  };
+
+  return { workerClient, workingCopyAPI, commitSpy };
 }
 
 type HarnessProps = {
@@ -103,7 +116,7 @@ describe('usePluginDialogController – folder create integration', () => {
     onClose = vi.fn();
 
     const mock = createMockWorker({ workingCopyId });
-    mockWorkerRef = mock.worker;
+    mockWorkerRef = mock.workerClient;
     commitSpy = mock.commitSpy;
   });
 

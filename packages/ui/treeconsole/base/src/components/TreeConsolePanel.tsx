@@ -225,6 +225,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           paddingRight: '8px',
           minWidth: 0,
         }}
+        data-tour-id="tree-table"
       >
       <TreeTableCore
         controller={controller}
@@ -244,20 +245,23 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       </Box>
 
       {/* Footer */}
-      <TreeConsoleFooter
-        controller={null} // TODO: Convert TreeTableController to TreeViewController
-        onStartTour={props.onStartTour}
-        height={32}
-        loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
-        loadingTooltip={(
-          <Box sx={{ p: 0.5 }}>
-            <Typography variant="caption" display="block">左から順に:</Typography>
-            <Typography variant="caption" display="block">- 購読中サブツリーの最上位の子の数</Typography>
-            <Typography variant="caption" display="block">- 読み込み済みのノード数（表示中＋展開分）</Typography>
-            <Typography variant="caption" display="block">- 選択されているノード数</Typography>
-          </Box>
-        )}
-      />
+      {!props.useTrashColumns &&
+        <TreeConsoleFooter
+          controller={null} // TODO: Convert TreeTableController to TreeViewController
+          onStartTour={props.onStartTour}
+          height={32}
+          loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
+          loadingTooltip={(
+            <Box sx={{ p: 0.5 }}>
+              <Typography variant="caption" display="block">From left to right:</Typography>
+              <Typography variant="caption" display="block">- Number of top-level children in the subscribed
+                subtree</Typography>
+              <Typography variant="caption" display="block">- Number of loaded nodes (visible + expanded)</Typography>
+              <Typography variant="caption" display="block">- Number of selected nodes</Typography>
+            </Box>
+          )}
+        />
+      }
 
       {/* Right-click context menu removed per policy */}
 

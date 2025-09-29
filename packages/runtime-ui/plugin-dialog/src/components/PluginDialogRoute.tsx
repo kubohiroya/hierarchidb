@@ -5,10 +5,9 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate } from 'react-router-dom';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
-import { getWorkerClientHook, type WorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 
 interface PluginDialogLoaderData {
   tree: { id: TreeId };
@@ -19,42 +18,18 @@ interface PluginDialogLoaderData {
   action: string;
 }
 
-type WorkerHookValue = WorkerAPI | { client?: WorkerAPI | null } | null;
-
-const isWorkerAPI = (value: unknown): value is WorkerAPI => (
-  typeof value === 'object'
-  && value !== null
-  && 'getQueryAPI' in value
-  && typeof (value as { getQueryAPI: unknown }).getQueryAPI === 'function'
-);
-
-const isWorkerHolder = (value: unknown): value is { client?: WorkerAPI | null } => (
-  typeof value === 'object'
-  && value !== null
-  && 'client' in value
-);
-
 /**
  * Plugin Dialog Route Component
  * This component should be used in React Router route definitions
  */
 
 export const PluginDialogRoute: React.FC = () => {
-  const loaderData = useLoaderData() as PluginDialogLoaderData;
-  const { tree, pageNodeId, targetNodeId, nodeType, action } = loaderData;
+  const { tree, pageNodeId, targetNodeId, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
 
   const navigate = useNavigate();
-  let useWorkerHook: WorkerClientHook<WorkerHookValue>;
-  try {
-    useWorkerHook = getWorkerClientHook<WorkerHookValue>();
-  } catch (error) {
-    console.warn('[PluginDialogRoute] Worker client hook unavailable', error);
-    useWorkerHook = () => null;
-  }
+  const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
-  const client = isWorkerAPI(ref)
-    ? ref
-    : (isWorkerHolder(ref) && ref.client && isWorkerAPI(ref.client) ? ref.client : null);
+  const client = ref?.client ?? null;
 
   // Parse query params for additional context
   const searchParams = new URLSearchParams(window.location.search);

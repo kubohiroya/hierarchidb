@@ -31,6 +31,39 @@ interface LocationSelectionStepProps {
   onUpdate: (_updates: Partial<LocationWorkingCopy>) => Promise<void>;
 }
 
+export function buildCheckboxState(
+  matrix: boolean[][],
+  countries: Country[] = SAMPLE_COUNTRIES,
+  locationTypes: LocationTypeConfig[] = LOCATION_TYPES,
+): Record<string, Record<LocationType, boolean>> {
+  const checkboxState: Record<string, Record<LocationType, boolean>> = {};
+
+  matrix.forEach((row, countryIndex) => {
+    const country = countries[countryIndex];
+    if (!country) {
+      return;
+    }
+
+    row.forEach((isSelected, typeIndex) => {
+      if (!isSelected) {
+        return;
+      }
+
+      const type = locationTypes[typeIndex]?.id;
+      if (!type) {
+        return;
+      }
+
+      if (!checkboxState[country.code]) {
+        checkboxState[country.code] = {} as Record<LocationType, boolean>;
+      }
+      checkboxState[country.code]![type] = true;
+    });
+  });
+
+  return checkboxState;
+}
+
 const SAMPLE_COUNTRIES: Country[] = [
   { code: 'INTL', name: 'Other (International/Maritime)', continent: 'International' },
   { code: 'JPN', name: 'Japan', localName: 'Nihon', continent: 'Asia' },
@@ -171,13 +204,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     return matrix;
   }, [locationTypes, workingCopy.checkboxState]);
 
-  const handleMatrixChange = useCallback(async () => {
-    // Convert matrix to checkboxState format
-    const checkboxState: Record<string, Record<LocationType, boolean>> = {};
-    // TODO: Implement proper conversion logic
-    await onUpdate({
-      checkboxState,
-    });
+  const handleMatrixChange = useCallback(async (matrix: boolean[][]) => {
+    const checkboxState = buildCheckboxState(matrix, SAMPLE_COUNTRIES, LOCATION_TYPES);
+    await onUpdate({ checkboxState });
   }, [onUpdate]);
 
   const handleSelectionChange = useCallback(async (state: SelectionState) => {

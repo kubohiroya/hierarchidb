@@ -10,6 +10,7 @@
 import { StylerDataService } from './services/StylerDataService.js';
 import { StylerEntityHandler } from './handlers/StylerEntityHandler.js';
 import { StylerExtension } from './extension/definition.js';
+import { PLUGIN_MANIFEST } from './extension/plugin-manifest.js';
 
 // Types exports
 export type {
@@ -45,6 +46,7 @@ export {
   MAPLIBRE_PROPERTY_METADATA,
   MAPLIBRE_PROPERTY_GROUPS,
 } from './types/stylerTypes.js';
+export { PLUGIN_MANIFEST as StylerPluginManifest } from './extension/plugin-manifest.js';
 
 // Extension definition (main plugin definition)
 export { StylerExtension as default } from './extension/definition.js';
@@ -67,34 +69,22 @@ export {
   generateColorGradient,
   valueToColor,
   adjustBrightness,
+  createColorVariations,
   getContrastRatio,
+} from './utils/colorUtils.js';
+export type {
+  ColorVariationOptions,
+  ColorVariations,
 } from './utils/colorUtils.js';
 
 // UI components are exported from subpath to avoid worker-time deps
 // import from '@hierarchidb/plugins-styler-plugin/ui' when needed
 
 /**
-  * : HierarchiDB
- * : package.jsonhierarchidb.plugin
- * :
-  */
-export const PLUGIN_INFO = {
-  nodeType: 'styler',
-  name: 'Styler Plugin',
-  displayName: 'スタイルマップ',
-  extends: 'spreadsheet',
-  version: '1.0.0',
-  category: 'visualization',
-  priority: 700,
-  capabilities: {
-    canHaveChildren: false,
-    canBeRoot: false,
-    canBeDeleted: true,
-    canBeRenamed: true,
-    canBeMoved: true,
-    canBeCopied: true,
-  },
-} as const;
+ * Backward-compatible alias for consumers that expect the historic PLUGIN_INFO export.
+ * Metadata now lives in src/extension/plugin-manifest.ts.
+ */
+export const PLUGIN_INFO = PLUGIN_MANIFEST;
 
 /**
   * :

@@ -8,18 +8,18 @@
 // =========================================
 // =========================================
 
+import { PLUGIN_MANIFEST } from './plugin-manifest.js';
+
 /**
-  * : UI
- * :
- * :
+  * Plugin metadata bridge (legacy fields kept for incremental migration)
   */
 export const PLUGIN_METADATA = {
-  NODE_TYPE: 'spreadsheet',
-  NAME: 'Spreadsheet',
-  DISPLAY_NAME: 'スプレッドシート',
-  ICON: 'table_chart',
-  COLOR: '#2196F3', // Material Design blue[500]
-  EXTENDS: 'folder',
+  NODE_TYPE: PLUGIN_MANIFEST.nodeType,
+  NAME: PLUGIN_MANIFEST.name,
+  DISPLAY_NAME: PLUGIN_MANIFEST.displayName ?? PLUGIN_MANIFEST.name,
+  ICON: PLUGIN_MANIFEST.icon?.mui ?? PLUGIN_MANIFEST.icon?.muiIconName ?? 'table_chart',
+  COLOR: PLUGIN_MANIFEST.icon?.color ?? '#2196F3',
+  EXTENDS: PLUGIN_MANIFEST.extends ?? 'folder',
 } as const;
 
 // =========================================
@@ -33,11 +33,11 @@ export const PLUGIN_METADATA = {
 export const STEP_CONFIG = {
   DATA_SOURCE: {
     NUMBER: 2,
-    TITLE: 'データソース選択',
+    TITLE: 'Data Source Selection',
   },
   FILTERING: {
     NUMBER: 3,
-    TITLE: 'フィルタリング',
+    TITLE: 'Filtering',
     IS_OPTIONAL: true,
     DEPENDS_ON: [2],
   },
@@ -113,9 +113,9 @@ export const FIELD_NAMES = {
  * : UI
   */
 export const FIELD_LABELS = {
-  SPREADSHEET_METADATA_ID: 'メタデータID',
-  DATA_SOURCE: 'データソース',
-  FILTERS: 'フィルタ設定',
+  SPREADSHEET_METADATA_ID: 'Metadata ID',
+  DATA_SOURCE: 'Data Source',
+  FILTERS: 'Filter Configuration',
 } as const;
 
 /**
@@ -124,9 +124,9 @@ export const FIELD_LABELS = {
  * : UI
   */
 export const FIELD_DESCRIPTIONS = {
-  SPREADSHEET_METADATA_ID: '表データのメタデータへの参照ID',
-  DATA_SOURCE: 'データの取得元（ファイル、URL、手動入力）',
-  FILTERS: '行と列のフィルタリング設定',
+  SPREADSHEET_METADATA_ID: 'Reference identifier for the parsed table metadata',
+  DATA_SOURCE: 'Source configuration for the spreadsheet data (file, URL, or manual input)',
+  FILTERS: 'Row and column filtering configuration applied to the dataset',
 } as const;
 
 // =========================================
@@ -139,12 +139,12 @@ export const FIELD_DESCRIPTIONS = {
  * : UX
   */
 export const ERROR_MESSAGES = {
-  DATA_SOURCE_REQUIRED: 'データソースを選択してください',
-  FILE_REQUIRED: 'ファイルを選択してください',
-  INVALID_FILE_FORMAT: 'CSV、TSV、またはExcelファイルを選択してください',
-  FILE_TOO_LARGE: `ファイルサイズが${FILE_SIZE_LIMITS.MAX_SIZE_LABEL}を超えています`,
-  INVALID_DATA_SOURCE_TYPE: '無効なデータソースタイプです',
-  FILTER_INVALID: 'フィルタ設定が不正です',
+  DATA_SOURCE_REQUIRED: 'Select a data source',
+  FILE_REQUIRED: 'Select a file to continue',
+  INVALID_FILE_FORMAT: 'Choose a CSV, TSV, or Excel file',
+  FILE_TOO_LARGE: `File size exceeds ${FILE_SIZE_LIMITS.MAX_SIZE_LABEL}`,
+  INVALID_DATA_SOURCE_TYPE: 'Invalid data source type',
+  FILTER_INVALID: 'Filter configuration is invalid',
 } as const;
 
 // =========================================
