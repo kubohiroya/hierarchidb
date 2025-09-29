@@ -92,15 +92,20 @@ export type CacheType =
 // === Configuration Types ===
 
 export interface BatchProcessConfig {
-  dataSource: DataSourceName;
-  countryCode: string;
-  adminLevels: number[];
+  dataSource?: DataSourceName;
+  countryCode?: string;
+  adminLevels?: number[];
   workerPoolSize?: number;
   enableFeatureExtraction?: boolean;
   simplificationLevels?: number[];
   tileZoomRange?: [number, number];
   corsProxy?: string;
   cacheStrategy?: CacheStrategy;
+  simplifyTolerance?: number;
+  minArea?: number;
+  zoomLevels?: number[];
+  tileSize?: number;
+  maxZoom?: number;
 }
 
 export interface CacheStrategy {
@@ -135,7 +140,7 @@ export interface BatchSession {
   updatedAt: number;
   completedAt?: number;
   progress: ProgressInfo;
-  stages: Record<ProcessingStage, StageStatus>;
+  stages: Partial<Record<ProcessingStage, StageStatus>>;
   resourceUsage?: ResourceUsage;
 }
 
@@ -158,7 +163,7 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  currentStage?: ProcessingStage;
+  currentStage?: ProcessingStage | string;
   currentTask?: string;
 }
 
@@ -166,10 +171,10 @@ export interface StageStatus {
   status: TaskStatus;
   startedAt?: number;
   completedAt?: number;
-  progress: number;
-  tasksTotal: number;
-  tasksCompleted: number;
-  tasksFailed: number;
+  progress?: number;
+  tasksTotal?: number;
+  tasksCompleted?: number;
+  tasksFailed?: number;
   message?: string;
   lastError?: string;
 }
@@ -177,10 +182,10 @@ export interface StageStatus {
 export interface TaskInfo {
   taskId: string;
   sessionId: string;
-  type: ProcessingStage;
-  status: TaskStatus;
-  index: number;
-  progress: number;
+  type?: ProcessingStage;
+  status?: TaskStatus;
+  index?: number;
+  progress?: number;
   message?: string;
   startedAt?: number;
   completedAt?: number;
@@ -309,8 +314,9 @@ export interface OptimizationResult {
 
 export interface DownloadTask extends TaskInfo {
   taskType: 'download';
-  nodeId: NodeId;
-  config: DownloadTaskConfig;
+  nodeId?: NodeId;
+  url?: string;
+  config?: Partial<DownloadTaskConfig>;
 }
 
 export interface DownloadTaskConfig {
@@ -338,8 +344,8 @@ export interface DownloadResult {
 
 export interface Simplify1Task extends TaskInfo {
   taskType: 'simplify1';
-  inputBufferId: string;
-  config: SimplifyTaskConfig;
+  inputBufferId?: string;
+  config?: Partial<SimplifyTaskConfig>;
 }
 
 export interface SimplifyTaskConfig {
@@ -363,8 +369,8 @@ export interface Simplify1Result {
 
 export interface Simplify2Task extends TaskInfo {
   taskType: 'simplify2';
-  inputBufferId: string;
-  config: TileSimplifyConfig;
+  inputBufferId?: string;
+  config?: Partial<TileSimplifyConfig>;
 }
 
 export interface TileSimplifyConfig extends SimplifyTaskConfig {
@@ -372,6 +378,8 @@ export interface TileSimplifyConfig extends SimplifyTaskConfig {
   preserveSharedBoundaries: boolean;
   quantization: number;
   coordinatePrecision: number;
+  tileSize?: number;
+  zoomLevels?: number[];
 }
 
 export interface Simplify2Result {
@@ -384,9 +392,12 @@ export interface Simplify2Result {
 }
 
 export interface VectorTileTask extends TaskInfo {
-  taskType: 'vectorTile';
-  tileBufferId: string;
-  config: VectorTileTaskConfig;
+  taskType: 'vectortile';
+  tileBufferId?: string;
+  inputBufferId?: string;
+  outputFormat?: string;
+  compression?: boolean;
+  config?: Partial<VectorTileTaskConfig>;
 }
 
 export interface VectorTileTaskConfig {

@@ -8,6 +8,7 @@
 
 import {
   AUTH_CONSTANTS,
+  AuthCancelledNotification,
   type AuthNotification,
   AuthNotificationFactory,
   AuthNotificationRegistry,
@@ -31,6 +32,7 @@ export interface AuthRequestInfo {
   context: AuthContext;
   retryCount: number;
   createdAt: number;
+  maxRetries: number;
 }
 
 /**
@@ -234,6 +236,7 @@ export class WorkerAuthHandler {
           context,
           retryCount,
           maxRetries,
+          createdAt: Date.now(),
         },
       });
 

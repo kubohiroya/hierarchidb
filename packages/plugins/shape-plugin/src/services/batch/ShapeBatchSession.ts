@@ -5,6 +5,7 @@ import {
 } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import type { ProgressInfo } from '../types.js';
+import type { ProcessingStage } from '../../shared/types.js';
 import type { SessionController } from './SessionController.js';
 
 export interface ShapeBatchConfig extends BaseBatchConfig {

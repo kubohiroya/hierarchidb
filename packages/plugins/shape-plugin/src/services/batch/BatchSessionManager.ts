@@ -226,10 +226,10 @@ export class BatchSessionManager {
         await this.cancelSession(sessionId);
         break;
       case 'stage/pause':
-        shared.pauseStage(payload.stage);
+        shared.pauseStage((payload as {stage: ProcessingStage}).stage);
         break;
       case 'stage/resume':
-        shared.resumeStage(payload.stage);
+        shared.resumeStage((payload as {stage: ProcessingStage}).stage);
         break;
       default:
         logBatchSessionWarning(`Unknown batch command ${String(command)}`, undefined);

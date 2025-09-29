@@ -27,6 +27,7 @@ export interface BatchTaskLike {
   error?: string;
   createdAt: number;
   updatedAt: number;
+  config?: Record<string, any>;
 }
 
 export type BatchTask = BatchTaskLike;
