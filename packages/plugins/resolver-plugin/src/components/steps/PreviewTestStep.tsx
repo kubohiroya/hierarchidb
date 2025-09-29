@@ -535,7 +535,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
   );
 };
 
-const hasMemory = (perf: Performance): perf is Performance & { memory: { usedJSHeapSize?: number } } => {
+const hasMemory = (perf: Performance): perf is Performance & { memory: { usedJSHeapSize?: number }} => {
   return typeof (perf as { memory?: unknown }).memory !== 'undefined';
 };
 

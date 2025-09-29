@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Grid, TextField, Typography } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { FolderIcon } from './FolderIcon.js';
 import type { FolderDisplayData, FolderEditData } from '../types.js';
 import type { NodeId } from '@hierarchidb/common-type';
@@ -162,37 +162,33 @@ export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={12}>
-            <TextField
-              autoFocus
-              fullWidth
-              label="Folder Name"
-              value={formData.name}
-              onChange={(e) => handleFormDataChange({ ...formData, name: e.target.value })}
-              error={!!errors.name}
-              helperText={errors.name || 'Enter a name for the folder-plugin'}
-              required
-              disabled={isSubmitting}
-              placeholder="Enter folder name..."
-            />
-          </Grid>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Folder Name"
+            value={formData.name}
+            onChange={(e) => handleFormDataChange({ ...formData, name: e.target.value })}
+            error={!!errors.name}
+            helperText={errors.name || 'Enter a name for the folder-plugin'}
+            required
+            disabled={isSubmitting}
+            placeholder="Enter folder name..."
+          />
 
-          <Grid size={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleFormDataChange({ ...formData, description: e.target.value })}
-              error={!!errors.description}
-              helperText={errors.description || 'Optional description for the folder-plugin'}
-              disabled={isSubmitting}
-              placeholder="Enter optional description..."
-            />
-          </Grid>
-        </Grid>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label="Description"
+            value={formData.description}
+            onChange={(e) => handleFormDataChange({ ...formData, description: e.target.value })}
+            error={!!errors.description}
+            helperText={errors.description || 'Optional description for the folder-plugin'}
+            disabled={isSubmitting}
+            placeholder="Enter optional description..."
+          />
+        </Stack>
       </DialogContent>
 
       <DialogActions>

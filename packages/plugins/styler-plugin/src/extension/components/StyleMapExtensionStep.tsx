@@ -6,7 +6,6 @@ import type React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, FormControl, InputLabel, MenuItem, Select, Slider, TextField, Typography } from '@mui/material';
-import Grid from '@mui/material/GridLegacy';
 
 export interface StylerStepData {
   styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
@@ -59,84 +58,81 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
   );
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          {t('extension.description', 'Configure Styler visualization settings for this folder')}
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 3,
+        gridTemplateColumns: {
+          xs: '1fr',
+          sm: 'repeat(2, minmax(0, 1fr))',
+        },
+      }}
+    >
+      <Typography variant="body2" color="text.secondary" gutterBottom sx={{ gridColumn: '1 / -1' }}>
+        {t('extension.description', 'Configure Styler visualization settings for this folder')}
+      </Typography>
+
+      <FormControl fullWidth disabled={isSubmitting}>
+        <InputLabel>{String(t('extension.styleType.label', 'Style Type'))}</InputLabel>
+        <Select
+          value={data.styleType || 'choropleth'}
+          onChange={handleStyleTypeChange}
+          label={String(t('extension.styleType.label', 'Style Type'))}
+        >
+          <MenuItem value="choropleth">
+            {t('extension.styleType.choropleth', 'Choropleth Map')}
+          </MenuItem>
+          <MenuItem value="heatmap">{t('extension.styleType.heatmap', 'Heat Map')}</MenuItem>
+          <MenuItem value="points">{t('extension.styleType.points', 'Point Map')}</MenuItem>
+          <MenuItem value="lines">{t('extension.styleType.lines', 'Line Map')}</MenuItem>
+        </Select>
+      </FormControl>
+
+      <TextField
+        fullWidth
+        label={String(t('extension.dataSource.label', 'Data Source'))}
+        value={data.dataSource || ''}
+        onChange={handleDataSourceChange}
+        disabled={isSubmitting}
+        placeholder={String(t('extension.dataSource.placeholder', 'e.g., CSV file path or URL'))}
+      />
+
+      <FormControl fullWidth disabled={isSubmitting}>
+        <InputLabel>{String(t('extension.colorScheme.label', 'Color Scheme'))}</InputLabel>
+        <Select
+          value={data.colorScheme || 'blues'}
+          onChange={handleColorSchemeChange}
+          label={String(t('extension.colorScheme.label', 'Color Scheme'))}
+        >
+          <MenuItem value="blues">{t('extension.colorScheme.blues', 'Blues')}</MenuItem>
+          <MenuItem value="reds">{t('extension.colorScheme.reds', 'Reds')}</MenuItem>
+          <MenuItem value="greens">{t('extension.colorScheme.greens', 'Greens')}</MenuItem>
+          <MenuItem value="viridis">{t('extension.colorScheme.viridis', 'Viridis')}</MenuItem>
+          <MenuItem value="plasma">{t('extension.colorScheme.plasma', 'Plasma')}</MenuItem>
+        </Select>
+      </FormControl>
+
+      <Box sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}>
+        <Typography gutterBottom>
+          {t('extension.opacity.label', 'Opacity')}: {data.opacity || 0.7}
         </Typography>
-      </Grid>
-
-      <Grid item xs={12} sm={6}>
-        <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>{String(t('extension.styleType.label', 'Style Type'))}</InputLabel>
-          <Select
-            value={data.styleType || 'choropleth'}
-            onChange={handleStyleTypeChange}
-            label={String(t('extension.styleType.label', 'Style Type'))}
-          >
-            <MenuItem value="choropleth">
-              {t('extension.styleType.choropleth', 'Choropleth Map')}
-            </MenuItem>
-            <MenuItem value="heatmap">{t('extension.styleType.heatmap', 'Heat Map')}</MenuItem>
-            <MenuItem value="points">{t('extension.styleType.points', 'Point Map')}</MenuItem>
-            <MenuItem value="lines">{t('extension.styleType.lines', 'Line Map')}</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
-      <Grid item xs={12} sm={6}>
-        <TextField
-          fullWidth
-          label={String(t('extension.dataSource.label', 'Data Source'))}
-          value={data.dataSource || ''}
-          onChange={handleDataSourceChange}
+        <Slider
+          value={data.opacity || 0.7}
+          onChange={handleOpacityChange}
+          min={0}
+          max={1}
+          step={0.1}
+          marks
           disabled={isSubmitting}
-          placeholder={String(t('extension.dataSource.placeholder', 'e.g., CSV file path or URL'))}
         />
-      </Grid>
-
-      <Grid item xs={12} sm={6}>
-        <FormControl fullWidth disabled={isSubmitting}>
-          <InputLabel>{String(t('extension.colorScheme.label', 'Color Scheme'))}</InputLabel>
-          <Select
-            value={data.colorScheme || 'blues'}
-            onChange={handleColorSchemeChange}
-            label={String(t('extension.colorScheme.label', 'Color Scheme'))}
-          >
-            <MenuItem value="blues">{t('extension.colorScheme.blues', 'Blues')}</MenuItem>
-            <MenuItem value="reds">{t('extension.colorScheme.reds', 'Reds')}</MenuItem>
-            <MenuItem value="greens">{t('extension.colorScheme.greens', 'Greens')}</MenuItem>
-            <MenuItem value="viridis">{t('extension.colorScheme.viridis', 'Viridis')}</MenuItem>
-            <MenuItem value="plasma">{t('extension.colorScheme.plasma', 'Plasma')}</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
-      <Grid xs={12} sm={6}>
-        <Box>
-          <Typography gutterBottom>
-            {t('extension.opacity.label', 'Opacity')}: {data.opacity || 0.7}
-          </Typography>
-          <Slider
-            value={data.opacity || 0.7}
-            onChange={handleOpacityChange}
-            min={0}
-            max={1}
-            step={0.1}
-            marks
-            disabled={isSubmitting}
-          />
-        </Box>
-      </Grid>
+      </Box>
 
       {errors && errors.length > 0 && (
-        <Grid item xs={12}>
-          <Typography color="error" variant="body2">
-            {errors.join(', ')}
-          </Typography>
-        </Grid>
+        <Typography color="error" variant="body2" sx={{ gridColumn: '1 / -1' }}>
+          {errors.join(', ')}
+        </Typography>
       )}
-    </Grid>
+    </Box>
   );
 };
 

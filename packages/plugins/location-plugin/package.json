@@ -75,7 +75,7 @@
     "@hierarchidb/batch": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^7.3.1",
+    "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -102,7 +102,7 @@
       "description": "Geographic location nodes with Shape integration",
       "icon": {
         "mui": "LocationPin",
-        "emoji": "\ud83d\udccd",
+        "emoji": "📍",
         "color": "#a3b030"
       },
       "category": {

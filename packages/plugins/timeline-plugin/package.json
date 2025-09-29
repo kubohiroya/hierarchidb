@@ -59,8 +59,8 @@
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "@hierarchidb/ui-dialog": "workspace:*",
     "react": ">=18.0.0"
   },
@@ -77,7 +77,7 @@
       "name": "Timeline Plugin",
       "icon": {
         "mui": "Timeline",
-        "emoji": "\ud83d\udd52",
+        "emoji": "🕒",
         "color": "#8a7cbf"
       }
     }

@@ -29,7 +29,6 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import Grid from '@mui/material/GridLegacy';
 import {
   AutoFixHigh as AutoFixHighIcon,
   BarChart as BarChartIcon,
@@ -271,48 +270,62 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
           <Typography variant="subtitle2" gutterBottom>
             Data Column Selection
           </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Key Column</InputLabel>
-                <Select
-                  value={selectedKeyColumn || ''}
-                  onChange={handleKeyColumnChange}
-                  label="Key Column"
-                >
-                  <MenuItem value="">
-                    <em>None</em>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: 'repeat(2, minmax(0, 1fr))',
+              },
+            }}
+          >
+            <FormControl
+              fullWidth
+              size="small"
+              sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+            >
+              <InputLabel>Key Column</InputLabel>
+              <Select
+                value={selectedKeyColumn || ''}
+                onChange={handleKeyColumnChange}
+                label="Key Column"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {columns.map((col) => (
+                  <MenuItem key={col} value={col}>
+                    {col}
                   </MenuItem>
-                  {columns.map((col) => (
-                    <MenuItem key={col} value={col}>
-                      {col}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>Column to use as feature identifier</FormHelperText>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Value Column</InputLabel>
-                <Select
-                  value={selectedValueColumn || ''}
-                  onChange={handleValueColumnChange}
-                  label="Value Column"
-                >
-                  <MenuItem value="">
-                    <em>None</em>
+                ))}
+              </Select>
+              <FormHelperText>Column to use as feature identifier</FormHelperText>
+            </FormControl>
+
+            <FormControl
+              fullWidth
+              size="small"
+              sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+            >
+              <InputLabel>Value Column</InputLabel>
+              <Select
+                value={selectedValueColumn || ''}
+                onChange={handleValueColumnChange}
+                label="Value Column"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {columns.filter(col => col !== selectedKeyColumn).map((col) => (
+                  <MenuItem key={col} value={col}>
+                    {col}
                   </MenuItem>
-                  {columns.filter(col => col !== selectedKeyColumn).map((col) => (
-                    <MenuItem key={col} value={col}>
-                      {col}
-                    </MenuItem>
-                  ))}
-                </Select>
-                <FormHelperText>Column containing values to map</FormHelperText>
-              </FormControl>
-            </Grid>
-          </Grid>
+                ))}
+              </Select>
+              <FormHelperText>Column containing values to map</FormHelperText>
+            </FormControl>
+          </Box>
         </Paper>
       )}
 
@@ -536,28 +549,35 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
             <Typography variant="subtitle2" gutterBottom>
               Value Range
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <TextField
-                  label="Min Value"
-                  type="number"
-                  value={localConfig.mapping.min}
-                  onChange={(e) => handleMappingChange('min', parseFloat(e.target.value) || 0)}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  label="Max Value"
-                  type="number"
-                  value={localConfig.mapping.max}
-                  onChange={(e) => handleMappingChange('max', parseFloat(e.target.value) || 100)}
-                  size="small"
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                },
+              }}
+            >
+              <TextField
+                label="Min Value"
+                type="number"
+                value={localConfig.mapping.min}
+                onChange={(e) => handleMappingChange('min', parseFloat(e.target.value) || 0)}
+                size="small"
+                fullWidth
+                sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
+              />
+              <TextField
+                label="Max Value"
+                type="number"
+                value={localConfig.mapping.max}
+                onChange={(e) => handleMappingChange('max', parseFloat(e.target.value) || 100)}
+                size="small"
+                fullWidth
+                sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' } }}
+              />
+            </Box>
           </Paper>
 
           {/* HSV Configuration */}

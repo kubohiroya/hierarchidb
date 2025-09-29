@@ -241,7 +241,7 @@ export function BaseMapEditor({
   return (
     <Box sx={{ p: 3 }}>
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             fullWidth
             label="Name"
@@ -250,7 +250,7 @@ export function BaseMapEditor({
           />
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             fullWidth
             multiline
@@ -261,7 +261,7 @@ export function BaseMapEditor({
           />
         </Grid>
         
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <FormControl fullWidth>
             <InputLabel>Map Style</InputLabel>
             <Select
@@ -277,7 +277,7 @@ export function BaseMapEditor({
           </FormControl>
         </Grid>
         
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <Typography gutterBottom>Zoom Level: {formData.zoom}</Typography>
           <Slider
             value={formData.zoom}
@@ -288,7 +288,7 @@ export function BaseMapEditor({
           />
         </Grid>
         
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Longitude"
@@ -302,7 +302,7 @@ export function BaseMapEditor({
           />
         </Grid>
         
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Latitude"
@@ -316,7 +316,7 @@ export function BaseMapEditor({
           />
         </Grid>
         
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Button 
             variant="contained" 
             color="primary" 

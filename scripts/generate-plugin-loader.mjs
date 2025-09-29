@@ -91,7 +91,8 @@ async function main() {
     const hasWorkerExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './worker'));
     const hasUiExportPath = !!(exportsField && Object.prototype.hasOwnProperty.call(exportsField, './ui'));
 
-    let hasEntitiesDbExport = false;
+    let entityLoaderKind = 'none';
+    let entityLoaderSymbol = undefined;
     let workerEntryPath;
     if (hasWorkerExportPath) {
       try {
@@ -107,26 +108,32 @@ async function main() {
         }
         // Robust check: dynamically import the worker entry and verify named export exists
         const className = `${capitalize(nodeType)}EntitiesDB`;
+        const loaderName = `load${capitalize(nodeType)}EntitiesDB`;
         try {
           const urlStr = url.pathToFileURL(workerEntryPath).href;
           const mod = await import(urlStr);
-          if (typeof mod[className] === 'function') {
-            hasEntitiesDbExport = true;
+          if (typeof mod[loaderName] === 'function') {
+            entityLoaderKind = 'load';
+            entityLoaderSymbol = loaderName;
+          } else if (typeof mod[className] === 'function') {
+            entityLoaderKind = 'class';
+            entityLoaderSymbol = className;
           }
         } catch {
-          // ignore import-time errors; leave hasEntitiesDbExport as false
+          // ignore import-time errors; leave entityLoaderKind as 'none'
         }
       } catch {
         // ignore resolution errors
       }
     }
+    const hasEntitiesDbExport = entityLoaderKind !== 'none';
 
     // Read plugin metadata to compute UI dependency order
     const pluginMeta = json?.hierarchidb?.plugin || {};
     const uiDepsRaw = pluginMeta.dependencies || pluginMeta.config?.dependencies || pluginMeta.dependsOn || [];
     const uiDeps = Array.isArray(uiDepsRaw) ? uiDepsRaw.map(String) : [];
 
-    meta.push({ name, nodeType, hasWorker: hasWorkerExportPath, hasUi: hasUiExportPath, hasEntitiesDbExport, uiDeps });
+    meta.push({ name, nodeType, hasWorker: hasWorkerExportPath, hasUi: hasUiExportPath, hasEntitiesDbExport, entityLoaderKind, entityLoaderSymbol, uiDeps });
   }
 
   const header = `// AUTO-GENERATED FILE. DO NOT EDIT.
@@ -160,13 +167,20 @@ declare global {
     .map(({ name, nodeType }) => `import * as ${capitalize(nodeType)}Worker from '${name}/worker';`)
     .join('\n');
 
+
   const loaderEntries = meta
-    .map(({ nodeType, hasWorker, hasEntitiesDbExport }) => {
+    .map(({ nodeType, hasWorker, hasEntitiesDbExport, entityLoaderKind, entityLoaderSymbol }) => {
       if (!hasWorker || !hasEntitiesDbExport) {
         return `  '${nodeType}': async () => undefined,`;
       }
+      const workerNamespace = `${capitalize(nodeType)}Worker`;
       const className = `${capitalize(nodeType)}EntitiesDB`;
-      return `  '${nodeType}': async () => { try { const Ctor = ${capitalize(nodeType)}Worker['${className}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },`;
+      if (entityLoaderKind === 'load') {
+        const loaderSymbol = entityLoaderSymbol || `load${capitalize(nodeType)}EntitiesDB`;
+        return `  '${nodeType}': async () => { try { const load = ${workerNamespace}['${loaderSymbol}'] as undefined | (() => Promise<unknown>); if (typeof load !== 'function') return undefined; const Ctor = await load(); if (typeof Ctor !== 'function') return undefined; const db = new (Ctor as any)(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },`;
+      }
+      const symbol = entityLoaderSymbol || className;
+      return `  '${nodeType}': async () => { try { const Ctor = ${workerNamespace}['${symbol}'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },`;
     })
     .join('\n');
 

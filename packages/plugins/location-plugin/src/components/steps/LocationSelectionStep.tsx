@@ -260,7 +260,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
             {/*
 */}
             {activeType.id === 'airport' && (
-              <Grid  spacing={3}>
+              <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <FormControlLabel
                     control={

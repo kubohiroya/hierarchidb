@@ -21,7 +21,7 @@
     "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
     "build:tsc": "tsc -p tsconfig.build.json",
     "dev": "tsup --watch",
-    "typecheck": "pnpm run prebuild && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
@@ -33,8 +33,8 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0"
   },

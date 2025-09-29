@@ -227,14 +227,14 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
           </Typography>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Data Source
               </Typography>
               <Typography variant="body1">{entity.dataSourceName.toUpperCase()}</Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               {entity.processingStatus && (
                 <>
                   <Typography variant="body2" color="text.secondary">
@@ -248,14 +248,14 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
                 </>
               )}
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Countries Selected
               </Typography>
               <Typography variant="body1">{entity.selectedCountries.length || 'None'}</Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Admin Levels
               </Typography>
@@ -356,7 +356,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
             {/* Stage Progress */}
             <Grid container spacing={2}>
               {Object.entries(batchStatus.session.stages).map(([stage, stageStatus]) => (
-                <Grid item xs={12} sm={6} key={stage}>
+                <Grid key={stage} size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="caption" sx={{ textTransform: 'capitalize' }}>

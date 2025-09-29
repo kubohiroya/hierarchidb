@@ -204,7 +204,7 @@ export const Step2MapStyle: React.FC<Step2MapStyleProps> = ({
       
       <Grid container spacing={3}>
         {mapStyleOptions.map((option) => (
-          <Grid item xs={12} sm={6} md={4} key={option.value}>
+          <Grid xs={12} sm={6} md={4} key={option.value}>
             <Card
               sx={{
                 cursor: 'pointer',

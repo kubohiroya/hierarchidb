@@ -262,10 +262,20 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
       {/*
 */}
       <Paper elevation={1} sx={{ p: 2, mb: 1 }}>
-        <Grid container spacing={2} alignItems="center">
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: 'repeat(3, minmax(0, 1fr))',
+            },
+            alignItems: 'center',
+          }}
+        >
           {/*
 */}
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
             <ToggleButtonGroup
               value={displayMode}
               exclusive
@@ -285,47 +295,46 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 <Typography variant="caption" sx={{ ml: 0.5 }}>Heatmap</Typography>
               </ToggleButton>
             </ToggleButtonGroup>
-          </Grid>
+          </Box>
 
           {/*
 */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              size="small"
-              fullWidth
-              placeholder={translations.mapPreview.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
-              }}
-            />
-          </Grid>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder={translations.mapPreview.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
+            }}
+            sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+          />
 
           {/*
 */}
-          <Grid size={{ xs: 12, md: 4 }}>
-          <Box display="flex" gap={1} flexWrap="wrap">
-            <Chip
-              label={formatTemplate(translations.mapPreview.visiblePointsLabel, {
-                visible: statistics.visiblePoints.toLocaleString(),
-                total: statistics.totalPoints.toLocaleString(),
-              })}
-              size="small"
-              color="primary"
-            />
-            {displayMode === 'clusters' && statistics.clusters > 0 && (
+          <Box sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
+            <Box display="flex" gap={1} flexWrap="wrap">
               <Chip
-                label={formatTemplate(translations.mapPreview.clustersLabel, {
-                  count: statistics.clusters,
+                label={formatTemplate(translations.mapPreview.visiblePointsLabel, {
+                  visible: statistics.visiblePoints.toLocaleString(),
+                  total: statistics.totalPoints.toLocaleString(),
                 })}
                 size="small"
-                variant="outlined"
+                color="primary"
               />
-            )}
+              {displayMode === 'clusters' && statistics.clusters > 0 && (
+                <Chip
+                  label={formatTemplate(translations.mapPreview.clustersLabel, {
+                    count: statistics.clusters,
+                  })}
+                  size="small"
+                  variant="outlined"
+                />
+              )}
+            </Box>
           </Box>
-          </Grid>
-        </Grid>
+        </Box>
 
         {/*
 */}
@@ -590,7 +599,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
           </DialogTitle>
           <DialogContent>
             <Grid container spacing={2}>
-              <Grid size={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
                   {translations.mapPreview.details.englishName}
                 </Typography>
@@ -598,7 +607,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                   {selectedLocation.nameEn || 'N/A'}
                 </Typography>
               </Grid>
-              <Grid size={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
                   {translations.mapPreview.details.countryCode}
                 </Typography>
@@ -606,7 +615,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                   {selectedLocation.countryCode}
                 </Typography>
               </Grid>
-              <Grid size={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
                   {translations.mapPreview.details.latitude}
                 </Typography>
@@ -614,7 +623,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                   {selectedLocation.coordinates[1].toFixed(6)}
                 </Typography>
               </Grid>
-              <Grid size={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="body2" color="text.secondary">
                   {translations.mapPreview.details.longitude}
                 </Typography>
@@ -623,7 +632,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
                 </Typography>
               </Grid>
               {Object.entries(selectedLocation.properties).map(([key, value]) => (
-                <Grid size={6} key={key}>
+                <Grid key={key} size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     {key}
                   </Typography>

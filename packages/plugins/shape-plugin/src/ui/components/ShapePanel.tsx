@@ -194,14 +194,14 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
           </Typography>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Data Source
               </Typography>
               <Typography variant="body1">{entity.dataSourceName}</Typography>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Processing Status
               </Typography>
@@ -220,7 +220,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
                 Description
               </Typography>
@@ -257,7 +257,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
             )}
 
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Typography variant="body2" color="text.secondary">
                   Features
                 </Typography>
@@ -266,7 +266,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Typography variant="body2" color="text.secondary">
                   Vector Tiles
                 </Typography>
@@ -275,7 +275,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 </Typography>
               </Grid>
 
-              <Grid item xs={12} sm={4}>
+              <Grid size={{ xs: 12, sm: 4 }}>
                 <Typography variant="body2" color="text.secondary">
                   Storage Used
                 </Typography>
@@ -331,7 +331,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Selected Countries
               </Typography>
@@ -347,7 +347,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
               </Box>
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Admin Levels
               </Typography>
@@ -363,7 +363,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
               </Box>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Processing Configuration
               </Typography>

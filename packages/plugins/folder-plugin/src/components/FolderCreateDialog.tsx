@@ -138,7 +138,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
 
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <TextField
               autoFocus
               fullWidth
@@ -153,7 +153,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
             />
           </Grid>
 
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
               multiline

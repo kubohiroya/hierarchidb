@@ -317,7 +317,7 @@ const DataSourceSelectStep = ({ workingCopy, onUpdate }) => {
       
       <Grid container spacing={3} sx={{ mt: 1 }}>
         {DATA_SOURCES.map((dataSource) => (
-          <Grid item xs={12} sm={6} key={dataSource.name}>
+          <Grid xs={12} sm={6} key={dataSource.name}>
             <DataSourceCard
               dataSource={dataSource}
               isSelected={workingCopy.dataSourceName === dataSource.name}
@@ -484,7 +484,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Typography gutterBottom>Concurrent Downloads</Typography>
               <Slider
                 value={workingCopy.processingConfig?.concurrentDownloads || 2}
@@ -504,7 +504,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="CORS Proxy Base URL"
                 value={workingCopy.processingConfig?.corsProxyBaseURL || ''}
@@ -608,7 +608,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Concurrent Processes"
                 type="number"
@@ -625,7 +625,7 @@ const ProcessingConfigStep = ({ workingCopy, onUpdate }) => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Max Zoom Level"
                 type="number"

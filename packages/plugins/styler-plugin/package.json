@@ -72,8 +72,8 @@
     "@hierarchidb/common-type": "workspace:*"
   },
   "peerDependencies": {
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "react": "^18.3.1",
     "react-dom": ">=18.0.0",
     "dexie": "^4.2.0",
@@ -119,7 +119,7 @@
       "name": "Styler Plugin",
       "icon": {
         "mui": "Palette",
-        "emoji": "\ud83c\udfa8",
+        "emoji": "🎨",
         "color": "#dcbc50"
       },
       "priority": 700,

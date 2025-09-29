@@ -1,68 +1,64 @@
-# AGENTS.md — 作業ルール（必読）
+# AGENTS.md — Operational Rules (English Edition)
 
-## 0. 会話・ドキュメント記述に用いる言語
+## 0. Quick-Start Checklist (read before any task)
+- **Language**: converse in clear, polite Japanese; write code comments/docs in English unless told otherwise.
+- **Grid usage**: use Material UI v7 `Grid` (new API, no `container`/`item`, prefer `size` props). No `GridLegacy`.
+- **Task source of truth**: use GitHub Issues as SSOT. Update labels/comments/logs on the relevant issue before modifying code (see `docs/policies/ISSUE-BASED-TASK-MANAGEMENT.md`).
+- **Verification**: run `pnpm -C <package> typecheck` and `pnpm -C <package> build` (if defined) for every touched package. For multi-package impact, run `pnpm -w typecheck` (and build if needed).
+- **Completion report**: list executed commands + success status. If a command cannot run (sandbox, network), explain why and provide fallback.
+- **Changes**: keep diffs small, scoped, and linked to documented tasks.
 
-* ユーザーとの対話に用いる言語は、丁寧な明瞭な日本語で行うこととしてください。短縮語を使うときには事前の定義をしてください。
-* ソースコード内のメッセージやインラインドキュメント、README.mdなどの記述で使用する言語は、特に指定がない限りは英語で行うこととしてください。
+## 1. Agent Update Process
+1. **Before coding**: read this file + the relevant GitHub Issue(s); acknowledge new instructions in the conversation.
+2. **When rules change**: append/update the relevant section here first (especially the checklist) and, if the task tracking flow changes, update `docs/policies/ISSUE-BASED-TASK-MANAGEMENT.md` accordingly.
+3. **Version trace**: maintain a "Change Log" at the bottom with date + short note (latest on top).
+4. **Reminders**: create TODOs in `TASKS.md` if longer follow-ups are required.
 
-このリポジトリでエージェント（AI/自動化）が機能追加や不具合修正を行う際の運用ルールです。以後の作業では本ドキュメントを最優先で順守してください（ユーザー/開発者の明示指示がある場合はそれを最優先）。
+## 2. Execution Rules
+### 2.1 Build & Typecheck (mandatory)
+- Run per package touched: `pnpm -C <package> typecheck`; `pnpm -C <package> build` if available.
+- For cross-package or unknown scope: `pnpm -w typecheck`, optionally `pnpm -w build`.
+- Fix failures immediately; do not submit with red builds.
 
-## 1. 完了報告前のビルド/型検証（必須）
-- 変更を加えたパッケージごとに、完了報告前に必ず以下を実行してグリーンであることを確認すること。
-  - `pnpm -C <package> typecheck`
-  - `pnpm -C <package> build`（ビルド定義が存在する場合）
-- 変更が複数パッケージに跨る、または影響範囲が不明な場合は、ワークスペース全体での検証も行う。
-  - `pnpm -w typecheck`
-  - `pnpm -w build`（必要に応じて）
-- 失敗があれば、原因を特定して修正し、再度すべてが通ることを確認してから完了報告すること。
+### 2.2 Result Reporting
+- Always list commands executed with package context and outcome.
+- If constraints block execution, state the reason, run a degraded check (e.g., `tsc --noEmit`), and request user execution if necessary.
 
-## 2. 実行結果の明示
-- 完了報告時は、どのコマンドをどのパッケージに対して実行し、結果がグリーンであったかを簡潔に記載すること。
-- もし環境制約（サンドボックス/権限/ネットワーク）で実行できない場合は、その理由を明記し、代替の検証（局所 `tsc --noEmit` など）を行ったうえで、ユーザーに承認/実行を依頼すること。原則として「未検証のまま完了報告」は不可。
+### 2.3 Change Scope & Records
+- Deliver minimal, reversible diffs.
+- Keep doc/type updates alongside code changes.
+- No unrelated cleanups.
 
-## 3. 変更単位と記録
-- 小さな差分を心掛け、不要な無関連変更は避けること。
-- 伴うドキュメントや型の更新も同一変更単位に含めること。
+## 3. Coordination
+- If deeper-file AGENTS.md exists, obey the more specific one in that scope.
+- Stop immediately if unexpected repo changes appear; ask the user how to proceed.
+- Follow the repo "Motto": *Small, clear, safe steps — always grounded in real docs.*
 
-## 4. その他
-- 既存の `TASKS.md` / `TASKS.csv` / `mrtask` 運用がある場合は、そちらの個別ルールを優先する（SSOT）。
-- リポジトリ内の他の AGENTS.md がより深い階層に存在する場合、そのスコープ内ではそちらを優先する。
-- コンテキストウィンドウの残りが15%以下になったときには、自動的に /compact を実行する。
+## 4. Workflow Guidance
+1. **Plan**: outline short actionable steps before major edits.
+2. **Read**: inspect relevant files fully before changing them.
+3. **Implement**: keep modules focused and ≤300 LOC when possible; comment only where logic isn’t obvious.
+4. **Verify**: re-read modified code; ensure formatting and lint expectations.
+5. **Test & Doc**: add/adjust tests and docs for every feature or fix.
+6. **Reflect**: address root causes; note adjacent risks or TODOs.
 
-Motto: "Small, clear, safe steps — always grounded in real docs."
+## 5. Code Style Notes
+- Write English comments; add rationale for non-trivial logic.
+- Concentrate config defaults in shared config files; avoid magic numbers.
+- Prefer clarity over cleverness; avoid new dependencies unless justified.
 
-## Principles
+## 6. Testing Notes
+- WFL (Worker-FIDB Loop): UI integration tests via WorkerAPIClient + fake-indexeddb.
+- Use context7 MCP server to fetch current docs before coding.
+- Verify external APIs with `resolve-library-id` → `get-library-docs`.
+- Pause and clarify when unsure.
 
-* Keep changes minimal, safe, and reversible.
-* Prefer clarity over cleverness; simplicity over complexity.
-* Avoid new dependencies unless necessary; remove when possible.
+## 7. Collaboration & Accountability
+- Escalate ambiguous, security-sensitive, or contract-changing requirements.
+- If confidence <80%, say so and ask questions.
+- Personal scoring guideline: −4 for wrong/breaking changes, +1 for successful changes. Honesty yields 0 (no penalty).
+- Prioritize correctness over speed.
 
-## Knowledge & Libraries
-## Testing Notes
-
-- **WFL (Worker-FIDB Loop)**: UI 統合テストで WorkerAPIClient を経由し、Worker 側の Fake IndexedDB (fake-indexeddb) 上で動作を検証する仕組み。従来の Worker テストと区別する用途で名称を統一。
-
-* Use context7 (MCP server) to fetch current docs before coding.
-* Call resolve-library-id, then get-library-docs to verify APls.
-* If uncertain, pause and request clarification.
-
-## Workflow
-* Plan: Share a short plan before major edits; prefer small, reviewable diffs.
-* Read: Identify and read all relevant files fully before changing anything.
-* Verify: Confirm external APIs/assumptions against docs; after edits, re-read affected code to ensure syntax/indentation is valid.
-* Implement: Keep scope tight; write modular, single-purpose files.
-* Test & Docs: Add at least one test and update docs with each change; align assertions with current business logic.
-* Reflect: Fix at the root cause; consider adjacent risks to prevent regressions.
-
-## Code Style & Limits
-* Files ≤ 300 LOC; keep modules single-purpose.
-* Comments: Add a brief header at the top of every file (where, what, why). Prefer clear, simple explanations; comment non-obvious logic.
-* Commenting habit: Err on the side of more comments; include rationale, assumptions, and trade-offs.
-* Configuration: Centralize runtime tunables in config-py; avoid magic numbers in code and tests. Pull defaults from config when wiring dependencies.
-* Simplicity: Implement exactly what's requested —no extra features.
-
-## Collaboration & Accountability
-* Escalate when requirements are ambiguous, security-sensitive, or when UX/API contracts would change.
-* Tell me when you are not confident about your code, plan, or fix. Ask questions or help, when your confidence level is below 80%
-* Assume that you get -4 points for wrong code and/or breaking changes. +1 point for successful changes. O point when you honestly tell me you're uncertain.
-* Value correctness over speed (a wrong change costs more than a small win).
+## 8. Change Log
+- 2025-09-29: Converted AGENTS.md to English checklist-driven format; added explicit MUI v7 Grid rule and update process.
+- 2025-09-29: Switched SSOT from `TASKS.md` to GitHub Issues; linked to `docs/policies/ISSUE-BASED-TASK-MANAGEMENT.md` and updated pre-work checks.

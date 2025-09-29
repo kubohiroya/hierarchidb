@@ -88,7 +88,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
       <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
         <Grid container spacing={3}>
           {/* Basic Info */}
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 {translations.panel.basicInfo}
@@ -125,13 +125,13 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
           </Grid>
 
           {/* Processing Config */}
-          <Grid size={12}>
+          <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 {translations.panel.processingSettings}
               </Typography>
               <Grid container spacing={2}>
-                <Grid size={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     {translations.panel.concurrentDownloads}
                   </Typography>
@@ -139,7 +139,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                     {entity.processingConfig?.concurrentDownloads}
                   </Typography>
                 </Grid>
-                <Grid size={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     {translations.panel.filtering}
                   </Typography>
@@ -149,7 +149,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                       : translations.common.disabled}
                   </Typography>
                 </Grid>
-                <Grid size={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     {translations.panel.clustering}
                   </Typography>
@@ -159,7 +159,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                       : translations.common.disabled}
                   </Typography>
                 </Grid>
-                <Grid size={6}>
+                <Grid size={{ xs: 6 }}>
                   <Typography variant="body2" color="text.secondary">
                     {translations.panel.geocoding}
                   </Typography>

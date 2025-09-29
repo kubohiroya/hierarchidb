@@ -1,7 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
-import Grid from '@mui/material/GridLegacy';
 import { useTranslation } from 'react-i18next';
 import { BasicInfoFields, CategorySelector, TagInput } from '@hierarchidb/ui-core';
 import type { StylemapCategory, StylemapCategoryConfig } from '../types/category-types.js';
@@ -112,8 +111,17 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         {tStr('basicInfo.description', 'Enter the basic information for your styler. This will help organize and identify your map style configuration.')}
       </Typography>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, minmax(0, 1fr))',
+          },
+        }}
+      >
+        <Box sx={{ gridColumn: '1 / -1' }}>
           <BasicInfoFields
             value={{ name: localData.name, description: localData.description }}
             onChange={(updates: Partial<{ name: string; description: string }>) => {
@@ -127,74 +135,61 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             descriptionLabel={tStr('basicInfo.description.label', 'Description')}
             descriptionHelperText={tStr('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
           />
-        </Grid>
+        </Box>
 
-        {/*
-*/}
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth required error={!!styleTypeError}>
-            <InputLabel>{tStr('basicInfo.styleType.label', 'Style Type')}</InputLabel>
-            <Select
-              value={localData.styleType}
-              label={tStr('basicInfo.styleType.label', 'Style Type')}
-              onChange={(e) => handleInputChange('styleType', e.target.value)}
-              disabled={disabled}
-            >
-              {styleTypeOptions.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText>
-              {styleTypeError || tStr('basicInfo.styleType.hint', 'Choose the geometry type for this style')}
-            </FormHelperText>
-          </FormControl>
-        </Grid>
-
-        {/*
-*/}
-        <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>{tStr('basicInfo.colorScheme.label', 'Color Scheme')}</InputLabel>
-            <Select
-              value={localData.colorScheme || ''}
-              label={tStr('basicInfo.colorScheme.label', 'Color Scheme')}
-              onChange={(e) => handleInputChange('colorScheme', e.target.value)}
-              disabled={disabled}
-            >
-              <MenuItem value="">
-                <em>{tStr('basicInfo.colorScheme.none', 'None selected')}</em>
-              </MenuItem>
-              {colorSchemeOptions.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <FormHelperText>
-              {tStr('basicInfo.colorScheme.hint', 'Optional predefined color palette')}
-            </FormHelperText>
-          </FormControl>
-        </Grid>
-
-        {/*
-*/}
-        <Grid item xs={12}>
-          <TextField
-            fullWidth
-            label={tStr('basicInfo.dataSource.label', 'Data Source')}
-            value={localData.dataSource || ''}
-            onChange={(e) => handleInputChange('dataSource', e.target.value)}
-            helperText={tStr('basicInfo.dataSource.hint', 'Optional reference to the data source or layer')}
+        <FormControl fullWidth required error={!!styleTypeError}>
+          <InputLabel>{tStr('basicInfo.styleType.label', 'Style Type')}</InputLabel>
+          <Select
+            value={localData.styleType}
+            label={tStr('basicInfo.styleType.label', 'Style Type')}
+            onChange={(e) => handleInputChange('styleType', e.target.value)}
             disabled={disabled}
-            placeholder={tStr('basicInfo.dataSource.placeholder', 'e.g., Census data, OpenStreetMap layers')}
-          />
-        </Grid>
+          >
+            {styleTypeOptions.map(option => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>
+            {styleTypeError || tStr('basicInfo.styleType.hint', 'Choose the geometry type for this style')}
+          </FormHelperText>
+        </FormControl>
 
-        {/*
-*/}
-        <Grid item xs={12}>
+        <FormControl fullWidth>
+          <InputLabel>{tStr('basicInfo.colorScheme.label', 'Color Scheme')}</InputLabel>
+          <Select
+            value={localData.colorScheme || ''}
+            label={tStr('basicInfo.colorScheme.label', 'Color Scheme')}
+            onChange={(e) => handleInputChange('colorScheme', e.target.value)}
+            disabled={disabled}
+          >
+            <MenuItem value="">
+              <em>{tStr('basicInfo.colorScheme.none', 'None selected')}</em>
+            </MenuItem>
+            {colorSchemeOptions.map(option => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>
+            {tStr('basicInfo.colorScheme.hint', 'Optional predefined color palette')}
+          </FormHelperText>
+        </FormControl>
+
+        <TextField
+          fullWidth
+          label={tStr('basicInfo.dataSource.label', 'Data Source')}
+          value={localData.dataSource || ''}
+          onChange={(e) => handleInputChange('dataSource', e.target.value)}
+          helperText={tStr('basicInfo.dataSource.hint', 'Optional reference to the data source or layer')}
+          disabled={disabled}
+          placeholder={tStr('basicInfo.dataSource.placeholder', 'e.g., Census data, OpenStreetMap layers')}
+          sx={{ gridColumn: '1 / -1' }}
+        />
+
+        <Box sx={{ gridColumn: '1 / -1' }}>
           <Typography variant="subtitle2" gutterBottom>
             {tStr('basicInfo.category.label', 'Category')}
           </Typography>
@@ -215,11 +210,9 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
             {tStr('basicInfo.category.hint', 'Choose a category that best describes this styler type')}
           </Typography>
-        </Grid>
+        </Box>
 
-        {/*
-*/}
-        <Grid item xs={12}>
+        <Box sx={{ gridColumn: '1 / -1' }}>
           <Typography variant="subtitle2" gutterBottom>
             {tStr('basicInfo.tags.label', 'Tags')}
           </Typography>
@@ -235,8 +228,8 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
             {tStr('basicInfo.tags.hint', 'Add tags to make this styler easier to find and organize')}
           </Typography>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

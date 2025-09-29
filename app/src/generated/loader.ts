@@ -29,14 +29,14 @@ import * as StylerWorker from '@hierarchidb/plugins-styler-plugin/worker';
 
 export const peerDbLoaders: Record<string, PeerDbLoader> = {
   'basemap': async () => undefined,
-  'folder': async () => { try { const Ctor = FolderWorker['FolderEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
+  'folder': async () => { try { const load = FolderWorker['loadFolderEntitiesDB'] as undefined | (() => Promise<unknown>); if (typeof load !== 'function') return undefined; const Ctor = await load(); if (typeof Ctor !== 'function') return undefined; const db = new (Ctor as any)(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },
   'linker': async () => undefined,
   'location': async () => undefined,
-  'resolver': async () => { try { const Ctor = ResolverWorker['ResolverEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
+  'resolver': async () => { try { const load = ResolverWorker['loadResolverEntitiesDB'] as undefined | (() => Promise<unknown>); if (typeof load !== 'function') return undefined; const Ctor = await load(); if (typeof Ctor !== 'function') return undefined; const db = new (Ctor as any)(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },
   'route': async () => undefined,
   'shape': async () => undefined,
   'spreadsheet': async () => undefined,
-  'styler': async () => { try { const Ctor = StylerWorker['StylerEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined; if (!Ctor) return undefined; const db = new Ctor(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db; } catch { return undefined; } },
+  'styler': async () => { try { const load = StylerWorker['loadStylerEntitiesDB'] as undefined | (() => Promise<unknown>); if (typeof load !== 'function') return undefined; const Ctor = await load(); if (typeof Ctor !== 'function') return undefined; const db = new (Ctor as any)(); if (typeof (db as any).open === 'function') { try { await (db as any).open(); } catch { /* ignore */ } } return db as PeerEntitiesDB; } catch { return undefined; } },
   'timeline': async () => undefined,
 };
 

@@ -303,7 +303,7 @@ export const BaseMapCreateDialog: React.FC<CreateDialogProps> = ({
       
       <DialogContent>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Name"
@@ -313,14 +313,14 @@ export const BaseMapCreateDialog: React.FC<CreateDialogProps> = ({
             />
           </Grid>
           
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <MapStyleSelector
               value={formData.style}
               onChange={(style) => setFormData({...formData, style})}
             />
           </Grid>
           
-          <Grid item xs={6}>
+          <Grid xs={6}>
             <CoordinatePicker
               label="Center"
               value={formData.center}
@@ -328,7 +328,7 @@ export const BaseMapCreateDialog: React.FC<CreateDialogProps> = ({
             />
           </Grid>
           
-          <Grid item xs={6}>
+          <Grid xs={6}>
             <Slider
               label="Initial Zoom"
               value={formData.zoom}

@@ -1,6 +1,11 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
+import fs from 'node:fs';
 import path from 'path';
+
+const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
   test: {
@@ -16,7 +21,7 @@ export default defineConfig({
       // Cross-plugin import resolution
       '../../spreadsheet/src/services/SpreadsheetCSVApiDriver': path.resolve(__dirname, '../spreadsheet-plugin/src/services/SpreadsheetCSVApiDriver.ts'),
       '@hierarchidb/plugins-spreadsheet-plugin': path.resolve(__dirname, './src/__tests__/mocks/spreadsheet-plugin.ts'),
-      '@hierarchidb/plugins-base-plugin': path.resolve(__dirname, '../base-plugin/src/index.ts'),
+      '@hierarchidb/plugins-base-plugin': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/ui-csv-extract': path.resolve(__dirname, '../../ui/csv-extract/dist/index.js'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),

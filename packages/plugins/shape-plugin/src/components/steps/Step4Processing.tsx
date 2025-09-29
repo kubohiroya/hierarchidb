@@ -54,7 +54,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography gutterBottom>Concurrent Downloads</Typography>
               <Slider
                 value={config?.concurrentDownloads || 2}
@@ -77,7 +77,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="CORS Proxy Base URL"
                 value={config?.corsProxyBaseURL || ''}
@@ -202,7 +202,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Concurrent Processes"
                 type="number"
@@ -220,7 +220,7 @@ export const Step4Processing: React.FC<StepProps> = ({ workingCopy, onUpdate, di
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Max Zoom Level"
                 type="number"

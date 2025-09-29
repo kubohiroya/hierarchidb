@@ -1,4 +1,11 @@
-# タスク管理（ローカル運用）
+# タスク管理（アーカイブ）
+
+> [!IMPORTANT]
+> 2025-09-29 以降、タスク管理の単一情報源 (SSOT) は GitHub Issues へ移行しました。今後は `docs/policies/ISSUE-BASED-TASK-MANAGEMENT.md` に従い、各タスクを Issue で管理してください。このファイルは履歴参照用に残しますが、更新は行わないでください。
+
+---
+
+# (旧) タスク管理（ローカル運用）
 
 本リポジトリでは、vibe-kanban の利用を一時停止し、当面はこの `TASKS.md` を単一の情報源（Single Source of Truth）としてタスク管理を行います。
 

@@ -10,10 +10,10 @@ import {
   MenuItem,
   Select,
   type SelectChangeEvent,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import Grid from '@mui/material/GridLegacy';
 import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 import type { DialogStepDefinition, DraftPeerEntity } from '@hierarchidb/common-type';
 import { BaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
@@ -111,111 +111,119 @@ const StylerConfigStep: React.FC<{
   const rangeError = errors?.find(e => e.includes('range'));
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <Typography variant="subtitle2" gutterBottom>
-          Configure map visualization style
-        </Typography>
-      </Grid>
+    <Box
+      sx={{
+        display: 'grid',
+        gap: 2,
+        gridTemplateColumns: {
+          xs: '1fr',
+          md: 'repeat(2, minmax(0, 1fr))',
+        },
+      }}
+    >
+      <Typography variant="subtitle2" gutterBottom sx={{ gridColumn: '1 / -1' }}>
+        Configure map visualization style
+      </Typography>
 
-      <Grid item xs={12} md={6}>
-        <FormControl fullWidth error={!!styleTypeError} disabled={isSubmitting}>
-          <InputLabel>Style Type</InputLabel>
-          <Select
-            value={data.styleType || ''}
-            onChange={handleStyleTypeChange}
-            label="Style Type"
-          >
-            <MenuItem value="">None</MenuItem>
-            <MenuItem value="choropleth">Choropleth Map</MenuItem>
-            <MenuItem value="heatmap">Heat Map</MenuItem>
-            <MenuItem value="points">Point Markers</MenuItem>
-            <MenuItem value="lines">Line Features</MenuItem>
-          </Select>
-          {styleTypeError && <FormHelperText>{styleTypeError}</FormHelperText>}
-        </FormControl>
-      </Grid>
+      <FormControl
+        fullWidth
+        error={!!styleTypeError}
+        disabled={isSubmitting}
+        sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+      >
+        <InputLabel>Style Type</InputLabel>
+        <Select
+          value={data.styleType || ''}
+          onChange={handleStyleTypeChange}
+          label="Style Type"
+        >
+          <MenuItem value="">None</MenuItem>
+          <MenuItem value="choropleth">Choropleth Map</MenuItem>
+          <MenuItem value="heatmap">Heat Map</MenuItem>
+          <MenuItem value="points">Point Markers</MenuItem>
+          <MenuItem value="lines">Line Features</MenuItem>
+        </Select>
+        {styleTypeError && <FormHelperText>{styleTypeError}</FormHelperText>}
+      </FormControl>
 
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Data Source"
-          value={data.dataSource || ''}
-          onChange={handleDataSourceChange}
-          error={!!dataSourceError}
-          helperText={dataSourceError || 'CSV file or API endpoint'}
-          disabled={isSubmitting}
-          placeholder="e.g., data.csv or https://api.example.com/data"
-        />
-      </Grid>
+      <TextField
+        fullWidth
+        label="Data Source"
+        value={data.dataSource || ''}
+        onChange={handleDataSourceChange}
+        error={!!dataSourceError}
+        helperText={dataSourceError || 'CSV file or API endpoint'}
+        disabled={isSubmitting}
+        placeholder="e.g., data.csv or https://api.example.com/data"
+        sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+      />
 
       {data.styleType && (
         <>
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth disabled={isSubmitting}>
-              <InputLabel>Color Scheme</InputLabel>
-              <Select
-                value={data.colorScheme || 'blues'}
-                onChange={handleColorSchemeChange}
-                label="Color Scheme"
-              >
-                <MenuItem value="blues">Blues</MenuItem>
-                <MenuItem value="reds">Reds</MenuItem>
-                <MenuItem value="greens">Greens</MenuItem>
-                <MenuItem value="purples">Purples</MenuItem>
-                <MenuItem value="viridis">Viridis</MenuItem>
-                <MenuItem value="plasma">Plasma</MenuItem>
-                <MenuItem value="rainbow">Rainbow</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          <FormControl
+            fullWidth
+            disabled={isSubmitting}
+            sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+          >
+            <InputLabel>Color Scheme</InputLabel>
+            <Select
+              value={data.colorScheme || 'blues'}
+              onChange={handleColorSchemeChange}
+              label="Color Scheme"
+            >
+              <MenuItem value="blues">Blues</MenuItem>
+              <MenuItem value="reds">Reds</MenuItem>
+              <MenuItem value="greens">Greens</MenuItem>
+              <MenuItem value="purples">Purples</MenuItem>
+              <MenuItem value="viridis">Viridis</MenuItem>
+              <MenuItem value="plasma">Plasma</MenuItem>
+              <MenuItem value="rainbow">Rainbow</MenuItem>
+            </Select>
+          </FormControl>
 
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Opacity"
-              type="number"
-              value={data.opacity || 0.7}
-              onChange={handleOpacityChange}
-              inputProps={{ min: 0, max: 1, step: 0.1 }}
-              disabled={isSubmitting}
-              helperText="0 (transparent) to 1 (opaque)"
-            />
-          </Grid>
+          <TextField
+            fullWidth
+            label="Opacity"
+            type="number"
+            value={data.opacity || 0.7}
+            onChange={handleOpacityChange}
+            inputProps={{ min: 0, max: 1, step: 0.1 }}
+            disabled={isSubmitting}
+            helperText="0 (transparent) to 1 (opaque)"
+            sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+          />
 
           {(data.styleType === 'choropleth' || data.styleType === 'heatmap') && (
             <>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Min Value"
-                  type="number"
-                  value={data.minValue || ''}
-                  onChange={handleMinValueChange}
-                  error={!!rangeError}
-                  disabled={isSubmitting}
-                  placeholder="Minimum data value"
-                />
-              </Grid>
+              <TextField
+                fullWidth
+                label="Min Value"
+                type="number"
+                value={data.minValue || ''}
+                onChange={handleMinValueChange}
+                error={!!rangeError}
+                disabled={isSubmitting}
+                placeholder="Minimum data value"
+                sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+              />
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Max Value"
-                  type="number"
-                  value={data.maxValue || ''}
-                  onChange={handleMaxValueChange}
-                  error={!!rangeError}
-                  helperText={rangeError}
-                  disabled={isSubmitting}
-                  placeholder="Maximum data value"
-                />
-              </Grid>
+              <TextField
+                fullWidth
+                label="Max Value"
+                type="number"
+                value={data.maxValue || ''}
+                onChange={handleMaxValueChange}
+                error={!!rangeError}
+                helperText={rangeError}
+                disabled={isSubmitting}
+                placeholder="Maximum data value"
+                sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
+              />
             </>
           )}
         </>
       )}
-    </Grid>
+    </Box>
   );
 };
 
@@ -257,28 +265,24 @@ const CategoryMappingStep: React.FC<{
   );
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12}>
-        <Typography variant="subtitle2" gutterBottom>
-          Define data categories for mapping
-        </Typography>
-      </Grid>
+    <Stack spacing={2}>
+      <Typography variant="subtitle2" gutterBottom>
+        Define data categories for mapping
+      </Typography>
 
-      <Grid item xs={12}>
-        <TextField
-          fullWidth
-          label="Add Category"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          disabled={isSubmitting}
-          placeholder="Type category name and press Enter"
-          helperText="Categories will be mapped to different colors/styles"
-        />
-      </Grid>
+      <TextField
+        fullWidth
+        label="Add Category"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyPress={handleKeyPress}
+        disabled={isSubmitting}
+        placeholder="Type category name and press Enter"
+        helperText="Categories will be mapped to different colors/styles"
+      />
 
       {data.categories && data.categories.length > 0 && (
-        <Grid item xs={12}>
+        <Box>
           <Typography variant="body2" gutterBottom>
             Categories ({data.categories.length}):
           </Typography>
@@ -293,17 +297,15 @@ const CategoryMappingStep: React.FC<{
               />
             ))}
           </Box>
-        </Grid>
+        </Box>
       )}
 
       {errors?.length && (
-        <Grid item xs={12}>
-          <Typography color="error" variant="caption">
-            {errors.join(', ')}
-          </Typography>
-        </Grid>
+        <Typography color="error" variant="caption">
+          {errors.join(', ')}
+        </Typography>
       )}
-    </Grid>
+    </Stack>
   );
 };
 

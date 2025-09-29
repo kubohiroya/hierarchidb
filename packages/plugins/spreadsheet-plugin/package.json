@@ -88,7 +88,7 @@
       "name": "Spreadsheet Plugin",
       "icon": {
         "mui": "Assessment",
-        "emoji": "\ud83d\udcc8",
+        "emoji": "📈",
         "color": "#dcbc50"
       },
       "priority": 600,
@@ -127,8 +127,8 @@
     "dexie": "^4.2.0",
     "react-i18next": "12.3.1",
     "i18next": "22.5.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "tsup": {

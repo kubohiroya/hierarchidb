@@ -65,7 +65,7 @@ export interface LocationEntity {
 ```typescript
 // src/components/batch/BatchProgressDialog.tsx
 // 修正前（MUI v6でitem propが削除された）
-<Grid item xs={6} md={3}>
+<Grid xs={6} md={3}>
   <Paper>Content</Paper>
 </Grid>
 

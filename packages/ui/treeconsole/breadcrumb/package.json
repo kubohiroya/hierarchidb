@@ -17,7 +17,7 @@
     "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
     "build:tsc": "tsc -p tsconfig.json",
     "dev": "tsup --watch",
-    "typecheck": "pnpm run prebuild && tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "comlink": "^4.4.2",
@@ -41,8 +41,8 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "react-router-dom": ">=6.22.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0"
   },

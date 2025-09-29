@@ -50,8 +50,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^6.1.8",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@deck.gl/core": "^9.0.0",
@@ -116,7 +116,7 @@
       "description": "Link compiled resources to map for usage",
       "icon": {
         "mui": "AccountTree",
-        "emoji": "\ud83c\udf32",
+        "emoji": "🌲",
         "color": "#ffe0f3"
       },
       "category": {
