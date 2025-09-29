@@ -7,10 +7,15 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prebuild": "pnpm --filter @hierarchidb/util build",
-    "build": "pnpm run prebuild && tsup",
+    "prebuild": "pnpm run build:clean",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "clean": "rm -rf dist",
-    "typecheck": "pnpm run prebuild && tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
     "@hierarchidb/common-auth": "workspace:*",

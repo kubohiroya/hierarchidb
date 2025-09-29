@@ -46,7 +46,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
@@ -56,8 +56,13 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc && tsc-alias",
-    "dev:tsc": "tsc --watch"
+    "build:tsc": "pnpm run build:types",
+    "dev:tsc": "tsc --watch",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
     "@hierarchidb/util": "workspace:*",
@@ -119,7 +124,7 @@
       "name": "Styler Plugin",
       "icon": {
         "mui": "Palette",
-        "emoji": "\ud83c\udfa8",
+        "emoji": "🎨",
         "color": "#dcbc50"
       },
       "priority": 700,

@@ -18,10 +18,16 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*"

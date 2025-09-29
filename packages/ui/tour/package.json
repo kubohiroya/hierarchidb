@@ -12,12 +12,17 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc && tsc-alias",
+    "build:tsc": "pnpm run build:types",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
     "react-joyride": "^3.0.0-7"

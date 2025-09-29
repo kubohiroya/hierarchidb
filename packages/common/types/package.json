@@ -14,8 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsup && node scripts/emit-ambient.mjs",
-    "build:tsc": "tsc && tsc-alias",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build:tsc": "pnpm run build:types",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
@@ -24,7 +24,12 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs && node scripts/emit-ambient.mjs",
+    "prebuild": "pnpm run build:clean"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

@@ -4324,3 +4324,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - progress: `pnpm -w typecheck` / `pnpm -w lint` を実行し、ともに成功を確認（location-plugin/styler-plugin の型修正後）。
 - progress: location-plugin と styler-plugin の `getStepStateEvaluator` を新インターフェース（`getEnabledSteps`/`getValidatedSteps`）へ合わせ、app ローダーの型警告も `Record<string, unknown>` 経由で解消。
 - progress: `scripts/dep-fence-extra.mjs` で検知されていた各パッケージの `tsconfig` パス上書きを整理し、`~/*` のみ残す形に統一。再度 `node scripts/dep-fence-extra.mjs` を実行して警告ゼロを確認。
+
+2025-09-29
+- start: chore/build-scripts-prebuild-cleanup — `packages/{runtime-ui/plugin-dialog,plugins/{folder-plugin,shape-plugin},feature/auth-recovery,ui/{core,csv-extract},ui/treeconsole/breadcrumb}` の `build` スクリプトから冗長な `pnpm run prebuild` 呼び出しを除去する作業を main 直下で着手。
+- done: 上記7パッケージの `build` スクリプトを `tsup` / `pnpm run build:tsc && tsup` へ統一し、Turbo の `dependsOn: ['^build']` だけで依存ビルドが完了する構成へ整理。確認のため `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` を実行したが、既存の `@hierarchidb/plugins-base-plugin` / `@hierarchidb/util` 型定義が未生成の状態で `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/map-adapter` の DTS ビルドが失敗する既知問題に突き当たり要フォロー。
+- progress: `scripts/build/apply-build-template.mjs` を更新し、`tsconfig.build.json` の `include/exclude` を元 TSConfig ベースで統合、`build:pack` の共通テンプレートから `@hierarchidb/common-type` だけ `emit-ambient` を差し込むロジックを追加。`scripts/build/copy-dist-types.mjs` も `.tsbuildinfo` を削除するよう改善。
+- progress: `pnpm --filter @hierarchidb/common-type build` を実行し、新テンプレートで宣言生成と ambient 連携が問題なく完了することを確認。
+- progress: `pnpm exec turbo run build --filter @hierarchidb/ui-core` を実行し、依存パッケージ（`@hierarchidb/util`, `@hierarchidb/ui-data-grid`, `@hierarchidb/ui-icon`, `@hierarchidb/common-type` など）が Turbo の `^build` 伝播で自動ビルドされる挙動を確認。全コマンド成功。
+- blocked: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` は引き続き `tsc -p tsconfig.build.json` で `@hierarchidb/plugins-base-plugin` の型解決に失敗（`TS2307`）。`pnpm list --filter @hierarchidb/runtime-ui-plugin-dialog --depth=0` を確認すると依存パッケージに `@hierarchidb/plugins-base-plugin` がリンクされておらず、workspace 解決の整備が必要。
+- blocked: 依存再インストール後も `pnpm --filter @hierarchidb/common-type build` が `@types/node` 不在で失敗（TS2688）。`pnpm --filter @hierarchidb/common-type install` をオフライン指定で試行したがストアに tarball がなく取得不可。ネットワーク許可後に再インストールが必要。
+- progress: `/Users/hiroya/WebstormProjects/worker-factory-rollout` で再度 `pnpm install` を実施していただいた後、`pnpm --filter @hierarchidb/common-type build` が新テンプレートで成功することを確認。
+- progress: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` も成功し、`@hierarchidb/plugins-base-plugin` 依存を含む型生成が通ることを確認。

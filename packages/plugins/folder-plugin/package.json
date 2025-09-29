@@ -43,17 +43,21 @@
     }
   },
   "scripts": {
-    "prebuild": "pnpm --filter @hierarchidb/util build",
-    "build": "pnpm run prebuild && tsup",
+    "prebuild": "pnpm run build:clean",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
     "dev": "tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "pnpm run prebuild && tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "build:tsc": "tsc",
+    "build:tsc": "pnpm run build:types",
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {

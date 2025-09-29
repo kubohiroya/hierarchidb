@@ -1,34 +1,42 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "outDir": "./dist-types",
+    "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/runtime-ui-datasource": [
-        "../../runtime-ui/datasource/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "../../runtime-ui/datasource/src/*"
-      ]
-    }
+    "declarationDir": "./dist-types",
+    "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "incremental": true
   },
   "include": [
-    "src/types/**/*.ts",
-    "src/types/**/*.tsx",
-    "src/types/**/*.d.ts"
+    "src/shared/**/*",
+    "src/types/**/*",
+    "src/services/**/*",
+    "src/worker/api.ts",
+    "src/worker/handlers/**/*",
+    "src/worker/plugin.ts"
   ],
   "exclude": [
-    "src/__tests____tests__migration/**",
+    "dist",
+    "dist-types",
+    "node_modules",
+    "src/__tests__/**",
+    "src/tests/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "src/**/*.stories.*",
+    "src/examples/**",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
     "src/ui/**",
-    "src/extension/**",
     "src/components/**",
-    "src/services/**",
     "src/worker/**",
-    "src/api/**",
-    "dist/**"
+    "src/extension/handler.ts"
   ]
 }

@@ -7,14 +7,20 @@
   "scripts": {
     "dev:manual": "wrangler dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "pnpm run typecheck",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "test": "vitest"
+    "test": "vitest",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
     "hono": "^4.9.2",

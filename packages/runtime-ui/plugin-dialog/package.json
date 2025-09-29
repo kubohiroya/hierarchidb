@@ -16,17 +16,20 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "prebuild": "pnpm --filter @hierarchidb/plugins-base-plugin build && pnpm --filter @hierarchidb/ui-core build && pnpm --filter @hierarchidb/ui-dialog build",
-    "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
-    "build:tsc": "tsc -p tsconfig.build.json",
-    "typecheck": "pnpm run prebuild && tsc --noEmit",
+    "prebuild": "pnpm run build:clean",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build:tsc": "pnpm run build:types",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "format": "prettier --write src",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:tsc": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs"
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
