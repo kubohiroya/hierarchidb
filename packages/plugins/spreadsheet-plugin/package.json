@@ -56,7 +56,7 @@
     "build:clean": "rm -rf dist dist-types",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
