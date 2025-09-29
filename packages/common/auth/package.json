@@ -8,8 +8,12 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "AuthNotificationSystem": ["dist/AuthNotificationSystem.d.ts"],
-      "*": ["dist/index.d.ts"]
+      "AuthNotificationSystem": [
+        "dist/AuthNotificationSystem.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "exports": {
@@ -23,14 +27,19 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "tsc && tsc-alias"
+    "build:tsc": "pnpm run build:types",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*"

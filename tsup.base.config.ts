@@ -29,40 +29,20 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     new Set([...(defaultExternal as string[]), ...((options.external as string[] | undefined) ?? [])])
   );
 
+  const { external: _externalIgnored, dts: _ignoredDts, ...restOptions } = options;
+
   return defineConfig({
     // Default entry point for packages
     entry: ['src/index.ts'],
 
     // Output formats
     format: ['esm'],
-    
+
     // TypeScript configuration
     target: 'es2022',
 
-    // Generate .d.ts files with optimized settings
-    dts: {
-      // Avoid inlining external .d.ts (react, mui, workspace peers)
-      // This prevents API Extractor from pulling in TS5-specific paths like
-      // '@types/react/ts5.0/jsx-runtime' into the bundled output.
-      resolve: false,
-      compilerOptions: {
-        module: 'Node16',
-        composite: false,
-        incremental: false,
-        tsBuildInfoFile: undefined,
-        // Align with package Node16 resolution during DTS bundling
-        moduleResolution: 'Node16',
-        resolveJsonModule: true,
-        // Keep JSX types external to avoid leaking jsx-runtime symbols
-        jsx: 'react-jsx',
-        skipLibCheck: true,
-        // Do not fail DTS bundling on local unuseds; keep tsc typecheck strict
-        noUnusedLocals: false,
-        noUnusedParameters: false,
-        // Include Vite's ambient definitions so packages using import.meta.env compile during DTS bundling.
-        types: ['react', 'node', 'vite/client'],
-      },
-    },
+    // Declaration bundling is handled by package-level tsc builds
+    dts: false,
 
     // Build settings
     splitting: false,
@@ -74,6 +54,6 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     external: mergedExternal,
 
     // Merge with package-specific options
-    ...options,
+    ...restOptions,
   }) as Options;
 };

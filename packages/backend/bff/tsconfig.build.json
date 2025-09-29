@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist-types",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "declarationDir": "./dist-types",
+    "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "incremental": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "dist-types",
+    "node_modules",
+    "src/__tests__/**",
+    "src/tests/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "src/**/*.stories.*",
+    "src/examples/**"
+  ]
+}

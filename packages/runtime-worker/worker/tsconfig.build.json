@@ -1,34 +1,33 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "./dist-types",
     "rootDir": "./src",
-    "baseUrl": "./",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
-    "module": "Node16",
-    "moduleResolution": "Node16",
-    "target": "es2023",
-    "lib": [
-      "es2023",
-      "dom"
-    ],
+    "baseUrl": ".",
+    "declarationDir": "./dist-types",
+    "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
     "noEmit": false,
-    "emitDeclarationOnly": false,
-    "allowImportingTsExtensions": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "jsx": "react-jsx"
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationMap": true,
+    "composite": true,
+    "incremental": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts",
+    "src/**/*.d.ts"
   ],
   "exclude": [
-    "node_modules",
     "dist",
-    "**/__tests__/*"
+    "dist-types",
+    "node_modules",
+    "src/__tests__/**",
+    "src/tests/**",
+    "src/**/*.test.*",
+    "src/**/*.spec.*",
+    "src/**/*.stories.*",
+    "src/examples/**",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts"
   ]
 }

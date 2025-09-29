@@ -8,10 +8,18 @@
   "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "types": ["dist/types.d.ts"],
-      "ports": ["dist/ports.d.ts"],
-      "registry": ["dist/registry.d.ts"],
-      "*": ["dist/index.d.ts"]
+      "types": [
+        "dist/types.d.ts"
+      ],
+      "ports": [
+        "dist/ports.d.ts"
+      ],
+      "registry": [
+        "dist/registry.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "exports": {
@@ -33,9 +41,15 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
     "clean": "rm -rf dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/build/copy-dist-types.mjs",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
