@@ -115,8 +115,8 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
         failed: progress.failed,
         percentage: progress.percentage,
         currentTask: progress.currentTask,
-        estimatedTimeRemaining: undefined, // ProgressInfo doesn't have this field
-      });
+        estimatedTimeRemaining: undefined,
+      } as unknown as Parameters<BatchProgressCallback>[0]);
     });
 
     // Return unsubscribe function (shape manager doesn't provide one, so we return a no-op)

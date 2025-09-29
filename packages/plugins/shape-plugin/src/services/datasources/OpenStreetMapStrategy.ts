@@ -10,7 +10,7 @@ import {
   type FetchOptions,
   type ProcessOptions,
 } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../types/ShapeEntity.js';
+import type { ShapeEntity } from '../../shared/types.js';
 
 //  OSM
 export interface OSMRawData {
@@ -159,7 +159,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       tags = [],
       query,
       timeout = 25, //  Overpass API
-      endpoint = 'interpreter',
+      endpoint: _endpoint = 'interpreter',
     } = options || {};
 
     try {

@@ -11,7 +11,10 @@ export class RuntimeWorkerSimplify1Adapter implements Simplify1StageAdapter {
     let completed = 0, failed = 0;
     for (const task of tasks) {
       try {
-        await client.simplify.simplifyStage1(task.inputBufferId, { tolerance: task.tolerance, minArea: task.minArea });
+        const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
+        const tolerance = task.tolerance ?? task.config?.tolerance ?? 0.001;
+        const minArea = task.minArea ?? task.config?.minimumArea ?? 0;
+        await client.simplify.simplifyStage1(inputBufferId, { tolerance, minArea });
         completed++;
       } catch {
         failed++;
@@ -29,7 +32,10 @@ export class RuntimeWorkerSimplify2Adapter implements Simplify2StageAdapter {
     let completed = 0, failed = 0;
     for (const task of tasks) {
       try {
-        await client.simplify.simplifyStage2(task.inputBufferId, { zoomLevels: task.zoomLevels, tileSize: task.tileSize });
+        const inputBufferId = task.inputBufferId ?? task.config?.inputBufferId ?? '';
+        const zoomLevels = task.zoomLevels ?? task.config?.zoomLevels ?? [];
+        const tileSize = task.tileSize ?? task.config?.tileSize ?? 256;
+        await client.simplify.simplifyStage2(inputBufferId, { zoomLevels, tileSize });
         completed++;
       } catch {
         failed++;
@@ -39,4 +45,3 @@ export class RuntimeWorkerSimplify2Adapter implements Simplify2StageAdapter {
     return { processed: completed, failed };
   }
 }
-

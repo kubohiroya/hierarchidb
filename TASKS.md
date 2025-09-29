@@ -4335,3 +4335,4 @@ ToDo（Phase 2/3: any の完全撤去）
 - blocked: 依存再インストール後も `pnpm --filter @hierarchidb/common-type build` が `@types/node` 不在で失敗（TS2688）。`pnpm --filter @hierarchidb/common-type install` をオフライン指定で試行したがストアに tarball がなく取得不可。ネットワーク許可後に再インストールが必要。
 - progress: `/Users/hiroya/WebstormProjects/worker-factory-rollout` で再度 `pnpm install` を実施していただいた後、`pnpm --filter @hierarchidb/common-type build` が新テンプレートで成功することを確認。
 - progress: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` も成功し、`@hierarchidb/plugins-base-plugin` 依存を含む型生成が通ることを確認。
+- progress: `@hierarchidb/plugins-shape-plugin` の shared/services 型定義を整理し、Runtime Worker adapter／RecoveryStrategy 周辺の実装を型安全化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認。

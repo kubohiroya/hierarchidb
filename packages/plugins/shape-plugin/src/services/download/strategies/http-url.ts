@@ -14,7 +14,8 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
     const net = new FetchNetworkPort({ perHostConcurrency: 4, retries: 3 });
     const store = new DexieChunkStoragePort('hidb-chunks');
   const dl = new DownloadService(net, store, undefined as unknown as never);
-    const fileId = `${task.sessionId}-${task.config?.country}-L${task.config?.adminLevel}`;
+    const taskConfig = task as BatchTaskLike & { config?: { country?: string; adminLevel?: number; dataSource?: string } };
+    const fileId = `${task.sessionId}-${taskConfig.config?.country ?? 'unknown'}-L${taskConfig.config?.adminLevel ?? 0}`;
     const res = await dl.download(url, fileId, {});
     let text: string;
     if (typeof store.readAll === 'function') {
@@ -28,9 +29,10 @@ export class HttpUrlStrategy implements IShapeDownloadStrategy {
   }
 
   private buildUrl(task: BatchTaskLike): string {
-    const dataSource = (task.config?.dataSource || 'gadm').toLowerCase();
-    const country = task.config?.country || 'JP';
-    const level = task.config?.adminLevel || 0;
+    const taskConfig = task as BatchTaskLike & { config?: { dataSource?: string; country?: string; adminLevel?: number } };
+    const dataSource = (taskConfig.config?.dataSource || 'gadm').toLowerCase();
+    const country = taskConfig.config?.country || 'JP';
+    const level = taskConfig.config?.adminLevel || 0;
     switch (dataSource) {
       case 'gadm':
         return `https://geodata.ucdavis.edu/gadm/gadm4.1/json/gadm41_${country}_${level}.json`;

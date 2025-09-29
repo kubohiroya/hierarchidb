@@ -24,39 +24,34 @@ import type { BBox, Geometry } from 'geojson';
 // Core Entity Types
 // ================================
 
-export type ShapeEntity = Partial<PeerEntity & {
+export interface ShapeEntity extends Partial<PeerEntity> {
   // Basic Information (Step 1)
-  name: string;
+  name?: string;
   description?: string;
 
   // Map Position
   zxy?: [number, number, number]; // [zoom, x(longitude), y(latitude)] for initial position
 
   // Data Source (Step 2)
-  dataSourceName: DataSourceName;
+  dataSourceName?: DataSourceName;
 
   // License Agreement (Step 3)
-  licenseAgreement: boolean;
+  licenseAgreement?: boolean;
   licenseAgreedAt?: string;
 
   // Processing Configuration (Step 4)
   processingConfig?: ProcessingConfig;
 
   // Country & Admin Selection (Step 5)
-  checkboxState: boolean[][] | string; // Serializable matrix
-  selectedCountries: string[];
-  adminLevels: number[];
-  urlMetadata: UrlMetadata[];
+  checkboxState?: boolean[][] | string; // Serializable matrix
+  selectedCountries?: string[];
+  adminLevels?: number[];
+  urlMetadata?: UrlMetadata[];
 
   // Processing Status
   batchSessionId?: string;
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
-
-  // Metadata
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-}>
+}
 
 // ShapeWorkingCopy extends the entity with working copy properties
 // To satisfy the WorkingCopy constraint, we need TreeNode properties
@@ -154,6 +149,8 @@ export interface UrlMetadata {
   countryCode: string;
   adminLevel: number;
   continent: string;
+  dataSource?: string;
+  country?: string;
   estimatedSize?: number;
   lastUpdated?: string;
 }
@@ -182,18 +179,105 @@ export const BatchTaskStage = {
 
 export type BatchTaskStage = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
-export interface BatchTask {
-  taskId: string;
-  taskType: BatchTaskType;
-  stage: BatchTaskStage;
-  progress?: number;
-  error?: string;
-  startedAt?: number;
-  completedAt?: number;
-  metadata?: Record<string, any>;
-}
+export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 export type BatchTaskType = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
+export type ProcessingStage = BatchTaskType;
+
+export interface BatchTaskBase {
+  taskId: string;
+  taskType: BatchTaskType;
+  sessionId?: NodeId;
+  stage?: BatchTaskStage;
+  status?: TaskStatus;
+  type?: string; // legacy compatibility for Dexie records
+  index?: number;
+  progress?: number;
+  startedAt?: number;
+  completedAt?: number;
+  retryCount?: number;
+  metadata?: Record<string, unknown>;
+  config?: unknown;
+  error?: string;
+}
+
+export type BatchTask = BatchTaskBase;
+
+export interface DownloadTaskConfig {
+  dataSource?: string;
+  country?: string;
+  adminLevel?: number;
+  url?: string;
+  timeout?: number;
+  retryDelay?: number;
+  expectedFormat?: string;
+  validateSSL?: boolean;
+}
+
+export interface DownloadTask extends BatchTaskBase {
+  taskType: 'download';
+  url?: string;
+  config?: DownloadTaskConfig;
+}
+
+export interface SimplifyTaskConfig {
+  algorithm?: 'douglas-peucker' | 'visvalingam';
+  tolerance?: number;
+  preserveTopology?: boolean;
+  minimumArea?: number;
+  maxVertices?: number;
+  inputBufferId?: string;
+}
+
+export interface Simplify1Task extends BatchTaskBase {
+  taskType: 'simplify1';
+  inputBufferId?: string;
+  tolerance?: number;
+  minArea?: number;
+  config?: SimplifyTaskConfig;
+}
+
+export interface TileSimplifyConfig extends SimplifyTaskConfig {
+  zoomLevel?: number;
+  preserveSharedBoundaries?: boolean;
+  quantization?: number;
+  coordinatePrecision?: number;
+  zoomLevels?: number[];
+  tileSize?: number;
+}
+
+export interface Simplify2Task extends BatchTaskBase {
+  taskType: 'simplify2';
+  inputBufferId?: string;
+  zoomLevels?: number[];
+  tileSize?: number;
+  config?: TileSimplifyConfig;
+}
+
+export type SimplifyTask = Simplify1Task | Simplify2Task;
+
+export interface VectorTileTaskConfig {
+  format?: 'mvt';
+  compression?: boolean;
+  tileSize?: number;
+  zoomLevel?: number;
+  tileX?: number;
+  tileY?: number;
+  extent?: number;
+  buffer?: number;
+  layers?: Array<{ name: string; featureCount?: number } | Record<string, unknown>>;
+  tileBufferId?: string;
+  inputBufferId?: string;
+}
+
+export interface VectorTileTask extends BatchTaskBase {
+  taskType: 'vectortile';
+  inputBufferId?: string;
+  tileBufferId?: string;
+  compression?: boolean;
+  outputFormat?: string;
+  config?: VectorTileTaskConfig;
+}
 
 export interface BatchSession {
   sessionId: string;
@@ -210,7 +294,7 @@ export interface BatchSession {
     failed: number;
     skipped: number;
     percentage: number;
-    currentStage?: string;
+    currentStage?: ProcessingStage | 'processing';
     currentTask?: string;
   };
 
@@ -220,19 +304,6 @@ export interface BatchSession {
   expiresAt: number;
   stages: Record<string, any>;
   resourceUsage?: any;
-}
-
-// Lightweight task views for UI/console components
-export interface DownloadTask extends BatchTask {
-  taskType: 'download';
-}
-
-export interface SimplifyTask extends BatchTask {
-  taskType: 'simplify1' | 'simplify2';
-}
-
-export interface VectorTileTask extends BatchTask {
-  taskType: 'vectortile';
 }
 
 // ================================
@@ -264,12 +335,12 @@ export interface ProgressInfo {
   failed: number;
   skipped: number;
   percentage: number;
-  currentStage?: string;
+  currentStage?: ProcessingStage | 'processing';
   currentTask?: string;
 }
 
 export interface StageStatus {
-  status: 'waiting' | 'running' | 'completed' | 'failed';
+  status: TaskStatus;
   progress: number;
   tasksTotal: number;
   tasksCompleted: number;
@@ -285,8 +356,6 @@ export interface ErrorInfo {
   stage: ProcessingStage;
   retryable: boolean;
 }
-
-export type ProcessingStage = 'download' | 'simplify1' | 'simplify2' | 'vectortile';
 
 // ================================
 // Feature Data Types

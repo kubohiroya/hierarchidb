@@ -24,6 +24,14 @@ export interface AuthContext {
   maxRetries?: number;
 }
 
+type AuthCancelledNotification = AuthNotification & {
+  context: {
+    requestId: string;
+    reason?: string;
+    sessionId?: string;
+  };
+};
+
 export interface AuthRequestInfo {
   requestId: string;
   url: string;
@@ -31,6 +39,7 @@ export interface AuthRequestInfo {
   context: AuthContext;
   retryCount: number;
   createdAt: number;
+  maxRetries?: number;
 }
 
 /**
@@ -234,6 +243,7 @@ export class WorkerAuthHandler {
           context,
           retryCount,
           maxRetries,
+          createdAt: Date.now(),
         },
       });
 

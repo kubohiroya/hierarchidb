@@ -15,10 +15,10 @@
         "./src/*"
       ],
       "@hierarchidb/runtime-ui-datasource": [
-        "../../runtime-ui/datasource/src/index.ts"
+        "./src/types/runtime-ui-datasource"
       ],
       "@hierarchidb/runtime-ui-datasource/*": [
-        "../../runtime-ui/datasource/src/*"
+        "./src/types/runtime-ui-datasource"
       ],
       "@hierarchidb/runtime-ui-plugin-dialog": [
         "../../runtime-ui/plugin-dialog/src/index.ts"
