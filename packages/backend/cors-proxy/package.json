@@ -7,8 +7,8 @@
   "scripts": {
     "dev:manual": "wrangler dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "pnpm run typecheck",
-    "deploy": "wrangler deploy",
+    "build": "wrangler build",
+    "build": "tsc --noEmit && echo 'Type checking completed. Cloudflare Workers do not require a build step.'",
     "deploy:production": "wrangler deploy --env production",
     "clean": "rm -rf dist",
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",

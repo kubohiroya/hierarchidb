@@ -7,8 +7,9 @@ import type {
   IBatchSessionManager,
   StageKey,
 } from '@hierarchidb/runtime-shared-batch-processor';
-import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchConfig, type RouteBatchManagerDeps } from './RouteBatchManager.js';
+import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import { RouteDatabase } from '../database/RouteDatabase.js';
+import { RouteBatchConfig } from './RouteBatchSession.js';
 
 export interface RouteBatchSessionConfig {
   corsProxyBaseURL?: string;
@@ -167,8 +168,4 @@ function resolveRouteConfig(config?: RouteBatchSessionConfig | RouteBatchConfig)
 
 export function createRouteBatchManager(deps?: RouteBatchManagerDeps): IBatchSessionManager {
   return new RouteBatchSessionOrchestrator(deps);
-}
-
-export function isRouteBatchAPIV2Enabled(): boolean {
-  return isBatchControlAPIV2Enabled();
 }
