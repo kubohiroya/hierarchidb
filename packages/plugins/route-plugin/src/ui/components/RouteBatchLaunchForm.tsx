@@ -38,7 +38,7 @@ export function RouteBatchLaunchForm({
     setStatus('starting...');
     try {
       const net = getNetPort();
-      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net }), net);
+      const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net }));
       const mgr = createRouteBatchManager({ net, osrmThrottle: { rps, concurrency } });
       const methodOptions: Record<string, unknown> = { osrmBaseUrl: baseUrl, osmProfile: profile };
       const config: RouteBatchConfig = {

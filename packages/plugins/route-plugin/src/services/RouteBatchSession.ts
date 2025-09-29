@@ -1,9 +1,8 @@
 import {
   AbstractBatchSession,
   type BaseBatchConfig,
-  type StandardProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
-import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from '../database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
@@ -58,7 +57,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   private writer: TabularWriter | null = null;
   private writerReady = false;
 
-  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], private progressSink?: (ev: ProgressEvent) => void, deps?: {
+  constructor(sessionId: string, nodeId: NodeId, config: RouteBatchConfig, tasks: RouteBatchTask[], deps?: {
     generator?: RouteGenerator
   }) {
     super(sessionId, nodeId, config);
@@ -95,8 +94,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
   protected async onResume(): Promise<void> {
   }
 
-  protected async onCancel(): Promise<void> {
-  }
+  protected async onCancel(): Promise<void> {}
 
   protected async onComplete(): Promise<void> {
     if (this.writer && this.writerReady) {
@@ -144,35 +142,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         await this.delay(250);
       }
     }, { concurrency: maxConcurrent });
-  }
-
-  protected onProgressUpdate(_p: any): void {
-    const p = this.getProgress();
-    const event: StandardProgressEvent = {
-      sessionId: this.sessionId,
-      stage: p.currentStage || 'processing',
-      total: p.total,
-      completed: p.completed,
-      failed: p.failed,
-      percentage: Math.round(p.percentage),
-      currentTask: p.currentTask || '',
-    };
-    this.onStandardProgressUpdate(event);
-  }
-
-  protected onStandardProgressUpdate(event: StandardProgressEvent): void {
-    // Convert to legacy ProgressEvent for compatibility
-    const legacyEvent: ProgressEvent = {
-      sessionId: event.sessionId,
-      stage: event.stage,
-      total: event.total,
-      completed: event.completed,
-      failed: event.failed,
-      percentage: event.percentage,
-      currentTask: event.currentTask || '',
-    };
-
-      this.progressSink?.(legacyEvent);
   }
 
   private async processTask(task: RouteBatchTask): Promise<void> {

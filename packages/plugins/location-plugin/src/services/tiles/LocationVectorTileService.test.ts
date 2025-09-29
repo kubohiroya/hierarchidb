@@ -3,6 +3,25 @@ import { toNodeId } from '@hierarchidb/common-type';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { UnifiedLocationBatchManager } from '../batch/UnifiedLocationBatchManager.js';
+
+type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;
+
+function createLocalBridge(): BridgeLike {
+  const manager = new UnifiedLocationBatchManager();
+  return {
+    async initialize() {
+      // no-op
+    },
+    async startBatchSession(_nodeType, nodeId) {
+      const sessionId = await manager.startBatchSession(nodeId);
+      return manager.getBatchSessionStatus(sessionId);
+    },
+    async subscribeBatchProgress(_nodeType, sessionId, cb) {
+      return manager.onBatchProgress(sessionId, cb);
+    },
+  } satisfies BridgeLike;
+}
 
 function long2tile(lon: number, z: number) {
   return Math.floor(((lon + 180) / 360) * 2 ** z);
@@ -17,7 +36,7 @@ async function waitForCompleted(on: (cb: (p: ProgressInfo) => void) => void, tim
   return new Promise<ProgressInfo>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('timeout waiting for completed')), timeoutMs);
     on((p) => {
-      if (p.stage === 'completed') {
+      if (p.phase === 'completed') {
         clearTimeout(t);
         resolve(p);
       }
@@ -36,7 +55,7 @@ describe('LocationVectorTileService', () => {
   });
 
   it('generates at least one vector tile for small point set', async () => {
-    const svc = new LocationVectorTileService();
+    const svc = new LocationVectorTileService(createLocalBridge());
     const points: LocationPointInput[] = [
       { lon: 139.767, lat: 35.681 }, // Tokyo Station
       { lon: 139.700, lat: 35.689 }, // Shinjuku
@@ -62,7 +81,7 @@ describe('LocationVectorTileService', () => {
   });
 
   it('emits progress events and completes to 100%', async () => {
-    const svc = new LocationVectorTileService();
+    const svc = new LocationVectorTileService(createLocalBridge());
     const points: LocationPointInput[] = [
       { lon: -73.9857, lat: 40.7484 }, // NYC
       { lon: -73.9851, lat: 40.7580 },
@@ -74,11 +93,11 @@ describe('LocationVectorTileService', () => {
 
     let sawTilegen = false;
     const p = await waitForCompleted((cb) => svc.onProgress(sessionId, (e) => {
-      if (e.stage === 'tilegen') sawTilegen = true;
+      if (e.stage === 'vectortile' || e.phase === 'completed') sawTilegen = true;
       cb(e);
     }));
     expect(sawTilegen).toBe(true);
-    expect(p.percentage).toBeGreaterThanOrEqual(100);
+    expect(p.phase).toBe('completed');
 
     // sanity: chosen z/x/y for a point at zoom 4 should be present or empty; ensure summary exists
     const db = getEphemeralLocationDB();

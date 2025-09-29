@@ -35,7 +35,7 @@ export * from './ui/hooks/useRouteBatchProgress.js';
 export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabular-store';
 
 // Unified Batch Control API (API v2)
-export * from './services/UnifiedRouteBatchManager.js';
+export * from './services/RouteBatchSessionOrchestrator.js';
 export { RouteBatchManager } from './services/RouteBatchManager.js';
 export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
 export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier, resolveAuthRegistry };

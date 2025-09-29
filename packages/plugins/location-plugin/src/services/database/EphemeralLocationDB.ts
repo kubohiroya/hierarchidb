@@ -36,6 +36,13 @@ export class EphemeralLocationDB extends Dexie {
     progress?: number;
     updatedAt?: number;
   }>;
+  pendingSessions!: Table<{
+    nodeId: NodeId;
+    points: unknown;
+    settings: unknown;
+    config?: unknown;
+    storedAt: number;
+  }>;
 
   constructor() {
     super(getDBName('location-ephemeral-db'));
@@ -51,8 +58,13 @@ export class EphemeralLocationDB extends Dexie {
       // Existing sessions will simply not have tableId
     });
 
+    this.version(4).stores({
+      pendingSessions: '&nodeId, storedAt',
+    });
+
     this.vectorTiles = this.table('vectorTiles');
     this.sessions = this.table('sessions');
+    this.pendingSessions = this.table('pendingSessions');
   }
 
   async clearSession(sessionId: string) {

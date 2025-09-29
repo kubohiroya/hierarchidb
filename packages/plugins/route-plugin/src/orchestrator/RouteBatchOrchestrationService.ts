@@ -3,14 +3,13 @@ import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
 import type { RouteBatchSpec } from './types.js';
 import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
 import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks, type RouteTaskInput } from './TaskMapper.js';
-import { createRouteBatchManager, type NetworkPortLike } from '../services/createRouteBatchManager.js';
+import { RouteBatchSessionOrchestrator, type RouteBatchSessionConfig } from '../services/RouteBatchSessionOrchestrator.js';
+import type { RouteBatchManagerDeps } from '../services/RouteBatchManager.js';
 
-export interface RouteBatchManagerLike {
-  startRouteBatchSession(nodeId: NodeId, config: RouteBatchConfig, routes: RouteTaskInput[]): Promise<string>;
-}
+export type RouteBatchManagerLike = RouteBatchSessionOrchestrator;
 
 export class RouteBatchOrchestrationService {
-  constructor(private readonly source: RouteSourceOrchestrator, private readonly net?: NetworkPortLike) {}
+  constructor(private readonly source: RouteSourceOrchestrator, private readonly deps?: RouteBatchManagerDeps) {}
 
   async startFromSources(nodeId: NodeId, spec: RouteBatchSpec, mgr: RouteBatchManagerLike | undefined, config: RouteBatchConfig): Promise<{
     jobId: string;
@@ -18,8 +17,9 @@ export class RouteBatchOrchestrationService {
   }> {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapRecomputeTasks(odPairs, spec.defaults, { methodOptions: spec.defaults });
-    const effectiveMgr = mgr ?? createRouteBatchManager({ net: this.net });
-    const jobId = await effectiveMgr.startRouteBatchSession(nodeId, config, routes);
+    const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
+    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    const jobId = await effectiveMgr.startBatchSession(nodeId);
     return { jobId, count: routes.length };
   }
 
@@ -37,8 +37,9 @@ export class RouteBatchOrchestrationService {
     const { odPairs: O } = await this.source.preview(origins);
     const { odPairs: D } = await this.source.preview(destinations);
     const routes = mapMatrixTasks(O, D, origins.defaults ?? destinations.defaults, methodOptions);
-    const effectiveMgr = mgr ?? createRouteBatchManager({ net: this.net });
-    const jobId = await effectiveMgr.startRouteBatchSession(nodeId, config, routes);
+    const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
+    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    const jobId = await effectiveMgr.startBatchSession(nodeId);
     return { jobId, count: routes.length };
   }
 
@@ -54,8 +55,31 @@ export class RouteBatchOrchestrationService {
   }> {
     const { odPairs } = await this.source.preview(spec);
     const routes = mapEnrichTasks(odPairs, options, spec.defaults);
-    const effectiveMgr = mgr ?? createRouteBatchManager({ net: this.net });
-    const jobId = await effectiveMgr.startRouteBatchSession(nodeId, config, routes);
+    const effectiveMgr = mgr ?? new RouteBatchSessionOrchestrator(this.deps);
+    await effectiveMgr.prepareSession(nodeId, toSessionConfig(config), { routes });
+    const jobId = await effectiveMgr.startBatchSession(nodeId);
     return { jobId, count: routes.length };
   }
+}
+
+function toSessionConfig(config: RouteBatchConfig): RouteBatchSessionConfig {
+  return {
+    corsProxyBaseURL: config.corsProxyBaseURL,
+    maxRetries: config.maxRetries,
+    retryDelay: config.retryDelay,
+    workerTimeout: config.workerTimeout,
+    maxMemoryPerWorker: config.maxMemoryPerWorker,
+    enableProgressTracking: config.enableProgressTracking,
+    enableResourceMonitoring: config.enableResourceMonitoring,
+    routeGeneration: {
+      method: config.routeGeneration.method,
+      parallel: config.routeGeneration.parallel,
+      maxConcurrent: config.routeGeneration.maxConcurrent,
+      retryOnFailure: config.routeGeneration.retryOnFailure,
+      maxRetries: config.routeGeneration.maxRetries,
+    },
+    locationResolution: config.locationResolution,
+    validation: config.validation,
+    laneCaps: config.laneCaps,
+  };
 }

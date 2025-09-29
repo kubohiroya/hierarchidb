@@ -19,6 +19,7 @@ import type { UrlMetadata } from '../../shared/types.js';
  */
 export class UnifiedShapeBatchManager implements IBatchSessionManager {
   private manager: BatchSessionManager;
+  private pending = new Map<NodeId, { config: ShapeBatchConfig; data: ShapeBatchData }>();
 
   constructor() {
     this.manager = new BatchSessionManager();
@@ -27,8 +28,18 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     this.manager.initialize().catch(console.error);
   }
 
-  async startBatchSession(nodeId: NodeId, config: ShapeBatchConfig, data?: ShapeBatchData): Promise<string> {
-    if (!data || !data.urlMetadata) {
+  prepareSession(nodeId: NodeId, config: ShapeBatchConfig, data: ShapeBatchData): void {
+    this.pending.set(nodeId, { config, data });
+  }
+
+  async startBatchSession(nodeId: NodeId): Promise<string> {
+    const pending = this.pending.get(nodeId);
+    if (!pending) {
+      throw new Error(`No pending shape batch session data for node ${nodeId}`);
+    }
+    this.pending.delete(nodeId);
+    const { config, data } = pending;
+    if (!data.urlMetadata?.length) {
       throw new Error('Shape batch session requires urlMetadata');
     }
 

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ProgressEvent } from '@hierarchidb/common-type';
-import type { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { NodeType, ProgressEvent } from '@hierarchidb/common-type';
+import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
+import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -14,58 +15,94 @@ export interface UseLocationProgressState {
   error: Error | null;
 }
 
+const LOCATION_NODE_TYPE = 'location' as NodeType;
+
+type ExtendedProgressInfo = UnifiedProgressInfo & {
+  phase?: string;
+  timestamp?: number;
+  message?: string;
+  nodeId?: string;
+  sessionId?: string;
+};
+
+function toProgressEvent(info: ExtendedProgressInfo | null, fallbackSessionId?: string): ProgressEvent | null {
+  if (!info) return null;
+  const sessionId = (info.sessionId as string | undefined) ?? fallbackSessionId ?? 'location';
+  const stage = info.phase === 'completed' ? 'completed' : info.stage;
+  return {
+    sessionId,
+    stage,
+    total: info.total ?? 0,
+    completed: info.completed ?? 0,
+    failed: info.failed ?? 0,
+    percentage: info.percentage ?? 0,
+    currentTask: info.currentTask ?? info.message ?? stage,
+    timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
+  } satisfies ProgressEvent;
+}
+
 /**
- * useLocationProgress - Subscribe to Location batch progress events.
- * The caller provides the `service` instance and `sessionId`.
+ * useLocationProgress - Subscribe to Location batch progress events via WorkerBridge.
  */
 export function useLocationProgress(
-  service: LocationVectorTileService,
   sessionId: string | null,
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
-
-  const [progress, setProgress] = useState<ProgressEvent | null>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const bridgeRef = useRef(getWorkerBridge());
+  const [overrideProgress, setOverrideProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const unsubscribeRef = useRef<null | (() => void)>(null);
-  const unsubscribeAuthRef = useRef<null | (() => void)>(null);
 
-  const handle = useCallback((p: ProgressEvent) => setProgress(p), []);
-
-  // Unified adapter for shared hook
-  const adapter = sessionId
-    ? createAdapterFromProgressSubscribe((cb: (e: ProgressEvent) => void) => service.onProgress(sessionId, cb))
-    : null;
-  const shared = useBatchProgress(adapter, { autoSubscribe });
-
-  const subscribe = useCallback(() => {
-    if (!sessionId || isSubscribed) return;
-    try {
-      unsubscribeRef.current = service.onProgress(sessionId, handle);
-      setIsSubscribed(true);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e : new Error('Failed to subscribe'));
-    }
-  }, [sessionId, isSubscribed, service, handle]);
-
-  const unsubscribe = useCallback(() => {
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-    setIsSubscribed(false);
-  }, []);
-
-  // Subscribe to global auth notifications and reflect as progress events
   useEffect(() => {
-    const reg = AuthNotificationRegistry.getInstance?.();
-    if (!reg) return;
+    if (!sessionId || !autoSubscribe) return;
+    void bridgeRef.current.initialize().catch((err: unknown) => {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      setError(errorObj);
+    });
+  }, [autoSubscribe, sessionId]);
+
+  useEffect(() => {
+    setOverrideProgress(null);
+  }, [sessionId]);
+
+  const adapter = useMemo(() => {
+    if (!sessionId) return null;
+    return createAdapterFromProgressSubscribe((cb) =>
+      bridgeRef.current
+        .subscribeBatchProgress(LOCATION_NODE_TYPE, sessionId, cb)
+        .then((unsubscribe: () => void) => {
+          setError(null);
+          return unsubscribe;
+        })
+        .catch((err: unknown) => {
+          const errorObj = err instanceof Error ? err : new Error('Failed to subscribe to location batch progress');
+          setError(errorObj);
+          return () => {
+          };
+        }),
+    );
+  }, [sessionId]);
+
+  const {
+    progress: unifiedProgress,
+    subscribed,
+    subscribe: sharedSubscribe,
+    unsubscribe: sharedUnsubscribe,
+  } = useBatchProgress(adapter, { autoSubscribe });
+
+  useEffect(() => {
+    if (unifiedProgress) {
+      setOverrideProgress(null);
+    }
+  }, [unifiedProgress]);
+
+  useEffect(() => {
+    const registry = AuthNotificationRegistry.getInstance?.();
+    if (!registry) return;
     const id = 'location-progress-hook';
-    reg.register?.(id, {
+    registry.register?.(id, {
       onAuthRequired: async (n: any) => {
-        setProgress({
+        setOverrideProgress({
           sessionId: sessionId || n?.context?.sessionId || 'location',
           stage: 'auth-required',
           total: 1,
@@ -77,7 +114,7 @@ export function useLocationProgress(
         });
       },
       onAuthSuccess: async (_n: any) => {
-        setProgress({
+        setOverrideProgress({
           sessionId: sessionId || 'location',
           stage: 'resumed',
           total: 1,
@@ -89,7 +126,7 @@ export function useLocationProgress(
         });
       },
       onAuthCancelled: async (n: any) => {
-        setProgress({
+        setOverrideProgress({
           sessionId: sessionId || 'location',
           stage: 'cancelled',
           total: 1,
@@ -101,23 +138,29 @@ export function useLocationProgress(
         });
       },
     });
-    unsubscribeAuthRef.current = () => reg.unregister?.(id);
     return () => {
-      unsubscribeAuthRef.current?.();
+      registry.unregister?.(id);
     };
   }, [sessionId]);
 
-  useEffect(() => {
-    if (!sessionId) return;
-    if (autoSubscribe) subscribe();
-    return () => {
-      unsubscribe();
-    };
-  }, [sessionId, autoSubscribe, subscribe, unsubscribe]);
+  const subscribe = useCallback(() => {
+    void bridgeRef.current.initialize().catch((err: unknown) => {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      setError(errorObj);
+    });
+    sharedSubscribe();
+  }, [sharedSubscribe]);
+
+  const unsubscribe = useCallback(() => {
+    sharedUnsubscribe();
+  }, [sharedUnsubscribe]);
+
+  const derived = toProgressEvent(unifiedProgress as ExtendedProgressInfo | null, sessionId ?? undefined);
+  const combined = derived ?? overrideProgress;
 
   return {
-    progress: (shared.progress as unknown as ProgressEvent | null) ?? progress,
-    isSubscribed,
+    progress: combined,
+    isSubscribed: subscribed,
     error,
     subscribe,
     unsubscribe,

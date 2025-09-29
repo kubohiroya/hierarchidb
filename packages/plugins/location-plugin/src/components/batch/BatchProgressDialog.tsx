@@ -50,7 +50,6 @@ import {
   Warning,
 } from '@mui/icons-material';
 import type { NodeId } from '../../types/index.js';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
@@ -132,8 +131,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
   const datasetId = useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
-  const locationVectorTileService = useMemo(() => new LocationVectorTileService(), []);
-  const { progress: realProgress } = useLocationProgress(locationVectorTileService, sessionId, { autoSubscribe: true });
+  const { progress: realProgress } = useLocationProgress(sessionId, { autoSubscribe: true });
   const phaseLabelMap = useMemo(() => ({
     download: translations.batch.stages.download,
     filter: translations.batch.stages.filtering,

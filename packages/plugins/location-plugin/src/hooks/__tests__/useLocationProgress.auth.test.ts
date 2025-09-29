@@ -1,13 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AuthNotificationFactory, AuthNotificationRegistry } from '@hierarchidb/common-auth';
 import { act, renderHook } from '@testing-library/react';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+
+const bridgeMock = {
+  initialize: vi.fn().mockResolvedValue(undefined),
+  subscribeBatchProgress: vi.fn().mockResolvedValue(() => {
+  }),
+  getBatchSessionStatus: vi.fn(),
+};
+
+vi.mock('@hierarchidb/runtime-ui-plugin-dialog', () => ({
+  getWorkerBridge: () => bridgeMock,
+}));
 
 describe('useLocationProgress - auth notifications', () => {
   it('emits auth-required and resumed progress events when notifications fire', async () => {
-    const svc = new LocationVectorTileService();
-    const { result } = renderHook(() => useLocationProgress(svc, 'sess-1', { autoSubscribe: false }));
+    const { result } = renderHook(() => useLocationProgress('sess-1', { autoSubscribe: false }));
 
     const reg = AuthNotificationRegistry.getInstance();
     const authReq = AuthNotificationFactory.createAuthRequired({

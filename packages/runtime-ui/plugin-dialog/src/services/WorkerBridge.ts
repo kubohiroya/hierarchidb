@@ -5,8 +5,13 @@
 
 import type { Remote } from 'comlink';
 import * as Comlink from 'comlink';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type {
+  BatchProgressEvent,
+  BatchSessionId,
+  BatchSessionStatus,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import type { StepCapabilities, ValidationResult, WorkingCopyData } from '../atoms/workingCopyAtoms.js';
 
 /**
@@ -46,44 +51,46 @@ export type WorkerNotification =
 export class WorkerBridge {
   private worker: Worker | null = null;
   private api: Remote<WorkerAPI> | null = null;
+  private initializing: Promise<void> | null = null;
   private subscribers = new Set<(notification: WorkerNotification) => void>();
   private validationQueue = new Map<string, ValidationRequest>();
   private capabilitiesQueue = new Map<number, CapabilitiesRequest>();
   private processingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private batchSubscriptions = new Map<string, () => void>();
 
   /**
    * Initialize Worker connection
    */
   async initialize(): Promise<void> {
     if (this.api) return;
+    if (this.initializing) {
+      await this.initializing;
+      return;
+    }
 
+    this.initializing = this.createWorkerConnection();
     try {
-      // Create Worker
+      await this.initializing;
+    } finally {
+      this.initializing = null;
+    }
+  }
+
+  private async createWorkerConnection(): Promise<void> {
+    this.clearBatchSubscriptions();
+    try {
       this.worker = new Worker(
         new URL('../../../worker/src/index.ts', import.meta.url),
         { type: 'module' },
       );
-
-      // Wrap with Comlink
       this.api = Comlink.wrap<WorkerAPI>(this.worker);
-
-      // MessageChannel setup removed as not implemented in WorkerAPI
-      // const { port1, port2 } = new MessageChannel();
-
-      // Send port2 to Worker (remove this as setNotificationPort doesn't exist)
-      // await this.api.setNotificationPort(Comlink.transfer(port2, [port2]));
-
-      // Listen for notifications on port1 (commented out as we're not using MessageChannel)
-      // port1.onmessage = (event) => {
-      //   this.handleWorkerNotification(event.data);
-      // };
-
-      // Initialize Worker
       await this.api.initialize();
-
       console.log('Worker Bridge initialized');
     } catch (error) {
       console.error('Failed to initialize Worker Bridge:', error);
+      this.worker?.terminate();
+      this.worker = null;
+      this.api = null;
       throw error;
     }
   }
@@ -139,6 +146,17 @@ export class WorkerBridge {
     this.processingTimeout = setTimeout(() => {
       this.processQueues();
     }, 100); // 100ms debounce
+  }
+
+  private clearBatchSubscriptions(): void {
+    for (const unsubscribe of this.batchSubscriptions.values()) {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn('[WorkerBridge] failed to unsubscribe batch listener', error);
+      }
+    }
+    this.batchSubscriptions.clear();
   }
 
   /**
@@ -204,6 +222,71 @@ export class WorkerBridge {
         });
       }
     }
+  }
+
+  private async requireApi(): Promise<Remote<WorkerAPI>> {
+    if (!this.api) {
+      await this.initialize();
+    }
+    if (!this.api) {
+      throw new Error('Worker API unavailable after initialization');
+    }
+    return this.api;
+  }
+
+  private getBatchSubscriptionKey(nodeType: NodeType, sessionId: BatchSessionId): string {
+    return `${nodeType}:${sessionId}`;
+  }
+
+  async startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
+    const api = await this.requireApi();
+    return api.startBatchSession(nodeType, nodeId);
+  }
+
+  async getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus> {
+    const api = await this.requireApi();
+    return api.getBatchSessionStatus(nodeType, sessionId);
+  }
+
+  async pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const api = await this.requireApi();
+    await api.pauseBatchSession(nodeType, sessionId);
+  }
+
+  async resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const api = await this.requireApi();
+    await api.resumeBatchSession(nodeType, sessionId);
+  }
+
+  async cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const api = await this.requireApi();
+    await api.cancelBatchSession(nodeType, sessionId);
+  }
+
+  async subscribeBatchProgress(
+    nodeType: NodeType,
+    sessionId: BatchSessionId,
+    callback: (event: BatchProgressEvent) => void,
+  ): Promise<() => void> {
+    const api = await this.requireApi();
+    const proxied = Comlink.proxy(callback);
+    const remoteUnsubscribe = await api.subscribeBatchProgress(nodeType, sessionId, proxied);
+    const key = this.getBatchSubscriptionKey(nodeType, sessionId);
+    this.batchSubscriptions.get(key)?.();
+    const unsubscribe = () => {
+      try {
+        remoteUnsubscribe?.();
+      } catch (error) {
+        console.warn('[WorkerBridge] failed to invoke remote unsubscribe', error);
+      } finally {
+        if (typeof (Comlink as unknown as { releaseProxy?: (value: unknown) => void }).releaseProxy === 'function') {
+          (Comlink as unknown as { releaseProxy: (value: unknown) => void }).releaseProxy(proxied);
+        }
+        this.batchSubscriptions.delete(key);
+      }
+    };
+    this.batchSubscriptions.set(key, unsubscribe);
+    return unsubscribe;
   }
 
   /**

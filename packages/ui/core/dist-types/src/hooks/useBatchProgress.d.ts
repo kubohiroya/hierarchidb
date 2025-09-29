@@ -1,3 +1,5 @@
+import type { NodeId } from '@hierarchidb/common-type';
+import type { BatchProgressPayload, BatchSessionId } from '@hierarchidb/runtime-shared-batch-processor';
 export interface UnifiedProgressInfo {
     stage: string;
     total: number;
@@ -5,6 +7,12 @@ export interface UnifiedProgressInfo {
     failed: number;
     percentage: number;
     currentTask: string;
+    phase?: string;
+    timestamp?: number;
+    payload?: BatchProgressPayload;
+    message?: string;
+    nodeId?: NodeId;
+    sessionId?: BatchSessionId;
 }
 export interface UseBatchProgressOptions {
     autoSubscribe?: boolean;

@@ -37,9 +37,10 @@ describe('UnifiedLocationBatchManager.onBatchProgress', () => {
     expect(arg).toBeDefined();
     expect(arg.sessionId).toBe('s1');
     expect(arg.stage).toBe('vectortile'); // index → vectortile
-    expect(arg.percentage).toBe(50);
-    expect(arg.total).toBe(20);
-    expect(arg.completed).toBe(10);
+    expect(arg.phase).toBe('running');
+    expect(arg.payload?.total).toBe(20);
+    expect(arg.payload?.completed).toBe(10);
+    expect(arg.payload?.failed).toBe(0);
     unsub();
   });
 });

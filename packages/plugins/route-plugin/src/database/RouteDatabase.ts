@@ -44,6 +44,13 @@ export interface RouteResultRow {
 /**
  * Route database schema
  */
+export interface PendingRouteSessionRecord {
+  nodeId: NodeId;
+  config: unknown;
+  routes: unknown;
+  storedAt: number;
+}
+
 export class RouteDatabase extends Dexie {
   routes!: Table<RouteEntity, NodeId>;
   workingCopies!: Table<RouteWorkingCopy, NodeId>;
@@ -52,6 +59,7 @@ export class RouteDatabase extends Dexie {
   routeCursors!: Table<RouteCursorRow, string>;
   // Optional results storage for batch-generated routes
   routeResults!: Table<RouteResultRow, string>;
+  pendingSessions!: Table<PendingRouteSessionRecord, NodeId>;
 
   constructor(dbName: string = getDBName('route-db')) {
     super(dbName);
@@ -66,6 +74,28 @@ export class RouteDatabase extends Dexie {
       routeCursors: '&sessionId, completed, total, updatedAt',
       routeResults: '&id, sessionId, taskId, method, createdAt',
     });
+    this.version(3).stores({
+      pendingSessions: '&nodeId, storedAt',
+    });
+
+    this.routes = this.table('routes');
+    this.workingCopies = this.table('workingCopies');
+    this.routeCache = this.table('routeCache');
+    this.routeCursors = this.table('routeCursors');
+    this.routeResults = this.table('routeResults');
+    this.pendingSessions = this.table('pendingSessions');
+  }
+
+  async savePendingSession(record: PendingRouteSessionRecord): Promise<void> {
+    await this.pendingSessions.put(record);
+  }
+
+  async takePendingSession(nodeId: NodeId): Promise<PendingRouteSessionRecord | undefined> {
+    const record = await this.pendingSessions.get(nodeId);
+    if (record) {
+      await this.pendingSessions.delete(nodeId);
+    }
+    return record;
   }
 
   /**
