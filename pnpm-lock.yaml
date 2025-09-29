@@ -298,6 +298,9 @@ importers:
       '@hierarchidb/plugins-timeline-plugin':
         specifier: workspace:*
         version: link:../packages/plugins/timeline-plugin
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../packages/runtime-shared/batch-processor
       '@hierarchidb/runtime-ui-landingpage':
         specifier: workspace:*
         version: link:../packages/runtime-ui/landingpage
@@ -499,6 +502,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../types
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -1769,6 +1775,9 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../../plugins/base-plugin
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
         version: link:../../runtime-worker/worker-bootstrap
@@ -2215,6 +2224,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
         version: link:../../runtime-worker/worker-bootstrap

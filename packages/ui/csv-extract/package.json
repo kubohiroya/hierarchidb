@@ -18,8 +18,9 @@
   ],
   "scripts": {
     "prebuild": "pnpm --filter @hierarchidb/table-metadata build",
-    "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
-    "build:tsc": "tsc -p tsconfig.build.json",
+    "build": "pnpm run prebuild && pnpm run build:dts && tsup",
+    "build:dts": "tsc -p tsconfig.build.json",
+    "build:tsc": "pnpm run prebuild && pnpm run build:dts",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",

@@ -32,6 +32,7 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "comlink": "^4.4.2"
   },
   "devDependencies": {

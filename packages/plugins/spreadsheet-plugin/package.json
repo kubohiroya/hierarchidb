@@ -45,7 +45,8 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup",
+    "prebuild": "pnpm --filter @hierarchidb/plugins-base-plugin build && pnpm --filter @hierarchidb/util build && pnpm --filter @hierarchidb/table-metadata build",
+    "build": "pnpm prebuild && tsup",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

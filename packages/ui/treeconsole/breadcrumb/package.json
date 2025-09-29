@@ -14,8 +14,9 @@
   },
   "scripts": {
     "prebuild": "pnpm --filter @hierarchidb/ui-core build",
-    "build": "pnpm run prebuild && pnpm run build:tsc && tsup",
-    "build:tsc": "tsc -p tsconfig.json",
+    "build": "pnpm run prebuild && pnpm run build:dts && tsup",
+    "build:dts": "tsc -p tsconfig.json",
+    "build:tsc": "pnpm run prebuild && pnpm run build:dts",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit"
   },

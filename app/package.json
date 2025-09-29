@@ -42,6 +42,7 @@
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-ui-tour": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:^",
+    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/plugins-shape-plugin": "workspace:*",
     "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*",

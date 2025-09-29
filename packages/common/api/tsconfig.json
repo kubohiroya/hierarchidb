@@ -22,6 +22,12 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "../../runtime-shared/batch-processor/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor/*": [
+        "../../runtime-shared/batch-processor/dist/*"
       ]
     }
   },
