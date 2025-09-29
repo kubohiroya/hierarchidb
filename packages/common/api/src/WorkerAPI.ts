@@ -7,6 +7,12 @@
  * client interactions with the worker layer.
  */
 
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type {
+  BatchProgressEvent,
+  BatchSessionId,
+  BatchSessionStatus,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
 import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
@@ -153,6 +159,49 @@ export interface WorkerAPI {
    * ```
    */
   getTagAPI(): Remote<TagAPI>;
+
+  /**
+   * Start a standardized batch processing session for the given node.
+   *
+   * @param nodeType Node type that controls which plugin manager to use
+   * @param nodeId Target node ID
+   * @returns Session status immediately after start (includes sessionId)
+   */
+  startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+
+  /**
+   * Retrieve the current status of a batch session.
+   */
+  getBatchSessionStatus(
+    nodeType: NodeType,
+    sessionId: BatchSessionId,
+  ): Promise<BatchSessionStatus>;
+
+  /**
+   * Pause a running batch session.
+   */
+  pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+
+  /**
+   * Resume a paused batch session.
+   */
+  resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+
+  /**
+   * Cancel an active batch session.
+   */
+  cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+
+  /**
+   * Subscribe to progress updates for a batch session.
+   *
+   * The returned unsubscribe function should be invoked when the UI is done listening.
+   */
+  subscribeBatchProgress(
+    nodeType: NodeType,
+    sessionId: BatchSessionId,
+    cb: (event: BatchProgressEvent) => void,
+  ): Promise<() => void>;
 
   /**
    * Simple ping method for health check

@@ -6,9 +6,10 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
   BatchProgressCallback,
+  BatchProgressEvent,
+  BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
-  StandardProgressEvent,
 } from './BatchControlAPI.js';
 import { isBatchControlAPIV2Enabled } from './BatchControlAPI.js';
 import type { AbstractBatchSession } from './AbstractBatchSession.js';
@@ -18,13 +19,13 @@ import type { AbstractBatchSession } from './AbstractBatchSession.js';
  * Provides common functionality that can be extended by plugin-specific managers
  */
 export abstract class BaseBatchSessionManager implements IBatchSessionManager {
-  protected sessions = new Map<string, AbstractBatchSession>();
-  protected progressCallbacks = new Map<string, Set<BatchProgressCallback>>();
-  private sessionProgressTeardown = new Map<string, () => void>();
+  protected sessions = new Map<BatchSessionId, AbstractBatchSession>();
+  protected progressCallbacks = new Map<BatchSessionId, Set<BatchProgressCallback>>();
+  private sessionProgressTeardown = new Map<BatchSessionId, () => void>();
 
-  abstract startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string>;
+  abstract startBatchSession(nodeId: NodeId): Promise<BatchSessionId>;
 
-  async pauseBatchSession(sessionId: string): Promise<void> {
+  async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -32,7 +33,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     await session.pause();
   }
 
-  async resumeBatchSession(sessionId: string): Promise<void> {
+  async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -40,7 +41,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     await session.resume();
   }
 
-  async cancelBatchSession(sessionId: string): Promise<void> {
+  async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -50,7 +51,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     this.progressCallbacks.delete(sessionId);
   }
 
-  async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
+  async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
     const session = this.sessions.get(sessionId);
     if (!session) {
       throw new Error(`Session ${sessionId} not found`);
@@ -71,7 +72,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
     };
   }
 
-  onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
+  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
     let callbacks = this.progressCallbacks.get(sessionId);
     if (!callbacks) {
       callbacks = new Set();
@@ -94,7 +95,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   /**
    * Emit progress to all registered callbacks for a session
    */
-  protected emitProgress(sessionId: string, event: StandardProgressEvent): void {
+  protected emitProgress(sessionId: BatchSessionId, event: BatchProgressEvent): void {
     const callbacks = this.progressCallbacks.get(sessionId);
     if (callbacks) {
       for (const callback of callbacks) {
@@ -111,7 +112,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
    * Register a session and set up progress forwarding
    */
   protected registerSession(session: AbstractBatchSession): void {
-    const sessionId = session.getState().sessionId;
+    const sessionId = session.getState().sessionId as BatchSessionId;
     this.sessions.set(sessionId, session);
 
     const teardown = this.sessionProgressTeardown.get(sessionId);
@@ -122,7 +123,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
 
     // Set up progress forwarding if API v2 is enabled
     if (isBatchControlAPIV2Enabled()) {
-      const unsubscribe = session.addStandardProgressListener((event: StandardProgressEvent) => {
+      const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => {
         this.emitProgress(sessionId, event);
       });
       this.sessionProgressTeardown.set(sessionId, unsubscribe);
@@ -132,7 +133,7 @@ export abstract class BaseBatchSessionManager implements IBatchSessionManager {
   /**
    * Clean up completed or failed sessions
    */
-  protected cleanupSession(sessionId: string): void {
+  protected cleanupSession(sessionId: BatchSessionId): void {
     this.sessions.delete(sessionId);
     this.progressCallbacks.delete(sessionId);
     const teardown = this.sessionProgressTeardown.get(sessionId);
@@ -158,26 +159,26 @@ export function createUnifiedBatchManagerFacade<TManager extends Record<string, 
   },
 ): IBatchSessionManager {
   return {
-    async startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string> {
-      return await existingManager[mappings.startMethod](nodeId, config, data);
+    async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
+      return await existingManager[mappings.startMethod](nodeId);
     },
 
-    async pauseBatchSession(sessionId: string): Promise<void> {
+    async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
       return await existingManager[mappings.pauseMethod](sessionId);
     },
 
-    async resumeBatchSession(sessionId: string): Promise<void> {
+    async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
       return await existingManager[mappings.resumeMethod](sessionId);
     },
 
-    async cancelBatchSession(sessionId: string): Promise<void> {
+    async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
       if (mappings.cancelMethod) {
         return await existingManager[mappings.cancelMethod](sessionId);
       }
       throw new Error('Cancel not supported by this manager');
     },
 
-    async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
+    async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
       if (mappings.statusMethod) {
         const status = await existingManager[mappings.statusMethod](sessionId);
         // Convert to standard format
@@ -189,9 +190,11 @@ export function createUnifiedBatchManagerFacade<TManager extends Record<string, 
             total: status.total || status.progress?.total || 0,
             completed: status.completed || status.progress?.completed || 0,
             failed: status.failed || status.progress?.failed || 0,
+            skipped: status.progress?.skipped,
             percentage: status.percentage || status.progress?.percentage || 0,
             currentStage: status.stage || status.progress?.currentStage || 'processing',
             currentTask: status.currentTask || status.progress?.currentTask,
+            estimatedTimeRemaining: status.progress?.estimatedTimeRemaining,
           },
           startedAt: status.startedAt,
           completedAt: status.completedAt,

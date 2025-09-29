@@ -1,52 +1,82 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { BatchProgressEvent } from '../../../shared/index.js';
+import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 import { useShapeProgress } from '../../hooks/useShapeProgress.js';
 
-const apiRef: { current: any } = { current: null };
+const unsubscribeSpy = vi.fn();
+let progressCallback: ((event: BatchProgressEvent) => void) | undefined;
 
-vi.mock('../../hooks/useShapeAPI.js', () => ({
-  useShapeAPIGetter: () => async () => apiRef.current,
+const bridgeMock = {
+  initialize: vi.fn(),
+  subscribeBatchProgress: vi.fn(),
+  getBatchSessionStatus: vi.fn(),
+};
+
+vi.mock('@hierarchidb/runtime-ui-plugin-dialog', () => ({
+  getWorkerBridge: () => bridgeMock,
 }));
 
 describe('useShapeProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    const unsubscribeSpy = vi.fn();
-    apiRef.current = {
-      subscribeToProgress: vi.fn((sessionId: string, cb: (event: BatchProgressEvent) => void) => {
-        apiRef.current.__progressCallback = cb;
+    progressCallback = undefined;
+    unsubscribeSpy.mockClear();
+    unsubscribeSpy.mockImplementation(() => {
+    });
+    bridgeMock.initialize.mockResolvedValue(undefined);
+    bridgeMock.getBatchSessionStatus.mockImplementation(async (_nodeType: string, session: string) => ({
+      sessionId: session,
+      nodeId: `${session}-node` as any,
+      status: 'running',
+      progress: {
+        total: 10,
+        completed: 3,
+        failed: 0,
+        percentage: 30,
+        currentStage: 'download',
+        currentTask: 'task-3',
+      },
+      startedAt: Date.now(),
+      lastActivity: Date.now(),
+    }));
+    bridgeMock.subscribeBatchProgress.mockImplementation(
+      async (_nodeType: string, _sessionId: string, cb: (event: BatchProgressEvent) => void) => {
+        progressCallback = cb;
         return () => unsubscribeSpy();
-      }),
-      getBatchSession: vi.fn().mockResolvedValue(null),
-      __unsubscribeSpy: unsubscribeSpy,
-    };
+      },
+    );
   });
 
-  const emit = (event: BatchProgressEvent) => {
-    const cb = apiRef.current.__progressCallback as ((ev: BatchProgressEvent) => void) | undefined;
-    if (!cb) throw new Error('progress callback not registered');
-    act(() => {
-      cb(event);
-    });
-  };
+const emit = async (event: BatchProgressEvent) => {
+  const cb = progressCallback;
+  if (!cb) throw new Error('progress callback not registered');
+  await act(async () => {
+    cb(event);
+  });
+};
 
   it('updates progress and status from runtime worker events', async () => {
-    const { result } = renderHook(() => useShapeProgress('session-1', { enablePollingFallback: false }));
+    const { result } = renderHook(() => useShapeProgress('session-1', {
+      autoSubscribe: false,
+      enablePollingFallback: false,
+    }));
 
-    await waitFor(() => expect(apiRef.current.subscribeToProgress).toHaveBeenCalled());
+    await act(async () => {
+      await result.current.subscribe();
+    });
 
-    emit({
+    await emit({
       sessionId: 'session-1',
-      treeNodeId: 'tree-1' as any,
+      nodeId: 'tree-1' as any,
       stage: 'download',
-      status: 'running',
-      progress: 30,
-      completedTasks: 3,
-      totalTasks: 10,
-      currentTask: 'task-3',
+      phase: 'running',
       timestamp: Date.now(),
-      type: 'progress',
+      payload: {
+        total: 10,
+        completed: 3,
+        failed: 0,
+        currentTask: 'task-3',
+      },
     });
 
     await waitFor(() => expect(result.current.progress?.completed).toBe(3));
@@ -69,21 +99,28 @@ describe('useShapeProgress', () => {
   });
 
   it('records errors from progress events', async () => {
-    const { result } = renderHook(() => useShapeProgress('session-err', { enablePollingFallback: false }));
-    await waitFor(() => expect(apiRef.current.subscribeToProgress).toHaveBeenCalled());
+    const { result } = renderHook(() => useShapeProgress('session-err', {
+      autoSubscribe: false,
+      enablePollingFallback: false,
+    }));
 
-    emit({
+    await act(async () => {
+      await result.current.subscribe();
+    });
+
+    await emit({
       sessionId: 'session-err',
-      treeNodeId: 'tree-err' as any,
+      nodeId: 'tree-err' as any,
       stage: 'simplify1',
-      status: 'failed',
-      progress: 45,
-      completedTasks: 4,
-      totalTasks: 10,
-      currentTask: 'task-5',
+      phase: 'failed',
       timestamp: Date.now(),
-      type: 'error',
-      error: 'download failed',
+      payload: {
+        total: 10,
+        completed: 4,
+        failed: 1,
+        currentTask: 'task-5',
+      },
+      error: { detail: 'download failed' },
     });
 
     await waitFor(() => expect(result.current.status?.status).toBe('failed'));
@@ -96,14 +133,20 @@ describe('useShapeProgress', () => {
   });
 
   it('unsubscribes from runtime updates', async () => {
-    const { result, unmount } = renderHook(() => useShapeProgress('session-unsub', { enablePollingFallback: false }));
-    await waitFor(() => expect(apiRef.current.subscribeToProgress).toHaveBeenCalled());
+    const { result, unmount } = renderHook(() => useShapeProgress('session-unsub', {
+      autoSubscribe: false,
+      enablePollingFallback: false,
+    }));
+
+    await act(async () => {
+      await result.current.subscribe();
+    });
 
     act(() => {
       result.current.unsubscribe();
     });
 
-    expect(apiRef.current.__unsubscribeSpy).toHaveBeenCalled();
+    expect(unsubscribeSpy).toHaveBeenCalled();
     expect(result.current.isSubscribed).toBe(false);
 
     unmount();

@@ -6,6 +6,27 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BatchProgress, BatchSessionState } from './AbstractBatchSession.js';
 
+export type BatchSessionId = string;
+export type StageKey = string;
+export type ProgressPhase =
+  | 'queued'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'warning'
+  | 'cancelled';
+
+export interface BatchProgressPayload {
+  total?: number;
+  completed?: number;
+  failed?: number;
+  skipped?: number;
+  currentTask?: string;
+  estimatedTimeRemaining?: number;
+  meta?: Record<string, unknown>;
+}
+
 /**
  * Common interface for batch session management across all plugins
  */
@@ -13,35 +34,33 @@ export interface IBatchSessionManager {
   /**
    * Start a new batch session
    * @param nodeId Target node ID
-   * @param config Plugin-specific configuration
-   * @param data Plugin-specific data
    * @returns Session ID
    */
-  startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string>;
+  startBatchSession(nodeId: NodeId): Promise<BatchSessionId>;
 
   /**
    * Pause a running batch session
    * @param sessionId Session to pause
    */
-  pauseBatchSession(sessionId: string): Promise<void>;
+  pauseBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
    * Resume a paused batch session
    * @param sessionId Session to resume
    */
-  resumeBatchSession(sessionId: string): Promise<void>;
+  resumeBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
    * Cancel a batch session
    * @param sessionId Session to cancel
    */
-  cancelBatchSession(sessionId: string): Promise<void>;
+  cancelBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
    * Get current session status
    * @param sessionId Session to query
    */
-  getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus>;
+  getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus>;
 
   /**
    * Subscribe to progress updates
@@ -49,14 +68,14 @@ export interface IBatchSessionManager {
    * @param callback Progress callback
    * @returns Unsubscribe function
    */
-  onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void;
+  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void;
 }
 
 /**
  * Standardized batch session status
  */
 export interface BatchSessionStatus {
-  sessionId: string;
+  sessionId: BatchSessionId;
   nodeId: NodeId;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   progress: BatchProgress;
@@ -69,21 +88,26 @@ export interface BatchSessionStatus {
 /**
  * Standardized progress callback signature
  */
-export type BatchProgressCallback = (progress: StandardProgressEvent) => void;
+export type BatchProgressCallback = (progress: BatchProgressEvent) => void;
 
 /**
  * Standardized progress event across all plugins
  */
-export interface StandardProgressEvent {
-  sessionId: string;
-  stage: string;
-  total: number;
-  completed: number;
-  failed: number;
-  percentage: number;
-  currentTask?: string;
-  estimatedTimeRemaining?: number;
+export interface BatchProgressEvent<P = BatchProgressPayload> {
+  sessionId: BatchSessionId;
+  nodeId: NodeId;
+  stage: StageKey;
+  phase: ProgressPhase;
+  timestamp: number;
+  payload?: P;
+  message?: string;
+  error?: { code?: string; detail?: unknown };
 }
+
+/** @deprecated use BatchProgressEvent instead */
+export type StandardProgressEvent<P = BatchProgressPayload> = BatchProgressEvent<P>;
+/** @deprecated use BatchProgressPayload instead */
+export type StandardProgressPayload = BatchProgressPayload;
 
 /**
  * Batch control command interface for sessions

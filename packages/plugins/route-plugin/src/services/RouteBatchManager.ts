@@ -3,7 +3,8 @@
  * @description Route batch processing manager extending Shape's batch infrastructure
  */
 
-import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-type';
+import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 // No longer extend local batch shim; RouteBatchSession provides shared behavior
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 import { RouteDatabase, type RouteCursorRow } from '../database/RouteDatabase.js';
@@ -37,24 +38,7 @@ const logRouteBatchWarning = (message: string, error: unknown): void => {
  */
 
 export class RouteBatchManager {
-  constructor(protected readonly deps?: RouteBatchManagerDeps) {
-  }
-
-  notifyProgress(this: RouteBatchManager, sessionId: string, ev: LegacyProgressEvent): void {
-    const stage = ev?.stage ?? 'processing';
-    const percentage = resolveProgressPercentage(ev);
-    const update: ProgressUpdate = { jobId: sessionId, progress: percentage, phase: stage, ts: Date.now() };
-    try {
-      this.deps?.emitter?.emit?.(update);
-    } catch (error) {
-      logRouteBatchWarning('Progress emitter raised an error (legacy notifyProgress)', error);
-    }
-    try {
-      this.deps?.store?.upsert?.(sessionId, update);
-    } catch (error) {
-      logRouteBatchWarning('Progress store upsert failed (legacy notifyProgress)', error);
-    }
-  };
+  constructor(protected readonly deps?: RouteBatchManagerDeps) {}
 
   private routeSpecificTasks = new Map<string, RouteBatchTask[]>();
   // private generator = new RouteGenerator();
@@ -166,9 +150,14 @@ export class RouteBatchManager {
     // Initialize cursor
     await this.db.routeCursors.put(createCursorRow(sessionId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
-    const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks, (ev: ProgressEvent) => this.emitProgress(ev));
+    const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
+    const unsubscribe = session.addBatchProgressListener((event) => this.emitProgressEvent(event));
     await session.initialize();
-    await session.start();
+    try {
+      await session.start();
+    } finally {
+      unsubscribe();
+    }
 
     return sessionId;
   }
@@ -294,20 +283,25 @@ export class RouteBatchManager {
     }
   }
 
-  private emitProgress(ev: ProgressEvent): void {
-    // bridge to UI progress emitter/store if provided via deps in createRouteBatchManager
+  private emitProgressEvent(event: BatchProgressEvent): void {
+    const payload = event.payload ?? {};
+    const total = payload.total ?? 0;
+    const completed = payload.completed ?? 0;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : completed;
+    const ts = event.timestamp ?? Date.now();
+    const update: ProgressUpdate = {
+      jobId: event.sessionId,
+      progress: percentage,
+      phase: event.stage,
+      ts,
+    };
     try {
-      this.deps?.emitter?.emit?.({ jobId: ev.sessionId, progress: ev.percentage, phase: ev.stage, ts: Date.now() });
+      this.deps?.emitter?.emit?.(update);
     } catch (error) {
       logRouteBatchWarning('Progress emitter raised an error', error);
     }
     try {
-      this.deps?.store?.upsert?.(ev.sessionId, {
-        jobId: ev.sessionId,
-        progress: ev.percentage,
-        phase: ev.stage,
-        ts: Date.now(),
-      });
+      this.deps?.store?.upsert?.(event.sessionId, update);
     } catch (error) {
       logRouteBatchWarning('Progress store upsert failed', error);
     }
@@ -363,27 +357,6 @@ function hashCyrb53(str: string, seed = 0): string {
   h2 = Math.imul(h2 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h2 >>> 13), 3266489909);
   const h = 4294967296 * (2097151 & h2) + (h1 >>> 0);
   return h.toString(36);
-}
-
-// Bridge notifyProgress (shim) to UI progress emitter/store using common ProgressEvent shape
-type LegacyProgressEvent = {
-  percentage?: number;
-  progress?: number;
-  total?: number;
-  completed?: number;
-  stage?: string;
-  currentTask?: string;
-} | undefined;
-
-function resolveProgressPercentage(ev: LegacyProgressEvent): number {
-  if (!ev) return 0;
-  if (typeof ev.percentage === 'number') return ev.percentage;
-  if (typeof ev.progress === 'number') return ev.progress;
-  if (typeof ev.total === 'number' && ev.total > 0) {
-    const completed = ev.completed ?? 0;
-    return Math.round((completed / ev.total) * 100);
-  }
-  return 0;
 }
 
 // (removed) Semaphore helper; concurrency control is handled in RouteBatchSession

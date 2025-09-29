@@ -47,3 +47,6 @@ export type {
 // URL synchronization hook (lightweight)
 export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
 export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
+
+// Services
+export { WorkerBridge, getWorkerBridge } from './services/WorkerBridge.js';

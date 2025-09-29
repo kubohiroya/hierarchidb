@@ -20,7 +20,7 @@ export async function createEntityHandler() {
 }
 
 export async function createBatchManager() {
-  const { createRouteBatchManager } = await import('../services/UnifiedRouteBatchManager.js');
+  const { createRouteBatchManager } = await import('../services/RouteBatchSessionOrchestrator.js');
   return createRouteBatchManager();
 }
 

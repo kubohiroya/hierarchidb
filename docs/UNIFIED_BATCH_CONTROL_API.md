@@ -1,131 +1,77 @@
-# Unified Batch Control API v2
+# Unified Batch Control API — Runtime Worker / UI 連携仕様（2025-09 再整理）
 
-プラグインのバッチ処理関係リファクタリングによって、location-plugin、shape-plugin、route-plugin の間でバッチ制御APIが統一されました。
+本ドキュメントは Shape / Location / Route を中心に構築中の共通バッチ基盤について、Runtime Worker と UI の結線仕様をまとめたものです。以下の方針は旧 API からの移行前提となります。
 
-## 機能フラグ
+## 1. ローディング戦略
 
-バッチ制御 API v2 は常時有効化されており、追加のフラグ設定は不要です。
+| レイヤ | ロード方法 | 備考 |
+| --- | --- | --- |
+| UI (親ウィンドウ) | 静的 import (`app/src/generated/ui-loader.ts`) | 起動時にすべての UI プラグインを読み込む。旧 `autoLoadPlugins()` は開発補助用途のみ。 |
+| Runtime Worker | 動的 import (`app/src/worker.ts`) | `virtual:plugin-registry-worker` による nodeType ごとの遅延ロード。deny-list 対応。 |
+| Stage Worker (孫 Worker) | プラグイン実装依存 | Runtime Worker 内で必要に応じて生成。 |
 
-## 統一されたインターフェース
+## 2. Runtime Worker 公開 API（予定）
 
-すべてのプラグインで `IBatchSessionManager` インターフェースを実装：
+```ts
+export type BatchSessionId = string;
+export type StageKey = string;              // download / simplify1 / vectortile などに正規化
+export type ProgressPhase = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'warning' | 'cancelled';
 
-```typescript
-interface IBatchSessionManager {
-  startBatchSession(nodeId: NodeId, config: any, data?: any): Promise<string>;
-  pauseBatchSession(sessionId: string): Promise<void>;
-  resumeBatchSession(sessionId: string): Promise<void>;
-  cancelBatchSession(sessionId: string): Promise<void>;
-  getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus>;
-  onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void;
+interface BatchProgressEvent<P = BatchProgressPayload> {
+  sessionId: BatchSessionId;
+  nodeId: NodeId;
+  stage: StageKey;
+  phase: ProgressPhase;
+  timestamp: number;
+  payload?: P;              // プラグイン固有の進捗データ
+  message?: string;
+  error?: { code?: string; detail?: unknown };
 }
-```
 
-## 使用例
-
-### Location Plugin
-
-```typescript
-import { createLocationBatchManager } from '@hierarchidb/plugins-location-plugin';
-
-const manager = createLocationBatchManager();
-
-// セッション開始
-const sessionId = await manager.startBatchSession(nodeId, {
-  concurrency: 4
-}, {
-  points: locationPoints,
-  settings: tileSettings
-});
-
-// 進捗監視
-const unsubscribe = manager.onBatchProgress(sessionId, (event) => {
-  console.log(`Progress: ${event.percentage}% (${event.completed}/${event.total})`);
-});
-
-// 制御
-await manager.pauseBatchSession(sessionId);
-await manager.resumeBatchSession(sessionId);
-await manager.cancelBatchSession(sessionId);
-```
-
-### Shape Plugin
-
-```typescript
-import { createShapeBatchManager } from '@hierarchidb/plugins-shape-plugin';
-
-const manager = createShapeBatchManager();
-
-const sessionId = await manager.startBatchSession(nodeId, {
-  corsProxyBaseURL: 'https://proxy.example.com',
-  maxRetries: 3,
-  maxConcurrentTasks: 8
-}, {
-  urlMetadata: shapeUrlList
-});
-```
-
-### Route Plugin
-
-```typescript
-import { createRouteBatchManager } from '@hierarchidb/plugins-route-plugin';
-
-const manager = createRouteBatchManager();
-
-const sessionId = await manager.startBatchSession(nodeId, {
-  routeGeneration: {
-    method: 'osm_route',
-    parallel: true,
-    maxConcurrent: 4
-  }
-}, {
-  routes: routeDefinitions
-});
-```
-
-## 統一された進捗イベント
-
-すべてのプラグインが同じ `StandardProgressEvent` 形式を使用：
-
-```typescript
-interface StandardProgressEvent {
-  sessionId: string;
-  stage: string;
-  total: number;
-  completed: number;
-  failed: number;
-  percentage: number;
+interface BatchProgressPayload {
+  total?: number;
+  completed?: number;
+  failed?: number;
+  skipped?: number;
   currentTask?: string;
   estimatedTimeRemaining?: number;
+  meta?: Record<string, unknown>;
 }
+
+// WorkerBridge -> WorkerService で公開する API
+startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus>;
+getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus>;
+pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void>;
+subscribeBatchProgress(
+  nodeType: NodeType,
+  sessionId: BatchSessionId,
+  cb: (event: BatchProgressEvent) => void,
+): Promise<() => void>;
 ```
 
-## 下位互換性
+- `startBatchSession` は UI から nodeType / nodeId だけを受け取り、Runtime Worker が PeerEntity / WorkingCopy から設定値を読み出す。
+- `getBatchSessionStatus` はタブ再オープン時のリカバリ用途。存在しない場合はエラーを返す。
+- `subscribeBatchProgress` は解除ハンドラを返す。UI ではダイアログ終了時に明示的に解除。
 
-旧来のマネージャークラス（`LocationBatchSessionManager` 等）は内部的に Unified 実装へ委譲されており、追加の設定なく最新 API を利用できます。
+## 3. 旧イベントとの関係
 
-## 実装詳細
+- 旧来の UI イベント（Shape などで利用していた `BatchProgressEvent`）は **`LegacyBatchProgressEvent`** として残し、Runtime Worker から受けた `BatchProgressEvent` を変換する互換レイヤで対応する。
+- UI 側では `payload` から進捗バーに必要な値（件数・割合など）を再計算する。冗長な `percentage` などを通知側に持たせない方針。
 
-### AbstractBatchSession 拡張
+## 4. TODO（2025-09-29 着手）
 
-- `IBatchControlCommands` インターフェースを実装
-- 統一されたコマンドハンドラ（start/pause/resume/cancel）
-- 標準化された進捗更新機能
+- [ ] WorkerBridge / WorkerService に上記 API を実装する。
+  - [ ] runtime-shared に `BatchSessionId` / `BatchProgressEvent` / `BatchProgressPayload` を導入し、`IBatchSessionManager` と `AbstractBatchSession` を更新。
+  - [ ] `subscribeBatchProgress` で Comlink 解除ハンドラを返却する実装を追加。
+- [ ] Shape / Location / Route の Runtime Worker アダプタを新 API へ対応させる。
+  - [ ] `startBatchSession(nodeId)` へ統一し、PeerEntity / WorkingCopy から設定値を解決する。
+  - [ ] 各プラグインで `payload` 生成ロジックと `StageKey` / `ProgressPhase` のマッピングを用意する。
+  - [ ] 旧 `LegacyBatchProgressEvent` へ変換する互換レイヤ（必要なら一時的）を整備する。
+- [ ] UI フック / ダイアログを `BatchProgressEvent` ベースへ差し替える。
+  - [ ] `useBatchProgress` アダプタを WorkerBridge 購読へ接続。
+  - [ ] Shape / Location / Route ダイアログを新アダプタ出力で更新し、Legacy イベント依存を解消する。
+- [ ] 変更後に `pnpm -w typecheck` / `pnpm -C app build` 等で検証し、必要なテストを追加する。
 
-### Progress Infrastructure 昇格
-
-- `ProgressEmitter` と `MemoryProgressStore` をruntime-sharedに移動
-- route-pluginで共有進捗基盤を活用
-- 統一されたスナップショット形式
-
-### 各プラグインのファサード
-
-各プラグインに `UnifiedXXXBatchManager` クラスを追加し、プラグイン固有の設定を統一インターフェースに変換します。
-
-## テスト
-
-統合テストで全プラグインのインターフェース統一性を検証：
-
-```bash
-pnpm --filter @hierarchidb/runtime-shared-batch-processor test
-```
+以上の TODO を小さな差分で進め、最終的には各プラグインのバッチ UI が同一のイベント仕様で動作することをゴールとします。

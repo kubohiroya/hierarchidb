@@ -342,7 +342,11 @@ export const shapePluginAPI = {
     const batchSessionData = { urlMetadata };
 
     // Start batch session using unified manager
-    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId, batchConfig, batchSessionData);
+    const managerWithPrepare = batchSessionManager as unknown as {
+      prepareSession?: (nodeId: NodeId, config: BatchProcessConfig, data: typeof batchSessionData) => void;
+    };
+    managerWithPrepare.prepareSession?.(workingCopy.nodeId, batchConfig, batchSessionData);
+    const sessionId = await batchSessionManager.startBatchSession(workingCopy.nodeId);
 
     const sessionMeta = getOrCreateSessionMeta(sessionId);
     sessionMeta.treeNodeId = workingCopy.nodeId as TreeNodeId;

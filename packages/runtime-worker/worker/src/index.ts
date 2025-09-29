@@ -7,6 +7,12 @@ import {
   WorkerAPI,
   type WorkingCopyAPI,
 } from '@hierarchidb/common-api';
+import type {
+  BatchProgressEvent,
+  BatchSessionId,
+  BatchSessionStatus,
+  IBatchSessionManager,
+} from '@hierarchidb/runtime-shared-batch-processor';
 import { CoreDB } from './services/CoreDB.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
@@ -40,10 +46,17 @@ const readHeapStats = (): { used: number; limit: number } => {
   };
 };
 
-export class WorkerService{
-  private readonly startTime = Date.now();
+type BatchManagerFactory = () => Promise<IBatchSessionManager>;
 
-  static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {
+export class WorkerService {
+  private readonly startTime = Date.now();
+  private readonly batchFactories: Map<NodeType, BatchManagerFactory>;
+  private readonly batchManagers = new Map<NodeType, IBatchSessionManager>();
+
+  static async getSingleton(
+    plugins: PluginDefinition[],
+    runtimeExports: Record<string, { createBatchManager?: () => Promise<unknown> | unknown }> = {},
+  ): Promise<WorkerService> {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
@@ -103,6 +116,22 @@ export class WorkerService{
         commandProcessor,
       );
 
+      const batchFactories = new Map<NodeType, BatchManagerFactory>();
+      for (const [nodeType, entry] of Object.entries(runtimeExports)) {
+        const factoryCandidate = entry?.createBatchManager;
+        if (typeof factoryCandidate !== 'function') {
+          continue;
+        }
+        batchFactories.set(nodeType as NodeType, async () => {
+          const maybePromise = factoryCandidate();
+          const instance = await Promise.resolve(maybePromise) as IBatchSessionManager;
+          if (!instance || typeof instance.startBatchSession !== 'function') {
+            throw new Error(`[WorkerService] Batch manager for ${nodeType} did not return IBatchSessionManager`);
+          }
+          return instance;
+        });
+      }
+
       return new WorkerService(
         coreDB,
         ephemeralDB,
@@ -114,6 +143,7 @@ export class WorkerService{
         tagService,
         nodeLifecycleManager,
         commandProcessor,
+        batchFactories,
       );
     });
   }
@@ -129,7 +159,9 @@ export class WorkerService{
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
+    batchFactories?: Map<NodeType, BatchManagerFactory>,
   ) {
+    this.batchFactories = batchFactories ?? new Map();
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
       listTrees: () => this.queryService.listTrees(),
@@ -189,6 +221,68 @@ export class WorkerService{
     return this.tagService;
   }
 
+  async startBatchSession(nodeType: NodeType, nodeId: NodeId): Promise<BatchSessionStatus> {
+    const manager = await this.ensureBatchManager(nodeType);
+    const sessionId = await manager.startBatchSession(nodeId);
+    try {
+      return await manager.getBatchSessionStatus(sessionId);
+    } catch (error) {
+      console.warn('[WorkerService] getBatchSessionStatus failed after start:', error);
+      return {
+        sessionId,
+        nodeId,
+        status: 'running',
+        progress: {
+          total: 0,
+          completed: 0,
+          failed: 0,
+          percentage: 0,
+          currentStage: 'starting',
+        },
+        startedAt: Date.now(),
+      } satisfies BatchSessionStatus;
+    }
+  }
+
+  async getBatchSessionStatus(nodeType: NodeType, sessionId: BatchSessionId): Promise<BatchSessionStatus> {
+    const manager = await this.ensureBatchManager(nodeType);
+    return manager.getBatchSessionStatus(sessionId);
+  }
+
+  async pauseBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const manager = await this.ensureBatchManager(nodeType);
+    await manager.pauseBatchSession(sessionId);
+  }
+
+  async resumeBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const manager = await this.ensureBatchManager(nodeType);
+    await manager.resumeBatchSession(sessionId);
+  }
+
+  async cancelBatchSession(nodeType: NodeType, sessionId: BatchSessionId): Promise<void> {
+    const manager = await this.ensureBatchManager(nodeType);
+    await manager.cancelBatchSession(sessionId);
+  }
+
+  async subscribeBatchProgress(
+    nodeType: NodeType,
+    sessionId: BatchSessionId,
+    cb: (event: BatchProgressEvent) => void,
+  ): Promise<() => void> {
+    const manager = await this.ensureBatchManager(nodeType);
+    const teardown = manager.onBatchProgress(sessionId, cb);
+    if (typeof teardown === 'function') {
+      return teardown;
+    }
+    // Support implementations that accidentally returned a Promise
+    if (teardown && typeof (teardown as PromiseLike<() => void>).then === 'function') {
+      return (await teardown) ?? (() => {
+      });
+    }
+    return () => {
+    };
+  }
+
   // Minimal stub to satisfy interface; not yet wired.
   getPluginLifecycleAPI(): import('@hierarchidb/common-api').PluginLifecycleAPI {
     return {
@@ -236,6 +330,20 @@ export class WorkerService{
 
   getCommandProcessor(): CommandProcessor {
     return this.commandProcessor;
+  }
+
+  private async ensureBatchManager(nodeType: NodeType): Promise<IBatchSessionManager> {
+    const cached = this.batchManagers.get(nodeType);
+    if (cached) {
+      return cached;
+    }
+    const factory = this.batchFactories.get(nodeType);
+    if (!factory) {
+      throw new Error(`[WorkerService] No batch manager factory registered for node type ${nodeType}`);
+    }
+    const manager = await factory();
+    this.batchManagers.set(nodeType, manager);
+    return manager;
   }
 
   async getSystemHealth(): Promise<{

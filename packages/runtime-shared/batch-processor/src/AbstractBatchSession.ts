@@ -4,7 +4,12 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
-import type { IBatchControlCommands, StandardProgressEvent } from './BatchControlAPI.js';
+import type {
+  IBatchControlCommands,
+  BatchProgressEvent,
+  BatchProgressPayload,
+  ProgressPhase,
+} from './BatchControlAPI.js';
 
 /**
  * Base configuration for all batch sessions
@@ -78,7 +83,7 @@ export abstract class AbstractBatchSession<
   protected progress: BatchProgress;
   protected resourceUsage?: ResourceUsage;
   protected abortController?: AbortController;
-  private standardProgressListeners = new Set<(event: StandardProgressEvent) => void>();
+  private progressListeners = new Set<(event: BatchProgressEvent) => void>();
 
   constructor(sessionId: string, nodeId: NodeId, config: TConfig) {
     this.sessionId = sessionId;
@@ -314,52 +319,77 @@ export abstract class AbstractBatchSession<
    */
   protected onProgressUpdate(progress: BatchProgress): void {
     // Default implementation: emit standardized progress event
-    const event: StandardProgressEvent = {
-      sessionId: this.sessionId,
-      stage: progress.currentStage || 'processing',
+    const payload: BatchProgressPayload = {
       total: progress.total,
       completed: progress.completed,
       failed: progress.failed,
-      percentage: progress.percentage,
+      skipped: progress.skipped,
       currentTask: progress.currentTask,
       estimatedTimeRemaining: progress.estimatedTimeRemaining,
     };
 
-    this.emitStandardProgressEvent(event);
+    const event: BatchProgressEvent = {
+      sessionId: this.sessionId,
+      nodeId: this.nodeId,
+      stage: progress.currentStage || 'processing',
+      phase: this.mapStateToPhase(this.state.status),
+      timestamp: Date.now(),
+      payload,
+    };
+
+    this.emitProgressEvent(event);
   }
 
   /**
-   * Called when standardized progress event is emitted
+   * Called when batch progress event is emitted
    * Can be overridden by subclasses for custom handling
    */
-  protected onStandardProgressUpdate(_event: StandardProgressEvent): void {
+  protected onBatchProgressEvent(_event: BatchProgressEvent): void {
     // Default implementation: no-op
     // Subclasses should override this to emit progress to their specific systems
   }
 
   /**
-   * Add a listener for standardized progress events emitted by this session.
+   * Add a listener for batch progress events emitted by this session.
    * Returns an unsubscribe function for cleanup.
    */
-  addStandardProgressListener(listener: (event: StandardProgressEvent) => void): () => void {
-    this.standardProgressListeners.add(listener);
+  addBatchProgressListener(listener: (event: BatchProgressEvent) => void): () => void {
+    this.progressListeners.add(listener);
     return () => {
-      this.standardProgressListeners.delete(listener);
+      this.progressListeners.delete(listener);
     };
   }
 
-  private emitStandardProgressEvent(event: StandardProgressEvent): void {
+  private emitProgressEvent(event: BatchProgressEvent): void {
     try {
-      this.onStandardProgressUpdate(event);
+      this.onBatchProgressEvent(event);
     } catch (error) {
-      console.error('Standard progress handler threw an error:', error);
+      console.error('Batch progress handler threw an error:', error);
     }
-    for (const listener of this.standardProgressListeners) {
+    for (const listener of this.progressListeners) {
       try {
         listener(event);
       } catch (error) {
         console.error('Progress listener threw an error:', error);
       }
+    }
+  }
+
+  private mapStateToPhase(status: BatchSessionState['status']): ProgressPhase {
+    switch (status) {
+      case 'paused':
+        return 'paused';
+      case 'completed':
+        return 'completed';
+      case 'failed':
+        return 'failed';
+      case 'cancelled':
+        return 'cancelled';
+      case 'idle':
+        return 'queued';
+      case 'running':
+      default:
+        return 'running';
     }
   }
 }

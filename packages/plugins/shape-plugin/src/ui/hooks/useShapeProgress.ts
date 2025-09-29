@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '../../shared/types.js';
+import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type {
+  BatchProgressEvent,
+  BatchSessionStatus,
+} from '@hierarchidb/runtime-shared-batch-processor';
+import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+import {
+  type ProcessingStatus,
+  type ProgressInfo,
+} from '../../shared/index.js';
 import { useShapeAPIGetter } from './useShapeAPI.js';
-import type { BatchProgressEvent, ProcessingStatus, ProgressInfo } from '../../shared/index.js';
+
+type WorkerBridgeLike = ReturnType<typeof getWorkerBridge>;
 
 export interface ShapeProgressState {
   progress: ProgressInfo | null;
@@ -11,35 +21,13 @@ export interface ShapeProgressState {
 }
 
 export interface UseShapeProgressOptions {
-  /**
-   * Whether to automatically subscribe on mount
-   * @default true
-   */
   autoSubscribe?: boolean;
-
-  /**
-   * Polling interval in milliseconds as fallback when real-time subscription fails
-   * @default 2000
-   */
   pollingInterval?: number;
-
-  /**
-   * Whether to enable polling fallback
-   * @default true
-   */
   enablePollingFallback?: boolean;
 }
 
-/**
- * React hook for subscribing to batch processing progress updates
- *
- * Provides real-time progress updates via Worker callback subscription,
- * with automatic fallback to polling when callbacks are not available.
- *
- * @param sessionId - Batch session ID to monitor
- * @param options - Configuration options
- * @returns Progress state and control functions
- */
+const SHAPE_NODE_TYPE = 'shape' as NodeType;
+
 export function useShapeProgress(
   sessionId: string | null,
   options: UseShapeProgressOptions = {},
@@ -54,192 +42,111 @@ export function useShapeProgress(
     enablePollingFallback = true,
   } = options;
 
-  const getShapeAPI = useShapeAPIGetter();
+  const bridgeRef = useRef<WorkerBridgeLike>(getWorkerBridge());
 
-  // State
   const [progress, setProgress] = useState<ProgressInfo | null>(null);
   const [status, setStatus] = useState<ProcessingStatus | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Refs for cleanup
   const unsubscribeRef = useRef<(() => void) | null>(null);
-  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isRealTimeActiveRef = useRef(false);
 
-  const mapEventToProgress = useCallback((event: BatchProgressEvent): ProgressInfo => {
-    const total = event.totalTasks ?? 0;
-    const completed = event.completedTasks ?? 0;
-    const isFailed = event.type === 'error' || event.status === 'failed';
-    const failed = isFailed ? Math.max(total - completed, 1) : 0;
-    const skippedCandidate = total - completed - failed;
-    const skipped = skippedCandidate > 0 ? skippedCandidate : 0;
-    const percentage = event.progress ?? (total > 0 ? (completed / total) * 100 : 0);
-
-    return {
-      total,
-      completed,
-      failed,
-      skipped,
-      percentage,
-      currentStage: event.stage,
-      currentTask: event.currentTask,
-    };
-  }, []);
-
-  const mapEventToStatus = useCallback((event: BatchProgressEvent): ProcessingStatus => {
-    const complete = event.type === 'complete' || event.status === 'completed';
-    const failed = event.type === 'error' || event.status === 'failed';
-    const cancelled = event.type === 'cancelled' || event.status === 'cancelled';
-
-    const status: ProcessingStatus['status'] = complete
-      ? 'completed'
-      : failed
-      ? 'failed'
-      : cancelled
-      ? 'cancelled'
-      : 'processing';
-
-    const hasErrors = failed || Boolean(event.error);
-    const errorMessages = event.error ? [event.error] : [];
-
-    return {
-      status,
-      stage: event.stage,
-      progress: complete ? 100 : event.progress ?? 0,
-      lastUpdated: event.timestamp,
-      error: event.error,
-      hasErrors,
-      errorMessages,
-    };
-  }, []);
-
-  // Handle progress events
-  const handleProgressEvent = useCallback((event: BatchProgressEvent) => {
-    const nextProgress = mapEventToProgress(event);
+  const handleBatchEvent = useCallback((event: BatchProgressEvent) => {
+    const nextProgress = eventToProgress(event);
+    const nextStatus = eventToStatus(event);
     setProgress(nextProgress);
-
-    const nextStatus = mapEventToStatus(event);
     setStatus(nextStatus);
 
-    setError(event.error ? new Error(event.error) : null);
+    if (event.error) {
+      setError(new Error(renderError(event)));
+    } else {
+      setError(null);
+    }
 
     isRealTimeActiveRef.current = true;
-  }, [mapEventToProgress, mapEventToStatus]);
+  }, []);
 
-  // Polling fallback function
   const pollProgress = useCallback(async () => {
-    if (!sessionId || isRealTimeActiveRef.current) return;
-
+    if (!sessionId) return;
     try {
-      const api = await getShapeAPI();
-      const session = await api.getBatchSession(sessionId);
-
-      if (session) {
-        const fallbackEvent: BatchProgressEvent = {
-          sessionId,
-          treeNodeId: (session.workingCopyId ?? session.sessionId) as NodeId,
-          stage: session.stage ?? 'processing',
-          status: session.status === 'completed' ? 'completed' : session.status === 'failed' ? 'failed' : undefined,
-          progress: session.progress ?? 0,
-          completedTasks: session.completedTasks ?? 0,
-          totalTasks: session.totalTasks ?? 0,
-          currentTask: session.stage ?? 'processing',
-          timestamp: Date.now(),
-          type: session.status === 'completed' ? 'complete' : session.status === 'failed' ? 'error' : 'progress',
-          error: session.error ?? undefined,
-        };
-
-        setProgress(mapEventToProgress(fallbackEvent));
-        setStatus(mapEventToStatus(fallbackEvent));
-        setError(session.error ? new Error(session.error) : null);
-      }
+      const statusSnapshot = await bridgeRef.current.getBatchSessionStatus(SHAPE_NODE_TYPE, sessionId);
+      handleBatchEvent(statusToEvent(statusSnapshot));
     } catch (err) {
-      console.error('Failed to poll progress:', err);
+      console.warn('[useShapeProgress] poll failed', err);
       setError(err instanceof Error ? err : new Error('Failed to poll progress'));
     }
-  }, [sessionId, getShapeAPI, mapEventToProgress, mapEventToStatus]);
+  }, [sessionId, handleBatchEvent]);
 
-  // Subscribe to real-time updates
   const subscribe = useCallback(async () => {
     if (!sessionId || isSubscribed) return;
 
     try {
       setError(null);
-      const api = await getShapeAPI();
-
-      // Check if subscribeToProgress is available (real-time capability)
-      const subscribeToProgress = (api as { subscribeToProgress?: (id: string, cb: (e: BatchProgressEvent) => void) => () => void }).subscribeToProgress;
-
-      if (typeof subscribeToProgress === 'function') {
-        const unsubscribe = subscribeToProgress(sessionId, handleProgressEvent);
-        unsubscribeRef.current = unsubscribe;
-        isRealTimeActiveRef.current = false;
-        setIsSubscribed(true);
-        await pollProgress();
-        return;
-      }
-
-      if (enablePollingFallback) {
-        await pollProgress();
-        pollingIntervalRef.current = setInterval(pollProgress, pollingInterval);
-        setIsSubscribed(true);
-        isRealTimeActiveRef.current = false;
-        return;
-      }
-
-      throw new Error('Real-time subscription not supported and polling fallback is disabled');
+      await bridgeRef.current.initialize();
+      const unsubscribe = await bridgeRef.current.subscribeBatchProgress(
+        SHAPE_NODE_TYPE,
+        sessionId,
+        (event) => handleBatchEvent(event),
+      );
+      unsubscribeRef.current = unsubscribe;
+      isRealTimeActiveRef.current = true;
+      setIsSubscribed(true);
+      await pollProgress();
+      return;
     } catch (err) {
-      console.error('Failed to subscribe to progress:', err);
+      console.error('[useShapeProgress] subscribe failed', err);
+      if (!enablePollingFallback) {
+        setError(err instanceof Error ? err : new Error('Failed to subscribe'));
+        return;
+      }
+    }
+
+    try {
+      await pollProgress();
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+      pollingRef.current = setInterval(() => {
+        void pollProgress();
+      }, pollingInterval);
+      isRealTimeActiveRef.current = false;
+      setIsSubscribed(true);
+    } catch (err) {
+      console.error('[useShapeProgress] polling fallback failed', err);
       setError(err instanceof Error ? err : new Error('Failed to subscribe'));
     }
-  }, [sessionId, isSubscribed, getShapeAPI, handleProgressEvent, pollProgress, enablePollingFallback, pollingInterval]);
+  }, [sessionId, isSubscribed, enablePollingFallback, pollingInterval, pollProgress, handleBatchEvent]);
 
-  // Unsubscribe from updates
   const unsubscribe = useCallback(() => {
-    // Clean up real-time subscription
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
+    unsubscribeRef.current?.();
+    unsubscribeRef.current = null;
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
     }
-
-    // Clean up polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-
     setIsSubscribed(false);
     isRealTimeActiveRef.current = false;
   }, []);
 
-  // Manual refresh
   const refresh = useCallback(async () => {
     try {
       await pollProgress();
     } catch (err) {
-      console.error('Failed to refresh progress:', err);
-      setError(err instanceof Error ? err : new Error('Failed to refresh'));
+      console.error('[useShapeProgress] refresh failed', err);
+      setError(err instanceof Error ? err : new Error('Failed to refresh progress'));
     }
   }, [pollProgress]);
 
-  // Auto-subscribe on mount
   useEffect(() => {
     if (sessionId && autoSubscribe) {
-      subscribe();
+      void subscribe();
     }
-
     return () => {
       unsubscribe();
     };
   }, [sessionId, autoSubscribe, subscribe, unsubscribe]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      unsubscribe();
-    };
-  }, [unsubscribe]);
 
   return {
     progress,
@@ -252,13 +159,6 @@ export function useShapeProgress(
   };
 }
 
-/**
- * Hook for monitoring Shape entity processing status
- *
- * @param nodeId - Node ID of the Shape entity
- * @param options - Configuration options
- * @returns Progress state for the associated batch session
- */
 export function useShapeEntityProgress(
   nodeId: NodeId,
   options: UseShapeProgressOptions = {},
@@ -272,33 +172,25 @@ export function useShapeEntityProgress(
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [entityError, setEntityError] = useState<Error | null>(null);
 
-  // Get session ID from entity
   useEffect(() => {
-    let isCancelled = false;
-
-    const loadSessionId = async () => {
+    let cancelled = false;
+    (async () => {
       try {
         const api = await getShapeAPI();
         const entity = await api.getEntity(nodeId);
-
-        if (!isCancelled && entity?.batchSessionId) {
-          setSessionId(entity.batchSessionId);
+        if (!cancelled) {
+          setSessionId(entity?.batchSessionId ?? null);
           setEntityError(null);
-        } else if (!isCancelled) {
-          setSessionId(null);
         }
       } catch (err) {
-        if (!isCancelled) {
-          console.error('Failed to load entity session ID:', err);
+        if (!cancelled) {
+          console.error('[useShapeEntityProgress] failed to load entity session', err);
           setEntityError(err instanceof Error ? err : new Error('Failed to load entity'));
         }
       }
-    };
-
-    loadSessionId();
-
+    })();
     return () => {
-      isCancelled = true;
+      cancelled = true;
     };
   }, [nodeId, getShapeAPI]);
 
@@ -307,6 +199,125 @@ export function useShapeEntityProgress(
   return {
     ...progressHook,
     sessionId,
-    error: progressHook.error || entityError,
+    error: progressHook.error ?? entityError,
   };
+}
+
+function eventToProgress(event: BatchProgressEvent): ProgressInfo {
+  const payload = event.payload ?? {};
+  const total = toNumber(payload.total);
+  const completed = toNumber(payload.completed);
+  const failed = toNumber(payload.failed);
+  const skipped = Math.max(0, total - completed - failed);
+  const percentage = computePercentage(event.phase, total, completed, payload);
+
+  return {
+    total,
+    completed,
+    failed,
+    skipped,
+    percentage,
+    currentStage: event.stage,
+    currentTask: payload.currentTask ?? event.message ?? event.stage,
+  };
+}
+
+function eventToStatus(event: BatchProgressEvent): ProcessingStatus {
+  const payload = event.payload ?? {};
+  const total = toNumber(payload.total);
+  const completed = toNumber(payload.completed);
+  const percentage = computePercentage(event.phase, total, completed, payload);
+
+  return {
+    status: phaseToStatus(event.phase),
+    stage: event.stage,
+    progress: percentage,
+    lastUpdated: event.timestamp ?? Date.now(),
+    hasErrors: Boolean(event.error),
+    errorMessages: event.error ? [renderError(event)] : [],
+    error: event.error ? renderError(event) : undefined,
+  };
+}
+
+function statusToEvent(status: BatchSessionStatus): BatchProgressEvent {
+  const progress = status.progress ?? {
+    total: 0,
+    completed: 0,
+    failed: 0,
+  };
+  const phase = mapStatusToPhase(status.status);
+  return {
+    sessionId: status.sessionId,
+    nodeId: status.nodeId,
+    stage: progress.currentStage ?? 'processing',
+    phase,
+    timestamp: Date.now(),
+    payload: {
+      total: progress.total,
+      completed: progress.completed,
+      failed: progress.failed,
+      currentTask: progress.currentTask,
+    },
+    message: status.error,
+    error: status.error ? { detail: status.error } : undefined,
+  } satisfies BatchProgressEvent;
+}
+
+function computePercentage(
+  phase: BatchProgressEvent['phase'] | undefined,
+  total: number,
+  completed: number,
+  payload: Record<string, unknown>,
+): number {
+  if (phase === 'completed') return 100;
+  const supplied = typeof payload.percentage === 'number' ? payload.percentage : undefined;
+  if (typeof supplied === 'number' && Number.isFinite(supplied)) {
+    return supplied;
+  }
+  if (total > 0) {
+    return Math.max(0, Math.min(100, Math.round((completed / total) * 100)));
+  }
+  return 0;
+}
+
+function phaseToStatus(phase: BatchProgressEvent['phase'] | undefined): ProcessingStatus['status'] {
+  switch (phase) {
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return 'cancelled';
+    case 'queued':
+      return 'idle';
+    default:
+      return 'processing';
+  }
+}
+
+function mapStatusToPhase(status: BatchSessionStatus['status']): BatchProgressEvent['phase'] {
+  switch (status) {
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    case 'cancelled':
+      return 'cancelled';
+    case 'paused':
+      return 'paused';
+    case 'idle':
+      return 'queued';
+    default:
+      return 'running';
+  }
+}
+
+function renderError(event: BatchProgressEvent): string {
+  if (!event.error) return 'Unknown error';
+  const detail = typeof event.error === 'object' ? (event.error.detail ?? event.error.code) : event.error;
+  return typeof detail === 'string' ? detail : 'Unknown error';
+}
+
+function toNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }

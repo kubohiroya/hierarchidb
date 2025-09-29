@@ -1,35 +1,36 @@
 /**
  * Unified Batch Control Facade for Location Plugin
- * Provides standardized batch control API while maintaining backward compatibility
+ * Provides standardized batch control API based on persisted session metadata
  */
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
   BatchProgressCallback,
+  BatchProgressEvent,
+  BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
-  StandardProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import type { LocationPointInput, LocationTileSettings } from './SessionController.js';
-import { toStandardProgressEvent } from './ProgressAdapter.js';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { toBatchProgressEvent } from './ProgressAdapter.js';
 
-/**
- * Unified location batch manager implementing the standard interface
- */
+export interface LocationBatchConfig {
+  concurrency?: number;
+}
+
+export interface LocationBatchData {
+  points: LocationPointInput[];
+  settings: LocationTileSettings;
+}
+
 export class UnifiedLocationBatchManager implements IBatchSessionManager {
   private manager: LocationBatchSessionManager;
-  // facade is currently unused in this minimal implementation; keep for future
-  // compatibility with unified manager factory without exporting in dts.
-  // Use underscore to mark intentionally unused until unified facade is required by API
-  // removed facade to satisfy dts build; can be reintroduced when unified API is wired
 
   constructor() {
     this.manager = new LocationBatchSessionManager();
-
-    // Facade creation skipped to avoid unused symbol during dts build
   }
 
   /** @internal Test-only injection hook */
@@ -37,13 +38,33 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     this.manager = manager;
   }
 
-  async startBatchSession(nodeId: NodeId, config: LocationBatchConfig, data?: LocationBatchData): Promise<string> {
-    if (!data || !data.points || !data.settings) {
-      throw new Error('Location batch session requires points and settings data');
+  async prepareSession(nodeId: NodeId, config: LocationBatchConfig | undefined, data: LocationBatchData): Promise<void> {
+    const db = getEphemeralLocationDB();
+    await db.pendingSessions.put({
+      nodeId,
+      points: data.points,
+      settings: data.settings,
+      config,
+      storedAt: Date.now(),
+    });
+  }
+
+  async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
+    const db = getEphemeralLocationDB();
+    const pending = await db.pendingSessions.get(nodeId);
+    if (!pending) {
+      throw new Error(`No pending location batch session for node ${nodeId}`);
+    }
+    await db.pendingSessions.delete(nodeId);
+
+    const points = pending.points as LocationPointInput[] | undefined;
+    const settings = pending.settings as LocationTileSettings | undefined;
+    const config = pending.config as LocationBatchConfig | undefined;
+    if (!points || !settings) {
+      throw new Error('Location batch session requires points and settings');
     }
 
-    const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
-    const db = getEphemeralLocationDB();
+    const summary = await this.manager.createSession(nodeId, points, settings, { concurrency: config?.concurrency });
     await db.sessions?.put({
       sessionId: summary.sessionId,
       nodeId,
@@ -57,84 +78,69 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     return summary.sessionId;
   }
 
-  async pauseBatchSession(sessionId: string): Promise<void> {
+  async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.pause(sessionId);
   }
 
-  async resumeBatchSession(sessionId: string): Promise<void> {
+  async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.resume(sessionId);
   }
 
-  async cancelBatchSession(sessionId: string): Promise<void> {
+  async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.cancel(sessionId);
   }
 
-  async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
+  async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
     const summary = this.manager.getInitialSummary(sessionId);
     if (!summary) {
       throw new Error(`Session ${sessionId} not found`);
     }
 
-    // Convert LocationPlugin format to standard format
     return {
       sessionId: summary.sessionId,
       nodeId: summary.nodeId,
-      status: 'running', // LocationPlugin doesn't track status explicitly
+      status: 'running',
       progress: {
         total: summary.totalPoints,
-        completed: 0, // Would need to be tracked separately
+        completed: 0,
         failed: 0,
         percentage: 0,
-        currentStage: 'processing',
+        currentStage: 'download',
       },
-      startedAt: Date.now(), // Would need to be tracked
+      startedAt: Date.now(),
     };
   }
 
-  onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
-    return this.manager.onProgress(sessionId, async (event) => {
-      const std: StandardProgressEvent = toStandardProgressEvent(event);
-      callback(std);
-      // Persist lightweight progress snapshot (best-effort, fire-and-forget)
+  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
+    return this.manager.onProgress(sessionId, (legacy) => {
+      const summary = this.manager.getInitialSummary(sessionId);
+      const event: BatchProgressEvent = toBatchProgressEvent({
+        sessionId: legacy.sessionId,
+        nodeId: summary?.nodeId,
+        stage: legacy.stage,
+        total: legacy.total,
+        completed: legacy.completed,
+        failed: legacy.failed,
+        percentage: legacy.percentage,
+        currentTask: legacy.currentTask,
+      });
+      callback(event);
       void (async () => {
-          const db = getEphemeralLocationDB();
-          await db.sessions?.update(sessionId, {
-            progress: std.percentage,
-            updatedAt: Date.now(),
-            status: std.percentage >= 100 ? 'completed' : 'running',
-          });
+        const db = getEphemeralLocationDB();
+        await db.sessions?.update(sessionId, {
+          progress: event.payload?.completed,
+          updatedAt: Date.now(),
+          status: event.phase === 'completed' ? 'completed' : 'running',
+        });
       })();
     });
   }
 }
 
-/**
- * Location-specific configuration interface
- */
-export interface LocationBatchConfig {
-  concurrency?: number;
-  // Add other location-specific config options
-}
-
-/**
- * Location-specific data interface
- */
-export interface LocationBatchData {
-  points: LocationPointInput[];
-  settings: LocationTileSettings;
-}
-
-/**
- * Factory function to get the appropriate batch manager
- * Returns the unified manager if API v2 is enabled, otherwise returns a wrapper around the legacy manager
- */
 export function createLocationBatchManager(): IBatchSessionManager {
   return new UnifiedLocationBatchManager();
 }
 
-/**
- * Feature flag check for location plugin specifically
- */
 export function isLocationBatchAPIV2Enabled(): boolean {
   return isBatchControlAPIV2Enabled();
 }

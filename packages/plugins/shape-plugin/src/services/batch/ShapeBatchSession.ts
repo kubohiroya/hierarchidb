@@ -1,7 +1,7 @@
 import {
   AbstractBatchSession,
   type BaseBatchConfig,
-  type StandardProgressEvent,
+  type BatchProgressEvent,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
 import type { ProgressInfo } from '../types.js';
@@ -54,31 +54,23 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
   protected async onComplete(): Promise<void> {
   }
 
-  protected onProgressUpdate(): void {
-    const p = this.getProgress();
-    const event: StandardProgressEvent = {
-      sessionId: this.sessionId,
-      stage: p.currentStage || 'processing',
-      total: p.total,
-      completed: p.completed,
-      failed: p.failed,
-      percentage: Math.round(p.percentage),
-      currentTask: p.currentTask || '',
-    };
-    this.onStandardProgressUpdate(event);
-  }
+  protected onBatchProgressEvent(event: BatchProgressEvent): void {
+    const payload = event.payload ?? {};
+    const total = payload.total ?? 0;
+    const completed = payload.completed ?? 0;
+    const failed = payload.failed ?? 0;
+    const progress = total > 0 ? (completed / total) * 100 : 0;
 
-  protected onStandardProgressUpdate(event: StandardProgressEvent): void {
-    // Convert to legacy ProgressEvent for compatibility
     const legacyEvent: ProgressEvent = {
       sessionId: event.sessionId,
       stage: event.stage,
-      total: event.total,
-      completed: event.completed,
-      failed: event.failed,
-      percentage: event.percentage,
-      currentTask: event.currentTask || '',
+      total,
+      completed,
+      failed,
+      percentage: progress,
+      currentTask: payload.currentTask ?? '',
     };
+
     this.sink?.(legacyEvent);
   }
 
