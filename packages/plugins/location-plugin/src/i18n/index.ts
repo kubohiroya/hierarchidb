@@ -13,7 +13,7 @@ const translations: Record<SupportedLocale, LocationPluginTranslations> = {
   en,
 };
 
-const DEFAULT_LOCALE: SupportedLocale = 'ja';
+const DEFAULT_LOCALE: SupportedLocale = 'en';
 
 /**
     */

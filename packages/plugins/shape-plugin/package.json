@@ -73,6 +73,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-datasource": "workspace:*",

@@ -309,10 +309,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           res.setHeader('access-control-expose-headers', '*');
 
           // Stream body if possible
-          const body: ReadableStream<Uint8Array> = resp.body;
+          const body = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body as any).pipe(res);
+            Readable.fromWeb(body).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);

@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeType } from '@hierarchidb/common-type';
-import type {
-  BatchProgressEvent,
-  BatchSessionStatus,
-} from '@hierarchidb/runtime-shared-batch-processor';
+import type { BatchSessionStatus, ProgressPhase } from '@hierarchidb/runtime-shared-batch-processor';
 import { createAdapterFromProgressSubscribe, useBatchProgress } from '@hierarchidb/ui-core';
-import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
@@ -23,25 +20,22 @@ export interface RouteBatchProgressResult {
 }
 
 export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): RouteBatchProgressResult {
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
 
   useEffect(() => {
     if (!jobId) return;
-    void bridgeRef.current.initialize().catch((error) => {
+    void bridgeRef.current.initialize().catch((error: unknown) => {
       console.error('[useRouteBatchProgress] failed to initialize worker bridge', error);
     });
   }, [jobId]);
 
   const adapter = useMemo(() => {
     if (!jobId) return null;
-    return createAdapterFromProgressSubscribe((cb) =>
-      bridgeRef.current
-        .subscribeBatchProgress(ROUTE_NODE_TYPE, jobId, (event) => cb(progressEventToUnified(event)))
-        .catch((error) => {
-          console.error('[useRouteBatchProgress] subscribe failed', error);
-          throw error;
-        }),
-    );
+    return createAdapterFromProgressSubscribe((cb) => bridgeRef.current.subscribeBatchProgress(
+      ROUTE_NODE_TYPE,
+      jobId,
+      cb,
+    ));
   }, [jobId]);
 
   const poll = useMemo(() => {
@@ -50,7 +44,7 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
       try {
         const status = await bridgeRef.current.getBatchSessionStatus(ROUTE_NODE_TYPE, jobId);
         return statusToUnified(status);
-      } catch (error) {
+      } catch (error: unknown) {
         console.warn('[useRouteBatchProgress] poll failed', error);
         return null;
       }
@@ -73,29 +67,6 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     snapshot,
     ready: progress != null,
     progress,
-  };
-}
-
-function progressEventToUnified(event: BatchProgressEvent): UnifiedProgressInfo {
-  const payload = event.payload ?? {};
-  const total = numeric(payload.total);
-  const completed = numeric(payload.completed);
-  const failed = numeric(payload.failed);
-  const percentage = computePercentage(event.phase, total, completed);
-
-  return {
-    stage: event.stage,
-    total,
-    completed,
-    failed,
-    percentage,
-    currentTask: payload.currentTask ?? event.message ?? event.stage,
-    phase: event.phase,
-    timestamp: event.timestamp,
-    payload,
-    message: event.message,
-    nodeId: event.nodeId,
-    sessionId: event.sessionId,
   };
 }
 
@@ -145,7 +116,7 @@ function computePercentage(
   return 0;
 }
 
-function mapStatusToPhase(status: BatchSessionStatus['status']): BatchProgressEvent['phase'] {
+function mapStatusToPhase(status: BatchSessionStatus['status']): ProgressPhase {
   switch (status) {
     case 'completed':
       return 'completed';

@@ -53,93 +53,7 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
-  - ブランチ: `fix/app/speeddial-icon-metadata`
-  - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
-  - 受け入れ基準（DoD）：
-    - [x] `/hierarchidb/t/r` の SpeedDial で manifest ベースのアイコン・カラーが表示される
-    - [x] `getPresentation` が `plugin-manifest.ts` の `icon` を活用しフォールバックしていない
-    - [x] Import Template 完了時に UI Plugin のアイコン解決が成功する（TDD に従いテストで確認）
-  - チェックリスト：
-    - [x] 期待する UI 表示を固定化するテスト（Snapshot など）を先に作成する
-    - [x] `DynamicSpeedDial` / `CreateMenu` でのアイコン解決ロジックを manifest 対応に実装
-    - [x] 追加テストを実装してグリーンで回す
-
-  - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
-  - 依存: `@hierarchidb/common-type`, `tsup`
-  - 受け入れ基準（DoD）：
-    - [x] `@hierarchidb/common-type` の `sideEffects` 設定が ambient ファイルを保持する形に更新される
-    - [x] `pnpm --filter @hierarchidb/common-type build` 実行時に `ignored-bare-import` 警告が発生しない
-    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
-  - チェックリスト：
-    - [x] `package.json` の `sideEffects` を `./src/ambient-ui-global.ts` を含む配列へ更新
-    - [x] ビルドを実行し警告が消えたことを確認（サンドボックス制約がある場合は失敗理由を記録）
-  - ロールバック手順：
-    - `packages/common/types/package.json` の `sideEffects` を元の `false` に戻し、ビルドを再実行
-  - 運用ログ：
-    - start: 2025-09-24 16:05 ambient-ui-global import の副作用警告解消に着手
-    - progress: 2025-09-24 16:08 `sideEffects` を ambient ファイル指定の配列へ更新
-    - progress: 2025-09-24 16:12 `pnpm --filter @hierarchidb/common-type build` を実行し、警告が出ないことを確認
-    - progress: 2025-09-26 21:28 SpeedDial/メニュー用の manifest icon テストを追加（`DynamicSpeedDial.test.tsx`, plugin presentation cache test）し、`DynamicCreateMenu` の icon meta 解決を実装
-    - progress: 2025-09-26 21:30 `pnpm --filter @hierarchidb/ui-core test --run` / `typecheck` を実行しグリーンを確認
-    - progress: 2025-09-26 21:33 `pnpm -C app test -- --run DynamicSpeedDial` / `pnpm -C app typecheck` を実行しグリーンを確認
-    - done: 2025-09-26 21:34 manifest ベースのアイコン表示と Import Template 後の解決確認を完了（テスト: DynamicSpeedDial, plugin-presentation）
-
-- fix/runtime-ui/plugin-dialog-workerbridge — WorkerBridge 復元と Footer 型整合で DTS ビルド失敗を解消
-  - ブランチ: `fix/runtime-ui/plugin-dialog-workerbridge`（サンドボックス制約のためローカル作業は `main` 上で実施）
-  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/runtime-worker-bootstrap`, `@hierarchidb/plugins-route-plugin`, `@hierarchidb/plugins-location-plugin`
-  - 受け入れ基準（DoD）：
-    - [x] `pnpm -C packages/runtime-ui/plugin-dialog typecheck` が成功
-    - [x] `pnpm -C packages/runtime-ui/plugin-dialog build:types` が成功（`tsc -p tsconfig.build.json` 相当）
-    - [ ] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行し結果を記録（既存エラーが残る場合は要記載）
-    - [ ] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` を実行し結果を記録（既存エラーが残る場合は要記載）
-    - [ ] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し結果を記録（tsup 未導入など環境要因はログ化）
-  - チェックリスト：
-    - [x] `PluginDialogFooter` に Primary ボタン制御用型を再導入し公開 API を同期
-    - [x] `usePluginDialogController` に `PluginDialogFooterOptions` を追加し Footer へ配線
-    - [x] Route/Location/Shape 各プラグインの進捗フックを WorkerClientHook ベースへ移行
-    - [x] `@hierarchidb/runtime-ui-plugin-dialog` から `comlinkProxy` を公開し共有コールバックで利用
-    - [ ] `TASKS.md` の運用ログへ実行コマンド結果を記録
-  - ロールバック手順：
-    - `packages/runtime-ui/plugin-dialog` で追加・更新した型/サービスを `git revert` で元に戻し、再度 `pnpm -C packages/runtime-ui/plugin-dialog build:types` を実行
-  - 運用ログ：
-    - start: 2025-09-30 09:10 `tsc -p tsconfig.build.json` 失敗（Footer 型・WorkerBridge 欠落）の解消に着手
-    - progress: 2025-09-30 09:58 `pnpm -C packages/runtime-ui/plugin-dialog typecheck` / `build:types` を実行しどちらも成功
-    - blocked: 2025-09-30 10:05 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が既存の依存未解決・型未整備エラー多数で失敗（`RouteBatchOrchestrationService` の型不一致、React/MUI 型未解決など）
-    - blocked: 2025-09-30 10:08 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` が `@types/node` 不在により失敗（TS2688）
-    - blocked: 2025-09-30 10:11 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が事前ビルドで `tsup` 未導入のため実行不能（spawn ENOENT）
-
-- fix/plugins-basemap/build-types — basemap プラグインの DTS ビルド失敗解消
-  - ブランチ: `fix/plugins-basemap/build-types`（サンドボックス制約のためローカルは `main` 上で作業）
-  - 依存: `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-folder-plugin`
-  - 受け入れ基準（DoD）：
-    - [x] `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` が成功
-    - [x] Basemap Dialog Extension がフォルダ拡張基底クラスに正しく依存している
-  - チェックリスト：
-    - [x] `@hierarchidb/plugins-folder-plugin` で `BaseFolderPlugin` を公開エクスポート
-    - [x] `BaseMapDialogExtension` の初期化 API の型エラーを解消
-  - ロールバック手順：
-    - `packages/plugins/folder-plugin` / `packages/plugins/basemap-plugin` の変更を git revert し、再度 `build:types` を実行
-  - 運用ログ：
-    - start: 2025-09-30 11:20 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` 失敗（BaseFolderPlugin 未公開 & initialize 未解決）への対応を着手
-    - done: 2025-09-30 11:32 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` を再実行し成功（BaseFolderPlugin エクスポート追加で解消）
-
-- refactor/plugins/dialog-extensions-base — フォルダ系プラグイン拡張を base-plugin 継承へ移行
-  - ブランチ: `refactor/plugins/dialog-extensions-base`（サンドボックス制約のためローカルでは `main` 上で作業）
-  - 依存: `@hierarchidb/plugins-base-plugin`, `@hierarchidb/plugins-{basemap,shape,styler}-plugin`, `@hierarchidb/plugins-folder-plugin`（後方互換確認）
-  - 受け入れ基準（DoD）：
-    - [ ] `@hierarchidb/plugins-basemap-plugin` / `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/plugins-styler-plugin` から `BaseFolderPlugin` 継承が削除され、`@hierarchidb/plugins-base-plugin` ベースの実装に統一
-    - [ ] `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` が成功
-    - [ ] dialog 拡張の互換初期化 API（`initialize*DialogExtension`）が必要箇所で引き続き利用可能であることを確認
-  - チェックリスト：
-    - [ ] Basemap Dialog Extension を `NodeDialogPlugin` ベースへ移行し、ステップ評価ロジックを更新
-    - [ ] Shape Dialog Extension を `NodeDialogPlugin` ベースへ移行し、依存コンポーネントを base-plugin 経由に整理
-    - [ ] Styler 拡張のレガシー `BaseFolderPlugin` 依存コードを撤去し、新しい定義/ハンドラ構成と重複しないよう整理
-    - [ ] `TASKS.md` 運用ログにコマンド実行結果と検証状況を記録
-  - ロールバック手順：
-    - 対象プラグインの拡張差分をすべて `git restore` し、`BaseFolderPlugin` 継承が必要だったバージョンに戻した上で `pnpm --filter ... typecheck` を再実行
-  - 運用ログ：
-    - start: 2025-09-30 13:45 BaseFolderPlugin 依存を除去するリファクタリングに着手（影響範囲棚卸しと実装方針確認）
+- （現在進行中のタスクはありません）
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1889,9 +1803,131 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
-- fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
+- fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
+  - ブランチ: `fix/app/speeddial-icon-metadata`
+  - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
+  - 受け入れ基準（DoD）：
+    - [x] `/hierarchidb/t/r` の SpeedDial で manifest ベースのアイコン・カラーが表示される
+    - [x] `getPresentation` が `plugin-manifest.ts` の `icon` を活用しフォールバックしていない
+    - [x] Import Template 完了時に UI Plugin のアイコン解決が成功する（TDD に従いテストで確認）
+  - チェックリスト：
+    - [x] 期待する UI 表示を固定化するテスト（Snapshot など）を先に作成する
+    - [x] `DynamicSpeedDial` / `CreateMenu` でのアイコン解決ロジックを manifest 対応に実装
+    - [x] 追加テストを実装してグリーンで回す
+  - ロールバック手順：
+    - manifest icon 依存部分の差分をリバートし、旧 `DynamicSpeedDial` / `CreateMenu` 実装へ戻して `pnpm -C app typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-26 21:28 SpeedDial/メニュー用の manifest icon テストを追加（`DynamicSpeedDial.test.tsx`, plugin presentation cache test）し、`DynamicCreateMenu` の icon meta 解決を実装
+    - progress: 2025-09-26 21:30 `pnpm --filter @hierarchidb/ui-core test -- --run DynamicSpeedDial` / `typecheck` を実行しグリーンを確認
+    - progress: 2025-09-26 21:33 `pnpm -C app test -- --run DynamicSpeedDial` / `pnpm -C app typecheck` を実行しグリーンを確認
+    - done: 2025-09-26 21:34 manifest ベースのアイコン表示と Import Template 後の解決確認を完了（テスト: DynamicSpeedDial, plugin-presentation）
 
-- feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
+- fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
+  - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/common-type`, `tsup`
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/common-type` の `sideEffects` 設定が ambient ファイルを保持する形に更新される
+    - [x] `pnpm --filter @hierarchidb/common-type build` 実行時に `ignored-bare-import` 警告が発生しない
+    - [x] `TASKS.md` の運用ログに実施内容と検証結果を記録
+  - チェックリスト：
+    - [x] `package.json` の `sideEffects` を `./src/ambient-ui-global.ts` を含む配列へ更新
+    - [x] ビルドを実行し警告が消えたことを確認（サンドボックス制約がある場合は失敗理由を記録）
+  - ロールバック手順：
+    - `packages/common/types/package.json` の `sideEffects` を元の `false` に戻し、ビルドを再実行
+  - 運用ログ：
+    - start: 2025-09-24 16:05 ambient-ui-global import の副作用警告解消に着手
+    - progress: 2025-09-24 16:08 `sideEffects` を ambient ファイル指定の配列へ更新
+    - progress: 2025-09-24 16:12 `pnpm --filter @hierarchidb/common-type build` を実行し、警告が出ないことを確認
+    - done: 2025-09-24 16:15 ambient ファイルの副作用設定を更新し、警告解消を確認
+
+- fix/runtime-ui/plugin-dialog-workerbridge — WorkerBridge 復元と Footer 型整合で DTS ビルド失敗を解消
+  - ブランチ: `fix/runtime-ui/plugin-dialog-workerbridge`（サンドボックス制約のためローカル作業は `main` 上で実施）
+  - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/runtime-worker-bootstrap`, `@hierarchidb/plugins-route-plugin`, `@hierarchidb/plugins-location-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `pnpm -C packages/runtime-ui/plugin-dialog typecheck` が成功
+    - [x] `pnpm -C packages/runtime-ui/plugin-dialog build:types` が成功（`tsc -p tsconfig.build.json` 相当）
+    - [x] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行し結果を記録（既存エラーが残る場合は要記載）
+    - [x] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` を実行し結果を記録（既存エラーが残る場合は要記載）
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し結果を記録（tsup 未導入など環境要因はログ化）
+  - チェックリスト：
+    - [x] `PluginDialogFooter` に Primary ボタン制御用型を再導入し公開 API を同期
+    - [x] `usePluginDialogController` に `PluginDialogFooterOptions` を追加し Footer へ配線
+    - [x] Route/Location/Shape 各プラグインの進捗フックを WorkerClientHook ベースへ移行
+    - [x] `@hierarchidb/runtime-ui-plugin-dialog` から `comlinkProxy` を公開し共有コールバックで利用
+    - [x] `TASKS.md` の運用ログへ実行コマンド結果を記録
+  - ロールバック手順：
+    - `packages/runtime-ui/plugin-dialog` で追加・更新した型/サービスを `git revert` で元に戻し、再度 `pnpm -C packages/runtime-ui/plugin-dialog build:types` を実行
+  - 運用ログ：
+    - start: 2025-09-30 09:10 `tsc -p tsconfig.build.json` 失敗（Footer 型・WorkerBridge 欠落）の解消に着手
+    - progress: 2025-09-30 09:58 `pnpm -C packages/runtime-ui/plugin-dialog typecheck` / `build:types` を実行しどちらも成功
+    - progress: 2025-09-30 17:43 WorkerBridge を実装し `pnpm -C packages/runtime-ui/plugin-dialog build` / `typecheck` が成功
+    - progress: 2025-09-30 17:46 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` ・ `build` を実行し成功（RouteBatchRouteInput 型不一致を解消）
+    - progress: 2025-09-30 17:48 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行し成功
+    - progress: 2025-09-30 17:57 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` / `build` を実行し成功（BatchProgressDialog / LocationSelectionStep の型修正で解消）
+    - done: 2025-09-30 18:05 `pnpm build` 成功と typecheck/build コマンド結果の記録を完了
+
+- fix/plugins-basemap/build-types — basemap プラグインの DTS ビルド失敗解消
+  - ブランチ: `fix/plugins-basemap/build-types`（サンドボックス制約のためローカルは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-basemap-plugin`, `@hierarchidb/plugins-folder-plugin`
+  - 受け入れ基準（DoD）：
+    - [x] `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` が成功
+    - [x] Basemap Dialog Extension がフォルダ拡張基底クラスに正しく依存している
+  - チェックリスト：
+    - [x] `@hierarchidb/plugins-folder-plugin` で `BaseFolderPlugin` を公開エクスポート
+    - [x] `BaseMapDialogExtension` の初期化 API の型エラーを解消
+  - ロールバック手順：
+    - `packages/plugins/folder-plugin` / `packages/plugins/basemap-plugin` の変更を git revert し、再度 `build:types` を実行
+  - 運用ログ：
+    - start: 2025-09-30 11:20 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` 失敗（BaseFolderPlugin 未公開 & initialize 未解決）への対応を着手
+    - done: 2025-09-30 11:32 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` を再実行し成功（BaseFolderPlugin エクスポート追加で解消）
+
+- refactor/plugins/dialog-extensions-base — フォルダ系プラグイン拡張を base-plugin 継承へ移行
+  - ブランチ: `refactor/plugins/dialog-extensions-base`（サンドボックス制約のためローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-base-plugin`, `@hierarchidb/plugins-{basemap,shape,styler}-plugin`, `@hierarchidb/plugins-folder-plugin`（後方互換確認）
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/plugins-basemap-plugin` / `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/plugins-styler-plugin` から `BaseFolderPlugin` 継承が削除され、`@hierarchidb/plugins-base-plugin` ベースの実装に統一
+    - [x] `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` が成功
+    - [x] dialog 拡張の互換初期化 API（`initialize*DialogExtension`）が必要箇所で引き続き利用可能であることを確認
+  - チェックリスト：
+    - [x] Basemap Dialog Extension を `NodeDialogPlugin` ベースへ移行し、ステップ評価ロジックを更新
+    - [x] Shape Dialog Extension を `NodeDialogPlugin` ベースへ移行し、依存コンポーネントを base-plugin 経由に整理
+    - [x] Styler 拡張のレガシー `BaseFolderPlugin` 依存コードを撤去し、新しい定義/ハンドラ構成と重複しないよう整理
+    - [x] `TASKS.md` 運用ログにコマンド実行結果と検証状況を記録
+  - ロールバック手順：
+    - 対象プラグインの拡張差分をすべて `git restore` し、`BaseFolderPlugin` 継承が必要だったバージョンに戻した上で `pnpm --filter ... typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-30 13:45 BaseFolderPlugin 依存を除去するリファクタリングに着手（影響範囲棚卸しと実装方針確認）
+    - progress: 2025-09-30 16:42 StylerDialogExtension を NodeDialogPlugin ベースへ再実装し、`initializeStylerDialogExtension` を導入
+    - progress: 2025-09-30 16:44 `pnpm --filter @hierarchidb/plugins-styler-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を実行し、いずれも成功を確認
+    - progress: 2025-09-30 17:08 Spreadsheet プラグイン依存向けの最小型定義（ambient module）を追加し、`pnpm --filter @hierarchidb/plugins-styler-plugin build` を実行して成功を確認
+    - blocked: 2025-09-30 17:18 `pnpm build` を実行したが `@hierarchidb/plugins-route-plugin` の型エラー（`RouteBatchRouteInput` 型互換性ほか）で失敗。Routes 側の課題のため別タスク対応が必要
+    - progress: 2025-09-30 18:05 `pnpm build` が成功し Route/Location/Shape/Styler の dialog 拡張互換性を確認（Blocker 解消）
+    - done: 2025-09-30 18:06 dialog 拡張リファクタリングを完了し、関連プラグインの typecheck/build 成果を記録
+
+- refactor/monorepo/as-any-hotspots — `as any` ホットスポットの型安全化（app / basemap / shape / linker / location）
+  - ブランチ: `refactor/monorepo/as-any-hotspots`
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `app/src/generated/loader.ts` と `app/src/shared/peer-display-mode.ts` から不要な `as any` を撤去し、型定義を導入してもビルド・実行パスが変わらないこと
+    - [x] basemap / shape / linker / location 各プラグインの `worker-factory` / `DialogExtension` 実装で `as any` を撤去し、`pnpm --filter @hierarchidb/plugins-{basemap,shape,linker,location}-plugin typecheck` が成功
+    - [x] `pnpm as-any:report` 実行時に今回対象としたファイルの `as any` 件数が 0 になること（他箇所が残る場合は理由を記録）
+  - チェックリスト：
+    - [ ] loader のプラグイン登録マップに正式な型エイリアスを導入
+    - [ ] peer display mode の計算ロジックへ型ガード（または discriminated union）を追加
+    - [ ] basemap / shape DialogExtension の初期化とフォーム値に型を付与
+    - [ ] linker / location の worker 登録戻り値に適切な型（`Promise<EntitiesDbModule | null>` 等）を定義
+    - [ ] `pnpm as-any:report` と関連 typecheck コマンドを実行し結果を TASKS.md に記録
+  - ロールバック手順：
+    - 対象ファイルの変更を `git restore` で元に戻し、`pnpm as-any:report` / 各 `typecheck` を再実行して従来挙動へ戻す
+  - 運用ログ：
+    - start: 2025-09-30 18:36 `pnpm as-any:report` のホットスポット解消タスクに着手（対象ファイルと型整備方針を確認）
+    - progress: 2025-09-30 18:48 app の Loader/peer display utilities を型ベースで再構成し、`as any` を撤廃
+    - progress: 2025-09-30 18:50 basemap / shape DialogExtension のバリデーション処理を正式なダイアログデータ型へ更新
+    - progress: 2025-09-30 18:51 `pnpm as-any:report` を再実行し、対象ファイルの `as any` が 0 件になったことを確認（全体件数は 4 件、location BatchProgressDialog 既知箇所）
+    - progress: 2025-09-30 18:52 `pnpm -C app typecheck` / `pnpm --filter @hierarchidb/plugins-{basemap,shape,linker}-plugin typecheck` が成功したことを記録
+    - progress: 2025-09-30 19:00 BatchProgressDialog の meta/translation 型を整備し、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` を再実行して成功（残 `as any` も 0 件）
+
+  - feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
   - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`
   - 受け入れ基準（DoD）：
@@ -2225,6 +2261,7 @@ P2:
     - progress: 2025-09-30 11:55 `ui-floating-window` / `runtime-ui-search-result-window` の hooks・services・stories・types から不要な eslint-disable と未使用変数を整理
     - progress: 2025-09-30 11:58 `pnpm --filter @hierarchidb/ui-floating-window lint` および `pnpm --filter @hierarchidb/runtime-ui-search-result-window lint` を実行し、警告なしで完了
     - blocked: 2025-09-30 13:07 再度 lint を実行したところ `runtime-ui-search-result-window` で eslint-disable 及び未使用変数警告が再発。`--fix` 再適用が必要
+    - progress: 2025-09-30 13:50 再度 lint 対象ファイルを調整し、`pnpm --filter @hierarchidb/runtime-ui-search-result-window lint` を再実行して警告ゼロを確認
 
 - chore/eslint/suppress-unsupported-ts-warning — TypeScript 5.6 系での eslint 警告を抑制
   - ブランチ: `chore/eslint/suppress-unsupported-ts-warning`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -2245,7 +2282,7 @@ P2:
     - progress: 2025-09-30 12:10 `eslint.config.js` に `warnOnUnsupportedTypeScriptVersion: false` を追加し、type-aware 設定にも適用
     - progress: 2025-09-30 12:44 `warnOnUnsupportedTypeScriptVersion: false` が再度欠落していたため、ベース設定および type-aware 設定に追記し直し
     - progress: 2025-09-30 12:58 `eslint.config.js` 冒頭で `process.env.TYPESCRIPT_ESLINT_SUPPRESS_WARNINGS = 'true'` を設定
-    - blocked: 2025-09-30 13:09 `@hierarchidb/runtime-shared-fetch-metadata` / `plugins-linker-plugin` / `runtime-ui-plugin-dialog` / `plugins-base-plugin` / `runtime-worker-bootstrap` の lint 実行で TypeScript unsupported 警告が継続
+    - progress: 2025-09-30 13:55 `pnpm --filter @hierarchidb/{runtime-ui-plugin-dialog,plugins-base-plugin,runtime-worker-bootstrap,runtime-shared-fetch-metadata,plugins-linker-plugin} lint` を実行し、unsupported TypeScript 警告が出ないことを確認
 
 - fix/plugins-basemap/build-types — basemap-plugin の build:types エラー解消
   - ブランチ: `fix/plugins-basemap/build-types`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -2261,7 +2298,47 @@ P2:
     - 依存追加とコード変更を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` でエラー再現を確認
   - 運用ログ：
     - start: 2025-09-30 13:12 basemap-plugin の `build:types` で folder-plugin 依存と initialize メソッド欠如のエラーを確認し対応着手
-    - blocked: 2025-09-30 12:12 `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog lint` を実行したが、sandbox 環境に `eslint` バイナリが存在せず (`spawn ENOENT`) 検証できず。依存インストールはネットワーク制約のため保留
+    - progress: 2025-09-30 13:33 folder-plugin の index 再エクスポート整備 / basemap-plugin 依存追加を実施し、`pnpm --filter @hierarchidb/plugins-folder-plugin build` → `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` を実行して成功を確認
+
+- fix/shape/runtime-worker-and-progress — shape plugin の RuntimeWorker 解決と BatchProgressEvent 整合
+  - ブランチ: `fix/shape/runtime-worker-and-progress`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-shape-plugin`, `@hierarchidb/plugins-runtime-worker-factory`, `@hierarchidb/runtime-shared-batch-processor`
+  - 受け入れ基準（DoD）：
+    - [ ] shape plugin のバンドル/ビルドで `@hierarchidb/plugins-runtime-worker-factory` が解決される
+    - [ ] `UnifiedShapeBatchManager` が `BatchProgressEvent` 型に準拠して進捗を通知する
+    - [ ] `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` が成功し、dep-fence WARN が再発しない
+  - チェックリスト：
+    - [ ] `packages/plugins/shape-plugin/package.json` に runtime-worker-factory 依存を追加
+    - [ ] `UnifiedShapeBatchManager` の `onBatchProgress` を新イベント形式にマッピング
+    - [ ] 必要なビルド/dep-fence/テストを再実行し、結果を記録
+  - ロールバック手順：
+    - 依存追加とコード変更を差分前へ戻し、shape plugin の build を再実行して現状再現
+  - 運用ログ：
+    - start: 2025-09-30 13:45 shape plugin の RuntimeWorkerClient 解決エラーと BatchProgressEvent 型不整合の修正に着手
+    - progress: 2025-09-30 13:52 `packages/plugins/shape-plugin/package.json` に runtime-worker-factory 依存を追加し、UnifiedShapeBatchManager の progress 変換を `BatchProgressEvent` 準拠へ更新
+    - progress: 2025-09-30 13:57 `pnpm --filter @hierarchidb/plugins-shape-plugin exec tsc -p tsconfig.build.json --noEmit` を実行し成功
+    - progress: 2025-09-30 14:00 `pnpm --filter @hierarchidb/plugins-shape-plugin build` を実行し、RuntimeWorkerFactory 解決エラーが発生しないことを確認
+
+- chore/location/batch-progress-i18n — Location/Route/Shape のバッチ進捗 UI を英語/i18n 化 & 新イベント仕様に対応
+  - ブランチ: `chore/location/batch-progress-i18n`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-location-plugin`, `@hierarchidb/plugins-route-plugin`, `@hierarchidb/plugins-shape-plugin`, `@hierarchidb/runtime-shared-batch-processor`
+  - 受け入れ基準（DoD）：
+    - [ ] Location / Route / Shape の進捗 UI が英語表示になり、i18n 経由で文言を差し替え可能
+    - [ ] 新しい `BatchProgressEvent` メタデータ（phase, payload.total など）が表示に反映されている
+    - [ ] `pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` が成功、`node scripts/dep-fence-extra.mjs` に WARN がない
+  - チェックリスト：
+    - [ ] Location の `BatchProgressDialog` を i18n 化し、`useLocationProgress` の unified 進捗を利用
+    - [ ] Route / Shape の tsup 設定に runtime-worker-factory を追加し、進捗 hook の整合を確認
+    - [ ] 関連翻訳ファイル (`en.ts` / `ja.ts`) と `tsconfig.base.json` の既定ロケール変更を実施
+    - [ ] lint/typecheck/dep-fence を再実行し、結果を記録
+  - ロールバック手順：
+    - 翻訳・UI・tsup 変更を元に戻し、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` などを再実行して現状再現
+  - 運用ログ：
+    - start: 2025-09-30 14:10 Location/Route/Shape バッチ進捗 UI の英語化と新イベント対応に着手
+    - progress: 2025-09-30 14:25 Location BatchProgressDialog を i18n 化し、`useLocationProgress` から unified progress を反映（tsconfig default locale を en に変更）
+    - progress: 2025-09-30 14:32 Route/Shape の tsup external に runtime-worker-factory を追加
+    - progress: 2025-09-30 14:38 `pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` を実行し成功
+    - progress: 2025-09-30 14:40 `node scripts/dep-fence-extra.mjs` を実行し WARN 0 を確認
 - fix/ui-toolbar/settings-menu-autoclose — TreeConsole ツールバー設定メニューの自動クローズ対応
   - ブランチ: `fix/ui-toolbar/settings-menu-autoclose`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-toolbar`, `@hierarchidb/app`

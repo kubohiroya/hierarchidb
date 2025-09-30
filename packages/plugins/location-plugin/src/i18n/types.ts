@@ -153,9 +153,16 @@ export interface LocationPluginTranslations {
     throughputUnit: string;
     errorsLabel: string;
     errorCountUnit: string;
+    processedTotal: string;
+    errorsUnit: string;
+    stageProgress: string;
+    stageErrors: string;
     stageListTitle: string;
     tasksTitle: string;
     authRequired: string;
+    authFallback: string;
+    logsEmpty: string;
+    logsDefault: string;
     mapPlaceholder: string;
     close: string;
     ariaLabel: string;
@@ -168,6 +175,16 @@ export interface LocationPluginTranslations {
       filtering: string;
       clustering: string;
       indexing: string;
+    };
+    tasksEmpty: string;
+    tasksEmptyHint: string;
+    phases: {
+      running: string;
+      queued: string;
+      completed: string;
+      failed: string;
+      paused: string;
+      cancelled: string;
     };
   };
 

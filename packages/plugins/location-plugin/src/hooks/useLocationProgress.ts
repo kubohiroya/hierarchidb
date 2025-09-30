@@ -3,14 +3,19 @@ import type { NodeType, ProgressEvent } from '@hierarchidb/common-type';
 import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
 }
 
+export interface LocationProgressEvent extends ProgressEvent {
+  message?: string;
+}
+
 export interface UseLocationProgressState {
-  progress: ProgressEvent | null;
+  progress: LocationProgressEvent | null;
+  unifiedProgress: UnifiedProgressInfo | null;
   isSubscribed: boolean;
   error: Error | null;
 }
@@ -25,11 +30,14 @@ type ExtendedProgressInfo = UnifiedProgressInfo & {
   sessionId?: string;
 };
 
-function toProgressEvent(info: ExtendedProgressInfo | null, fallbackSessionId?: string): ProgressEvent | null {
+function toProgressEvent(
+  info: ExtendedProgressInfo | null,
+  fallbackSessionId?: string,
+): LocationProgressEvent | null {
   if (!info) return null;
   const sessionId = (info.sessionId as string | undefined) ?? fallbackSessionId ?? 'location';
   const stage = info.phase === 'completed' ? 'completed' : info.stage;
-  return {
+  const event: LocationProgressEvent = {
     sessionId,
     stage,
     total: info.total ?? 0,
@@ -38,7 +46,9 @@ function toProgressEvent(info: ExtendedProgressInfo | null, fallbackSessionId?: 
     percentage: info.percentage ?? 0,
     currentTask: info.currentTask ?? info.message ?? stage,
     timestamp: typeof info.timestamp === 'number' ? info.timestamp : Date.now(),
-  } satisfies ProgressEvent;
+    message: info.message,
+  };
+  return event;
 }
 
 /**
@@ -49,8 +59,8 @@ export function useLocationProgress(
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
-  const bridgeRef = useRef(getWorkerBridge());
-  const [overrideProgress, setOverrideProgress] = useState<ProgressEvent | null>(null);
+  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
+  const [overrideProgress, setOverrideProgress] = useState<LocationProgressEvent | null>(null);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
@@ -111,6 +121,7 @@ export function useLocationProgress(
           percentage: 0,
           currentTask: n?.context?.errorMessage || 'Authentication required',
           timestamp: Date.now(),
+          message: n?.context?.errorMessage,
         });
       },
       onAuthSuccess: async (_n: any) => {
@@ -123,6 +134,7 @@ export function useLocationProgress(
           percentage: 100,
           currentTask: 'Authentication successful - resuming',
           timestamp: Date.now(),
+          message: 'Authentication successful - resuming',
         });
       },
       onAuthCancelled: async (n: any) => {
@@ -135,6 +147,7 @@ export function useLocationProgress(
           percentage: 0,
           currentTask: n?.context?.reason || 'Authentication cancelled',
           timestamp: Date.now(),
+          message: n?.context?.reason,
         });
       },
     });
@@ -160,6 +173,7 @@ export function useLocationProgress(
 
   return {
     progress: combined,
+    unifiedProgress: unifiedProgress ?? null,
     isSubscribed: subscribed,
     error,
     subscribe,

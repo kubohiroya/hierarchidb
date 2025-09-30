@@ -53,3 +53,5 @@ export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
 export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
 
 // Services (none exported currently)
+export { getWorkerBridge } from './services/WorkerBridge.js';
+export type { WorkerBridge } from './services/WorkerBridge.js';

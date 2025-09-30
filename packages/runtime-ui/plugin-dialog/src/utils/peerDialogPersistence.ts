@@ -39,7 +39,7 @@ type EntitiesOverrideFactory =
 type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
 
 declare global {
-  var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, any> | undefined;
+  var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, unknown> | undefined;
 }
 
 class UIPersistenceRegistry {

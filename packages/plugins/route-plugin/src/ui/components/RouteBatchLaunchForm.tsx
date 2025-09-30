@@ -8,6 +8,7 @@ import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
 import type { RouteBatchSpec } from '../../orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
+import type { RouteGenerationOptions } from '../../entities/RouteEntity.js';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 
@@ -40,7 +41,11 @@ export function RouteBatchLaunchForm({
       const net = getNetPort();
       const orchestrator = new RouteBatchOrchestrationService(new RouteSourceOrchestrator({ net }));
       const mgr = createRouteBatchManager({ net, osrmThrottle: { rps, concurrency } });
-      const methodOptions: Record<string, unknown> = { osrmBaseUrl: baseUrl, osmProfile: profile };
+      const methodOptions: RouteGenerationOptions & { profile: OsrmProfile } = {
+        osrmBaseUrl: baseUrl,
+        profile,
+        osmProfile: profile,
+      };
       const config: RouteBatchConfig = {
         routeGeneration: {
           method: 'osm_route',

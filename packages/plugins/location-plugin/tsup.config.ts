@@ -27,6 +27,7 @@ export default createTsupConfig({
     "@hierarchidb/runtime-worker-bootstrap",
     "@hierarchidb/download",
     "@hierarchidb/batch",
+    "@hierarchidb/plugins-runtime-worker-factory",
     "dexie"
   ]
 });

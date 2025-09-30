@@ -10,6 +10,8 @@ export async function registerLinkerWorkerStores(options: RegisterLinkerWorkerSt
   // No worker-side Dexie stores yet; keep as no-op for breadth rollout.
 }
 
-export async function loadLinkerEntitiesDbModule() { return null as any; }
+export async function loadLinkerEntitiesDbModule(): Promise<null> {
+  return null;
+}
 
 registerLinkerWorkerStores().catch(() => {});

@@ -28,6 +28,7 @@ export default createTsupConfig({
     '@hierarchidb/runtime-worker',
     // workspace deps that must stay external in host app
     '@hierarchidb/runtime-worker-bootstrap',
+    '@hierarchidb/plugins-runtime-worker-factory',
     // Treat ui-dialog as external optional peer to avoid bundling resolution
     '@hierarchidb/ui-dialog',
   ],

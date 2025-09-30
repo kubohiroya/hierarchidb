@@ -54,11 +54,13 @@ export async function registerLocationWorkerStores(options: RegisterLocationWork
   }
 }
 
-export async function loadLocationEntitiesDbModule() {
+type LocationEntitiesDbModule = typeof import('../worker/locationEntitiesDB.js');
+
+export async function loadLocationEntitiesDbModule(): Promise<LocationEntitiesDbModule | null> {
   try {
     return await import(/* @vite-ignore */ '../worker/locationEntitiesDB.js');
   } catch {
-    return null as any;
+    return null;
   }
 }
 

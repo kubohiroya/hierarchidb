@@ -130,3 +130,6 @@ export class RuntimeWiring {
     // Styler plugin currently relies on default runtime worker lifecycle behaviour.
   }
 }
+
+// Dialog extension initializer
+export { initializeStylerDialogExtension, stylerDialogExtension } from './extensions/StylerDialogExtension.js';

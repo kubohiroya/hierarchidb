@@ -32,6 +32,7 @@ export default createTsupConfig({
     '@emotion/provider',
     '@emotion/styled',
     // workspace deps (keep external when not bundled by host)
+    '@hierarchidb/plugins-runtime-worker-factory',
     '@hierarchidb/runtime-worker-bootstrap',
     '@hierarchidb/download',
     'dexie',
