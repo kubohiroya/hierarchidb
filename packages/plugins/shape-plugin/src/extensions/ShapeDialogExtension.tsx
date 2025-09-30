@@ -3,7 +3,7 @@
  * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
-import type { DialogStepDefinition, PeerEntity } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, PeerEntity, StepValidation } from '@hierarchidb/common-type';
 import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
 
 // Reuse existing step components from the Shape plugin
@@ -35,7 +35,7 @@ const asStringArray = (values: unknown): string[] => (
     : []
 );
 
-const toDialogData = (value: ShapeDialogPeer): ShapeDialogData => {
+const toDialogData = (value: unknown): ShapeDialogData => {
   if (!isRecord(value)) {
     return { licenseAgreement: false, selectedAdminLevels: [], selectedCountries: [] };
   }
@@ -54,6 +54,40 @@ const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined, fall
     : fallback
 );
 
+const validateDataSourceStep: StepValidation = {
+  validate: async (data) => {
+    const dialogData = toDialogData(data);
+    const ok = typeof dialogData.dataSourceName === 'string' && dialogData.dataSourceName.length > 0;
+    return ok ? { valid: true } : { valid: false, message: 'Data source selection is required' };
+  },
+};
+
+const validateLicenseStep: StepValidation = {
+  validate: async (data) => {
+    const dialogData = toDialogData(data);
+    const ok = dialogData.licenseAgreement === true;
+    return ok ? { valid: true } : { valid: false, message: 'You must accept the license agreement' };
+  },
+};
+
+const validateProcessingStep: StepValidation = {
+  validate: async (data) => {
+    const dialogData = toDialogData(data);
+    const levels = dialogData.selectedAdminLevels;
+    const ok = levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
+    return ok ? { valid: true } : { valid: false, message: 'Select administrative levels (0-3) — at least one' };
+  },
+};
+
+const validateCountryStep: StepValidation = {
+  validate: async (data) => {
+    const dialogData = toDialogData(data);
+    const countries = dialogData.selectedCountries;
+    const ok = countries.length > 0 && countries.every((c) => c.length >= 2);
+    return ok ? { valid: true } : { valid: false, message: 'Select at least one country' };
+  },
+};
+
 export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
   readonly pluginId = 'shape-plugin-dialog-extension';
   readonly pluginName = 'Shape Dialog Extension';
@@ -67,10 +101,7 @@ export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
         title: 'Data Source',
         component: wrapDialogStepComponent(DataSourceStep),
         validation: {
-          validate: async (data: ShapeDialogData) => {
-            const ok = typeof data.dataSourceName === 'string' && data.dataSourceName.length > 0;
-            return ok ? { valid: true } : { valid: false, message: 'Data source selection is required' };
-          },
+          validate: validateDataSourceStep.validate,
         },
       },
       {
@@ -79,10 +110,7 @@ export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
         component: wrapDialogStepComponent(LicenseStep),
         dependsOn: [2],
         validation: {
-          validate: async (data: ShapeDialogData) => {
-            const ok = data.licenseAgreement === true;
-            return ok ? { valid: true } : { valid: false, message: 'You must accept the license agreement' };
-          },
+          validate: validateLicenseStep.validate,
         },
       },
       {
@@ -91,11 +119,7 @@ export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
         component: wrapDialogStepComponent(ProcessingStep),
         dependsOn: [3],
         validation: {
-          validate: async (data: ShapeDialogData) => {
-            const levels = data.selectedAdminLevels;
-            const ok = levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
-            return ok ? { valid: true } : { valid: false, message: 'Select administrative levels (0-3) — at least one' };
-          },
+          validate: validateProcessingStep.validate,
         },
       },
       {
@@ -104,11 +128,7 @@ export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
         component: wrapDialogStepComponent(CountrySelectionStep),
         dependsOn: [4],
         validation: {
-          validate: async (data: ShapeDialogData) => {
-            const countries = data.selectedCountries;
-            const ok = countries.length > 0 && countries.every((c) => c.length >= 2);
-            return ok ? { valid: true } : { valid: false, message: 'Select at least one country' };
-          },
+          validate: validateCountryStep.validate,
         },
       },
     ];

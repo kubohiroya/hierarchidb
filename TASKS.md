@@ -53,7 +53,15 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- （現在進行中のタスクはありません）
+- feat/route/progress-controls-pause-resume（Route: 進捗UIに Pause/Resume を配線）
+  - ブランチ: `feat/route/progress-controls-pause-resume`（ローカル作成は sandbox 権限エラーのため保留中、#worklog-4 参照）
+  - 依存: PR #144（UI-DESIGN.md）
+  - 受け入れ基準（DoD）：
+    - [ ] `RoutePanel` の Progress セクションに Pause/Resume ボタンを追加
+    - [ ] `RouteBatchManager.pauseRouteBatchSession/resumeRouteBatchSession` を呼び出し、Dexie `routeCursors.paused` が切り替わる
+    - [ ] `RouteBatchSummary` に failed 件数/直近エラー要約を表示
+    - [ ] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン
+  - ロールバック: UI ボタンを隠すフラグ `ROUTE_PROGRESS_CONTROLS=0`
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -4487,6 +4495,8 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-30 12:20 start: feat/route/progress-controls-pause-resume — Pause/Resume UI 着手。`git switch -c feat/route/progress-controls-pause-resume` が sandbox 権限不足で失敗したため、一時的に `main` ブランチ上で要件洗い出しを進める（権限解消後にブランチ作成予定）。
+- 2025-09-30 12:55 progress: feat/route/progress-controls-pause-resume — RoutePanel の progress stack（RouteBatchLiveProgress/RouteBatchSummary/useRouteBatchProgress）と `RouteBatchSessionOrchestrator` / `RouteBatchManager` / WorkerBridge API を確認。Pause/Resume は Dexie `routeCursors.paused` フラグと WorkerBridge の `pauseBatchSession`/`resumeBatchSession` で制御する設計で、`getBatchSessionStatus` が `paused` を返さない課題と Summary 表示に失敗件数/エラー要約を追加する必要を把握。
 - 2025-09-30 09:10 start: fix/runtime-ui/plugin-dialog-workerbridge — DTS ビルド失敗（Footer 型欠落と WorkerBridge 未実装）の調査に着手
 - 2025-09-30 09:58 progress: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm -C packages/runtime-ui/plugin-dialog typecheck` / `build:types` を実行し完了
 - 2025-09-30 10:05 blocked: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が既存の React/MUI 型未整備や batch config 型不備で失敗
