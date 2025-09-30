@@ -4,16 +4,18 @@
  */
 
 import type React from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
+import { Snackbar } from '@mui/material';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
   type MapClickEvent,
   type MapFeatureIdentifyResult,
+  type MapFeatureIdentifyConfig,
 } from '../types/unified-map-props.js';
-import { resolveIdentifyCandidates } from '../lib/feature-identification.js';
+import { DEFAULT_IDENTIFY_RADIUS, resolveIdentifyCandidates } from '../lib/feature-identification.js';
 import { loadMapLibreModule } from '../utils/maplibre-loader.js';
 // Load MapLibre CSS only in browser contexts to avoid worker/SSR errors
 if (typeof document !== 'undefined') {
@@ -58,6 +60,14 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
                                                         }) => {
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [identifySnackbarState, setIdentifySnackbarState] = useState<{ open: boolean; message: string }>({
+    open: false,
+    message: '',
+  });
+
+  const defaultIdentifyConfig = useMemo<MapFeatureIdentifyConfig>(() => ({
+    radius: DEFAULT_IDENTIFY_RADIUS,
+  }), []);
 
   const handleMapLoad = useCallback((e: any) => {
     const map = e.target;
@@ -104,12 +114,9 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const handleMapClick = useCallback(
     (event: any) => {
       const mapEvent = event as MapClickEvent;
-      if (!identifyFeatureOnClick) {
-        onClick?.(mapEvent);
-        return;
-      }
+      const effectiveIdentifyConfig: MapFeatureIdentifyConfig = identifyFeatureOnClick ?? defaultIdentifyConfig;
 
-      const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, identifyFeatureOnClick);
+      const baseResult = resolveIdentifyCandidates(mapRef.current, mapEvent, effectiveIdentifyConfig);
       const enrichedEvent: MapClickEvent = {
         ...mapEvent,
         identifiedFeatureIds: baseResult.featureIds,
@@ -121,11 +128,28 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
         originalEvent: enrichedEvent,
       };
 
-      identifyFeatureOnClick.onIdentify?.(identifyResult);
+      const disableDefaultSnackbar = identifyFeatureOnClick?.disableDefaultSnackbar ?? false;
+      if (!disableDefaultSnackbar) {
+        const idsText = identifyResult.featureIds.length > 0 ? identifyResult.featureIds.map((id) => String(id)).join(', ') : 'No features';
+        const lng = enrichedEvent.lngLat?.lng;
+        const lat = enrichedEvent.lngLat?.lat;
+        const locationText = lng !== undefined && lat !== undefined ? `@ (${lng.toFixed(4)}, ${lat.toFixed(4)})` : '';
+        setIdentifySnackbarState({
+          open: true,
+          message: `${idsText} ${locationText}`.trim(),
+        });
+      }
+
+      effectiveIdentifyConfig.onIdentify?.(identifyResult);
       onClick?.(enrichedEvent);
     },
-    [identifyFeatureOnClick, onClick],
+    [defaultIdentifyConfig, identifyFeatureOnClick, onClick],
   );
+
+  const handleSnackbarClose = useCallback((_: unknown, reason?: string) => {
+    if (reason === 'clickaway') return;
+    setIdentifySnackbarState((prev) => ({ ...prev, open: false }));
+  }, []);
 
   const containerStyle: React.CSSProperties = {
     width,
@@ -161,6 +185,13 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           {mapLoaded && children}
         </ReactMapLibreMap>
       </MapProvider>
+      <Snackbar
+        open={identifySnackbarState.open}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        message={identifySnackbarState.message}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </div>
   );
 };

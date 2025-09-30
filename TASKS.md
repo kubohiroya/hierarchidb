@@ -121,28 +121,6 @@
 13) test/base-plugin/minimal-unit（最小ユニット）
 14) test/resolver/e2e-headless-stabilize（ResolverDialog ヘッドレスE2E再有効化）
 
-- feat/plugins/worker-factory-pilot — Worker プラグイン動的 import 化（Phase 2a: 代表プラグイン移行）
-  - ブランチ: `feat/plugins/worker-factory-pilot`
-  - 依存: `refactor/runtime/worker-core-split`
-  - 受け入れ基準（DoD）：
-    - [x] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
-    - [x] `packages/app` のプラグイン初期化コードが新 API (`registerXxxWorkerStores`) を利用し、`pnpm --filter @hierarchidb/app typecheck` が成功
-    - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` が成功
-    - [x] Phase 2a の検証結果・課題を `TASKS.md` と `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ反映
-  - チェックリスト：
-    - [x] フォルダ/Resolver プラグインに `worker-factory` ディレクトリと `worker-public-types.ts`（型のみ）を新設
-    - [x] `WorkerModuleLoader` から新ファクトリーを呼び出すコードパスを追加し、テストで await するヘルパーを整備
-    - [x] プラグインのビルド/テスト/型チェックを実行し結果を運用ログへ記録
-  - ロールバック手順：
-    - プラグイン側のファクトリー導入差分をリバートし、旧 `worker/index.ts` 再エクスポート構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
-  - 運用ログ：
-    - start: 2025-09-25 19:34 Phase 2a パイロットとして folder/resolver プラグインの worker ファクトリー化に着手
-    - progress: 2025-09-25 19:45 folder/resolver の `worker/index.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
-    - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
-    - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
-    - progress: 2025-09-25 21:40 basemap/route/spreadsheet/styler の構成テンプレートをフォルダ/Resolver に合わせて整理し、`worker-public-types.ts` と型エントリを追加入力（ビルドは Phase 2b で一括再検証予定）
-    - progress: 2025-09-25 21:48 残務検証として再エクスポート残存を検索し、`packages/plugins/{folder,resolver}-plugin/src/worker/index.ts` がいずれも `worker-factory` 経由でのエクスポートに統一されていることを確認（旧 `export { … } from '../worker/*'` は不在）
-
 - feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b: 全プラグイン展開）
   - ブランチ: `feat/plugins/worker-factory-rollout`
   - 依存: `feat/plugins/worker-factory-pilot`
@@ -1949,6 +1927,29 @@ P2:
     - blocked: 2025-09-30 17:18 `pnpm build` を実行したが `@hierarchidb/plugins-route-plugin` の型エラー（`RouteBatchRouteInput` 型互換性ほか）で失敗。Routes 側の課題のため別タスク対応が必要
     - progress: 2025-09-30 18:05 `pnpm build` が成功し Route/Location/Shape/Styler の dialog 拡張互換性を確認（Blocker 解消）
     - done: 2025-09-30 18:06 dialog 拡張リファクタリングを完了し、関連プラグインの typecheck/build 成果を記録
+
+- feat/plugins/worker-factory-pilot — Worker プラグイン動的 import 化（Phase 2a: 代表プラグイン移行）
+  - ブランチ: `feat/plugins/worker-factory-pilot`
+  - 依存: `refactor/runtime/worker-core-split`
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
+    - [x] `packages/app` のプラグイン初期化コードが新 API (`registerXxxWorkerStores`) を利用し、`pnpm --filter @hierarchidb/app typecheck` が成功
+    - [x] `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` および `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` が成功
+    - [x] Phase 2a の検証結果・課題を `TASKS.md` と `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ反映
+  - チェックリスト：
+    - [x] フォルダ/Resolver プラグインに `worker-factory` ディレクトリと `worker-public-types.ts`（型のみ）を新設
+    - [x] `WorkerModuleLoader` から新ファクトリーを呼び出すコードパスを追加し、テストで await するヘルパーを整備
+    - [x] プラグインのビルド/テスト/型チェックを実行し結果を運用ログへ記録
+  - ロールバック手順：
+    - プラグイン側のファクトリー導入差分をリバートし、旧 `worker/index.ts` 再エクスポート構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-25 19:34 Phase 2a パイロットとして folder/resolver プラグインの worker ファクトリー化に着手
+    - progress: 2025-09-25 19:45 folder/resolver の `worker/index.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
+    - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
+    - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
+    - progress: 2025-09-25 21:40 basemap/route/spreadsheet/styler の構成テンプレートをフォルダ/Resolver に合わせて整理し、`worker-public-types.ts` と型エントリを追加入力（ビルドは Phase 2b で一括再検証予定）
+    - progress: 2025-09-25 21:48 残務検証として再エクスポート残存を検索し、`packages/plugins/{folder,resolver}-plugin/src/worker/index.ts` がいずれも `worker-factory` 経由でのエクスポートに統一されていることを確認（旧 `export { … } from '../worker/*'` は不在）
+    - done: 2025-09-25 21:58 Phase 2a プラグイン移行を完了し、`pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin typecheck` / `build` と `pnpm --filter @hierarchidb/app typecheck` の結果を記録
 
 - refactor/monorepo/as-any-hotspots — `as any` ホットスポットの型安全化（app / basemap / shape / linker / location）
   - ブランチ: `refactor/monorepo/as-any-hotspots`
@@ -4533,6 +4534,7 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-30 20:05 done: chore/tasks/kanban-refresh — Kanban の Doing を空にし、完了済みタスク（SpeedDial icon, ambient sideEffects, WorkerBridge, Basemap build-types, dialog extensions, worker-factory-pilot）の Done 反映とログ整備を実施。
 - 2025-09-30 19:25 start: feat/app/ui-code-split — MapLibre 系再エクスポート削除と WorkerAPIClient 動的 import 化によるチャンク警告解消タスクを定義。`@hierarchidb/ui-map` / folder-plugin / Worker runtime の対応方針と検証手順（typecheck + app build）を整理。
 - 2025-09-30 19:48 progress: feat/app/ui-code-split — MapLibreMap 再エクスポート整理と WorkerProvider/WorkerModuleLoader/WorkerStateStore の動的 import 化を実施。`pnpm --filter @hierarchidb/ui-map typecheck` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm --filter @hierarchidb/app typecheck` / `pnpm -C app build:vite` が成功（maplibre chunk サイズ警告のみ）。
 - 2025-09-30 16:40 start: fix/shape/worker-factory-load-export — app/src/generated/loader.ts の型エラーを確認し、`packages/plugins/shape-plugin/src/worker-factory/public-types.ts` で `loadShapeEntitiesDbModule` を公開する方針を決定。`git switch -c fix/shape/worker-factory-load-export` は sandbox 権限制約で失敗したため、ブランチ作成は保留。
@@ -4541,6 +4543,9 @@ P2:
 - 2025-09-30 17:05 start: fix/shape/map-preview-ui-map-import — MapPreview で発生している `@hierarchidb/ui-map` 解決エラーを確認。対策として `tsconfig.base.json` にパスエイリアスを追加し、shape-plugin での参照を復旧させる方針を決定。
 - 2025-09-30 17:12 progress: fix/shape/map-preview-ui-map-import — `tsconfig.base.json` に `@hierarchidb/ui-map` / `@hierarchidb/ui-map/*` のパスエイリアスを追加。ロールバックは該当エントリを削除のうえ `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行。
 - 2025-09-30 17:18 progress: fix/shape/map-preview-ui-map-import — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` を実行し、いずれもグリーンを確認（MapPreview の TS2307 解消を IDE で確認）。
+- 2025-09-30 17:30 start: fix/ui-map/default-identify-snackbar — MapLibreMap のクリック識別を既定ONにする要件を確認。デフォルト onIdentify で Snackbar を表示し、無効化用フラグの追加方針を決定。
+- 2025-09-30 17:48 progress: fix/ui-map/default-identify-snackbar — `MapLibreMap.tsx` に MUI Snackbar を実装し、identifyFeatureOnClick 未指定時でもフィーチャーID配列を表示する既定 onIdentify を追加。`disableDefaultSnackbar` オプションで抑止可能にした。
+- 2025-09-30 17:52 progress: fix/ui-map/default-identify-snackbar — `pnpm --filter @hierarchidb/ui-map typecheck` を実行しグリーン。ロールバック手順（差分前へ戻し、typecheck 再実行）を TASKS.md に追記。
 - 2025-09-30 15:12 progress: feat/app/ui-code-split — `scripts/generate-plugin-loader.mjs`/`app/src/root.tsx` を動的 import 仕様へ更新し、TreeConsole/Map ルートを `React.lazy` 化。`pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` がグリーン。
 - 2025-09-30 16:05 progress: feat/app/ui-code-split — Basemap/Linker/Shape のマッププレビューを `React.lazy` + `Suspense` で実装し、`@hierarchidb/ui-map` に `loadMapLibreMap/loadMapWithVectorTiles` を追加。MapLibre/Deck.gl のチャンク分離を確認済み (`pnpm --filter @hierarchidb/ui-map typecheck`, 各プラグイン typecheck, `pnpm -C app build:vite`).
 - 2025-09-30 15:42 progress: feat/app/ui-code-split — `packages/ui/map/src/components/MapWithDeckGL.tsx` を Deck.gl 動的 import 対応に改修し、`loadMapWithDeckGL` を追加。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm -C app build:vite` を再実行しグリーン。

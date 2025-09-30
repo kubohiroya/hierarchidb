@@ -132,6 +132,9 @@ export interface MapFeatureIdentifyConfig {
 
   /** Optional callback invoked when identification finishes */
   onIdentify?: (result: MapFeatureIdentifyResult) => void;
+
+  /** Whether to suppress the default Snackbar that displays identified feature IDs (defaults to false) */
+  disableDefaultSnackbar?: boolean;
 }
 
 export interface MapIdentifyProps {
