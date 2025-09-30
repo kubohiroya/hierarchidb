@@ -11,6 +11,7 @@ import type { BaseShapeError } from '../types/ShapeErrorHierarchy.js';
 import { ErrorCategory } from '../types/ShapeErrorHierarchy.js';
 import type { BatchConfig } from '../types/BatchConfig.js';
 import type { NodeId } from '@hierarchidb/common-type';
+import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
 
 // ========================================
 // ========================================
@@ -213,7 +214,7 @@ export class CheckpointResumeStrategy implements RecoveryStrategy {
     };
   }
 
-  calculateDelay(attemptNumber: number): number {
+  calculateDelay(_attemptNumber: number): number {
     return 1000;
   }
 
@@ -269,7 +270,7 @@ export class ReduceDataSizeStrategy implements RecoveryStrategy {
     };
   }
 
-  calculateDelay(attemptNumber: number): number {
+  calculateDelay(_attemptNumber: number): number {
     return 3000; //  3
   }
 }
@@ -310,13 +311,13 @@ export class FallbackStrategy implements RecoveryStrategy {
       success: true,
       strategy: this.name,
       newConfig: {
-        dataSource: newSource,
+        dataSource: newSource as DataSourceName,
       },
       message: `データソースを ${currentSource} から ${newSource} に変更しました`,
     };
   }
 
-  calculateDelay(attemptNumber: number): number {
+  calculateDelay(_attemptNumber: number): number {
     return 0;
   }
 
@@ -372,7 +373,7 @@ export class RecoveryStrategyManager {
       return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
     });
 
-    return sortedStrategies[0];
+    return sortedStrategies[0] ?? null;
   }
 
   /**
@@ -404,6 +405,14 @@ export class RecoveryStrategyManager {
     });
 
     const selectedStrategy = sortedStrategies[0];
+    if (!selectedStrategy) {
+      return {
+        success: false,
+        strategy: 'none',
+        message: '適用可能なリカバリ戦略がありません',
+      };
+    }
+
     const result = await selectedStrategy.execute(context);
 
     this.recordAttempt(context.sessionId, {

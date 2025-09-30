@@ -29,7 +29,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     let failed = 0;
     let totalBytes = 0;
 
-    await batch.mapChunks(
+    await batch.mapChunks<DownloadTask>(
       tasks,
       async (task, index) => {
         if (controls?.waitIfPaused) {
@@ -37,7 +37,11 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
         }
         const fileId = `${sessionId}-download-${index}`;
         try {
-          const res = await client.download.download(task.url, fileId);
+        const downloadUrl = task.url ?? task.config?.url;
+        if (!downloadUrl) {
+          throw new Error(`Download task ${task.taskId} missing url`);
+        }
+        const res = await client.download.download(downloadUrl, fileId);
           totalBytes += res.sizeBytes || 0;
           completed++;
         } catch {

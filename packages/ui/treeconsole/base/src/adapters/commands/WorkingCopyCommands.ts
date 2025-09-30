@@ -6,6 +6,7 @@
 
 import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
 import type {
+  CommitResult,
   CommitWorkingCopyForCreatePayload,
   CommitWorkingCopyPayload,
   DiscardWorkingCopyPayload,
@@ -176,10 +177,11 @@ export class WorkingCopyCommandsAdapter {
         );
       }
 
+      const unexpectedResult = result as CommitResult;
       throw new TreeConsoleAdapterError(
         'Commit edit operation failed: unexpected status',
         'COMMIT_NODE_EDIT_FAILED',
-        { status: result.status, onNameConflict: commitOptions?.onNameConflict },
+        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict },
       );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
@@ -257,10 +259,11 @@ export class WorkingCopyCommandsAdapter {
         );
       }
 
+      const unexpectedResult = result as CommitResult;
       throw new TreeConsoleAdapterError(
         'Commit create operation failed: unexpected status',
         'COMMIT_NODE_CREATE_FAILED',
-        { status: result.status, onNameConflict: commitOptions?.onNameConflict },
+        { status: unexpectedResult.status, onNameConflict: commitOptions?.onNameConflict },
       );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {

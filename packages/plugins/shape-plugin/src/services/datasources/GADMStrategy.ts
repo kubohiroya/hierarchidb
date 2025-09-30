@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../types/ShapeEntity.js';
+import type { ShapeEntity } from '../../shared/types.js';
 
 //  GADM
 export interface GADMRawData {
@@ -310,7 +310,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     return files;
   }
 
-  private async processGeoPackage(geopackage: ArrayBuffer, level: number): Promise<any> {
+  private async processGeoPackage(_geopackage: ArrayBuffer, _level: number): Promise<any> {
     //  GeoPackage
     //  @ngageoint/geopackage-js
 
@@ -342,7 +342,7 @@ export class GADMStrategy extends BaseDataSourceStrategy<GADMRawData, GADMProces
     };
   }
 
-  private async processShapefile(shapefile: Map<string, ArrayBuffer>): Promise<any> {
+  private async processShapefile(_shapefile: Map<string, ArrayBuffer>): Promise<any> {
     //  Shapefile
     return {
       type: 'FeatureCollection',

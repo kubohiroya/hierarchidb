@@ -4,8 +4,9 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../types/ShapeEntity.js';
+import type { ShapeEntity } from '../../shared/types.js';
 import JSZip from 'jszip';
+import type { Feature as GeoJSONFeature } from 'geojson';
 
 //  Natural Earth
 export interface NaturalEarthRawData {
@@ -93,7 +94,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     const {
       endpoint = 'countries-50m',
       adminLevel,
-      bbox,
+      bbox: _bbox,
       timeout = this.config.access.timeout,
     } = options || {};
 
@@ -140,13 +141,13 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
   }
 
   async processData(rawData: NaturalEarthRawData, options?: ProcessOptions): Promise<NaturalEarthProcessedData> {
-    const { filters, transformations, simplify = true, tolerance = 0.001 } = options || {};
+    const { filters, transformations, simplify: _simplify = true, tolerance: _tolerance = 0.001 } = options || {};
 
     try {
       //  ShapefileGeoJSON
       const geojson = await this.convertShapefilesToGeoJSON(rawData.files);
 
-      let features = geojson.features;
+      let features: GeoJSONFeature[] = geojson.features as GeoJSONFeature[];
       if (filters && filters.length > 0) {
         features = await this.applyFilters(features, filters);
       }
@@ -247,7 +248,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     throw new Error('Max retry attempts reached');
   }
 
-  private async convertShapefilesToGeoJSON(files: Map<string, ArrayBuffer>): Promise<any> {
+  private async convertShapefilesToGeoJSON(_files: Map<string, ArrayBuffer>): Promise<any> {
     //  Shapefileshapefile-js
 
     //  shapefile:

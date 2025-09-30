@@ -2477,6 +2477,8 @@ P2:
     - progress: 2025-09-22 12:08 プラグイン/Trash 双方のヘッダーを Stepper + React Router Link ナビゲーションへ更新し、単一ステップ時の余分な表示を除去
     - progress: 2025-09-22 12:12 非ゴミ箱ダイアログのフッターを Cancel/Back・Save Draft・Start Batch（条件付き）・Next/Save 配置へ統一。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `test` および `pnpm -C app typecheck` を再実行し成功
     - progress: 2025-09-22 12:24 create アクション時も UI が “Create …” と表示されるよう `intent` を導入し、作成完了後にツリーへ反映されるよう WorkingCopy コミット処理とナビゲーションを調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {typecheck,test}` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` を実行し成功
+    - progress: 2025-09-27 19:42 ExtensibleFolderDialog を HeadlessMultiStepDialog ベースへ移行し、専用 Header/Footer で標準フレームに統合。`pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm -C app typecheck` を再実行しグリーンを確認
+    - progress: 2025-09-27 19:55 runtime-ui-plugin-dialog の build 前に ui-core の d.ts を確実に生成する `prebuild` を追加し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog build` が成功することを確認
 - feat/ui/dialog-hover-feedback — ダイアログタイトルのドラッグハンドルにホバー演出を追加
   - ブランチ: `feat/ui/dialog-hover-feedback`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-dialog`
@@ -2542,6 +2544,23 @@ P2:
   - 運用ログ：
     - start: 2025-09-21 20:48 Deprecation 警告解消対応に着手
     - progress: 2025-09-21 20:54 register-default-extensions をリファクタリングし、新API経由では警告が出ず旧APIのみ警告を発するように調整
+- investigate/ui/speeddial-folder-dialog — SpeedDial 経由フォルダ作成ダイアログが表示されない問題の調査
+  - ブランチ: `investigate/ui/speeddial-folder-dialog`（サンドボックス制約によりローカルでは `main` 上で調査）
+  - 依存: `@hierarchidb/app`, `app/src/routes/(hierarchidb)/t/[tenant]/r/[root]/[node]/folder/create`
+  - 受け入れ基準（DoD）：
+    - [x] SpeedDial からフォルダ作成遷移時にダイアログが表示されない原因を特定できる
+    - [x] 原因に対する解決方針または修正案を提案できる
+    - [ ] 再現手順と調査結果を TASKS.md および報告で共有できる
+  - チェックリスト：
+    - [x] SpeedDial のアクションハンドラとフォルダ作成ルートの表示制御を確認する
+    - [x] 関連ログ出力や例外が発生しない理由を調べる
+    - [ ] 想定動作との差分と改善策を整理する
+  - ロールバック手順：
+    - 調査のみのため適用不要（実装変更を行う場合は別タスクで管理）
+  - 運用ログ：
+    - start: 2025-09-21 19:05 SpeedDial 経由フォルダ作成ダイアログ非表示の原因調査に着手
+    - progress: 2025-09-21 19:52 TreeConsole レイアウトの `overflow: hidden` と PluginDialogShell の通常フローが衝突し、Outlet 直下にレンダリングされたダイアログがビューポート外で不可視になっている兆候を確認
+    - progress: 2025-09-21 20:34 PluginDialogShell を `Portal` ベースの固定レイヤーに変更し、HeadlessMultiStepDialog をモーダル表示できるように暫定実装。body スクロール抑制と全画面モード互換スタイルを追加
 - fix/app/trash-dialog-chrome-hover — TrashDialog Chrome hover制御のReferenceError解消
   - ブランチ: `fix/app/trash-dialog-chrome-hover`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/app`, `app/src/components/dialogs/TrashDialog.tsx`
@@ -4993,3 +5012,26 @@ ToDo（Phase 2/3: any の完全撤去）
     - 2025-09-16 13:05 done: spreadsheet-plugin の Dexie import/steps-provider を Node16 仕様へ更新。`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` グリーン。
     - 2025-09-16 13:10 done: `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog run build` で ESM 出力を再生成し、UI ステップ登録の型参照を復旧。
     - 2025-09-16 13:15 done: `pnpm -w typecheck` が全パッケージで成功。
+
+2025-09-27
+- progress: `pnpm dts:quick` を再実行し、UI Core / Runtime UI Plugin Dialog を含む 25 パッケージのビルド＆宣言出力が CI スクリプト経由でグリーンで完了することを確認。
+- progress: `rg "\\.pnpm/node_modules" -n` で全リポジトリを棚卸しし、Runtime Worker 系以外に `.pnpm` 直参照がないことを確認。Runtime Worker での参照はいずれも公式型宣言（comlink / rxjs / @types/vt-pbf / @maplibre/vt-pbf）向けである点も再確認。
+- next: Runtime Worker 以外で外部ベンダ型が必要になった場合は、dist 参照またはベンダ提供の公式 .d.ts を優先採用する方針を共有。
+- progress: `pnpm exec dep-fence --strict` を再実行し、全パッケージが policy チェックを通過することを確認（`@hierarchidb/ui-core` の dist 参照統一と timeline-plugin のローカル shim 削除後）。
+- progress: `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` / `pnpm dts:quick` を再走させ、型定義の参照調整がグリーンで完了することを確認。
+- note: `packages/common/types/scripts/emit-ambient.mjs` を拡張し、`src/@types` 配下の宣言を dist にコピー＆ `index.d.ts` へ参照追加することで、局所 shim に頼らず `react-transition-group/Transition` 型を解決できるようにした。
+- progress: `pnpm -w typecheck` / `pnpm -w lint` を実行し、ともに成功を確認（location-plugin/styler-plugin の型修正後）。
+- progress: location-plugin と styler-plugin の `getStepStateEvaluator` を新インターフェース（`getEnabledSteps`/`getValidatedSteps`）へ合わせ、app ローダーの型警告も `Record<string, unknown>` 経由で解消。
+- progress: `scripts/dep-fence-extra.mjs` で検知されていた各パッケージの `tsconfig` パス上書きを整理し、`~/*` のみ残す形に統一。再度 `node scripts/dep-fence-extra.mjs` を実行して警告ゼロを確認。
+
+2025-09-29
+- start: chore/build-scripts-prebuild-cleanup — `packages/{runtime-ui/plugin-dialog,plugins/{folder-plugin,shape-plugin},feature/auth-recovery,ui/{core,csv-extract},ui/treeconsole/breadcrumb}` の `build` スクリプトから冗長な `pnpm run prebuild` 呼び出しを除去する作業を main 直下で着手。
+- done: 上記7パッケージの `build` スクリプトを `tsup` / `pnpm run build:tsc && tsup` へ統一し、Turbo の `dependsOn: ['^build']` だけで依存ビルドが完了する構成へ整理。確認のため `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` を実行したが、既存の `@hierarchidb/plugins-base-plugin` / `@hierarchidb/util` 型定義が未生成の状態で `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/map-adapter` の DTS ビルドが失敗する既知問題に突き当たり要フォロー。
+- progress: `scripts/build/apply-build-template.mjs` を更新し、`tsconfig.build.json` の `include/exclude` を元 TSConfig ベースで統合、`build:pack` の共通テンプレートから `@hierarchidb/common-type` だけ `emit-ambient` を差し込むロジックを追加。`scripts/build/copy-dist-types.mjs` も `.tsbuildinfo` を削除するよう改善。
+- progress: `pnpm --filter @hierarchidb/common-type build` を実行し、新テンプレートで宣言生成と ambient 連携が問題なく完了することを確認。
+- progress: `pnpm exec turbo run build --filter @hierarchidb/ui-core` を実行し、依存パッケージ（`@hierarchidb/util`, `@hierarchidb/ui-data-grid`, `@hierarchidb/ui-icon`, `@hierarchidb/common-type` など）が Turbo の `^build` 伝播で自動ビルドされる挙動を確認。全コマンド成功。
+- blocked: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` は引き続き `tsc -p tsconfig.build.json` で `@hierarchidb/plugins-base-plugin` の型解決に失敗（`TS2307`）。`pnpm list --filter @hierarchidb/runtime-ui-plugin-dialog --depth=0` を確認すると依存パッケージに `@hierarchidb/plugins-base-plugin` がリンクされておらず、workspace 解決の整備が必要。
+- blocked: 依存再インストール後も `pnpm --filter @hierarchidb/common-type build` が `@types/node` 不在で失敗（TS2688）。`pnpm --filter @hierarchidb/common-type install` をオフライン指定で試行したがストアに tarball がなく取得不可。ネットワーク許可後に再インストールが必要。
+- progress: `/Users/hiroya/WebstormProjects/worker-factory-rollout` で再度 `pnpm install` を実施していただいた後、`pnpm --filter @hierarchidb/common-type build` が新テンプレートで成功することを確認。
+- progress: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` も成功し、`@hierarchidb/plugins-base-plugin` 依存を含む型生成が通ることを確認。
+- progress: `@hierarchidb/plugins-shape-plugin` の shared/services 型定義を整理し、Runtime Worker adapter／RecoveryStrategy 周辺の実装を型安全化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認。

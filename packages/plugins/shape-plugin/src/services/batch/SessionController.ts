@@ -20,6 +20,7 @@ import { RuntimeWorkerVectorTileAdapter } from './adapters/RuntimeWorkerVectorTi
 import { getShapeRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import type { BatchProcessConfig } from './types.js';
 import type { UrlMetadata, ProgressInfo, ProcessingStage } from '../../shared/index.js';
+import { BatchTaskStage } from '../../shared/index.js';
 import type { DownloadTask } from '../../shared/types.js';
 
 export interface BatchSessionOptions {
@@ -35,7 +36,6 @@ export class SessionController {
   private workerPool: any | null = null;
   private downloadAdapter: DownloadStageAdapter = new RuntimeWorkerDownloadAdapter();
   private urlMetadata: UrlMetadata[];
-  private config: BatchProcessConfig;
   private options: BatchSessionOptions;
   private currentStage: ProcessingStage = 'download';
   private isPaused = false;
@@ -51,13 +51,12 @@ export class SessionController {
     sessionId: string,
     nodeId: NodeId,
     urlMetadata: UrlMetadata[],
-    config: BatchProcessConfig,
+    _config: BatchProcessConfig,
     options: BatchSessionOptions = {},
   ) {
     this.sessionId = sessionId;
     this.nodeId = nodeId;
     this.urlMetadata = urlMetadata;
-    this.config = config;
     this.options = options;
   }
 
@@ -178,11 +177,24 @@ export class SessionController {
 
     const tasks: DownloadTask[] = this.urlMetadata.map((metadata, index) => ({
       taskId: `${this.sessionId}-download-${index}`,
+      sessionId: this.sessionId,
+      taskType: 'download',
+      stage: BatchTaskStage.WAIT,
+      type: 'download',
+      status: 'waiting',
+      index,
+      progress: 0,
       url: metadata.url,
-      dataSource: metadata.dataSource,
-      country: metadata.country,
-      adminLevel: metadata.adminLevel,
-      expectedFormat: 'geojson',
+      config: {
+        dataSource: (metadata as { dataSource?: string }).dataSource ?? metadata.continent ?? 'gadm',
+        country: (metadata as { country?: string }).country ?? metadata.countryCode ?? 'UNKNOWN',
+        adminLevel: metadata.adminLevel,
+        url: metadata.url,
+        timeout: this.options.timeoutMs ?? 0,
+        retryDelay: this.options.retryAttempts ?? 0,
+        expectedFormat: 'geojson',
+        validateSSL: true,
+      },
     }));
     const res = await this.downloadAdapter.process(
       this.sessionId,
@@ -211,11 +223,24 @@ export class SessionController {
     this.currentStage = 'simplify1';
     console.log(`[Session ${this.sessionId}] Processing simplify1 stage`);
 
-    const tasks: Simplify1Task[] = this.urlMetadata.map((metadata, index) => ({
+    const tasks: Simplify1Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify1-${index}`,
+      sessionId: this.sessionId,
+      taskType: 'simplify1',
+      stage: BatchTaskStage.WAIT,
+      type: 'simplify1',
+      status: 'waiting',
+      index,
+      progress: 0,
       inputBufferId: `${this.sessionId}-download-${index}`,
-      tolerance: this.config.simplifyTolerance || 0.001,
-      minArea: this.config.minArea || 100,
+      tolerance: 0.001,
+      minArea: 0,
+      config: {
+        algorithm: 'douglas-peucker',
+        tolerance: 0.001,
+        preserveTopology: true,
+        minimumArea: 0,
+      },
     }));
 
     const r = await this.simplify1Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
@@ -231,11 +256,30 @@ export class SessionController {
     this.currentStage = 'simplify2';
     console.log(`[Session ${this.sessionId}] Processing simplify2 stage`);
 
-    const tasks: Simplify2Task[] = this.urlMetadata.map((metadata, index) => ({
+    const tasks: Simplify2Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify2-${index}`,
+      sessionId: this.sessionId,
+      taskType: 'simplify2',
+      stage: BatchTaskStage.WAIT,
+      type: 'simplify2',
+      status: 'waiting',
+      index,
+      progress: 0,
       inputBufferId: `${this.sessionId}-simplify1-${index}`,
-      zoomLevels: this.config.zoomLevels || [0, 5, 10],
-      tileSize: this.config.tileSize || 512,
+      zoomLevels: [10],
+      tileSize: 512,
+      config: {
+        zoomLevel: 10,
+        tileSize: 512,
+        preserveSharedBoundaries: true,
+        quantization: 1,
+        algorithm: 'douglas-peucker',
+        tolerance: 0.001,
+        minimumArea: 0,
+        preserveTopology: true,
+        maxVertices: undefined,
+        coordinatePrecision: 6,
+      },
     }));
 
     const r = await this.simplify2Adapter!.process(tasks, (p) => this.progressCallback?.(p), {
@@ -251,11 +295,28 @@ export class SessionController {
     this.currentStage = 'vectortile';
     console.log(`[Session ${this.sessionId}] Processing vector tile stage`);
 
-    const tasks: VectorTileTask[] = this.urlMetadata.map((metadata, index) => ({
+    const tasks: VectorTileTask[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-vectortile-${index}`,
+      sessionId: this.sessionId,
+      taskType: 'vectortile',
+      stage: BatchTaskStage.WAIT,
+      type: 'vectortile',
+      status: 'waiting',
+      index,
+      progress: 0,
       inputBufferId: `${this.sessionId}-simplify2-${index}`,
       outputFormat: 'mvt',
-      compression: 'gzip',
+      compression: true,
+      config: {
+        zoomLevel: 10,
+        tileX: 0,
+        tileY: 0,
+        extent: 4096,
+        buffer: 256,
+        layers: [],
+        format: 'mvt',
+        compression: true,
+      },
     }));
 
     const r = await this.vectorTileAdapter!.process(tasks, (p) => this.progressCallback?.(p), {

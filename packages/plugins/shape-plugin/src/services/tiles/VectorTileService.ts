@@ -12,11 +12,10 @@
 //import { VectorTile } from '@mapbox/vector-tile';
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
-import { shapeDB, type VectorTileRecord } from '../database/ShapeDB.js';
+import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/ShapeDB.js';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { BoundingBox, TileMetadata } from '../../shared/index.js';
 import type { Feature } from '../../shared/types.js';
-import type { LayerConfig } from '../types.js';
+import type { BoundingBox, TileMetadata, LayerConfig } from '../types.js';
 import type { Geometry } from 'geojson';
 
 export interface TileRequest {
@@ -297,7 +296,7 @@ export class VectorTileService {
     return [lonMin, latMin, lonMax, latMax];
   }
 
-  private calculateFeatureBounds(features: Feature[]): BoundingBox {
+  private calculateFeatureBounds(features: Array<Feature | FeatureRecord>): BoundingBox {
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,

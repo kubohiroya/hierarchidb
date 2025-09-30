@@ -159,7 +159,7 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
       tags = [],
       query,
       timeout = 25, //  Overpass API
-      endpoint = 'interpreter',
+      endpoint: _endpoint = 'interpreter',
     } = options || {};
 
     try {
