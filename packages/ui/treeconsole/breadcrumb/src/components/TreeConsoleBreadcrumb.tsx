@@ -154,6 +154,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     NodeTypeIcon: CustomNodeTypeIcon,
     NodeContextMenu: CustomNodeContextMenu,
     pageNodeId,
+    onContextAction,
   } = props;
 
   const { isTrashPage: _isTrashPage, isProjectsPage } = context;
@@ -195,20 +196,20 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     (nodeId: string, node?: BreadcrumbNode) => {
       if (onNodeClick) {
         onNodeClick(nodeId, node);
-      } else {
-        console.log(`Navigate to node: ${nodeId} - TODO: Connect to controller`);
+      } else if (onContextAction && node) {
+        onContextAction('navigate', node);
       }
     },
-    [onNodeClick],
+    [onContextAction, onNodeClick],
   );
 
   const handleConfirmDelete = useCallback(async () => {
-    if (pendingDeleteNodeId) {
-      console.log(`Delete node: ${pendingDeleteNodeId} - TODO: Connect to controller`);
+    if (pendingDeleteNodeId && contextMenuNode && onContextAction) {
+      onContextAction('remove', contextMenuNode, { navigateToParent: true });
     }
     setConfirmDialogOpen(false);
     setPendingDeleteNodeId(null);
-  }, [pendingDeleteNodeId]);
+  }, [contextMenuNode, onContextAction, pendingDeleteNodeId]);
 
   const openContextMenu = (node: BreadcrumbNode, anchorEl: HTMLElement | null) => {
     if (!anchorEl) return;
@@ -233,18 +234,33 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   };
 
   const handleCreate = (type: string) => {
-    console.log(`TODO: Create ${type} under node:`, contextMenuNode?.id);
-    // TODO: Connect to controller
+    if (contextMenuNode && onContextAction) {
+      onContextAction(`create:${type}`, contextMenuNode, { navigateToParent: true, source: 'breadcrumb' });
+    }
   };
 
   const handleEdit = () => {
-    console.log('TODO: Edit node:', contextMenuNode?.id);
-    // TODO: Connect to controller
+    if (contextMenuNode && onContextAction) {
+      onContextAction('rename-dialog', contextMenuNode, { source: 'breadcrumb' });
+    }
   };
 
   const handleDuplicate = () => {
-    console.log('TODO: Duplicate node:', contextMenuNode?.id);
-    // TODO: Connect to controller
+    if (contextMenuNode && onContextAction) {
+      onContextAction('duplicate', contextMenuNode, { source: 'breadcrumb' });
+    }
+  };
+
+  const handleCopy = () => {
+    if (contextMenuNode && onContextAction) {
+      onContextAction('copy', contextMenuNode, { source: 'breadcrumb' });
+    }
+  };
+
+  const handleCut = () => {
+    if (contextMenuNode && onContextAction) {
+      onContextAction('cut', contextMenuNode, { navigateToParent: true, source: 'breadcrumb' });
+    }
   };
 
   const handleRemove = () => {
@@ -402,7 +418,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         canEdit={!isRootContext}
         canRemove={!isRootContext}
         canDuplicate={!isRootContext}
+        canCopy={!isRootContext}
+        canCut={!isRootContext}
         onCreate={handleCreate}
+        onCopy={handleCopy}
+        onCut={handleCut}
         onEdit={() => { if (!isRootContext) handleEdit(); else handleContextMenuClose(); }}
         onDuplicate={() => { if (!isRootContext) handleDuplicate(); else handleContextMenuClose(); }}
         onRemove={() => { if (!isRootContext) handleRemove(); else handleContextMenuClose(); }}

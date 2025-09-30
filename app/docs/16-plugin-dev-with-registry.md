@@ -26,7 +26,7 @@
     - 走査対象: 同上
     - 生成: `virtual:mui-icon-map`（`{ 'AccountTree': AccountTreeIcon, ... }` を静的 import して map を export）
 - アプリ側の利用箇所
-  - Worker: `virtual:plugin-registry-worker` を取り込み、nodeType→loader のマップを使用
+  - Worker: `virtual:plugin-registry-worker` を取り込み、nodeType→loader のマップを使用（実体は `WorkerModuleLoader` が `@hierarchidb/runtime-shared-module-paths.importPluginWorker()` を経由して `./worker-factory` を解決）
   - UI: `virtual:plugin-registry-ui` を取り込み、メニューやダイアログ等のロードに使用
   - アイコン: `virtual:mui-icon-map` を `setGlobalMuiIconMap()` で注入（実描画は静的解決）
 - メタデータ
@@ -42,12 +42,14 @@
   "type": "module",
   "exports": {
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./worker": { "import": "./dist/worker/index.js" } // Worker不要なら省略可
+    "./worker": { "import": "./dist/worker/index.js" },          // Legacy 互換（必要な場合のみ）
+    "./worker-factory": { "import": "./dist/worker-factory/index.js" }
   },
   "scripts": { "build": "tsup" }
 }
 ```
-- `exports["./worker"]` は Worker を公開する場合のみ必要（Linker のように不要なら省略）
+- Runtime は `@hierarchidb/runtime-shared-module-paths.importPluginWorker('<id>')` を通じて `./worker-factory` を解決します。
+- 旧 API 互換（直接 `*/worker` を import するツール等）が不要であれば `exports["./worker"]` は省略可能です。
 - メタデータは `src/extension/plugin-manifest.ts` に記述する（次項）。`package.json` からは撤去済み
 
 ### 2) plugin-manifest.ts（拡張メタデータ）
@@ -86,7 +88,8 @@ export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 
 ### 3) エントリ配置
 - UI: `src/index.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
-- Worker（任意）: `src/worker/index.ts`（アプリが `@hierarchidb/<foo>-plugin/worker` を動的 import）
+- Worker Factory: `src/worker-factory/index.ts`（Runtime が modulePaths 経由で遅延ロード）
+- Worker エントリ（任意）: `src/worker/index.ts`（旧来の直接 import 互換が必要な場合のみ公開）
 - ビルド: tsup で `dist/` に出力（exports に合わせる）
 
 ## アプリへの接続（自動）
@@ -183,9 +186,20 @@ PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
 - Worker 側初期化で `virtual:plugin-registry-worker` を用いる例（要約）
 ```ts
 // app/src/worker.ts
+import type { PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
+
 const { pluginMapWorker } = await import('virtual:plugin-registry-worker');
-let pluginMap = pluginMapWorker || {};
-// 必要に応じて手動オーバーライドを合成（Devソースに差し替え等）
+const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
+
+for (const nodeType of Object.keys(pluginMapWorker)) {
+  const originalLoader = pluginMapWorker[nodeType];
+  pluginMapWorker[nodeType] = async () => {
+    await modulePaths.importPluginWorker(nodeType as PluginWorkerId);
+    return originalLoader?.();
+  };
+}
+
+// 必要に応じて手動オーバーライドを合成（Dev ソースに差し替え等）
 ```
 
 ## アイコンの解決
@@ -213,7 +227,8 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
   - `src/extension/plugin-manifest.ts` の `icon.mui`（または `muiIconName`）を PascalCase で記述（例: `AccountTree`）
   - 変更後は devサーバが自動再生成（HMR）。表示が変わらなければ一度再起動
 - Worker が期待どおり動かない
-  - `exports["./worker"]` が存在するか確認。`dist/worker/index.js` を export しているか
+  - `exports["./worker-factory"]` が存在するか確認（既定の初期化ルート）。
+  - 旧互換が必要な場合のみ `exports["./worker"]` が `dist/worker/index.js` を指しているか確認
   - Worker不要なプラグインはダミーとして扱われ、呼び出しが無視されます
 - GitHub Pages での挙動
   - 仮想モジュールはすべてビルド時に JS へ実体化・分割。追加設定は不要

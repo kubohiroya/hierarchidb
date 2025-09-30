@@ -54,6 +54,7 @@ export interface TreeTableController {
   onRemove?: (nodeIds: string[]) => void;
   // Move nodes to a new parent
   onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
+  onContextAction?: (action: string, node: TreeNodeInUI, options?: { navigateToParent?: boolean }) => void;
 }
 
 // TreeTable core props

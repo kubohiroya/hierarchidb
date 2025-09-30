@@ -64,11 +64,11 @@ sequenceDiagram
                     alt workerInstance存在
                         IW-->>WAC: 既存インスタンスを返す
                     else 新規作成
-                        IW->>W: new Worker()
-                        W-->>IW: Worker作成完了
-                        IW->>IW: Comlink.wrap()
+                        IW->>Loader: ensureWorkerRuntime()
+                        Loader->>W: spawn / reuse shared worker
+                        W-->>IW: Worker 初期化完了
                         IW->>IW: workerInstance保存
-                        IW-->>WAC: インスタンス返す
+                        IW-->>WAC: インスタンス/クライアント返す
                     end
                 end
                 
@@ -386,11 +386,24 @@ sequenceDiagram
 ```javascript
 // === Worker 稼働状況の詳細チェック ===
 
-// 1. Worker の生存確認
-const testWorker = new Worker(new URL('./worker', import.meta.url).href, { type: 'module' });
-testWorker.postMessage({ type: 'ping' });
-testWorker.onmessage = (e) => console.log('Worker response:', e.data);
-testWorker.onerror = (error) => console.error('Worker error:', error);
+// 1. Worker モジュールの解決確認（modulePaths 経由）
+const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
+const runtimeModule = await modulePaths.importRuntimeWorker();
+console.table({
+  hasStoreRegistry: Boolean(runtimeModule?.storeRegistry),
+  exportedKeys: Object.keys(runtimeModule ?? {}),
+});
+
+// 1-b. WorkerBridge の参照確認（UI 側で WorkerProvider がマウントされている前提）
+const bridgeRef = window.__HDB_WORKER_CLIENT_REF__;
+if (!bridgeRef) {
+  console.warn('WorkerBridge client ref is not injected (WorkerProvider not initialized yet).');
+} else {
+  console.log('WorkerBridge state', {
+    isInitialized: bridgeRef.isInitialized,
+    hasClient: Boolean(bridgeRef.client),
+  });
+}
 
 // 2. WorkerAPIClient の内部状態確認
 if (typeof WorkerAPIClient !== 'undefined') {

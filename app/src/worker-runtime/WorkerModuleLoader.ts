@@ -3,6 +3,13 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
+// NOTE: Worker runtime and plugin worker modules are no longer imported through
+// legacy `*/worker` subpath specifiers.  Instead we delegate to the
+// `@hierarchidb/runtime-shared-module-paths` manifest so that both the runtime
+// bundle and each plugin worker can be resolved via a single, versioned entry
+// point.  This loader keeps the cache warm and preloads the optional peer store
+// registration helpers for the plugins that still expose Dexie-backed stores.
+
 type ModulePathsModule = typeof import('@hierarchidb/runtime-shared-module-paths');
 
 const PLUGINS_TO_PRELOAD: PluginWorkerId[] = [

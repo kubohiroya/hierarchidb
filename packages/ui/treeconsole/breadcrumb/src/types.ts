@@ -93,4 +93,14 @@ export interface TreeConsoleBreadcrumbProps {
    * Defaults to true.
    */
   iconInteractive?: boolean;
+
+  /**
+   * Optional callback invoked when the breadcrumb context menu triggers an action.
+   * The node argument corresponds to the breadcrumb entry that initiated the action.
+   */
+  onContextAction?: (
+    action: string,
+    node: BreadcrumbNode,
+    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'breadcrumb' },
+  ) => void;
 }

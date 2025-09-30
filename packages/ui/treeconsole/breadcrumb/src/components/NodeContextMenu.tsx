@@ -6,7 +6,7 @@
 
 import { type MouseEvent, useEffect, useRef, useState } from 'react';
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
+import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, ContentCut as ContentCutIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
@@ -31,6 +31,8 @@ export interface NodeContextMenuProps {
   canCreate?: boolean;
   canRemove?: boolean;
   canDuplicate?: boolean;
+  canCopy?: boolean;
+  canCut?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
   onPreview?: () => void;
@@ -38,6 +40,8 @@ export interface NodeContextMenuProps {
   onCreate?: (type: string) => void;
   onDuplicate?: () => void;
   onRemove?: () => void;
+  onCopy?: () => void;
+  onCut?: () => void;
   onCheckReference?: () => void;
   isTrashRoot?: boolean;
   mode?: 'restore' | 'dispose';
@@ -64,6 +68,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canCreate = true,
     canRemove = true,
     canDuplicate = true,
+    canCopy = true,
+    canCut = true,
     onOpen: _onOpen,
     onOpenFolder: _onOpenFolder,
     onPreview: _onPreview,
@@ -71,6 +77,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onCreate: _onCreate,
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
+    onCopy: _onCopy,
+    onCut: _onCut,
     onCheckReference: _onCheckReference,
   } = props;
 
@@ -152,6 +160,20 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     blurActive();
     handleMainMenuClose();
     setTimeout(() => { onRemove?.(); }, 0);
+  };
+
+  const handleCopyClick = () => {
+    const onCopy = propsRef.current.onCopy;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onCopy?.(); }, 0);
+  };
+
+  const handleCutClick = () => {
+    const onCut = propsRef.current.onCut;
+    blurActive();
+    handleMainMenuClose();
+    setTimeout(() => { onCut?.(); }, 0);
   };
 
   const handlePreviewClick = () => {
@@ -293,6 +315,20 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
             <EditIcon />
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={handleCopyClick} disabled={!canCopy} aria-label="Copy">
+          <ListItemIcon>
+            <ContentCopyIcon />
+          </ListItemIcon>
+          <ListItemText>Copy</ListItemText>
+        </MenuItem>
+
+        <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label="Cut">
+          <ListItemIcon>
+            <ContentCutIcon />
+          </ListItemIcon>
+          <ListItemText>Cut</ListItemText>
         </MenuItem>
 
         <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label="Duplicate">

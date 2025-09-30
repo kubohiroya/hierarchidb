@@ -15,6 +15,7 @@ export { BasicInfoFields } from './components/BasicInfoFields.js';
 export { TagChipsInput } from './components/TagChipsInput.js';
 export type { TagChipsInputProps } from './components/TagChipsInput.js';
 export { TabularPreview } from './components/TabularPreview/TabularPreview.js';
+export { SparkleAnimation } from './components/sparkle-animation/SparkleAnimation.js';
 export { CrossViewStyles } from './sync/CrossViewStyles.js';
 export { CrossViewSnackbar } from './components/CrossViewSnackbar.js';
 export { useCrossHighlightSync } from './hooks/useCrossHighlightSync.js';

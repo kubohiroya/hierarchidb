@@ -742,6 +742,10 @@ Comlink.expose(new ShapesWorkerImpl());
 
 ### 5. ShapesService.ts (eria-cartographパターン準拠) 🟡
 
+> **Note (2025-09-30)**: 実装では Worker API の取得を `@hierarchidb/runtime-shared-module-paths.importPluginWorker('shape')`
+> と `getWorkerBridge()` に委譲している。以下のコードは責務の整理用サンプルであり、
+> `../workers/ShapesWorkerAPI` の直接 import は実際には使用しない。
+
 ```typescript
 /**
  * ShapesService - UI層からのメインインターフェース
@@ -749,7 +753,7 @@ Comlink.expose(new ShapesWorkerImpl());
 import type { ShapesEntity, BatchTaskLike } from "../types";
 import type { TreeNodeId } from "@hierarchidb/core";
 import { BaseResourceWorkerService } from "@/shared/workers/services/BaseResourceWorkerService";
-import type { ShapesWorkerAPI } from "../workers/ShapesWorkerAPI";
+import type { ShapesWorkerAPI } from "../workers/ShapesWorkerAPI"; // 実装では modulePaths/WorkerBridge 経由で取得
 
 export interface IShapesService {
   // 基本CRUD

@@ -67,7 +67,11 @@ export interface TreeConsoleActions {
   handleBreadcrumbNavigate: (nodeId: string, node?: BreadcrumbNode) => void;
   handleNavigateBack: () => void;
   handleNavigateForward: () => void;
-  handleContextMenuAction: (action: string, node: TreeNodeData) => void;
+  handleContextMenuAction: (
+    action: string,
+    node: TreeNodeData,
+    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'breadcrumb' | 'treetable' | 'speedDial' },
+  ) => void;
   handleUndo: () => void;
   handleRedo: () => void;
   handleCopy: () => void;

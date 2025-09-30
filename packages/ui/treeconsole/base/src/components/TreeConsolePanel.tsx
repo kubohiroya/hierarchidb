@@ -4,6 +4,7 @@ import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
+import type { NodeType } from '@hierarchidb/common-type';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
@@ -74,7 +75,8 @@ export interface TreeConsolePanelProps {
   readonly onNavigateForward?: () => void;
   readonly canGoBack?: boolean;
   readonly canGoForward?: boolean;
-  readonly onContextMenuAction: (action: string, node: TreeNodeData) => void;
+  readonly onContextMenuAction: (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => void;
+  readonly onBreadcrumbContextAction?: (action: string, node: PanelBreadcrumbNode, options?: { navigateToParent?: boolean }) => void;
   readonly onStartTour?: () => void;
   readonly onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
   /** Optional: For column-width persistence, provide treeId to scope keys */
@@ -155,6 +157,16 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       onMoveNodes: (nodeIds: string[], targetParentId: string) => {
         props.onMoveNodes?.(nodeIds, targetParentId);
       },
+      onContextAction: (action: string, node: TreeNodeInUI, options?: { navigateToParent?: boolean }) => {
+        if (props.onContextMenuAction) {
+          const nodeData: TreeNodeData = {
+            ...(node as unknown as TreeNodeData),
+            id: node.id,
+            nodeType: (node.nodeType || node.type || 'folder') as NodeType,
+          };
+          props.onContextMenuAction(action, nodeData, options);
+        }
+      },
     };
   }, [props]);
 
@@ -204,6 +216,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           onDropToNode: props.onMoveNodes
             ? (targetId: string, draggedId: string) => props.onMoveNodes?.([draggedId], targetId)
             : undefined,
+          onContextAction: props.onBreadcrumbContextAction,
         };
         const renderDefault = () => <TreeConsoleBreadcrumb {...defaultRendererProps} />;
         if (props.breadcrumbRenderer) {

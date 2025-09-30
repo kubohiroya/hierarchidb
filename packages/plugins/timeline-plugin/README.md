@@ -33,8 +33,8 @@ Projects ツリーにおける「特殊なフォルダ」型ノードとして�
 ### 前提
 - 本リポの app を開発モードで起動します。
   - `pnpm -C app dev`
-- app 側では Worker が `@hierarchidb/plugins-timeline-plugin/worker` を遅延ロードするように設定済みです。
-  - app/src/worker.ts の `workerOverrides.timeline` を追加済み
+- app 側では `@hierarchidb/runtime-shared-module-paths.importPluginWorker('timeline')` を通じて `@hierarchidb/plugins-timeline-plugin/worker-factory` を遅延ロードします。
+  - app/src/worker-runtime/WorkerModuleLoader.ts で timeline の登録を確認してください
 - Projects の「作成」メニューに timeline/linker を表示する設定を追加済みです。
   - app/src/plugins/menu-spec.ts の projects.order に `timeline`, `linker` を追記
 
@@ -95,7 +95,7 @@ const frames = toFramesFromNodes(descendants);
   - `src/ui/utils/` … useFramePlayer / frames 整形ユーティリティ
   - `src/ui/TimelineDialog.tsx` … MUI Dialog ベースの簡易ウィザード
 - app への組込み
-  - Worker ローダ: `timeline: async () => import('@hierarchidb/plugins-timeline-plugin/worker')`
+  - Worker ローダ: `await import('@hierarchidb/runtime-shared-module-paths').then((m) => m.importPluginWorker('timeline'));`
   - 作成メニュー: `menu-spec.ts` に `timeline` を追加済み
 - アイコン
   - MUI: Timeline（@mui/icons-material/Timeline）

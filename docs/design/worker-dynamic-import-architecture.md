@@ -15,7 +15,7 @@
 
 ---
 
-## 2. 現状アーキテクチャの概観
+## 2. 現状アーキテクチャの概観（2025-09-30）
 
 ```mermaid
 flowchart LR
@@ -29,29 +29,28 @@ flowchart LR
         WDB[Dexie-based Entities DB]
     end
     subgraph Plugin Worker Entrypoints
-        PF[folder/worker/index]
-        PR[resolver/worker/index]
-        PS[styler/worker/index]
-        PSp[spreadsheet/worker/index]
+        PF[modulePaths.importPluginWorker('folder')]
+        PR[modulePaths.importPluginWorker('resolver')]
+        PS[modulePaths.importPluginWorker('styler')]
+        PSp[modulePaths.importPluginWorker('spreadsheet')]
     end
 
     A -->|static import| B
     C -->|dynamic import| B
     C -->|dynamic import| client.ts
     B -->|dynamic import| runtime-worker-bootstrap
-    PF -->|dynamic import| runtime-worker
-    PF -->|dynamic import| folderEntitiesDB
-    PF -->|static re-export| folderEntitiesDB
-    PR -->|dynamic import| runtime-worker
-    PR -->|static re-export| resolverEntitiesDB
-    PS -->|dynamic import| runtime-worker
-    PS -->|static re-export| stylerEntitiesDB
+    PF -->|modulePaths| runtime-worker
+    PF -->|modulePaths| folderEntitiesDB
+    PR -->|modulePaths| runtime-worker
+    PR -->|modulePaths| resolverEntitiesDB
+    PS -->|modulePaths| runtime-worker
+    PS -->|modulePaths| stylerEntitiesDB
     B -->|cached instance| W
     PF -->|register peer| W
 ```
 
-- 同一ファイル内で `export { X } from './X.js'` が存在するため静的 import が発生し、動的 import の効果 (chunk 分離) を損なっている。
-- WorkerProvider は同期 import に依存しており、React 初期レンダリング時点で `WorkerAPIClient` が評価される。
+- `@hierarchidb/runtime-shared-module-paths` が `importRuntimeWorker` / `importPluginWorker` を提供し、アプリ側が直接 `*/worker` サブパスへ触れずに済む構成へ移行済み。
+- WorkerProvider は `WorkerModuleLoader.ensureWorkerRuntime()` を通じて `WorkerBridge` へクライアント参照を提供し、初回は React Suspense / fallback で待ち合わせる。
 
 ---
 
@@ -73,8 +72,8 @@ flowchart TD
     App[Application entry (React)] --> Provider[WorkerRuntimeProvider]
     Provider --> ClientProxy[WorkerClientProxy]
     ClientProxy --> Loader[WorkerModuleLoader]
-    Loader -->|dynamic import| runtimeWorker[@hierarchidb/runtime-worker]
-    Loader -->|dynamic import| PluginRegistries
+    Loader -->|modulePaths.importRuntimeWorker()| runtimeWorker[@hierarchidb/runtime-worker]
+    Loader -->|modulePaths.importPluginWorker(id)| PluginRegistries
     Loader --> StateHub[WorkerStateStore]
 
     subgraph PluginRegistries
@@ -89,7 +88,7 @@ flowchart TD
 
 - **WorkerRuntimeProvider**: React Context Provider。初期レンダリングでは非同期初期化を `Suspense` + `fallback` で待機。
 - **WorkerClientProxy**: `getClient()` / `ensureInitialized()` などの非同期 API を提供し、クライアントコードは常に Promise を介してアクセスする。
-- **WorkerModuleLoader**: `import()` を集中管理。各プラグイン worker を登録する非同期処理もここで実行。
+- **WorkerModuleLoader**: `@hierarchidb/runtime-shared-module-paths` の `importRuntimeWorker` / `importPluginWorker` を仲介し、モジュールキャッシュとプラグイン登録の非同期処理を集約。
 - **WorkerStateStore**: 状態マシン (未初期化 → 初期化中 → 利用可能 → エラー) を管理する軽量なストア。2025-09-25 時点で `app/src/worker-runtime/WorkerStateStore.ts` として実装済みで、`WorkerClientProxy` / hooks から利用。
 
 ### 4.2 初期化シーケンス
@@ -104,14 +103,16 @@ sequenceDiagram
 
     UI->>Proxy: ensureInitialized()
     Proxy->>Loader: loadRuntime()
-    Loader->>Runtime: import('@hierarchidb/runtime-worker')
+    Loader->>Runtime: modulePaths.importRuntimeWorker()
     Runtime-->>Loader: storeRegistry, channel APIs
-    Loader->>Plugin: import('./worker/index.js') (各プラグイン)
+    Loader->>Plugin: modulePaths.importPluginWorker(pluginId)
     Plugin-->>Loader: registerPeer()
     Loader->>Proxy: resolve(clientRef)
     Proxy-->>UI: Promise resolved
     UI->>UI: render children with client context
 ```
+
+- `modulePaths` は `@hierarchidb/runtime-shared-module-paths` が提供するモジュール解決マニフェストを指す。
 
 ### 4.3 状態管理 (State Machine)
 
@@ -170,7 +171,7 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
   ```ts
   export async function registerStylerWorkerStores({ storeRegistry }: RegisterStylerWorkerStoresOptions = {}) {
     if (!storeRegistry || typeof indexedDB === 'undefined') return;
-    const { StylerEntitiesDB } = await import('../worker/stylerEntitiesDB.js');
+    const { StylerEntitiesDB } = await import('../worker/stylerEntitiesDB.js'); // plugin 内の相対参照（アプリ側には露出しない）
     const { createStylerPeerStoreDexie } = await import('../worker/stylerPeerStore.dexie.js');
     const db = new StylerEntitiesDB();
     await db.open?.();
@@ -179,10 +180,10 @@ export const WorkerRuntimeProvider: React.FC<{ children: ReactNode }> = ({ child
     }
   }
   ```
-- `WorkerModuleLoader` は上記ファクトリー関数を `await import('@hierarchidb/plugins-styler-plugin/worker-factory')` で取得し、実行時に呼び出す。
+- `WorkerModuleLoader` は上記ファクトリー関数を `modulePaths.importPluginWorker('styler')` で取得し、実行時に呼び出す。
 
 ### 6.2 型定義
-- `dist/worker/index.d.ts` は再エクスポートから関数エクスポートへ更新する必要がある。
+- `dist/worker/index.d.ts` は再エクスポートから関数エクスポートへ更新する必要がある（modulePaths からの import を前提とした公開面に揃える）。
 - `PeerStore` や `EntitiesDB` を直接 import するテストは、必要に応じて `load...` ファクトリー内部で `return { StylerEntitiesDB }` のように公開する。
 
 ---
@@ -229,7 +230,7 @@ sequenceDiagram
 
 2. **実装取得ラッパーと型の橋渡し**
    - `loadStylerWorkerPeer` などのファクトリー関数は戻り値の型を明示し、`import type` で静的な型定義を参照する。
-   - 例: `type StylerWorkerModule = typeof import('./worker-public-types.js');` のように型定義専用のモジュールを参照し、実装は `await import('./worker/index.js')` で取得する。
+- 例: `type StylerWorkerModule = typeof import('@hierarchidb/plugins-styler-plugin/worker-factory');` のように公開ファクトリを参照し、実装は `modulePaths.importPluginWorker('styler')` で取得する。
 
 3. **API Contract の分離**
    - ランタイム側に `worker-public-types.ts` (純粋に型のみを export) を新設し、`index.d.ts` から再エクスポートする。

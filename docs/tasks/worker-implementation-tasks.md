@@ -1728,18 +1728,18 @@ describe('WorkingCopyOperations', () => {
 **実装詳細**:
 ```typescript
 describe('Worker Integration Tests', () => {
-  let worker: Worker;
   let api: WorkerAPI;
   
   beforeAll(async () => {
-    worker = new Worker('./worker.ts');
-    api = Comlink.wrap<WorkerAPI>(worker);
-    await api.initialize();
+    // modulePaths と WorkerModuleLoader を経由し、アプリ本番と同一ルートで Worker を初期化する。
+    const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
+    await modulePaths.importRuntimeWorker();
+    const { ensureWorkerRuntime } = await import('../../app/src/worker-runtime/WorkerModuleLoader');
+    api = await ensureWorkerRuntime();
   });
   
   afterAll(async () => {
-    await api.dispose();
-    worker.terminate();
+    await api.dispose?.();
   });
   
   it('should handle complete workflow', async () => {

@@ -4,9 +4,6 @@ import styles from './SparkleAnimation.module.css';
 
 interface SparkleAnimationProps {
   showSparkle: boolean;
-  /**
-         * 5000ms5
-      */
   duration?: number;
 }
 

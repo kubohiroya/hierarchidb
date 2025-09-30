@@ -34,6 +34,11 @@ export function TreeTableContextMenu({
     onClose();
   };
 
+  const triggerContextAction = (action: string, options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'treetable' }) => {
+    if (!node) return;
+    controller?.onContextAction?.(action, node, options);
+  };
+
   return (
     <ContextMenuComponent
       anchorEl={contextMenuState.anchorEl}
@@ -47,37 +52,47 @@ export function TreeTableContextMenu({
       canEdit={!isRoot}
       canRemove={!isRoot}
       canDuplicate={!isRoot}
+      canCopy={!isRoot}
+      canCut={!isRoot}
       onCreate={(type: string) => {
         if (node) {
-          controller?.onCreate?.(node.id, type);
+          triggerContextAction(`create:${type}`, { expandTarget: true, source: 'treetable' });
         }
         handleClose();
       }}
       onEdit={() => {
-        if (node) {
-          if (node.depth === 0) {
-            handleClose();
-            return;
-          }
-          if (controller?.onEdit) {
-            controller.onEdit(node.id, node);
-          } else {
-            controller?.onNodeClick?.(node.id, node);
-          }
+        if (!node || isRoot) {
+          handleClose();
+          return;
         }
+        triggerContextAction('rename-dialog');
         handleClose();
       }}
       onDuplicate={() => {
-        if (node && node.depth !== 0) {
-          controller?.onDuplicate?.(node.id);
+        if (!node || isRoot) {
+          handleClose();
+          return;
         }
+        triggerContextAction('duplicate', { expandTarget: true, source: 'treetable' });
         handleClose();
       }}
       onRemove={() => {
-        if (node && node.depth !== 0) {
-          controller?.onRemove?.([node.id]);
+        if (!node || isRoot) {
+          handleClose();
+          return;
         }
+        triggerContextAction('remove', { navigateToParent: false, source: 'treetable' });
         handleClose();
+      }}
+      onCopy={() => {
+        if (node) {
+          triggerContextAction('copy', { source: 'treetable' });
+        }
+      }}
+      onCut={() => {
+        if (node) {
+          triggerContextAction('cut', { navigateToParent: true, source: 'treetable' });
+        }
       }}
       onOpen={() => {
         if (node) {

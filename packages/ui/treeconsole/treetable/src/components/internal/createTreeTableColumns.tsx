@@ -6,7 +6,7 @@ import {
 } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TreeNode, NodeId } from '@hierarchidb/common-type';
-import { rainbowColors } from '@hierarchidb/ui-core';
+import { rainbowColors, SparkleAnimation } from '@hierarchidb/ui-core';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
@@ -165,6 +165,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const isEditing = editingNodeId === node.id && editingField === 'name';
       const iconDepth = typeof reportedDepth === 'number' ? reportedDepth : depth + depthOffset;
       const iconColor = rainbowColors[Math.max(0, iconDepth) % rainbowColors.length];
+      const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
+      const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
 
       return (
         <NameCell>
@@ -362,6 +364,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 >
                   {node.name}
                 </Box>
+                <SparkleAnimation showSparkle={showSparkle} />
                 {Boolean(node.isDraft) && (
                   <Chip
                     label="Draft"

@@ -59,9 +59,9 @@ strict, packages interoperable, and builds reproducible.
 ## Public API Design
 
 - MUST: Export only stable, documented types from the root entry.
-- SHOULD: Use subpath exports (`./shared`, `./worker`, `./ui`) to gate unstable
-  areas. Unstable subpaths can be temporarily excluded from `exports` to keep
-  `d.ts` passing.
+- SHOULD: Gate不安定な領域は subpath exports（例: `./shared` や `./ui`）で管理しつつ、
+  Worker 系は `@hierarchidb/runtime-shared-module-paths` の `importRuntimeWorker()` / `importPluginWorker()`
+  を経由して公開する。直接 `*/worker` サブパスをアプリ側に露出しない。
 
 ## Temporary Workarounds Policy
 
@@ -93,4 +93,3 @@ strict, packages interoperable, and builds reproducible.
 - MUST: Mark Dexie as a `peerDependency` and add a matching `devDependency`.
 - MUST: Type Dexie usage (`Table<TEntity, EntityId>`, `Collection<TEntity,...>`)
   in handlers. No implicit `any`.
-

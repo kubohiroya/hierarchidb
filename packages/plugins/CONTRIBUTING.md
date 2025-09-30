@@ -123,14 +123,16 @@ The `@hierarchidb/plugins-shape-plugin` package now ships full ESM builds in `di
 - `dist/index.js` — main library entry (types: `dist/index.d.ts`)
 - `dist/shared/index.js` — shared types and helpers (types: `dist/shared/index.d.ts`)
 - `dist/ui/index.js` — UI exports (components, hooks) (types: `dist/ui/index.d.ts`)
-- `dist/worker/index.js` — worker-layer API (no .d.ts yet)
+- `dist/worker/index.js` — legacy worker entry（互換用）
+- `dist/worker-factory/index.js` — modulePaths 経由で解決される Worker ファクトリ API
 - `dist/workers/*.js` — dedicated Worker entry points (Download/Simplify1/Simplify2/VectorTile)
 
 Consumers should import as follows:
 
 - App (main thread): `import { ... } from '@hierarchidb/plugins-shape-plugin'`
 - UI: `import { ... } from '@hierarchidb/plugins-shape-plugin/ui'`
-- Workers (new URL): `new Worker(new URL('@hierarchidb/plugins-shape-plugin/workers/DownloadWorker', import.meta.url), { type: 'module' })`
+- Worker preload: `await import('@hierarchidb/runtime-shared-module-paths').then((m) => m.importPluginWorker('shape'))`
+- Worker factories: `import('@hierarchidb/plugins-shape-plugin/worker-factory')`
 
 Notes:
 
@@ -138,7 +140,7 @@ Notes:
   `import { registerWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap'`
   and `registerWorkerClientHook(useWorkerAPIClient)` at startup.
 - The app should reference `@hierarchidb/plugins-shape-plugin` entries via dist (avoid src deep imports).
-- `exports` in package.json are configured accordingly; TS type resolution points to `dist/*.d.ts`.
+- `exports` in package.json are configured accordingly; TS type resolution points to `dist/*.d.ts`。Worker 互換が必要な場合は `./worker` を、既定経路は `./worker-factory` を活用する。
 
 ### DTS policy
 

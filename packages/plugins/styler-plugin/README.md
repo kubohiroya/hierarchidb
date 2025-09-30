@@ -38,7 +38,7 @@ The Styler Plugin provides comprehensive data styling capabilities including:
 pnpm add @hierarchidb/plugin-styler-plugin
 
 # Peer dependencies
-pnpm add @hierarchidb/core @hierarchidb/worker @hierarchidb/ui-core
+pnpm add @hierarchidb/core @hierarchidb/runtime-worker @hierarchidb/ui-core
 ```
 
 ## Quick Start

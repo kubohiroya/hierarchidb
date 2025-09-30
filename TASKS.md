@@ -114,6 +114,24 @@
     - progress: 2025-09-30 20:36 peerDialogPersistence の dev フォールバック（`@hierarchidb/plugins-*/worker` 直接 import）を撤去し、worker-factory 依存のみで EntitiesDB を解決する構成に統一
     - progress: 2025-09-30 20:42 `useWorkerAPI` を WorkerClientHook ベースに置き換え、専用 Worker を生成する旧ロジックを廃止（`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {lint,typecheck}` を実行し成功）
 
+- fix/ui-map/default-identify-snackbar（MapLibreMap の identifyFeatureOnClick を既定で有効化）
+  - ブランチ: `fix/ui-map/default-identify-snackbar`（sandbox 権限制約によりローカル作成保留）
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `packages/ui/map/src/components/MapLibreMap.tsx` にデフォルト onIdentify を実装し、MUI Snackbar でフィーチャーID配列を表示する
+    - [x] `packages/ui/map/src/types/unified-map-props.ts` に Snackbar 無効化オプションを追加して制御できるようにする
+    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` が成功
+  - ロールバック: `MapLibreMap.tsx` / `unified-map-props.ts` を差分前へ戻し、`pnpm --filter @hierarchidb/ui-map typecheck` を再実行
+
+- fix/ui-treeconsole/recent-update-sparkle（TreeTable の更新直後ノードに Sparkle 表示）
+  - ブランチ: `fix/ui-treeconsole/recent-update-sparkle`（sandbox 権限制約によりローカル作成保留）
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/ui-core` で `SparkleAnimation` を公開エクスポートする
+    - [x] TreeTable Name セルで SparkleAnimation を読み込み、`updatedAt` が現在時刻から5秒以内のノードに自動表示する
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功
+  - ロールバック: Sparkle 表示差分および `@hierarchidb/ui-core` のエクスポート差分を元に戻し、typecheck を再実行
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -1978,6 +1996,7 @@ P2:
     - progress: 2025-09-30 18:51 `pnpm as-any:report` を再実行し、対象ファイルの `as any` が 0 件になったことを確認（全体件数は 4 件、location BatchProgressDialog 既知箇所）
     - progress: 2025-09-30 18:52 `pnpm -C app typecheck` / `pnpm --filter @hierarchidb/plugins-{basemap,shape,linker}-plugin typecheck` が成功したことを記録
     - progress: 2025-09-30 19:00 BatchProgressDialog の meta/translation 型を整備し、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` を再実行して成功（残 `as any` も 0 件）
+    - progress: 2025-09-30 19:40 TreeConsole のコンテキストメニュー（パンくず・名前セル）を Worker API に結線し、単一ノード操作（copy/cut/duplicate/trash）を実装。`pnpm -C app typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-{breadcrumb,treetable,base} typecheck` を実行し成功
 
   - feat/ui-dialog/dialog-surface-contrast — ダイアログ背景の明度調整で Trash/Plugin ダイアログを共通スタイル化
   - ブランチ: `feat/ui-dialog/dialog-surface-contrast`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -4539,6 +4558,9 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-30 21:05 progress: feat/plugins/worker-factory-rollout — `WorkerModuleLoader` のコメントと `docs/design/worker-dynamic-import-architecture.md` / `docs/requirements/dynamic-import-unification.md` を最新の modulePaths ベース構成へ更新し、旧 `*/worker` 言及を整理（ドキュメントのみ変更のためコマンド実行なし）。
+- 2025-09-30 21:28 progress: feat/plugins/worker-factory-rollout — `docs/architecture/worker-initialization-analysis.md` / `docs/developer-guidelines.md` / `docs/design/plugin-shapes/implementation-design.md` / `docs/tasks/worker-implementation-tasks.md` を棚卸しし、`*/worker` 直参照の説明を modulePaths / WorkerBridge 前提に差し替え（ドキュメント更新のみ）。
+- 2025-09-30 21:46 progress: feat/plugins/worker-factory-rollout — `app/docs/16-plugin-dev-with-registry.md`, `packages/plugins/README.md`, `packages/plugins/CONTRIBUTING.md`, `packages/plugins/timeline-plugin/README.md`, `packages/runtime/worker-bootstrap/README.md`, `packages/plugins/resolver-plugin/README.md`, `packages/plugins/styler-plugin/README.md` を更新し、最新の worker-factory / WorkerModuleLoader 運用に沿うよう記述を改訂（コード変更なし）。
 - 2025-09-30 20:15 start: feat/plugins/worker-factory-rollout — Phase 2b 展開タスクに着手。対象プラグインと ESLint ルール適用範囲を棚卸しし、必要な codemod/検証コマンドを整理。
 - 2025-09-30 20:05 done: chore/tasks/kanban-refresh — Kanban の Doing を空にし、完了済みタスク（SpeedDial icon, ambient sideEffects, WorkerBridge, Basemap build-types, dialog extensions, worker-factory-pilot）の Done 反映とログ整備を実施。
 - 2025-09-30 20:12 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行しグリーンを確認（Pause/Resume UI DoD を満たしたため checklist 更新）。
@@ -4553,6 +4575,9 @@ P2:
 - 2025-09-30 17:30 start: fix/ui-map/default-identify-snackbar — MapLibreMap のクリック識別を既定ONにする要件を確認。デフォルト onIdentify で Snackbar を表示し、無効化用フラグの追加方針を決定。
 - 2025-09-30 17:48 progress: fix/ui-map/default-identify-snackbar — `MapLibreMap.tsx` に MUI Snackbar を実装し、identifyFeatureOnClick 未指定時でもフィーチャーID配列を表示する既定 onIdentify を追加。`disableDefaultSnackbar` オプションで抑止可能にした。
 - 2025-09-30 17:52 progress: fix/ui-map/default-identify-snackbar — `pnpm --filter @hierarchidb/ui-map typecheck` を実行しグリーン。ロールバック手順（差分前へ戻し、typecheck 再実行）を TASKS.md に追記。
+- 2025-09-30 18:05 start: fix/ui-treeconsole/recent-update-sparkle — SparkleAnimation の公開方法を確認し、TreeTable Name セル右脇へ配置する設計を決定。`updatedAt` が 5 秒以内の場合に表示する要件を整理。
+- 2025-09-30 18:22 progress: fix/ui-treeconsole/recent-update-sparkle — `@hierarchidb/ui-core` に `SparkleAnimation` の公開エクスポートを追加し、TreeTable Name セルに `SparkleAnimation` を組み込んで `updatedAt` 判定（5秒以内）で表示するよう実装。
+- 2025-09-30 18:28 progress: fix/ui-treeconsole/recent-update-sparkle — `pnpm --filter @hierarchidb/ui-core build` と `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` を実行し、いずれもグリーン。ロールバック手順（差分前へ戻し、同コマンド再実行）を記録。
 - 2025-09-30 15:12 progress: feat/app/ui-code-split — `scripts/generate-plugin-loader.mjs`/`app/src/root.tsx` を動的 import 仕様へ更新し、TreeConsole/Map ルートを `React.lazy` 化。`pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` がグリーン。
 - 2025-09-30 16:05 progress: feat/app/ui-code-split — Basemap/Linker/Shape のマッププレビューを `React.lazy` + `Suspense` で実装し、`@hierarchidb/ui-map` に `loadMapLibreMap/loadMapWithVectorTiles` を追加。MapLibre/Deck.gl のチャンク分離を確認済み (`pnpm --filter @hierarchidb/ui-map typecheck`, 各プラグイン typecheck, `pnpm -C app build:vite`).
 - 2025-09-30 15:42 progress: feat/app/ui-code-split — `packages/ui/map/src/components/MapWithDeckGL.tsx` を Deck.gl 動的 import 対応に改修し、`loadMapWithDeckGL` を追加。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm -C app build:vite` を再実行しグリーン。

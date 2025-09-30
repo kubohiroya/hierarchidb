@@ -58,6 +58,28 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     setupSubscription,
   } = deps;
 
+  const applyClipboard = (ids: NodeId[], cut: boolean) => {
+    const clip = ensureClipboard();
+    clip.nodeIds = [...ids];
+    if (cut) {
+      clip.cut = true;
+    } else {
+      delete clip.cut;
+    }
+    const canPaste = ids.length > 0;
+    setState((prev) => ({ ...prev, canPaste }));
+    setSSOT({ canPaste });
+  };
+
+  const navigateTo = (targetId: NodeId | null | undefined) => {
+    if (!pushPath || !treeId) return;
+    if (!targetId) {
+      pushPath(`/t/${treeId}`);
+    } else {
+      pushPath(`/t/${treeId}/${targetId}`);
+    }
+  };
+
   return {
     handleNodeClick: (node: TreeNodeData) => {
       const targetId = node.id as NodeId;
@@ -290,38 +312,73 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       if (pushPath) pushPath(1);
     },
 
-    handleContextMenuAction: async (action, node) => {
+    handleContextMenuAction: async (action, node, options = {}) => {
       const actionStr = action as ContextAction;
       console.log('Context menu action:', actionStr, 'for node:', node);
 
+      const targetNodeId = node.id as NodeId;
+      const parentId = (node.parentId as NodeId | undefined) ?? (pageNodeId as NodeId | undefined);
+
+      const refreshParent = async (id: NodeId | undefined) => {
+        if (!id) return;
+        await loadChildrenOf(id);
+      };
+
       if (actionStr.startsWith('create:')) {
-        const nodeType = actionStr.replace('create:', '') as string as NodeType;
+        if (!client || !treeId) return;
+        const source = options.source ?? 'speedDial';
+        const newType = actionStr.replace('create:', '') as NodeType;
         try {
-          if (client && pageNodeId && treeId) {
-            const displayName = nodeType.charAt(0).toUpperCase() + nodeType.slice(1);
-            const mutationAPI = await client.getMutationAPI();
-              const res = await mutationAPI.createNode({
-                nodeType,
-                treeId: treeId as TreeId,
-              parentId: pageNodeId as NodeId,
-              name: `New ${displayName}`,
-            });
-            if (!res?.success) {
-              const err = (res as unknown as { error?: string })?.error;
-              showCommandError('INVALID_OPERATION', err || 'Create failed');
-              return;
-            }
-            const wcNodeId = res.nodeId as NodeId;
-            fireCmdEvent();
+          const mutationAPI = await client.getMutationAPI();
+          const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
+          const res = await mutationAPI.createNode({
+            nodeType: newType,
+            treeId: treeId as TreeId,
+            parentId: targetNodeId,
+            name: `New ${displayName}`,
+          });
+          if (!res?.success) {
+            const err = (res as unknown as { error?: string })?.error;
+            showCommandError('INVALID_OPERATION', err || 'Create failed');
+            return;
+          }
+          const wcNodeId = res.nodeId as NodeId;
+          fireCmdEvent();
+
+          if (source === 'breadcrumb') {
+            await refreshParent(targetNodeId);
             if (pushPath) {
-              const nodeTypePath = String(nodeType);
-              pushPath(`/t/${treeId}/${pageNodeId}/${wcNodeId}/${nodeTypePath}/create`);
+              navigateTo(targetNodeId);
             }
-          } else {
-            showCommandError('INVALID_OPERATION', 'Worker client or page context unavailable');
+            return;
+          }
+
+          if (source === 'treetable') {
+            const expanded = new Set<NodeId>((ssot.expandedIds as NodeId[]) ?? []);
+            if (!expanded.has(targetNodeId)) {
+              expanded.add(targetNodeId);
+              setSSOT({ expandedIds: Array.from(expanded) });
+            }
+            const selected = new Set<NodeId>((ssot.selectedIds as NodeId[]) ?? []);
+            selected.clear();
+            selected.add(wcNodeId);
+            setSSOT({ selectedIds: Array.from(selected) });
+
+            setTimeout(() => {
+              void refreshParent(targetNodeId);
+            }, 0);
+            await refreshUndoRedo();
+            return;
+          }
+
+          // default (speed dial etc.)
+          await refreshParent(targetNodeId);
+          if (pushPath) {
+            const nodeTypePath = String(newType);
+            pushPath(`/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`);
           }
         } catch (error) {
-          console.error('Error creating node:', error);
+          console.error('Context create failed:', error);
           showCommandError('UNKNOWN_ERROR');
         }
         return;
@@ -341,8 +398,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
           }
-          const parent = pageNodeId as NodeId;
-          await loadChildrenOf(parent);
+          await refreshParent(parentId ?? pageNodeId as NodeId);
           await refreshUndoRedo();
           fireCmdEvent();
         } catch (error) {
@@ -364,14 +420,100 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
           }
-          const parent = pageNodeId as NodeId;
-          await loadChildrenOf(parent);
+          await refreshParent(parentId ?? pageNodeId as NodeId);
           await refreshUndoRedo();
           fireCmdEvent();
         } catch (error) {
           console.error('Inline description update failed:', error);
           showCommandError('UNKNOWN_ERROR');
         }
+        return;
+      }
+
+      if (action === 'rename-dialog') {
+        if (!client || !node?.id) return;
+        const currentName = node.name ?? '';
+        const nextName = prompt('Enter new name', currentName)?.trim();
+        if (!nextName || nextName === currentName) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.updateNode({ nodeId: targetNodeId, name: nextName });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+            return;
+          }
+          await refreshParent(parentId ?? pageNodeId as NodeId);
+          await refreshUndoRedo();
+          fireCmdEvent();
+        } catch (error) {
+          console.error('Rename dialog failed:', error);
+          showCommandError('UNKNOWN_ERROR');
+        }
+        return;
+      }
+
+      if (action === 'copy') {
+        applyClipboard([targetNodeId], false);
+        return;
+      }
+
+      if (action === 'cut') {
+        applyClipboard([targetNodeId], true);
+        if (options.navigateToParent) {
+          navigateTo(parentId ?? null);
+        }
+        return;
+      }
+
+      if (action === 'duplicate') {
+        if (!client) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const toParentId = parentId ?? pageNodeId;
+          const res = await mutationAPI.duplicateNodes({ nodeIds: [targetNodeId], toParentId: toParentId as NodeId });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Duplicate failed');
+            return;
+          }
+          await refreshParent(toParentId as NodeId);
+          await refreshUndoRedo();
+          fireCmdEvent();
+        } catch (error) {
+          console.error('Duplicate failed:', error);
+          showCommandError('UNKNOWN_ERROR');
+        }
+        return;
+      }
+
+      if (action === 'remove') {
+        if (!client) return;
+        try {
+          const scopeParent = parentId ?? pageNodeId;
+          if (scopeParent) await teardownSubscription(scopeParent);
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.moveNodesToTrash([targetNodeId]);
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
+            return;
+          }
+          if (scopeParent) {
+            await loadChildrenOf(scopeParent);
+            await setupSubscription(scopeParent);
+          }
+          setSSOT({ selectedIds: (selectedIds || []).filter((id) => id !== targetNodeId) });
+          fireCmdEvent();
+          if (options.navigateToParent) {
+            navigateTo(scopeParent ?? null);
+          }
+        } catch (error) {
+          console.error('Remove failed:', error);
+          showCommandError('UNKNOWN_ERROR');
+        }
+        return;
+      }
+
+      if (action === 'navigate') {
+        navigateTo(targetNodeId);
         return;
       }
 
@@ -417,19 +559,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     },
 
     handleCopy: () => {
-      const clip = ensureClipboard();
-      clip.nodeIds = [...selectedIds];
-      delete clip.cut;
-      setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
-      setSSOT({ canPaste: selectedIds.length > 0 });
+      applyClipboard(selectedIds as NodeId[], false);
     },
 
     handleCut: () => {
-      const clip = ensureClipboard();
-      clip.nodeIds = [...selectedIds];
-      clip.cut = true;
-      setState((prev) => ({ ...prev, canPaste: selectedIds.length > 0 }));
-      setSSOT({ canPaste: selectedIds.length > 0 });
+      applyClipboard(selectedIds as NodeId[], true);
     },
 
     handlePaste: async () => {

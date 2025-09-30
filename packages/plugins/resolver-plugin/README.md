@@ -278,11 +278,18 @@ class ChainCompiler {
   private compileParallel(chain: ResolverChain): CompiledChain {
     return {
       execute: async (data) => {
-        const workers = chain.resolvers.map(r => 
-          new Worker(`resolver-${r.resolverId}.js`)
-        );
+        const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
+        await modulePaths.importPluginWorker('resolver');
+        const { getWorkerBridge } = await import('@hierarchidb/runtime-ui-plugin-dialog');
+        const bridge = getWorkerBridge();
+        await bridge.initialize();
+
         const results = await Promise.all(
-          workers.map(w => w.process(data))
+          chain.resolvers.map((resolver) =>
+            bridge.startBatchSession('resolver', resolver.resolverId).then(() =>
+              bridge.getBatchSessionStatus('resolver', resolver.resolverId)
+            )
+          )
         );
         return this.mergeResults(results, chain.conflictResolution);
       }

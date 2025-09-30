@@ -42,6 +42,12 @@ yarn add @hierarchidb/runtime-worker-init-notifier
 
 ## 🚀 Quick Start
 
+> **HierarchiDB integration note**: 本モノレポでは `app/src/worker-runtime/WorkerModuleLoader.ts`
+> と `@hierarchidb/runtime-shared-module-paths` が Worker の生成と初期化を統括します。
+> 以下のサンプルはスタンドアロン環境向けの参考実装です。HierarchiDB では
+> `WorkerModuleLoader.ensureWorkerRuntime()` と `WorkerInitializationChannel`
+> を組み合わせて利用してください。
+
 ### Basic Usage (Vanilla JavaScript)
 
 #### Worker Side
@@ -81,28 +87,31 @@ try {
 
 #### UI Side
 ```typescript
-// main.ts
+// main.ts (HierarchiDB での利用例)
 import { WorkerInitializationChannel } from '@hierarchidb/runtime-worker-init-notifier';
+import { ensureWorkerRuntime, getWorkerRuntimePromise } from '../app/src/worker-runtime/WorkerModuleLoader';
+import { loadWorkerAPIClientModule } from '../app/src/worker-runtime/workerApiClientLoader';
 
-// Create worker
-const worker = new Worker('./worker.js', { type: 'module' });
+// Ensure the runtime is booted (spawns the shared worker via WorkerModuleLoader)
+await ensureWorkerRuntime();
+
+const { WorkerAPIClient } = await loadWorkerAPIClientModule();
+const rawWorker = WorkerAPIClient.getRawWorkerInstance();
 
 // Create initialization channel
 const channel = new WorkerInitializationChannel();
 
 // Wait for worker to be ready
 const result = await channel.waitForInitialization({
-  worker: worker,
-  timeout: 10000, // 10 second timeout
-  debug: true     // Enable debug logging
+  worker: rawWorker,
+  timeout: 10000,
+  debug: true,
 });
 
 if (result.success) {
   console.log(`Worker ready in ${result.duration}ms`);
-  
-  // Now safe to wrap with Comlink
-  const api = Comlink.wrap(worker);
-  // Use your API...
+  const api = await getWorkerRuntimePromise();
+  // Use your API via Comlink proxy…
 } else {
   console.error('Worker initialization failed:', result.error);
 }
@@ -216,25 +225,27 @@ reporter.reportComplete();
 ### Error Recovery
 
 ```typescript
-// UI side with retry logic
+// UI side with retry logic (HierarchiDB integration)
 const channel = new WorkerInitializationChannel();
+const { WorkerAPIClient } = await loadWorkerAPIClientModule();
 let retries = 3;
 
 while (retries > 0) {
+  const rawWorker = WorkerAPIClient.getRawWorkerInstance();
   const result = await channel.waitForInitialization({
-    worker: worker,
-    timeout: 10000
+    worker: rawWorker,
+    timeout: 10000,
   });
-  
+
   if (result.success) {
     break;
   }
-  
+
   retries--;
   if (retries > 0) {
-    console.log(`Retrying... (${retries} attempts left)`);
-    // Recreate worker for retry
-    worker = new Worker('./worker.js', { type: 'module' });
+    console.warn(`Retrying worker init… (${retries} attempts left)`);
+    WorkerAPIClient.reset();
+    await ensureWorkerRuntime();
   }
 }
 ```
@@ -257,11 +268,13 @@ The package uses a simple, robust message protocol:
 ```mermaid
 sequenceDiagram
     participant UI as UI Thread
+    participant Loader as WorkerModuleLoader
     participant Channel as Init Channel
     participant Worker as Worker Thread
     participant Reporter as Init Reporter
     
-    UI->>Worker: new Worker()
+    UI->>Loader: ensureWorkerRuntime()
+    Loader->>Worker: spawn / reuse shared worker
     Worker->>Reporter: new WorkerInitializationReporter()
     UI->>Channel: waitForInitialization()
     Channel->>Worker: INIT_REQUEST

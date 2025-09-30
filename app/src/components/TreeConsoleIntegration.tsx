@@ -17,6 +17,7 @@ import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
 import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
 import type { SubscriptionCallback } from '~/subscriptions/controller.js';
@@ -388,6 +389,31 @@ const TreeConsoleIntegrationInner: React.FC<
     [pageNodeId, workerClient, treeId, actions, navigate],
   );
 
+  const handleContextMenuAction = useCallback(
+    (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => {
+      actions.handleContextMenuAction(action, node, options);
+    },
+    [actions],
+  );
+
+  const handleBreadcrumbContextAction = useCallback(
+    (action: string, breadcrumbNode: { id?: string; treeNodeId?: string; parentId?: string | null; nodeType?: string; type?: string; name?: string; depth?: number }, options?: { navigateToParent?: boolean }) => {
+      const rawId = breadcrumbNode.id ?? breadcrumbNode.treeNodeId;
+      if (!rawId) return;
+      const parentFallback = breadcrumbNode.parentId ?? (pageNodeId ? String(pageNodeId) : treeId ? `${treeId}:root` : null);
+      const nodeData: TreeNodeData = {
+        id: rawId as NodeId,
+        nodeType: (breadcrumbNode.nodeType ?? breadcrumbNode.type ?? 'folder') as NodeType,
+        name: breadcrumbNode.name ?? '',
+        parentId: parentFallback ? (parentFallback as NodeId) : (pageNodeId as NodeId | undefined),
+        depth: breadcrumbNode.depth ?? 1,
+      } as TreeNodeData;
+
+      actions.handleContextMenuAction(action, nodeData, options);
+    },
+    [actions, pageNodeId, treeId],
+  );
+
   // Handler for starting guided tour
   const handleStartTour = useCallback(() => {
     setTourRun(true);
@@ -495,6 +521,7 @@ const TreeConsoleIntegrationInner: React.FC<
         onStartTour={handleStartTour}
         title={`Tree: ${pageTreeNode?.name || 'Root'}`}
         pageNodeId={pageNodeId}
+        pageTreeNode={pageTreeNode}
         data={[...treeData]}
         columns={columns}
         breadcrumbItems={breadcrumbItems}
@@ -533,7 +560,8 @@ const TreeConsoleIntegrationInner: React.FC<
         onNavigateForward={actions.handleNavigateForward}
         canGoBack={state.canGoBack}
         canGoForward={state.canGoForward}
-        onContextMenuAction={actions.handleContextMenuAction}
+        onContextMenuAction={handleContextMenuAction}
+        onBreadcrumbContextAction={handleBreadcrumbContextAction}
         onMoveNodes={actions.handleMoveNodes}
         useTrashColumns={isTrashPage}
       />
