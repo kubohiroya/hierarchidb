@@ -111,17 +111,6 @@ export async function initializeStylerPlugin(context: {
       dataService,
     });
 
-    // Optionally register dialog extension for evaluator/steps (if host uses folder Extensible dialog)
-    // This is a no-op if the host does not consume dialog extensions.
-    try {
-      const { stylerDialogExtension } = await import('./extensions/StylerDialogExtension.js');
-      // Defer initialization; host may call separately depending on lifecycle.
-      // await stylerDialogExtension.initialize();
-      void stylerDialogExtension; // keep import live without side effects
-    } catch {
-      // ignore (folder extension optional)
-    }
-
     console.log('[Styler] Plugin initialized successfully');
 
     return {

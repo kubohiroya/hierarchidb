@@ -4,14 +4,29 @@
  * - Steps themselves may be provided by host; evaluator aligns by stepNumber [2,3,4].
  */
 
-import { BaseFolderPlugin } from '@hierarchidb/plugins-folder-plugin';
+import type { PeerEntity } from '@hierarchidb/common-type';
+import { NodeDialogPlugin } from '@hierarchidb/plugins-base-plugin';
 
 function isValidUrl(u: string | undefined): boolean {
   if (!u) return false;
   try { new URL(u); return true; } catch { return false; }
 }
 
-export class BaseMapDialogExtension extends BaseFolderPlugin {
+type BaseMapDialogPeer = PeerEntity<Record<string, unknown>>;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const toDialogRecord = (value: BaseMapDialogPeer): Record<string, unknown> => (
+  isRecord(value) ? value : {}
+);
+
+const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] => (
+  stepNumbers && stepNumbers.length > 0
+    ? Array.from(stepNumbers)
+    : [2, 3, 4]
+);
+
+export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> {
   readonly pluginId = 'basemap-plugin-dialog-extension';
   readonly pluginName = 'BaseMap Dialog Extension';
   readonly pluginDescription = 'Adds BaseMap step evaluators to plugin dialogs';
@@ -19,17 +34,17 @@ export class BaseMapDialogExtension extends BaseFolderPlugin {
 
   protected getStepStateEvaluator() {
     return {
-      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
-        return nums.map((n) => {
+      getValidatedSteps: (data: BaseMapDialogPeer, stepNumbers?: ReadonlyArray<number>) => {
+        const dialogData = toDialogRecord(data) as any;
+        return resolveStepNumbers(stepNumbers).map((n) => {
           if (n === 2) {
-            const style = data?.mapStyle?.style;
+            const style = dialogData?.mapStyle?.style;
             if (!style) return false;
-            if (style === 'custom') return isValidUrl(data?.mapStyle?.customStyleUrl);
+            if (style === 'custom') return isValidUrl(dialogData?.mapStyle?.customStyleUrl);
             return true;
           }
           if (n === 3) {
-            const vp = data?.viewport;
+            const vp = dialogData?.viewport;
             if (!vp) return false;
             const [lng, lat] = vp.center || [];
             const zoom = vp.zoom;
@@ -44,18 +59,18 @@ export class BaseMapDialogExtension extends BaseFolderPlugin {
           return true;
         });
       },
-      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
+      getEnabledSteps: (data: BaseMapDialogPeer, stepNumbers?: ReadonlyArray<number>) => {
+        const dialogData = toDialogRecord(data) as any;
         // sequential gating: 2 -> 3 -> 4
         const filled = new Map<number, boolean>();
         const ok2 = (() => {
-          const style = data?.mapStyle?.style;
+          const style = dialogData?.mapStyle?.style;
           if (!style) return false;
-          if (style === 'custom') return isValidUrl(data?.mapStyle?.customStyleUrl);
+          if (style === 'custom') return isValidUrl(dialogData?.mapStyle?.customStyleUrl);
           return true;
         })();
         const ok3 = (() => {
-          const vp = data?.viewport;
+          const vp = dialogData?.viewport;
           if (!vp) return false;
           const [lng, lat] = vp.center || [];
           const zoom = vp.zoom;
@@ -65,7 +80,7 @@ export class BaseMapDialogExtension extends BaseFolderPlugin {
         })();
         filled.set(2, ok2);
         filled.set(3, ok3);
-        return nums.map((n) => {
+        return resolveStepNumbers(stepNumbers).map((n) => {
           if (n === 2) return true;
           if (n === 3) return filled.get(2) === true;
           if (n === 4) return filled.get(3) === true;
@@ -76,13 +91,14 @@ export class BaseMapDialogExtension extends BaseFolderPlugin {
   }
 
   protected getSubmitEligibility() {
-    return (data: any) => {
+    return (data: BaseMapDialogPeer) => {
+      const dialogData = toDialogRecord(data) as any;
       // Require style step and viewport step to be valid
-      const style = data?.mapStyle?.style;
+      const style = dialogData?.mapStyle?.style;
       if (!style) return false;
-      if (style === 'custom' && !isValidUrl(data?.mapStyle?.customStyleUrl)) return false;
+      if (style === 'custom' && !isValidUrl(dialogData?.mapStyle?.customStyleUrl)) return false;
 
-      const vp = data?.viewport;
+      const vp = dialogData?.viewport;
       if (!vp) return false;
       const [lng, lat] = vp.center || [];
       const zoom = vp.zoom;
@@ -95,4 +111,6 @@ export class BaseMapDialogExtension extends BaseFolderPlugin {
 }
 
 export const baseMapDialogExtension = new BaseMapDialogExtension();
-export async function initializeBaseMapDialogExtension() { await baseMapDialogExtension.initialize(); }
+export async function initializeBaseMapDialogExtension(): Promise<void> {
+  await baseMapDialogExtension.initialize();
+}

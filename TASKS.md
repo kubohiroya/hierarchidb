@@ -124,6 +124,23 @@
     - start: 2025-09-30 11:20 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` 失敗（BaseFolderPlugin 未公開 & initialize 未解決）への対応を着手
     - done: 2025-09-30 11:32 `pnpm --filter @hierarchidb/plugins-basemap-plugin build:types` を再実行し成功（BaseFolderPlugin エクスポート追加で解消）
 
+- refactor/plugins/dialog-extensions-base — フォルダ系プラグイン拡張を base-plugin 継承へ移行
+  - ブランチ: `refactor/plugins/dialog-extensions-base`（サンドボックス制約のためローカルでは `main` 上で作業）
+  - 依存: `@hierarchidb/plugins-base-plugin`, `@hierarchidb/plugins-{basemap,shape,styler}-plugin`, `@hierarchidb/plugins-folder-plugin`（後方互換確認）
+  - 受け入れ基準（DoD）：
+    - [ ] `@hierarchidb/plugins-basemap-plugin` / `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/plugins-styler-plugin` から `BaseFolderPlugin` 継承が削除され、`@hierarchidb/plugins-base-plugin` ベースの実装に統一
+    - [ ] `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck`・`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` が成功
+    - [ ] dialog 拡張の互換初期化 API（`initialize*DialogExtension`）が必要箇所で引き続き利用可能であることを確認
+  - チェックリスト：
+    - [ ] Basemap Dialog Extension を `NodeDialogPlugin` ベースへ移行し、ステップ評価ロジックを更新
+    - [ ] Shape Dialog Extension を `NodeDialogPlugin` ベースへ移行し、依存コンポーネントを base-plugin 経由に整理
+    - [ ] Styler 拡張のレガシー `BaseFolderPlugin` 依存コードを撤去し、新しい定義/ハンドラ構成と重複しないよう整理
+    - [ ] `TASKS.md` 運用ログにコマンド実行結果と検証状況を記録
+  - ロールバック手順：
+    - 対象プラグインの拡張差分をすべて `git restore` し、`BaseFolderPlugin` 継承が必要だったバージョンに戻した上で `pnpm --filter ... typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-30 13:45 BaseFolderPlugin 依存を除去するリファクタリングに着手（影響範囲棚卸しと実装方針確認）
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。

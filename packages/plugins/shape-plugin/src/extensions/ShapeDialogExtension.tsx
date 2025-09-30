@@ -3,8 +3,8 @@
  * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
-import { BaseFolderPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-folder-plugin';
-import type { DialogStepDefinition } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, PeerEntity } from '@hierarchidb/common-type';
+import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
 
 // Reuse existing step components from the Shape plugin
 import { DataSourceStep } from '../extension/components/DataSourceStep.js';
@@ -12,7 +12,33 @@ import { LicenseStep } from '../extension/components/LicenseStep.js';
 import { ProcessingStep } from '../extension/components/ProcessingStep.js';
 import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
 
-export class ShapeDialogExtension extends BaseFolderPlugin {
+type ShapeDialogPeer = PeerEntity<Record<string, unknown>>;
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+const toDialogRecord = (value: ShapeDialogPeer): Record<string, unknown> => (
+  isRecord(value) ? value : {}
+);
+
+const asNumberArray = (values: unknown): number[] => (
+  Array.isArray(values)
+    ? values.filter((v): v is number => typeof v === 'number')
+    : []
+);
+
+const asStringArray = (values: unknown): string[] => (
+  Array.isArray(values)
+    ? values.filter((v): v is string => typeof v === 'string')
+    : []
+);
+
+const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined, fallback: number[]): number[] => (
+  stepNumbers && stepNumbers.length > 0
+    ? Array.from(stepNumbers)
+    : fallback
+);
+
+export class ShapeDialogExtension extends NodeDialogPlugin<ShapeDialogPeer> {
   readonly pluginId = 'shape-plugin-dialog-extension';
   readonly pluginName = 'Shape Dialog Extension';
   readonly pluginDescription = 'Adds shape-related dialog steps for the Shape plugin';
@@ -78,53 +104,53 @@ export class ShapeDialogExtension extends BaseFolderPlugin {
 
   protected getStepStateEvaluator() {
     return {
-      getValidatedSteps: (data: any, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
-        return nums.map((n) => {
+      getValidatedSteps: (data: ShapeDialogPeer, stepNumbers?: ReadonlyArray<number>) => {
+        const dialogData = toDialogRecord(data) as any;
+        return resolveStepNumbers(stepNumbers, [2, 3, 4, 5]).map((n) => {
           switch (n) {
             case 2:
-              return !!data?.dataSourceName;
+              return !!dialogData?.dataSourceName;
             case 3:
-              return data?.licenseAgreement === true;
+              return dialogData?.licenseAgreement === true;
             case 4: {
-              const levels: number[] | undefined = data?.selectedAdminLevels;
-              return Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
+              const levels = asNumberArray(dialogData?.selectedAdminLevels);
+              return levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
             }
             case 5: {
-              const countries: string[] | undefined = data?.selectedCountries;
-              return Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2);
+              const countries = asStringArray(dialogData?.selectedCountries);
+              return countries.length > 0 && countries.every((c) => c.length >= 2);
             }
             default:
               return true;
           }
         });
       },
-      getEnabledSteps: (data: any, stepNumbers?: number[]) => {
-        const nums = stepNumbers || [];
+      getEnabledSteps: (data: ShapeDialogPeer, stepNumbers?: ReadonlyArray<number>) => {
+        const dialogData = toDialogRecord(data) as any;
         const filledByNumber = new Map<number, boolean>();
         // Evaluate filled quickly for dependency checks
         [2, 3, 4, 5].forEach((n) => {
           switch (n) {
             case 2:
-              filledByNumber.set(2, !!data?.dataSourceName);
+              filledByNumber.set(2, !!dialogData?.dataSourceName);
               break;
             case 3:
-              filledByNumber.set(3, data?.licenseAgreement === true);
+              filledByNumber.set(3, dialogData?.licenseAgreement === true);
               break;
             case 4: {
-              const levels: number[] | undefined = data?.selectedAdminLevels;
-              filledByNumber.set(4, Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3));
+              const levels = asNumberArray(dialogData?.selectedAdminLevels);
+              filledByNumber.set(4, levels.length > 0 && levels.every((l) => l >= 0 && l <= 3));
               break;
             }
             case 5: {
-              const countries: string[] | undefined = data?.selectedCountries;
-              filledByNumber.set(5, Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2));
+              const countries = asStringArray(dialogData?.selectedCountries);
+              filledByNumber.set(5, countries.length > 0 && countries.every((c) => c.length >= 2));
               break;
             }
           }
         });
 
-        return nums.map((n) => {
+        return resolveStepNumbers(stepNumbers, [2, 3, 4, 5]).map((n) => {
           if (n === 2) return true;
           if (n === 3) return filledByNumber.get(2) === true;
           if (n === 4) return filledByNumber.get(3) === true;
@@ -136,13 +162,14 @@ export class ShapeDialogExtension extends BaseFolderPlugin {
   }
 
   protected getSubmitEligibility() {
-    return (data: any) => {
-      const hasDataSource = !!data?.dataSourceName;
-      const accepted = data?.licenseAgreement === true;
-      const levels: number[] | undefined = data?.selectedAdminLevels;
-      const hasLevels = Array.isArray(levels) && levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
-      const countries: string[] | undefined = data?.selectedCountries;
-      const hasCountries = Array.isArray(countries) && countries.length > 0 && countries.every((c) => typeof c === 'string' && c.length >= 2);
+    return (data: ShapeDialogPeer) => {
+      const dialogData = toDialogRecord(data) as any;
+      const hasDataSource = !!dialogData?.dataSourceName;
+      const accepted = dialogData?.licenseAgreement === true;
+      const levels = asNumberArray(dialogData?.selectedAdminLevels);
+      const hasLevels = levels.length > 0 && levels.every((l) => l >= 0 && l <= 3);
+      const countries = asStringArray(dialogData?.selectedCountries);
+      const hasCountries = countries.length > 0 && countries.every((c) => c.length >= 2);
       return hasDataSource && accepted && hasLevels && hasCountries;
     };
   }
@@ -150,6 +177,6 @@ export class ShapeDialogExtension extends BaseFolderPlugin {
 
 export const shapeDialogExtension = new ShapeDialogExtension();
 
-export async function initializeShapeDialogExtension() {
+export async function initializeShapeDialogExtension(): Promise<void> {
   await shapeDialogExtension.initialize();
 }
