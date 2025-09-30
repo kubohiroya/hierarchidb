@@ -1,37 +1,59 @@
-# @hierarchidb/plugins-linker-plugin — Linker（リンカー）
+# HierarchiDB App — Keep every layered project at your fingertips
 
-Linker は、Projects ツリー（folder / linker / timeline）で、フォルダにより集約・コンパイル済みのリソースを「link（参照）」して実用的な地図表示に束ねる軽量プラグインです。解析・生成など重い処理は行わず、選択・集約・表示に特化します。
+HierarchiDB is a web application designed for people who need to organise rich, hierarchical data without getting lost in tabs, spreadsheets, or GIS consoles. From project plans to geospatial assets, the app keeps everything in a single tree so you can browse, edit, and present information exactly the way your team thinks about it.
 
-## 目的（What/Why）
-- compiled 済みのタイル・ベクター・スタイルなどを“再計算せず”に束ね、すぐ使える地図として活用する。
-- フォルダやタイムラインで管理された成果物を、運用視点の「ビュー」として組み合わせる。
-- 生成処理（shape/route/location 等）と利用（linker）を分離し、UI を軽く保つ。
+## Why HierarchiDB matters for end users
+- **Navigate complex hierarchies with confidence:** Drag-and-drop folders, undo/redo any action, and rely on automatic saves to keep your structure intact while you explore ideas.
+- **Work the way your data demands:** Enable plugins only when you need them—switch between maps, spreadsheets, timelines, and project nodes without changing tools.
+- **Stay productive on any connection:** Once the app is loaded you can keep working offline; changes live in IndexedDB until you are ready to export or share them.
+- **Collaborate without chaos:** Real-time co-editing, granular roles, and threaded comments help teams move quickly while preserving accountability.
 
-## 機能（Features）
-- リソース選択（チェックボックス）と簡易プレビュー（MapLibre）
-- Compiled Map 表示（中心/ズームなどヒントの適用）
-- 表示状態の保存（表示モード、ダイアログ位置・サイズ）
-- 軽量な Worker ストア（Dexie: `linker-entities-db`）で永続化
+## Feature highlights
+### Structure information your way
+- Build unlimited trees with folder, project, and custom plugin nodes.
+- Use the breadcrumb trail, keyboard shortcuts, and quick actions to jump across deep hierarchies in seconds.
+- Update properties from the detail panel and keep context with breadcrumb navigation and history tools.
 
-## 使い方（Usage）
-1) 前提
-   - ホストアプリで本プラグインを有効化（本リポジトリの `app/` では済）
-   - UI/Worker の peer 依存（React/MUI/`@hierarchidb/ui-map` 等）はホスト側で提供
+### Bring specialised views to every node
+- **Maps:** Combine basemaps, shapes, and styling layers to visualise locations, routes, and territories directly alongside documents.
+- **Spreadsheets:** Manage tabular data with CSV/Excel import, column mapping, and formula-friendly editing without leaving the tree.
+- **Linker workspaces:** Assemble curated collections of compiled assets and launch ready-to-share map views instantly.
 
-2) 新規作成（UI）
-   - Projects ツリーで「新規 → Linker」を選択
-   - Step 1: リソース選択（TrashBin 風テーブルで複数選択）＋右側で簡易マッププレビュー
-   - Step 2: Compiled Map 表示（中心/ズームがあれば適用）→ 完了で保存
+### Keep teams aligned
+- Invite teammates with role-based access, from read-only reviewers to project owners.
+- Co-edit in real time with presence indicators, live cursors, and conflict resolution tools.
+- Open comment threads on any node, mention stakeholders, and attach files to keep discussions in context.
 
-3) ホスト組み込み
-   - 追加の Worker 登録は不要です（UI 側へのプラグイン登録のみ）。
+### Never lose momentum
+- Automatic version history gives you confidence to experiment—roll back or compare changes whenever you need.
+- Import and export entire trees or selected branches in JSON, CSV, Excel, PDF, HTML, and GeoJSON formats to stay compatible with external systems.
+- Configure personal settings for language, light/dark theme, and notification preferences so the workspace feels like yours.
 
-4) データ保存先（内部）
-   - DB: `linker-entities-db`
-   - テーブル: `peerEntities (&nodeId, updatedAt)`
-   - 保存: 表示モード、ダイアログ位置・サイズ 等（ノードごとの UI 状態）
+## Quick start for new users
+1. **Sign in and pick a language:** Access HierarchiDB in your browser and choose Japanese or English from the settings menu.
+2. **Create your first tree:** Start a project, add folders and plugin nodes, and rearrange them with drag-and-drop.
+3. **Add content with plugins:** Drop in a Linker node for a curated map view, a Spreadsheet node for data entry, or a Shape node to sketch geometry on top of a basemap.
+4. **Invite collaborators:** Share access from the team panel, assign roles, and kick off a discussion with comments or mentions.
+5. **Export a snapshot:** When you are ready to share outside the app, export the relevant branch in the format your audience needs.
 
-5) 旧 project-plugin からの移行
-   - 旧 nodeType `project` → 新 `linker`
-   - 旧 Worker 実装は不要になりました（削除済み）。新規は `linker` で作成してください。
-   - ※ 2025-09-16 時点で `project-plugin` は Deprecated 扱いです。`@hierarchidb/plugins-linker-plugin` を利用してください。
+## Everyday workflows
+- **Planning and documentation:** Use project folders to keep briefs, decisions, and reference material structured and searchable.
+- **Operations and fieldwork:** Combine geospatial layers with spreadsheets to track assets, routes, and site notes in one place.
+- **Publishing and reviews:** Curate Linker workspaces to showcase the latest compiled maps, then hand over an export or invite reviewers for live feedback.
+
+## Power tools when you need them
+- Keyboard shortcuts for navigation, creation, and editing keep power users in flow.
+- Help icons in the header link directly to documentation, so answers are always one click away.
+- Runtime flags let administrators toggle experimental plugins or tailor the experience for specific teams.
+
+## Learn more
+Dive deeper with the in-app documentation located under [`app/docs/`](./app/docs/):
+- [Getting started](./app/docs/01-getting-started.md)
+- [Basic operations](./app/docs/02-basic-operations.md)
+- [Navigation tips](./app/docs/03-navigation.md)
+- [Plugin guides](./app/docs/04-folder-plugin.md) including Linker, map, and spreadsheet tools
+- [Import & export workflows](./app/docs/08-import-export.md)
+- [Collaboration and permissions](./app/docs/10-collaboration.md)
+- [Settings, shortcuts, and troubleshooting](./app/docs/11-settings.md)
+
+HierarchiDB puts every layer of your project within reach—so you and your team can plan, analyse, and deliver without friction.
