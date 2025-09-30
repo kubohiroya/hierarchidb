@@ -389,6 +389,7 @@ flowchart LR
 - 2025-09-25: shape プラグインを同テンプレートへ展開し、`worker/index.ts` を薄い re-export 化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` は成功するが、Dexie 4.x の型互換問題で `pnpm build` の DTS バンドルが失敗（`ShapeEntitiesDB` 継承で constructor/`version` が検出されない）。要対応メモとして残す
 - 2025-09-25: Dexie 4.x の型差異に `tsup.base.config.ts` の `esModuleInterop` 追記と `shapeEntitiesDB.ts` の named import 変更で対処。`pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認
 - 2025-09-25: `register*WorkerStores.ts` に `vite/client` 型参照を付与し、`tsconfig.base.json` に `@hierarchidb/runtime-worker` のパスエイリアスを追加。`pnpm --filter @hierarchidb/app build` は WARN のみ（動的 import 既知警告）で通過
+- 2025-09-30: Phase 2b 再開にあたり `pnpm -w lint` / `pnpm -r typecheck` を実行し、ESLint の旧 `worker` パス禁止ルールと monorepo 全体の型チェックがグリーンであることを確認
 
 ### 12.6 Phase 3 – 互換層整理と CI 強化
 - [ ] 旧 API を参照しているコードが残っていないかを検索し、必要に応じて互換ラッパーを削除

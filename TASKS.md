@@ -108,6 +108,7 @@
     - progress: 2025-09-25 22:52 folder/resolver/styler プラグインを factory 指定に統一し、関連テストを更新
     - progress: 2025-09-25 22:58 `WorkerModuleLoader` preload 更新後に `pnpm --filter @hierarchidb/runtime-shared-module-paths build` / `typecheck` ・ `pnpm --filter @hierarchidb/app typecheck` が成功
     - progress: 2025-09-30 20:15 残プラグイン棚卸しと ESLint ルール再適用手順を整理し、Phase 2b の再開準備完了
+    - progress: 2025-09-30 20:18 `pnpm -w lint` / `pnpm -r typecheck` を実行し、旧 `worker` パス禁止ルールとモノレポ型検証がグリーンであることを確認
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
