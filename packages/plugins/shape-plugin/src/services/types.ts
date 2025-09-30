@@ -11,6 +11,13 @@ import type {
   DataSourceName,
   ValidationResult,
 } from '@hierarchidb/runtime-ui-datasource';
+import type {
+  ErrorInfo as SharedErrorInfo,
+  ProcessingStage,
+  ProgressInfo as SharedProgressInfo,
+  StageStatus as SharedStageStatus,
+  TaskStatus,
+} from '../shared/index.js';
 
 // === API Method Signatures ===
 
@@ -70,19 +77,6 @@ export type { DataSourceName, DataSourceInfo, CountryMetadata, ValidationResult,
 // Re-export without importing into local scope to avoid unused import warnings
 export type { AdminLevelInfo } from '@hierarchidb/runtime-ui-datasource';
 
-export type ProcessingStage =
-  | 'download'
-  | 'simplify1'
-  | 'simplify2'
-  | 'vectortile';
-
-export type TaskStatus =
-  | 'waiting'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
-
 export type CacheType =
   | 'features'
   | 'tiles'
@@ -92,20 +86,15 @@ export type CacheType =
 // === Configuration Types ===
 
 export interface BatchProcessConfig {
-  dataSource?: DataSourceName;
-  countryCode?: string;
-  adminLevels?: number[];
+  dataSource: DataSourceName;
+  countryCode: string;
+  adminLevels: number[];
   workerPoolSize?: number;
   enableFeatureExtraction?: boolean;
   simplificationLevels?: number[];
   tileZoomRange?: [number, number];
   corsProxy?: string;
   cacheStrategy?: CacheStrategy;
-  simplifyTolerance?: number;
-  minArea?: number;
-  zoomLevels?: number[];
-  tileSize?: number;
-  maxZoom?: number;
 }
 
 export interface CacheStrategy {
@@ -140,7 +129,7 @@ export interface BatchSession {
   updatedAt: number;
   completedAt?: number;
   progress: ProgressInfo;
-  stages: Partial<Record<ProcessingStage, StageStatus>>;
+  stages: Record<ProcessingStage, StageStatus>;
   resourceUsage?: ResourceUsage;
 }
 
@@ -157,49 +146,29 @@ export interface BatchStatus {
   };
 }
 
-export interface ProgressInfo {
-  total: number;
-  completed: number;
-  failed: number;
-  skipped: number;
-  percentage: number;
-  currentStage?: ProcessingStage | string;
-  currentTask?: string;
-}
+export type ProgressInfo = SharedProgressInfo;
 
-export interface StageStatus {
-  status: TaskStatus;
+export interface StageStatus extends SharedStageStatus {
   startedAt?: number;
   completedAt?: number;
-  progress?: number;
-  tasksTotal?: number;
-  tasksCompleted?: number;
-  tasksFailed?: number;
-  message?: string;
   lastError?: string;
 }
 
 export interface TaskInfo {
   taskId: string;
   sessionId: string;
-  type?: ProcessingStage;
-  status?: TaskStatus;
-  index?: number;
-  progress?: number;
+  type: ProcessingStage;
+  status: TaskStatus;
+  index: number;
+  progress: number;
   message?: string;
   startedAt?: number;
   completedAt?: number;
   retryCount?: number;
 }
 
-export interface ErrorInfo {
-  taskId: string;
-  sessionId: string;
-  error: string;
+export interface ErrorInfo extends SharedErrorInfo {
   stack?: string;
-  timestamp: number;
-  stage: ProcessingStage;
-  retryable: boolean;
 }
 
 export interface ResourceUsage {
@@ -310,25 +279,19 @@ export interface OptimizationResult {
 
 // (Legacy Worker Pool types removed)
 
-// === Task Types for Workers ===
-
-export interface DownloadTask extends TaskInfo {
-  taskType: 'download';
-  nodeId?: NodeId;
-  url?: string;
-  config?: Partial<DownloadTaskConfig>;
-}
-
-export interface DownloadTaskConfig {
-  dataSource: DataSourceName;
-  country: string;
-  adminLevel: number;
-  url: string;
-  timeout: number;
-  retryDelay: number;
-  expectedFormat: 'geojson' | 'shapefile' | 'topojson';
-  validateSSL: boolean;
-}
+export type {
+  DownloadTask,
+  DownloadTaskConfig,
+  SimplifyTask,
+  Simplify1Task,
+  Simplify2Task,
+  SimplifyTaskConfig,
+  TileSimplifyConfig,
+  VectorTileTask,
+  VectorTileTaskConfig,
+  ProcessingStage,
+  TaskStatus,
+} from '../shared/index.js';
 
 export interface DownloadResult {
   taskId: string;
@@ -342,20 +305,6 @@ export interface DownloadResult {
   errorMessage?: string;
 }
 
-export interface Simplify1Task extends TaskInfo {
-  taskType: 'simplify1';
-  inputBufferId?: string;
-  config?: Partial<SimplifyTaskConfig>;
-}
-
-export interface SimplifyTaskConfig {
-  algorithm: 'douglas-peucker' | 'visvalingam';
-  tolerance: number;
-  preserveTopology: boolean;
-  minimumArea?: number;
-  maxVertices?: number;
-}
-
 export interface Simplify1Result {
   taskId: string;
   status: 'completed' | 'failed';
@@ -367,21 +316,6 @@ export interface Simplify1Result {
   errorMessage?: string;
 }
 
-export interface Simplify2Task extends TaskInfo {
-  taskType: 'simplify2';
-  inputBufferId?: string;
-  config?: Partial<TileSimplifyConfig>;
-}
-
-export interface TileSimplifyConfig extends SimplifyTaskConfig {
-  zoomLevel: number;
-  preserveSharedBoundaries: boolean;
-  quantization: number;
-  coordinatePrecision: number;
-  tileSize?: number;
-  zoomLevels?: number[];
-}
-
 export interface Simplify2Result {
   taskId: string;
   status: 'completed' | 'failed';
@@ -389,26 +323,6 @@ export interface Simplify2Result {
   tilesGenerated: number;
   topologyPreserved: boolean;
   errorMessage?: string;
-}
-
-export interface VectorTileTask extends TaskInfo {
-  taskType: 'vectortile';
-  tileBufferId?: string;
-  inputBufferId?: string;
-  outputFormat?: string;
-  compression?: boolean;
-  config?: Partial<VectorTileTaskConfig>;
-}
-
-export interface VectorTileTaskConfig {
-  zoomLevel: number;
-  tileX: number;
-  tileY: number;
-  extent: number;
-  buffer: number;
-  layers: LayerConfig[];
-  format: 'mvt';
-  compression: boolean;
 }
 
 export interface VectorTileResult {

@@ -27,7 +27,17 @@ export interface BatchTaskLike {
   error?: string;
   createdAt: number;
   updatedAt: number;
-  config?: Record<string, any>;
+  url?: string;
+  config?: {
+    dataSource?: string;
+    country?: string;
+    adminLevel?: number;
+    expectedFormat?: string;
+    validateSSL?: boolean;
+    timeout?: number;
+    retryDelay?: number;
+    [key: string]: unknown;
+  };
 }
 
 export type BatchTask = BatchTaskLike;

@@ -1,25 +1,50 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": false,
-    "incremental": false,
-    "noEmit": true,
-    "jsx": "react-jsx",
     "baseUrl": ".",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "WebWorker"
+    ],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/runtime-ui-datasource": [
+        "../../runtime-ui/datasource/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-ui-datasource/*": [
+        "../../runtime-ui/datasource/dist/*"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata": [
+        "../../runtime-shared/fetch-metadata/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata/*": [
+        "../../runtime-shared/fetch-metadata/dist/*"
+      ],
+      "@hierarchidb/plugins-runtime-worker-factory": [
+        "../runtime-worker-factory/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugins-runtime-worker-factory/*": [
+        "../runtime-worker-factory/dist/*"
+      ],
+      "@hierarchidb/batch": [
+        "../../feature/batch/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch/*": [
+        "../../feature/batch/dist/*"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog": [
+        "../../runtime-ui/plugin-dialog/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-ui-plugin-dialog/*": [
+        "../../runtime-ui/plugin-dialog/dist/*"
       ]
     },
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "vite/client",
-      "node"
-    ],
     "module": "Node16"
   },
   "include": [
@@ -28,17 +53,17 @@
     "src/services/**/*",
     "src/worker/api.ts",
     "src/worker/handlers/**/*",
-    "src/worker/plugin.ts",
-    "src/worker-factory/**/*"
+    "src/worker/plugin.ts"
   ],
   "exclude": [
-    "dist",
     "node_modules",
-    "src/__tests__/**",
-    "src/**/*.stories.ts",
-    "src/**/*.stories.tsx",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/vite-env.d.ts"
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "src/ui/**",
+    "src/components/**",
+    "src/worker/**",
+    "src/extension/handler.ts"
   ]
 }

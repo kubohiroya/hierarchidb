@@ -99,7 +99,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
           onNameConflict: conflictPolicy,
         });
         const res = await this.commandProcessor.processCommand(env);
-        const mapped = await this.mapCommandProcessorResult(res, workingCopyId, context);
+        const mapped = await this.mapCommandProcessorResult(res, context);
         if (mapped) {
           return mapped;
         }
@@ -111,7 +111,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
     try {
       const { commitWorkingCopyV2 } = await import('./WorkingCopyTreeNodeOperations.js');
       const v2Result = await commitWorkingCopyV2(this.coreDB, workingCopyId, conflictPolicy);
-      return await this.mapCommitResultV2(v2Result, workingCopyId, context);
+      return await this.mapCommitResultV2(v2Result, context);
     } catch {
       // Continue to manual fallback below if v2 path throws (e.g. metadata missing)
     }
@@ -180,7 +180,6 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   private async mapCommandProcessorResult(
     result: CommandResult,
-    workingCopyId: NodeId,
     context?: WorkingCopyContext,
   ): Promise<CommitResult | undefined> {
     if (result.success) {
@@ -215,7 +214,6 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   private async mapCommitResultV2(
     result: CommitResultV2,
-    workingCopyId: NodeId,
     context?: WorkingCopyContext,
   ): Promise<CommitResult> {
     if (result.status === 'ok') {
