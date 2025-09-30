@@ -34,7 +34,7 @@ interface LocationSelectionStepProps {
 export function buildCheckboxState(
   matrix: boolean[][],
   countries: Country[] = SAMPLE_COUNTRIES,
-  locationTypes: LocationTypeConfig[] = LOCATION_TYPES,
+  locationTypes: LocationTypeConfig[] = DEFAULT_LOCATION_TYPES,
 ): Record<string, Record<LocationType, boolean>> {
   const checkboxState: Record<string, Record<LocationType, boolean>> = {};
 
@@ -97,6 +97,15 @@ const LOCATION_TYPE_BASE: LocationTypeBaseConfig[] = [
   { id: LocationType.GOVERNMENT, icon: '🏛️', color: '#9C27B0', descriptionKey: 'government', estimatedCount: 8000 },
   { id: LocationType.INTERCHANGE, icon: '🛣️', color: '#607D8B', descriptionKey: 'interchange', estimatedCount: 15000 },
 ];
+
+const DEFAULT_LOCATION_TYPES: LocationTypeConfig[] = LOCATION_TYPE_BASE.map((type) => ({
+  id: type.id,
+  icon: type.icon,
+  color: type.color,
+  estimatedCount: type.estimatedCount,
+  name: type.id,
+  description: type.descriptionKey,
+}));
 
 interface LocationTypeDetailConfig {
   airport: {
@@ -176,7 +185,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
     color: type.color,
     estimatedCount: type.estimatedCount,
     name: translations.locationTypes[type.id] ?? type.id,
-    description: translations.selection.typeDescriptions?.[type.descriptionKey] ?? '',
+    description: translations.selection.typeDescriptions?.[type.descriptionKey] ?? type.descriptionKey,
   })), [translations]);
 
   const [activeTab, setActiveTab] = useState(0);
@@ -205,9 +214,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({
   }, [locationTypes, workingCopy.checkboxState]);
 
   const handleMatrixChange = useCallback(async (matrix: boolean[][]) => {
-    const checkboxState = buildCheckboxState(matrix, SAMPLE_COUNTRIES, LOCATION_TYPES);
+    const checkboxState = buildCheckboxState(matrix, SAMPLE_COUNTRIES, locationTypes);
     await onUpdate({ checkboxState });
-  }, [onUpdate]);
+  }, [locationTypes, onUpdate]);
 
   const handleSelectionChange = useCallback(async (state: SelectionState) => {
     await onUpdate({

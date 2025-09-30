@@ -136,25 +136,33 @@ export interface RouteFilterCriteria {
 /**
  * Route generation configuration
  */
+export interface RouteGenerationOptions {
+  // OSM routing options
+  osmProfile?: 'car' | 'bike' | 'foot' | 'truck';
+  avoidTolls?: boolean;
+  avoidHighways?: boolean;
+  osrmBaseUrl?: string;
+  baseUrl?: string;
+  headers?: Record<string, string>;
+
+  // Great circle options
+  numPoints?: number;  // Number of interpolation points
+
+  // Sea route options
+  avoidCanals?: boolean;
+  preferredChannels?: string[];
+
+  // Custom options
+  customAlgorithm?: string;
+  customParameters?: Record<string, any>;
+
+  // Allow engines to pass through engine-specific parameters without widening to any.
+  [key: string]: unknown;
+}
+
 export interface RouteGenerationConfig {
   method: RouteGenerationMethod;
-  options?: {
-    // OSM routing options
-    osmProfile?: 'car' | 'bike' | 'foot' | 'truck';
-    avoidTolls?: boolean;
-    avoidHighways?: boolean;
-
-    // Great circle options
-    numPoints?: number;  // Number of interpolation points
-
-    // Sea route options
-    avoidCanals?: boolean;
-    preferredChannels?: string[];
-
-    // Custom options
-    customAlgorithm?: string;
-    customParameters?: Record<string, any>;
-  };
+  options?: RouteGenerationOptions;
 }
 
 /**

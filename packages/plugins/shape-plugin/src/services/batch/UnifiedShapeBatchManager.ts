@@ -7,7 +7,9 @@ import type { NodeId } from '@hierarchidb/common-type';
 import type {
   BatchProgressCallback,
   BatchSessionStatus,
+  BatchProgressEvent,
   IBatchSessionManager,
+  ProgressPhase,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
@@ -20,6 +22,7 @@ import type { UrlMetadata } from '../../shared/types.js';
 export class UnifiedShapeBatchManager implements IBatchSessionManager {
   private manager: BatchSessionManager;
   private pending = new Map<NodeId, { config: ShapeBatchConfig; data: ShapeBatchData }>();
+  private sessionNodes = new Map<string, NodeId>();
 
   constructor() {
     this.manager = new BatchSessionManager();
@@ -84,6 +87,7 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
     if (!sessionId) {
       throw new Error('Failed to create shape batch session: missing sessionId');
     }
+    this.sessionNodes.set(sessionId, nodeId);
     return sessionId;
   }
 
@@ -96,7 +100,8 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
   }
 
   async cancelBatchSession(sessionId: string): Promise<void> {
-    return this.manager.cancelSession(sessionId);
+    await this.manager.cancelSession(sessionId);
+    this.sessionNodes.delete(sessionId);
   }
 
   async getBatchSessionStatus(sessionId: string): Promise<BatchSessionStatus> {
@@ -117,22 +122,70 @@ export class UnifiedShapeBatchManager implements IBatchSessionManager {
 
   onBatchProgress(sessionId: string, callback: BatchProgressCallback): () => void {
     this.manager.onProgress(sessionId, (progress) => {
-      // Convert shape-specific progress to standard format
-      callback({
-        sessionId,
-        stage: progress.currentStage || 'processing',
-        total: progress.total,
-        completed: progress.completed,
-        failed: progress.failed,
-        percentage: progress.percentage,
+      const nodeId = this.sessionNodes.get(sessionId);
+      if (!nodeId) {
+        return;
+      }
+
+      const total = progress.total ?? 0;
+      const completed = progress.completed ?? 0;
+      const failed = progress.failed ?? 0;
+      const skipped = progress.skipped ?? 0;
+
+      const phase = this.resolveProgressPhase({ total, completed, failed, percentage: progress.percentage });
+
+      const payload: NonNullable<BatchProgressEvent['payload']> = {
+        total,
+        completed,
+        failed,
+        skipped,
         currentTask: progress.currentTask,
-        estimatedTimeRemaining: undefined, // ProgressInfo doesn't have this field
-      });
+        meta: {
+          percentage: progress.percentage,
+        },
+      };
+
+      const event: Parameters<BatchProgressCallback>[0] = {
+        sessionId,
+        nodeId,
+        stage: progress.currentStage || 'processing',
+        phase,
+        timestamp: Date.now(),
+        payload,
+        message: typeof progress.currentTask === 'string' ? progress.currentTask : undefined,
+      };
+
+      callback(event);
+
+      if (phase === 'completed' || phase === 'failed') {
+        this.sessionNodes.delete(sessionId);
+      }
     });
 
     // Return unsubscribe function (shape manager doesn't provide one, so we return a no-op)
     return () => {
     };
+  }
+
+  private resolveProgressPhase(progress: {
+    total: number;
+    completed: number;
+    failed: number;
+    percentage?: number;
+  }): ProgressPhase {
+    if (progress.failed > 0) {
+      return 'failed';
+    }
+
+    if (progress.total > 0 && progress.completed >= progress.total) {
+      return 'completed';
+    }
+
+    if ((progress.percentage ?? 0) <= 0 && progress.completed === 0) {
+      return 'queued';
+    }
+
+    return 'running';
   }
 }
 

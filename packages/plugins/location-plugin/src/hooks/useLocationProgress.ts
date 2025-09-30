@@ -3,7 +3,7 @@ import type { NodeType, ProgressEvent } from '@hierarchidb/common-type';
 import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;
@@ -49,7 +49,7 @@ export function useLocationProgress(
   options: UseLocationProgressOptions = {},
 ): UseLocationProgressState & { subscribe: () => void; unsubscribe: () => void } {
   const { autoSubscribe = true } = options;
-  const bridgeRef = useRef(getWorkerBridge());
+  const bridgeRef = useRef<WorkerBridge>(getWorkerBridge());
   const [overrideProgress, setOverrideProgress] = useState<ProgressEvent | null>(null);
   const [error, setError] = useState<Error | null>(null);
 

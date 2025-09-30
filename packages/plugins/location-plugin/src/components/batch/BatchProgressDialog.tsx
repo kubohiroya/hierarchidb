@@ -49,7 +49,6 @@ import {
   Warning,
 } from '@mui/icons-material';
 import type { NodeId } from '../../types/index.js';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
@@ -127,8 +126,7 @@ export const BatchProgressDialog: React.FC<BatchProgressDialogProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [tableId, setTableId] = useState<string | null>(null);
   const datasetId = React.useMemo(() => (tableId ? `location:${tableId}` : null), [tableId]);
-  const vectorTileService = React.useMemo(() => new LocationVectorTileService(), []);
-  const { progress: locationProgress } = useLocationProgress(vectorTileService, sessionId, { autoSubscribe: true });
+  const { progress: locationProgress } = useLocationProgress(sessionId, { autoSubscribe: true });
   const showAuthRequired = locationProgress?.stage === 'auth-required';
   const [progress, setProgress] = useState<ProgressInfo>({
     percentage: 0,
