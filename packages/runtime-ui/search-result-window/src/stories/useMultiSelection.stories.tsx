@@ -322,7 +322,7 @@ function LargeDataDemo() {
     displayColumns: ['name', 'index'],
   }));
 
-  const { selectedResults, selectedResultItems, handleResultSelect, selectAll, clearSelection } =
+  const { selectedResults, handleResultSelect, selectAll, clearSelection } =
     useMultiSelection({
       results: largeResults,
       onSelectionChange: (selectedItems) => {
@@ -361,7 +361,6 @@ function LargeDataDemo() {
                   <ListItemButton
                     selected={isSelected}
                     onClick={(event) => {
-                      const isMultiSelect = event.shiftKey || event.metaKey || event.ctrlKey;
                       handleResultSelect(result, {
                         shiftKey: event.shiftKey,
                         metaKey: event.metaKey,
@@ -388,4 +387,3 @@ function LargeDataDemo() {
 export const LargeDataset: Story = {
   render: () => <LargeDataDemo />,
 };
-/* eslint-disable no-unused-vars */

@@ -226,7 +226,7 @@ describe('Worker Initialization Node.js E2E Tests', () => {
     if (workerPath && fs.existsSync(workerPath)) {
       try {
         fs.unlinkSync(workerPath);
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
     }

@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-/* eslint-disable no-unused-vars */
+ 
 import type React from 'react';
 import type { Position } from '../types/WindowState.js';
 

@@ -13,6 +13,7 @@ export { PLUGIN_MANIFEST as FolderPluginManifest } from './extension/plugin-mani
 
 // Export BaseDialogPlugin for dialog-based extensions
 export * from './base/BaseDialogPlugin.js';
+export * from './base/BaseFolderPlugin.js';
 export { wrapDialogStepComponent } from './base/wrapDialogStepComponent.js';
 
 // Convenience initializer to register common extensions

@@ -116,4 +116,3 @@ export const useMultiSelection = ({
     toggleSelection,
   };
 };
-/* eslint-disable no-unused-vars */
