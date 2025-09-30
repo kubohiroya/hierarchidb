@@ -1,3 +1,5 @@
+import { importPluginWorker, PLUGIN_WORKER_MODULE_IDS, type PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
+
 export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
 export type PeerDialogSize = { width: number; height: number };
@@ -40,6 +42,19 @@ type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
 
 declare global {
   var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, unknown> | undefined;
+}
+
+const KNOWN_PLUGIN_WORKER_IDS = new Set<PluginWorkerId>(
+  Object.keys(PLUGIN_WORKER_MODULE_IDS) as PluginWorkerId[],
+);
+
+function isPluginWorkerId(value: string): value is PluginWorkerId {
+  return KNOWN_PLUGIN_WORKER_IDS.has(value as PluginWorkerId);
+}
+
+function capitalize(value: string): string {
+  if (!value) return value;
+  return value.slice(0, 1).toUpperCase() + value.slice(1);
 }
 
 class UIPersistenceRegistry {
@@ -88,55 +103,46 @@ class UIPersistenceRegistry {
         return null;
       }
 
-      const className = `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}EntitiesDB`;
-      const meta = import.meta as ImportMeta & { env?: Record<string, unknown> };
-      const isDev = Boolean(meta.env?.DEV);
-      const packageBases = [
-        `@hierarchidb/plugins-${nodeType}-plugin`,
-      ];
-      const basePaths = packageBases.flatMap((pkg) => [
-        `${pkg}/worker/${nodeType}EntitiesDB`,
-        `${pkg}/worker/index`,
-        `${pkg}/worker`,
-      ]);
-      if (isDev) {
-        packageBases.forEach((pkg) => {
-          basePaths.push(
-            `${pkg}/src/worker/${nodeType}EntitiesDB`,
-            `${pkg}/src/worker/index`,
-            `${pkg}/src/worker`,
-          );
-        });
-      }
-      const extensions = ['.js', '.mjs', '.mts', '.ts', ''];
-      const candidates = Array.from(new Set(
-        basePaths.flatMap((base) => extensions.map((ext) => (ext ? `${base}${ext}` : base))),
-      ));
-
+      const className = `${capitalize(nodeType)}EntitiesDB`;
       let lastError: unknown = null;
-      for (const candidate of candidates) {
+
+      const instantiateFromModule = async (module: Record<string, unknown>): Promise<PeerEntitiesDBAdapter | null> => {
+        const Ctor = module?.[className] as (new () => { open?: () => Promise<void> | void; table: (name: string) => PeerEntitiesTable });
+        if (!Ctor) {
+          lastError = new Error(`Export ${className} missing`);
+          return null;
+        }
+        const db = new Ctor();
+        await db.open?.();
+        const adapter: PeerEntitiesDBAdapter = {
+          table: (name: string): PeerEntitiesTable => {
+            const tbl = db.table(name);
+            return {
+              get: (id: string) => tbl.get(id),
+              put: (row: PeerDialogRow) => tbl.put(row),
+            };
+          },
+        };
+        this.dbCache.set(nodeType, adapter);
+        return adapter;
+      };
+
+      if (isPluginWorkerId(nodeType)) {
         try {
-          const mod = await import(/* @vite-ignore */ candidate);
-          const Ctor = mod[className];
-          if (!Ctor) {
-            lastError = new Error(`Export ${className} missing in ${candidate}`);
-            continue;
+          const factoryModule = await importPluginWorker(nodeType as PluginWorkerId);
+          const loadFnName = `load${capitalize(nodeType)}EntitiesDbModule`;
+          const loadFn = (factoryModule as Record<string, unknown>)[loadFnName];
+          if (typeof loadFn === 'function') {
+            const entitiesModule = await (loadFn as () => Promise<Record<string, unknown>>)();
+            const adapter = await instantiateFromModule(entitiesModule ?? {});
+            if (adapter) {
+              return adapter;
+            }
+          } else {
+            lastError = new Error(`Function ${loadFnName} is not exported from worker-factory`);
           }
-          const db = new Ctor();
-          await db.open?.();
-          const adapter: PeerEntitiesDBAdapter = {
-            table: (name: string): PeerEntitiesTable => {
-              const tbl = db.table(name);
-              return {
-                get: (id: string) => tbl.get(id),
-                put: (row: PeerDialogRow) => tbl.put(row),
-              };
-            },
-          };
-          this.dbCache.set(nodeType, adapter);
-          return adapter;
-        } catch (err) {
-          lastError = err;
+        } catch (error) {
+          lastError = error;
         }
       }
 

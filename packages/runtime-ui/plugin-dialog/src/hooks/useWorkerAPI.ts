@@ -1,52 +1,51 @@
-/**
- * Worker API Hook
- * Provides access to Worker API with Comlink
- */
-
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import type { Remote } from 'comlink';
-import * as Comlink from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import {
+  getWorkerClientHook,
+  type WorkerClientRef,
+} from '@hierarchidb/runtime-worker-bootstrap';
 
-let workerInstance: Worker | null = null;
-let workerAPI: Remote<WorkerAPI> | null = null;
-
-/**
- * Initialize Worker and Comlink proxy
- */
-async function initializeWorker(): Promise<Remote<WorkerAPI>> {
-  if (workerAPI) return workerAPI;
-
-  // Create Worker instance
-  workerInstance = new Worker(
-    new URL('../../../worker/src/index.ts', import.meta.url),
-    { type: 'module' },
-  );
-
-  // Wrap with Comlink
-  const api = Comlink.wrap<WorkerAPI>(workerInstance);
-
-  // Initialize the Worker
-  await api.initialize();
-
-  workerAPI = api;
-  return api;
+interface UseWorkerAPIResult {
+  api: Remote<WorkerAPI> | null;
+  loading: boolean;
+  error: Error | null;
+  initialize: () => Promise<void>;
 }
 
-/**
- * Hook to access Worker API
- */
-export function useWorkerAPI() {
-  const [api, setApi] = useState<Remote<WorkerAPI> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    initializeWorker()
-      .then(setApi)
-      .catch(setError)
-      .finally(() => setLoading(false));
+export function useWorkerAPI(): UseWorkerAPIResult {
+  const client = useMemo(() => {
+    try {
+      const hook = getWorkerClientHook<WorkerClientRef>();
+      return hook();
+    } catch (error) {
+      console.warn('[useWorkerAPI] worker client hook is not registered', error);
+      return null;
+    }
   }, []);
 
-  return { api, loading, error };
+  if (!client) {
+    return {
+      api: null,
+      loading: true,
+      error: new Error('Worker client is unavailable. Ensure WorkerProvider is mounted.'),
+      initialize: async () => {
+        throw new Error('Worker client is unavailable.');
+      },
+    };
+  }
+
+  let api: Remote<WorkerAPI> | null = null;
+  try {
+    api = client.client ?? client.getAPI();
+  } catch (error) {
+    console.warn('[useWorkerAPI] failed to obtain Worker API', error);
+  }
+
+  return {
+    api,
+    loading: !client.isInitialized,
+    error: client.error,
+    initialize: client.initialize,
+  };
 }

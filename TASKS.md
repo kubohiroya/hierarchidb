@@ -109,6 +109,10 @@
     - progress: 2025-09-25 22:58 `WorkerModuleLoader` preload 更新後に `pnpm --filter @hierarchidb/runtime-shared-module-paths build` / `typecheck` ・ `pnpm --filter @hierarchidb/app typecheck` が成功
     - progress: 2025-09-30 20:15 残プラグイン棚卸しと ESLint ルール再適用手順を整理し、Phase 2b の再開準備完了
     - progress: 2025-09-30 20:18 `pnpm -w lint` / `pnpm -r typecheck` を実行し、旧 `worker` パス禁止ルールとモノレポ型検証がグリーンであることを確認
+    - progress: 2025-09-30 20:28 UI 側の peerDialogPersistence を `worker-factory` 経由で EntitiesDB を解決する実装に刷新し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功
+    - progress: 2025-09-30 20:32 旧 `@hierarchidb/plugins-*/worker` 参照をリポジトリ全体で検索し、実コードでは未使用（docs やコメントのみに残存）であることを確認
+    - progress: 2025-09-30 20:36 peerDialogPersistence の dev フォールバック（`@hierarchidb/plugins-*/worker` 直接 import）を撤去し、worker-factory 依存のみで EntitiesDB を解決する構成に統一
+    - progress: 2025-09-30 20:42 `useWorkerAPI` を WorkerClientHook ベースに置き換え、専用 Worker を生成する旧ロジックを廃止（`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {lint,typecheck}` を実行し成功）
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 

@@ -48,6 +48,18 @@ describe('peerDialogPersistence default provider', () => {
 
 const fallbackRows = new Map<string, any>();
 
+vi.mock('@hierarchidb/runtime-shared-module-paths', () => ({
+  PLUGIN_WORKER_MODULE_IDS: {
+    folder: '@hierarchidb/plugins-folder-plugin/worker-factory',
+  },
+  importPluginWorker: (id: string) => {
+    if (id !== 'folder') {
+      return Promise.reject(new Error(`Unhandled plugin id ${id}`));
+    }
+    return import('@hierarchidb/plugins-folder-plugin/worker-factory');
+  },
+}));
+
 vi.mock('@hierarchidb/plugins-folder-plugin/worker-factory', () => ({
   loadFolderEntitiesDbModule: async () => ({
     FolderEntitiesDB: class {
