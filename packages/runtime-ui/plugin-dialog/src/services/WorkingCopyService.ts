@@ -3,7 +3,7 @@
  * Manages working copy state and capabilities evaluation on Worker side
  */
 
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-type';
 import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
 
 /**
@@ -244,10 +244,11 @@ export class WorkingCopyService {
         throw error;
       }
 
+      const fallbackResult = result as CommitResult;
       const error = new Error('Save failed: unexpected status');
       Object.assign(error, {
         name: 'WorkingCopyCommitError',
-        status: result.status,
+        status: fallbackResult.status,
         onNameConflict: options?.onNameConflict,
       });
       throw error;

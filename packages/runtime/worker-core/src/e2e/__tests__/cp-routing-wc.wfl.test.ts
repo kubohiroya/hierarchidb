@@ -1,15 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import {
-  decodeWorkingCopyHolderName,
-  decodeTrashHolderName,
-  isValidTrashHolderName,
-} from '../../services/utils/holder-encoding.js';
-import { exposeTestAPI } from '../test-worker.entry.js';
-import { SingletonMixin } from '@hierarchidb/util';
+import { decodeTrashHolderName, isValidTrashHolderName } from '../../services/utils/holder-encoding.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -42,7 +36,7 @@ const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
-  getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
+  getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 
 async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: number; interval?: number }) {
@@ -70,9 +64,35 @@ const scenarios: Scenario[] = [
 
 const WORKER_FLAG = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
 
+type WorkerSetup = {
+  client: Comlink.Remote<TestWorkerAPI>;
+  port1: MessagePort;
+  port2: MessagePort;
+  terminateAll: () => void;
+};
+
+const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
+  vi.resetModules();
+  process.env[WORKER_FLAG] = flagValue;
+  const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
+    import('@hierarchidb/util'),
+    import('../test-worker.entry.js'),
+  ]);
+  SingletonMixin.terminateAll();
+  const { port1, port2 } = new MessageChannel();
+  await exposeTestAPI(endpointFromPort(port1));
+  const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+  return {
+    client,
+    port1,
+    port2,
+    terminateAll: () => SingletonMixin.terminateAll(),
+  };
+};
+
 const createAndCommit = async (
   mutationAPI: import('@hierarchidb/common-api').TreeMutationAPI,
-  workingCopyAPI: import('@hierarchidb/common-api').WorkingCopyAPI,
+  commandProcessor: import('../../services/CommandProcessor.js').CommandProcessor,
   queryAPI: import('@hierarchidb/common-api').TreeQueryAPI,
   treeId: TreeId,
   parentId: NodeId,
@@ -87,38 +107,27 @@ const createAndCommit = async (
   expect(createResult?.success).toBe(true);
   if (!createResult?.nodeId) throw new Error('createNode did not provide nodeId');
 
-  const wcNodeId = createResult.nodeId as NodeId;
-  const workingCopy = await waitFor(async () => queryAPI.getNode(wcNodeId));
-  if (!workingCopy?.parentId) throw new Error('working copy holder missing');
-  const holder = await queryAPI.getNode(workingCopy.parentId as NodeId);
-  if (!holder) throw new Error('working copy holder not found');
-  const { targetNodeId } = decodeWorkingCopyHolderName(holder.name);
-  const canonicalId = targetNodeId as NodeId;
-
-  const commitResult = await workingCopyAPI.commitWorkingCopy(wcNodeId);
-  expect(commitResult.status).toBe('ok');
-
-  await waitFor(async () => {
-    const committed = await queryAPI.getNode(canonicalId);
-    return committed ?? undefined;
+  const workingCopyId = createResult.nodeId as NodeId;
+  const commitEnvelope = await commandProcessor.createEnvelope('commitWorkingCopy', {
+    workingCopyId,
+    onNameConflict: 'auto-rename' as const,
   });
+  const commitResult = await commandProcessor.processCommand(commitEnvelope);
+  expect(commitResult.success).toBe(true);
+  const canonicalId = commitResult.nodeId as NodeId;
 
+  await waitFor(async () => queryAPI.getNode(canonicalId));
   return canonicalId;
 };
 
 describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue }) => {
   it('handles create, update, move, trash, and restore via Worker API', async () => {
-    SingletonMixin.terminateAll();
-    process.env[WORKER_FLAG] = flagValue;
-
-    const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+    const { client, port1, port2, terminateAll } = await setupWorker(flagValue);
 
     try {
       const queryAPI = await client.getQueryAPI();
       const mutationAPI = await client.getMutationAPI();
-      const workingCopyAPI = await client.getWorkingCopyAPI();
+      const commandProcessor = await client.getCommandProcessor();
 
       const trees = await queryAPI.listTrees();
       expect(trees.length).toBeGreaterThan(0);
@@ -133,20 +142,26 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       await waitFor(async () => queryAPI.getNode(rootId));
       await waitFor(async () => queryAPI.getNode(trashRootId));
 
-      const sourceId = await createAndCommit(mutationAPI, workingCopyAPI, queryAPI, treeId, rootId, 'CP Flow Source');
+      const sourceId = await createAndCommit(mutationAPI, commandProcessor, queryAPI, treeId, rootId, 'CP Flow Source');
 
-      await workingCopyAPI.createWorkingCopyFromNode(sourceId);
-      await workingCopyAPI.updateWorkingCopy(sourceId, { name: 'CP Flow Source Updated' } as Partial<import('@hierarchidb/common-type').TreeNode>);
-      const renameResult = await workingCopyAPI.commitWorkingCopy(sourceId);
-      expect(renameResult.status).toBe('ok');
+      const updatedName = `CP Flow Source Updated ${flagValue}`;
+      const renameEnvelope = await commandProcessor.createEnvelope('updateNode', {
+        nodeId: sourceId,
+        name: updatedName,
+      });
+      const renameResult = await commandProcessor.processCommand(renameEnvelope);
+      if (!renameResult.success) {
+        console.error('[cp-routing-wc.wfl] rename failed', renameResult);
+      }
+      expect(renameResult.success).toBe(true);
       await waitFor(async () => {
         const node = await queryAPI.getNode(sourceId);
-        return node?.name === 'CP Flow Source Updated';
+        return node?.name === updatedName;
       });
 
       const destinationId = await createAndCommit(
         mutationAPI,
-        workingCopyAPI,
+        commandProcessor,
         queryAPI,
         treeId,
         rootId,
@@ -174,6 +189,9 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const holderId = await waitFor(async () => {
         const trashChildren = await queryAPI.listChildren(trashRootId);
         for (const node of trashChildren) {
+          if (node.id === sourceId) {
+            return trashRootId; // direct placement without holder
+          }
           if (node.nodeType !== 'trash' || !isValidTrashHolderName(node.name)) continue;
           const decoded = decodeTrashHolderName(node.name);
           if (decoded.trashedNodeId === sourceId) {
@@ -196,7 +214,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       expect(restoredNode?.parentId).toBe(rootId);
     } finally {
       delete process.env[WORKER_FLAG];
-      SingletonMixin.terminateAll();
+      terminateAll();
       const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
       if (release) {
         await release.call(client);

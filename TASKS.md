@@ -75,11 +75,12 @@
   - [x] Headless: policy-c フロー（`packages/runtime-worker/worker/src/e2e/__tests__/policy-c*.headless.test.ts`）
  - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
  - [x] UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
- - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
+  - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker-core/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
+  - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
  - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
   - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
   - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
-  - [ ] Playwright 実行安定化（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts` 通過） — 未検証。build 済み環境でサーバ起動→テスト実行の手順整理、TreeTable が非同期更新中に閉じるケースの吸収、`waitForSubTreeUpdate` で捌けない DOM 反映遅延対策（イベント待機/リトライ）を詰める。
+  - [ ] Playwright 実行安定化（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts` 通過） — 未検証。User 指示により当面は WFL 結合テストを優先したため、UI 側は別途リトライ前提。build 済み環境でサーバ起動→テスト実行の手順整理、TreeTable が非同期更新中に閉じるケースの吸収、`waitForSubTreeUpdate` で捌けない DOM 反映遅延対策（イベント待機/リトライ）を詰める。
   - [ ] フロー完了後の UI 状態検証の強化 — 移動→復元後に親ノード展開が戻ることがあり、追加の DOM 安定化（`TreeConsoleIntegration` イベント or 属性監視）が必要。
   - [ ] フラグ override の再検証 — テスト毎に localStorage を初期化する仕組みがまだない。複数シナリオ連続実行時に override が持ち越されるため、`beforeEach` でクリアするか Playwright の storageState を活用する。
   - [ ] CI 組み込み — turbo `e2e` タスクへ新 spec を組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
@@ -1382,6 +1383,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
 - 2025-09-30 14:10 start: feat/e2e/cp-routing-wc — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/cp-routing-wc` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
 - 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/cp-routing-wc-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
+- 2025-09-30 18:20 progress: 同タスク — `packages/runtime-worker-core/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を新設し、Comlink + fake-indexeddb 環境で create → rename → move → trash → restore を flag off/on 両モードで検証。`pnpm --filter @hierarchidb/runtime-worker test cp-routing-wc.wfl.test.ts` が通過。Playwright 側は未実行のため TODO を維持。
 - 2025-09-30 16:30 progress: feat/worker/undo-redo-finalize — Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を追加し、`renameFolder` / `restoreFromTrash` / `clickUndo` / `clickRedo` を含むテストヘルパーを拡張。Toolbar に Undo/Redo の data-testid を付与し、flag override 連携を UI/Worker 共通設定 (`app/src/config/worker-flag-overrides.ts`) へ集約。次ステップで `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行し、flag OFF/ON 両経路の整合を検証する。
 - 2025-09-30 16:55 progress: 同タスク — `playwright.config.ts` の webServer timeout を 480 秒へ延長（app build が 300 秒超かかるため）。Chromium 単体実行を目標に `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を再試行する準備完了。
 - 2025-09-30 17:05 blocked: 同タスク — `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行したところ、`playwright.config.ts` の webServer (`pnpm --filter @hierarchidb/app build && preview`) 起動時に `vite preview` の `listen EPERM: operation not permitted 0.0.0.0:4173` で失敗。sandbox ではポート開放不可のため外部環境での再実行が必要。`pnpm --filter @hierarchidb/app build` までは完了済みで、chromium 向けシナリオとヘルパーは動作確認待ち。必要なら webServer のポート/ホスト設定を 127.0.0.1 固定で再試行する。
@@ -4565,6 +4567,9 @@ P2:
 - 2025-09-30 21:05 progress: feat/plugins/worker-factory-rollout — `WorkerModuleLoader` のコメントと `docs/design/worker-dynamic-import-architecture.md` / `docs/requirements/dynamic-import-unification.md` を最新の modulePaths ベース構成へ更新し、旧 `*/worker` 言及を整理（ドキュメントのみ変更のためコマンド実行なし）。
 - 2025-09-30 21:28 progress: feat/plugins/worker-factory-rollout — `docs/architecture/worker-initialization-analysis.md` / `docs/developer-guidelines.md` / `docs/design/plugin-shapes/implementation-design.md` / `docs/tasks/worker-implementation-tasks.md` を棚卸しし、`*/worker` 直参照の説明を modulePaths / WorkerBridge 前提に差し替え（ドキュメント更新のみ）。
 - 2025-09-30 21:46 progress: feat/plugins/worker-factory-rollout — `app/docs/16-plugin-dev-with-registry.md`, `packages/plugins/README.md`, `packages/plugins/CONTRIBUTING.md`, `packages/plugins/timeline-plugin/README.md`, `packages/runtime/worker-bootstrap/README.md`, `packages/plugins/resolver-plugin/README.md`, `packages/plugins/styler-plugin/README.md` を更新し、最新の worker-factory / WorkerModuleLoader 運用に沿うよう記述を改訂（コード変更なし）。
+- 2025-09-30 22:10 start: fix/runtime-ui-plugin-dialog/working-copy-status-never — `packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` のフォールバック分岐で `result` が `never` 推論となり `result.status` 参照で TS2339 が発生。型キャストによるフォールバック整備と `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 実行を予定。
+- 2025-09-30 22:18 progress: fix/runtime-ui-plugin-dialog/working-copy-status-never — 依存型再生成のため `pnpm --filter @hierarchidb/ui-core build` を実行後、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がグリーンで完了。
+- 2025-09-30 22:25 done: fix/runtime-ui-plugin-dialog/working-copy-status-never — `CommitResult` を明示インポートし、fallback 分岐で `result` をキャストして `status` 参照時の TS2339 を解消。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` が成功（依存ビルド済み）。
 - 2025-09-30 20:15 start: feat/plugins/worker-factory-rollout — Phase 2b 展開タスクに着手。対象プラグインと ESLint ルール適用範囲を棚卸しし、必要な codemod/検証コマンドを整理。
 - 2025-09-30 20:05 done: chore/tasks/kanban-refresh — Kanban の Doing を空にし、完了済みタスク（SpeedDial icon, ambient sideEffects, WorkerBridge, Basemap build-types, dialog extensions, worker-factory-pilot）の Done 反映とログ整備を実施。
 - 2025-10-01 09:05 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を再実行し、Pause/Resume UI 実装後もグリーンであることを確認。
