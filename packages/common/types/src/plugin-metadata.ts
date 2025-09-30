@@ -1,4 +1,40 @@
 import type { NodeType } from './id-types.js';
+import type { ValidationRule } from './validation-types.js';
+
+export interface PluginManifestDatabaseField {
+  name: string;
+  indexed?: boolean;
+}
+
+export interface PluginManifestDatabaseSchema {
+  fields?: ReadonlyArray<PluginManifestDatabaseField>;
+}
+
+export interface PluginManifestDatabaseConfig {
+  dbName?: string;
+  tableName?: string;
+  version?: number;
+  schema?: PluginManifestDatabaseSchema;
+}
+
+export interface PluginManifestUIConfig {
+  dialogComponentPath?: string;
+  panelComponentPath?: string;
+  formComponentPath?: string;
+  iconComponentPath?: string;
+}
+
+export interface PluginManifestAPIConfig {
+  workerExtensions?: Record<string, (...args: unknown[]) => Promise<unknown>>;
+  clientExtensions?: Record<string, (...args: unknown[]) => Promise<unknown>>;
+}
+
+export interface PluginManifestValidationConfig {
+  namePattern?: string | RegExp;
+  maxChildren?: number;
+  allowedChildTypes?: ReadonlyArray<NodeType>;
+  customValidators?: ReadonlyArray<ValidationRule<any>>;
+}
 
 /**
  * Lightweight, publish-stable metadata that plugins may expose for discovery.
@@ -50,10 +86,16 @@ export interface PluginMetadata {
   schema?: unknown;
 
   /** Database configuration hints */
-  database?: unknown;
+  database?: PluginManifestDatabaseConfig;
 
   /** UI configuration hints */
-  ui?: unknown;
+  ui?: PluginManifestUIConfig;
+
+  /** API extension hints */
+  api?: PluginManifestAPIConfig;
+
+  /** Validation hints */
+  validation?: PluginManifestValidationConfig;
 
   /** Arbitrary additional metadata */
   extra?: Record<string, unknown>;

@@ -5,14 +5,14 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 import {
   type MapLibreLayer,
-  MapLibreMap,
   type MapLibreMapInstance,
   type MapLibreStyle,
   type MapViewState,
+  loadMapLibreMap,
 } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
@@ -58,6 +58,11 @@ export interface BaseMapDisplayProps {
   /** Optional: show a minimal demo overlay (local GeoJSON) for hover/select showcasing */
   enableDemoOverlay?: boolean;
 }
+
+const LazyMapLibreMap = lazy(async () => {
+  const mod = await loadMapLibreMap();
+  return { default: mod.MapLibreMap };
+});
 
 /**
  * BaseMap Display Component
@@ -345,24 +350,41 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   // Render map
   return (
     <Box sx={{ width, height, position: 'relative', ...style }}>
-      <MapLibreMap
-        initialViewState={initialViewState}
-        mapStyle={mapStyleUrl}
-        width="100%"
-        height="100%"
-        onLoad={handleMapLoad}
-        onViewStateChange={handleViewStateChange}
-        mapOptions={{
-          interactive,
-          scrollZoom: interactive,
-          dragPan: interactive,
-          dragRotate: interactive,
-          doubleClickZoom: interactive,
-          touchZoomRotate: interactive,
-        }}
+      <Suspense
+        fallback={
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(247, 250, 252, 0.6)',
+            }}
+          >
+            <CircularProgress size={32} />
+          </Box>
+        }
       >
-        {/* Children components like markers, layers etc. can be added here */}
-      </MapLibreMap>
+        <LazyMapLibreMap
+          initialViewState={initialViewState}
+          mapStyle={mapStyleUrl}
+          width="100%"
+          height="100%"
+          onLoad={handleMapLoad}
+          onViewStateChange={handleViewStateChange}
+          mapOptions={{
+            interactive,
+            scrollZoom: interactive,
+            dragPan: interactive,
+            dragRotate: interactive,
+            doubleClickZoom: interactive,
+            touchZoomRotate: interactive,
+          }}
+        >
+          {/* Children components like markers, layers etc. can be added here */}
+        </LazyMapLibreMap>
+      </Suspense>
 
       {/* Attribution overlay if needed */}
       {entity.displayOptions?.attribution && (

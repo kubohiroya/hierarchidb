@@ -66,7 +66,6 @@
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
@@ -84,6 +83,7 @@
     "@hierarchidb/download": "workspace:*"
   },
   "peerDependencies": {
+    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "dexie": "^4.2.0",
     "@hierarchidb/batch": "workspace:*",
     "react": "^18.3.1",

@@ -7,6 +7,7 @@ import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { Map as ReactMapLibreMap, MapProvider } from '@vis.gl/react-maplibre';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
+import type * as MapLibreModule from 'maplibre-gl';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
@@ -19,6 +20,29 @@ if (typeof document !== 'undefined') {
   // dynamic import prevents Vite HMR client from injecting styles in workers
   void import('maplibre-gl/dist/maplibre-gl.css');
 }
+
+type MapLibreControlsModule = typeof MapLibreModule;
+
+let cachedControlsModule: MapLibreControlsModule | null = null;
+let controlsModulePromise: Promise<MapLibreControlsModule | null> | null = null;
+
+const loadMapLibreControlsModule = async (): Promise<MapLibreControlsModule | null> => {
+  if (cachedControlsModule) return cachedControlsModule;
+  if (!controlsModulePromise) {
+    controlsModulePromise = import('maplibre-gl')
+      .then((mod) => {
+        cachedControlsModule = mod;
+        return mod;
+      })
+      .catch((error) => {
+        if (typeof console !== 'undefined') {
+          console.warn('[MapLibreMap] Failed to load maplibre-gl controls', error);
+        }
+        return null;
+      });
+  }
+  return controlsModulePromise;
+};
 
 // Re-export types for backward compatibility
 export type { MapViewState, MapInteractionOptions } from '../types/unified-map-props.js';
@@ -61,10 +85,9 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
   const handleMapLoad = useCallback((e: any) => {
     const map = e.target;
     mapRef.current = map;
-    // Optional built-in controls
     if (controls) {
-      try {
-        const mlib = require('maplibre-gl');
+      void loadMapLibreControlsModule().then((mlib) => {
+        if (!mlib) return;
         if (controls.navigation) {
           const pos = typeof controls.navigation === 'object' && controls.navigation.position ? controls.navigation.position : 'top-right';
           map.addControl(new mlib.NavigationControl(), pos);
@@ -82,9 +105,7 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
           const opts = typeof controls.geolocate === 'object' && controls.geolocate.options ? controls.geolocate.options : { trackUserLocation: true };
           if (mlib.GeolocateControl) map.addControl(new mlib.GeolocateControl(opts), pos);
         }
-      } catch {
-        // ignore if maplibre-gl is not resolvable in this environment
-      }
+      });
     }
     setMapLoaded(true);
     onLoad?.(map);

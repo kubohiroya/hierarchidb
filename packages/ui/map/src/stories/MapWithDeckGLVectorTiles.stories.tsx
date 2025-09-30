@@ -1,12 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import type { Feature, Polygon } from 'geojson';
 import { TileLayer } from '@deck.gl/geo-layers';
 import type { TileLayerProps } from '@deck.gl/geo-layers';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import type { GeoJsonLayerProps } from '@deck.gl/layers';
-import MapWithDeckGL from '../components/MapWithDeckGL.js';
-import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import { DEFAULT_MAP_CONFIG, loadMapWithDeckGL } from '../index.js';
+
+const LazyMapWithDeckGL = lazy(async () => {
+  const mod = await loadMapWithDeckGL();
+  return { default: mod.MapWithDeckGL };
+});
 
 type PrefectureFeatureProperties = {
   name: string;
@@ -151,21 +155,42 @@ const VectorTileHighlightDemo = ({ highlightId, matchProperty, matchValue }: Hig
   );
 
   return (
-    <MapWithDeckGL
-      initialViewState={INITIAL_VIEW_STATE}
-      mapStyle={DEFAULT_MAP_CONFIG.mapStyle}
-      height="520px"
-      deck={{
-        layers,
-        getTooltip: ({ object }: { object?: PrefectureFeature }) =>
-          object
-            ? {
-                text: `${object.properties?.name}\n${object.properties?.prefecture}`,
-              }
-            : null,
-      }}
-      style={{ minHeight: '520px', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.18)' }}
-    />
+    <Suspense
+      fallback={
+        <div
+          style={{
+            width: '100%',
+            height: '520px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, rgba(15,23,42,0.08), rgba(15,23,42,0.02))',
+            borderRadius: 12,
+            boxShadow: 'inset 0 0 0 1px rgba(15, 23, 42, 0.08)',
+            color: '#334155',
+            fontSize: '0.9rem',
+          }}
+        >
+          Loading Deck.gl layers…
+        </div>
+      }
+    >
+      <LazyMapWithDeckGL
+        initialViewState={INITIAL_VIEW_STATE}
+        mapStyle={DEFAULT_MAP_CONFIG.mapStyle}
+        height="520px"
+        deck={{
+          layers,
+          getTooltip: ({ object }: { object?: PrefectureFeature }) =>
+            object
+              ? {
+                  text: `${object.properties?.name}\n${object.properties?.prefecture}`,
+                }
+              : null,
+        }}
+        style={{ minHeight: '520px', borderRadius: 12, overflow: 'hidden', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.18)' }}
+      />
+    </Suspense>
   );
 };
 

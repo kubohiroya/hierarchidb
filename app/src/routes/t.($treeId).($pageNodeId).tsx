@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, ShouldRevalidateFunction } from 'react-router';
 import type { MouseEvent, ReactNode } from 'react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLoaderData, useNavigate } from 'react-router';
 import {
   AppBar,
@@ -22,9 +22,13 @@ import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { loadPageNode } from '~/loader.js';
-import { TreeConsoleIntegration } from '~/components/TreeConsoleIntegration.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
+
+const LazyTreeConsoleIntegration = lazy(async () => {
+  const mod = await import('~/components/TreeConsoleIntegration.js');
+  return { default: mod.TreeConsoleIntegration };
+});
 
 type LoaderData = Awaited<ReturnType<typeof loadPageNode>>;
 
@@ -172,7 +176,7 @@ export default function TLayout() {
           </Dialog>
         ) : (
           <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}>
-            <TreeConsoleIntegration
+            <LazyTreeConsoleIntegration
               key={`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`}
               treeId={data.tree?.id}
               pageNodeId={data.pageNodeId}

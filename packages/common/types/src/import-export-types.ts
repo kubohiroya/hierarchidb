@@ -95,7 +95,7 @@ export interface ImportOptions {
  * @deprecated Unused across the repository; scheduled for removal.
  */
 export interface FileImportOptions extends ImportOptions {
-  file: File;
+  file: ImportFileSource;
 }
 
 /**
@@ -171,3 +171,14 @@ export interface ClipboardData {
  * @deprecated Unused across the repository; scheduled for removal.
  */
 export type IdMapping = Map<NodeId, NodeId>;
+type GlobalFile = typeof globalThis extends { File: infer F } ? F : never;
+
+export interface FileLike {
+  name: string;
+  size: number;
+  type?: string;
+  lastModified?: number;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
+export type ImportFileSource = GlobalFile extends never ? FileLike : GlobalFile | FileLike;

@@ -3,7 +3,6 @@
 // This file statically wires plugin worker EntitiesDB loaders and registers UI persistence overrides.
 
 import type { Table } from 'dexie';
-
 export type NodeId = string & { readonly __brand: unique symbol };
 
 // Dexie-like shape used by UI/worker utilities
@@ -17,38 +16,8 @@ export interface PeerEntityRecord {
   dialogSize?: PeerDialogSize;
   data?: unknown;
 }
-
-export type PeerEntitiesDB = {
-  peerEntities: Table<PeerEntityRecord, NodeId>;
-  open?: () => Promise<void> | void;
-  close?: () => Promise<void> | void;
-} & Record<string, unknown>;
-
+export type PeerEntitiesDB = { peerEntities: Table<PeerEntityRecord, NodeId>; open?: () => Promise<void>; close?: () => void } & Record<string, unknown>;
 export type PeerDbLoader = () => Promise<PeerEntitiesDB | undefined>;
-
-type UiPersistenceRow = {
-  nodeId: string;
-  displayMode?: string;
-  dialogPosition?: PeerDialogPosition;
-  dialogSize?: PeerDialogSize;
-  updatedAt?: number;
-  data?: unknown;
-};
-
-interface UiPersistenceTableAdapter {
-  get: (id: string) => Promise<UiPersistenceRow | undefined>;
-  put: (row: UiPersistenceRow) => Promise<void>;
-  delete?: (id: string) => Promise<void> | void;
-}
-
-interface UiPersistenceAdapter {
-  open?: () => Promise<void> | void;
-  table: (_name: string) => UiPersistenceTableAdapter;
-}
-
-type UiPersistenceAdapterFactory = () => Promise<UiPersistenceAdapter | undefined>;
-
-type UiPersistenceRegistry = Record<string, UiPersistenceAdapterFactory>;
 
 declare global {
   var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, unknown> | undefined;
@@ -60,107 +29,167 @@ import { loadLinkerEntitiesDbModule } from '@hierarchidb/plugins-linker-plugin/w
 import { loadLocationEntitiesDbModule } from '@hierarchidb/plugins-location-plugin/worker-factory';
 import { loadResolverEntitiesDbModule } from '@hierarchidb/plugins-resolver-plugin/worker-factory';
 import { loadRouteEntitiesDbModule } from '@hierarchidb/plugins-route-plugin/worker-factory';
+import { loadShapeEntitiesDbModule } from '@hierarchidb/plugins-shape-plugin/worker-factory';
 import { loadSpreadsheetEntitiesDbModule } from '@hierarchidb/plugins-spreadsheet-plugin/worker-factory';
 import { loadStylerEntitiesDbModule } from '@hierarchidb/plugins-styler-plugin/worker-factory';
 import { loadTimelineEntitiesDbModule } from '@hierarchidb/plugins-timeline-plugin/worker-factory';
 
-type EntitiesDbConstructor = new () => PeerEntitiesDB;
-
-const toNodeId = (value: string): NodeId => value as NodeId;
-
-const resolveEntitiesDbConstructor = (module: unknown, exportName: string): EntitiesDbConstructor | null => {
-  if (!module || typeof module !== 'object') return null;
-  const candidate = (module as Record<string, unknown>)[exportName];
-  return typeof candidate === 'function' ? (candidate as EntitiesDbConstructor) : null;
-};
-
-const createPeerDbLoader = (loader: () => Promise<unknown>, exportName: string): PeerDbLoader => {
-  return async () => {
+export const peerDbLoaders: Record<string, PeerDbLoader> = {
+  'basemap': async () => {
     try {
-      const module = await loader();
-      const Ctor = resolveEntitiesDbConstructor(module, exportName);
-      if (!Ctor) return undefined;
+      const mod = await loadBasemapEntitiesDbModule();
+      const Ctor = mod?.['BasemapEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
       const db = new Ctor();
-      try {
-        await db.open?.();
-      } catch {
-        // ignore open errors; caller can still interact with DB lazily
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
       }
-      return db;
+      return db as unknown as PeerEntitiesDB;
     } catch {
       return undefined;
     }
-  };
-};
-
-const toPersistenceRow = (record: PeerEntityRecord | undefined): UiPersistenceRow | undefined => {
-  if (!record) return undefined;
-  return {
-    nodeId: String(record.nodeId),
-    displayMode: typeof record.displayMode === 'string' ? record.displayMode : undefined,
-    dialogPosition: record.dialogPosition,
-    dialogSize: record.dialogSize,
-    updatedAt: typeof record.updatedAt === 'number' ? record.updatedAt : undefined,
-    data: record.data,
-  };
-};
-
-const fromPersistenceRow = (row: UiPersistenceRow | undefined): PeerEntityRecord | null => {
-  if (!row || typeof row.nodeId !== 'string') return null;
-  return {
-    nodeId: toNodeId(row.nodeId),
-    displayMode: typeof row.displayMode === 'string' ? row.displayMode : undefined,
-    dialogPosition: row.dialogPosition,
-    dialogSize: row.dialogSize,
-    updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : undefined,
-    data: row.data,
-  };
-};
-
-export const peerDbLoaders: Record<string, PeerDbLoader> = {
-  basemap: createPeerDbLoader(loadBasemapEntitiesDbModule, 'BasemapEntitiesDB'),
-  folder: createPeerDbLoader(loadFolderEntitiesDbModule, 'FolderEntitiesDB'),
-  linker: createPeerDbLoader(loadLinkerEntitiesDbModule, 'LinkerEntitiesDB'),
-  location: createPeerDbLoader(loadLocationEntitiesDbModule, 'LocationEntitiesDB'),
-  resolver: createPeerDbLoader(loadResolverEntitiesDbModule, 'ResolverEntitiesDB'),
-  route: createPeerDbLoader(loadRouteEntitiesDbModule, 'RouteEntitiesDB'),
-  shape: createPeerDbLoader(loadShapeEntitiesDbModule, 'ShapeEntitiesDB'),
-  spreadsheet: createPeerDbLoader(loadSpreadsheetEntitiesDbModule, 'SpreadsheetEntitiesDB'),
-  styler: createPeerDbLoader(loadStylerEntitiesDbModule, 'StylerEntitiesDB'),
-  timeline: createPeerDbLoader(loadTimelineEntitiesDbModule, 'TimelineEntitiesDB'),
+  },
+  'folder': async () => {
+    try {
+      const mod = await loadFolderEntitiesDbModule();
+      const Ctor = mod?.['FolderEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'linker': async () => {
+    try {
+      const mod = await loadLinkerEntitiesDbModule();
+      const Ctor = mod?.['LinkerEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'location': async () => {
+    try {
+      const mod = await loadLocationEntitiesDbModule();
+      const Ctor = mod?.['LocationEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'resolver': async () => {
+    try {
+      const mod = await loadResolverEntitiesDbModule();
+      const Ctor = mod?.['ResolverEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'route': async () => {
+    try {
+      const mod = await loadRouteEntitiesDbModule();
+      const Ctor = mod?.['RouteEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'shape': async () => {
+    try {
+      const mod = await loadShapeEntitiesDbModule();
+      const Ctor = mod?.['ShapeEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'spreadsheet': async () => {
+    try {
+      const mod = await loadSpreadsheetEntitiesDbModule();
+      const Ctor = mod?.['SpreadsheetEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'styler': async () => {
+    try {
+      const mod = await loadStylerEntitiesDbModule();
+      const Ctor = mod?.['StylerEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
+  'timeline': async () => {
+    try {
+      const mod = await loadTimelineEntitiesDbModule();
+      const Ctor = mod?.['TimelineEntitiesDB'] as unknown as (new () => PeerEntitiesDB) | undefined;
+      if (typeof Ctor !== 'function') return undefined;
+      const db = new Ctor();
+      if (typeof (db as any).open === 'function') {
+        try { await (db as any).open(); } catch { /* ignore */ }
+      }
+      return db as unknown as PeerEntitiesDB;
+    } catch {
+      return undefined;
+    }
+  },
 };
 
 export function registerUIPersistenceOverrides(): void {
-  const globalObject = globalThis as { __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, unknown> };
-  const existing = globalObject.__HDB_PLUGIN_ENTITY_OVERRIDES__;
-  const overrides: UiPersistenceRegistry = existing ? existing as UiPersistenceRegistry : {};
-  globalObject.__HDB_PLUGIN_ENTITY_OVERRIDES__ = overrides;
-
+  const g = (globalThis as any);
+  const overrides = (g.__HDB_PLUGIN_ENTITY_OVERRIDES__ ??= {});
   for (const [nodeType, loader] of Object.entries(peerDbLoaders)) {
     overrides[nodeType] = async () => {
       const db = await loader();
-      if (!db) {
-        return {
-          table: () => ({
-            get: async () => undefined,
-            put: async () => {},
-          }),
-        } satisfies UiPersistenceAdapter;
-      }
-
+      if (!db) return { table: () => ({ get: async () => undefined, put: async () => {} }) };
       return {
-        table: () => ({
-          get: async (id: string) => toPersistenceRow(await db.peerEntities.get(toNodeId(id))),
-          put: async (row: UiPersistenceRow) => {
-            const record = fromPersistenceRow(row);
-            if (!record) return;
-            await db.peerEntities.put(record);
-          },
-          delete: async (id: string) => {
-            await db.peerEntities.delete(toNodeId(id));
-          },
+        table: (_name: string) => ({
+          get: (id: string) => (db as any).peerEntities.get(id as any),
+          put: (row: any) => (db as any).peerEntities.put(row),
         }),
-      } satisfies UiPersistenceAdapter;
+      };
     };
   }
 }

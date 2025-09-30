@@ -6,10 +6,15 @@ import type {
   PluginUIConfig,
   PluginAPIConfig,
   PluginValidationConfig,
-  DatabaseSchema
-} from '../packages/common/types/src/plugin-definition.js';
-import type { NodeType } from '../packages/common/types/src/id-types.js';
-import type { PluginMetadata } from '../packages/common/types/src/plugin-metadata.js';
+  PluginManifestAPIConfig,
+  PluginManifestDatabaseConfig,
+  PluginManifestDatabaseSchema,
+  PluginManifestUIConfig,
+  PluginManifestValidationConfig,
+  DatabaseSchema,
+  NodeType,
+  PluginMetadata,
+} from '@hierarchidb/common-type';
 
 export type PluginManifestContent = PluginMetadata;
 
@@ -33,9 +38,9 @@ export class PluginDefinitionBuilder {
         category: this.buildCategoryDefinition(manifest.category, manifest.priority),
         database: this.buildDatabaseConfig(manifest, nodeType),
 
-        ui: this.buildUIConfig((manifest.ui ?? {}) as any),
-        api: this.buildAPIConfig((manifest.api ?? {}) as any),
-        validation: this.buildValidationConfig((manifest.validation ?? {}) as any),
+        ui: this.buildUIConfig(manifest.ui),
+        api: this.buildAPIConfig(manifest.api),
+        validation: this.buildValidationConfig(manifest.validation),
 
         extends: manifest.extends,
         dependencies: this.buildDependencies(manifest, nodeType),
@@ -105,43 +110,39 @@ export class PluginDefinitionBuilder {
   }
   
   private buildDatabaseConfig(pluginConfig: PluginManifestContent, nodeType: NodeType): PluginDatabaseConfig {
-    const dbConfig = (pluginConfig.database as any) || {};
-    const tableName = dbConfig.tableName || `${nodeType}s`.replace('-plugin', '');
-    
+    const dbConfig: PluginManifestDatabaseConfig = pluginConfig.database ?? {};
+    const tableName = dbConfig.tableName ?? `${nodeType}s`.replace('-plugin', '');
+
     const schema: DatabaseSchema = {};
     schema[tableName] = this.buildDatabaseSchema(dbConfig.schema);
 
     return {
-      dbName: dbConfig.dbName || 'CoreDB',
+      dbName: dbConfig.dbName ?? 'CoreDB',
       schema,
-      version: dbConfig.version || 1
+      version: dbConfig.version ?? 1,
     };
   }
-  
-  private buildDatabaseSchema(schemaConfig: any): string {
+
+  private buildDatabaseSchema(schemaConfig?: PluginManifestDatabaseSchema): string {
     const indexedFields: string[] = ['&id', 'nodeId'];
-    
-    if (schemaConfig?.fields) {
-      for (const field of schemaConfig.fields) {
-        if (field.name === 'name') {
-          if (!indexedFields.includes('name')) {
-            indexedFields.push('name');
-          }
-        } else if (field.indexed) {
-          if (!indexedFields.includes(field.name)) {
-            indexedFields.push(field.name);
-          }
-        }
+
+    const fields = schemaConfig?.fields ?? [];
+    for (const field of fields) {
+      if (!field?.name) continue;
+      if (field.name === 'name') {
+        if (!indexedFields.includes('name')) indexedFields.push('name');
+      } else if (field.indexed) {
+        if (!indexedFields.includes(field.name)) indexedFields.push(field.name);
       }
     }
-    
+
     const standardFields = ['createdAt', 'updatedAt', 'version'];
     for (const field of standardFields) {
       if (!indexedFields.includes(field)) {
         indexedFields.push(field);
       }
     }
-    
+
     return indexedFields.join(', ');
   }
   
@@ -161,40 +162,74 @@ export class PluginDefinitionBuilder {
     return dependencies;
   }
   
-  private buildUIConfig(uiConfig: any): PluginUIConfig | undefined {
-    if (!uiConfig) {
+  private buildUIConfig(uiConfig: PluginManifestUIConfig | undefined): PluginUIConfig | undefined {
+    if (!uiConfig) return undefined;
+    const {
+      dialogComponentPath,
+      panelComponentPath,
+      formComponentPath,
+      iconComponentPath,
+    } = uiConfig;
+    if (
+      !dialogComponentPath &&
+      !panelComponentPath &&
+      !formComponentPath &&
+      !iconComponentPath
+    ) {
       return undefined;
     }
-    
+
     return {
-      dialogComponentPath: uiConfig.dialogComponentPath,
-      panelComponentPath: uiConfig.panelComponentPath,
-      formComponentPath: uiConfig.formComponentPath,
-      iconComponentPath: uiConfig.iconComponentPath
+      dialogComponentPath,
+      panelComponentPath,
+      formComponentPath,
+      iconComponentPath,
     };
   }
   
-  private buildAPIConfig(apiConfig: any): PluginAPIConfig | undefined {
-    if (!apiConfig) {
+  private buildAPIConfig(apiConfig: PluginManifestAPIConfig | undefined): PluginAPIConfig | undefined {
+    if (!apiConfig) return undefined;
+    const hasWorker = apiConfig.workerExtensions && Object.keys(apiConfig.workerExtensions).length > 0;
+    const hasClient = apiConfig.clientExtensions && Object.keys(apiConfig.clientExtensions).length > 0;
+
+    if (!hasWorker && !hasClient) {
       return undefined;
     }
-    
+
     return {
       workerExtensions: apiConfig.workerExtensions,
-      clientExtensions: apiConfig.clientExtensions
+      clientExtensions: apiConfig.clientExtensions,
     };
   }
   
-  private buildValidationConfig(validationConfig: any): PluginValidationConfig | undefined {
-    if (!validationConfig) {
+  private buildValidationConfig(validationConfig: PluginManifestValidationConfig | undefined): PluginValidationConfig | undefined {
+    if (!validationConfig) return undefined;
+
+    const {
+      namePattern,
+      maxChildren,
+      allowedChildTypes,
+      customValidators,
+    } = validationConfig;
+
+    if (
+      namePattern == null &&
+      maxChildren == null &&
+      (!allowedChildTypes || allowedChildTypes.length === 0) &&
+      (!customValidators || customValidators.length === 0)
+    ) {
       return undefined;
     }
-    
+
+    const compiledPattern = typeof namePattern === 'string'
+      ? new RegExp(namePattern)
+      : namePattern;
+
     return {
-      namePattern: validationConfig.namePattern ? new RegExp(validationConfig.namePattern) : undefined,
-      maxChildren: validationConfig.maxChildren,
-      allowedChildTypes: validationConfig.allowedChildTypes?.map((type: string) => type as NodeType),
-      customValidators: validationConfig.customValidators
+      namePattern: compiledPattern,
+      maxChildren,
+      allowedChildTypes: allowedChildTypes?.map((type) => type as NodeType),
+      customValidators: customValidators as PluginValidationConfig['customValidators'],
     };
   }
 }

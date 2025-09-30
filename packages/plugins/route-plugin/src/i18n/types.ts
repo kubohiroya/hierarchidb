@@ -67,11 +67,31 @@ export interface RoutePluginTranslations {
     cancel: string;
     download: string;
     exportRoutes: string;
+    pauseTooltip: string;
+    resumeTooltip: string;
+    cancelTooltip: string;
     stages: {
       planning: string;
       routing: string;
       optimization: string;
       validation: string;
+      [stageKey: string]: string;
+    };
+    phases: {
+      running: string;
+      queued: string;
+      completed: string;
+      failed: string;
+      paused: string;
+      cancelled: string;
+    };
+    summary: {
+      completedLabel: string;
+      totalLabel: string;
+      failedLabel: string;
+      resultsLabel: string;
+      lastErrorLabel: string;
+      noneLabel: string;
     };
   };
 

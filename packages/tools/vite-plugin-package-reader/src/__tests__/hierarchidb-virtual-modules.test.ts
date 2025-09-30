@@ -14,6 +14,17 @@ const repoRoot = path.resolve(currentDir, '../../../../..');
 
 const virtualModuleId = 'virtual:plugin-definitions';
 
+function getHookHandler<T extends (...args: any[]) => any>(
+  hook: T | { handler?: T } | undefined,
+): T | undefined {
+  if (!hook) return undefined;
+  if (typeof hook === 'function') return hook;
+  if (typeof hook.handler === 'function') {
+    return hook.handler;
+  }
+  return undefined;
+}
+
 describe('HierarchiDB preset virtual module integration', () => {
   it('processes real plugin manifests and exposes plugin-definitions virtual module', async () => {
     const plugin = vitePluginPackageReader({
@@ -27,7 +38,10 @@ describe('HierarchiDB preset virtual module integration', () => {
       monorepo: { usePnpmWorkspace: true },
     });
 
-    await plugin.configResolved?.({
+    const configResolved = getHookHandler<(config: any) => void | Promise<void>>(
+      plugin.configResolved as any,
+    );
+    await configResolved?.call(plugin, {
       root: repoRoot,
       logLevel: 'silent',
       resolve: {},
@@ -45,10 +59,21 @@ describe('HierarchiDB preset virtual module integration', () => {
     expect(definitions?.some((def) => def.nodeType === 'folder')).toBe(true);
     expect(definitions?.every((def) => typeof def.version === 'string')).toBe(true);
 
-    const resolvedId = plugin.resolveId?.(virtualModuleId);
+    const resolveId = getHookHandler<(
+      source: string,
+      importer: string | undefined,
+      options: any
+    ) => any>(plugin.resolveId as any);
+    const resolvedId = await resolveId?.call(
+      plugin,
+      virtualModuleId,
+      undefined,
+      { attributes: {}, isEntry: false } as any,
+    );
     expect(resolvedId).toBe('\0virtual:plugin-definitions');
 
-    const virtualContent = plugin.load?.(resolvedId as string);
+    const load = getHookHandler<(id: string, options?: any) => any>(plugin.load as any);
+    const virtualContent = await load?.call(plugin, resolvedId as string, { ssr: false } as any);
     expect(virtualContent).toBeDefined();
     expect(virtualContent).toContain("packageName: '@hierarchidb/plugins-folder-plugin'");
     expect(virtualContent).toContain("nodeType: 'folder'");

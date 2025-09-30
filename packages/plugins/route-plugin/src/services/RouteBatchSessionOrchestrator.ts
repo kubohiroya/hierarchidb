@@ -96,19 +96,40 @@ export class RouteBatchSessionOrchestrator implements IBatchSessionManager {
   }
 
   async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
-    const progress = await this.manager.getRouteBatchProgress(sessionId);
+    const [progress, cursor] = await Promise.all([
+      this.manager.getRouteBatchProgress(sessionId),
+      this.db.routeCursors.get(sessionId),
+    ]);
+    const total = progress.totalRoutes;
+    const completed = progress.completedRoutes;
+    const failed = progress.errors.length;
+    const percentage = clampPercentage(progress.progress);
+    const paused = cursor?.paused ?? false;
+    const status: BatchSessionStatus['status'] = paused
+      ? 'paused'
+      : percentage >= 100
+        ? 'completed'
+        : failed > 0
+          ? 'failed'
+          : 'running';
+
+    const lastError = progress.errors.length > 0 ? progress.errors[progress.errors.length - 1] : undefined;
+    const nodeId = this.sessionNodeMap.get(sessionId) ?? ('' as NodeId);
     return {
       sessionId,
-      nodeId: this.sessionNodeMap.get(sessionId) ?? ('' as NodeId),
-      status: progress.progress >= 100 ? 'completed' : 'running',
+      nodeId,
+      status,
       progress: {
-        total: progress.totalRoutes,
-        completed: progress.completedRoutes,
-        failed: progress.errors.length,
-        percentage: progress.progress,
+        total,
+        completed,
+        failed,
+        percentage,
         currentStage: progress.phase,
+        currentTask: progress.phase,
       },
       startedAt: undefined,
+      lastActivity: cursor?.updatedAt,
+      error: lastError,
     };
   }
 
@@ -168,4 +189,11 @@ function resolveRouteConfig(config?: RouteBatchSessionConfig | RouteBatchConfig)
 
 export function createRouteBatchManager(deps?: RouteBatchManagerDeps): IBatchSessionManager {
   return new RouteBatchSessionOrchestrator(deps);
+}
+
+function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return Math.round(value);
 }

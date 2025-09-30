@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 
 import { loadPluginManifestFromFile } from '../../../../../tools/plugin-manifest-loader.js';
-import { PluginDefinitionBuilder } from '../../../../../scripts/plugin-definition-builder.ts';
-import type { PluginMetadata } from '../../../../../packages/common/types/src/plugin-metadata.ts';
-import type { NodeType } from '../../../../../packages/common/types/src/id-types.ts';
+import { PluginDefinitionBuilder } from '../../../../../scripts/plugin-definition-builder.js';
+import type { NodeType, PluginMetadata } from '@hierarchidb/common-type';
 
 type PluginDescriptor = {
   packageName: string;

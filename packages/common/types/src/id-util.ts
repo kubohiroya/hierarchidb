@@ -1,5 +1,13 @@
 import type { NodeId, NodeType, TreeId } from './id-types.js';
 
+function generateUUID(): string {
+  const maybeCrypto = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (maybeCrypto && typeof maybeCrypto.randomUUID === 'function') {
+    return maybeCrypto.randomUUID();
+  }
+  return `uuid-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
+}
+
 // Helper functions to create branded types
 export function toNodeId(id: string): NodeId {
   return id as NodeId;
@@ -25,12 +33,12 @@ export function isTreeId(id: unknown): boolean {
 }
 
 export function generateNodeId(): NodeId {
-  return toNodeId(crypto.randomUUID());
+  return toNodeId(generateUUID());
 }
 
 
 export function generateTreeId(): TreeId {
-  return toTreeId(crypto.randomUUID());
+  return toTreeId(generateUUID());
 }
 
 export function getSuperRootId(treeId: TreeId, rootId: NodeId): NodeId {

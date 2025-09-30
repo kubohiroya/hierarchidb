@@ -13,12 +13,16 @@
  * - Maintain browser history for navigation
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import useGeolocation from 'react-hook-geolocation';
 import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-map';
-import { MapLibreMap } from '@hierarchidb/ui-map';
 import { Box } from '@mui/material';
+
+const LazyMapLibreMap = lazy(async () => {
+  const mod = await import('@hierarchidb/ui-map');
+  return { default: mod.MapLibreMap };
+});
 
 // Default initial position (world view)
 const DEFAULT_VIEW_STATE: MapViewState = {
@@ -201,22 +205,30 @@ export default function MapPage() {
       </Box>
 
       {/* Map component */}
-      <MapLibreMap
-        key={`map-${formatZxyParam(initialViewState)}`} // Force re-render on significant URL changes
-        initialViewState={initialViewState}
-        width="100%"
-        height="100%"
-        onLoad={handleMapLoad}
-        onViewStateChange={handleViewStateChange}
-        mapOptions={{
-          interactive: true,
-          scrollZoom: true,
-          dragPan: true,
-          dragRotate: true,
-          doubleClickZoom: true,
-          touchZoomRotate: true,
-        }}
-      />
+      <Suspense
+        fallback={
+          <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            Loading map...
+          </Box>
+        }
+      >
+        <LazyMapLibreMap
+          key={`map-${formatZxyParam(initialViewState)}`} // Force re-render on significant URL changes
+          initialViewState={initialViewState}
+          width="100%"
+          height="100%"
+          onLoad={handleMapLoad}
+          onViewStateChange={handleViewStateChange}
+          mapOptions={{
+            interactive: true,
+            scrollZoom: true,
+            dragPan: true,
+            dragRotate: true,
+            doubleClickZoom: true,
+            touchZoomRotate: true,
+          }}
+        />
+      </Suspense>
     </Box>
   );
 }

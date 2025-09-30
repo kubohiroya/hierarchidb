@@ -65,7 +65,6 @@
   "dependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
@@ -81,6 +80,7 @@
     "searoute-js": "^0.1.0"
   },
   "peerDependencies": {
+    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",

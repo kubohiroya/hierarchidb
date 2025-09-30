@@ -63,6 +63,30 @@
     - [ ] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン
   - ロールバック: UI ボタンを隠すフラグ `ROUTE_PROGRESS_CONTROLS=0`
 
+- feat/app/ui-code-split — App index チャンクの分割（プラグイン UI / TreeConsole / MapLibre）
+  - ブランチ: `feat/app/ui-code-split`
+  - 依存: なし（app 単体で完結）
+  - 受け入れ基準（DoD）：
+    - [x] `scripts/generate-plugin-loader.mjs` が UI プラグインを動的 import するローダーを生成し、`app/src/root.tsx` から非同期登録できる
+    - [x] TreeConsole 関連 UI（`app/src/routes/t.($treeId).($pageNodeId).tsx` など）が lazy 読込になり、通常操作で問題がない
+    - [x] Map ルート（`app/src/routes/map.tsx`）が lazy 読込したまま正常動作し、MapLibre/DeckGL が初期チャンクから分離される
+    - [x] `pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` が成功する
+  - チェックリスト：
+    - [x] `scripts/generate-plugin-loader.mjs` / `app/src/generated/ui-loader.ts` を動的 import 仕様に更新
+    - [x] `app/src/root.tsx` で UI プラグイン登録と TreeConsolePanel グローバル露出を非同期化
+    - [x] `app/src/routes/t.($treeId).($pageNodeId).tsx` で `TreeConsoleIntegration` の lazy 読込を導入
+    - [x] `app/src/routes/map.tsx` で `MapLibreMap` を lazy 読込化
+  - ロールバック: `scripts/generate-plugin-loader.mjs` を旧版へ戻し、`app/src/root.tsx` / ルート群の静的 import を復旧
+
+- fix/shape/worker-factory-load-export（Shape worker-factory の EntitiesDB ローダー型欠落を修正）
+  - ブランチ: `fix/shape/worker-factory-load-export`（sandbox 権限制約によりローカル作成保留）
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `packages/plugins/shape-plugin/src/worker-factory/public-types.ts` が `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を型付きで再エクスポートする
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、`app/src/generated/loader.ts` の import エラーが解消する
+    - [x] ロールバック手順を含む運用ログを `TASKS.md` に追記済み
+  - ロールバック: `public-types.ts` を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -4495,8 +4519,18 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-30 16:40 start: fix/shape/worker-factory-load-export — app/src/generated/loader.ts の型エラーを確認し、`packages/plugins/shape-plugin/src/worker-factory/public-types.ts` で `loadShapeEntitiesDbModule` を公開する方針を決定。`git switch -c fix/shape/worker-factory-load-export` は sandbox 権限制約で失敗したため、ブランチ作成は保留。
+- 2025-09-30 16:48 progress: fix/shape/worker-factory-load-export — `packages/plugins/shape-plugin/src/worker-factory/public-types.ts` から `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を再エクスポートし、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` がグリーンで完了。
+- 2025-09-30 16:55 progress: fix/shape/worker-factory-load-export — `pnpm --filter @hierarchidb/plugins-shape-plugin build` を実行し、`dist/worker-factory/index.d.ts` に `loadShapeEntitiesDbModule` の宣言が生成されたことを確認。ロールバックは `public-types.ts` を差分前へ戻して `pnpm --filter @hierarchidb/plugins-shape-plugin {build,typecheck}` を再実行。
+- 2025-09-30 15:12 progress: feat/app/ui-code-split — `scripts/generate-plugin-loader.mjs`/`app/src/root.tsx` を動的 import 仕様へ更新し、TreeConsole/Map ルートを `React.lazy` 化。`pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` がグリーン。
+- 2025-09-30 15:42 progress: feat/app/ui-code-split — `packages/ui/map/src/components/MapWithDeckGL.tsx` を Deck.gl 動的 import 対応に改修し、`loadMapWithDeckGL` を追加。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm -C app build:vite` を再実行しグリーン。
+- 2025-09-30 13:45 start: feat/app/ui-code-split — App index チャンク分割タスクに着手。`TASKS.md` を更新し、プランニングと影響範囲の洗い出しを開始。
 - 2025-09-30 12:20 start: feat/route/progress-controls-pause-resume — Pause/Resume UI 着手。`git switch -c feat/route/progress-controls-pause-resume` が sandbox 権限不足で失敗したため、一時的に `main` ブランチ上で要件洗い出しを進める（権限解消後にブランチ作成予定）。
 - 2025-09-30 12:55 progress: feat/route/progress-controls-pause-resume — RoutePanel の progress stack（RouteBatchLiveProgress/RouteBatchSummary/useRouteBatchProgress）と `RouteBatchSessionOrchestrator` / `RouteBatchManager` / WorkerBridge API を確認。Pause/Resume は Dexie `routeCursors.paused` フラグと WorkerBridge の `pauseBatchSession`/`resumeBatchSession` で制御する設計で、`getBatchSessionStatus` が `paused` を返さない課題と Summary 表示に失敗件数/エラー要約を追加する必要を把握。
+- 2025-09-30 13:45 progress: feat/route/progress-controls-pause-resume — RouteBatchSessionOrchestrator が pause 状態と失敗情報を返すように更新し、useRouteBatchProgress フックへ Pause/Resume 制御・エラー状態を追加。RouteBatchLiveProgress/RouteBatchSummary を英語 UI + i18n 付きで拡張し、Pause/Resume ボタンと失敗件数/最新エラー表示を実装。
+- 2025-09-30 13:50 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行し成功（Pause/Resume UI 差分の型検証）。
+- 2025-09-30 14:25 progress: feat/route/progress-controls-pause-resume — plugin-registry-utils タイプチェック失敗で検知した共通型の未整備を是正。PluginMetadata の `database/ui/api/validation` を厳密型化し、builder/テストを更新。`id-util` の UUID 生成を `globalThis.crypto` ベースに調整し、ファイルインポート型を `FileLike` へ拡張。
+- 2025-09-30 14:45 progress: feat/route/progress-controls-pause-resume — dep-fence 警告解消のため plugins-location/route/shape から `@hierarchidb/plugins-runtime-worker-factory` を peerDependencies 化し、ビルド設定の external を整理。`@hierarchidb/tools-plugin-registry-utils` の tsconfig パスを dist 参照へ変更し、ui-routing の typecheck を `tsc -p tsconfig.typecheck.json` に見直し。
 - 2025-09-30 09:10 start: fix/runtime-ui/plugin-dialog-workerbridge — DTS ビルド失敗（Footer 型欠落と WorkerBridge 未実装）の調査に着手
 - 2025-09-30 09:58 progress: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm -C packages/runtime-ui/plugin-dialog typecheck` / `build:types` を実行し完了
 - 2025-09-30 10:05 blocked: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が既存の React/MUI 型未整備や batch config 型不備で失敗

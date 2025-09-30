@@ -19,13 +19,13 @@ import { APP_VERSION, BUILD_TIME } from './version.js';
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 import { BootProgressProvider } from './contexts/BootProgressProvider.js';
 import { AppThemeProvider } from './components/AppThemeProvider.js';
-import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
 import { ServicesReadySnackbar } from './components/ServicesReadySnackbar.js';
 import { LanguageEventsBridge } from './components/LanguageEventsBridge.js';
 import { AuthReadyReporter, ConfigReadyReporter, I18nReadyReporter, ThemeReadyReporter, UIReadyReporter, WorkerProgressReporter } from './init/InitReporters.js';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
-// Generated static UI plugin loader: imports plugin UI entry points in dependency order
-import './generated/ui-loader.js';
+import { loadAllUIPlugins } from './generated/ui-loader.js';
+
+type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
 /**
  * Global link descriptors shared across all routes (favicons, etc.)
@@ -66,20 +66,40 @@ if (typeof window !== 'undefined') {
 declare global {
   interface Window {
     __uiPluginsRegistered?: boolean;
+    __HDB_UI_PLUGIN_READY__?: Promise<void>;
+    __HDB_TreeConsolePanel?: TreeConsolePanelGlobal;
   }
 }
 
 // Initialize worker URL configuration
 
-// Register all UI plugins at startup (only once). UI plugins are statically imported via generated/ui-loader.
-if (typeof window !== 'undefined' && !window.__uiPluginsRegistered) {
-  registerAllUIPlugins();
-  window.__uiPluginsRegistered = true;
-}
-
 // Pre-load WorkerAPIClient module to ensure it's available when WorkerSingletonProvider needs it
 // This doesn't initialize the worker, just ensures the module is loaded
 if (typeof window !== 'undefined') {
+  const globalWindow = window as Window & {
+    __uiPluginsRegistered?: boolean;
+    __HDB_UI_PLUGIN_READY__?: Promise<void>;
+    __HDB_TreeConsolePanel?: TreeConsolePanelGlobal;
+  };
+
+  if (!globalWindow.__HDB_UI_PLUGIN_READY__) {
+    globalWindow.__HDB_UI_PLUGIN_READY__ = (async () => {
+      try {
+        await loadAllUIPlugins();
+        registerAllUIPlugins();
+        globalWindow.__uiPluginsRegistered = true;
+      } catch (error) {
+        globalWindow.__uiPluginsRegistered = false;
+        logRootWarning('Failed to register UI plugins', error);
+        throw error;
+      }
+    })();
+  }
+
+  void globalWindow.__HDB_UI_PLUGIN_READY__?.catch(() => {
+    // Errors already logged via logRootWarning; swallow to avoid unhandled rejections
+  });
+
   import('./WorkerAPIClient.js').then(() => {
 
   }).catch(error => {
@@ -103,16 +123,25 @@ if (typeof window !== 'undefined') {
     });
 
   // Provide plugin definitions to runtime-ui packages that rely on global injection
-    import('virtual:plugin-definitions')
+  import('virtual:plugin-definitions')
     .then((mod: { default?: unknown[] }) => {
-      (window as Window & { __HDB_PLUGIN_DEFS__?: unknown[] }).__HDB_PLUGIN_DEFS__ = mod?.default || [];
+      (globalWindow as Window & { __HDB_PLUGIN_DEFS__?: unknown[] }).__HDB_PLUGIN_DEFS__ = mod?.default || [];
     })
     .catch((error) => {
       logRootWarning('Failed to load virtual:plugin-definitions', error);
     });
 
   // Expose TreeConsolePanel for plugin UIs that avoid static imports
-  (window as Window & { __HDB_TreeConsolePanel?: typeof TreeConsolePanel }).__HDB_TreeConsolePanel = TreeConsolePanel;
+  void import('@hierarchidb/ui-treeconsole-base')
+    .then((mod) => {
+      const panel = mod?.TreeConsolePanel as TreeConsolePanelGlobal | undefined;
+      if (panel) {
+        globalWindow.__HDB_TreeConsolePanel = panel;
+      }
+    })
+    .catch((error) => {
+      logRootWarning('Failed to load TreeConsolePanel for global exposure', error);
+    });
 
 
   // Inject app-generated static MUI icon map for ui-icon to use globally

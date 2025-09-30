@@ -8,6 +8,12 @@ export { MapLibreMap } from './components/MapLibreMap.js';
 export { VectorTileLayer } from './components/VectorTileLayer.js';
 export { MapWithVectorTiles } from './components/MapWithVectorTiles.js';
 export { MapWithDeckGL } from './components/MapWithDeckGL.js';
+export const loadMapWithDeckGL = () =>
+  import('./components/MapWithDeckGL.js') as Promise<typeof import('./components/MapWithDeckGL.js')>;
+export const loadMapLibreMap = () =>
+  import('./components/MapLibreMap.js') as Promise<typeof import('./components/MapLibreMap.js')>;
+export const loadMapWithVectorTiles = () =>
+  import('./components/MapWithVectorTiles.js') as Promise<typeof import('./components/MapWithVectorTiles.js')>;
 
 // Type exports - unified props
 export type {

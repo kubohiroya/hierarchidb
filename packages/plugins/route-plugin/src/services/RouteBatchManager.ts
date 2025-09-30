@@ -220,27 +220,31 @@ export class RouteBatchManager {
     errors: string[];
   }> {
     const tasks = this.routeSpecificTasks.get(sessionId) || [];
-    const completedTasks = tasks.filter(t => t.status === 'completed');
-    const failedTasks = tasks.filter(t => t.status === 'failed');
+    const completedTasks = tasks.filter((t) => t.status === 'completed');
+    const failedTasks = tasks.filter((t) => t.status === 'failed');
 
-    const routeGenerationTasks = tasks.filter(t => t.taskType === 'route_generation');
-    const completedRoutes = routeGenerationTasks.filter(t => t.status === 'completed').length;
+    const routeGenerationTasks = tasks.filter((t) => t.taskType === 'route_generation');
+    const completedRoutes = routeGenerationTasks.filter((t) => t.status === 'completed').length;
+    const totalTasks = tasks.length;
+    const percentage = totalTasks > 0
+      ? Math.min(100, Math.max(0, (completedTasks.length / totalTasks) * 100))
+      : 0;
 
     // Determine current phase
     let phase = 'idle';
-    if (tasks.some(t => t.taskType === 'location_resolution' && t.status === 'processing')) {
+    if (tasks.some((t) => t.taskType === 'location_resolution' && t.status === 'processing')) {
       phase = 'resolving_locations';
-    } else if (tasks.some(t => t.taskType === 'route_generation' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'route_generation' && t.status === 'processing')) {
       phase = 'generating_routes';
-    } else if (tasks.some(t => t.taskType === 'validation' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'validation' && t.status === 'processing')) {
       phase = 'validating';
-    } else if (tasks.some(t => t.taskType === 'optimization' && t.status === 'processing')) {
+    } else if (tasks.some((t) => t.taskType === 'optimization' && t.status === 'processing')) {
       phase = 'optimizing';
     }
 
     return {
       phase,
-      progress: (completedTasks.length / tasks.length) * 100,
+      progress: Number.isFinite(percentage) ? percentage : 0,
       completedRoutes,
       totalRoutes: routeGenerationTasks.length,
       errors: failedTasks.map(t => t.error || 'Unknown error'),
@@ -285,9 +289,9 @@ export class RouteBatchManager {
 
   private emitProgressEvent(event: BatchProgressEvent): void {
     const payload = event.payload ?? {};
-    const total = payload.total ?? 0;
-    const completed = payload.completed ?? 0;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : completed;
+    const total = coerceNumber(payload.total);
+    const completed = coerceNumber(payload.completed);
+    const percentage = computePercentage(total, completed, event.phase === 'completed');
     const ts = event.timestamp ?? Date.now();
     const update: ProgressUpdate = {
       jobId: event.sessionId,
@@ -344,6 +348,21 @@ function stableStringify(x: unknown): string {
     }
     return value;
   });
+}
+
+function coerceNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  return 0;
+}
+
+function computePercentage(total: number, completed: number, isCompletedPhase: boolean): number {
+  if (isCompletedPhase) return 100;
+  if (total <= 0) return Math.max(0, Math.min(100, Math.round(completed)));
+  const ratio = (completed / total) * 100;
+  if (!Number.isFinite(ratio)) return 0;
+  return Math.max(0, Math.min(100, Math.round(ratio)));
 }
 
 function hashCyrb53(str: string, seed = 0): string {

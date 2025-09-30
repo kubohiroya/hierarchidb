@@ -64,7 +64,15 @@ export type {
   ExtendedPluginDefinition,
   PluginIntegrated,
 } from './plugin-definition.js';
-export type { PluginMetadata } from './plugin-metadata.js';
+export type {
+  PluginMetadata,
+  PluginManifestDatabaseConfig,
+  PluginManifestDatabaseSchema,
+  PluginManifestDatabaseField,
+  PluginManifestUIConfig,
+  PluginManifestAPIConfig,
+  PluginManifestValidationConfig,
+} from './plugin-metadata.js';
 export type { DependencyGraph } from './plugin-resolution.js';
 export type {
   StepComponent,
