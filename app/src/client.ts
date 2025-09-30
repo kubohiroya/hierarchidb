@@ -4,6 +4,11 @@
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { bootLog } from './utils/bootLog.js';
+import {
+  WORKER_FLAG_OVERRIDES_STORAGE_KEY,
+  WORKER_FLAG_PARAM_PREFIX,
+  isAllowedWorkerFlag,
+} from './config/worker-flag-overrides.js';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-worker-bootstrap to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.
@@ -55,6 +60,43 @@ const COMLINK_NOISE_TYPES = new Set([
   'HANDLER',
 ]);
 
+const TRUE_FLAG_VALUES = new Set(['1', 'true', 'on', 'enabled']);
+const FALSE_FLAG_VALUES = new Set(['0', 'false', 'off', 'disabled']);
+
+function normalizeWorkerFlagValue(value: unknown): string | null {
+  if (typeof value === 'boolean') return value ? '1' : '0';
+  if (typeof value === 'number') {
+    if (Number.isNaN(value)) return null;
+    return value === 0 ? '0' : value === 1 ? '1' : null;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim().toLowerCase();
+    if (TRUE_FLAG_VALUES.has(trimmed)) return '1';
+    if (FALSE_FLAG_VALUES.has(trimmed)) return '0';
+    return null;
+  }
+  return null;
+}
+
+function applyWorkerFlagOverrides(workerUrl: URL): void {
+  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return;
+  try {
+    const raw = window.localStorage.getItem(WORKER_FLAG_OVERRIDES_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return;
+    const entries = Object.entries(parsed as Record<string, unknown>);
+    for (const [key, value] of entries) {
+      if (!isAllowedWorkerFlag(key)) continue;
+      const normalized = normalizeWorkerFlagValue(value);
+      if (normalized == null) continue;
+      workerUrl.searchParams.set(`${WORKER_FLAG_PARAM_PREFIX}${key}`, normalized);
+    }
+  } catch (error) {
+    logInitWorkerWarning('Failed to apply worker flag overrides', error);
+  }
+}
+
 function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
   return window as BootWindow;
@@ -84,7 +126,9 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         rawWorkerInstance = null;
       }
 
-      rawWorkerInstance = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+      const workerUrl = new URL('./worker.ts', import.meta.url);
+      applyWorkerFlagOverrides(workerUrl);
+      rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
 
       const Comlink = await import('comlink');
       rawWorkerInstance.addEventListener('error', (e: ErrorEvent) => {

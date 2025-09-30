@@ -1,5 +1,14 @@
-import type { WorkingCopyAPI } from '@hierarchidb/common-api';
-import type { CommitResult, NodeId, NodeType, TreeId, TreeNode, ValidationResult } from '@hierarchidb/common-type';
+import type { CommitWorkingCopyOptions, WorkingCopyAPI } from '@hierarchidb/common-api';
+import type {
+  CommandResult,
+  CommitResult,
+  OnNameConflict,
+  NodeId,
+  NodeType,
+  TreeId,
+  TreeNode,
+  ValidationResult,
+} from '@hierarchidb/common-type';
 import type { CoreDB } from './CoreDB.js';
 import {
   createDraftWorkingCopyGetOrCreate,
@@ -8,6 +17,7 @@ import {
   getWorkingCopy as getWc,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
+import type { CommitResultV2 } from './WorkingCopyTreeNodeOperations.js';
 import type { CommandProcessor } from './CommandProcessor.js';
 
 /**
@@ -75,60 +85,38 @@ export class WorkingCopyService implements WorkingCopyAPI {
     return !!wc;
   }
 
-  async commitWorkingCopy(workingCopyId: NodeId): Promise<CommitResult> {
+  async commitWorkingCopy(
+    workingCopyId: NodeId,
+    options?: CommitWorkingCopyOptions,
+  ): Promise<CommitResult> {
     const context = await this.getWorkingCopyContext(workingCopyId);
+    const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
 
-    // Prefer CommandProcessor V2 when available, otherwise call V2 helper directly.
     if (this.commandProcessor) {
-      const env = this.commandProcessor.createEnvelope('commitWorkingCopy', {
-        workingCopyId,
-        onNameConflict: 'auto-rename',
-      });
-      const res = await this.commandProcessor.processCommand(env);
-      if (res.success) {
-        const committed = await this.loadCommittedNode((res).nodeId as NodeId | undefined, context);
-        return committed ? { success: true, node: committed } : { success: true };
+      try {
+        const env = this.commandProcessor.createEnvelope('commitWorkingCopy', {
+          workingCopyId,
+          onNameConflict: conflictPolicy,
+        });
+        const res = await this.commandProcessor.processCommand(env);
+        const mapped = await this.mapCommandProcessorResult(res, workingCopyId, context);
+        if (mapped) {
+          return mapped;
+        }
+      } catch {
+        // fall back to direct path when the command processor path fails
       }
     }
-    // Fallback: try direct V2 commit when CP is unavailable or fails
+
     try {
       const { commitWorkingCopyV2 } = await import('./WorkingCopyTreeNodeOperations.js');
-      const r = await commitWorkingCopyV2(this.coreDB, workingCopyId, 'auto-rename');
-      if (r.status === 'ok') {
-        const committed = await this.loadCommittedNode(r.nodeId, context);
-        return committed ? { success: true, node: committed } : { success: true };
-      }
-    } catch (e) {
-      // fall through to manual path below
+      const v2Result = await commitWorkingCopyV2(this.coreDB, workingCopyId, conflictPolicy);
+      return await this.mapCommitResultV2(v2Result, workingCopyId, context);
+    } catch {
+      // Continue to manual fallback below if v2 path throws (e.g. metadata missing)
     }
-    // Manual last-resort: create canonical node and discard WC
-    try {
-      const wcNode = context?.wcNode;
-      const holder = context?.holder;
-      const targetParentNodeId = context?.targetParentNodeId;
-      const targetNodeId = context?.targetNodeId;
-      if (!wcNode || !holder) return { success: false, error: 'Working copy not found' };
-      if (!targetParentNodeId || !targetNodeId) return { success: false, error: 'Holder metadata missing' };
-      const parent = await (this.coreDB).nodes.get(targetParentNodeId);
-      if (!parent) return { success: false, error: 'Parent node not found' };
-      // name conflict auto-rename
-      const siblings = await this.coreDB.listChildren(targetParentNodeId);
-      const names = siblings.map((n) => n.name);
-      let finalName = wcNode.name;
-      if (names.includes(finalName)) {
-        const { createNewName } = await import('./WorkingCopyTreeNodeOperations.js');
-        finalName = createNewName(names, finalName);
-      }
-      await this.coreDB.createNode({ ...wcNode, id: targetNodeId, parentId: targetParentNodeId, name: finalName });
-      const { discardWorkingCopy } = await import('./WorkingCopyTreeNodeOperations.js');
-      await discardWorkingCopy(this.coreDB, [holder.id, wcNode.id]);
-      const committed = await this.loadCommittedNode(targetNodeId, context);
-      return committed ? { success: true, node: committed } : { success: true };
-    } catch (e) {
-      const holderId = context?.wcNode?.parentId as NodeId | undefined;
-      if (holderId) await discardWc(this.coreDB, [holderId, workingCopyId]);
-      return { success: false, error: (e as Error)?.message || 'Commit failed' };
-    }
+
+    return this.commitWorkingCopyManually(workingCopyId, context, conflictPolicy);
   }
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
@@ -188,6 +176,228 @@ export class WorkingCopyService implements WorkingCopyAPI {
     const candidate = explicitId ?? context?.targetNodeId;
     if (!candidate) return undefined;
     return this.coreDB.nodes.get(candidate) ?? undefined;
+  }
+
+  private async mapCommandProcessorResult(
+    result: CommandResult,
+    workingCopyId: NodeId,
+    context?: WorkingCopyContext,
+  ): Promise<CommitResult | undefined> {
+    if (result.success) {
+      const canonicalId = (result.nodeId as NodeId | undefined) ?? context?.targetNodeId;
+      if (!canonicalId) {
+        return undefined;
+      }
+      const autoRenameTo = 'autoRenameTo' in result ? result.autoRenameTo : undefined;
+      return this.buildOkResult(canonicalId, context, autoRenameTo);
+    }
+
+    if (result.status === 'COMMIT_CONFLICT') {
+      if (typeof result.originalVersion === 'number' && typeof result.wcVersion === 'number') {
+        return {
+          status: 'COMMIT_CONFLICT',
+          originalVersion: result.originalVersion,
+          wcVersion: result.wcVersion,
+        };
+      }
+      return undefined;
+    }
+
+    if (result.status === 'NAME_CONFLICT' && typeof result.suggestedName === 'string') {
+      return {
+        status: 'NAME_CONFLICT',
+        suggestedName: result.suggestedName,
+      };
+    }
+
+    return undefined;
+  }
+
+  private async mapCommitResultV2(
+    result: CommitResultV2,
+    workingCopyId: NodeId,
+    context?: WorkingCopyContext,
+  ): Promise<CommitResult> {
+    if (result.status === 'ok') {
+      const canonicalId = result.nodeId ?? context?.targetNodeId;
+      if (!canonicalId) {
+        throw new Error('Committed node id not found');
+      }
+      return this.buildOkResult(canonicalId, context, result.autoRenameTo);
+    }
+
+    if (result.status === 'COMMIT_CONFLICT') {
+      return {
+        status: 'COMMIT_CONFLICT',
+        originalVersion: result.originalVersion,
+        wcVersion: result.wcVersion,
+      };
+    }
+
+    return {
+      status: 'NAME_CONFLICT',
+      suggestedName: result.suggestedName,
+    };
+  }
+
+  private async commitWorkingCopyManually(
+    workingCopyId: NodeId,
+    context: WorkingCopyContext | undefined,
+    onNameConflict: OnNameConflict,
+  ): Promise<CommitResult> {
+    let resolvedContext: WorkingCopyContext | undefined;
+    try {
+      resolvedContext = await this.ensureWorkingCopyContext(workingCopyId, context);
+      const { wcNode, holder, targetNodeId, targetParentNodeId } = resolvedContext;
+
+      if (!wcNode || !holder) {
+        throw new Error('Working copy not found');
+      }
+      if (!targetParentNodeId || !targetNodeId) {
+        throw new Error('Holder metadata missing');
+      }
+
+      const parent = await this.coreDB.nodes.get(targetParentNodeId);
+      if (!parent) {
+        throw new Error('Parent node not found');
+      }
+
+      const { createNewName, discardWorkingCopy, getChildNames } = await import(
+        './WorkingCopyTreeNodeOperations.js'
+      );
+
+      const siblingNames = await getChildNames(this.coreDB, targetParentNodeId);
+      const nameConflicts = siblingNames.includes(wcNode.name);
+      const suggestedName = nameConflicts ? createNewName(siblingNames, wcNode.name) : undefined;
+
+      const existingNode = await this.coreDB.nodes.get(targetNodeId);
+      const now = Date.now();
+
+      if (!existingNode) {
+        if (nameConflicts && onNameConflict === 'error' && suggestedName) {
+          return { status: 'NAME_CONFLICT', suggestedName };
+        }
+
+        const finalName =
+          nameConflicts && onNameConflict === 'auto-rename' && suggestedName ? suggestedName : wcNode.name;
+
+        await this.coreDB.createNode({
+          ...wcNode,
+          id: targetNodeId,
+          parentId: targetParentNodeId,
+          name: finalName,
+          updatedAt: now,
+          version: (wcNode.version || 1) + 1,
+        });
+
+        await discardWorkingCopy(this.coreDB, [holder.id, wcNode.id]);
+        const autoRenameTo = finalName !== wcNode.name ? finalName : undefined;
+        return this.buildOkResult(targetNodeId, resolvedContext, autoRenameTo);
+      }
+
+      const wcVersion = wcNode.version ?? 1;
+      const originalVersion = existingNode.version ?? 1;
+      if (originalVersion > wcVersion) {
+        return {
+          status: 'COMMIT_CONFLICT',
+          originalVersion,
+          wcVersion,
+        };
+      }
+
+      if (nameConflicts && onNameConflict === 'error' && suggestedName) {
+        return {
+          status: 'NAME_CONFLICT',
+          suggestedName,
+        };
+      }
+
+      const finalName =
+        nameConflicts && onNameConflict === 'auto-rename' && suggestedName ? suggestedName : wcNode.name;
+
+      await this.coreDB.updateNode({
+        ...wcNode,
+        id: targetNodeId,
+        parentId: targetParentNodeId,
+        name: finalName,
+        updatedAt: now,
+        version: wcVersion + 1,
+      });
+
+      await discardWorkingCopy(this.coreDB, [holder.id, wcNode.id]);
+      const autoRenameTo = finalName !== wcNode.name ? finalName : undefined;
+      return this.buildOkResult(targetNodeId, resolvedContext, autoRenameTo);
+    } catch (error) {
+      const holderId =
+        resolvedContext?.wcNode?.parentId ?? context?.wcNode?.parentId ??
+        (resolvedContext?.holder?.id as NodeId | undefined);
+      if (holderId) {
+        await discardWc(this.coreDB, [holderId, workingCopyId]);
+      }
+      throw error instanceof Error ? error : new Error('Commit failed');
+    }
+  }
+
+  private async ensureWorkingCopyContext(
+    workingCopyId: NodeId,
+    context: WorkingCopyContext | undefined,
+  ): Promise<WorkingCopyContext> {
+    if (
+      context?.wcNode &&
+      context.holder &&
+      context.targetNodeId &&
+      context.targetParentNodeId
+    ) {
+      return context;
+    }
+
+    const wcNode = context?.wcNode ?? (await this.coreDB.nodes.get(workingCopyId));
+    if (!wcNode) {
+      throw new Error('Working copy not found');
+    }
+    const holder =
+      context?.holder ?? ((await this.coreDB.nodes.get(wcNode.parentId)) as WorkingCopyHolderNode | undefined);
+    if (!holder) {
+      throw new Error('Working copy holder not found');
+    }
+
+    let targetNodeId = context?.targetNodeId ?? holder.holderTargetId;
+    let targetParentNodeId = context?.targetParentNodeId ?? holder.holderMetaParentId;
+    if (!targetNodeId || !targetParentNodeId) {
+      try {
+        const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
+        const parsed = decodeWorkingCopyHolderName(holder.name);
+        targetNodeId = targetNodeId ?? (parsed.targetNodeId as NodeId);
+        targetParentNodeId = targetParentNodeId ?? (parsed.targetParentNodeId as NodeId);
+      } catch {
+        // noop: fallback to metadata checks below
+      }
+    }
+
+    if (!targetNodeId || !targetParentNodeId) {
+      throw new Error('Holder metadata missing');
+    }
+
+    return {
+      wcNode,
+      holder,
+      targetNodeId,
+      targetParentNodeId,
+    };
+  }
+
+  private async buildOkResult(
+    nodeId: NodeId,
+    context?: WorkingCopyContext,
+    autoRenameTo?: string,
+  ): Promise<CommitResult> {
+    const committed = await this.loadCommittedNode(nodeId, context);
+    return {
+      status: 'ok',
+      nodeId,
+      node: committed,
+      autoRenameTo,
+    };
   }
 
   async createMultipleWorkingCopies(nodeIds: NodeId[]): Promise<TreeNode[]> {

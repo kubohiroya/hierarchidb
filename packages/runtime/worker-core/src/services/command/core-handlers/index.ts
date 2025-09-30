@@ -27,7 +27,16 @@ export interface CoreCommandDeps {
   history: CommandHistoryManager;
   batchOperationSize: number;
   deletePeerEntitiesForNodes: (nodes: TreeNode[]) => Promise<void>;
-  createErrorResult: (message: string, code: WorkerErrorCode) => CommandResult;
+  createErrorResult: (
+    message: string,
+    code: WorkerErrorCode,
+    extra?: {
+      status?: 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
+      suggestedName?: string;
+      originalVersion?: number;
+      wcVersion?: number;
+    },
+  ) => CommandResult;
   getNextSeq: () => Seq;
 }
 
@@ -617,19 +626,34 @@ async function handleCommitWorkingCopy(
         holder: holderSnapshot,
         committedNode: committedSnapshot,
       });
-      return { success: true, seq: deps.getNextSeq(), nodeId: payload.workingCopyId };
+      return {
+        success: true,
+        seq: deps.getNextSeq(),
+        nodeId: result.nodeId ?? payload.workingCopyId,
+        status: 'ok',
+        autoRenameTo: result.autoRenameTo,
+      };
     }
 
     if (result.status === 'COMMIT_CONFLICT') {
       return deps.createErrorResult(
         `Commit conflict (original=${result.originalVersion}, wc=${result.wcVersion})`,
         WorkerErrorCode.COMMIT_CONFLICT,
+        {
+          status: 'COMMIT_CONFLICT',
+          originalVersion: result.originalVersion,
+          wcVersion: result.wcVersion,
+        },
       );
     }
 
     return deps.createErrorResult(
       `Name conflict. Suggested: ${result.suggestedName}`,
       WorkerErrorCode.VALIDATION_ERROR,
+      {
+        status: 'NAME_CONFLICT',
+        suggestedName: result.suggestedName,
+      },
     );
   } catch (error) {
     return deps.createErrorResult(

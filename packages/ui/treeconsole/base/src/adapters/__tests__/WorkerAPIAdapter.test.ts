@@ -64,7 +64,7 @@ describe('WorkerAPIAdapter', () => {
     workingCopyAPI = {
       createWorkingCopyFromNode: vi.fn().mockResolvedValue(undefined),
       createDraftWorkingCopy: vi.fn().mockResolvedValue({ id: 'wc-1' }),
-      commitWorkingCopy: vi.fn().mockResolvedValue({ success: true }),
+      commitWorkingCopy: vi.fn().mockResolvedValue({ status: 'ok', nodeId: 'n:1' }),
       discardWorkingCopy: vi.fn().mockResolvedValue(undefined),
     };
     mockWorkerAPI.getWorkingCopyAPI = vi.fn().mockResolvedValue(workingCopyAPI);

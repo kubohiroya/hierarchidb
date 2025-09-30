@@ -5,6 +5,10 @@
 
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
 import type { PluginDefinition } from '@hierarchidb/common-type';
+import {
+  WORKER_FLAG_ALLOWED_OVERRIDES,
+  WORKER_FLAG_PARAM_PREFIX,
+} from './config/worker-flag-overrides.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -32,6 +36,25 @@ if (typeof globalShim.global === 'undefined') {
 }
 if (!globalShim.process) {
   globalShim.process = { env: {} } as typeof globalShim.process;
+}
+if (!globalShim.process.env) {
+  globalShim.process.env = {};
+}
+
+const workerEnv = globalShim.process.env;
+
+try {
+  if (typeof self !== 'undefined' && typeof self.location?.href === 'string') {
+    const params = new URL(self.location.href).searchParams;
+    for (const flag of WORKER_FLAG_ALLOWED_OVERRIDES) {
+      const value = params.get(`${WORKER_FLAG_PARAM_PREFIX}${flag}`);
+      if (value != null) {
+        workerEnv[flag] = value;
+      }
+    }
+  }
+} catch (error) {
+  console.warn('[worker bootstrap] failed to apply flag overrides', error);
 }
 
 const reporter = new WorkerInitializationReporter(

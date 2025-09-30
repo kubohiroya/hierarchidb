@@ -105,7 +105,7 @@ export default defineConfig({
     command: 'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000, // allow extra time for build + preview
+    timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes
   },
 
   /* Global setup and teardown */

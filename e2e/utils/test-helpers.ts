@@ -1,4 +1,38 @@
 import { Page, Locator, expect } from '@playwright/test';
+import {
+  WORKER_FLAG_OVERRIDES_STORAGE_KEY,
+  WORKER_FLAG_ALLOWED_OVERRIDES,
+} from '../../app/src/config/worker-flag-overrides.js';
+
+export type WorkerFlagOverrideValue = '0' | '1' | null;
+
+if (!WORKER_FLAG_ALLOWED_OVERRIDES.includes('WORKER_USE_CMDPROC_MOVE_REMOVE')) {
+  throw new Error('WORKER_USE_CMDPROC_MOVE_REMOVE flag must be included in WORKER_FLAG_ALLOWED_OVERRIDES');
+}
+
+export const WORKER_CMDPROC_FLAG_NAME = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
+
+export async function configureWorkerCmdprocOverride(
+  page: Page,
+  value: WorkerFlagOverrideValue,
+): Promise<void> {
+  await page.addInitScript(
+    ({ storageKey, flagName, flagValue }: { storageKey: string; flagName: string; flagValue: WorkerFlagOverrideValue }) => {
+      try {
+        if (flagValue === null) {
+          window.localStorage.removeItem(storageKey);
+          return;
+        }
+        const payload: Record<string, string> = {};
+        payload[flagName] = flagValue;
+        window.localStorage.setItem(storageKey, JSON.stringify(payload));
+      } catch (error) {
+        console.warn('[e2e] failed to configure worker flag override', error);
+      }
+    },
+    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, flagName: WORKER_CMDPROC_FLAG_NAME, flagValue: value },
+  );
+}
 
 /**
  * E2E Test Helper Functions
@@ -147,6 +181,72 @@ export async function moveToTrash(page: Page, folderName: string): Promise<void>
 }
 
 /**
+ * Renames a folder-plugin via context menu and returns the generated name.
+ */
+export async function renameFolder(
+  page: Page,
+  currentName: string,
+  baseName: string
+): Promise<string> {
+  const timestamp = Date.now();
+  const nextName = `${baseName} ${timestamp}`;
+
+  const folderNode = page
+    .locator('[data-testid="tree-node"]')
+    .filter({ hasText: currentName })
+    .first();
+  await expect(folderNode).toBeVisible({ timeout: 5000 });
+
+  await folderNode.click({ button: 'right' });
+  await expect(page.locator('[data-testid="context-menu"]')).toBeVisible();
+  await page.locator('[data-testid="context-menu-edit"]').click();
+
+  const dialog = page.locator('[data-testid="folder-plugin-edit-base-dialog"]');
+  await expect(dialog).toBeVisible({ timeout: 5000 });
+
+  const nameInput = dialog.locator('[data-testid="folder-plugin-name-input"]');
+  await nameInput.fill(nextName);
+
+  await dialog.locator('[data-testid="edit-folder-plugin-confirm"]').click();
+  await expect(dialog).not.toBeVisible({ timeout: 5000 });
+
+  await waitForWorkingCopyUpdate(page);
+  await expect(
+    page.locator('[data-testid="tree-node"]').filter({ hasText: nextName }).first()
+  ).toBeVisible({ timeout: 5000 });
+
+  return nextName;
+}
+
+/**
+ * Restores a folder from the trash panel back to the main tree.
+ */
+export async function restoreFromTrash(page: Page, folderName: string): Promise<void> {
+  const trashButton = page.locator('[data-testid="trash-button"]');
+  await trashButton.click();
+
+  const trashPanel = page.locator('[data-testid="trash-panel"]');
+  await expect(trashPanel).toBeVisible({ timeout: 5000 });
+
+  const trashItem = trashPanel.locator('[data-testid="trash-item"]').filter({ hasText: folderName }).first();
+  await expect(trashItem).toBeVisible({ timeout: 5000 });
+
+  await trashItem.click({ button: 'right' });
+  await expect(page.locator('[data-testid="trash-context-menu"]')).toBeVisible({ timeout: 5000 });
+  await page.locator('[data-testid="trash-menu-restore"]').click();
+
+  const confirmationDialog = page.locator('[data-testid="restore-confirmation-base-dialog"]');
+  await expect(confirmationDialog).toBeVisible({ timeout: 5000 });
+  await page.locator('[data-testid="confirm-restore"]').click();
+  await expect(confirmationDialog).not.toBeVisible({ timeout: 5000 });
+
+  await page.locator('[data-testid="close-trash-panel"]').click();
+  await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
+
+  await waitForWorkingCopyUpdate(page);
+}
+
+/**
  * Performs drag and drop operation between two elements
  */
 export async function performDragDrop(page: Page, source: Locator, target: Locator): Promise<void> {
@@ -231,6 +331,29 @@ export async function waitForWorkingCopyUpdate(page: Page): Promise<void> {
     },
     { timeout: 5000 }
   );
+
+  // Allow any follow-up UI refresh to settle
+  await page.waitForTimeout(100);
+}
+
+/**
+ * Clicks the toolbar Undo button and waits for the operation to settle.
+ */
+export async function clickUndo(page: Page): Promise<void> {
+  const undoButton = page.locator('[data-testid="treeconsole-toolbar-undo-button"]');
+  await expect(undoButton).toBeEnabled({ timeout: 5000 });
+  await undoButton.click();
+  await waitForWorkingCopyUpdate(page);
+}
+
+/**
+ * Clicks the toolbar Redo button and waits for the operation to settle.
+ */
+export async function clickRedo(page: Page): Promise<void> {
+  const redoButton = page.locator('[data-testid="treeconsole-toolbar-redo-button"]');
+  await expect(redoButton).toBeEnabled({ timeout: 5000 });
+  await redoButton.click();
+  await waitForWorkingCopyUpdate(page);
 }
 
 /**
@@ -239,7 +362,7 @@ export async function waitForWorkingCopyUpdate(page: Page): Promise<void> {
 export async function clearTestData(page: Page): Promise<void> {
   // Try to clear test data, but ignore errors if running in restricted context
   try {
-    await page.evaluate(async () => {
+    await page.evaluate(async (storageKey) => {
       // Clear localStorage test data - with try/catch for security errors
       try {
         const keysToRemove = [];
@@ -250,6 +373,7 @@ export async function clearTestData(page: Page): Promise<void> {
           }
         }
         keysToRemove.forEach((key) => localStorage.removeItem(key));
+        localStorage.removeItem(storageKey);
       } catch (e) {
         // Ignore localStorage access errors in test environment
         console.warn('Could not access localStorage:', e);
@@ -275,7 +399,7 @@ export async function clearTestData(page: Page): Promise<void> {
         // Ignore IndexedDB access errors in test environment
         console.warn('Could not access IndexedDB:', e);
       }
-    });
+    }, WORKER_FLAG_OVERRIDES_STORAGE_KEY);
   } catch (e) {
     // Ignore all errors - test can proceed without clearing data
     console.warn('Could not clear test data:', e);

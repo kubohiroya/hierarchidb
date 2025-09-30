@@ -4,7 +4,7 @@
  * Working Copy
   */
 
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
 import type {
   CommitWorkingCopyForCreatePayload,
   CommitWorkingCopyPayload,
@@ -28,6 +28,11 @@ export interface WorkingCopyEditSession {
 
 export class WorkingCopyCommandsAdapter {
   constructor(private workerAPI: WorkerAPI) {
+  }
+
+  private resolveCommitOptions(options: CommandAdapterOptions): CommitWorkingCopyOptions | undefined {
+    const policy = options.context?.onNameConflict as CommitWorkingCopyOptions['onNameConflict'] | undefined;
+    return policy ? { onNameConflict: policy } : undefined;
   }
 
   /**
@@ -136,14 +141,46 @@ export class WorkingCopyCommandsAdapter {
       );
 
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
+      const commitOptions = this.resolveCommitOptions(options);
+      const result = await workingCopyAPI.commitWorkingCopy(
+        command.payload.workingCopyId as NodeId,
+        commitOptions,
+      );
 
-      if (!result.success) {
+      if (result.status === 'ok') return;
+
+      if (result.status === 'NAME_CONFLICT') {
         throw new TreeConsoleAdapterError(
-          `Failed to commit node edit: ${result.error || 'Unknown error'}`,
+          `Failed to commit node edit: name conflict (suggested: ${result.suggestedName})`,
           'COMMIT_NODE_EDIT_FAILED',
+          {
+            status: result.status,
+            suggestedName: result.suggestedName,
+            onNameConflict: commitOptions?.onNameConflict,
+          },
         );
       }
+
+      if (result.status === 'COMMIT_CONFLICT') {
+        const original = result.originalVersion ?? 'unknown';
+        const wc = result.wcVersion ?? 'unknown';
+        throw new TreeConsoleAdapterError(
+          `Failed to commit node edit: version conflict (original=${original}, wc=${wc})`,
+          'COMMIT_NODE_EDIT_FAILED',
+          {
+            status: result.status,
+            originalVersion: result.originalVersion,
+            wcVersion: result.wcVersion,
+            onNameConflict: commitOptions?.onNameConflict,
+          },
+        );
+      }
+
+      throw new TreeConsoleAdapterError(
+        'Commit edit operation failed: unexpected status',
+        'COMMIT_NODE_EDIT_FAILED',
+        { status: result.status, onNameConflict: commitOptions?.onNameConflict },
+      );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
         throw error;
@@ -187,14 +224,44 @@ export class WorkingCopyCommandsAdapter {
       );
 
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(command.payload.workingCopyId as NodeId);
+      const commitOptions = this.resolveCommitOptions(options);
+      const result = await workingCopyAPI.commitWorkingCopy(
+        command.payload.workingCopyId as NodeId,
+        commitOptions,
+      );
 
-      if (!result.success) {
+      if (result.status === 'ok') return;
+
+      if (result.status === 'NAME_CONFLICT') {
         throw new TreeConsoleAdapterError(
-          `Failed to commit node create: ${result.error || 'Unknown error'}`,
+          `Failed to commit node create: name conflict (suggested: ${result.suggestedName})`,
           'COMMIT_NODE_CREATE_FAILED',
+          {
+            status: result.status,
+            suggestedName: result.suggestedName,
+            onNameConflict: commitOptions?.onNameConflict,
+          },
         );
       }
+
+      if (result.status === 'COMMIT_CONFLICT') {
+        throw new TreeConsoleAdapterError(
+          'Failed to commit node create: version conflict detected',
+          'COMMIT_NODE_CREATE_FAILED',
+          {
+            status: result.status,
+            originalVersion: result.originalVersion,
+            wcVersion: result.wcVersion,
+            onNameConflict: commitOptions?.onNameConflict,
+          },
+        );
+      }
+
+      throw new TreeConsoleAdapterError(
+        'Commit create operation failed: unexpected status',
+        'COMMIT_NODE_CREATE_FAILED',
+        { status: result.status, onNameConflict: commitOptions?.onNameConflict },
+      );
     } catch (error) {
       if (error instanceof TreeConsoleAdapterError) {
         throw error;

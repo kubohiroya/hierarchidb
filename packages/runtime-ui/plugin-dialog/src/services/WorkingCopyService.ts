@@ -4,7 +4,7 @@
  */
 
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
 
 /**
  * Working copy state with capabilities
@@ -198,19 +198,59 @@ export class WorkingCopyService {
   /**
    * Save working copy
    */
-  async saveWorkingCopy(nodeId: NodeId, asDraft: boolean = false): Promise<NodeId> {
+  async saveWorkingCopy(
+    nodeId: NodeId,
+    asDraft: boolean = false,
+    options?: CommitWorkingCopyOptions,
+  ): Promise<NodeId> {
     try {
       const workingCopyAPI = await this.workerAPI.getWorkingCopyAPI();
-      const result = await workingCopyAPI.commitWorkingCopy(nodeId);
+      const result = await workingCopyAPI.commitWorkingCopy(nodeId, options);
 
       // Clear cache after save
-      if (!asDraft && result.success) {
-        this.stateCache.delete(nodeId);
-        this.subscribers.delete(nodeId as string);
+      if (result.status === 'ok') {
+        const canonicalId = (result.nodeId as NodeId | undefined) ?? nodeId;
+        if (!asDraft) {
+          this.stateCache.delete(nodeId);
+          this.subscribers.delete(nodeId as string);
+          if (canonicalId !== nodeId) {
+            this.stateCache.delete(canonicalId);
+            this.subscribers.delete(canonicalId as string);
+          }
+        }
+        return canonicalId;
       }
 
-      if (result.success) return nodeId;
-      throw new Error(result.error || 'Save failed');
+      if (result.status === 'NAME_CONFLICT') {
+        const error = new Error(`Save failed: name conflict (suggested: ${result.suggestedName})`);
+        Object.assign(error, {
+          name: 'WorkingCopyCommitError',
+          status: result.status,
+          suggestedName: result.suggestedName,
+          onNameConflict: options?.onNameConflict,
+        });
+        throw error;
+      }
+
+      if (result.status === 'COMMIT_CONFLICT') {
+        const error = new Error('Save failed: version conflict detected');
+        Object.assign(error, {
+          name: 'WorkingCopyCommitError',
+          status: result.status,
+          originalVersion: result.originalVersion,
+          wcVersion: result.wcVersion,
+          onNameConflict: options?.onNameConflict,
+        });
+        throw error;
+      }
+
+      const error = new Error('Save failed: unexpected status');
+      Object.assign(error, {
+        name: 'WorkingCopyCommitError',
+        status: result.status,
+        onNameConflict: options?.onNameConflict,
+      });
+      throw error;
     } catch (error) {
       console.error('Failed to save working copy:', error);
       throw error;

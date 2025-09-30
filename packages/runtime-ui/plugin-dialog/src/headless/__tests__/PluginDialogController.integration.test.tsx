@@ -39,7 +39,7 @@ function createMockWorker(options: {
     data: {},
   };
 
-  const commitSpy = vi.fn(async () => ({ success: true, node: { id: committedNodeId } }));
+  const commitSpy = vi.fn(async () => ({ status: 'ok', nodeId: committedNodeId, node: { id: committedNodeId } }));
 
   const workingCopyAPI = {
     getWorkingCopy: vi.fn(async (id: NodeId) => (id === workingCopyId ? workingCopy : null)),

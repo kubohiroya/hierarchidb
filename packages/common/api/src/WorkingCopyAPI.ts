@@ -6,7 +6,22 @@
  * until changes are committed or discarded.
  */
 
-import type { CommitResult, NodeId, NodeType, TreeNode, ValidationResult } from '@hierarchidb/common-type';
+import type {
+  CommitResult,
+  NodeId,
+  NodeType,
+  OnNameConflict,
+  TreeNode,
+  ValidationResult,
+} from '@hierarchidb/common-type';
+
+export interface CommitWorkingCopyOptions {
+  /**
+   * Policy for resolving name conflicts during commit operations.
+   * Defaults to `'auto-rename'` for backward compatibility.
+   */
+  onNameConflict?: OnNameConflict;
+}
 
 /**
  * Working copy management API
@@ -110,19 +125,19 @@ export interface WorkingCopyAPI {
    * Commit a working copy to the main database
    *
    * @param nodeId - Node ID of the working copy to commit
-   * @returns Commit result with success status and committed node
+   * @returns Commit result status and optional committed node payload
    *
    * @example
    * ```typescript
    * const result = await workingCopyAPI.commitWorkingCopy(nodeId);
-   * if (result.success) {
+   * if (result.status === 'ok') {
    *   console.log('Committed node:', result.node);
-   * } else {
-   *   console.error('Commit failed:', result.error);
+   * } else if (result.status === 'NAME_CONFLICT') {
+   *   console.warn('Name conflict, suggested:', result.suggestedName);
    * }
    * ```
    */
-  commitWorkingCopy(nodeId: NodeId): Promise<CommitResult>;
+  commitWorkingCopy(nodeId: NodeId, options?: CommitWorkingCopyOptions): Promise<CommitResult>;
 
   /**
    * Discard a working copy without saving changes

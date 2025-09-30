@@ -112,7 +112,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const canonicalId = targetNodeId as NodeId;
 
     const commitRes = await wcAPI.commitWorkingCopy(wcNodeId);
-    expect(commitRes?.success).toBe(true);
+    expect(commitRes?.status).toBe('ok');
 
     await waitFor(() =>
       subtreeEvents.some(

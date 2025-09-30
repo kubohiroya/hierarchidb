@@ -185,4 +185,109 @@ describe('WFL command processor undo/redo flow', () => {
     const childrenAfterRemoveSubtree = await queryAPI.listChildren(moveTargetId);
     expect(childrenAfterRemoveSubtree.length).toBe(0);
   }, 40_000);
+
+  it('create -> rename -> trash -> restore sequence can be undone and redone step-by-step', async () => {
+    const treeId = 'r' as TreeId;
+    const { port1, port2 } = new MessageChannel();
+    await exposeTestAPI(endpointFromPort(port1));
+    const client = Comlink.wrap<WorkerTestAPI>(endpointFromPort(port2));
+
+    const queryAPI = await client.getQueryAPI();
+    const commandProcessor = await client.getCommandProcessor();
+
+    const tree = await queryAPI.getTree(treeId);
+    if (!tree) throw new Error('Expected default tree to exist');
+    const rootId = tree.rootId as NodeId;
+    const trashRootId = tree.trashRootId as NodeId;
+
+    const createResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('createNode', {
+        nodeType: 'folder' as NodeType,
+        treeId,
+        parentId: rootId,
+        name: 'UndoRedo Headless Original',
+      }),
+    );
+    expect(createResult.success).toBe(true);
+    const nodeId = createResult.nodeId as NodeId;
+
+    const renameResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('updateNode', { nodeId, name: 'UndoRedo Headless Renamed' }),
+    );
+    expect(renameResult.success).toBe(true);
+
+    const moveToTrashResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId] }),
+    );
+    expect(moveToTrashResult.success).toBe(true);
+
+    const restoreResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('restoreFromTrash', {
+        nodeIds: [nodeId],
+        toParentId: rootId,
+        onNameConflict: 'auto-rename',
+      }),
+    );
+    expect(restoreResult.success).toBe(true);
+
+    const restoredNode = await queryAPI.getNode(nodeId);
+    expect(restoredNode?.name).toBe('UndoRedo Headless Renamed');
+    expect(restoredNode?.holderType).toBeUndefined();
+
+    const trashAfterRestore = await queryAPI.listChildren(trashRootId);
+    expect(trashAfterRestore.some((node) => node.id === nodeId)).toBe(false);
+
+    // Undo: restore -> moveToTrash -> rename -> create
+    const undoRestore = await commandProcessor.undo();
+    expect(undoRestore.success).toBe(true);
+    const nodeAfterUndoRestore = await queryAPI.getNode(nodeId);
+    expect(nodeAfterUndoRestore?.holderType).toBe('trash');
+    expect(nodeAfterUndoRestore?.name).toBe('UndoRedo Headless Renamed');
+
+    const undoMoveToTrash = await commandProcessor.undo();
+    expect(undoMoveToTrash.success).toBe(true);
+    const nodeAfterUndoTrash = await queryAPI.getNode(nodeId);
+    expect(nodeAfterUndoTrash?.holderType).toBeUndefined();
+    expect(nodeAfterUndoTrash?.parentId).toBe(rootId);
+    expect(nodeAfterUndoTrash?.name).toBe('UndoRedo Headless Renamed');
+
+    const undoRename = await commandProcessor.undo();
+    expect(undoRename.success).toBe(true);
+    const nodeAfterUndoRename = await queryAPI.getNode(nodeId);
+    expect(nodeAfterUndoRename?.name).toBe('UndoRedo Headless Original');
+
+    const undoCreate = await commandProcessor.undo();
+    expect(undoCreate.success).toBe(true);
+    const nodeAfterUndoCreate = await queryAPI.getNode(nodeId);
+    expect(nodeAfterUndoCreate).toBeUndefined();
+
+    // Redo operations in original order
+    const redoCreate = await commandProcessor.redo();
+    expect(redoCreate.success).toBe(true);
+    const nodeAfterRedoCreate = await queryAPI.getNode(nodeId);
+    expect(nodeAfterRedoCreate?.name).toBe('UndoRedo Headless Original');
+
+    const redoRename = await commandProcessor.redo();
+    expect(redoRename.success).toBe(true);
+    const nodeAfterRedoRename = await queryAPI.getNode(nodeId);
+    expect(nodeAfterRedoRename?.name).toBe('UndoRedo Headless Renamed');
+
+    const redoMoveToTrash = await commandProcessor.redo();
+    expect(redoMoveToTrash.success).toBe(true);
+    const nodeAfterRedoTrash = await queryAPI.getNode(nodeId);
+    expect(nodeAfterRedoTrash?.holderType).toBe('trash');
+
+    const redoRestore = await commandProcessor.redo();
+    expect(redoRestore.success).toBe(true);
+    const nodeAfterRedoRestore = await queryAPI.getNode(nodeId);
+    expect(nodeAfterRedoRestore?.holderType).toBeUndefined();
+    expect(nodeAfterRedoRestore?.parentId).toBe(rootId);
+    expect(nodeAfterRedoRestore?.name).toBe('UndoRedo Headless Renamed');
+
+    const finalTrashState = await queryAPI.listChildren(trashRootId);
+    expect(finalTrashState.some((node) => node.id === nodeId)).toBe(false);
+
+    port1.close();
+    port2.close();
+  }, 20_000);
 });

@@ -1,4 +1,5 @@
 import type { NodeId, NodeType, TreeId } from './id-types.js';
+import type { CommitStatus } from './commit-types.js';
 import type { Timestamp } from './primitive-types.js';
 import type { TreeNode } from './tree-node-types.js';
 
@@ -34,6 +35,8 @@ export type ErrorCode =
   | 'VALIDATION_ERROR'
   | 'DATABASE_ERROR';
 
+type CommitFailureStatus = Exclude<CommitStatus, 'ok'>;
+
 export type CommandResult =
   | {
   success: true;
@@ -47,13 +50,19 @@ export type CommandResult =
     rootIds: NodeId[];
     nodeCount?: number;
   };
-}
+  status?: 'ok';
+  autoRenameTo?: string;
+ }
   | {
   success: false;
   error: string;
   code: ErrorCode;
   seq?: Seq; //  seq
-};
+  status?: CommitFailureStatus;
+  suggestedName?: string;
+  originalVersion?: number;
+  wcVersion?: number;
+ };
 
 export interface CreateWorkingCopyForCreatePayload {
   workingCopyOf: NodeId;

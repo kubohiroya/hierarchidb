@@ -15,7 +15,7 @@ export type {
 } from './ImportExportAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { TreeQueryAPI, ListChildrenOptions, ListChildrenPrefetchOptions } from './TreeQueryAPI.js';
-export type { WorkingCopyAPI } from './WorkingCopyAPI.js';
+export type { WorkingCopyAPI, CommitWorkingCopyOptions } from './WorkingCopyAPI.js';
 export type { WorkerAPI } from './WorkerAPI.js';
 export type { DialogStateAPI, DialogStateSubscriptionId } from './DialogStateAPI.js';
 

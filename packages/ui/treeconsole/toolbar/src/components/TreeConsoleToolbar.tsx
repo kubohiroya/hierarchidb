@@ -311,10 +311,20 @@ function TreeConsoleToolbarContent({
 
       {/* Undo/Redo Group */}
       <ButtonGroup size="small">
-        <Button title="Undo (⌘+Z)" disabled={!canUndo} onClick={() => handleAction('undo')}>
+        <Button
+          title="Undo (⌘+Z)"
+          disabled={!canUndo}
+          onClick={() => handleAction('undo')}
+          data-testid="treeconsole-toolbar-undo-button"
+        >
           <UndoIcon fontSize="small" />
         </Button>
-        <Button title="Redo (⌘+Shift+Z)" disabled={!canRedo} onClick={() => handleAction('redo')}>
+        <Button
+          title="Redo (⌘+Shift+Z)"
+          disabled={!canRedo}
+          onClick={() => handleAction('redo')}
+          data-testid="treeconsole-toolbar-redo-button"
+        >
           <RedoIcon fontSize="small" />
         </Button>
       </ButtonGroup>

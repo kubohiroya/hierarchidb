@@ -82,7 +82,16 @@ export class CommandHistoryManager {
     private readonly deps: {
       coreDB: CoreDB;
       getNextSeq: () => Seq;
-      createErrorResult: (message: string, code: WorkerErrorCode) => CommandResult;
+      createErrorResult: (
+        message: string,
+        code: WorkerErrorCode,
+        extra?: {
+          status?: 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
+          suggestedName?: string;
+          originalVersion?: number;
+          wcVersion?: number;
+        },
+      ) => CommandResult;
       maxUndoStackSize: number;
       maxRedoStackSize: number;
       maxEventHistorySize: number;

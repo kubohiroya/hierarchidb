@@ -187,16 +187,33 @@ export function useWorkingCopy({
 
       // Commit
       const res = await wcAPI.commitWorkingCopy(finalData.treeNodeId);
-      if (!res?.success) throw new Error(res?.error || 'Commit failed');
 
-      const committedNodeId = (res.node?.id as NodeId | undefined)
-        ?? targetNodeId
-        ?? finalData.treeNodeId;
+      if (res.status === 'ok') {
+        const committedNodeId = (res.node?.id as NodeId | undefined)
+          ?? res.nodeId
+          ?? targetNodeId
+          ?? finalData.treeNodeId;
 
-      // Update original copy snapshot with latest data
-      setOriginalCopy({ ...finalData, treeNodeId: committedNodeId });
+        let refreshedCopy: WorkingCopyData = { ...finalData, treeNodeId: committedNodeId };
+        if (res.node) {
+          refreshedCopy = { ...toWorkingCopyData(res.node), treeNodeId: committedNodeId };
+        }
 
-      return committedNodeId;
+        setOriginalCopy(refreshedCopy);
+        setWorkingCopy(refreshedCopy);
+
+        return committedNodeId;
+      }
+
+      if (res.status === 'NAME_CONFLICT') {
+        throw new Error(`NAME_CONFLICT:${res.suggestedName}`);
+      }
+
+      if (res.status === 'COMMIT_CONFLICT') {
+        throw new Error('COMMIT_CONFLICT');
+      }
+
+      throw new Error('Commit failed with unknown status');
     } catch (err) {
       console.error('Failed to save working copy:', err);
       throw err;

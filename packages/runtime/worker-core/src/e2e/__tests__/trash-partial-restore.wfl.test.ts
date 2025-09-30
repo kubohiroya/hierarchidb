@@ -104,7 +104,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       const canonicalId = targetNodeId as NodeId;
 
       const commitResult = await workingCopyAPI.commitWorkingCopy(createResult.nodeId as NodeId);
-      expect(commitResult.success).toBe(true);
+      expect(commitResult.status).toBe('ok');
       await waitFor(async () => {
         const committed = await queryAPI.getNode(canonicalId);
         return Boolean(committed);

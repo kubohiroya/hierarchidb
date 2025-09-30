@@ -25,7 +25,7 @@ function createMockClient(options: {
       data: {},
     })),
     updateWorkingCopy: vi.fn(async () => {}),
-    commitWorkingCopy: vi.fn(async () => ({ success: true })),
+    commitWorkingCopy: vi.fn(async () => ({ status: 'ok', nodeId: 'n:1' })),
     discardWorkingCopy: vi.fn(async () => {}),
   };
 

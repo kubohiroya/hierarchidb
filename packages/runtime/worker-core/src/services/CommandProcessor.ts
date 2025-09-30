@@ -1,6 +1,7 @@
 import crypto from 'crypto';
-import type { CommandId, NodeId, Seq, Timestamp } from '@hierarchidb/common-type';
+import type { CommandId, NodeId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-type';
 import { SingletonMixin } from '@hierarchidb/util';
+import { Subject } from 'rxjs';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
 import type { CoreDB } from './CoreDB.js';
@@ -31,6 +32,13 @@ type EntitiesOverrideFactory =
   | (() => Promise<EntitiesDbAdapter | undefined>);
 
 type EntitiesOverrideRegistry = Record<string, EntitiesOverrideFactory>;
+
+type ErrorResultExtras = {
+  status?: 'COMMIT_CONFLICT' | 'NAME_CONFLICT';
+  suggestedName?: string;
+  originalVersion?: number;
+  wcVersion?: number;
+};
 
 function getEntitiesOverrides(): EntitiesOverrideRegistry | undefined {
   const globalWithOverrides = globalThis as typeof globalThis & {
@@ -210,7 +218,7 @@ export class CommandProcessor {
         history: this.history,
         batchOperationSize: PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE,
         deletePeerEntitiesForNodes: (nodes) => this.deletePeerEntitiesForNodes(nodes),
-        createErrorResult: (message, code) => this.createErrorResult(message, code),
+        createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
         getNextSeq: () => this.getNextSeq(),
       },
     );
@@ -253,12 +261,17 @@ export class CommandProcessor {
   /**
    * Create error result
    */
-  private createErrorResult(error: string, code: WorkerErrorCode): CommandResult {
+  private createErrorResult(
+    error: string,
+    code: WorkerErrorCode,
+    extra: ErrorResultExtras = {},
+  ): CommandResult {
     return {
       success: false,
       error,
       code,
       seq: this.getNextSeq(),
+      ...extra,
     };
   }
 
@@ -401,10 +414,16 @@ export class CommandProcessor {
    * : DI
       */
   constructor(private readonly coreDB: CoreDB) {
+    const changeSubject = (coreDB as Partial<{ changeSubject?: { subscribe?: unknown } }>).changeSubject as
+      | { subscribe?: unknown }
+      | undefined;
+    if (!changeSubject || typeof changeSubject.subscribe !== 'function') {
+      (coreDB as unknown as { changeSubject: Subject<TreeChangeEvent> }).changeSubject = new Subject<TreeChangeEvent>();
+    }
     this.history = new CommandHistoryManager({
       coreDB,
       getNextSeq: () => this.getNextSeq(),
-      createErrorResult: (message, code) => this.createErrorResult(message, code),
+      createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
       maxUndoStackSize: this.MAX_UNDO_STACK_SIZE,
       maxRedoStackSize: this.MAX_REDO_STACK_SIZE,
       maxEventHistorySize: this.MAX_EVENT_HISTORY_SIZE,

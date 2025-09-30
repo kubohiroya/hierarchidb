@@ -62,6 +62,57 @@
   - [ ] CommandProcessor 実処理（moveNodes/remove）
   - [ ] runtime-worker の `pnpm typecheck && pnpm test` グリーン
 
+2) Route/Worker バッチ E2E 整備（P1）
+- ブランチ: `feat/e2e/cp-routing-wc`
+- 依存: cp-routing-create-update, cp-routing-move-remove, wc-impl-align
+- 方針: Node（fake-indexeddb + worker）での統合テストを土台に、UI Playwright でバッチ操作を OFF/ON 両状態で検証する。
+- 受け入れ基準:
+  - Headless（Node + fake-indexeddb）で create/update/move/remove/recover の統合テストがグリーン
+  - Playwright E2E で OFF→ON 切替シナリオを含むバッチ操作が成功し、`pnpm e2e` がグリーン
+  - start-env.sh でフラグ注入パターンを整備し、本番環境への影響がないことを整理
+- チェックリスト:
+  - [x] Headless: cp-routing + WC フロー（`packages/runtime-worker/worker/src/e2e/__tests__/cp-routing-wc.headless.test.ts`）
+  - [x] Headless: policy-c フロー（`packages/runtime-worker/worker/src/e2e/__tests__/policy-c*.headless.test.ts`）
+ - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
+ - [x] UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
+ - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
+ - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
+  - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
+  - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
+  - [ ] Playwright 実行安定化（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts` 通過） — 未検証。build 済み環境でサーバ起動→テスト実行の手順整理、TreeTable が非同期更新中に閉じるケースの吸収、`waitForSubTreeUpdate` で捌けない DOM 反映遅延対策（イベント待機/リトライ）を詰める。
+  - [ ] フロー完了後の UI 状態検証の強化 — 移動→復元後に親ノード展開が戻ることがあり、追加の DOM 安定化（`TreeConsoleIntegration` イベント or 属性監視）が必要。
+  - [ ] フラグ override の再検証 — テスト毎に localStorage を初期化する仕組みがまだない。複数シナリオ連続実行時に override が持ち越されるため、`beforeEach` でクリアするか Playwright の storageState を活用する。
+  - [ ] CI 組み込み — turbo `e2e` タスクへ新 spec を組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
+
+3) WC 実装アライン（commit V2 戻り統一）（P1）
+- ブランチ: `refactor/worker/wc-impl-align`（sandbox 制約で新規ブランチ作成不可のため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理）
+- 依存: wc-util-baseline
+- 受け入れ基準: ToDo 定義どおり（戻り値を `ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
+- チェックリスト:
+  - [ ] commit API の戻り型/分岐を統一
+  - [ ] UI 連携の影響点メモ化（後続 PR で UI 反映）
+  - [ ] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
+- 残作業メモ:
+  - 【API統一】`WorkingCopyAPI.commitWorkingCopy` に `options?: { onNameConflict: 'error' | 'auto-rename' }` を追加し、`WorkingCopyService` → `CommandProcessor` → `commitWorkingCopyV2` へ伝播させる。現状は常に `auto-rename` 固定で呼び出しているため NAME_CONFLICT が表出せず、UI 側で指定した `onNameConflict` が無視されている。
+  - 【実装整合】`WorkingCopyService.commitWorkingCopyManually` 側でも version 差分検知と NAME_CONFLICT / COMMIT_CONFLICT の戻りを実装し、フォールバック経路が常に `status: 'ok'` を返してしまう問題を解消する。必要に応じて旧 `commitWorkingCopy` (CommandResult) API の呼び出し箇所を削除し、新戻り値へ一本化する。
+  - 【テスト補完】`packages/runtime/worker-core/src/services/__tests__/wc-commit-e2e.test.ts` に NAME_CONFLICT（`onNameConflict: 'error'` 指定）と COMMIT_CONFLICT（同一ノードを並行更新）のケースを追加し、`CommitResult` の `status` / `autoRenameTo` / `suggestedName` / `originalVersion` を検証する。CommandProcessor 直呼びテストも追加してエラーコードと status の連携を確認する。
+  - 【UI 追従】`packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` で保持している `options.context?.onNameConflict` を新 API オプションへ渡し、NAME_CONFLICT 時のダイアログ表示・リトライ導線を実装する。`packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` でも NAME_CONFLICT / COMMIT_CONFLICT をユーザー向けエラーへ変換するハンドリングを追記する。
+  - 【検証手順】上記変更後に `pnpm --filter @hierarchidb/runtime-worker typecheck`, `pnpm --filter @hierarchidb/runtime-worker test`, `pnpm --filter @hierarchidb/runtime-ui typecheck` を実行し、実行結果とログを運用ログ欄へ記録する。
+
+4) Undo/Redo 仕上げ（restore含む）（P1）
+- ブランチ: `feat/worker/undo-redo-finalize`
+- 依存: Envelope v1、cp-routing-move-remove
+- 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
+- チェックリスト:
+  - [x] restore（recoverFromTrash）の逆操作実装
+  - [x] 競合時の整合（NAME/COMMIT_CONFLICT）
+  - [ ] e2e: 連続操作の取り消し/やり直し
+    - [x] Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を実装し、`renameFolder` / `restoreFromTrash` など新規ヘルパーを追加。
+    - [x] Worker flag override 経路を `app/src/config/worker-flag-overrides.ts` 経由で UI ↔ Worker 間に導入し、localStorage → Worker URL param を接続。
+    - [ ] `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を通し、flag off/on 両経路の Undo/Redo を検証。（2025-09-30 17:05 sandbox で `vite preview` が `EPERM: operation not permitted 0.0.0.0:4173` となり未完。ローカル実行時はポート許可済み環境で再試行する。）
+    - [ ] 実行結果を運用ログへ記録し、必要なら待機調整やスクリーンショット収集のフローを整備。
+  - [x] ドキュメント更新（運用と制約）
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -1317,40 +1368,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ### Next Up（Doing完了後に着手） <a id="kanban-next-up"></a>
 
-1) WC 実装アライン（commit V2戻り統一）（P1）
-- ブランチ: `refactor/worker/wc-impl-align`
-- 依存: wc-util-baseline（Doing）
-- 受け入れ基準: ToDoの定義どおり（`ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
-- チェックリスト:
-  - [x] commit API の戻り型/分岐統一
-  - [x] UI 連携の影響点メモ化（後続PRでUI反映）
-  - [x] 型通し（runtime-worker スコープ）
-
-2) Undo/Redo 仕上げ（restore含む）（P1）
-- ブランチ: `feat/worker/undo-redo-finalize`
-- 依存: Envelope v1、cp-routing-move-remove
-- 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
-- チェックリスト:
-  - [x] restore（recoverFromTrash）の逆操作実装
-  - [x] 競合時の整合（NAME/COMMIT_CONFLICT）
-  - [x] e2e への布石（シナリオ草案）
-
-3) テスト戦略: Node先行→UI（E2E）追従（P1）
-- ブランチ: `feat/e2e/cp-routing-wc`（UI段は後段）
-- 依存: 1)〜3)
-- 方針: まず Node 環境（fake-indexeddb + worker）で統合テストをグリーン化し、その後に UI でのE2E（Playwright）は表示/操作の健全性確認として最小実施。
-- 受け入れ基準:
-  - Headless（Node + fake-indexeddb）で create/update/move/remove/recover の統合テストがグリーン
-  - UI E2E（Playwright）は smoke レベルで同等シナリオの起動・基本操作が成功
-- チェックリスト:
-  - [x] Headless: cp-routing + WC フロー（`packages/runtime-worker/worker/src/e2e/__tests__/cp-routing-wc.headless.test.ts`）
-  - [x] Headless: policy-c フロー（`packages/runtime-worker/worker/src/e2e/__tests__/policy-c*.headless.test.ts`）
-  - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
-  - [x] UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
-  - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
-  - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
-
-5) エラーモデル統一（バックエンド）（P1）
+1) エラーモデル統一（バックエンド）（P1）
 - ブランチ: `refactor/worker/error-model-unify`
 - 依存: Envelope v1
 - 受け入れ基準: CommandResult の統一と例外系の収斂（UIは後続で反映）
@@ -1361,7 +1379,14 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
+- 2025-09-30 14:10 start: feat/e2e/cp-routing-wc — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/cp-routing-wc` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
+- 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/cp-routing-wc-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
+- 2025-09-30 16:30 progress: feat/worker/undo-redo-finalize — Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を追加し、`renameFolder` / `restoreFromTrash` / `clickUndo` / `clickRedo` を含むテストヘルパーを拡張。Toolbar に Undo/Redo の data-testid を付与し、flag override 連携を UI/Worker 共通設定 (`app/src/config/worker-flag-overrides.ts`) へ集約。次ステップで `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行し、flag OFF/ON 両経路の整合を検証する。
+- 2025-09-30 16:55 progress: 同タスク — `playwright.config.ts` の webServer timeout を 480 秒へ延長（app build が 300 秒超かかるため）。Chromium 単体実行を目標に `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を再試行する準備完了。
+- 2025-09-30 17:05 blocked: 同タスク — `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行したところ、`playwright.config.ts` の webServer (`pnpm --filter @hierarchidb/app build && preview`) 起動時に `vite preview` の `listen EPERM: operation not permitted 0.0.0.0:4173` で失敗。sandbox ではポート開放不可のため外部環境での再実行が必要。`pnpm --filter @hierarchidb/app build` までは完了済みで、chromium 向けシナリオとヘルパーは動作確認待ち。必要なら webServer のポート/ホスト設定を 127.0.0.1 固定で再試行する。
 - 2025-09-30 start: feat/worker/cp-routing-move-remove — CommandProcessor の move/remove 経路を既定OFFフラグ付きで実装開始。ブランチ `feat/worker/cp-routing-move-remove` を作成し、TASKS を Doing へ移動。
+- 2025-09-30 start: refactor/worker/wc-impl-align — Worker Commit の戻り値統一タスクに着手。sandbox 制約で新規ブランチ作成が拒否されたため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理しつつ TASKS を Doing へ移動。
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
 - 2025-09-04 done: basemap-plugin 型修正（Handlerを `HierarchicalEntityHandler<BaseMapEntity>` ベースに再実装、DexieのID型を `EntityId` に統一、`useBaseMapEntity`/`BaseMapPanel`/`BaseMapDisplay` のAPI整合、`index.ts` の不要export削除、`components/`/`hooks/` にbarrel追加、PluginDefinitionを現行形に整合）。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` グリーン。
@@ -1407,6 +1432,8 @@ P1:
     - [x] フラグ `WORKER_USE_CMDPROC_MOVE_REMOVE` を追加
     - [x] TreeMutationService に move/remove のガード分岐を追加
     - [x] CommandProcessor に 'moveNodes' / 'remove' の実処理追加
+- WC 実装アライン（commit V2 戻り統一）
+  - （Doing へ移動）
     - [x] ルーティングの最小テスト追加（cp-routing-create-update.test.ts 内）
 - Undo/Redo 拡充（update/move/remove/restore）
   - ブランチ: `feat/worker/undo-redo`
@@ -1498,19 +1525,7 @@ P2:
 
 ### 次期ToDo（前提: 現在のDoing/P1完了後） <a id="kanban-next-todo"></a>
 
- 1) E2E: CPルーティングとWCフローの包括テスト（P1）
-- ブランチ: `feat/e2e/cp-routing-wc`
-- 依存: cp-routing-create-update, cp-routing-move-remove, wc-impl-align
-- 受け入れ基準:
-  - Playwright で create/update/move/remove をフラグ OFF/ON 両方で検証
-  - start-env.sh からフラグ注入シナリオを整備（本番影響なし）
-  - CI で `pnpm e2e` グリーン（レポート保存）
-- チェックリスト:
-  - [ ] e2e シナリオ（OFF→ON）とリグレッションケース（ヘッドレス統合テストは追加済み）
-  - [ ] 既存 e2e に干渉しない isolate データセット
-  - [ ] CI レポートの保存・参照手順追記
-
-2) CI: Policy Checks（hard-fail）導入
+1) CI: Policy Checks（hard-fail）導入
 — ブランチ: `chore/ci/policy-checks`
 - 依存: 自作 check-deps, dependency-cruiser 設定
 - 受け入れ基準:
@@ -1605,19 +1620,7 @@ P2:
 - UI ダイアログ置換は `ui-dialog` 既存 API に準拠。問題があれば該当 2 ファイルのみ巻き戻し可能。
 - CI soft-fail は step 属性変更のため、元の `|| true` に戻すだけで復旧可能。
 
-2) Undo/Redo 仕上げ（restore 含む）とe2e（P1）
-- ブランチ: `feat/worker/undo-redo-finalize`
-- 依存: undo-redo, cp-routing-move-remove
-- 受け入れ基準:
-  - restore（recoverFromTrash）の逆操作と再適用を実装し、単体/結合/e2e で検証
-  - 競合時の戻り（`ok | COMMIT_CONFLICT | NAME_CONFLICT`）に伴うUndo/Redoの整合
-- チェックリスト:
-  - [x] 単体テスト（境界/大量/親子連鎖の最小ケース）
-  - [x] create の Undo/Redo を確実化（作成ノードIDの追跡と再現）
-  - [ ] e2e: 連続操作の取り消し/やり直し
-  - [x] ドキュメント更新（運用と制約）
-
-3) エラーモデル統一のUI反映（通知/トースト）（P1）
+2) エラーモデル統一のUI反映（通知/トースト）（P1）
 - ブランチ: `refactor/app/error-model-unify-ui`
 - 依存: error-model-unify
 - 受け入れ基準:
@@ -1628,7 +1631,7 @@ P2:
   - [ ] `@testing-library/react` レンダリングテスト追加
   - [ ] ドキュメント（ユーザガイド）更新
 
-4) Trash holder 方式への移行スクリプト（P1）
+3) Trash holder 方式への移行スクリプト（P1）
 - ブランチ: `feat/backend/trash-holder-migrate`
 - 依存: trash-holder, wc-impl-align
 - 受け入れ基準:
@@ -1639,7 +1642,7 @@ P2:
   - [ ] `--commit` 実装とロールバック手順（small/big データ）
   - [ ] 運用Runbook追記
 
-5) 観測性: Command 実行レイテンシ/件数メトリクス（P2）
+4) 観測性: Command 実行レイテンシ/件数メトリクス（P2）
 - ブランチ: `feat/worker/metrics-command-latency`
 - 依存: cp-routing-* 完了
 - 受け入れ基準:
@@ -1650,7 +1653,7 @@ P2:
   - [ ] サンプリング/閾値アラート（開発時のみ）
   - [ ] Docs: トラブルシューティング手順
 
-6) フラグの段階ロールアウト計画と露出（P2）
+5) フラグの段階ロールアウト計画と露出（P2）
 - ブランチ: `chore/docs/flag-rollout-plan`
 - 依存: 各機能フラグ実装
 - 受け入れ基準:
@@ -1661,7 +1664,7 @@ P2:
   - [ ] start-env.sh の例と注意点
   - [ ] 既知の相互作用と制約一覧
 
-7) レガシー経路の除去（安定化後）（P3）
+6) レガシー経路の除去（安定化後）（P3）
 - ブランチ: `refactor/worker/remove-legacy-treemutation`
 - 依存: cp-routing-* 安定、e2e グリーン、運用2週間無事故
 - 受け入れ基準:
@@ -1673,7 +1676,7 @@ P2:
   - [x] 移行後の型通し（`pnpm typecheck`）
   - [x] 変更履歴（CHANGELOG/リリースノート）
 
-8) Storybook 整備（UIの回帰防止）（P3）
+7) Storybook 整備（UIの回帰防止）（P3）
 - ブランチ: `chore/storybook/wc-components`
 - 依存: wc-impl-align, error-model-unify-ui
 - 受け入れ基準:
