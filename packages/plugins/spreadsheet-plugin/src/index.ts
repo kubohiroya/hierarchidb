@@ -18,7 +18,7 @@ export * from './steps/FilteringStep.js';
 export * from './services/index.js';
 
 // Folder dialog extension initializer (optional)
-export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './extensions/SpreadsheetDialogExtension.js';
+export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './extensions/index.js';
 
 // Register UI steps-provider for host-composed dialog (idempotent)
 import './ui/steps-provider';

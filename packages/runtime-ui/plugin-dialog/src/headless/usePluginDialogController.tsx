@@ -36,6 +36,7 @@ import { composeStepConfigs } from '../services/StepComposer.js';
 import { useWorkingCopy, type WorkingCopyData } from '../hooks/useWorkingCopy.js';
 import { getIconComponent, getPresentation } from '../utils/pluginPresentation.js';
 import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
+import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 import {
   getPeerDisplayMode,
   setPeerDisplayMode,
@@ -61,6 +62,12 @@ export interface PluginDialogControllerOptions {
   initialStep?: number;
   onClose: () => void;
   onSuccess?: (nodeId: NodeId) => void;
+  footerOptions?: PluginDialogFooterOptions;
+}
+
+export interface PluginDialogFooterOptions {
+  primaryButtons?: PluginDialogFooterPrimaryButtonOptions;
+  saveDraftLabel?: string;
 }
 
 export interface PluginDialogControllerState {
@@ -309,6 +316,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     initialStep = 0,
     onClose,
     onSuccess,
+    footerOptions,
   } = options;
 
   const navigate = useNavigate();
@@ -946,6 +954,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;
+  const footerPrimaryButtons = footerOptions?.primaryButtons;
+  const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
 
   const HeaderComponent: HeadlessMultiStepDialogProps<any>['HeaderComponent'] = useCallback(() => (
     <PluginDialogHeader
@@ -979,8 +989,18 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
       disableDraft={!hasUnsavedChanges}
       canStartBatch={canStartBatch}
+      primaryButtonOptions={footerPrimaryButtons}
+      saveDraftLabel={footerSaveDraftLabel}
     />
-  ), [mode, canSaveCurrent, handleSaveDraft, hasUnsavedChanges, canStartBatch]);
+  ), [
+    mode,
+    canSaveCurrent,
+    handleSaveDraft,
+    hasUnsavedChanges,
+    canStartBatch,
+    footerPrimaryButtons,
+    footerSaveDraftLabel,
+  ]);
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {

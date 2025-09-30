@@ -293,7 +293,7 @@ function CallbackDemo() {
             <Typography color="text.secondary">No changes yet</Typography>
           ) : (
             <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
-              {stateChanges.map((change, index) => (
+              {stateChanges.map((change) => (
                 <Box key={change.timestamp} sx={{ mb: 1, fontSize: '12px' }}>
                   <Typography variant="caption" color="text.secondary">
                     {new Date(change.timestamp).toLocaleTimeString()}
@@ -314,4 +314,3 @@ function CallbackDemo() {
 export const WithCallbacks: Story = {
   render: () => <CallbackDemo />,
 };
-/* eslint-disable no-unused-vars */

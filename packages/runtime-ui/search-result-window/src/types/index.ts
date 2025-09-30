@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import type { WindowState } from '@hierarchidb/ui-floating-window';
 import type React from 'react';

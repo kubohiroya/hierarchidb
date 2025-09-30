@@ -72,6 +72,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",

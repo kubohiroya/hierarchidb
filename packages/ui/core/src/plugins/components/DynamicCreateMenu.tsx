@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from 'react';
+import { isValidElement, type ComponentType, type ReactNode } from 'react';
 import {
   Alert,
   CircularProgress,
@@ -195,7 +195,7 @@ export const DynamicCreateMenu: React.FC<DynamicCreateMenuProps> = ({
         } else if (typeof iconSpec === 'function') {
           const IconComponent = iconSpec as ComponentType<{ fontSize?: string }>;
           iconNode = <IconComponent fontSize="small" />;
-        } else if (iconSpec && typeof iconSpec === 'object' && !React.isValidElement(iconSpec)) {
+        } else if (iconSpec && typeof iconSpec === 'object' && !isValidElement(iconSpec)) {
           const iconMeta = iconSpec as {
             muiIconName?: string;
             mui?: string;

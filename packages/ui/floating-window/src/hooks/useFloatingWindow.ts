@@ -3,7 +3,7 @@
  * @description Custom hook for managing floating window state
  */
 
-/* eslint-disable no-unused-vars */
+ 
 import { useCallback, useEffect, useState } from 'react';
 import type { Position, Size, WindowState } from '../types/WindowState.js';
 

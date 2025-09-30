@@ -11,7 +11,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/runtime-shared-module-paths": ["./src/index.ts"]
+      "~/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts"],

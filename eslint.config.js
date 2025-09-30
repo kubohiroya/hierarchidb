@@ -4,9 +4,13 @@
 
 import js from '@eslint/js';
 import globals from 'globals';
-import tsParser from '@typescript-eslint/parser';
 import deprecation from 'eslint-plugin-deprecation';
 import reactHooks from 'eslint-plugin-react-hooks';
+
+// Silence unsupported TypeScript version warnings from @typescript-eslint
+process.env.TYPESCRIPT_ESLINT_SUPPRESS_WARNINGS = 'true';
+const tsParserModule = await import('@typescript-eslint/parser');
+const tsParser = tsParserModule.default ?? tsParserModule;
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
@@ -28,6 +32,9 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       parser: tsParser,
+      parserOptions: {
+        warnOnUnsupportedTypeScriptVersion: false,
+      },
       globals: {
         ...globals.es2022,
         ...globals.browser,
@@ -98,6 +105,7 @@ export default [
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
         project: ['./packages/runtime/worker-core/tsconfig.json'],
+        warnOnUnsupportedTypeScriptVersion: false,
       },
     },
     rules: {
@@ -112,6 +120,7 @@ export default [
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
         project: ['./packages/plugins/shape-plugin/tsconfig.json'],
+        warnOnUnsupportedTypeScriptVersion: false,
       },
     },
     rules: {

@@ -1,1 +1,0 @@
-{"version":3,"file":"osm.d.ts","sourceRoot":"","sources":["../../src/fetchers/osm.ts"],"names":[],"mappings":"AA2bA;;;GAGG;AACH,wBAAsB,QAAQ,CAC5B,aAAa,EAAE,MAAM,EACrB,cAAc,EAAE,MAAM,GACrB,OAAO,CAAC,IAAI,CAAC,CAwCf;AAoCD;;;GAGG;AACH,wBAAgB,qBAAqB,CACnC,IAAI,EAAE,MAAM,EACZ,UAAU,EAAE,MAAM,GACjB,MAAM,CAUR"}

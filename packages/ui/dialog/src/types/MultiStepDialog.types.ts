@@ -5,6 +5,11 @@
 import { ReactNode } from 'react';
 
 /**
+ * Generic dialog data shape (plugin-specific structure extends this).
+ */
+export type DialogData = Record<string, unknown>;
+
+/**
  * Dialog mode - create or edit
  */
 export type DialogMode = 'create' | 'edit';

@@ -51,9 +51,13 @@
   "tsup": {
     "external": [
       "@deck.gl/mapbox",
+      "@deck.gl/geo-layers",
+      "@deck.gl/layers",
       "@emotion/react",
       "@emotion/styled",
       "@mui/material",
+      "@vis.gl/react-maplibre",
+      "maplibre-gl",
       "react"
     ]
   }
