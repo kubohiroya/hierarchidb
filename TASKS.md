@@ -53,6 +53,15 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1) CP 段階ルーティング（move/remove）（P1）
+- ブランチ: `feat/worker/cp-routing-move-remove`
+- 依存: cp-routing-create-update（Done）
+- 受け入れ基準: ToDoの定義どおり（既定OFF `WORKER_USE_CMDPROC_MOVE_REMOVE`、ON時に非回帰）
+- チェックリスト:
+  - [ ] ガード分岐の実装と最小テスト
+  - [ ] CommandProcessor 実処理（moveNodes/remove）
+  - [ ] runtime-worker の `pnpm typecheck && pnpm test` グリーン
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -1308,16 +1317,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ### Next Up（Doing完了後に着手） <a id="kanban-next-up"></a>
 
-1) CP 段階ルーティング（move/remove）（P1）
-- ブランチ: `feat/worker/cp-routing-move-remove`
-- 依存: cp-routing-create-update（Doing）
-- 受け入れ基準: ToDoの定義どおり（既定OFF `WORKER_USE_CMDPROC_MOVE_REMOVE`、ON時に非回帰）
-- チェックリスト:
-  - [x] ガード分岐の実装と最小テスト
-  - [x] CommandProcessor 実処理（moveNodes/remove）
-  - [x] runtime-worker の `pnpm typecheck && pnpm test` グリーン
-
-2) WC 実装アライン（commit V2戻り統一）（P1）
+1) WC 実装アライン（commit V2戻り統一）（P1）
 - ブランチ: `refactor/worker/wc-impl-align`
 - 依存: wc-util-baseline（Doing）
 - 受け入れ基準: ToDoの定義どおり（`ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
@@ -1326,7 +1326,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] UI 連携の影響点メモ化（後続PRでUI反映）
   - [x] 型通し（runtime-worker スコープ）
 
-3) Undo/Redo 仕上げ（restore含む）（P1）
+2) Undo/Redo 仕上げ（restore含む）（P1）
 - ブランチ: `feat/worker/undo-redo-finalize`
 - 依存: Envelope v1、cp-routing-move-remove
 - 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
@@ -1335,7 +1335,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] 競合時の整合（NAME/COMMIT_CONFLICT）
   - [x] e2e への布石（シナリオ草案）
 
-4) テスト戦略: Node先行→UI（E2E）追従（P1）
+3) テスト戦略: Node先行→UI（E2E）追従（P1）
 - ブランチ: `feat/e2e/cp-routing-wc`（UI段は後段）
 - 依存: 1)〜3)
 - 方針: まず Node 環境（fake-indexeddb + worker）で統合テストをグリーン化し、その後に UI でのE2E（Playwright）は表示/操作の健全性確認として最小実施。
@@ -1361,6 +1361,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-09-30 start: feat/worker/cp-routing-move-remove — CommandProcessor の move/remove 経路を既定OFFフラグ付きで実装開始。ブランチ `feat/worker/cp-routing-move-remove` を作成し、TASKS を Doing へ移動。
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
 - 2025-09-04 done: basemap-plugin 型修正（Handlerを `HierarchicalEntityHandler<BaseMapEntity>` ベースに再実装、DexieのID型を `EntityId` に統一、`useBaseMapEntity`/`BaseMapPanel`/`BaseMapDisplay` のAPI整合、`index.ts` の不要export削除、`components/`/`hooks/` にbarrel追加、PluginDefinitionを現行形に整合）。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` グリーン。
