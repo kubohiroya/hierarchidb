@@ -78,14 +78,29 @@
   - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker-core/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
   - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
  - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
-  - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
-  - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
-  - [ ] Playwright 実行安定化（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts` 通過） — 未検証。User 指示により当面は WFL 結合テストを優先したため、UI 側は別途リトライ前提。build 済み環境でサーバ起動→テスト実行の手順整理、TreeTable が非同期更新中に閉じるケースの吸収、`waitForSubTreeUpdate` で捌けない DOM 反映遅延対策（イベント待機/リトライ）を詰める。
-  - [ ] フロー完了後の UI 状態検証の強化 — 移動→復元後に親ノード展開が戻ることがあり、追加の DOM 安定化（`TreeConsoleIntegration` イベント or 属性監視）が必要。
-  - [ ] フラグ override の再検証 — テスト毎に localStorage を初期化する仕組みがまだない。複数シナリオ連続実行時に override が持ち越されるため、`beforeEach` でクリアするか Playwright の storageState を活用する。
-  - [ ] CI 組み込み — turbo `e2e` タスクへ新 spec を組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
+ - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
+ - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
+ - [ ] Playwright 実行安定化（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts` 通過） — 未検証。User 指示により当面は WFL 結合テストを優先したため、UI 側は別途リトライ前提。build 済み環境でサーバ起動→テスト実行の手順整理、TreeTable が非同期更新中に閉じるケースの吸収、`waitForSubTreeUpdate` で捌けない DOM 反映遅延対策（イベント待機/リトライ）を詰める。
+ - [ ] フロー完了後の UI 状態検証の強化 — 移動→復元後に親ノード展開が戻ることがあり、追加の DOM 安定化（`TreeConsoleIntegration` イベント or 属性監視）が必要。
+ - [ ] フラグ override の再検証 — テスト毎に localStorage を初期化する仕組みがまだない。複数シナリオ連続実行時に override が持ち越されるため、`beforeEach` でクリアするか Playwright の storageState を活用する。
+ - [ ] CI 組み込み — turbo `e2e` タスクへ新 spec を組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
 
-3) WC 実装アライン（commit V2 戻り統一）（P1）
+3) WFL trash/undo 安定化（P0）
+- ブランチ: `fix/runtime-worker/undo-trash-stability`（サンドボックス制約で新規ブランチ作成不可のため main 上で暫定作業）
+- 依存: trash-holder, cp-routing undo/redo 完了タスク
+- 受け入れ基準:
+  - [ ] `packages/runtime-worker-core/src/e2e/__tests__/trash-partial-restore.wfl.test.ts` がタイムアウトせず成功
+  - [ ] `packages/runtime-worker-core/src/e2e/__tests__/folder-undo-redo.wfl.test.ts` の flag off/on 両ケースが成功
+  - [ ] `packages/runtime-worker/worker/src/e2e/__tests__/command-processor-undo-redo.wfl.test.ts` が全アサーションを満たす
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker-core test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` がグリーン
+- チェックリスト:
+  - [ ] タイムアウト箇所（waitFor）の原因調査（通知未送信・命名不整合・ホルダー整備不足）
+  - [ ] trash holder 名称／復元ロジックの修正とテスト反映
+  - [ ] undo/redo 履歴への反映確認と CommandProcessor 連携の修正
+- ロールバック手順:
+  - 変更ファイルを差分前へ戻し、テストを再実行して従来の挙動へ復旧する。
+
+4) WC 実装アライン（commit V2 戻り統一）（P1）
 - ブランチ: `refactor/worker/wc-impl-align`（sandbox 制約で新規ブランチ作成不可のため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理）
 - 依存: wc-util-baseline
 - 受け入れ基準: ToDo 定義どおり（戻り値を `ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
@@ -100,7 +115,7 @@
   - 【UI 追従】`packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` で保持している `options.context?.onNameConflict` を新 API オプションへ渡し、NAME_CONFLICT 時のダイアログ表示・リトライ導線を実装する。`packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` でも NAME_CONFLICT / COMMIT_CONFLICT をユーザー向けエラーへ変換するハンドリングを追記する。
   - 【検証手順】上記変更後に `pnpm --filter @hierarchidb/runtime-worker typecheck`, `pnpm --filter @hierarchidb/runtime-worker test`, `pnpm --filter @hierarchidb/runtime-ui typecheck` を実行し、実行結果とログを運用ログ欄へ記録する。
 
-4) Undo/Redo 仕上げ（restore含む）（P1）
+5) Undo/Redo 仕上げ（restore含む）（P1）
 - ブランチ: `feat/worker/undo-redo-finalize`
 - 依存: Envelope v1、cp-routing-move-remove
 - 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
@@ -1380,6 +1395,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `trash-partial-restore.wfl.test.ts`, `folder-undo-redo.wfl.test.ts`, `command-processor-undo-redo.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker-core test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
 - 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
 - 2025-09-30 14:10 start: feat/e2e/cp-routing-wc — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/cp-routing-wc` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
 - 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/cp-routing-wc-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
