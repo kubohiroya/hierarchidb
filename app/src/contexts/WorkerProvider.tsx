@@ -25,15 +25,57 @@ function normalizeError(error: unknown): Error {
   }
   return new Error(String(error));
 }
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
 import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
 import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
+import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from '../worker-runtime/workerApiClientLoader.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[WorkerProvider]', message, error);
+};
+
+const getWorkerClientClass = () => getWorkerAPIClientModule()?.WorkerAPIClient ?? null;
+
+const getNotInitializedErrorCtor = () => getWorkerAPIClientModule()?.NotInitializedError ?? null;
+
+const isNotInitializedError = (error: unknown): boolean => {
+  const NotInitialized = getNotInitializedErrorCtor();
+  return Boolean(NotInitialized && error instanceof NotInitialized);
+};
+
+const getWorkerClientSingleton = (): Remote<WorkerAPI> | null => {
+  const Client = getWorkerClientClass();
+  if (!Client) return null;
+  try {
+    return Client.getSingleton();
+  } catch (error) {
+    if (isNotInitializedError(error)) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+const isWorkerClientReady = (): boolean => {
+  const Client = getWorkerClientClass();
+  return Client ? Client.isReady() : false;
+};
+
+const resetWorkerClient = () => {
+  const Client = getWorkerClientClass();
+  if (Client) {
+    Client.reset();
+    return;
+  }
+  void loadWorkerAPIClientModule()
+    .then(({ WorkerAPIClient }) => {
+      WorkerAPIClient.reset();
+    })
+    .catch((error) => {
+      logWorkerProviderWarning('Failed to reset WorkerAPIClient (lazy load)', error);
+    });
 };
 
 type WorkerStatusState = {
@@ -296,6 +338,7 @@ export const WorkerProvider = ({
   const finalizeInitialized = useCallback(async () => {
     try {
       bootLog('WorkerProvider finalize');
+      const { WorkerAPIClient } = await loadWorkerAPIClientModule();
       const client = WorkerAPIClient.getSingleton();
       latestProgressRef.current = 100;
       setStatus({
@@ -313,7 +356,7 @@ export const WorkerProvider = ({
 
   const markComplete = useCallback(async () => {
     if (initCompleted) {
-      if (!WorkerAPIClient.isReady()) {
+      if (!isWorkerClientReady()) {
         return;
       }
     }
@@ -368,7 +411,7 @@ export const WorkerProvider = ({
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
-    WorkerAPIClient.reset();
+    resetWorkerClient();
     initCompleted = false;
     initStarted = false;
     latestProgressRef.current = 0;
@@ -386,7 +429,7 @@ export const WorkerProvider = ({
 
   const reset = useCallback(() => {
     bootLog('WorkerProvider reset requested');
-    WorkerAPIClient.reset();
+    resetWorkerClient();
     initCompleted = false;
     initStarted = false;
     latestProgressRef.current = 0;
@@ -401,6 +444,10 @@ export const WorkerProvider = ({
     bootLog('WorkerProvider mount');
     let pollTimer: number | null = null;
     let devFallbackTimer: number | null = null;
+
+    void loadWorkerAPIClientModule().catch((error) => {
+      logWorkerProviderWarning('Failed to preload WorkerAPIClient module', error);
+    });
 
     const onInitComplete = () => {
       void markComplete();
@@ -417,13 +464,13 @@ export const WorkerProvider = ({
     if (!initStarted) {
       initStarted = true;
       void runInitialization();
-    } else if (initCompleted || WorkerAPIClient.isReady()) {
+    } else if (initCompleted || isWorkerClientReady()) {
       void markComplete();
     }
 
     const poll = async () => {
       try {
-        if (WorkerAPIClient.isReady()) {
+        if (isWorkerClientReady()) {
           await markComplete();
           if (pollTimer) window.clearInterval(pollTimer);
         }
@@ -435,7 +482,7 @@ export const WorkerProvider = ({
 
     if (import.meta.env.DEV) {
       devFallbackTimer = window.setTimeout(() => {
-        if (WorkerAPIClient.isReady()) {
+        if (isWorkerClientReady()) {
           void markComplete();
         }
       }, 1500);
