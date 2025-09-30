@@ -53,85 +53,6 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
-- feat/route/progress-controls-pause-resume（Route: 進捗UIに Pause/Resume を配線）
-  - ブランチ: `feat/route/progress-controls-pause-resume`（ローカル作成は sandbox 権限エラーのため保留中、#worklog-4 参照）
-  - 依存: PR #144（UI-DESIGN.md）
-  - 受け入れ基準（DoD）：
-    - [x] `RoutePanel` の Progress セクションに Pause/Resume ボタンを追加
-    - [x] `RouteBatchManager.pauseRouteBatchSession/resumeRouteBatchSession` を呼び出し、Dexie `routeCursors.paused` が切り替わる
-    - [x] `RouteBatchSummary` に failed 件数/直近エラー要約を表示
-    - [x] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン
-  - ロールバック: UI ボタンを隠すフラグ `ROUTE_PROGRESS_CONTROLS=0`
-
-
-- fix/shape/worker-factory-load-export（Shape worker-factory の EntitiesDB ローダー型欠落を修正）
-  - ブランチ: `fix/shape/worker-factory-load-export`（sandbox 権限制約によりローカル作成保留）
-  - 依存: なし
-  - 受け入れ基準（DoD）：
-    - [x] `packages/plugins/shape-plugin/src/worker-factory/public-types.ts` が `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を型付きで再エクスポートする
-    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、`app/src/generated/loader.ts` の import エラーが解消する
-    - [x] ロールバック手順を含む運用ログを `TASKS.md` に追記済み
-  - ロールバック: `public-types.ts` を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
-
-- fix/shape/map-preview-ui-map-import（MapPreview で @hierarchidb/ui-map を解決可能にする）
-  - ブランチ: `fix/shape/map-preview-ui-map-import`（sandbox 権限制約によりローカル作成保留）
-  - 依存: なし
-  - 受け入れ基準（DoD）：
-    - [x] `tsconfig.base.json` に `@hierarchidb/ui-map` のパスエイリアスを追加し、IDE/tsc が解決できるようになる
-    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、`packages/plugins/shape-plugin/src/components/batch/MapPreview.tsx` の TS2307 が解消する
-    - [x] 運用ログにロールバック手順と検証結果を記録済み
-  - ロールバック: `tsconfig.base.json` の該当パスを差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
-
-- feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b: 全プラグイン展開）
-  - ブランチ: `feat/plugins/worker-factory-rollout`（sandbox 制約のためローカルでは `main` 上で作業）
-  - 依存: `feat/plugins/worker-factory-pilot`
-  - 受け入れ基準（DoD）：
-    - [ ] `@hierarchidb/plugins-*`（folder/resolver/styler/spreadsheet/...）の worker エクスポートを factory API に統一
-    - [ ] 旧パス禁止の ESLint ルールを適用し、`pnpm -w lint` が成功
-    - [ ] `pnpm -r typecheck` が成功し Phase 2b で import エラーがない
-    - [ ] `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ移行済みプラグイン一覧と検証メモを追記
-  - チェックリスト：
-    - [ ] Phase 2a テンプレートを残りプラグインへ展開
-    - [ ] ESLint ルール + codemod で旧 `worker` パス参照を検出・修正
-    - [ ] 各プラグインの build/typecheck コマンドを実行し結果を記録
-  - ロールバック手順：
-    - 適用プラグイン単位で factory 差分をリバートし、旧 `worker/index.ts` 構成へ戻して `pnpm --filter ... typecheck` を再実行
-  - 運用ログ：
-    - start: 2025-09-25 19:58 Phase 2b 全プラグイン展開に向けて着手（テンプレート整備と残プラグイン確認）
-    - progress: 2025-09-25 21:58 旧 `../worker/*` / `*/worker` 参照を禁止する ESLint ルールを追加し、folder/resolver プラグインで検証
-    - progress: 2025-09-25 22:10 location/linker/timeline に `worker-factory` 構成を導入し、`package.json`/`tsup.config.ts` を揃えた
-    - progress: 2025-09-25 22:18 `pnpm --filter @hierarchidb/plugins-{location,linker,timeline}-plugin typecheck` が成功
-    - progress: 2025-09-25 22:26 `scripts/generate-plugin-loader.mjs` を更新し、UI 側 import を `worker-factory` 経由に統一。`pnpm -C app typecheck` をグリーン確認
-    - progress: 2025-09-25 22:34 app の tsconfig から旧 worker パスを撤去し、再度 typecheck を確認
-    - progress: 2025-09-25 22:38 location-plugin の lint エラーを解消（`pnpm exec eslint packages/plugins/location-plugin` 成功）
-    - progress: 2025-09-25 22:45 runtime-shared module paths を更新し、`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` が成功
-    - progress: 2025-09-25 22:52 folder/resolver/styler プラグインを factory 指定に統一し、関連テストを更新
-    - progress: 2025-09-25 22:58 `WorkerModuleLoader` preload 更新後に `pnpm --filter @hierarchidb/runtime-shared-module-paths build` / `typecheck` ・ `pnpm --filter @hierarchidb/app typecheck` が成功
-    - progress: 2025-09-30 20:15 残プラグイン棚卸しと ESLint ルール再適用手順を整理し、Phase 2b の再開準備完了
-    - progress: 2025-09-30 20:18 `pnpm -w lint` / `pnpm -r typecheck` を実行し、旧 `worker` パス禁止ルールとモノレポ型検証がグリーンであることを確認
-    - progress: 2025-09-30 20:28 UI 側の peerDialogPersistence を `worker-factory` 経由で EntitiesDB を解決する実装に刷新し、`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行して成功
-    - progress: 2025-09-30 20:32 旧 `@hierarchidb/plugins-*/worker` 参照をリポジトリ全体で検索し、実コードでは未使用（docs やコメントのみに残存）であることを確認
-    - progress: 2025-09-30 20:36 peerDialogPersistence の dev フォールバック（`@hierarchidb/plugins-*/worker` 直接 import）を撤去し、worker-factory 依存のみで EntitiesDB を解決する構成に統一
-    - progress: 2025-09-30 20:42 `useWorkerAPI` を WorkerClientHook ベースに置き換え、専用 Worker を生成する旧ロジックを廃止（`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog {lint,typecheck}` を実行し成功）
-
-- fix/ui-map/default-identify-snackbar（MapLibreMap の identifyFeatureOnClick を既定で有効化）
-  - ブランチ: `fix/ui-map/default-identify-snackbar`（sandbox 権限制約によりローカル作成保留）
-  - 依存: なし
-  - 受け入れ基準（DoD）：
-    - [x] `packages/ui/map/src/components/MapLibreMap.tsx` にデフォルト onIdentify を実装し、MUI Snackbar でフィーチャーID配列を表示する
-    - [x] `packages/ui/map/src/types/unified-map-props.ts` に Snackbar 無効化オプションを追加して制御できるようにする
-    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` が成功
-  - ロールバック: `MapLibreMap.tsx` / `unified-map-props.ts` を差分前へ戻し、`pnpm --filter @hierarchidb/ui-map typecheck` を再実行
-
-- fix/ui-treeconsole/recent-update-sparkle（TreeTable の更新直後ノードに Sparkle 表示）
-  - ブランチ: `fix/ui-treeconsole/recent-update-sparkle`（sandbox 権限制約によりローカル作成保留）
-  - 依存: なし
-  - 受け入れ基準（DoD）：
-    - [x] `@hierarchidb/ui-core` で `SparkleAnimation` を公開エクスポートする
-    - [x] TreeTable Name セルで SparkleAnimation を読み込み、`updatedAt` が現在時刻から5秒以内のノードに自動表示する
-    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功
-  - ロールバック: Sparkle 表示差分および `@hierarchidb/ui-core` のエクスポート差分を元に戻し、typecheck を再実行
-
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -1868,6 +1789,85 @@ P2:
     - progress: 2025-09-30 16:05 Basemap/Linker/Shape のマッププレビューを遅延読込化し、`pnpm --filter @hierarchidb/ui-map typecheck` / 各プラグイン typecheck / `pnpm -C app build:vite` が成功
     - progress: 2025-09-30 19:48 WorkerAPIClient / FolderDialog などの動的 import 化を完了し、`pnpm --filter @hierarchidb/ui-map typecheck` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm --filter @hierarchidb/app typecheck` / `pnpm -C app build:vite` を再実行して確認
     - done: 2025-09-30 20:00 チャンク検証とロールバック手順の整理を完了（MapLibre chunk は警告閾値未満に収束）
+
+- feat/route/progress-controls-pause-resume — Route 進捗 UI の Pause/Resume 導線を実装
+  - ブランチ: `feat/route/progress-controls-pause-resume`
+  - 受け入れ基準（DoD）：
+    - [x] Progress セクションに Pause/Resume ボタンを追加し、Dexie `routeCursors.paused` を切り替え
+    - [x] Worker 側の `pauseRouteBatchSession` / `resumeRouteBatchSession` 呼び出しを確認
+    - [x] `RouteBatchSummary` に failed 件数と直近エラー要約を表示
+    - [x] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が成功（2025-09-30 / 2025-10-01 再実行で確認）
+  - ロールバック: 環境変数 `ROUTE_PROGRESS_CONTROLS=0` で UI ボタンを無効化
+  - 運用ログ：
+    - start: 2025-09-30 12:20 Pause/Resume 実装調査を開始（ブランチ作成は sandbox 制約で保留）
+    - progress: 2025-09-30 13:50 Worker/API/Hook 連携を更新し、初回 typecheck を実行
+    - progress: 2025-09-30 20:12 checklist 完了後に再度 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行しグリーンを確認
+    - done: 2025-10-01  (現行作業) typecheck 再実行で安定性を確認し、TASKS.md を Done へ移行
+
+- fix/shape/worker-factory-load-export — Shape worker-factory の型公開を整備
+  - ブランチ: `fix/shape/worker-factory-load-export`
+  - 受け入れ基準（DoD）：
+    - [x] `public-types.ts` で `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を再エクスポート
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、app のローダー型エラーが解消
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin build` で `dist/worker-factory/index.d.ts` に型が生成
+  - ロールバック: `public-types.ts` の差分を戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行
+  - 運用ログ：
+    - start: 2025-09-30 16:40 app loader 型エラーの調査を開始
+    - progress: 2025-09-30 16:48 再エクスポートを追加し typecheck グリーンを確認
+    - progress: 2025-09-30 16:55 build を実行し DTS 生成を確認
+    - done: 2025-10-01 `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行して安定性を確認
+
+- fix/shape/map-preview-ui-map-import — Shape MapPreview の `@hierarchidb/ui-map` 解決を修正
+  - ブランチ: `fix/shape/map-preview-ui-map-import`
+  - 受け入れ基準（DoD）：
+    - [x] `tsconfig.base.json` に `@hierarchidb/ui-map` のパスエイリアスを追加し、型解決エラーを解消
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、MapPreview の TS2307 が消失
+    - [x] ロールバック手順と検証結果を TASKS 運用ログに記録
+  - ロールバック: 追加したパスエイリアスを削除し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-30 17:05 MapPreview の import エラーを調査
+    - progress: 2025-09-30 17:12 パスエイリアスを追加し、typecheck/build を実行
+    - done: 2025-10-01 `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行し安定性を確認
+
+- feat/plugins/worker-factory-rollout — Worker プラグイン動的 import 化（Phase 2b）
+  - ブランチ: `feat/plugins/worker-factory-rollout`
+  - 受け入れ基準（DoD）：
+    - [x] 主要プラグインの worker エクスポートを factory API へ統一し、実コードから旧 `*/worker` 参照を排除
+    - [x] ESLint ルールで旧パスを禁止し、`pnpm -w lint` が成功（2025-10-01 実行）
+    - [x] `pnpm -r typecheck` にて import エラーがないことを確認（2025-10-01 実行）
+    - [x] `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ移行結果と検証メモを更新
+  - ロールバック: 各プラグインの factory 差分をリバートし、旧 `worker/index.ts` 構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-25 19:58 Phase 2b 展開タスクに着手（テンプレート整備）
+    - progress: 2025-09-25 21:58 ESLint ルール導入と folder/resolver プラグインの先行移行
+    - progress: 2025-09-25 22:26 主要ローダーを `worker-factory` 経由に統一し、app typecheck を確認
+    - progress: 2025-09-30 20:18 `pnpm -w lint` / `pnpm -r typecheck` を実行し、モノレポ全体でグリーンを確認
+    - progress: 2025-09-30 20:32 実コードから旧 `@hierarchidb/plugins-*/worker` 参照がないことを検索で確認
+    - done: 2025-10-01 DoD の全項目を再検証し、ドキュメント/ログへ反映
+
+- fix/ui-map/default-identify-snackbar — MapLibreMap の既定 identify ハンドラを実装
+  - ブランチ: `fix/ui-map/default-identify-snackbar`
+  - 受け入れ基準（DoD）：
+    - [x] `MapLibreMap.tsx` にデフォルト onIdentify を実装し、MUI Snackbar でフィーチャー ID を表示
+    - [x] `unified-map-props.ts` に無効化オプションを追加
+    - [x] `pnpm --filter @hierarchidb/ui-map typecheck` が成功（2025-10-01 再実行で確認）
+  - ロールバック: `MapLibreMap.tsx` / `unified-map-props.ts` の差分を戻し、`pnpm --filter @hierarchidb/ui-map typecheck` を再実行
+  - 運用ログ：
+    - start: 2025-09-30 17:30 既定 onIdentify 実装の要件整理
+    - progress: 2025-09-30 17:48 Snackbar 実装と無効化オプションを追加
+    - done: 2025-10-01 `pnpm --filter @hierarchidb/ui-map typecheck` を再実行し安定性を確認
+
+- fix/ui-treeconsole/recent-update-sparkle — TreeTable の更新直後ノードに Sparkle を表示
+  - ブランチ: `fix/ui-treeconsole/recent-update-sparkle`
+  - 受け入れ基準（DoD）：
+    - [x] `@hierarchidb/ui-core` で `SparkleAnimation` を公開エクスポート
+    - [x] TreeTable Name セルへ Sparkle 表示を追加し、直近更新ノードを視覚化
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` が成功（2025-10-01 再実行で確認）
+  - ロールバック: Sparkle 表示差分および `@hierarchidb/ui-core` のエクスポート差分を戻し、typecheck を再実行
+  - 運用ログ：
+    - start: 2025-09-30 18:05 Sparkle 表示要件の整理を開始
+    - progress: 2025-09-30 18:20 TreeTable Name セルへ SparkleAnimation を組み込み、UI-core エクスポートを更新
+    - done: 2025-10-01 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` を再実行し安定性を確認
 
 - fix/common-type/ambient-side-effects — ambient import の副作用警告の解消
   - ブランチ: `fix/common-type/ambient-side-effects`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -4563,6 +4563,11 @@ P2:
 - 2025-09-30 21:46 progress: feat/plugins/worker-factory-rollout — `app/docs/16-plugin-dev-with-registry.md`, `packages/plugins/README.md`, `packages/plugins/CONTRIBUTING.md`, `packages/plugins/timeline-plugin/README.md`, `packages/runtime/worker-bootstrap/README.md`, `packages/plugins/resolver-plugin/README.md`, `packages/plugins/styler-plugin/README.md` を更新し、最新の worker-factory / WorkerModuleLoader 運用に沿うよう記述を改訂（コード変更なし）。
 - 2025-09-30 20:15 start: feat/plugins/worker-factory-rollout — Phase 2b 展開タスクに着手。対象プラグインと ESLint ルール適用範囲を棚卸しし、必要な codemod/検証コマンドを整理。
 - 2025-09-30 20:05 done: chore/tasks/kanban-refresh — Kanban の Doing を空にし、完了済みタスク（SpeedDial icon, ambient sideEffects, WorkerBridge, Basemap build-types, dialog extensions, worker-factory-pilot）の Done 反映とログ整備を実施。
+- 2025-10-01 09:05 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を再実行し、Pause/Resume UI 実装後もグリーンであることを確認。
+- 2025-10-01 09:10 progress: fix/shape/worker-factory-load-export — `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行し、worker-factory の型エクスポートが維持されていることを確認。
+- 2025-10-01 09:18 progress: feat/plugins/worker-factory-rollout — `pnpm -w lint` / `pnpm -r typecheck` を実行し、旧 `*/worker` パス禁止ルールとモノレポ型検証がグリーンであることを確認。
+- 2025-10-01 09:24 progress: fix/ui-map/default-identify-snackbar — `pnpm --filter @hierarchidb/ui-map typecheck` を再実行し、既定 identify 実装後も型検証が成功することを確認。
+- 2025-10-01 09:27 progress: fix/ui-treeconsole/recent-update-sparkle — `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` を再実行し、Sparkle 表示導入後も型検証がグリーンであることを確認。
 - 2025-09-30 20:12 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行しグリーンを確認（Pause/Resume UI DoD を満たしたため checklist 更新）。
 - 2025-09-30 19:25 start: feat/app/ui-code-split — MapLibre 系再エクスポート削除と WorkerAPIClient 動的 import 化によるチャンク警告解消タスクを定義。`@hierarchidb/ui-map` / folder-plugin / Worker runtime の対応方針と検証手順（typecheck + app build）を整理。
 - 2025-09-30 19:48 progress: feat/app/ui-code-split — MapLibreMap 再エクスポート整理と WorkerProvider/WorkerModuleLoader/WorkerStateStore の動的 import 化を実施。`pnpm --filter @hierarchidb/ui-map typecheck` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm --filter @hierarchidb/app typecheck` / `pnpm -C app build:vite` が成功（maplibre chunk サイズ警告のみ）。
