@@ -1,7 +1,9 @@
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerAPIClient } from '../WorkerAPIClient.js';
-import { importPluginWorker, importRuntimeWorker, type PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
+import type { PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
+import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
+
+type ModulePathsModule = typeof import('@hierarchidb/runtime-shared-module-paths');
 
 const PLUGINS_TO_PRELOAD: PluginWorkerId[] = [
   'basemap',
@@ -34,19 +36,37 @@ let pluginLoadPromise: Promise<void> | null = null;
 
 const isBrowserEnvironment = typeof window !== 'undefined';
 
+let cachedModulePaths: ModulePathsModule | null = null;
+let modulePathsPromise: Promise<ModulePathsModule> | null = null;
+
+const getModulePaths = (): ModulePathsModule | null => cachedModulePaths;
+
+const loadModulePaths = async (): Promise<ModulePathsModule> => {
+  if (cachedModulePaths) return cachedModulePaths;
+  if (!modulePathsPromise) {
+    modulePathsPromise = import('@hierarchidb/runtime-shared-module-paths').then((mod) => {
+      cachedModulePaths = mod;
+      return mod;
+    });
+  }
+  return modulePathsPromise;
+};
+
 async function loadPluginWorkers(): Promise<void> {
   if (!isBrowserEnvironment) {
     return;
   }
 
-  const runtimeModulePromise = importRuntimeWorker().catch((error) => {
+  const modulePaths = await loadModulePaths();
+
+  const runtimeModulePromise = modulePaths.importRuntimeWorker().catch((error) => {
     console.warn('[WorkerModuleLoader] failed to import runtime worker module', error);
     return null;
   });
 
   const loadTasks = PLUGINS_TO_PRELOAD.map(async (pluginId) => {
     try {
-      const mod = await importPluginWorker(pluginId);
+      const mod = await modulePaths.importPluginWorker(pluginId);
       const loaderExports = PLUGIN_LOADER_EXPORTS[pluginId] ?? [];
       const runtimeModule = await runtimeModulePromise;
       const storeRegistry = runtimeModule?.storeRegistry;
@@ -72,11 +92,23 @@ async function loadPluginWorkers(): Promise<void> {
 export async function ensureWorkerRuntime(): Promise<Remote<WorkerAPI>> {
   if (!runtimePromise) {
     runtimePromise = (async () => {
+      const [{ WorkerAPIClient }, modulePaths] = await Promise.all([
+        loadWorkerAPIClientModule(),
+        loadModulePaths().catch((error) => {
+          console.warn('[WorkerModuleLoader] failed to load module paths module', error);
+          throw error;
+        }),
+      ]);
       const client = await WorkerAPIClient.getOrInit();
       if (!pluginLoadPromise) {
         pluginLoadPromise = loadPluginWorkers().catch((error) => {
           console.warn('[WorkerModuleLoader] plugin preload encountered errors', error);
         });
+      }
+
+      // ensure module paths cache populated for subsequent synchronous access
+      if (!getModulePaths()) {
+        cachedModulePaths = modulePaths;
       }
       await pluginLoadPromise.catch(() => {
         // individual plugin errors are logged above; swallow to avoid failing initialization

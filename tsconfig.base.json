@@ -106,6 +106,12 @@
       "@hierarchidb/ui-core/*": [
         "packages/ui/core/src/*"
       ],
+      "@hierarchidb/ui-map": [
+        "packages/ui/map/src/index.ts"
+      ],
+      "@hierarchidb/ui-map/*": [
+        "packages/ui/map/src/*"
+      ],
       "@hierarchidb/ui-csv-extract": [
         "packages/ui/csv-extract/src/index.ts"
       ],

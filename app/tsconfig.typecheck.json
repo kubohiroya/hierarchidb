@@ -67,6 +67,12 @@
       "@hierarchidb/ui-dialog": [
         "../packages/ui/dialog/src/index.ts"
       ],
+      "@hierarchidb/ui-map": [
+        "../packages/ui/map/src/index.ts"
+      ],
+      "@hierarchidb/ui-map/*": [
+        "../packages/ui/map/src/*"
+      ],
       "@hierarchidb/ui-treeconsole-treetable": [
         "../packages/ui/treeconsole/treetable/dist"
       ],

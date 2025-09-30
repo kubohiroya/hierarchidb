@@ -1,8 +1,7 @@
-import type React from 'react';
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { Alert, Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
-import { type MapViewState, MapWithVectorTiles } from '@hierarchidb/ui-map';
+import { type MapViewState, loadMapWithVectorTiles } from '@hierarchidb/ui-map';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { DownloadTask, VectorTileTask } from '../../shared';
 
@@ -19,6 +18,11 @@ interface MapPreviewProps {
   /** Optional zxy string for map preview URL (zoom,lng,lat) */
   zxy?: string;
 }
+
+const LazyMapWithVectorTiles = lazy(async () => {
+  const mod = await loadMapWithVectorTiles();
+  return { default: mod.MapWithVectorTiles };
+});
 
 export const MapPreview: React.FC<MapPreviewProps> = ({
                                                         nodeId,
@@ -51,12 +55,10 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
 
   // Handle open in new window
   const handleOpenMap = () => {
-    const baseUrl = window.location.origin;
-    const appPrefix = import.meta.env?.VITE_APP_PREFIX ?? '';
-    const trimmedPrefix = appPrefix.replace(/^[/]+|[/]+$/g, '');
-    const basePath = trimmedPrefix ? `/${trimmedPrefix}/` : '/';
-    const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
-    window.open(mapUrl, '_blank');
+    const base = typeof document !== 'undefined' ? document.baseURI : `${window.location.origin}/`;
+    const url = new URL('map', base);
+    url.searchParams.set('zxy', zxyString);
+    window.open(url.toString(), '_blank');
   };
 
   const successfulDownloads = downloadTasks.filter(t => t.stage === 'success').length;
@@ -94,30 +96,49 @@ export const MapPreview: React.FC<MapPreviewProps> = ({
         ) : (
           <>
             {/* Map Component */}
-            <MapWithVectorTiles
-              initialViewState={initialViewState}
-              nodeId={nodeId}
-              width="100%"
-              height="100%"
-              dbName="shape-tiles"
-              layerOptions={{
-                layerId: 'shape-plugin-layer',
-                sourceId: 'shape-plugin-source',
-                paint: {
-                  'fill-color': 'rgba(0, 136, 136, 0.7)',
-                  'fill-outline-color': '#004444',
-                },
-                layerType: 'fill',
-              }}
-              mapOptions={{
-                interactive: true,
-                scrollZoom: true,
-                dragPan: true,
-                dragRotate: true,
-                doubleClickZoom: true,
-                touchZoomRotate: true,
-              }}
-            />
+            <Suspense
+              fallback={
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(247,250,252,0.6)',
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Loading vector tiles…
+                  </Typography>
+                </Box>
+              }
+            >
+              <LazyMapWithVectorTiles
+                initialViewState={initialViewState}
+                nodeId={nodeId}
+                width="100%"
+                height="100%"
+                dbName="shape-tiles"
+                layerOptions={{
+                  layerId: 'shape-plugin-layer',
+                  sourceId: 'shape-plugin-source',
+                  paint: {
+                    'fill-color': 'rgba(0, 136, 136, 0.7)',
+                    'fill-outline-color': '#004444',
+                  },
+                  layerType: 'fill',
+                }}
+                mapOptions={{
+                  interactive: true,
+                  scrollZoom: true,
+                  dragPan: true,
+                  dragRotate: true,
+                  doubleClickZoom: true,
+                  touchZoomRotate: true,
+                }}
+              />
+            </Suspense>
 
             {/* Progress Overlay */}
             <Box

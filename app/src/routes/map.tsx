@@ -17,10 +17,11 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router';
 import useGeolocation from 'react-hook-geolocation';
 import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-map';
+import { loadMapLibreMap } from '@hierarchidb/ui-map';
 import { Box } from '@mui/material';
 
 const LazyMapLibreMap = lazy(async () => {
-  const mod = await import('@hierarchidb/ui-map');
+  const mod = await loadMapLibreMap();
   return { default: mod.MapLibreMap };
 });
 

@@ -1,7 +1,7 @@
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerAPIClient, NotInitializedError } from '../WorkerAPIClient.js';
 import { ensureWorkerRuntime } from './WorkerModuleLoader.js';
+import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 export type WorkerRuntimeState = 'uninitialized' | 'initializing' | 'ready' | 'failed';
 
@@ -20,6 +20,35 @@ export interface WorkerStateSnapshot {
 export type WorkerStateListener = (snapshot: WorkerStateSnapshot) => void;
 export type WorkerProgressListener = (progress: WorkerInitializationProgress) => void;
 
+const getWorkerClientModule = () => getWorkerAPIClientModule();
+
+const getWorkerClientClass = () => getWorkerClientModule()?.WorkerAPIClient ?? null;
+
+const getNotInitializedErrorCtor = () => getWorkerClientModule()?.NotInitializedError ?? null;
+
+const isNotInitializedError = (error: unknown): boolean => {
+  const NotInitialized = getNotInitializedErrorCtor();
+  return Boolean(NotInitialized && error instanceof NotInitialized);
+};
+
+const getSingletonIfAvailable = (): Remote<WorkerAPI> | null => {
+  const Client = getWorkerClientClass();
+  if (!Client) return null;
+  try {
+    return Client.getSingleton();
+  } catch (error) {
+    if (isNotInitializedError(error)) {
+      return null;
+    }
+    throw error;
+  }
+};
+
+const isWorkerReady = (): boolean => {
+  const Client = getWorkerClientClass();
+  return Client ? Client.isReady() : false;
+};
+
 const DEFAULT_PROGRESS: WorkerInitializationProgress = {
   progress: 0,
   message: 'Worker初期化を開始しています...',
@@ -30,25 +59,14 @@ const EVENT_INIT_PROGRESS = 'hierarchidb-worker-init-progress';
 const EVENT_INIT_ERROR = 'hierarchidb-worker-init-error';
 const EVENT_INIT_COMPLETE = 'hierarchidb-worker-init-complete';
 
-function resolveInitialClient(): Remote<WorkerAPI> | null {
-  if (!WorkerAPIClient.isReady()) {
-    return null;
-  }
-  try {
-    return WorkerAPIClient.getSingleton();
-  } catch (error) {
-    if (error instanceof NotInitializedError) {
-      return null;
-    }
-    throw error;
-  }
-}
+const initialClient = getSingletonIfAvailable();
+const initialState: WorkerRuntimeState = initialClient ? 'ready' : 'uninitialized';
 
 let snapshot: WorkerStateSnapshot = {
-  state: WorkerAPIClient.isReady() ? 'ready' : 'uninitialized',
-  client: resolveInitialClient(),
+  state: initialState,
+  client: initialClient,
   error: null,
-  progress: WorkerAPIClient.isReady()
+  progress: initialClient
     ? { progress: 100, message: 'Worker初期化完了' }
     : DEFAULT_PROGRESS,
 };
@@ -113,17 +131,7 @@ export function subscribeWorkerProgress(listener: WorkerProgressListener): () =>
 }
 
 function getCachedClient(): Remote<WorkerAPI> | null {
-  if (!WorkerAPIClient.isReady()) {
-    return null;
-  }
-  try {
-    return WorkerAPIClient.getSingleton();
-  } catch (error) {
-    if (error instanceof NotInitializedError) {
-      return null;
-    }
-    throw error;
-  }
+  return getSingletonIfAvailable();
 }
 
 export async function ensureWorkerInitialized(options?: {
@@ -160,6 +168,7 @@ export async function ensureWorkerInitialized(options?: {
 
   initializationPromise = (async () => {
     try {
+      await loadWorkerAPIClientModule();
       const runtimeInitialization = ensureWorkerRuntime();
       const client = await (abortPromise
         ? Promise.race([runtimeInitialization, abortPromise])

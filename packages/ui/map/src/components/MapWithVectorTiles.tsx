@@ -4,9 +4,8 @@
  */
 
 import type React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import MapLibreMap from './MapLibreMap.js';
 import VectorTileLayer from './VectorTileLayer.js';
 import {
   type BaseMapProps,
@@ -14,6 +13,25 @@ import {
   type VectorTileDataSource,
   type VectorTileLayerConfig,
 } from '../types/unified-map-props.js';
+import type { MapLibreMapProps } from './MapLibreMap.js';
+
+type MapLibreComponent = React.ComponentType<MapLibreMapProps>;
+
+let cachedMapLibreComponent: MapLibreComponent | null = null;
+let mapLibreComponentPromise: Promise<MapLibreComponent> | null = null;
+
+const getCachedMapComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
+
+const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
+  if (cachedMapLibreComponent) return cachedMapLibreComponent;
+  if (!mapLibreComponentPromise) {
+    mapLibreComponentPromise = import('./MapLibreMap.js').then((mod) => {
+      cachedMapLibreComponent = mod.MapLibreMap;
+      return cachedMapLibreComponent;
+    });
+  }
+  return mapLibreComponentPromise;
+};
 
 // Re-export for backward compatibility - but mark as deprecated
 /**
@@ -73,9 +91,18 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
                                                                         onMapClick,
                                                                       }) => {
   const [mapInstance, setMapInstance] = useState<MapLibreMapInstance | null>(null);
+  const [MapComponent, setMapComponent] = useState<MapLibreComponent | null>(getCachedMapComponent);
 
-  // Merge layer config with backward compatibility support
-  const mergedLayerConfig = { ...defaultLayerConfig, ...layerConfig, ...layerOptions };
+  useEffect(() => {
+    if (MapComponent) return;
+    let mounted = true;
+    void loadMapLibreComponent().then((component) => {
+      if (mounted) setMapComponent(() => component);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [MapComponent]);
 
   const handleMapLoad = useCallback((map: MapLibreMapInstance) => {
     setMapInstance(map);
@@ -84,8 +111,21 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
     onMapLoad?.(map); // Backward compatibility
   }, [onLoad, onMapLoad]);
 
+  if (!MapComponent) {
+    const fallbackStyle: React.CSSProperties = {
+      width,
+      height,
+      position: 'relative',
+      ...(style ?? {}),
+    };
+    return <div style={fallbackStyle} />;
+  }
+
+  // Merge layer config with backward compatibility support
+  const mergedLayerConfig = { ...defaultLayerConfig, ...layerConfig, ...layerOptions };
+
   return (
-    <MapLibreMap
+    <MapComponent
       initialViewState={initialViewState}
       mapStyle={mapStyle}
       width={width}
@@ -116,7 +156,7 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
           tileDataProvider={tileDataProvider}
         />
       )}
-    </MapLibreMap>
+    </MapComponent>
   );
 };
 

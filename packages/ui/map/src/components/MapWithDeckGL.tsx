@@ -6,10 +6,10 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MapLibreMap } from './MapLibreMap.js';
 import type { IControl } from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type { MapboxOverlay as DeckMapboxOverlay } from '@deck.gl/mapbox';
+import type { MapLibreMapProps } from './MapLibreMap.js';
 
 export interface DeckOverlayProps {
   layers: any[];
@@ -18,7 +18,7 @@ export interface DeckOverlayProps {
   onClick?: (info: any) => void;
 }
 
-export interface MapWithDeckGLProps extends React.ComponentProps<typeof MapLibreMap> {
+export interface MapWithDeckGLProps extends MapLibreMapProps {
   deck: DeckOverlayProps;
 }
 
@@ -30,6 +30,24 @@ type DeckOverlayControl = IControl & {
 
 let cachedOverlayCtor: DeckOverlayCtor | null = null;
 let overlayCtorPromise: Promise<DeckOverlayCtor | null> | null = null;
+
+type MapLibreComponent = React.ComponentType<MapLibreMapProps>;
+
+let cachedMapLibreComponent: MapLibreComponent | null = null;
+let mapLibreComponentPromise: Promise<MapLibreComponent> | null = null;
+
+const getCachedMapLibreComponent = (): MapLibreComponent | null => cachedMapLibreComponent;
+
+const loadMapLibreComponent = async (): Promise<MapLibreComponent> => {
+  if (cachedMapLibreComponent) return cachedMapLibreComponent;
+  if (!mapLibreComponentPromise) {
+    mapLibreComponentPromise = import('./MapLibreMap.js').then((mod) => {
+      cachedMapLibreComponent = mod.MapLibreMap;
+      return cachedMapLibreComponent;
+    });
+  }
+  return mapLibreComponentPromise;
+};
 
 const loadDeckOverlayCtor = async (): Promise<DeckOverlayCtor | null> => {
   if (cachedOverlayCtor) return cachedOverlayCtor;
@@ -54,6 +72,18 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
   const mapRef = useRef<MapLibreMapInstance | null>(null);
   const overlayRef = useRef<DeckOverlayControl | null>(null);
   const [overlayCtor, setOverlayCtor] = useState<DeckOverlayCtor | null>(cachedOverlayCtor);
+  const [MapComponent, setMapComponent] = useState<MapLibreComponent | null>(getCachedMapLibreComponent);
+
+  useEffect(() => {
+    if (MapComponent) return;
+    let mounted = true;
+    void loadMapLibreComponent().then((component) => {
+      if (mounted) setMapComponent(() => component);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [MapComponent]);
 
   useEffect(() => {
     let mounted = true;
@@ -122,7 +152,17 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
     }
   }, []);
 
-  return <MapLibreMap {...mapProps} onLoad={handleLoad} />;
+  if (!MapComponent) {
+    const fallbackStyle: React.CSSProperties = {
+      width: (mapProps.width as string | number | undefined) ?? '100%',
+      height: (mapProps.height as string | number | undefined) ?? '100%',
+      position: 'relative',
+      ...(mapProps.style ?? {}),
+    };
+    return <div style={fallbackStyle} />;
+  }
+
+  return <MapComponent {...mapProps} onLoad={handleLoad} />;
 };
 
 export default MapWithDeckGL;

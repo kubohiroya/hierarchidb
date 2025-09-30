@@ -5,10 +5,10 @@
  */
 
 import type React from 'react';
-import { useMemo } from 'react';
+import { Suspense, lazy, useMemo } from 'react';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
-import { type MapLibreLayer, MapLibreMap, type MapLibreStyle, type MapViewState } from '@hierarchidb/ui-map';
+import { type MapLibreLayer, type MapLibreMapInstance, type MapLibreStyle, type MapViewState, loadMapLibreMap } from '@hierarchidb/ui-map';
 import { CrossViewSnackbar } from '@hierarchidb/ui-core';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../constants/builtInStyles.js';
 
@@ -62,6 +62,11 @@ const STYLE_ICONS: Record<string, React.ReactElement> = {
   light: <LightMode />,
   custom: <Tune />,
 };
+
+const LazyMapLibreMap = lazy(async () => {
+  const mod = await loadMapLibreMap();
+  return { default: mod.MapLibreMap };
+});
 
 /**
  * BaseMap Preview Component
@@ -166,20 +171,39 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
         onClick={handleMapClick}
         title={!interactive ? `Click to open map at ${zxyString}` : undefined}
       >
-        <MapLibreMap
-          initialViewState={initialViewState}
-          mapStyle={mapStyleUrl}
-          width="100%"
-          height="100%"
-          mapOptions={{
-            interactive,
-            scrollZoom: interactive,
-            dragPan: interactive,
-            dragRotate: interactive,
-            doubleClickZoom: interactive,
-            touchZoomRotate: interactive,
-          }}
-          onLoad={(map) => {
+        <Suspense
+          fallback={
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(247,250,252,0.6)',
+                borderRadius: 1,
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                Loading map preview…
+              </Typography>
+            </Box>
+          }
+        >
+          <LazyMapLibreMap
+            initialViewState={initialViewState}
+            mapStyle={mapStyleUrl}
+            width="100%"
+            height="100%"
+            mapOptions={{
+              interactive,
+              scrollZoom: interactive,
+              dragPan: interactive,
+              dragRotate: interactive,
+              doubleClickZoom: interactive,
+              touchZoomRotate: interactive,
+            }}
+            onLoad={(map: MapLibreMapInstance) => {
             // Apply display options
             if (!displayOptions.showLabels) {
               // Hide all label layers
@@ -240,7 +264,8 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
               }
             }
           }}
-        />
+          />
+        </Suspense>
 
         {/* Overlay Information */}
         {showMetadata && (

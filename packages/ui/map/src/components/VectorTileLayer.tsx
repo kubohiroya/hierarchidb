@@ -11,10 +11,10 @@ import type {
   SourceSpecification,
   VectorSourceSpecification,
 } from 'maplibre-gl';
-import maplibregl from 'maplibre-gl';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
 import type { VectorTileProps } from '../types/unified-map-props.js';
 import { DEFAULT_MAP_CONFIG } from '../types/unified-map-props.js';
+import { loadMapLibreModule } from '../utils/maplibre-loader.js';
 
 // Global flag to ensure protocol is only registered once
 let protocolRegistered = false;
@@ -50,68 +50,79 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   // Setup custom protocol for Dexie if needed
   useEffect(() => {
-    if (!dbName || !nodeId || !tileDataProvider) return;
+    let cancelled = false;
 
-    if (!protocolRegistered) {
-      try {
-        maplibregl.addProtocol(
-          'dexie',
-          async (
-            params: RequestParameters,
-            _abortController: AbortController,
-          ): Promise<GetResourceResponse<ArrayBuffer>> => {
-            const urlParts = params.url.replace('dexie://', '').split('/').filter(Boolean);
-            const [dbName, nodeId, z, x, y] = urlParts;
+    async function ensureProtocolAndTiles() {
+      if (!dbName || !nodeId || !tileDataProvider) return;
 
-            if (!dbName || !nodeId || !z || !x || !y) {
-              throw new Error(`Invalid dexie URL format: ${params.url}`);
-            }
+      if (!protocolRegistered) {
+        const mlib = await loadMapLibreModule();
+        if (cancelled || !mlib) return;
+        try {
+          mlib.addProtocol(
+            'dexie',
+            async (
+              params: RequestParameters,
+              _abortController: AbortController,
+            ): Promise<GetResourceResponse<ArrayBuffer>> => {
+              const urlParts = params.url.replace('dexie://', '').split('/').filter(Boolean);
+              const [dbNameFromUrl, nodeIdFromUrl, z, x, y] = urlParts;
 
-            const zInt = parseInt(z, 10);
-            const xInt = parseInt(x, 10);
-            const yInt = parseInt(y, 10);
+              if (!dbNameFromUrl || !nodeIdFromUrl || !z || !x || !y) {
+                throw new Error(`Invalid dexie URL format: ${params.url}`);
+              }
 
-            try {
-              const tileData = await tileDataProvider(zInt, xInt, yInt, nodeId);
+              const zInt = parseInt(z, 10);
+              const xInt = parseInt(x, 10);
+              const yInt = parseInt(y, 10);
 
-              if (tileData) {
-                return {
-                  data: tileData,
-                  cacheControl: null,
-                  expires: null,
-                };
-              } else {
+              try {
+                const tileData = await tileDataProvider(zInt, xInt, yInt, nodeIdFromUrl);
+
+                if (tileData) {
+                  return {
+                    data: tileData,
+                    cacheControl: null,
+                    expires: null,
+                  };
+                } else {
+                  return {
+                    data: new ArrayBuffer(0),
+                    cacheControl: null,
+                    expires: null,
+                  };
+                }
+              } catch (error) {
+                console.warn(
+                  `[VectorTileLayer] Tile not found: z=${zInt}, x=${xInt}, y=${yInt}, nodeId=${nodeIdFromUrl}`,
+                  error,
+                );
                 return {
                   data: new ArrayBuffer(0),
                   cacheControl: null,
                   expires: null,
                 };
               }
-            } catch (error) {
-              console.warn(
-                `[VectorTileLayer] Tile not found: z=${zInt}, x=${xInt}, y=${yInt}, nodeId=${nodeId}`,
-                error,
-              );
-              return {
-                data: new ArrayBuffer(0),
-                cacheControl: null,
-                expires: null,
-              };
-            }
-          },
-        );
-        protocolRegistered = true;
-      } catch (error) {
-        protocolRegistered = true; // Assume it was already registered
+            },
+          );
+          protocolRegistered = true;
+        } catch {
+          protocolRegistered = true; // Assume it was already registered elsewhere
+        }
+      }
+
+      if (!tilesLoadedRef.current) {
+        tilesLoadedRef.current = true;
+        const tileUrls = [`dexie://${dbName}/${nodeId}/{z}/{x}/{y}`];
+        if (!cancelled) setComputedTiles(tileUrls);
       }
     }
 
-    // Set up computed tiles
-    if (!tilesLoadedRef.current) {
-      tilesLoadedRef.current = true;
-      const tileUrls = [`dexie://${dbName}/${nodeId}/{z}/{x}/{y}`];
-      setComputedTiles(tileUrls);
-    }
+    void ensureProtocolAndTiles();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dbName, nodeId, tileDataProvider]);
 
   // Add vector tile source

@@ -49,6 +49,14 @@ declare module '@hierarchidb/ui-i18n';
 declare module '@hierarchidb/runtime-ui-plugin-dialog';
 declare module '@hierarchidb/plugins-basemap-plugin/database';
 declare module '@hierarchidb/plugins-shape-plugin/services';
+declare module '@hierarchidb/plugins-basemap-plugin/ui';
+declare module '@hierarchidb/plugins-folder-plugin/ui';
+declare module '@hierarchidb/plugins-location-plugin/ui';
+declare module '@hierarchidb/plugins-route-plugin/ui';
+declare module '@hierarchidb/plugins-shape-plugin/ui';
+declare module '@hierarchidb/plugins-spreadsheet-plugin/ui';
+declare module '@hierarchidb/plugins-styler-plugin/ui';
+declare module '@hierarchidb/plugins-timeline-plugin/ui';
 
 // Minimal ambient type for geojson-vt so app typecheck passes when worker imports it.
 // Prefer installing official types: `pnpm add -D @types/geojson-vt` at the workspace root.

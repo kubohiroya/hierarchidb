@@ -1,7 +1,7 @@
 export { FolderIcon } from '../components/FolderIcon.js';
 export { FolderCreateDialog } from '../components/FolderCreateDialog.js';
 export { FolderEditDialog } from '../components/FolderEditDialog.js';
-export { FolderDialog } from '../components/FolderDialog.js';
+export type { FolderDialogProps } from '../components/FolderDialog.js';
 
 // Standardized entry for PluginDialogRoute: provide getDialogComponent()
 export async function getDialogComponent() {

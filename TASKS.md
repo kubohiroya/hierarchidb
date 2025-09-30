@@ -70,12 +70,17 @@
     - [x] `scripts/generate-plugin-loader.mjs` が UI プラグインを動的 import するローダーを生成し、`app/src/root.tsx` から非同期登録できる
     - [x] TreeConsole 関連 UI（`app/src/routes/t.($treeId).($pageNodeId).tsx` など）が lazy 読込になり、通常操作で問題がない
     - [x] Map ルート（`app/src/routes/map.tsx`）が lazy 読込したまま正常動作し、MapLibre/DeckGL が初期チャンクから分離される
+    - [x] Basemap/Linker/Shape など MapLibre 依存プラグインの UI が `React.lazy` ベースで読み込まれ、MapLibre 本体が必要時に取得される
     - [x] `pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` が成功する
   - チェックリスト：
     - [x] `scripts/generate-plugin-loader.mjs` / `app/src/generated/ui-loader.ts` を動的 import 仕様に更新
     - [x] `app/src/root.tsx` で UI プラグイン登録と TreeConsolePanel グローバル露出を非同期化
     - [x] `app/src/routes/t.($treeId).($pageNodeId).tsx` で `TreeConsoleIntegration` の lazy 読込を導入
     - [x] `app/src/routes/map.tsx` で `MapLibreMap` を lazy 読込化
+    - [x] `packages/plugins/{basemap,linker,shape}-plugin` のマップ系コンポーネントを `React.lazy` + `Suspense` 化し、`@hierarchidb/ui-map` の新ローダーを利用
+    - [ ] `@hierarchidb/ui-map` の `MapLibreMap/MapWithVectorTiles/MapWithDeckGL` を静的再エクスポートから除外し、ローダー API への一本化でチャンク分離を確実化
+    - [ ] `@hierarchidb/plugins-folder-plugin/src/ui/index.ts` から `FolderDialog` の静的 import を除去し、`getDialogComponent()` の遅延読込に統一
+    - [ ] `app/src/contexts/WorkerProvider.tsx` / `app/src/worker-runtime/WorkerModuleLoader.ts` / `app/src/worker-runtime/WorkerStateStore.ts` で `WorkerAPIClient` を動的 import 化し、共有ローダーでキャッシュ管理する
   - ロールバック: `scripts/generate-plugin-loader.mjs` を旧版へ戻し、`app/src/root.tsx` / ルート群の静的 import を復旧
 
 - fix/shape/worker-factory-load-export（Shape worker-factory の EntitiesDB ローダー型欠落を修正）
@@ -86,6 +91,15 @@
     - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、`app/src/generated/loader.ts` の import エラーが解消する
     - [x] ロールバック手順を含む運用ログを `TASKS.md` に追記済み
   - ロールバック: `public-types.ts` を差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
+
+- fix/shape/map-preview-ui-map-import（MapPreview で @hierarchidb/ui-map を解決可能にする）
+  - ブランチ: `fix/shape/map-preview-ui-map-import`（sandbox 権限制約によりローカル作成保留）
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `tsconfig.base.json` に `@hierarchidb/ui-map` のパスエイリアスを追加し、IDE/tsc が解決できるようになる
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` が成功し、`packages/plugins/shape-plugin/src/components/batch/MapPreview.tsx` の TS2307 が解消する
+    - [x] 運用ログにロールバック手順と検証結果を記録済み
+  - ロールバック: `tsconfig.base.json` の該当パスを差分前へ戻し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` を再実行
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -4519,10 +4533,15 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-09-30 19:25 start: feat/app/ui-code-split — MapLibre 系再エクスポート削除と WorkerAPIClient 動的 import 化によるチャンク警告解消タスクを定義。`@hierarchidb/ui-map` / folder-plugin / Worker runtime の対応方針と検証手順（typecheck + app build）を整理。
 - 2025-09-30 16:40 start: fix/shape/worker-factory-load-export — app/src/generated/loader.ts の型エラーを確認し、`packages/plugins/shape-plugin/src/worker-factory/public-types.ts` で `loadShapeEntitiesDbModule` を公開する方針を決定。`git switch -c fix/shape/worker-factory-load-export` は sandbox 権限制約で失敗したため、ブランチ作成は保留。
 - 2025-09-30 16:48 progress: fix/shape/worker-factory-load-export — `packages/plugins/shape-plugin/src/worker-factory/public-types.ts` から `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を再エクスポートし、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` がグリーンで完了。
 - 2025-09-30 16:55 progress: fix/shape/worker-factory-load-export — `pnpm --filter @hierarchidb/plugins-shape-plugin build` を実行し、`dist/worker-factory/index.d.ts` に `loadShapeEntitiesDbModule` の宣言が生成されたことを確認。ロールバックは `public-types.ts` を差分前へ戻して `pnpm --filter @hierarchidb/plugins-shape-plugin {build,typecheck}` を再実行。
+- 2025-09-30 17:05 start: fix/shape/map-preview-ui-map-import — MapPreview で発生している `@hierarchidb/ui-map` 解決エラーを確認。対策として `tsconfig.base.json` にパスエイリアスを追加し、shape-plugin での参照を復旧させる方針を決定。
+- 2025-09-30 17:12 progress: fix/shape/map-preview-ui-map-import — `tsconfig.base.json` に `@hierarchidb/ui-map` / `@hierarchidb/ui-map/*` のパスエイリアスを追加。ロールバックは該当エントリを削除のうえ `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行。
+- 2025-09-30 17:18 progress: fix/shape/map-preview-ui-map-import — `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` を実行し、いずれもグリーンを確認（MapPreview の TS2307 解消を IDE で確認）。
 - 2025-09-30 15:12 progress: feat/app/ui-code-split — `scripts/generate-plugin-loader.mjs`/`app/src/root.tsx` を動的 import 仕様へ更新し、TreeConsole/Map ルートを `React.lazy` 化。`pnpm --filter @hierarchidb/app typecheck` と `pnpm -C app build:vite` がグリーン。
+- 2025-09-30 16:05 progress: feat/app/ui-code-split — Basemap/Linker/Shape のマッププレビューを `React.lazy` + `Suspense` で実装し、`@hierarchidb/ui-map` に `loadMapLibreMap/loadMapWithVectorTiles` を追加。MapLibre/Deck.gl のチャンク分離を確認済み (`pnpm --filter @hierarchidb/ui-map typecheck`, 各プラグイン typecheck, `pnpm -C app build:vite`).
 - 2025-09-30 15:42 progress: feat/app/ui-code-split — `packages/ui/map/src/components/MapWithDeckGL.tsx` を Deck.gl 動的 import 対応に改修し、`loadMapWithDeckGL` を追加。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm -C app build:vite` を再実行しグリーン。
 - 2025-09-30 13:45 start: feat/app/ui-code-split — App index チャンク分割タスクに着手。`TASKS.md` を更新し、プランニングと影響範囲の洗い出しを開始。
 - 2025-09-30 12:20 start: feat/route/progress-controls-pause-resume — Pause/Resume UI 着手。`git switch -c feat/route/progress-controls-pause-resume` が sandbox 権限不足で失敗したため、一時的に `main` ブランチ上で要件洗い出しを進める（権限解消後にブランチ作成予定）。
