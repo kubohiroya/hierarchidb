@@ -34,8 +34,13 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { alpha } from '@mui/material/styles';
 import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
-import { TreeConsolePanel } from '@hierarchidb/ui-treeconsole-base';
+import {
+  TreeConsolePanel,
+  type TreeConsolePanelBreadcrumbRendererProps,
+  type TreeConsolePanelProps,
+  type TreeNodeData,
+  type TreeTableColumn,
+} from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
@@ -505,11 +510,11 @@ function TrashDialogContent({
           useTrashColumns
           trashAction={mode}
           hideDragHandler
-          breadcrumbRenderer={({ defaultRendererProps }) => (
+          breadcrumbRenderer={({ defaultRendererProps }: TreeConsolePanelBreadcrumbRendererProps) => (
             <TrashBreadcrumb {...defaultRendererProps} />
           )}
-          onNodeClick={() => undefined}
-          onNodeSelect={(nodeIds, selected) => {
+          onNodeClick={(_node: TreeNodeData) => undefined}
+          onNodeSelect={(nodeIds: string[], selected: boolean) => {
             const branded = nodeIds.map((id) => id as NodeId);
             setSelectedIds((prev) => {
               const next = new Set(prev);
@@ -523,7 +528,7 @@ function TrashDialogContent({
               return Array.from(next);
             });
           }}
-          onNodeExpand={(nodeId, expanded) => onToggleExpand(String(nodeId), expanded)}
+          onNodeExpand={(nodeId: string, expanded: boolean) => onToggleExpand(String(nodeId), expanded)}
           availableFilters={[]}
           searchTerm={searchTerm}
           onSearchChange={onSearchTermChange}
@@ -534,13 +539,20 @@ function TrashDialogContent({
           onRefresh={() => undefined}
           onExpandAll={() => undefined}
           onCollapseAll={() => undefined}
-          onSort={(_columnId) => undefined}
-          onFilterChange={(_filter) => undefined}
-          onViewModeChange={(_mode) => undefined}
-          onBreadcrumbNavigate={(_nodeId, _node) => undefined}
-          onContextMenuAction={(_action, _node) => undefined}
+          onSort={(_columnId: string) => undefined}
+          onFilterChange={(_filter: string) => undefined}
+          onViewModeChange={(_mode: 'list' | 'grid') => undefined}
+          onBreadcrumbNavigate={(
+            _nodeId: string,
+            _node?: TreeConsolePanelProps['breadcrumbItems'][number],
+          ) => undefined}
+          onContextMenuAction={(
+            _action: string,
+            _node: TreeNodeData,
+            _options?: { navigateToParent?: boolean },
+          ) => undefined}
           onStartTour={undefined}
-          onMoveNodes={(_ids, _target) => undefined}
+          onMoveNodes={(_ids: string[], _target: string) => undefined}
         />
       </Box>
     </Box>

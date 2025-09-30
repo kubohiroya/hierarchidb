@@ -76,11 +76,41 @@
       "@hierarchidb/ui-treeconsole-treetable": [
         "../packages/ui/treeconsole/treetable/dist"
       ],
+      "@hierarchidb/ui-treeconsole-base": [
+        "../packages/ui/treeconsole/base/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-base/*": [
+        "../packages/ui/treeconsole/base/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb": [
+        "../packages/ui/treeconsole/breadcrumb/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb/*": [
+        "../packages/ui/treeconsole/breadcrumb/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar": [
+        "../packages/ui/treeconsole/toolbar/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar/*": [
+        "../packages/ui/treeconsole/toolbar/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-trashbin": [
+        "../packages/ui/treeconsole/trashbin/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-trashbin/*": [
+        "../packages/ui/treeconsole/trashbin/dist/*"
+      ],
       "@hierarchidb/ui-auth": [
         "../packages/ui/auth/dist"
       ],
       "@hierarchidb/ui-icon": [
         "../packages/ui/icon/dist"
+      ],
+      "@hierarchidb/ui-usermenu": [
+        "../packages/ui/usermenu/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-usermenu/*": [
+        "../packages/ui/usermenu/dist/*"
       ],
       "@hierarchidb/plugins-location-plugin/services": [
         "../packages/plugins/location-plugin/src/services/index.ts"
