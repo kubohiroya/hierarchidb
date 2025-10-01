@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
-import type { ConfigEnv, Plugin, UserConfigExport, ViteDevServer } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 // @ts-ignore
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -88,11 +88,37 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js');
     addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/dist/index.js');
     addAlias('@hierarchidb/runtime-shared-module-paths', '../packages/runtime-shared/module-paths/dist/index.js');
+    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true });
+    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/dist/index.js', { exclude: true });
   }
 
   return {
     aliases,
     optimizeDepsExclude: Array.from(optimizeExclude),
+  };
+}
+
+function workerReactRouterHmrGuard(): Plugin {
+  const injectStubId = '\0hdb:react-router-inject-hmr-runtime-stub';
+  const runtimeStubId = '\0hdb:react-router-hmr-runtime-stub';
+
+  return {
+    name: 'hdb:worker-react-router-hmr-guard',
+    enforce: 'pre',
+    resolveId(source) {
+      if (source === 'virtual:react-router/inject-hmr-runtime') return injectStubId;
+      if (source === 'virtual:react-router/hmr-runtime') return runtimeStubId;
+      return null;
+    },
+    load(id) {
+      if (id === injectStubId) {
+        return 'export const __reactRouterWorkerHMRDisabled = true;\n';
+      }
+      if (id === runtimeStubId) {
+        return 'export default {};\n';
+      }
+      return null;
+    },
   };
 }
 
@@ -440,6 +466,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
       // Apply both comlink and package-reader to worker bundle so virtual modules
       // are available inside the worker context as well.
       plugins: () => [
+        workerReactRouterHmrGuard(),
         // Provide UI/Worker registries and icon map in worker context, too
         pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
         // Run package-reader first so virtual modules are available early
