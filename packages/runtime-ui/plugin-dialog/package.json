@@ -18,7 +18,6 @@
     "dev": "tsup --watch",
     "prebuild": "pnpm run build:clean",
     "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
-    "pretypecheck": "pnpm --filter @hierarchidb/runtime-shared-module-paths build",
     "build:tsc": "pnpm run build:types",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",

@@ -31043,7 +31043,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/config/feature-flags.ts",
+      "filePath": "packages/runtime/worker/src/config/feature-flags.ts",
       "baseName": "feature-flags",
       "extension": ".ts",
       "exports": [
@@ -31079,7 +31079,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/e2e/test-worker.entry.ts",
+      "filePath": "packages/runtime/worker/src/e2e/test-worker.entry.ts",
       "baseName": "test-worker.entry",
       "extension": ".ts",
       "exports": [
@@ -31102,7 +31102,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/EntityHandler.ts",
+      "filePath": "packages/runtime/worker/src/entity/EntityHandler.ts",
       "baseName": "EntityHandler",
       "extension": ".ts",
       "exports": [
@@ -31125,7 +31125,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/EntityLifecycleManager.ts",
+      "filePath": "packages/runtime/worker/src/entity/EntityLifecycleManager.ts",
       "baseName": "EntityLifecycleManager",
       "extension": ".ts",
       "exports": [
@@ -31150,7 +31150,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/EntityRegistry.ts",
+      "filePath": "packages/runtime/worker/src/entity/EntityRegistry.ts",
       "baseName": "EntityRegistry",
       "extension": ".ts",
       "exports": [
@@ -31175,7 +31175,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/handlers/PeerEntityHandler.ts",
+      "filePath": "packages/runtime/worker/src/entity/handlers/PeerEntityHandler.ts",
       "baseName": "PeerEntityHandler",
       "extension": ".ts",
       "exports": [
@@ -31200,7 +31200,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/store-registry.ts",
+      "filePath": "packages/runtime/worker/src/entity/store-registry.ts",
       "baseName": "store-registry",
       "extension": ".ts",
       "exports": [
@@ -31225,7 +31225,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/store.ts",
+      "filePath": "packages/runtime/worker/src/entity/store.ts",
       "baseName": "store",
       "extension": ".ts",
       "exports": [
@@ -31303,7 +31303,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/entity/types.ts",
+      "filePath": "packages/runtime/worker/src/entity/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -31326,7 +31326,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/adapters/ImportExportDBPortCoreDBAdapter.ts",
+      "filePath": "packages/runtime/worker/src/services/adapters/ImportExportDBPortCoreDBAdapter.ts",
       "baseName": "ImportExportDBPortCoreDBAdapter",
       "extension": ".ts",
       "exports": [
@@ -31351,7 +31351,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/adapters/TagDBPortCoreDBAdapter.ts",
+      "filePath": "packages/runtime/worker/src/services/adapters/TagDBPortCoreDBAdapter.ts",
       "baseName": "TagDBPortCoreDBAdapter",
       "extension": ".ts",
       "exports": [
@@ -31376,7 +31376,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/command-types.ts",
+      "filePath": "packages/runtime/worker/src/services/command-types.ts",
       "baseName": "command-types",
       "extension": ".ts",
       "exports": [
@@ -31454,7 +31454,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/command/envelope.util.ts",
+      "filePath": "packages/runtime/worker/src/services/command/envelope.util.ts",
       "baseName": "envelope.util",
       "extension": ".ts",
       "exports": [
@@ -31477,7 +31477,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/command/registry.ts",
+      "filePath": "packages/runtime/worker/src/services/command/registry.ts",
       "baseName": "registry",
       "extension": ".ts",
       "exports": [
@@ -31522,7 +31522,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/command/registry.types.ts",
+      "filePath": "packages/runtime/worker/src/services/command/registry.types.ts",
       "baseName": "registry.types",
       "extension": ".ts",
       "exports": [
@@ -31622,7 +31622,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/CommandProcessor.ts",
+      "filePath": "packages/runtime/worker/src/services/CommandProcessor.ts",
       "baseName": "CommandProcessor",
       "extension": ".ts",
       "exports": [
@@ -31647,7 +31647,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/CoreDB.ts",
+      "filePath": "packages/runtime/worker/src/services/CoreDB.ts",
       "baseName": "CoreDB",
       "extension": ".ts",
       "exports": [
@@ -31672,7 +31672,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/EphemeralDB.ts",
+      "filePath": "packages/runtime/worker/src/services/EphemeralDB.ts",
       "baseName": "EphemeralDB",
       "extension": ".ts",
       "exports": [
@@ -31708,7 +31708,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/FeatureBootstrap.ts",
+      "filePath": "packages/runtime/worker/src/services/FeatureBootstrap.ts",
       "baseName": "FeatureBootstrap",
       "extension": ".ts",
       "exports": [
@@ -31731,7 +31731,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/ImportExportService.ts",
+      "filePath": "packages/runtime/worker/src/services/ImportExportService.ts",
       "baseName": "ImportExportService",
       "extension": ".ts",
       "exports": [
@@ -31756,7 +31756,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/lifecycle-types.ts",
+      "filePath": "packages/runtime/worker/src/services/lifecycle-types.ts",
       "baseName": "lifecycle-types",
       "extension": ".ts",
       "exports": [
@@ -31801,7 +31801,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/NodeLifecycleManager.ts",
+      "filePath": "packages/runtime/worker/src/services/NodeLifecycleManager.ts",
       "baseName": "NodeLifecycleManager",
       "extension": ".ts",
       "exports": [
@@ -31826,7 +31826,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/StageProcessingService.ts",
+      "filePath": "packages/runtime/worker/src/services/StageProcessingService.ts",
       "baseName": "StageProcessingService",
       "extension": ".ts",
       "exports": [
@@ -31882,7 +31882,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/stageWorker.entry.ts",
+      "filePath": "packages/runtime/worker/src/services/stageWorker.entry.ts",
       "baseName": "stageWorker.entry",
       "extension": ".ts",
       "exports": [],
@@ -31893,7 +31893,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/TagService.ts",
+      "filePath": "packages/runtime/worker/src/services/TagService.ts",
       "baseName": "TagService",
       "extension": ".ts",
       "exports": [],
@@ -31904,7 +31904,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/TilesDB.ts",
+      "filePath": "packages/runtime/worker/src/services/TilesDB.ts",
       "baseName": "TilesDB",
       "extension": ".ts",
       "exports": [
@@ -31940,7 +31940,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/TreeMutationService.ts",
+      "filePath": "packages/runtime/worker/src/services/TreeMutationService.ts",
       "baseName": "TreeMutationService",
       "extension": ".ts",
       "exports": [
@@ -31965,7 +31965,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/TreeQueryService.ts",
+      "filePath": "packages/runtime/worker/src/services/TreeQueryService.ts",
       "baseName": "TreeQueryService",
       "extension": ".ts",
       "exports": [
@@ -31990,7 +31990,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/TreeSubscriptionService.ts",
+      "filePath": "packages/runtime/worker/src/services/TreeSubscriptionService.ts",
       "baseName": "TreeSubscriptionService",
       "extension": ".ts",
       "exports": [
@@ -32015,7 +32015,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/utils/holder-encoding.ts",
+      "filePath": "packages/runtime/worker/src/services/utils/holder-encoding.ts",
       "baseName": "holder-encoding",
       "extension": ".ts",
       "exports": [
@@ -32104,7 +32104,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/utils/metrics.ts",
+      "filePath": "packages/runtime/worker/src/services/utils/metrics.ts",
       "baseName": "metrics",
       "extension": ".ts",
       "exports": [
@@ -32149,7 +32149,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/utils/policy-c.ts",
+      "filePath": "packages/runtime/worker/src/services/utils/policy-c.ts",
       "baseName": "policy-c",
       "extension": ".ts",
       "exports": [
@@ -32183,7 +32183,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/validation/envelope.ts",
+      "filePath": "packages/runtime/worker/src/services/validation/envelope.ts",
       "baseName": "envelope",
       "extension": ".ts",
       "exports": [
@@ -32272,7 +32272,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/WorkingCopyService.ts",
+      "filePath": "packages/runtime/worker/src/services/WorkingCopyService.ts",
       "baseName": "WorkingCopyService",
       "extension": ".ts",
       "exports": [
@@ -32297,7 +32297,7 @@
       "classification": "match"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/services/WorkingCopyTreeNodeOperations.ts",
+      "filePath": "packages/runtime/worker/src/services/WorkingCopyTreeNodeOperations.ts",
       "baseName": "WorkingCopyTreeNodeOperations",
       "extension": ".ts",
       "exports": [
@@ -32496,7 +32496,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/stageWorker.entry.ts",
+      "filePath": "packages/runtime/worker/src/stageWorker.entry.ts",
       "baseName": "stageWorker.entry",
       "extension": ".ts",
       "exports": [],
@@ -32507,7 +32507,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/tools/metrics-dump.ts",
+      "filePath": "packages/runtime/worker/src/tools/metrics-dump.ts",
       "baseName": "metrics-dump",
       "extension": ".ts",
       "exports": [],
@@ -32518,7 +32518,7 @@
       "classification": "no-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/types.ts",
+      "filePath": "packages/runtime/worker/src/types.ts",
       "baseName": "types",
       "extension": ".ts",
       "exports": [
@@ -32596,7 +32596,7 @@
       "classification": "type-only"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/utils/metrics.ts",
+      "filePath": "packages/runtime/worker/src/utils/metrics.ts",
       "baseName": "metrics",
       "extension": ".ts",
       "exports": [
@@ -32630,7 +32630,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/utils/performance-config.ts",
+      "filePath": "packages/runtime/worker/src/utils/performance-config.ts",
       "baseName": "performance-config",
       "extension": ".ts",
       "exports": [
@@ -32655,7 +32655,7 @@
       "classification": "case-mismatch"
     },
     {
-      "filePath": "packages/runtime/worker-core/src/utils/workerLogger.ts",
+      "filePath": "packages/runtime/worker/src/utils/workerLogger.ts",
       "baseName": "workerLogger",
       "extension": ".ts",
       "exports": [
@@ -32711,7 +32711,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/tsup.config.ts",
+      "filePath": "packages/runtime/worker/tsup.config.ts",
       "baseName": "tsup.config",
       "extension": ".ts",
       "exports": [
@@ -32734,7 +32734,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/vitest.config.ts",
+      "filePath": "packages/runtime/worker/vitest.config.ts",
       "baseName": "vitest.config",
       "extension": ".ts",
       "exports": [
@@ -32757,7 +32757,7 @@
       "classification": "no-matching-export"
     },
     {
-      "filePath": "packages/runtime/worker-core/vitest.setup.ts",
+      "filePath": "packages/runtime/worker/vitest.setup.ts",
       "baseName": "vitest.setup",
       "extension": ".ts",
       "exports": [],

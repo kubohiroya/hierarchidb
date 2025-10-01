@@ -56,10 +56,10 @@
         "packages/feature/download/src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "packages/runtime/worker-core/src/index.ts"
+        "packages/runtime/worker/src/index.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "packages/runtime/worker-core/src/*"
+        "packages/runtime/worker/src/*"
       ],
       "@hierarchidb/runtime-shared-module-paths": [
         "packages/runtime-shared/module-paths/src/index.ts"

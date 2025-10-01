@@ -50,7 +50,7 @@
         "../packages/runtime-ui/tour/src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker-core/src/index.ts"
+        "../packages/runtime/worker/src/index.ts"
       ],
       "@hierarchidb/runtime-worker-bootstrap": [
         "../packages/runtime/worker-bootstrap/src/index.ts"

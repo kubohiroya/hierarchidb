@@ -25,7 +25,7 @@
         "../packages/ui/icon/dist"
       ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker-core"
+        "../packages/runtime/worker"
       ],
       "@hierarchidb/runtime-worker-bootstrap": [
         "../packages/runtime/worker-bootstrap"

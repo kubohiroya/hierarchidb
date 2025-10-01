@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
+import type {PeerStore} from '@hierarchidb/runtime-worker';
 
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
-import type { PeerStore } from '@hierarchidb/runtime-worker';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;

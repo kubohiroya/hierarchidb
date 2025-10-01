@@ -5,12 +5,7 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "module": "Node16",
-    "moduleResolution": "Node16",
-    "paths": {
-      "@hierarchidb/runtime-shared-module-paths": [
-        "../../runtime-shared/module-paths/dist/index.d.ts"
-      ]
-    }
+    "moduleResolution": "Node16"
   },
   "include": [
     "src/types/**/*.ts",

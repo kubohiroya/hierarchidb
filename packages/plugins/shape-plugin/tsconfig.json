@@ -13,36 +13,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/runtime-ui-datasource": [
-        "../../runtime-ui/datasource/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "../../runtime-ui/datasource/dist/*"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata": [
-        "../../runtime-shared/fetch-metadata/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata/*": [
-        "../../runtime-shared/fetch-metadata/dist/*"
-      ],
-      "@hierarchidb/plugins-runtime-worker-factory": [
-        "../runtime-worker-factory/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugins-runtime-worker-factory/*": [
-        "../runtime-worker-factory/dist/*"
-      ],
-      "@hierarchidb/batch": [
-        "../../feature/batch/dist/index.d.ts"
-      ],
-      "@hierarchidb/batch/*": [
-        "../../feature/batch/dist/*"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "../../runtime-ui/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "../../runtime-ui/plugin-dialog/dist/*"
       ]
     },
     "module": "Node16"

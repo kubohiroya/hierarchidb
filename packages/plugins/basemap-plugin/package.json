@@ -46,7 +46,6 @@
   },
   "scripts": {
     "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
-    "pretypecheck": "pnpm --filter @hierarchidb/runtime-shared-module-paths build",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:watch": "vitest",

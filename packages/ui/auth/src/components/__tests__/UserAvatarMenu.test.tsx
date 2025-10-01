@@ -1,4 +1,4 @@
-/**
+**
  * @file UserAvatarMenu.test.tsx
  * @description Test suite for UserAvatarMenu component with authentication integration
  */

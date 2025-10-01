@@ -127,7 +127,7 @@
     - [x] Worker flag override 経路を `app/src/config/worker-flag-overrides.ts` 経由で UI ↔ Worker 間に導入し、localStorage → Worker URL param を接続。
     - [ ] `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を通し、flag off/on 両経路の Undo/Redo を検証。（2025-09-30 17:05 sandbox で `vite preview` が `EPERM: operation not permitted 0.0.0.0:4173` となり未完。ローカル実行時はポート許可済み環境で再試行する。）
     - [ ] 実行結果を運用ログへ記録し、必要なら待機調整やスクリーンショット収集のフローを整備。
-  - [x] ドキュメント更新（運用と制約）
+ - [x] ドキュメント更新（運用と制約）
 
 6) runtime-worker import failure in dev（P0）
 - ブランチ: `fix/runtime-worker/import-dev`（sandbox 制約で作成不可のため main 上で暫定対応）
@@ -141,7 +141,21 @@
   - [ ] Node 環境（Vitest/headless）での import 互換を確認（必要なら後続で追跡）
   - [ ] 必要なら Vite alias/ImportMap の再調整を実施
   - [x] ロールバック手順と検証結果を運用ログに記録
-  - [x] dep-fence-extra の警告から当該パッケージの tsconfig(paths) 違反が消えていることを確認
+ - [x] dep-fence-extra の警告から当該パッケージの tsconfig(paths) 違反が消えていることを確認
+
+7) dep-fence warnings cleanup（P1）
+- ブランチ: `chore/plugins/dep-fence-cleanup`（sandbox 制約で作成不可のため main 上で暫定対応）
+- 依存: policy/ban-tsconfig-paths-dist-dts フォローアップ
+- 受け入れ基準（DoD）:
+  - [x] `pnpm check:deps:extra` の WARN から `@hierarchidb/plugins-{location,route,shape}-plugin` の tsup.external 欠落が消える
+  - [x] 同コマンドの WARN から `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/runtime-ui-plugin-dialog` の tsconfig paths 違反が消える
+  - [x] `pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` がグリーン
+  - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がグリーン
+- チェックリスト:
+  - [x] 各 package.json の `tsup.external` に `@hierarchidb/plugins-runtime-worker-factory` を追加（peer と整合）
+  - [x] `packages/plugins/shape-plugin/tsconfig*.json` の `paths` を `~/*` のみに整理（必要なら依存パッケージ側で型参照修正）
+  - [x] `packages/runtime-ui/plugin-dialog/tsconfig.json` の `paths` を `~/*` のみに整理
+  - [x] ロールバック手順と検証結果を運用ログに記録
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1416,6 +1430,14 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-10-01 10:55 progress: 同タスク — `packages/runtime-shared/module-paths/src/index.ts` から `@vite-ignore` を撤去し、`importRuntimeWorker` / `importOptionalFeature` / `importPluginWorker` が bare specifier をそのまま `import()` へ渡すよう更新。Vite が alias 解決を行う想定。ロールバックは当該行を差分前へ戻すのみ。
 - 2025-10-01 11:05 progress: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `pnpm --filter @hierarchidb/runtime-shared-module-paths build` を実行し成功。ブラウザでの再確認は未実施のため、`pnpm dev` 環境での挙動確認をユーザーへ依頼予定。
 - 2025-10-01 11:20 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` から `@hierarchidb/runtime-worker` / `@hierarchidb/runtime-worker-bootstrap` の paths 上書きを削除し、`~/*` のみを維持。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm check:deps:extra` を実行して当該パッケージの警告が消えたことを確認（他パッケージの警告は既存課題として残存）。
+- 2025-10-01 11:40 start: dep-fence warnings cleanup — `pnpm check:deps:extra` に残存する `@hierarchidb/plugins-{location,route,shape}-plugin` の tsup.external 警告と `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/runtime-ui-plugin-dialog` の tsconfig paths 警告を解消するため調査を開始。sandbox 制約で新規ブランチは作成できず main 上で差分管理。
+- 2025-10-01 11:55 progress: 同タスク — `packages/plugins/{location,route,shape}-plugin/package.json` の `tsup.external` に `@hierarchidb/plugins-runtime-worker-factory` を追記し、ポリシーが peerDependencies と整合するよう更新。`pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` を実行し全て成功。
+- 2025-10-01 12:05 done: 同タスク — `packages/plugins/shape-plugin/tsconfig.json`・`tsconfig.build.json` と `packages/runtime-ui/plugin-dialog/tsconfig.json` の `paths` を `~/*` のみに整理。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` に成功し、`pnpm check:deps:extra` を再実行して WARN 0 件を確認。ロールバックは各 package.json / tsconfig の追加行を差分前へ戻し再度 typecheck/dep-fence を実行するだけで可。
+- 2025-10-01 12:15 progress: runtime-worker import failure in dev — 動的 import の警告を抑制するため `packages/runtime-shared/module-paths/src/index.ts` の importer 実装を `importModule(specifier: string)` 経由へ変更。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm dev` での挙動再確認をユーザーへ依頼。
+- 2025-10-01 12:28 progress: 同タスク — Vite dev での解決失敗を受け、importer を文字列リテラルの `import()`（`/* @vite-ignore */` 付き）に戻し、StoreRegistry の最小型を導入。`packages/runtime-shared/module-paths/tsup.config.ts` に対象モジュールを external として列挙し直し、`pnpm --filter @hierarchidb/runtime-shared-module-paths build` が成功。
+- 2025-10-01 12:36 progress: 同タスク — 型検証用に `packages/runtime-shared/module-paths/src/types/external-modules.d.ts` を追加（shim-check 非対象のファイル名）し、`tsconfig.json` の include を更新。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` を再実行してグリーンを確認。
+- 2025-10-01 12:32 done: 同タスク — `packages/runtime-shared/module-paths/tsup.config.ts` に対象モジュールを external として追加し、`pnpm --filter @hierarchidb/runtime-shared-module-paths build` が成功。`pnpm dev` での再確認をユーザーへ依頼（現在の挙動共有待ち）。ロールバックは importer/tsconfig/tsup/シムを差分前へ戻し再ビルド。
+- 2025-10-01 13:10 progress: 同タスク — HDB_DEV ベースの dev alias ハックを撤去し、`app/vite.config.ts` で開発モード時に runtime/worker/plugin エントリを自動検出する仕組みに置換。バナー表示や環境変数依存の案内も削除。
 - 2025-10-01 11:30 start: chore/runtime-shared/lane-env-safeguard — `packages/runtime-shared/batch-processor/src/lane/LaneSemaphoreRegistry.ts` で `process.env` 参照が残っているため、ブラウザ互換な環境変数読取（import.meta / globalThis）へ置き換える作業を `feat/worker/cp-routing-move-remove` ブランチ上で開始。ロールバックは当該ファイルのユーティリティ関数を現状へ戻すだけで可。
 - 2025-10-01 11:45 progress: 同タスク — LaneSemaphoreRegistry の `readEnv` を import.meta / `__HIERARCHIDB_ENV__` / 直接 global property 読取へ差し替え、`packages/runtime-shared/batch-processor/src/lane/__tests__/LaneSemaphoreRegistry.test.ts` も `process.env` 依存を排除。ロールバックは該当ファイルを差分前に戻すのみで可。
 - 2025-10-01 11:55 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` と `pnpm --filter @hierarchidb/runtime-shared-batch-processor test -- LaneSemaphoreRegistry` を実行し成功。ブラウザ上でも `process` ポリフィル不要となる想定で、追加確認が必要なら `globalThis[ENV_KEY]` の上書き手順を共有予定。

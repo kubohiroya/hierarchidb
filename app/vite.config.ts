@@ -4,8 +4,9 @@ import type { Plugin, ViteDevServer } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
+import * as fs from 'node:fs';
 import * as path from 'path';
-import {readFileSync} from 'fs';
+import { readFileSync } from 'node:fs';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
@@ -20,67 +21,92 @@ import {
 } from '@hierarchidb/tools-vite-plugin-package-reader';
 import { hierarchiDBMultiModulePreset } from '@hierarchidb/tools-vite-plugin-package-reader/presets';
 
+type AliasEntry = { find: string; replacement: string };
+
+interface RuntimeAliasConfig {
+  aliases: AliasEntry[];
+  optimizeDepsExclude: string[];
+}
+
+function createRuntimeAliasConfig({
+  rootDir,
+  isDev,
+}: {
+  rootDir: string;
+  isDev: boolean;
+}): RuntimeAliasConfig {
+  const aliases: AliasEntry[] = [];
+  const optimizeExclude = new Set<string>(['@hierarchidb/runtime-worker-bootstrap']);
+
+  const addAlias = (specifier: string, relativePath: string | null, { exclude = false } = {}) => {
+    if (!relativePath) return;
+    const absolutePath = path.resolve(rootDir, relativePath);
+    if (!fs.existsSync(absolutePath)) return;
+    aliases.push({ find: specifier, replacement: absolutePath });
+    if (exclude) optimizeExclude.add(specifier);
+  };
+
+  if (isDev) {
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-shared-module-paths', '../packages/runtime-shared/module-paths/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/index.ts', { exclude: true });
+
+    const pluginRoot = path.resolve(rootDir, '../packages/plugins');
+    if (fs.existsSync(pluginRoot)) {
+      const workerCandidates = ['src/worker-factory/index.ts', 'src/worker-factory.ts'];
+      const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
+
+      for (const entry of fs.readdirSync(pluginRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        if (!entry.name.endsWith('-plugin')) continue;
+
+        const pluginName = entry.name;
+        const specBase = `@hierarchidb/plugins-${pluginName}`;
+
+        const resolveCandidate = (candidates: string[]) => {
+          for (const candidate of candidates) {
+            const resolved = path.resolve(rootDir, `../packages/plugins/${pluginName}/${candidate}`);
+            if (fs.existsSync(resolved)) return `../packages/plugins/${pluginName}/${candidate}`;
+          }
+          return null;
+        };
+
+        const workerRel = resolveCandidate(workerCandidates);
+        if (workerRel) {
+          addAlias(`${specBase}/worker-factory`, workerRel, { exclude: true });
+        }
+
+        const uiRel = resolveCandidate(uiCandidates);
+        if (uiRel) {
+          addAlias(`${specBase}/ui`, uiRel, { exclude: true });
+        }
+      }
+    }
+  } else {
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js');
+    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/dist/index.js');
+    addAlias('@hierarchidb/runtime-shared-module-paths', '../packages/runtime-shared/module-paths/dist/index.js');
+  }
+
+  return {
+    aliases,
+    optimizeDepsExclude: Array.from(optimizeExclude),
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
   // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
   const base = appPrefix ? `/${appPrefix}/` : '/';
-  // const isDev = mode === 'development';
+  const isDev = mode === 'development';
 
   const ssrExternalDeps = ['@mui/material', '@mui/system', '@mui/utils', 'node-fetch', 'whatwg-url', 'tr46'];
 
-  /**
-   * HDB_DEV 運用ドキュメント（開発者向け）
-   *
-   * 目的:
-   * - モノレポ配下の UI パッケージを、Vite dev サーバから直接 src を参照して HMR で快適に開発する。
-   * - turbo の watch → dist 反映 → Vite で検出、という待ち時間を避け、保存＝即反映にする。
-   *
-   * 使い方（最小レシピ）:
-   * - 環境変数 HDB_DEV に、開発対象ワークスペースパッケージ名をカンマ区切りで指定します。
-   *   例:
-   *     macOS/Linux (bash/zsh):
-   *       HDB_DEV=@hierarchidb/ui-treeconsole-toolbar,@hierarchidb/ui-treeconsole-base pnpm -C app dev
-   *     PowerShell:
-   *       $env:HDB_DEV="@hierarchidb/ui-treeconsole-toolbar,@hierarchidb/ui-treeconsole-base"; pnpm -C app dev
-   *     fish:
-   *       env HDB_DEV=@hierarchidb/ui-treeconsole-toolbar,@hierarchidb/ui-treeconsole-base pnpm -C app dev
-   *
-   * 挙動:
-   * - 指定パッケージは resolve.alias で src/index.ts に差し替え、かつ optimizeDeps.exclude に入れて pre-bundle から外します。
-   * - これにより、当該パッケージの変更は即 HMR で反映されます。
-   *
-   * 注意:
-   * - HDB_DEV を変更したら Vite を再起動してください（依存最適化キャッシュのため）。
-   * - 対象を増やす場合は DEV_SRC_MAP にマッピングを追加してください（パッケージ名 → src エントリ）。
-   * - React 重複を避けるため resolve.dedupe を維持しています。
-   */
-  // Minimal recipe: develop selected workspace UI packages via src with HMR
-  // Usage: set HDB_DEV to CSV of package names, e.g.
-  //   HDB_DEV=@hierarchidb/ui-treeconsole-toolbar,@hierarchidb/ui-treeconsole-base
-  const DEV_PACKAGES = (env.HDB_DEV || process.env.HDB_DEV || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  // Map active packages to their src entry. Extend here as needed.
-  const DEV_SRC_MAP: Record<string, string> = {
-    '@hierarchidb/ui-treeconsole-toolbar': '../packages/ui/treeconsole/toolbar/src/index.ts',
-    '@hierarchidb/ui-treeconsole-base': '../packages/ui/treeconsole/base/src/index.ts',
-    '@hierarchidb/ui-treeconsole-breadcrumb': '../packages/ui/treeconsole/breadcrumb/src/index.ts',
-    '@hierarchidb/ui-treeconsole-treetable': '../packages/ui/treeconsole/treetable/src/index.ts',
-    '@hierarchidb/ui-icon': '../packages/ui/icon/src/index.ts',
-    '@hierarchidb/ui-dialog': '../packages/ui/dialog/src/index.ts',
-    // Node-type plugins (opt-in via HDB_DEV)
-    '@hierarchidb/plugins-resolver-plugin': '../packages/plugins/resolver-plugin/src/index.ts',
-    '@hierarchidb/plugins-linker-plugin': '../packages/plugins/linker-plugin/src/index.ts',
-    // 追加したいパッケージがあればここにマッピングを足してください
-  };
-
-  const devAliases = DEV_PACKAGES
-    .map((name) => (DEV_SRC_MAP[name] ? { find: name, replacement: path.resolve(__dirname, DEV_SRC_MAP[name]) } : null))
-    .filter(Boolean) as Array<{ find: string; replacement: string }>;
+  const runtimeAliasConfig = createRuntimeAliasConfig({ rootDir: __dirname, isDev });
 
   // Note: Guidance logs are printed by hdb-dev-banner plugin after server starts.
 
@@ -334,49 +360,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     },
   };
 
-  // Print a clear banner AFTER Vite finishes its own startup messages
-  const hdbDevBannerPlugin: Plugin = {
-    name: 'hdb-dev-banner',
-    configureServer(server: ViteDevServer) {
-      const printBanner = (lines: string[]) => {
-        const width = Math.max(...lines.map((l) => l.length), 64);
-        const bar = '+-' + '-'.repeat(width) + '-+';
-        console.log('\n' + bar);
-        for (const l of lines) {
-          const pad = ' '.repeat(width - l.length);
-          console.log(`|  ${l}${pad}  |`);
-        }
-        console.log(bar + '\n');
-      };
-      const onListening = () => {
-
-          if (DEV_PACKAGES.length === 0) {
-            printBanner([
-              'HDB_DEV is not set.',
-              'Tip: Enable instant HMR for workspace UI packages by setting HDB_DEV.',
-              'Example:',
-              '  HDB_DEV=@hierarchidb/ui-treeconsole-toolbar,@hierarchidb/ui-treeconsole-base pnpm -C app dev',
-            ]);
-          } else {
-            printBanner([
-              'HDB_DEV active packages (using src + HMR):',
-              ...DEV_PACKAGES.map((p) => `- ${p}`),
-            ]);
-          }
-
-      };
-      if (server?.httpServer) {
-        server.httpServer.once('listening', onListening);
-      } else {
-        // Fallback: print immediately if httpServer is not available yet
-        onListening();
-      }
-    },
-  };
-
   return {
     base,
-    // Avoid clearing the terminal so startup logs (e.g. HDB_DEV tips) remain visible
     clearScreen: false,
     define: (() => {
       // Inject version and build time for logging
@@ -387,7 +372,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         'import.meta.env.HDB_LOCAL_PROXY': JSON.stringify(env.HDB_LOCAL_PROXY || process.env.HDB_LOCAL_PROXY || ''),
       } as Record<string, string>;
     })(),
-    plugins: [buildBeaconPlugin, hdbDevProxyPlugin, hdbDevBannerPlugin, ...plugins],
+    plugins: [buildBeaconPlugin, hdbDevProxyPlugin, ...plugins],
     resolve: {
       // Avoid multiple React copies by always resolving to the app's React
       dedupe: [
@@ -403,7 +388,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       ],
       alias: [
         { find: '~', replacement: path.resolve(__dirname, './src') },
-        // Active dev packages are resolved above via HDB_DEV -> devAliases
         // Force ESM/modern entrypoints for MUI to avoid SSR CJS 'require is not defined'
         // These aliases are safe across v5/v7 as they point to ESM builds.
         // Do not alias MUI packages to ESM entry files.
@@ -411,6 +395,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // which would resolve to '.../esm/index.js/Grid' and fail.
         // Active dev packages: resolve to src for instant HMR
         ...devAliases,
+        ...runtimeAliasConfig.aliases,
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Icons utility (always point to src for now)
@@ -427,21 +412,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         { find: 'child_process', replacement: path.resolve(__dirname, './src/virtual/child-process-shim.ts') },
         // Legacy provider alias used by some plugins
         { find: 'provider-i18next', replacement: 'react-i18next' },
-        // Ensure worker bundle can resolve @hierarchidb/runtime-worker from plugin dist
-        // We point to the built dist to let Vite trace its internal worker entry (stageWorker.entry.js)
-        {
-          find: '@hierarchidb/runtime-worker',
-          replacement: path.resolve(__dirname, '../packages/runtime/worker-core/dist/index.js'),
-        },
-        // Ensure bootstrap utils resolve to built dist in app build
-        {
-          find: '@hierarchidb/runtime-worker-bootstrap',
-          replacement: path.resolve(__dirname, '../packages/runtime/worker-bootstrap/dist/index.js'),
-        },
-        {
-          find: '@hierarchidb/runtime-shared-module-paths',
-          replacement: path.resolve(__dirname, '../packages/runtime-shared/module-paths/dist/index.js'),
-        },
         // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugins
         // Rationale: location-plugin bundles it as external; alias points to built dist
         // Temporary aliases removed after dynamic imports hardened
@@ -541,11 +511,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         '@emotion/styled',
       ],
       // Exclude specific packages from pre-bundle so Vite watches sources directly
-      exclude: [
-        // Do not prebundle bootstrap; resolve via alias to dist at build time
-        '@hierarchidb/runtime-worker-bootstrap',
-        ...DEV_PACKAGES,
-      ],
+      exclude: runtimeAliasConfig.optimizeDepsExclude,
       esbuildOptions: {
         target: 'es2020',
       },

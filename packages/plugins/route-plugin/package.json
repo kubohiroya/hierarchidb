@@ -124,7 +124,8 @@
       "@mui/icons-material",
       "@mui/material",
       "react",
-      "react-dom"
+      "react-dom",
+      "@hierarchidb/plugins-runtime-worker-factory"
     ]
   }
 }

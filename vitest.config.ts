@@ -77,7 +77,7 @@ export default defineConfig({
       './packages/plugins/styler-plugin',
       './packages/runtime-ui/plugin-dialog',
       './packages/runtime/worker-bootstrap',
-      './packages/runtime/worker-core',
+      './packages/runtime/worker',
       './packages/tools/vite-plugin-package-reader',
       './packages/ui/auth',
       './packages/ui/core',

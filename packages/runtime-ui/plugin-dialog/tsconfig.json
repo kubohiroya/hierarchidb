@@ -18,12 +18,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/runtime-shared-module-paths": [
-        "../../runtime-shared/module-paths/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-shared-module-paths/*": [
-        "../../runtime-shared/module-paths/dist/*"
       ]
     }
   },

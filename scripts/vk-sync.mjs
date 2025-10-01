@@ -147,7 +147,7 @@ function writeTaskFS(task) {
 
 async function main() {
   const args = parseArgs(process.argv);
-  const dirs = args.dirs.length ? args.dirs : ['packages/runtime/worker-core/docs'];
+  const dirs = args.dirs.length ? args.dirs : ['packages/runtime/worker/docs'];
   let all = [];
   for (const d of dirs) {
     const tasks = await collectTasksFromDir(d);

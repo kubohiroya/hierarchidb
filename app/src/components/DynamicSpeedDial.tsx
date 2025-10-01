@@ -211,7 +211,7 @@ export function DynamicSpeedDial({
           icon={<SpeedDialIcon />}
           direction="up"
           open={open}
-          onClose={(_, reason?: any) => {
+          onClose={(_, reason?: string) => {
             // Ignore auto-close reasons we don’t want (blur/mouseLeave)
             if (reason === 'blur' || reason === 'mouseLeave') return;
             // Allow toggle, escape, clickAway to close
