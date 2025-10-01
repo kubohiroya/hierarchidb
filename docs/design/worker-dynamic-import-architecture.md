@@ -362,13 +362,13 @@ flowchart LR
 - [ ] ESLint/tsconfig のルール（旧パス検出など）を先行整備するかどうか検討
 
 ### 12.3 Phase 1 – `runtime/` 再編
-- [x] `packages/runtime-worker` を `packages/runtime/worker-core` などへ移動し、`package.json` と `exports` を更新
+- [x] `packages/runtime-worker` を `packages/runtime/worker` などへ移動し、`package.json` と `exports` を更新
 - [x] `app/src` での import パスを仮移行し、`pnpm --filter @hierarchidb/app typecheck` を実行
 - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し、移動後もグリーンであることを確認
 - [x] この段階ではプラグインには手を付けない（分割の影響範囲を限定）
 
 進捗ログ（Phase 1）
-- 2025-09-25: `packages/runtime-worker/worker*` を `packages/runtime/worker-core` / `packages/runtime/worker-bootstrap` へ移行し、ESLint / Vitest / tsconfig / Vite / pnpm-lock を新パスへ更新
+- 2025-09-25: `packages/runtime-worker/worker*` を `packages/runtime/worker` / `packages/runtime/worker-bootstrap` へ移行し、ESLint / Vitest / tsconfig / Vite / pnpm-lock を新パスへ更新
 - 2025-09-26: Phase 1 の移行後点検として `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` / `pnpm -C app typecheck` を再実行し、`docs/design/worker-dynamic-import-architecture.md` と `TASKS.md` に検証結果を反映
 
 ### 12.4 Phase 2a – 代表プラグインでの試験移行

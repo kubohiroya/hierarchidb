@@ -22,6 +22,6 @@ Developer notes:
 
 References:
 
-- `packages/runtime/worker-core/src/services/CommandProcessor.ts`
-- `packages/runtime/worker-core/docs/adr/adr-workingcopy-trash-unification.md`
-- `packages/runtime/worker-core/docs/adr/adr-block-move-delete-when-wc-in-subtree.md`
+- `packages/runtime/worker/src/services/CommandProcessor.ts`
+- `packages/runtime/worker/docs/adr/adr-workingcopy-trash-unification.md`
+- `packages/runtime/worker/docs/adr/adr-block-move-delete-when-wc-in-subtree.md`

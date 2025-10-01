@@ -6,7 +6,7 @@
 - [x] ts-morph / prettier / eslint を codemod 実行環境として確認
 
 ## Phase 1: Runtime 基盤整備
-- [x] `WorkerClientProxy` を新規追加 (`packages/runtime/worker-core/src/client-proxy.ts` など)
+- [x] `WorkerClientProxy` を新規追加 (`packages/runtime/worker/src/client-proxy.ts` など)
 - [ ] `WorkerRuntimeProvider` を React Suspense 対応で実装
   - 参考実装: `reference/app0/src/shared/providers/worker-provider`（旧 Suspense 対応）、現行 `app/src/contexts/WorkerProvider.tsx`
   - やること: `WorkerStateStore`/`WorkerModuleLoader` を組み込んだ fallback・エラーハンドリングの再設計とテスト

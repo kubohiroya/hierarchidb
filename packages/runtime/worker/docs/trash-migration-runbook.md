@@ -12,14 +12,14 @@ vk:doc kind=runbook audience=ops scope=worker
 手順
 1) ドライラン
 ```
-node -r esbuild-register packages/runtime/worker-core/src/tools/trash-migrate.ts --dry-run --limit=100
+node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --dry-run --limit=100
 ```
 - 出力: JSON（scanned/migrated/errors/durationMs/errorsByReason/details）
 - 問題がなければ limit を段階的に上げる。
 
 2) 本番実行（段階）
 ```
-node -r esbuild-register packages/runtime/worker-core/src/tools/trash-migrate.ts --limit=1000
+node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --limit=1000
 ```
 - まずは小さな limit から。監視しながら増やす。
 
@@ -29,7 +29,7 @@ node -r esbuild-register packages/runtime/worker-core/src/tools/trash-migrate.ts
 ロールバック
 - 再度スクリプトを `--rollback` で実行（`--dry-run` で計画確認→実行）
 ```
-node -r esbuild-register packages/runtime/worker-core/src/tools/trash-migrate.ts --rollback --limit=1000
+node -r esbuild-register packages/runtime/worker/src/tools/trash-migrate.ts --rollback --limit=1000
 ```
 
 注意

@@ -26,14 +26,14 @@
 - 追加フィールド許容: 既存の互換性維持のため、未知フィールドは削除せず無視。
 
 関連コード参照:
-- `packages/runtime/worker-core/src/services/command-types.ts`
-- `packages/runtime/worker-core/src/services/CommandProcessor.ts`
+- `packages/runtime/worker/src/services/command-types.ts`
+- `packages/runtime/worker/src/services/CommandProcessor.ts`
 
 ## タスク一覧（ZE-1 〜 ZE-5）
 
 - ZE-1 依存追加と最小雛形
   - 内容: `zod`（必要なら `zod-validation-error`）をワークスペースに追加。`Envelope` 検証の最小雛形関数を作成（返り値は Result 型 or 例外）。
-  - 成果物: `packages/runtime/worker-core/src/services/validation/envelope.ts`（案）に雛形。`pnpm test` がグリーン。
+  - 成果物: `packages/runtime/worker/src/services/validation/envelope.ts`（案）に雛形。`pnpm test` がグリーン。
   - 受け入れ基準: 型安全で import 可能、まだ実行経路へは未適用。
 
 - ZE-2 Envelope スキーマ定義
@@ -59,7 +59,7 @@
     - スキーマ単体テスト（成功/失敗/境界値）。
     - `processCommand` 統合テスト（正常系/`type`→`kind` 正規化/失敗系）。
     - ログサニタイズの検証（`payload` 不出力・メッセージ長）。
-  - 成果物: `packages/runtime/worker-core/src/services/validation/__tests__/envelope.test.ts` ほか。
+  - 成果物: `packages/runtime/worker/src/services/validation/__tests__/envelope.test.ts` ほか。
   - 受け入れ基準: `pnpm test` グリーン。既存 E2E に影響なし。
 
 ## 適用ポイントと実装方針
@@ -88,9 +88,9 @@
   - T5 の WorkerAPI 初期化/DI の影響を受けないファイル配置（`validation/` ディレクトリ）にする。
 
 ## 成果物サマリ
-- 新規: `packages/runtime/worker-core/src/services/validation/envelope.ts`（スキーマ/検証関数）
+- 新規: `packages/runtime/worker/src/services/validation/envelope.ts`（スキーマ/検証関数）
 - 変更: `CommandProcessor.processCommand`（入口検証・エラーマッピング・ログサニタイズ）
-- テスト: `packages/runtime/worker-core/src/services/validation/__tests__/envelope.test.ts`、`CommandProcessor` 統合テスト補強
+- テスト: `packages/runtime/worker/src/services/validation/__tests__/envelope.test.ts`、`CommandProcessor` 統合テスト補強
 
 ## リスクと回避策
 - 既存呼び出しの破壊的変更リスク → `type`→`kind` 正規化で後方互換維持、未知フィールドは許容。

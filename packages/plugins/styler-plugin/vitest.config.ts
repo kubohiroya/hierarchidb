@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
-import fs from 'node:fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
 const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
@@ -13,8 +13,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     pool: 'threads',
-    maxThreads: 1,
-    minThreads: 1,
   },
   resolve: {
     alias: {

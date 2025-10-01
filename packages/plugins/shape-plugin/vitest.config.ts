@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
-import fs from 'node:fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
 const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
@@ -17,8 +17,8 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     // Use threads pool to avoid child-process kill errors in sandboxed CI
     pool: 'threads',
-    maxThreads: 1,
-    minThreads: 1,
+    // maxThreads: 1,
+    // minThreads: 1,
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
@@ -49,8 +49,8 @@ export default defineConfig({
       '@hierarchidb/core': path.resolve(__dirname, '../../common/types/dist/index.js'),
       '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/dist/index.js'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist/index.js'),
-      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/dist/index.js'),
-      '@hierarchidb/runtime-worker-worker': path.resolve(__dirname, '../../runtime-worker/worker/dist/index.js'),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime/worker-bootstrap/dist/index.js'),
+      '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../runtime/worker/dist/index.js'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.js'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.js'),
       '@hierarchidb/plugins-base-plugin': basePluginEntry,

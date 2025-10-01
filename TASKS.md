@@ -75,7 +75,7 @@
   - [x] Headless: policy-c フロー（`packages/runtime-worker/worker/src/e2e/__tests__/policy-c*.headless.test.ts`）
  - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
  - [x] UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
-  - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker-core/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
+  - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
   - [ ] UI: OFF→ON 切替シナリオの安定化（実操作: create/update/move/remove/recover）
  - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
  - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
@@ -89,10 +89,10 @@
 - ブランチ: `fix/runtime-worker/undo-trash-stability`（サンドボックス制約で新規ブランチ作成不可のため main 上で暫定作業）
 - 依存: trash-holder, cp-routing undo/redo 完了タスク
 - 受け入れ基準:
-  - [ ] `packages/runtime-worker-core/src/e2e/__tests__/trash-partial-restore.wfl.test.ts` がタイムアウトせず成功
-  - [ ] `packages/runtime-worker-core/src/e2e/__tests__/folder-undo-redo.wfl.test.ts` の flag off/on 両ケースが成功
+  - [ ] `packages/runtime-worker/src/e2e/__tests__/trash-partial-restore.wfl.test.ts` がタイムアウトせず成功
+  - [ ] `packages/runtime-worker/src/e2e/__tests__/folder-undo-redo.wfl.test.ts` の flag off/on 両ケースが成功
   - [ ] `packages/runtime-worker/worker/src/e2e/__tests__/command-processor-undo-redo.wfl.test.ts` が全アサーションを満たす
-  - [ ] `pnpm --filter @hierarchidb/runtime-worker-core test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` がグリーン
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` がグリーン
 - チェックリスト:
   - [ ] タイムアウト箇所（waitFor）の原因調査（通知未送信・命名不整合・ホルダー整備不足）
   - [ ] trash holder 名称／復元ロジックの修正とテスト反映
@@ -111,7 +111,7 @@
 - 残作業メモ:
   - 【API統一】`WorkingCopyAPI.commitWorkingCopy` に `options?: { onNameConflict: 'error' | 'auto-rename' }` を追加し、`WorkingCopyService` → `CommandProcessor` → `commitWorkingCopyV2` へ伝播させる。現状は常に `auto-rename` 固定で呼び出しているため NAME_CONFLICT が表出せず、UI 側で指定した `onNameConflict` が無視されている。
   - 【実装整合】`WorkingCopyService.commitWorkingCopyManually` 側でも version 差分検知と NAME_CONFLICT / COMMIT_CONFLICT の戻りを実装し、フォールバック経路が常に `status: 'ok'` を返してしまう問題を解消する。必要に応じて旧 `commitWorkingCopy` (CommandResult) API の呼び出し箇所を削除し、新戻り値へ一本化する。
-  - 【テスト補完】`packages/runtime/worker-core/src/services/__tests__/wc-commit-e2e.test.ts` に NAME_CONFLICT（`onNameConflict: 'error'` 指定）と COMMIT_CONFLICT（同一ノードを並行更新）のケースを追加し、`CommitResult` の `status` / `autoRenameTo` / `suggestedName` / `originalVersion` を検証する。CommandProcessor 直呼びテストも追加してエラーコードと status の連携を確認する。
+  - 【テスト補完】`packages/runtime/worker/src/services/__tests__/wc-commit-e2e.test.ts` に NAME_CONFLICT（`onNameConflict: 'error'` 指定）と COMMIT_CONFLICT（同一ノードを並行更新）のケースを追加し、`CommitResult` の `status` / `autoRenameTo` / `suggestedName` / `originalVersion` を検証する。CommandProcessor 直呼びテストも追加してエラーコードと status の連携を確認する。
   - 【UI 追従】`packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` で保持している `options.context?.onNameConflict` を新 API オプションへ渡し、NAME_CONFLICT 時のダイアログ表示・リトライ導線を実装する。`packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` でも NAME_CONFLICT / COMMIT_CONFLICT をユーザー向けエラーへ変換するハンドリングを追記する。
   - 【検証手順】上記変更後に `pnpm --filter @hierarchidb/runtime-worker typecheck`, `pnpm --filter @hierarchidb/runtime-worker test`, `pnpm --filter @hierarchidb/runtime-ui typecheck` を実行し、実行結果とログを運用ログ欄へ記録する。
 
@@ -1424,7 +1424,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
 - 2025-10-01 09:40 start: policy/ban-tsconfig-paths-dist-dts フォローアップ — `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` で `packages/runtime-shared/module-paths/tsconfig.json` の dist/*.d.ts 参照が検出されたため是正を開始。`git checkout -b chore/runtime-shared/module-paths-tsconfig` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成できなかったため、main 上で差分を管理しつつ `paths` を `src` 参照へ切替える方針。
-- 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker-core/src/index.ts`・`../runtime/worker-bootstrap/src/index.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
+- 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker/src/index.ts`・`../runtime/worker-bootstrap/src/index.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
 - 2025-10-01 10:12 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を実行し、前者は `tsc --noEmit` が成功、後者は `[policy] OK` を確認。ロールバックは `packages/runtime-shared/module-paths/tsconfig.json` を差分前へ戻し再度 typecheck/policy を実行するだけで可。
 - 2025-10-01 10:35 start: runtime-worker import failure in dev — `pnpm dev` 実行後もブラウザで `failed to resolve module specifier '@hierarchidb/runtime-worker'` 警告が継続するため、`@hierarchidb/runtime-shared-module-paths` の `importRuntimeWorker()` が dev 環境でモジュール解決できるよう調査・修正を開始。`git checkout -b fix/runtime-worker/import-dev` は sandbox 制約により作成不可だったため、main 上で差分を管理する。
 - 2025-10-01 10:55 progress: 同タスク — `packages/runtime-shared/module-paths/src/index.ts` から `@vite-ignore` を撤去し、`importRuntimeWorker` / `importOptionalFeature` / `importPluginWorker` が bare specifier をそのまま `import()` へ渡すよう更新。Vite が alias 解決を行う想定。ロールバックは当該行を差分前へ戻すのみ。
@@ -1441,11 +1441,11 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-10-01 11:30 start: chore/runtime-shared/lane-env-safeguard — `packages/runtime-shared/batch-processor/src/lane/LaneSemaphoreRegistry.ts` で `process.env` 参照が残っているため、ブラウザ互換な環境変数読取（import.meta / globalThis）へ置き換える作業を `feat/worker/cp-routing-move-remove` ブランチ上で開始。ロールバックは当該ファイルのユーティリティ関数を現状へ戻すだけで可。
 - 2025-10-01 11:45 progress: 同タスク — LaneSemaphoreRegistry の `readEnv` を import.meta / `__HIERARCHIDB_ENV__` / 直接 global property 読取へ差し替え、`packages/runtime-shared/batch-processor/src/lane/__tests__/LaneSemaphoreRegistry.test.ts` も `process.env` 依存を排除。ロールバックは該当ファイルを差分前に戻すのみで可。
 - 2025-10-01 11:55 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` と `pnpm --filter @hierarchidb/runtime-shared-batch-processor test -- LaneSemaphoreRegistry` を実行し成功。ブラウザ上でも `process` ポリフィル不要となる想定で、追加確認が必要なら `globalThis[ENV_KEY]` の上書き手順を共有予定。
-- 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `trash-partial-restore.wfl.test.ts`, `folder-undo-redo.wfl.test.ts`, `command-processor-undo-redo.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker-core test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
+- 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `trash-partial-restore.wfl.test.ts`, `folder-undo-redo.wfl.test.ts`, `command-processor-undo-redo.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
 - 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
 - 2025-09-30 14:10 start: feat/e2e/cp-routing-wc — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/cp-routing-wc` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
 - 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/cp-routing-wc-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
-- 2025-09-30 18:20 progress: 同タスク — `packages/runtime-worker-core/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を新設し、Comlink + fake-indexeddb 環境で create → rename → move → trash → restore を flag off/on 両モードで検証。`pnpm --filter @hierarchidb/runtime-worker test cp-routing-wc.wfl.test.ts` が通過。Playwright 側は未実行のため TODO を維持。
+- 2025-09-30 18:20 progress: 同タスク — `packages/runtime-worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を新設し、Comlink + fake-indexeddb 環境で create → rename → move → trash → restore を flag off/on 両モードで検証。`pnpm --filter @hierarchidb/runtime-worker test cp-routing-wc.wfl.test.ts` が通過。Playwright 側は未実行のため TODO を維持。
 - 2025-09-30 16:30 progress: feat/worker/undo-redo-finalize — Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を追加し、`renameFolder` / `restoreFromTrash` / `clickUndo` / `clickRedo` を含むテストヘルパーを拡張。Toolbar に Undo/Redo の data-testid を付与し、flag override 連携を UI/Worker 共通設定 (`app/src/config/worker-flag-overrides.ts`) へ集約。次ステップで `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行し、flag OFF/ON 両経路の整合を検証する。
 - 2025-09-30 16:55 progress: 同タスク — `playwright.config.ts` の webServer timeout を 480 秒へ延長（app build が 300 秒超かかるため）。Chromium 単体実行を目標に `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を再試行する準備完了。
 - 2025-09-30 17:05 blocked: 同タスク — `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行したところ、`playwright.config.ts` の webServer (`pnpm --filter @hierarchidb/app build && preview`) 起動時に `vite preview` の `listen EPERM: operation not permitted 0.0.0.0:4173` で失敗。sandbox ではポート開放不可のため外部環境での再実行が必要。`pnpm --filter @hierarchidb/app build` までは完了済みで、chromium 向けシナリオとヘルパーは動作確認待ち。必要なら webServer のポート/ホスト設定を 127.0.0.1 固定で再試行する。
@@ -2070,7 +2070,7 @@ P2:
 
 - feat/plugins/worker-factory-pilot — Worker プラグイン動的 import 化（Phase 2a: 代表プラグイン移行）
   - ブランチ: `feat/plugins/worker-factory-pilot`
-  - 依存: `refactor/runtime/worker-core-split`
+  - 依存: `refactor/runtime/worker-split`
   - 受け入れ基準（DoD）：
     - [x] `@hierarchidb/plugins-folder-plugin` / `@hierarchidb/plugins-resolver-plugin` の worker 実装が `worker-factory` / `worker-types` 構成へ移行し、旧 `export { ... }` 再エクスポートが削除されている
     - [x] `packages/app` のプラグイン初期化コードが新 API (`registerXxxWorkerStores`) を利用し、`pnpm --filter @hierarchidb/app typecheck` が成功
@@ -2221,25 +2221,25 @@ P2:
     - progress: 2025-09-24 16:58 TypeScript 型配布戦略を追記（静的 d.ts 維持と `import type` 指針）
     - progress: 2025-09-24 17:05 any/unknown キャストが残る具体ファイル一覧を追記
     - progress: 2025-09-24 17:12 フェーズ別の作業手順・注意事項チェックリストを文書化
-- refactor/runtime/worker-core-split — Worker runtime 再編（Phase 1: runtime/ 配下再構築）
-  - ブランチ: `refactor/runtime/worker-core-split`（サンドボックス制約によりローカルでは `main` 上で作業）
+- refactor/runtime/worker-split — Worker runtime 再編（Phase 1: runtime/ 配下再構築）
+  - ブランチ: `refactor/runtime/worker-split`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`, `@hierarchidb/runtime-shared-*`, `@hierarchidb/app`
   - 受け入れ基準（DoD）：
-    - [x] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker-core` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
+    - [x] `packages/runtime-worker/worker` / `worker-bootstrap` のソースが `packages/runtime/worker` へ再配置され、`package.json` / `exports` / `types` が新構成を指す
     - [x] `app/src` およびプラグインの runtime 参照が新パスへ更新され、`pnpm --filter @hierarchidb/app typecheck` が成功
     - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` および `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` が成功（必要に応じ `pnpm turbo run typecheck` で全体確認）
     - [x] 再編結果と検証ログを本タスクの運用ログ／`docs/design/worker-dynamic-import-architecture.md` Phase 1 節へ反映
   - チェックリスト：
-    - [x] `packages/runtime/worker-core` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
+    - [x] `packages/runtime/worker` ディレクトリを作成し、`worker` / `worker-bootstrap` の共通ビルド設定を調整
     - [x] 各 `package.json` の `name` / `exports` / `files` を移動後のレイアウトに合わせて更新
     - [x] `app` / `packages/*` に存在する `@hierarchidb/runtime-worker` 等への import パスを一括更新
     - [x] `pnpm turbo run typecheck --filter` 等で型検証し、結果を運用ログへ記録
   - ロールバック手順：
-    - 新設した `packages/runtime/worker-core` を削除し、`packages/runtime-worker/worker*` を元のディレクトリへ戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
+    - 新設した `packages/runtime/worker` を削除し、`packages/runtime-worker/worker*` を元のディレクトリへ戻した上で `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-25 18:46 Phase 1 runtime 再編タスクに着手。`docs/design/worker-dynamic-import-architecture.md` の Phase 1 手順を参照し移行計画を具体化
-    - progress: 2025-09-25 18:50 `packages/runtime/worker-core` ディレクトリを作成し、`pnpm-workspace.yaml` に `packages/runtime/*` を追加して新レイアウト準備を開始
-    - progress: 2025-09-25 18:56 `packages/runtime-worker/worker*` を `packages/runtime/worker-core` / `worker-bootstrap` へ移動し、旧ディレクトリをクリーンアップ
+    - progress: 2025-09-25 18:50 `packages/runtime/worker` ディレクトリを作成し、`pnpm-workspace.yaml` に `packages/runtime/*` を追加して新レイアウト準備を開始
+    - progress: 2025-09-25 18:56 `packages/runtime-worker/worker*` を `packages/runtime/worker` / `worker-bootstrap` へ移動し、旧ディレクトリをクリーンアップ
     - progress: 2025-09-25 19:00 eslint/vitest/tsconfig/app-config/スクリプトの参照パスを新構成へ更新し、`pnpm-lock.yaml`・docs を `packages/runtime/worker-*` 参照に同期
     - progress: 2025-09-25 19:04 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck` を実行し、移動後のパッケージでグリーンを確認
     - progress: 2025-09-25 19:06 `pnpm --filter @hierarchidb/app typecheck` を実行し、新パス設定で解決できることを確認
@@ -4667,6 +4667,10 @@ P2:
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
+- 2025-10-01 09:15 start: fix/app/map-adapter-dependency — `pnpm --filter @hierarchidb/app build` が `@hierarchidb/map-adapter` 未解決で失敗する事象を調査（発生ログを共有済み、依存関係の棚卸しから着手）。
+- 2025-10-01 09:28 progress: fix/app/map-adapter-dependency — `app/package.json` に `@hierarchidb/{map-adapter,tabular-xlsx}` を追加し、`CI=true pnpm install --filter @hierarchidb/app --no-frozen-lockfile` でワークスペース依存を再リンク（map-adapter が `app/node_modules` へ展開されたことを確認）。
+- 2025-10-01 09:47 blocked: fix/app/map-adapter-dependency — `pnpm --filter @hierarchidb/app typecheck` は既存の worker/plugin 型未整備・依存欠落（`@hierarchidb/util`, `@hierarchidb/ui-core` など）で失敗、`pnpm --filter @hierarchidb/app build:vite` は `picocolors` 未解決で停止（map-adapter の解決エラーは再現せず）。後続の型/依存タスク完了後に再検証が必要。
+- 2025-10-01 10:08 blocked: fix/app/map-adapter-dependency — `pnpm --filter @hierarchidb/app build` 再試行で `@hierarchidb/table-metadata/dist` からの `@hierarchidb/util` 解決に失敗（Rollup warning→error）。根本は table-metadata / util の root node_modules 未展開のため、対象パッケージの install/build が残件。
 - 2025-09-30 21:05 progress: feat/plugins/worker-factory-rollout — `WorkerModuleLoader` のコメントと `docs/design/worker-dynamic-import-architecture.md` / `docs/requirements/dynamic-import-unification.md` を最新の modulePaths ベース構成へ更新し、旧 `*/worker` 言及を整理（ドキュメントのみ変更のためコマンド実行なし）。
 - 2025-09-30 21:28 progress: feat/plugins/worker-factory-rollout — `docs/architecture/worker-initialization-analysis.md` / `docs/developer-guidelines.md` / `docs/design/plugin-shapes/implementation-design.md` / `docs/tasks/worker-implementation-tasks.md` を棚卸しし、`*/worker` 直参照の説明を modulePaths / WorkerBridge 前提に差し替え（ドキュメント更新のみ）。
 - 2025-09-30 21:46 progress: feat/plugins/worker-factory-rollout — `app/docs/16-plugin-dev-with-registry.md`, `packages/plugins/README.md`, `packages/plugins/CONTRIBUTING.md`, `packages/plugins/timeline-plugin/README.md`, `packages/runtime/worker-bootstrap/README.md`, `packages/plugins/resolver-plugin/README.md`, `packages/plugins/styler-plugin/README.md` を更新し、最新の worker-factory / WorkerModuleLoader 運用に沿うよう記述を改訂（コード変更なし）。

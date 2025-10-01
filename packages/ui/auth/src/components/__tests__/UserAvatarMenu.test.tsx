@@ -1,7 +1,8 @@
-**
+/**
  * @file UserAvatarMenu.test.tsx
  * @description Test suite for UserAvatarMenu component with authentication integration
  */
+import "@testing-library/jest-dom/vitest";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';

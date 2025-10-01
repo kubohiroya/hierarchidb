@@ -6,7 +6,7 @@
     "baseUrl": ".",
     "declarationDir": "./dist-types",
     "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
-    "noEmit": false,
+    "noEmit": true,
     "emitDeclarationOnly": true,
     "declaration": true,
     "declarationMap": true,

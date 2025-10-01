@@ -632,10 +632,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         if (!client) return;
         const tagAPI = await client.getTagAPI();
         const all = await tagAPI.getAllTags();
-        if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter((name): name is string => typeof name === 'string'));
+        if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter((name:string): name is string => typeof name === 'string'));
         if (mode === 'edit' && nodeId) {
           const nodeTags = await tagAPI.getTagsForNode(nodeId);
-          const names = (nodeTags || []).map((t: TagEntity) => t.name).filter((name): name is string => typeof name === 'string');
+          const names = (nodeTags || []).map((t: TagEntity) => t.name).filter((name: string): name is string => typeof name === 'string');
           if (!disposed && names.length) setBasicInfo(prev => ({ ...prev, tags: prev.tags.length ? prev.tags : names }));
         }
       } catch (err) {

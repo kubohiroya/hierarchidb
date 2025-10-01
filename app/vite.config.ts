@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
-import type { Plugin, ViteDevServer } from 'vite';
+import type { ConfigEnv, Plugin, UserConfigExport, ViteDevServer } from 'vite';
 // @ts-ignore
 import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -97,7 +97,7 @@ function createRuntimeAliasConfig({
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode, isSsrBuild }) => {
+export default defineConfig(({ mode,isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
   // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
@@ -338,7 +338,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           const body = resp.body;
           if (body) {
             const { Readable } = await import('node:stream');
-            Readable.fromWeb(body).pipe(res);
+            Readable.fromWeb(body as any).pipe(res);
           } else {
             const buf = Buffer.from(await resp.arrayBuffer());
             res.end(buf);
@@ -394,7 +394,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Aliasing to index.js breaks subpath imports like '@mui/system/Grid'
         // which would resolve to '.../esm/index.js/Grid' and fail.
         // Active dev packages: resolve to src for instant HMR
-        ...devAliases,
+        //...devAliases,
         ...runtimeAliasConfig.aliases,
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
@@ -475,6 +475,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
           'react-resizable',
           'react-draggable',
+
         ],
         output: {
           entryFileNames: 'assets/[name].js',
