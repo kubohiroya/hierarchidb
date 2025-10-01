@@ -36,14 +36,14 @@ export type PluginWorkerId = keyof typeof PLUGIN_WORKER_MODULE_IDS;
  * exports such as `storeRegistry`.
  */
 export function importRuntimeWorker() {
-  return import(/* @vite-ignore */ RUNTIME_MODULE_IDS.runtimeWorker);
+  return import(RUNTIME_MODULE_IDS.runtimeWorker);
 }
 
 /**
  * Dynamically import an optional feature module (e.g. map adapter).
  */
 export function importOptionalFeature<T extends OptionalFeatureId>(feature: T) {
-  return import(/* @vite-ignore */ OPTIONAL_FEATURE_MODULE_IDS[feature]);
+  return import(OPTIONAL_FEATURE_MODULE_IDS[feature]);
 }
 
 /**
@@ -57,5 +57,5 @@ export function getPluginWorkerModuleId(id: PluginWorkerId): string {
  * Dynamically import a plugin worker bundle.
  */
 export function importPluginWorker<T extends PluginWorkerId>(id: T) {
-  return import(/* @vite-ignore */ PLUGIN_WORKER_MODULE_IDS[id]);
+  return import(PLUGIN_WORKER_MODULE_IDS[id]);
 }

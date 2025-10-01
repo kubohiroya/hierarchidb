@@ -48,6 +48,13 @@ export const en: LocationPluginTranslations = {
     geocoding: 'Geocoding',
   },
 
+  // Details step
+  details: {
+    title: 'Data Source & License',
+    processingTitle: 'Processing Settings',
+    concurrency: 'Concurrent downloads'
+  },
+
   // Basic info step
   basicInfo: {
     title: 'Basic Information',

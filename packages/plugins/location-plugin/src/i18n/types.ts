@@ -47,6 +47,12 @@ export interface LocationPluginTranslations {
     geocoding: string;
   };
 
+  details?: {
+    title: string;
+    processingTitle: string;
+    concurrency: string;
+  };
+
   basicInfo: {
     title: string;
     subtitle: string;

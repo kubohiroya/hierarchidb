@@ -1343,6 +1343,9 @@ importers:
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/plugins-runtime-worker-factory':
+        specifier: workspace:*
+        version: link:../runtime-worker-factory
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
@@ -1488,6 +1491,9 @@ importers:
       '@hierarchidb/plugins-base-plugin':
         specifier: workspace:*
         version: link:../base-plugin
+      '@hierarchidb/plugins-folder-plugin':
+        specifier: workspace:*
+        version: link:../folder-plugin
       '@hierarchidb/runtime-shared-module-paths':
         specifier: workspace:*
         version: link:../../runtime-shared/module-paths
@@ -1843,6 +1849,9 @@ importers:
       '@hierarchidb/runtime-shared-batch-processor':
         specifier: workspace:*
         version: link:../../runtime-shared/batch-processor
+      '@hierarchidb/runtime-shared-module-paths':
+        specifier: workspace:*
+        version: link:../../runtime-shared/module-paths
       '@hierarchidb/runtime-worker-bootstrap':
         specifier: workspace:*
         version: link:../../runtime/worker-bootstrap
@@ -2145,6 +2154,10 @@ importers:
         version: 5.6.2
 
   packages/tools/plugin-registry-utils:
+    dependencies:
+      '@hierarchidb/common-type':
+        specifier: workspace:*
+        version: link:../../common/types
     devDependencies:
       '@types/node':
         specifier: 18.19.123
@@ -3236,6 +3249,7 @@ packages:
 
   '@arcgis/lumina@4.34.0-next.150':
     resolution: {integrity: sha512-MsX/d+Yu2zaYUFTYkRGcrgUD8S735vgWlJFSDBmshOOP27afMX+lqcj8Xw0zoIdtbQvIY4YdkesH8GpYWvNyWQ==}
+    deprecated: This version is no longer supported. Upgrade to @latest
     peerDependencies:
       '@lit/context': ^1.1.5
       lit: ^3.3.0
@@ -3245,6 +3259,7 @@ packages:
 
   '@arcgis/toolkit@4.34.0-next.150':
     resolution: {integrity: sha512-gZB8xrROFIN++4J7PGQ6dSun8AGpEwB2s2Mon5OUp3Z07KpoPtOLhzn9bbTmRXFcsePpIoqwkFxFf3cGo2kyaA==}
+    deprecated: This version is no longer supported. Upgrade to @latest
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}

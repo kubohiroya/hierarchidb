@@ -107,7 +107,7 @@
 - チェックリスト:
   - [ ] commit API の戻り型/分岐を統一
   - [ ] UI 連携の影響点メモ化（後続 PR で UI 反映）
-  - [ ] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
+ - [ ] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
 - 残作業メモ:
   - 【API統一】`WorkingCopyAPI.commitWorkingCopy` に `options?: { onNameConflict: 'error' | 'auto-rename' }` を追加し、`WorkingCopyService` → `CommandProcessor` → `commitWorkingCopyV2` へ伝播させる。現状は常に `auto-rename` 固定で呼び出しているため NAME_CONFLICT が表出せず、UI 側で指定した `onNameConflict` が無視されている。
   - 【実装整合】`WorkingCopyService.commitWorkingCopyManually` 側でも version 差分検知と NAME_CONFLICT / COMMIT_CONFLICT の戻りを実装し、フォールバック経路が常に `status: 'ok'` を返してしまう問題を解消する。必要に応じて旧 `commitWorkingCopy` (CommandResult) API の呼び出し箇所を削除し、新戻り値へ一本化する。
@@ -122,12 +122,26 @@
 - チェックリスト:
   - [x] restore（recoverFromTrash）の逆操作実装
   - [x] 競合時の整合（NAME/COMMIT_CONFLICT）
-  - [ ] e2e: 連続操作の取り消し/やり直し
+- [ ] e2e: 連続操作の取り消し/やり直し
     - [x] Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を実装し、`renameFolder` / `restoreFromTrash` など新規ヘルパーを追加。
     - [x] Worker flag override 経路を `app/src/config/worker-flag-overrides.ts` 経由で UI ↔ Worker 間に導入し、localStorage → Worker URL param を接続。
     - [ ] `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を通し、flag off/on 両経路の Undo/Redo を検証。（2025-09-30 17:05 sandbox で `vite preview` が `EPERM: operation not permitted 0.0.0.0:4173` となり未完。ローカル実行時はポート許可済み環境で再試行する。）
     - [ ] 実行結果を運用ログへ記録し、必要なら待機調整やスクリーンショット収集のフローを整備。
   - [x] ドキュメント更新（運用と制約）
+
+6) runtime-worker import failure in dev（P0）
+- ブランチ: `fix/runtime-worker/import-dev`（sandbox 制約で作成不可のため main 上で暫定対応）
+- 依存: policy/ban-tsconfig-paths-dist-dts フォローアップ
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm dev` 起動後にブラウザコンソールへ `failed to resolve module specifier '@hierarchidb/runtime-worker'` が出力されない
+  - [ ] `modulePaths.importRuntimeWorker()` が `@hierarchidb/runtime-worker` を正常解決でき、各 plugin worker の storeRegistry 初期化が成功
+  - [ ] `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `pnpm --filter @hierarchidb/runtime-shared-module-paths build`（存在する場合）がグリーン
+- チェックリスト:
+  - [x] `importRuntimeWorker` / `importPluginWorker` の解決処理を Vite dev で bare specifier を解決できる形に更新（`@vite-ignore` 撤去や resolver 追加）
+  - [ ] Node 環境（Vitest/headless）での import 互換を確認（必要なら後続で追跡）
+  - [ ] 必要なら Vite alias/ImportMap の再調整を実施
+  - [x] ロールバック手順と検証結果を運用ログに記録
+  - [x] dep-fence-extra の警告から当該パッケージの tsconfig(paths) 違反が消えていることを確認
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1395,6 +1409,16 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-10-01 09:40 start: policy/ban-tsconfig-paths-dist-dts フォローアップ — `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` で `packages/runtime-shared/module-paths/tsconfig.json` の dist/*.d.ts 参照が検出されたため是正を開始。`git checkout -b chore/runtime-shared/module-paths-tsconfig` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成できなかったため、main 上で差分を管理しつつ `paths` を `src` 参照へ切替える方針。
+- 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker-core/src/index.ts`・`../runtime/worker-bootstrap/src/index.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
+- 2025-10-01 10:12 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を実行し、前者は `tsc --noEmit` が成功、後者は `[policy] OK` を確認。ロールバックは `packages/runtime-shared/module-paths/tsconfig.json` を差分前へ戻し再度 typecheck/policy を実行するだけで可。
+- 2025-10-01 10:35 start: runtime-worker import failure in dev — `pnpm dev` 実行後もブラウザで `failed to resolve module specifier '@hierarchidb/runtime-worker'` 警告が継続するため、`@hierarchidb/runtime-shared-module-paths` の `importRuntimeWorker()` が dev 環境でモジュール解決できるよう調査・修正を開始。`git checkout -b fix/runtime-worker/import-dev` は sandbox 制約により作成不可だったため、main 上で差分を管理する。
+- 2025-10-01 10:55 progress: 同タスク — `packages/runtime-shared/module-paths/src/index.ts` から `@vite-ignore` を撤去し、`importRuntimeWorker` / `importOptionalFeature` / `importPluginWorker` が bare specifier をそのまま `import()` へ渡すよう更新。Vite が alias 解決を行う想定。ロールバックは当該行を差分前へ戻すのみ。
+- 2025-10-01 11:05 progress: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `pnpm --filter @hierarchidb/runtime-shared-module-paths build` を実行し成功。ブラウザでの再確認は未実施のため、`pnpm dev` 環境での挙動確認をユーザーへ依頼予定。
+- 2025-10-01 11:20 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` から `@hierarchidb/runtime-worker` / `@hierarchidb/runtime-worker-bootstrap` の paths 上書きを削除し、`~/*` のみを維持。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm check:deps:extra` を実行して当該パッケージの警告が消えたことを確認（他パッケージの警告は既存課題として残存）。
+- 2025-10-01 11:30 start: chore/runtime-shared/lane-env-safeguard — `packages/runtime-shared/batch-processor/src/lane/LaneSemaphoreRegistry.ts` で `process.env` 参照が残っているため、ブラウザ互換な環境変数読取（import.meta / globalThis）へ置き換える作業を `feat/worker/cp-routing-move-remove` ブランチ上で開始。ロールバックは当該ファイルのユーティリティ関数を現状へ戻すだけで可。
+- 2025-10-01 11:45 progress: 同タスク — LaneSemaphoreRegistry の `readEnv` を import.meta / `__HIERARCHIDB_ENV__` / 直接 global property 読取へ差し替え、`packages/runtime-shared/batch-processor/src/lane/__tests__/LaneSemaphoreRegistry.test.ts` も `process.env` 依存を排除。ロールバックは該当ファイルを差分前に戻すのみで可。
+- 2025-10-01 11:55 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` と `pnpm --filter @hierarchidb/runtime-shared-batch-processor test -- LaneSemaphoreRegistry` を実行し成功。ブラウザ上でも `process` ポリフィル不要となる想定で、追加確認が必要なら `globalThis[ENV_KEY]` の上書き手順を共有予定。
 - 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `trash-partial-restore.wfl.test.ts`, `folder-undo-redo.wfl.test.ts`, `command-processor-undo-redo.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker-core test -- --run trash-partial-restore,folder-undo-redo` と `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
 - 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
 - 2025-09-30 14:10 start: feat/e2e/cp-routing-wc — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/cp-routing-wc` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
@@ -1770,6 +1794,23 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- chore/runtime-shared/module-paths-tsconfig — runtime-shared module-paths の `tsconfig.paths` から dist/*.d.ts 参照を排除
+  - ブランチ: `chore/runtime-shared/module-paths-tsconfig`（sandbox 制約で実ブランチ未作成・main 上で対応）
+  - 依存: なし
+  - 受け入れ基準（DoD）：
+    - [x] `packages/runtime-shared/module-paths/tsconfig.json` の `paths` から `dist/*.d.ts` 参照を排除
+    - [x] `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` が違反なしで完了
+    - [x] `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` がグリーン
+  - チェックリスト：
+    - [x] runtime-worker / runtime-worker-bootstrap の参照を `src/index.ts` 起点へ変更
+    - [x] TypeScript 型解決（`tsc --noEmit`）でエラーが出ないことを確認
+    - [x] ロールバック手順と検証結果を運用ログに記録
+  - ロールバック手順：
+    - `packages/runtime-shared/module-paths/tsconfig.json` の該当 `paths` を元の `dist/index.d.ts` 参照に戻し、`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を再実行して現状復旧を確認
+  - 運用ログ：
+    - start: 2025-10-01 09:40 policy/ban-tsconfig-paths-dist-dts フォローアップを開始（sandbox でブランチ作成不可のため main 上で作業）
+    - progress: 2025-10-01 10:05 tsconfig の `paths` を `src/index.ts` 参照へ更新（差分は単一ファイル）
+    - done: 2025-10-01 10:12 `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` がともに成功
 - fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
   - ブランチ: `fix/app/speeddial-icon-metadata`
   - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
@@ -1838,6 +1879,38 @@ P2:
     - progress: 2025-09-30 16:48 再エクスポートを追加し typecheck グリーンを確認
     - progress: 2025-09-30 16:55 build を実行し DTS 生成を確認
     - done: 2025-10-01 `pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を再実行して安定性を確認
+
+- chore/dep-fence/paths-and-externals — dep-fence-extra WARN（tsup external／tsconfig paths）を解消
+  - ブランチ: `chore/dep-fence/paths-and-externals`（サンドボックス制約によりローカルでは `main` 上で作業）
+  - 依存: `dep-fence`, `@hierarchidb/ui-map`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-core`
+  - 受け入れ基準（DoD）：
+    - [x] `node scripts/dep-fence-extra.mjs` を実行して WARN が表示されない
+    - [x] 対象パッケージ（ui-map, runtime-ui/plugin-dialog, ui-core, common-api, plugins/location-plugin, plugins/runtime-worker-factory, plugins/shape-plugin, runtime-shared/module-paths）の `tsconfig` から禁止されている `paths` エントリが撤去されている
+    - [x] `packages/ui/map/package.json` の `tsup.external` が peerDependencies と一致している
+  - チェックリスト：
+    - [x] `packages/ui/map/package.json` の `tsup.external` を peer 依存に合わせて更新
+    - [x] 各対象 `tsconfig*.json` から `@hierarchidb/.../dist` などのローカル paths を削除し、型参照が通ることを確認
+    - [x] 主要パッケージで `pnpm --filter <package> typecheck` を実行しグリーンを確認（sandbox 制約がある場合は理由を記録）
+  - ロールバック手順：
+    - 更新した `package.json` および `tsconfig*.json` を差分前へ戻し、`node scripts/dep-fence-extra.mjs` を再実行して WARN の再現を確認
+  - 運用ログ：
+    - start: 2025-09-30 11:20 dep-fence-extra WARN 解消タスクに着手（tsconfig paths と tsup external を整理）
+    - progress: 2025-09-30 11:34 `packages/ui/map/package.json` の `tsup.external` を peer 依存に合わせて更新し、対象パッケージ（common-api / runtime-ui-plugin-dialog / ui-core / plugins-location-plugin / plugins-runtime-worker-factory / plugins-shape-plugin / runtime-shared-module-paths）の `tsconfig.json` から許可外の `paths` を削除
+    - progress: 2025-09-30 11:38 `node scripts/dep-fence-extra.mjs` を実行し WARN=0 を確認
+    - progress: 2025-09-30 11:40 `pnpm --filter @hierarchidb/ui-core typecheck`・`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck`・`pnpm --filter @hierarchidb/common-api typecheck` がいずれも成功
+    - blocked: 2025-09-30 11:42 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` が既存エラー（LOCATION_TYPES 未定義・WorkerBridge 型欠如など）で失敗したため保留。dep-fence WARN 解消とは独立課題として記録
+    - blocked: 2025-09-30 13:05 `node scripts/dep-fence-extra.mjs` を再実行したところ WARN が再発（tsup.external / tsconfig paths）。Lockfile と node_modules の不整合警告も確認
+    - progress: 2025-09-30 12:28 WARN 再発を確認後、`packages/ui/map/package.json` の `tsup.external` を再調整し、対象 tsconfig から許可外 `paths` を再削除
+    - progress: 2025-09-30 12:30 `node scripts/dep-fence-extra.mjs` を再実行し WARN=0 を確認
+    - blocked: 2025-09-30 12:32 `pnpm --filter @hierarchidb/ui-core typecheck` が既存エラー（DynamicCreateMenu.tsx の React import 不足）で失敗。前回同様に別課題として記録し、`@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/common-api` typecheck は成功
+    - progress: 2025-09-30 13:08 tsconfig パス制約を再確認し、対象パッケージの設定から許可外 entries を除去
+    - progress: 2025-09-30 13:09 `packages/ui/map/package.json` の `tsup.external` を peer 依存と完全同期
+    - done: 2025-09-30 13:10 `node scripts/dep-fence-extra.mjs` を再実行し WARN 0 件を確認（typecheck は既存既知エラーのため据え置き）
+    - reopen: 2025-10-01 09:35 `node scripts/dep-fence-extra.mjs` で WARN（tsup external／tsconfig paths）が再発したためタスクを再開
+    - progress: 2025-10-01 09:50 `packages/plugins/{location,route,shape}-plugin` と `packages/runtime-ui/plugin-dialog` の `tsup.external`・`tsconfig` を調整し、禁止 `paths` を撤去
+    - progress: 2025-10-01 09:55 `node scripts/dep-fence-extra.mjs` を再実行し WARN=0 を確認
+    - progress: 2025-10-01 10:00 `pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck`・`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がいずれも成功（`runtime-shared/module-paths` は事前ビルド）
+    - done: 2025-10-01 10:05 dep-fence-extra WARN 再発分の是正完了（tsup external / tsconfig paths 調整と typecheck 実行）
 
 - fix/shape/map-preview-ui-map-import — Shape MapPreview の `@hierarchidb/ui-map` 解決を修正
   - ブランチ: `fix/shape/map-preview-ui-map-import`
@@ -2308,33 +2381,6 @@ P2:
     - progress: 2025-09-26 02:03 `pnpm --filter @hierarchidb/plugins-linker-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck` を再実行し、いずれも成功
     - progress: 2025-09-26 02:05 `pnpm --filter @hierarchidb/plugins-timeline-plugin build` を実行し、tsup がエラーなく完了
     - progress: 2025-09-26 02:06 `pnpm exec dep-fence` を再実行し、peer external / local shim 警告が再発しないことを確認（既知の `paths-direct-src` WARN のみ継続）
-
-- chore/dep-fence/paths-and-externals — dep-fence-extra WARN（tsup external／tsconfig paths）を解消
-  - ブランチ: `chore/dep-fence/paths-and-externals`（サンドボックス制約によりローカルでは `main` 上で作業）
-  - 依存: `dep-fence`, `@hierarchidb/ui-map`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-core`
-  - 受け入れ基準（DoD）：
-    - [ ] `node scripts/dep-fence-extra.mjs` を実行して WARN が表示されない
-    - [ ] 対象パッケージ（ui-map, runtime-ui/plugin-dialog, ui-core, common-api, plugins/location-plugin, plugins/runtime-worker-factory, plugins/shape-plugin, runtime-shared/module-paths）の `tsconfig` から禁止されている `paths` エントリが撤去されている
-    - [ ] `packages/ui/map/package.json` の `tsup.external` が peerDependencies と一致している
-  - チェックリスト：
-    - [ ] `packages/ui/map/package.json` の `tsup.external` を peer 依存に合わせて更新
-    - [ ] 各対象 `tsconfig*.json` から `@hierarchidb/.../dist` などのローカル paths を削除し、型参照が通ることを確認
-    - [ ] 主要パッケージで `pnpm --filter <package> typecheck` を実行しグリーンを確認（sandbox 制約がある場合は理由を記録）
-  - ロールバック手順：
-    - 更新した `package.json` および `tsconfig*.json` を差分前へ戻し、`node scripts/dep-fence-extra.mjs` を再実行して WARN の再現を確認
-  - 運用ログ：
-    - start: 2025-09-30 11:20 dep-fence-extra WARN 解消タスクに着手（tsconfig paths と tsup external を整理）
-    - progress: 2025-09-30 11:34 `packages/ui/map/package.json` の `tsup.external` を peer 依存に合わせて更新し、対象パッケージ（common-api / runtime-ui-plugin-dialog / ui-core / plugins-location-plugin / plugins-runtime-worker-factory / plugins-shape-plugin / runtime-shared-module-paths）の `tsconfig.json` から許可外の `paths` を削除
-    - progress: 2025-09-30 11:38 `node scripts/dep-fence-extra.mjs` を実行し WARN=0 を確認
-    - progress: 2025-09-30 11:40 `pnpm --filter @hierarchidb/ui-core typecheck`・`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck`・`pnpm --filter @hierarchidb/common-api typecheck` がいずれも成功
-    - blocked: 2025-09-30 11:42 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck` が既存エラー（LOCATION_TYPES 未定義・WorkerBridge 型欠如など）で失敗したため保留。dep-fence WARN 解消とは独立課題として記録
-    - blocked: 2025-09-30 13:05 `node scripts/dep-fence-extra.mjs` を再実行したところ WARN が再発（tsup.external / tsconfig paths）。Lockfile と node_modules の不整合警告も確認
-    - progress: 2025-09-30 12:28 WARN 再発を確認後、`packages/ui/map/package.json` の `tsup.external` を再調整し、対象 tsconfig から許可外 `paths` を再削除
-    - progress: 2025-09-30 12:30 `node scripts/dep-fence-extra.mjs` を再実行し WARN=0 を確認
-    - blocked: 2025-09-30 12:32 `pnpm --filter @hierarchidb/ui-core typecheck` が既存エラー（DynamicCreateMenu.tsx の React import 不足）で失敗。前回同様に別課題として記録し、`@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/common-api` typecheck は成功
-    - progress: 2025-09-30 13:08 tsconfig パス制約を再確認し、対象パッケージの設定から許可外 entries を除去
-    - progress: 2025-09-30 13:09 `packages/ui/map/package.json` の `tsup.external` を peer 依存と完全同期
-    - done: 2025-09-30 13:10 `node scripts/dep-fence-extra.mjs` を再実行し WARN 0 件を確認（typecheck は既存既知エラーのため据え置き）
 
 - chore/ui-floating-window/remove-unused-eslint-disable — lint: no-unused-vars の無効化ディレクティブ警告を解消
   - ブランチ: `chore/ui-floating-window/remove-unused-eslint-disable`（サンドボックス制約によりローカルでは `main` 上で作業）

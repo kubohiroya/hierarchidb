@@ -46,6 +46,12 @@ export const ja: LocationPluginTranslations = {
     geocoding: 'ジオコーディング',
   },
 
+  details: {
+    title: 'データソースとライセンス',
+    processingTitle: '処理設定',
+    concurrency: '並行ダウンロード数'
+  },
+
   basicInfo: {
     title: '基本情報',
     subtitle: '地点情報の基本的な設定を行います。タグとカテゴリを使用して地点を分類・検索しやすくできます。',
