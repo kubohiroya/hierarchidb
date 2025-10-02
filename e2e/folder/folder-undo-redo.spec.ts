@@ -14,6 +14,7 @@ import {
   configureWorkerCmdprocOverride,
   WORKER_CMDPROC_FLAG_NAME,
   WorkerFlagOverrideValue,
+  resetWorkerFlagOverrides,
 } from '../utils/test-helpers';
 import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../../app/src/config/worker-flag-overrides.js';
 
@@ -35,6 +36,10 @@ const SCENARIOS: Scenario[] = [
 ];
 
 test.describe.serial('Folder Undo/Redo Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await resetWorkerFlagOverrides(page);
+  });
+
   async function runUndoRedoCycle(page: Parameters<typeof test>[0]['page'], scenario: Scenario) {
     setupConsoleErrorTracking(page);
     await clearTestData(page);

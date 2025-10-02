@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId, TreeNode, TreeChangeEvent, SubscriptionId } from '@hierarchidb/common-type';
+import { withWorkerFlagEnvOverrides } from '../utils/worker-flag-helpers.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -97,11 +98,12 @@ type WorkerSetup = {
   port1: MessagePort;
   port2: MessagePort;
   terminateAll: () => void;
+  restoreEnv: () => void;
 };
 
 const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
   vi.resetModules();
-  process.env[WORKER_FLAG] = flagValue;
+  const restoreEnv = withWorkerFlagEnvOverrides({ [WORKER_FLAG]: flagValue });
   const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
     import('../test-worker.entry.js'),
@@ -115,6 +117,7 @@ const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
     port1,
     port2,
     terminateAll: () => SingletonMixin.terminateAll(),
+    restoreEnv,
   };
 };
 
@@ -150,7 +153,7 @@ const createAndCommit = async (
 
 describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue }) => {
   it('handles create, update, move, trash, and restore via Worker API', async () => {
-    const { client, port1, port2, terminateAll } = await setupWorker(flagValue);
+    const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
 
     try {
       const queryAPI = await client.getQueryAPI();
@@ -257,7 +260,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const restoredNode = await queryAPI.getNode(sourceId);
       expect(restoredNode?.parentId).toBe(rootId);
     } finally {
-      delete process.env[WORKER_FLAG];
+      restoreEnv();
       terminateAll();
       const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
       if (release) {
@@ -269,7 +272,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
   }, 30_000);
 
   it('supports undo/redo across create, move, trash, restore, and remove', async () => {
-    const { client, port1, port2, terminateAll } = await setupWorker(flagValue);
+    const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
 
     try {
       const queryAPI = await client.getQueryAPI();
@@ -455,7 +458,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       expect(result.success).toBe(true);
       await waitFor(async () => (await queryAPI.getNode(subjectId)) === undefined);
     } finally {
-      delete process.env[WORKER_FLAG];
+      restoreEnv();
       terminateAll();
       const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
       if (release) {
@@ -467,7 +470,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
   }, 40_000);
 
   it('times out when the subscribed node does not emit a change event', async () => {
-    const { client, port1, port2, terminateAll } = await setupWorker(flagValue);
+    const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
 
     try {
       const queryAPI = await client.getQueryAPI();
@@ -505,7 +508,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
         ),
       ).rejects.toThrow(/timeout/);
     } finally {
-      delete process.env[WORKER_FLAG];
+      restoreEnv();
       terminateAll();
       const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
       if (release) {

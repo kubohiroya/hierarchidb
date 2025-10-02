@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import { withWorkerFlagEnvOverrides } from '../utils/worker-flag-helpers.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -50,8 +51,7 @@ type WorkerSetup = {
 
 const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
   vi.resetModules();
-  const previousValue = process.env[WORKER_FLAG];
-  process.env[WORKER_FLAG] = flagValue;
+  const restoreEnv = withWorkerFlagEnvOverrides({ [WORKER_FLAG]: flagValue });
   const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
     import('../test-worker.entry.js'),
@@ -65,13 +65,7 @@ const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
     port1,
     port2,
     terminateAll: () => SingletonMixin.terminateAll(),
-    restoreEnv: () => {
-      if (previousValue === undefined) {
-        delete process.env[WORKER_FLAG];
-      } else {
-        process.env[WORKER_FLAG] = previousValue;
-      }
-    },
+    restoreEnv,
   };
 };
 

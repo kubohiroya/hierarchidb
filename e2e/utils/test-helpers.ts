@@ -3,8 +3,12 @@ import {
   WORKER_FLAG_OVERRIDES_STORAGE_KEY,
   WORKER_FLAG_ALLOWED_OVERRIDES,
 } from '../../app/src/config/worker-flag-overrides.js';
+import {
+  createWorkerFlagOverridePayload,
+  type WorkerFlagOverrideSetting,
+} from '../../packages/runtime/worker/src/e2e/utils/worker-flag-helpers.js';
 
-export type WorkerFlagOverrideValue = '0' | '1' | null;
+export type WorkerFlagOverrideValue = WorkerFlagOverrideSetting;
 
 if (!WORKER_FLAG_ALLOWED_OVERRIDES.includes('WORKER_USE_CMDPROC_MOVE_REMOVE')) {
   throw new Error('WORKER_USE_CMDPROC_MOVE_REMOVE flag must be included in WORKER_FLAG_ALLOWED_OVERRIDES');
@@ -16,22 +20,35 @@ export async function configureWorkerCmdprocOverride(
   page: Page,
   value: WorkerFlagOverrideValue,
 ): Promise<void> {
+  const payload = createWorkerFlagOverridePayload({ [WORKER_CMDPROC_FLAG_NAME]: value });
   await page.addInitScript(
-    ({ storageKey, flagName, flagValue }: { storageKey: string; flagName: string; flagValue: WorkerFlagOverrideValue }) => {
+    ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
       try {
-        if (flagValue === null) {
+        if (serialized) {
+          window.localStorage.setItem(storageKey, serialized);
+        } else {
           window.localStorage.removeItem(storageKey);
-          return;
         }
-        const payload: Record<string, string> = {};
-        payload[flagName] = flagValue;
-        window.localStorage.setItem(storageKey, JSON.stringify(payload));
       } catch (error) {
         console.warn('[e2e] failed to configure worker flag override', error);
       }
     },
-    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, flagName: WORKER_CMDPROC_FLAG_NAME, flagValue: value },
+    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
   );
+  await page.evaluate(
+    ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
+      if (serialized) {
+        window.localStorage.setItem(storageKey, serialized);
+      } else {
+        window.localStorage.removeItem(storageKey);
+      }
+    },
+    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
+  );
+}
+
+export async function resetWorkerFlagOverrides(page: Page): Promise<void> {
+  await configureWorkerCmdprocOverride(page, null);
 }
 
 /**
