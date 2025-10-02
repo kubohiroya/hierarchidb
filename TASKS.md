@@ -53,26 +53,7 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
--1) Route/Worker バッチ結合テスト整備（P1）
-- ブランチ: `feat/e2e/cp-routing-wc`
-- 依存: cp-routing-create-update, cp-routing-move-remove, wc-impl-align
-- 方針: Comlink + fake-indexeddb（WFL）による結合テストを主軸に flag OFF/ON 両経路を網羅し、UI Playwright は最小スモーク確認に留める。
-1) WC 実装アライン（commit V2 戻り統一）（P1）
-- ブランチ: `refactor/worker/wc-impl-align`（sandbox 制約で新規ブランチ作成不可のため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理）
-- 依存: wc-util-baseline
-- 受け入れ基準: ToDo 定義どおり（戻り値を `ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
-- チェックリスト:
-  - [x] commit API の戻り型/分岐を統一
-  - [x] UI 連携の影響点メモ化（後続 PR で UI 反映）
- - [x] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
-- 残作業メモ:
-  - 【API統一】`WorkingCopyAPI.commitWorkingCopy` に `options?: { onNameConflict: 'error' | 'auto-rename' }` を追加し、`WorkingCopyService` → `CommandProcessor` → `commitWorkingCopyV2` へ伝播させる。現状は常に `auto-rename` 固定で呼び出しているため NAME_CONFLICT が表出せず、UI 側で指定した `onNameConflict` が無視されている。
-  - 【実装整合】`WorkingCopyService.commitWorkingCopyManually` 側でも version 差分検知と NAME_CONFLICT / COMMIT_CONFLICT の戻りを実装し、フォールバック経路が常に `status: 'ok'` を返してしまう問題を解消する。必要に応じて旧 `commitWorkingCopy` (CommandResult) API の呼び出し箇所を削除し、新戻り値へ一本化する。
-  - 【テスト補完】`packages/runtime/worker/src/services/__tests__/wc-commit-e2e.test.ts` に NAME_CONFLICT（`onNameConflict: 'error'` 指定）と COMMIT_CONFLICT（同一ノードを並行更新）のケースを追加し、`CommitResult` の `status` / `autoRenameTo` / `suggestedName` / `originalVersion` を検証する。CommandProcessor 直呼びテストも追加してエラーコードと status の連携を確認する。
-  - 【UI 追従】`packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` で保持している `options.context?.onNameConflict` を新 API オプションへ渡し、NAME_CONFLICT 時のダイアログ表示・リトライ導線を実装する。`packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` でも NAME_CONFLICT / COMMIT_CONFLICT をユーザー向けエラーへ変換するハンドリングを追記する。
-  - 【検証手順】上記変更後に `pnpm --filter @hierarchidb/runtime-worker typecheck`, `pnpm --filter @hierarchidb/runtime-worker test`, `pnpm --filter @hierarchidb/runtime-ui typecheck` を実行し、実行結果とログを運用ログ欄へ記録する。
-
-2) Undo/Redo 仕上げ（restore含む）（P1）
+1) Undo/Redo 仕上げ（restore含む）（P1）
 - ブランチ: `feat/worker/undo-redo-finalize`
 - 依存: Envelope v1、cp-routing-move-remove
 - 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
@@ -85,16 +66,6 @@
     - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
-
-3) Runtime Worker Vitest 非watch化（P2）
-- ブランチ: `fix/runtime-worker/vitest-run`
-- 依存: なし
-- 受け入れ基準: `pnpm --filter @hierarchidb/runtime-worker test` が 1 回実行後に即終了する。
-- チェックリスト:
-  - [x] `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` 系へ更新
-  - [x] 修正後にテストを実行し、終了挙動と結果を確認
-- ロールバック手順:
-  - `packages/runtime/worker/package.json` の `test` スクリプトを `vitest` に戻す
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1779,7 +1750,18 @@ P2:
   - 運用ログ：
     - done: 2025-10-02 20:05 `pnpm --filter @hierarchidb/runtime-worker wfl` を実行し、JUnit レポート出力と docs 反映を確認
     - done: 2025-10-02 20:08 `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を実行し、Undo/Redo シナリオの flag off/on 両経路がグリーンであることを確認（Playwright スモークは sandbox 制約により後続確認）。
+    - done: 2025-10-02 20:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行しグリーン、`pnpm --filter @hierarchidb/runtime-worker test` も再確認（tsconfig に `src/e2e/**` を除外して typecheck 対象を整理）。
     - done: 2025-10-02 20:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行しグリーン、`pnpm --filter @hierarchidb/runtime-worker test` も再確認（tsconfig へ `src/e2e/**` を除外して typecheck 対象を調整）。
+- WC 実装アライン（commit V2 戻り統一）（P1） — WorkingCopy API の戻り値と onNameConflict ハンドリングを統一
+  - ブランチ: `refactor/worker/wc-impl-align`
+  - 受け入れ基準（DoD）：
+    - [x] `WorkingCopyService` と `CommandProcessor` で `CommitResult` を `ok | COMMIT_CONFLICT | NAME_CONFLICT` に統一し、`autoRenameTo` / `suggestedName` / `originalVersion` を透過
+    - [x] UI アダプタ（`WorkingCopyCommandsAdapter`、`runtime-ui` サービス）が `onNameConflict` オプションを Worker API へ渡し、NAME/COMMIT_CONFLICT エラーを UI で取り扱えるように整理
+    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test` を実行しグリーンを確認
+  - ロールバック手順：
+    - `WorkingCopyService`／`CommandProcessor`／UI アダプタで今回追加した差分をリバートし、`packages/runtime/worker/tsconfig.json` の `src/e2e/**` 除外設定も元に戻してから `pnpm --filter @hierarchidb/runtime-worker typecheck && pnpm --filter @hierarchidb/runtime-worker test` を再実行
+  - 運用ログ：
+    - done: 2025-10-02 20:18 commit API の onNameConflict オプション伝播と戻り値統一を確認し、`pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test` を実行
 - CP 段階ルーティング（move/remove）（P1） — CommandProcessor 経由への移行を `WORKER_USE_CMDPROC_MOVE_REMOVE` で段階導入
   - ブランチ: `feat/worker/cp-routing-move-remove`
   - 依存: cp-routing-create-update
