@@ -203,8 +203,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </head>
     <body suppressHydrationWarning>
     {children}
-    {/* Snackbars */}
-    <ServicesReadySnackbar />
     <ScrollRestoration />
     <Scripts />
     </body>
@@ -402,6 +400,7 @@ export default function App() {
                   <LanguageEventsBridge />
                   {/* Global notifications */}
                   <NotificationSystem />
+                  <ServicesReadySnackbar />
                   {/* UI plugins were registered at module load, confirm step */}
                   <UIReadyReporter />
 
