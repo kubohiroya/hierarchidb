@@ -6,6 +6,8 @@ import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
+import { BatchService } from '@hierarchidb/batch';
+import { createLaneSemaphoreRegistry } from '@hierarchidb/runtime-shared-batch-processor';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 
 export interface LocationPointInput {
@@ -40,6 +42,14 @@ export interface SessionSummary {
 }
 
 export class SessionController {
+  private static readonly laneRegistry = createLaneSemaphoreRegistry({
+    defaults: {
+      tilegen: 4,
+    },
+    envKey: 'LOCATION_LANE_LIMITS',
+    fallback: 4,
+  });
+
   constructor(
     public readonly sessionId: string,
     private readonly nodeId: NodeId,
@@ -125,37 +135,44 @@ export class SessionController {
       console.warn('[Location][Session] runtime worker client unavailable; skipping worker delegation');
       return;
     }
-    await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
+    await SessionController.laneRegistry.runWithLane('tilegen', async () => {
+      await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
+    });
 
     // 3) Import generated tiles back into location DB for compatibility
     const list = await client.vectortile.listTiles(fileId);
     const total = list.length;
     let completed = 0;
-    for (const t of list) {
-      if (this.cancelled) break;
-      while (this.paused) await new Promise(r => setTimeout(r, 100));
-      const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
-      if (!u8) continue;
-      // Ensure we store a plain ArrayBuffer (avoid SharedArrayBuffer unions)
-      const copy = new Uint8Array(u8);
-      const data: ArrayBuffer = copy.buffer.slice(0);
-      const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
-      const hash = await sha256Hex(new Uint8Array(data));
-      await db.vectorTiles.put({
-        id,
-        sessionId: this.sessionId,
-        nodeId: this.nodeId,
-        z: t.z, x: t.x, y: t.y,
-        data,
-        hash,
-        size: data.byteLength,
-        featureCount: 0,
-        timestamp: t.timestamp ?? Date.now(),
-        contentType: 'application/vnd.mapbox-vector-tile',
+    const batch = new BatchService();
+    const laneName = 'tilegen';
+    const concurrency = SessionController.laneRegistry.recommendConcurrency([laneName], 4);
+
+    await batch.mapChunks(list, async (t) => {
+      await SessionController.laneRegistry.runWithLane(laneName, async () => {
+        if (this.cancelled) return;
+        while (this.paused) await new Promise(r => setTimeout(r, 100));
+        const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
+        if (!u8) return;
+        const copy = new Uint8Array(u8);
+        const data: ArrayBuffer = copy.buffer.slice(0);
+        const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
+        const hash = await sha256Hex(new Uint8Array(data));
+        await db.vectorTiles.put({
+          id,
+          sessionId: this.sessionId,
+          nodeId: this.nodeId,
+          z: t.z, x: t.x, y: t.y,
+          data,
+          hash,
+          size: data.byteLength,
+          featureCount: 0,
+          timestamp: t.timestamp ?? Date.now(),
+          contentType: 'application/vnd.mapbox-vector-tile',
+        });
+        completed += 1;
+        this.emit('tilegen', total, completed, 0, `Imported tile ${t.z}/${t.x}/${t.y}`);
       });
-      completed++;
-      this.emit('tilegen', total, completed, 0, `Imported tile ${t.z}/${t.x}/${t.y}`);
-    }
+    }, { concurrency });
   }
 
   private emit(stage: ProgressInfo['stage'], total: number, completed: number, failed: number, currentTask: string) {

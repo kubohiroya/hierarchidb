@@ -1,5 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import { BatchService } from '@hierarchidb/batch';
+import { createLaneSemaphoreRegistry } from '@hierarchidb/runtime-shared-batch-processor';
 import type { DownloadTask } from '../../types.js';
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
@@ -14,6 +15,18 @@ import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
  * Later this will dispatch tasks to @hierarchidb/runtime-worker workers.
  */
 export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
+  private readonly laneRegistry = createLaneSemaphoreRegistry({
+    defaults: {
+      gadm: 2,
+      osm: 1,
+      naturalearth: 2,
+      openmaptiles: 1,
+      default: 4,
+    },
+    envKey: 'SHAPE_LANE_LIMITS',
+    fallback: 4,
+  });
+
   async process(
     sessionId: string,
     _nodeId: NodeId,
@@ -29,35 +42,43 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
     let failed = 0;
     let totalBytes = 0;
 
+    const recommendedConcurrency = this.laneRegistry.recommendConcurrency(
+      tasks.map((task) => (task.config?.dataSource ?? 'default').toLowerCase()),
+      4,
+    );
+
     await batch.mapChunks<DownloadTask>(
       tasks,
       async (task, index) => {
-        if (controls?.waitIfPaused) {
-          await controls.waitIfPaused();
-        }
-        const fileId = `${sessionId}-download-${index}`;
-        try {
-        const downloadUrl = task.url ?? task.config?.url;
-        if (!downloadUrl) {
-          throw new Error(`Download task ${task.taskId} missing url`);
-        }
-        const res = await client.download.download(downloadUrl, fileId);
-          totalBytes += res.sizeBytes || 0;
-          completed++;
-        } catch {
-          failed++;
-        }
-        onProgress({
-          total: tasks.length,
-          completed,
-          failed,
-          skipped: 0,
-          percentage: (completed / tasks.length) * 100,
-          currentStage: 'download',
-          currentTask: task.taskId,
+        const lane = (task.config?.dataSource ?? 'default').toLowerCase();
+        await this.laneRegistry.runWithLane(lane, async () => {
+          if (controls?.waitIfPaused) {
+            await controls.waitIfPaused();
+          }
+          const fileId = `${sessionId}-download-${index}`;
+          try {
+            const downloadUrl = task.url ?? task.config?.url;
+            if (!downloadUrl) {
+              throw new Error(`Download task ${task.taskId} missing url`);
+            }
+            const res = await client.download.download(downloadUrl, fileId);
+            totalBytes += res.sizeBytes || 0;
+            completed += 1;
+          } catch {
+            failed += 1;
+          }
+          onProgress({
+            total: tasks.length,
+            completed,
+            failed,
+            skipped: 0,
+            percentage: tasks.length > 0 ? (completed / tasks.length) * 100 : 0,
+            currentStage: 'download',
+            currentTask: task.taskId,
+          });
         });
       },
-      { concurrency: 4 },
+      { concurrency: recommendedConcurrency },
     );
 
     return { processed: completed, failed, totalDownloadSize: totalBytes };

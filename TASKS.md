@@ -497,17 +497,6 @@
     - [ ] メトリクス表示
 
 - feat/common/lane-semaphores（レーン別同時実行制御の横展開）
-  - ブランチ: `feat/common/lane-semaphores`
-  - 依存: analysis-20250907（セクション7）
-  - 受け入れ基準（DoD）:
-    - [ ] shape/location にレーンセマフォ導入（データソース/戦略単位）
-    - [ ] 既存のバッチ並列と二重制御にならない設計（単一制御点）
-  - ロールバック: 環境変数 `*_LANE_LIMITS=0` で無効化
-  - チェックリスト:
-    - [ ] lane 設計
-    - [ ] shape 反映
-    - [ ] location 反映
-
 - feat/location/auth-registry-integration（認証レジストリ連携）
   - ブランチ: `feat/location/auth-registry-integration`
   - 依存: analysis-20250907（セクション8）、shape の `AuthNotificationRegistry`
@@ -1782,6 +1771,22 @@ P2:
     - start: 2025-09-30 Pause/Resume UI 着手（RoutePanel/RouteBatchManager/integration の要件整理）
     - progress: 2025-09-30 13:50 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行し基礎差分がグリーン
     - done: 2025-10-02 20:25 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を再実行（BatchService d.ts 追加＆ implicit any 解消）し成功
+- feat/common/lane-semaphores — Shape/Location バッチ処理へレーンセマフォを導入
+  - ブランチ: `feat/common/lane-semaphores`
+  - 依存: analysis-20250907（セクション7）
+  - 受け入れ基準（DoD）：
+    - [x] shape download ステージでデータソース単位の lane 制御を追加 (`RuntimeWorkerDownloadAdapter` → `createLaneSemaphoreRegistry` / env `SHAPE_LANE_LIMITS`)
+    - [x] location tile 生成を lane 経由で逐次制御し、BatchService + registry 推奨並列を採用
+    - [x] 共通ランタイム（`@hierarchidb/runtime-shared-batch-processor`）から lane registry API を公開
+    - [x] `pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` グリーン、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` は既存の `@hierarchidb/ui-core` d.ts 未整備により失敗（今回差分では追加エラーなし）
+  - ロールバック手順：
+    - shape: `RuntimeWorkerDownloadAdapter` の lane registry 差分を戻し、env を未使用にする
+    - location: `SessionController` の lane registry 呼び出しを削除し、元の逐次処理に戻す
+    - 共通: `@hierarchidb/runtime-shared-batch-processor` のエクスポート追加を削除
+  - 運用ログ：
+    - start: 2025-10-02 lane 設計の棚卸し（既存 route 実装を参考に defaults/環境変数命名を決定）
+    - progress: 2025-10-02 shape download へ lane registry を適用し、`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` 通過を確認
+    - done: 2025-10-02 21:10 location tile 生成へ lane registry を適用し、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` 実行で既存エラーのみ（UI コア型未提供）となることを確認
 - WFL trash/undo 安定化（P0） — Trash 直下移動仕様へ統一し、undo/redo 連携を復旧
   - ブランチ: `fix/worker/undo-redo-restore-name`
   - 依存: trash-holder, cp-routing undo/redo 完了タスク

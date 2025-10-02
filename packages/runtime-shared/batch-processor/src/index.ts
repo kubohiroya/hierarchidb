@@ -49,3 +49,4 @@ export * from './AbstractWorkerPoolManager.js';
 // Unified batch control API
 export * from './BatchControlAPI.js';
 export * from './BaseBatchSessionManager.js';
+export * from './lane/LaneSemaphoreRegistry.js';
