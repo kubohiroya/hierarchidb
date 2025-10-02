@@ -82,7 +82,7 @@
 - [ ] WFL: 連続操作の取り消し/やり直し
     - [x] WFL シナリオ `packages/runtime-worker/src/e2e/__tests__/folder-undo-redo.wfl.test.ts` を整備し、`renameNode` / `moveToTrash` / `restoreFromTrash` / `undo` / `redo` を一連で検証。
     - [x] Worker flag override 経路を `app/src/config/worker-flag-overrides.ts` 経由で UI ↔ Worker 間に導入し、localStorage → Worker URL param を接続。
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
 
@@ -1778,6 +1778,7 @@ P2:
     - `turbo.json`・`package.json`・`packages/runtime/worker/package.json` の `wfl` 差分と関連ドキュメント更新をリバートし、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行して旧構成へ戻す
   - 運用ログ：
     - done: 2025-10-02 20:05 `pnpm --filter @hierarchidb/runtime-worker wfl` を実行し、JUnit レポート出力と docs 反映を確認
+    - done: 2025-10-02 20:08 `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を実行し、Undo/Redo シナリオの flag off/on 両経路がグリーンであることを確認（Playwright スモークは sandbox 制約により後続確認）。
 - CP 段階ルーティング（move/remove）（P1） — CommandProcessor 経由への移行を `WORKER_USE_CMDPROC_MOVE_REMOVE` で段階導入
   - ブランチ: `feat/worker/cp-routing-move-remove`
   - 依存: cp-routing-create-update
