@@ -57,29 +57,7 @@
 - ブランチ: `feat/e2e/cp-routing-wc`
 - 依存: cp-routing-create-update, cp-routing-move-remove, wc-impl-align
 - 方針: Comlink + fake-indexeddb（WFL）による結合テストを主軸に flag OFF/ON 両経路を網羅し、UI Playwright は最小スモーク確認に留める。
-- 受け入れ基準:
-  - WFL（Node + fake-indexeddb）で create/update/move/remove/recover を連続実行し、flag OFF/ON 両方でグリーン
-  - policy-c／undo-redo など関連 WFL シナリオでもバッチ操作の履歴・復元が担保されている
-  - start-env.sh でフラグ注入パターンを整備し、本番環境への影響がないことを整理
-- チェックリスト:
-  - [x] Headless: cp-routing + WC フロー（`packages/runtime-worker/worker/src/e2e/__tests__/cp-routing-wc.headless.test.ts`）
-  - [x] Headless: policy-c フロー（`packages/runtime-worker/worker/src/e2e/__tests__/policy-c*.headless.test.ts`）
- - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
- - [x] （任意）UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
-  - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
-  - [x] WFL: cp-routing undo/redo 連続操作の追加シナリオを安定化（実操作: create/update/move/remove/recover をコマンド履歴込みで検証）
- - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
- - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
- - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
-  - [x] WFL: Comlink 復元イベントの待機ヘルパーを整備し、TreeTable 相当の状態確認を結合テスト内で完結させる。
-    - [x] フォローアップ: `waitForNodeEventDuring` のタイムアウト・例外経路を再現する追加テストを検討。
-- [x] 任意 UI: Playwright スモーク（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts --project=chromium`）実行手順を補足し、必要なら DOM 安定化ヘルパーを追加。
-  - `docs/testing/cp-routing-wc-playwright.md` に Chromium スモーク向けの手順・トラブルシュートを追記済み（ビルド自動実行/既存プレビュー流用の 2 パターンを記載）。
-  - DOM 安定化は既存の `waitForTreeTableLoad` / `waitForSubTreeUpdate` / `waitForWorkingCopyUpdate` で十分であることを確認し、必要に応じてタイムアウト調整が可能である旨をドキュメントに記載。
-- [x] フラグ override の再検証 — テスト毎に override を初期化するユーティリティを WFL/Playwright 双方で共通化。
- - [ ] CI 組み込み — turbo タスクに runtime-worker WFL シナリオを組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
-
-2) WC 実装アライン（commit V2 戻り統一）（P1）
+1) WC 実装アライン（commit V2 戻り統一）（P1）
 - ブランチ: `refactor/worker/wc-impl-align`（sandbox 制約で新規ブランチ作成不可のため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理）
 - 依存: wc-util-baseline
 - 受け入れ基準: ToDo 定義どおり（戻り値を `ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
@@ -94,7 +72,7 @@
   - 【UI 追従】`packages/ui/treeconsole/base/src/adapters/commands/WorkingCopyCommands.ts` で保持している `options.context?.onNameConflict` を新 API オプションへ渡し、NAME_CONFLICT 時のダイアログ表示・リトライ導線を実装する。`packages/runtime-ui/plugin-dialog/src/services/WorkingCopyService.ts` でも NAME_CONFLICT / COMMIT_CONFLICT をユーザー向けエラーへ変換するハンドリングを追記する。
   - 【検証手順】上記変更後に `pnpm --filter @hierarchidb/runtime-worker typecheck`, `pnpm --filter @hierarchidb/runtime-worker test`, `pnpm --filter @hierarchidb/runtime-ui typecheck` を実行し、実行結果とログを運用ログ欄へ記録する。
 
-3) Undo/Redo 仕上げ（restore含む）（P1）
+2) Undo/Redo 仕上げ（restore含む）（P1）
 - ブランチ: `feat/worker/undo-redo-finalize`
 - 依存: Envelope v1、cp-routing-move-remove
 - 受け入れ基準: restore の逆操作/再適用まで単体・結合テストで担保
@@ -108,7 +86,7 @@
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
 
-4) Runtime Worker Vitest 非watch化（P2）
+3) Runtime Worker Vitest 非watch化（P2）
 - ブランチ: `fix/runtime-worker/vitest-run`
 - 依存: なし
 - 受け入れ基準: `pnpm --filter @hierarchidb/runtime-worker test` が 1 回実行後に即終了する。
@@ -1786,6 +1764,20 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- Route/Worker バッチ結合テスト整備（P1） — cp-routing WFL/Playwright/CI 統合で flag off/on 両経路を保証
+  - ブランチ: `feat/e2e/cp-routing-wc`
+  - 受け入れ基準（DoD）：
+    - [x] `packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` で create/update/move/trash/restore/undo/redo を flag off/on 両モードで検証
+    - [x] Playwright `e2e/cp-routing-wc-flow.spec.ts` のスモーク手順を整備し、DOM 安定化・フラグ初期化ヘルパーを共通化
+    - [x] Turborepo `wfl` タスクを追加し、`pnpm wfl --filter @hierarchidb/runtime-worker` で JUnit レポート（`reports/runtime-worker/cp-routing-wfl.xml`）を生成
+  - チェックリスト：
+    - [x] Worker flag override を `createWorkerFlagOverrideLifecycle` へ統一
+    - [x] `waitForNodeEventDuring` タイムアウト経路のテスト追加
+    - [x] Playwright / WFL 実行ドキュメント（`docs/testing/cp-routing-wc-playwright.md` / `docs/testing/runtime-worker-wfl.md`）を更新
+  - ロールバック手順：
+    - `turbo.json`・`package.json`・`packages/runtime/worker/package.json` の `wfl` 差分と関連ドキュメント更新をリバートし、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行して旧構成へ戻す
+  - 運用ログ：
+    - done: 2025-10-02 20:05 `pnpm --filter @hierarchidb/runtime-worker wfl` を実行し、JUnit レポート出力と docs 反映を確認
 - CP 段階ルーティング（move/remove）（P1） — CommandProcessor 経由への移行を `WORKER_USE_CMDPROC_MOVE_REMOVE` で段階導入
   - ブランチ: `feat/worker/cp-routing-move-remove`
   - 依存: cp-routing-create-update
@@ -4760,6 +4752,7 @@ P2:
 - 2025-10-02 18:52 done: feat/e2e/cp-routing-wc — Worker flag override の初期化ユーティリティを共通化し、WFL/Playwright 両方で試験前にリセットできるよう整備。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行し、追加テストを含めてグリーンを確認。
 - 2025-10-02 19:18 done: feat/e2e/cp-routing-wc — `createWorkerFlagOverrideLifecycle` を導入して env/localStorage 両経路のリセットを統一し、Playwright ヘルパーからも利用する形に再編。`pnpm --filter @hierarchidb/runtime-shared-batch-processor build` で必要な dist を生成したうえで `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行しグリーンを確認。ロールバックは新ライフサイクルヘルパーと関連 import を除去し、従来の `withWorkerFlagEnvOverrides` 直接呼び出しへ戻す。 
 - 2025-10-02 19:42 done: feat/e2e/cp-routing-wc — Playwright スモーク（chromium）の実行手順を `docs/testing/cp-routing-wc-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
+- 2025-10-02 20:05 done: feat/e2e/cp-routing-wc — Turborepo に `wfl` タスクを追加し、`packages/runtime/worker` の `wfl` スクリプトで cp-routing WFL シナリオを実行可能にした。JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力するよう設定し、運用手順を `docs/testing/runtime-worker-wfl.md` / Playwright ガイドに追記。ロールバックは `turbo.json` の `wfl` エントリと `package.json`／`packages/runtime/worker/package.json` の `wfl` スクリプトを削除し、該当ドキュメント追記を戻せばよい。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
 - 2025-10-02 11:00 start: fix/ui/language-provider-i18n-context — TreeTableCore 初期描画で発生する react-i18next 未初期化エラーの恒久対策に着手。`git checkout -b fix/ui/language-provider-i18n-context` は sandbox 制約で失敗したため、main 上で作業を継続する方針に切り替え。
 - 2025-10-02 11:20 progress: fix/ui/language-provider-i18n-context — LanguageProvider.tsx で初期レンダリング時にも I18nextProvider / LocalizationProvider を挟み、フォールバック描画でも i18n コンテキストが欠落しないよう修正（コード差分のみ、UI 実行環境では未検証）。

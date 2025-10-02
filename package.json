@@ -55,6 +55,7 @@
     "coverage": "turbo run coverage --parallel",
     "ci:unit": "pnpm -r --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable exec vitest run --passWithNoTests",
     "e2e": "turbo run e2e",
+    "wfl": "turbo run wfl",
     "lint": "turbo run lint",
     "biome:check": "biome check --reporter summary",
     "biome:fix": "biome check --write",

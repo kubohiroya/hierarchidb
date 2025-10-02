@@ -44,3 +44,4 @@ cp-routing フローの UI E2E テスト（`e2e/cp-routing-wc-flow.spec.ts`）�
 - `e2e/cp-routing-wc-flow.spec.ts`
 - `e2e/utils/test-helpers.ts`
 - `app/src/config/worker-flag-overrides.ts`
+- WFL（Worker Fake IndexedDB）連携: [runtime-worker WFL シナリオ実行ガイド](./runtime-worker-wfl.md)

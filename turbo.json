@@ -10,6 +10,11 @@
     "lint": {},
     "dev": { "cache": false, "persistent": true },
     "preview": { "cache": false, "persistent": true },
-    "e2e": { "dependsOn": ["build"], "cache": false, "persistent": false }
+    "e2e": { "dependsOn": ["build"], "cache": false, "persistent": false },
+    "wfl": {
+      "dependsOn": ["^build"],
+      "outputs": ["reports/runtime-worker/*.xml"],
+      "cache": false
+    }
   }
 }
