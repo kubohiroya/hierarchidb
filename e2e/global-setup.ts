@@ -1,5 +1,20 @@
 import { chromium, FullConfig } from '@playwright/test';
 
+const normalizeBasePath = (value: string | undefined): string => {
+  if (!value) return '';
+  return value.replace(/^\/+|\/+$/g, '');
+};
+
+const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
+const defaultBaseURL = (() => {
+  const basePath = appName ? `/${appName}` : '';
+  return `http://localhost:4173${basePath}`;
+})();
+
+const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
+const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
+const baseURLWithSlash = `${normalizedBaseURL}/`;
+
 /**
  * Global setup for E2E tests
  *
@@ -10,7 +25,7 @@ async function globalSetup(config: FullConfig) {
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  const serverUrl = config.webServer?.url ?? 'http://localhost:4173';
+  const serverUrl = config.webServer?.url ?? baseURLWithSlash;
   const skipWebServer = !config.webServer;
 
   let progressTimer: NodeJS.Timeout | undefined;

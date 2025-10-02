@@ -7,6 +7,21 @@ import { defineConfig, devices } from '@playwright/test';
  */
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1';
 
+const normalizeBasePath = (value: string | undefined): string => {
+  if (!value) return '';
+  return value.replace(/^\/+|\/+$/g, '');
+};
+
+const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
+const defaultBaseURL = (() => {
+  const basePath = appName ? `/${appName}` : '';
+  return `http://localhost:4173${basePath}`;
+})();
+
+const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
+const normalizedBaseURL = rawBaseURL.replace(/\/*$/, '');
+const baseURLWithSlash = `${normalizedBaseURL}/`;
+
 export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
@@ -27,7 +42,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:4173',
+    baseURL: baseURLWithSlash,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -108,7 +123,7 @@ export default defineConfig({
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
         command: 'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview',
-        url: 'http://localhost:4173',
+        url: baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
         timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes
       },

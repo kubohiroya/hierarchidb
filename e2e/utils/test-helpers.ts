@@ -20,6 +20,40 @@ export const WORKER_CMDPROC_FLAG_NAME = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
 const workerFlagLifecycle = createWorkerFlagOverrideLifecycle();
 let activeOverrideCleanup: (() => void) | null = null;
 
+const normalizeBasePath = (value: string | undefined): string => {
+  if (!value) return '';
+  return value.replace(/^\/+|\/+$/g, '');
+};
+
+const appName = normalizeBasePath(process.env.VITE_APP_NAME ?? process.env.PLAYWRIGHT_APP_NAME);
+const defaultBaseURL = (() => {
+  const basePath = appName ? `/${appName}` : '';
+  return `http://localhost:4173${basePath}`;
+})();
+
+const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
+
+export const APP_BASE_URL = rawBaseURL.replace(/\/*$/, '');
+
+export const APP_BASE_URL_WITH_SLASH = `${APP_BASE_URL}/`;
+
+export const buildAppUrl = (path = ''): string => {
+  if (!path) return APP_BASE_URL_WITH_SLASH;
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  if (path.startsWith('#')) {
+    return `${APP_BASE_URL_WITH_SLASH}${path}`;
+  }
+
+  if (path.startsWith('/')) {
+    return `${APP_BASE_URL}${path}`;
+  }
+
+  return `${APP_BASE_URL_WITH_SLASH}${path}`;
+};
+
 export async function configureWorkerCmdprocOverride(
   page: Page,
   value: WorkerFlagOverrideValue,
@@ -487,12 +521,12 @@ export async function waitForAnimations(page: Page): Promise<void> {
     () => {
       // Check if any CSS animations or transitions are running
       const elements = document.querySelectorAll('*');
-      for (const element of elements) {
+      elements.forEach (element =>{
         const computedStyle = getComputedStyle(element);
         if (computedStyle.animationName !== 'none' || computedStyle.transitionDuration !== '0s') {
           return false;
         }
-      }
+      });
       return true;
     },
     { timeout: 5000 }

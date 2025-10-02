@@ -6,6 +6,7 @@ import {
   waitForRouteProgress,
   setupConsoleErrorTracking,
   clearTestData,
+  buildAppUrl,
 } from '../utils/test-helpers';
 
 type Scenario = {
@@ -69,7 +70,7 @@ test.describe('Route progress controls', () => {
         }
       }, { flagValue: scenario.flagValue });
 
-      await page.goto('http://localhost:4202/hierarchidb/t/r', { waitUntil: 'networkidle' });
+      await page.goto(buildAppUrl('t/r'), { waitUntil: 'networkidle' });
       await dismissGuidedTour(page);
       await waitForTreeTableLoad(page);
 
@@ -153,7 +154,7 @@ test.describe('Route progress controls', () => {
       });
 
       await page.goto(
-        `http://localhost:4202/hierarchidb/t/${routeNode.treeId}/${routeNode.pageNodeId}/${routeNode.nodeId}/route`,
+        buildAppUrl(`t/${routeNode.treeId}/${routeNode.pageNodeId}/${routeNode.nodeId}/route`),
         { waitUntil: 'networkidle' },
       );
 

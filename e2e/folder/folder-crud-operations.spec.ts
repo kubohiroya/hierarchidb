@@ -9,6 +9,7 @@ import {
   moveToTrash,
   waitForSubTreeUpdate,
   waitForWorkingCopyUpdate,
+  buildAppUrl,
 } from '../utils/test-helpers';
 
 /**
@@ -24,7 +25,7 @@ test.describe('Folder CRUD Operations', () => {
     await clearTestData(page);
     // Navigate to specific tree with valid IDs to avoid routing issues
     // Using 'default' as treeId and 'defaultRoot' as pageTreeNodeId
-    await page.goto('http://localhost:4202/hierarchidb/t/r');
+    await page.goto(buildAppUrl('t/r'));
 
     // If a base-dialog is open, close it
     const dialog = page.locator('[role="base-dialog"]');
@@ -45,7 +46,7 @@ test.describe('Folder CRUD Operations', () => {
   test('フォルダ作成 - SpeedDialダイアログ経由で作成', async ({ page }) => {
     const folderName = await createTestFolder(page, 'Test Folder');
 
-    await expect(page.locator(`[data-testid=\"tree-node\"]:has-text(\"${folderName}\")`)).toBeVisible({
+    await expect(page.locator(`[data-testid="tree-node"]:has-text("${folderName}")`)).toBeVisible({
       timeout: 5000,
     });
   });
@@ -266,7 +267,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // 元のフォルダと新しいフォルダの両方が存在することを確認
     const allFolders = page.locator(`[data-testid="tree-node"]:has-text("${originalName}")`);
-    await expect(allFolders).toHaveCount.atLeast(2);
+    await expect(allFolders).toHaveCount(2);
   });
 
   test('フォルダのプロパティ表示', async ({ page }) => {

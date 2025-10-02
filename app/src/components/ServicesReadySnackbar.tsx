@@ -1,6 +1,6 @@
 import React from 'react';
 import { Snackbar, Alert } from '@mui/material';
-import i18n from '@hierarchidb/ui-i18n';
+import { i18n } from '@hierarchidb/ui-i18n';
 
 type Detail = { source: 'worker' | 'ui'; at?: number; nodeTypes?: string[] };
 

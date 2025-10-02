@@ -67,6 +67,21 @@
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
 
+2) SpeedDial フォルダ作成ダイアログの DialogState 購読エラー修正（P1）
+- ブランチ: `fix/ui/speeddial-dialog-state`（ローカル sandbox 制約で main 上で作業中）
+- 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`
+- 受け入れ基準（DoD）:
+  - [ ] SpeedDial からのフォルダ作成で PluginDialog が例外なく起動し、`dialogStateApi.subscribeState` の呼び出しが安全に行われる
+  - [ ] Worker 側 API と UI フォールバックの整合性をテスト（単体 or headless）で担保する
+  - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm -C app typecheck` が成功
+- チェックリスト:
+  - [x] DialogStateAPI の取得・購読フローで undefined を許容するガードを追加
+  - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
+  - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
+- ロールバック手順：
+  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
+  - Worker 側の API 変更があれば revert し、テスト追加分を削除
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -4746,6 +4761,10 @@ P2:
 - 2025-10-02 18:52 done: feat/e2e/cp-routing-wc — Worker flag override の初期化ユーティリティを共通化し、WFL/Playwright 両方で試験前にリセットできるよう整備。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行し、追加テストを含めてグリーンを確認。
 - 2025-10-02 19:18 done: feat/e2e/cp-routing-wc — `createWorkerFlagOverrideLifecycle` を導入して env/localStorage 両経路のリセットを統一し、Playwright ヘルパーからも利用する形に再編。`pnpm --filter @hierarchidb/runtime-shared-batch-processor build` で必要な dist を生成したうえで `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行しグリーンを確認。ロールバックは新ライフサイクルヘルパーと関連 import を除去し、従来の `withWorkerFlagEnvOverrides` 直接呼び出しへ戻す。 
 - 2025-10-02 19:42 done: feat/e2e/cp-routing-wc — Playwright スモーク（chromium）の実行手順を `docs/testing/cp-routing-wc-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
+- 2025-10-02 20:15 start: fix/ui/speeddial-dialog-state — SpeedDial 経由フォルダ作成時に `dialogStateApi.subscribeState` が未定義となる例外を再現し、UI 側の購読ロジックと Worker API の突合せを開始。Sandbox 制約で新規ブランチ作成が失敗したため、当面は `main` 上で差分を保持しつつ後続でブランチを作成予定であることを記録。
+- 2025-10-02 20:45 progress: fix/ui/speeddial-dialog-state — `usePluginDialogController` に購読フォールバックを実装し、`subscribeState` 未提供時は `getState` 単発取得へ切替。`subscribeDialogState` ヘルパー導入と単体テスト追加で UI/Worker 間の互換性を確認。
+- 2025-10-02 20:52 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 成功を確認。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test -- --run dialogStateSubscription` は Vitest が `vitest.config.ts.timestamp-*.mjs` を作成できず EPERM で失敗したため未実行扱い（sandbox 書込制限）。
+- 2025-10-02 21:00 blocked: fix/ui/speeddial-dialog-state — `pnpm -C app typecheck` 実行時に `node_modules/.cache/tsbuildinfo` への書込が EPERM で失敗し、既存の worker-factory 関連型エラーが残存。手元では解消不可のため記録のみ。
 - 2025-10-02 20:05 done: feat/e2e/cp-routing-wc — Turborepo に `wfl` タスクを追加し、`packages/runtime/worker` の `wfl` スクリプトで cp-routing WFL シナリオを実行可能にした。JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力するよう設定し、運用手順を `docs/testing/runtime-worker-wfl.md` / Playwright ガイドに追記。ロールバックは `turbo.json` の `wfl` エントリと `package.json`／`packages/runtime/worker/package.json` の `wfl` スクリプトを削除し、該当ドキュメント追記を戻せばよい。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
 - 2025-10-02 20:15 done: fix/runtime-worker/vitest-run — `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` へ更新済みであることを確認し、`pnpm --filter @hierarchidb/runtime-worker test` を再実行して単回実行で終了することを確認。

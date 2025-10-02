@@ -15,6 +15,7 @@ import {
   WORKER_CMDPROC_FLAG_NAME,
   WorkerFlagOverrideValue,
   resetWorkerFlagOverrides,
+  buildAppUrl,
 } from '../utils/test-helpers';
 import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../../app/src/config/worker-flag-overrides.js';
 
@@ -45,7 +46,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await clearTestData(page);
     await configureWorkerCmdprocOverride(page, scenario.flagValue);
 
-    await page.goto('http://localhost:4202/hierarchidb/t/r');
+    await page.goto(buildAppUrl('t/r'));
 
     const dialog = page.locator('[role="base-dialog"]');
     if (await dialog.isVisible()) {

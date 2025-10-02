@@ -27,9 +27,14 @@ import type {
   MultiDialogSize,
   MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import type { DialogStateAPI, DialogStateSubscriptionId, WorkerAPI } from '@hierarchidb/common-api';
-import type { TagEntity } from '@hierarchidb/common-type';
+import type {
+  DialogStateSubscribeInput,
+  MultiStepDialogState,
+  NodeId,
+  TagEntity,
+  TreeId,
+} from '@hierarchidb/common-type';
 import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import { composeStepConfigs } from '../services/StepComposer.js';
@@ -49,8 +54,7 @@ import {
 import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
-import { Remote, proxy } from 'comlink';
-import type { MultiStepDialogState } from '@hierarchidb/common-type';
+import { Remote, proxy, releaseProxy } from 'comlink';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -305,6 +309,114 @@ async function evaluateStepGuards({
   };
 }
 
+type DialogStateApiSubset = Partial<Pick<DialogStateAPI, 'subscribeState' | 'unsubscribeState' | 'getState'>>;
+
+type DialogStateSubscriptionLogger = Pick<Console, 'warn'> | undefined;
+
+export interface DialogStateSubscriptionDeps {
+  createCallback?: (handler: (state: MultiStepDialogState | null) => void) => unknown;
+  releaseCallback?: (callback: unknown) => void;
+}
+
+export interface SubscribeDialogStateOptions {
+  api: DialogStateApiSubset | null;
+  params: DialogStateSubscribeInput;
+  onSnapshot: (state: MultiStepDialogState | null) => void;
+  logger?: DialogStateSubscriptionLogger;
+  deps?: DialogStateSubscriptionDeps;
+}
+
+const defaultWarn = (...args: unknown[]) => {
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn(...args);
+  }
+};
+
+export async function subscribeDialogState({
+  api,
+  params,
+  onSnapshot,
+  logger,
+  deps,
+}: SubscribeDialogStateOptions): Promise<() => void> {
+  const warn = logger?.warn?.bind(logger) ?? defaultWarn;
+
+  if (!api) {
+    warn('[PluginDialogShell] DialogStateAPI unavailable; skipping subscription');
+    return () => {};
+  }
+
+  const subscribeFn = typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
+  const unsubscribeFn = typeof api.unsubscribeState === 'function' ? api.unsubscribeState.bind(api) : null;
+  const getStateFn = typeof api.getState === 'function' ? api.getState.bind(api) : null;
+
+  const createCallback = deps?.createCallback
+    ?? ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
+  const releaseCallback = deps?.releaseCallback
+    ?? ((callback: unknown) => {
+      if (!callback) return;
+      try {
+        const releaser = (callback as { [releaseProxy]?: () => void })[releaseProxy];
+        if (typeof releaser === 'function') {
+          releaser.call(callback);
+        }
+      } catch {
+        // Ignore release errors – callback may not be a proxied function in test environments
+      }
+    });
+
+  if (!subscribeFn || !unsubscribeFn) {
+    if (getStateFn) {
+      try {
+        const snapshot = await getStateFn(params);
+        onSnapshot(snapshot ?? null);
+      } catch (error) {
+        warn('[PluginDialogShell] getState fallback failed', error);
+      }
+    } else {
+      warn('[PluginDialogShell] DialogStateAPI missing subscribeState/getState implementations', params);
+    }
+    return () => {};
+  }
+
+  const callback = createCallback((snapshot: MultiStepDialogState | null) => {
+    onSnapshot(snapshot ?? null);
+  });
+
+  let cleanedUp = false;
+  let subscriptionId: DialogStateSubscriptionId | null = null;
+
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    releaseCallback(callback);
+    if (subscriptionId !== null) {
+      Promise.resolve(unsubscribeFn(subscriptionId)).catch(() => {});
+    }
+  };
+
+  try {
+    subscriptionId = await subscribeFn(
+      params,
+      callback as (state: MultiStepDialogState | null) => void,
+    );
+  } catch (error) {
+    warn('[PluginDialogShell] dialog state subscription failed', error);
+    cleanup();
+    if (getStateFn) {
+      try {
+        const snapshot = await getStateFn(params);
+        onSnapshot(snapshot ?? null);
+      } catch (fallbackError) {
+        warn('[PluginDialogShell] getState fallback after subscribe failure failed', fallbackError);
+      }
+    }
+    return cleanup;
+  }
+
+  return cleanup;
+}
+
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
   const {
     mode,
@@ -373,36 +485,50 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   } = useWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, workerClient: ref ?? null });
 
   useEffect(() => {
-    if (!dialogStateApi) return;
     if (!nodeType || !nodeId) {
       setWorkerDialogState(null);
       return;
     }
 
-    let disposed = false;
-    let subscriptionId: DialogStateSubscriptionId | null = null;
-    const callback = proxy((snapshot: MultiStepDialogState | null) => {
-      if (disposed) return;
-      setWorkerDialogState(snapshot);
-    });
+    if (!dialogStateApi) {
+      setWorkerDialogState(null);
+      return;
+    }
 
-    dialogStateApi.subscribeState({ nodeType, nodeId }, callback)
-      .then((id) => {
-        if (!disposed) {
-          subscriptionId = id;
+    let disposed = false;
+    let cleanup: (() => void) | null = null;
+
+    (async () => {
+      try {
+        const release = await subscribeDialogState({
+          api: dialogStateApi,
+          params: { nodeType, nodeId } as DialogStateSubscribeInput,
+          onSnapshot: (snapshot) => {
+            if (!disposed) {
+              setWorkerDialogState(snapshot ?? null);
+            }
+          },
+          logger: typeof console !== 'undefined' ? console : undefined,
+        });
+
+        if (disposed) {
+          release();
+        } else {
+          cleanup = release;
         }
-      })
-      .catch((error) => {
-        if (typeof console !== 'undefined' && console.warn) {
-          console.warn('[PluginDialogShell] dialog state subscription failed', error);
+      } catch (error) {
+        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+          console.warn('[PluginDialogShell] failed to establish dialog state subscription bridge', error);
         }
-      });
+      }
+    })();
 
     return () => {
       disposed = true;
       setWorkerDialogState(null);
-      if (subscriptionId) {
-        dialogStateApi.unsubscribeState(subscriptionId).catch(() => {});
+      if (cleanup) {
+        cleanup();
+        cleanup = null;
       }
     };
   }, [dialogStateApi, nodeType, nodeId]);
