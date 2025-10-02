@@ -107,7 +107,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     const maxConcurrent = this.config.routeGeneration.maxConcurrent;
     const batch = new BatchService();
     let completed = 0;
-    await batch.mapChunks(this.tasks, async (task, _i) => {
+    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task, index) => {
       if (this.isAborted()) throw new Error('aborted');
       if (task.taskType === 'route_generation') {
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
@@ -121,7 +121,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
       } else {
         await this.processTask(task);
       }
-      completed++;
+      completed += 1;
       await this.db.routeCursors.update(this.sessionId, {
         completed,
         total: this.tasks.length,
@@ -132,7 +132,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         total: this.tasks.length,
         completed,
         currentStage: task.stage,
-        currentTask: `Processing ${task.taskType}`,
+        currentTask: `Processing ${task.taskType}#${index}`,
       });
       // Pause handling (poll cursor flag)
       for (; ;) {

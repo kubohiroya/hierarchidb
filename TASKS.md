@@ -374,16 +374,6 @@
 
 — UI-DESIGN.md 反映タスク（最小復旧プランの実装） —
 
-- feat/route/progress-controls-pause-resume（Route: 進捗UIに Pause/Resume を配線）
-  - ブランチ: `feat/route/progress-controls-pause-resume`
-  - 依存: PR #144（UI-DESIGN.md）
-  - 受け入れ基準（DoD）:
-    - [ ] `RoutePanel` の Progress セクションに Pause/Resume ボタンを追加
-    - [ ] `RouteBatchManager.pauseRouteBatchSession/resumeRouteBatchSession` を呼び出し、Dexie `routeCursors.paused` が切り替わる
-    - [ ] `RouteBatchSummary` に failed 件数/直近エラー要約を表示
-    - [ ] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン
-  - ロールバック: UI ボタンを隠すフラグ `ROUTE_PROGRESS_CONTROLS=0`
-
 - feat/shape/batch-monitor-wireup（Shape: 監視ダイアログの実装配線最小化）
   - ブランチ: `feat/shape/batch-monitor-wireup`
   - 依存: PR #144（UI-DESIGN.md）
@@ -1778,6 +1768,20 @@ P2:
   - 運用ログ：
     - start: 2025-09-30 CommandProcessor move/remove 経路の段階導入を開始（ブランチ作成済み）
     - done: 2025-10-02 16:20 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-worker test` を実行しグリーンを確認。フラグ OFF/ON で動作確認済み。
+- feat/route/progress-controls-pause-resume — Route 進捗 UI へ Pause/Resume を配線
+  - ブランチ: `feat/route/progress-controls-pause-resume`
+  - 依存: UI-DESIGN.md (PR #144)
+  - 受け入れ基準（DoD）：
+    - [x] `RoutePanel` の Progress セクションに Pause/Resume ボタンを追加
+    - [x] `RouteBatchManager.pauseRouteBatchSession` / `resumeRouteBatchSession` で Dexie `routeCursors.paused` を更新
+    - [x] `RouteBatchSummary` に failed 件数と直近エラー要約を表示
+    - [x] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` がグリーン（2025-10-02 実行、`RouteBatchSession` の型補完と `@hierarchidb/batch` 用 d.ts 追加で解消）
+  - ロールバック手順：
+    - フラグ `ROUTE_PROGRESS_CONTROLS=0` で UI を非表示に戻し、`RouteBatchManager`/`RouteBatchSummary` の差分をリバート
+  - 運用ログ：
+    - start: 2025-09-30 Pause/Resume UI 着手（RoutePanel/RouteBatchManager/integration の要件整理）
+    - progress: 2025-09-30 13:50 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行し基礎差分がグリーン
+    - done: 2025-10-02 20:25 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を再実行（BatchService d.ts 追加＆ implicit any 解消）し成功
 - WFL trash/undo 安定化（P0） — Trash 直下移動仕様へ統一し、undo/redo 連携を復旧
   - ブランチ: `fix/worker/undo-redo-restore-name`
   - 依存: trash-holder, cp-routing undo/redo 完了タスク
