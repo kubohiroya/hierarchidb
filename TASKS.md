@@ -91,8 +91,8 @@
 - 依存: なし
 - 受け入れ基準: `pnpm --filter @hierarchidb/runtime-worker test` が 1 回実行後に即終了する。
 - チェックリスト:
-  - [ ] `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` 系へ更新
-  - [ ] 修正後にテストを実行し、終了挙動と結果を確認
+  - [x] `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` 系へ更新
+  - [x] 修正後にテストを実行し、終了挙動と結果を確認
 - ロールバック手順:
   - `packages/runtime/worker/package.json` の `test` スクリプトを `vitest` に戻す
 
@@ -4755,6 +4755,7 @@ P2:
 - 2025-10-02 19:42 done: feat/e2e/cp-routing-wc — Playwright スモーク（chromium）の実行手順を `docs/testing/cp-routing-wc-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
 - 2025-10-02 20:05 done: feat/e2e/cp-routing-wc — Turborepo に `wfl` タスクを追加し、`packages/runtime/worker` の `wfl` スクリプトで cp-routing WFL シナリオを実行可能にした。JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力するよう設定し、運用手順を `docs/testing/runtime-worker-wfl.md` / Playwright ガイドに追記。ロールバックは `turbo.json` の `wfl` エントリと `package.json`／`packages/runtime/worker/package.json` の `wfl` スクリプトを削除し、該当ドキュメント追記を戻せばよい。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
+- 2025-10-02 20:15 done: fix/runtime-worker/vitest-run — `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` へ更新済みであることを確認し、`pnpm --filter @hierarchidb/runtime-worker test` を再実行して単回実行で終了することを確認。
 - 2025-10-02 11:00 start: fix/ui/language-provider-i18n-context — TreeTableCore 初期描画で発生する react-i18next 未初期化エラーの恒久対策に着手。`git checkout -b fix/ui/language-provider-i18n-context` は sandbox 制約で失敗したため、main 上で作業を継続する方針に切り替え。
 - 2025-10-02 11:20 progress: fix/ui/language-provider-i18n-context — LanguageProvider.tsx で初期レンダリング時にも I18nextProvider / LocalizationProvider を挟み、フォールバック描画でも i18n コンテキストが欠落しないよう修正（コード差分のみ、UI 実行環境では未検証）。
 - 2025-10-02 11:30 progress: fix/ui/language-provider-i18n-context — `pnpm --filter @hierarchidb/ui-i18n typecheck` と `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` がともに成功。sandbox では `pnpm dev` が制限されているためブラウザ再現確認はユーザー側での追試が必要。
