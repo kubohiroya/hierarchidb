@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect, vi } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode, TreeChangeEvent, SubscriptionId } from '@hierarchidb/common-type';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -36,6 +36,7 @@ type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
   getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
+  getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
 };
 
 async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: number; interval?: number }) {
@@ -50,6 +51,34 @@ async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: nu
     await new Promise((resolve) => setTimeout(resolve, interval));
   }
 }
+
+const waitForNodeEventDuring = async <T>(
+  subscriptionAPI: import('@hierarchidb/common-api').TreeSubscriptionAPI,
+  nodeId: NodeId,
+  action: () => Promise<T>,
+  predicate?: (event: TreeChangeEvent) => boolean,
+  opts?: { timeout?: number; interval?: number },
+): Promise<{ result: T; event: TreeChangeEvent }> => {
+  let matched: TreeChangeEvent | undefined;
+  const handler = Comlink.proxy((event: TreeChangeEvent) => {
+    if (!matched && (predicate ? predicate(event) : true)) {
+      matched = event;
+    }
+  });
+
+  const subscriptionId: SubscriptionId = await subscriptionAPI.subscribeNode(nodeId, handler);
+  try {
+    const result = await action();
+    const event = await waitFor(() => matched, opts);
+    return { result, event };
+  } finally {
+    await subscriptionAPI.unsubscribe(subscriptionId);
+    const release = (handler as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
+    if (typeof release === 'function') {
+      await release.call(handler);
+    }
+  }
+};
 
 type Scenario = {
   label: string;
@@ -127,6 +156,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const queryAPI = await client.getQueryAPI();
       const mutationAPI = await client.getMutationAPI();
       const commandProcessor = await client.getCommandProcessor();
+      const subscriptionAPI = await client.getSubscriptionAPI();
 
       const trees = await queryAPI.listTrees();
       expect(trees.length).toBeGreaterThan(0);
@@ -144,15 +174,22 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const sourceId = await createAndCommit(mutationAPI, commandProcessor, queryAPI, treeId, rootId, 'CP Flow Source');
 
       const updatedName = `CP Flow Source Updated ${flagValue}`;
-      const renameEnvelope = await commandProcessor.createEnvelope('updateNode', {
-        nodeId: sourceId,
-        name: updatedName,
-      });
-      const renameResult = await commandProcessor.processCommand(renameEnvelope);
-      if (!renameResult.success) {
-        console.error('[cp-routing-wc.wfl] rename failed', renameResult);
-      }
-      expect(renameResult.success).toBe(true);
+      await waitForNodeEventDuring(
+        subscriptionAPI,
+        sourceId,
+        async () => {
+          const renameEnvelope = await commandProcessor.createEnvelope('updateNode', {
+            nodeId: sourceId,
+            name: updatedName,
+          });
+          const renameResult = await commandProcessor.processCommand(renameEnvelope);
+          if (!renameResult.success) {
+            console.error('[cp-routing-wc.wfl] rename failed', renameResult);
+          }
+          expect(renameResult.success).toBe(true);
+          return renameResult;
+        },
+      );
       await waitFor(async () => {
         const node = await queryAPI.getNode(sourceId);
         return node?.name === updatedName;
@@ -167,11 +204,16 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
         'CP Flow Destination',
       );
 
-      const moveResult = await mutationAPI.moveNodes({
-        nodeIds: [sourceId],
-        toParentId: destinationId,
-        onNameConflict: 'auto-rename',
-      });
+      const { result: moveResult } = await waitForNodeEventDuring(
+        subscriptionAPI,
+        sourceId,
+        () =>
+          mutationAPI.moveNodes({
+            nodeIds: [sourceId],
+            toParentId: destinationId,
+            onNameConflict: 'auto-rename',
+          }),
+      );
       expect(moveResult.success).toBe(true);
 
       await waitFor(async () => {
@@ -182,7 +224,11 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const movedNode = await queryAPI.getNode(sourceId);
       expect(movedNode?.parentId).toBe(destinationId);
 
-      const trashResult = await mutationAPI.moveNodesToTrash([sourceId]);
+      const { result: trashResult } = await waitForNodeEventDuring(
+        subscriptionAPI,
+        sourceId,
+        () => mutationAPI.moveNodesToTrash([sourceId]),
+      );
       expect(trashResult.success).toBe(true);
 
       const trashedNode = await waitFor(async () => {
@@ -196,7 +242,11 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       expect(trashed.originalParentId).toBe(destinationId);
       expect(trashed.originalName).toBe(updatedName);
 
-      const restoreResult = await mutationAPI.restoreNodesFromTrash({ nodeIds: [sourceId], toParentId: rootId });
+      const { result: restoreResult } = await waitForNodeEventDuring(
+        subscriptionAPI,
+        sourceId,
+        () => mutationAPI.restoreNodesFromTrash({ nodeIds: [sourceId], toParentId: rootId }),
+      );
       expect(restoreResult.success).toBe(true);
 
       await waitFor(async () => {
@@ -224,6 +274,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
     try {
       const queryAPI = await client.getQueryAPI();
       const commandProcessor = await client.getCommandProcessor();
+      const subscriptionAPI = await client.getSubscriptionAPI();
 
       const trees = await queryAPI.listTrees();
       expect(trees.length).toBeGreaterThan(0);
@@ -235,14 +286,33 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const rootId = tree.rootId as NodeId;
       const trashRootId = tree.trashRootId as NodeId;
 
-      const runCommand = async <K extends string, P>(kind: K, payload: P) => {
-        const envelope = await commandProcessor.createEnvelope(kind, payload as P);
-        const result = await commandProcessor.processCommand(envelope);
+      const runCommand = async <K extends string, P>(
+        kind: K,
+        payload: P,
+        opts?: { expectNodeId?: NodeId },
+      ) => {
+        const execute = async () => {
+          const envelope = await commandProcessor.createEnvelope(kind, payload as P);
+          return commandProcessor.processCommand(envelope);
+        };
+        if (opts?.expectNodeId) {
+          const { result } = await waitForNodeEventDuring(
+            subscriptionAPI,
+            opts.expectNodeId,
+            async () => {
+              const outcome = await execute();
+              expect(outcome.success).toBe(true);
+              return outcome;
+            },
+          );
+          return { result: result as { nodeId?: NodeId } } as const;
+        }
+        const result = await execute();
         expect(result.success).toBe(true);
-        return result as { nodeId?: NodeId };
+        return { result: result as { nodeId?: NodeId } } as const;
       };
 
-      const destinationRes = await runCommand('createNode', {
+      const { result: destinationRes } = await runCommand('createNode', {
         nodeType: 'folder' as const,
         treeId,
         parentId: rootId,
@@ -251,7 +321,7 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       const destinationId = destinationRes.nodeId as NodeId;
       await waitFor(() => queryAPI.getNode(destinationId));
 
-      const subjectRes = await runCommand('createNode', {
+      const { result: subjectRes } = await runCommand('createNode', {
         nodeType: 'folder' as const,
         treeId,
         parentId: rootId,
@@ -261,17 +331,21 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       await waitFor(() => queryAPI.getNode(subjectId));
 
       const renamed = `Undo Subject Renamed ${flagValue}`;
-      await runCommand('updateNode', { nodeId: subjectId, name: renamed });
+      await runCommand('updateNode', { nodeId: subjectId, name: renamed }, { expectNodeId: subjectId });
       await waitFor(async () => (await queryAPI.getNode(subjectId))?.name === renamed);
 
-      await runCommand('moveNodes', {
-        nodeIds: [subjectId],
-        toParentId: destinationId,
-        onNameConflict: 'auto-rename' as const,
-      });
+      await runCommand(
+        'moveNodes',
+        {
+          nodeIds: [subjectId],
+          toParentId: destinationId,
+          onNameConflict: 'auto-rename' as const,
+        },
+        { expectNodeId: subjectId },
+      );
       await waitFor(async () => (await queryAPI.getNode(subjectId))?.parentId === destinationId);
 
-      await runCommand('moveToTrash', { nodeIds: [subjectId] });
+      await runCommand('moveToTrash', { nodeIds: [subjectId] }, { expectNodeId: subjectId });
       const trashedNode = (await waitFor(async () => {
         const node = await queryAPI.getNode(subjectId);
         return node?.holderType === 'trash' ? node : undefined;
@@ -280,14 +354,18 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       expect(trashedNode.originalParentId).toBe(destinationId);
       expect(trashedNode.originalName).toBe(renamed);
 
-      await runCommand('restoreFromTrash', {
-        nodeIds: [subjectId],
-        toParentId: rootId,
-        onNameConflict: 'auto-rename' as const,
-      });
+      await runCommand(
+        'restoreFromTrash',
+        {
+          nodeIds: [subjectId],
+          toParentId: rootId,
+          onNameConflict: 'auto-rename' as const,
+        },
+        { expectNodeId: subjectId },
+      );
       await waitFor(async () => (await queryAPI.getNode(subjectId))?.parentId === rootId);
 
-      await runCommand('remove', { nodeIds: [subjectId] });
+      await runCommand('remove', { nodeIds: [subjectId] }, { expectNodeId: subjectId });
       await waitFor(async () => (await queryAPI.getNode(subjectId)) === undefined);
 
       const expectNameStartsWith = async (

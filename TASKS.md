@@ -67,11 +67,12 @@
  - [x] Headless: undo/redo 代表シナリオ（連続操作）— `packages/runtime-worker/worker/src/e2e/__tests__/undo-redo.headless.test.ts`
  - [x] （任意）UI: OFF/ON ラベルのベースライン（`e2e/cp-routing-wc-flow.spec.ts`）
   - [x] WFL: cp-routing バッチフロー（flag off/on 切替）を `packages/runtime-worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` として追加し、Comlink + fake-indexeddb 環境での一括操作（create/update/move/trash/restore）を検証。
-  - [ ] WFL: cp-routing undo/redo 連続操作の追加シナリオを安定化（実操作: create/update/move/remove/recover をコマンド履歴込みで検証）
+  - [x] WFL: cp-routing undo/redo 連続操作の追加シナリオを安定化（実操作: create/update/move/remove/recover をコマンド履歴込みで検証）
  - [x] レポート保存（e2e-results/）設定確認（JSON/JUnit/HTML）
  - [x] Playwright 向け Worker フラグ override 実装（localStorage → worker URL param）
  - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
- - [ ] WFL: Comlink 復元イベントの待機ヘルパーを整備し、TreeTable 相当の状態確認を結合テスト内で完結させる。
+  - [x] WFL: Comlink 復元イベントの待機ヘルパーを整備し、TreeTable 相当の状態確認を結合テスト内で完結させる。
+    - [ ] フォローアップ: `waitForNodeEventDuring` のタイムアウト・例外経路を再現する追加テストを検討。
  - [ ] 任意 UI: Playwright スモーク（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts --project=chromium`）実行手順を補足し、必要なら DOM 安定化ヘルパーを追加。
  - [ ] フラグ override の再検証 — テスト毎に override を初期化するユーティリティを WFL/Playwright 双方で共通化。
  - [ ] CI 組み込み — turbo タスクに runtime-worker WFL シナリオを組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
@@ -4752,6 +4753,7 @@ P2:
 - 2025-10-02 15:48 progress: fix/worker/undo-redo-restore-name — trash holder 方式を廃止し、`moveToTrash` / `restoreFromTrash` がノード本体を Trash ルート直下へ移動させる実装へ切替。`CommandHistoryManager`・`TreeMutationService`・`trash-partial-restore.wfl.test.ts`・`trash-subscription.wfl.test.ts`・`bulk-ops-cp.test.ts`・`trash-holder.test.ts` を更新し、`originalName` / `originalParentId` を用いた復元に揃えた。`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-partial-restore,folder-undo-redo` / `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` がグリーンで完了。
 - 2025-10-02 16:42 progress: fix/worker/undo-redo-restore-name — ゴミ箱テスト群から `decodeTrashHolderName` 依存を除去し、`trash-subscription` / `cp-routing-wc` / `command-processor-undo-redo` / `trash-partial-restore` 各 WFL で `originalName`・`originalParentId` を直接検証する形へ整理。
 - 2025-10-02 16:49 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-partial-restore,trash-subscription,command-processor-undo-redo,cp-routing-wc,trash-holder,holder-encoding,bulk-ops-cp` を実行し、いずれも成功したことを確認。
+- 2025-10-02 18:24 done: feat/e2e/cp-routing-wc — `packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` に `waitForNodeEventDuring` を導入し、create/update/move/trash/restore/undo/redo を Comlink サブスクリプション経由で検証。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` がグリーンで完了したことを確認。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
 - 2025-10-02 11:00 start: fix/ui/language-provider-i18n-context — TreeTableCore 初期描画で発生する react-i18next 未初期化エラーの恒久対策に着手。`git checkout -b fix/ui/language-provider-i18n-context` は sandbox 制約で失敗したため、main 上で作業を継続する方針に切り替え。
 - 2025-10-02 11:20 progress: fix/ui/language-provider-i18n-context — LanguageProvider.tsx で初期レンダリング時にも I18nextProvider / LocalizationProvider を挟み、フォールバック描画でも i18n コンテキストが欠落しないよう修正（コード差分のみ、UI 実行環境では未検証）。
