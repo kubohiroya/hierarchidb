@@ -79,28 +79,40 @@
   - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
   - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
 - ロールバック手順：
-  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
+ - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
   - Worker 側の API 変更があれば revert し、テスト追加分を削除
+
+3) Preview 環境 React hydration エラー修正（P1）
+- ブランチ: `fix/app/preview-hydration`（sandbox の Git refs 作成制限で main 上で暫定対応）
+- 依存: `@hierarchidb/app`, `app/scripts/fix-spa-build.js`
+- 受け入れ基準（DoD）：
+  - [ ] `pnpm --filter @hierarchidb/app build` 実行後に `pnpm preview` を起動しても React #418/#423 の hydration エラーが発生しない
+  - [ ] `build/client/index.html` の生成物が `HydratedRouter` が期待する SSR マークアップ構造を保持している（要手動確認）
+  - [ ] `pnpm -C app typecheck` が成功し、結果を運用ログへ記録
+- チェックリスト：
+  - [ ] `app/scripts/fix-spa-build.js` を既存 HTML を破壊しない差分ベース更新へ改修
+  - [ ] `pnpm --filter @hierarchidb/app build` → `pnpm preview` を実行し、ブラウザコンソールで hydration エラーが解消されたことを確認
+  - [ ] ロールバック手順と検証ログを運用ログに追記
+- ロールバック手順：
+  - `app/scripts/fix-spa-build.js` を差分前へ戻し、`pnpm --filter @hierarchidb/app build` / `pnpm preview` で従来挙動に復旧する
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
 優先実施順（インデックス）
-1) feat/route/progress-controls-pause-resume（Pause/Resume UI）
-2) feat/common/lane-semaphores（Shape/Location への横展開）
-3) refactor/shape/batch-to-session（Batch責務のSession集約）
-4) feat/location/stepper-migration-and-wiring（4ステップ化＋配線）
-5) feat/route/engine-registry（エンジン切替レジストリ）
-6) feat/route/vector-tiler-lite（ベクタータイル軽量化）
-7) feat/common/validation-pipeline（検証/フィルタ共通化）
-8) feat/ui/ui-batch-wizard（ウィザード共通部品）
-9) feat/spreadsheet/steps-impl-minimum + feat/spreadsheet/filtering-ui（統合）
-10) feat/styler/preview-stub-and-config-io + feat/styler/jenks-equal-interval（統合）
-11) feat/location/auth-registry-integration（認証連携）
-12) fix/resolver/error-notify（エラー通知）
-13) test/base-plugin/minimal-unit（最小ユニット）
-14) test/resolver/headless-integration-stabilize（ResolverDialog ヘッドレス結合テスト再有効化）
+1) refactor/shape/batch-to-session（Batch責務のSession集約）
+2) feat/location/stepper-migration-and-wiring（4ステップ化＋配線）
+3) feat/route/engine-registry（エンジン切替レジストリ）
+4) feat/route/vector-tiler-lite（ベクタータイル軽量化）
+5) feat/common/validation-pipeline（検証/フィルタ共通化）
+6) feat/ui/ui-batch-wizard（ウィザード共通部品）
+7) feat/spreadsheet/steps-impl-minimum + feat/spreadsheet/filtering-ui（統合）
+8) feat/styler/preview-stub-and-config-io + feat/styler/jenks-equal-interval（統合）
+9) feat/location/auth-registry-integration（認証連携）
+10) fix/resolver/error-notify（エラー通知）
+11) test/base-plugin/minimal-unit（最小ユニット）
+12) test/resolver/headless-integration-stabilize（ResolverDialog ヘッドレス結合テスト再有効化）
 
 - refactor/plugins/entity-type-safety — プラグイン拡張定義の型安全化（PeerEntity ジェネリクス適用）
   - ブランチ: `refactor/plugins/entity-type-safety`
@@ -1335,6 +1347,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-10-01 11:05 progress: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `pnpm --filter @hierarchidb/runtime-shared-module-paths build` を実行し成功。ブラウザでの再確認は未実施のため、`pnpm dev` 環境での挙動確認をユーザーへ依頼予定。
 - 2025-10-01 11:20 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` から `@hierarchidb/runtime-worker` / `@hierarchidb/runtime-worker-bootstrap` の paths 上書きを削除し、`~/*` のみを維持。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm check:deps:extra` を実行して当該パッケージの警告が消えたことを確認（他パッケージの警告は既存課題として残存）。
 - 2025-10-02 12:05 done: runtime-worker import failure in dev — `pnpm dev` 再起動後に Worker 初期化エラーが解消され、modulePaths 経由の解決結果を確認。
+- 2025-10-02 21:45 start: fix/app/preview-hydration — `pnpm preview` で React #418/#423 hydration エラーが発生する事象の調査を開始。`git checkout -b fix/app/preview-hydration` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成不可のため、`TASKS.md` を更新の上 main 上で進める。
 - 2025-10-01 11:40 start: dep-fence warnings cleanup — `pnpm check:deps:extra` に残存する `@hierarchidb/plugins-{location,route,shape}-plugin` の tsup.external 警告と `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/runtime-ui-plugin-dialog` の tsconfig paths 警告を解消するため調査を開始。sandbox 制約で新規ブランチは作成できず main 上で差分管理。
 - 2025-10-01 11:55 progress: 同タスク — `packages/plugins/{location,route,shape}-plugin/package.json` の `tsup.external` に `@hierarchidb/plugins-runtime-worker-factory` を追記し、ポリシーが peerDependencies と整合するよう更新。`pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` を実行し全て成功。
 - 2025-10-01 12:05 done: 同タスク — `packages/plugins/shape-plugin/tsconfig.json`・`tsconfig.build.json` と `packages/runtime-ui/plugin-dialog/tsconfig.json` の `paths` を `~/*` のみに整理。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` に成功し、`pnpm check:deps:extra` を再実行して WARN 0 件を確認。ロールバックは各 package.json / tsconfig の追加行を差分前へ戻し再度 typecheck/dep-fence を実行するだけで可。
@@ -1955,20 +1968,6 @@ P2:
     - progress: 2025-09-30 16:05 Basemap/Linker/Shape のマッププレビューを遅延読込化し、`pnpm --filter @hierarchidb/ui-map typecheck` / 各プラグイン typecheck / `pnpm -C app build:vite` が成功
     - progress: 2025-09-30 19:48 WorkerAPIClient / FolderDialog などの動的 import 化を完了し、`pnpm --filter @hierarchidb/ui-map typecheck` / `pnpm --filter @hierarchidb/plugins-folder-plugin typecheck` / `pnpm --filter @hierarchidb/app typecheck` / `pnpm -C app build:vite` を再実行して確認
     - done: 2025-09-30 20:00 チャンク検証とロールバック手順の整理を完了（MapLibre chunk は警告閾値未満に収束）
-
-- feat/route/progress-controls-pause-resume — Route 進捗 UI の Pause/Resume 導線を実装
-  - ブランチ: `feat/route/progress-controls-pause-resume`
-  - 受け入れ基準（DoD）：
-    - [x] Progress セクションに Pause/Resume ボタンを追加し、Dexie `routeCursors.paused` を切り替え
-    - [x] Worker 側の `pauseRouteBatchSession` / `resumeRouteBatchSession` 呼び出しを確認
-    - [x] `RouteBatchSummary` に failed 件数と直近エラー要約を表示
-    - [x] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が成功（2025-09-30 / 2025-10-01 再実行で確認）
-  - ロールバック: 環境変数 `ROUTE_PROGRESS_CONTROLS=0` で UI ボタンを無効化
-  - 運用ログ：
-    - start: 2025-09-30 12:20 Pause/Resume 実装調査を開始（ブランチ作成は sandbox 制約で保留）
-    - progress: 2025-09-30 13:50 Worker/API/Hook 連携を更新し、初回 typecheck を実行
-    - progress: 2025-09-30 20:12 checklist 完了後に再度 `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` を実行しグリーンを確認
-    - done: 2025-10-01  (現行作業) typecheck 再実行で安定性を確認し、TASKS.md を Done へ移行
 
 - fix/shape/worker-factory-load-export — Shape worker-factory の型公開を整備
   - ブランチ: `fix/shape/worker-factory-load-export`
