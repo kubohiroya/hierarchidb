@@ -1813,6 +1813,7 @@ P2:
     - start: 2025-10-02 12:55 undo/redo 失敗再現と調査開始（sandbox 制約により main 上で作業）
     - progress: 2025-10-02 14:35 folder undo/redo シナリオの整理・skip 対応後、Trash 直下移動仕様への移行検討
     - progress: 2025-10-02 15:48 trash holder 廃止コード反映、関連テスト修正、`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-partial-restore,folder-undo-redo` / `--run command-processor-undo-redo` 実行でグリーン確認
+    - done: 2025-10-02 20:05 fix/app/services-ready-snackbar-i18n — `ServicesReadySnackbar` を i18n 対応し、`common.json`（en/ja）へ `servicesReady.*` キーを追加。`pnpm --filter @hierarchidb/app typecheck` は既存の plugin worker export 未整備による TS2614/TS2339 で失敗することを確認（今回差分による新規エラーなし）。ロールバックはコンポーネントと locale の差分を戻すのみ。
 - chore/runtime-shared/module-paths-tsconfig — runtime-shared module-paths の `tsconfig.paths` から dist/*.d.ts 参照を排除
   - ブランチ: `chore/runtime-shared/module-paths-tsconfig`（sandbox 制約で実ブランチ未作成・main 上で対応）
   - 依存: なし

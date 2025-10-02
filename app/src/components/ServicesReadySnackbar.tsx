@@ -1,11 +1,13 @@
 import React from 'react';
 import { Snackbar, Alert } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 type Detail = { source: 'worker' | 'ui'; at?: number; nodeTypes?: string[] };
 
 export function ServicesReadySnackbar() {
   const [open, setOpen] = React.useState(false);
   const [detail, setDetail] = React.useState<Detail | null>(null);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     const handler = (ev: Event) => {
@@ -18,16 +20,19 @@ export function ServicesReadySnackbar() {
   }, []);
 
   const message = React.useMemo(() => {
-    if (!detail) return 'サービスの準備が完了しました。';
-    const when = detail.at ? new Date(detail.at).toLocaleTimeString() : '';
+    const timeSuffix = detail?.at ? ` (${new Date(detail.at).toLocaleTimeString()})` : '';
+    if (!detail) {
+      return t('servicesReady.default', { time: timeSuffix });
+    }
     if (detail.source === 'worker') {
-      return `Worker サービスの準備が完了しました。${when ? `(${when})` : ''}`;
+      return t('servicesReady.worker', { time: timeSuffix });
     }
     const list = (detail.nodeTypes || []).join(', ');
-    return list
-      ? `サービスの事前接続が完了: ${list}`
-      : `サービスの事前接続が完了しました。${when ? `(${when})` : ''}`;
-  }, [detail]);
+    if (list) {
+      return t('servicesReady.prefetchList', { list });
+    }
+    return t('servicesReady.prefetch', { time: timeSuffix });
+  }, [detail, t]);
 
   return (
     <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
@@ -37,4 +42,3 @@ export function ServicesReadySnackbar() {
     </Snackbar>
   );
 }
-
