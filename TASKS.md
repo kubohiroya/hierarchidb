@@ -62,9 +62,9 @@
 - 依存: wc-util-baseline
 - 受け入れ基準: ToDo 定義どおり（戻り値を `ok | COMMIT_CONFLICT | NAME_CONFLICT` へ統一）
 - チェックリスト:
-  - [ ] commit API の戻り型/分岐を統一
-  - [ ] UI 連携の影響点メモ化（後続 PR で UI 反映）
- - [ ] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
+  - [x] commit API の戻り型/分岐を統一
+  - [x] UI 連携の影響点メモ化（後続 PR で UI 反映）
+ - [x] runtime-worker スコープの `pnpm typecheck && pnpm test` グリーン
 - 残作業メモ:
   - 【API統一】`WorkingCopyAPI.commitWorkingCopy` に `options?: { onNameConflict: 'error' | 'auto-rename' }` を追加し、`WorkingCopyService` → `CommandProcessor` → `commitWorkingCopyV2` へ伝播させる。現状は常に `auto-rename` 固定で呼び出しているため NAME_CONFLICT が表出せず、UI 側で指定した `onNameConflict` が無視されている。
   - 【実装整合】`WorkingCopyService.commitWorkingCopyManually` 側でも version 差分検知と NAME_CONFLICT / COMMIT_CONFLICT の戻りを実装し、フォールバック経路が常に `status: 'ok'` を返してしまう問題を解消する。必要に応じて旧 `commitWorkingCopy` (CommandResult) API の呼び出し箇所を削除し、新戻り値へ一本化する。
@@ -1779,6 +1779,7 @@ P2:
   - 運用ログ：
     - done: 2025-10-02 20:05 `pnpm --filter @hierarchidb/runtime-worker wfl` を実行し、JUnit レポート出力と docs 反映を確認
     - done: 2025-10-02 20:08 `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を実行し、Undo/Redo シナリオの flag off/on 両経路がグリーンであることを確認（Playwright スモークは sandbox 制約により後続確認）。
+    - done: 2025-10-02 20:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行しグリーン、`pnpm --filter @hierarchidb/runtime-worker test` も再確認（tsconfig へ `src/e2e/**` を除外して typecheck 対象を調整）。
 - CP 段階ルーティング（move/remove）（P1） — CommandProcessor 経由への移行を `WORKER_USE_CMDPROC_MOVE_REMOVE` で段階導入
   - ブランチ: `feat/worker/cp-routing-move-remove`
   - 依存: cp-routing-create-update
