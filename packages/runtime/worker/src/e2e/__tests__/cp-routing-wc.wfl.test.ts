@@ -465,4 +465,54 @@ describe.each(scenarios)('Comlink CP routing batch flow ($label)', ({ flagValue 
       port2.close();
     }
   }, 40_000);
+
+  it('times out when the subscribed node does not emit a change event', async () => {
+    const { client, port1, port2, terminateAll } = await setupWorker(flagValue);
+
+    try {
+      const queryAPI = await client.getQueryAPI();
+      const mutationAPI = await client.getMutationAPI();
+      const commandProcessor = await client.getCommandProcessor();
+      const subscriptionAPI = await client.getSubscriptionAPI();
+
+      const trees = await queryAPI.listTrees();
+      expect(trees.length).toBeGreaterThan(0);
+      const treeId = (trees[0]?.id ?? 'r') as TreeId;
+      const tree = await queryAPI.getTree(treeId);
+      if (!tree?.rootId) {
+        throw new Error('Tree root not available');
+      }
+
+      const rootId = tree.rootId as NodeId;
+      await waitFor(() => queryAPI.getNode(rootId));
+
+      const idleNodeId = await createAndCommit(
+        mutationAPI,
+        commandProcessor,
+        queryAPI,
+        treeId,
+        rootId,
+        `Timeout Subject ${flagValue}`,
+      );
+
+      await expect(
+        waitForNodeEventDuring(
+          subscriptionAPI,
+          idleNodeId,
+          async () => 'noop',
+          undefined,
+          { timeout: 200, interval: 10 },
+        ),
+      ).rejects.toThrow(/timeout/);
+    } finally {
+      delete process.env[WORKER_FLAG];
+      terminateAll();
+      const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
+      if (release) {
+        await release.call(client);
+      }
+      port1.close();
+      port2.close();
+    }
+  }, 10_000);
 });
