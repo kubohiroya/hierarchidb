@@ -12,6 +12,7 @@ import {
   createNewName,
 } from '../../WorkingCopyTreeNodeOperations.js';
 import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
+import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
 import type {
   CommandId,
   NodeId,
@@ -20,7 +21,6 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-type';
-import { generateNodeId } from '@hierarchidb/common-type';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;
@@ -242,6 +242,7 @@ async function handleMoveToTrash(
       previousHolderMetaParentId?: NodeId;
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
+      trashName: string;
     }> = [];
 
     let trees: Array<{ rootId: NodeId; trashRootId: NodeId }> | undefined;
@@ -258,6 +259,10 @@ async function handleMoveToTrash(
     for (const id of payload.nodeIds) {
       const node = await deps.coreDB.getNode?.(id);
       if (!node) {
+        continue;
+      }
+
+      if (node.holderType === 'trash' && node.parentId === trashRootId) {
         continue;
       }
 
@@ -304,11 +309,6 @@ async function handleMoveToTrash(
         continue;
       }
 
-      // If already under this trash root, skip
-      if (node.parentId === trashRootId) {
-        continue;
-      }
-
       const now = Date.now() as Timestamp;
       const previousOriginalName = (node as { originalName?: string }).originalName;
       const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
@@ -317,16 +317,19 @@ async function handleMoveToTrash(
       const previousHolderTargetId = node.holderTargetId as NodeId | undefined;
       const previousHolderMetaParentId = node.holderMetaParentId as NodeId | undefined;
 
+      const holderName = encodeTrashHolderName(originalParentId, node.id as NodeId);
+      const trashName = holderName;
+
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,
         parentId: trashRootId,
-        name: generateNodeId(),
+        name: trashName,
         originalName: previousOriginalName ?? node.name,
         originalParentId: previousOriginalParentId ?? originalParentId,
         removedAt: now,
-        holderType: undefined,
-        holderTargetId: undefined,
-        holderMetaParentId: undefined,
+        holderType: 'trash',
+        holderTargetId: node.id as NodeId,
+        holderMetaParentId: originalParentId,
         updatedAt: now,
         version: (node.version || 1) + 1,
       };
@@ -345,6 +348,7 @@ async function handleMoveToTrash(
         previousHolderMetaParentId,
         trashRootId,
         trashRemovedAt: now,
+        trashName,
       });
     }
 

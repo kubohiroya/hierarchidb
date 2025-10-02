@@ -27,6 +27,9 @@ overrides:
   '@mui/icons-material': ^7.3.2
 
 patchedDependencies:
+  '@react-router/dev@7.9.1':
+    hash: 7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7
+    path: patches/@react-router+dev@7.9.1-disable-worker-hmr.patch
   ast-types@0.16.1:
     hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
     path: patches/ast-types@0.16.1.patch
@@ -386,7 +389,7 @@ importers:
         version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-router/fs-routes':
         specifier: ^7.8.1
-        version: 7.9.1(@react-router/dev@7.9.1(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.6.2)
+        version: 7.9.1(@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.6.2)
       '@react-router/node':
         specifier: ^7.8.2
         version: 7.9.1(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)
@@ -438,7 +441,10 @@ importers:
         version: link:../packages/tools/vite-plugin-package-reader
       '@react-router/dev':
         specifier: ^7.8.2
-        version: 7.9.1(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+        version: 7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
       '@vis.gl/react-maplibre':
         specifier: ^8.0.4
         version: 8.0.4(maplibre-gl@5.7.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -12231,7 +12237,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@react-router/dev@7.9.1(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
+  '@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/generator': 7.28.3
@@ -12278,9 +12284,9 @@ snapshots:
       - supports-color
       - terser
 
-  '@react-router/fs-routes@7.9.1(@react-router/dev@7.9.1(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.6.2)':
+  '@react-router/fs-routes@7.9.1(@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.6.2)':
     dependencies:
-      '@react-router/dev': 7.9.1(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+      '@react-router/dev': 7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.6.2)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
       minimatch: 9.0.5
     optionalDependencies:
       typescript: 5.6.2
@@ -14455,7 +14461,7 @@ snapshots:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 

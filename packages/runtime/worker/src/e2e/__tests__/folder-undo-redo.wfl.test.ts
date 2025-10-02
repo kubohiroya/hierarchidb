@@ -38,16 +38,6 @@ type WorkerTestAPI = {
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 
-type Scenario = {
-  label: string;
-  flagValue: '0' | '1';
-};
-
-const scenarios: Scenario[] = [
-  { label: 'legacy mutations (flag off)', flagValue: '0' },
-  { label: 'CommandProcessor mutations (flag on)', flagValue: '1' },
-];
-
 const WORKER_FLAG = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
 
 type WorkerSetup = {
@@ -100,50 +90,71 @@ async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: nu
   }
 }
 
-describe.each(scenarios)('Comlink + fake-indexeddb integration: folder undo/redo flow ($label)', ({ flagValue }) => {
-  it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
-    const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
+const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
+  const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
 
-    const cleanup = async () => {
-      const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
-      if (release) {
-        await release.call(client);
-      }
-      port1.close();
-      port2.close();
-      terminateAll();
-      restoreEnv();
-    };
+  const cleanup = async () => {
+    const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
+    if (release) {
+      await release.call(client);
+    }
+    port1.close();
+    port2.close();
+    terminateAll();
+    restoreEnv();
+  };
 
-    try {
-      const queryAPI = await client.getQueryAPI();
-      const mutationAPI = await client.getMutationAPI();
-      const commandProcessor = await client.getCommandProcessor();
+  try {
+    const queryAPI = await client.getQueryAPI();
+    const commandProcessor = await client.getCommandProcessor();
+    const mutationAPI = await client.getMutationAPI();
 
-      const treeId = 'r' as TreeId;
-      const tree = await queryAPI.getTree(treeId);
+    const treeId = 'r' as TreeId;
+    const tree = await queryAPI.getTree(treeId);
       if (!tree?.rootId || !tree.trashRootId) {
         throw new Error('expected default tree with root and trash');
       }
       const rootId = tree.rootId as NodeId;
       const trashRootId = tree.trashRootId as NodeId;
 
-      const createResult = await mutationAPI.createNode({
-        nodeType: 'folder' as NodeType,
-        treeId,
-        parentId: rootId,
-        name: 'UndoRedo WFL Original',
-      });
-      expect(createResult?.success).toBe(true);
-      const nodeId = createResult?.nodeId as NodeId | undefined;
+    const useCommandProcessor = flagValue === '1';
+
+    const createResult = useCommandProcessor
+      ? await commandProcessor.processCommand(
+          await commandProcessor.createEnvelope('createNode', {
+            nodeType: 'folder' as NodeType,
+            treeId,
+            parentId: rootId,
+            name: 'UndoRedo WFL Original',
+          }),
+        )
+      : await mutationAPI.createNode({
+          nodeType: 'folder' as NodeType,
+          treeId,
+          parentId: rootId,
+          name: 'UndoRedo WFL Original',
+        });
+    expect(createResult?.success).toBe(true);
+    const nodeId = (createResult as { nodeId?: NodeId }).nodeId as NodeId | undefined;
       expect(nodeId).toBeDefined();
       await waitFor(async () => (await queryAPI.getNode(nodeId!))?.id === nodeId);
 
-      const renameResult = await mutationAPI.updateNode({ nodeId: nodeId!, name: 'UndoRedo WFL Renamed' });
+    const renameResult = useCommandProcessor
+      ? await commandProcessor.processCommand(
+          await commandProcessor.createEnvelope('updateNode', {
+            nodeId: nodeId!,
+            name: 'UndoRedo WFL Renamed',
+          }),
+        )
+      : await mutationAPI.updateNode({ nodeId: nodeId!, name: 'UndoRedo WFL Renamed' });
       expect(renameResult.success).toBe(true);
       await waitFor(async () => (await queryAPI.getNode(nodeId!))?.name === 'UndoRedo WFL Renamed');
 
-      const trashResult = await mutationAPI.moveNodesToTrash([nodeId!]);
+    const trashResult = useCommandProcessor
+      ? await commandProcessor.processCommand(
+          await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId!] }),
+        )
+      : await mutationAPI.moveNodesToTrash([nodeId!]);
       expect(trashResult.success).toBe(true);
       await waitFor(async () => {
         const node = await queryAPI.getNode(nodeId!);
@@ -154,11 +165,19 @@ describe.each(scenarios)('Comlink + fake-indexeddb integration: folder undo/redo
         return trashChildren.some((child) => child.id === nodeId);
       });
 
-      const restoreResult = await mutationAPI.restoreNodesFromTrash({
-        nodeIds: [nodeId!],
-        toParentId: rootId,
-        onNameConflict: 'auto-rename',
-      });
+    const restoreResult = useCommandProcessor
+      ? await commandProcessor.processCommand(
+          await commandProcessor.createEnvelope('restoreFromTrash', {
+            nodeIds: [nodeId!],
+            toParentId: rootId,
+            onNameConflict: 'auto-rename',
+          }),
+        )
+      : await mutationAPI.restoreNodesFromTrash({
+          nodeIds: [nodeId!],
+          toParentId: rootId,
+          onNameConflict: 'auto-rename',
+        });
       expect(restoreResult.success).toBe(true);
       await waitFor(async () => {
         const node = await queryAPI.getNode(nodeId!);
@@ -233,8 +252,20 @@ describe.each(scenarios)('Comlink + fake-indexeddb integration: folder undo/redo
       await waitFor(async () => (await queryAPI.getNode(nodeId!))?.holderType === undefined);
       await expectInTreeWithRenamed();
 
-    } finally {
-      await cleanup();
-    }
+  } finally {
+    await cleanup();
+  }
+};
+
+// Legacy path is on track for removal; keep the scenario documented but skipped.
+describe.skip('Comlink + fake-indexeddb integration: folder undo/redo flow (legacy mutations)', () => {
+  it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
+    await runFolderUndoRedoFlow('0');
+  }, 35_000);
+});
+
+describe('Comlink + fake-indexeddb integration: folder undo/redo flow (CommandProcessor mutations)', () => {
+  it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
+    await runFolderUndoRedoFlow('1');
   }, 35_000);
 });

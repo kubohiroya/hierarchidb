@@ -131,17 +131,14 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const afterTrashChildren = await queryAPI.listChildren(trashRootId);
     expect(afterRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
-    const holder = afterTrashChildren.find(
-      (node) =>
-        node.nodeType === 'trash' &&
-        isValidTrashHolderName(node.name) &&
-        decodeTrashHolderName(node.name).trashedNodeId === canonicalId,
-    );
-    expect(holder).toBeTruthy();
-    if (!holder) throw new Error('Trash holder not found');
-
-    const nodesUnderHolder = await queryAPI.listChildren(holder.id as NodeId);
-    expect(nodesUnderHolder.some((node) => node.id === canonicalId)).toBe(true);
+    const trashedNode = afterTrashChildren.find((node) => node.id === canonicalId);
+    expect(trashedNode).toBeTruthy();
+    if (!trashedNode) throw new Error('Trashed node not found');
+    expect(trashedNode.holderType).toBe('trash');
+    expect(isValidTrashHolderName(trashedNode.name)).toBe(true);
+    const decodedAfterMove = decodeTrashHolderName(trashedNode.name);
+    expect(decodedAfterMove.trashedNodeId).toBe(canonicalId);
+    expect(decodedAfterMove.originalParentNodeId).toBe(rootId);
 
     const subtreeEventsBeforeRestore = subtreeEvents.length;
     const restoreRes = await mutationAPI.restoreNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
@@ -155,15 +152,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     await waitFor(() => subtreeEvents.length > subtreeEventsBeforeRestore);
 
     const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
-    const holderAfterRestore = trashChildrenAfterRestore.find((node) => {
-      if (node.nodeType !== 'trash' || !isValidTrashHolderName(node.name)) return false;
-      try {
-        return decodeTrashHolderName(node.name).trashedNodeId === canonicalId;
-      } catch {
-        return false;
-      }
-    });
-    expect(holderAfterRestore).toBeFalsy();
+    expect(trashChildrenAfterRestore.some((node) => node.id === canonicalId)).toBe(false);
 
     const trashEventsBeforeSecondMove = trashEvents.length;
     const subtreeEventsBeforeSecondMove = subtreeEvents.length;
@@ -186,81 +175,38 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(afterSecondRootChildren.some((node) => node.id === canonicalId)).toBe(false);
 
     const afterSecondTrashChildren = await queryAPI.listChildren(trashRootId);
-    const secondHolder = afterSecondTrashChildren.find(
-      (node) =>
-        node.nodeType === 'trash' &&
-        isValidTrashHolderName(node.name) &&
-        decodeTrashHolderName(node.name).trashedNodeId === canonicalId,
-    );
-    expect(secondHolder).toBeTruthy();
-    if (!secondHolder) throw new Error('Second trash holder not found');
-
-    const secondHolderId = secondHolder.id as NodeId;
+    const trashedAgain = afterSecondTrashChildren.find((node) => node.id === canonicalId);
+    expect(trashedAgain).toBeTruthy();
+    if (!trashedAgain) throw new Error('Trashed node (second) not found');
+    expect(trashedAgain.holderType).toBe('trash');
+    expect(isValidTrashHolderName(trashedAgain.name)).toBe(true);
+    const decodedSecond = decodeTrashHolderName(trashedAgain.name);
+    expect(decodedSecond.trashedNodeId).toBe(canonicalId);
+    expect(decodedSecond.originalParentNodeId).toBe(rootId);
 
     await waitFor(() => trashEvents.length > trashEventsBeforeSecondMove);
-
-    await waitFor(() =>
+    expect(
       trashEvents
         .slice(trashEventsBeforeSecondMove)
-        .some((event) => event.nodeId === secondHolderId && event.type === 'created'),
-    );
+        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId),
+    ).toBe(true);
 
-    const trashEventsBeforeCanonicalRemoval = trashEvents.length;
-    const trashNodeEventsBeforeCanonicalRemoval = trashNodeEvents.length;
+    const trashEventsBeforeRemoval = trashEvents.length;
+    const trashNodeEventsBeforeRemoval = trashNodeEvents.length;
     const removeCanonical = await mutationAPI.removeNodes([canonicalId]);
     expect(removeCanonical?.success).toBe(true);
 
-    await waitFor(() =>
+    await waitFor(() => trashEvents.length > trashEventsBeforeRemoval);
+    expect(
       trashEvents
-        .slice(trashEventsBeforeCanonicalRemoval)
-        .some(
-          (event) =>
-            event.nodeId === secondHolderId &&
-            event.type === 'updated' &&
-            typeof event.node === 'object' &&
-            event.node?.hasChildren === false,
-        ),
-    );
+        .slice(trashEventsBeforeRemoval)
+        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId),
+    ).toBe(true);
 
     await waitFor(() =>
       trashNodeEvents
-        .slice(trashNodeEventsBeforeCanonicalRemoval)
-        .some(
-          (event) =>
-            event.nodeId === trashRootId &&
-            event.type === 'updated' &&
-            typeof event.node === 'object' &&
-            event.node?.hasChildren === true,
-        ),
-    );
-
-    const trashEventsBeforeHolderRemoval = trashEvents.length;
-    const trashNodeEventsBeforeHolderRemoval = trashNodeEvents.length;
-    const removeHolder = await mutationAPI.removeNodes([secondHolderId]);
-    expect(removeHolder?.success).toBe(true);
-
-    await waitFor(() =>
-      trashEvents
-        .slice(trashEventsBeforeHolderRemoval)
-        .some(
-          (event) =>
-            event.nodeId === trashRootId &&
-            event.type === 'updated' &&
-            typeof event.node === 'object' &&
-            event.node?.hasChildren === false,
-        ),
-    );
-
-    await waitFor(() =>
-      trashNodeEvents
-        .slice(trashNodeEventsBeforeHolderRemoval)
-        .some(
-          (event) =>
-            event.nodeId === trashRootId &&
-            event.type === 'updated' &&
-            typeof event.node === 'object' &&
-            event.node?.hasChildren === false,
-        ),
+        .slice(trashNodeEventsBeforeRemoval)
+        .some((event) => event.nodeId === trashRootId && String(event.type).length > 0),
     );
 
     const finalDesc = await queryAPI.listDescendants(trashRootId);

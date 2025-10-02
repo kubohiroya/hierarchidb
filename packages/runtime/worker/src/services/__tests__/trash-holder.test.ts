@@ -72,6 +72,9 @@ describe('Trash direct trash storage flow', () => {
         holderType?: TreeNode['holderType'];
         holderTargetId?: NodeId;
       };
+      if (node.id === ('r:trash' as NodeId)) {
+        return false;
+      }
       return node.nodeType === ('trash' as NodeType) && meta.holderType === 'trash' && meta.holderTargetId === target;
     });
 
@@ -84,9 +87,8 @@ describe('Trash direct trash storage flow', () => {
     const nodeA = state['a'];
     if (!nodeA) throw new Error('Node a missing after moveToTrash');
     const holderForA = findTrashHolderByTarget('a' as NodeId);
-    expect(holderForA).toBeDefined();
-    expect(holderForA?.parentId).toBe('r:trash');
-    expect(nodeA.parentId).toBe(holderForA?.id);
+    expect(holderForA).toBeUndefined();
+    expect(nodeA.parentId).toBe('r:trash');
     expect(nodeA.name).not.toBe('A');
     expect(nodeA.originalName).toBe('A');
     expect(nodeA.originalParentId).toBe('r:root');
@@ -94,6 +96,12 @@ describe('Trash direct trash storage flow', () => {
     expect(nodeA.holderType).toBe('trash');
     expect(nodeA.holderTargetId).toBe('a');
     expect(nodeA.holderMetaParentId).toBe('r:root');
+    const trashChildren = Object.values(state).filter((node) => node.parentId === ('r:trash' as NodeId));
+    expect(trashChildren.some((node) => node.id === ('a' as NodeId))).toBe(true);
+    const extraTrashNodes = Object.values(state).filter(
+      (node) => node.nodeType === ('trash' as NodeType) && node.id !== ('r:trash' as NodeId),
+    );
+    expect(extraTrashNodes).toHaveLength(0);
 
     // restore a
     const rc = cp.createEnvelope('restoreFromTrash', { nodeIds: ['a' as NodeId] });
@@ -119,9 +127,8 @@ describe('Trash direct trash storage flow', () => {
     const nodeCInTrash = state['c'];
     expect(nodeCInTrash).toBeDefined();
     const holderForC = findTrashHolderByTarget('c' as NodeId);
-    expect(holderForC).toBeDefined();
-    expect(nodeCInTrash?.parentId).toBe(holderForC?.id);
-    expect(holderForC?.parentId).toBe('r:trash');
+    expect(holderForC).toBeUndefined();
+    expect(nodeCInTrash?.parentId).toBe('r:trash');
     expect(nodeCInTrash?.originalParentId).toBe('b');
     expect(nodeCInTrash?.holderType).toBe('trash');
     expect(nodeCInTrash?.holderMetaParentId).toBe('b');
@@ -149,10 +156,10 @@ describe('Trash direct trash storage flow', () => {
 
     const holderForC = findTrashHolderByTarget('c' as NodeId);
     const holderForD = findTrashHolderByTarget('d' as NodeId);
-    expect(holderForC).toBeDefined();
-    expect(holderForD).toBeDefined();
-    expect(state['c']?.parentId).toBe(holderForC?.id);
-    expect(state['d']?.parentId).toBe(holderForD?.id);
+    expect(holderForC).toBeUndefined();
+    expect(holderForD).toBeUndefined();
+    expect(state['c']?.parentId).toBe('r:trash');
+    expect(state['d']?.parentId).toBe('r:trash');
 
     const restoreOne = cp.createEnvelope('restoreFromTrash', { nodeIds: ['c' as NodeId] });
     const restoreOneResult = await cp.processCommand(restoreOne);
@@ -160,9 +167,8 @@ describe('Trash direct trash storage flow', () => {
 
     expect(state['c']?.parentId).toBe('b');
     const remainingHolderForD = findTrashHolderByTarget('d' as NodeId);
-    expect(remainingHolderForD).toBeDefined();
-    expect(state['d']?.parentId).toBe(remainingHolderForD?.id);
-    expect(remainingHolderForD?.parentId).toBe('r:trash');
+    expect(remainingHolderForD).toBeUndefined();
+    expect(state['d']?.parentId).toBe('r:trash');
     expect(state['d']?.holderType).toBe('trash');
   });
 });

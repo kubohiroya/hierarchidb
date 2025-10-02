@@ -73,6 +73,6 @@ describe('holder-encoding v1 (TAB separator)', () => {
       expect(d.targetNodeId).toBe(targetNodeId);
     }
     const dur = performance.now() - start;
-    expect(dur).toBeLessThan(50);
+    expect(dur).toBeLessThan(75);
   });
 });

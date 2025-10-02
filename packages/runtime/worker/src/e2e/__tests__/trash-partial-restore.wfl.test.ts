@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
 import {
   decodeTrashHolderName,
   decodeWorkingCopyHolderName,
@@ -125,25 +125,30 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       return children.every((node) => node.id !== childOneId && node.id !== childTwoId);
     });
 
-    const holderByTarget = await waitFor(async () => {
+    const trashedLookup = await waitFor(async () => {
       const trashChildren = await queryAPI.listChildren(trashRootId);
-      const map = new Map<NodeId, NodeId>();
+      const ids = new Map<NodeId, TreeNode>();
       for (const node of trashChildren) {
-        if (node.nodeType === 'trash' && isValidTrashHolderName(node.name)) {
-          const decoded = decodeTrashHolderName(node.name);
-          map.set(decoded.trashedNodeId, node.id as NodeId);
-        }
+        const nodeId = node.id as NodeId;
+        ids.set(nodeId, node);
       }
-      return map.size >= 2 ? map : undefined;
+      return ids.has(childOneId) && ids.has(childTwoId) ? ids : undefined;
     });
 
-    const holderForChildOne = holderByTarget.get(childOneId);
-    const holderForChildTwo = holderByTarget.get(childTwoId);
-    expect(holderForChildOne).toBeDefined();
-    expect(holderForChildTwo).toBeDefined();
-    if (!holderForChildOne || !holderForChildTwo) {
-      throw new Error('Expected trash holders for both trashed nodes');
-    }
+    const trashedChildOne = trashedLookup.get(childOneId)!;
+    const trashedChildTwo = trashedLookup.get(childTwoId)!;
+    expect(trashedChildOne.parentId).toBe(trashRootId);
+    expect(trashedChildTwo.parentId).toBe(trashRootId);
+    expect(trashedChildOne.holderType).toBe('trash');
+    expect(trashedChildTwo.holderType).toBe('trash');
+    expect(isValidTrashHolderName(trashedChildOne.name)).toBe(true);
+    expect(isValidTrashHolderName(trashedChildTwo.name)).toBe(true);
+    const decodedOne = decodeTrashHolderName(trashedChildOne.name);
+    const decodedTwo = decodeTrashHolderName(trashedChildTwo.name);
+    expect(decodedOne.trashedNodeId).toBe(childOneId);
+    expect(decodedTwo.trashedNodeId).toBe(childTwoId);
+    expect(decodedOne.originalParentNodeId).toBe(parentId);
+    expect(decodedTwo.originalParentNodeId).toBe(parentId);
 
     const restoreResult = await mutationAPI.restoreNodesFromTrash({ nodeIds: [childOneId], toParentId: parentId });
     expect(restoreResult.success).toBe(true);
@@ -157,34 +162,21 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(childOneAfterRestore?.parentId).toBe(parentId);
 
     const childTwoAfterRestore = await queryAPI.getNode(childTwoId);
-    expect(childTwoAfterRestore?.parentId).toBe(holderForChildTwo);
+    expect(childTwoAfterRestore?.parentId).toBe(trashRootId);
+    expect(childTwoAfterRestore?.holderType).toBe('trash');
+    expect(childTwoAfterRestore?.originalParentId).toBe(parentId);
+    expect(childTwoAfterRestore?.originalName).toBe('Integration Trash Child D');
 
     const trashChildrenAfterRestore = await queryAPI.listChildren(trashRootId);
-    const remainingHolderIds = new Set<NodeId>();
-    for (const node of trashChildrenAfterRestore) {
-      if (node.nodeType === 'trash' && isValidTrashHolderName(node.name)) {
-        const decoded = decodeTrashHolderName(node.name);
-        remainingHolderIds.add(node.id as NodeId);
-        expect(decoded.trashedNodeId).not.toBe(childOneId);
-      }
-    }
-
-    expect(remainingHolderIds.has(holderForChildTwo)).toBe(true);
-    expect(remainingHolderIds.has(holderForChildOne)).toBe(false);
+    expect(trashChildrenAfterRestore.some((node) => node.id === childTwoId)).toBe(true);
+    expect(trashChildrenAfterRestore.some((node) => node.id === childOneId)).toBe(false);
 
     const secondMoveResult = await mutationAPI.moveNodesToTrash([childOneId]);
     expect(secondMoveResult.success).toBe(true);
 
     await waitFor(async () => {
       const trashChildren = await queryAPI.listChildren(trashRootId);
-      return trashChildren.some((node) => {
-        if (node.nodeType !== 'trash' || !isValidTrashHolderName(node.name)) return false;
-        try {
-          return decodeTrashHolderName(node.name).trashedNodeId === childOneId;
-        } catch {
-          return false;
-        }
-      });
+      return trashChildren.some((node) => node.id === childOneId);
     });
 
     const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];

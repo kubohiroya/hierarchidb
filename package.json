@@ -224,7 +224,8 @@
       "workerd"
     ],
     "patchedDependencies": {
-      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch",
+      "@react-router/dev@7.9.1": "patches/@react-router+dev@7.9.1-disable-worker-hmr.patch"
     }
   },
   "keywords": [

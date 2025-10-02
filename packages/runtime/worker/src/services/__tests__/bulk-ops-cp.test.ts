@@ -3,7 +3,6 @@ import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
 import type { CoreDB } from '../CoreDB.js';
 
 const FOLDER_TYPE = 'folder' as NodeType;
-const TRASH_TYPE = 'trash' as NodeType;
 
 type TreeNodeState = Map<NodeId, TreeNode>;
 
@@ -118,15 +117,28 @@ describe('CommandProcessor bulk operations', () => {
     expect(state.has('b' as NodeId)).toBe(false);
   });
 
-  it('restoreFromTrash uses bulkUpdateNodes and bulkDeleteNodes (holders) when multiple', async () => {
-    const holder1 = makeNode('h1', 'trash', 'ignored', TRASH_TYPE);
-    const holder2 = makeNode('h2', 'trash', 'ignored', TRASH_TYPE);
-    const trashed1: TreeNode = { ...makeNode('t1', 'h1', 'n1'), removedAt: Date.now() };
-    const trashed2: TreeNode = { ...makeNode('t2', 'h2', 'n2'), removedAt: Date.now() };
+  it('restoreFromTrash uses bulkUpdateNodes for multiple nodes (without holders)', async () => {
+    const removedAt = Date.now();
+    const trashed1: TreeNode = {
+      ...makeNode('t1', 'trash', 'trash::t1'),
+      originalName: 'n1',
+      originalParentId: 'root' as NodeId,
+      removedAt,
+      holderType: 'trash',
+      holderTargetId: 't1' as NodeId,
+      holderMetaParentId: 'root' as NodeId,
+    };
+    const trashed2: TreeNode = {
+      ...makeNode('t2', 'trash', 'trash::t2'),
+      originalName: 'n2',
+      originalParentId: 'root' as NodeId,
+      removedAt,
+      holderType: 'trash',
+      holderTargetId: 't2' as NodeId,
+      holderMetaParentId: 'root' as NodeId,
+    };
 
     const state: TreeNodeState = new Map([
-      ['h1' as NodeId, holder1],
-      ['h2' as NodeId, holder2],
       ['t1' as NodeId, trashed1],
       ['t2' as NodeId, trashed2],
     ]);
@@ -166,8 +178,11 @@ describe('CommandProcessor bulk operations', () => {
     const result = await cp.processCommand(env);
     expect(result.success).toBe(true);
     expect(core.bulkUpdateNodes).toHaveBeenCalledTimes(1);
-    expect(core.bulkDeleteNodes).toHaveBeenCalledTimes(1);
+    expect(core.bulkDeleteNodes).not.toHaveBeenCalled();
     expect(state.get('t1' as NodeId)?.parentId).toBe('root');
     expect(state.get('t2' as NodeId)?.parentId).toBe('root');
+    expect(state.get('t1' as NodeId)?.holderType).toBeUndefined();
+    expect(state.get('t2' as NodeId)?.holderType).toBeUndefined();
+    expect(state.has('h1' as NodeId)).toBe(false);
   });
 });

@@ -6,11 +6,14 @@
  */
 
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { I18nextProvider, useTranslation } from 'react-i18next';
 import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
 import { enUS, ja } from 'date-fns/locale';
+import i18nextInstance, { type i18n as I18nInstance } from 'i18next';
 import { isDevEnv } from '../utils/env.js';
 import '../i18n/index.js';
+
+const sharedI18n = i18nextInstance as unknown as I18nInstance;
 // Avoid hard type dependency on date-fns types during DTS build
 type Locale = unknown;
 
@@ -119,11 +122,24 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
   if (!isMounted) {
     return (
-      <LanguageContext.Provider value={defaultContextValue}>{children}</LanguageContext.Provider>
+      <I18nextProvider i18n={sharedI18n}>
+        <LanguageContext.Provider value={defaultContextValue}>
+          <LocalizationProvider
+            dateAdapter={AdapterDateFns}
+            adapterLocale={defaultContextValue.currentLanguage.dateLocale}
+          >
+            {children}
+          </LocalizationProvider>
+        </LanguageContext.Provider>
+      </I18nextProvider>
     );
   }
 
-  return <LanguageProviderInner>{children}</LanguageProviderInner>;
+  return (
+    <I18nextProvider i18n={sharedI18n}>
+      <LanguageProviderInner>{children}</LanguageProviderInner>
+    </I18nextProvider>
+  );
 };
 
 const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) => {

@@ -6,14 +6,13 @@ import type {
 import { WorkerErrorCode } from '../../command-types.js';
 import type { CoreDB } from '../../CoreDB.js';
 import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
-import {
-  generateNodeId,
-  type CommandId,
-  type NodeId,
-  type NodeType,
-  type Seq,
-  type Timestamp,
-  type TreeNode,
+import type {
+  CommandId,
+  NodeId,
+  NodeType,
+  Seq,
+  Timestamp,
+  TreeNode,
 } from '@hierarchidb/common-type';
 
 type SanitizedLogResult = {
@@ -57,10 +56,7 @@ export class CommandHistoryManager {
     previousHolderMetaParentId?: NodeId;
     trashRootId: NodeId;
     trashRemovedAt: Timestamp;
-    //trashHolderId: NodeId;
-    //trashHolderName: string;
-    //trashHolderWasCreated: boolean;
-    //trashName: string;
+    trashName: string;
   }>>();
   private readonly preCommitWorkingCopyState = new Map<CommandId, {
     workingCopy: TreeNode;
@@ -247,10 +243,7 @@ export class CommandHistoryManager {
       previousHolderMetaParentId?: NodeId;
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
-      //trashHolderId: NodeId;
-      //trashHolderName: string;
-      //trashHolderWasCreated: boolean;
-      //trashName: string;
+      trashName: string;
     }>,
   ): void {
     this.preMoveToTrashState.set(commandId, entries.map((entry) => ({ ...entry })));
@@ -381,15 +374,6 @@ export class CommandHistoryManager {
             updatedAt: Date.now() as Timestamp,
             version: (node.version || 1) + 1,
           });
-          /*
-          if (entry.trashHolderId) {
-            try {
-              await this.deps.coreDB.deleteNode?.(entry.trashHolderId);
-            } catch {
-              // Holder might already be absent; ignore
-            }
-          }
-           */
         }
         break;
       }
@@ -514,23 +498,6 @@ export class CommandHistoryManager {
           if (!node) {
             continue;
           }
-          /*
-          const holderId = node.parentId as NodeId | undefined;
-          const holder = holderId ? await this.deps.coreDB.getNode?.(holderId) : undefined;
-
-          let targetParentId = storedNext?.nextParentId ?? payload.toParentId;
-          if (!targetParentId && holder && holder.nodeType === 'trash' && holder.parentId) {
-            if (isValidTrashHolderName(holder.name)) {
-              try {
-                targetParentId = decodeTrashHolderName(holder.name).originalParentNodeId;
-              } catch {
-                targetParentId = holder.holderMetaParentId as NodeId | undefined;
-              }
-            } else if (holder.holderMetaParentId) {
-              targetParentId = holder.holderMetaParentId as NodeId;
-            }
-          }
-           */
           const storedNext = redoSnapshot?.get(id);
           let targetParentId = storedNext?.nextParentId ?? payload.toParentId;
           if (!targetParentId) {
@@ -549,18 +516,12 @@ export class CommandHistoryManager {
             originalName: undefined,
             originalParentId: undefined,
             removedAt: undefined,
+            holderType: undefined,
+            holderTargetId: undefined,
+            holderMetaParentId: undefined,
             updatedAt: Date.now() as Timestamp,
             version: (node.version || 1) + 1,
           });
-          /*
-          if (holder) {
-            try {
-              await this.deps.coreDB.deleteNode?.(holder.id as NodeId);
-            } catch {
-              // holder might already be absent; ignore
-            }
-          }
-           */
         }
         break;
       }
@@ -574,37 +535,17 @@ export class CommandHistoryManager {
             continue;
           }
           const now = Date.now() as Timestamp;
-          /*
-        let holder = entry.trashHolderId
-          ? await this.deps.coreDB.getNode?.(entry.trashHolderId)
-          : undefined;
-        if (!holder) {
-          const holderNode: TreeNode = {
-            id: entry.trashHolderId,
-            parentId: entry.trashRootId,
-            nodeType: entry.nodeType, // 'trash' as NodeType,
-            name: entry.trashHolderName,
-            createdAt: entry.trashRemovedAt,
-            updatedAt: entry.trashRemovedAt,
-            version: holder?.version ?? 1,
-            //holderType: 'trash',
-            //holderTargetId: entry.nodeId,
-            //holderMetaParentId: entry.previousParentId,
-          };
-          await this.deps.coreDB.createNode?.(holderNode);
-          holder = holderNode;
-        }
-           */
+          const trashName = entry.trashName ?? node.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: entry.trashRootId,
-            name: generateNodeId(), //entry.trashName,
+            name: trashName,
             originalName: entry.previousOriginalName ?? entry.previousName,
-            originalParentId: entry.previousParentId,
-            removedAt: entry.trashRemovedAt,
-            //holderType: entry.nodeType,
-            //holderTargetId: entry.nodeId,
-            //holderMetaParentId: entry.previousParentId,
+            originalParentId: entry.previousOriginalParentId ?? entry.previousParentId,
+            removedAt: now,
+            holderType: 'trash',
+            holderTargetId: entry.nodeId,
+            holderMetaParentId: entry.previousParentId,
             updatedAt: now,
             version: (node.version || 1) + 1,
           });

@@ -7,12 +7,12 @@ import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
 import * as path from 'path';
 import { readFileSync } from 'node:fs';
+import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
-import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
 import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
-import { visualizer } from 'rollup-plugin-visualizer';
 import { pluginRegistryPlugin } from './vite-plugin-registry.js';
 import { pluginServicesRegistry } from './vite-plugin-plugin-services.js';
 import { createNodeTypeAliasPlugin } from '@hierarchidb/tools-plugin-registry-utils';
@@ -95,30 +95,6 @@ function createRuntimeAliasConfig({
   return {
     aliases,
     optimizeDepsExclude: Array.from(optimizeExclude),
-  };
-}
-
-function workerReactRouterHmrGuard(): Plugin {
-  const injectStubId = '\0hdb:react-router-inject-hmr-runtime-stub';
-  const runtimeStubId = '\0hdb:react-router-hmr-runtime-stub';
-
-  return {
-    name: 'hdb:worker-react-router-hmr-guard',
-    enforce: 'pre',
-    resolveId(source) {
-      if (source === 'virtual:react-router/inject-hmr-runtime') return injectStubId;
-      if (source === 'virtual:react-router/hmr-runtime') return runtimeStubId;
-      return null;
-    },
-    load(id) {
-      if (id === injectStubId) {
-        return 'export const __reactRouterWorkerHMRDisabled = true;\n';
-      }
-      if (id === runtimeStubId) {
-        return 'export default {};\n';
-      }
-      return null;
-    },
   };
 }
 
@@ -220,6 +196,10 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         // ssr: isSsrBuild,
       }),
     );
+  }
+
+  if (process.env.DEBUG_WORKER_HMR === '1') {
+    console.log('[vite.config] main plugin order', plugins.map((p) => p && p.name));
   }
 
   // beacon values captured in closure
@@ -463,13 +443,8 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     },
     worker: {
       format: 'es',
-      // Apply both comlink and package-reader to worker bundle so virtual modules
-      // are available inside the worker context as well.
       plugins: () => [
-        workerReactRouterHmrGuard(),
-        // Provide UI/Worker registries and icon map in worker context, too
         pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
-        // Run package-reader first so virtual modules are available early
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
             pattern: /@hierarchidb\/plugins-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
@@ -479,8 +454,6 @@ export default defineConfig(({ mode,isSsrBuild }) => {
           rootDir: path.resolve(__dirname, '..'),
           hooks: {
             beforeTransform: async (packages) => packages,
-            // Do not auto-import plugin-specific worker bundles here.
-            // Runtime wiring now handles worker adapters centrally via @hierarchidb/runtime-worker.
           },
         }),
         comlink(),

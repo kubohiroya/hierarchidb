@@ -17,7 +17,7 @@
     "build:tsc": "pnpm run build:types",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",

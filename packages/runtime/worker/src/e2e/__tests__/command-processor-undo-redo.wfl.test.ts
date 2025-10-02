@@ -3,6 +3,10 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import {
+  decodeTrashHolderName,
+  isValidTrashHolderName,
+} from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
@@ -242,7 +246,12 @@ describe('WFL command processor undo/redo flow', () => {
     expect(undoRestore.success).toBe(true);
     const nodeAfterUndoRestore = await queryAPI.getNode(nodeId);
     expect(nodeAfterUndoRestore?.holderType).toBe('trash');
-    expect(nodeAfterUndoRestore?.name).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterUndoRestore?.originalName).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterUndoRestore?.name).toBeDefined();
+    expect(isValidTrashHolderName(nodeAfterUndoRestore!.name)).toBe(true);
+    const decodedUndoRestore = decodeTrashHolderName(nodeAfterUndoRestore!.name);
+    expect(decodedUndoRestore.originalParentNodeId).toBe(rootId);
+    expect(decodedUndoRestore.trashedNodeId).toBe(nodeId);
 
     const undoMoveToTrash = await commandProcessor.undo();
     expect(undoMoveToTrash.success).toBe(true);
@@ -276,6 +285,12 @@ describe('WFL command processor undo/redo flow', () => {
     expect(redoMoveToTrash.success).toBe(true);
     const nodeAfterRedoTrash = await queryAPI.getNode(nodeId);
     expect(nodeAfterRedoTrash?.holderType).toBe('trash');
+    expect(nodeAfterRedoTrash?.originalName).toBe('UndoRedo Headless Renamed');
+    expect(nodeAfterRedoTrash?.name).toBeDefined();
+    expect(isValidTrashHolderName(nodeAfterRedoTrash!.name)).toBe(true);
+    const decodedRedoTrash = decodeTrashHolderName(nodeAfterRedoTrash!.name);
+    expect(decodedRedoTrash.originalParentNodeId).toBe(rootId);
+    expect(decodedRedoTrash.trashedNodeId).toBe(nodeId);
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);

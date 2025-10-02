@@ -3,6 +3,7 @@
  * Avoid static imports so we can report precise failures to UI.
  */
 
+import './worker-react-refresh-shim.js';
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
 import type { PluginDefinition } from '@hierarchidb/common-type';
 import {
