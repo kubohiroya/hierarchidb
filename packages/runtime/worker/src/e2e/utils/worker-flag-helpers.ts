@@ -19,6 +19,34 @@ export type WorkerFlagOverrideMap = Partial<Record<WorkerFlagOverrideName, Worke
 
 export type WorkerFlagEnv = Record<string, string | undefined>;
 
+type WorkerFlagEnvSnapshot = Map<WorkerFlagOverrideName, WorkerFlagOverrideSetting>;
+
+const createEnvSnapshot = (
+  env: WorkerFlagEnv,
+  defaults?: WorkerFlagOverrideMap,
+): WorkerFlagEnvSnapshot => {
+  const snapshot: WorkerFlagEnvSnapshot = new Map();
+  for (const flag of WORKER_FLAG_ALLOWED_OVERRIDES) {
+    if (defaults && flag in defaults) {
+      snapshot.set(flag, defaults[flag]);
+    } else {
+      snapshot.set(flag, env[flag]);
+    }
+  }
+  return snapshot;
+};
+
+const applyEnvSnapshot = (snapshot: WorkerFlagEnvSnapshot, env: WorkerFlagEnv): void => {
+  for (const flag of WORKER_FLAG_ALLOWED_OVERRIDES) {
+    const value = snapshot.get(flag);
+    if (value === '0' || value === '1') {
+      env[flag] = value;
+    } else {
+      delete env[flag];
+    }
+  }
+};
+
 /**
  * Applies flag overrides to the provided environment record and returns a
  * function that restores the previous values. Flags set to `null` or
@@ -70,3 +98,38 @@ export function createWorkerFlagOverridePayload(
 
 export const WORKER_FLAG_STORAGE_KEY = WORKER_FLAG_OVERRIDES_STORAGE_KEY;
 
+export type WorkerFlagOverrideLifecycle = {
+  resetEnv(): void;
+  applyEnvOverrides(overrides: WorkerFlagOverrideMap): () => void;
+  createPayload(overrides: WorkerFlagOverrideMap | null | undefined): string | null;
+};
+
+export function createWorkerFlagOverrideLifecycle(
+  env: WorkerFlagEnv = process.env,
+  defaults?: WorkerFlagOverrideMap,
+): WorkerFlagOverrideLifecycle {
+  const baseline = createEnvSnapshot(env, defaults);
+
+  const resetEnv = () => {
+    applyEnvSnapshot(baseline, env);
+  };
+
+  const applyEnvOverrides = (overrides: WorkerFlagOverrideMap): (() => void) => {
+    resetEnv();
+    const restore = withWorkerFlagEnvOverrides(overrides, env);
+    return () => {
+      restore();
+      resetEnv();
+    };
+  };
+
+  const createPayload = (overrides: WorkerFlagOverrideMap | null | undefined): string | null => {
+    return createWorkerFlagOverridePayload(overrides);
+  };
+
+  return {
+    resetEnv,
+    applyEnvOverrides,
+    createPayload,
+  };
+}

@@ -4,7 +4,8 @@ import {
   WORKER_FLAG_ALLOWED_OVERRIDES,
 } from '../../app/src/config/worker-flag-overrides.js';
 import {
-  createWorkerFlagOverridePayload,
+  createWorkerFlagOverrideLifecycle,
+  type WorkerFlagOverrideMap,
   type WorkerFlagOverrideSetting,
 } from '../../packages/runtime/worker/src/e2e/utils/worker-flag-helpers.js';
 
@@ -16,11 +17,28 @@ if (!WORKER_FLAG_ALLOWED_OVERRIDES.includes('WORKER_USE_CMDPROC_MOVE_REMOVE')) {
 
 export const WORKER_CMDPROC_FLAG_NAME = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
 
+const workerFlagLifecycle = createWorkerFlagOverrideLifecycle();
+let activeOverrideCleanup: (() => void) | null = null;
+
 export async function configureWorkerCmdprocOverride(
   page: Page,
   value: WorkerFlagOverrideValue,
 ): Promise<void> {
-  const payload = createWorkerFlagOverridePayload({ [WORKER_CMDPROC_FLAG_NAME]: value });
+  if (activeOverrideCleanup) {
+    activeOverrideCleanup();
+    activeOverrideCleanup = null;
+  }
+
+  const overrides: WorkerFlagOverrideMap =
+    value === '0' || value === '1' ? { [WORKER_CMDPROC_FLAG_NAME]: value } : {};
+
+  if (value === '0' || value === '1') {
+    activeOverrideCleanup = workerFlagLifecycle.applyEnvOverrides(overrides);
+  } else {
+    workerFlagLifecycle.resetEnv();
+  }
+
+  const payload = workerFlagLifecycle.createPayload(overrides);
   await page.addInitScript(
     ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
       try {
@@ -49,6 +67,12 @@ export async function configureWorkerCmdprocOverride(
 
 export async function resetWorkerFlagOverrides(page: Page): Promise<void> {
   await configureWorkerCmdprocOverride(page, null);
+  if (activeOverrideCleanup) {
+    activeOverrideCleanup();
+    activeOverrideCleanup = null;
+  } else {
+    workerFlagLifecycle.resetEnv();
+  }
 }
 
 /**

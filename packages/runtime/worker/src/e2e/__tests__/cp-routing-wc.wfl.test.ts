@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId, TreeNode, TreeChangeEvent, SubscriptionId } from '@hierarchidb/common-type';
-import { withWorkerFlagEnvOverrides } from '../utils/worker-flag-helpers.js';
+import { createWorkerFlagOverrideLifecycle } from '../utils/worker-flag-helpers.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -93,6 +93,12 @@ const scenarios: Scenario[] = [
 
 const WORKER_FLAG = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
 
+const workerFlagLifecycle = createWorkerFlagOverrideLifecycle();
+
+beforeEach(() => {
+  workerFlagLifecycle.resetEnv();
+});
+
 type WorkerSetup = {
   client: Comlink.Remote<TestWorkerAPI>;
   port1: MessagePort;
@@ -103,7 +109,7 @@ type WorkerSetup = {
 
 const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
   vi.resetModules();
-  const restoreEnv = withWorkerFlagEnvOverrides({ [WORKER_FLAG]: flagValue });
+  const restoreEnv = workerFlagLifecycle.applyEnvOverrides({ [WORKER_FLAG]: flagValue });
   const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
     import('../test-worker.entry.js'),
