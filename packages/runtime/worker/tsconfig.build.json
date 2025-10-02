@@ -21,6 +21,7 @@
     "dist",
     "dist-types",
     "node_modules",
+    "src/e2e/**",
     "src/__tests__/**",
     "src/tests/**",
     "src/**/*.test.*",

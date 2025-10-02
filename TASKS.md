@@ -73,7 +73,9 @@
  - [x] CP routing フロー用シナリオ実装（flag off/on 向け Playwright spec 改修）
   - [x] WFL: Comlink 復元イベントの待機ヘルパーを整備し、TreeTable 相当の状態確認を結合テスト内で完結させる。
     - [x] フォローアップ: `waitForNodeEventDuring` のタイムアウト・例外経路を再現する追加テストを検討。
- - [ ] 任意 UI: Playwright スモーク（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts --project=chromium`）実行手順を補足し、必要なら DOM 安定化ヘルパーを追加。
+- [x] 任意 UI: Playwright スモーク（chromium 基準で `pnpm exec playwright test e2e/cp-routing-wc-flow.spec.ts --project=chromium`）実行手順を補足し、必要なら DOM 安定化ヘルパーを追加。
+  - `docs/testing/cp-routing-wc-playwright.md` に Chromium スモーク向けの手順・トラブルシュートを追記済み（ビルド自動実行/既存プレビュー流用の 2 パターンを記載）。
+  - DOM 安定化は既存の `waitForTreeTableLoad` / `waitForSubTreeUpdate` / `waitForWorkingCopyUpdate` で十分であることを確認し、必要に応じてタイムアウト調整が可能である旨をドキュメントに記載。
 - [x] フラグ override の再検証 — テスト毎に override を初期化するユーティリティを WFL/Playwright 双方で共通化。
  - [ ] CI 組み込み — turbo タスクに runtime-worker WFL シナリオを組み込み、WARN/FAIL 時のレポート取得方法を README/TASKS へ追記。
 
@@ -4757,6 +4759,7 @@ P2:
 - 2025-10-02 18:29 done: feat/e2e/cp-routing-wc — `waitForNodeEventDuring` のタイムアウト経路を再現するシナリオを追加し、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行してグリーンを確認。
 - 2025-10-02 18:52 done: feat/e2e/cp-routing-wc — Worker flag override の初期化ユーティリティを共通化し、WFL/Playwright 両方で試験前にリセットできるよう整備。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行し、追加テストを含めてグリーンを確認。
 - 2025-10-02 19:18 done: feat/e2e/cp-routing-wc — `createWorkerFlagOverrideLifecycle` を導入して env/localStorage 両経路のリセットを統一し、Playwright ヘルパーからも利用する形に再編。`pnpm --filter @hierarchidb/runtime-shared-batch-processor build` で必要な dist を生成したうえで `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を再実行しグリーンを確認。ロールバックは新ライフサイクルヘルパーと関連 import を除去し、従来の `withWorkerFlagEnvOverrides` 直接呼び出しへ戻す。 
+- 2025-10-02 19:42 done: feat/e2e/cp-routing-wc — Playwright スモーク（chromium）の実行手順を `docs/testing/cp-routing-wc-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
 - 2025-10-02 11:00 start: fix/ui/language-provider-i18n-context — TreeTableCore 初期描画で発生する react-i18next 未初期化エラーの恒久対策に着手。`git checkout -b fix/ui/language-provider-i18n-context` は sandbox 制約で失敗したため、main 上で作業を継続する方針に切り替え。
 - 2025-10-02 11:20 progress: fix/ui/language-provider-i18n-context — LanguageProvider.tsx で初期レンダリング時にも I18nextProvider / LocalizationProvider を挟み、フォールバック描画でも i18n コンテキストが欠落しないよう修正（コード差分のみ、UI 実行環境では未検証）。
