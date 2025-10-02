@@ -10,14 +10,29 @@ async function globalSetup(config: FullConfig) {
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  const serverUrl = config.webServer?.url ?? 'http://localhost:4173';
+  const skipWebServer = !config.webServer;
+
+  let progressTimer: NodeJS.Timeout | undefined;
 
   try {
     // Wait for the development server to be ready
-    console.log('⏳ Waiting for development server...');
-    await page.goto(config.webServer?.url || 'http://localhost:4200', {
+    if (skipWebServer) {
+      console.log(`⏳ PLAYWRIGHT_SKIP_WEBSERVER=1 が設定済み。既存サーバー (${serverUrl}) への接続を試みます。`);
+    } else {
+      console.log(`⏳ Preview サーバー起動を待機中 (${serverUrl})...`);
+    }
+
+    progressTimer = setInterval(() => {
+      console.log(`   … ${new Date().toLocaleTimeString()} 時点: サーバー応答待ち`);
+    }, 15000);
+
+    await page.goto(serverUrl, {
       waitUntil: 'networkidle',
       timeout: 60000,
     });
+
+    clearInterval(progressTimer);
 
     // Check if the _app is loaded properly - just wait for page to load
     // Remove _app-root check as it doesn't exist in current implementation
@@ -58,9 +73,16 @@ async function globalSetup(config: FullConfig) {
 
     console.log('⚙️ Test environment configured');
   } catch (error) {
+    // ensure timer is cleared if goto failed early
+    if (progressTimer) {
+      clearInterval(progressTimer);
+    }
     console.error('❌ Global setup failed:', error);
     throw error;
   } finally {
+    if (progressTimer) {
+      clearInterval(progressTimer);
+    }
     await browser.close();
   }
 
