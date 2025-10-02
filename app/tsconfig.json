@@ -126,7 +126,8 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".generated/types/**/*.d.ts"
+    ".generated/types/**/*.d.ts",
+    "vite.config.ts"
   ],
   "exclude": [
     "node_modules",

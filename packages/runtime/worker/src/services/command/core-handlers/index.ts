@@ -12,7 +12,6 @@ import {
   createNewName,
 } from '../../WorkingCopyTreeNodeOperations.js';
 import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
-import { encodeTrashHolderName } from '../../utils/holder-encoding.js';
 import type {
   CommandId,
   NodeId,
@@ -262,10 +261,6 @@ async function handleMoveToTrash(
         continue;
       }
 
-      if (node.holderType === 'trash' && node.parentId === trashRootId) {
-        continue;
-      }
-
       const originalParentId = node.parentId as NodeId | undefined;
       if (!originalParentId) {
         continue;
@@ -309,6 +304,10 @@ async function handleMoveToTrash(
         continue;
       }
 
+      if (node.holderType === 'trash' && node.parentId === trashRootId) {
+        continue;
+      }
+
       const now = Date.now() as Timestamp;
       const previousOriginalName = (node as { originalName?: string }).originalName;
       const previousOriginalParentId = (node as { originalParentId?: NodeId }).originalParentId;
@@ -317,8 +316,7 @@ async function handleMoveToTrash(
       const previousHolderTargetId = node.holderTargetId as NodeId | undefined;
       const previousHolderMetaParentId = node.holderMetaParentId as NodeId | undefined;
 
-      const holderName = encodeTrashHolderName(originalParentId, node.id as NodeId);
-      const trashName = holderName;
+      const trashName = node.name;
 
       const updatedNode: Parameters<CoreDB['updateNode']>[0] = {
         ...node,

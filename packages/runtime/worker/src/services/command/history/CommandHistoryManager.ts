@@ -191,18 +191,30 @@ export class CommandHistoryManager {
   }
 
   recordCreatedNode(commandId: CommandId, nodeId: NodeId): void {
+    if (this.createdNodeIdByCommand.has(commandId)) {
+      return;
+    }
     this.createdNodeIdByCommand.set(commandId, nodeId);
   }
 
   storePreUpdateState(commandId: CommandId, node: TreeNode): void {
+    if (this.preUpdateState.has(commandId)) {
+      return;
+    }
     this.preUpdateState.set(commandId, { ...node });
   }
 
   storePreMoveState(commandId: CommandId, nodes: TreeNode[]): void {
+    if (this.preMoveState.has(commandId)) {
+      return;
+    }
     this.preMoveState.set(commandId, nodes.map((node) => ({ ...node })));
   }
 
   storePreRemoveState(commandId: CommandId, nodes: TreeNode[]): void {
+    if (this.preRemoveState.has(commandId)) {
+      return;
+    }
     this.preRemoveState.set(commandId, nodes.map((node) => ({ ...node })));
   }
 
@@ -210,6 +222,9 @@ export class CommandHistoryManager {
     commandId: CommandId,
     entries: Array<{ node: TreeNode; holder?: TreeNode; nextParentId: NodeId; nextName: string }>,
   ): void {
+    if (this.preRestoreState.has(commandId)) {
+      return;
+    }
     this.preRestoreState.set(
       commandId,
       entries.map(({ node, holder, nextParentId, nextName }) => ({
@@ -246,6 +261,9 @@ export class CommandHistoryManager {
       trashName: string;
     }>,
   ): void {
+    if (this.preMoveToTrashState.has(commandId)) {
+      return;
+    }
     this.preMoveToTrashState.set(commandId, entries.map((entry) => ({ ...entry })));
   }
 
@@ -257,6 +275,9 @@ export class CommandHistoryManager {
       committedNode?: TreeNode;
     },
   ): void {
+    if (this.preCommitWorkingCopyState.has(commandId)) {
+      return;
+    }
     this.preCommitWorkingCopyState.set(commandId, {
       workingCopy: { ...snapshot.workingCopy },
       holder: { ...snapshot.holder },

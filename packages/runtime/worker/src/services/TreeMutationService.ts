@@ -21,7 +21,6 @@ import { createNewName } from './WorkingCopyTreeNodeOperations.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { encodeTrashHolderName } from './utils/holder-encoding.js';
 import { FEATURE_FLAGS } from '../config/feature-flags.js';
 import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
 
@@ -814,11 +813,10 @@ export class TreeMutationService implements TreeMutationAPI {
           continue;
         }
 
-        const holderName = encodeTrashHolderName(originalParentId, node.id as NodeId);
         await this.coreDB.updateNode?.({
           id: node.id,
           parentId: trashRootId,
-          name: holderName,
+          name: node.name,
           originalName: (node as { originalName?: string }).originalName ?? node.name,
           originalParentId: originalParentId,
           removedAt: now,

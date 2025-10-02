@@ -2,11 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
-import {
-  decodeTrashHolderName,
-  isValidTrashHolderName,
-} from '../../services/utils/holder-encoding.js';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
@@ -244,14 +240,12 @@ describe('WFL command processor undo/redo flow', () => {
     // Undo: restore -> moveToTrash -> rename -> create
     const undoRestore = await commandProcessor.undo();
     expect(undoRestore.success).toBe(true);
-    const nodeAfterUndoRestore = await queryAPI.getNode(nodeId);
+    const nodeAfterUndoRestore = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
     expect(nodeAfterUndoRestore?.holderType).toBe('trash');
+    expect(nodeAfterUndoRestore?.name).toBe('UndoRedo Headless Renamed');
     expect(nodeAfterUndoRestore?.originalName).toBe('UndoRedo Headless Renamed');
-    expect(nodeAfterUndoRestore?.name).toBeDefined();
-    expect(isValidTrashHolderName(nodeAfterUndoRestore!.name)).toBe(true);
-    const decodedUndoRestore = decodeTrashHolderName(nodeAfterUndoRestore!.name);
-    expect(decodedUndoRestore.originalParentNodeId).toBe(rootId);
-    expect(decodedUndoRestore.trashedNodeId).toBe(nodeId);
+    expect(nodeAfterUndoRestore?.originalParentId).toBe(rootId);
+    expect(nodeAfterUndoRestore?.parentId).toBe(trashRootId);
 
     const undoMoveToTrash = await commandProcessor.undo();
     expect(undoMoveToTrash.success).toBe(true);
@@ -283,14 +277,12 @@ describe('WFL command processor undo/redo flow', () => {
 
     const redoMoveToTrash = await commandProcessor.redo();
     expect(redoMoveToTrash.success).toBe(true);
-    const nodeAfterRedoTrash = await queryAPI.getNode(nodeId);
+    const nodeAfterRedoTrash = (await queryAPI.getNode(nodeId)) as TreeNode | undefined;
     expect(nodeAfterRedoTrash?.holderType).toBe('trash');
+    expect(nodeAfterRedoTrash?.name).toBe('UndoRedo Headless Renamed');
     expect(nodeAfterRedoTrash?.originalName).toBe('UndoRedo Headless Renamed');
-    expect(nodeAfterRedoTrash?.name).toBeDefined();
-    expect(isValidTrashHolderName(nodeAfterRedoTrash!.name)).toBe(true);
-    const decodedRedoTrash = decodeTrashHolderName(nodeAfterRedoTrash!.name);
-    expect(decodedRedoTrash.originalParentNodeId).toBe(rootId);
-    expect(decodedRedoTrash.trashedNodeId).toBe(nodeId);
+    expect(nodeAfterRedoTrash?.originalParentId).toBe(rootId);
+    expect(nodeAfterRedoTrash?.parentId).toBe(trashRootId);
 
     const redoRestore = await commandProcessor.redo();
     expect(redoRestore.success).toBe(true);

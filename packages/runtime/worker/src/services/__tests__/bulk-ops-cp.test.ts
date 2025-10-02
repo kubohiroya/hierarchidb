@@ -120,7 +120,7 @@ describe('CommandProcessor bulk operations', () => {
   it('restoreFromTrash uses bulkUpdateNodes for multiple nodes (without holders)', async () => {
     const removedAt = Date.now();
     const trashed1: TreeNode = {
-      ...makeNode('t1', 'trash', 'trash::t1'),
+      ...makeNode('t1', 'trash', 'n1'),
       originalName: 'n1',
       originalParentId: 'root' as NodeId,
       removedAt,
@@ -129,7 +129,7 @@ describe('CommandProcessor bulk operations', () => {
       holderMetaParentId: 'root' as NodeId,
     };
     const trashed2: TreeNode = {
-      ...makeNode('t2', 'trash', 'trash::t2'),
+      ...makeNode('t2', 'trash', 'n2'),
       originalName: 'n2',
       originalParentId: 'root' as NodeId,
       removedAt,

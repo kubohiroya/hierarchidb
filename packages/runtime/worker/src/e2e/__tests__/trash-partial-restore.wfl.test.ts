@@ -3,11 +3,7 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
-import {
-  decodeTrashHolderName,
-  decodeWorkingCopyHolderName,
-  isValidTrashHolderName,
-} from '../../services/utils/holder-encoding.js';
+import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
@@ -141,14 +137,12 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(trashedChildTwo.parentId).toBe(trashRootId);
     expect(trashedChildOne.holderType).toBe('trash');
     expect(trashedChildTwo.holderType).toBe('trash');
-    expect(isValidTrashHolderName(trashedChildOne.name)).toBe(true);
-    expect(isValidTrashHolderName(trashedChildTwo.name)).toBe(true);
-    const decodedOne = decodeTrashHolderName(trashedChildOne.name);
-    const decodedTwo = decodeTrashHolderName(trashedChildTwo.name);
-    expect(decodedOne.trashedNodeId).toBe(childOneId);
-    expect(decodedTwo.trashedNodeId).toBe(childTwoId);
-    expect(decodedOne.originalParentNodeId).toBe(parentId);
-    expect(decodedTwo.originalParentNodeId).toBe(parentId);
+    expect(trashedChildOne.name).toBe('Integration Trash Child C');
+    expect(trashedChildTwo.name).toBe('Integration Trash Child D');
+    expect(trashedChildOne.originalName).toBe('Integration Trash Child C');
+    expect(trashedChildTwo.originalName).toBe('Integration Trash Child D');
+    expect(trashedChildOne.originalParentId).toBe(parentId);
+    expect(trashedChildTwo.originalParentId).toBe(parentId);
 
     const restoreResult = await mutationAPI.restoreNodesFromTrash({ nodeIds: [childOneId], toParentId: parentId });
     expect(restoreResult.success).toBe(true);

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
-import { decodeTrashHolderName, decodeWorkingCopyHolderName, isValidTrashHolderName } from '../../services/utils/holder-encoding.js';
+import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
@@ -135,10 +135,9 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedNode).toBeTruthy();
     if (!trashedNode) throw new Error('Trashed node not found');
     expect(trashedNode.holderType).toBe('trash');
-    expect(isValidTrashHolderName(trashedNode.name)).toBe(true);
-    const decodedAfterMove = decodeTrashHolderName(trashedNode.name);
-    expect(decodedAfterMove.trashedNodeId).toBe(canonicalId);
-    expect(decodedAfterMove.originalParentNodeId).toBe(rootId);
+    expect(trashedNode.name).toBe('tmp');
+    expect(trashedNode.originalName).toBe('tmp');
+    expect(trashedNode.originalParentId).toBe(rootId);
 
     const subtreeEventsBeforeRestore = subtreeEvents.length;
     const restoreRes = await mutationAPI.restoreNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
@@ -179,10 +178,9 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedAgain).toBeTruthy();
     if (!trashedAgain) throw new Error('Trashed node (second) not found');
     expect(trashedAgain.holderType).toBe('trash');
-    expect(isValidTrashHolderName(trashedAgain.name)).toBe(true);
-    const decodedSecond = decodeTrashHolderName(trashedAgain.name);
-    expect(decodedSecond.trashedNodeId).toBe(canonicalId);
-    expect(decodedSecond.originalParentNodeId).toBe(rootId);
+    expect(trashedAgain.name).toBe('tmp');
+    expect(trashedAgain.originalName).toBe('tmp');
+    expect(trashedAgain.originalParentId).toBe(rootId);
 
     await waitFor(() => trashEvents.length > trashEventsBeforeSecondMove);
     expect(

@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * See https://playwright.dev/docs/test-configuration.
  */
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1';
+
 export default defineConfig({
   testDir: './e2e',
   /* Run tests in files in parallel */
@@ -17,6 +19,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
+    ['list'],
     ['html'],
     ['json', { outputFile: 'e2e-results.json' }],
     ['junit', { outputFile: 'e2e-results.xml' }],
@@ -100,13 +103,15 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    // Build and preview the app to avoid file watcher limits in CI/sandboxes
-    command: 'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes
-  },
+  webServer: skipWebServer
+    ? undefined
+    : {
+        // Build and preview the app to avoid file watcher limits in CI/sandboxes
+        command: 'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview',
+        url: 'http://localhost:4173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes
+      },
 
   /* Global setup and teardown */
   globalSetup: './e2e/global-setup.ts',

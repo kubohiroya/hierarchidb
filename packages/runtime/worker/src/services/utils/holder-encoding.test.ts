@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  decodeTrashHolderName,
   decodeWorkingCopyHolderName,
-  encodeTrashHolderName,
   encodeWorkingCopyHolderName,
   HOLDER_NAME_TAB,
-  isValidTrashHolderName,
   isValidWorkingCopyHolderName,
 } from './holder-encoding.js';
 import type { NodeId } from '@hierarchidb/common-type';
@@ -20,35 +17,15 @@ describe('holder-encoding v1 (TAB separator)', () => {
     expect(isValidWorkingCopyHolderName(name)).toBe(true);
   });
 
-  it('encodes and decodes Trash holder name roundtrip', () => {
-    const originalParentId = 'r:trash' as NodeId;
-    const trashedNodeId = 'node-dead-beef' as NodeId;
-    const name = encodeTrashHolderName(originalParentId, trashedNodeId);
-    const decoded = decodeTrashHolderName(name);
-    expect(decoded).toEqual({ originalParentNodeId: originalParentId, trashedNodeId });
-    expect(isValidTrashHolderName(name)).toBe(true);
-  });
-
   it('rejects TAB in IDs for WorkingCopy encoding', () => {
     expect(() => encodeWorkingCopyHolderName('bad\tid' as NodeId, 'ok' as NodeId)).toThrow();
     expect(() => encodeWorkingCopyHolderName('ok' as NodeId, 'bad\tid' as NodeId)).toThrow();
-  });
-
-  it('rejects TAB in IDs for Trash encoding', () => {
-    expect(() => encodeTrashHolderName('bad\tid' as NodeId, 'ok' as NodeId)).toThrow();
-    expect(() => encodeTrashHolderName('ok' as NodeId, 'bad\tid' as NodeId)).toThrow();
   });
 
   it('throws on invalid holder name format (WorkingCopy)', () => {
     expect(() => decodeWorkingCopyHolderName('no-sep')).toThrow();
     expect(() => decodeWorkingCopyHolderName(`${HOLDER_NAME_TAB}leading`)).toThrow();
     expect(() => decodeWorkingCopyHolderName(`trailing${HOLDER_NAME_TAB}`)).toThrow();
-  });
-
-  it('throws on invalid holder name format (Trash)', () => {
-    expect(() => decodeTrashHolderName('no-sep')).toThrow();
-    expect(() => decodeTrashHolderName(`${HOLDER_NAME_TAB}leading`)).toThrow();
-    expect(() => decodeTrashHolderName(`trailing${HOLDER_NAME_TAB}`)).toThrow();
   });
 
   it('exposes TAB separator constant', () => {
