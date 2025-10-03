@@ -155,8 +155,3 @@ export const StylerExtension = {
     mergeStrategy: 'append',
   },
 };
-
-/**
-  * :
-  */
-export default StylerExtension;

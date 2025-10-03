@@ -266,8 +266,3 @@ export interface WorkerAPI {
     uptime: number;
   }>;
 }
-
-/**
- * Default export for the WorkerAPI interface
- */
-export default WorkerAPI;

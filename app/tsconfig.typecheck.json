@@ -4,7 +4,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "noEmit": true,
-    "incremental": true,
+    "incremental": false,
     "composite": false,
     "moduleResolution": "Node16",
     "resolveJsonModule": true,
@@ -55,17 +55,26 @@
       "@hierarchidb/runtime-worker-bootstrap": [
         "../packages/runtime/worker-bootstrap/src/index.ts"
       ],
+      "@hierarchidb/runtime-worker-bootstrap/*": [
+        "../packages/runtime/worker-bootstrap/src/*"
+      ],
       "@hierarchidb/runtime-shared-module-paths": [
         "../packages/runtime-shared/module-paths/src/index.ts"
       ],
       "@hierarchidb/runtime-shared-module-paths/*": [
-        "../packages/runtime-shared/module-paths/*"
+        "../packages/runtime-shared/module-paths/src/*"
       ],
       "@hierarchidb/common-api": [
-        "../packages/common/api/dist"
+        "../packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "../packages/common/api/src/*"
       ],
       "@hierarchidb/ui-dialog": [
         "../packages/ui/dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-dialog/*": [
+        "../packages/ui/dialog/src/*"
       ],
       "@hierarchidb/ui-map": [
         "../packages/ui/map/src/index.ts"
@@ -73,53 +82,59 @@
       "@hierarchidb/ui-map/*": [
         "../packages/ui/map/src/*"
       ],
-      "@hierarchidb/ui-treeconsole-treetable": [
-        "../packages/ui/treeconsole/treetable/dist"
-      ],
       "@hierarchidb/ui-treeconsole-base": [
-        "../packages/ui/treeconsole/base/dist/index.d.ts"
+        "../packages/ui/treeconsole/base/src/index.ts"
       ],
       "@hierarchidb/ui-treeconsole-base/*": [
-        "../packages/ui/treeconsole/base/dist/*"
+        "../packages/ui/treeconsole/base/src/*"
       ],
       "@hierarchidb/ui-treeconsole-breadcrumb": [
-        "../packages/ui/treeconsole/breadcrumb/dist/index.d.ts"
+        "../packages/ui/treeconsole/breadcrumb/src/index.ts"
       ],
       "@hierarchidb/ui-treeconsole-breadcrumb/*": [
-        "../packages/ui/treeconsole/breadcrumb/dist/*"
+        "../packages/ui/treeconsole/breadcrumb/src/*"
       ],
       "@hierarchidb/ui-treeconsole-toolbar": [
-        "../packages/ui/treeconsole/toolbar/dist/index.d.ts"
+        "../packages/ui/treeconsole/toolbar/src/index.ts"
       ],
       "@hierarchidb/ui-treeconsole-toolbar/*": [
-        "../packages/ui/treeconsole/toolbar/dist/*"
+        "../packages/ui/treeconsole/toolbar/src/*"
       ],
       "@hierarchidb/ui-treeconsole-trashbin": [
-        "../packages/ui/treeconsole/trashbin/dist/index.d.ts"
+        "../packages/ui/treeconsole/trashbin/src/index.ts"
       ],
       "@hierarchidb/ui-treeconsole-trashbin/*": [
-        "../packages/ui/treeconsole/trashbin/dist/*"
+        "../packages/ui/treeconsole/trashbin/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "../packages/ui/treeconsole/treetable/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable/*": [
+        "../packages/ui/treeconsole/treetable/src/*"
       ],
       "@hierarchidb/ui-auth": [
-        "../packages/ui/auth/dist"
+        "../packages/ui/auth/src/index.ts"
+      ],
+      "@hierarchidb/ui-auth/*": [
+        "../packages/ui/auth/src/*"
       ],
       "@hierarchidb/ui-icon": [
-        "../packages/ui/icon/dist"
+        "../packages/ui/icon/src/index.ts"
+      ],
+      "@hierarchidb/ui-icon/*": [
+        "../packages/ui/icon/src/*"
       ],
       "@hierarchidb/ui-usermenu": [
-        "../packages/ui/usermenu/dist/index.d.ts"
+        "../packages/ui/usermenu/src/index.ts"
       ],
       "@hierarchidb/ui-usermenu/*": [
-        "../packages/ui/usermenu/dist/*"
-      ],
-      "@hierarchidb/plugins-location-plugin/services": [
-        "../packages/plugins/location-plugin/src/services/index.ts"
+        "../packages/ui/usermenu/src/*"
       ],
       "@hierarchidb/plugins-linker-plugin/services": [
         "../packages/plugins/linker-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-*-plugin/worker-factory": [
-        "../packages/plugins/*-plugin/src/worker-factory/index.ts"
+      "@hierarchidb/plugins-location-plugin/services": [
+        "../packages/plugins/location-plugin/src/services/index.ts"
       ],
       "@hierarchidb/plugins-basemap-plugin/database": [
         "../packages/plugins/basemap-plugin/src/database/index.ts"
@@ -142,39 +157,12 @@
       "@hierarchidb/plugins-timeline-plugin/services": [
         "../packages/plugins/timeline-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-basemap-plugin/database": [
-        "../packages/plugins/basemap-plugin/src/database/index.ts"
-      ],
-      "@hierarchidb/plugins-linker-plugin/services": [
-        "../packages/plugins/linker-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/plugins-location-plugin/services": [
-        "../packages/plugins/location-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/plugins-resolver-plugin/database": [
-        "../packages/plugins/resolver-plugin/src/database/index.ts"
-      ],
-      "@hierarchidb/plugins-route-plugin/database": [
-        "../packages/plugins/route-plugin/src/database/index.ts"
-      ],
-      "@hierarchidb/plugins-shape-plugin/services": [
-        "../packages/plugins/shape-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/plugins-spreadsheet-plugin/database": [
-        "../packages/plugins/spreadsheet-plugin/src/database/index.ts"
-      ],
-      "@hierarchidb/plugins-styler-plugin/services": [
-        "../packages/plugins/styler-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/plugins-timeline-plugin/services": [
-        "../packages/plugins/timeline-plugin/src/services/index.ts"
-      ]
-    },
-    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo/app-typecheck.tsbuildinfo"
+    }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "src/**/*.d.ts",
     ".generated/types/**/*.d.ts"
   ],
   "exclude": [

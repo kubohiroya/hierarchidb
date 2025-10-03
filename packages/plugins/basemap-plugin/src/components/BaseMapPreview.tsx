@@ -389,5 +389,3 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
     </Paper>
   );
 };
-
-export default BaseMapPreview;

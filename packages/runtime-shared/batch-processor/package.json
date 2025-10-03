@@ -34,7 +34,7 @@
   "devDependencies": {
     "@types/node": "^18.19.24",
     "tsup": "^8.5.0",
-    "typescript": "^4.9.5"
+    "typescript": "workspace:^5.9.3"
   },
   "keywords": [
     "hierarchidb",

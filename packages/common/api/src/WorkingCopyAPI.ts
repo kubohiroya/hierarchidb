@@ -233,8 +233,3 @@ export interface WorkingCopyAPI {
    */
   cleanupOldWorkingCopies(olderThan: number): Promise<number>;
 }
-
-/**
- * Default export for the WorkingCopyAPI interface
- */
-export default WorkingCopyAPI;

@@ -23,7 +23,7 @@ interface GitHubCornerProps {
   visible?: boolean;
 }
 
-const GitHubCorner = ({ url, visible = false }: GitHubCornerProps): React.ReactElement | null => {
+export const GitHubCorner = ({ url, visible = false }: GitHubCornerProps): React.ReactElement | null => {
   if (!visible) {
     return null;
   }
@@ -76,5 +76,3 @@ const GitHubCorner = ({ url, visible = false }: GitHubCornerProps): React.ReactE
     </a>
   );
 };
-
-export default GitHubCorner;

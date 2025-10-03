@@ -205,7 +205,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       {/* Breadcrumb Navigation with drop-to-parent support */}
       {(() => {
         const defaultRendererProps: DefaultBreadcrumbProps = {
-          nodePath: [...props.breadcrumbItems] as readonly DefaultBreadcrumbNode[],
+          nodePath: props.breadcrumbItems as unknown as readonly DefaultBreadcrumbNode[],
           onNodeClick: props.onBreadcrumbNavigate,
           treeId: props.treeId,
           variant: 'default',

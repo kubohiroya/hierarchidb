@@ -42,7 +42,7 @@ const readHeapStats = (): { used: number; limit: number } => {
   };
 };
 
-export class WorkerService{
+export class WorkerService {
   private readonly startTime = Date.now();
 
   static async getSingleton(plugins: PluginDefinition[]): Promise<WorkerService> {

@@ -135,5 +135,3 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
     </Box>
   );
 };
-
-export default StylerExtensionStep;

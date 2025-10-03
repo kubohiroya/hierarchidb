@@ -17,5 +17,6 @@ export function useGoogleLogin(config?: {
   };
 }
 
-export default { useGoogleLogin };
+const ReactOauthGoogle = { useGoogleLogin };
+export { ReactOauthGoogle };
 

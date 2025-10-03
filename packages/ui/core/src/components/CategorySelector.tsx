@@ -41,6 +41,3 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     </div>
   );
 };
-
-export default CategorySelector;
-

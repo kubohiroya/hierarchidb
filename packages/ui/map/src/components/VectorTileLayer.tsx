@@ -246,5 +246,3 @@ export const VectorTileLayer: React.FC<VectorTileLayerProps> = ({
 
   return null;
 };
-
-export default VectorTileLayer;

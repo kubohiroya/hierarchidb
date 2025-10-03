@@ -7,12 +7,9 @@ export class TabularWriter {
 }
 
 // default exports expected by SessionController
-const vtpbf = {
+export const vtpbf = {
   fromGeojson: () => new Uint8Array(),
 };
-
-export default vtpbf;
-
 export const geojsonvt = (..._args: unknown[]) => ({
   getTile: () => ({ features: [] as unknown[] }),
 });

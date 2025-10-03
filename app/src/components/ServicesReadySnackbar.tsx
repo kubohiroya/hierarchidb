@@ -12,6 +12,8 @@ const FALLBACK_MESSAGES = {
 };
 
 export function ServicesReadySnackbar() {
+  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
+
   const [open, setOpen] = React.useState(false);
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [, forceUpdate] = React.useReducer((c) => c + 1, 0);
@@ -69,6 +71,10 @@ export function ServicesReadySnackbar() {
     }
     return translate('servicesReady.prefetch', { time: timeSuffix });
   }, [detail]);
+
+  if (!hasDom) {
+    return null;
+  }
 
   return (
     <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>

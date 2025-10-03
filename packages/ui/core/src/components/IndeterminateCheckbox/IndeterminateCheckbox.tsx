@@ -32,5 +32,3 @@ export function IndeterminateCheckbox({
     />
   );
 }
-
-export default IndeterminateCheckbox;

@@ -30,5 +30,3 @@ export class TimelineFramesService {
 }
 
 export const timelineServices = { TimelineFramesService };
-
-export default timelineServices;

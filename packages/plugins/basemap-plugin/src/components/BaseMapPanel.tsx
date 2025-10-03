@@ -267,5 +267,3 @@ export const BaseMapPanel: React.FC<BaseMapPanelProps> = ({
     </Paper>
   );
 };
-
-export default BaseMapPanel;

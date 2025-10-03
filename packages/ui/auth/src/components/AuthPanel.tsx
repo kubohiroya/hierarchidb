@@ -9,7 +9,7 @@ const useAuthLib = () => ({
   signOut: () => Promise.resolve(),
 });
 
-function AuthPanel() {
+export function AuthPanel() {
   const auth = useAuth();
   const { signIn, signOut } = useAuthLib();
 
@@ -49,5 +49,3 @@ function AuthPanel() {
     </Button>
   );
 }
-
-export default AuthPanel;

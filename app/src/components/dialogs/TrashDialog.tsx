@@ -563,7 +563,7 @@ function TrashDialogContent({
 // Main component
 // ----------------------------------------
 
-export default function TrashDialogV2() {
+export function TrashDialogV2() {
   const data = useLoaderData<TrashDialogData>();
   const navigate = useNavigate();
   const params = useParams();
@@ -733,3 +733,5 @@ export default function TrashDialogV2() {
     />
   );
 }
+
+export default TrashDialogV2;

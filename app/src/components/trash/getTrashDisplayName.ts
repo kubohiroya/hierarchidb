@@ -23,5 +23,3 @@ export function getTrashDisplayName(node: TrashLikeNode | TreeNodeData | undefin
   const idRaw = 'id' in (node ?? {}) ? (node as { id?: NodeId | string }).id : undefined;
   return typeof idRaw === 'string' ? idRaw : '';
 }
-
-export default getTrashDisplayName;

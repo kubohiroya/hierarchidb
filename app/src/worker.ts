@@ -27,6 +27,30 @@ type WorkerMessagePort = typeof self & {
 
 type PluginLoaderMap = Record<string, () => Promise<unknown>>;
 
+type RuntimeWorkerServices = {
+  ping: () => unknown;
+  initialize: () => Promise<unknown> | unknown;
+  shutdown: () => Promise<unknown> | unknown;
+  getSystemHealth: () => Promise<unknown>;
+  getQueryAPI: () => unknown;
+  getMutationAPI: () => unknown;
+  getSubscriptionAPI: () => unknown;
+  getWorkingCopyAPI: () => unknown;
+  getPluginLifecycleAPI: () => unknown;
+  getImportExportAPI: () => unknown;
+  getTagAPI: () => unknown;
+  getDialogStateAPI: () => unknown;
+};
+
+type RuntimeWorkerModule = {
+  WorkerService: {
+    getSingleton: (plugins: PluginDefinition[]) => Promise<RuntimeWorkerServices>;
+  };
+  entityRegistry?: {
+    register: (nodeType: string, handler: unknown) => void;
+  };
+};
+
 // Provide minimal Node-like globals for libraries that expect them.
 const globalShim = globalThis as typeof globalThis & {
   global?: typeof globalThis;
@@ -144,8 +168,8 @@ reporter.reportStepProgress('Load Comlink', 0);
     });
 
     try {
-      const runtime = await import('@hierarchidb/runtime-worker');
-      const entityRegistry = (runtime as { entityRegistry?: { register: (nodeType: string, handler: unknown) => void } }).entityRegistry;
+      const runtimeModule = await import('@hierarchidb/runtime-worker') as unknown as RuntimeWorkerModule;
+      const entityRegistry = runtimeModule.entityRegistry;
       if (entityRegistry) {
         for (const [nodeType, entry] of Object.entries(exportsByType)) {
           const factory = entry?.createEntityHandler;
@@ -162,7 +186,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         }
       }
 
-      const { WorkerService } = runtime;
+      const { WorkerService } = runtimeModule;
       const services = await WorkerService.getSingleton(
         enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions,
       );
@@ -178,14 +202,14 @@ reporter.reportStepProgress('Load Comlink', 0);
         initialize: () => services.initialize(),
         shutdown: () => services.shutdown(),
         getSystemHealth: () => services.getSystemHealth(),
-        getQueryAPI: () => Comlink.proxy(services.getQueryAPI()),
-        getMutationAPI: () => Comlink.proxy(services.getMutationAPI()),
-        getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI()),
-        getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI()),
-        getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
-        getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
-        getTagAPI: () => Comlink.proxy(services.getTagAPI()),
-        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI()),
+        getQueryAPI: () => Comlink.proxy(services.getQueryAPI() as any),
+        getMutationAPI: () => Comlink.proxy(services.getMutationAPI() as any),
+        getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI() as any),
+        getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI() as any),
+        getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI() as any),
+        getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI() as any),
+        getTagAPI: () => Comlink.proxy(services.getTagAPI() as any),
+        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI() as any),
       } as const;
 
       reporter.reportStepProgress('Create API facade', 100);

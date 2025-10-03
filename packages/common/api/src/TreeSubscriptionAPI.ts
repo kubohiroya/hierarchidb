@@ -194,8 +194,3 @@ export interface TreeSubscriptionAPI {
    */
   getEventHistory(startTime: number, endTime: number, nodeId?: NodeId): Promise<TreeNodeEvent[]>;
 }
-
-/**
- * Default export for the TreeSubscriptionAPI interface
- */
-export default TreeSubscriptionAPI;

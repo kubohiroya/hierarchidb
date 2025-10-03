@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useMemo, useState, type ReactElement } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 import {
   getCoreRowModel,
   getExpandedRowModel,
@@ -116,7 +116,8 @@ export function TreeTableCore({
     handleStartEdit,
   });
 
-  const { t } = useTranslation('common', { keyPrefix: 'treeTable.selectAll' });
+  const { t, i18n } = useTranslation('common', { keyPrefix: 'treeTable.selectAll' });
+  const languageKey = i18n?.resolvedLanguage ?? i18n?.language ?? 'en';
 
   const columns = useMemo(() => createTreeTableColumns({
     columnWidths,
@@ -159,7 +160,7 @@ export function TreeTableCore({
     visualSelectionSet,
     useTrashColumns,
     trashAction,
-  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, setEditingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
+  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, languageKey, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, setEditingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
 
   const table = useReactTable({
     data: structure.visibleData,

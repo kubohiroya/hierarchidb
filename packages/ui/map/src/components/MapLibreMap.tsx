@@ -195,5 +195,3 @@ export const MapLibreMap: React.FC<MapLibreMapProps> = ({
     </div>
   );
 };
-
-export default MapLibreMap;

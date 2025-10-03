@@ -162,6 +162,11 @@ export function NotificationSystem(): JSX.Element | null {
     replaceWindowAlert();
   }, []);
 
+  const hasDom = typeof document !== 'undefined' && !!document && !!document.body;
+  if (!hasDom) {
+    return null;
+  }
+
   return (
     <Stack
       spacing={1}

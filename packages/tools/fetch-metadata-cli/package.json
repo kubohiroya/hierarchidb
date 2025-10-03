@@ -44,7 +44,7 @@
     "commander": "^11.1.0",
     "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
     "tsup": "^8.0.2",
-    "typescript": "^5.3.3"
+    "typescript": "workspace:^5.9.3"
   },
   "engines": {
     "node": ">=18"

@@ -49,7 +49,6 @@ export {
 export { PLUGIN_MANIFEST as StylerPluginManifest } from './extension/plugin-manifest.js';
 
 // Extension definition (main plugin definition)
-export { StylerExtension as default } from './extension/definition.js';
 export { StylerExtension } from './extension/definition.js';
 
 // Entity handler

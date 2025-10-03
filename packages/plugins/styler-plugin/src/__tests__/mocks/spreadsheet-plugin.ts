@@ -291,4 +291,5 @@ export class SpreadsheetCSVApiDriver {
 }
 
 // default export shape mimic
-export default { SpreadsheetCSVApiDriver };
+const SpreadsheetPlugin = { SpreadsheetCSVApiDriver };
+export { SpreadsheetPlugin };

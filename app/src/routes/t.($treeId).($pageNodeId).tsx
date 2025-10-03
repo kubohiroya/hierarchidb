@@ -21,6 +21,7 @@ import {
 import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
+import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { loadPageNode } from '~/loader.js';
 import type { NodeId, Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
@@ -46,6 +47,12 @@ export default function TLayout() {
   const navigate = useNavigate();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
+  const bootProgress = useOptionalBootProgress();
+  const isUserMenuReady = Boolean(
+    bootProgress?.steps.Auth.done &&
+      bootProgress?.steps.Theme.done &&
+      bootProgress?.steps.I18n.done,
+  );
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
   const [notFoundOpen, setNotFoundOpen] = useState<boolean>(nodeNotFound);
@@ -154,9 +161,11 @@ export default function TLayout() {
                 ))}
             </ToggleButtonGroup>
 
-            <Box sx={{ ml: '8px' }}>
-              <UserLoginButton />
-            </Box>
+            {isUserMenuReady ? (
+              <Box sx={{ ml: '8px' }}>
+                <UserLoginButton />
+              </Box>
+            ) : null}
           </Stack>
           </Toolbar>
         </AppBar>

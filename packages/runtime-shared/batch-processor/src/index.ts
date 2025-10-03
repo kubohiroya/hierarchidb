@@ -37,9 +37,6 @@ export class BatchProcessor<T> {
     return results;
   }
 }
-
-export default BatchProcessor;
-
 // Progress utilities (shared across plugins)
 export * from './Progress.js';
 export * from './downloadAdapter.js';

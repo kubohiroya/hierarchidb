@@ -29,7 +29,7 @@ const createEnvSnapshot = (
   for (const flag of WORKER_FLAG_ALLOWED_OVERRIDES) {
     const hasDefault = defaults && Object.prototype.hasOwnProperty.call(defaults, flag);
     const value = hasDefault ? defaults![flag] : env[flag];
-    snapshot.set(flag, value ?? undefined);
+    snapshot.set(flag, (value ?? null) as WorkerFlagOverrideSetting);
   }
   return snapshot;
 };

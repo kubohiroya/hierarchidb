@@ -435,5 +435,3 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
 
   return createPortal(dialogNode, portalTarget);
 }
-
-export default MultiDialogFrame;

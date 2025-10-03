@@ -67,37 +67,37 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "comlink": "^4.4.1"
   },
   "peerDependencies": {
-    "dexie": "^4.2.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "dexie": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "dexie": "^4.2.0",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@vitest/ui": "^3.2.4",
+    "dexie": "^4.2.0",
     "fake-indexeddb": "^6.1.0",
-    "tsup": "^8.3.5",
-    "typescript": "^5.7.2",
-    "vitest": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "tsup": "^8.3.5",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
   },
   "tsup": {
     "external": [

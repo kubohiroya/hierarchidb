@@ -463,5 +463,8 @@ export const createAppTheme = (mode: PaletteMode) => {
   return theme;
 };
 
-// Default export for backward compatibility (light theme)
-export default createAppTheme('light');
+// Default theme instance (light mode) for backward compatibility
+const defaultTheme = createAppTheme('light');
+
+export { defaultTheme };
+export default defaultTheme;

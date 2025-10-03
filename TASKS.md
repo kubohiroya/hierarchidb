@@ -94,7 +94,21 @@
   - [ ] `pnpm --filter @hierarchidb/app build` → `pnpm preview` を実行し、ブラウザコンソールで hydration エラーが解消されたことを確認
   - [ ] ロールバック手順と検証ログを運用ログに追記
 - ロールバック手順：
-  - `app/scripts/fix-spa-build.js` を差分前へ戻し、`pnpm --filter @hierarchidb/app build` / `pnpm preview` で従来挙動に復旧する
+ - `app/scripts/fix-spa-build.js` を差分前へ戻し、`pnpm --filter @hierarchidb/app build` / `pnpm preview` で従来挙動に復旧する
+
+4) fix/ui/i18n-browser-detector-missing（i18next 言語検出モジュール解決）（P0）
+- ブランチ: `fix/ui/i18n-browser-detector-missing`（sandbox 制約で main 上で作業）
+- 依存: `@hierarchidb/ui-i18n`, `@hierarchidb/app`
+- 受け入れ基準（DoD）：
+  - [ ] `pnpm -C app dev` 起動時に `i18next-browser-languagedetector` のモジュール解決エラーが発生しない
+  - [x] `pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` が成功し、結果を運用ログに記載
+  - [ ] 依存整理の内容とロールバック手順を `TASKS.md` に追記
+- チェックリスト：
+  - [ ] `packages/ui/i18n/package.json` の依存宣言を見直し、runtime 依存を `dependencies` に整理
+  - [x] 必要に応じて `app/package.json` など消費側パッケージの peer 依存も確認
+  - [x] ロックファイル差分を確認し、不要な reinstall を避ける
+- ロールバック手順：
+  - 依存宣言差分を元に戻し、`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行して現状復旧を確認
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1337,6 +1351,20 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
   - [x] 影響範囲の型通し
  - [x] ドキュメント更新（エラー一覧）
 
+2) chore/ui/mui-peer-dev-audit（MUI peer/dev 重複ルールの棚卸し）
+- ブランチ: `chore/ui/mui-peer-dev-audit`（sandbox 制約で main 上で進行予定）
+- 依存: UI パッケージ群（`packages/ui/*`、`app` のプレビュー依存）
+- 受け入れ基準（DoD）：
+  - [ ] UI 系パッケージで `@mui/material` / `@mui/icons-material` の宣言箇所を洗い出し、peerDependencies/devDependencies の組合せと理由を `TASKS.md` の運用ログまたは進捗メモに整理
+  - [ ] 重複が不要なパッケージについて `peerDependencies`/`dependencies` のいずれかへ整理案を提示し、必要なら ToDo 化
+  - [ ] 影響パッケージで `pnpm --filter <pkg> typecheck` を実施し、結果を運用ログに記録
+- チェックリスト：
+  - [ ] `rg "@mui/material" packages/ui app` で参照箇所を棚卸し
+  - [ ] peer/dev の差異があるパッケージを列挙し、維持/整理方針を記載
+  - [ ] ポリシーの決定内容を `docs/dependency-guidelines.md`（未作成なら進捗メモ）へ反映
+- ロールバック手順：
+  - 調査のみのためなし。変更が発生した場合は該当 package.json の差分をリバートし、再度 typecheck を実行して現状復帰を確認
+
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
 - 2025-10-01 09:40 start: policy/ban-tsconfig-paths-dist-dts フォローアップ — `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` で `packages/runtime-shared/module-paths/tsconfig.json` の dist/*.d.ts 参照が検出されたため是正を開始。`git checkout -b chore/runtime-shared/module-paths-tsconfig` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成できなかったため、main 上で差分を管理しつつ `paths` を `src` 参照へ切替える方針。
@@ -1473,6 +1501,15 @@ P2:
   - ブランチ: `chore/docs/cleanup-metrics`
   - 依存: EPIC完了フェーズ
 
+- 2025-10-03 09:30 progress: packages/ui/country-select の peer/dev 依存構成を確認し、`@mui/material` と `@mui/icons-material` を peerDependencies と devDependencies の両方で宣言する運用がローカル開発に必要であることを確認済。次ステップ: UI パッケージ全体で MUI 周辺依存の整理状況を棚卸しし、方針が揃っていない箇所を ToDo 化する。
+- 2025-10-03 13:55 progress: fix/app/preview-hydration — `pnpm preview` 時に Worker 初期化が進まず UI が `CircularProgress` のまま停止する問題を調査。`@hierarchidb/runtime-shared-module-paths/src/index.ts` から `/* @vite-ignore */` を除去し、Vite が bare specifier を本番ビルドでチャンク化できるよう修正。`pnpm --filter @hierarchidb/app typecheck` は成功、`pnpm exec tsc -p packages/runtime-shared/module-paths/tsconfig.json --noEmit --incremental false --composite false` で該当パッケージの型確認も実施（tsconfig.tsbuildinfo 書き込み制限を回避）。ロールバックは当該ファイルのコメント差分を戻し、上記コマンドを再実行するだけで可。ブラウザでの再確認はユーザー環境でお願いしたい。
+- 2025-10-03 14:20 progress: fix/app/preview-hydration — `vite.preview.config.ts` にワークスペース alias を追加し、`@hierarchidb/runtime-worker`／`@hierarchidb/util` など preview ビルドで参照されるパッケージを dist 出力へ解決するように変更。`pnpm --filter @hierarchidb/app typecheck` を再実行して成功を確認。`pnpm --filter @hierarchidb/app build` は sandbox の依存未解決により未完了（途中で typecheck 用サブパッケージが `@hierarchidb/tabular` を解決できず停止）だが、ローカルフル環境では alias 追加により `commonjs--resolver` の解決失敗が解消される想定。ロールバックは `vite.preview.config.ts` の alias 追加部分を元に戻し再度 typecheck を実行するだけで可。
+- 2025-10-03 14:40 progress: fix/app/preview-hydration — `entry.client.tsx` で SSR マークアップ不在時は `hydrateRoot` ではなく `createRoot` を用いるフォールバックを実装。`#root` が存在しない／空の場合はクライアントレンダへ切り替え、`hydrateRoot` 失敗時も catch で再描画。`pnpm --filter @hierarchidb/app typecheck` を再実行して成功を確認。ロールバックは `entry.client.tsx` のフォールバック分岐を差分前へ戻すのみ。
+- 2025-10-03 15:05 progress: fix/ui/i18n-browser-detector-missing — `app/package.json` に `i18next-browser-languagedetector` / `i18next-http-backend` を追加し、`pnpm install --filter @hierarchidb/app --no-frozen-lockfile`（CI 変数付与）でワークスペースへ再リンク。インポート確認として `node -e "import('i18next-browser-languagedetector')"`（workdir=app）・`node -e "import('@hierarchidb/ui-i18n')"` を実行し成功を確認。`pnpm --filter @hierarchidb/ui-i18n typecheck` と `pnpm -C app typecheck` もグリーン。ロールバックは `app/package.json` の依存追記を戻し、再度 `pnpm install` と typecheck を実行する。
+- 2025-10-03 15:25 progress: fix/ui/i18n-browser-detector-missing — `LanguageProvider` が i18next の未初期化インスタンスを掴んでいたため、`packages/ui/i18n/src/provider/LanguageProvider.tsx` で `../i18n/index.ts` の構成済みインスタンスを参照するよう修正。`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行し成功（ブラウザ側の TreeTable `useTranslation` 警告解消を確認予定）。ロールバックは当該 import 変更を戻し再 typecheck。
+- 2025-10-03 15:45 progress: fix/ui/i18n-browser-detector-missing — `@hierarchidb/ui-i18n` から `useTranslation` 等を再エクスポートし、`@hierarchidb/ui-treeconsole-treetable` 側で同 API を利用するよう変更。`pnpm --filter @hierarchidb/ui-i18n build` → `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し dist を再生成。続けて `pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm -C app typecheck` を再度通過。ロールバックは import を `react-i18next` へ戻し再ビルド。
+- 2025-10-03 16:00 progress: fix/ui/i18n-browser-detector-missing — TreeTable のラベルが言語切替で更新されない問題に対し、`TreeTableCore` の `useMemo` 依存へ `i18n.resolvedLanguage` を組み込み、言語変更で列メタが再評価されるよう修正。再度 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `build` と `pnpm -C app typecheck` を実行し成功。ロールバックは当該依存追加を戻し再ビルドする。
+- 2025-10-03 14:45 start: fix/ui/i18n-browser-detector-missing — `pnpm dev` 起動時に `i18next-browser-languagedetector` が見つからず SSR import に失敗する事象を受けて調査を開始。`git checkout -b fix/ui/i18n-browser-detector-missing` は sandbox 制約で `unable to create directory for .git/refs/heads/...` により失敗したため、main 上で差分を管理する。
 ## 今日の着手（運用ログ） <a id="worklog-2"></a>
 
 - 2025-09-03 start: EPIC「i18nコア統一とロケール伝播」の計画を策定。問題抽出（固定言語/WorkerのlocalStorage依存/React前提初期化/ロケール未伝達）と段階導入方針を追記。

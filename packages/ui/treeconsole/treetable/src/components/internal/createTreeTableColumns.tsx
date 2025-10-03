@@ -11,7 +11,15 @@ import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from 'react-router-dom';
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
+
+type NodeTypeIconLikeProps = {
+  nodeType: string;
+  size?: string;
+  clickable?: boolean;
+  color?: 'inherit' | 'primary' | 'secondary' | 'action' | 'disabled' | 'error';
+  htmlColor?: string;
+};
 
 export interface ColumnBuilderParams {
   columnWidths: Record<string, number>;
@@ -35,7 +43,7 @@ export interface ColumnBuilderParams {
   editingNodeId: string | null;
   hideDragHandler: boolean;
   disableDragAndDrop: boolean;
-  IconComponent: React.ComponentType<{ nodeType: string; size?: string; clickable?: boolean; color?: string; htmlColor?: string }>;
+  IconComponent: ComponentType<NodeTypeIconLikeProps>;
   iconInteractive?: boolean;
   rowClickAction: 'Select/Navigate' | 'Edit';
   selectionMode: 'single' | 'multiple' | 'none';
@@ -102,6 +110,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     header: () => (
       <Tooltip title={selectAll ? selectAllLabels.clear : selectAllLabels.select} placement="right">
         <Checkbox
+          id={`row-selection-all`}
           checked={selectAll ? true : allRowsSelected}
           indeterminate={!selectAll && someSelected}
           onChange={() => handleSelectAll(!selectAll)}
@@ -118,6 +127,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
       const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
       return (
         <Checkbox
+          id={`row-selection-${row.original.id}`}
           checked={visuallyChecked}
           disabled={disableCheckbox}
           onChange={(e) => {

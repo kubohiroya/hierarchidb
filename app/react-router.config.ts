@@ -59,7 +59,7 @@ const config: ReactRouterConfig = {
 
     //  GitHub Pages404.htmlSPA
     const notFoundHtml = `<!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <title>HierarchiDB</title>

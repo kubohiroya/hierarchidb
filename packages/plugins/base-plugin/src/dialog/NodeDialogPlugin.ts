@@ -104,5 +104,3 @@ export abstract class NodeDialogPlugin<TDialog extends PeerEntity = PeerEntity> 
 
   protected getSubmitEligibility?(): NodeDialogHooks<TDialog>['canSubmit'];
 }
-
-export default NodeDialogPlugin;

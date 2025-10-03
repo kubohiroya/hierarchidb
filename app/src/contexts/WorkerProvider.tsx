@@ -97,6 +97,55 @@ type WorkerProviderProps = {
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
 
+const noopAsync = async () => undefined;
+const noopSync = () => undefined;
+
+const createFallbackWorkerClient = (): Remote<WorkerAPI> => {
+  const services = {
+    modals: {
+      open: noopAsync,
+      close: noopSync,
+      register: noopSync,
+      unregister: noopSync,
+    },
+  };
+
+  const tagApi = {
+    getAllTags: async () => [],
+    getTag: async () => null,
+    createTag: async () => ({ id: 'stub', name: 'stub' }),
+    updateTag: noopAsync,
+    deleteTag: noopAsync,
+  };
+
+  return {
+    services,
+    getTagAPI: async () => tagApi,
+  } as unknown as Remote<WorkerAPI>;
+};
+
+const noopWorkerClient = createFallbackWorkerClient();
+
+const fallbackWorkerContextValue: WorkerContextValue = {
+  client: noopWorkerClient,
+  isInitialized: false,
+  isConnected: false,
+  initProgress: 0,
+  initMessage: 'Worker not initialized',
+  error: new Error('WorkerProvider context missing'),
+  initialize: async () => {
+    if (typeof console !== 'undefined') {
+      console.warn('[WorkerProvider] initialize() called without provider; request ignored.');
+    }
+  },
+  reset: () => {
+    if (typeof console !== 'undefined') {
+      console.warn('[WorkerProvider] reset() called without provider; request ignored.');
+    }
+  },
+  getAPI: () => noopWorkerClient,
+};
+
 let initStarted = false;
 let initCompleted = false;
 
@@ -543,7 +592,10 @@ export const WorkerProvider = ({
 export const useWorker = (): WorkerContextValue => {
   const context = useContext(WorkerContext);
   if (!context) {
-    throw new Error('useWorker must be used within WorkerProvider');
+    if (typeof console !== 'undefined') {
+      console.warn('[WorkerProvider] useWorker invoked outside provider; returning fallback context.');
+    }
+    return fallbackWorkerContextValue;
   }
   return context;
 };

@@ -259,8 +259,3 @@ export interface PluginLifecycleAPI {
       */
   resetSystem(createBackup?: boolean): Promise<PluginResetResult>;
 }
-
-/**
- * Default export for the PluginLifecycleAPI interface
- */
-export default PluginLifecycleAPI;

@@ -13,5 +13,3 @@ export const FolderUIPlugin = {
   label: 'Folder',
   displayName: 'Folder',
 };
-
-export default FolderUIPlugin;

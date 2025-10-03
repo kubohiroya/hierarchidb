@@ -253,5 +253,3 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
 };
 
 ExtensibleFolderDialog.displayName = 'ExtensibleFolderDialog';
-
-export default ExtensibleFolderDialog;

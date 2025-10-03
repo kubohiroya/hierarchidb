@@ -3,7 +3,7 @@ import Joyride, { type CallBackProps, STATUS, type Step } from 'react-joyride';
 import { useTheme } from '@mui/material/styles';
 import { Box, Checkbox, FormControlLabel, GlobalStyles, IconButton, Portal } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import GuidedTourStateManager from '../managers/GuidedTourStateManager.js';
+import { GuidedTourStateManager } from '../managers/GuidedTourStateManager.js';
 
 export interface GenericGuidedTourProps {
   run: boolean;

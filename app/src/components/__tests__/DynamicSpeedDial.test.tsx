@@ -4,6 +4,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
 import type { TreeId } from '@hierarchidb/common-type';
 import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
+import "@testing-library/jest-dom";
 
 const iconModule = vi.hoisted(() => ({
   getMuiIconWithColor: vi.fn(() => <div data-testid="speed-dial-icon" />),

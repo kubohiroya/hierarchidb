@@ -164,5 +164,3 @@ export const MapWithDeckGL: React.FC<MapWithDeckGLProps> = ({ deck, onLoad, ...m
 
   return <MapComponent {...mapProps} onLoad={handleLoad} />;
 };
-
-export default MapWithDeckGL;

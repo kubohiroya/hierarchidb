@@ -35,5 +35,3 @@ export const TagInput: React.FC<TagInputProps> = ({ value = [], onChange: _onCha
     </div>
   );
 };
-
-export default TagInput;

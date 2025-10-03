@@ -19,7 +19,7 @@ import { validateOrigin } from './middleware/origin-validator.js';
 import { requireTurnstile } from './utils/turnstile.js';
 import { getEnv, type BffBindings } from './utils/env.js';
 
-const app = new Hono<BffBindings>();
+export const app = new Hono<BffBindings>();
 
 // Environment mapping middleware
 app.use('*', async (c, next) => {
@@ -458,5 +458,3 @@ const oidcDiscoveryHandler = (c: Context) => {
 // Support both with hyphen (standard) and underscore (legacy)
 app.get('/.well-known/openid-configuration', oidcDiscoveryHandler);
 app.get('/.well-known/openid_configuration', oidcDiscoveryHandler);
-
-export default app;

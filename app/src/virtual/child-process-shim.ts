@@ -4,5 +4,7 @@ export function spawn(): never {
   throw new Error('child_process.spawn is not available in the browser');
 }
 
-export default { spawn };
+const ChildProcessShim = { spawn };
 
+export { ChildProcessShim };
+export default ChildProcessShim;

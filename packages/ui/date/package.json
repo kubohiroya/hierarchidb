@@ -33,7 +33,7 @@
     "@mui/x-date-pickers": "^8.10.2"
   },
   "devDependencies": {
-    "typescript": "4.9.5"
+    "typescript": "workspace:^5.9.3"
   },
   "tsup": {
     "external": [

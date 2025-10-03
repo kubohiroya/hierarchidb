@@ -302,5 +302,3 @@ export const AUTH_CONSTANTS = {
   MAX_RETRY_COUNT: 3,
   TOKEN_REFRESH_THRESHOLD: 300000, // 5 minutes before expiry
 } as const;
-
-export default AuthNotificationRegistry;

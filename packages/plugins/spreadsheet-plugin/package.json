@@ -69,35 +69,35 @@
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/tabular": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "@types/pako": "^2.0.3",
-    "pako": "^2.1.0",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "pako": "^2.1.0"
   },
   "devDependencies": {
-    "react-i18next": "12.3.1",
-    "i18next": "22.5.0",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "fake-indexeddb": "^6.1.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
+    "i18next": "22.5.0",
     "react": "^18.3.1",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^7.3.1",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
+    "react-i18next": "12.3.1",
+    "tsup": "^8.5.0",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
   },
   "hierarchidb": {
     "plugin": {
@@ -140,13 +140,13 @@
     }
   },
   "peerDependencies": {
-    "react": "^18.3.1",
-    "dexie": "^4.2.0",
-    "react-i18next": "12.3.1",
-    "i18next": "22.5.0",
-    "@mui/material": "^7.3.2",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@mui/icons-material": "^7.3.2",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
+    "@mui/material": "^7.3.2",
+    "dexie": "^4.2.0",
+    "i18next": "22.5.0",
+    "react": "^18.3.1",
+    "react-i18next": "12.3.1"
   },
   "tsup": {
     "external": [

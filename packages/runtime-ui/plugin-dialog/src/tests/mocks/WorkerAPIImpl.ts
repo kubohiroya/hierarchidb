@@ -406,5 +406,3 @@ export class WorkerAPIImpl {
     };
   }
 }
-
-export default WorkerAPIImpl;

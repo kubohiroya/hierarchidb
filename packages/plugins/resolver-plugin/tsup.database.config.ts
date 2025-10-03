@@ -1,6 +1,6 @@
 import { createTsupConfig } from '../../../tsup.base.config.js';
 
-export default createTsupConfig({
+const TsupDatabaseConfig = createTsupConfig({
   entry: {
     'database/index': 'src/database/index.ts',
   },
@@ -8,4 +8,5 @@ export default createTsupConfig({
     'dexie',
   ],
 });
+export { TsupDatabaseConfig };
 

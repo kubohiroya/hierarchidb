@@ -226,8 +226,3 @@ export interface PluginTreeAPI {
     options?: MetricOptions,
   ): Promise<PluginMetrics>;
 }
-
-/**
- * Default export for the PluginTreeAPI interface
- */
-export default PluginTreeAPI;

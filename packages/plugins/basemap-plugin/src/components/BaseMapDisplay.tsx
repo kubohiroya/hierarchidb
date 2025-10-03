@@ -409,5 +409,3 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
     </Box>
   );
 };
-
-export default BaseMapDisplay;

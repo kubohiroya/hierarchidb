@@ -120,5 +120,3 @@ export function AdvancedTreeTable(props: TreeTableCorePropsWithPlugins): ReactEl
     />
   );
 }
-
-export default TreeTableCoreWithPlugins;

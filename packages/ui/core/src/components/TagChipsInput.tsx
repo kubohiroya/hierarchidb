@@ -110,5 +110,3 @@ export const TagChipsInput: React.FC<TagChipsInputProps> = ({
     </Box>
   );
 };
-
-export default TagChipsInput;

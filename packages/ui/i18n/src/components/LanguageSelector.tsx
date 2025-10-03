@@ -53,5 +53,3 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   // Add other variants (buttons, compact) here if needed
   return null;
 };
-
-export default LanguageSelector;

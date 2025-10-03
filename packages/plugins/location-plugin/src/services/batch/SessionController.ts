@@ -140,14 +140,15 @@ export class SessionController {
     });
 
     // 3) Import generated tiles back into location DB for compatibility
-    const list = await client.vectortile.listTiles(fileId);
+    type VectorTileRecord = { z: number; x: number; y: number; size: number; timestamp?: number };
+    const list: VectorTileRecord[] = await client.vectortile.listTiles(fileId);
     const total = list.length;
     let completed = 0;
     const batch = new BatchService();
     const laneName = 'tilegen';
     const concurrency = SessionController.laneRegistry.recommendConcurrency([laneName], 4);
 
-    await batch.mapChunks(list, async (t) => {
+    await batch.mapChunks<VectorTileRecord, void>(list, async (t) => {
       await SessionController.laneRegistry.runWithLane(laneName, async () => {
         if (this.cancelled) return;
         while (this.paused) await new Promise(r => setTimeout(r, 100));

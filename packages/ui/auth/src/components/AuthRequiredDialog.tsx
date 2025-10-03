@@ -455,5 +455,3 @@ export function AuthRequiredDialog({
     </Dialog>
   );
 }
-
-export default AuthRequiredDialog;

@@ -18,5 +18,3 @@ export const StylerView: React.FC<StylerViewProps> = ({ nodeId }) => {
     </div>
   );
 };
-
-export default StylerView;

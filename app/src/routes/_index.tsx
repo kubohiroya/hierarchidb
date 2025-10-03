@@ -59,6 +59,11 @@ export default function Index() {
   // Get _app config from context
   const { appTitle, appDescription, appHomepage } = useAppConfig();
   const navigate = useNavigate();
+  const [isUserMenuReady, setUserMenuReady] = useState(false);
+
+  useEffect(() => {
+    setUserMenuReady(true);
+  }, []);
 
   // Track if we're in browser environment to avoid SSR/hydration mismatch
   const [isClient, setIsClient] = useState(false);
@@ -148,7 +153,7 @@ export default function Index() {
           >
             v1.0.0
           </div>
-          <UserLoginButton />
+          {isUserMenuReady ? <UserLoginButton /> : null}
         </div>
 
         {/* Main content */}

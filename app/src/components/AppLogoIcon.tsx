@@ -39,4 +39,3 @@ export const AppLogoIcon: React.FC<AppLogoIconProps> = ({ size = 32 }) => (
 );
 
 export default AppLogoIcon;
-

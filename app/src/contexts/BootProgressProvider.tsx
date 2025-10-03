@@ -37,6 +37,10 @@ export const useBootProgress = (): BootProgressContextValue => {
   return ctx;
 };
 
+export const useOptionalBootProgress = (): BootProgressContextValue | null => {
+  return useContext(BootProgressContext);
+};
+
 export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   = ({ children }) => {
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {

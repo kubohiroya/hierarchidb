@@ -249,5 +249,3 @@ export function AutoHideFullScreenDialog({
     </Dialog>
   );
 }
-
-export default AutoHideFullScreenDialog;

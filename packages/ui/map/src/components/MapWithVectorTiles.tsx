@@ -6,7 +6,7 @@
 import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import type { MapLibreMapInstance } from '../types/maplibre-public.js';
-import VectorTileLayer from './VectorTileLayer.js';
+import { VectorTileLayer } from './VectorTileLayer.js';
 import {
   type BaseMapProps,
   DEFAULT_MAP_CONFIG,
@@ -159,5 +159,3 @@ export const MapWithVectorTiles: React.FC<MapWithVectorTilesProps> = ({
     </MapComponent>
   );
 };
-
-export default MapWithVectorTiles;

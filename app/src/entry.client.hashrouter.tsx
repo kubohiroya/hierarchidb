@@ -31,10 +31,15 @@ async function createApp() {
   return createHashRouter(resolvedRoutes as unknown as RouteObject[]);
 }
 
+function removeHydrateFallback(): void {
+  document.getElementById('hdb-hydrate-fallback')?.remove();
+}
+
 createApp().then((router) => {
   startTransition(() => {
     const root = document.getElementById('root');
     if (!root) throw new Error('Root element not found');
+    removeHydrateFallback();
     const base = import.meta?.env?.BASE_URL || (document?.baseURI ? new URL(document.baseURI).pathname : '/');
     const b = typeof base === 'string' ? base : '/';
     if (b && b !== '/' && location.pathname.startsWith(b) && !location.hash) {

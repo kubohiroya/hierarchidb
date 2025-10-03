@@ -45,5 +45,3 @@ export class GuidedTourStateManager {
     this.tourDisabled.clear();
   }
 }
-
-export default GuidedTourStateManager;

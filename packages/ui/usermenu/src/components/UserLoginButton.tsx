@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -25,32 +25,69 @@ import {
   MemoryOutlined as MemoryOutlinedIcon,
 } from '@mui/icons-material';
 import { AuthProviderDialog, type AuthProviderType, useAuth, UserAvatar } from '@hierarchidb/ui-auth';
-import { type ThemeMode, useThemeMode } from '@hierarchidb/ui-theme';
+import { ThemeContext, type ThemeMode, type ThemeContextType } from '@hierarchidb/ui-theme';
 import { getThemeDisplayName, getThemeIcon } from '@hierarchidb/ui-core';
-import { type LanguageConfig, useLanguage } from '@hierarchidb/ui-i18n';
+import { useLanguage, SUPPORTED_LANGUAGES } from '@hierarchidb/ui-i18n';
+
+type LanguageConfig = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const UserLoginButton: React.FC = () => {
+  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
+
   const { user, signIn, signOut, auth } = useAuth();
-  const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
-  const { currentLanguage, supportedLanguages, changeLanguage } = useLanguage();
-  const isLoading = auth.isLoading;
-  const isAuthenticated = auth.isAuthenticated;
+
+  const themeContext = useContext<ThemeContextType | null>(ThemeContext);
+  if (!themeContext) {
+    return null;
+  }
+
+  const languageContext = useLanguage();
+  const { mode: themeMode, setMode: setThemeMode } = themeContext;
+  const fallbackLanguage: LanguageConfig = useMemo(() => (
+    SUPPORTED_LANGUAGES[0] ?? {
+      code: 'en',
+      name: 'English',
+      nativeName: 'English',
+      flag: '🇺🇸',
+      direction: 'ltr' as const,
+      dateLocale: undefined,
+    }
+  ), []);
+
+
+  // Load memory monitor visibility state on mount
+  useEffect(() => {
+    const savedVisibility = localStorage.getItem('memoryMonitorVisible');
+    if (savedVisibility === 'true') {
+      setMemoryMonitorVisible(true);
+    }
+  }, []);
+
+  const handleToggleMemoryMonitor = useCallback(() => {
+    const newVisibility = !memoryMonitorVisible;
+    setMemoryMonitorVisible(newVisibility);
+    localStorage.setItem('memoryMonitorVisible', newVisibility.toString());
+    // Dispatch custom event to notify MemoryUsageMonitor component
+    window.dispatchEvent(
+      new CustomEvent('memoryMonitorToggle', {
+        detail: { visible: newVisibility },
+      }),
+    );
+  }, [memoryMonitorVisible]);
 
   // Menu state management
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [themeMenuAnchorEl, setThemeMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const [languageMenuAnchorEl, setLanguageMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const [authProviderDialogOpen, setAuthProviderDialogOpen] = React.useState(false);
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
   const [memoryMonitorVisible, setMemoryMonitorVisible] = React.useState(false);
 
-  // Load memory monitor visibility state on mount
-  React.useEffect(() => {
-    const savedVisibility = localStorage.getItem('memoryMonitorVisible');
-    if (savedVisibility === 'true') {
-      setMemoryMonitorVisible(true);
-    }
-  }, []);
+  const currentLanguage = languageContext.currentLanguage ?? fallbackLanguage;
+  const supportedLanguages = languageContext.supportedLanguages ?? SUPPORTED_LANGUAGES;
+  const changeLanguage = languageContext.changeLanguage ?? (async () => {});
+  const isLoading = auth.isLoading;
+  const isAuthenticated = auth.isAuthenticated;
 
   // Event handlers
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -90,18 +127,6 @@ export const UserLoginButton: React.FC = () => {
     handleLanguageMenuClose();
     handleMenuClose();
   };
-
-  const handleToggleMemoryMonitor = React.useCallback(() => {
-    const newVisibility = !memoryMonitorVisible;
-    setMemoryMonitorVisible(newVisibility);
-    localStorage.setItem('memoryMonitorVisible', newVisibility.toString());
-    // Dispatch custom event to notify MemoryUsageMonitor component
-    window.dispatchEvent(
-      new CustomEvent('memoryMonitorToggle', {
-        detail: { visible: newVisibility },
-      }),
-    );
-  }, [memoryMonitorVisible]);
 
   const handleLogout = async () => {
     signOut();
@@ -143,10 +168,14 @@ export const UserLoginButton: React.FC = () => {
       // Close base-dialog and reload page to apply changes
       setClearCacheDialogOpen(false);
       window.location.reload();
-    } catch (error) {
+    } catch {
       alert('Failed to clear some cache data. Please try again.');
     }
   };
+
+  if (!hasDom) {
+    return null;
+  }
 
   // Show loading state during authentication
   if (isLoading) {

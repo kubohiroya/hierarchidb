@@ -104,8 +104,8 @@
     "dexie": "^4.2.0",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/download": "workspace:*",
-    "@mui/icons-material": "^7.3.1",
-    "@mui/material": "^5.16.7 || ^6.0.0",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
@@ -127,8 +127,8 @@
     "jsdom": "^25.0.1",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "@mui/material": "^5.16.7 || ^6.0.0",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4"
   },
   "type": "module",

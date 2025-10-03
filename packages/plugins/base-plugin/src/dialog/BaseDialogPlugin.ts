@@ -45,5 +45,3 @@ export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity>
     };
   }
 }
-
-export default BaseDialogPlugin;

@@ -13,5 +13,3 @@ export const EriaCartLogo: React.FC<{ size?: number }> = ({ size = 24 }) => {
     </svg>
   );
 };
-
-export default EriaCartLogo;

@@ -11,4 +11,6 @@ export function randomUUID(): string {
 }
 
 const defaultExport = { randomUUID } as const;
+
+export { defaultExport };
 export default defaultExport;

@@ -177,5 +177,3 @@ export class StylerExtensionHandler {
     // This would clear any cached data related to this Styler
   }
 }
-
-export default StylerExtensionHandler;

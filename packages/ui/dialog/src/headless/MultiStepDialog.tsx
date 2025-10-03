@@ -89,5 +89,3 @@ export function HeadlessMultiStepDialog<TData>(props: HeadlessMultiStepDialogPro
     </MultiStepDialogProvider>
   );
 }
-
-export default HeadlessMultiStepDialog;

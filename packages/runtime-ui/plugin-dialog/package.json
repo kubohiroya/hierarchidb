@@ -46,11 +46,11 @@
   "devDependencies": {
     "@types/react": "^18.3.1",
     "tsup": "^8.3.5",
-    "typescript": "~5.9.2",
+    "typescript": "workspace:^5.9.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@mui/material": "^7.1.0",
-    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {

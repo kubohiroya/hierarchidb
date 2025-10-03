@@ -84,5 +84,3 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     </Box>
   );
 };
-
-export default LoginForm;

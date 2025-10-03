@@ -69,17 +69,17 @@
     "dev:tsc": "tsc --watch"
   },
   "dependencies": {
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/tag": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
+    "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "i18next": "22.5.0",
     "react-i18next": "12.3.1"
   },
@@ -88,20 +88,20 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
-    "react": ">=18.0.0",
-    "dexie": "^4.2.0"
+    "dexie": "^4.2.0",
+    "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^5.0.2",
+    "dexie": "^4.2.0",
     "fake-indexeddb": "^6.2.2",
     "jsdom": "^26.1.0",
     "react": ">=18.0.0",
-    "@mui/material": "^7.3.1",
-    "@mui/icons-material": "^7.3.1",
-    "dexie": "^4.2.0",
     "vitest": "^3.2.4"
   },
   "keywords": [

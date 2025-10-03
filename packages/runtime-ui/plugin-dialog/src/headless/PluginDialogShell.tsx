@@ -15,5 +15,3 @@ export const PluginDialogShell: React.FC<PluginDialogShellProps> = (props) => {
 };
 
 PluginDialogShell.displayName = 'PluginDialogShell';
-
-export default PluginDialogShell;

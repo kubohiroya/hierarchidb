@@ -1,7 +1,5 @@
-// Stub module for @hierarchidb/plugins-spreadsheet-plugin
-// This package is currently incomplete; loading a stub prevents Vite import-analysis errors
-// and lets the app continue to run without spreadsheet features.
-
 const SpreadsheetPluginStub = {};
+
+export { SpreadsheetPluginStub };
 export default SpreadsheetPluginStub;
 

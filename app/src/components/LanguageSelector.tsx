@@ -98,8 +98,6 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
     </FormControl>
   );
 };
-
-export default LanguageSelector;
 type LanguageWindow = Window & {
   i18next?: {
     changeLanguage?: (lang: string) => unknown;

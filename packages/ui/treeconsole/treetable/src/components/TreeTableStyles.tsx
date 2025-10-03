@@ -8,7 +8,8 @@ type StyledRowProps = TableRowProps & { selected?: boolean };
 
 const mergeSx = (base: SxProps<Theme>, incoming?: SxProps<Theme>): SxProps<Theme> => {
   if (!incoming) return base;
-  return Array.isArray(incoming) ? [base, ...incoming] : [base, incoming];
+  const parts = Array.isArray(incoming) ? incoming : [incoming];
+  return [base, ...parts] as SxProps<Theme>;
 };
 
 export const StyledTableContainer = forwardRef<HTMLDivElement, BoxProps>(function StyledTableContainer(

@@ -196,9 +196,18 @@ if (typeof window !== 'undefined') {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
+    <>
+    {children}
+    <ScrollRestoration />
+    <Scripts />
+    </>
+  );
+}
+export function _Layout({ children }: { children: React.ReactNode }) {
+  return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <Meta />
+    <head>
+      <Meta />
       <Links />
     </head>
     <body suppressHydrationWarning>
@@ -215,6 +224,7 @@ export function HydrateFallback() {
   // Simple splash screen without complex theme providers to avoid hydration issues
   return (
     <div
+      id="hdb-hydrate-fallback"
       style={{
         position: 'fixed',
         inset: 0,

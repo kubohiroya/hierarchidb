@@ -239,8 +239,3 @@ export interface NodeTypeAPI {
    */
   getNodeTypeStats(): Promise<Record<NodeType, number>>;
 }
-
-/**
- * Default export for the NodeTypeAPI interface
- */
-export default NodeTypeAPI;

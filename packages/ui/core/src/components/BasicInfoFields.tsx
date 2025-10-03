@@ -123,5 +123,3 @@ export const BasicInfoFields: React.FC<BasicInfoFieldsProps> = ({
     </Box>
   );
 };
-
-export default BasicInfoFields;

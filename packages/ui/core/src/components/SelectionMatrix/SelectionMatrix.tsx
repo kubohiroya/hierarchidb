@@ -258,5 +258,3 @@ export function SelectionMatrix<T = any>({
     </TableContainer>
   );
 }
-
-export default SelectionMatrix;

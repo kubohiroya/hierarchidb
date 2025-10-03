@@ -10,6 +10,4 @@ export interface VMPluginDefinition {
   config?: unknown;
 }
 
-const pluginDefinitions: VMPluginDefinition[] = [];
-export default pluginDefinitions;
-
+export const pluginDefinitions: VMPluginDefinition[] = [];

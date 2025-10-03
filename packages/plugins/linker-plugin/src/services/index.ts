@@ -35,5 +35,3 @@ export class LinkerResourceService {
 export const linkerServices = {
   LinkerResourceService,
 };
-
-export default linkerServices;

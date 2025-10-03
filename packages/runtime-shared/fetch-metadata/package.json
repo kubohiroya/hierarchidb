@@ -37,7 +37,7 @@
     "eslint": "^9.34.0",
     "prettier": "^3.2.5",
     "tsup": "^8.0.2",
-    "typescript": "^5.3.3",
+    "typescript": "workspace:^5.9.3",
     "undici-types": "^7.15.0"
   },
   "files": [

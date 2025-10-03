@@ -113,5 +113,3 @@ export const BaseDialog: React.FC<BaseDialogProps> = ({
     </Box>
   );
 };
-
-export default BaseDialog;

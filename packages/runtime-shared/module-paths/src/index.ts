@@ -47,55 +47,27 @@ type OptionalFeatureModule = Record<string, unknown> | unknown;
 type PluginWorkerModule = Record<string, unknown> | unknown;
 
 const runtimeWorkerImporter = () =>
-  import(
-    /* @vite-ignore */ '@hierarchidb/runtime-worker'
-  ) as Promise<RuntimeWorkerModule>;
+  import('@hierarchidb/runtime-worker') as Promise<RuntimeWorkerModule>;
 
 const runtimeWorkerBootstrapImporter = () =>
-  import(
-    /* @vite-ignore */ '@hierarchidb/runtime-worker-bootstrap'
-  ) as Promise<Record<string, unknown>>;
+  import('@hierarchidb/runtime-worker-bootstrap') as Promise<Record<string, unknown>>;
 
 const optionalFeatureImporters: Record<OptionalFeatureId, () => Promise<OptionalFeatureModule>> = {
-  mapAdapter: () => import(
-    /* @vite-ignore */ '@hierarchidb/map-adapter'
-  ) as Promise<OptionalFeatureModule>,
-  tabularXlsx: () => import(
-    /* @vite-ignore */ '@hierarchidb/tabular-xlsx'
-  ) as Promise<OptionalFeatureModule>,
+  mapAdapter: () => import('@hierarchidb/map-adapter') as Promise<OptionalFeatureModule>,
+  tabularXlsx: () => import('@hierarchidb/tabular-xlsx') as Promise<OptionalFeatureModule>,
 };
 
 const pluginWorkerImporters: Record<PluginWorkerId, () => Promise<PluginWorkerModule>> = {
-  basemap: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-basemap-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  folder: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-folder-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  resolver: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-resolver-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  route: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-route-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  spreadsheet: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-spreadsheet-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  styler: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-styler-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  shape: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-shape-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  location: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-location-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  linker: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-linker-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
-  timeline: () => import(
-    /* @vite-ignore */ '@hierarchidb/plugins-timeline-plugin/worker-factory'
-  ) as Promise<PluginWorkerModule>,
+  basemap: () => import('@hierarchidb/plugins-basemap-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  folder: () => import('@hierarchidb/plugins-folder-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  resolver: () => import('@hierarchidb/plugins-resolver-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  route: () => import('@hierarchidb/plugins-route-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  spreadsheet: () => import('@hierarchidb/plugins-spreadsheet-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  styler: () => import('@hierarchidb/plugins-styler-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  shape: () => import('@hierarchidb/plugins-shape-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  location: () => import('@hierarchidb/plugins-location-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  linker: () => import('@hierarchidb/plugins-linker-plugin/worker-factory') as Promise<PluginWorkerModule>,
+  timeline: () => import('@hierarchidb/plugins-timeline-plugin/worker-factory') as Promise<PluginWorkerModule>,
 };
 
 /**
