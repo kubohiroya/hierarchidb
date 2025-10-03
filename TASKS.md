@@ -66,6 +66,7 @@
     - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo,command-processor-undo-redo` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
+ - ※ Playwright スモーク整備は ToDo「test/runtime-worker/undo-redo-playwright-smoke」でテストファースト実施予定（red→greenで完了させる）。
 
 2) SpeedDial フォルダ作成ダイアログの DialogState 購読エラー修正（P1）
 - ブランチ: `fix/ui/speeddial-dialog-state`（ローカル sandbox 制約で main 上で作業中）
@@ -81,38 +82,39 @@
 - ロールバック手順：
  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
   - Worker 側の API 変更があれば revert し、テスト追加分を削除
-
-3) Preview 環境 React hydration エラー修正（P1）
-- ブランチ: `fix/app/preview-hydration`（sandbox の Git refs 作成制限で main 上で暫定対応）
-- 依存: `@hierarchidb/app`, `app/scripts/fix-spa-build.js`
-- 受け入れ基準（DoD）：
-  - [ ] `pnpm --filter @hierarchidb/app build` 実行後に `pnpm preview` を起動しても React #418/#423 の hydration エラーが発生しない
-  - [ ] `build/client/index.html` の生成物が `HydratedRouter` が期待する SSR マークアップ構造を保持している（要手動確認）
-  - [ ] `pnpm -C app typecheck` が成功し、結果を運用ログへ記録
-- チェックリスト：
-  - [ ] `app/scripts/fix-spa-build.js` を既存 HTML を破壊しない差分ベース更新へ改修
-  - [ ] `pnpm --filter @hierarchidb/app build` → `pnpm preview` を実行し、ブラウザコンソールで hydration エラーが解消されたことを確認
-  - [ ] ロールバック手順と検証ログを運用ログに追記
-- ロールバック手順：
- - `app/scripts/fix-spa-build.js` を差分前へ戻し、`pnpm --filter @hierarchidb/app build` / `pnpm preview` で従来挙動に復旧する
-
-4) fix/ui/i18n-browser-detector-missing（i18next 言語検出モジュール解決）（P0）
-- ブランチ: `fix/ui/i18n-browser-detector-missing`（sandbox 制約で main 上で作業）
-- 依存: `@hierarchidb/ui-i18n`, `@hierarchidb/app`
-- 受け入れ基準（DoD）：
-  - [ ] `pnpm -C app dev` 起動時に `i18next-browser-languagedetector` のモジュール解決エラーが発生しない
-  - [x] `pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` が成功し、結果を運用ログに記載
-  - [ ] 依存整理の内容とロールバック手順を `TASKS.md` に追記
-- チェックリスト：
-  - [ ] `packages/ui/i18n/package.json` の依存宣言を見直し、runtime 依存を `dependencies` に整理
-  - [x] 必要に応じて `app/package.json` など消費側パッケージの peer 依存も確認
-  - [x] ロックファイル差分を確認し、不要な reinstall を避ける
-- ロールバック手順：
-  - 依存宣言差分を元に戻し、`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行して現状復旧を確認
+ - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
+
+-- テストファースト追加タスク（Doing #1/#2 フォロー） --
+- test/runtime-worker/undo-redo-playwright-smoke（Playwright スモーク導入, P1）
+  - ブランチ: `test/runtime-worker/undo-redo-playwright-smoke`
+  - 依存: Doing 1) Undo/Redo 仕上げ（restore 含む）
+  - 受け入れ基準（DoD）：
+    - [ ] 既存の Undo/Redo UI シナリオを Playwright で再現し、現状は失敗（red）するテストを追加
+    - [ ] UI 待機や Worker flag 初期化の修正でテストをグリーン化
+    - [ ] `pnpm playwright test --project=chromium --grep "cp routing undo/redo"` が通過
+    - [ ] 実行ログを TASKS 運用ログへ追記
+  - チェックリスト：
+    - [ ] SpeedDial 経由の複合操作を自動化し、Worker flag on/off 両方を検証
+    - [ ] フラグ初期化・DB リセットヘルパーを Playwright 共通モジュールへ切り出し
+  - ロールバック手順：
+    - 追加した Playwright テストとヘルパーを削除し、`pnpm playwright test` を再実行
+
+- test/runtime-ui/speeddial-dialog-state-regression（DialogState 購読 E2E, P1）
+  - ブランチ: `test/runtime-ui/speeddial-dialog-state-regression`
+  - 依存: Doing 2) SpeedDial フォルダ作成ダイアログの DialogState 購読エラー修正
+  - 受け入れ基準（DoD）：
+    - [ ] SpeedDial → Dialog 起動パスの現状バグを headless/Vitest いずれかで再現（red）
+    - [ ] `usePluginDialogController` の修正を前提にテストをグリーン化し、購読解除まで検証
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test -- --run dialog-state` を追加し通過
+  - チェックリスト：
+    - [ ] DialogState API をモックし、subscribe/unsubscribe/エラー経路の挙動を確認
+    - [ ] SpeedDial からの手動確認結果を運用ログへ記録
+  - ロールバック手順：
+    - 追加テストと補助コードを削除し、既存テストを再実行
 
 優先実施順（インデックス）
 1) refactor/shape/batch-to-session（Batch責務のSession集約）
@@ -1825,6 +1827,12 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- Preview 環境 React hydration エラー修正（P1） — SSR スプラッシュの除去と Worker バンドル URL 調整で preview 時の hydrate エラーを抑止
+  - ブランチ: `fix/app/preview-hydration`
+  - 要点: HydrateFallback DOM に ID を付与しクライアント初期化時に除去、`worker.ts?worker&url` を採用して `pnpm preview` でも Worker が適切な MIME で配信されるよう修正。`pnpm --filter @hierarchidb/app typecheck` はグリーン（build/preview 実行は sandbox 制約で未実施）。
+- fix/ui/i18n-browser-detector-missing（i18next 言語検出モジュール解決, P0） — ランタイム依存の再整理で検出モジュールの解決エラーを解消
+  - ブランチ: `fix/ui/i18n-browser-detector-missing`
+  - 要点: `@hierarchidb/ui-i18n` の `package.json` を更新し、`i18next-browser-languagedetector` / `i18next-http-backend` / `date-fns` を runtime dependencies へ移行。`pnpm --filter @hierarchidb/ui-i18n typecheck` は `.tsbuildinfo` 書き込み制限でローカル実行不可だったため、書き込み可能な環境での再確認を要ログ。
 - Route/Worker バッチ結合テスト整備（P1） — cp-routing WFL/Playwright/CI 統合で flag off/on 両経路を保証
   - ブランチ: `feat/e2e/cp-routing-wc`
   - 受け入れ基準（DoD）：

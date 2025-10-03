@@ -94,6 +94,12 @@
       "@hierarchidb/common-api/*": [
         "packages/common/api/src/*"
       ],
+      "@hierarchidb/batch": [
+        "packages/feature/batch/src/index.ts"
+      ],
+      "@hierarchidb/batch/*": [
+        "packages/feature/batch/src/*"
+      ],
       "@hierarchidb/runtime-ui-plugin-dialog": [
         "packages/runtime-ui/plugin-dialog/src/index.ts"
       ],
