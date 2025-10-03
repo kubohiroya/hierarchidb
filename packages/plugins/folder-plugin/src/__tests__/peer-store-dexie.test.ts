@@ -21,20 +21,20 @@ describe('folder-plugin: PeerStore Dexie', () => {
     const n2 = 'n2' as NodeId;
 
     // put + get
-    await store.put({ nodeId: n1, data: { v: 1 } });
+    await store.put({ nodeId: n1, data: { schemaVersion: 1, domain: { v: 1 } } as any });
     const p1 = await store.get(n1);
-    expect(p1?.data?.v).toBe(1);
+    expect(p1?.data?.domain?.v).toBe(1);
 
     // bulkUpsert
     await store.bulkUpsert([
-      { nodeId: n1, data: { v: 2 } },
-      { nodeId: n2, data: { v: 3 } },
+      { nodeId: n1, data: { schemaVersion: 1, domain: { v: 2 } } },
+      { nodeId: n2, data: { schemaVersion: 1, domain: { v: 3 } } },
     ] as any);
 
     const p1b = await store.get(n1);
     const p2 = await store.get(n2);
-    expect(p1b?.data?.v).toBe(2);
-    expect(p2?.data?.v).toBe(3);
+    expect(p1b?.data?.domain?.v).toBe(2);
+    expect(p2?.data?.domain?.v).toBe(3);
 
     // delete
     await store.delete(n1);
@@ -42,4 +42,3 @@ describe('folder-plugin: PeerStore Dexie', () => {
     expect(gone).toBeUndefined();
   });
 });
-

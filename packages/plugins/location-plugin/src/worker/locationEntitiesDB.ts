@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
 import type { LocationGroupItemData, LocationPeerData, LocationRelationMeta } from '../types/entities.js';
 
 export type LocationPeerRow = {
@@ -10,6 +10,7 @@ export type LocationPeerRow = {
   displayMode?: 'normal' | 'maximize' | 'full-screen';
   dialogPosition?: { x: number; y: number };
   dialogSize?: { width: number; height: number };
+  dialogState?: MultiStepDialogState | null;
 };
 export type LocationGroupRow = { nodeId: NodeId; id: string; data?: LocationGroupItemData; updatedAt?: number };
 export type LocationRelationRow = {

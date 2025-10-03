@@ -3,6 +3,7 @@
  */
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import workerScriptUrl from './worker.ts?worker&url';
 import { bootLog } from './utils/bootLog.js';
 import {
   WORKER_FLAG_OVERRIDES_STORAGE_KEY,
@@ -62,6 +63,19 @@ const COMLINK_NOISE_TYPES = new Set([
 
 const TRUE_FLAG_VALUES = new Set(['1', 'true', 'on', 'enabled']);
 const FALSE_FLAG_VALUES = new Set(['0', 'false', 'off', 'disabled']);
+
+function resolveWorkerUrl(): URL {
+  if (typeof workerScriptUrl === 'string') {
+    if (typeof window !== 'undefined') {
+      return new URL(workerScriptUrl, window.location.origin);
+    }
+    const globalScope = globalThis as { location?: Location };
+    if (globalScope.location?.origin) {
+      return new URL(workerScriptUrl, globalScope.location.origin);
+    }
+  }
+  return new URL('./worker.ts', import.meta.url);
+}
 
 function normalizeWorkerFlagValue(value: unknown): string | null {
   if (typeof value === 'boolean') return value ? '1' : '0';
@@ -126,7 +140,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
         rawWorkerInstance = null;
       }
 
-      const workerUrl = new URL('./worker.ts', import.meta.url);
+      const workerUrl = resolveWorkerUrl();
       applyWorkerFlagOverrides(workerUrl);
       rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
 

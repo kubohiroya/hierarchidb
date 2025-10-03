@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
 import type { ShapePeerData } from '../types/entities.js';
 
 export type ShapePeerRow = {
@@ -10,6 +10,7 @@ export type ShapePeerRow = {
   displayMode?: 'normal' | 'maximize' | 'full-screen';
   dialogPosition?: { x: number; y: number } | null;
   dialogSize?: { width: number; height: number } | null;
+  dialogState?: MultiStepDialogState | null;
 };
 export type ShapeGroupRow = { nodeId: NodeId; id: string; data?: unknown; updatedAt?: number };
 export type ShapeRelationRow = {

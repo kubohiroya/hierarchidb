@@ -77,8 +77,13 @@ const createNotFoundHtml = (basePath) => `<!DOCTYPE html>
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
         l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.pathname
+          .slice(1)
+          .split('/')
+          .slice(pathSegmentsToKeep)
+          .join('/')
+          .replaceAll('&', '~and~') +
+        (l.search ? '&' + l.search.slice(1).replaceAll('&', '~and~') : '') +
         l.hash
       );
     </script>

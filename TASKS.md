@@ -127,6 +127,47 @@
 10) fix/resolver/error-notify（エラー通知）
 11) test/base-plugin/minimal-unit（最小ユニット）
 12) test/resolver/headless-integration-stabilize（ResolverDialog ヘッドレス結合テスト再有効化）
+13) test/runtime/dialog-state-service-sanity（DialogStateAPI サービスのテストファースト整備）
+  - ブランチ: `test/runtime/dialog-state-service-sanity`
+  - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`
+  - 受け入れ基準（DoD）：
+    - [ ] Worker 側 `DialogStateService` を対象に、`publishState` / `getState` / `subscribeState` / `unsubscribeState` の往復を検証する Vitest を追加し、CI で失敗を再現（レッド）→ 実装修正でグリーンにするテストファーストを実施
+    - [ ] peerStore 未登録時の挙動（警告出力）の検証を含む
+    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` を実行し、追加テストが通過
+  - チェックリスト：
+    - [ ] `DialogStateService` 用のモック PeerStore 実装を用意
+    - [ ] subscribe → publish → unsubscribe のシナリオを網羅
+    - [ ] テストレポートを `TASKS.md` 運用ログに記録
+  - ロールバック手順：
+    - 追加したテストファイルと補助コードを削除し、`pnpm --filter @hierarchidb/runtime-worker test` を再実行
+
+14) fix/runtime/dialog-state-peer-wiring（DialogState peer-store 結線）
+  - ブランチ: `fix/runtime/dialog-state-peer-wiring`
+  - 依存: `test/runtime/dialog-state-service-sanity`
+  - 受け入れ基準（DoD）：
+    - [ ] 各プラグイン定義（少なくとも folder/route/styler 系）に DialogState 用 peerStore 名を登録し、`storeRegistry` 経由で `DialogStateService` が正しいストアへ書き込みできるようにする
+    - [ ] テストファースト：上記 13) のテスト群が失敗→接続実装でグリーンになる流れを確認
+    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` および該当プラグインの型検証が成功
+  - チェックリスト：
+    - [ ] PeerStore の初期化コードとプラグイン定義の結線を追加
+    - [ ] デバッグログ（必要なら）を整備し、成功時には `[DialogStateService]` 系ログで確認
+    - [ ] 影響範囲のドキュメント（plugin-dialog README など）を更新
+  - ロールバック手順：
+    - 追加した PeerStore 定義を元に戻し、テストを再実行
+
+15) fix/ui/dialog-state-workingcopy-sync（PluginDialogShell WorkingCopy 同期）
+  - ブランチ: `fix/ui/dialog-state-workingcopy-sync`
+  - 依存: `fix/runtime/dialog-state-peer-wiring`
+  - 受け入れ基準（DoD）：
+    - [ ] `usePluginDialogController` で WorkingCopy 初期化後に `DialogStateAPI.publishState` / `subscribeState` が実際に呼ばれ、`workerDialogState` に反映されることをテストファーストで確認（ヘッドレスまたは component テストを追加）
+    - [ ] SpeedDial → フォルダ作成ダイアログの初期値が UI テスト（Playwright など）で自動検証される
+    - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test`（新設テスト）と `pnpm -C app typecheck` が成功
+  - チェックリスト：
+    - [ ] `DialogStateAPI` の購読結果を BasicInfo/ステッパーへ反映するコードを整理
+    - [ ] 新規テスト（失敗→修正→成功）を追加し、ログに結果を記録
+    - [ ] 必要に応じて `PluginDialogShell` のログレベルを調整
+  - ロールバック手順：
+    - 新規テストと同期ロジックをリバートし、従来挙動に戻して型検証を再実行
 
 - refactor/plugins/entity-type-safety — プラグイン拡張定義の型安全化（PeerEntity ジェネリクス適用）
   - ブランチ: `refactor/plugins/entity-type-safety`
@@ -1509,6 +1550,11 @@ P2:
 - 2025-10-03 15:25 progress: fix/ui/i18n-browser-detector-missing — `LanguageProvider` が i18next の未初期化インスタンスを掴んでいたため、`packages/ui/i18n/src/provider/LanguageProvider.tsx` で `../i18n/index.ts` の構成済みインスタンスを参照するよう修正。`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行し成功（ブラウザ側の TreeTable `useTranslation` 警告解消を確認予定）。ロールバックは当該 import 変更を戻し再 typecheck。
 - 2025-10-03 15:45 progress: fix/ui/i18n-browser-detector-missing — `@hierarchidb/ui-i18n` から `useTranslation` 等を再エクスポートし、`@hierarchidb/ui-treeconsole-treetable` 側で同 API を利用するよう変更。`pnpm --filter @hierarchidb/ui-i18n build` → `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し dist を再生成。続けて `pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm -C app typecheck` を再度通過。ロールバックは import を `react-i18next` へ戻し再ビルド。
 - 2025-10-03 16:00 progress: fix/ui/i18n-browser-detector-missing — TreeTable のラベルが言語切替で更新されない問題に対し、`TreeTableCore` の `useMemo` 依存へ `i18n.resolvedLanguage` を組み込み、言語変更で列メタが再評価されるよう修正。再度 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `build` と `pnpm -C app typecheck` を実行し成功。ロールバックは当該依存追加を戻し再ビルドする。
+- 2025-10-03 16:30 progress: fix/ui/speeddial-dialog-state — SpeedDial 起点のフォルダ作成で Worker 側が古い DialogStateAPI を返し `publishState`/`subscribeState` が未定義となるケースに備え、`packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx` にフォールバック API を実装し、state bridge 不在でも例外なく動作するように調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` が成功。ロールバックはフォールバック実装を除去しガードを元に戻して再度 typecheck。
+- 2025-10-03 17:05 note: DialogStateAPI 周辺の未結線課題を整理し、ToDo #13〜#15 を追加（テストファーストでサービス→PeerStore→UI 同期を順に整備するタスク群）。
+- 2025-10-03 17:15 progress: test/runtime/dialog-state-service-sanity — `packages/runtime/worker/src/services/__tests__/dialog-state-service.test.ts` を追加し、`DialogStateService` の publish/get/subscribe/unsubscribe を in-memory PeerStore で検証。`pnpm --filter @hierarchidb/runtime-worker test` がグリーン。
+- 2025-10-03 20:05 progress: test/runtime/dialog-state-service-sanity — Comlink proxy テストで `"publishState" in api` が false となったため、判定を `typeof api.publishState === 'function'` に揃えて Vitest を再実行。`pnpm --filter @hierarchidb/runtime-worker test` が再度グリーン。
+- 2025-10-03 20:12 progress: fix/ui/speeddial-dialog-state — フォールバック API 実装後の影響を確認するため `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/plugins-* typecheck` / `pnpm -C app typecheck` を再走し、いずれも成功。
 - 2025-10-03 14:45 start: fix/ui/i18n-browser-detector-missing — `pnpm dev` 起動時に `i18next-browser-languagedetector` が見つからず SSR import に失敗する事象を受けて調査を開始。`git checkout -b fix/ui/i18n-browser-detector-missing` は sandbox 制約で `unable to create directory for .git/refs/heads/...` により失敗したため、main 上で差分を管理する。
 ## 今日の着手（運用ログ） <a id="worklog-2"></a>
 

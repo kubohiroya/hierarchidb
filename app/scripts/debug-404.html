@@ -73,8 +73,8 @@
   const redirectUrl =
     l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
     baseSegments.join('/') + '/?/' +
-    routeSegments.join('/').replace(/&/g, '~and~') +
-    (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+    routeSegments.join('/').replaceAll('&', '~and~') +
+    (l.search ? '&' + l.search.slice(1).replaceAll('&', '~and~') : '') +
     l.hash;
 
   log(`Redirect URL: ${redirectUrl}`, 'success');

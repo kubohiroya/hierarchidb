@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
 import type { StylerPeerData } from '../types/stylerTypes.js';
 
 export type StylerPeerRow = {
@@ -10,6 +10,7 @@ export type StylerPeerRow = {
   displayMode?: 'normal' | 'maximize' | 'full-screen';
   dialogPosition?: { x: number; y: number } | null;
   dialogSize?: { width: number; height: number } | null;
+  dialogState?: MultiStepDialogState | null;
 };
 
 export class StylerEntitiesDB extends Dexie {
