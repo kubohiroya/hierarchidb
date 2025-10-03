@@ -1,5 +1,6 @@
-import React from 'react';
+// @ts-ignore
 import type { UIPluginDefinition } from '@hierarchidb/ui-core';
+// @ts-ignore
 import { registerStubUiPlugin } from './createStubUiPlugin.js';
 
 type BaseMapEntity = {
@@ -18,17 +19,17 @@ type UseBaseMapEntityResult = {
 const BaseMapPlaceholder: React.FC<{ title: string }> = ({ title }) => (
   <div
     data-stub="basemap"
-    style={{
-      padding: 16,
-      borderRadius: 12,
-      border: '1px solid #b0bec5',
-      background: '#eceff1',
-      color: '#37474f',
-    }}
-  >
-    <h3 style={{ marginTop: 0 }}>{title}</h3>
-    <p style={{ marginBottom: 0 }}>Base map UI elements are unavailable in this preview environment.</p>
-  </div>
+style={{
+  padding: 16,
+    borderRadius: 12,
+    border: '1px solid #b0bec5',
+    background: '#eceff1',
+    color: '#37474f',
+}}
+>
+<h3 style={{ marginTop: 0 }}>{title}</h3>
+<p style={{ marginBottom: 0 }}>Base map UI elements are unavailable in this preview environment.</p>
+</div>
 );
 
 export const BaseMapDisplay: React.FC = () => <BaseMapPlaceholder title="Base Map Display" />;

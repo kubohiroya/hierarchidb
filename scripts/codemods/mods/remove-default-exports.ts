@@ -35,7 +35,7 @@ const skipMatchers: ((filePath: string) => boolean)[] = [
   filePath => filePath.includes('app/src/virtual/stubs/location-plugin-stub.ts'),
   filePath => filePath.includes('app/src/virtual/stubs/styler-plugin-stub.ts'),
   filePath => filePath.includes('app/src/virtual/stubs/shape-plugin-stub.ts'),
-  filePath => filePath.includes('app/src/virtual/stubs/basemap-plugin-stub.ts'),
+  filePath => filePath.includes('app/src/virtual/stubs/basemap-plugin-stub.tsx'),
   // Storybook stories (default export required by story format)
   filePath => /\.stories\.[^.]+$/.test(filePath),
   // CLI / tool configs that rely on default exports

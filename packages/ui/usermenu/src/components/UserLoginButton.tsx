@@ -36,13 +36,11 @@ export const UserLoginButton: React.FC = () => {
 
   const { user, signIn, signOut, auth } = useAuth();
 
-  const themeContext = useContext<ThemeContextType | null>(ThemeContext);
-  if (!themeContext) {
-    return null;
-  }
+  const themeContext= useContext<ThemeContextType | null>(ThemeContext);
+  // nst  = ;
+  ///{ mode: themeMode, setMode: setThemeMode }
 
   const languageContext = useLanguage();
-  const { mode: themeMode, setMode: setThemeMode } = themeContext;
   const fallbackLanguage: LanguageConfig = useMemo(() => (
     SUPPORTED_LANGUAGES[0] ?? {
       code: 'en',
@@ -63,17 +61,6 @@ export const UserLoginButton: React.FC = () => {
     }
   }, []);
 
-  const handleToggleMemoryMonitor = useCallback(() => {
-    const newVisibility = !memoryMonitorVisible;
-    setMemoryMonitorVisible(newVisibility);
-    localStorage.setItem('memoryMonitorVisible', newVisibility.toString());
-    // Dispatch custom event to notify MemoryUsageMonitor component
-    window.dispatchEvent(
-      new CustomEvent('memoryMonitorToggle', {
-        detail: { visible: newVisibility },
-      }),
-    );
-  }, [memoryMonitorVisible]);
 
   // Menu state management
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -89,6 +76,17 @@ export const UserLoginButton: React.FC = () => {
   const isLoading = auth.isLoading;
   const isAuthenticated = auth.isAuthenticated;
 
+  const handleToggleMemoryMonitor = useCallback(() => {
+    const newVisibility = !memoryMonitorVisible;
+    setMemoryMonitorVisible(newVisibility);
+    localStorage.setItem('memoryMonitorVisible', newVisibility.toString());
+    // Dispatch custom event to notify MemoryUsageMonitor component
+    window.dispatchEvent(
+      new CustomEvent('memoryMonitorToggle', {
+        detail: { visible: newVisibility },
+      }),
+    );
+  }, [memoryMonitorVisible]);
   // Event handlers
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -117,7 +115,8 @@ export const UserLoginButton: React.FC = () => {
   };
 
   const handleThemeChange = (newTheme: ThemeMode) => {
-    setThemeMode(newTheme);
+    if(!themeContext) return;
+    themeContext.setMode(newTheme);
     handleThemeMenuClose();
     handleMenuClose();
   };
@@ -173,6 +172,9 @@ export const UserLoginButton: React.FC = () => {
     }
   };
 
+  if (!themeContext) {
+    return null;
+  }
   if (!hasDom) {
     return null;
   }
@@ -259,7 +261,7 @@ export const UserLoginButton: React.FC = () => {
 
         {/* Theme Selection */}
         <MenuItem onClick={handleThemeMenuOpen} aria-label="Theme Selection">
-          <ListItemIcon>{getThemeIcon(themeMode)}</ListItemIcon>
+          <ListItemIcon>{getThemeIcon(themeContext.mode)}</ListItemIcon>
           <ListItemText>
             <Box
               sx={{
@@ -390,7 +392,7 @@ export const UserLoginButton: React.FC = () => {
                 <span>
                   {getThemeIcon(mode)} {getThemeDisplayName(mode)}
                 </span>
-                {themeMode === mode && (
+                {themeContext.mode === mode && (
                   <CheckIcon
                     fontSize="small"
                     sx={{
