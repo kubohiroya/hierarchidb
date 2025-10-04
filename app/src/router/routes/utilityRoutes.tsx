@@ -11,9 +11,9 @@ import { createRoute } from '@tanstack/react-router';
 import { rootRoute } from './rootRoute.js';
 
 // Import existing components from React Router routes
-import TagsRoute from '../../routes/tags.js';
-import TagDetailRoute from '../../routes/tags.($uuid).js';
-import PluginsRoute from '../../routes/plugins.js';
+import TagsRoute from './tags.js';
+import TagDetailRoute from './tags.($uuid).js';
+import PluginsRoute from './plugins.js';
 
 export const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -24,7 +24,10 @@ export const tagsRoute = createRoute({
 export const tagDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/tags/$uuid',
-  component: TagDetailRoute,
+  component: () => {
+    const { uuid } = tagDetailRoute.useParams();
+    return <TagDetailRoute uuid={uuid} />;
+  },
 });
 
 export const pluginsRoute = createRoute({

@@ -168,7 +168,9 @@ export async function ensureWorkerStarted(
             `[workerClient] Attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`
           );
         }
-        await sleep(delay);
+        if(delay){
+          await sleep(delay);
+        }
       }
     }
   }

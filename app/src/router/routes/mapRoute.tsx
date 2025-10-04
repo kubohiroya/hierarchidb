@@ -9,7 +9,7 @@ import { rootRoute } from './rootRoute.js';
 import { mapLoader, type MapViewState } from '../loaders/mapLoader.js';
 
 // Import the existing map page component
-import MapPage from '../../routes/map.js';
+import MapPage from './map.js';
 
 interface MapSearch {
   zxy?: string;

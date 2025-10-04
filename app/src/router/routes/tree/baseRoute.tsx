@@ -8,8 +8,8 @@
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { rootRoute } from './rootRoute.js';
-import { loadWorkerAPIClient } from '../loaders/treeLoaders.js';
+import { rootRoute } from '../rootRoute.js';
+import { loadWorkerAPIClient } from '../../loaders/treeLoaders.js';
 
 type BootWindow = Window & {
   __HDB_INIT_WAIT__?: Promise<void> | null;
