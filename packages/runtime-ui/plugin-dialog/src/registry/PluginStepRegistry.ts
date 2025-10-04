@@ -142,7 +142,6 @@ export class PluginStepRegistry {
       console.warn(`Provider for nodeType "${provider.nodeType}" is already registered`);
     }
     this.providers.set(provider.nodeType, provider);
-    console.log(`Registered step provider for nodeType: ${provider.nodeType}`);
     this.emitChange();
   }
 
@@ -152,7 +151,6 @@ export class PluginStepRegistry {
       console.warn(`Config provider for nodeType "${provider.nodeType}" is already registered`);
     }
     this.configProviders.set(provider.nodeType, provider);
-    console.log(`Registered config provider for nodeType: ${provider.nodeType}`);
     this.emitChange();
   }
 

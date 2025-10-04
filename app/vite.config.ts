@@ -5,7 +5,7 @@ import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
 import * as path from 'path';
 import { readFileSync } from 'node:fs';
-import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
+// import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -126,6 +126,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
       tsconfigSubpaths: ['services', 'database'],
     }),
     pluginServicesRegistry({ rootDir: path.resolve(__dirname, '..') }),
+    /*
     devHealthPlugin({
       // Ignore virtual/server-only or known peer-provided modules to avoid false positives
       ignore: [
@@ -138,6 +139,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         'react-draggable',
       ],
     }),
+     */
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({

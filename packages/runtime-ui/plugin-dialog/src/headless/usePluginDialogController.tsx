@@ -505,7 +505,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return () => {
       cancelled = true;
     };
-  }, [client]);
+  }, [client, fallbackDialogStateApi]);
 
   const {
     workingCopy,
@@ -572,7 +572,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         cleanup = null;
       }
     };
-  }, [dialogStateApi, nodeType, nodeId]);
+  }, [dialogStateApi, nodeType, nodeId, fallbackDialogStateApi]);
 
   const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },
@@ -1020,6 +1020,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     });
   }, [
     dialogStateApi,
+    fallbackDialogStateApi,
     nodeType,
     nodeId,
     steps,

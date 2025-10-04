@@ -27,14 +27,8 @@ export interface PluginDialogRouteProps {
   loaderData?: PluginDialogLoaderData;
 }
 
-export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData }) => {
-  const resolvedLoaderData = loaderData ?? (useLoaderData({ strict: false }) as PluginDialogLoaderData | undefined);
-
-  if (!resolvedLoaderData) {
-    throw new Error('PluginDialogRoute requires loader data');
-  }
-
-  const { tree, pageNodeId, targetNodeId, nodeType, action } = resolvedLoaderData;
+const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ data }) => {
+  const { tree, pageNodeId, targetNodeId, nodeType, action } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -121,6 +115,18 @@ export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData
       initialStep={currentStep}
     />
   );
+};
+
+const PluginDialogRouteFromRouter: React.FC = () => {
+  const data = useLoaderData({ from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action' }) as PluginDialogLoaderData;
+  return <PluginDialogRouteBody data={data} />;
+};
+
+export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData }) => {
+  if (loaderData) {
+    return <PluginDialogRouteBody data={loaderData} />;
+  }
+  return <PluginDialogRouteFromRouter />;
 };
 
 /**
