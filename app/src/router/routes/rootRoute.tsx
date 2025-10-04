@@ -9,7 +9,6 @@
 
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { setupUIPlugins } from '../loaders/uiPlugins.js';
-import { AppProviders } from '../context/AppProviders.js';
 
 interface RootContext {
   uiPluginsReady: boolean;
@@ -25,8 +24,6 @@ export const rootRoute = createRootRoute({
     };
   },
   component: () => (
-    <AppProviders>
-      <Outlet />
-    </AppProviders>
+    <Outlet />
   ),
 });
