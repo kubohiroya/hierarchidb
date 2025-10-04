@@ -1,10 +1,10 @@
 # React Router v7 ルーティング構造図
 
-## URL: `http://localhost:4200/hierarchidb/t/r` のマッチング解析
+## URL: `http://localhost:4200/hierarchidb/#/t/r` のマッチング解析
 
 ### 1. URL構成の分解
 ```
-http://localhost:4200/hierarchidb/t/r
+http://localhost:4200/hierarchidb/#/t/r
                       ↑          ↑ ↑
                       |          | └─ treeId = "r"
                       |          └─── 固定パス "t"
@@ -15,7 +15,7 @@ http://localhost:4200/hierarchidb/t/r
 
 ```mermaid
 graph TD
-    Start["URL: /hierarchidb/t/r"] --> Match1["① t._index.tsx<br/>パス: /t"]
+    Start["URL: /hierarchidb/#/t/r"] --> Match1["① t._index.tsx<br/>パス: /t"]
     Match1 --> Outlet1["<Outlet />"]
     
     Outlet1 --> Match2["② t.($treeId).tsx<br/>パス: /t/r<br/>params: {treeId: 'r'}"]

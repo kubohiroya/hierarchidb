@@ -7,7 +7,7 @@ HierarchiDBのWorker初期化システムに関する包括的な分析と実装
 ## 2. 問題の背景
 
 ### 2.1 症状
-- **URL直接アクセス時** (`http://localhost:4201/hierarchidb/t/r`)
+- **URL直接アクセス時** (`http://localhost:4201/hierarchidb/#/t/r`)
   - TreeTableConsoleの画面が表示されない（不安定）
   - ローディング画面が表示され続ける
   - 稀に正常に表示されることがある
@@ -302,7 +302,7 @@ window.addEventListener('unhandledrejection', (event) => {
 ### 10.1 手動テスト
 1. ブラウザのキャッシュをクリア
 2. 開発者ツールを開く
-3. `http://localhost:4201/hierarchidb/t/r` に直接アクセス
+3. `http://localhost:4201/hierarchidb/#/t/r` に直接アクセス
 4. コンソールログを確認
 5. TreeTableが表示されることを確認
 
@@ -310,7 +310,7 @@ window.addEventListener('unhandledrejection', (event) => {
 ```typescript
 // E2Eテスト例
 test('Direct URL access should display TreeTable', async ({ page }) => {
-  await page.goto('http://localhost:4201/hierarchidb/t/r');
+  await page.goto('http://localhost:4201/hierarchidb/#/t/r');
   await page.waitForSelector('.tree-table-console', { timeout: 5000 });
   const isVisible = await page.isVisible('.tree-table-console');
   expect(isVisible).toBe(true);
@@ -337,7 +337,7 @@ sequenceDiagram
     participant Worker
     participant Console
     
-    User->>Browser: http://localhost:4201/hierarchidb/t/r
+    User->>Browser: http://localhost:4201/hierarchidb/#/t/r
     Browser->>React: ページロード
     React->>WorkerSingletonProvider: コンポーネントマウント
     

@@ -32,12 +32,30 @@ const defaultBaseURL = (() => {
 })();
 
 const rawBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? defaultBaseURL;
+const rawRouterMode = process.env.PLAYWRIGHT_ROUTER_MODE ?? process.env.VITE_ROUTER_MODE ?? (process.env.VITE_USE_HASH_ROUTING === 'false' ? 'browser' : 'hash');
+const normalizedRouterMode = typeof rawRouterMode === 'string' ? rawRouterMode.toLowerCase() : 'hash';
+const IS_HASH_ROUTER = normalizedRouterMode !== 'browser';
 
 export const APP_BASE_URL = rawBaseURL.replace(/\/*$/, '');
 
 export const APP_BASE_URL_WITH_SLASH = `${APP_BASE_URL}/`;
 
+const toHashPath = (input: string): string => {
+  if (!input) return '#/';
+  if (input.startsWith('#')) {
+    const trimmed = input.replace(/^#+/, '');
+    if (!trimmed) return '#/';
+    return `#/${trimmed.replace(/^\/+/,'')}`;
+  }
+  return `#/${input.replace(/^\/+/,'')}`;
+};
+
 export const buildAppUrl = (path = ''): string => {
+  if (IS_HASH_ROUTER) {
+    const hashPath = toHashPath(path);
+    return `${APP_BASE_URL_WITH_SLASH}${hashPath}`;
+  }
+
   if (!path) return APP_BASE_URL_WITH_SLASH;
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
@@ -87,16 +105,25 @@ export async function configureWorkerCmdprocOverride(
     },
     { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
   );
-  await page.evaluate(
-    ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
-      if (serialized) {
-        window.localStorage.setItem(storageKey, serialized);
-      } else {
-        window.localStorage.removeItem(storageKey);
+  await page
+    .evaluate(
+      ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
+        if (serialized) {
+          window.localStorage.setItem(storageKey, serialized);
+        } else {
+          window.localStorage.removeItem(storageKey);
+        }
+      },
+      { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
+    )
+    .catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/Access is denied/i.test(message)) {
+        // about:blank or other restricted origins will apply the overrides after navigation via addInitScript
+        return;
       }
-    },
-    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
-  );
+      throw error;
+    });
 }
 
 export async function resetWorkerFlagOverrides(page: Page): Promise<void> {
@@ -126,7 +153,7 @@ export async function dismissGuidedTour(page: Page): Promise<void> {
       await page.locator('[data-testid="skip-tour-button"]').click();
       await expect(tourModal).not.toBeVisible();
     }
-  } catch (error) {
+  } catch {
     // Tour might not be present, continue
   }
 }
@@ -554,14 +581,29 @@ export async function takeScreenshot(
  * Checks for console errors and logs them
  */
 export function setupConsoleErrorTracking(page: Page): void {
-  page.on('console', (msg) => {
+  page.on('console', async (msg) => {
     if (msg.type() === 'error') {
-      console.error('Console error:', msg.text());
+      let serializedArgs: unknown[] = [];
+      try {
+        serializedArgs = await Promise.all(
+          msg.args().map(async (arg) => {
+            try {
+              return await arg.jsonValue();
+            } catch (serializationError) {
+              return `<unserializable: ${serializationError}>`;
+            }
+          }),
+        );
+      } catch (serializationError) {
+        serializedArgs = [`<args unavailable: ${serializationError}>`];
+      }
+      console.error('Console error:', msg.text(), serializedArgs);
     }
   });
 
   page.on('pageerror', (error) => {
-    console.error('Page error:', error.message);
+    const errorDetails = error?.stack ?? error?.message ?? String(error);
+    console.error('Page error:', errorDetails);
   });
 }
 

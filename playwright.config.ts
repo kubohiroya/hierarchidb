@@ -122,7 +122,8 @@ export default defineConfig({
     ? undefined
     : {
         // Build and preview the app to avoid file watcher limits in CI/sandboxes
-        command: 'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview',
+        command:
+          'pnpm --filter @hierarchidb/app build && pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4173',
         url: baseURLWithSlash,
         reuseExistingServer: !process.env.CI,
         timeout: 480 * 1000, // allow enough headroom because the app build routinely exceeds 3 minutes

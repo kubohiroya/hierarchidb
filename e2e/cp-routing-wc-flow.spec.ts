@@ -13,6 +13,7 @@ import {
   WorkerFlagOverrideValue,
   performDragDrop,
   resetWorkerFlagOverrides,
+  buildAppUrl,
 } from './utils/test-helpers';
 import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../app/src/config/worker-flag-overrides.js';
 
@@ -37,7 +38,7 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
     await configureWorkerCmdprocOverride(page, scenario.flagValue);
     await clearTestData(page);
 
-    await page.goto('/#/t/r');
+    await page.goto(buildAppUrl('t/r'));
     await dismissGuidedTour(page);
     await waitForTreeTableLoad(page);
 

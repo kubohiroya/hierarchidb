@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the routing architecture and component hierarchy for the TreeConsole UI in HierarchiDB, specifically analyzing the URL path `/hierarchidb/t/r`.
+This document describes the routing architecture and component hierarchy for the TreeConsole UI in HierarchiDB, specifically analyzing the URL path `/hierarchidb/#/t/r`.
 
 ## URL Structure
 
@@ -11,7 +11,7 @@ The TreeConsole uses a hierarchical URL structure:
 /hierarchidb/t/{treeId}/{pageNodeId}/{targetNodeId}/{nodeType}/{action}
 ```
 
-For the example URL `/hierarchidb/t/r`:
+For the example URL `/hierarchidb/#/t/r`:
 - Base path: `/hierarchidb` (from VITE_APP_NAME environment variable)
 - Route: `/t` (tree console route)
 - TreeTypes ID: `r` (Resource tree)

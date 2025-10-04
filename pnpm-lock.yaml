@@ -27,12 +27,12 @@ overrides:
   '@mui/icons-material': ^7.3.2
 
 patchedDependencies:
-  '@react-router/dev@7.9.1':
-    hash: 7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7
-    path: patches/@react-router+dev@7.9.1-disable-worker-hmr.patch
   ast-types@0.16.1:
     hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
     path: patches/ast-types@0.16.1.patch
+  '@react-router/dev@7.9.3':
+    hash: 802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3
+    path: patches/@react-router+dev@7.9.3-disable-worker-hmr.patch
 
 importers:
 
@@ -388,11 +388,11 @@ importers:
         specifier: ^7.3.2
         version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-router/fs-routes':
-        specifier: ^7.8.1
-        version: 7.9.1(@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)
+        specifier: ^7.9.3
+        version: 7.9.3(@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)
       '@react-router/node':
-        specifier: ^7.8.2
-        version: 7.9.1(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)
+        specifier: ^7.9.3
+        version: 7.9.3(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -421,11 +421,11 @@ importers:
         specifier: ^3.0.5
         version: 3.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router:
-        specifier: '>=7.0.0'
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^7.9.3
+        version: 7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router-dom:
-        specifier: ^7.8.2
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: ^7.9.3
+        version: 7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@deck.gl/geo-layers':
         specifier: ^9.1.14
@@ -446,8 +446,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/tools/vite-plugin-package-reader
       '@react-router/dev':
-        specifier: ^7.8.2
-        version: 7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+        specifier: ^7.9.3
+        version: 7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -2576,9 +2576,18 @@ importers:
       '@mui/x-date-pickers':
         specifier: ^8.10.2
         version: 8.11.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mui/system@7.3.3(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(date-fns@4.1.0)(dayjs@1.11.18)(luxon@3.6.1)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       i18next:
         specifier: 22.5.0
         version: 22.5.0
+      i18next-browser-languagedetector:
+        specifier: ^8.2.0
+        version: 8.2.0
+      i18next-http-backend:
+        specifier: ^3.0.2
+        version: 3.0.2
       react-i18next:
         specifier: 12.3.1
         version: 12.3.1(i18next@22.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2598,15 +2607,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: 4.3.4
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
-      i18next-browser-languagedetector:
-        specifier: ^8.2.0
-        version: 8.2.0
-      i18next-http-backend:
-        specifier: ^3.0.2
-        version: 3.0.2
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -5032,14 +5032,14 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@react-router/dev@7.9.1':
-    resolution: {integrity: sha512-fW/qubsdHq1nsufHPLpXa6hiNvXXV9JBtWqRlJ02OOhFeaWERZw4rGoHjG1DCg8/QTTadgbzplmP97ZnzWPkcA==}
+  '@react-router/dev@7.9.3':
+    resolution: {integrity: sha512-oPaO+OpvCo/rNTJrRipHSp31/K4It19PE5A24x21FlYlemPTe3fbGX/kyC2+8au/abXbvzNHfRbuIBD/rfojmA==}
     engines: {node: '>=20.0.0'}
     hasBin: true
     peerDependencies:
-      '@react-router/serve': ^7.9.1
+      '@react-router/serve': ^7.9.3
       '@vitejs/plugin-rsc': '*'
-      react-router: ^7.9.1
+      react-router: ^7.9.3
       typescript: 5.9.3
       vite: 5.4.19
       wrangler: ^3.28.2 || ^4.0.0
@@ -5053,21 +5053,21 @@ packages:
       wrangler:
         optional: true
 
-  '@react-router/fs-routes@7.9.1':
-    resolution: {integrity: sha512-K97pQ7PIUJnmYPzoC5lrJxr3XKDn5ZLBMkp403usQJlucpP2NUfRw7I5N3NdqQ5XDbPEyROOJr6wsZnWGPPC7g==}
+  '@react-router/fs-routes@7.9.3':
+    resolution: {integrity: sha512-KuKeCznj4w7DviNPEuBpVaxMzalcFgLuRGLrMGbfzK3I887N+AW7kTVqEXpaVXS569rBtS38NVRJxFi3VlqG7A==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@react-router/dev': ^7.9.1
+      '@react-router/dev': ^7.9.3
       typescript: 5.9.3
     peerDependenciesMeta:
       typescript:
         optional: true
 
-  '@react-router/node@7.9.1':
-    resolution: {integrity: sha512-XfyVLM+sDUDB1frGNr7iqaKNglrPwBiUp8+sFdL4///bngy49pUb2RuEtn2J2Cy5yjL+IlKbjJFrsmfimLBmeg==}
+  '@react-router/node@7.9.3':
+    resolution: {integrity: sha512-+OvWxPPUgouOshw85QlG0J6yFJM0GMCCpXqPj38IcveeFLlP7ppOAEkOi7RBFrDvg7vSUtCEBDnsbuDCvxUPJg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      react-router: 7.9.1
+      react-router: 7.9.3
       typescript: 5.9.3
     peerDependenciesMeta:
       typescript:
@@ -5083,6 +5083,9 @@ packages:
         optional: true
       react-redux:
         optional: true
+
+  '@remix-run/node-fetch-server@0.9.0':
+    resolution: {integrity: sha512-SoLMv7dbH+njWzXnOY6fI08dFMI5+/dQ+vY3n8RnnbdG7MdJEgiP28Xj/xWlnRnED/aB6SFw56Zop+LbmaaKqA==}
 
   '@rollup/pluginutils@5.3.0':
     resolution: {integrity: sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q==}
@@ -9088,8 +9091,25 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
+  react-router-dom@7.9.3:
+    resolution: {integrity: sha512-1QSbA0TGGFKTAc/aWjpfW/zoEukYfU4dc1dLkT/vvf54JoGMkW+fNA+3oyo2gWVW1GM7BxjJVHz5GnPJv40rvg==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+
   react-router@7.9.1:
     resolution: {integrity: sha512-pfAByjcTpX55mqSDGwGnY9vDCpxqBLASg0BMNAuMmpSGESo/TaOUG6BllhAtAkCGx8Rnohik/XtaqiYUJtgW2g==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+
+  react-router@7.9.3:
+    resolution: {integrity: sha512-4o2iWCFIwhI/eYAIL43+cjORXYn/aRQPgtFRRZb3VzoyQ5Uej0Bmqj7437L97N9NJW4wnicSwLOLS+yCXfAPgg==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -12280,7 +12300,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
+  '@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/generator': 7.28.3
@@ -12290,7 +12310,8 @@ snapshots:
       '@babel/traverse': 7.28.4
       '@babel/types': 7.28.4
       '@npmcli/package-json': 4.0.1
-      '@react-router/node': 7.9.1(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)
+      '@react-router/node': 7.9.3(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)
+      '@remix-run/node-fetch-server': 0.9.0
       arg: 5.0.2
       babel-dead-code-elimination: 1.0.10
       chokidar: 4.0.3
@@ -12304,9 +12325,8 @@ snapshots:
       picocolors: 1.1.1
       prettier: 3.6.2
       react-refresh: 0.14.2
-      react-router: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router: 7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       semver: 7.7.2
-      set-cookie-parser: 2.7.1
       tinyglobby: 0.2.15
       valibot: 0.41.0(typescript@5.9.3)
       vite: 5.4.19(@types/node@18.19.123)
@@ -12327,17 +12347,17 @@ snapshots:
       - supports-color
       - terser
 
-  '@react-router/fs-routes@7.9.1(@react-router/dev@7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)':
+  '@react-router/fs-routes@7.9.3(@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)':
     dependencies:
-      '@react-router/dev': 7.9.1(patch_hash=7a8e794cfdd2161a9fa915ddd7d75d6763d26deff4a2ea20a52d2daa194a38f7)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+      '@react-router/dev': 7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
       minimatch: 9.0.5
     optionalDependencies:
       typescript: 5.9.3
 
-  '@react-router/node@7.9.1(react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)':
+  '@react-router/node@7.9.3(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)':
     dependencies:
       '@mjackson/node-fetch-server': 0.2.0
-      react-router: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-router: 7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     optionalDependencies:
       typescript: 5.9.3
 
@@ -12352,6 +12372,8 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
       react-redux: 9.2.0(@types/react@18.3.24)(react@18.3.1)(redux@5.0.1)
+
+  '@remix-run/node-fetch-server@0.9.0': {}
 
   '@rollup/pluginutils@5.3.0(rollup@4.50.1)':
     dependencies:
@@ -17621,7 +17643,21 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-router: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
+  react-router-dom@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-router: 7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+
   react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      cookie: 1.0.2
+      react: 18.3.1
+      set-cookie-parser: 2.7.1
+    optionalDependencies:
+      react-dom: 18.3.1(react@18.3.1)
+
+  react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       cookie: 1.0.2
       react: 18.3.1

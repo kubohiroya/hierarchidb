@@ -69,8 +69,8 @@
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
-    "@react-router/fs-routes": "^7.8.1",
-    "@react-router/node": "^7.8.2",
+    "@react-router/fs-routes": "^7.9.3",
+    "@react-router/node": "^7.9.3",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -80,14 +80,14 @@
     "react-draggable": "^4.5.0",
     "react-hook-geolocation": "^1.1.0",
     "react-resizable": "^3.0.5",
-    "react-router": ">=7.0.0",
-    "react-router-dom": "^7.8.2"
+    "react-router": "^7.9.3",
+    "react-router-dom": "^7.9.3"
   },
   "devDependencies": {
     "@hierarchidb/tools-plugin-registry-utils": "workspace:*",
     "@hierarchidb/tools-vite-plugin-dev-health": "workspace:*",
     "@hierarchidb/tools-vite-plugin-package-reader": "workspace:*",
-    "@react-router/dev": "^7.8.2",
+    "@react-router/dev": "^7.9.3",
     "@vitejs/plugin-react": "^5.0.1",
     "gh-pages": "^6.3.0",
     "license-checker": "^25.0.1",

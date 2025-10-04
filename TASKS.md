@@ -1557,6 +1557,11 @@ P2:
 - 2025-10-03 17:15 progress: test/runtime/dialog-state-service-sanity — `packages/runtime/worker/src/services/__tests__/dialog-state-service.test.ts` を追加し、`DialogStateService` の publish/get/subscribe/unsubscribe を in-memory PeerStore で検証。`pnpm --filter @hierarchidb/runtime-worker test` がグリーン。
 - 2025-10-03 20:05 progress: test/runtime/dialog-state-service-sanity — Comlink proxy テストで `"publishState" in api` が false となったため、判定を `typeof api.publishState === 'function'` に揃えて Vitest を再実行。`pnpm --filter @hierarchidb/runtime-worker test` が再度グリーン。
 - 2025-10-03 20:12 progress: fix/ui/speeddial-dialog-state — フォールバック API 実装後の影響を確認するため `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/plugins-* typecheck` / `pnpm -C app typecheck` を再走し、いずれも成功。
+- 2025-10-03 21:35 progress: fix/ui/i18n-browser-detector-missing — `@hierarchidb/ui-i18n` の default export 利用箇所を洗い替え、`app/src/components/ServicesReadySnackbar.tsx` などを名前付き import へ統一済みであることを再確認。sandbox 制約で `pnpm --filter @hierarchidb/ui-i18n typecheck` が `.tsbuildinfo` 書き込みで失敗するため、`pnpm exec tsc -p packages/ui/i18n/tsconfig.json --noEmit --tsBuildInfoFile /tmp/ui-i18n.tsbuildinfo` を実行しグリーンを確認。その後 `pnpm --filter @hierarchidb/ui-i18n build` も成功。ロールバックは `app/src/client.ts` 等の named import 差分を戻し、同コマンドを再実行する。
+- 2025-10-03 21:50 progress: fix/app/preview-worker-mime — プレビュー環境で `worker.ts` が `video/mp2t` MIME で配信され Worker 初期化に失敗する件に対応し、`app/src/client.ts` の最終フォールバックを `new URL(/* @vite-ignore */ './worker.js', import.meta.url)` へ変更。`pnpm --filter @hierarchidb/app build:vite` を再実行して警告無く成功、`pnpm preview -- --host 127.0.0.1 --port 4173` 起動中に `curl -I http://127.0.0.1:4176/hierarchidb/worker.js` で `Content-Type: text/javascript` を確認（従来の `worker.ts` 要求は継続して `video/mp2t` で返るが、UI からは `.js` にフォールバックするため影響無し）。ロールバックは当該フォールバック URL を `.ts` に戻し再ビルド。
+- 2025-10-03 22:50 progress: chore/router-default-hash — React Router を 7.9.3 へ更新したうえで、`entry.client.tsx` の既定ルーターモードを HashRouter に切り替え。`VITE_ROUTER_MODE=browser` 指定時のみ BrowserRouter を試行し、失敗時は自動で HashRouter へフォールバックするガードを整備。Playwright 用の `buildAppUrl` も `#/` 付き URL を生成するよう修正し、`pnpm --filter @hierarchidb/app build:vite` が成功することを確認。
+- 2025-10-03 23:15 blocked: test/runtime-worker/undo-redo-playwright-smoke — HashRouter 化後に `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行したが、preview サーバー起動時に `listen EPERM: operation not permitted 0.0.0.0:4173` が再発し sandbox のポート制限で停止。HashRouter/`buildAppUrl` の更新は確認できたため、ポート開放可能な環境で同コマンドを再試行する必要あり。
+- 2025-10-04 09:35 blocked: 同テスト — `app/react-router.config.ts` を ESM 対応（`fileURLToPath` 利用）で書き直し、`pnpm --filter @hierarchidb/app build:vite` は完了。しかし生成物 `app/build/client/assets/entry.client.js` には依然 `flatRoutes()` 呼び出しが残存し、Playwright 実行時に `The following error is a bug in React Router; please open an issue!` が再発。`flatRoutes` をビルド時に静的化する追加対応が必要。
 - 2025-10-03 14:45 start: fix/ui/i18n-browser-detector-missing — `pnpm dev` 起動時に `i18next-browser-languagedetector` が見つからず SSR import に失敗する事象を受けて調査を開始。`git checkout -b fix/ui/i18n-browser-detector-missing` は sandbox 制約で `unable to create directory for .git/refs/heads/...` により失敗したため、main 上で差分を管理する。
 ## 今日の着手（運用ログ） <a id="worklog-2"></a>
 
@@ -2022,7 +2027,7 @@ P2:
   - ブランチ: `fix/app/speeddial-icon-metadata`
   - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
   - 受け入れ基準（DoD）：
-    - [x] `/hierarchidb/t/r` の SpeedDial で manifest ベースのアイコン・カラーが表示される
+    - [x] `/hierarchidb/#/t/r` の SpeedDial で manifest ベースのアイコン・カラーが表示される
     - [x] `getPresentation` が `plugin-manifest.ts` の `icon` を活用しフォールバックしていない
     - [x] Import Template 完了時に UI Plugin のアイコン解決が成功する（TDD に従いテストで確認）
   - チェックリスト：

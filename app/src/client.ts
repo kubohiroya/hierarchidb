@@ -74,7 +74,9 @@ function resolveWorkerUrl(): URL {
       return new URL(workerScriptUrl, globalScope.location.origin);
     }
   }
-  return new URL('./worker.ts', import.meta.url);
+  // Final fallback: always reference the transpiled worker bundle (.js)
+  // so that environments without Vite query handling still load a valid script.
+  return new URL(/* @vite-ignore */ './worker.js', import.meta.url);
 }
 
 function normalizeWorkerFlagValue(value: unknown): string | null {
