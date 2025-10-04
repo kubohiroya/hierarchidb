@@ -22,7 +22,7 @@
   - [Done（完了）](#kanban-done)
 - [運用ログ（today）](#log-today)
 - 今日の着手（運用ログ）
-  - [#1](#worklog-1) / [#2](#worklog-2) / [#3](#worklog-3) / [#4](#worklog-4)
+  - [#1](#worklog-1) / [#2](#worklog-2) / [#3](#worklog-3) / [#4](#worklog-4) / [#5](#worklog-5)
 - [次のチェックポイント（本日）](#checkpoint-today)
 - [進捗メモ](#progress-notes)
 - [フラグ運用（共通）](#flags)
@@ -1832,6 +1832,21 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- refactor/router/tanstack-migrate（P1） — UI/Runtime パッケージの React Router 依存を除去し TanStack Router へ統一
+  - ブランチ: `main`（サンドボックス制約のため直接作業）
+  - 要点:
+    - runtime-ui（landingpage/plugin-dialog/appbar）・ui-core/ui-navigation/ui-auth/ui-routing・treeconsole（breadcrumb/treetable/base）の `react-router(-dom)` 依存を削除し、`@tanstack/react-router` へ置換。
+    - Storybook / tsup 設定およびテスト用モックを刷新し、各パッケージで Browser/MemoryRouter 互換コードを排除。
+    - `pnpm-lock.yaml` を更新し、モノレポ全体で React Router 系の runtime/dev 依存が残らないことを確認。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-landingpage typecheck --pretty false`
+    - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck --pretty false`
+    - [x] `pnpm --filter @hierarchidb/ui-routing typecheck --pretty false`
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck --pretty false`
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-base test:run`
+  - ロールバック手順:
+    - 各パッケージで削除した `react-router(-dom)` 依存とモックを戻し、tsup/Storybook 設定を復元してから上記コマンド群を再実行。
+  - 影響範囲: UI コンポーネント／runtime-ui plugin／Storybook ドキュメント環境。HashRouter 依存の暫定コードがない状態で `tanstack-router` ベースに統一済み。
 - Preview 環境 React hydration エラー修正（P1） — SSR スプラッシュの除去と Worker バンドル URL 調整で preview 時の hydrate エラーを抑止
   - ブランチ: `fix/app/preview-hydration`
   - 要点: HydrateFallback DOM に ID を付与しクライアント初期化時に除去、`worker.ts?worker&url` を採用して `pnpm preview` でも Worker が適切な MIME で配信されるよう修正。`pnpm --filter @hierarchidb/app typecheck` はグリーン（build/preview 実行は sandbox 制約で未実施）。
@@ -5336,3 +5351,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - progress: `/Users/hiroya/WebstormProjects/worker-factory-rollout` で再度 `pnpm install` を実施していただいた後、`pnpm --filter @hierarchidb/common-type build` が新テンプレートで成功することを確認。
 - progress: `pnpm exec turbo run build --filter @hierarchidb/runtime-ui-plugin-dialog` も成功し、`@hierarchidb/plugins-base-plugin` 依存を含む型生成が通ることを確認。
 - progress: `@hierarchidb/plugins-shape-plugin` の shared/services 型定義を整理し、Runtime Worker adapter／RecoveryStrategy 周辺の実装を型安全化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` と `pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認。
+
+## 今日の着手（運用ログ） <a id="worklog-5"></a>
+
+- 2025-10-04 21:30 start: refactor/router/tanstack-migrate — runtime-ui（landingpage/plugin-dialog/appbar）や ui-* パッケージ、treeconsole 系テストの `react-router(-dom)` 参照を調査し、TanStack Router への置換方針を確定。
+- 2025-10-04 22:05 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/runtime-ui-landingpage typecheck --pretty false` / `@hierarchidb/runtime-ui-plugin-dialog typecheck --pretty false` / `@hierarchidb/ui-routing typecheck --pretty false` / `@hierarchidb/ui-treeconsole-treetable typecheck --pretty false` を順に実行し、依存除去後も型検証がグリーンであることを確認。
+- 2025-10-04 22:20 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/ui-treeconsole-base test:run` を実行し、TanStack Router モックへ更新後もユニットテスト全体が成功することを確認。
+- 2025-10-04 22:35 done: refactor/router/tanstack-migrate — `git commit -m "refactor(routing): remove remaining react-router dependencies"`（c764a005）と `git push` を実行し、main ブランチへ反映。
+- 2025-10-04 22:58 progress: refactor/router/tanstack-migrate — `app/vite.config.ts` に `rollupOptions.onwarn` を追加し、MUI の `'use client'` ディレクティブが大量出力される警告を抑制。`pnpm --filter @hierarchidb/app build:vite` を実行し、該当警告が出力されないことを確認。
+- 2025-10-05 00:15 progress: refactor/router/tanstack-migrate — `/t/:treeId` で pageNodeId 省略時もルートノードを表示できるよう TanStack Router にインデックスルート（`treeLayoutIndexRoute`）を追加。`pnpm --filter @hierarchidb/app typecheck --pretty false` が成功することを確認。

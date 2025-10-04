@@ -39,7 +39,7 @@ export type LoadTreeReturn = {
 
 export type LoadPageNodeArgs = {
   treeId: string;
-  pageNodeId: string;
+  pageNodeId?: string;
 };
 export type LoadPageNodeReturn = {
   pageNodeId: NodeId;
@@ -48,7 +48,7 @@ export type LoadPageNodeReturn = {
 
 export type LoadTargetNodeArgs = {
   treeId: string;
-  pageNodeId: string;
+  pageNodeId?: string;
   targetNodeId: string;
 };
 export type LoadTargetNodeReturn = {
@@ -58,7 +58,7 @@ export type LoadTargetNodeReturn = {
 
 export type LoadNodeTypeArgs = {
   treeId: string;
-  pageNodeId: string;
+  pageNodeId?: string;
   targetNodeId: string;
   nodeType: string;
 };
@@ -68,7 +68,7 @@ export type LoadNodeTypeReturn = {
 
 export type LoadNodeActionArgs = {
   treeId: string;
-  pageNodeId: string;
+  pageNodeId?: string;
   targetNodeId: string;
   nodeType: string;
   action: string;

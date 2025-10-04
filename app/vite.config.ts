@@ -482,6 +482,16 @@ export default defineConfig(({ mode,isSsrBuild }) => {
               },
             }),
         },
+        onwarn(warning, warn) {
+          if (
+            warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+            typeof warning.message === 'string' &&
+            warning.message.includes('"use client"')
+          ) {
+            return;
+          }
+          warn(warning);
+        },
       },
     },
     // Prevent Vite SSR build from externalizing workspace packages,

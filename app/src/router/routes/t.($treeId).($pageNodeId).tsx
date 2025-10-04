@@ -21,7 +21,7 @@ import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-materi
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { NodeId, Tree } from '@hierarchidb/common-type';
+import type { Tree } from '@hierarchidb/common-type';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { Outlet, useNavigate, useLoaderData } from '@tanstack/react-router';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
@@ -33,8 +33,16 @@ const LazyTreeConsoleIntegration = lazy(async () => {
 
 type LoaderData = LoadPageNodeReturn;
 
+type TreeLayoutBodyProps = {
+  data: LoaderData;
+};
+
 export default function TLayout() {
   const data = useLoaderData({ from: '/t/$treeId/$pageNodeId' }) as LoaderData;
+  return <TreeLayoutBody data={data} />;
+}
+
+export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const navigate = useNavigate();
   const { client: workerClient } = useWorkerClient();
   const [trees, setTrees] = useState<Tree[]>([]);
