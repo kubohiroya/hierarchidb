@@ -1,7 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
-// @ts-ignore
-import { reactRouter } from '@react-router/dev/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
@@ -131,9 +129,6 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     devHealthPlugin({
       // Ignore virtual/server-only or known peer-provided modules to avoid false positives
       ignore: [
-        /@react-router\//,
-        'react-router',
-        'react-router-dom',
         '@emotion/react',
         'react-hook-geolocation',
         'comlink',
@@ -143,8 +138,6 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         'react-draggable',
       ],
     }),
-    // Use default react-router plugin; let it infer basename from Vite base
-    reactRouter(),
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
@@ -485,13 +478,13 @@ export default defineConfig(({ mode,isSsrBuild }) => {
             ? {}
             : {
               manualChunks: {
-                'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+                'vendor-react': ['react', 'react-dom'],
               },
             }),
         },
       },
     },
-    // Prevent Vite/React Router SSR build from externalizing workspace packages,
+    // Prevent Vite SSR build from externalizing workspace packages,
     // which would otherwise cause runtime failures when loaded in the browser.
     ssr: {
       external: ssrExternalDeps,
@@ -502,7 +495,6 @@ export default defineConfig(({ mode,isSsrBuild }) => {
       include: [
         'react',
         'react-dom',
-        'react-router-dom',
         'dexie',
         'react-resizable',
         'react-draggable',
