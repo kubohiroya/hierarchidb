@@ -4,6 +4,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { Subject } from 'rxjs';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
+import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
 import type { CoreDB } from './CoreDB.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { commandRegistry, type CommandHandlerContext } from './command/registry.js';
@@ -164,10 +165,9 @@ export class CommandProcessor {
       await this.emitUndoStateIfChanged();
       return result;
     } catch (error) {
-      // Do not leak internal details in error message
-      const sanitizedMessage = this.sanitizeErrorMessage(error);
+      const classification = classifyWorkerError(error, WorkerErrorCode.INVALID_OPERATION);
       console.error('CommandProcessor error:', error);
-      const failure = this.createErrorResult(sanitizedMessage, WorkerErrorCode.INVALID_OPERATION);
+      const failure = this.createErrorResult(classification.message, classification.code);
       await this.emitUndoStateIfChanged();
       return failure;
     }
@@ -206,7 +206,8 @@ export class CommandProcessor {
         };
         return await handler.execute(contextForHandler);
       } catch (err) {
-        return this.createErrorResult(this.sanitizeErrorMessage(err), WorkerErrorCode.UNKNOWN_ERROR);
+        const classification = classifyWorkerError(err, WorkerErrorCode.UNKNOWN_ERROR);
+        return this.createErrorResult(classification.message, classification.code);
       }
     }
 
@@ -268,25 +269,11 @@ export class CommandProcessor {
   ): CommandResult {
     return {
       success: false,
-      error,
+      error: sanitizeMessageText(error),
       code,
       seq: this.getNextSeq(),
       ...extra,
     };
-  }
-
-  /**
-   * Sanitize error message for user-visible or log-safe contexts.
-   */
-  private sanitizeErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-      const sanitized = error.message
-        .replace(/[\r\n\t]/g, ' ')
-        .substring(0, PERFORMANCE_CONFIG.MAX_ERROR_MESSAGE_LENGTH);
-
-      return sanitized || 'Command processing failed';
-    }
-    return 'An unexpected error occurred';
   }
 
   private async getUndoStateService(): Promise<TreeSubscriptionService> {

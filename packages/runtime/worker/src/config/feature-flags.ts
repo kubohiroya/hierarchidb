@@ -14,7 +14,7 @@ export const FEATURE_FLAGS = Object.freeze({
   WORKER_ENTITY_UNIFIED: true,
   WORKER_POLICY_C: true,
   WORKER_WC_COMMIT_V2: true,
-  WORKER_USE_CMDPROC_MOVE_REMOVE: readEnvFlag('WORKER_USE_CMDPROC_MOVE_REMOVE', false),
+  WORKER_USE_CMDPROC_MOVE_REMOVE: readEnvFlag('WORKER_USE_CMDPROC_MOVE_REMOVE', true),
 });
 
 export type WorkerFeatureFlags = typeof FEATURE_FLAGS;

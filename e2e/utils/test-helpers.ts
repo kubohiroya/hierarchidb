@@ -229,6 +229,20 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   return folderName;
 }
 
+export async function waitForRouteProgress(page: Page) {
+  const card = page.locator('[data-testid="route-progress-card"]');
+  await expect(card).toBeVisible({ timeout: 15000 });
+
+  return {
+    card,
+    percentage: card.locator('[data-testid="route-progress-percentage"]'),
+    stage: card.locator('[data-testid="route-progress-stage"]'),
+    failedCount: card.locator('[data-testid="route-progress-failed-count"]'),
+    lastError: card.locator('[data-testid="route-progress-last-error"]'),
+    toggleButton: card.locator('[data-testid="route-progress-toggle"]'),
+  };
+}
+
 /**
  * Creates a child folder-plugin under a parent node
  */

@@ -23,6 +23,7 @@ import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { FEATURE_FLAGS } from '../config/feature-flags.js';
 import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
+import { sanitizeMessageText } from './utils/error-adapter.js';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
   if (result.success) return fallback;
@@ -139,7 +140,7 @@ export class TreeMutationService implements TreeMutationAPI {
       );
       return { success: true, nodeId: wcNodeId as NodeId };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -160,7 +161,7 @@ export class TreeMutationService implements TreeMutationAPI {
       }
       return { success: true };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -297,7 +298,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -342,7 +343,7 @@ export class TreeMutationService implements TreeMutationAPI {
         nodeIds: result.newNodeIds || [],
       };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -371,7 +372,7 @@ export class TreeMutationService implements TreeMutationAPI {
       }
       return { success: true };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -428,7 +429,7 @@ export class TreeMutationService implements TreeMutationAPI {
 
       return { success: true };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 
@@ -473,7 +474,7 @@ export class TreeMutationService implements TreeMutationAPI {
       }
       return { success: true };
     } catch (error) {
-      return { success: false, error: String(error) };
+      return { success: false, error: sanitizeMessageText(error) };
     }
   }
 

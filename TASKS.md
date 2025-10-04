@@ -1385,15 +1385,6 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ### Next Up（Doing完了後に着手） <a id="kanban-next-up"></a>
 
-1) エラーモデル統一（バックエンド）（P1）
-- ブランチ: `refactor/worker/error-model-unify`
-- 依存: Envelope v1
-- 受け入れ基準: CommandResult の統一と例外系の収斂（UIは後続で反映）
-- チェックリスト:
-  - [x] 型/返却値の統一化
-  - [x] 影響範囲の型通し
- - [x] ドキュメント更新（エラー一覧）
-
 2) chore/ui/mui-peer-dev-audit（MUI peer/dev 重複ルールの棚卸し）
 - ブランチ: `chore/ui/mui-peer-dev-audit`（sandbox 制約で main 上で進行予定）
 - 依存: UI パッケージ群（`packages/ui/*`、`app` のプレビュー依存）
@@ -1832,6 +1823,18 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- refactor/worker/error-model-unify（P1） — CommandProcessor/TreeMutationService を Core `CommandResult` 準拠のエラーモデルへ統一
+  - ブランチ: `main`（サンドボックス制約下で直編集）
+  - 要点:
+    - `services/utils/error-adapter.ts` を新設し、例外→`WorkerErrorCode` の分類（コード/名前/メッセージヒューリスティック）とメッセージサニタイズを共通化。
+    - CommandProcessor ならびに TreeMutationService が常に `classifyWorkerError` 経由で `CommandResult` を返却するよう改修。
+    - `docs/error-codes.md` を更新し、コード一覧・分類ルール・整流ポリシーを明文化。
+  - 検証:
+    - [x] `pnpm --filter /runtime-worker typecheck`
+    - [x] `pnpm --filter /runtime-worker test -- --run command-processor-error-model`（既存 WFL 含む全テストがグリーン、Dexie 再初期化の警告のみ）
+    - [x] `pnpm --filter /runtime-worker build`
+  - ロールバック手順:
+    - `services/utils/error-adapter.ts` の追加と CommandProcessor / TreeMutationService の呼び出し差分、`docs/error-codes.md` の改訂をリバートし、上記検証コマンドを再実行。
 - refactor/router/tanstack-migrate（P1） — UI/Runtime パッケージの React Router 依存を除去し TanStack Router へ統一
   - ブランチ: `main`（サンドボックス制約のため直接作業）
   - 要点:
@@ -5354,6 +5357,15 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-10-04 23:10 start: refactor/worker/error-model-unify — CommandProcessor のエラー分類ユーティリティ実装方針を再確認し、既存の例外捕捉箇所を調査開始。
+- 2025-10-04 23:25 progress: refactor/worker/error-model-unify — Doing へ移動し、TASKS チェックリストの初期状態を整備。
+- 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。
+- 2025-10-04 23:30 progress: refactor/worker/error-model-unify — エラー分類ユーティリティ追加と CommandProcessor 差し替えを中心とした改修計画を策定。
+- 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
+- 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
+- 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。
+- 2025-10-05 00:00 progress: refactor/worker/error-model-unify — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-error-model` を実行し、既存WFL含む全テストがグリーン（Dexie 再初期化警告のみ）。
+- 2025-10-05 00:04 progress: refactor/worker/error-model-unify — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker build` を実行し成功。残タスクはエラー一覧ドキュメント更新のみ。
 - 2025-10-04 21:30 start: refactor/router/tanstack-migrate — runtime-ui（landingpage/plugin-dialog/appbar）や ui-* パッケージ、treeconsole 系テストの `react-router(-dom)` 参照を調査し、TanStack Router への置換方針を確定。
 - 2025-10-04 22:05 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/runtime-ui-landingpage typecheck --pretty false` / `@hierarchidb/runtime-ui-plugin-dialog typecheck --pretty false` / `@hierarchidb/ui-routing typecheck --pretty false` / `@hierarchidb/ui-treeconsole-treetable typecheck --pretty false` を順に実行し、依存除去後も型検証がグリーンであることを確認。
 - 2025-10-04 22:20 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/ui-treeconsole-base test:run` を実行し、TanStack Router モックへ更新後もユニットテスト全体が成功することを確認。
