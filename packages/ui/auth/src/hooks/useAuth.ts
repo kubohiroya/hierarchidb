@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
 import { PopupDetectionService } from '../services/PopupDetectionService.js';
 import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '../services/BFFAuthService.js';
@@ -79,6 +79,7 @@ export function useAuth(homeUrl = '/') {
   const location = useLocation();
   const navigate = useNavigate();
   const popupDetection = PopupDetectionService.getInstance();
+  const currentLocationHref = `${location.pathname}${location.searchStr}`;
 
   // Track refresh timer
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,7 +96,7 @@ export function useAuth(homeUrl = '/') {
       forceMethod?: 'popup' | 'redirect';
     }) => {
       // Determine return URL
-      const fullPath = location.pathname + location.search;
+      const fullPath = currentLocationHref;
       const returnUrl = options?.returnUrl || fullPath;
 
       // Store return URL for redirect flow
@@ -153,7 +154,7 @@ export function useAuth(homeUrl = '/') {
         }
       }
     },
-    [bffAuth, location.pathname, location.search, popupDetection],
+    [bffAuth, currentLocationHref, popupDetection],
   );
 
   /**
@@ -175,7 +176,7 @@ export function useAuth(homeUrl = '/') {
     await bffAuth.signOut();
 
     // Navigate to home
-    navigate(homeUrl, { replace: true });
+    void navigate({ to: homeUrl, replace: true });
   }, [bffAuth, navigate, homeUrl]);
 
   /**
@@ -186,8 +187,7 @@ export function useAuth(homeUrl = '/') {
       const storedRedirectURL = localStorage.getItem(STORAGE_KEYS.REDIRECT_URL);
 
       // Check if we're already at the stored redirect URL
-      const currentPath = location.pathname + location.search;
-      if (currentPath === storedRedirectURL) {
+      if (currentLocationHref === storedRedirectURL) {
         localStorage.removeItem(STORAGE_KEYS.REDIRECT_URL);
         return;
       }
@@ -195,13 +195,13 @@ export function useAuth(homeUrl = '/') {
       if (storedRedirectURL) {
         // Navigate to stored URL
         localStorage.removeItem(STORAGE_KEYS.REDIRECT_URL);
-        navigate(storedRedirectURL, { replace: true });
+        void navigate({ to: storedRedirectURL, replace: true });
       } else {
         // Navigate to default
-        navigate(defaultRedirect, { replace: true });
+        void navigate({ to: defaultRedirect, replace: true });
       }
     },
-    [navigate, location.pathname, location.search, homeUrl],
+    [navigate, currentLocationHref, homeUrl],
   );
 
   /**

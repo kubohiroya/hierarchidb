@@ -28,13 +28,14 @@
   },
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*"
+    "@hierarchidb/ui-core": "workspace:*",
+    "@tanstack/react-router": "^1.132.33"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": ">=18.0.0",
-    "react-router-dom": "^7.0.0"
+    "@tanstack/react-router": "^1.132.33"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
@@ -58,7 +59,7 @@
       "@mui/icons-material",
       "@mui/material",
       "react",
-      "react-router-dom"
+      "@tanstack/react-router"
     ]
   }
 }

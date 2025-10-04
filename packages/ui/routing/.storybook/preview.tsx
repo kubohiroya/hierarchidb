@@ -1,6 +1,13 @@
 import type { Preview } from '@storybook/provider';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import {
+  RouterProvider,
+  Outlet,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -22,12 +29,33 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <MemoryRouter>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Story />
-        </ThemeProvider>
-      </MemoryRouter>
+      (() => {
+        const history = createMemoryHistory({ initialEntries: ['/'] });
+
+        const rootRoute = createRootRoute({
+          component: () => (
+            <ThemeProvider theme={theme}>
+              <CssBaseline />
+              <Outlet />
+            </ThemeProvider>
+          ),
+        });
+
+        const storyRoute = createRoute({
+          getParentRoute: () => rootRoute,
+          path: '/',
+          component: Story,
+        });
+
+        const routeTree = rootRoute.addChildren([storyRoute]);
+
+        const router = createRouter({
+          routeTree,
+          history,
+        });
+
+        return <RouterProvider router={router as any} />;
+      })()
     ),
   ],
 };

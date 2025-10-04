@@ -8,7 +8,7 @@ import type { TreeNode, NodeId } from '@hierarchidb/common-type';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
 import { NameCell, IndentSpace, StyledTableRow } from '../TreeTableStyles.js';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 
 export interface TreeTableRowsProps {
   table: ReactTable<TreeNode>;
@@ -112,7 +112,7 @@ export function TreeTableRows({
             <IndentSpace depth={Math.max(0, ((node.depth || 0) + depthOffset) - 1)} />
             <Box
               component={RouterLink}
-              to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
+              to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}` as any}
               sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
               {node.name}

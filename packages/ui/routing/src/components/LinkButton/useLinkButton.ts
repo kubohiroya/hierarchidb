@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import type { LinkButtonProps, ToastConfig } from './LinkButton.js';
 // Mock toast hook
 const useToast = () => ({
@@ -52,6 +52,7 @@ export function useLinkButton(props: LinkButtonProps): UseLinkButtonReturn {
   } = props;
 
   const navigate = useNavigate();
+  type NavigateOptions = Parameters<typeof navigate>[0];
   const { showToast: systemShowToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -159,7 +160,16 @@ export function useLinkButton(props: LinkButtonProps): UseLinkButtonReturn {
 
       // Navigate if destination provided
       if (to) {
-        navigate(to, { replace, state });
+        const navigateOptions: NavigateOptions = {
+          to,
+          replace,
+        };
+
+        if (state !== undefined) {
+          navigateOptions.state = state as NavigateOptions['state'];
+        }
+
+        void navigate(navigateOptions);
       }
 
       // Call success callbacks

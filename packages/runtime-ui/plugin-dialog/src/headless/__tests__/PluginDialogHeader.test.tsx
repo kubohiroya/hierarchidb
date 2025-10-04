@@ -2,9 +2,26 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
-import { MemoryRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
+
+const headerLocationRef = {
+  pathname: '/dialog',
+  searchStr: '',
+  hash: '',
+};
+
+vi.mock('@tanstack/react-router', () => {
+  const React = require('react');
+  return {
+    useNavigate: () => () => Promise.resolve(),
+    useLocation: () => headerLocationRef,
+    Link: React.forwardRef<HTMLAnchorElement, any>(({ to, children, ...rest }, ref) => {
+      const href = typeof to === 'string' ? to : (to?.to ?? '#');
+      return React.createElement('a', { ref, href, ...rest }, children);
+    }),
+  };
+});
 
 describe('PluginDialogHeader', () => {
   it('uses MUI buttons and triggers navigation callbacks', () => {
@@ -31,14 +48,16 @@ describe('PluginDialogHeader', () => {
       onDisplayModeChange: vi.fn(),
     };
 
+    headerLocationRef.pathname = '/dialog';
+    headerLocationRef.searchStr = '';
+    headerLocationRef.hash = '';
+
     render(
-      <MemoryRouter initialEntries={['/dialog']}> 
-        <ThemeProvider theme={createTheme()}>
-          <MultiStepDialogProvider value={contextValue}>
-            <PluginDialogHeader title="Create Folder" mode="create" />
-          </MultiStepDialogProvider>
-        </ThemeProvider>
-      </MemoryRouter>,
+      <ThemeProvider theme={createTheme()}>
+        <MultiStepDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Create Folder" mode="create" />
+        </MultiStepDialogProvider>
+      </ThemeProvider>,
     );
 
     const detailsStepButton = screen.getByRole('link', { name: /Details/i });

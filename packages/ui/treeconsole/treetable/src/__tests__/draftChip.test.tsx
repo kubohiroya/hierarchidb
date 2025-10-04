@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({ children, ...props }: any) => (
+    <a {...props}>{children}</a>
+  ),
+}));
 import type { ReactNode } from 'react';
 import type { ColumnBuilderParams } from '../components/internal/createTreeTableColumns.js';
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
@@ -80,7 +84,7 @@ describe('TreeTable Draft chip', () => {
     const cell = cellRenderer({
       row: { original: node },
     });
-    render(<MemoryRouter>{cell}</MemoryRouter>);
+    render(<>{cell}</>);
   };
 
   it('renders Draft chip when node is marked as draft', () => {

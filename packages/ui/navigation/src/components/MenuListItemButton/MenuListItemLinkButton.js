@@ -7,8 +7,8 @@ import {
   MenuItem,
   SpeedDialIcon,
 } from '@mui/material';
-import { useCallback, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useLocation } from '@tanstack/react-router';
 export const MenuListItemLinkButton = ({ id, items }) => {
   const location = useLocation();
   const [anchorElem, setAnchorElem] = useState(null);
@@ -18,8 +18,19 @@ export const MenuListItemLinkButton = ({ id, items }) => {
   };
   const handleMenuItemClick = useCallback((_url) => {
     setAnchorElem(null);
-    // devLog(_url);
   }, []);
+  const currentPath = location.pathname ?? '';
+  const baseLinkStyle = useMemo(
+    () => ({
+      textDecoration: 'none',
+      whiteSpace: 'nowrap',
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      color: 'inherit',
+    }),
+    []
+  );
   return _jsxs(_Fragment, {
     children: [
       _jsx(IconButton, {
@@ -38,18 +49,12 @@ export const MenuListItemLinkButton = ({ id, items }) => {
             ? _jsx(
                 MenuItem,
                 {
-                  onClick: () => handleMenuItemClick(`${location.pathname}/${item.url}`),
+                  onClick: () => handleMenuItemClick(`${currentPath}/${item.url}`),
                   'aria-label': item.name,
                   children: _jsxs(Link, {
-                    to: `${location.pathname}/${item.url}`,
-                    style: {
-                      textDecoration: 'none',
-                      whiteSpace: 'no-wrap',
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'flex-start',
-                      color: 'inherit',
-                    },
+                    to: `${currentPath}/${item.url}`,
+                    preload: "intent",
+                    style: baseLinkStyle,
                     children: [
                       _jsx(ListItemIcon, { children: item.icon }),
                       _jsx(ListItemText, { children: item.name }),

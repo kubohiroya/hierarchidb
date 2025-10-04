@@ -15,7 +15,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';

@@ -9,7 +9,7 @@ import React = require('react');
 import type { TreeNodeData } from '../../types/index.js';
 import type { TreeTableColumn } from '../TreeTable/index.js';
 
-vi.mock('react-router-dom', () => ({
+vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 

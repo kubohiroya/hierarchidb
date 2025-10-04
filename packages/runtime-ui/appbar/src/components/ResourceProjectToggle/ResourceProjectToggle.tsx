@@ -5,7 +5,7 @@
 
 import { Button, ButtonGroup, type ButtonProps } from '@mui/material';
 import type { NodeId } from '@hierarchidb/common-type';
-import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import { Folder as FolderIcon, AccountTree as AccountTreeIcon } from '@mui/icons-material';
 
 export type ResourceProjectType = 'resources' | 'projects' | 'none';
@@ -42,7 +42,7 @@ export function ResourceProjectToggle({
                                         size = 'medium',
                                       }: ResourceProjectToggleProps) {
   const navigate = useNavigate();
-  const loaderData = useLoaderData() as { pageNodeId?: string };
+  const loaderData = useLoaderData({ strict: false }) as { pageNodeId?: string } | undefined;
   const pageNodeId = loaderData?.pageNodeId;
 
   const handleToggle = async (targetType: 'resources' | 'projects') => {
@@ -71,7 +71,7 @@ export function ResourceProjectToggle({
     const basePath = targetType === 'resources' ? 'r' : 'p';
     const targetPath = savedPageNodeId ? `/t/${basePath}/${savedPageNodeId}` : `/t/${basePath}`;
 
-    navigate(targetPath, { replace: true });
+    void navigate({ to: targetPath, replace: true });
   };
 
   return (

@@ -22,7 +22,7 @@
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
-    "reason": "react-router-dom@7 type d.ts requires TS>=5; leaf-only here"
+    "reason": "TanStack RouterとMUIの型依存を leaf パッケージ内で完結させるため"
   },
   "include": [
     "src"

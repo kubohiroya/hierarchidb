@@ -1,8 +1,8 @@
 // Local implementation - using provider-router-dom directly
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
-import { type MouseEvent, type ReactNode, useCallback, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { type CSSProperties, type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
+import { Link, useLocation } from '@tanstack/react-router';
 
 export type MenuItemLinkType = {
   name: string;
@@ -29,6 +29,19 @@ export const MenuListItemLinkButton = ({
     setAnchorElem(null);
   }, []);
 
+  const currentPath = location.pathname ?? '';
+  const baseLinkStyle = useMemo<CSSProperties>(
+    () => ({
+      textDecoration: 'none',
+      whiteSpace: 'nowrap',
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      color: 'inherit',
+    }),
+    [],
+  );
+
   return (
     <>
       <IconButton
@@ -43,20 +56,10 @@ export const MenuListItemLinkButton = ({
           item ? (
             <MenuItem
               key={index}
-              onClick={() => handleMenuItemClick(`${location.pathname}/${item.url}`)}
+              onClick={() => handleMenuItemClick(`${currentPath}/${item.url}`)}
               aria-label={item.name}
             >
-              <Link
-                to={`${location.pathname}/${item.url}`}
-                style={{
-                  textDecoration: 'none',
-                  whiteSpace: 'no-wrap',
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'flex-start',
-                  color: 'inherit',
-                }}
-              >
+              <Link to={`${currentPath}/${item.url}` as any} style={baseLinkStyle} preload="intent">
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText>{item.name}</ListItemText>
               </Link>

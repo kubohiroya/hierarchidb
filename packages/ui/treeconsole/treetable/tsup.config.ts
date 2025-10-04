@@ -4,7 +4,7 @@ export default createTsupConfig({
   external: [
     'react',
     'react-dom',
-    'react-router-dom',
+    '@tanstack/react-router',
     '@mui/material',
     '@mui/icons-material',
     '@emotion/react',

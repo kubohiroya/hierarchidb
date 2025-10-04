@@ -6,18 +6,13 @@
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter, useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { LinkButton } from '../LinkButton.js';
 import { useLinkButton } from '../useLinkButton.js';
 
-// Mock provider-router-dom
-vi.mock('provider-router-dom', async () => {
-  const actual = await vi.importActual('provider-router-dom');
-  return {
-    ...actual,
-    useNavigate: vi.fn(),
-  };
-});
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: vi.fn(),
+}));
 
 // Mock toast provider is already handled in useLinkButton.ts
 
@@ -35,26 +30,20 @@ describe('LinkButton Component', () => {
 
   describe('Basic Functionality', () => {
     it('renders with children', () => {
-      render(
-        <BrowserRouter>
-          <LinkButton>Click Me</LinkButton>
-        </BrowserRouter>,
-      );
+      render(<LinkButton>Click Me</LinkButton>);
       expect(screen.getByText('Click Me')).toBeInTheDocument();
     });
 
     it('shows loading text when loading', async () => {
       render(
-        <BrowserRouter>
-          <LinkButton
-            loadingText="Saving..."
-            onSave={async () => {
-              await new Promise((resolve) => setTimeout(resolve, 100));
-            }}
-          >
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton
+          loadingText="Saving..."
+          onSave={async () => {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }}
+        >
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -66,17 +55,14 @@ describe('LinkButton Component', () => {
     });
 
     it('navigates to specified path', async () => {
-      render(
-        <BrowserRouter>
-          <LinkButton to="/next">Next</LinkButton>
-        </BrowserRouter>,
-      );
+      render(<LinkButton to="/next">Next</LinkButton>);
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/next', {
+        expect(mockNavigate).toHaveBeenCalledWith({
+          to: '/next',
           replace: false,
           state: undefined,
         });
@@ -85,18 +71,17 @@ describe('LinkButton Component', () => {
 
     it('replaces history when replace prop is true', async () => {
       render(
-        <BrowserRouter>
-          <LinkButton to="/next" replace>
-            Next
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton to="/next" replace>
+          Next
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/next', {
+        expect(mockNavigate).toHaveBeenCalledWith({
+          to: '/next',
           replace: true,
           state: undefined,
         });
@@ -110,11 +95,9 @@ describe('LinkButton Component', () => {
       const validate = vi.fn().mockResolvedValue(false);
 
       render(
-        <BrowserRouter>
-          <LinkButton validate={validate} onSave={onSave}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton validate={validate} onSave={onSave}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -131,11 +114,9 @@ describe('LinkButton Component', () => {
       const validate = vi.fn().mockResolvedValue(true);
 
       render(
-        <BrowserRouter>
-          <LinkButton validate={validate} onSave={onSave}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton validate={validate} onSave={onSave}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -151,19 +132,17 @@ describe('LinkButton Component', () => {
   describe('Confirmation Dialog', () => {
     it('shows confirmation base-dialog when configured', async () => {
       render(
-        <BrowserRouter>
-          <LinkButton
-            confirmDialog={{
-              enabled: true,
-              title: 'Confirm Delete',
-              message: 'Are you sure?',
-              confirmText: 'Delete',
-              cancelText: 'Cancel',
-            }}
-          >
-            Delete
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton
+          confirmDialog={{
+            enabled: true,
+            title: 'Confirm Delete',
+            message: 'Are you sure?',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+          }}
+        >
+          Delete
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -182,17 +161,15 @@ describe('LinkButton Component', () => {
       const onSave = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton
-            confirmDialog={{
-              enabled: true,
-              message: 'Are you sure?',
-            }}
-            onSave={onSave}
-          >
-            Delete
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton
+          confirmDialog={{
+            enabled: true,
+            message: 'Are you sure?',
+          }}
+          onSave={onSave}
+        >
+          Delete
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -212,17 +189,15 @@ describe('LinkButton Component', () => {
       const onSave = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton
-            confirmDialog={{
-              enabled: true,
-              message: 'Are you sure?',
-            }}
-            onSave={onSave}
-          >
-            Delete
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton
+          confirmDialog={{
+            enabled: true,
+            message: 'Are you sure?',
+          }}
+          onSave={onSave}
+        >
+          Delete
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -246,11 +221,7 @@ describe('LinkButton Component', () => {
       const step1 = vi.fn();
       const step2 = vi.fn();
 
-      render(
-        <BrowserRouter>
-          <LinkButton steps={[{ execute: step1 }, { execute: step2 }]}>Execute</LinkButton>
-        </BrowserRouter>,
-      );
+      render(<LinkButton steps={[{ execute: step1 }, { execute: step2 }]}>Execute</LinkButton>);
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
@@ -273,19 +244,17 @@ describe('LinkButton Component', () => {
       const step2Execute = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton
-            steps={[
-              {
-                validate: () => false,
-                execute: step1Execute,
-              },
-              { execute: step2Execute },
-            ]}
-          >
-            Execute
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton
+          steps={[
+            {
+              validate: () => false,
+              execute: step1Execute,
+            },
+            { execute: step2Execute },
+          ]}
+        >
+          Execute
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -303,21 +272,19 @@ describe('LinkButton Component', () => {
       const globalOnError = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton
-            steps={[
-              {
-                execute: async () => {
-                  throw stepError;
-                },
-                onError: stepOnError,
+        <LinkButton
+          steps={[
+            {
+              execute: async () => {
+                throw stepError;
               },
-            ]}
-            onError={globalOnError}
-          >
-            Execute
-          </LinkButton>
-        </BrowserRouter>,
+              onError: stepOnError,
+            },
+          ]}
+          onError={globalOnError}
+        >
+          Execute
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -334,11 +301,7 @@ describe('LinkButton Component', () => {
     it('executes save operation', async () => {
       const onSave = vi.fn();
 
-      render(
-        <BrowserRouter>
-          <LinkButton onSave={onSave}>Save</LinkButton>
-        </BrowserRouter>,
-      );
+      render(<LinkButton onSave={onSave}>Save</LinkButton>);
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
@@ -353,11 +316,9 @@ describe('LinkButton Component', () => {
       const onCleanup = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton onSave={onSave} onCleanup={onCleanup}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton onSave={onSave} onCleanup={onCleanup}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -383,11 +344,9 @@ describe('LinkButton Component', () => {
       const onSave = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton onBeforeAction={onBeforeAction} onSave={onSave}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton onBeforeAction={onBeforeAction} onSave={onSave}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -404,11 +363,9 @@ describe('LinkButton Component', () => {
       const onSuccess = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton onSave={onSave} onSuccess={onSuccess}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton onSave={onSave} onSuccess={onSuccess}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -426,11 +383,9 @@ describe('LinkButton Component', () => {
       const onError = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton onSave={onSave} onError={onError}>
-            Save
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton onSave={onSave} onError={onError}>
+          Save
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -448,11 +403,7 @@ describe('LinkButton Component', () => {
         .fn()
         .mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
 
-      render(
-        <BrowserRouter>
-          <LinkButton onSave={onSave}>Save</LinkButton>
-        </BrowserRouter>,
-      );
+      render(<LinkButton onSave={onSave}>Save</LinkButton>);
 
       const button = screen.getByRole('button');
       fireEvent.click(button);
@@ -469,11 +420,9 @@ describe('LinkButton Component', () => {
       const onBeforeNavigate = vi.fn().mockResolvedValue(true);
 
       render(
-        <BrowserRouter>
-          <LinkButton to="/next" onBeforeNavigate={onBeforeNavigate}>
-            Next
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton to="/next" onBeforeNavigate={onBeforeNavigate}>
+          Next
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -481,7 +430,11 @@ describe('LinkButton Component', () => {
 
       await waitFor(() => {
         expect(onBeforeNavigate).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith('/next', expect.any(Object));
+        expect(mockNavigate).toHaveBeenCalledWith({
+          to: '/next',
+          replace: false,
+          state: undefined,
+        });
       });
     });
 
@@ -489,11 +442,9 @@ describe('LinkButton Component', () => {
       const onSuccessNavigate = vi.fn();
 
       render(
-        <BrowserRouter>
-          <LinkButton to="/next" onSuccessNavigate={onSuccessNavigate}>
-            Next
-          </LinkButton>
-        </BrowserRouter>,
+        <LinkButton to="/next" onSuccessNavigate={onSuccessNavigate}>
+          Next
+        </LinkButton>,
       );
 
       const button = screen.getByRole('button');
@@ -563,7 +514,11 @@ describe('useLinkButton Hook', () => {
     expect(step1).toHaveBeenCalled();
     expect(step2).toHaveBeenCalled();
     expect(onSuccess).toHaveBeenCalled();
-    expect(mockNavigate).toHaveBeenCalledWith('/success', expect.any(Object));
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/success',
+      replace: false,
+      state: undefined,
+    });
   });
 
   it('handles errors correctly', async () => {

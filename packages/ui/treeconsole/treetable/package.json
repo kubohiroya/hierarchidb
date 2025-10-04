@@ -37,7 +37,7 @@
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
-    "react-router-dom": ">=6.22.0",
+    "@tanstack/react-router": "^1.132.33",
     "jotai": "^2.13.1",
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
@@ -57,7 +57,8 @@
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2"
+    "@mui/icons-material": "^7.3.2",
+    "@tanstack/react-router": "^1.132.33"
   },
   "tsup": {
     "external": [
@@ -66,7 +67,7 @@
       "@mui/icons-material",
       "@mui/material",
       "jotai",
-      "react-router-dom",
+      "@tanstack/react-router",
       "react",
       "react-dom"
     ]

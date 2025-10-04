@@ -41,6 +41,7 @@
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/runtime-shared-module-paths": "workspace:*",
+    "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2"
   },
   "devDependencies": {
@@ -62,7 +63,7 @@
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "jotai": "^2.11.2",
-    "react-router-dom": ">=7.0.0"
+    "@tanstack/react-router": "^1.132.33"
   },
   "tsup": {
     "external": [
@@ -72,7 +73,7 @@
       "@hierarchidb/runtime-worker-bootstrap",
       "@hierarchidb/ui-core",
       "jotai",
-      "react-router-dom",
+      "@tanstack/react-router",
       "react",
       "react-dom"
     ]

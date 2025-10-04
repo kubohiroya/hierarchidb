@@ -18,7 +18,7 @@ import {
   OpenInFull as OpenInFullIcon,
 } from '@mui/icons-material';
 import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@tanstack/react-router';
 import { alpha } from '@mui/material/styles';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
 
@@ -74,11 +74,12 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
   }, [subtitle, ctx.stepComponents.length]);
 
   const buildStepLink = useCallback((index: number) => {
-    const params = new URLSearchParams(location.search);
+    const rawSearch = location.searchStr ? location.searchStr.slice(1) : '';
+    const params = new URLSearchParams(rawSearch);
     params.set('d_step', String(index));
     const query = params.toString();
     return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
-  }, [location.pathname, location.search, location.hash]);
+  }, [location.pathname, location.searchStr, location.hash]);
 
   const handleStepClick = useCallback((event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
     if (!canNavigate || index === ctx.activeStepIndex) {
@@ -139,10 +140,13 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 return (
                   <Step key={step.id} completed={completed}>
                     <StepButton
-                      component={Link}
-                      to={stepLink}
+                      component={Link as any}
+                      to={stepLink as any}
                       disabled={!canNavigate}
-                      onClick={(event) => handleStepClick(event, index, canNavigate)}
+                      preload="intent"
+                      onClick={(event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) =>
+                        handleStepClick(event, index, canNavigate)
+                      }
                     >
                       <StepLabel>
                         <Typography variant="caption" noWrap>

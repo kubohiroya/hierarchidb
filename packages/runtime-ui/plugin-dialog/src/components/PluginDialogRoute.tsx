@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { useLoaderData, useNavigate } from 'react-router-dom';
+import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
 import { NodeId, TreeId } from '@hierarchidb/common-type';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
@@ -23,16 +23,27 @@ interface PluginDialogLoaderData {
  * This component should be used in React Router route definitions
  */
 
-export const PluginDialogRoute: React.FC = () => {
-  const { tree, pageNodeId, targetNodeId, nodeType, action } = useLoaderData<PluginDialogLoaderData>();
+export interface PluginDialogRouteProps {
+  loaderData?: PluginDialogLoaderData;
+}
+
+export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData }) => {
+  const resolvedLoaderData = loaderData ?? (useLoaderData({ strict: false }) as PluginDialogLoaderData | undefined);
+
+  if (!resolvedLoaderData) {
+    throw new Error('PluginDialogRoute requires loader data');
+  }
+
+  const { tree, pageNodeId, targetNodeId, nodeType, action } = resolvedLoaderData;
 
   const navigate = useNavigate();
+  const location = useLocation();
   const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
   const client = ref?.client ?? null;
 
   // Parse query params for additional context
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
   const stepParam = searchParams.get('step');
   const currentStep = stepParam ? parseInt(stepParam, 10) - 1 : 0; // Convert to 0-based index
 
@@ -68,31 +79,32 @@ export const PluginDialogRoute: React.FC = () => {
           return await wcApi.getWorkingCopy(targetNodeId);
         })());
         if (!disposed && wc?.id && wc.id !== targetNodeId) {
-          const search = window.location.search || '';
-          navigate(`/t/${tree.id}/${pageNodeId}/${wc.id}/${nodeType}/${action}${search}`, { replace: true });
+          const search = location.searchStr || '';
+          const hash = location.hash || '';
+          void navigate({
+            to: `/t/${tree.id}/${pageNodeId}/${wc.id}/${nodeType}/${action}${search}${hash}`,
+            replace: true,
+          });
         }
       } catch (e) {
         console.warn('[PluginDialogRoute] ensure working copy for edit failed', e);
       }
     })();
     return () => { disposed = true; };
-  }, [client, mode, targetNodeId, tree?.id, pageNodeId, nodeType, action, navigate]);
+  }, [client, mode, targetNodeId, tree?.id, pageNodeId, nodeType, action, navigate, location.searchStr, location.hash]);
 
 
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
-    if (pageNodeId) {
-      navigate(`/t/${tree.id}/${pageNodeId}`);
-    } else {
-      navigate(`/t/${tree.id}`);
-    }
+    const destination = pageNodeId ? `/t/${tree.id}/${pageNodeId}` : `/t/${tree.id}`;
+    void navigate({ to: destination });
   };
 
   // Handle success
   const handleSuccess = (savedNodeId: NodeId) => {
     // Navigate to the saved node
-    navigate(`/t/${tree.id}/${pageNodeId}/${savedNodeId}`);
+    void navigate({ to: `/t/${tree.id}/${pageNodeId}/${savedNodeId}` });
   };
 
   // Unified host: headless plugin dialog shell

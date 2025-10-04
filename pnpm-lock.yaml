@@ -1765,9 +1765,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
-      react-router-dom:
-        specifier: ^7.0.0
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -1864,15 +1864,15 @@ importers:
       '@hierarchidb/ui-icon':
         specifier: workspace:*
         version: link:../../ui/icon
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
       jotai:
         specifier: ^2.11.2
         version: 2.14.0(@babel/core@7.28.4)(@babel/template@7.27.2)(@types/react@18.3.24)(react@18.3.1)
-      react-router-dom:
-        specifier: '>=7.0.0'
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2244,6 +2244,9 @@ importers:
       '@react-oauth/google':
         specifier: ^0.12.2
         version: 0.12.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       i18next:
         specifier: 22.5.0
         version: 22.5.0
@@ -2259,9 +2262,6 @@ importers:
       react-oidc-context:
         specifier: ^3.3.0
         version: 3.3.0(oidc-client-ts@3.3.0)(react@18.3.1)
-      react-router-dom:
-        specifier: ^7.8.1
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -2326,12 +2326,12 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-gravatar:
         specifier: ^2.6.3
         version: 2.6.3(react@18.3.1)
-      react-router-dom:
-        specifier: ^7.0.0
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2748,9 +2748,6 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
-      react-router-dom:
-        specifier: '>=7.0.0'
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2758,6 +2755,9 @@ importers:
       '@mui/material':
         specifier: ^7.3.2
         version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: ^18.3.24
         version: 18.3.24
@@ -2773,9 +2773,9 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../core
-      react-router-dom:
-        specifier: ^7.8.1
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -2972,6 +2972,9 @@ importers:
       '@hierarchidb/ui-icon':
         specifier: workspace:*
         version: link:../../icon
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -2994,18 +2997,12 @@ importers:
       '@testing-library/react':
         specifier: ^16.3.0
         version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.24))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@types/react-router-dom':
-        specifier: ^5.3.3
-        version: 5.3.3
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
       react-dom:
         specifier: '>=18.0.0'
         version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^7.8.2
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   packages/ui/treeconsole/footer:
     dependencies:
@@ -3160,9 +3157,6 @@ importers:
       jotai:
         specifier: ^2.13.1
         version: 2.14.0(@babel/core@7.28.4)(@babel/template@7.27.2)(@types/react@18.3.24)(react@18.3.1)
-      react-router-dom:
-        specifier: '>=6.22.0'
-        version: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -3170,6 +3164,9 @@ importers:
       '@mui/material':
         specifier: ^7.3.2
         version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
@@ -5925,9 +5922,6 @@ packages:
   '@types/google.maps@3.58.1':
     resolution: {integrity: sha512-X9QTSvGJ0nCfMzYOnaVs/k6/4L+7F5uCS+4iUmkLEls6J9S/Phv+m/i3mDeyc49ZBgwab3EFO1HEoBY7k98EGQ==}
 
-  '@types/history@4.7.11':
-    resolution: {integrity: sha512-qjDJRrmvBMiTx+jyLxvLfJU7UznFuokDv4f3WRuriHKERccVpFU+8XMQUAbDzoiJCsmexxRExQeMwwCdamSKDA==}
-
   '@types/jscodeshift@17.3.0':
     resolution: {integrity: sha512-ogvGG8VQQqAQQ096uRh+d6tBHrYuZjsumHirKtvBa5qEyTMN3IQJ7apo+sw9lxaB/iKWIhbbLlF3zmAWk9XQIg==}
 
@@ -5977,12 +5971,6 @@ packages:
 
   '@types/react-resizable@3.0.8':
     resolution: {integrity: sha512-Pcvt2eGA7KNXldt1hkhVhAgZ8hK41m0mp89mFgQi7LAAEZiaLgm4fHJ5zbJZ/4m2LVaAyYrrRRv1LHDcrGQanA==}
-
-  '@types/react-router-dom@5.3.3':
-    resolution: {integrity: sha512-kpqnYK4wcdm5UaWI3fLcELopqLrHgLqNsdpHauzlQktfkHL3npOSwtj1Uz9oKBAzs7lFtVkV8j83voAz2D8fhw==}
-
-  '@types/react-router@5.1.20':
-    resolution: {integrity: sha512-jGjmu/ZqS7FjSH6owMcD5qpq19+1RS9DeVRqfl1FeBMxTDQAGwlMWOcs52NDoXaNKyG3d1cYQFMs9rCrb88o9Q==}
 
   '@types/react-transition-group@4.4.12':
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
@@ -8965,13 +8953,6 @@ packages:
     resolution: {integrity: sha512-vKpeHhI5OZvYn82kXOs1bC8aOXktGU5AmKAgaZS4F5JPburCtbmDPqE7Pzp+1kN4+Wb81LlF33VpGwWwtXem+w==}
     peerDependencies:
       react: '>= 16.3'
-
-  react-router-dom@7.9.1:
-    resolution: {integrity: sha512-U9WBQssBE9B1vmRjo9qTM7YRzfZ3lUxESIZnsf4VjR/lXYz9MHjvOxHzr/aUm4efpktbVOrF09rL/y4VHa8RMw==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
 
   react-router@7.9.1:
     resolution: {integrity: sha512-pfAByjcTpX55mqSDGwGnY9vDCpxqBLASg0BMNAuMmpSGESo/TaOUG6BllhAtAkCGx8Rnohik/XtaqiYUJtgW2g==}
@@ -13854,8 +13835,6 @@ snapshots:
 
   '@types/google.maps@3.58.1': {}
 
-  '@types/history@4.7.11': {}
-
   '@types/jscodeshift@17.3.0':
     dependencies:
       ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
@@ -13901,17 +13880,6 @@ snapshots:
 
   '@types/react-resizable@3.0.8':
     dependencies:
-      '@types/react': 18.3.24
-
-  '@types/react-router-dom@5.3.3':
-    dependencies:
-      '@types/history': 4.7.11
-      '@types/react': 18.3.24
-      '@types/react-router': 5.1.20
-
-  '@types/react-router@5.1.20':
-    dependencies:
-      '@types/history': 4.7.11
       '@types/react': 18.3.24
 
   '@types/react-transition-group@4.4.12(@types/react@18.3.24)':
@@ -14370,7 +14338,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:
@@ -17370,12 +17338,6 @@ snapshots:
       react-draggable: 4.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     transitivePeerDependencies:
       - react-dom
-
-  react-router-dom@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      react-router: 7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   react-router@7.9.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:

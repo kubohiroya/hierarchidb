@@ -6,7 +6,7 @@
  * consistent Next/Save guards derived from plugin-provided services.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import {
   HeadlessMultiStepDialogProps,
   HeadlessContentRenderProps,
@@ -1072,7 +1072,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   }, [activeStepIndex, steps.length, setUrlStep]);
 
   const navigateToNode = useCallback((targetId: NodeId) => {
-    navigate(`/t/${treeId}/${pageNodeId}/${targetId}`);
+    void navigate({ to: `/t/${treeId}/${pageNodeId}/${targetId}` as const });
   }, [navigate, treeId, pageNodeId]);
 
   const saveDraftInProgress = useRef(false);

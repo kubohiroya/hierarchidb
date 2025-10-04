@@ -10,7 +10,7 @@ import { rainbowColors, SparkleAnimation } from '@hierarchidb/ui-core';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from '@tanstack/react-router';
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 type NodeTypeIconLikeProps = {
@@ -369,7 +369,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               >
                 <Box
                   component={RouterLink}
-                  to={linkHref}
+                  to={linkHref as any}
                   sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                 >
                   {node.name}

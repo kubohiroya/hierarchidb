@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from 'react-oidc-context';
 
 //import { APP_PREFIX } from "@/config/appDescription";
@@ -18,7 +18,7 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
 
       sessionStorage.setItem('oidc.redirect', window.location.pathname);
 
-      navigate(fallbackTo, { replace: true });
+      void navigate({ to: fallbackTo, replace: true });
     };
 
     window.addEventListener('Auth-error', handleAuthErrorEvent as EventListener);
@@ -26,7 +26,7 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
     return () => {
       window.removeEventListener('Auth-error', handleAuthErrorEvent as EventListener);
     };
-  }, [navigate, auth]);
+  }, [navigate, auth, fallbackTo]);
 
   return null;
 }

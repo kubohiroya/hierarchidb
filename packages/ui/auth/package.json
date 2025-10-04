@@ -38,7 +38,7 @@
     "react-i18next": "12.3.1",
     "i18next": "22.5.0",
     "react-oidc-context": "^3.3.0",
-    "react-router-dom": "^7.8.1"
+    "@tanstack/react-router": "^1.132.33"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
@@ -58,7 +58,8 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0"
+    "@emotion/styled": "^11.14.0",
+    "@tanstack/react-router": "^1.132.33"
   },
   "license": "MIT",
   "module": "dist/index.js",
@@ -68,6 +69,7 @@
       "@emotion/styled",
       "@mui/icons-material",
       "@mui/material",
+      "@tanstack/react-router",
       "react",
       "react-dom"
     ]

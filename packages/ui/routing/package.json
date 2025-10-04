@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@hierarchidb/ui-core": "workspace:*",
-    "react-router-dom": "^7.8.1"
+    "@tanstack/react-router": "^1.132.33"
   },
   "devDependencies": {
     "vitest": "^3.2.4",

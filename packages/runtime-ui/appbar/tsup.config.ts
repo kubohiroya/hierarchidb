@@ -5,6 +5,6 @@ export default createTsupConfig({
     'react',
     '@mui/material',
     '@mui/icons-material',
-    'react-router-dom',
+    '@tanstack/react-router',
   ],
 });

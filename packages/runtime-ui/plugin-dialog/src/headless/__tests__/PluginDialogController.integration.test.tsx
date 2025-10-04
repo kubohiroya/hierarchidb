@@ -1,12 +1,35 @@
 import type React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { NodeId, TreeId } from '@hierarchidb/common-type';
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { usePluginDialogController } from '../usePluginDialogController.js';
+
+const navigateMock = vi.fn();
+const locationRef = {
+  pathname: '/t/tree-1/page-1/node/folder/create',
+  searchStr: '',
+  hash: '',
+};
+
+vi.mock('@tanstack/react-router', () => {
+  const React = require('react');
+  return {
+    useNavigate: () => (options: unknown) => {
+      navigateMock(options);
+      return Promise.resolve();
+    },
+    useLocation: () => locationRef,
+    Link: React.forwardRef<HTMLAnchorElement, any>(({ to, children, ...rest }, ref) => {
+      const href = typeof to === 'string' ? to : (to?.to ?? '#');
+      return React.createElement('a', { ref, href, ...rest }, children);
+    }),
+    useLoaderData: () => ({}),
+    useSearch: () => ({}),
+  };
+});
 
 vi.mock('@hierarchidb/runtime-worker-bootstrap', () => ({
   getWorkerClientHook: () => () => mockWorkerRef,
@@ -124,6 +147,7 @@ describe('usePluginDialogController – folder create integration', () => {
     cleanup();
     vi.restoreAllMocks();
     mockWorkerRef = null;
+    navigateMock.mockClear();
   });
 
   it('satisfies the folder dialog checklist', async () => {
@@ -132,20 +156,22 @@ describe('usePluginDialogController – folder create integration', () => {
       'commits working copy, calls onSuccess, and closes the dialog',
     ]);
 
+    locationRef.pathname = `/t/${treeId}/${pageNodeId}/${workingCopyId}/folder/create`;
+    locationRef.searchStr = '';
+    locationRef.hash = '';
+
     render(
-      <MemoryRouter initialEntries={[`/t/tree-1/page-1/${workingCopyId}/folder/create`]}> 
-        <TestHarness
-          intent="create"
-          mode="create"
-          nodeType="folder"
-          nodeId={workingCopyId}
-          pageNodeId={pageNodeId}
-          treeId={treeId}
-          open
-          onClose={onClose}
-          onSuccess={onSuccess}
-        />
-      </MemoryRouter>,
+      <TestHarness
+        intent="create"
+        mode="create"
+        nodeType="folder"
+        nodeId={workingCopyId}
+        pageNodeId={pageNodeId}
+        treeId={treeId}
+        open
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />,
     );
 
     await waitFor(() => expect(screen.queryByTestId('dialog-loading')).not.toBeInTheDocument());

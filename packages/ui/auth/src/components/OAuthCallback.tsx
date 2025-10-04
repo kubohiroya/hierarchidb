@@ -6,7 +6,7 @@
 
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
 import { BFFAuthService } from '../services/BFFAuthService.js';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 
@@ -29,7 +29,7 @@ export const OAuthCallback: React.FC = () => {
         localStorage.removeItem('auth_return_url');
 
         // Navigate to the return URL
-        navigate(returnUrl, { replace: true });
+        void navigate({ to: returnUrl, replace: true });
       } catch (err) {
         console.error('OAuth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');

@@ -8,7 +8,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
-    'react-router-dom',
+    '@tanstack/react-router',
     'jotai',
     '@hierarchidb/ui-icon',
     '@hierarchidb/ui-core',

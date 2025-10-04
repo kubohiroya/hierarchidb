@@ -8,7 +8,5 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
-    'react-router',
-    'react-router-dom',
   ],
 });
