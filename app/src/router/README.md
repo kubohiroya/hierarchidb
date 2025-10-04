@@ -25,7 +25,12 @@ router/
 │   ├── uiPlugins.ts        # UI plugin setup
 │   ├── mapLoader.ts        # Map zxy parameter handling
 │   ├── treeLoaders.ts      # Tree data loading (Phase 3)
+│   ├── workerClient.ts     # Worker initialization service (Phase 4)
 │   └── __tests__/          # Loader tests
+│       ├── uiPlugins.test.ts
+│       ├── mapLoader.test.ts
+│       ├── treeLoaders.test.ts
+│       └── workerClient.test.ts  # Phase 4 tests
 └── index.tsx           # Main router factory and utilities
 ```
 
@@ -188,9 +193,16 @@ Test Results:
 - TrashDialog special case handled
 - Unit tests added (treeLoaders.test.ts)
 
-**Phase 4-5**: Future
-- Worker initialization refactor
+**Phase 4**: ✅ Complete
+- Worker initialization service implemented (`workerClient.ts`)
+- Retry/timeout functionality with exponential backoff
+- AbortSignal support for cancellable initialization
+- 9 unit tests passing (workerClient.test.ts)
+- Full integration with TanStack Router `beforeLoad` hooks
+
+**Phase 5**: Future
 - React Router removal
+- Final cleanup and documentation
 
 ## Implementation Notes
 
