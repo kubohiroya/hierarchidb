@@ -8,8 +8,17 @@ This directory contains the TanStack Router implementation for HierarchiDB, supp
 router/
 ├── __tests__/          # Unit tests for router functionality
 ├── context/            # Shared context providers (AppProviders)
-├── routes/             # TanStack Router route definitions (to be added in Phase 2)
-├── loaders/            # Data loading functions (to be added in Phase 2+)
+├── routes/             # TanStack Router route definitions
+│   ├── rootRoute.tsx       # Root route with UI plugin initialization
+│   ├── indexRoute.tsx      # Home page (/)
+│   ├── infoRoute.tsx       # Info page (/info)
+│   ├── mapRoute.tsx        # Map page (/map)
+│   ├── authRoutes.tsx      # Auth routes (/auth/*)
+│   └── utilityRoutes.tsx   # Utility routes (/tags, /plugins, etc.)
+├── loaders/            # Data loading functions
+│   ├── uiPlugins.ts        # UI plugin setup
+│   ├── mapLoader.ts        # Map zxy parameter handling
+│   └── __tests__/          # Loader tests
 └── index.tsx           # Main router factory and utilities
 ```
 
@@ -54,7 +63,9 @@ Creates a TanStack Router instance with the specified configuration.
 - `config.mode`: `'browser'` or `'hash'`
 - `config.basename`: Optional base path for routing (e.g., `/hierarchidb`)
 
-**Returns:** TanStack Router instance
+**Returns:** Promise resolving to TanStack Router instance
+
+**Note:** This is now an async function that dynamically imports route definitions.
 
 ### `getRouterMode()`
 
@@ -68,28 +79,108 @@ Gets the base path from environment variables with proper formatting.
 
 **Returns:** Base path string (e.g., `/hierarchidb` or `/`)
 
+## Route Structure
+
+### Top-Level Routes (Phase 2 - Complete)
+
+All top-level routes have been migrated to TanStack Router:
+
+- `/` - Home page with tree type selection
+- `/info` - Application information and licenses
+- `/map` - Map view with URL-synchronized position (zxy parameter)
+- `/tags` - Tag list and search
+- `/tags/:uuid` - Tag detail page
+- `/auth/login` - Login page
+- `/auth/callback` - OAuth callback handler
+- `/auth/silent-renew` - Silent token renewal
+- `/plugins` - Plugin registry
+- `/plugin-demo` - Plugin demo page
+- `/worker-test` - Worker API test page
+- `/test` - Simple test page
+
+### Root Route Features
+
+The root route (`rootRoute.tsx`) provides:
+
+1. **UI Plugin Initialization**: Calls `setupUIPlugins()` in `beforeLoad`
+2. **Common Context**: Provides `uiPluginsReady` flag to all child routes
+3. **App Providers**: Wraps all routes with common providers
+
+### Loaders
+
+#### setupUIPlugins
+
+Located in `loaders/uiPlugins.ts`, this function:
+- Loads all UI plugin modules via dynamic imports
+- Returns a registry of loaded plugins
+- Provides cleanup via `teardown()` function
+
+#### mapLoader
+
+Located in `loaders/mapLoader.ts`, this provides:
+- `parseZxyParam()`: Parse map position from URL (bug fixed: `parts.length !== 3`)
+- `formatZxyParam()`: Format position for URL
+- `mapLoader()`: TanStack Router loader function
+
+**Bug Fix**: The original implementation had `parts.length === 3` which would return `null` for valid 3-part parameters. This has been corrected to `parts.length !== 3`.
+
 ## Testing
 
 Run the router tests:
 ```bash
 pnpm -C app test -- router/__tests__/engine-toggle.test.ts
+pnpm -C app test -- router/loaders/__tests__/
 ```
+
+Test Results:
+- Router engine tests: 13 tests passing
+- Loader tests: 25 tests passing (21 mapLoader + 4 uiPlugins)
 
 ## Migration Status
 
-**Phase 1 (Current)**: ✅ Complete
+**Phase 1**: ✅ Complete
 - TanStack Router dependency added
 - Router factory function implemented
 - Feature flag support added
 - AppProviders abstraction created
 - Unit tests passing
 
-**Phase 2**: Planned
-- Top-level routes migration
-- UI plugin initialization
-- Route definitions for `/`, `/info`, `/map`, `/tags`, etc.
+**Phase 2**: ✅ Complete
+- Top-level routes migrated to TanStack Router
+- UI plugin initialization integrated
+- Route definitions for `/`, `/info`, `/map`, `/tags`, `/auth/*`, etc.
+- Map zxy parameter bug fixed
+- Comprehensive loader tests (25 tests)
 
 **Phase 3-5**: Future
 - Tree routes migration (`/t/*`)
 - Worker initialization refactor
 - React Router removal
+
+## Implementation Notes
+
+### Async Router Creation
+
+The `createHierarchiRouter` function is now async because it uses dynamic imports to avoid circular dependencies:
+
+```typescript
+const router = await createHierarchiRouter({ mode: 'browser' });
+```
+
+### Route Reuse Strategy
+
+Phase 2 reuses existing React Router component implementations to minimize changes:
+
+```typescript
+// Example: indexRoute reuses existing component
+import IndexPage from '../../routes/_index.js';
+
+export const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: IndexPage,
+});
+```
+
+This approach allows for incremental migration and easier rollback if needed.
+
