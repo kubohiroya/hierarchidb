@@ -1,30 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHierarchiRouter, getRouterMode, getBasePath } from '../index.js';
 
+// Mock UI plugin setup to avoid loading actual plugins
+vi.mock('../loaders/uiPlugins.js', () => ({
+  setupUIPlugins: vi.fn().mockResolvedValue({
+    registry: {},
+    servicesReady: Promise.resolve(),
+    teardown: async () => {},
+  }),
+}));
+
 describe('createHierarchiRouter', () => {
   beforeEach(() => {
     // Reset environment variables
     vi.unstubAllEnvs();
   });
 
-  it('should create a router with browser mode', () => {
-    const router = createHierarchiRouter({ mode: 'browser' });
+  it('should create a router with browser mode', async () => {
+    const router = await createHierarchiRouter({ mode: 'browser' });
     
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
   });
 
-  it('should create a router with hash mode', () => {
-    const router = createHierarchiRouter({ mode: 'hash' });
+  it('should create a router with hash mode', async () => {
+    const router = await createHierarchiRouter({ mode: 'hash' });
     
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
   });
 
-  it('should apply basename when provided', () => {
-    const router = createHierarchiRouter({ 
+  it('should apply basename when provided', async () => {
+    const router = await createHierarchiRouter({ 
       mode: 'browser', 
       basename: '/hierarchidb' 
     });
@@ -33,8 +42,8 @@ describe('createHierarchiRouter', () => {
     expect(router.history).toBeDefined();
   });
 
-  it('should not apply basename for hash mode', () => {
-    const router = createHierarchiRouter({ 
+  it('should not apply basename for hash mode', async () => {
+    const router = await createHierarchiRouter({ 
       mode: 'hash', 
       basename: '/hierarchidb' 
     });

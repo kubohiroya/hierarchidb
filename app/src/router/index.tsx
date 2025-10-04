@@ -27,18 +27,43 @@ export interface HierarchiRouter {
  * @param config - Router configuration with mode and optional basename
  * @returns Router instance for TanStack Router
  */
-export function createHierarchiRouter(config: RouterConfig) {
+export async function createHierarchiRouter(config: RouterConfig) {
   const { mode, basename } = config;
 
-  // Create root route for TanStack Router
-  const rootRoute = createRootRoute({
-    component: () => (
-      <div>TanStack Router Root - Not yet fully configured</div>
-    ),
-  });
+  // Import route definitions dynamically
+  const { rootRoute } = await import('./routes/rootRoute.js');
+  const { indexRoute } = await import('./routes/indexRoute.js');
+  const { infoRoute } = await import('./routes/infoRoute.js');
+  const { mapRoute } = await import('./routes/mapRoute.js');
+  const { 
+    authLoginRoute, 
+    authCallbackRoute, 
+    authSilentRenewRoute 
+  } = await import('./routes/authRoutes.js');
+  const {
+    tagsRoute,
+    tagDetailRoute,
+    pluginsRoute,
+    pluginDemoRoute,
+    workerTestRoute,
+    testRoute,
+  } = await import('./routes/utilityRoutes.js');
 
-  // Create route tree (for now just root)
-  const routeTree = rootRoute;
+  // Create route tree with all top-level routes
+  const routeTree = rootRoute.addChildren([
+    indexRoute,
+    infoRoute,
+    mapRoute,
+    authLoginRoute,
+    authCallbackRoute,
+    authSilentRenewRoute,
+    tagsRoute,
+    tagDetailRoute,
+    pluginsRoute,
+    pluginDemoRoute,
+    workerTestRoute,
+    testRoute,
+  ]);
 
   // Create appropriate history based on mode
   const history =
