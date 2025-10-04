@@ -50,6 +50,7 @@ export async function createHierarchiRouter(config: RouterConfig) {
   } = await import('./routes/utilityRoutes.js');
 
   // Import tree routes
+  const { treeBaseRoute } = await import('./routes/tree/baseRoute.js');
   const { treeLayoutRoute } = await import('./routes/tree/layoutRoute.js');
   const { treePageRoute } = await import('./routes/tree/pageRoute.js');
   const { treeTargetRoute } = await import('./routes/tree/targetRoute.js');
@@ -57,12 +58,14 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { treeDialogRoute } = await import('./routes/tree/dialogRoute.js');
 
   // Build the tree route hierarchy
-  // The hierarchy is: layout -> page -> target -> nodeType -> dialog
-  const treeRouteWithChildren = treeLayoutRoute.addChildren([
-    treePageRoute.addChildren([
-      treeTargetRoute.addChildren([
-        treeNodeTypeRoute.addChildren([
-          treeDialogRoute,
+  // The hierarchy is: base -> layout -> page -> target -> nodeType -> dialog
+  const treeRouteWithChildren = treeBaseRoute.addChildren([
+    treeLayoutRoute.addChildren([
+      treePageRoute.addChildren([
+        treeTargetRoute.addChildren([
+          treeNodeTypeRoute.addChildren([
+            treeDialogRoute,
+          ]),
         ]),
       ]),
     ]),

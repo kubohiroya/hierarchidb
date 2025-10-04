@@ -6,12 +6,12 @@
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { rootRoute } from '../rootRoute.js';
+import { treeBaseRoute } from './baseRoute.js';
 import { loadTree } from '../../loaders/treeLoaders.js';
 
 export const treeLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 't/$treeId',
+  getParentRoute: () => treeBaseRoute,
+  path: '$treeId',
   loader: async ({ params }) => {
     const { treeId } = params;
     if (!treeId) {
