@@ -64,7 +64,6 @@ const skipMatchers = [
   filePath => filePath.includes('app/src/virtual/stubs/basemap-plugin-stub.tsx'),
   filePath => /\.stories\.[^.]+$/.test(filePath),
   filePath => /(vite(?:\.[^/]+)?|vitest|playwright|tsup|eslint)\.config\.[^.]+$/.test(filePath),
-  filePath => filePath.endsWith('react-router.config.ts'),
   filePath => filePath.endsWith('/vite.config.ts') || filePath.endsWith('/vite.config.mts') || filePath.endsWith('/vitest.config.ts') || filePath.endsWith('/playwright.config.ts'),
 ];
 

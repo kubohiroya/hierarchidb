@@ -13,8 +13,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "vite.config.ts",
-    "react-router.config.ts"
+    "vite.config.ts"
   ],
   "extends": "../tsconfig.base.json"
 }

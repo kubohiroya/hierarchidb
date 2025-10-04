@@ -18,7 +18,6 @@
     "jscodeshift",
     "react-draggable",
     "react-resizable",
-    "react-router",
     "ts-node",
     "vite-plugin-checker",
     "vite-tsconfig-paths"
@@ -39,7 +38,6 @@
     "**/.cache/**",
     "**/.debug/**",
     "**/.generated/**",
-    "**/.react-router/**",
     "**/.storybook-static/**",
     "**/.turbo/**",
     "**/build/**",
@@ -132,11 +130,6 @@
             "biome.json"
           ]
         },
-        "react-router": {
-          "config": [
-            "app/react-router.config.ts"
-          ]
-        }
       }
     },
     "app": {
@@ -150,7 +143,6 @@
       },
       "ignore": [
         "build/**",
-        ".react-router/**",
         ".debug/**",
         ".generated/**",
         "docs/**",

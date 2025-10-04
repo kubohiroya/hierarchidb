@@ -225,8 +225,7 @@
       "workerd"
     ],
     "patchedDependencies": {
-      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch",
-      "@react-router/dev@7.9.3": "patches/@react-router+dev@7.9.3-disable-worker-hmr.patch"
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
     }
   },
   "keywords": [
@@ -255,7 +254,6 @@
   "dependencies": {
     "@mui/icons-material": "^7.3.2",
     "dexie": "^4.2.0",
-    "gh-pages": "^6.3.0",
-    "react-router": "^7.9.1"
+    "gh-pages": "^6.3.0"
   }
 }

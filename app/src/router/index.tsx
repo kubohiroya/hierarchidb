@@ -1,10 +1,8 @@
 import {
   createRouter,
-  createRootRoute,
   createHashHistory,
   createBrowserHistory,
 } from '@tanstack/react-router';
-import type { Router as ReactRouter } from 'react-router-dom';
 
 export type RouterMode = 'browser' | 'hash';
 export type RouterEngine = 'react-router' | 'tanstack';
