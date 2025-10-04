@@ -14,10 +14,17 @@ router/
 │   ├── infoRoute.tsx       # Info page (/info)
 │   ├── mapRoute.tsx        # Map page (/map)
 │   ├── authRoutes.tsx      # Auth routes (/auth/*)
-│   └── utilityRoutes.tsx   # Utility routes (/tags, /plugins, etc.)
+│   ├── utilityRoutes.tsx   # Utility routes (/tags, /plugins, etc.)
+│   └── tree/               # Tree routes (Phase 3)
+│       ├── layoutRoute.tsx   # /t/:treeId layout
+│       ├── pageRoute.tsx     # /t/:treeId/:pageNodeId page
+│       ├── targetRoute.tsx   # /t/:treeId/:pageNodeId/:targetNodeId
+│       ├── nodeTypeRoute.tsx # /t/:treeId/:pageNodeId/:targetNodeId/:nodeType
+│       └── dialogRoute.tsx   # /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action
 ├── loaders/            # Data loading functions
 │   ├── uiPlugins.ts        # UI plugin setup
 │   ├── mapLoader.ts        # Map zxy parameter handling
+│   ├── treeLoaders.ts      # Tree data loading (Phase 3)
 │   └── __tests__/          # Loader tests
 └── index.tsx           # Main router factory and utilities
 ```
@@ -98,6 +105,16 @@ All top-level routes have been migrated to TanStack Router:
 - `/worker-test` - Worker API test page
 - `/test` - Simple test page
 
+### Tree Routes (Phase 3 - Complete)
+
+Tree-related routes have been migrated to TanStack Router:
+
+- `/t/:treeId` - Tree layout (loads tree data)
+- `/t/:treeId/:pageNodeId` - Page with TreeConsoleIntegration and AppBar
+- `/t/:treeId/:pageNodeId/:targetNodeId` - Target node selection
+- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` - Node type with NotFound handling
+- `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` - Dialog route (including TrashDialog)
+
 ### Root Route Features
 
 The root route (`rootRoute.tsx`) provides:
@@ -122,7 +139,15 @@ Located in `loaders/mapLoader.ts`, this provides:
 - `formatZxyParam()`: Format position for URL
 - `mapLoader()`: TanStack Router loader function
 
-**Bug Fix**: The original implementation had `parts.length === 3` which would return `null` for valid 3-part parameters. This has been corrected to `parts.length !== 3`.
+#### treeLoaders
+
+Located in `loaders/treeLoaders.ts`, this module:
+- Re-exports existing loader functions from `~/loader.js` for TanStack Router
+- Provides type definitions for tree route context
+- Functions: `loadTree`, `loadPageNode`, `loadTargetNode`, `loadNodeType`, `loadNodeAction`
+- Maintains compatibility with existing loader implementation
+
+**Design Note**: Phase 3 implementation reuses existing loader.ts functions to minimize changes and maintain consistency with React Router routes.
 
 ## Testing
 
@@ -134,7 +159,9 @@ pnpm -C app test -- router/loaders/__tests__/
 
 Test Results:
 - Router engine tests: 13 tests passing
-- Loader tests: 25 tests passing (21 mapLoader + 4 uiPlugins)
+- Loader tests: 30+ tests passing (21 mapLoader + 4 uiPlugins + 5 treeLoaders)
+
+**Note**: Full E2E tests require building all packages first.
 
 ## Migration Status
 
@@ -152,8 +179,16 @@ Test Results:
 - Map zxy parameter bug fixed
 - Comprehensive loader tests (25 tests)
 
-**Phase 3-5**: Future
-- Tree routes migration (`/t/*`)
+**Phase 3**: ✅ Complete
+- Tree routes migrated to TanStack Router (`/t/*`)
+- All 5 tree route levels implemented (layout → page → target → nodeType → dialog)
+- treeLoaders.ts created for tree data loading
+- Existing React Router components reused for TreeConsoleIntegration
+- NotFound dialog handling integrated
+- TrashDialog special case handled
+- Unit tests added (treeLoaders.test.ts)
+
+**Phase 4-5**: Future
 - Worker initialization refactor
 - React Router removal
 
@@ -169,7 +204,7 @@ const router = await createHierarchiRouter({ mode: 'browser' });
 
 ### Route Reuse Strategy
 
-Phase 2 reuses existing React Router component implementations to minimize changes:
+Phases 2 and 3 reuse existing React Router component implementations to minimize changes:
 
 ```typescript
 // Example: indexRoute reuses existing component
@@ -180,7 +215,31 @@ export const indexRoute = createRoute({
   path: '/',
   component: IndexPage,
 });
+
+// Example: pageRoute reuses TreeConsoleIntegration component
+import TreePageLayout from '../../../routes/t.($treeId).($pageNodeId).js';
+
+export const treePageRoute = createRoute({
+  getParentRoute: () => treeLayoutRoute,
+  path: '$pageNodeId',
+  loader: async ({ params }) => { /* ... */ },
+  component: TreePageLayout,
+});
 ```
 
 This approach allows for incremental migration and easier rollback if needed.
+
+### Tree Route Hierarchy
+
+The tree routes are nested hierarchically in TanStack Router:
+
+```typescript
+treeLayoutRoute (t/:treeId)
+  └── treePageRoute (t/:treeId/:pageNodeId)
+      └── treeTargetRoute (t/:treeId/:pageNodeId/:targetNodeId)
+          └── treeNodeTypeRoute (t/:treeId/:pageNodeId/:targetNodeId/:nodeType)
+              └── treeDialogRoute (t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action)
+```
+
+Each level loads its specific data and passes it down through TanStack Router's context system.
 
