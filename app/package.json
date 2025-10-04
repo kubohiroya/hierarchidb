@@ -6,11 +6,11 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "predev": "node ../scripts/generate-plugin-loader.mjs && pnpm -w run check:deps:extra",
-    "dev": "react-router dev",
+    "dev": "vite dev",
     "test": "vitest run",
     "prebuild": "node ../scripts/prebuild-app.mjs",
-    "build": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode production && node scripts/fix-spa-build.js && touch build/client/assets/.nojekyll",
-    "build:dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode development && node scripts/fix-spa-build.js",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=6144\" vite build --mode production && node scripts/fix-spa-build.js && touch dist/assets/.nojekyll",
+    "build:dev": "NODE_OPTIONS=\"--max-old-space-size=6144\" vite build --mode development && node scripts/fix-spa-build.js",
     "build:vite": "vite build --mode production && node scripts/fix-spa-build.js",
     "generate:favicon": "node scripts/generate-favicon.js",
     "preview": "vite preview --config vite.preview.config.ts",
@@ -18,13 +18,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "predeploy": "pnpm run build",
-    "deploy": "gh-pages -d build/client -r git@github.com:kubohiroya/hierarchidb.git",
+    "deploy": "gh-pages -d dist -r git@github.com:kubohiroya/hierarchidb.git",
     "test:github-pages": "node scripts/test-github-pages.js",
-    "debug:copy": "cp scripts/debug-*.html build/client/ && cp scripts/minimal-*.html build/client/",
-    "debug:serve": "npx serve build/client -l 8080",
+    "debug:copy": "cp scripts/debug-*.html dist/ && cp scripts/minimal-*.html dist/",
+    "debug:serve": "npx serve dist -l 8080",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:react-router": "NODE_OPTIONS=\"--max-old-space-size=6144\" react-router build --mode production && node scripts/fix-spa-build.js && touch build/client/assets/.nojekyll"
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -69,8 +68,6 @@
     "@hierarchidb/util": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
-    "@react-router/fs-routes": "^7.9.3",
-    "@react-router/node": "^7.9.3",
     "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
@@ -80,9 +77,7 @@
     "jotai": "^2.14.0",
     "react-draggable": "^4.5.0",
     "react-hook-geolocation": "^1.1.0",
-    "react-resizable": "^3.0.5",
-    "react-router": "^7.9.3",
-    "react-router-dom": "^7.9.3"
+    "react-resizable": "^3.0.5"
   },
   "devDependencies": {
     "@deck.gl/geo-layers": "^9.1.14",
@@ -91,7 +86,6 @@
     "@hierarchidb/tools-plugin-registry-utils": "workspace:*",
     "@hierarchidb/tools-vite-plugin-dev-health": "workspace:*",
     "@hierarchidb/tools-vite-plugin-package-reader": "workspace:*",
-    "@react-router/dev": "^7.9.3",
     "@types/node": "^18.0.0",
     "@vis.gl/react-maplibre": "^8.0.4",
     "@vitejs/plugin-react": "^5.0.1",
@@ -112,8 +106,7 @@
       "@mui/icons-material",
       "@mui/material",
       "react",
-      "react-dom",
-      "react-router"
+      "react-dom"
     ]
   }
 }
