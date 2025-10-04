@@ -27,12 +27,12 @@ overrides:
   '@mui/icons-material': ^7.3.2
 
 patchedDependencies:
-  ast-types@0.16.1:
-    hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
-    path: patches/ast-types@0.16.1.patch
   '@react-router/dev@7.9.3':
     hash: 802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3
     path: patches/@react-router+dev@7.9.3-disable-worker-hmr.patch
+  ast-types@0.16.1:
+    hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
+    path: patches/ast-types@0.16.1.patch
 
 importers:
 
@@ -389,10 +389,13 @@ importers:
         version: 7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-router/fs-routes':
         specifier: ^7.9.3
-        version: 7.9.3(@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)
+        version: 7.9.3(@react-router/dev@7.9.3(patch_hash=802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)
       '@react-router/node':
         specifier: ^7.9.3
         version: 7.9.3(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)
+      '@tanstack/react-router':
+        specifier: ^1.132.33
+        version: 1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
         version: 4.4.2
@@ -447,7 +450,7 @@ importers:
         version: link:../packages/tools/vite-plugin-package-reader
       '@react-router/dev':
         specifier: ^7.9.3
-        version: 7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+        version: 7.9.3(patch_hash=802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -5414,6 +5417,23 @@ packages:
     peerDependencies:
       storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
 
+  '@tanstack/history@1.132.31':
+    resolution: {integrity: sha512-UCHM2uS0t/uSszqPEo+SBSSoQVeQ+LlOWAVBl5SA7+AedeAbKafIPjFn8huZCXNLAYb0WKV2+wETr7lDK9uz7g==}
+    engines: {node: '>=12'}
+
+  '@tanstack/react-router@1.132.33':
+    resolution: {integrity: sha512-o/uOh/EfCRr5u2SyY6aHJCIREZKTyXsiztMnZGSWjT055J99IaQm7zUwq9ZeK841hsZ7fhgMjLh8my75SOdobA==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      react: '>=18.0.0 || >=19.0.0'
+      react-dom: '>=18.0.0 || >=19.0.0'
+
+  '@tanstack/react-store@0.7.7':
+    resolution: {integrity: sha512-qqT0ufegFRDGSof9D/VqaZgjNgp4tRPHZIJq2+QIHkMUtHjaJ0lYrrXjeIUJvjnTbgPfSD1XgOMEt0lmANn6Zg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   '@tanstack/react-table@8.21.3':
     resolution: {integrity: sha512-5nNMTSETP4ykGegmVkhjcS8tTLW6Vl4axfEGQN3v0zdHYbK4UfoqfPChclTrJ4EoK9QynqAu9oUf8VEmrpZ5Ww==}
     engines: {node: '>=12'}
@@ -5426,6 +5446,13 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@tanstack/router-core@1.132.33':
+    resolution: {integrity: sha512-7EwXqlcBsIbDfb8MjhpZp0yaZHE6Jl+TBHtQ3WErramBB5PLFtYVDB1fiJnZMCftHXJNWXMAz4640VTcCQsXow==}
+    engines: {node: '>=12'}
+
+  '@tanstack/store@0.7.7':
+    resolution: {integrity: sha512-xa6pTan1bcaqYDS9BDpSiS63qa6EoDkPN9RsRaxHuDdVDNntzq3xNwR5YKTU/V3SkSyC9T4YVOPh2zRQN0nhIQ==}
 
   '@tanstack/table-core@8.21.3':
     resolution: {integrity: sha512-ldZXEhOBb8Is7xLs01fR3YEc3DERiz5silj8tnGkFZytt1abEvl/GhUmCE0PMLaMPTa3Jk4HbKmRlHmu+gCftg==}
@@ -6857,6 +6884,9 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  cookie-es@2.0.0:
+    resolution: {integrity: sha512-RAj4E421UYRgqokKUmotqAwuplYw15qtdXfY+hGzgCJ/MBjCVZcSoHK/kH9kocfjRjcDME7IiDWR/1WX1TM2Pg==}
 
   cookie@1.0.2:
     resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
@@ -9359,6 +9389,16 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  seroval-plugins@1.3.3:
+    resolution: {integrity: sha512-16OL3NnUBw8JG1jBLUoZJsLnQq0n5Ua6aHalhJK4fMQkz1lqR7Osz1sA30trBtd9VUDc2NgkuRCn8+/pBwqZ+w==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
+  seroval@1.3.2:
+    resolution: {integrity: sha512-RbcPH1n5cfwKrru7v7+zrZvjLurgHhGyso3HTyGtRivGWgYjbOmGuivCQaORNELjNONoK35nj28EoWul9sb1zQ==}
+    engines: {node: '>=10'}
+
   set-cookie-parser@2.7.1:
     resolution: {integrity: sha512-IOc8uWeOZgnb3ptbCURJWNjWUPcO3ZnTTdzsurqERrP6nPyv+paC55vJM0LpOlT2ne+Ix+9+CRG1MNLlyZ4GjQ==}
 
@@ -9701,6 +9741,9 @@ packages:
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
+
+  tiny-warning@1.0.3:
+    resolution: {integrity: sha512-lBN9zLN/oAf68o3zNXYrdCt1kP8WsiGW8Oo2ka41b2IM5JL/S1CTyX1rW0mb/zSuJun0ZUrDxx4sqvYS2FWzPA==}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -12300,7 +12343,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
+  '@react-router/dev@7.9.3(patch_hash=802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))':
     dependencies:
       '@babel/core': 7.28.4
       '@babel/generator': 7.28.3
@@ -12347,9 +12390,9 @@ snapshots:
       - supports-color
       - terser
 
-  '@react-router/fs-routes@7.9.3(@react-router/dev@7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)':
+  '@react-router/fs-routes@7.9.3(@react-router/dev@7.9.3(patch_hash=802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0)))(typescript@5.9.3)':
     dependencies:
-      '@react-router/dev': 7.9.3(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
+      '@react-router/dev': 7.9.3(patch_hash=802c7fb5684a551bfcd2dbfebfb493babed73093263aff02e7ca83c3370710a3)(@types/node@18.19.123)(babel-plugin-macros@3.1.0)(react-router@7.9.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))(wrangler@4.36.0(@cloudflare/workers-types@4.20250913.0))
       minimatch: 9.0.5
     optionalDependencies:
       typescript: 5.9.3
@@ -12691,6 +12734,26 @@ snapshots:
     dependencies:
       storybook: 8.6.14(prettier@3.6.2)
 
+  '@tanstack/history@1.132.31': {}
+
+  '@tanstack/react-router@1.132.33(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@tanstack/history': 1.132.31
+      '@tanstack/react-store': 0.7.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tanstack/router-core': 1.132.33
+      isbot: 5.1.30
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tiny-invariant: 1.3.3
+      tiny-warning: 1.0.3
+
+  '@tanstack/react-store@0.7.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@tanstack/store': 0.7.7
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      use-sync-external-store: 1.5.0(react@18.3.1)
+
   '@tanstack/react-table@8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tanstack/table-core': 8.21.3
@@ -12702,6 +12765,18 @@ snapshots:
       '@tanstack/virtual-core': 3.13.12
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@tanstack/router-core@1.132.33':
+    dependencies:
+      '@tanstack/history': 1.132.31
+      '@tanstack/store': 0.7.7
+      cookie-es: 2.0.0
+      seroval: 1.3.2
+      seroval-plugins: 1.3.3(seroval@1.3.2)
+      tiny-invariant: 1.3.3
+      tiny-warning: 1.0.3
+
+  '@tanstack/store@0.7.7': {}
 
   '@tanstack/table-core@8.21.3': {}
 
@@ -15112,6 +15187,8 @@ snapshots:
   convert-source-map@1.9.0: {}
 
   convert-source-map@2.0.0: {}
+
+  cookie-es@2.0.0: {}
 
   cookie@1.0.2: {}
 
@@ -17959,6 +18036,12 @@ snapshots:
 
   semver@7.7.2: {}
 
+  seroval-plugins@1.3.3(seroval@1.3.2):
+    dependencies:
+      seroval: 1.3.2
+
+  seroval@1.3.2: {}
+
   set-cookie-parser@2.7.1: {}
 
   set-function-length@1.2.2:
@@ -18361,6 +18444,8 @@ snapshots:
   timezone-groups@0.10.4: {}
 
   tiny-invariant@1.3.3: {}
+
+  tiny-warning@1.0.3: {}
 
   tinybench@2.9.0: {}
 
