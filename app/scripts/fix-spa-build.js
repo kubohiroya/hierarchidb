@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Post-process React Router SPA builds without clobbering the generated markup.
+ * Post-process Vite SPA builds without clobbering the generated markup.
  *
  * Responsibilities:
  * - create `.nojekyll` so GitHub Pages serves underscored assets
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 import { loadEnv } from 'vite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const buildDir = join(__dirname, '..', 'build', 'client');
+const buildDir = join(__dirname, '..', 'dist');
 const indexPath = join(buildDir, 'index.html');
 const nojekyllPath = join(buildDir, '.nojekyll');
 const notFoundPath = join(buildDir, '404.html');
@@ -109,7 +109,7 @@ async function main() {
   try {
     indexHtml = await readFile(indexPath, 'utf-8');
   } catch (error) {
-    console.error('❌ Unable to read build/client/index.html:', error);
+    console.error('❌ Unable to read dist/index.html:', error);
     process.exitCode = 1;
     return;
   }
