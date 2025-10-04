@@ -15,12 +15,12 @@ import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
-import { useLocation, useNavigate } from 'react-router';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
 import type { SubscriptionCallback } from '~/subscriptions/controller.js';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 
 const logIntegrationWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -94,12 +94,20 @@ const TreeConsoleIntegrationInner: React.FC<
     pageTreeNode,
     pushPath: (to: string | number) => {
       if (typeof to === 'number') {
-        navigate(to);
-      } else {
-        navigate(to);
+        window.history.go(to);
+        return;
       }
+
+      // Query-only navigation (e.g. '?foo=bar')
+      if (to.startsWith('?')) {
+        const nextHref = `${location.pathname}${to}`;
+        navigate({ to: nextHref as any, replace: false });
+        return;
+      }
+
+      navigate({ to: to as any, replace: false });
     },
-    locationSearch: location.search,
+    locationSearch: location.searchStr,
   });
 
   // Row Click Action state (Select | Edit | Navigate)
@@ -343,7 +351,9 @@ const TreeConsoleIntegrationInner: React.FC<
             (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
               ? params.trashNodeId
               : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
-          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore`);
+          navigate({
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore` as any,
+          });
           break;
         }
         case 'empty': {
@@ -352,7 +362,9 @@ const TreeConsoleIntegrationInner: React.FC<
             (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
               ? params.trashNodeId
               : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
-          navigate(`/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty`);
+          navigate({
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty` as any,
+          });
           break;
         }
         case 'undo':

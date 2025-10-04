@@ -9,12 +9,14 @@ import {
   getRouterMode,
   getBasePath,
 } from './router/index.js';
+import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.js';
 
 /**
  * Initialize and mount the application with TanStack Router
  * Phase 5: React Router has been completely removed
  */
 async function initializeApp() {
+  initializeBrowserGlobals();
   await initializeDefaultNodeDialogExtensions();
   const mode = getRouterMode();
   const basename = getBasePath();

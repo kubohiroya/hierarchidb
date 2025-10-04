@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLoaderData, useNavigate, useParams } from 'react-router';
 import {
   Box,
   Button,
@@ -45,22 +44,28 @@ import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
 import { WorkerAPIClient } from '../../WorkerAPIClient.js';
-import type { LoaderFunctionArgs } from 'react-router';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 import { TrashBreadcrumb } from '../trash/TrashBreadcrumb.js';
 import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';
-
 const TRASH_DIALOG_FOOTER_HEIGHT = 72;
 
 // ----------------------------------------
 // Loader & data types
 // ----------------------------------------
 
-export async function clientLoader(args: LoaderFunctionArgs) {
-  const { treeId, targetNodeId } = args.params;
+export type TrashDialogRouteParams = {
+  treeId?: string;
+  pageNodeId?: string;
+  targetNodeId?: string;
+  nodeType?: string;
+  action?: string;
+};
+
+export async function clientLoader({ params }: { params: TrashDialogRouteParams }): Promise<TrashDialogData> {
+  const { treeId, targetNodeId } = params;
   if (!treeId) {
     throw new Response('Missing treeId parameter.', { status: 400 });
   }
@@ -70,6 +75,7 @@ export async function clientLoader(args: LoaderFunctionArgs) {
     return {
       ...treeData,
       activeTrashNodeId: (targetNodeId as NodeId | undefined) ?? null,
+      params,
     } satisfies TrashDialogData;
   }
 
@@ -90,13 +96,15 @@ export async function clientLoader(args: LoaderFunctionArgs) {
     trashRootNode,
     trashItems,
     activeTrashNodeId,
+    params,
   } satisfies TrashDialogData;
 }
 
-type TrashDialogData = LoadTreeReturn & {
+export type TrashDialogData = LoadTreeReturn & {
   trashRootNode?: TreeNode;
   trashItems?: TreeNode[];
   activeTrashNodeId: NodeId | null;
+  params: TrashDialogRouteParams;
 };
 
 // ----------------------------------------
@@ -563,10 +571,12 @@ function TrashDialogContent({
 // Main component
 // ----------------------------------------
 
-export function TrashDialogV2() {
-  const data = useLoaderData<TrashDialogData>();
-  const navigate = useNavigate();
-  const params = useParams();
+export interface TrashDialogProps {
+  data: TrashDialogData;
+  params: TrashDialogRouteParams;
+}
+
+export function TrashDialog({ data, params }: TrashDialogProps) {
   const { t } = useTranslation();
 
   const treeId = data.tree?.id;
@@ -609,8 +619,8 @@ export function TrashDialogV2() {
   ], [t]);
 
   const handleClose = useCallback(() => {
-    navigate(-1);
-  }, [navigate]);
+    window.history.back();
+  }, []);
 
   const frameState = useTrashFrameState('normal');
 
@@ -625,14 +635,14 @@ export function TrashDialogV2() {
         console.error('Restore failed:', result.error);
         return;
       }
-      navigate(-1);
+      window.history.back();
       window.location.reload();
     } catch (error) {
       console.error('Error restoring trash nodes:', error);
     } finally {
       setLoading(false);
     }
-  }, [navigate, selectedIds]);
+  }, [selectedIds]);
 
   const handleEmptyAll = useCallback(async () => {
     const confirmed = window.confirm('Permanently delete all items in the trash? This cannot be undone.');
@@ -644,7 +654,7 @@ export function TrashDialogV2() {
       const nodes = treeData.map((node) => node.id as NodeId);
       const res = await mutationAPI.removeNodes(nodes);
       if (res.success) {
-        navigate(-1);
+        window.history.back();
         window.location.reload();
       } else {
         console.error('Empty trash failed:', res.error);
@@ -654,7 +664,7 @@ export function TrashDialogV2() {
     } finally {
       setLoading(false);
     }
-  }, [navigate, treeData]);
+  }, [treeData]);
 
   const onToggleExpand = useCallback((nodeId: string, expanded: boolean) => {
     setExpandedIds((prev) => {
@@ -734,4 +744,4 @@ export function TrashDialogV2() {
   );
 }
 
-export default TrashDialogV2;
+export default TrashDialog;

@@ -6,11 +6,14 @@
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */
 
-import { createRoute, useParams } from '@tanstack/react-router';
+import { createRoute } from '@tanstack/react-router';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { loadNodeAction } from '../../loaders/treeLoaders.js';
 import { PluginDialogRoute } from '@hierarchidb/runtime-ui-plugin-dialog';
-import TrashDialog from '~/components/dialogs/TrashDialog.js';
+import TrashDialog, {
+  type TrashDialogData,
+  type TrashDialogRouteParams,
+} from '~/components/dialogs/TrashDialog.js';
 
 export const treeDialogRoute = createRoute({
   getParentRoute: () => treeNodeTypeRoute,
@@ -24,10 +27,9 @@ export const treeDialogRoute = createRoute({
     
     // Special handling for trash dialog
     if (nodeType === 'trash') {
-      // Import the trash dialog loader
       const trashDialogModule = await import('~/components/dialogs/TrashDialog.js');
       if (trashDialogModule.clientLoader) {
-        return await trashDialogModule.clientLoader({ params } as any);
+        return await trashDialogModule.clientLoader({ params });
       }
     }
     
@@ -43,11 +45,13 @@ export const treeDialogRoute = createRoute({
 });
 
 function TreeDialogGuarded() {
-  const { nodeType, action } = useParams({ from: treeDialogRoute.id });
-  
+  const params = treeDialogRoute.useParams() as TrashDialogRouteParams;
+  const { nodeType, action } = params;
+
   if (nodeType === 'trash') {
     if (!action) return null;
-    return <TrashDialog />;
+    const data = treeDialogRoute.useLoaderData() as TrashDialogData;
+    return <TrashDialog data={data} params={params} />;
   }
   
   if (!nodeType || !action) return null;

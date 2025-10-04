@@ -8,7 +8,6 @@ import type {
 } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import { useRouteLoaderData } from 'react-router-dom';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
 import { loadAppConfig } from '~/loadAppConfig.js';
 import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
@@ -374,28 +373,4 @@ export async function loadNodeAction({
 
 export function useAppConfig(): LoadAppConfigReturn {
   return loadAppConfig();
-}
-
-export function useWorkerAPIClient(): LoadWorkerAPIClientReturn {
-  return useRouteLoaderData('t') as LoadWorkerAPIClientReturn;
-}
-
-export function useTree(): Tree | undefined {
-  return useRouteLoaderData('t/($treeId)');
-}
-
-export function usePageNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageNodeId)');
-}
-
-export function useTargetNode(): TreeNode | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageNodeId)/($targetNodeId)');
-}
-
-export function useNodeType(): NodeType | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageNodeId)/($targetNodeId)/($nodeType)');
-}
-
-export function useNodeTAction(): NodeAction | undefined {
-  return useRouteLoaderData('t/($treeId)/($pageNodeId)/($targetNodeId)/($nodeType)/($action)');
 }
