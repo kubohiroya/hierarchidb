@@ -1,9 +1,8 @@
-import { startTransition, StrictMode } from 'react';
+import { startTransition } from 'react';
 if (import.meta.env.DEV) import('./dev-health-client.js');
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/plugins-folder-plugin';
-import { AppProviders } from './router/context/AppProviders.js';
 import {
   createHierarchiRouter,
   getRouterMode,
@@ -44,12 +43,6 @@ initializeApp().then((router) => {
 
     removeHydrateFallback();
 
-    createRoot(rootElement).render(
-      <StrictMode>
-        <AppProviders>
-          <RouterProvider router={router} />
-        </AppProviders>
-      </StrictMode>,
-    );
+    createRoot(rootElement).render(<RouterProvider router={router} />);
   });
 });
