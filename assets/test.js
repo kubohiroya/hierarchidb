@@ -1,1 +1,0 @@
-import{w as t}from"./vendor-react-DJVw7yVT.js";import{j as e}from"./jsx-runtime-1znGzoh0.js";const r=t(function(){return console.log("[TestPage] Component rendered"),e.jsxs("div",{children:[e.jsx("h1",{children:"Test Page"}),e.jsx("p",{children:"If you can see this, React Router is working!"})]})});export{r as default};

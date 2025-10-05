@@ -2,5 +2,31 @@
   "navigation": {
     "selectLanguage": "言語を選択",
     "language": "言語"
+  },
+  "servicesReady": {
+    "default": "サービスの準備が完了しました。{{time}}",
+    "worker": "Worker サービスの準備が完了しました。{{time}}",
+    "prefetch": "サービスの事前接続が完了しました。{{time}}",
+    "prefetchList": "サービスの事前接続が完了: {{list}}"
+  },
+  "dialogs": {
+    "trash": {
+      "modeMenu": {
+        "ariaLabel": "表示モード",
+        "normal": "Normal（通常）",
+        "maximize": "Maximize（最大）",
+        "fullScreen": "Full-screen（全画面）"
+      },
+      "actions": {
+        "close": "ダイアログを閉じる",
+        "exitFullscreen": "全画面を終了"
+      }
+    }
+  },
+  "treeTable": {
+    "selectAll": {
+      "select": "すべて選択",
+      "clear": "すべて解除"
+    }
   }
 }

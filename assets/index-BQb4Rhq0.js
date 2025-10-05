@@ -1,1 +1,0 @@
-const a={nodeType:"timeline",capabilities:{canHaveChildren:!0,canBeRoot:!1,canBeDeleted:!0,canBeRenamed:!0,canBeMoved:!0}};function e(){}var n={register:e};export{n as default,a as lifecycle,e as register};

@@ -1,1 +1,0 @@
-function i(t){return{async list(e){return await t.groupEntities.where("nodeId").equals(e).toArray()},async bulkUpsert(e,a){await t.groupEntities.bulkPut(a.map(r=>({...r,nodeId:e,updatedAt:Date.now()})))},async bulkDelete(e,a){await t.transaction("rw",t.groupEntities,async()=>{for(const r of a)await t.groupEntities.delete([e,r])})}}}export{i as createSpreadsheetGroupStoreDexie};
