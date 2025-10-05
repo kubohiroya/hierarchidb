@@ -1,5 +1,4 @@
 import { startTransition } from 'react';
-if (import.meta.env.DEV) import('./dev-health-client.js');
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/plugins-folder-plugin';

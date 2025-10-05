@@ -14,6 +14,7 @@ This package provides reusable dialog components that implement the dialog speci
 - **Unsaved Changes Protection**: Automatic detection and confirmation dialogs
 - **Draft Support**: Save incomplete work as drafts
 - **TypeScript Support**: Full type definitions for all components
+- **Worker-backed Dialog State**: Requires Worker `DialogStateAPI` (`publishState` / `getState` / `subscribeState` / `unsubscribeState`) to be available. フォールバックは提供していないため、API が欠落している場合は初期化時に例外を投げます。
 
 ## Installation
 
@@ -337,4 +338,3 @@ Proprietary - Part of HierarchiDB
 - 既存のローカル状態ハンドリング（例: `useWorkingCopy` のみでステップ管理）に戻す場合は、`MultiStepDialogState` の publish 呼び出しを削除し、ヘッダー/ステッパーへ `workerDialogState` を渡している箇所を元に戻してください。
 
 詳細な API 定義は `packages/common/api/src/DialogStateAPI.ts` を参照してください。
-

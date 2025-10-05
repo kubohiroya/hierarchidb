@@ -30,6 +30,7 @@ import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-
 import { bootLog } from '../utils/bootLog.js';
 import { useBootProgress } from './BootProgressProvider.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from '../worker-runtime/workerApiClientLoader.js';
+import { ensureDialogStateAPI } from '../loader.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -340,6 +341,7 @@ export const WorkerProvider = ({
         initProgress: detail.progress,
         initMessage: detail.message,
       }));
+      console.log('[WorkerProvider] progress update', detail);
       bootProgress?.setStepProgress('Worker', detail.progress, detail.message);
     });
     return unsubscribe;
@@ -380,6 +382,7 @@ export const WorkerProvider = ({
       if (!changed) {
         return prev;
       }
+      console.log('[WorkerProvider] status transition', next);
       return next;
     });
   }, [proxy, proxyState, proxyError]);
@@ -388,7 +391,7 @@ export const WorkerProvider = ({
     try {
       bootLog('WorkerProvider finalize');
       const { WorkerAPIClient } = await loadWorkerAPIClientModule();
-      const client = WorkerAPIClient.getSingleton();
+      const client = await WorkerAPIClient.getOrInit();
       latestProgressRef.current = 100;
       setStatus({
         client,
@@ -397,8 +400,10 @@ export const WorkerProvider = ({
         initMessage: 'Worker初期化完了',
         error: null,
       });
+      console.log('[WorkerProvider] finalizeInitialized complete');
     } catch (error) {
       const normalized = normalizeError(error);
+      console.error('[WorkerProvider] finalizeInitialized error', normalized);
       setStatus(prev => ({ ...prev, error: normalized }));
     }
   }, []);
@@ -444,15 +449,18 @@ export const WorkerProvider = ({
 
     try {
       const client = await proxy.ensureInitialized();
+      await ensureDialogStateAPI(client);
       setStatus(prev => ({
         ...prev,
         client,
         isInitialized: true,
         error: null,
       }));
+      console.log('[WorkerProvider] ensureInitialized succeeded');
       await markComplete();
     } catch (error) {
       const normalized = normalizeError(error);
+      console.error('[WorkerProvider] ensureInitialized failed', normalized);
       setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
       bootProgress?.setStepProgress('Worker', latestProgressRef.current, normalized.message);
     }

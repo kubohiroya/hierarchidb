@@ -10,6 +10,7 @@ import {
   WORKER_FLAG_PARAM_PREFIX,
   isAllowedWorkerFlag,
 } from './config/worker-flag-overrides.js';
+import { APP_VERSION } from './version.js';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-worker-bootstrap to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.
@@ -67,16 +68,22 @@ const FALSE_FLAG_VALUES = new Set(['0', 'false', 'off', 'disabled']);
 function resolveWorkerUrl(): URL {
   if (typeof workerScriptUrl === 'string') {
     if (typeof window !== 'undefined') {
-      return new URL(workerScriptUrl, window.location.origin);
+      const url = new URL(workerScriptUrl, window.location.origin);
+      url.searchParams.set('appVersion', APP_VERSION);
+      return url;
     }
     const globalScope = globalThis as { location?: Location };
     if (globalScope.location?.origin) {
-      return new URL(workerScriptUrl, globalScope.location.origin);
+      const url = new URL(workerScriptUrl, globalScope.location.origin);
+      url.searchParams.set('appVersion', APP_VERSION);
+      return url;
     }
   }
   // Final fallback: always reference the transpiled worker bundle (.js)
   // so that environments without Vite query handling still load a valid script.
-  return new URL(/* @vite-ignore */ './worker.js', import.meta.url);
+  const fallbackUrl = new URL(/* @vite-ignore */ './worker.js', import.meta.url);
+  fallbackUrl.searchParams.set('appVersion', APP_VERSION);
+  return fallbackUrl;
 }
 
 function normalizeWorkerFlagValue(value: unknown): string | null {
@@ -143,6 +150,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       }
 
       const workerUrl = resolveWorkerUrl();
+      workerUrl.searchParams.set('retry', String(attempt));
       applyWorkerFlagOverrides(workerUrl);
       rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
 

@@ -95,26 +95,34 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
-        padding: theme.spacing(1.5, 2),
+        padding: theme.spacing(1.5, 2, 0.1, 2),
         borderBottom: `1px solid ${theme.palette.divider}`,
-        cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
         userSelect: 'none',
-        backgroundColor: getDialogSurfaceColor(theme),
-        transition: theme.transitions.create(['background-color'], { duration: theme.transitions.duration.shorter }),
-        '&:hover': {
-          backgroundColor:
-            theme.palette.mode === 'dark'
-              ? alpha(theme.palette.common.white, 0.08)
-              : theme.palette.action.hover,
-        },
       })}
-      onPointerDown={dragHandlePointerDown}
-      data-dialog-drag-handle="true"
     >
-      <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+      <Stack direction="column" spacing={1} sx={{
+        minWidth: 0, flex: 1, pr: 2,
+      }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={(theme)=>({
+          borderRadius: 8,
+          minWidth: 0,
+          cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
+          backgroundColor: getDialogSurfaceColor(theme),
+          transition: theme.transitions.create(['background-color'], { duration: theme.transitions.duration.shorter }),
+          '&:hover': {
+            backgroundColor:
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.common.white, 0.08)
+                : theme.palette.action.hover,
+          },
+        })}
+               onPointerDown={dragHandlePointerDown}
+               data-dialog-drag-handle="true"
+        >
           {icon && (
-            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center',
+              marginLeft: '8px !important',
+            }}>
               {icon}
             </Box>
           )}
@@ -128,7 +136,19 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           </Box>
         </Stack>
         {ctx.stepComponents.length > 1 && (
-          <Box onPointerDown={stopPointerPropagation}>
+          <Box
+            sx={{
+              cursor: 'default',
+              margin:0,
+              padding:0
+            }}
+            onPointerDown={stopPointerPropagation}
+            onMouseEnter={stopPointerPropagation}
+            onMouseLeave={stopPointerPropagation}
+            onMouseMove={stopPointerPropagation}
+            onMouseOver={stopPointerPropagation}
+            onMouseOut={stopPointerPropagation}
+          >
             <Stepper nonLinear activeStep={ctx.activeStepIndex} alternativeLabel>
               {ctx.stepComponents.map((step, index) => {
                 const workerStep = workerStepMap?.get(step.id) ?? dialogState?.steps?.[index];
@@ -147,6 +167,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       onClick={(event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) =>
                         handleStepClick(event, index, canNavigate)
                       }
+                      sx={{padding:0, margin: 0}}
                     >
                       <StepLabel>
                         <Typography variant="caption" noWrap>

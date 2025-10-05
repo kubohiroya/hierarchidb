@@ -23,12 +23,28 @@ export function composeStepConfigs(nodeType: string, mode: 'create' | 'edit'): C
     : [];
 
   // Deduplicate by step id with "extension/plugin overrides host" policy.
-  // Preserve plugin-defined order first, then append any host steps not provided by plugin.
-  const pluginIds = new Set<string>(pluginCfgs.map((c) => c.id));
-  const merged: PluginStepConfig[] = [
-    ...pluginCfgs,
-    ...hostBase.filter((h) => !pluginIds.has(h.id)),
-  ];
+  // Preserve host-provided ordering for base steps, allowing plugin configs to override
+  // matching ids. Any additional plugin-defined steps are appended in their declared order.
+  const pluginById = new Map<string, PluginStepConfig>(pluginCfgs.map((cfg) => [cfg.id, cfg]));
+  const merged: PluginStepConfig[] = [];
+  const seen = new Set<string>();
+
+  for (const baseCfg of hostBase) {
+    const override = pluginById.get(baseCfg.id);
+    if (override) {
+      merged.push(override);
+      seen.add(override.id);
+    } else {
+      merged.push(baseCfg);
+      seen.add(baseCfg.id);
+    }
+  }
+
+  for (const cfg of pluginCfgs) {
+    if (seen.has(cfg.id)) continue;
+    merged.push(cfg);
+    seen.add(cfg.id);
+  }
 
   const hasBasic = merged.some((c) => c.id === 'basic-info');
   return {

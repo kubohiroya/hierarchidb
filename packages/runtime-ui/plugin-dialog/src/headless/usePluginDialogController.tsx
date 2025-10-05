@@ -342,8 +342,9 @@ export async function subscribeDialogState({
   const warn = logger?.warn?.bind(logger) ?? defaultWarn;
 
   if (!api) {
-    warn('[PluginDialogShell] DialogStateAPI unavailable; skipping subscription');
-    return () => {};
+    const error = new Error('[PluginDialogShell] DialogStateAPI unavailable; cannot subscribe');
+    warn(error.message);
+    throw error;
   }
 
   const subscribeFn = typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
@@ -366,17 +367,16 @@ export async function subscribeDialogState({
     });
 
   if (!subscribeFn || !unsubscribeFn) {
-    if (getStateFn) {
-      try {
-        const snapshot = await getStateFn(params);
-        onSnapshot(snapshot ?? null);
-      } catch (error) {
-        warn('[PluginDialogShell] getState fallback failed', error);
-      }
-    } else {
-      warn('[PluginDialogShell] DialogStateAPI missing subscribeState/getState implementations', params);
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error('[PluginDialogShell] subscribeState/unsubscribeState missing', {
+        typeofSubscribe: typeof api?.subscribeState,
+        typeofUnsubscribe: typeof api?.unsubscribeState,
+        keys: api ? Object.keys(api as unknown as Record<string, unknown>) : [],
+      });
     }
-    return () => {};
+    const error = new Error('[PluginDialogShell] DialogStateAPI must implement subscribeState/unsubscribeState');
+    warn(error.message, params);
+    throw error;
   }
 
   const callback = createCallback((snapshot: MultiStepDialogState | null) => {
@@ -400,21 +400,21 @@ export async function subscribeDialogState({
       params,
       callback as (state: MultiStepDialogState | null) => void,
     );
-  } catch (error) {
-    warn('[PluginDialogShell] dialog state subscription failed', error);
-    cleanup();
     if (getStateFn) {
       try {
         const snapshot = await getStateFn(params);
         onSnapshot(snapshot ?? null);
-      } catch (fallbackError) {
-        warn('[PluginDialogShell] getState fallback after subscribe failure failed', fallbackError);
+      } catch (snapshotError) {
+        warn('[PluginDialogShell] failed to fetch initial dialog state snapshot', snapshotError);
       }
     }
-    return cleanup;
-  }
 
-  return cleanup;
+    return cleanup;
+  } catch (error) {
+    cleanup();
+    warn('[PluginDialogShell] dialog state subscription failed', error);
+    throw error;
+  }
 }
 
 export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
@@ -439,34 +439,16 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const ref = useClientHook();
   const client: Remote<WorkerAPI> | null = useMemo(() => ref?.client ?? null, [ref]);
 
-  const fallbackDialogStateApi = useMemo<DialogStateAPI>(() => ({
-    async publishState() {
-      /* noop */
-    },
-    async getState() {
-      return null;
-    },
-    async subscribeState(_input: DialogStateSubscribeInput, callback: (state: MultiStepDialogState | null) => void) {
-      try {
-        callback(null);
-      } catch {
-        /* ignore */
-      }
-      return 'noop';
-    },
-    async unsubscribeState() {
-      /* noop */
-    },
-  }), []);
-
   const [dialogStateApi, setDialogStateApi] = useState<DialogStateAPI | null>(null);
   const [workerDialogState, setWorkerDialogState] = useState<MultiStepDialogState | null>(null);
+  const [dialogStateError, setDialogStateError] = useState<unknown>(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!client) {
       setDialogStateApi(null);
       setWorkerDialogState(null);
+      setDialogStateError(null);
       return () => {
         cancelled = true;
       };
@@ -475,29 +457,58 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     (async () => {
       try {
         const api = await client.getDialogStateAPI();
-        if (!cancelled) {
-          const hasMethod = (method: keyof DialogStateAPI) => typeof api?.[method] === 'function';
-          if (hasMethod('publishState') && hasMethod('getState') && hasMethod('subscribeState') && hasMethod('unsubscribeState')) {
-            setDialogStateApi(api);
-          } else {
-            if (typeof console !== 'undefined' && console.warn) {
-              console.warn('[PluginDialogShell] DialogStateAPI missing expected methods; state sync disabled', {
-                publishStateType: typeof api?.publishState,
-                getStateType: typeof api?.getState,
-                subscribeStateType: typeof api?.subscribeState,
-                unsubscribeStateType: typeof api?.unsubscribeState,
-                keys: Object.keys(api ?? {}),
-              });
-            }
-            setDialogStateApi(fallbackDialogStateApi);
-          }
+        if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+          console.debug('[PluginDialogShell] dialogStateAPI snapshot', {
+            apiType: typeof api,
+            publishType: typeof api?.publishState,
+            subscribeType: typeof api?.subscribeState,
+            unsubscribeType: typeof api?.unsubscribeState,
+            keys: api ? Object.keys(api as unknown as Record<string, unknown>) : [],
+          });
         }
+        if (cancelled) {
+          return;
+        }
+
+        const hasMethod = (method: keyof DialogStateAPI) => typeof api?.[method] === 'function';
+        const missingRequiredMethod = !hasMethod('publishState')
+          || !hasMethod('getState')
+          || !hasMethod('subscribeState')
+          || !hasMethod('unsubscribeState');
+
+        if (missingRequiredMethod) {
+          const details = {
+            publishStateType: typeof api?.publishState,
+            getStateType: typeof api?.getState,
+            subscribeStateType: typeof api?.subscribeState,
+            unsubscribeStateType: typeof api?.unsubscribeState,
+            keys: Object.keys(api ?? {}),
+          };
+          const error = new Error('[PluginDialogShell] DialogStateAPI is missing required methods');
+          if (typeof console !== 'undefined' && typeof console.error === 'function') {
+            console.error(error.message, details);
+          }
+          setDialogStateApi(null);
+          setDialogStateError(error);
+          return;
+        }
+
+        const wrappedApi: DialogStateAPI = {
+          publishState: async (input) => api.publishState(input),
+          getState: async (input) => api.getState(input),
+          subscribeState: async (input, callback) => api.subscribeState(input, callback),
+          unsubscribeState: async (subscriptionId) => api.unsubscribeState(subscriptionId),
+        };
+
+        setDialogStateError(null);
+        setDialogStateApi(wrappedApi);
       } catch (error) {
-        if (typeof console !== 'undefined' && console.warn) {
-          console.warn('[PluginDialogShell] failed to acquire DialogStateAPI', error);
+        if (typeof console !== 'undefined' && typeof console.error === 'function') {
+          console.error('[PluginDialogShell] failed to acquire DialogStateAPI', error);
         }
         if (!cancelled) {
           setDialogStateApi(null);
+          setDialogStateError(error);
         }
       }
     })();
@@ -505,7 +516,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return () => {
       cancelled = true;
     };
-  }, [client, fallbackDialogStateApi]);
+  }, [client]);
 
   const {
     workingCopy,
@@ -524,7 +535,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       return;
     }
 
-    if (!dialogStateApi || dialogStateApi === fallbackDialogStateApi) {
+    if (!dialogStateApi) {
       setWorkerDialogState(null);
       return;
     }
@@ -534,13 +545,6 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
 
     (async () => {
       try {
-        if (typeof dialogStateApi.subscribeState !== 'function' || typeof dialogStateApi.unsubscribeState !== 'function') {
-          if (typeof console !== 'undefined' && console.warn) {
-            console.warn('[PluginDialogShell] DialogStateAPI missing subscribe/unsubscribe; skipping worker state bridge', { nodeType, nodeId });
-          }
-          return;
-        }
-
         const release = await subscribeDialogState({
           api: dialogStateApi,
           params: { nodeType, nodeId } as DialogStateSubscribeInput,
@@ -552,14 +556,22 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
           logger: typeof console !== 'undefined' ? console : undefined,
         });
 
+        if (!disposed) {
+          setDialogStateError(null);
+        }
+
         if (disposed) {
           release();
         } else {
           cleanup = release;
         }
       } catch (error) {
-        if (typeof console !== 'undefined' && typeof console.warn === 'function') {
-          console.warn('[PluginDialogShell] failed to establish dialog state subscription bridge', error);
+        if (typeof console !== 'undefined' && typeof console.error === 'function') {
+          console.error('[PluginDialogShell] failed to establish dialog state subscription bridge', error);
+        }
+        if (!disposed) {
+          setWorkerDialogState(null);
+          setDialogStateError(error);
         }
       }
     })();
@@ -572,7 +584,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         cleanup = null;
       }
     };
-  }, [dialogStateApi, nodeType, nodeId, fallbackDialogStateApi]);
+  }, [dialogStateApi, nodeType, nodeId]);
 
   const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },
@@ -1006,21 +1018,15 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     };
 
     const publishState = dialogStateApi.publishState;
-    if (typeof publishState !== 'function' || dialogStateApi === fallbackDialogStateApi) {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[PluginDialogShell] dialogStateApi.publishState is not available; skipping state broadcast');
-      }
-      return;
-    }
 
     publishState({ nodeType, nodeId, state: snapshot }).catch((error) => {
-      if (typeof console !== 'undefined' && console.warn) {
-        console.warn('[PluginDialogShell] failed to publish dialog state', error);
+      if (typeof console !== 'undefined' && typeof console.error === 'function') {
+        console.error('[PluginDialogShell] failed to publish dialog state', error);
       }
+      setDialogStateError(error);
     });
   }, [
     dialogStateApi,
-    fallbackDialogStateApi,
     nodeType,
     nodeId,
     steps,
@@ -1043,7 +1049,6 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     if (open) return;
 
     const publishState = dialogStateApi.publishState;
-    if (typeof publishState !== 'function') return;
     publishState({ nodeType, nodeId, state: null }).catch(() => {});
   }, [dialogStateApi, nodeType, nodeId, open]);
 
@@ -1232,6 +1237,13 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
       persistPosition(normalized.position);
     }
   }, [displayMode, persistPosition, persistSize]);
+
+  if (dialogStateError) {
+    const errorObject = dialogStateError instanceof Error
+      ? dialogStateError
+      : new Error(String(dialogStateError));
+    throw errorObject;
+  }
 
   const headlessProps: HeadlessMultiStepDialogProps<any> = {
     open,

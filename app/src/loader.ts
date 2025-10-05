@@ -7,7 +7,7 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-type';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
 import { loadAppConfig } from '~/loadAppConfig.js';
 import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
@@ -25,6 +25,10 @@ function getBootWindow(): BootWindow | null {
   if (typeof window === 'undefined') return null;
   return window as BootWindow;
 }
+
+let dialogStateVerificationPromise: Promise<void> | null = null;
+let dialogStateApiVerified: boolean = false;
+let lastVerifiedClient: Remote<WorkerAPI> | null = null;
 
 export type LoadWorkerAPIClientReturn = {
   client: Remote<WorkerAPI>; // Worker API instance via Comlink
@@ -223,9 +227,16 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     await ensureInitComplete();
 
     // Obtain the instance
-    const client = WorkerAPIClient.getSingleton();
-    
+    let client: Remote<WorkerAPI>;
+    try {
+      client = WorkerAPIClient.getSingleton();
+    } catch (getSingletonError) {
+      // WorkerAPIClient may still be finalising verification even after INIT_COMPLETE.
+      // Fall back to the guarded path that waits for initialization to finish.
+      client = await WorkerAPIClient.getOrInit();
+    }
 
+    await ensureDialogStateAPI(client);
 
     return {
       ...appConfig,
@@ -238,6 +249,56 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
       console.error('[loadWorkerAPIClient] Error stack:', error.stack);
     }
     throw error;
+  }
+}
+
+export async function ensureDialogStateAPI(client: Remote<WorkerAPI>): Promise<void> {
+  if (lastVerifiedClient !== client) {
+    dialogStateApiVerified = false;
+  }
+
+  if (dialogStateApiVerified) {
+    return;
+  }
+
+  if (dialogStateVerificationPromise) {
+    await dialogStateVerificationPromise;
+    return;
+  }
+
+  const verification = (async () => {
+    const api = await client.getDialogStateAPI();
+    const required: Array<keyof DialogStateAPI> = [
+      'publishState',
+      'getState',
+      'subscribeState',
+      'unsubscribeState',
+    ];
+    const missing = required.filter((method) => typeof api?.[method] !== 'function');
+    if (missing.length > 0) {
+      const snapshot = {
+        typeofPublish: typeof api?.publishState,
+        typeofGet: typeof api?.getState,
+        typeofSubscribe: typeof api?.subscribeState,
+        typeofUnsubscribe: typeof api?.unsubscribeState,
+        keys: api ? Object.keys(api as unknown as Record<string, unknown>) : null,
+      };
+      console.error('[loadWorkerAPIClient] DialogStateAPI verification failed', snapshot);
+      throw new Error(
+        `[loadWorkerAPIClient] DialogStateAPI is missing required methods: ${missing.join(', ')}`,
+      );
+    }
+    console.log('[loadWorkerAPIClient] DialogStateAPI verified');
+    dialogStateApiVerified = true;
+    lastVerifiedClient = client;
+  })();
+
+  dialogStateVerificationPromise = verification;
+  try {
+    await verification;
+  } finally {
+    dialogStateVerificationPromise = null;
+    lastVerifiedClient = dialogStateApiVerified ? client : null;
   }
 }
 

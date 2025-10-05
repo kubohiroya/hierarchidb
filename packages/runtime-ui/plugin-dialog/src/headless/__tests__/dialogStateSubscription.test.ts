@@ -24,42 +24,36 @@ describe('subscribeDialogState', () => {
     nodeId: 'node-1' as NodeId,
   };
 
-  it('falls back to getState when subscribeState is unavailable', async () => {
-    const snapshot = createSnapshot();
-    const getState = vi.fn().mockResolvedValue(snapshot);
-    const onSnapshot = vi.fn();
+  it('throws when subscribeState/unsubscribeState are missing', async () => {
+    const getState = vi.fn();
     const warn = vi.fn();
 
-    const cleanup = await subscribeDialogState({
-      api: { getState } as any,
-      params,
-      onSnapshot,
-      logger: { warn },
-      deps: {
-        createCallback: handler => handler,
-        releaseCallback: vi.fn(),
-      },
-    });
+    await expect(
+      subscribeDialogState({
+        api: { getState } as any,
+        params,
+        onSnapshot: vi.fn(),
+        logger: { warn },
+      }),
+    ).rejects.toThrow('DialogStateAPI must implement subscribeState/unsubscribeState');
 
-    expect(getState).toHaveBeenCalledTimes(1);
-    expect(onSnapshot).toHaveBeenCalledWith(snapshot);
-    expect(warn).not.toHaveBeenCalled();
-
-    cleanup();
+    expect(warn).toHaveBeenCalled();
+    expect(getState).not.toHaveBeenCalled();
   });
 
-  it('subscribes and unsubscribes when API supports it', async () => {
+  it('subscribes/unsubscribes and hydrates the initial snapshot', async () => {
     const snapshot = createSnapshot();
     const subscribeState = vi.fn().mockImplementation(async (_input, callback: any) => {
       callback(snapshot);
       return 'sub-1';
     });
     const unsubscribeState = vi.fn().mockResolvedValue(undefined);
+    const getState = vi.fn().mockResolvedValue(snapshot);
     const release = vi.fn();
     const onSnapshot = vi.fn();
 
     const cleanup = await subscribeDialogState({
-      api: { subscribeState, unsubscribeState } as any,
+      api: { subscribeState, unsubscribeState, getState } as any,
       params,
       onSnapshot,
       deps: {
@@ -69,6 +63,7 @@ describe('subscribeDialogState', () => {
     });
 
     expect(subscribeState).toHaveBeenCalledTimes(1);
+    expect(getState).toHaveBeenCalledTimes(1);
     expect(onSnapshot).toHaveBeenCalledWith(snapshot);
 
     cleanup();
@@ -77,49 +72,36 @@ describe('subscribeDialogState', () => {
     expect(release).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to getState when subscribeState throws', async () => {
-    const snapshot = createSnapshot();
+  it('propagates subscribeState failures', async () => {
     const subscribeState = vi.fn().mockRejectedValue(new Error('subscribe failed'));
     const unsubscribeState = vi.fn().mockResolvedValue(undefined);
-    const getState = vi.fn().mockResolvedValue(snapshot);
     const release = vi.fn();
     const warn = vi.fn();
-    const onSnapshot = vi.fn();
 
-    const cleanup = await subscribeDialogState({
-      api: { subscribeState, unsubscribeState, getState } as any,
-      params,
-      onSnapshot,
-      logger: { warn },
-      deps: {
-        createCallback: handler => handler,
-        releaseCallback: release,
-      },
-    });
+    await expect(
+      subscribeDialogState({
+        api: { subscribeState, unsubscribeState } as any,
+        params,
+        onSnapshot: vi.fn(),
+        logger: { warn },
+        deps: {
+          createCallback: handler => handler,
+          releaseCallback: release,
+        },
+      }),
+    ).rejects.toThrow('subscribe failed');
 
-    expect(subscribeState).toHaveBeenCalledTimes(1);
-    expect(getState).toHaveBeenCalledTimes(1);
-    expect(onSnapshot).toHaveBeenCalledWith(snapshot);
     expect(warn).toHaveBeenCalled();
-
-    cleanup();
     expect(release).toHaveBeenCalledTimes(1);
   });
 
-  it('logs a warning when neither subscribeState nor getState are available', async () => {
-    const warn = vi.fn();
-    const onSnapshot = vi.fn();
-
-    const cleanup = await subscribeDialogState({
-      api: {} as any,
-      params,
-      onSnapshot,
-      logger: { warn },
-    });
-
-    expect(onSnapshot).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalled();
-
-    cleanup();
+  it('throws when DialogStateAPI is not provided', async () => {
+    await expect(
+      subscribeDialogState({
+        api: null,
+        params,
+        onSnapshot: vi.fn(),
+      }),
+    ).rejects.toThrow('DialogStateAPI unavailable; cannot subscribe');
   });
 });

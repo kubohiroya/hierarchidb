@@ -5,7 +5,6 @@ import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
 import * as path from 'path';
 import { readFileSync } from 'node:fs';
-// import devHealthPlugin from '@hierarchidb/tools-vite-plugin-dev-health';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -212,7 +211,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     name: 'hdb-build-beacon',
     configureServer(server: ViteDevServer) {
       const startedAt = new Date().toISOString();
-      const beaconHandler = (_req, res) => {
+      const beaconHandler = (_req: XMLHttpRequest, res: any) => {
         const payload = {
           appVersion,
           buildTime,
@@ -231,7 +230,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
   const hdbDevProxyPlugin: Plugin = {
     name: 'hdb-dev-proxy',
     configureServer(server: ViteDevServer) {
-      const handler = async (req, res, next) => {
+      const handler = async (req: any, res: any, next: any) => {
         try {
           // Allow only localhost callers
           const remote = (req.socket?.remoteAddress || '').toString();

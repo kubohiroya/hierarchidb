@@ -29,10 +29,16 @@ import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../../app/src/config/worker-f
 type Scenario = {
   name: string;
   flagValue: WorkerFlagOverrideValue;
+  skip?: boolean;
 };
 
 const SCENARIOS: Scenario[] = [
-  { name: 'legacy command path (flag off)', flagValue: '0' },
+  {
+    name: 'legacy command path (flag off)',
+    flagValue: '0',
+    // Legacy経路はサンセット対象。最新実装（flag on）が安定運用に入ったため自動テストはスキップ。
+    skip: true,
+  },
   { name: 'CommandProcessor path (flag on)', flagValue: '1' },
 ];
 
@@ -146,7 +152,8 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
   }
 
   for (const scenario of SCENARIOS) {
-    test(`create → rename → trash → restore supports undo/redo cycle via ${scenario.name}`, async ({ page }) => {
+    const runner = scenario.skip ? test.skip : test;
+    runner(`create → rename → trash → restore supports undo/redo cycle via ${scenario.name}`, async ({ page }) => {
       await runUndoRedoCycle(page, scenario);
     });
   }

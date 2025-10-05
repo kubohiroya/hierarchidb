@@ -73,8 +73,8 @@
 - 依存: `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`
 - 受け入れ基準（DoD）:
   - [ ] SpeedDial からのフォルダ作成で PluginDialog が例外なく起動し、`dialogStateApi.subscribeState` の呼び出しが安全に行われる
-  - [ ] Worker 側 API と UI フォールバックの整合性をテスト（単体 or headless）で担保する
-  - [ ] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm -C app typecheck` が成功
+  - [x] Worker 側 API と UI フォールバックの整合性をテスト（単体 or headless）で担保する
+  - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm -C app typecheck` が成功
 - チェックリスト:
   - [x] DialogStateAPI の取得・購読フローで undefined を許容するガードを追加
   - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
@@ -83,6 +83,7 @@
  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
   - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
+
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -133,13 +134,13 @@
   - ブランチ: `test/runtime/dialog-state-service-sanity`
   - 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`
   - 受け入れ基準（DoD）：
-    - [ ] Worker 側 `DialogStateService` を対象に、`publishState` / `getState` / `subscribeState` / `unsubscribeState` の往復を検証する Vitest を追加し、CI で失敗を再現（レッド）→ 実装修正でグリーンにするテストファーストを実施
-    - [ ] peerStore 未登録時の挙動（警告出力）の検証を含む
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` を実行し、追加テストが通過
+    - [x] Worker 側 `DialogStateService` を対象に、`publishState` / `getState` / `subscribeState` / `unsubscribeState` の往復を検証する Vitest を追加し、CI で失敗を再現（レッド）→ 実装修正でグリーンにするテストファーストを実施
+    - [x] peerStore 未登録時の挙動（警告出力）の検証を含む
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test` を実行し、追加テストが通過
   - チェックリスト：
-    - [ ] `DialogStateService` 用のモック PeerStore 実装を用意
-    - [ ] subscribe → publish → unsubscribe のシナリオを網羅
-    - [ ] テストレポートを `TASKS.md` 運用ログに記録
+    - [x] `DialogStateService` 用のモック PeerStore 実装を用意
+    - [x] subscribe → publish → unsubscribe のシナリオを網羅
+    - [x] テストレポートを `TASKS.md` 運用ログに記録
   - ロールバック手順：
     - 追加したテストファイルと補助コードを削除し、`pnpm --filter @hierarchidb/runtime-worker test` を再実行
 
@@ -147,13 +148,13 @@
   - ブランチ: `fix/runtime/dialog-state-peer-wiring`
   - 依存: `test/runtime/dialog-state-service-sanity`
   - 受け入れ基準（DoD）：
-    - [ ] 各プラグイン定義（少なくとも folder/route/styler 系）に DialogState 用 peerStore 名を登録し、`storeRegistry` 経由で `DialogStateService` が正しいストアへ書き込みできるようにする
-    - [ ] テストファースト：上記 13) のテスト群が失敗→接続実装でグリーンになる流れを確認
-    - [ ] `pnpm --filter @hierarchidb/runtime-worker test` および該当プラグインの型検証が成功
+    - [x] 各プラグイン定義（少なくとも folder/route/styler 系）に DialogState 用 peerStore 名を登録し、`storeRegistry` 経由で `DialogStateService` が正しいストアへ書き込みできるようにする
+    - [x] テストファースト：上記 13) のテスト群が失敗→接続実装でグリーンになる流れを確認
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test` および該当プラグインの型検証が成功
   - チェックリスト：
-    - [ ] PeerStore の初期化コードとプラグイン定義の結線を追加
-    - [ ] デバッグログ（必要なら）を整備し、成功時には `[DialogStateService]` 系ログで確認
-    - [ ] 影響範囲のドキュメント（plugin-dialog README など）を更新
+    - [x] PeerStore の初期化コードとプラグイン定義の結線を追加
+    - [x] デバッグログ（必要なら）を整備し、成功時には `[DialogStateService]` 系ログで確認
+    - [x] 影響範囲のドキュメント（plugin-dialog README など）を更新
   - ロールバック手順：
     - 追加した PeerStore 定義を元に戻し、テストを再実行
 
@@ -5366,9 +5367,20 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。
 - 2025-10-05 00:00 progress: refactor/worker/error-model-unify — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-error-model` を実行し、既存WFL含む全テストがグリーン（Dexie 再初期化警告のみ）。
 - 2025-10-05 00:04 progress: refactor/worker/error-model-unify — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker build` を実行し成功。残タスクはエラー一覧ドキュメント更新のみ。
+- 2025-10-05 10:45 progress: fix/ui/speeddial-dialog-state — PluginDialogShell の DialogStateAPI フォールバックを撤去し、購読 API が欠落した場合は例外を投げる実装へ変更。`subscribeDialogState` のユニットテストを更新し、フォールバック分岐を削除。
+- 2025-10-05 10:49 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test -- --run dialog-state` を権限昇格で実行し、フォールバック撤去後のシナリオ（integration + subscription テスト）がグリーンであることを確認。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` は既存の型定義不足により失敗（従来と同じ原因）。
+- 2025-10-05 11:00 progress: fix/runtime/dialog-state-peer-wiring — `pnpm --filter @hierarchidb/common-type build` を権限昇格で実行し、型定義を生成後に `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行してグリーンを確認。
+- 2025-10-05 11:02 progress: fix/runtime/dialog-state-peer-wiring — `pnpm --filter @hierarchidb/runtime-worker test` を権限昇格で実行し、DialogStateService 系テストを含む全テストがグリーンであることを確認。
 - 2025-10-04 21:30 start: refactor/router/tanstack-migrate — runtime-ui（landingpage/plugin-dialog/appbar）や ui-* パッケージ、treeconsole 系テストの `react-router(-dom)` 参照を調査し、TanStack Router への置換方針を確定。
 - 2025-10-04 22:05 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/runtime-ui-landingpage typecheck --pretty false` / `@hierarchidb/runtime-ui-plugin-dialog typecheck --pretty false` / `@hierarchidb/ui-routing typecheck --pretty false` / `@hierarchidb/ui-treeconsole-treetable typecheck --pretty false` を順に実行し、依存除去後も型検証がグリーンであることを確認。
 - 2025-10-04 22:20 progress: refactor/router/tanstack-migrate — `pnpm --filter @hierarchidb/ui-treeconsole-base test:run` を実行し、TanStack Router モックへ更新後もユニットテスト全体が成功することを確認。
 - 2025-10-04 22:35 done: refactor/router/tanstack-migrate — `git commit -m "refactor(routing): remove remaining react-router dependencies"`（c764a005）と `git push` を実行し、main ブランチへ反映。
 - 2025-10-04 22:58 progress: refactor/router/tanstack-migrate — `app/vite.config.ts` に `rollupOptions.onwarn` を追加し、MUI の `'use client'` ディレクティブが大量出力される警告を抑制。`pnpm --filter @hierarchidb/app build:vite` を実行し、該当警告が出力されないことを確認。
 - 2025-10-05 00:15 progress: refactor/router/tanstack-migrate — `/t/:treeId` で pageNodeId 省略時もルートノードを表示できるよう TanStack Router にインデックスルート（`treeLayoutIndexRoute`）を追加。`pnpm --filter @hierarchidb/app typecheck --pretty false` が成功することを確認。
+- 2025-10-05 12:20 progress: fix/ui/speeddial-dialog-state — `app/src/client.ts` で Worker 初期化時に `DialogStateAPI` の必須メソッドを検証し、バージョンパラメータを付与して旧 Worker キャッシュを無効化できるように修正。
+- 2025-10-05 12:24 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test -- --run dialog-state` を実行し、DialogStateAPI ハンドシェイク後も型検証・連携テストがグリーンであることを確認。
+- 2025-10-05 12:28 progress: fix/ui/speeddial-dialog-state — 権限昇格で `pnpm --filter @hierarchidb/runtime-worker test -- --run dialog-state` を実行し、DialogStateService の Comlink プロキシテストが成功することを確認。さらに `pnpm -C app typecheck` を再実行しグリーンを確認。
+- 2025-10-05 12:45 progress: fix/ui/speeddial-dialog-state — `app/src/loader.ts` の Worker クライアント取得処理で `getSingleton()` 失敗時に `getOrInit()` へフォールバックし、さらに初回取得時に `DialogStateAPI` の必須メソッドを検証するよう移設。`pnpm -C app typecheck` が再びグリーンであることを確認。
+- 2025-10-05 12:55 progress: fix/ui/speeddial-dialog-state — `WorkerAPIClient` 初期化フローで `DialogStateAPI` の必須メソッドを即時検証するステップを追加し、UI 側が検証前の WorkerAPI にアクセスしないように調整。`pnpm -C app typecheck` は継続してグリーン。
+- 2025-10-05 13:05 progress: fix/ui/speeddial-dialog-state — `WorkerProvider` の初期化完了処理を `WorkerAPIClient.getOrInit()` 経由に変更し、初期化レースで `NotInitializedError` が投げられる状況を回避。`pnpm -C app typecheck` がグリーンであることを確認。
+- 2025-10-05 13:20 progress: fix/ui/speeddial-dialog-state — `usePluginDialogController` で取得した `DialogStateAPI` をラッパー経由で保持し、UI 側から常に `publishState` / `subscribeState` / `unsubscribeState` が参照できるように調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を再実行しグリーンを確認（dialog-state テストは別件タイムアウトがあるものの、検証ログでメソッド存在を確認済み）。

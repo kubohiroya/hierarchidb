@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId, TreeId } from '@hierarchidb/common-type';
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { usePluginDialogController } from '../usePluginDialogController.js';
 
@@ -82,10 +82,21 @@ function createMockWorker(options: {
     getTagsForNode: vi.fn(async () => []),
   };
 
+  const dialogStateAPI = {
+    publishState: vi.fn(async () => {}),
+    getState: vi.fn(async () => null),
+    subscribeState: vi.fn(async (_input: unknown, callback: (state: MultiStepDialogState | null) => void) => {
+      callback(null);
+      return 'dialog-sub-1';
+    }),
+    unsubscribeState: vi.fn(async () => {}),
+  };
+
   const worker: WorkerAPI = {
     getWorkingCopyAPI: async () => workingCopyAPI,
     getQueryAPI: async () => queryAPI,
     getTagAPI: async () => tagAPI,
+    getDialogStateAPI: async () => dialogStateAPI,
   } as unknown as WorkerAPI;
 
   const workerClient: WorkerClientRef = {

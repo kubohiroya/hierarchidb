@@ -7,6 +7,7 @@
  */
 import React from 'react';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
+import { useLocation } from '@tanstack/react-router';
 import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
@@ -42,6 +43,13 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   primaryButtonOptions,
 }) => {
   const ctx = useMultiStepDialogContext<Record<string, unknown>>();
+  const location = useLocation();
+  const isResourcesTree = React.useMemo(() => {
+    const segments = location.pathname.split('/').filter(Boolean);
+    if (segments.length < 2) return false;
+    const treeId = segments[1]?.toLowerCase();
+    return treeId === 'r';
+  }, [location.pathname]);
 
   const commitLabel = mode === 'create' ? 'Create' : 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
@@ -91,7 +99,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
             <Button
               variant="contained"
               size="large"
-              color={isFirstStep ? 'inherit' : 'secondary'}
+              color={(isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary')}
               onClick={handleBackOrCancel}
               onPointerDown={stopPointerPropagation}
               disabled={disableLeftPrimary}

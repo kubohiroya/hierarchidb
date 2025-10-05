@@ -62,6 +62,63 @@ export default defineConfig({
         __dirname,
         './src/tests/mocks/WorkerAPIImpl.ts',
       ),
+      'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
+      '@hierarchidb/runtime-worker': path.resolve(
+        __dirname,
+        '../../runtime/worker/src/index.ts',
+      ),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(
+        __dirname,
+        '../../runtime/worker-bootstrap/src/index.ts',
+      ),
+      '@hierarchidb/map-adapter': path.resolve(
+        __dirname,
+        '../../feature/map-adapter/src/index.ts',
+      ),
+      '@hierarchidb/tabular-xlsx': path.resolve(
+        __dirname,
+        '../../feature/tabular-xlsx/src/index.ts',
+      ),
+      '@hierarchidb/plugins-basemap-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/basemap-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-folder-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/folder-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-resolver-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/resolver-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-route-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/route-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-spreadsheet-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/spreadsheet-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-styler-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/styler-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-shape-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/shape-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-location-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/location-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-linker-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/linker-plugin/src/worker-factory/index.ts',
+      ),
+      '@hierarchidb/plugins-timeline-plugin/worker-factory': path.resolve(
+        __dirname,
+        '../../plugins/timeline-plugin/src/worker-factory/index.ts',
+      ),
       ...nodeTypeAliases,
       ...legacyNodeTypeAliases,
       ...nodeTypeSrcAliases,
