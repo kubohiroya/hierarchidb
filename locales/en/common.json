@@ -2,5 +2,31 @@
   "navigation": {
     "selectLanguage": "Select Language",
     "language": "Language"
+  },
+  "servicesReady": {
+    "default": "Services are ready.{{time}}",
+    "worker": "Worker service is ready.{{time}}",
+    "prefetch": "Service preconnection is complete.{{time}}",
+    "prefetchList": "Service preconnection complete: {{list}}"
+  },
+  "dialogs": {
+    "trash": {
+      "modeMenu": {
+        "ariaLabel": "Display mode",
+        "normal": "Normal (windowed)",
+        "maximize": "Maximize (browser window)",
+        "fullScreen": "Full-screen (system)"
+      },
+      "actions": {
+        "close": "Close dialog",
+        "exitFullscreen": "Exit full screen"
+      }
+    }
+  },
+  "treeTable": {
+    "selectAll": {
+      "select": "Select all",
+      "clear": "Clear all"
+    }
   }
 }

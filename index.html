@@ -1,30 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/hierarchidb/favicon.svg" />
-    <title>HierarchiDB</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Multiple favicon formats for better browser compatibility -->
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <!-- Fallback PNG favicon as data URL for immediate loading -->
+  <link rel="icon" type="image/png"
+        href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAKhSURBVFiFtZfPaxNBFMc/m91NTNLUVqtQKHgQPIgHL/4DD0LBgxc9ePDkyZMnT548CIIHQfBQLN48ePAgiAcPgiAIgqCIVbGtaWuTJtlkdnZnxkNqsp3Zbhr6hYVh3rz3/bx582ZnBXYhIgJA07R/YmVZRtM0hBBYloUQAtu2kVKiaRpSShzHQdM0HMfBtm2klGiahpQS27axLAtN03Ach2g0iqZpCCGwLIsNm5VSymw2K7PZrJRSSimlzOVyMpfLScdxpOu60nVdKaWUruuGsG1bOo4jHceRtm1Lx3Gk67rSdV3Z6TiO1HVdBvZzXVd2Op12EaqqKl3XbbPneZ7neZ7v+77v+/I/6Ha7XTab3RSPx2N+uBPZto1t2wgh/IsQEYEQIhCXUmJZVgdLKTEMo0MEA8vlcrler9MNq9Vq19pisUi73Q6kjV4ZVFWF4zi+RVRVxXGcTkIIgaqqCCHQNG2TrutYlkU4HEZRFBRF6fQH8TCHhoYAqNfr2LaNoij09PQA0Gq1cByHSCTSMfX392/adyAQGRkZAWBtbY1qtYpt29Trddrt9lZz3yLhcJhyuUy5XKbdbmOaJqZpYprmdsO2xODgIIqiYJomqqqiqiqGYWAYBrquB/K/RTRNo9VqYRgGjuMQjUaJRqOEQiFCoRCKomypOhAIhUIAJBIJEokEAJFIZFs8/1dhGEaIx+MAVCoVADRNIxQKdRJCCCzLwnVdXNft/C4T/7yCaDRKLBajVqtRrVYxTbPz1wPQ29vbh1IjhOhE/v5VFKXrdRAIrF+u6zpCCGzbJhaL0dfXRywWQ1EU4vE4rutSr9exLIsVVVU/ptPp1xsbpFKpL6lU6sv8/Pzi/Pz84vz8fCmVSn0B3mUymeVMJvMGKGUymXKH+wOHEVjLHmWUdAAAAABJRU5ErkJggg==" />
+  <script type="text/javascript">
+    // GitHub Pages SPAリダイレクト処理
+    // 404.htmlからのリダイレクトを処理
+    (function(l) {
+      if (l.search[1] === '/') {
+        var decoded = l.search.slice(1).split('&').map(function(s) {
+          return s.replace(/~and~/g, '&');
+        }).join('?');
+        window.history.replaceState(null, null,
+          l.pathname.slice(0, -1) + decoded + l.hash,
+        );
+      }
+    }(window.location));
+  </script>
+  <script type="module" crossorigin src="/hierarchidb/assets/index.js"></script>
+  <link rel="modulepreload" crossorigin href="/hierarchidb/assets/vendor-react-nPrKd0zk.js">
     <script type="text/javascript">
       // Hash routing handler for GitHub Pages
       // Convert path-based URLs to hash-based URLs - run only once on page load
       (function() {
-        // Check if we already processed this page
+        if (typeof window === 'undefined') return;
         if (sessionStorage.getItem('hash-routing-processed')) {
           return;
         }
-        
+
         var path = window.location.pathname;
         var base = '/hierarchidb';
-        
-        // Only redirect if we're on a sub-path (not the root)
-        // and we don't already have a hash fragment
+
         if (path !== base + '/' && path.startsWith(base + '/') && !window.location.hash) {
           sessionStorage.setItem('hash-routing-processed', 'true');
           var hashPath = path.substring(base.length);
           window.location.replace(base + '/#' + hashPath + window.location.search);
         } else if (path === base + '/') {
-          // Mark as processed for root path too
           sessionStorage.setItem('hash-routing-processed', 'true');
         }
       })();
@@ -32,65 +48,6 @@
 </head>
 <body>
 <div id="root"></div>
-<script>
-  // React Router SPA mode initialization with hash routing support
-  window.__reactRouterContext = {
-    "basename": "/hierarchidb/",
-    "future": {
-      "unstable_middleware": false,
-      "unstable_optimizeDeps": false,
-      "unstable_splitRouteModules": false,
-      "unstable_subResourceIntegrity": false,
-      "unstable_viteEnvironmentApi": false
-    },
-    "routeDiscovery": {"mode": "initial"},
-    "ssr": false,
-    "isSpaMode": true
-  };
-  
-  // Intercept navigation to add hash prefix - disabled for now to prevent loops
-  // This approach can cause conflicts with React Router's internal navigation
-  /*
-  var originalPushState = history.pushState;
-  var originalReplaceState = history.replaceState;
-  
-  history.pushState = function() {
-    var url = arguments[2];
-    if (url && !url.startsWith('#') && !url.startsWith('/hierarchidb/#')) {
-      arguments[2] = '/hierarchidb/#' + url.replace('/hierarchidb', '');
-    }
-    return originalPushState.apply(history, arguments);
-  };
-  
-  history.replaceState = function() {
-    var url = arguments[2];
-    if (url && !url.startsWith('#') && !url.startsWith('/hierarchidb/#')) {
-      arguments[2] = '/hierarchidb/#' + url.replace('/hierarchidb', '');
-    }
-    return originalReplaceState.apply(history, arguments);
-  };
-  */
-  
-  // Create a minimal stream for SPA mode
-  window.__reactRouterContext.stream = new ReadableStream({
-    start(controller) {
-      window.__reactRouterContext.streamController = controller;
-      controller.enqueue('[{"_1":2,"_3":-5,"_4":-5},"loaderData",{},"actionData","errors"]' + String.fromCharCode(10));
-      controller.close();
-    }
-  }).pipeThrough(new TextEncoderStream());
-</script>
-<script type="module">
-  
-  import * as route0 from "/hierarchidb/assets/root.js";
-  import * as indexRoute from "/hierarchidb/assets/_index.js";
-  
-  window.__reactRouterRouteModules = {
-    "root": route0,
-    "routes/_index": indexRoute
-  };
-  
-  import("/hierarchidb/assets/entry.client.js");
-</script>
+<noscript>JavaScript is required to run this application.</noscript>
 </body>
 </html>

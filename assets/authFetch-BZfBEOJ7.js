@@ -1,0 +1,1 @@
+import{A as r}from"./index-V2D5ysaQ.js";import"./index.js";import"./vendor-react-nPrKd0zk.js";async function n(t,e){return(await r.getSingleton()).fetchWithAuth(t,e,{pluginType:"spreadsheet"})}export{n as authFetch};

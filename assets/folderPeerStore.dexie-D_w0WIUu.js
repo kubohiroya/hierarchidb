@@ -1,1 +1,0 @@
-function r(t){return{async get(e){return await t.peerEntities.get(e)},async put(e){const a={...e,updatedAt:Date.now()};await t.peerEntities.put(a)},async delete(e){await t.peerEntities.delete(e)},async bulkUpsert(e){const a=e.map(n=>({...n,updatedAt:Date.now()}));await t.peerEntities.bulkPut(a)}}}export{r as createFolderPeerStoreDexie};

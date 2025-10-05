@@ -1,1 +1,0 @@
-import{j as t}from"./jsx-runtime-1znGzoh0.js";import{d as i,r as o,H as e}from"./vendor-react-DJVw7yVT.js";import"./FolderExtensionAPI-BS-yMoM_.js";import"./index-BxnpQD04.js";import{a as s}from"./register-default-extensions-bT5-2h_Y.js";var a,r=i;r.createRoot,a=r.hydrateRoot;o.startTransition(()=>{s(),a(document,t.jsx(o.StrictMode,{children:t.jsx(e,{})}))});
