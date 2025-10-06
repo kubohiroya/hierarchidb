@@ -37,6 +37,9 @@
 
 - **共通設計フィードバック適用（docs/plugins/common-working-copy-refactor-feedback.md）**
   - [x] 1. WorkingCopyDraft 構造の厳格化: base-plugin の型/ヘルパー更新＆ Location プラグイン型定義の追従完了（他プラグイン展開は別タスクで管理）。
+    - 2025-10-06 20:07 start: Basemap プラグインの WorkingCopyDraft 再整備に着手。`BaseMapWorkingCopy` を `WorkingCopyDraft<BaseMapEntity>` + `Partial<BaseMapEntity>` の合成へ変更し、ハンドラーでの Draft Payload を整理予定。
+    - 2025-10-06 20:10 progress: Basemap の `BaseMapDraftPayload` / `BaseMapWorkingCopy` を更新し、ハンドラーで Timestamp import と Dexie put/delete の NodeId 処理を是正。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行してグリーンを確認。
+    - 2025-10-06 20:12 docs: WorkingCopy パターン水平展開ガイド（`docs/plugins/working-copy-horizontal-rollout.md`）を追加し、適用手順・チェックリスト・ロールバック方針を整理。横展開時は本ガイドに基づき進行ログを更新すること。
   - [ ] 2. Entity↔WorkingCopy アダプタ共通化: base-plugin にアダプタを実装し、Jotai 派生 atom パターンを文書化して UI へ展開。
   - [ ] 3. BaseEntityHandler タイムスタンプ更新: `Date.now()` ベースへ統一し、版数更新との役割分担を明記。
   - [ ] 4. UI handler Adapter 化: in-memory Adapter を整備し、Folder/Shape 等の UI handler を移行。

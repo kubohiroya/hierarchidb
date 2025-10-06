@@ -79,20 +79,18 @@ export interface BaseMapEntity extends HierarchicalEntity {
 /**
  * BaseMap working copy for edit operations
  */
-export type BaseMapDraftPayload = Pick<
-  BaseMapEntity,
-  | 'name'
-  | 'description'
-  | 'category'
-  | 'settings'
-  | 'tags'
-  | 'baseMapMetadataId'
-  | 'mapStyle'
-  | 'viewport'
-  | 'displayOptions'
->;
+export type BaseMapDraftPayload = Partial<BaseMapEntity> & {
+  mapStyle: MapStyle;
+  viewport: MapViewport;
+  displayOptions: DisplayOptions;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  version: number;
+};
 
-export type BaseMapWorkingCopy = WorkingCopyDraft<BaseMapEntity>;
+export type BaseMapWorkingCopyEntity = WorkingCopyDraft<BaseMapEntity> & BaseMapDraftPayload;
+
+export type BaseMapWorkingCopy = BaseMapWorkingCopyEntity;
 
 /**
  * Data for creating a new BaseMap

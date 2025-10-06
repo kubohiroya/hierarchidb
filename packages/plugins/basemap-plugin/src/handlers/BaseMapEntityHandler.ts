@@ -3,7 +3,7 @@
  * @description BaseMap entity handler built on HierarchicalEntityHandler
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import type { Collection, IndexableType, Table } from 'dexie';
 import { HierarchicalEntityHandler, createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
 import type {
@@ -278,7 +278,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       ...base,
     };
 
-    await this.workingCopyTable.put(workingCopy, nodeId as IndexableType);
+    await this.workingCopyTable.put(workingCopy, workingCopy.treeNodeId);
     return workingCopy;
   }
 
@@ -326,7 +326,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
     // Remove any working copy associated with the node
     const wc = await this.workingCopyTable.where('nodeId').equals(nodeId as string).first();
-    if (wc) await this.workingCopyTable.delete(wc.id);
+    if (wc) await this.workingCopyTable.delete(wc.treeNodeId);
   }
 
   async updateMapStyle(nodeId: NodeId, mapStyle: MapStyle): Promise<BaseMapEntity> {
