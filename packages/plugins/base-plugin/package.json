@@ -30,7 +30,8 @@
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/runtime-shared-batch-processor": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",

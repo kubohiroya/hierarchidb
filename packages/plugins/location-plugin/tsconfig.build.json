@@ -28,5 +28,13 @@
     "src/examples/**",
     "src/worker*.test.ts",
     "**/*.test.tsx"
+  ],
+  "references": [
+    {
+      "path": "../../ui/datasource/tsconfig.build.json"
+    },
+    {
+      "path": "../../ui/license/tsconfig.build.json"
+    }
   ]
 }

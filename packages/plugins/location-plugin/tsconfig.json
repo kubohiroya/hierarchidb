@@ -14,15 +14,19 @@
         "./src/*"
       ],
       "@hierarchidb/ui-datasource": [
+        "../../ui/datasource/dist-types/index.d.ts",
         "../../ui/datasource/src/index.ts"
       ],
       "@hierarchidb/ui-datasource/*": [
+        "../../ui/datasource/dist-types/*",
         "../../ui/datasource/src/*"
       ],
       "@hierarchidb/ui-license": [
+        "../../ui/license/dist-types/index.d.ts",
         "../../ui/license/src/index.ts"
       ],
       "@hierarchidb/ui-license/*": [
+        "../../ui/license/dist-types/*",
         "../../ui/license/src/*"
       ]
     }

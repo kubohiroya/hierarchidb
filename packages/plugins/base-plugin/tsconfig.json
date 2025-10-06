@@ -10,6 +10,12 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor": [
+        "../../runtime-shared/batch-processor/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-batch-processor/*": [
+        "../../runtime-shared/batch-processor/src/*"
       ]
     },
     "module": "Node16"

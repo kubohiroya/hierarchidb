@@ -6,15 +6,15 @@
 import type { NodeId } from '@hierarchidb/common-type';
 import type {
   BatchProgressCallback,
-  BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
+import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/plugins-base-plugin';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import type { LocationPointInput, LocationTileSettings } from './SessionController.js';
-import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
+import { getEphemeralLocationDB, type EphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
 
 export interface UnifiedLocationBatchConfig {
@@ -26,14 +26,63 @@ export interface LocationBatchData {
   settings: LocationTileSettings;
 }
 
-export class UnifiedLocationBatchManager implements IBatchSessionManager {
-  private manager: LocationBatchSessionManager;
-  private getDb: () => ReturnType<typeof getEphemeralLocationDB>;
+const PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
-  private static readonly VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+type LocationBatchSessionPayload = UnifiedBatchSession<UnifiedLocationBatchConfig | undefined, LocationBatchData>;
+
+function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
+  return {
+    async savePending(nodeId, payload) {
+      const db = dbProvider();
+      try {
+        await db.clearExpiredPendingSessions(PENDING_TTL);
+      } catch (error) {
+        console.warn('[UnifiedLocationBatchManager] failed to clear expired pending sessions', error);
+      }
+      await db.pendingSessions.put({
+        nodeId,
+        points: payload.data.points,
+        settings: payload.data.settings,
+        config: payload.config,
+        storedAt: payload.storedAt,
+      });
+    },
+    async takePending(nodeId) {
+      const db = dbProvider();
+      const record = await db.pendingSessions.get(nodeId);
+      if (!record) return undefined;
+      await db.pendingSessions.delete(nodeId);
+      return {
+        config: record.config as UnifiedLocationBatchConfig | undefined,
+        data: {
+          points: record.points as LocationPointInput[],
+          settings: record.settings as LocationTileSettings,
+        },
+        storedAt: record.storedAt as Timestamp,
+      } satisfies LocationBatchSessionPayload;
+    },
+    async onSessionProgress(sessionId, event) {
+      const db = dbProvider();
+      await db.sessions?.update(sessionId, {
+        progress: event.payload?.completed,
+        updatedAt: event.timestamp,
+        status: event.phase === 'completed' ? 'completed' : event.phase === 'failed' ? 'failed' : 'running',
+      });
+    },
+    async onSessionCompleted(sessionId) {
+      const db = dbProvider();
+      await db.clearVectorTilesForSession(sessionId);
+    },
+  };
+}
+
+export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
+  private manager: LocationBatchSessionManager;
+  private readonly getDb: () => EphemeralLocationDB;
 
   constructor(dbProvider: typeof getEphemeralLocationDB = getEphemeralLocationDB) {
+    super(createPersistence(dbProvider));
     this.manager = new LocationBatchSessionManager();
     this.getDb = () => dbProvider();
   }
@@ -44,126 +93,96 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
   }
 
   /** @internal Test-only injection hook */
-  setDbProvider(provider: () => ReturnType<typeof getEphemeralLocationDB>): void {
+  setDbProvider(provider: () => EphemeralLocationDB): void {
+    (this as { persistence?: BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> }).persistence = createPersistence(provider);
     this.getDb = provider;
   }
 
-  async prepareSession(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<void> {
-    const db = this.getDb();
+  protected async performStart(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<BatchSessionId> {
+    const summary = await this.manager.createSession(nodeId, data.points, data.settings, { concurrency: config?.concurrency });
     try {
-      await db.clearExpiredPendingSessions(UnifiedLocationBatchManager.PENDING_TTL);
-    } catch (error) {
-      console.warn('[UnifiedLocationBatchManager] failed to clear expired pending sessions', error);
-    }
-    await db.pendingSessions.put({
-      nodeId,
-      points: data.points,
-      settings: data.settings,
-      config,
-      storedAt: Date.now(),
-    });
-  }
-
-  async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
-    const db = this.getDb();
-    const pending = await db.pendingSessions.get(nodeId);
-    if (!pending) {
-      throw new Error(`No pending location batch session for node ${nodeId}`);
-    }
-    await db.pendingSessions.delete(nodeId);
-
-    const points = pending.points as LocationPointInput[] | undefined;
-    const settings = pending.settings as LocationTileSettings | undefined;
-    const config = pending.config as UnifiedLocationBatchConfig | undefined;
-    if (!points || !settings) {
-      throw new Error('Location batch session requires points and settings');
-    }
-
-    const summary = await this.manager.createSession(nodeId, points, settings, { concurrency: config?.concurrency });
-    try {
+      const db = this.getDb();
       await db.clearVectorTilesForSession(summary.sessionId);
-      await db.clearExpiredVectorTiles(UnifiedLocationBatchManager.VECTOR_TILE_TTL);
+      await db.clearExpiredVectorTiles(VECTOR_TILE_TTL);
+      await db.sessions?.put({
+        sessionId: summary.sessionId,
+        nodeId,
+        bbox: summary.bbox,
+        zoomMin: summary.zoomMin,
+        zoomMax: summary.zoomMax,
+        totalPoints: summary.totalPoints,
+        createdAt: Date.now(),
+        status: 'running',
+        config,
+      });
     } catch (error) {
-      console.warn('[UnifiedLocationBatchManager] failed to tidy vector tiles', error);
+      console.warn('[UnifiedLocationBatchManager] failed to persist session metadata', error);
     }
-    await db.sessions?.put({
-      sessionId: summary.sessionId,
-      nodeId,
-      bbox: summary.bbox,
-      zoomMin: summary.zoomMin,
-      zoomMax: summary.zoomMax,
-      totalPoints: summary.totalPoints,
-      createdAt: Date.now(),
-      status: 'running',
-      config,
-    });
     return summary.sessionId;
   }
 
-  async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
+  protected async performPause(sessionId: BatchSessionId): Promise<void> {
     this.manager.pause(sessionId);
     try {
       const db = this.getDb();
-      await db.sessions?.update(sessionId, {
-        status: 'paused',
-        updatedAt: Date.now(),
-      });
+      await db.sessions?.update(sessionId, { status: 'paused', updatedAt: Date.now() });
     } catch (error) {
       console.warn('[UnifiedLocationBatchManager] failed to mark session paused', error);
     }
   }
 
-  async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
+  protected async performResume(sessionId: BatchSessionId): Promise<void> {
     this.manager.resume(sessionId);
     try {
       const db = this.getDb();
-      await db.sessions?.update(sessionId, {
-        status: 'running',
-        updatedAt: Date.now(),
-      });
+      await db.sessions?.update(sessionId, { status: 'running', updatedAt: Date.now() });
     } catch (error) {
       console.warn('[UnifiedLocationBatchManager] failed to mark session running', error);
     }
   }
 
-  async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
+  protected async performCancel(sessionId: BatchSessionId): Promise<void> {
     this.manager.cancel(sessionId);
     try {
       const db = this.getDb();
-      await db.sessions?.update(sessionId, {
-        status: 'cancelled',
-        updatedAt: Date.now(),
-      });
+      await db.sessions?.update(sessionId, { status: 'cancelled', updatedAt: Date.now() });
+      await db.clearVectorTilesForSession(sessionId);
     } catch (error) {
       console.warn('[UnifiedLocationBatchManager] failed to mark session cancelled', error);
     }
   }
 
-  async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
+  protected async performStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {
+    const db = this.getDb();
+    const record = await db.sessions?.get(sessionId);
     const summary = this.manager.getInitialSummary(sessionId);
-    if (!summary) {
+    if (!record && !summary) {
       throw new Error(`Session ${sessionId} not found`);
     }
-
+    const total = record?.totalPoints ?? summary?.totalPoints ?? 0;
+    const completed = (record?.progress as number | undefined) ?? 0;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const status = record?.status ?? (percentage >= 100 ? 'completed' : 'running');
     return {
-      sessionId: summary.sessionId,
-      nodeId: summary.nodeId,
-      status: 'running',
+      sessionId,
+      nodeId: record?.nodeId ?? summary?.nodeId ?? ('' as NodeId),
+      status,
       progress: {
-        total: summary.totalPoints,
-        completed: 0,
+        total,
+        completed,
         failed: 0,
-        percentage: 0,
-        currentStage: 'download',
+        percentage,
+        currentStage: percentage >= 100 ? 'vectortile' : 'download',
       },
-      startedAt: Date.now(),
+      startedAt: record?.createdAt,
+      lastActivity: record?.updatedAt,
     };
   }
 
-  onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
+  protected performSubscribe(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
     return this.manager.onProgress(sessionId, (legacy) => {
       const summary = this.manager.getInitialSummary(sessionId);
-      const event: BatchProgressEvent = toBatchProgressEvent({
+      const event = toBatchProgressEvent({
         sessionId: legacy.sessionId,
         nodeId: summary?.nodeId,
         stage: legacy.stage,
@@ -174,14 +193,6 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
         currentTask: legacy.currentTask,
       });
       callback(event);
-      void (async () => {
-        const db = this.getDb();
-        await db.sessions?.update(sessionId, {
-          progress: event.payload?.completed,
-          updatedAt: Date.now(),
-          status: event.phase === 'completed' ? 'completed' : 'running',
-        });
-      })();
     });
   }
 }

@@ -1,6 +1,6 @@
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
-import type { RouteDraftPayload, RouteEntity, RouteWorkingCopy, RouteWorkingCopyEntity } from '../types/index.js';
+import type { NodeId } from '@hierarchidb/common-type';
+import { createEntityWorkingCopyAdapter } from '@hierarchidb/plugins-base-plugin';
+import type { RouteDraftPayload, RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 
 const DEFAULT_TRANSPORT_MODES: TransportMode[] = [TransportMode.CAR];
@@ -11,60 +11,86 @@ const DEFAULT_PROCESSING_CONFIG = {
   enableTrafficData: false,
 } as RouteEntity['processingConfig'];
 
-function ensureDraftPayload(
-  entity: Partial<RouteEntity>,
-  overrides: Partial<RouteDraftPayload> = {},
-): RouteDraftPayload {
-  const createdAt = (overrides.createdAt ?? entity.createdAt ?? Date.now()) as Timestamp;
-  const updatedAt = (overrides.updatedAt ?? entity.updatedAt ?? createdAt) as Timestamp;
-
-  return {
-    name: overrides.name ?? entity.name ?? '',
-    description: overrides.description ?? entity.description ?? '',
-    category: overrides.category ?? entity.category,
-    routeType: overrides.routeType ?? entity.routeType ?? RouteType.ROAD,
-    transportModes: overrides.transportModes ?? entity.transportModes ?? DEFAULT_TRANSPORT_MODES,
-    startPoint: overrides.startPoint ?? entity.startPoint,
-    endPoint: overrides.endPoint ?? entity.endPoint,
-    waypoints: overrides.waypoints ?? entity.waypoints,
-    boundingBox: overrides.boundingBox ?? entity.boundingBox,
-    distance: overrides.distance ?? entity.distance,
-    duration: overrides.duration ?? entity.duration,
-    elevation: overrides.elevation ?? entity.elevation,
-    dataSourceName: overrides.dataSourceName ?? entity.dataSourceName ?? 'openstreetmap',
-    licenseAgreement: overrides.licenseAgreement ?? entity.licenseAgreement ?? false,
-    licenseAgreedAt: overrides.licenseAgreedAt ?? entity.licenseAgreedAt,
-    processingConfig: overrides.processingConfig ?? entity.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
-    batchSessionId: overrides.batchSessionId ?? entity.batchSessionId,
-    processingStatus: overrides.processingStatus ?? entity.processingStatus ?? 'idle',
-    createdAt,
-    updatedAt,
-    version: overrides.version ?? entity.version ?? 1,
-  };
-}
+const adapter = createEntityWorkingCopyAdapter<RouteEntity, RouteWorkingCopy>({
+  draftFromEntity(entity) {
+    return {
+      name: entity.name,
+      description: entity.description,
+      category: entity.category,
+      routeType: entity.routeType,
+      transportModes: entity.transportModes,
+      startPoint: entity.startPoint,
+      endPoint: entity.endPoint,
+      waypoints: entity.waypoints,
+      boundingBox: entity.boundingBox,
+      distance: entity.distance,
+      duration: entity.duration,
+      elevation: entity.elevation,
+      dataSourceName: entity.dataSourceName,
+      licenseAgreement: entity.licenseAgreement,
+      licenseAgreedAt: entity.licenseAgreedAt,
+      processingConfig: entity.processingConfig,
+      batchSessionId: entity.batchSessionId,
+      processingStatus: entity.processingStatus,
+      metadata: entity.metadata,
+      customFields: entity.customFields,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      version: entity.version,
+    } satisfies Partial<RouteEntity>;
+  },
+  draftDefaults(treeNodeId, overrides) {
+    const now = Date.now();
+    return {
+      name: overrides?.name ?? '',
+      description: overrides?.description ?? '',
+      category: overrides?.category,
+      routeType: overrides?.routeType ?? RouteType.ROAD,
+      transportModes: overrides?.transportModes ?? DEFAULT_TRANSPORT_MODES,
+      startPoint: overrides?.startPoint,
+      endPoint: overrides?.endPoint,
+      waypoints: overrides?.waypoints ?? [],
+      boundingBox: overrides?.boundingBox,
+      distance: overrides?.distance,
+      duration: overrides?.duration,
+      elevation: overrides?.elevation,
+      dataSourceName: overrides?.dataSourceName ?? 'openstreetmap',
+      licenseAgreement: overrides?.licenseAgreement ?? false,
+      licenseAgreedAt: overrides?.licenseAgreedAt,
+      processingConfig: overrides?.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
+      batchSessionId: overrides?.batchSessionId,
+      processingStatus: overrides?.processingStatus ?? 'idle',
+      metadata: overrides?.metadata ?? {},
+      customFields: overrides?.customFields ?? {},
+      createdAt: overrides?.createdAt ?? now,
+      updatedAt: overrides?.updatedAt ?? now,
+      version: overrides?.version ?? 1,
+      nodeId: overrides?.nodeId ?? (treeNodeId as NodeId),
+    } satisfies Partial<RouteEntity>;
+  },
+  finalize(workingCopy) {
+    return {
+      ...workingCopy,
+      id: workingCopy.treeNodeId,
+      nodeId: (workingCopy as any).nodeId ?? workingCopy.treeNodeId,
+      parentId: (workingCopy as any).parentId ?? workingCopy.treeNodeId,
+      isDraft: false,
+    } as RouteWorkingCopy;
+  },
+  finalizeDraft(workingCopy) {
+    return {
+      ...workingCopy,
+      id: workingCopy.treeNodeId,
+      nodeId: workingCopy.treeNodeId,
+      parentId: (workingCopy as any).parentId ?? workingCopy.treeNodeId,
+      isDraft: true,
+      resumeStep: 0,
+    } as RouteWorkingCopy;
+  },
+});
 
 export function createRouteWorkingCopyFromEntity(entity: RouteEntity): RouteWorkingCopy {
-  const draft = ensureDraftPayload(entity);
-  const base = createDraftWorkingCopyBase<RouteEntity>({
-    draft,
-    meta: {
-      treeNodeId: entity.nodeId,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-      originalVersion: entity.version,
-    },
-  });
-
-  const workingCopy: RouteWorkingCopyEntity = {
-    ...base,
-    ...draft,
-    id: entity.nodeId,
-    nodeId: entity.nodeId,
-    parentId: entity.nodeId,
-    isDraft: false,
-  };
-
-  return workingCopy;
+  return adapter.fromEntity(entity);
 }
 
 export function createRouteDraftWorkingCopy(
@@ -72,44 +98,16 @@ export function createRouteDraftWorkingCopy(
   overrides: Partial<RouteDraftPayload> = {},
   parentId?: NodeId,
 ): RouteWorkingCopy {
-  const draft = ensureDraftPayload({}, overrides);
-  const base = createDraftWorkingCopyBase<RouteEntity>({
-    draft,
-    meta: {
-      treeNodeId: nodeId,
-      createdAt: draft.createdAt,
-      updatedAt: draft.updatedAt,
-      originalVersion: draft.version,
-    },
-  });
-
-  const workingCopy: RouteWorkingCopyEntity = {
-    ...base,
+  const draft = adapter.createDraft(nodeId, { ...overrides, parentId });
+  return {
     ...draft,
-    id: nodeId,
-    nodeId,
     parentId: parentId ?? nodeId,
-    isDraft: true,
-    resumeStep: 0,
-  };
-
-  return workingCopy;
+  } as RouteWorkingCopy;
 }
 
 export function mergeRouteWorkingCopy(
   workingCopy: RouteWorkingCopy,
   updates: Partial<RouteEntity>,
-  timestamp: Timestamp = Date.now() as Timestamp,
 ): RouteWorkingCopy {
-  const base = markWorkingCopyUpdated<RouteEntity>(workingCopy, updates, timestamp);
-  const draft = ensureDraftPayload({ ...workingCopy, ...workingCopy.draft }, { ...updates, updatedAt: timestamp });
-
-  const next: RouteWorkingCopyEntity = {
-    ...workingCopy,
-    ...base,
-    ...draft,
-    updatedAt: timestamp,
-  };
-
-  return next;
+  return adapter.merge(workingCopy, updates);
 }

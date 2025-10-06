@@ -108,6 +108,8 @@ export type RouteDraftPayload = Partial<RouteEntity> & {
   dataSourceName: RouteEntity['dataSourceName'];
   licenseAgreement: RouteEntity['licenseAgreement'];
   processingConfig: RouteEntity['processingConfig'];
+  metadata?: RouteEntity['metadata'];
+  customFields?: RouteEntity['customFields'];
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: number;

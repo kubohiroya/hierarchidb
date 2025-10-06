@@ -43,7 +43,6 @@ export function createEntityWorkingCopyAdapter<TEntity, TWorkingCopy extends Wor
       updatedAt?: number;
       originalVersion?: number;
     },
-    finalizer?: (workingCopy: TWorkingCopy) => TWorkingCopy,
   ): TWorkingCopy => {
     const createdAt = ensureTimestamp(meta.createdAt, () => Date.now());
     const updatedAt = ensureTimestamp(meta.updatedAt, () => createdAt);
@@ -62,42 +61,37 @@ export function createEntityWorkingCopyAdapter<TEntity, TWorkingCopy extends Wor
       },
     });
 
-    const workingCopy = {
+    return {
       ...base,
       ...draft,
-    } as TWorkingCopy;
-
-    return finalizer ? finalizer(workingCopy) : workingCopy;
+    } as unknown as TWorkingCopy;
   };
 
   return {
     fromEntity(entity: TEntity): TWorkingCopy {
       const draft = options.draftFromEntity(entity);
-      const workingCopy = buildWorkingCopy(
-        (draft as { nodeId?: NodeId }).nodeId ?? (entity as { nodeId?: NodeId }).nodeId ?? (entity as any).id,
-        draft,
-        {
-          createdAt: (entity as any).createdAt,
-          updatedAt: (entity as any).updatedAt,
-          originalVersion: (entity as any).version,
-        },
-        options.finalize ? (wc) => options.finalize!(wc, entity) : undefined,
-      );
+      const nodeId = (draft as { nodeId?: NodeId }).nodeId ?? (entity as { nodeId?: NodeId }).nodeId ?? (entity as any).id;
+      let workingCopy = buildWorkingCopy(nodeId, draft, {
+        createdAt: (entity as any).createdAt,
+        updatedAt: (entity as any).updatedAt,
+        originalVersion: (entity as any).version,
+      });
+      if (options.finalize) {
+        workingCopy = options.finalize(workingCopy, entity);
+      }
       return workingCopy;
     },
 
     createDraft(treeNodeId: NodeId, overrides?: Partial<TEntity>): TWorkingCopy {
       const draft = options.draftDefaults(treeNodeId, overrides);
-      const workingCopy = buildWorkingCopy(
-        treeNodeId,
-        draft,
-        {
-          createdAt: (draft as any)?.createdAt,
-          updatedAt: (draft as any)?.updatedAt,
-          originalVersion: (draft as any)?.version,
-        },
-        options.finalizeDraft,
-      );
+      let workingCopy = buildWorkingCopy(treeNodeId, draft, {
+        createdAt: (draft as any)?.createdAt,
+        updatedAt: (draft as any)?.updatedAt,
+        originalVersion: (draft as any)?.version,
+      });
+      if (options.finalizeDraft) {
+        workingCopy = options.finalizeDraft(workingCopy, treeNodeId);
+      }
       return workingCopy;
     },
 
