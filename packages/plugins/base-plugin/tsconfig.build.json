@@ -29,5 +29,10 @@
     "src/examples/**",
     "**/*.test.ts",
     "**/*.spec.ts"
+  ],
+  "references": [
+    {
+      "path": "../../runtime-shared/batch-processor/tsconfig.build.json"
+    }
   ]
 }

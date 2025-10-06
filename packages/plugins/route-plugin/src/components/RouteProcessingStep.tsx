@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -27,6 +27,7 @@ import {
 import { PlayArrow, Settings, Stop } from '@mui/icons-material';
 import type { RouteCategory, RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
+import { getRouteDraft } from '../utils/workingCopy.js';
 
 export interface RouteProcessingStepProps {
   workingCopy: RouteWorkingCopy;
@@ -47,16 +48,18 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = (workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
+    const base = typeof draftVersion === 'number'
+      ? draftVersion
+      : typeof workingCopy.originalVersion === 'number'
+        ? workingCopy.originalVersion
+        : 0;
     return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion, workingCopy.version]);
+  }, [draftVersion, workingCopy.originalVersion]);
 
-  const resolvedCategory = (draft.category as RouteCategory | undefined)
-    ?? (workingCopy.category as RouteCategory | undefined)
-    ?? 'transportation';
+  const resolvedCategory = (draft.category as RouteCategory | undefined) ?? 'transportation';
 
   const [category, setCategory] = useState<RouteCategory>(resolvedCategory);
   useEffect(() => {
@@ -329,7 +332,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
             variant="contained"
             startIcon={<PlayArrow />}
             onClick={startProcessing}
-            disabled={!workingCopy.waypoints || workingCopy.waypoints.length < 2}
+            disabled={!Array.isArray(draft.waypoints) || draft.waypoints.length < 2}
           >
             {t('base-dialog.processing.startProcessing', 'Start Processing')}
           </Button>

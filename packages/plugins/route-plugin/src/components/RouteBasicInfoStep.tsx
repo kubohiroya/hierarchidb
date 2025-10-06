@@ -22,6 +22,7 @@ import { Route as RouteIcon } from '@mui/icons-material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
 import type { RouteCategory, RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
+import { getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
 
 export interface RouteBasicInfoStepProps {
@@ -31,9 +32,6 @@ export interface RouteBasicInfoStepProps {
   disabled?: boolean;
 }
 
-const resolveDraft = (workingCopy: RouteWorkingCopy): Partial<RouteEntity> =>
-  workingCopy.draft ?? (workingCopy as Partial<RouteEntity>);
-
 export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
   workingCopy,
   onUpdate,
@@ -42,18 +40,22 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
 }) => {
   const { translations } = useTranslation();
 
-  const draft = useMemo(() => resolveDraft(workingCopy), [workingCopy]);
-  const resolvedName = draft.name ?? '';
-  const resolvedDescription = draft.description ?? '';
-  const resolvedRouteType = draft.routeType ?? workingCopy.routeType;
-  const resolvedTransportModes = draft.transportModes ?? workingCopy.transportModes ?? [];
-  const resolvedCategory = draft.category ?? workingCopy.category ?? 'transportation';
-  const resolvedTags = draft.tags ?? workingCopy.tags ?? [];
+  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
+  const resolvedName = typeof draft.name === 'string' ? draft.name : '';
+  const resolvedDescription = typeof draft.description === 'string' ? draft.description : '';
+  const resolvedRouteType = draft.routeType ?? RouteType.ROAD;
+  const resolvedTransportModes = draft.transportModes ?? [];
+  const resolvedCategory = (draft.category as RouteCategory | undefined) ?? 'transportation';
+  const resolvedTags = draft.tags ?? [];
 
   const computeNextVersion = useCallback(() => {
-    const baseVersion = draft.version ?? workingCopy.version;
+    const baseVersion = typeof draft.version === 'number'
+      ? draft.version
+      : typeof workingCopy.originalVersion === 'number'
+        ? workingCopy.originalVersion
+        : 0;
     return typeof baseVersion === 'number' ? baseVersion + 1 : 0;
-  }, [draft.version, workingCopy.version]);
+  }, [draft.version, workingCopy.originalVersion]);
 
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({

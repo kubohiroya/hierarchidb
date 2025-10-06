@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -24,6 +24,7 @@ import {
 import { Add, MyLocation, Remove } from '@mui/icons-material';
 import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
+import { getRouteDraft } from '../utils/workingCopy.js';
 
 export interface RouteSelectionStepProps {
   workingCopy: RouteWorkingCopy;
@@ -44,12 +45,16 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = (workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draft = useMemo(() => getRouteDraft(workingCopy), [workingCopy]);
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
-    const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
+    const base = typeof draftVersion === 'number'
+      ? draftVersion
+      : typeof workingCopy.originalVersion === 'number'
+        ? workingCopy.originalVersion
+        : 0;
     return typeof base === 'number' ? base + 1 : 0;
-  }, [draftVersion, workingCopy.version]);
+  }, [draftVersion, workingCopy.originalVersion]);
 
   const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
@@ -279,7 +284,7 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
         </Button>
       </Box>
 
-      {workingCopy.waypoints && workingCopy.waypoints.length > 0 && (
+      {Array.isArray(draft.waypoints) && draft.waypoints.length > 0 && (
         <Alert severity="success" sx={{ mt: 2 }}>
           {t('base-dialog.routeSelection.routeCalculated', 'Route calculated successfully!')}
         </Alert>

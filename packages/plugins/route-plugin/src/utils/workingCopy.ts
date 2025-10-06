@@ -111,3 +111,12 @@ export function mergeRouteWorkingCopy(
 ): RouteWorkingCopy {
   return adapter.merge(workingCopy, updates);
 }
+
+export function getRouteDraft(workingCopy: RouteWorkingCopy): Partial<RouteEntity> {
+  if (workingCopy && typeof workingCopy === 'object' && workingCopy.draft && typeof workingCopy.draft === 'object') {
+    return workingCopy.draft as Partial<RouteEntity>;
+  }
+
+  // Fallback to legacy structure where domain fields lived at the top level.
+  return workingCopy as unknown as Partial<RouteEntity>;
+}

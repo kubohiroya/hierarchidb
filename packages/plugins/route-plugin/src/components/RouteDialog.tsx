@@ -6,7 +6,7 @@ import type React from 'react';
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
 import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
-import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
+import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy, getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
@@ -83,8 +83,11 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
-    const { name, routeType, transportModes } = workingCopy;
-    return Boolean(name?.trim()) && Boolean(routeType) && Array.isArray(transportModes) && transportModes.length > 0;
+    const draft = getRouteDraft(workingCopy);
+    const name = typeof draft.name === 'string' ? draft.name : '';
+    const routeType = draft.routeType;
+    const transportModes = draft.transportModes;
+    return Boolean(name.trim()) && Boolean(routeType) && Array.isArray(transportModes) && transportModes.length > 0;
   }, [workingCopy]);
   const isSelectionValid = true; // keep permissive; selection completeness is reflected after calculation
   const isProcessingValid = true;
