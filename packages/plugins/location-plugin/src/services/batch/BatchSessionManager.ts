@@ -17,6 +17,10 @@ export class LocationBatchSessionManager {
   private progress = new Map<string, Set<(p: ProgressEvent) => void>>();
   private summaries = new Map<string, SessionSummary>();
 
+  private static readonly SESSION_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private static readonly VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
   async createSession(
     nodeId: NodeId,
     points: LocationPointInput[],
@@ -42,7 +46,9 @@ export class LocationBatchSessionManager {
       const { getEphemeralLocationDB } = await import('../database/EphemeralLocationDB.js');
       const db = getEphemeralLocationDB();
       try {
-        await db.clearExpiredSessions(7 * 24 * 60 * 60 * 1000);
+        await db.clearExpiredSessions(LocationBatchSessionManager.SESSION_TTL);
+        await db.clearExpiredPendingSessions(LocationBatchSessionManager.PENDING_TTL);
+        await db.clearExpiredVectorTiles(LocationBatchSessionManager.VECTOR_TILE_TTL);
       } catch (error) {
         if (isDevEnvironment) {
           console.warn('[LocationBatchSessionManager] clearExpiredSessions failed', error);

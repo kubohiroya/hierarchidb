@@ -555,6 +555,13 @@
     - [ ] セッション実装/テスト
     - [ ] 進捗発火置換
     - [ ] UI 影響の回帰確認
+  - 運用ログ：
+    - progress: 2025-10-06 14:42 EphemeralLocationDB の `pendingSessions` / `sessions` / `vectorTiles` に TTL を適用し、`LocationBatchSessionManager`・`UnifiedLocationBatchManager`・`SessionController` 間の再実行時に既存タイルを初期化するフローを結線。
+    - progress: 2025-10-06 14:48 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` を実行し、TTL 実装後も型検証がグリーンであることを確認。
+    - progress: 2025-10-06 15:12 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationVectorTileService UnifiedLocationBatchManager` を実行し、Vitest がグリーンで完了。
+    - blocked: 2025-10-06 15:26 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` は sandbox の書き込み制約 (EPERM) で失敗。ユーザー環境で同コマンドを実行いただきグリーン結果を確認。
+    - blocked: 2025-10-06 15:34 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationBatchParametersStep` も同様に Vitest の設定ファイル書き込みで EPERM。ユーザー環境での実行を依頼。
+    - blocked: 2025-10-06 15:46 `pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationMapPreviewStep` も EPERM により未実行。Map preview step は Dexie/VectorTileService モックで単体テストを用意済み、ユーザー環境での実行を依頼。
 
 - refactor/shape/batch-to-session（Shape の Batch 責務集約）
   - ブランチ: `refactor/shape/batch-to-session`

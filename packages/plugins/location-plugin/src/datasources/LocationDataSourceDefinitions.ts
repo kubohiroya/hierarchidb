@@ -15,6 +15,10 @@ export interface LocationDataSourceBase {
   baseUrl: string;
   /** License type */
   license: string;
+  /** License reference URL */
+  licenseUrl?: string;
+  /** Attribution string required by the provider */
+  attribution?: string;
   /** Update frequency */
   updateFrequency: 'realtime' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'irregular';
   /** Supported location types */
@@ -48,6 +52,8 @@ export const OpenStreetMapOverpassDataSource: LocationDataSourceBase = {
   name: 'OpenStreetMap (Overpass API)',
   baseUrl: 'https://overpass-api.de/',
   license: 'ODbL 1.0',
+  licenseUrl: 'https://opendatacommons.org/licenses/odbl/',
+  attribution: '© OpenStreetMap contributors',
   updateFrequency: 'realtime',
   supportedTypes: ['all'],
   availableAttributes: [
@@ -71,6 +77,8 @@ export const OpenStreetMapNominatimDataSource: LocationDataSourceBase = {
   name: 'OpenStreetMap (Nominatim)',
   baseUrl: 'https://nominatim.openstreetmap.org/',
   license: 'ODbL 1.0',
+  licenseUrl: 'https://opendatacommons.org/licenses/odbl/',
+  attribution: '© OpenStreetMap contributors',
   updateFrequency: 'realtime',
   supportedTypes: ['all'],
   availableAttributes: [
@@ -95,6 +103,8 @@ export const GeoNamesDataSource: LocationDataSourceBase = {
   name: 'GeoNames',
   baseUrl: 'https://www.geonames.org/',
   license: 'CC BY 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+  attribution: 'Data provided by GeoNames',
   updateFrequency: 'daily',
   supportedTypes: ['all'],
   availableAttributes: [
@@ -120,6 +130,8 @@ export const NaturalEarthDataSource: LocationDataSourceBase = {
   name: 'Natural Earth',
   baseUrl: 'https://www.naturalearthdata.com/',
   license: 'Public Domain',
+  licenseUrl: 'https://www.naturalearthdata.com/about/terms-of-use/',
+  attribution: 'Map data by Natural Earth',
   updateFrequency: 'irregular',
   supportedTypes: ['administrative', 'airport', 'port'],
   availableAttributes: [
@@ -139,6 +151,8 @@ export const OurAirportsDataSource: LocationDataSourceBase = {
   name: 'OurAirports',
   baseUrl: 'https://ourairports.com/data/',
   license: 'Public Domain',
+  licenseUrl: 'https://ourairports.com/data/',
+  attribution: 'Data courtesy of OurAirports.com',
   updateFrequency: 'weekly',
   supportedTypes: ['airport'],
   availableAttributes: [
@@ -158,6 +172,8 @@ export const OpenFlightsDataSource: LocationDataSourceBase = {
   name: 'OpenFlights',
   baseUrl: 'https://openflights.org/data.html',
   license: 'ODbL 1.0',
+  licenseUrl: 'https://opendatacommons.org/licenses/odbl/',
+  attribution: 'OpenFlights project',
   updateFrequency: 'irregular',
   supportedTypes: ['airport', 'station'],
   availableAttributes: [
@@ -177,6 +193,8 @@ export const WorldPortIndexDataSource: LocationDataSourceBase = {
   name: 'World Port Index',
   baseUrl: 'https://msi.nga.mil/Publications/WPI',
   license: 'Public Domain',
+  licenseUrl: 'https://msi.nga.mil/Publications/WPI',
+  attribution: 'World Port Index (U.S. National Geospatial-Intelligence Agency)',
   updateFrequency: 'yearly',
   supportedTypes: ['port'],
   availableAttributes: [

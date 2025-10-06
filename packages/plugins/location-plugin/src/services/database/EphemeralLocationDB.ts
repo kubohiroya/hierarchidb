@@ -68,7 +68,7 @@ export class EphemeralLocationDB extends Dexie {
   }
 
   async clearSession(sessionId: string) {
-    await this.vectorTiles.where('sessionId').equals(sessionId).delete();
+    await this.clearVectorTilesForSession(sessionId);
     if (this.sessions) await this.sessions.where('sessionId').equals(sessionId).delete();
   }
 
@@ -85,6 +85,22 @@ export class EphemeralLocationDB extends Dexie {
       }
     });
     return sessionIds.length;
+  }
+
+  async clearExpiredPendingSessions(ttlMs: number): Promise<number> {
+    const threshold = Date.now() - ttlMs;
+    const collection = this.pendingSessions.where('storedAt').below(threshold);
+    return collection.delete();
+  }
+
+  async clearExpiredVectorTiles(ttlMs: number): Promise<number> {
+    const threshold = Date.now() - ttlMs;
+    const collection = this.vectorTiles.where('timestamp').below(threshold);
+    return collection.delete();
+  }
+
+  async clearVectorTilesForSession(sessionId: string): Promise<void> {
+    await this.vectorTiles.where('sessionId').equals(sessionId).delete();
   }
 }
 

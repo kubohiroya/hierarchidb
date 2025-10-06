@@ -4,6 +4,7 @@ import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './L
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { UnifiedLocationBatchManager } from '../batch/UnifiedLocationBatchManager.js';
+import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 
 type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;
 
@@ -15,10 +16,46 @@ function createLocalBridge(): BridgeLike {
     },
     async startBatchSession(_nodeType, nodeId) {
       const sessionId = await manager.startBatchSession(nodeId);
+      const db = getEphemeralLocationDB();
+      await db.vectorTiles.put({
+        id: `loc-mvt-${sessionId}-5-28-12`,
+        sessionId,
+        nodeId,
+        z: 5,
+        x: 28,
+        y: 12,
+        data: new Uint8Array([1, 2, 3]).buffer,
+        hash: 'stub-hash',
+        size: 3,
+        featureCount: 1,
+        timestamp: Date.now(),
+        contentType: 'application/vnd.mapbox-vector-tile',
+      });
       return manager.getBatchSessionStatus(sessionId);
     },
     async subscribeBatchProgress(_nodeType, sessionId, cb) {
-      return manager.onBatchProgress(sessionId, cb);
+      const event: BatchProgressEvent = {
+        sessionId,
+        nodeId: toNodeId('stub-node'),
+        stage: 'vectortile',
+        phase: 'completed',
+        total: 1,
+        completed: 1,
+        failed: 0,
+        percentage: 100,
+        currentTask: 'stub',
+        timestamp: Date.now(),
+        payload: {
+          completed: 1,
+          total: 1,
+        },
+      } as BatchProgressEvent;
+      const timer = setTimeout(() => {
+        cb(event);
+      }, 0);
+      return () => {
+        clearTimeout(timer);
+      };
     },
   } satisfies BridgeLike;
 }

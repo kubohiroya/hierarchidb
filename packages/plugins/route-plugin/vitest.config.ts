@@ -9,7 +9,7 @@ const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry
 
 export default defineConfig({
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     globals: true,
     setupFiles: [path.resolve(__dirname, '../../../vitest.setup.ts')],
     pool: 'threads',

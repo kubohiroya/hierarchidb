@@ -123,3 +123,36 @@ type LocationPointPayloadBySource = {
 - データソース別のパーサ／バリデータを `services/datasources` で拡張可能にする。
 - 既存の `LocationVectorTileService` を活用しつつ、`prepareSession` 時の設定（タイル解像度、並列数など）を `LocationBatchConfig` で指定できるようにする。
 - セッション再開／クリーンアップ／ログ蓄積などの運用周りは Shape Plugin と同様に Dexie のセッションテーブルを活用し、未完了セッション検知や LRU クリーニングを実装する。
+
+### 8. セッション管理の DoD とテスト方針
+
+UnifiedLocationBatchManager と LocationBatchSessionManager の組み合わせで、次の条件を満たすことを完了条件（Definition of Done）とする。
+
+1. **prepareSession**
+   - `pendingSessions`（Dexie v4）へ `points`・`settings`・`config` を必ず保存する。
+   - TTL によるクリーンアップを実装し、テストでは `storedAt` を偽装して削除されることを確認する。
+
+2. **startBatchSession**
+   - `pendingSessions` からデータを取り出し、`sessions` に `status=running`・`totalPoints`・`zoomMin/zoomMax` を記録する。
+   - LocationPoints の永続化（`appendLocationPoints`）完了後にタイル生成へ進む。統合テストでは `LocationEntitiesDB` に書き込まれるレコード数をアサートする。
+
+3. **progress / completion**
+   - `onBatchProgress` で `sessions.progress` と `status` が更新され、完了時は `completed`、失敗時は `failed` となる。
+   - Dexie の値を読み出して検証するユニットテストを用意する。
+
+4. **resume / pause / cancel**
+   - `resume(sessionId)` 呼び出し時に `sessions` の状態が `running` に戻ること。
+   - Pause / Cancel は `LocationBatchSession` への委譲を spy で確認する。`UnifiedLocationBatchManager.test.ts` に pause / resume / cancel の委譲テストを追加済み。
+
+5. **ベクトルタイル生成**
+   - `LocationVectorTileService` を介して生成したタイルが `vectorTiles` に保存され、`hash` と `featureCount` を保持する。
+   - 再生成時は `clearSession` → `bulkPut` の流れで上書きされる。
+
+#### 推奨テスト追加
+- `services/batch/__tests__/UnifiedLocationBatchManager.test.ts`
+  - pending → start → progress → completion の一連フローをモック化し、Dexie のレコードをアサート（実装済み）。
+  - Pause/Resume/Cancel が `LocationBatchSessionManager` を呼ぶか spy で確認（実装済み）。
+- `services/pointRepository.test.ts`（新規）
+  - `appendLocationPoints` / `replaceLocationPoints` / `clearLocationPoints` が Dexie 永続テーブルへ反映されること。
+- `services/tiles/LocationVectorTileService.test.ts`
+  - タイル生成→保存と `clearSession` の挙動を確認。

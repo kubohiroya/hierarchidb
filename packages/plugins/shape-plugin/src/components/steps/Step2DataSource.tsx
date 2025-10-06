@@ -1,7 +1,6 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
-//  @hierarchidb/_app-datasource
-//  import_app-datasource
+import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
 import type { DataSourceName, StepProps } from '../../shared';
 import { DATA_SOURCE_CONFIGS } from '../../mock/data';
 
@@ -10,6 +9,18 @@ import { DATA_SOURCE_CONFIGS } from '../../mock/data';
  * Uses @hierarchidb/_app-datasource components for data source selection
  */
 export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
+  const options: DataSourceOption[] = Object.values(DATA_SOURCE_CONFIGS).map((source) => ({
+    id: source.name,
+    name: source.displayName,
+    description: source.description,
+    icon: source.icon,
+    metadata: {
+      license: source.license,
+      licenseUrl: source.licenseUrl,
+      attribution: source.attribution,
+    },
+  }));
+
   const handleDataSourceSelect = (dataSourceName: DataSourceName) => {
     onUpdate({
       dataSourceName,
@@ -28,35 +39,13 @@ export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, di
         licensing requirements.
       </Typography>
 
-      {/* TODO: Replace with actual DataSourceSelector from @hierarchidb/_app-datasource */}
       <Box sx={{ mt: 3 }}>
-        {Object.values(DATA_SOURCE_CONFIGS).map((source) => (
-          <Box
-            key={source.name}
-            sx={{
-              p: 2,
-              mb: 2,
-              border: 2,
-              borderColor: workingCopy.dataSourceName === source.name ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              cursor: disabled ? 'default' : 'pointer',
-              bgcolor:
-                workingCopy.dataSourceName === source.name ? 'action.selected' : 'background.paper',
-              '&:hover': disabled ? {} : { bgcolor: 'action.hover' },
-            }}
-            onClick={() => !disabled && handleDataSourceSelect(source.name)}
-          >
-            <Typography variant="subtitle1">
-              {source.icon} {source.displayName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {source.description}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              License: {source.license} | Max Level: {source.maxAdminLevel}
-            </Typography>
-          </Box>
-        ))}
+        <DataSourceSelector
+          options={options}
+          value={workingCopy.dataSourceName ?? options[0]?.id ?? ''}
+          onChange={(next) => handleDataSourceSelect(next as DataSourceName)}
+          disabled={disabled}
+        />
       </Box>
     </Box>
   );

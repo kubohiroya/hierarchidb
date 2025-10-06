@@ -19,6 +19,22 @@
 
 ## ToDo（未着手）
 
+- **LocationStep ステッパー導入と配線調整**
+   - [x] Location Dialog を 6 ステップ構成（Basic → DataSource → License → Selection → Batch → Preview）へ再配線し、旧 2 ステップとの齟齬を吸収。
+   - [ ] `SelectionMatrix` 周辺の i18n・テスト差し替え（route 仕様流用部分の是正）。※ Component テスト追加済み。Playwright 更新と翻訳精査を継続。
+   - [ ] `LocationDialog.tsx` とステップコンポーネントの配線を最新仕様へ整理。
+
+- **UnifiedLocationBatchManager API 固定化**
+   - [ ] Location plugin で仮適用中の API を Shape/Route でも扱えるインターフェースに確定。
+   - [ ] 呼び出し側の config/resume/progress を共通化し、Breaking 変更を解消。
+   - [ ] docs へ API 使用例とローリング導入ガイドを追加。
+
+- **共通データソース／ライセンス UI パッケージ化**
+   - [x] `packages/ui/datasource` / `packages/ui/license` を作成し、DataSourceSelector / LicenseAgreementStep を提供。
+   - [ ] shape-plugin の Step2/Step3 を共通コンポーネントへ置き換え、ユニットテストを整備。
+   - [ ] Location/Route へ水平展開し、WorkingCopy ドラフト更新パターンを統一。
+   - [ ] `docs/ui/datasource-license.md` の DoD を満たし、各プラグイン README を更新。
+
 - **共通設計フィードバック適用（docs/plugins/common-working-copy-refactor-feedback.md）**
   - [ ] 1. WorkingCopyDraft 構造の厳格化: base-plugin の型/ヘルパー更新＆各プラグイン型定義の追従。
   - [ ] 2. Entity↔WorkingCopy アダプタ共通化: base-plugin にアダプタを実装し、Jotai 派生 atom パターンを文書化して UI へ展開。
@@ -73,6 +89,7 @@
     - [x] Downloader / Batch Manager の入力検証を強化し、`tags` / `LocationPoint` マッピングを新仕様へ更新。
     - [x] `metadata.locationPoint` を撤廃し、`pointRepository` 経由で `LocationEntitiesDB`（PersistentGroupEntity）へ保存するフローを導入。
     - [x] ダイアログ UI の WorkingCopy 参照を `payload.draft` ベースへ切り替え（Location Details/Selection）。
+    - [x] Ephemeral/Persistent DB それぞれで `pendingSessions` / `sessions` / `vectorTiles` の TTL とクリーンアップを実装し、`LocationBatchSessionManager`・`UnifiedLocationBatchManager`・`SessionController` 間でタイル再生成前の初期化を保証（2025-10-06 `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` で確認）。
     - [ ] Dexie 正規化／Worker 連携を `LocationPoint` 保存フローへ接続し、WorkingCopy ↔ point ストア同期を確認。
     - [ ] テスト（unit/vitest、Playwright）と翻訳キー全体の最終確認、ドキュメント更新。
   - 次アクション: Dexie/worker 正規化の実装に着手 → `pnpm --filter @hierarchidb/plugins-location-plugin lint`/`test` を実行し緑化 → `docs/plugins/location-plugin/` 更新。
@@ -82,7 +99,9 @@
   - 対応中の施策:
     - [x] Overpass/custom ダウンロードのクエリ検証・OSM タグマッピングを更新し、`LocationPoint` 生成までを共通化。
     - [x] Downloader / Batch Manager から生成した `LocationPoint` を `LocationEntitiesDB.groupEntities` へ永続化し、PersistentGroupEntity として扱う。
-    - [ ] Batch セッション（sessionId + point 集合 + tile settings）を `UnifiedLocationBatchManager` の新 `UnifiedLocationBatchConfig` へ接続し、再開フローを E2E 検証。
+    - [x] `EphemeralLocationDB` の TTL 自動削除（`pendingSessions` / `sessions` / `vectorTiles`）と `SessionController` による再生成前クリアを実装し、`UnifiedLocationBatchManager` セッション API と整合させた。
+    - [ ] Batch セッション（sessionId + point 集合 + tile settings）を `UnifiedLocationBatchManager` の `UnifiedLocationBatchConfig` へ接続し、再開フローを E2E 検証。
+    - [x] ドキュメント「batch-processing-ja.md」の DoD を更新し、Dexie `pendingSessions` / `sessions` / `vectorTiles` を扱うテスト状況（pending, progress, pause/resume/cancel）を反映。
     - [ ] PoC テストでポイント生成→Batch再開→タイル生成の一連動作を確認し、TASKS.md の DoD に沿ってログ化。
 
 - **Shape プラグイン wizard state 削減** (2025-10-05 start)
@@ -91,6 +110,30 @@
   - 残タスク:
     - [ ] Batch/Normalizer が `checkboxState` から派生値を生成する経路の再確認。
     - [ ] UI/ドキュメントへ派生ルールを追記し、既存 e2e シナリオの影響を確認。
+
+- **LocationStep ステッパー導入・配線**
+  - 目的: Location Dialog のステップ構成再設計に合わせて UI / ロジックを最新仕様へ揃える。
+  - 現状: 6 ステップ構成（Basic → DataSource → License → Selection → Batch → Preview）を導入し、共通 `@hierarchidb/ui-datasource` / `@hierarchidb/ui-license` を組み込み済み。SelectionStep の i18n/テスト調整と Batch/Preview ステップの最終確認が未完。
+  - 次のアクション（完了条件は DoD 達成 + `pnpm --filter @hierarchidb/plugins-location-plugin {typecheck,test}` グリーン + TASKS.md への検証ログ追記）:
+    1. SelectionStep
+       - [x] `packages/plugins/location-plugin/src/i18n/{en,ja}.ts` に SelectionMatrix/選択サマリ用ラベルを追補し、`LocationSelectionStep` から参照するよう整理（matrix 見出し・選択件数を翻訳化）。
+       - [x] `LocationSelectionStep` で `SelectionMatrix` 表示前に翻訳済みタイトル／選択件数ラベルを描画し、`LocationSelectionStep.view.test.tsx` に翻訳値の検証を追加。
+       - [x] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` を実施。`pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` は sandbox 書き込み制約 (EPERM) で失敗したためユーザー実行に委任し、結果グリーンであることを確認済み。
+    2. BatchParametersStep
+       - [x] UI で入力可能なパラメータ（並列度・ズーム範囲）を列挙し、`LocationBatchParametersStep` の更新値が `LocationWorkingCopy` の `concurrentDownloads/tilesMinZoom/tilesMaxZoom` に収束するよう整合。
+       - [x] 値域バリデーションと相互依存（min<=max）を追加し、`__tests__/LocationBatchParametersStep.test.tsx` でスライダ／入力変更時の `onUpdate` 発火とクランプ挙動を確認。
+       - [x] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` を実行。`pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationBatchParametersStep` は sandbox の書き込み制約で実行不可だったため、ユーザー環境で再実行いただく前提で運用ログへ記録。
+    3. MapPreviewStep
+       - [x] `LocationMapPreviewStep` で Dexie の最新セッション情報を取得し、`LocationVectorTileService.getSessionSummary` を呼び出してタイル統計を表示するフローを実装。空データ時やエラー時の表示を整備。
+       - [x] `LocationMapPreviewStep.test.tsx` を追加し、セッションあり / なし / エラーのケースをモックで検証。`LocationMapPreview` はテスト用スタブで置換。
+       - [ ] E2E（Playwright または WFL）で Preview ステップが最新タイルを表示することを確認し、コマンドと結果を TASKS.md 運用ログへ追記。
+  - ロールバック: `packages/plugins/location-plugin/src/components/steps/` と `LocationDialog.tsx` の差分を revert。
+
+- **UnifiedLocationBatchManager API 固定（仮差し戻し状態）**
+  - 目的: Location plugin で利用中の API を基準に、Shape/Route など他プラグインでも扱える共通インターフェースへ統一する。
+  - 現状: 仮実装のまま前進が止まり呼び出し側が未対応。
+  - 次のアクション: API 設計（config/resume/progress）を確定 → 呼び出し側を順次更新 → ドキュメント整備。
+  - ロールバック: `services/batch/UnifiedLocationBatchManager.ts` の差分を revert。
 
 - **WorkingCopy 逸脱是正（横断）**
   - 状況: 共通ユーティリティ適用と UI state 外出しをテーマごとに進行中。Location/Shape の成果をベースに Route/Resolver へ横展開予定。

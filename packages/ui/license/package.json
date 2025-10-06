@@ -1,0 +1,15 @@
+{
+  "name": "@hierarchidb/ui-license",
+  "version": "0.0.1",
+  "description": "Shared license agreement components (WIP)",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}

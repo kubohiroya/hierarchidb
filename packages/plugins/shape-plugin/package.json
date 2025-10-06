@@ -81,6 +81,8 @@
     "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
+    "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",

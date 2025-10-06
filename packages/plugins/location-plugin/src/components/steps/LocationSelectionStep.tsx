@@ -72,7 +72,7 @@ export function buildCheckboxState(
   return state;
 }
 
-function normalizeMatrix(matrix: boolean[][] | undefined, countries: Country[], types: LocationTypeConfig[]): boolean[][] {
+export function normalizeMatrix(matrix: boolean[][] | undefined, countries: Country[], types: LocationTypeConfig[]): boolean[][] {
   const safe = matrix ?? [];
   return countries.map((_, rowIndex) => {
     const row = safe[rowIndex] ?? [];
@@ -98,9 +98,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
     });
   }, [translations]);
 
-  const selectionMatrixSource = workingCopy.payload?.draft?.selectionMatrix
+  const selectionMatrixSource = useMemo(()=> {
+    return workingCopy.payload?.draft?.selectionMatrix
     ?? workingCopy.selectionMatrix
-    ?? [];
+  }, [workingCopy.payload?.draft?.selectionMatrix, workingCopy.selectionMatrix]);
+
   const selectionMatrix = useMemo(() => (
     normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, locationTypes)
   ), [locationTypes, selectionMatrixSource]);
@@ -121,6 +123,13 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
         {translations.selection.alertMessage}
       </Alert>
 
+      <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
+        <Typography variant="h6">{translations.selection.matrixTitle}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {translations.selection.selectedCount}: {selectionMatrix.flat().filter(Boolean).length}
+        </Typography>
+      </Box>
+
       <Box mb={3}>
         <SelectionMatrix
           countries={SAMPLE_COUNTRIES}
@@ -135,6 +144,11 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
           <Settings color="primary" />
           <Typography variant="h6">{translations.selection.settingsTitle}</Typography>
         </Box>
+        {translations.selection.settingsDescription && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {translations.selection.settingsDescription}
+          </Typography>
+        )}
 
         <Tabs
           value={activeTab}
@@ -161,7 +175,9 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
             <Typography variant="subtitle1" gutterBottom>
               {activeType.icon} {activeType.description}
             </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>Configure advanced filters for this type.</Typography>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {translations.selectionSettings.generic?.advancedFilters ?? 'Configure advanced filters for this type.'}
+          </Typography>
 
             {activeType.id === 'airport' && (
               <Grid container spacing={3} columns={{ xs: 12 }}>

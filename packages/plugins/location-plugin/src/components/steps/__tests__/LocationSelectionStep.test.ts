@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildCheckboxState } from '../LocationSelectionStep.js';
+import { buildCheckboxState, normalizeMatrix } from '../LocationSelectionStep.js';
 import type { LocationType } from '../../../types/index.js';
 import type { Country, LocationTypeConfig } from '../../ui/SelectionMatrix.js';
 
@@ -44,5 +44,24 @@ describe('buildCheckboxState', () => {
       AAA: { airport: true, port: true },
       BBB: { port: true },
     });
+  });
+});
+
+describe('normalizeMatrix', () => {
+  it('fills missing rows and columns with false', () => {
+    const matrix = [[true], []];
+    const normalized = normalizeMatrix(matrix, mockCountries, mockTypes);
+    expect(normalized).toEqual([
+      [true, false],
+      [false, false],
+    ]);
+  });
+
+  it('returns empty selections when matrix is undefined', () => {
+    const normalized = normalizeMatrix(undefined, mockCountries, mockTypes);
+    expect(normalized).toEqual([
+      [false, false],
+      [false, false],
+    ]);
   });
 });

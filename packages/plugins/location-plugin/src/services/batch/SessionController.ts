@@ -116,6 +116,11 @@ export class SessionController {
     bbox: [number, number, number, number]
   }) {
     const db = getEphemeralLocationDB();
+    try {
+      await db.clearVectorTilesForSession(this.sessionId);
+    } catch (error) {
+      console.warn('[Location][Session] failed to clear existing vector tiles for session', error);
+    }
     // 1) Persist normalized GeoJSON into shared chunk store so worker can read it
     const json = JSON.stringify(fc);
     const bytes = new TextEncoder().encode(json).buffer;

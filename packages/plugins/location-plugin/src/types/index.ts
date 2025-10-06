@@ -10,6 +10,7 @@ export type { NodeId } from '@hierarchidb/common-type';
 // Entity Types
 // ================================
 
+import type { Timestamp } from '@hierarchidb/common-type';
 import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
 import type {
   LocationEntity as LocationEntityDefinition,
@@ -48,8 +49,14 @@ export type LocationWorkingCopy = WorkingCopyDraft<LocationEntityDefinition> & {
   selectionMatrix?: boolean[][];
   concurrentDownloads?: number;
   licenseAgreement?: boolean;
+  licenseAgreedAt?: Timestamp;
   category?: LocationCategory;
   type?: LocationType;
+  tilesMinZoom?: number;
+  tilesMaxZoom?: number;
+  tags?: string[];
+  name?: string;
+  description?: string;
 };
 
 export interface UpdateLocationData {

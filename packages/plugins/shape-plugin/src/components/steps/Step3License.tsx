@@ -1,6 +1,6 @@
 import type React from 'react';
-import { Alert, AlertTitle, Box, Button, Stack, Typography } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
+import { LicenseAgreementStep } from '@hierarchidb/ui-license';
 import type { StepProps } from '../../shared';
 import { DATA_SOURCE_CONFIGS } from '../../mock/data';
 
@@ -14,7 +14,9 @@ export const Step3License: React.FC<StepProps> = ({ workingCopy, onUpdate, disab
   if (!dataSource) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="warning">Please select a data source first</Alert>
+        <Typography variant="body2" color="text.secondary">
+          Please select a data source first.
+        </Typography>
       </Box>
     );
   }
@@ -35,60 +37,20 @@ export const Step3License: React.FC<StepProps> = ({ workingCopy, onUpdate, disab
       <Typography variant="h6" gutterBottom>
         License Agreement
       </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        Please review and agree to the licensing requirements for {dataSource.displayName}.
-      </Typography>
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <AlertTitle>{dataSource.displayName} License</AlertTitle>
-
-        <Stack spacing={2}>
-          <Typography variant="body2">
-            <strong>License Type:</strong> {dataSource.license}
-          </Typography>
-
-          <Typography variant="body2">
-            <strong>Attribution:</strong> {dataSource.attribution}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            By clicking the button below, you acknowledge that you have read and agree to comply
-            with the licensing requirements.
-          </Typography>
-
-          <Button
-            variant={workingCopy.licenseAgreement ? 'outlined' : 'contained'}
-            color={workingCopy.licenseAgreement ? 'success' : 'warning'}
-            size="large"
-            startIcon={<OpenInNewIcon />}
-            onClick={handleLicenseAgreement}
-            fullWidth
-            disabled={disabled}
-            sx={{ mt: 2 }}
-          >
-            {workingCopy.licenseAgreement
-              ? 'License Agreed - View Details'
-              : 'View License Terms & Agree'}
-          </Button>
-        </Stack>
-      </Alert>
-
-      {workingCopy.licenseAgreement && (
-        <Alert severity="success" sx={{ mt: 2 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <CheckCircleIcon color="success" />
-            <Typography variant="body2">
-              ✓ You have agreed to the {dataSource.license} license terms for{' '}
-              {dataSource.displayName}
-            </Typography>
-          </Stack>
-          {workingCopy.licenseAgreedAt && (
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
-              Agreed on: {new Date(workingCopy.licenseAgreedAt).toLocaleString()}
-            </Typography>
-          )}
-        </Alert>
-      )}
+      <LicenseAgreementStep
+        sourceName={dataSource.displayName}
+        details={{
+          licenseName: dataSource.license,
+          attribution: dataSource.attribution,
+          url: dataSource.licenseUrl,
+        }}
+        state={{
+          agreed: Boolean(workingCopy.licenseAgreement),
+          agreedAt: workingCopy.licenseAgreedAt,
+        }}
+        onAgree={handleLicenseAgreement}
+        disabled={disabled}
+      />
     </Box>
   );
 };

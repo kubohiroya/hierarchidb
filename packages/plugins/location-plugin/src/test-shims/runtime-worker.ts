@@ -1,0 +1,29 @@
+// Minimal stub for @hierarchidb/runtime-worker used in Vitest.
+// Location plugin unit tests do not execute real worker logic; this file
+// satisfies dynamic imports originating from runtime-shared module paths.
+
+export const workerBootstrap = {
+  initialize: async () => undefined,
+};
+
+export const workerAPI = {
+  startBatchSession: async () => ({
+    sessionId: 'stub-session',
+    nodeId: 'stub-node',
+    status: 'running' as const,
+  }),
+  getBatchSessionStatus: async () => ({
+    sessionId: 'stub-session',
+    nodeId: 'stub-node',
+    status: 'running' as const,
+  }),
+  pauseBatchSession: async () => undefined,
+  resumeBatchSession: async () => undefined,
+  cancelBatchSession: async () => undefined,
+  subscribeBatchProgress: async () => () => undefined,
+};
+
+export default {
+  workerBootstrap,
+  workerAPI,
+};

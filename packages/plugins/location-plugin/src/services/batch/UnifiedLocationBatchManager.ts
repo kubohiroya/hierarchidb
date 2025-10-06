@@ -28,9 +28,14 @@ export interface LocationBatchData {
 
 export class UnifiedLocationBatchManager implements IBatchSessionManager {
   private manager: LocationBatchSessionManager;
+  private getDb: () => ReturnType<typeof getEphemeralLocationDB>;
 
-  constructor() {
+  private static readonly PENDING_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private static readonly VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  constructor(dbProvider: typeof getEphemeralLocationDB = getEphemeralLocationDB) {
     this.manager = new LocationBatchSessionManager();
+    this.getDb = () => dbProvider();
   }
 
   /** @internal Test-only injection hook */
@@ -38,8 +43,18 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     this.manager = manager;
   }
 
+  /** @internal Test-only injection hook */
+  setDbProvider(provider: () => ReturnType<typeof getEphemeralLocationDB>): void {
+    this.getDb = provider;
+  }
+
   async prepareSession(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<void> {
-    const db = getEphemeralLocationDB();
+    const db = this.getDb();
+    try {
+      await db.clearExpiredPendingSessions(UnifiedLocationBatchManager.PENDING_TTL);
+    } catch (error) {
+      console.warn('[UnifiedLocationBatchManager] failed to clear expired pending sessions', error);
+    }
     await db.pendingSessions.put({
       nodeId,
       points: data.points,
@@ -50,7 +65,7 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
   }
 
   async startBatchSession(nodeId: NodeId): Promise<BatchSessionId> {
-    const db = getEphemeralLocationDB();
+    const db = this.getDb();
     const pending = await db.pendingSessions.get(nodeId);
     if (!pending) {
       throw new Error(`No pending location batch session for node ${nodeId}`);
@@ -65,6 +80,12 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     }
 
     const summary = await this.manager.createSession(nodeId, points, settings, { concurrency: config?.concurrency });
+    try {
+      await db.clearVectorTilesForSession(summary.sessionId);
+      await db.clearExpiredVectorTiles(UnifiedLocationBatchManager.VECTOR_TILE_TTL);
+    } catch (error) {
+      console.warn('[UnifiedLocationBatchManager] failed to tidy vector tiles', error);
+    }
     await db.sessions?.put({
       sessionId: summary.sessionId,
       nodeId,
@@ -126,7 +147,7 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
       });
       callback(event);
       void (async () => {
-        const db = getEphemeralLocationDB();
+        const db = this.getDb();
         await db.sessions?.update(sessionId, {
           progress: event.payload?.completed,
           updatedAt: Date.now(),

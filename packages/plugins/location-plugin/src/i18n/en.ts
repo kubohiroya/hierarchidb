@@ -80,6 +80,7 @@ export const en: LocationPluginTranslations = {
     alertMessage: 'Select the location data to retrieve. You can specify data by country and location type combinations.',
     matrixTitle: 'Selection Matrix',
     settingsTitle: 'Detailed Settings by Location Type',
+    settingsDescription: 'Adjust filters and thresholds to control how each location type is downloaded.',
     searchPlaceholder: 'Search by country name...',
     continentFilter: 'Continent Filter',
     showSelectedOnly: 'Show Selected Only',
@@ -93,6 +94,8 @@ export const en: LocationPluginTranslations = {
       port: 'Commercial ports, fishing ports, and marinas',
       government: 'Capitals, prefectural offices, and municipal buildings',
       interchange: 'Expressway interchanges and junctions',
+      tourist_attraction: 'Museums, landmarks, and tourist attractions',
+      park: 'National parks, urban parks, and recreational green areas',
     },
   },
 
@@ -149,6 +152,9 @@ export const en: LocationPluginTranslations = {
       includeInterchanges: 'Include interchanges',
       namedOnly: 'Named interchanges only',
       excludeServiceAreas: 'Exclude service and parking areas',
+    },
+    generic: {
+      advancedFilters: 'Configure advanced filters for this type.',
     },
   },
 
@@ -207,6 +213,7 @@ export const en: LocationPluginTranslations = {
   },
 
   mapPreview: {
+    description: 'Preview the generated location points and verify coverage before running batch processing.',
     searchPlaceholder: 'Search locations...',
     visiblePointsLabel: '{visible} / {total}',
     clustersLabel: '{count} clusters',
@@ -225,6 +232,15 @@ export const en: LocationPluginTranslations = {
     clusterRadiusLabel: 'Cluster radius: {value}px',
     maxZoomLabel: 'Maximum zoom: {value}',
     close: 'Close',
+    loading: 'Loading map preview...',
+    error: 'Failed to load map preview: {message}',
+    summary: {
+      tiles: 'Generated tiles: {count}',
+      zoomRange: 'Zoom range: {min} - {max}',
+      size: 'Total size: {size}',
+      layers: 'Layers: {layers}',
+      noData: 'No vector tiles generated yet.',
+    },
     details: {
       englishName: 'English name',
       countryCode: 'Country code',
@@ -247,6 +263,8 @@ export const en: LocationPluginTranslations = {
     detailsStep: 'Data source & license',
     selectionStep: 'Location selection',
     datasetDescription: 'Configure data acquisition and processing parameters',
+    dataSourceDescription: 'Choose the primary provider for location data retrieval.',
+    selectDataSourceFirst: 'Please select a data source first.',
     nameLabel: 'Name',
     descriptionLabel: 'Description',
     dataSourceLabel: 'Data Source',
@@ -256,6 +274,15 @@ export const en: LocationPluginTranslations = {
     displayFullscreen: 'Full screen',
     save: 'Save',
     cancel: 'Cancel',
+  },
+
+  dataSources: {
+    openstreetmap: 'OpenStreetMap (Nominatim)',
+    overpass: 'OpenStreetMap (Overpass API)',
+    geonames: 'GeoNames',
+    wikidata: 'Wikidata',
+    custom: 'Custom dataset',
+    manual: 'Manual entry',
   },
 
   // Location types
@@ -293,6 +320,23 @@ export const en: LocationPluginTranslations = {
     interchange: 'Interchange',
     tourist_attraction: 'Tourist Attraction',
     custom: 'Custom Point',
+  },
+
+  dataSourceDescriptions: {
+    openstreetmap: 'Use Overpass API queries to retrieve points of interest from OpenStreetMap.',
+    overpass: 'Run custom Overpass API scripts optimized for batch processing.',
+    geonames: 'Import administrative and populated place data maintained by GeoNames.',
+    wikidata: 'Fetch globally curated entities and identifiers from Wikidata.',
+    custom: 'Upload CSV/GeoJSON files or connect to bespoke location datasets.',
+    manual: 'Create and maintain point data manually inside HierarchiDB.',
+  },
+
+  processing: {
+    description: 'Configure batch download concurrency and tiling parameters for the generated dataset.',
+    concurrentDownloadsLabel: 'Concurrent downloads',
+    tilingZoomLabel: 'Tile zoom range',
+    minZoom: 'Min zoom',
+    maxZoom: 'Max zoom',
   },
 
   // Categories

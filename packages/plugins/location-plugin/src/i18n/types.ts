@@ -76,6 +76,7 @@ export interface LocationPluginTranslations {
     alertMessage: string;
     matrixTitle: string;
     settingsTitle: string;
+    settingsDescription?: string;
     searchPlaceholder: string;
     continentFilter: string;
     showSelectedOnly: string;
@@ -140,6 +141,9 @@ export interface LocationPluginTranslations {
       namedOnly: string;
       excludeServiceAreas: string;
     };
+    generic?: {
+      advancedFilters: string;
+    };
   };
 
   batch: {
@@ -196,6 +200,7 @@ export interface LocationPluginTranslations {
   };
 
   mapPreview: {
+    description?: string;
     searchPlaceholder: string;
     visiblePointsLabel: string;
     clustersLabel: string;
@@ -227,6 +232,15 @@ export interface LocationPluginTranslations {
       currentLocation: string;
       settings: string;
     };
+    loading?: string;
+    error?: string;
+    summary?: {
+      tiles: string;
+      zoomRange: string;
+      size: string;
+      layers: string;
+      noData: string;
+    };
   };
 
   dialog: {
@@ -236,6 +250,8 @@ export interface LocationPluginTranslations {
     detailsStep: string;
     selectionStep: string;
     datasetDescription: string;
+    dataSourceDescription?: string;
+    selectDataSourceFirst?: string;
     nameLabel: string;
     descriptionLabel: string;
     dataSourceLabel: string;
@@ -245,6 +261,17 @@ export interface LocationPluginTranslations {
     displayFullscreen: string;
     save: string;
     cancel: string;
+  };
+
+  dataSources: Record<string, string>;
+  dataSourceDescriptions: Record<string, string>;
+
+  processing?: {
+    description?: string;
+    concurrentDownloadsLabel?: string;
+    tilingZoomLabel?: string;
+    minZoom?: string;
+    maxZoom?: string;
   };
 
   locationTypes: {

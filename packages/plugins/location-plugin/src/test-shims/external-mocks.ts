@@ -1,9 +1,27 @@
 export class BatchService {
-  // minimal surface to satisfy imports in tests
+  async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>, _options?: { concurrency?: number }): Promise<R[]> {
+    const results: R[] = [];
+    for (const item of items) {
+      results.push(await mapper(item));
+    }
+    return results;
+  }
 }
 
 export class TabularWriter {
-  // minimal surface to satisfy imports in tests
+  constructor(_namespace: string) {}
+
+  async begin(_config: { filename: string; columns: string[] }) {
+    // no-op for tests
+  }
+
+  async writeRows<T>(_rows: T[]): Promise<void> {
+    // no-op
+  }
+
+  async commit(): Promise<{ tableId: string }> {
+    return { tableId: 'test-table-id' };
+  }
 }
 
 // default exports expected by SessionController

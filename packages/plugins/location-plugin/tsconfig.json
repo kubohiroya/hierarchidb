@@ -12,6 +12,18 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/ui-datasource": [
+        "../../ui/datasource/src/index.ts"
+      ],
+      "@hierarchidb/ui-datasource/*": [
+        "../../ui/datasource/src/*"
+      ],
+      "@hierarchidb/ui-license": [
+        "../../ui/license/src/index.ts"
+      ],
+      "@hierarchidb/ui-license/*": [
+        "../../ui/license/src/*"
       ]
     }
   },

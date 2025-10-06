@@ -1,6 +1,5 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep.js';
 import { RouteType, TransportMode, type RouteWorkingCopy } from '../types/index.js';
 import { en as enTranslations } from '../i18n/en.js';

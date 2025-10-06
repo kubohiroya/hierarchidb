@@ -74,7 +74,6 @@ export const ja: LocationPluginTranslations = {
     subtitle: '取得する地点データを選択してください。国と地点タイプの組み合わせでデータを指定できます。',
     alertMessage: '取得する地点データを選択してください。国と地点タイプの組み合わせでデータを指定できます。',
     matrixTitle: '選択マトリックス',
-    settingsTitle: '地点タイプ別詳細設定',
     searchPlaceholder: '国名で検索...',
     continentFilter: '大陸フィルター',
     showSelectedOnly: '選択済みのみ表示',
@@ -82,12 +81,16 @@ export const ja: LocationPluginTranslations = {
     deselectAll: 'すべて解除',
     selectedCount: '選択数',
     estimatedSize: '推定データサイズ',
+    settingsTitle: '地点タイプごとの詳細設定',
+    settingsDescription: 'ダウンロード対象の地点タイプごとにフィルタやしきい値を調整します。',
     typeDescriptions: {
       airport: '民間・軍用空港、飛行場',
       railway_station: '鉄道駅、地下鉄駅',
       port: '商港、漁港、マリーナ',
       government: '首都、県庁所在地、市役所',
       interchange: 'インターチェンジ、ジャンクション',
+      tourist_attraction: '博物館・ランドマークなどの観光名所',
+      park: '国立公園や都市公園などの緑地',
     },
   },
 
@@ -145,6 +148,9 @@ export const ja: LocationPluginTranslations = {
       namedOnly: '名称付きのみ',
       excludeServiceAreas: 'SA/PA除外',
     },
+    generic: {
+      advancedFilters: 'この地点タイプに対する詳細フィルタを設定します。',
+    },
   },
 
   batch: {
@@ -201,6 +207,7 @@ export const ja: LocationPluginTranslations = {
   },
 
   mapPreview: {
+    description: 'バッチ処理の前に生成される地点データの範囲と密度を確認できます。',
     searchPlaceholder: '地点を検索...',
     visiblePointsLabel: '{visible} / {total}',
     clustersLabel: '{count} クラスター',
@@ -219,6 +226,15 @@ export const ja: LocationPluginTranslations = {
     clusterRadiusLabel: 'クラスタ半径: {value}px',
     maxZoomLabel: '最大ズーム: {value}',
     close: '閉じる',
+    loading: 'マッププレビューを読み込み中...',
+    error: 'マッププレビューの取得に失敗しました: {message}',
+    summary: {
+      tiles: '生成タイル数: {count}',
+      zoomRange: 'ズーム範囲: {min}〜{max}',
+      size: '合計サイズ: {size}',
+      layers: 'レイヤー: {layers}',
+      noData: 'まだベクトルタイルが生成されていません。',
+    },
     details: {
       englishName: '英語名',
       countryCode: '国コード',
@@ -241,6 +257,8 @@ export const ja: LocationPluginTranslations = {
     detailsStep: 'データソースとライセンス',
     selectionStep: '地点の選択',
     datasetDescription: '取得および処理の設定を構成します',
+    dataSourceDescription: '地点データの取得先となる提供者を選択してください。',
+    selectDataSourceFirst: '先にデータソースを選択してください。',
     nameLabel: '名前',
     descriptionLabel: '説明',
     dataSourceLabel: 'データソース',
@@ -250,6 +268,32 @@ export const ja: LocationPluginTranslations = {
     displayFullscreen: '全画面',
     save: '保存',
     cancel: 'キャンセル',
+  },
+
+  dataSources: {
+    openstreetmap: 'OpenStreetMap（Nominatim）',
+    overpass: 'OpenStreetMap（Overpass API）',
+    geonames: 'GeoNames',
+    wikidata: 'Wikidata',
+    custom: 'カスタムデータセット',
+    manual: '手動入力',
+  },
+
+  dataSourceDescriptions: {
+    openstreetmap: 'OpenStreetMap 公式の Nominatim を利用して地点情報を検索します。',
+    overpass: 'Overpass API へのクエリを用いて柔軟に地点データを取得します。',
+    geonames: 'GeoNames が提供する行政区画や地名データを取り込みます。',
+    wikidata: 'Wikidata のグローバルなエンティティ情報を参照します。',
+    custom: 'CSV や GeoJSON などの独自データセットをアップロードして利用します。',
+    manual: 'HierarchiDB 上で地点を手入力し、細かく管理します。',
+  },
+
+  processing: {
+    description: 'バッチ処理で使用するダウンロード並列度やタイル化のパラメータを設定します。',
+    concurrentDownloadsLabel: '同時ダウンロード数',
+    tilingZoomLabel: 'タイル化ズーム範囲',
+    minZoom: '最小ズーム',
+    maxZoom: '最大ズーム',
   },
 
   locationTypes: {

@@ -67,6 +67,8 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-shared-batch-processor": "workspace:*",

@@ -112,6 +112,18 @@
       "@hierarchidb/ui-core/*": [
         "packages/ui/core/src/*"
       ],
+      "@hierarchidb/ui-datasource": [
+        "packages/ui/datasource/src/index.ts"
+      ],
+      "@hierarchidb/ui-datasource/*": [
+        "packages/ui/datasource/src/*"
+      ],
+      "@hierarchidb/ui-license": [
+        "packages/ui/license/src/index.ts"
+      ],
+      "@hierarchidb/ui-license/*": [
+        "packages/ui/license/src/*"
+      ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"
       ],

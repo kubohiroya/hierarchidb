@@ -1,0 +1,71 @@
+/**
+ * Location Basic Information Step
+ */
+
+import type React from 'react';
+import { useMemo } from 'react';
+import { Box, TextField, Typography } from '@mui/material';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
+import type { LocationWorkingCopy } from '../../types/index.js';
+import { useTranslation } from '../../i18n/index.js';
+
+interface LocationBasicInfoStepProps {
+  workingCopy: LocationWorkingCopy;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+}
+
+export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({ workingCopy, onUpdate }) => {
+  const { translations } = useTranslation();
+
+  const { name, description, tags } = useMemo(() => {
+    const draft = ((workingCopy.payload?.draft as Partial<LocationWorkingCopy> | undefined) ?? workingCopy) as LocationWorkingCopy;
+    return {
+      name: draft.name ?? '',
+      description: draft.description ?? '',
+      tags: draft.tags ?? [],
+    };
+  }, [workingCopy]);
+
+  const handleBasicInfoChange = (updates: { name?: string; description?: string }) => {
+    const patch: Partial<LocationWorkingCopy> = {};
+    if (updates.name !== undefined) {
+      patch.name = updates.name;
+    }
+    if (updates.description !== undefined) {
+      patch.description = updates.description;
+    }
+    if (Object.keys(patch).length > 0) {
+      onUpdate(patch);
+    }
+  };
+
+  return (
+    <Box display="flex" flexDirection="column" gap={3}>
+      <BasicInfoFields
+        value={{ name, description }}
+        onChange={handleBasicInfoChange}
+        nameLabel={translations.basicInfo.nameLabel}
+        nameHelperText={translations.basicInfo.nameHelperText}
+        nameRequiredText={translations.errors.nameRequired}
+        descriptionLabel={translations.basicInfo.descriptionLabel}
+        descriptionHelperText={translations.basicInfo.descriptionHelperText}
+      />
+
+      <Box>
+        <Typography variant="subtitle1" gutterBottom>
+          {translations.basicInfo.tagsLabel}
+        </Typography>
+        <TextField
+          fullWidth
+          value={tags.join(', ')}
+          onChange={(event) => {
+            const next = event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean);
+            onUpdate({ tags: next });
+          }}
+          placeholder={translations.basicInfo.tagsPlaceholder}
+          helperText={translations.basicInfo.tagsHelperText}
+        />
+      </Box>
+    </Box>
+  );
+};

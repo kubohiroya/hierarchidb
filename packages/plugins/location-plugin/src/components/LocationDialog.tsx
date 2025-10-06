@@ -10,6 +10,7 @@ import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import type {
   LocationDialogProps,
   LocationWorkingCopy,
+  LocationDataSource,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 import {
@@ -31,19 +32,12 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
+import { LocationBasicInfoStep } from './steps/LocationBasicInfoStep.js';
+import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
+import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
-import { LocationDetailsStep } from '../ui/components/LocationDetailsStep.js';
-
-const DATA_SOURCE_LABELS = {
-  openstreetmap: 'OpenStreetMap',
-  geonames: 'GeoNames',
-  wikidata: 'Wikidata',
-  overpass: 'Overpass API',
-  custom: 'Custom Source',
-  manual: 'Manual Entry',
-} as const;
-
-type DataSourceLabelKey = keyof typeof DATA_SOURCE_LABELS;
+import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
+import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
   value ? `${value}` : undefined;
@@ -105,31 +99,63 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy>>>(() => ([
     {
-      id: 'details',
-      label: translations.dialog.detailsStep,
+      id: 'basic-info',
+      label: translations.basicInfo.title,
       component: ({ data, onChange }) => (
-        <LocationDetailsStep
-          workingCopy={data}
-          onUpdate={(updates) => onChange(updates)}
-        />
+        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} />
+      ),
+    },
+    {
+      id: 'data-source',
+      label: translations.dialog.dataSourceLabel,
+      component: ({ data, onChange }) => (
+        <LocationDataSourceStep workingCopy={data} onUpdate={onChange} />
+      ),
+    },
+    {
+      id: 'license',
+      label: translations.dialog.licenseAgreementLabel,
+      component: ({ data, onChange }) => (
+        <LocationLicenseStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'selection',
-      label: translations.dialog.selectionStep,
+      label: translations.selection.title,
       component: ({ data, onChange }) => (
-        <LocationSelectionStep
-          workingCopy={data}
-          onUpdate={(updates) => {
-            onChange(updates);
-          }}
-        />
+        <LocationSelectionStep workingCopy={data} onUpdate={onChange} />
       ),
     },
-  ]), [translations.dialog.detailsStep, translations.dialog.selectionStep]);
+    {
+      id: 'batch-parameters',
+      label: translations.panel.processingSettings,
+      component: ({ data, onChange }) => (
+        <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
+      ),
+    },
+    {
+      id: 'map-preview',
+      label: translations.mapPreview?.title ?? 'Map Preview',
+      component: ({ data }) => (
+        <LocationMapPreviewStep workingCopy={data} />
+      ),
+    },
+  ]), [
+    translations.basicInfo.title,
+    translations.dialog.dataSourceLabel,
+    translations.dialog.licenseAgreementLabel,
+    translations.selection.title,
+    translations.panel.processingSettings,
+    translations.mapPreview?.title,
+  ]);
 
   const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
   const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
+
+  const resolveDataSourceLabel = useCallback((value?: LocationDataSource) => {
+    if (!value) return '—';
+    return translations.dataSources?.[value] ?? value;
+  }, [translations.dataSources]);
 
   const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
     const viewport = getViewportSize();
@@ -241,46 +267,51 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
 
   const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationWorkingCopy>) => {
-    const activeStep = propsContent.activeStep;
-    if (!activeStep) return null;
+    const ActiveComponent = propsContent.activeStep?.component;
+    if (!ActiveComponent) return null;
 
-    const ActiveComponent = activeStep.component;
-
-    const dataSourceKey = (propsContent.stepData.dataSource as DataSourceLabelKey) ?? 'openstreetmap';
+    const dataSourceKey = (propsContent.stepData.dataSource as LocationDataSource) ?? 'openstreetmap';
     const licenseAgreementValue = Boolean(propsContent.stepData.licenseAgreement);
     const concurrentDownloadsValue = propsContent.stepData.concurrentDownloads ?? 2;
+    const selectionCount = propsContent.stepData.selectionMatrix?.reduce((count, row) => (
+      count + row.filter(Boolean).length
+    ), 0) ?? 0;
 
     return (
       <Box sx={{ pt: 2, px: 2 }}>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           {translations.dialog.datasetDescription}
         </Typography>
-        <Grid container columnSpacing={2} sx={{ mb: 3 }}>
-          <Grid size="auto">
+        <Grid container columnSpacing={2} sx={{ mb: 3 }} columns={{ xs: 12 }}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography variant="caption" color="text.secondary">{translations.dialog.dataSourceLabel}</Typography>
-            <Typography variant="body2">{DATA_SOURCE_LABELS[dataSourceKey] ?? dataSourceKey}</Typography>
+            <Typography variant="body2">{resolveDataSourceLabel(dataSourceKey)}</Typography>
           </Grid>
-          <Grid size="auto">
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography variant="caption" color="text.secondary">{translations.dialog.licenseAgreementLabel}</Typography>
             <Typography variant="body2">{licenseAgreementValue ? translations.common.enabled : translations.common.disabled}</Typography>
           </Grid>
-          <Grid size="auto">
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography variant="caption" color="text.secondary">{translations.panel.concurrentDownloads}</Typography>
             <Typography variant="body2">{concurrentDownloadsValue}</Typography>
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Typography variant="caption" color="text.secondary">{translations.selection?.selectedCount ?? 'Selected entries'}</Typography>
+            <Typography variant="body2">{selectionCount}</Typography>
           </Grid>
         </Grid>
 
         <ActiveComponent
           stepIndex={propsContent.activeStepIndex ?? 0}
-          stepId={activeStep.id}
-          label={activeStep.label}
+          stepId={propsContent.activeStep?.id ?? ''}
+          label={propsContent.activeStep?.label ?? ''}
           data={propsContent.stepData}
           onChange={propsContent.onStepDataChange}
           invalidMessages={propsContent.invalidMessageMap}
         />
       </Box>
     );
-  }, [translations]);
+  }, [resolveDataSourceLabel, translations]);
 
   const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
