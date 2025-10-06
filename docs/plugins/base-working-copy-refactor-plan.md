@@ -1,72 +1,70 @@
 # Working Copy Refactor Plan
 
-_最終更新: 2025-10-06_
+最終更新: 2025-10-06
 
 ## 現状整理
 
 - `WorkingCopyBase<TEntity>` は `draft: Partial<TEntity>` を保持しつつ、`WorkingCopyDraft<TEntity>` が `WorkingCopyBase<TEntity> & Partial<TEntity>` という型合成になっている。
 - `markWorkingCopyUpdated` は `draft` とトップレベルの両方に同じフィールドを展開するため、利用側では `workingCopy.name` と `workingCopy.draft.name` が併存する。
-- UI や handler で `workingCopy.foo` を直接参照している箇所が多数存在し、UI 状態が WorkingCopy へ紛れ込む要因になっている。
-- `draft` のみを正とする設計に移行することで、Working Copy に保持する値を明確にし、UI 状態を切り離しやすくする狙い。
+- UI/handler で `workingCopy.foo` を直接参照している箇所が多数存在し、UI 状態が WorkingCopy へ紛れ込む温床になっている。
+- `draft` のみを正とする設計に移行することで、Working Copy 内に保持する値を明確にし、UI 状態を切り離しやすくする狙い。
 
-### 既存使用状況サマリ
+### 既存使用状況（一部）
 
 | プラグイン | 主なフィールド参照 | 備考 |
 | --- | --- | --- |
 | location | `workingCopy.selectionMatrix`, `workingCopy.dataSource`, `workingCopy.licenseAgreement`, `workingCopy.concurrentDownloads` | TanStack Router 移行済み。UI はトップレベル参照依存。 |
-| route | `workingCopy.name`, `workingCopy.routeType`, `workingCopy.transportModes`, `workingCopy.version`, `workingCopy.waypoints` | ダイアログ各ステップで直接参照。 |
-| basemap | Handler と tests が `workingCopy.name`, `workingCopy.mapStyle`, `workingCopy.viewport`, `workingCopy.tags` 等を参照。 | |
-| shape | UI／Worker API／docs で `workingCopy.checkboxState`, `workingCopy.dataSourceName`, `workingCopy.processingConfig` などを利用。 | |
-| resolver | Handler が `workingCopy.draft` とトップレベルの混在利用。 | |
+| route | `workingCopy.name`, `workingCopy.routeType`, `workingCopy.transportModes`, `workingCopy.version`, `workingCopy.waypoints` など | ダイアログ各ステップと handler が直接参照。 |
+| basemap | handler と tests で `workingCopy.name` 等を直接利用。 | |
+| shape | ステップ UI / worker API / handler / utils が `workingCopy.checkboxState`, `workingCopy.dataSourceName` 等を参照。 |
+| resolver | handler が `workingCopy.draft` とトップレベル両方を混在利用。 |
+| folder (仕様書) | ドキュメント内サンプルがトップレベル参照。 |
 
 ## 改修方針
 
 1. **型定義の見直し**
-   - `WorkingCopyDraft<TEntity>` を `WorkingCopyBase<TEntity>` 単体に変更し、トップレベルへ `Partial<TEntity>` を展開しない。
-   - `draft` を透過的に扱いたい場合は `createWorkingCopyProxy`（仮）などの補助関数を検討。
+   - `WorkingCopyDraft<TEntity>` を `WorkingCopyBase<TEntity>` のみとし、トップレベルに `Partial<TEntity>` を展開しない。
+   - 代替として `createWorkingCopyProxy`（仮）など、`draft` を透過的に扱いたい場合は getter を提供する方向を検討。
 
-2. **ヘルパー更新**
-   - `createDraftWorkingCopyBase` は現状どおり `draft` とメタ情報を返す。
-  - `markWorkingCopyUpdated` は `draft` のみを更新し、戻り値を `WorkingCopyBase<TEntity>` とする方向で再設計。
+2. **ヘルパーの更新**
+   - `createDraftWorkingCopyBase` は変わらず `draft` とメタ情報を返す。
+   - `markWorkingCopyUpdated` は `draft` のみを更新し、戻り値も `WorkingCopyBase<TEntity>` を返すよう変更。
+   - 既存コードが `markWorkingCopyUpdated(wc, updates)` 後にトップレベルを参照しているケースが多いため、後述の移行ステップで徐々に置き換える。
 
 3. **移行戦略**
-   1. 現状棚卸し（本ドキュメント）
-   2. プラグイン別に `workingCopy.*` → `payload.draft.*` へ置換
-   3. テスト／ドキュメント更新
-   4. 基盤型の切り替え（型エラーで残存箇所を排除）
+   1. **基盤更新前の棚卸し**（本ドキュメント）…完了
+   2. **プラグイン別のトップレベル参照を `draft` 参照へ置換**
+      - まず Location/Route/Basemap/Shape/Resolver 主要５プラグインから着手。
+      - UI 側は Hook やコンポーネントで `const { draft } = workingCopy` を展開するラッパーを導入予定。
+   3. **テスト＆ドキュメント更新**
+      - `WorkingCopyDraft` 参照サンプル（README や docs）を `draft.*` パターンに書き換え。
+   4. **基盤更新**
+      - `WorkingCopyDraft` とヘルパーの型を切り替え、型エラーで残存箇所を洗い出す。
 
-## プラグイン別の主な参照箇所（2025-10-06 時点）
+## 影響範囲サマリ
 
-- **Location**
-  - `components/steps/LocationSelectionStep.tsx`: `workingCopy.selectionMatrix`
-  - `ui/components/LocationDetailsStep.tsx`: `workingCopy.dataSource`, `workingCopy.concurrentDownloads`, `workingCopy.licenseAgreement`
-- **Route**
-  - `components/RouteBasicInfoStep.tsx`: `workingCopy.name`, `workingCopy.routeType`, `workingCopy.transportModes`, `workingCopy.version`
-  - `components/RouteProcessingStep.tsx`: `workingCopy.waypoints`, `workingCopy.version`
-  - `components/RouteSelectionStep.tsx`: `workingCopy.version`, `workingCopy.waypoints`
-- **Shape**
-  - Docs（`docs/WORKING_COPY_PATTERN.md`, `docs/IMPLEMENTATION_PLAN.md`）のサンプル多数
-  - `components/steps/Step*.tsx`: `workingCopy.name`, `workingCopy.dataSourceName`, `workingCopy.checkboxState`, `workingCopy.licenseAgreement`
-  - `worker/api.ts` / `shared/utils.ts`: `workingCopy.batchSessionId`, `workingCopy.processingConfig`
-- **Basemap**
-  - `handlers/BaseMapEntityHandler.ts`: `workingCopy.name`, `workingCopy.mapStyle`, `workingCopy.viewport`, `workingCopy.tags`, `workingCopy.displayOptions`
-  - テスト: `workingCopy.isDraft`, `workingCopy.nodeId` など
-- **Resolver**
-  - `handlers/ResolverEntityHandler.ts`: `workingCopy.draft`, `workingCopy.treeNodeId`
-  - テスト: 主に `workingCopy.draft.*` 参照
+| プラグイン/モジュール | 主な対応内容 | 備考 |
+| --- | --- | --- |
+| `@hierarchidb/plugins-location-plugin` | `workingCopy.x` -> `workingCopy.draft.x` へ置換。TanStack Router 移行済みのため比較的少ない。 | ステップ UI と handler の両方を更新予定。 |
+| `@hierarchidb/plugins-route-plugin` | ステップ UI 全体で `workingCopy.*` を `draft.*` に置換。バリデーションロジック更新。 | `useWorkingCopy` hook との整合性確認が必要。 |
+| `@hierarchidb/plugins/shape-plugin` | UI/Worker/API/Docs 全域に `draft` 化が必要。 | バッチセッション連携あり、影響大。 |
+| `@hierarchidb/plugins/basemap-plugin` | Handler と tests の `workingCopy` 参照が多いため、先に共通ユーティリティで `draft` を参照するヘルパーを導入予定。 | |
+| `@hierarchidb/plugins/resolver-plugin` | Handler が `draft` を既に併用しているため、置換規模は小さめ。 | |
+| Runtime Worker | `WorkingCopyTreeNodeOperations` などで `workingCopy.version` を参照しており、`draft` へ統一する必要あり。 |
+| Docs/Spec | Folder/Shape の仕様書などにあるサンプルコードを `draft` パターンに修正。 | |
 
 ## 今後のタスク案
 
-1. Location: UI/handler の `workingCopy.*` を `payload.draft` ベースへ段階的に移行。
-2. Route: ダイアログステップ（BasicInfo/Processing/Selection）を `payload.draft` 参照に書き換え、バリデーションロジックも整理。
-3. Shape: UI・Worker API を `draft` 参照へ統一し、ドキュメントのサンプルも更新。
-4. Basemap/Resolver: Handler とテストを `draft` 参照へ寄せる。
-5. Runtime Worker: `WorkingCopyTreeNodeOperations` などコアサービスの `workingCopy.*` 参照を見直す。
-6. Docs: `docs/plugins/working-copy-baseline.md` など共有ドキュメントのサンプルコードを刷新。
-7. 基盤更新: `WorkingCopyDraft` 型と `markWorkingCopyUpdated` 実装を置き換え、ユニットテストを修正。
+1. Location プラグイン: `LocationWorkingCopy` を `draft` 中心に再定義し、UI/handler の参照を置換。
+2. Route プラグイン: ダイアログ Steps／Handler の `workingCopy.*` → `draft.*` 置換とバリデーション調整。
+3. Shape プラグイン: `checkboxState` や `processingConfig` を `draft` から参照するよう統一し、Worker API への影響を洗い出し。
+4. Basemap/Resolver プラグイン: Handler 内の `workingCopy` 依存を `draft` に寄せる。
+5. Runtime Worker サービス: `WorkingCopyTreeNodeOperations` 等で `draft` へのアクセスへ統一。
+6. Docs 更新: `docs/plugins/working-copy-baseline.md` などのサンプルコード更新。
+7. 基盤更新: `WorkingCopyDraft` 型とヘルパーの実装変更、テスト修正。
 
 ## メモ
 
-- `useWorkingCopy` hook（runtime-ui/plugin-dialog）に draft を抽出するセレクタを用意し、UI から `draft` を直接扱う流れに誘導する案を検討中。
-- `markWorkingCopyUpdated` の戻り値を `WorkingCopyBase` に変更すると、トップレベル参照が型エラーで浮き彫りになるため、事前の `draft` 化が重要。
-- Worker API では `workingCopy.batchSessionId` などを参照しているため、`payload.draft` に整理する際に Worker 側の型整合性チェックが必要。
+- `useWorkingCopy` hook（runtime-ui/plugin-dialog）に `getDraftSelector` を用意し、UI からは基本的に `draft` を直接扱う方針へ誘導できる。
+- `markWorkingCopyUpdated` の戻り値が変わるため、基盤更新時には `const next = markWorkingCopyUpdated(wc, patch);` 後の `next.field` 参照が型エラーで顕在化する。先に全参照箇所を `draft` 化しておくことで移行が容易になる。
+- Worker 側で `workingCopy.batchSessionId` などを参照している箇所は、`WorkingCopyBase` に `meta` もしくは `draft` へアクセスするよう調整が必要。

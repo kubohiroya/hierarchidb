@@ -3,12 +3,11 @@
    */
 
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Chip, Grid, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
-import { listLocationPoints } from '../services/index.js';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -17,8 +16,6 @@ export interface LocationPanelProps {
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
   const { translations, locale } = useTranslation();
-  const [pointCount, setPointCount] = useState<number | null>(null);
-  const [isLoadingPoints, setIsLoadingPoints] = useState(false);
 
   const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
@@ -38,81 +35,45 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     return new Date(timestamp).toLocaleString(formatterLocale);
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoadingPoints(true);
-    listLocationPoints(nodeId)
-      .then((points) => {
-        if (!cancelled) setPointCount(points.length);
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          console.warn('[LocationPanel] Failed to load location points', error);
-          setPointCount(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingPoints(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [nodeId]);
-
   return (
     <Grid container direction="column" wrap="nowrap" sx={{ height: '100%' }}>
-      <Grid
-        container
-        columns={{ xs: 12 }}
-        wrap="nowrap"
-        columnSpacing={2}
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ flexShrink: 0 }}
-      >
-        <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
-          <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-            <Grid
-              container
-              columns={{ xs: 12 }}
-              wrap="nowrap"
-              columnSpacing={2}
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center">
-                <Grid size="auto">
-                  <LocationOn color="primary" />
-                </Grid>
-                <Grid size="auto">
-                  <Typography variant="h6" noWrap>{translations.panel.sampleName}</Typography>
-                </Grid>
-                <Grid size="auto">
-                  <Chip label="dataset" size="small" />
-                </Grid>
+      <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+        <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={2} alignItems="center">
+          <Grid size={{ xs: 9 }}>
+            <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center">
+              <Grid size="auto">
+                <LocationOn color="primary" />
               </Grid>
-              <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center" justifyContent="flex-end">
+              <Grid size="auto">
+                <Typography variant="h6" noWrap>{translations.panel.sampleName}</Typography>
+              </Grid>
+              <Grid size="auto">
+                <Chip label="dataset" size="small" />
+              </Grid>
+            </Grid>
+          </Grid>
+          <Grid size="auto">
+            <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center" justifyContent="flex-end">
+              <Grid size="auto">
+                <Tooltip title={translations.panel.refresh}>
+                  <IconButton size="small">
+                    <Refresh />
+                  </IconButton>
+                </Tooltip>
+              </Grid>
+              {onEdit && (
                 <Grid size="auto">
-                  <Tooltip title={translations.panel.refresh}>
-                    <IconButton size="small">
-                      <Refresh />
+                  <Tooltip title={translations.panel.edit}>
+                    <IconButton size="small" onClick={onEdit}>
+                      <Edit />
                     </IconButton>
                   </Tooltip>
                 </Grid>
-                {onEdit && (
-                  <Grid size="auto">
-                    <Tooltip title={translations.panel.edit}>
-                      <IconButton size="small" onClick={onEdit}>
-                        <Edit />
-                      </IconButton>
-                    </Tooltip>
-                  </Grid>
-                )}
-              </Grid>
+              )}
             </Grid>
-          </Paper>
+          </Grid>
         </Grid>
-      </Grid>
+      </Paper>
 
       <Grid container direction="column" wrap="nowrap" sx={{ flex: 1, overflow: 'auto', p: 3 }}>
         <Grid container spacing={3} columns={{ xs: 12 }}>
@@ -168,12 +129,6 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                   <ListItemText
                     primary="Selection entries"
                     secondary={entity.selectionMatrix.flat().filter(Boolean).length}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemText
-                    primary={translations.panel.locationPointCount}
-                    secondary={isLoadingPoints ? translations.common.loading : (pointCount ?? '—')}
                   />
                 </ListItem>
               </List>

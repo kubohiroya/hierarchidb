@@ -241,10 +241,8 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
 
   const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationWorkingCopy>) => {
-    const activeStep = propsContent.activeStep;
-    if (!activeStep) return null;
-
-    const ActiveComponent = activeStep.component;
+    const ActiveComponent = propsContent.activeStep?.component;
+    if (!ActiveComponent) return null;
 
     const dataSourceKey = (propsContent.stepData.dataSource as DataSourceLabelKey) ?? 'openstreetmap';
     const licenseAgreementValue = Boolean(propsContent.stepData.licenseAgreement);
@@ -255,7 +253,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           {translations.dialog.datasetDescription}
         </Typography>
-        <Grid container columnSpacing={2} sx={{ mb: 3 }}>
+        <Grid container columnSpacing={2} sx={{ mb: 3 }} columns={{ xs: 12 }}>
           <Grid size="auto">
             <Typography variant="caption" color="text.secondary">{translations.dialog.dataSourceLabel}</Typography>
             <Typography variant="body2">{DATA_SOURCE_LABELS[dataSourceKey] ?? dataSourceKey}</Typography>
@@ -272,8 +270,8 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
         <ActiveComponent
           stepIndex={propsContent.activeStepIndex ?? 0}
-          stepId={activeStep.id}
-          label={activeStep.label}
+          stepId={propsContent.activeStep?.id ?? ''}
+          label={propsContent.activeStep?.label ?? ''}
           data={propsContent.stepData}
           onChange={propsContent.onStepDataChange}
           invalidMessages={propsContent.invalidMessageMap}

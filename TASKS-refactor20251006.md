@@ -19,6 +19,16 @@
 
 ## ToDo（未着手）
 
+- **LocationStep ステッパー導入と配線調整**
+   - [ ] Location Dialog の 4 ステップ構成（Details/Selection/Preview/Confirm）に合わせ、既存 2 ステップ構成との齟齬を吸収。
+   - [ ] `SelectionMatrix` 周辺の i18n・テスト差し替え（route 仕様流用部分の是正）。
+   - [ ] `LocationDialog.tsx` とステップコンポーネントの配線を最新仕様へ整理。
+
+- **UnifiedLocationBatchManager API 固定化**
+   - [ ] Location plugin で仮適用中の API を Shape/Route でも扱えるインターフェースに確定。
+   - [ ] 呼び出し側の config/resume/progress を共通化し、Breaking 変更を解消。
+   - [ ] docs へ API 使用例とローリング導入ガイドを追加。
+
 - **共通設計フィードバック適用（docs/plugins/common-working-copy-refactor-feedback.md）**
   - [ ] 1. WorkingCopyDraft 構造の厳格化: base-plugin の型/ヘルパー更新＆各プラグイン型定義の追従。
   - [ ] 2. Entity↔WorkingCopy アダプタ共通化: base-plugin にアダプタを実装し、Jotai 派生 atom パターンを文書化して UI へ展開。
@@ -91,6 +101,18 @@
   - 残タスク:
     - [ ] Batch/Normalizer が `checkboxState` から派生値を生成する経路の再確認。
     - [ ] UI/ドキュメントへ派生ルールを追記し、既存 e2e シナリオの影響を確認。
+
+- **LocationStep ステッパー導入・配線**
+  - 目的: Location Dialog のステップ構成再設計に合わせて UI / ロジックを最新仕様へ揃える。
+  - 現状: SelectionStep / PreviewStep がドラフト仕様（route 流用）のまま差し替え途中。
+  - 次のアクション: i18n / テスト差し替え、`SelectionMatrix` の実装更新、`LocationDialog.tsx` の配線整理。
+  - ロールバック: `packages/plugins/location-plugin/src/components/steps/` と `LocationDialog.tsx` の差分を revert。
+
+- **UnifiedLocationBatchManager API 固定（仮差し戻し状態）**
+  - 目的: Location plugin で利用中の API を基準に、Shape/Route など他プラグインでも扱える共通インターフェースへ統一する。
+  - 現状: 仮実装のまま前進が止まり呼び出し側が未対応。
+  - 次のアクション: API 設計（config/resume/progress）を確定 → 呼び出し側を順次更新 → ドキュメント整備。
+  - ロールバック: `services/batch/UnifiedLocationBatchManager.ts` の差分を revert。
 
 - **WorkingCopy 逸脱是正（横断）**
   - 状況: 共通ユーティリティ適用と UI state 外出しをテーマごとに進行中。Location/Shape の成果をベースに Route/Resolver へ横展開予定。
