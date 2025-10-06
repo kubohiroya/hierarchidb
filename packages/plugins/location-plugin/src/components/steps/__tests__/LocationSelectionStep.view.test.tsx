@@ -32,14 +32,28 @@ describe('LocationSelectionStep (component)', () => {
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {
     const onUpdate = vi.fn();
-    render(<LocationSelectionStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
+    const { rerender } = render(<LocationSelectionStep workingCopy={baseWorkingCopy} onUpdate={onUpdate} />);
 
     const firstCheckbox = screen.getAllByRole('checkbox')[0];
     fireEvent.click(firstCheckbox);
 
     expect(onUpdate).toHaveBeenCalledTimes(1);
-    const patch = onUpdate.mock.calls[0][0];
-    expect(patch.selectionMatrix?.[0]?.[0]).toBe(true);
+    const patch = onUpdate.mock.calls[0][0] as Partial<LocationWorkingCopy>;
+    const nextMatrix = patch.draft?.selectionMatrix ?? baseWorkingCopy.draft.selectionMatrix;
+    expect(nextMatrix?.[0]?.[0]).toBe(true);
+
+    rerender(
+      <LocationSelectionStep
+        workingCopy={{
+          ...baseWorkingCopy,
+          draft: {
+            ...baseWorkingCopy.draft,
+            selectionMatrix: nextMatrix,
+          },
+        }}
+        onUpdate={onUpdate}
+      />,
+    );
 
     // selected count derivation reflects new matrix summary label
     const selectedLabel = screen.getByText((content) => content.startsWith(en.selection.selectedCount));

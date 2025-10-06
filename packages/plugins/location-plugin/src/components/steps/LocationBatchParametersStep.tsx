@@ -9,7 +9,7 @@ import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBatchParametersStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
 }
 
 const MIN_CONCURRENCY = 1;
@@ -36,21 +36,21 @@ export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepPr
   const handleConcurrentDownloadsChange = (_: Event, value: number | number[]) => {
     const rawValue = Array.isArray(value) ? value[0] ?? concurrentDownloads : value ?? concurrentDownloads;
     const next = clamp(rawValue, MIN_CONCURRENCY, MAX_CONCURRENCY);
-    onUpdate({ concurrentDownloads: next });
+    onUpdate({ draft: { concurrentDownloads: next } });
   };
 
   const handleMinZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMin = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMax = Math.max(nextMin, maxZoom);
-    onUpdate({ tilesMinZoom: nextMin, tilesMaxZoom: adjustedMax });
+    onUpdate({ draft: { tilesMinZoom: nextMin, tilesMaxZoom: adjustedMax } });
   };
 
   const handleMaxZoomChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const raw = Number(event.target.value);
     const nextMax = clamp(raw, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
     const adjustedMin = Math.min(nextMax, minZoom);
-    onUpdate({ tilesMinZoom: adjustedMin, tilesMaxZoom: nextMax });
+    onUpdate({ draft: { tilesMinZoom: adjustedMin, tilesMaxZoom: nextMax } });
   };
 
   return (

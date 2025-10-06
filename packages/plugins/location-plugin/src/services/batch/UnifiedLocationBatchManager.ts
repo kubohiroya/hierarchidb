@@ -95,20 +95,48 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
       totalPoints: summary.totalPoints,
       createdAt: Date.now(),
       status: 'running',
+      config,
     });
     return summary.sessionId;
   }
 
   async pauseBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.pause(sessionId);
+    try {
+      const db = this.getDb();
+      await db.sessions?.update(sessionId, {
+        status: 'paused',
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      console.warn('[UnifiedLocationBatchManager] failed to mark session paused', error);
+    }
   }
 
   async resumeBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.resume(sessionId);
+    try {
+      const db = this.getDb();
+      await db.sessions?.update(sessionId, {
+        status: 'running',
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      console.warn('[UnifiedLocationBatchManager] failed to mark session running', error);
+    }
   }
 
   async cancelBatchSession(sessionId: BatchSessionId): Promise<void> {
     this.manager.cancel(sessionId);
+    try {
+      const db = this.getDb();
+      await db.sessions?.update(sessionId, {
+        status: 'cancelled',
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      console.warn('[UnifiedLocationBatchManager] failed to mark session cancelled', error);
+    }
   }
 
   async getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus> {

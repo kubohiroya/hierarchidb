@@ -151,4 +151,23 @@ describe('LocationVectorTileService', () => {
     // It might be null if all points fell in neighboring tile; allow null but require at least one non-null in DB overall
     if (bytes) expect(bytes.byteLength).toBeGreaterThan(0);
   });
+
+  it('passes batch configuration through prepareSession', async () => {
+    const prepareSpy = vi.spyOn(UnifiedLocationBatchManager.prototype, 'prepareSession');
+    const svc = new LocationVectorTileService(createLocalBridge());
+    const nodeId = toNodeId('node-config');
+    const points: LocationPointInput[] = [{ lon: 0, lat: 0 }];
+    const settings: LocationTileSettings = { zoomMinGenerate: 3, zoomMaxGenerate: 5 };
+
+    try {
+      await svc.startSession(nodeId, points, settings, { concurrency: 6 });
+      expect(prepareSpy).toHaveBeenCalledWith(
+        nodeId,
+        { concurrency: 6 },
+        expect.objectContaining({ points, settings }),
+      );
+    } finally {
+      prepareSpy.mockRestore();
+    }
+  });
 });

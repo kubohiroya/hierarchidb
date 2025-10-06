@@ -12,7 +12,7 @@ import { getLocationDataSource } from '../../datasources/LocationDataSourceDefin
 
 interface LocationLicenseStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
 }
 
 export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ workingCopy, onUpdate }) => {
@@ -45,8 +45,10 @@ export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ workin
       }}
       onAgree={() => {
         onUpdate({
-          licenseAgreement: true,
-          licenseAgreedAt: Date.now() as Timestamp,
+          draft: {
+            licenseAgreement: true,
+            licenseAgreedAt: Date.now() as Timestamp,
+          },
         });
       }}
     />

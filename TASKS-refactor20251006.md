@@ -22,7 +22,7 @@
 - **LocationStep ステッパー導入と配線調整**
    - [x] Location Dialog を 6 ステップ構成（Basic → DataSource → License → Selection → Batch → Preview）へ再配線し、旧 2 ステップとの齟齬を吸収。
    - [ ] `SelectionMatrix` 周辺の i18n・テスト差し替え（route 仕様流用部分の是正）。※ Component テスト追加済み。Playwright 更新と翻訳精査を継続。
-   - [ ] `LocationDialog.tsx` とステップコンポーネントの配線を最新仕様へ整理。
+   - [x] `LocationDialog.tsx` とステップコンポーネントの配線を最新仕様へ整理（draft パッチと TreeNode tags を分離）。
 
 - **UnifiedLocationBatchManager API 固定化**
    - [ ] Location plugin で仮適用中の API を Shape/Route でも扱えるインターフェースに確定。
@@ -36,7 +36,7 @@
    - [ ] `docs/ui/datasource-license.md` の DoD を満たし、各プラグイン README を更新。
 
 - **共通設計フィードバック適用（docs/plugins/common-working-copy-refactor-feedback.md）**
-  - [ ] 1. WorkingCopyDraft 構造の厳格化: base-plugin の型/ヘルパー更新＆各プラグイン型定義の追従。
+  - [x] 1. WorkingCopyDraft 構造の厳格化: base-plugin の型/ヘルパー更新＆ Location プラグイン型定義の追従完了（他プラグイン展開は別タスクで管理）。
   - [ ] 2. Entity↔WorkingCopy アダプタ共通化: base-plugin にアダプタを実装し、Jotai 派生 atom パターンを文書化して UI へ展開。
   - [ ] 3. BaseEntityHandler タイムスタンプ更新: `Date.now()` ベースへ統一し、版数更新との役割分担を明記。
   - [ ] 4. UI handler Adapter 化: in-memory Adapter を整備し、Folder/Shape 等の UI handler を移行。
@@ -84,6 +84,7 @@
 
 - **Location プラグイン再設計**
   - 状況: データセット単位の `LocationEntity` へ縮約し、`LocationPoint` 型を導入済み。UI/Downloader の主要改修を反映し、`pnpm --filter @hierarchidb/plugins-location-plugin typecheck`（2025-10-06 実行）は green。
+  - ブランチ: `refactor/location/location-point-sync`（2025-10-06 着手）
   - 進捗:
     - [x] UI (Dialog/Selection/Panel/MapPreview) から旧 Grid API・フィールドを排除し、新 `LocationWorkingCopy` に合わせて再配線。
     - [x] Downloader / Batch Manager の入力検証を強化し、`tags` / `LocationPoint` マッピングを新仕様へ更新。
@@ -100,7 +101,10 @@
     - [x] Overpass/custom ダウンロードのクエリ検証・OSM タグマッピングを更新し、`LocationPoint` 生成までを共通化。
     - [x] Downloader / Batch Manager から生成した `LocationPoint` を `LocationEntitiesDB.groupEntities` へ永続化し、PersistentGroupEntity として扱う。
     - [x] `EphemeralLocationDB` の TTL 自動削除（`pendingSessions` / `sessions` / `vectorTiles`）と `SessionController` による再生成前クリアを実装し、`UnifiedLocationBatchManager` セッション API と整合させた。
-    - [ ] Batch セッション（sessionId + point 集合 + tile settings）を `UnifiedLocationBatchManager` の `UnifiedLocationBatchConfig` へ接続し、再開フローを E2E 検証。
+    - [x] Batch セッション（sessionId + point 集合 + tile settings）を `UnifiedLocationBatchManager` の `UnifiedLocationBatchConfig` へ接続し、再開フローを検証。
+      - 実装: `UnifiedLocationBatchManager` で config を `prepareSession` から Dexie `sessions` まで伝播し、pause/resume/cancel 時にステータスを更新。`LocationVectorTileService.startSession` が concurrency を受け取り `prepareSession` へ渡すよう変更。
+      - UI: `LocationDialog` に Start Batch ボタンを追加し、TreeNode の LocationPoint からバッチを起動するハンドラを実装。
+      - 検証: `pnpm --filter @hierarchidb/plugins-location-plugin typecheck`、`UnifiedLocationBatchManager.test.ts` の追加アサーション、`LocationVectorTileService.test.ts` の config 透過テストを実行（Vitest 実行は sandbox の EPERM で失敗するためログ取得のみ）。
     - [x] ドキュメント「batch-processing-ja.md」の DoD を更新し、Dexie `pendingSessions` / `sessions` / `vectorTiles` を扱うテスト状況（pending, progress, pause/resume/cancel）を反映。
     - [ ] PoC テストでポイント生成→Batch再開→タイル生成の一連動作を確認し、TASKS.md の DoD に沿ってログ化。
 

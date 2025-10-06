@@ -25,7 +25,7 @@ import type { LocationType } from '../../types/index.js';
 
 interface LocationSelectionStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
 }
 
 const SAMPLE_COUNTRIES: Country[] = [
@@ -105,7 +105,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
   ), [locationTypes, selectionMatrixSource]);
 
   const handleMatrixChange = useCallback((matrix: boolean[][]) => {
-    onUpdate({ selectionMatrix: matrix });
+    onUpdate({ draft: { selectionMatrix: matrix } });
   }, [onUpdate]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {

@@ -81,8 +81,23 @@
   - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
 - ロールバック手順：
  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
-  - Worker 側の API 変更があれば revert し、テスト追加分を削除
+ - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
+
+3) dep-fence WARN cleanup（ui-datasource/ui-license/ui-i18n）（P2）
+- ブランチ: `chore/ui/dep-fence-warn-cleanup`（sandbox 制約で `main` 上で作業）
+- 依存: dep-fence 基盤, `@hierarchidb/ui-datasource`, `@hierarchidb/ui-license`, `@hierarchidb/ui-i18n`
+- 受け入れ基準（DoD）：
+  - [ ] `pnpm exec dep-fence --strict` で該当 WARN が消失し、他 WARN/ERROR を追加しない
+  - [ ] `pnpm exec tsc -p packages/ui/datasource/tsconfig.json --pretty false` を実行し成功
+  - [ ] `pnpm exec tsc -p packages/ui/license/tsconfig.json --pretty false` を実行し成功
+  - [ ] `pnpm --filter @hierarchidb/ui-i18n build` が成功
+- チェックリスト：
+  - [ ] `@hierarchidb/ui-datasource` に `tsconfig.json` を追加し、`jsx: react-jsx` を明示
+  - [ ] `@hierarchidb/ui-license` に `tsconfig.json` を追加し、`jsx: react-jsx` を明示
+  - [ ] `@hierarchidb/ui-i18n` の external 指定ライブラリ（detector/backend/date-fns）を peerDependencies 化し、devDependencies を補完
+- ロールバック手順：
+  - 追加した `tsconfig.json` と `package.json` の差分を戻し、上記コマンドを再実行して WARN 再現を確認
 
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -1543,6 +1558,7 @@ P2:
   - ブランチ: `chore/docs/cleanup-metrics`
   - 依存: EPIC完了フェーズ
 
+- 2025-10-06 19:18 start: chore/ui/dep-fence-warn-cleanup — dep-fence WARN（tsconfig-no-base / jsx-mismatch / external-in-deps）解消へ向けて着手。`@hierarchidb/ui-datasource` と `@hierarchidb/ui-license` は tsconfig 未整備のため base 継承＋ `jsx: react-jsx` を追加予定。`@hierarchidb/ui-i18n` は external 指定の `i18next-browser-languagedetector` / `i18next-http-backend` / `date-fns` を peerDependencies へ移行し、devDependencies を補完してビルド環境を維持する方針。
 - 2025-10-03 09:30 progress: packages/ui/country-select の peer/dev 依存構成を確認し、`@mui/material` と `@mui/icons-material` を peerDependencies と devDependencies の両方で宣言する運用がローカル開発に必要であることを確認済。次ステップ: UI パッケージ全体で MUI 周辺依存の整理状況を棚卸しし、方針が揃っていない箇所を ToDo 化する。
 - 2025-10-03 13:55 progress: fix/app/preview-hydration — `pnpm preview` 時に Worker 初期化が進まず UI が `CircularProgress` のまま停止する問題を調査。`@hierarchidb/runtime-shared-module-paths/src/index.ts` から `/* @vite-ignore */` を除去し、Vite が bare specifier を本番ビルドでチャンク化できるよう修正。`pnpm --filter @hierarchidb/app typecheck` は成功、`pnpm exec tsc -p packages/runtime-shared/module-paths/tsconfig.json --noEmit --incremental false --composite false` で該当パッケージの型確認も実施（tsconfig.tsbuildinfo 書き込み制限を回避）。ロールバックは当該ファイルのコメント差分を戻し、上記コマンドを再実行するだけで可。ブラウザでの再確認はユーザー環境でお願いしたい。
 - 2025-10-03 14:20 progress: fix/app/preview-hydration — `vite.preview.config.ts` にワークスペース alias を追加し、`@hierarchidb/runtime-worker`／`@hierarchidb/util` など preview ビルドで参照されるパッケージを dist 出力へ解決するように変更。`pnpm --filter @hierarchidb/app typecheck` を再実行して成功を確認。`pnpm --filter @hierarchidb/app build` は sandbox の依存未解決により未完了（途中で typecheck 用サブパッケージが `@hierarchidb/tabular` を解決できず停止）だが、ローカルフル環境では alias 追加により `commonjs--resolver` の解決失敗が解消される想定。ロールバックは `vite.preview.config.ts` の alias 追加部分を元に戻し再度 typecheck を実行するだけで可。

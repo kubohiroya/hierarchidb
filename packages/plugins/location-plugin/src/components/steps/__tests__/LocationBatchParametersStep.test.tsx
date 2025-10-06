@@ -35,7 +35,7 @@ describe('LocationBatchParametersStep', () => {
     const slider = screen.getByRole('slider');
     fireEvent.change(slider, { target: { value: '20' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ concurrentDownloads: 16 });
+    expect(onUpdate).toHaveBeenCalledWith({ draft: { concurrentDownloads: 16 } });
   });
 
   it('updates min zoom and enforces max zoom floor', () => {
@@ -45,7 +45,7 @@ describe('LocationBatchParametersStep', () => {
     const minField = screen.getByLabelText(en.processing.minZoom);
     fireEvent.change(minField, { target: { value: '18' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ tilesMinZoom: 18, tilesMaxZoom: 18 });
+    expect(onUpdate).toHaveBeenCalledWith({ draft: { tilesMinZoom: 18, tilesMaxZoom: 18 } });
   });
 
   it('updates max zoom and enforces min zoom ceiling', () => {
@@ -63,6 +63,6 @@ describe('LocationBatchParametersStep', () => {
     const maxField = screen.getByLabelText(en.processing.maxZoom);
     fireEvent.change(maxField, { target: { value: '5' } });
 
-    expect(onUpdate).toHaveBeenCalledWith({ tilesMinZoom: 5, tilesMaxZoom: 5 });
+    expect(onUpdate).toHaveBeenCalledWith({ draft: { tilesMinZoom: 5, tilesMaxZoom: 5 } });
   });
 });

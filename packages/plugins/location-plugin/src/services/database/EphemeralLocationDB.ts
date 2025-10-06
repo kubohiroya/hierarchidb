@@ -31,10 +31,11 @@ export class EphemeralLocationDB extends Dexie {
     zoomMax: number;
     totalPoints: number;
     createdAt: number;
-    status: 'running' | 'completed' | 'failed';
+    status: 'running' | 'completed' | 'failed' | 'paused' | 'cancelled';
     tableId?: string;
     progress?: number;
     updatedAt?: number;
+    config?: unknown;
   }>;
   pendingSessions!: Table<{
     nodeId: NodeId;

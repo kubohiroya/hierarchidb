@@ -11,7 +11,7 @@ import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBasicInfoStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
 }
 
 export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({ workingCopy, onUpdate }) => {
@@ -22,20 +22,20 @@ export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({ wo
     return {
       name: draft.name ?? '',
       description: draft.description ?? '',
-      tags: (draft.tags as string[] | undefined) ?? [],
+      tags: workingCopy.tags ?? [],
     };
-  }, [workingCopy.draft]);
+  }, [workingCopy.draft, workingCopy.tags]);
 
   const handleBasicInfoChange = (updates: { name?: string; description?: string }) => {
-    const patch: Partial<LocationWorkingCopy['draft']> = {};
+    const draftPatch: Partial<LocationWorkingCopy['draft']> = {};
     if (updates.name !== undefined) {
-      patch.name = updates.name;
+      draftPatch.name = updates.name;
     }
     if (updates.description !== undefined) {
-      patch.description = updates.description;
+      draftPatch.description = updates.description;
     }
-    if (Object.keys(patch).length > 0) {
-      onUpdate(patch);
+    if (Object.keys(draftPatch).length > 0) {
+      onUpdate({ draft: draftPatch });
     }
   };
 

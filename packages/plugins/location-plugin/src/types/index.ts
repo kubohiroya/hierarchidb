@@ -45,8 +45,9 @@ export type {
 };
 
 export interface LocationWorkingCopy extends WorkingCopyDraft<LocationEntityDefinition> {
+  /** Tree-level categorisation tags (persisted on the owning TreeNode). */
+  tags?: string[];
   draft: WorkingCopyDraft<LocationEntityDefinition>['draft'] & {
-    tags?: string[];
     tilesMinZoom?: number;
     tilesMaxZoom?: number;
   };

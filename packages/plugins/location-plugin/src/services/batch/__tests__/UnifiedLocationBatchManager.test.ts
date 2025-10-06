@@ -231,6 +231,7 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
       nodeId: sampleNode,
       status: 'running',
       totalPoints: samplePoints.length,
+      config: { concurrency: 2 },
     }));
   });
 
@@ -311,6 +312,10 @@ describe('UnifiedLocationBatchManager control operations', () => {
       expect(pauseSpy).toHaveBeenCalledWith('session-test');
       expect(resumeSpy).toHaveBeenCalledWith('session-test');
       expect(cancelSpy).toHaveBeenCalledWith('session-test');
+
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'paused' }));
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'running' }));
+      expect(mockDb.sessions.update).toHaveBeenCalledWith('session-test', expect.objectContaining({ status: 'cancelled' }));
     } finally {
       pauseSpy.mockRestore();
       resumeSpy.mockRestore();

@@ -20,7 +20,7 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
 
 interface LocationDataSourceStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
 }
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ workingCopy, onUpdate }) => {
@@ -42,9 +42,11 @@ export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ 
   const handleChange = (next: string) => {
     const nextSource = next as LocationDataSource;
     onUpdate({
-      dataSource: nextSource,
-      licenseAgreement: false,
-      licenseAgreedAt: undefined,
+      draft: {
+        dataSource: nextSource,
+        licenseAgreement: false,
+        licenseAgreedAt: undefined,
+      },
     });
   };
 

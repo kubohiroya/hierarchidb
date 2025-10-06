@@ -6,11 +6,75 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import type { NodeId } from '@hierarchidb/common-type';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
-import type { LocationWorkingCopy } from '../../types/index.js';
+import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
+import type { LocationWorkingCopy, LocationType } from '../../types/index.js';
 import { formatBytes, useTranslation } from '../../i18n/index.js';
 import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+import { listLocationPoints } from '../../services/pointRepository.js';
+
+const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
+  'airport',
+  'railway_station',
+  'bus_stop',
+  'port',
+  'parking',
+  'government',
+  'religious',
+  'post_office',
+  'fire_station',
+  'police',
+  'hospital',
+  'clinic',
+  'pharmacy',
+  'school',
+  'university',
+  'library',
+  'shopping_mall',
+  'supermarket',
+  'restaurant',
+  'hotel',
+  'bank',
+  'museum',
+  'theater',
+  'monument',
+  'park',
+  'stadium',
+  'beach',
+  'mountain',
+  'lake',
+  'river',
+  'interchange',
+  'tourist_attraction',
+  'custom',
+];
+
+const resolveLocationType = (kind: string): LocationType => (
+  (KNOWN_LOCATION_TYPES as readonly string[]).includes(kind)
+    ? kind as LocationType
+    : 'custom'
+);
+
+const toPreviewLocationPoint = (point: Awaited<ReturnType<typeof listLocationPoints>>[number]): PreviewLocationPoint => {
+  const properties: PreviewLocationPoint['properties'] = {
+    ...(point.payload ?? {}),
+  };
+
+  if (point.gid1) properties.gid1 = point.gid1;
+  if (point.gid2) properties.gid2 = point.gid2;
+  if (point.source) properties.source = point.source;
+
+  return {
+    id: point.pid,
+    name: point.name,
+    type: resolveLocationType(point.kind),
+    countryCode: point.gid0 || 'UNK',
+    coordinates: [point.longitude, point.latitude],
+    properties,
+  };
+};
 
 interface LocationMapPreviewStepProps {
   workingCopy: LocationWorkingCopy;
@@ -25,15 +89,33 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
   const { translations, locale } = useTranslation();
   const nodeId = (workingCopy as any)?.treeNodeId ?? (workingCopy as any)?.nodeId ?? 'preview';
   const [summary, setSummary] = useState<TileSummary | null>(null);
+  const [locations, setLocations] = useState<PreviewLocationPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const serviceRef = useRef<LocationVectorTileService | null>(null);
+  const isMountedRef = useRef(true);
 
   if (!serviceRef.current) {
     serviceRef.current = new LocationVectorTileService();
   }
 
-  const loadSummary = useCallback(async () => {
+  const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
+
+    if (typeof window === 'undefined') {
+      setSummary(null);
+      setLocations([]);
+      return;
+    }
+
+    if (!nodeId || nodeId === 'preview') {
+      setSummary(null);
+      setLocations([]);
+      return;
+    }
+
+    const resolvedNodeId = nodeId as NodeId;
+
     setLoading(true);
     setError(null);
     try {
@@ -41,12 +123,18 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       const sessions = db.sessions;
       if (!sessions || typeof sessions.where !== 'function') {
         setSummary(null);
+        const pointRecords = await listLocationPoints(resolvedNodeId);
+        if (!isMountedRef.current) return;
+        setLocations(pointRecords.map(toPreviewLocationPoint));
         return;
       }
 
       const records = await sessions.where('nodeId').equals(nodeId).toArray();
       if (!records?.length) {
         setSummary(null);
+        const pointRecords = await listLocationPoints(resolvedNodeId);
+        if (!isMountedRef.current) return;
+        setLocations(pointRecords.map(toPreviewLocationPoint));
         return;
       }
 
@@ -57,31 +145,37 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
 
       if (!latest?.sessionId) {
         setSummary(null);
+        const pointRecords = await listLocationPoints(resolvedNodeId);
+        if (!isMountedRef.current) return;
+        setLocations(pointRecords.map(toPreviewLocationPoint));
         return;
       }
 
-      const summaryResponse = await serviceRef.current!.getSessionSummary(latest.sessionId);
+      const [summaryResponse, pointRecords] = await Promise.all([
+        serviceRef.current!.getSessionSummary(latest.sessionId),
+        listLocationPoints(resolvedNodeId),
+      ]);
+      if (!isMountedRef.current) return;
       setSummary({ ...summaryResponse, sessionId: latest.sessionId });
+      setLocations(pointRecords.map(toPreviewLocationPoint));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setSummary(null);
+      setLocations([]);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [nodeId]);
 
+  useEffect(() => () => {
+    isMountedRef.current = false;
+  }, []);
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      await loadSummary();
-    })();
-    return () => {
-      cancelled = true;
-      if (cancelled) {
-        setLoading(false);
-      }
-    };
-  }, [loadSummary]);
+    void loadData();
+  }, [loadData]);
 
   const summaryContent = useMemo(() => {
     if (loading) {
@@ -156,7 +250,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
           size="small"
           variant="outlined"
           startIcon={<RefreshIcon fontSize="small" />}
-          onClick={loadSummary}
+          onClick={loadData}
         >
           {translations.panel.refresh}
         </Button>
@@ -169,7 +263,7 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
       <Divider />
 
       <Box flex={1} minHeight={320}>
-        <LocationMapPreview nodeId={nodeId as any} locations={[]} />
+        <LocationMapPreview nodeId={nodeId as any} locations={locations} />
       </Box>
     </Box>
   );

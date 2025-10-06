@@ -39,6 +39,8 @@ import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
+import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
+import { listLocationPoints } from '../services/pointRepository.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
   value ? `${value}` : undefined;
@@ -49,6 +51,12 @@ const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosi
   const position = initialPosition(size, viewport);
   return { size, position };
 };
+
+const DEFAULT_MIN_ZOOM = 5;
+const DEFAULT_MAX_ZOOM = 12;
+const DEFAULT_CONCURRENCY = 4;
+const MIN_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 16;
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
   mode,
@@ -80,10 +88,12 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const dialogSizeRef = useRef<MultiDialogSize>(initialSize);
   const dialogPositionRef = useRef<MultiDialogPosition>(initialPositionValue);
+  const vectorServiceRef = useRef<LocationVectorTileService | null>(null);
   const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
   const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [isBatchStarting, setIsBatchStarting] = useState(false);
 
   const emptyWorkingCopy = useMemo<LocationWorkingCopy>(() => ({
     treeNodeId: '' as NodeId,
@@ -118,40 +128,101 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     });
   }, [emptyWorkingCopy, setWorkingCopy]);
 
+  const ensureVectorTileService = useCallback((): LocationVectorTileService => {
+    if (!vectorServiceRef.current) {
+      vectorServiceRef.current = new LocationVectorTileService();
+    }
+    return vectorServiceRef.current;
+  }, []);
+
+  const handleStartBatch = useCallback(async () => {
+    if (isBatchStarting) return;
+    const nodeId = dialogData.treeNodeId;
+    if (!nodeId) {
+      notify.error('Save changes before starting a batch session.');
+      return;
+    }
+    setIsBatchStarting(true);
+    try {
+      const pointsRaw = await listLocationPoints(nodeId);
+      if (!pointsRaw.length) {
+        notify.info('No location points available to process.');
+        return;
+      }
+
+      const points = pointsRaw.map((point) => ({
+        lon: point.longitude,
+        lat: point.latitude,
+        id: point.pid,
+        properties: {
+          name: point.name,
+          kind: point.kind,
+          gid0: point.gid0,
+          gid1: point.gid1,
+          gid2: point.gid2,
+          ...(point.payload ?? {}),
+        },
+      }));
+
+      const requestedMinZoom = Number(dialogData.draft?.tilesMinZoom ?? DEFAULT_MIN_ZOOM) || DEFAULT_MIN_ZOOM;
+      const requestedMaxZoom = Number(dialogData.draft?.tilesMaxZoom ?? DEFAULT_MAX_ZOOM) || DEFAULT_MAX_ZOOM;
+      const zoomMin = Math.max(0, Math.min(requestedMinZoom, requestedMaxZoom));
+      const zoomMax = Math.max(zoomMin, requestedMaxZoom);
+
+      const settings = {
+        zoomMinGenerate: zoomMin,
+        zoomMaxGenerate: zoomMax,
+        zoomMaxServe: dialogData.draft?.tilesMaxZoom ?? zoomMax,
+      } as const;
+
+      const rawConcurrency = Number(dialogData.draft?.concurrentDownloads ?? DEFAULT_CONCURRENCY) || DEFAULT_CONCURRENCY;
+      const concurrency = Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, rawConcurrency));
+
+      const service = ensureVectorTileService();
+      const summary = await service.startSession(nodeId, points, settings, { concurrency });
+      notify.success(`Batch session ${summary.sessionId} started.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      notify.error(`Failed to start batch session: ${message}`);
+    } finally {
+      setIsBatchStarting(false);
+    }
+  }, [dialogData, ensureVectorTileService, isBatchStarting]);
+
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy>>>(() => ([
     {
       id: 'basic-info',
       label: translations.basicInfo.title,
       component: ({ data, onChange }) => (
-        <LocationBasicInfoStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
+        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'data-source',
       label: translations.dialog.dataSourceLabel,
       component: ({ data, onChange }) => (
-        <LocationDataSourceStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
+        <LocationDataSourceStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'license',
       label: translations.dialog.licenseAgreementLabel,
       component: ({ data, onChange }) => (
-        <LocationLicenseStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
+        <LocationLicenseStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'selection',
       label: translations.selection.title,
       component: ({ data, onChange }) => (
-        <LocationSelectionStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
+        <LocationSelectionStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'batch-parameters',
       label: translations.panel.processingSettings,
       component: ({ data, onChange }) => (
-        <LocationBatchParametersStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
+        <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
@@ -177,6 +248,8 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     if (!value) return '—';
     return translations.dataSources?.[value] ?? value;
   }, [translations.dataSources]);
+
+  const canStartBatch = Boolean(dialogData.treeNodeId && dialogData.draft?.licenseAgreement && dialogData.draft?.dataSource);
 
   const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
     const viewport = getViewportSize();
@@ -339,6 +412,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy>) => {
     const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
+    const startBatchLabel = 'Start Batch';
 
     return (
       <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
@@ -358,6 +432,16 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             {translations.dialog.cancel}
           </Button>
           <Button
+            variant="outlined"
+            color="secondary"
+            disabled={!canStartBatch || isBatchStarting}
+            onClick={() => {
+              void handleStartBatch();
+            }}
+          >
+            {isBatchStarting ? 'Starting…' : startBatchLabel}
+          </Button>
+          <Button
             variant="contained"
             onClick={() => propsFooter.onRequestCommit?.()}
             disabled={!canCommit}
@@ -367,7 +451,18 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
         </Box>
       </Box>
     );
-  }, [displayMode, transitionDisplayMode, translations.dialog.cancel, translations.dialog.displayFullscreen, translations.dialog.displayMaximize, translations.dialog.displayNormal, translations.dialog.save]);
+  }, [
+    canStartBatch,
+    displayMode,
+    handleStartBatch,
+    isBatchStarting,
+    transitionDisplayMode,
+    translations.dialog.cancel,
+    translations.dialog.displayFullscreen,
+    translations.dialog.displayMaximize,
+    translations.dialog.displayNormal,
+    translations.dialog.save,
+  ]);
 
   const dialogProps: HeadlessMultiStepDialogProps<LocationWorkingCopy> = {
     open,

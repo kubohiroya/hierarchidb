@@ -1,6 +1,6 @@
 import type { NodeId, NodeType } from '@hierarchidb/common-type';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
-import { UnifiedLocationBatchManager, type LocationBatchData } from '../batch/UnifiedLocationBatchManager.js';
+import { UnifiedLocationBatchManager, type LocationBatchData, type UnifiedLocationBatchConfig } from '../batch/UnifiedLocationBatchManager.js';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/SessionController.js';
 import type {
   BatchProgressEvent,
@@ -32,9 +32,14 @@ export class LocationVectorTileService {
     this.bridge = bridge;
   }
 
-  async startSession(nodeId: NodeId, points: LocationPointInput[], settings: LocationTileSettings): Promise<SessionSummary> {
+  async startSession(
+    nodeId: NodeId,
+    points: LocationPointInput[],
+    settings: LocationTileSettings,
+    config?: UnifiedLocationBatchConfig,
+  ): Promise<SessionSummary> {
     const data: LocationBatchData = { points, settings };
-    await this.manager.prepareSession(nodeId, undefined, data);
+    await this.manager.prepareSession(nodeId, config, data);
     await this.bridge.initialize();
     const status = await this.bridge.startBatchSession(LOCATION_NODE_TYPE, nodeId);
     const sessionId = status.sessionId;
