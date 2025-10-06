@@ -44,27 +44,20 @@ export type {
   LocationAttributes,
 };
 
-export type LocationWorkingCopy = WorkingCopyDraft<LocationEntityDefinition> & {
-  dataSource?: LocationDataSource;
-  selectionMatrix?: boolean[][];
-  concurrentDownloads?: number;
-  licenseAgreement?: boolean;
-  licenseAgreedAt?: Timestamp;
-  category?: LocationCategory;
-  type?: LocationType;
-  tilesMinZoom?: number;
-  tilesMaxZoom?: number;
-  tags?: string[];
-  name?: string;
-  description?: string;
-};
+export interface LocationWorkingCopy extends WorkingCopyDraft<LocationEntityDefinition> {
+  draft: WorkingCopyDraft<LocationEntityDefinition>['draft'] & {
+    tags?: string[];
+    tilesMinZoom?: number;
+    tilesMaxZoom?: number;
+  };
+}
 
 export interface UpdateLocationData {
   dataSource?: LocationDataSource;
   selectionMatrix?: boolean[][];
   concurrentDownloads?: number;
   licenseAgreement?: boolean;
-  licenseAgreedAt?: number;
+  licenseAgreedAt?: Timestamp;
   batchSessionId?: string;
   lastProcessedAt?: number;
   category?: LocationCategory;

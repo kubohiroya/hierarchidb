@@ -1,26 +1,24 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationWorkingCopy } from '../../../types/index.js';
+import type { Timestamp } from '@hierarchidb/common-type';
 import { LocationSelectionStep } from '../LocationSelectionStep.js';
 import { en } from '../../../i18n/en.js';
 
 describe('LocationSelectionStep (component)', () => {
+  const timestamp = Date.now() as Timestamp;
   const baseWorkingCopy: LocationWorkingCopy = {
-    id: 'node-1',
-    nodeId: 'node-1',
-    version: 1,
-    dataSource: 'openstreetmap',
-    selectionMatrix: [[false, false], [false, false]],
-    concurrentDownloads: 2,
-    licenseAgreement: false,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    payload: {
-      draft: {
-        selectionMatrix: [[false, false], [false, false]],
-      },
+    treeNodeId: 'node-1',
+    draft: {
+      dataSource: 'openstreetmap',
+      selectionMatrix: [[false, false], [false, false]],
+      concurrentDownloads: 2,
+      licenseAgreement: false,
     },
-  } as unknown as LocationWorkingCopy;
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    originalVersion: 1,
+  };
 
   it('renders selection guidance and default location tabs', () => {
     const onUpdate = vi.fn();

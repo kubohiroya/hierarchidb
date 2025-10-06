@@ -12,13 +12,13 @@ import { getLocationDataSource } from '../../datasources/LocationDataSourceDefin
 
 interface LocationLicenseStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
 }
 
 export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ workingCopy, onUpdate }) => {
   const { translations } = useTranslation();
 
-  const dataSourceId = workingCopy.payload?.draft?.dataSource ?? workingCopy.dataSource ?? 'openstreetmap';
+  const dataSourceId = workingCopy.draft.dataSource ?? 'openstreetmap';
   const dataSource = getLocationDataSource(dataSourceId);
 
   if (!dataSource) {
@@ -40,8 +40,8 @@ export const LocationLicenseStep: React.FC<LocationLicenseStepProps> = ({ workin
         url: dataSource.licenseUrl,
       }}
       state={{
-        agreed: Boolean(workingCopy.licenseAgreement),
-        agreedAt: workingCopy.licenseAgreedAt ? new Date(workingCopy.licenseAgreedAt).toISOString() : undefined,
+        agreed: Boolean(workingCopy.draft.licenseAgreement),
+        agreedAt: workingCopy.draft.licenseAgreedAt ? new Date(workingCopy.draft.licenseAgreedAt).toISOString() : undefined,
       }}
       onAgree={() => {
         onUpdate({

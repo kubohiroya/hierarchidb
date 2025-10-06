@@ -20,17 +20,15 @@ const ORDERED_DATA_SOURCES: LocationDataSource[] = [
 
 interface LocationDataSourceStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
 }
 
 export const LocationDataSourceStep: React.FC<LocationDataSourceStepProps> = ({ workingCopy, onUpdate }) => {
   const { translations } = useTranslation();
 
   const value = useMemo<LocationDataSource>(() => (
-    (workingCopy.payload?.draft?.dataSource as LocationDataSource)
-    ?? (workingCopy.dataSource as LocationDataSource)
-    ?? 'openstreetmap'
-  ), [workingCopy]);
+    (workingCopy.draft.dataSource as LocationDataSource) ?? 'openstreetmap'
+  ), [workingCopy.draft.dataSource]);
 
   const options = useMemo<DataSourceOption[]>(() => (
     ORDERED_DATA_SOURCES.map((sourceId) => ({

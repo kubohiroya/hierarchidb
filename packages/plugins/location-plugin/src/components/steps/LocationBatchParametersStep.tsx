@@ -9,7 +9,7 @@ import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBatchParametersStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
 }
 
 const MIN_CONCURRENCY = 1;
@@ -24,12 +24,12 @@ function clamp(value: number, min: number, max: number): number {
 
 export const LocationBatchParametersStep: React.FC<LocationBatchParametersStepProps> = ({ workingCopy, onUpdate }) => {
   const { translations } = useTranslation();
-  const draft = workingCopy.payload?.draft ?? workingCopy;
+  const draft = workingCopy.draft ?? {};
 
-  const rawConcurrent = draft.concurrentDownloads ?? workingCopy.concurrentDownloads ?? 2;
+  const rawConcurrent = draft.concurrentDownloads ?? 2;
   const concurrentDownloads = clamp(Number(rawConcurrent) || 2, MIN_CONCURRENCY, MAX_CONCURRENCY);
-  const rawMinZoom = (draft as any).tilesMinZoom ?? (workingCopy as any).tilesMinZoom ?? 4;
-  const rawMaxZoom = (draft as any).tilesMaxZoom ?? (workingCopy as any).tilesMaxZoom ?? 12;
+  const rawMinZoom = (draft as any).tilesMinZoom ?? 4;
+  const rawMaxZoom = (draft as any).tilesMaxZoom ?? 12;
   const minZoom = clamp(Number(rawMinZoom) || 4, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
   const maxZoom = clamp(Number(rawMaxZoom) || 12, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL);
 

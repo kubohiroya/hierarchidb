@@ -11,23 +11,23 @@ import { useTranslation } from '../../i18n/index.js';
 
 interface LocationBasicInfoStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
 }
 
 export const LocationBasicInfoStep: React.FC<LocationBasicInfoStepProps> = ({ workingCopy, onUpdate }) => {
   const { translations } = useTranslation();
 
   const { name, description, tags } = useMemo(() => {
-    const draft = ((workingCopy.payload?.draft as Partial<LocationWorkingCopy> | undefined) ?? workingCopy) as LocationWorkingCopy;
+    const draft = workingCopy.draft;
     return {
       name: draft.name ?? '',
       description: draft.description ?? '',
-      tags: draft.tags ?? [],
+      tags: (draft.tags as string[] | undefined) ?? [],
     };
-  }, [workingCopy]);
+  }, [workingCopy.draft]);
 
   const handleBasicInfoChange = (updates: { name?: string; description?: string }) => {
-    const patch: Partial<LocationWorkingCopy> = {};
+    const patch: Partial<LocationWorkingCopy['draft']> = {};
     if (updates.name !== undefined) {
       patch.name = updates.name;
     }

@@ -12,7 +12,4 @@ export interface WorkingCopyBase<TEntity> {
   originalVersion?: number;
 }
 
-/**
- * Convenience type: working copy that also exposes draft fields at the top level for ease of access.
- */
-export type WorkingCopyDraft<TEntity> = WorkingCopyBase<TEntity> & Partial<TEntity>;
+export type WorkingCopyDraft<TEntity> = WorkingCopyBase<TEntity>;

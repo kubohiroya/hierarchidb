@@ -10,18 +10,16 @@ type DataSourceValue = typeof DATA_SOURCES[number];
 
 export interface LocationDetailsStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (patch: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (patch: Partial<LocationWorkingCopy['draft']>) => void;
   disabled?: boolean;
 }
 
 export const LocationDetailsStep: React.FC<LocationDetailsStepProps> = ({ workingCopy, onUpdate, disabled = false }) => {
   const { translations } = useTranslation();
-  const draft = workingCopy.payload?.draft ?? {};
-  const dataSourceValue: DataSourceValue = (draft.dataSource as DataSourceValue)
-    ?? (workingCopy.dataSource as DataSourceValue)
-    ?? 'openstreetmap';
-  const concurrentDownloads = draft.concurrentDownloads ?? workingCopy.concurrentDownloads ?? 2;
-  const licenseAgreement = draft.licenseAgreement ?? workingCopy.licenseAgreement ?? false;
+  const draft = workingCopy.draft ?? {};
+  const dataSourceValue: DataSourceValue = (draft.dataSource as DataSourceValue) ?? 'openstreetmap';
+  const concurrentDownloads = draft.concurrentDownloads ?? 2;
+  const licenseAgreement = draft.licenseAgreement ?? false;
 
   return (
     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 640, margin: '0 auto' }}>

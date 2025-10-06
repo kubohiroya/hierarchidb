@@ -4,6 +4,7 @@
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
@@ -84,7 +85,14 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-  const dialogData = useMemo<LocationWorkingCopy>(() => workingCopy ?? ({} as LocationWorkingCopy), [workingCopy]);
+  const emptyWorkingCopy = useMemo<LocationWorkingCopy>(() => ({
+    treeNodeId: '' as NodeId,
+    draft: {},
+    createdAt: Date.now() as Timestamp,
+    updatedAt: Date.now() as Timestamp,
+  }), []);
+
+  const dialogData = useMemo<LocationWorkingCopy>(() => workingCopy ?? emptyWorkingCopy, [emptyWorkingCopy, workingCopy]);
 
   const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
     dialogSizeRef.current = size;
@@ -94,43 +102,56 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   }, []);
 
   const handleWorkingCopyPatch = useCallback((patch: Partial<LocationWorkingCopy>) => {
-    setWorkingCopy((prev) => ({ ...prev, ...patch }));
-  }, [setWorkingCopy]);
+    setWorkingCopy((prev) => {
+      const base = prev ?? emptyWorkingCopy;
+
+      const { draft: draftPatch, updatedAt: updatedAtPatch, ...metaPatch } = patch;
+      const nextDraft = draftPatch ? { ...base.draft, ...draftPatch } : base.draft;
+      const nextUpdatedAt = updatedAtPatch ?? (prev?.updatedAt ?? (Date.now() as Timestamp));
+
+      return {
+        ...base,
+        ...metaPatch,
+        draft: nextDraft,
+        updatedAt: nextUpdatedAt,
+      } satisfies LocationWorkingCopy;
+    });
+  }, [emptyWorkingCopy, setWorkingCopy]);
 
   const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy>>>(() => ([
     {
       id: 'basic-info',
       label: translations.basicInfo.title,
       component: ({ data, onChange }) => (
-        <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} />
+        <LocationBasicInfoStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
       ),
     },
     {
       id: 'data-source',
       label: translations.dialog.dataSourceLabel,
       component: ({ data, onChange }) => (
-        <LocationDataSourceStep workingCopy={data} onUpdate={onChange} />
+        <LocationDataSourceStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
       ),
     },
     {
       id: 'license',
       label: translations.dialog.licenseAgreementLabel,
       component: ({ data, onChange }) => (
-        <LocationLicenseStep workingCopy={data} onUpdate={onChange} />
+        <LocationLicenseStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
       ),
     },
     {
       id: 'selection',
       label: translations.selection.title,
       component: ({ data, onChange }) => (
-        <LocationSelectionStep workingCopy={data} onUpdate={onChange} />
+        <LocationSelectionStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
       ),
     },
     {
       id: 'batch-parameters',
       label: translations.panel.processingSettings,
       component: ({ data, onChange }) => (
-        <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
+        <LocationBatchParametersStep workingCopy={data} onUpdate={(updates) => onChange({ draft: updates })} />
       ),
     },
     {
@@ -270,12 +291,15 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     const ActiveComponent = propsContent.activeStep?.component;
     if (!ActiveComponent) return null;
 
-    const dataSourceKey = (propsContent.stepData.dataSource as LocationDataSource) ?? 'openstreetmap';
-    const licenseAgreementValue = Boolean(propsContent.stepData.licenseAgreement);
-    const concurrentDownloadsValue = propsContent.stepData.concurrentDownloads ?? 2;
-    const selectionCount = propsContent.stepData.selectionMatrix?.reduce((count, row) => (
+    const draft = propsContent.stepData?.draft ?? {};
+
+    const dataSourceKey = (draft.dataSource as LocationDataSource) ?? 'openstreetmap';
+    const licenseAgreementValue = Boolean(draft.licenseAgreement);
+    const concurrentDownloadsValue = draft.concurrentDownloads ?? 2;
+    const selectionMatrix = draft.selectionMatrix ?? [];
+    const selectionCount = selectionMatrix.reduce((count: number, row: boolean[]) => (
       count + row.filter(Boolean).length
-    ), 0) ?? 0;
+    ), 0);
 
     return (
       <Box sx={{ pt: 2, px: 2 }}>

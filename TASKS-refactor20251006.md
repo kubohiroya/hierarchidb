@@ -120,7 +120,7 @@
        - [x] `LocationSelectionStep` で `SelectionMatrix` 表示前に翻訳済みタイトル／選択件数ラベルを描画し、`LocationSelectionStep.view.test.tsx` に翻訳値の検証を追加。
        - [x] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` を実施。`pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationSelectionStep` は sandbox 書き込み制約 (EPERM) で失敗したためユーザー実行に委任し、結果グリーンであることを確認済み。
     2. BatchParametersStep
-       - [x] UI で入力可能なパラメータ（並列度・ズーム範囲）を列挙し、`LocationBatchParametersStep` の更新値が `LocationWorkingCopy` の `concurrentDownloads/tilesMinZoom/tilesMaxZoom` に収束するよう整合。
+       - [x] UI で入力可能なパラメータ（並列度・ズーム範囲・リトライ設定）を列挙し、`LocationBatchParametersStep` の更新値が `LocationWorkingCopy` の `concurrentDownloads/tilesMinZoom/tilesMaxZoom/batchConfig` に収束するよう整合。
        - [x] 値域バリデーションと相互依存（min<=max）を追加し、`__tests__/LocationBatchParametersStep.test.tsx` でスライダ／入力変更時の `onUpdate` 発火とクランプ挙動を確認。
        - [x] `pnpm --filter @hierarchidb/plugins-location-plugin typecheck --pretty false` を実行。`pnpm --filter @hierarchidb/plugins-location-plugin test -- --run LocationBatchParametersStep` は sandbox の書き込み制約で実行不可だったため、ユーザー環境で再実行いただく前提で運用ログへ記録。
     3. MapPreviewStep

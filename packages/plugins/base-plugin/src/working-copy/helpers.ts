@@ -37,16 +37,11 @@ export function markWorkingCopyUpdated<TEntity>(
     ...updates,
   };
 
-  const base: WorkingCopyBase<TEntity> = {
+  return {
     treeNodeId: workingCopy.treeNodeId,
     draft,
     createdAt: workingCopy.createdAt,
     updatedAt: timestamp,
     originalVersion: workingCopy.originalVersion,
-  };
-
-  return {
-    ...draft,
-    ...base,
-  } as WorkingCopyDraft<TEntity>;
+  } satisfies WorkingCopyDraft<TEntity>;
 }

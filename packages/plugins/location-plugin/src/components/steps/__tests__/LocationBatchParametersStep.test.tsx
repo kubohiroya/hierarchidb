@@ -1,24 +1,22 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationWorkingCopy } from '../../../types/index.js';
+import type { Timestamp } from '@hierarchidb/common-type';
 import { LocationBatchParametersStep } from '../LocationBatchParametersStep.js';
 import { en } from '../../../i18n/en.js';
 
+const timestamp = Date.now() as Timestamp;
 const baseWorkingCopy: LocationWorkingCopy = {
-  id: 'node-1',
-  nodeId: 'node-1',
-  version: 1,
-  concurrentDownloads: 2,
-  tilesMinZoom: 4,
-  tilesMaxZoom: 12,
-  payload: {
-    draft: {
-      concurrentDownloads: 2,
-      tilesMinZoom: 4,
-      tilesMaxZoom: 12,
-    },
+  treeNodeId: 'node-1',
+  draft: {
+    concurrentDownloads: 2,
+    tilesMinZoom: 4,
+    tilesMaxZoom: 12,
   },
-} as unknown as LocationWorkingCopy;
+  createdAt: timestamp,
+  updatedAt: timestamp,
+  originalVersion: 1,
+};
 
 describe('LocationBatchParametersStep', () => {
   it('renders processing description and initial values', () => {
@@ -56,9 +54,7 @@ describe('LocationBatchParametersStep', () => {
       <LocationBatchParametersStep
         workingCopy={{
           ...baseWorkingCopy,
-          tilesMinZoom: 10,
-          tilesMaxZoom: 10,
-          payload: { draft: { tilesMinZoom: 10, tilesMaxZoom: 10 } },
+          draft: { ...baseWorkingCopy.draft, tilesMinZoom: 10, tilesMaxZoom: 10 },
         }}
         onUpdate={onUpdate}
       />,

@@ -25,7 +25,7 @@ import type { LocationType } from '../../types/index.js';
 
 interface LocationSelectionStepProps {
   workingCopy: LocationWorkingCopy;
-  onUpdate: (updates: Partial<LocationWorkingCopy>) => void;
+  onUpdate: (updates: Partial<LocationWorkingCopy['draft']>) => void;
 }
 
 const SAMPLE_COUNTRIES: Country[] = [
@@ -98,10 +98,7 @@ export const LocationSelectionStep: React.FC<LocationSelectionStepProps> = ({ wo
     });
   }, [translations]);
 
-  const selectionMatrixSource = useMemo(()=> {
-    return workingCopy.payload?.draft?.selectionMatrix
-    ?? workingCopy.selectionMatrix
-  }, [workingCopy.payload?.draft?.selectionMatrix, workingCopy.selectionMatrix]);
+  const selectionMatrixSource = useMemo(() => workingCopy.draft.selectionMatrix ?? [], [workingCopy.draft.selectionMatrix]);
 
   const selectionMatrix = useMemo(() => (
     normalizeMatrix(selectionMatrixSource, SAMPLE_COUNTRIES, locationTypes)
