@@ -3,6 +3,7 @@
    */
 
 import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type { Timestamp } from '@hierarchidb/common-type';
 
 // Branded types
 export type NodeId = string & { readonly __brand: 'NodeId' };
@@ -100,21 +101,30 @@ export type RouteEntity = {
   version: number;
 }
 
-export type RouteWorkingCopy = WorkingCopyDraft<RouteEntity> & Partial<RouteEntity> & {
-  isDraft?: boolean;
-  copiedAt?: number;
-  originalVersion?: number;
-  modifiedFields?: string[];
-  selectedCountries?: string[];
-  routeTypes?: RouteType[];
-  transportModes?: TransportMode[];
-  routeParameters?: RouteParameters;
-  draft?: Partial<RouteEntity>;
-  payload?: {
-    draft?: Partial<RouteEntity>;
-    stage?: 'draft' | 'synced';
-  };
+export type RouteDraftPayload = Partial<RouteEntity> & {
+  name: RouteEntity['name'];
+  routeType: RouteEntity['routeType'];
+  transportModes: RouteEntity['transportModes'];
+  dataSourceName: RouteEntity['dataSourceName'];
+  licenseAgreement: RouteEntity['licenseAgreement'];
+  processingConfig: RouteEntity['processingConfig'];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  version: number;
 };
+
+export type RouteWorkingCopyEntity = WorkingCopyDraft<RouteEntity> & RouteDraftPayload & {
+  id: NodeId;
+  nodeId: RouteEntity['nodeId'];
+  parentId?: NodeId;
+  isDraft?: boolean;
+  copiedAt?: Timestamp;
+  resumeStep?: number;
+  batchSessionId?: RouteEntity['batchSessionId'];
+  processingStatus?: RouteEntity['processingStatus'];
+};
+
+export type RouteWorkingCopy = RouteWorkingCopyEntity;
 
 /**
  * Peer payload stored for route nodes in peerEntities.

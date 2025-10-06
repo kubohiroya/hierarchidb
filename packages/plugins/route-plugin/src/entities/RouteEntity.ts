@@ -4,7 +4,6 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
 
 /**
  * Transport mode types
@@ -112,16 +111,7 @@ export interface RouteEntity extends BaseEntity {
 /**
  * Route working copy metadata shared between UI と Worker.
  */
-export type RouteWorkingCopy = WorkingCopyDraft<RouteEntity> & Partial<RouteEntity> & {
-  isDraft?: boolean;
-  copiedAt?: number;
-  modifiedFields?: string[];
-  draft?: Partial<RouteEntity>;
-  payload?: {
-    stage?: 'draft' | 'synced';
-    draft?: Partial<RouteEntity>;
-  };
-};
+export type RouteWorkingCopy = import('../types/index.js').RouteWorkingCopy;
 
 /**
  * Route filter criteria

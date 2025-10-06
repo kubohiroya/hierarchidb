@@ -27,7 +27,7 @@ import { useTranslation } from '../i18n/index.js';
 
 export interface RouteSelectionStepProps {
   workingCopy: RouteWorkingCopy;
-  onUpdate: (updates: Partial<RouteWorkingCopy>) => void;
+  onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 
@@ -44,14 +44,14 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = (workingCopy.payload?.draft ?? workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draft = (workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
     const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
     return typeof base === 'number' ? base + 1 : 0;
   }, [draftVersion, workingCopy.version]);
 
-  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+  const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,
       updatedAt: Date.now(),

@@ -1,7 +1,8 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep.js';
-import { RouteType, TransportMode, type RouteWorkingCopy } from '../types/index.js';
+import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId } from '../types/index.js';
+import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { en as enTranslations } from '../i18n/en.js';
 
 vi.mock('../i18n/index.js', () => ({
@@ -11,14 +12,10 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createWorkingCopy = (overrides: Partial<RouteWorkingCopy> = {}): RouteWorkingCopy => ({
-  treeNodeId: 'route-node-1' as any,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  draft: {},
-  payload: { stage: 'draft', draft: {} },
-  ...overrides,
-});
+const createWorkingCopy = (overrides: Partial<RouteEntity> = {}): RouteWorkingCopy => {
+  const base = createRouteDraftWorkingCopy('route-node-1' as NodeId);
+  return mergeRouteWorkingCopy(base, overrides);
+};
 
 describe('RouteBasicInfoStep', () => {
   beforeEach(() => {
@@ -27,18 +24,13 @@ describe('RouteBasicInfoStep', () => {
 
   it('prefers values provided via payload.draft', () => {
     const workingCopy = createWorkingCopy({
-      payload: {
-        stage: 'draft',
-        draft: {
-          name: 'Draft Route',
-          description: 'Draft description',
-          routeType: RouteType.ROAD,
-          transportModes: [TransportMode.CAR, TransportMode.BUS],
-          category: 'logistics',
-          tags: ['draft-tag'],
-          version: 4,
-        },
-      },
+      name: 'Draft Route',
+      description: 'Draft description',
+      routeType: RouteType.ROAD,
+      transportModes: [TransportMode.CAR, TransportMode.BUS],
+      category: 'logistics',
+      tags: ['draft-tag'],
+      version: 4,
     });
 
     render(
@@ -62,15 +54,7 @@ describe('RouteBasicInfoStep', () => {
 
   it('emits updates with incremented version and timestamp', () => {
     const onUpdate = vi.fn();
-    const workingCopy = createWorkingCopy({
-      payload: {
-        stage: 'draft',
-        draft: {
-          name: 'Draft Route',
-          version: 1,
-        },
-      },
-    });
+    const workingCopy = createWorkingCopy({ name: 'Draft Route', version: 1 });
 
     render(
       <RouteBasicInfoStep

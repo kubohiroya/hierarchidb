@@ -2,7 +2,8 @@ import { describe, expect, vi, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
-import type { RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteWorkingCopy, NodeId } from '../types/index.js';
+import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { en as enTranslations } from '../i18n/en.js';
 
 vi.mock('../i18n/index.js', () => ({
@@ -12,14 +13,10 @@ vi.mock('../i18n/index.js', () => ({
   }),
 }));
 
-const createWorkingCopy = (overrides: Partial<RouteWorkingCopy> = {}): RouteWorkingCopy => ({
-  treeNodeId: 'route-node-1' as any,
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
-  draft: {},
-  payload: { stage: 'draft', draft: {} },
-  ...overrides,
-});
+const createWorkingCopy = (overrides: Partial<RouteEntity> = {}): RouteWorkingCopy => {
+  const base = createRouteDraftWorkingCopy('route-node-1' as NodeId);
+  return mergeRouteWorkingCopy(base, overrides);
+};
 
 describe('RouteSelectionStep', () => {
   beforeEach(() => {

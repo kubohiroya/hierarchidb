@@ -30,7 +30,7 @@ import { useTranslation } from '../i18n/index.js';
 
 export interface RouteProcessingStepProps {
   workingCopy: RouteWorkingCopy;
-  onUpdate: (updates: Partial<RouteWorkingCopy>) => void;
+  onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
 }
 
@@ -47,7 +47,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
   onValidationChange,
 }) => {
   const { t } = useTranslation();
-  const draft = (workingCopy.payload?.draft ?? workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draft = (workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
   const draftVersion = draft.version;
   const computeNextVersion = useCallback(() => {
     const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
@@ -63,7 +63,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     setCategory(resolvedCategory);
   }, [resolvedCategory]);
 
-  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+  const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,
       updatedAt: Date.now(),

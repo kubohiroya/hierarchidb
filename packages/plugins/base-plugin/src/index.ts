@@ -41,6 +41,11 @@ export {
   createDraftWorkingCopyBase,
   markWorkingCopyUpdated,
 } from './working-copy/helpers.js';
+export type { EntityWorkingCopyAdapter } from './working-copy/adapter.js';
+export { createEntityWorkingCopyAdapter } from './working-copy/adapter.js';
+
+export { UnifiedBatchManagerBase } from './batch/UnifiedBatchManagerBase.js';
+export type { BatchPersistence, UnifiedBatchSession } from './batch/UnifiedBatchManagerBase.js';
 
 export type {
   PeerDataBase,

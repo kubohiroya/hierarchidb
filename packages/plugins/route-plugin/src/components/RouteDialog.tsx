@@ -5,7 +5,8 @@
 import type React from 'react';
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
+import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
 import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
@@ -70,8 +71,14 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
     setWorkingCopy((prev) => (prev ? updater(prev) : prev));
   }, [setWorkingCopy]);
 
-  const applyUpdates = useCallback((updates: Partial<RouteWorkingCopy>) => {
-    updateWorkingCopy((prev) => ({ ...prev, ...updates }));
+  useEffect(() => {
+    if (!open || workingCopy || mode !== 'create') return;
+    const fallbackNodeId = (nodeId ?? parentId ?? (globalThis.crypto?.randomUUID?.() ?? `route-${Date.now()}`)) as NodeId;
+    setWorkingCopy((prev) => prev ?? createRouteDraftWorkingCopy(fallbackNodeId, {}, parentId));
+  }, [open, mode, nodeId, parentId, workingCopy, setWorkingCopy]);
+
+  const applyUpdates = useCallback((updates: Partial<RouteEntity>) => {
+    updateWorkingCopy((prev) => (prev ? mergeRouteWorkingCopy(prev, updates) : prev));
   }, [updateWorkingCopy]);
 
   // Simple computed validity based on workingCopy to ease testing and determinism
@@ -84,7 +91,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const steps: DialogStep[] = useMemo(() => {
     if (!workingCopy) return [];
-    const handleUpdate = (updates: Partial<RouteWorkingCopy>) => applyUpdates(updates);
+    const handleUpdate = (updates: Partial<RouteEntity>) => applyUpdates(updates);
     return [
       {
         id: '1',

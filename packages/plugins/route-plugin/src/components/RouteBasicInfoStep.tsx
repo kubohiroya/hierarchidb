@@ -26,16 +26,13 @@ import { useTranslation } from '../i18n/index.js';
 
 export interface RouteBasicInfoStepProps {
   workingCopy: RouteWorkingCopy;
-  onUpdate: (updates: Partial<RouteWorkingCopy>) => void;
+  onUpdate: (updates: Partial<RouteEntity>) => void;
   onValidationChange: (isValid: boolean) => void;
   disabled?: boolean;
 }
 
-const resolveDraft = (workingCopy: RouteWorkingCopy): Partial<RouteEntity> => {
-  if (workingCopy.payload?.draft) return workingCopy.payload.draft;
-  if (workingCopy.draft) return workingCopy.draft;
-  return workingCopy as Partial<RouteEntity>;
-};
+const resolveDraft = (workingCopy: RouteWorkingCopy): Partial<RouteEntity> =>
+  workingCopy.draft ?? (workingCopy as Partial<RouteEntity>);
 
 export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
   workingCopy,
@@ -58,7 +55,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
     return typeof baseVersion === 'number' ? baseVersion + 1 : 0;
   }, [draft.version, workingCopy.version]);
 
-  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+  const emitUpdate = useCallback((updates: Partial<RouteEntity>) => {
     onUpdate({
       ...updates,
       updatedAt: Date.now(),
@@ -88,7 +85,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
   }, [emitUpdate]);
 
   const handleRouteTypeChange = useCallback((routeType: RouteType) => {
-    emitUpdate({ routeType, routeTypes: [routeType] });
+    emitUpdate({ routeType });
   }, [emitUpdate]);
 
   const handleTransportModesChange = useCallback((event: SelectChangeEvent<TransportMode[]>) => {
