@@ -124,6 +124,12 @@
       "@hierarchidb/ui-license/*": [
         "packages/ui/license/src/*"
       ],
+      "@hierarchidb/plugins-base-plugin": [
+        "packages/plugins/base-plugin/src/index.ts"
+      ],
+      "@hierarchidb/plugins-base-plugin/*": [
+        "packages/plugins/base-plugin/src/*"
+      ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"
       ],

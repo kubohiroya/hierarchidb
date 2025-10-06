@@ -28,6 +28,14 @@
       "@hierarchidb/ui-license/*": [
         "../../ui/license/dist-types/*",
         "../../ui/license/src/*"
+      ],
+      "@hierarchidb/plugins-base-plugin": [
+        "../../plugins/base-plugin/dist-types/index.d.ts",
+        "../../plugins/base-plugin/src/index.ts"
+      ],
+      "@hierarchidb/plugins-base-plugin/*": [
+        "../../plugins/base-plugin/dist-types/*",
+        "../../plugins/base-plugin/src/*"
       ]
     }
   },

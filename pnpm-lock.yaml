@@ -811,6 +811,9 @@ importers:
       '@hierarchidb/common-type':
         specifier: workspace:*
         version: link:../../common/types
+      '@hierarchidb/runtime-shared-batch-processor':
+        specifier: workspace:*
+        version: link:../../runtime-shared/batch-processor
     devDependencies:
       '@types/node':
         specifier: 18.19.123

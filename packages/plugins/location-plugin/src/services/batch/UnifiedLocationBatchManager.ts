@@ -3,9 +3,10 @@
  * Provides standardized batch control API based on persisted session metadata
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import type {
   BatchProgressCallback,
+  BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
@@ -31,9 +32,11 @@ const VECTOR_TILE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 type LocationBatchSessionPayload = UnifiedBatchSession<UnifiedLocationBatchConfig | undefined, LocationBatchData>;
 
-function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
+function createPersistence(
+  dbProvider: typeof getEphemeralLocationDB,
+): BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
   return {
-    async savePending(nodeId, payload) {
+    async savePending(nodeId: NodeId, payload: LocationBatchSessionPayload) {
       const db = dbProvider();
       try {
         await db.clearExpiredPendingSessions(PENDING_TTL);
@@ -48,7 +51,7 @@ function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPers
         storedAt: payload.storedAt,
       });
     },
-    async takePending(nodeId) {
+    async takePending(nodeId: NodeId) {
       const db = dbProvider();
       const record = await db.pendingSessions.get(nodeId);
       if (!record) return undefined;
@@ -62,7 +65,7 @@ function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPers
         storedAt: record.storedAt as Timestamp,
       } satisfies LocationBatchSessionPayload;
     },
-    async onSessionProgress(sessionId, event) {
+    async onSessionProgress(sessionId: BatchSessionId, event: BatchProgressEvent) {
       const db = dbProvider();
       await db.sessions?.update(sessionId, {
         progress: event.payload?.completed,
@@ -70,7 +73,7 @@ function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPers
         status: event.phase === 'completed' ? 'completed' : event.phase === 'failed' ? 'failed' : 'running',
       });
     },
-    async onSessionCompleted(sessionId) {
+    async onSessionCompleted(sessionId: BatchSessionId) {
       const db = dbProvider();
       await db.clearVectorTilesForSession(sessionId);
     },
@@ -79,7 +82,7 @@ function createPersistence(dbProvider: typeof getEphemeralLocationDB): BatchPers
 
 export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<UnifiedLocationBatchConfig | undefined, LocationBatchData> {
   private manager: LocationBatchSessionManager;
-  private readonly getDb: () => EphemeralLocationDB;
+  private getDb: () => EphemeralLocationDB;
 
   constructor(dbProvider: typeof getEphemeralLocationDB = getEphemeralLocationDB) {
     super(createPersistence(dbProvider));
@@ -94,7 +97,10 @@ export class UnifiedLocationBatchManager extends UnifiedBatchManagerBase<Unified
 
   /** @internal Test-only injection hook */
   setDbProvider(provider: () => EphemeralLocationDB): void {
-    (this as { persistence?: BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData> }).persistence = createPersistence(provider);
+    const self = this as unknown as {
+      persistence?: BatchPersistence<UnifiedLocationBatchConfig | undefined, LocationBatchData>;
+    };
+    self.persistence = createPersistence(provider);
     this.getDb = provider;
   }
 
