@@ -3,121 +3,65 @@
    */
 
 //  @hierarchidb/common-type
-export type NodeId = string & { readonly __brand: 'NodeId' };
-export type TagId = string & { readonly __brand: 'TagId' };
-
-// Location Category Type
-export type LocationCategory = 'transportation' | 'administrative' | 'infrastructure';
-
-// ================================
-// Location Types
-// ================================
-
-export enum LocationType {
-  AIRPORT = 'airport',
-  RAILWAY_STATION = 'railway_station',
-  BUS_STOP = 'bus_stop',
-  PORT = 'port',
-  HOSPITAL = 'hospital',
-  SCHOOL = 'school',
-  UNIVERSITY = 'university',
-  TOURIST_ATTRACTION = 'tourist_attraction',
-  HOTEL = 'hotel',
-  RESTAURANT = 'restaurant',
-  SHOPPING = 'shopping',
-  PARK = 'park',
-  LIBRARY = 'library',
-  MUSEUM = 'museum',
-  BANK = 'bank',
-  POST_OFFICE = 'post_office',
-  FIRE_STATION = 'fire_station',
-  POLICE = 'police',
-  GOVERNMENT = 'government',
-  RELIGIOUS = 'religious',
-  INTERCHANGE = 'interchange'
-}
+import type { NodeId } from '@hierarchidb/common-type';
+export type { NodeId } from '@hierarchidb/common-type';
 
 // ================================
 // Entity Types
 // ================================
 
-export type LocationEntity = Partial<{
-  id: NodeId;
-  nodeId: NodeId;
+import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type {
+  LocationEntity as LocationEntityDefinition,
+  LocationDataSource,
+  LocationBatchConfig,
+  LocationBatchFilterCriteria,
+  LocationBatchProcessingOptions,
+  LocationCategory,
+  LocationType,
+  LocationSearchConfig,
+  LocationAddress,
+  LocationAttributes,
+} from '../entities/LocationEntity.js';
+export type {
+  LocationPoint,
+  LocationPointProperties,
+  LocationPointKind,
+  LocationPointSource,
+} from '../entities/LocationPoint.js';
 
-  // Basic Information
-  name: string;
-  description?: string;
-  tags: TagId[];
-  category: LocationCategory;
+export type LocationEntity = LocationEntityDefinition;
+export type {
+  LocationDataSource,
+  LocationCategory,
+  LocationType,
+  LocationBatchConfig,
+  LocationBatchFilterCriteria,
+  LocationBatchProcessingOptions,
+  LocationSearchConfig,
+  LocationAddress,
+  LocationAttributes,
+};
 
-  // Map Position
-  zxy: [number, number, number]; // [zoom, x(longitude), y(latitude)]
-
-  // Data Source
-  dataSourceName: 'openstreetmap' | 'geonames' | 'wikidata' | 'overpass';
-
-  // License Agreement
-  licenseAgreement: boolean;
-  licenseAgreedAt: string;
-
-  // Processing Configuration
-  processingConfig: LocationProcessingConfig;
-
-  // Processing Status
-  batchSessionId: string;
-  processingStatus: 'idle' | 'processing' | 'completed' | 'failed';
-
-  // Metadata
-  createdAt: number;
-  updatedAt: number;
-  version: number;
-}>;
-
-export type LocationWorkingCopy = Partial<LocationEntity & {
-  isDraft: boolean;
-  checkboxState: Record<string, Record<LocationType, boolean>>;
-  selectedCountries: string[];
-  locationTypes: LocationType[];
-}>;
-
-// ================================
-// Processing Configuration
-// ================================
-
-export interface LocationProcessingConfig {
-  concurrentDownloads: number;
-  corsProxyBaseURL?: string;
-  enableLocationFiltering: boolean;
-  enableClustering: boolean;
-  enableGeocoding: boolean;
-  maxLocationsPerType?: number;
-  bufferRadius?: number;
-  clusteringRadius?: number;
-  minClusterSize?: number;
-  geocodingLanguage?: string;
-}
-
-// ================================
-// Statistics Types
-// ================================
-
-export interface LocationStatistics {
-  totalLocations: number;
-  locationsByType: Record<string, number>;
-  locationsByCountry: Record<string, number>;
-  averageElevation?: number;
-  totalCapacity?: number;
-}
-
-// ================================
-// Create/Update Data Types
-// ================================
+export type LocationWorkingCopy = WorkingCopyDraft<LocationEntityDefinition> & {
+  dataSource?: LocationDataSource;
+  selectionMatrix?: boolean[][];
+  concurrentDownloads?: number;
+  licenseAgreement?: boolean;
+  category?: LocationCategory;
+  type?: LocationType;
+};
 
 export interface UpdateLocationData {
-  name?: string;
-  description?: string;
-  processingConfig?: LocationProcessingConfig;
+  dataSource?: LocationDataSource;
+  selectionMatrix?: boolean[][];
+  concurrentDownloads?: number;
+  licenseAgreement?: boolean;
+  licenseAgreedAt?: number;
+  batchSessionId?: string;
+  lastProcessedAt?: number;
+  category?: LocationCategory;
+  type?: LocationType;
 }
 
 // ================================
@@ -135,4 +79,17 @@ export interface LocationDialogProps {
 }
 
 // Worker entity metadata types
-export type { LocationPeerData, LocationGroupItemData, LocationRelationMeta } from './entities.js';
+export type {
+  LocationPeerData,
+  LocationGroupItemData,
+  LocationRelationMeta,
+} from './entities.js';
+export type {
+  OsmPointPayload,
+  OverpassPointPayload,
+  GeoNamesPointPayload,
+  WikidataPointPayload,
+  CustomPointPayload,
+  LocationPointPayloadBySource,
+  LocationPointPayloadUnion,
+} from './payloads.js';

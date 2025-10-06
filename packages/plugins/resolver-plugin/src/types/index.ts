@@ -1,4 +1,5 @@
 import type { NodeId, PeerEntity } from '@hierarchidb/common-type';
+import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
 
 /**
  * Resolver entity represents a property mapping configuration
@@ -76,15 +77,9 @@ export interface PreviewConfig {
 /**
  * Working copy types for Resolver
  */
-export interface ResolverWorkingCopyEntity extends ResolverEntity {
-  /** Working copy specific fields from WorkingCopy interface */
-  workingCopyId?: NodeId;
-  originalId: NodeId;
-  isDirty: boolean;
+export type ResolverDraftPayload = Partial<ResolverEntity>;
 
-  /** Fields that have been modified */
-  modifiedFields: string[];
-}
+export type ResolverWorkingCopy = WorkingCopyDraft<ResolverEntity>;
 
 /**
  * Peer payload persisted for resolver nodes.

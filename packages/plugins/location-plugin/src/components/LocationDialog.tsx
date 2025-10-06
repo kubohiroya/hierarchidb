@@ -1,26 +1,16 @@
 /**
-  * Location Dialog Component
-   */
+ * Location Dialog Component composed with the headless multi-step dialog shell.
+ */
 
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  Checkbox,
-  FormControl,
-  FormControlLabel,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-  Typography,
-} from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material';
+import { Box, Button, Grid, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
-import { notify } from '@hierarchidb/ui-core';
-import type { LocationDialogProps, LocationWorkingCopy } from '../types/index.js';
-import { useWorkingCopy } from '@hierarchidb/ui-core';
+import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
+import type {
+  LocationDialogProps,
+  LocationWorkingCopy,
+} from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 import {
   HeadlessMultiStepDialog,
@@ -31,32 +21,39 @@ import {
   initialPosition,
   sizesEqual,
   positionsEqual,
-  type HeadlessMultiStepDialogProps,
-  type StepComponentDescriptor,
-  type HeadlessHeaderRenderProps,
   type HeadlessContentRenderProps,
   type HeadlessFooterRenderProps,
-  type StepNavigationEvent,
+  type HeadlessHeaderRenderProps,
+  type HeadlessMultiStepDialogProps,
   type DialogDisplayMode,
-  type MultiDialogSize,
   type MultiDialogPosition,
+  type MultiDialogSize,
+  type StepNavigationEvent,
+  type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
+import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
+import { LocationDetailsStep } from '../ui/components/LocationDetailsStep.js';
 
-const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
-  value ? `${value}` : undefined;
-
-const dataSourceOptions = ['openstreetmap', 'geonames', 'wikidata', 'overpass'] as const;
-type DataSourceName = typeof dataSourceOptions[number];
-
-const dataSourceLabels: Record<DataSourceName, string> = {
+const DATA_SOURCE_LABELS = {
   openstreetmap: 'OpenStreetMap',
   geonames: 'GeoNames',
   wikidata: 'Wikidata',
   overpass: 'Overpass API',
-};
+  custom: 'Custom Source',
+  manual: 'Manual Entry',
+} as const;
 
-const isDataSourceName = (value: string): value is DataSourceName =>
-  (dataSourceOptions as readonly string[]).includes(value);
+type DataSourceLabelKey = keyof typeof DATA_SOURCE_LABELS;
+
+const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
+  value ? `${value}` : undefined;
+
+const buildDefaultFrame = (): { size: MultiDialogSize; position: MultiDialogPosition } => {
+  const viewport = getViewportSize();
+  const size = getPresetSize('normal', viewport);
+  const position = initialPosition(size, viewport);
+  return { size, position };
+};
 
 export const LocationDialog: React.FC<LocationDialogProps> = ({
   mode,
@@ -67,187 +64,72 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
   onSuccess,
   onError,
 }) => {
-  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<LocationWorkingCopy>({
+  const { translations } = useTranslation();
+  const { size: initialSize, position: initialPositionValue } = useMemo(buildDefaultFrame, []);
+
+  const {
+    workingCopy,
+    setWorkingCopy,
+    init,
+    commit,
+    discard,
+  } = useWorkingCopy<LocationWorkingCopy>({
     nodeType: 'location',
     mode,
     nodeId: toIdString(nodeId),
     parentId: toIdString(parentId),
   });
-  const { translations } = useTranslation();
-  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
-    Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
-  []);
 
   useEffect(() => { if (open) void init(); }, [open, init]);
-  useEffect(() => { return () => { void discard().catch(() => {}); }; }, [discard]);
+  useEffect(() => () => { void discard().catch(() => {}); }, [discard]);
 
-  const initialLayout = useMemo(() => {
-    const viewport = getViewportSize();
-    const defaultSize = getPresetSize('normal', viewport);
-    return normalizeDialogState(
-      defaultSize,
-      initialPosition(defaultSize, viewport),
-      viewport,
-      { enforceTopLeftMargin: true },
-    );
-  }, []);
+  const dialogSizeRef = useRef<MultiDialogSize>(initialSize);
+  const dialogPositionRef = useRef<MultiDialogPosition>(initialPositionValue);
+  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialSize);
+  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialPositionValue);
+  const [displayMode, setDisplayMode] = useState<DialogDisplayMode>('normal');
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-  const [displayMode, setDisplayModeState] = useState<DialogDisplayMode>('normal');
-  const [dialogSize, setDialogSize] = useState<MultiDialogSize>(initialLayout.size);
-  const [dialogPosition, setDialogPosition] = useState<MultiDialogPosition>(initialLayout.position);
-  const dialogSizeRef = useRef(dialogSize);
-  const dialogPositionRef = useRef(dialogPosition);
+  const dialogData = useMemo<LocationWorkingCopy>(() => workingCopy ?? ({} as LocationWorkingCopy), [workingCopy]);
 
   const applyNormalizedState = useCallback((size: MultiDialogSize, position: MultiDialogPosition) => {
     dialogSizeRef.current = size;
     dialogPositionRef.current = position;
     setDialogSize(size);
     setDialogPosition(position);
-  }, [setDialogPosition, setDialogSize]);
-
-  useEffect(() => {
-    dialogSizeRef.current = dialogSize;
-  }, [dialogSize]);
-
-  useEffect(() => {
-    dialogPositionRef.current = dialogPosition;
-  }, [dialogPosition]);
-
-  useEffect(() => {
-    if (!open) {
-      setDisplayModeState('normal');
-      dialogSizeRef.current = initialLayout.size;
-      dialogPositionRef.current = initialLayout.position;
-      setDialogSize(initialLayout.size);
-      setDialogPosition(initialLayout.position);
-    }
-  }, [open, initialLayout]);
-
-  const handleSave = useCallback(async () => {
-    try {
-      await commit();
-      if (workingCopy) onSuccess?.(workingCopy);
-      notify.success('Location saved successfully');
-    } catch (e) {
-      onError?.(e as Error);
-      notify.error('Failed to save location');
-    } finally {
-      onClose();
-    }
-  }, [commit, onClose, onError, onSuccess, workingCopy]);
-
-  const handleCancel = useCallback(async () => {
-    await discard().catch(() => {});
-    notify.info('Location changes discarded');
-    onClose();
-  }, [discard, onClose]);
-
-  const updateWorkingCopy = useCallback((updates: LocationWorkingCopy) => {
-    setWorkingCopy((prev) => ({ ...prev, ...updates }));
-  }, [setWorkingCopy]);
-
-  const dataSourceValue: DataSourceName = workingCopy?.dataSourceName ?? 'openstreetmap';
-  const handleDataSourceChange = useCallback((event: SelectChangeEvent<DataSourceName>) => {
-    const nextValue = event.target.value;
-    if (isDataSourceName(nextValue)) updateWorkingCopy({ dataSourceName: nextValue });
-  }, [updateWorkingCopy]);
-
-  const nameValue = workingCopy?.name ?? '';
-  const descriptionValue = workingCopy?.description ?? '';
-  const licenseAgreementValue = workingCopy?.licenseAgreement ?? false;
-
-  const steps = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy | null>>>(() => ([
-    { id: 'location-form', label: 'Location Details', component: () => null },
-  ]), []);
-
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-
-  useEffect(() => {
-    if (!open) {
-      setActiveStepIndex(0);
-    }
-  }, [open]);
-
-  const enabledStepIndices = useMemo<ReadonlyArray<number>>(() => [0], []);
-  const validatedStepIndices = useMemo<ReadonlyArray<number>>(() => (
-    (nameValue && licenseAgreementValue) ? [0] : []
-  ), [licenseAgreementValue, nameValue]);
-  const committableStepIndices = useMemo<ReadonlyArray<number>>(() => [0], []);
-
-  const handleNavigation = useCallback((event: StepNavigationEvent) => {
-    switch (event.type) {
-      case 'direct':
-        setActiveStepIndex(event.targetIndex);
-        break;
-      case 'next':
-      case 'back':
-        // Single step dialog; ignore navigation requests beyond bounds
-        break;
-    }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const handleWorkingCopyPatch = useCallback((patch: Partial<LocationWorkingCopy>) => {
+    setWorkingCopy((prev) => ({ ...prev, ...patch }));
+  }, [setWorkingCopy]);
 
-    let rafId: number | null = null;
+  const stepComponents = useMemo<ReadonlyArray<StepComponentDescriptor<LocationWorkingCopy>>>(() => ([
+    {
+      id: 'details',
+      label: translations.dialog.detailsStep,
+      component: ({ data, onChange }) => (
+        <LocationDetailsStep
+          workingCopy={data}
+          onUpdate={(updates) => onChange(updates)}
+        />
+      ),
+    },
+    {
+      id: 'selection',
+      label: translations.dialog.selectionStep,
+      component: ({ data, onChange }) => (
+        <LocationSelectionStep
+          workingCopy={data}
+          onUpdate={(updates) => {
+            onChange(updates);
+          }}
+        />
+      ),
+    },
+  ]), [translations.dialog.detailsStep, translations.dialog.selectionStep]);
 
-    const normalize = () => {
-      rafId = null;
-      const viewport = getViewportSize();
-      let targetSize = dialogSizeRef.current;
-      let targetPosition = dialogPositionRef.current;
-      let options = {
-        enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      };
-
-      if (displayMode === 'full-screen') {
-        targetSize = {
-          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
-        };
-        targetPosition = { x: 0, y: 0 };
-        options = {
-          enforceTopLeftMargin: false,
-          minPosition: 0,
-          clampSizeToViewport: false,
-        };
-      } else if (displayMode === 'maximize') {
-        targetSize = getPresetSize('maximize', viewport);
-        targetPosition = {
-          x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-          y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        };
-        options = {
-          enforceTopLeftMargin: false,
-          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-          clampSizeToViewport: true,
-        };
-      }
-
-      const normalized = normalizeDialogState(targetSize, targetPosition, viewport, options);
-      if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
-        applyNormalizedState(normalized.size, normalized.position);
-      }
-    };
-
-    const schedule = () => {
-      if (rafId !== null) return;
-      rafId = window.requestAnimationFrame(normalize);
-    };
-
-    window.addEventListener('resize', schedule, { passive: true });
-    schedule();
-
-    return () => {
-      window.removeEventListener('resize', schedule);
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-    };
-  }, [applyNormalizedState, displayMode]);
+  const enabledStepIndices = useMemo(() => stepComponents.map((_, index) => index), [stepComponents]);
+  const committableStepIndices = useMemo(() => [stepComponents.length - 1], [stepComponents.length]);
 
   const transitionDisplayMode = useCallback((mode: DialogDisplayMode) => {
     const viewport = getViewportSize();
@@ -277,21 +159,35 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
       applyNormalizedState(normalized.size, normalized.position);
     }
 
-    setDisplayModeState(mode);
-  }, [applyNormalizedState, setDisplayModeState]);
+    setDisplayMode(mode);
+  }, [applyNormalizedState]);
+
+  const handleSave = useCallback(async () => {
+    try {
+      await commit();
+      onSuccess?.(dialogData);
+      notify.success('Location saved successfully');
+    } catch (e) {
+      onError?.(e as Error);
+      notify.error('Failed to save location');
+    } finally {
+      onClose();
+    }
+  }, [commit, dialogData, onClose, onError, onSuccess]);
+
+  const handleCancel = useCallback(async () => {
+    await discard().catch(() => {});
+    notify.info('Location changes discarded');
+    onClose();
+  }, [discard, onClose]);
 
   const handleSizeChange = useCallback((next?: MultiDialogSize) => {
     if (!next) return;
-    const normalized = normalizeDialogState(
-      next,
-      dialogPositionRef.current,
-      getViewportSize(),
-      {
-        enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      },
-    );
+    const normalized = normalizeDialogState(next, dialogPositionRef.current, getViewportSize(), {
+      enforceTopLeftMargin: displayMode === 'normal',
+      minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+      clampSizeToViewport: true,
+    });
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       applyNormalizedState(normalized.size, normalized.position);
     }
@@ -299,22 +195,33 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
 
   const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
     if (!next) return;
-    const normalized = normalizeDialogState(
-      dialogSizeRef.current,
-      next,
-      getViewportSize(),
-      {
-        enforceTopLeftMargin: displayMode === 'normal',
-        minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      },
-    );
+    const normalized = normalizeDialogState(dialogSizeRef.current, next, getViewportSize(), {
+      enforceTopLeftMargin: displayMode === 'normal',
+      minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+      clampSizeToViewport: true,
+    });
     if (!sizesEqual(dialogSizeRef.current, normalized.size) || !positionsEqual(dialogPositionRef.current, normalized.position)) {
       applyNormalizedState(normalized.size, normalized.position);
     }
   }, [applyNormalizedState, displayMode]);
 
-  const renderHeader: HeadlessMultiStepDialogProps<LocationWorkingCopy | null>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationWorkingCopy | null>) => (
+  const handleStepNavigate = useCallback((event: StepNavigationEvent) => {
+    switch (event.type) {
+      case 'direct':
+        setActiveStepIndex(event.targetIndex);
+        break;
+      case 'next':
+        setActiveStepIndex((prev) => Math.min(prev + 1, stepComponents.length - 1));
+        break;
+      case 'back':
+        setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      default:
+        break;
+    }
+  }, [stepComponents.length]);
+
+  const renderHeader: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderHeader'] = useCallback((propsHeader: HeadlessHeaderRenderProps<LocationWorkingCopy>) => (
     <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ px: 2, py: 1.5, borderBottom: '1px solid #dde1eb' }}>
       <Box display="flex" alignItems="center" gap={1.5}>
         <LocationOn color="primary" />
@@ -323,133 +230,116 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
             {mode === 'create' ? translations.dialog.createTitle : translations.dialog.editTitle}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {formatTemplate(translations.dialog.stepLabel, {
-              current: propsHeader.activeStepIndex + 1,
-              total: steps.length,
-            })}
+            {translations.dialog.datasetDescription}
           </Typography>
         </Box>
       </Box>
-      <Button size="small" onClick={() => propsHeader.stepNavigation({ type: 'back' })} disabled>
+      <Button size="small" onClick={() => propsHeader.stepNavigation({ type: 'back' })} disabled={propsHeader.activeStepIndex === 0}>
         Back
       </Button>
     </Box>
-  ), [formatTemplate, mode, steps.length, translations.dialog.createTitle, translations.dialog.editTitle, translations.dialog.stepLabel]);
+  ), [mode, translations.dialog.createTitle, translations.dialog.datasetDescription, translations.dialog.editTitle]);
 
-  const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy | null>['renderContent'] = useCallback((_: HeadlessContentRenderProps<LocationWorkingCopy | null>) => (
-    <Box sx={{ pt: 2, px: 2 }}>
-      <TextField
-        fullWidth
-        required
-        label={translations.dialog.nameLabel}
-        value={nameValue}
-        onChange={(e) => updateWorkingCopy({ name: e.target.value })}
-        disabled={!workingCopy}
-        sx={{ mb: 3 }}
-      />
+  const renderContent: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderContent'] = useCallback((propsContent: HeadlessContentRenderProps<LocationWorkingCopy>) => {
+    const activeStep = propsContent.activeStep;
+    if (!activeStep) return null;
 
-      <TextField
-        fullWidth
-        multiline
-        rows={3}
-        label={translations.dialog.descriptionLabel}
-        value={descriptionValue}
-        onChange={(e) => updateWorkingCopy({ description: e.target.value })}
-        disabled={!workingCopy}
-        sx={{ mb: 3 }}
-      />
+    const ActiveComponent = activeStep.component;
 
-      <FormControl fullWidth sx={{ mb: 3 }}>
-        <InputLabel>{translations.dialog.dataSourceLabel}</InputLabel>
-        <Select<DataSourceName>
-          value={dataSourceValue}
-          onChange={handleDataSourceChange}
-          label={translations.dialog.dataSourceLabel}
-          disabled={!workingCopy}
-        >
-          {dataSourceOptions.map((value) => (
-            <MenuItem key={value} value={value}>
-              {dataSourceLabels[value]}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+    const dataSourceKey = (propsContent.stepData.dataSource as DataSourceLabelKey) ?? 'openstreetmap';
+    const licenseAgreementValue = Boolean(propsContent.stepData.licenseAgreement);
+    const concurrentDownloadsValue = propsContent.stepData.concurrentDownloads ?? 2;
 
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={licenseAgreementValue}
-            onChange={(e) => updateWorkingCopy({ licenseAgreement: e.target.checked })}
-            disabled={!workingCopy}
-          />
-        }
-        label={translations.dialog.licenseAgreementLabel}
-        sx={{ mb: 2 }}
-      />
-    </Box>
-  ), [dataSourceValue, descriptionValue, handleDataSourceChange, licenseAgreementValue, nameValue, translations.dialog.dataSourceLabel, translations.dialog.descriptionLabel, translations.dialog.licenseAgreementLabel, translations.dialog.nameLabel, updateWorkingCopy, workingCopy]);
+    return (
+      <Box sx={{ pt: 2, px: 2 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          {translations.dialog.datasetDescription}
+        </Typography>
+        <Grid container columnSpacing={2} sx={{ mb: 3 }}>
+          <Grid size="auto">
+            <Typography variant="caption" color="text.secondary">{translations.dialog.dataSourceLabel}</Typography>
+            <Typography variant="body2">{DATA_SOURCE_LABELS[dataSourceKey] ?? dataSourceKey}</Typography>
+          </Grid>
+          <Grid size="auto">
+            <Typography variant="caption" color="text.secondary">{translations.dialog.licenseAgreementLabel}</Typography>
+            <Typography variant="body2">{licenseAgreementValue ? translations.common.enabled : translations.common.disabled}</Typography>
+          </Grid>
+          <Grid size="auto">
+            <Typography variant="caption" color="text.secondary">{translations.panel.concurrentDownloads}</Typography>
+            <Typography variant="body2">{concurrentDownloadsValue}</Typography>
+          </Grid>
+        </Grid>
 
-  const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy | null>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy | null>) => (
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
-      <Button onClick={() => propsFooter.onRequestClose('close')} color="inherit">
-        {translations.dialog.cancel}
-      </Button>
-      <Button
-        variant="contained"
-        onClick={() => propsFooter.onRequestCommit?.()}
-        disabled={!workingCopy || !nameValue || !licenseAgreementValue}
-      >
-        {translations.dialog.save}
-      </Button>
-    </Box>
-  ), [licenseAgreementValue, nameValue, translations.dialog.cancel, translations.dialog.save, workingCopy]);
+        <ActiveComponent
+          stepIndex={propsContent.activeStepIndex ?? 0}
+          stepId={activeStep.id}
+          label={activeStep.label}
+          data={propsContent.stepData}
+          onChange={propsContent.onStepDataChange}
+          invalidMessages={propsContent.invalidMessageMap}
+        />
+      </Box>
+    );
+  }, [translations]);
 
-  const invalidMessageMap = useMemo(() => ({} as Record<string, string>), []);
+  const renderFooter: HeadlessMultiStepDialogProps<LocationWorkingCopy>['renderFooter'] = useCallback((propsFooter: HeadlessFooterRenderProps<LocationWorkingCopy>) => {
+    const canCommit = propsFooter.committableStepIndices.includes(propsFooter.activeStepIndex);
 
-  const frameSx = useMemo(() => {
-    const fullScreen = displayMode === 'full-screen';
-    return {
-      width: fullScreen ? '100%' : `${dialogSize.width}px`,
-      maxWidth: fullScreen ? '100%' : 'min(calc(100vw - 48px), 1280px)',
-      height: fullScreen ? '100%' : `${dialogSize.height}px`,
-      maxHeight: fullScreen ? '100%' : 'calc(100vh - 48px)',
-      display: 'flex',
-      flexDirection: 'column',
-      borderRadius: fullScreen ? 0 : 12,
-      boxShadow: fullScreen ? 'none' : '0 22px 80px rgba(10, 14, 36, 0.38)',
-      overflow: 'hidden',
-      backgroundColor: '#fff',
-    } as const;
-  }, [dialogSize.height, dialogSize.width, displayMode]);
+    return (
+      <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1.5, borderTop: '1px solid #dde1eb' }}>
+        <Box display="flex" gap={1}>
+          <Button size="small" onClick={() => transitionDisplayMode('normal')} disabled={displayMode === 'normal'}>
+            {translations.dialog.displayNormal}
+          </Button>
+          <Button size="small" onClick={() => transitionDisplayMode('maximize')} disabled={displayMode === 'maximize'}>
+            {translations.dialog.displayMaximize}
+          </Button>
+          <Button size="small" onClick={() => transitionDisplayMode('full-screen')} disabled={displayMode === 'full-screen'}>
+            {translations.dialog.displayFullscreen}
+          </Button>
+        </Box>
+        <Box display="flex" gap={1}>
+          <Button variant="outlined" onClick={() => propsFooter.onRequestClose('close')}>
+            {translations.dialog.cancel}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => propsFooter.onRequestCommit?.()}
+            disabled={!canCommit}
+          >
+            {translations.dialog.save}
+          </Button>
+        </Box>
+      </Box>
+    );
+  }, [displayMode, transitionDisplayMode, translations.dialog.cancel, translations.dialog.displayFullscreen, translations.dialog.displayMaximize, translations.dialog.displayNormal, translations.dialog.save]);
+
+  const dialogProps: HeadlessMultiStepDialogProps<LocationWorkingCopy> = {
+    open,
+    stepComponents,
+    stepData: dialogData,
+    onStepDataChange: handleWorkingCopyPatch,
+    activeStepIndex,
+    enabledStepIndices,
+    validatedStepIndices: [],
+    committableStepIndices,
+    invalidMessageMap: {},
+    isDirty: true,
+    onStepNavigate: handleStepNavigate,
+    onRequestClose: () => { void handleCancel(); },
+    onRequestCommit: () => { void handleSave(); },
+    renderHeader,
+    renderContent,
+    renderFooter,
+    size: dialogSize,
+    onSizeChange: handleSizeChange,
+    position: dialogPosition,
+    onPositionChange: handlePositionChange,
+    displayMode,
+    onDisplayModeChange: transitionDisplayMode,
+  };
 
   return (
-    <Box sx={frameSx} role="dialog" aria-modal={open}>
-      <HeadlessMultiStepDialog<LocationWorkingCopy | null>
-        open={open}
-        stepComponents={steps}
-        stepData={workingCopy}
-        onStepDataChange={(patch: Partial<LocationWorkingCopy> | null | undefined) => {
-          if (!patch) return;
-          updateWorkingCopy(patch);
-        }}
-        activeStepIndex={activeStepIndex}
-        onStepNavigate={handleNavigation}
-        enabledStepIndices={enabledStepIndices}
-        validatedStepIndices={validatedStepIndices}
-        committableStepIndices={committableStepIndices}
-        invalidMessageMap={invalidMessageMap}
-        onRequestClose={() => { void handleCancel(); }}
-        onRequestCommit={() => { void handleSave(); }}
-        displayMode={displayMode}
-        onDisplayModeChange={(mode: DialogDisplayMode) => { transitionDisplayMode(mode); }}
-        position={dialogPosition}
-        onPositionChange={handlePositionChange}
-        size={dialogSize}
-        onSizeChange={handleSizeChange}
-        renderHeader={renderHeader}
-        renderContent={renderContent}
-        renderFooter={renderFooter}
-      />
-    </Box>
+    <HeadlessMultiStepDialog<LocationWorkingCopy> {...dialogProps} />
   );
 };

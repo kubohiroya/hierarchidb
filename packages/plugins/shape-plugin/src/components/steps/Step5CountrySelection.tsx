@@ -105,8 +105,6 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
 
       onUpdate({
         checkboxState: newMatrix,
-        selectedCountries: getSelectedCountries(newMatrix),
-        adminLevels: getSelectedLevels(newMatrix),
       });
     },
     [checkboxMatrix, onUpdate],
@@ -118,26 +116,6 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
       { variant: 'success' },
     );
   }, [stats, enqueueSnackbar]);
-
-  const getSelectedCountries = (matrix: boolean[][]) => {
-    const selectedCountries: string[] = [];
-    matrix.forEach((row, index) => {
-      if (row.some((selected) => selected) && countries[index]) {
-        selectedCountries.push(countries[index].countryCode);
-      }
-    });
-    return selectedCountries;
-  };
-
-  const getSelectedLevels = (matrix: boolean[][]) => {
-    const levels = new Set<number>();
-    matrix.forEach((row) => {
-      row.forEach((selected, levelIndex) => {
-        if (selected) levels.add(levelIndex);
-      });
-    });
-    return Array.from(levels);
-  };
 
   // Show loading state
   if (loading) {

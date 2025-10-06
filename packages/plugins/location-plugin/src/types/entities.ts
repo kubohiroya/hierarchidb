@@ -1,7 +1,8 @@
+import type { LocationPointProperties } from '../entities/LocationPoint.js';
+
 /**
  * Location worker entity-specific data structures used by Dexie stores.
  */
-
 export interface LocationPeerData {
   schemaVersion: 1;
   lastProgress?: {
@@ -17,12 +18,9 @@ export interface LocationPeerData {
   metadata?: Record<string, unknown>;
 }
 
-export interface LocationGroupItemData {
-  schemaVersion: 1;
-  label?: string;
-  description?: string;
-  metadata?: Record<string, unknown>;
-}
+export interface LocationGroupItemData<
+  TPayload extends Record<string, unknown> = Record<string, unknown>,
+> extends LocationPointProperties<TPayload> {}
 
 export interface LocationRelationMeta {
   schemaVersion: 1;
@@ -30,4 +28,3 @@ export interface LocationRelationMeta {
   weight?: number;
   metadata?: Record<string, unknown>;
 }
-

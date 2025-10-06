@@ -351,16 +351,18 @@ export function buildShapeEntityFromCreate(
 export function createWorkingCopyFromEntity(
   entity: import('./types.js').ShapeEntity,
 ): import('./types.js').ShapeWorkingCopy {
-  const obj = {
-    ...entity,
-    processingConfig: { ...entity.processingConfig },
-    checkboxState: [],
-    selectedCountries: [...entity.selectedCountries||[]],
-    adminLevels: [...entity.adminLevels||[]],
-    urlMetadata: [...entity.urlMetadata||[]],
+  const { selectedCountries, adminLevels, urlMetadata, ...rest } = entity;
+  const workingCopy = {
+    ...rest,
+    processingConfig: entity.processingConfig ? { ...entity.processingConfig } : undefined,
+    checkboxState: Array.isArray(entity.checkboxState)
+      ? entity.checkboxState
+      : typeof entity.checkboxState === 'string'
+        ? parseCheckboxState(entity.checkboxState)
+        : [],
     isDraft: false,
   };
-  return obj as unknown as import('./types.js').ShapeWorkingCopy;
+  return workingCopy as import('./types.js').ShapeWorkingCopy;
 }
 
 /**
@@ -369,8 +371,80 @@ export function createWorkingCopyFromEntity(
 export function mapWorkingCopyToUpdates(
   workingCopy: import('./types.js').ShapeWorkingCopy,
 ): Partial<import('./types.js').ShapeEntity> {
-  const updates: Partial<import('./types.js').ShapeEntity> = {
-    ...workingCopy
-  };
+  const updates: Partial<import('./types.js').ShapeEntity> = {};
+
+  if (typeof workingCopy.name === 'string') {
+    updates.name = workingCopy.name;
+  }
+  if (typeof workingCopy.description === 'string') {
+    updates.description = workingCopy.description;
+  }
+  if (typeof workingCopy.dataSourceName === 'string') {
+    updates.dataSourceName = workingCopy.dataSourceName;
+  }
+  if (typeof workingCopy.licenseAgreement === 'boolean') {
+    updates.licenseAgreement = workingCopy.licenseAgreement;
+  }
+  if (workingCopy.processingConfig) {
+    updates.processingConfig = workingCopy.processingConfig;
+  }
+  if (workingCopy.checkboxState !== undefined) {
+    updates.checkboxState = workingCopy.checkboxState;
+  }
+
+  if (typeof workingCopy.batchSessionId === 'string') {
+    updates.batchSessionId = workingCopy.batchSessionId;
+  }
+  if (typeof workingCopy.processingStatus === 'string') {
+    updates.processingStatus = workingCopy.processingStatus;
+  }
+
+  if (workingCopy.licenseAgreedAt) {
+    updates.licenseAgreedAt = workingCopy.licenseAgreedAt;
+  }
+
   return updates;
+}
+
+/**
+ * Summarize checkbox state into simple derived information.
+ */
+export function summarizeCheckboxState(state: boolean[][] | string | undefined): {
+  hasSelection: boolean;
+  levels: number[];
+  selectedRowCount: number;
+  totalSelections: number;
+} {
+  const matrix: boolean[][] = Array.isArray(state)
+    ? state
+    : typeof state === 'string'
+      ? parseCheckboxState(state)
+      : [];
+
+  let hasSelection = false;
+  const levelSet = new Set<number>();
+  let selectedRowCount = 0;
+  let totalSelections = 0;
+
+  matrix.forEach((row) => {
+    let rowSelected = false;
+    row.forEach((selected, levelIndex) => {
+      if (selected) {
+        hasSelection = true;
+        levelSet.add(levelIndex);
+        rowSelected = true;
+        totalSelections += 1;
+      }
+    });
+    if (rowSelected) {
+      selectedRowCount += 1;
+    }
+  });
+
+  return {
+    hasSelection,
+    levels: Array.from(levelSet).sort((a, b) => a - b),
+    selectedRowCount,
+    totalSelections,
+  };
 }

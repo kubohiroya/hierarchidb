@@ -45,6 +45,7 @@ export interface LocationPluginTranslations {
     filtering: string;
     clustering: string;
     geocoding: string;
+    locationPointCount: string;
   };
 
   details?: {
@@ -232,10 +233,16 @@ export interface LocationPluginTranslations {
     createTitle: string;
     editTitle: string;
     stepLabel: string;
+    detailsStep: string;
+    selectionStep: string;
+    datasetDescription: string;
     nameLabel: string;
     descriptionLabel: string;
     dataSourceLabel: string;
     licenseAgreementLabel: string;
+    displayNormal: string;
+    displayMaximize: string;
+    displayFullscreen: string;
     save: string;
     cancel: string;
   };
@@ -245,29 +252,52 @@ export interface LocationPluginTranslations {
     railway_station: string;
     bus_stop: string;
     port: string;
-    hospital: string;
-    school: string;
-    university: string;
-    tourist_attraction: string;
-    hotel: string;
-    restaurant: string;
-    shopping: string;
-    park: string;
-    library: string;
-    museum: string;
-    bank: string;
+    parking: string;
+    government: string;
+    religious: string;
     post_office: string;
     fire_station: string;
     police: string;
-    government: string;
-    religious: string;
-    interchange?: string;
+    hospital: string;
+    clinic: string;
+    pharmacy: string;
+    school: string;
+    university: string;
+    library: string;
+    shopping_mall: string;
+    supermarket: string;
+    restaurant: string;
+    hotel: string;
+    bank: string;
+    museum: string;
+    theater: string;
+    monument: string;
+    park: string;
+    stadium: string;
+    beach: string;
+    mountain: string;
+    lake: string;
+    river: string;
+    interchange: string;
+    tourist_attraction: string;
+    custom: string;
   };
 
   categories: {
     transportation: string;
     administrative: string;
     infrastructure: string;
+    commercial: string;
+    leisure: string;
+    cultural: string;
+    natural: string;
+    healthcare: string;
+    education: string;
+    government: string;
+    financial: string;
+    accommodation: string;
+    religious: string;
+    other: string;
   };
 
   errors: {

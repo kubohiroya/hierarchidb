@@ -3,7 +3,7 @@
  * Panel component for displaying shape-plugin entity information
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Accordion,
   AccordionDetails,
@@ -30,7 +30,7 @@ import {
 import type { NodeId } from '../../shared/types.js';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
 import { useShapeEntityProgress } from '../hooks/useShapeProgress.js';
-import { formatBytes, type ShapeEntity } from '../../shared/index.js';
+import { formatBytes, summarizeCheckboxState, type ShapeEntity } from '../../shared/index.js';
 
 export interface ShapePanelProps {
   nodeId: NodeId;
@@ -45,6 +45,24 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
   const [entity, setEntity] = useState<ShapeEntity | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const checkboxSummary = useMemo(
+    () => summarizeCheckboxState(entity?.checkboxState),
+    [entity?.checkboxState],
+  );
+
+  const derivedCountries = useMemo(() => {
+    if (!entity?.urlMetadata?.length) {
+      return [] as string[];
+    }
+    const codes = new Set<string>();
+    entity.urlMetadata.forEach((meta) => {
+      if (meta?.countryCode) {
+        codes.add(meta.countryCode);
+      }
+    });
+    return Array.from(codes).sort();
+  }, [entity?.urlMetadata]);
 
   // Real-time progress monitoring
   const {
@@ -287,7 +305,7 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
 
             {/* Processing Controls */}
             <Box mt={2}>
-              {!isProcessing && entity.selectedCountries.length > 0 && (
+              {!isProcessing && checkboxSummary.hasSelection && (
                 <Button
                   variant="contained"
                   startIcon={<PlayIcon />}
@@ -336,10 +354,19 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 Selected Countries
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={0.5} mt={1}>
-                {entity.selectedCountries.map((country) => (
+                {(
+                  derivedCountries.length > 0
+                    ? derivedCountries
+                    : entity?.selectedCountries ?? []
+                ).map((country) => (
                   <Chip key={country} label={country} size="small" />
                 ))}
-                {entity.selectedCountries.length === 0 && (
+                {derivedCountries.length === 0 && !(entity?.selectedCountries?.length) && checkboxSummary.selectedRowCount > 0 && (
+                  <Typography variant="body2" color="text.secondary">
+                    {checkboxSummary.selectedRowCount} countries selected (pending batch sync)
+                  </Typography>
+                )}
+                {checkboxSummary.selectedRowCount === 0 && (
                   <Typography variant="body2" color="text.disabled">
                     No countries selected
                   </Typography>
@@ -352,10 +379,10 @@ export function ShapePanel({ nodeId, onEdit, onError }: ShapePanelProps) {
                 Admin Levels
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={0.5} mt={1}>
-                {entity.adminLevels.map((level) => (
+                {(entity?.adminLevels?.length ? entity.adminLevels : checkboxSummary.levels).map((level) => (
                   <Chip key={level} label={`Level ${level}`} size="small" />
                 ))}
-                {entity.adminLevels.length === 0 && (
+                {entity?.adminLevels?.length === 0 && checkboxSummary.levels.length === 0 && (
                   <Typography variant="body2" color="text.disabled">
                     No admin levels selected
                   </Typography>

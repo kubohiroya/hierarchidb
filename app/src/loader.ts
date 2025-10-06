@@ -322,6 +322,10 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
     'loadTree.getTree',
   );
 
+  if (!tree) {
+    console.warn('[loader] getTree returned no data', { treeId });
+  }
+
   // Get final client state for return
   const workerAPIClientReturn = await loadWorkerAPIClient();
   return {

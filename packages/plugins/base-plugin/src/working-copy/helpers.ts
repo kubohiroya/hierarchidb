@@ -1,0 +1,52 @@
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { WorkingCopyBase, WorkingCopyDraft } from './types.js';
+
+export interface CreateDraftWorkingCopyParams<TEntity> {
+  draft: Partial<TEntity>;
+  meta: {
+    treeNodeId: NodeId;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+    originalVersion?: number;
+  };
+}
+
+/**
+ * Helper to construct a draft working copy with common metadata populated.
+ */
+export function createDraftWorkingCopyBase<TEntity>(
+  params: CreateDraftWorkingCopyParams<TEntity>,
+): WorkingCopyBase<TEntity> {
+  const now = Date.now() as Timestamp;
+  return {
+    treeNodeId: params.meta.treeNodeId,
+    draft: params.draft,
+    createdAt: params.meta.createdAt ?? now,
+    updatedAt: params.meta.updatedAt ?? now,
+    originalVersion: params.meta.originalVersion,
+  };
+}
+
+export function markWorkingCopyUpdated<TEntity>(
+  workingCopy: WorkingCopyDraft<TEntity>,
+  updates: Partial<TEntity>,
+  timestamp: Timestamp = Date.now() as Timestamp,
+): WorkingCopyDraft<TEntity> {
+  const draft = {
+    ...workingCopy.draft,
+    ...updates,
+  };
+
+  const base: WorkingCopyBase<TEntity> = {
+    treeNodeId: workingCopy.treeNodeId,
+    draft,
+    createdAt: workingCopy.createdAt,
+    updatedAt: timestamp,
+    originalVersion: workingCopy.originalVersion,
+  };
+
+  return {
+    ...draft,
+    ...base,
+  } as WorkingCopyDraft<TEntity>;
+}

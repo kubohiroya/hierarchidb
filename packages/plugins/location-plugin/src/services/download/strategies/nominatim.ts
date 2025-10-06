@@ -7,7 +7,6 @@ import type {
 } from '../../../entities/LocationEntity.js';
 import {
   buildLocationEntity,
-  createPoint,
   mapCategory,
   mapType,
   normalizeImportance,
@@ -16,33 +15,9 @@ import {
   parseNumber,
   sanitizeTags,
 } from '../mappers.js';
-
-interface RawAddress {
-  road?: string;
-  house_number?: string;
-  postcode?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  suburb?: string;
-  state?: string;
-  country?: string;
-  country_code?: string;
-}
-
-interface RawNominatimResult {
-  osm_id: number | string;
-  display_name?: string;
-  class?: string;
-  type?: string;
-  osm_type?: string;
-  lon?: string;
-  lat?: string;
-  boundingbox?: [string, string, string, string] | string[];
-  address?: RawAddress;
-  extratags?: Record<string, string>;
-  importance?: number | string;
-}
+import type { RawNominatimResult } from '../rawTypes.js';
+import { buildOsmPointProperties } from '../../pointFactories.js';
+import { appendLocationPoints } from '../../pointRepository.js';
 
 export class NominatimStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-nominatim';
@@ -109,20 +84,30 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
 
     const category: LocationCategory = mapCategory(osmData.class);
     const type: LocationType = mapType(osmData.type);
+    const fetchedAt = Date.now();
+    const point = buildOsmPointProperties(
+      osmData,
+      type,
+      lat,
+      lon,
+      fetchedAt,
+    );
 
-    return buildLocationEntity({
+    const entity = buildLocationEntity({
       prefix: 'osm',
       rawId: osmData.osm_id,
       name: osmData.display_name || 'Unknown',
       category,
       type,
       dataSource: 'openstreetmap',
-      point: createPoint(lon, lat, 'openstreetmap', Date.now()),
       attributes,
       boundingBox: parseBoundingBox(osmData.boundingbox),
       address,
       importance: normalizeImportance(osmData.importance, 0.5),
-      metadata: { source: 'nominatim' },
     });
+    void appendLocationPoints(entity.nodeId, [point]).catch((err) => {
+      console.warn('[Location][Nominatim] failed to persist point', err);
+    });
+    return entity;
   }
 }

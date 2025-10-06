@@ -104,15 +104,68 @@ export const fromPeerRow = (
 };
 
 const isGroupData = (value: unknown): value is LocationGroupItemData =>
-  isObject(value) && value.schemaVersion === 1;
+  isObject(value) && value.schemaVersion === 1 && typeof value.pid === 'string';
+
+const sanitizeSource = (value: unknown): LocationGroupItemData['source'] => {
+  if (!isObject(value)) return undefined;
+  const provider = typeof value.provider === 'string' ? value.provider : undefined;
+  const fetchedAt = typeof value.fetchedAt === 'number' ? value.fetchedAt : undefined;
+  if (!provider || fetchedAt === undefined) return undefined;
+  const originalId = typeof value.originalId === 'string' ? value.originalId : undefined;
+  return { provider, fetchedAt, originalId };
+};
+
+const sanitizePayload = (value: unknown): Record<string, unknown> => (
+  isRecord(value) ? { ...value } : {}
+);
 
 const normalizeGroupData = (value: unknown): LocationGroupItemData => {
-  if (isGroupData(value)) return value;
-  if (!isObject(value)) return { schemaVersion: 1 };
-  const metadata = sanitizeMetadata(value.metadata);
-  const label = typeof value.label === 'string' ? value.label : undefined;
-  const description = typeof value.description === 'string' ? value.description : undefined;
-  return { schemaVersion: 1, label, description, metadata };
+  if (isGroupData(value)) {
+    return {
+      ...value,
+      payload: sanitizePayload(value.payload),
+      source: sanitizeSource(value.source),
+    };
+  }
+
+  if (!isObject(value)) {
+    return {
+      schemaVersion: 1,
+      pid: '',
+      name: '',
+      latitude: 0,
+      longitude: 0,
+      kind: 'unknown',
+      gid0: '',
+      gid1: undefined,
+      gid2: undefined,
+      payload: {},
+      source: undefined,
+    };
+  }
+
+  const pid = typeof value.pid === 'string' ? value.pid : '';
+  const name = typeof value.name === 'string' ? value.name : '';
+  const latitude = typeof value.latitude === 'number' ? value.latitude : 0;
+  const longitude = typeof value.longitude === 'number' ? value.longitude : 0;
+  const kind = typeof value.kind === 'string' ? value.kind : 'unknown';
+  const gid0 = typeof value.gid0 === 'string' ? value.gid0 : '';
+  const gid1 = typeof value.gid1 === 'string' ? value.gid1 : undefined;
+  const gid2 = typeof value.gid2 === 'string' ? value.gid2 : undefined;
+
+  return {
+    schemaVersion: 1,
+    pid,
+    name,
+    latitude,
+    longitude,
+    kind,
+    gid0,
+    gid1,
+    gid2,
+    payload: sanitizePayload((value as Record<string, unknown>).payload),
+    source: sanitizeSource((value as Record<string, unknown>).source),
+  };
 };
 
 export const toGroupRow = (
@@ -169,4 +222,3 @@ export const fromRelationRows = (
     meta: normalizeRelationMeta(meta),
     updatedAt,
   }));
-

@@ -6,6 +6,7 @@
 export type {
   BaseMapEntity,
   BaseMapWorkingCopy,
+  BaseMapDraftPayload,
   CreateBaseMapData,
   BaseMapSearchCriteria,
   MapStyle,

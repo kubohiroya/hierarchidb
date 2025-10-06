@@ -146,46 +146,14 @@ interface LicenseAgreement {
 
 ### Step 4: 処理設定
 ```typescript
-interface LocationProcessingConfig {
-  // ダウンロード設定
-  downloadConfig: {
-    concurrentDownloads: number;    // 並列ダウンロード数 (1-10)
-    chunkSize: number;              // チャンクサイズ (1000-10000)
-    requestDelay: number;           // リクエスト間隔（ミリ秒）
-    corsProxyUrl?: string;          // CORSプロキシURL
-  };
-  
-  // フィルタリング設定
-  filterConfig: {
-    enableDuplicateRemoval: boolean;  // 重複除去
-    duplicateThreshold: number;       // 重複判定距離（メートル）
-    minPopulation?: number;           // 最小人口（行政センターのみ）
-    includeClosedFacilities: boolean; // 閉鎖施設を含む
-  };
-  
-  // クラスタリング設定
-  clusterConfig: {
-    enableClustering: boolean;
-    algorithm: 'kmeans' | 'dbscan' | 'hierarchical';
-    clusterRadius: number;           // クラスタ半径（km）
-    minClusterSize: number;          // 最小クラスタサイズ
-  };
-  
-  // ジオコーディング設定
-  geocodingConfig: {
-    enableReverseGeocoding: boolean;
-    geocodingLanguage: string; // e.g., 'en', 'ja', or locale code
-    includeAdminBoundaries: boolean;
-  };
+interface LocationProcessingOptions {
+  concurrentDownloads: number; // 並列ダウンロード数 (1-8)
 }
 ```
 
 **UIコンポーネント**:
-- Slider: 並列数、チャンクサイズ調整
-- NumberField: 数値パラメータ入力
-- Switch: 機能の有効/無効切り替え
-- Select: アルゴリズム選択
-- AdvancedSettings: 詳細設定の折りたたみパネル
+- NumberField: 並列ダウンロード数を入力
+- Switch: ライセンス同意トグルのみ
 
 ### Step 5: 地点タイプと地域選択
 
@@ -668,31 +636,12 @@ interface ErrorHandling {
 interface LocationEntity {
   id: EntityId;
   nodeId: NodeId;
-  
-  // 基本情報
-  name: string;
-  description: string;
-  category: string;
-  tags: string[];
-  
-  // データソース設定
-  dataSourceName: string;
-  dataSourceConfig: DataSourceConfig;
-  
-  // 処理設定
-  processingConfig: LocationProcessingConfig;
-  
-  // 選択情報
+  dataSource: string;
+  licenseAgreement: boolean;
   selectionMatrix: boolean[][];
-  selectedCountries: string[];
-  locationTypes: LocationType[];
-  
-  // バッチ処理状態
+  concurrentDownloads: number;
   batchSessionId?: string;
-  processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
   lastProcessedAt?: number;
-  
-  // メタデータ
   createdAt: number;
   updatedAt: number;
   version: number;
@@ -802,7 +751,7 @@ const session = await locationPlugin.createBatchSession(
   basicInfo,
   dataSource,
   selection,
-  processingConfig
+  { concurrentDownloads: 2 }
 );
 
 // Step 5: 進捗モニタリング

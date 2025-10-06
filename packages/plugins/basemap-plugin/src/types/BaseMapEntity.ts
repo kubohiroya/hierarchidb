@@ -4,7 +4,12 @@
  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { HierarchicalEntity, HierarchicalSearchCriteria } from '@hierarchidb/plugins-base-plugin';
+import type {
+  HierarchicalEntity,
+  HierarchicalSearchCriteria,
+  PeerDataBase,
+  WorkingCopyDraft,
+} from '@hierarchidb/plugins-base-plugin';
 
 /**
  * Map style configuration
@@ -74,12 +79,20 @@ export interface BaseMapEntity extends HierarchicalEntity {
 /**
  * BaseMap working copy for edit operations
  */
-export interface BaseMapWorkingCopy extends BaseMapEntity {
-  workingCopyId: NodeId;
-  isDraft: true;
-  originalId?: NodeId;
-  copiedAt: Timestamp;
-}
+export type BaseMapDraftPayload = Pick<
+  BaseMapEntity,
+  | 'name'
+  | 'description'
+  | 'category'
+  | 'settings'
+  | 'tags'
+  | 'baseMapMetadataId'
+  | 'mapStyle'
+  | 'viewport'
+  | 'displayOptions'
+>;
+
+export type BaseMapWorkingCopy = WorkingCopyDraft<BaseMapEntity>;
 
 /**
  * Data for creating a new BaseMap
@@ -105,7 +118,7 @@ export interface BaseMapSearchCriteria extends HierarchicalSearchCriteria {
  * schemaVersion must always be present so that future migrations
  * can discriminate payload revisions.
  */
-export interface BasemapPeerData {
+export interface BasemapPeerData extends PeerDataBase {
   schemaVersion: 1;
   presentation?: {
     viewport?: MapViewport;

@@ -1,6 +1,6 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-type';
 import type { Table } from 'dexie';
-import { BaseEntityHandler } from '@hierarchidb/plugins-base-plugin';
+import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
 import { resolverDB } from '../database/ResolverDatabase.js';
 import type {
   DataTransformation,
@@ -128,17 +128,24 @@ export class ResolverEntityHandler extends BaseEntityHandler<
       throw new Error(`Resolver entity not found for nodeId: ${nodeId}`);
     }
 
-    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
+    const draftPayload: ResolverDraftPayload = { ...entity };
+
+    const base = createDraftWorkingCopyBase<ResolverEntity>({
+      draft: draftPayload,
+      meta: {
+        treeNodeId: entity.nodeId,
+        createdAt: entity.createdAt as Timestamp,
+        updatedAt: entity.updatedAt as Timestamp,
+        originalVersion: entity.version,
+      },
+    });
+
     const workingCopy: ResolverWorkingCopy = {
-      ...entity,
-      id: workingCopyId, // Use id as primary key for database
-      workingCopyId: workingCopyId,
-      originalId: entity.id,
-      isDirty: false,
-      modifiedFields: [],
+      ...base,
+      ...draftPayload,
     };
 
-    await resolverDB.workingCopies.put(workingCopy);
+    await resolverDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
     return workingCopy;
   }
 
@@ -146,43 +153,26 @@ export class ResolverEntityHandler extends BaseEntityHandler<
    * Get working copy by node ID
    */
   async getWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy | null> {
-    const entity = await this.getEntityByNodeId(nodeId);
-    if (!entity) {
-      return null;
-    }
-
-    const workingCopy = await resolverDB.workingCopies
-      .where('originalId')
-      .equals(entity.id)
-      .first();
-
-    return workingCopy || null;
+    const existing = await resolverDB.workingCopies.get(nodeId);
+    return existing ?? null;
   }
 
   /**
    * Update working copy
    */
   async updateWorkingCopy(
-    workingCopyId: NodeId,
-    updates: Partial<ResolverWorkingCopy>,
+    treeNodeId: NodeId,
+    updates: Partial<ResolverEntity>,
   ): Promise<ResolverWorkingCopy> {
-    const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
+    const workingCopy = await resolverDB.workingCopies.get(treeNodeId);
     if (!workingCopy) {
-      throw new Error(`Working copy not found: ${workingCopyId}`);
+      throw new Error(`Working copy not found: ${treeNodeId}`);
     }
 
-    const updatedWorkingCopy: ResolverWorkingCopy = {
-      ...workingCopy,
-      ...updates,
-      isDirty: true,
-      modifiedFields: Array.from(new Set([
-        ...workingCopy.modifiedFields,
-        ...Object.keys(updates),
-      ])),
-    };
+    const merged = markWorkingCopyUpdated(workingCopy, updates, Date.now() as Timestamp);
 
-    await resolverDB.workingCopies.put(updatedWorkingCopy);
-    return updatedWorkingCopy;
+    await resolverDB.workingCopies.put(merged, merged.treeNodeId);
+    return merged;
   }
 
   /**
@@ -193,14 +183,18 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
     }
+    const entityId = workingCopy.draft.id ?? workingCopy.treeNodeId;
+    if (!entityId) {
+      throw new Error('Working copy missing entity id');
+    }
 
-    // Remove working copy specific fields
-    const { id: _, workingCopyId: __, originalId, isDirty, modifiedFields, ...entityData } = workingCopy;
+    const entityData: Partial<ResolverEntity> = {
+      ...workingCopy.draft,
+      updatedAt: Date.now(),
+    };
 
-    // Update the main entity using the original entity id
-    const updatedEntity = await this.updateEntity(originalId, entityData);
+    const updatedEntity = await this.updateEntity(entityId as NodeId, entityData);
 
-    // Delete the working copy
     await resolverDB.workingCopies.delete(workingCopyId);
 
     return updatedEntity;

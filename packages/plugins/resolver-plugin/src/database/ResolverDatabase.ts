@@ -14,7 +14,7 @@ class ResolverDatabase extends Dexie {
 
     this.version(1).stores({
       resolvers: '&id, nodeId, name, createdAt, updatedAt',
-      workingCopies: '&id, nodeId, originalId, originalVersion',
+      workingCopies: '&treeNodeId, createdAt, updatedAt',
     });
   }
 }

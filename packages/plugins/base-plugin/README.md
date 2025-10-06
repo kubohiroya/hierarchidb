@@ -28,7 +28,56 @@ export class MyEntityHandler extends HierarchicalEntityHandler<MyEntity> {
 }
 ```
 
+## Working Copy ヘルパー
+`WorkingCopyBase` はドラフト/コミット両方のペイロードを単一プロパティで表現する汎用型です。プラグイン固有の edit フローでは、次のようにドラフト初期化とコミット遷移を安全に扱えます。
+
+```ts
+import {
+  createDraftWorkingCopyBase,
+  markWorkingCopyUpdated,
+  type WorkingCopyDraft,
+} from '@hierarchidb/plugins-base-plugin';
+
+interface Entity {
+  name: string;
+  description?: string;
+  version: number;
+}
+
+const wc = {
+  ...createDraftWorkingCopyBase<Entity>({
+    draft: { name: 'New node' },
+    meta: {
+      treeNodeId: 'node-1' as NodeId,
+    },
+  }),
+  name: 'New node',
+} satisfies WorkingCopyDraft<Entity>;
+
+const updated = markWorkingCopyUpdated(wc, {
+  description: 'Updated description',
+});
+console.log(updated.draft.description);
+```
+
+Working Copy はエンティティの一部（`Partial<Entity>`）のみを扱い、UI 固有の一時データは含めない想定で設計されている。
+
+## PeerStore ヘルパー
+`createPeerStoreNormalizer` はプラグイン固有のデフォルト値をマージするファクトリです。`schemaVersion` やメタデータの上書き漏れを防げます。
+
+```ts
+import { createPeerStoreNormalizer } from '@hierarchidb/plugins-base-plugin';
+
+const normalizePeerData = createPeerStoreNormalizer(() => ({
+  schemaVersion: 1,
+  domain: { flags: [] },
+  metadata: { source: 'default' },
+}));
+
+// 未設定値は defaults が補完される
+const payload = normalizePeerData({ metadata: { tags: ['foo'] } });
+```
+
 ## 注意
 - このパッケージは UI コンポーネントやワーカープラグイン定義を持ちません。
 - ランタイムで直接有効化されるプラグインではなく、実装向けのユーティリティ/抽象です。
-

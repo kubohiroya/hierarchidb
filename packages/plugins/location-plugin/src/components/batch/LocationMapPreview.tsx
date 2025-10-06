@@ -39,7 +39,7 @@ import {
 import type { LocationType, NodeId } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 
-export interface LocationPoint {
+export interface PreviewLocationPoint {
   id: string;
   name: string;
   nameEn?: string;
@@ -74,12 +74,12 @@ export interface MapStatistics {
 
 export interface LocationMapPreviewProps {
   nodeId: NodeId;
-  locations: LocationPoint[];
-  onLocationSelect?: (location: LocationPoint) => void;
+  locations: PreviewLocationPoint[];
+  onLocationSelect?: (location: PreviewLocationPoint) => void;
 }
 
 //  props
-const SAMPLE_LOCATIONS: LocationPoint[] = [
+const SAMPLE_LOCATIONS: PreviewLocationPoint[] = [
   {
     id: '1',
     name: 'Narita International Airport',
@@ -118,28 +118,40 @@ const TYPE_SETTINGS_BASE: Record<LocationType, {
   railway_station: { color: '#4CAF50', icon: '🚂', defaultVisible: true },
   bus_stop: { color: '#FF5722', icon: '🚌', defaultVisible: false },
   port: { color: '#FF9800', icon: '🚢', defaultVisible: true },
-  hospital: { color: '#F44336', icon: '🏥', defaultVisible: true },
-  school: { color: '#795548', icon: '🏫', defaultVisible: false },
-  university: { color: '#3F51B5', icon: '🎓', defaultVisible: true },
-  tourist_attraction: { color: '#E91E63', icon: '🎯', defaultVisible: true },
-  hotel: { color: '#9C27B0', icon: '🏨', defaultVisible: false },
-  restaurant: { color: '#FFC107', icon: '🍽️', defaultVisible: false },
-  shopping: { color: '#607D8B', icon: '🛍️', defaultVisible: false },
-  park: { color: '#4CAF50', icon: '🌳', defaultVisible: true },
-  library: { color: '#795548', icon: '📚', defaultVisible: false },
-  museum: { color: '#9C27B0', icon: '🏛️', defaultVisible: true },
-  bank: { color: '#2196F3', icon: '🏦', defaultVisible: false },
+  parking: { color: '#9E9E9E', icon: '🅿️', defaultVisible: false },
+  government: { color: '#607D8B', icon: '🏛️', defaultVisible: true },
+  religious: { color: '#795548', icon: '⛪', defaultVisible: false },
   post_office: { color: '#FF9800', icon: '📮', defaultVisible: false },
   fire_station: { color: '#F44336', icon: '🚒', defaultVisible: true },
   police: { color: '#3F51B5', icon: '👮', defaultVisible: true },
-  government: { color: '#607D8B', icon: '🏛️', defaultVisible: true },
-  religious: { color: '#795548', icon: '⛪', defaultVisible: false },
-  interchange: { color: '#FFA726', icon: '🛣️', defaultVisible: false },
+  hospital: { color: '#F44336', icon: '🏥', defaultVisible: true },
+  clinic: { color: '#EF5350', icon: '🩺', defaultVisible: false },
+  pharmacy: { color: '#8BC34A', icon: '💊', defaultVisible: false },
+  school: { color: '#795548', icon: '🏫', defaultVisible: false },
+  university: { color: '#3F51B5', icon: '🎓', defaultVisible: true },
+  library: { color: '#673AB7', icon: '📚', defaultVisible: false },
+  shopping_mall: { color: '#607D8B', icon: '🛍️', defaultVisible: false },
+  supermarket: { color: '#8BC34A', icon: '🛒', defaultVisible: false },
+  restaurant: { color: '#FFC107', icon: '🍽️', defaultVisible: false },
+  hotel: { color: '#9C27B0', icon: '🏨', defaultVisible: false },
+  bank: { color: '#2196F3', icon: '🏦', defaultVisible: false },
+  museum: { color: '#9C27B0', icon: '🏛️', defaultVisible: true },
+  theater: { color: '#FF7043', icon: '🎭', defaultVisible: false },
+  monument: { color: '#AB47BC', icon: '🗿', defaultVisible: false },
+  park: { color: '#4CAF50', icon: '🌳', defaultVisible: true },
+  stadium: { color: '#FFA726', icon: '🏟️', defaultVisible: false },
+  beach: { color: '#03A9F4', icon: '🏖️', defaultVisible: false },
+  mountain: { color: '#8D6E63', icon: '⛰️', defaultVisible: false },
+  lake: { color: '#29B6F6', icon: '🌊', defaultVisible: false },
+  river: { color: '#26C6DA', icon: '🏞️', defaultVisible: false },
+  interchange: { color: '#FFA000', icon: '🛣️', defaultVisible: false },
+  tourist_attraction: { color: '#E91E63', icon: '🎯', defaultVisible: true },
+  custom: { color: '#9E9E9E', icon: '📌', defaultVisible: false },
 };
 
 export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
-                                                                        locations = SAMPLE_LOCATIONS,
-                                                                      }) => {
+  locations = SAMPLE_LOCATIONS,
+}) => {
   const { translations } = useTranslation();
   const formatTemplate = useCallback((template: string, values: Record<string, string | number>) =>
     Object.entries(values).reduce((acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)), template),
@@ -157,7 +169,7 @@ export const LocationMapPreview: React.FC<LocationMapPreviewProps> = ({
   );
   const [zoom, setZoom] = useState(10);
   const [center, setCenter] = useState<[number, number]>([139.7, 35.7]); // Tokyo
-  const [selectedLocation, setSelectedLocation] = useState<LocationPoint | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<PreviewLocationPoint | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [settingsAnchor, setSettingsAnchor] = useState<null | HTMLElement>(null);

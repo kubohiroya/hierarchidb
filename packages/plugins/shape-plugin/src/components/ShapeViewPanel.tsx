@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -31,7 +31,7 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-type';
-import type { ShapeEntity } from '../shared';
+import { summarizeCheckboxState, type ShapeEntity } from '../shared';
 import type { BatchStatus } from '../services/types';
 
 export interface ShapeViewPanelProps {
@@ -50,6 +50,29 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const checkboxSummary = useMemo(() => summarizeCheckboxState(entity.checkboxState), [entity.checkboxState]);
+
+  const derivedCountries = useMemo(() => {
+    if (!entity.urlMetadata?.length) {
+      return [] as string[];
+    }
+    const codes = new Set<string>();
+    entity.urlMetadata.forEach((meta) => {
+      if (meta?.countryCode) {
+        codes.add(meta.countryCode);
+      }
+    });
+    return Array.from(codes).sort();
+  }, [entity.urlMetadata]);
+
+  const displayCountries = derivedCountries.length
+    ? derivedCountries
+    : entity.selectedCountries ?? [];
+
+  const displayAdminLevels = entity.adminLevels?.length
+    ? entity.adminLevels
+    : checkboxSummary.levels;
 
   // Fetch batch status
   const fetchBatchStatus = useCallback(async () => {
@@ -252,14 +275,24 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
               <Typography variant="body2" color="text.secondary">
                 Countries Selected
               </Typography>
-              <Typography variant="body1">{entity.selectedCountries.length || 'None'}</Typography>
+              {displayCountries.length > 0 ? (
+                <Typography variant="body1">{displayCountries.join(', ')}</Typography>
+              ) : checkboxSummary.selectedRowCount > 0 ? (
+                <Typography variant="body1" color="text.secondary">
+                  {checkboxSummary.selectedRowCount} countries selected (pending batch sync)
+                </Typography>
+              ) : (
+                <Typography variant="body1">None</Typography>
+              )}
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="body2" color="text.secondary">
                 Admin Levels
               </Typography>
-              <Typography variant="body1">{entity.adminLevels.join(', ') || 'None'}</Typography>
+              <Typography variant="body1">
+                {displayAdminLevels.length ? displayAdminLevels.join(', ') : 'None'}
+              </Typography>
             </Grid>
           </Grid>
 
@@ -392,7 +425,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       )}
 
       {/* Actions */}
-      {!entity.batchSessionId && entity.selectedCountries.length > 0 && (
+      {!entity.batchSessionId && checkboxSummary.hasSelection && (
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>

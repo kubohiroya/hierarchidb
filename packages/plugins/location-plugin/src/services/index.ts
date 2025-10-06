@@ -7,10 +7,16 @@
 export { getEphemeralLocationDB, closeEphemeralLocationDB } from './database/EphemeralLocationDB.js';
 export { LocationVectorTileService } from './tiles/LocationVectorTileService.js';
 export { LocationBatchManager, type LocationBatchProgressEvent } from './LocationBatchManager.js';
+export {
+  appendLocationPoints,
+  replaceLocationPoints,
+  listLocationPoints,
+  deleteLocationPoints,
+  clearLocationPoints,
+} from './pointRepository.js';
 
 // Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
 export { registerLocationRuntimeWorkerAdapters } from './batch/adapters/registerRuntimeWorker.js';
 export { registerLocationSharedDownloadService } from './download/registerSharedDownloadService.js';
 export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from './download/registry.js';
-

@@ -21,7 +21,7 @@ export class BaseMapDatabase extends Dexie {
 
     this.version(1).stores({
       baseMaps: '&id, nodeId, name, createdAt, updatedAt, baseMapMetadataId',
-      workingCopies: '&id, nodeId, originalId, createdAt, copiedAt',
+      workingCopies: '&treeNodeId',
     });
   }
 

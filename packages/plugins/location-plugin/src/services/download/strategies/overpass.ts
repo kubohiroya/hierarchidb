@@ -5,22 +5,15 @@ import type {
 } from '../../../entities/LocationEntity.js';
 import {
   buildLocationEntity,
-  createPoint,
   mapCategory,
   mapType,
   normalizeImportance,
   normalizeOsmType,
   sanitizeTags,
 } from '../mappers.js';
-
-interface RawOverpassElement {
-  id: number | string;
-  type: string;
-  lon?: number;
-  lat?: number;
-  center?: { lon?: number; lat?: number };
-  tags?: Record<string, string>;
-}
+import type { RawOverpassElement } from '../rawTypes.js';
+import { buildOverpassPointProperties } from '../../pointFactories.js';
+import { appendLocationPoints } from '../../pointRepository.js';
 
 export class OverpassStrategy implements ILocationDownloadStrategy {
   readonly id = 'openstreetmap-overpass';
@@ -31,8 +24,8 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
 
   async search(config: LocationSearchConfig): Promise<LocationEntity[]> {
     const endpoint = config.options?.overpassEndpoint || 'https://overpass-api.de/api/interpreter';
-    const query = config.options?.overpassQuery;
-    if (!query) {
+    const query = typeof config.options?.overpassQuery === 'string' ? config.options.overpassQuery : undefined;
+    if (!query?.trim()) {
       // Keep it conservative: require explicit query for now
       return [];
     }
@@ -66,23 +59,34 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
     const tags = overpassData.tags ?? {};
     const primaryClass = this.detectClass(tags);
     const primaryType = this.detectType(tags);
+    const mappedType = mapType(primaryType);
+    const fetchedAt = Date.now();
+    const point = buildOverpassPointProperties(
+      overpassData,
+      mappedType,
+      lat,
+      lon,
+      fetchedAt,
+    );
 
-    return buildLocationEntity({
+    const entity = buildLocationEntity({
       prefix: 'overpass',
       rawId: overpassData.id,
       name: tags.name || 'Unknown',
       category: mapCategory(primaryClass),
-      type: mapType(primaryType),
+      type: mappedType,
       dataSource: 'overpass',
-      point: createPoint(lon, lat, 'overpass', Date.now()),
       attributes: {
         osmId: String(overpassData.id),
         osmType: normalizeOsmType(overpassData.type),
-        osmTags: sanitizeTags(tags),
+        tags: sanitizeTags(tags),
       },
-      metadata: { source: 'overpass' },
       importance: normalizeImportance(tags.importance),
     });
+    void appendLocationPoints(entity.nodeId, [point]).catch((err) => {
+      console.warn('[Location][Overpass strategy] failed to persist point', err);
+    });
+    return entity;
   }
 
   private detectClass(tags: Record<string, string>): string | undefined {

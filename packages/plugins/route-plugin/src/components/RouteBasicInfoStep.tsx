@@ -1,9 +1,9 @@
 /**
-  * Route Basic Info Step Component
-   */
+ * Route Basic Info Step Component
+ */
 
 import type React from 'react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   Box,
   Chip,
@@ -18,9 +18,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
 import { Route as RouteIcon } from '@mui/icons-material';
-import type { RouteCategory, RouteWorkingCopy, TagId } from '../types/index.js';
+import { BasicInfoFields } from '@hierarchidb/ui-core';
+import type { RouteCategory, RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 
@@ -31,84 +31,76 @@ export interface RouteBasicInfoStepProps {
   disabled?: boolean;
 }
 
-/**
-    */
+const resolveDraft = (workingCopy: RouteWorkingCopy): Partial<RouteEntity> => {
+  if (workingCopy.payload?.draft) return workingCopy.payload.draft;
+  if (workingCopy.draft) return workingCopy.draft;
+  return workingCopy as Partial<RouteEntity>;
+};
+
 export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
-                                                                        workingCopy,
-                                                                        onUpdate,
-                                                                        onValidationChange,
-                                                                        disabled = false,
-                                                                      }) => {
+  workingCopy,
+  onUpdate,
+  onValidationChange,
+  disabled = false,
+}) => {
   const { translations } = useTranslation();
 
-  // Validation logic
+  const draft = useMemo(() => resolveDraft(workingCopy), [workingCopy]);
+  const resolvedName = draft.name ?? '';
+  const resolvedDescription = draft.description ?? '';
+  const resolvedRouteType = draft.routeType ?? workingCopy.routeType;
+  const resolvedTransportModes = draft.transportModes ?? workingCopy.transportModes ?? [];
+  const resolvedCategory = draft.category ?? workingCopy.category ?? 'transportation';
+  const resolvedTags = draft.tags ?? workingCopy.tags ?? [];
+
+  const computeNextVersion = useCallback(() => {
+    const baseVersion = draft.version ?? workingCopy.version;
+    return typeof baseVersion === 'number' ? baseVersion + 1 : 0;
+  }, [draft.version, workingCopy.version]);
+
+  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+    onUpdate({
+      ...updates,
+      updatedAt: Date.now(),
+      version: computeNextVersion(),
+    });
+  }, [computeNextVersion, onUpdate]);
+
   useEffect(() => {
-    const isValid =
-      (workingCopy.name?.trim() !== '' &&
-      workingCopy.routeType &&
-      workingCopy.transportModes &&
-      workingCopy.transportModes.length > 0) ?? false;
-
+    const isValid = Boolean(resolvedName.trim()) && Boolean(resolvedRouteType) && resolvedTransportModes.length > 0;
     onValidationChange(isValid);
-  }, [workingCopy.name, workingCopy.routeType, workingCopy.transportModes, onValidationChange]);
+  }, [onValidationChange, resolvedName, resolvedRouteType, resolvedTransportModes]);
 
-  const version = workingCopy.version ? workingCopy.version + 1 : 0;
-  const handleTagChange = (tags: TagId[]) => {
-    onUpdate({
-      tags,
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+  const handleTagChange = useCallback((tags: TagId[]) => {
+    emitUpdate({ tags });
+  }, [emitUpdate]);
 
-  const handleCategoryChange = (category: RouteCategory) => {
-    onUpdate({
-      category,
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+  const handleCategoryChange = useCallback((category: RouteCategory) => {
+    emitUpdate({ category });
+  }, [emitUpdate]);
 
-  const handleNameChange = (name: string) => {
-    onUpdate({
-      name,
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+  const handleNameChange = useCallback((name: string) => {
+    emitUpdate({ name });
+  }, [emitUpdate]);
 
-  const handleDescriptionChange = (description: string) => {
-    onUpdate({
-      description,
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+  const handleDescriptionChange = useCallback((description: string) => {
+    emitUpdate({ description });
+  }, [emitUpdate]);
 
-  const handleRouteTypeChange = (routeType: RouteType) => {
-    onUpdate({
-      routeType,
-      routeTypes: [routeType],
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+  const handleRouteTypeChange = useCallback((routeType: RouteType) => {
+    emitUpdate({ routeType, routeTypes: [routeType] });
+  }, [emitUpdate]);
 
-  const handleTransportModesChange = (event: SelectChangeEvent<TransportMode[]>) => {
+  const handleTransportModesChange = useCallback((event: SelectChangeEvent<TransportMode[]>) => {
     const value = event.target.value;
-    const transportModes = typeof value === 'string' ? value.split(',') as TransportMode[] : value as TransportMode[];
-
-    onUpdate({
-      transportModes,
-      updatedAt: Date.now(),
-      version,
-    });
-  };
+    const transportModes = typeof value === 'string'
+      ? (value.split(',') as TransportMode[])
+      : (value as TransportMode[]);
+    emitUpdate({ transportModes });
+  }, [emitUpdate]);
 
   return (
     <Box sx={{ p: 3, maxWidth: 700, margin: '0 auto' }}>
-      {/*
-*/}
       <Box display="flex" alignItems="center" gap={1} mb={3}>
         <RouteIcon color="primary" />
         <Typography variant="h6">{translations.basicInfo.title}</Typography>
@@ -120,8 +112,8 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
 
       <Stack spacing={3}>
         <BasicInfoFields
-          value={{ name: workingCopy.name, description: workingCopy.description }}
-          onChange={(updates: Partial<RouteWorkingCopy>) => {
+          value={{ name: resolvedName, description: resolvedDescription }}
+          onChange={(updates) => {
             if (updates.name !== undefined) handleNameChange(updates.name);
             if (updates.description !== undefined) handleDescriptionChange(updates.description);
           }}
@@ -135,18 +127,16 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
 
         <Divider />
 
-        {/*
-*/}
         <TextField
           select
           label={translations.basicInfo.routeTypeLabel}
-          value={workingCopy.routeType}
-          onChange={(e) => handleRouteTypeChange(e.target.value as RouteType)}
+          value={resolvedRouteType ?? ''}
+          onChange={(event) => handleRouteTypeChange(event.target.value as RouteType)}
           required
           fullWidth
           disabled={disabled}
           helperText={translations.basicInfo.routeTypeHelperText}
-          error={!workingCopy.routeType}
+          error={!resolvedRouteType}
         >
           {Object.values(RouteType).map((type) => (
             <MenuItem key={type} value={type}>
@@ -155,23 +145,17 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           ))}
         </TextField>
 
-        {/*
-*/}
         <FormControl required fullWidth disabled={disabled}>
           <InputLabel>{translations.basicInfo.transportModesLabel}</InputLabel>
           <Select
             multiple
-            value={workingCopy.transportModes || []}
+            value={resolvedTransportModes}
             onChange={handleTransportModesChange}
             input={<OutlinedInput label={translations.basicInfo.transportModesLabel} />}
             renderValue={(selected) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                 {selected.map((mode) => (
-                  <Chip
-                    key={mode}
-                    label={translations.transportModes[mode]}
-                    size="small"
-                  />
+                  <Chip key={mode} label={translations.transportModes[mode]} size="small" />
                 ))}
               </Box>
             )}
@@ -187,19 +171,15 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           </Typography>
         </FormControl>
 
-        {/*
-*/}
         <TextField
           select
           label={translations.basicInfo.categoryLabel}
-          value={workingCopy.category || 'transportation'}
-          onChange={(e) => handleCategoryChange(e.target.value as RouteCategory)}
+          value={resolvedCategory}
+          onChange={(event) => handleCategoryChange(event.target.value as RouteCategory)}
           fullWidth
           disabled={disabled}
           helperText={translations.basicInfo.categoryHelperText}
-          SelectProps={{
-            native: true,
-          }}
+          SelectProps={{ native: true }}
         >
           <option value="transportation">{translations.categories.transportation}</option>
           <option value="recreation">{translations.categories.recreation}</option>
@@ -207,13 +187,14 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
           <option value="emergency">{translations.categories.emergency}</option>
         </TextField>
 
-        {/*
-*/}
         <TextField
           label={translations.basicInfo.tagsLabel}
-          value={(workingCopy.tags || []).join(', ')}
-          onChange={(e) => {
-            const tags = e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) as TagId[];
+          value={resolvedTags.join(', ')}
+          onChange={(event) => {
+            const tags = event.target.value
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean) as TagId[];
             handleTagChange(tags);
           }}
           fullWidth
@@ -223,8 +204,6 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
         />
       </Stack>
 
-      {/*
-*/}
       <Box mt={4} p={2} bgcolor="grey.50" borderRadius={1}>
         <Typography variant="caption" color="text.secondary">
           {translations.basicInfo.hint}

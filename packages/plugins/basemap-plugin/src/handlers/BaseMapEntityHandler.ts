@@ -5,7 +5,7 @@
 
 import type { NodeId } from '@hierarchidb/common-type';
 import type { Collection, IndexableType, Table } from 'dexie';
-import { HierarchicalEntityHandler } from '@hierarchidb/plugins-base-plugin';
+import { HierarchicalEntityHandler, createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
 import type {
   BaseMapEntity,
   BaseMapSearchCriteria,
@@ -15,6 +15,7 @@ import type {
   MapStyle,
   MapViewport,
   BasemapPeerData,
+  BaseMapDraftPayload,
 } from '../types/index.js';
 import { BaseMapDatabase } from '../database/BaseMapDatabase.js';
 import type { PeerEntity } from '@hierarchidb/runtime-worker';
@@ -237,66 +238,58 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   /** Create working copy */
   async createWorkingCopy(nodeId: NodeId): Promise<BaseMapWorkingCopy> {
     const entity = await this.getEntityByNodeId(nodeId);
-    const now = Date.now();
-    const workingCopyId = crypto.randomUUID() as unknown as NodeId;
+    const now = Date.now() as Timestamp;
 
-    if (entity) {
-      const workingCopy: BaseMapWorkingCopy = {
-        ...entity,
-        id: workingCopyId,
-        workingCopyId: workingCopyId,
-        isDraft: true,
-        originalId: entity.id,
-        copiedAt: now,
-        updatedAt: now,
-      } as BaseMapWorkingCopy;
-      await this.workingCopyTable.add(workingCopy);
-      return workingCopy;
-    }
+    const mapStyle = normalizeMapStyle(entity?.mapStyle);
+    const viewport = normalizeViewport(entity?.viewport);
+    const displayOptions = resolveDisplayOptions(mapStyle, entity?.displayOptions);
 
-    const defaultMapStyle = normalizeMapStyle();
-    const defaultViewport = normalizeViewport();
-    const defaultDisplayOptions = resolveDisplayOptions(defaultMapStyle);
-
-    const workingCopy: BaseMapWorkingCopy = {
-      id: workingCopyId,
-      workingCopyId: workingCopyId,
-      nodeId,
-      name: 'New BaseMap',
-      description: '',
-      settings: {
+    const draftPayload: BaseMapDraftPayload = {
+      name: entity?.name ?? 'New BaseMap',
+      description: entity?.description ?? '',
+      category: entity?.category,
+      settings: entity?.settings ?? {
         allowNestedFolders: true,
         maxDepth: 10,
         sortOrder: 'name',
       },
-      baseMapMetadataId: undefined,
-      mapStyle: defaultMapStyle,
-      viewport: defaultViewport,
-      displayOptions: defaultDisplayOptions,
-      isDraft: true,
-      createdAt: now,
-      updatedAt: now,
-      copiedAt: now,
-      version: 1,
-      parentId: undefined,
-      depth: 0,
-      path: `/${nodeId}`,
-      childCount: 0,
-      tags: [],
-    } as BaseMapWorkingCopy;
+      tags: entity?.tags ?? [],
+      baseMapMetadataId: entity?.baseMapMetadataId,
+      mapStyle,
+      viewport,
+      displayOptions,
+      version: entity?.version ?? 1,
+      createdAt: entity?.createdAt ?? now,
+      updatedAt: entity?.updatedAt ?? now,
+    };
 
-    await this.workingCopyTable.add(workingCopy);
+    const base = createDraftWorkingCopyBase<BaseMapEntity>({
+      draft: draftPayload,
+      meta: {
+        treeNodeId: nodeId,
+        createdAt: draftPayload.createdAt,
+        updatedAt: now,
+        originalVersion: entity?.version,
+      },
+    });
+
+    const workingCopy: BaseMapWorkingCopy = {
+      ...draftPayload,
+      ...base,
+    };
+
+    await this.workingCopyTable.put(workingCopy, nodeId as IndexableType);
     return workingCopy;
   }
 
   async commitWorkingCopy(_nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<BaseMapEntity> {
     // If original exists, update it; otherwise create a new entity for provided nodeId
-    if (workingCopy.originalId) {
+    if (workingCopy.treeNodeId && (await this.getEntityByNodeId(workingCopy.treeNodeId))) {
       const mapStyle = normalizeMapStyle(workingCopy.mapStyle);
       const viewport = normalizeViewport(workingCopy.viewport);
       const baseDisplayOptions = resolveDisplayOptions(mapStyle, workingCopy.displayOptions);
       const normalizedTags = normalizeTags({
-        explicitTags: (workingCopy as BaseMapEntity).tags,
+        explicitTags: workingCopy.tags,
         displayTags: workingCopy.displayOptions?.tags,
         name: workingCopy.name,
       });
@@ -304,7 +297,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
         ? { ...baseDisplayOptions, tags: [...normalizedTags] }
         : baseDisplayOptions;
       const tags = normalizedTags.length > 0 ? [...normalizedTags] : [];
-      const updated = await this.updateEntity(workingCopy.originalId as NodeId, {
+      const updated = await this.updateEntity(workingCopy.treeNodeId, {
         name: workingCopy.name,
         mapStyle,
         viewport,
@@ -315,12 +308,12 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       return updated;
     }
     // Create a new entity using working copy fields (explicit mapping)
-    const created = await this.createEntity(workingCopy.nodeId as NodeId, {
+    const created = await this.createEntity(workingCopy.treeNodeId, {
       name: workingCopy.name,
       description: workingCopy.description,
-      category: (workingCopy as BaseMapEntity).category,
-      settings: (workingCopy as BaseMapEntity).settings,
-      tags: (workingCopy as BaseMapEntity).tags,
+      category: workingCopy.category,
+      settings: workingCopy.settings,
+      tags: workingCopy.tags,
       baseMapMetadataId: workingCopy.baseMapMetadataId,
       mapStyle: workingCopy.mapStyle,
       viewport: workingCopy.viewport,

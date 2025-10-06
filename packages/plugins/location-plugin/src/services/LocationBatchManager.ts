@@ -11,9 +11,9 @@ import type {
   LocationSearchConfig,
   LocationType,
 } from '../entities/LocationEntity.js';
+import type { LocationPointProperties } from '../entities/LocationPoint.js';
 import {
   buildLocationEntity,
-  createPoint,
   mapCategory,
   mapType,
   normalizeImportance,
@@ -22,6 +22,9 @@ import {
   parseNumber,
   sanitizeTags,
 } from './download/mappers.js';
+import { buildOsmPointProperties, buildOverpassPointProperties } from './pointFactories.js';
+import { appendLocationPoints } from './pointRepository.js';
+import type { RawNominatimResult, RawOverpassElement } from './download/rawTypes.js';
 
 const logLocationBatchWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -82,42 +85,7 @@ export interface LocationBatchProgressEvent {
   };
 }
 
-interface RawOsmAddress {
-  road?: string;
-  house_number?: string;
-  postcode?: string;
-  city?: string;
-  town?: string;
-  village?: string;
-  suburb?: string;
-  state?: string;
-  country?: string;
-  country_code?: string;
-}
-
-interface RawNominatimLike {
-  osm_id: number | string;
-  display_name?: string;
-  class?: string;
-  type?: string;
-  osm_type?: string;
-  lon?: string | number;
-  lat?: string | number;
-  boundingbox?: [string, string, string, string] | string[];
-  address?: RawOsmAddress;
-  extratags?: Record<string, string>;
-  importance?: number | string;
-}
-
-interface RawOverpassElement {
-  id: number | string;
-  type?: string;
-  lon?: number | string;
-  lat?: number | string;
-  center?: { lon?: number; lat?: number };
-  tags?: Record<string, string>;
-  importance?: number | string;
-}
+type RawNominatimLike = RawNominatimResult;
 
 /**
  * Location batch manager extending Shape's batch session manager
@@ -126,6 +94,11 @@ export class LocationBatchManager {
   private locationSessions: Map<string, LocationBatchSession> = new Map();
   private locationTasks: Map<string, LocationBatchTask[]> = new Map();
   private progressCallbacks: Map<string, (event: LocationBatchProgressEvent) => void> = new Map();
+
+  private async persistLocationPoints(nodeId: NodeId, points: Array<LocationPointProperties>): Promise<void> {
+    if (!points.length) return;
+    await appendLocationPoints(nodeId, points);
+  }
 
   /**
    * Start location batch session
@@ -414,7 +387,10 @@ export class LocationBatchManager {
    */
   private async searchOverpass(config: LocationSearchConfig): Promise<LocationEntity[]> {
     const endpoint = config.options?.overpassEndpoint || 'https://overpass-api.de/api/interpreter';
-    const query = config.options?.overpassQuery || this.buildOverpassQuery(config);
+    const queryOption = config.options?.overpassQuery;
+    const query = typeof queryOption === 'string' && queryOption.trim().length > 0
+      ? queryOption
+      : this.buildOverpassQuery(config);
 
     try {
       const { postJson } = await import('./utils/sharedNet.js');
@@ -437,12 +413,25 @@ export class LocationBatchManager {
 
     try {
       const { getJson } = await import('./utils/sharedNet.js');
-      const url = config.options.customEndpoint;
-      const searchParams = new URLSearchParams(config.options.queryParams ?? {});
-      const requestUrl = searchParams.size > 0 ? `${url}?${searchParams.toString()}` : url;
-      const init: RequestInit | undefined = config.options.customHeaders
-        ? { headers: config.options.customHeaders }
+      const endpointUrl = config.options.customEndpoint;
+      if (typeof endpointUrl !== 'string' || endpointUrl.length === 0) {
+        console.error('Custom endpoint is invalid');
+        return [];
+      }
+      const queryParamsRaw = config.options.queryParams as Record<string, unknown> | undefined;
+      const queryParams = queryParamsRaw
+        ? Object.entries(queryParamsRaw).reduce((acc, [key, value]) => {
+          if (value == null) return acc;
+          acc[key] = Array.isArray(value)
+            ? value.map((item) => String(item)).join(',')
+            : String(value);
+          return acc;
+        }, {} as Record<string, string>)
         : undefined;
+      const searchParams = new URLSearchParams(queryParams);
+      const requestUrl = searchParams.size > 0 ? `${endpointUrl}?${searchParams.toString()}` : endpointUrl;
+      const customHeaders = config.options.customHeaders as HeadersInit | undefined;
+      const init: RequestInit | undefined = customHeaders ? { headers: customHeaders } : undefined;
       const data = await getJson(requestUrl, init);
       return this.convertCustomToLocations(data);
     } catch (error) {
@@ -483,39 +472,43 @@ export class LocationBatchManager {
    * Get OSM tag for location type
    */
   private getOSMTagForType(type: LocationType): { key: string; value: string } | null {
-    const typeToTag: Record<LocationType, { key: string; value: string }> = {
-      'airport': { key: 'aeroway', value: 'aerodrome' },
-      'railway_station': { key: 'railway', value: 'station' },
-      'bus_stop': { key: 'highway', value: 'bus_stop' },
-      'port': { key: 'harbour', value: 'yes' },
-      'parking': { key: 'amenity', value: 'parking' },
-      'government': { key: 'office', value: 'government' },
-      'embassy': { key: 'office', value: 'diplomatic' },
-      'courthouse': { key: 'amenity', value: 'courthouse' },
-      'hospital': { key: 'amenity', value: 'hospital' },
-      'clinic': { key: 'amenity', value: 'clinic' },
-      'pharmacy': { key: 'amenity', value: 'pharmacy' },
-      'school': { key: 'amenity', value: 'school' },
-      'university': { key: 'amenity', value: 'university' },
-      'library': { key: 'amenity', value: 'library' },
-      'shopping_mall': { key: 'shop', value: 'mall' },
-      'supermarket': { key: 'shop', value: 'supermarket' },
-      'restaurant': { key: 'amenity', value: 'restaurant' },
-      'hotel': { key: 'tourism', value: 'hotel' },
-      'bank': { key: 'amenity', value: 'bank' },
-      'museum': { key: 'tourism', value: 'museum' },
-      'theater': { key: 'amenity', value: 'theatre' },
-      'monument': { key: 'historic', value: 'monument' },
-      'park': { key: 'leisure', value: 'park' },
-      'stadium': { key: 'leisure', value: 'stadium' },
-      'beach': { key: 'natural', value: 'beach' },
-      'mountain': { key: 'natural', value: 'peak' },
-      'lake': { key: 'natural', value: 'water' },
-      'river': { key: 'waterway', value: 'river' },
-      'interchange': { key: 'highway', value: 'motorway_junction' },
+    const typeToTag: Partial<Record<LocationType, { key: string; value: string }>> = {
+      airport: { key: 'aeroway', value: 'aerodrome' },
+      railway_station: { key: 'railway', value: 'station' },
+      bus_stop: { key: 'highway', value: 'bus_stop' },
+      port: { key: 'harbour', value: 'yes' },
+      parking: { key: 'amenity', value: 'parking' },
+      government: { key: 'office', value: 'government' },
+      religious: { key: 'amenity', value: 'place_of_worship' },
+      post_office: { key: 'amenity', value: 'post_office' },
+      fire_station: { key: 'amenity', value: 'fire_station' },
+      police: { key: 'amenity', value: 'police' },
+      hospital: { key: 'amenity', value: 'hospital' },
+      clinic: { key: 'amenity', value: 'clinic' },
+      pharmacy: { key: 'amenity', value: 'pharmacy' },
+      school: { key: 'amenity', value: 'school' },
+      university: { key: 'amenity', value: 'university' },
+      library: { key: 'amenity', value: 'library' },
+      shopping_mall: { key: 'shop', value: 'mall' },
+      supermarket: { key: 'shop', value: 'supermarket' },
+      restaurant: { key: 'amenity', value: 'restaurant' },
+      hotel: { key: 'tourism', value: 'hotel' },
+      bank: { key: 'amenity', value: 'bank' },
+      museum: { key: 'tourism', value: 'museum' },
+      theater: { key: 'amenity', value: 'theatre' },
+      monument: { key: 'historic', value: 'monument' },
+      park: { key: 'leisure', value: 'park' },
+      stadium: { key: 'leisure', value: 'stadium' },
+      beach: { key: 'natural', value: 'beach' },
+      mountain: { key: 'natural', value: 'peak' },
+      lake: { key: 'natural', value: 'water' },
+      river: { key: 'waterway', value: 'river' },
+      interchange: { key: 'highway', value: 'motorway_junction' },
+      tourist_attraction: { key: 'tourism', value: 'attraction' },
+      custom: { key: 'amenity', value: 'yes' },
     };
 
-    return typeToTag[type] || null;
+    return typeToTag[type] ?? null;
   }
 
   /**
@@ -566,24 +559,37 @@ export class LocationBatchManager {
         }
       : undefined;
 
-    return buildLocationEntity({
+    const category = mapCategory(osmData.class);
+    const type = mapType(osmData.type);
+    const fetchedAt = Date.now();
+    const point = buildOsmPointProperties(
+      osmData,
+      type,
+      lat,
+      lon,
+      fetchedAt,
+    );
+
+    const entity = buildLocationEntity({
       prefix: 'osm',
       rawId: osmData.osm_id,
       name: osmData.display_name || 'Unknown',
-      category: mapCategory(osmData.class),
-      type: mapType(osmData.type),
+      category,
+      type,
       dataSource: 'openstreetmap',
-      point: createPoint(lon, lat, 'openstreetmap', Date.now()),
       attributes: {
         osmId: String(osmData.osm_id),
         osmType: normalizeOsmType(osmData.osm_type),
-        osmTags: sanitizeTags(osmData.extratags),
+        tags: sanitizeTags(osmData.extratags),
       },
       boundingBox: parseBoundingBox(osmData.boundingbox),
       address,
       importance: normalizeImportance(osmData.importance, 0.5),
-      metadata: { source: 'osm-batch' },
     });
+    void this.persistLocationPoints(entity.nodeId, [point]).catch((err) => {
+      console.warn('[LocationBatchManager] failed to persist OSM point', err);
+    });
+    return entity;
   }
 
   /**
@@ -603,22 +609,34 @@ export class LocationBatchManager {
     if (typeof lon !== 'number' || typeof lat !== 'number') return null;
 
     const tags = overpassData.tags ?? {};
-    return buildLocationEntity({
+    const mappedType = this.detectTypeFromTags(tags);
+    const fetchedAt = Date.now();
+    const point = buildOverpassPointProperties(
+      overpassData,
+      mappedType,
+      lat,
+      lon,
+      fetchedAt,
+    );
+
+    const entity = buildLocationEntity({
       prefix: 'overpass',
       rawId: overpassData.id,
       name: tags.name || 'Unknown',
       category: this.detectCategoryFromTags(tags),
-      type: this.detectTypeFromTags(tags),
+      type: mappedType,
       dataSource: 'overpass',
-      point: createPoint(lon, lat, 'overpass', Date.now()),
       attributes: {
         osmId: String(overpassData.id),
         osmType: normalizeOsmType(overpassData.type),
-        osmTags: sanitizeTags(tags),
+        tags: sanitizeTags(tags),
       },
       importance: normalizeImportance(tags.importance),
-      metadata: { source: 'overpass-batch' },
     });
+    void this.persistLocationPoints(entity.nodeId, [point]).catch((err) => {
+      console.warn('[LocationBatchManager] failed to persist Overpass point', err);
+    });
+    return entity;
   }
 
   /**

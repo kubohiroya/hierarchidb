@@ -20,13 +20,11 @@ import {
 import type { NodeId } from '../../shared/index.js';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import {
-  CreateShapeData,
   type ShapeEntity,
   type ShapeWorkingCopy,
   UI_CONSTANTS,
-  UpdateShapeData,
   DEFAULT_PROCESSING_CONFIG,
-  mergeProcessingConfig,
+  summarizeCheckboxState,
 } from '../../shared/index.js';
 
 export interface ShapeDialogProps {
@@ -69,9 +67,6 @@ export function ShapeDialog({
       licenseAgreement: false,
       processingConfig: baseConfig,
       checkboxState: [],
-      selectedCountries: [],
-      adminLevels: [],
-      urlMetadata: [],
       isDraft: true,
       copiedAt: now,
       createdAt: now,
@@ -138,8 +133,10 @@ export function ShapeDialog({
         return workingCopy.licenseAgreement;
       case 3:
         return !!workingCopy.processingConfig;
-      case 4:
-        return workingCopy.selectedCountries.length > 0 && workingCopy.adminLevels.length > 0;
+      case 4: {
+        const summary = summarizeCheckboxState(workingCopy.checkboxState);
+        return summary.hasSelection && summary.levels.length > 0;
+      }
       default:
         return false;
     }

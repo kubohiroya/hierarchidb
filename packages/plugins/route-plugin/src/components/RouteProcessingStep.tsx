@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -25,7 +25,7 @@ import {
   Typography,
 } from '@mui/material';
 import { PlayArrow, Settings, Stop } from '@mui/icons-material';
-import type { RouteCategory, RouteWorkingCopy } from '../types/index.js';
+import type { RouteCategory, RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 
 export interface RouteProcessingStepProps {
@@ -42,14 +42,34 @@ interface ProcessingStatus {
 }
 
 export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
-                                                                          workingCopy,
-                                                                          onUpdate,
-                                                                          onValidationChange,
-                                                                        }) => {
+  workingCopy,
+  onUpdate,
+  onValidationChange,
+}) => {
   const { t } = useTranslation();
-  const [category, setCategory] = useState<RouteCategory>(
-    (workingCopy.category as RouteCategory) || 'urban',
-  );
+  const draft = (workingCopy.payload?.draft ?? workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draftVersion = draft.version;
+  const computeNextVersion = useCallback(() => {
+    const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
+    return typeof base === 'number' ? base + 1 : 0;
+  }, [draftVersion, workingCopy.version]);
+
+  const resolvedCategory = (draft.category as RouteCategory | undefined)
+    ?? (workingCopy.category as RouteCategory | undefined)
+    ?? 'transportation';
+
+  const [category, setCategory] = useState<RouteCategory>(resolvedCategory);
+  useEffect(() => {
+    setCategory(resolvedCategory);
+  }, [resolvedCategory]);
+
+  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+    onUpdate({
+      ...updates,
+      updatedAt: Date.now(),
+      version: computeNextVersion(),
+    });
+  }, [computeNextVersion, onUpdate]);
   const [simplificationLevel, setSimplificationLevel] = useState(3);
   const [generateElevation, setGenerateElevation] = useState(true);
   const [generateTurns, setGenerateturns] = useState(true);
@@ -60,14 +80,9 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     stage: '',
     message: '',
   });
-  const version = workingCopy.version? workingCopy.version+ 1:0;
   const handleCategoryChange = (newCategory: RouteCategory) => {
     setCategory(newCategory);
-    onUpdate({
-      category: newCategory,
-      updatedAt: Date.now(),
-      version,
-    });
+    emitUpdate({ category: newCategory });
   };
 
   const handleSimplificationChange = (_event: Event, newValue: number | number[]) => {
@@ -75,20 +90,11 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
     if (typeof value === 'number') {
       setSimplificationLevel(value);
     }
-    onUpdate({
-      updatedAt: Date.now(),
-      version,
-    });
+    emitUpdate({});
   };
 
   const handleProcessingOptionChange = (option: string, value: boolean | number) => {
-    const updates: Partial<RouteWorkingCopy> = {
-      [option]: value,
-      updatedAt: Date.now(),
-      version,
-    };
-
-    onUpdate(updates);
+    emitUpdate({ [option]: value } as Partial<RouteWorkingCopy>);
 
     if (option === 'generateElevation') setGenerateElevation(value as boolean);
     if (option === 'generateTurns') setGenerateturns(value as boolean);
@@ -150,13 +156,7 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
         message: t('base-dialog.processing.completed', 'Route processing completed!'),
       });
 
-    const version = workingCopy.version ? workingCopy.version + 1 : 0;
-      // Update working copy with processing results
-      onUpdate({
-        updatedAt: Date.now(),
-        version,
-      });
-
+      emitUpdate({});
       onValidationChange(true);
     } catch (error) {
       setProcessingStatus({
@@ -214,11 +214,10 @@ export const RouteProcessingStep: React.FC<RouteProcessingStepProps> = ({
             label={t('base-dialog.processing.category', 'Category')}
             onChange={(e) => handleCategoryChange(e.target.value as RouteCategory)}
           >
-            <MenuItem value="urban">{t('categories.urban', 'Urban')}</MenuItem>
-            <MenuItem value="highway">{t('categories.highway', 'Highway')}</MenuItem>
-            <MenuItem value="rural">{t('categories.rural', 'Rural')}</MenuItem>
-            <MenuItem value="mountain">{t('categories.mountain', 'Mountain')}</MenuItem>
-            <MenuItem value="coastal">{t('categories.coastal', 'Coastal')}</MenuItem>
+            <MenuItem value="transportation">{t('categories.transportation', 'Transportation')}</MenuItem>
+            <MenuItem value="recreation">{t('categories.recreation', 'Recreation')}</MenuItem>
+            <MenuItem value="logistics">{t('categories.logistics', 'Logistics')}</MenuItem>
+            <MenuItem value="emergency">{t('categories.emergency', 'Emergency')}</MenuItem>
           </Select>
         </FormControl>
       </Box>

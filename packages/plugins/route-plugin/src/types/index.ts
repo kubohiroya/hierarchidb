@@ -2,6 +2,8 @@
   * Route Plugin Type Definitions
    */
 
+import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+
 // Branded types
 export type NodeId = string & { readonly __brand: 'NodeId' };
 export type TagId = string & { readonly __brand: 'TagId' };
@@ -98,13 +100,21 @@ export type RouteEntity = {
   version: number;
 }
 
-export type RouteWorkingCopy = Partial<RouteEntity & {
+export type RouteWorkingCopy = WorkingCopyDraft<RouteEntity> & Partial<RouteEntity> & {
   isDraft?: boolean;
-  selectedCountries: string[];
-  routeTypes: RouteType[];
-  transportModes: TransportMode[];
-  routeParameters: RouteParameters;
-}>;
+  copiedAt?: number;
+  originalVersion?: number;
+  modifiedFields?: string[];
+  selectedCountries?: string[];
+  routeTypes?: RouteType[];
+  transportModes?: TransportMode[];
+  routeParameters?: RouteParameters;
+  draft?: Partial<RouteEntity>;
+  payload?: {
+    draft?: Partial<RouteEntity>;
+    stage?: 'draft' | 'synced';
+  };
+};
 
 /**
  * Peer payload stored for route nodes in peerEntities.

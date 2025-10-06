@@ -2,6 +2,8 @@
   * Location Plugin Category Types
    */
 
+import type { LocationCategory } from '../entities/LocationEntity.js';
+
 //  JSX
 interface CategoryOption<T = string> {
   value: T;
@@ -10,14 +12,6 @@ interface CategoryOption<T = string> {
   icon?: string;
   color: string;
 }
-
-/**
-  * LocationCategory -
-  */
-export type LocationCategory =
-  | 'transportation'
-  | 'administrative'
-  | 'infrastructure';
 
 /**
   * LocationCategoryOption -

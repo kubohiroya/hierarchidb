@@ -3,12 +3,12 @@
    */
 
 import type React from 'react';
-import { useMemo } from 'react';
-import { Box, Chip, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
-import Grid from '@mui/material/Grid';
+import { useEffect, useMemo, useState } from 'react';
+import { Chip, Grid, IconButton, List, ListItem, ListItemText, Paper, Tooltip, Typography } from '@mui/material';
 import { Edit, LocationOn, Refresh } from '@mui/icons-material';
 import type { LocationEntity, NodeId } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
+import { listLocationPoints } from '../services/index.js';
 
 export interface LocationPanelProps {
   nodeId: NodeId;
@@ -17,25 +17,20 @@ export interface LocationPanelProps {
 
 export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) => {
   const { translations, locale } = useTranslation();
+  const [pointCount, setPointCount] = useState<number | null>(null);
+  const [isLoadingPoints, setIsLoadingPoints] = useState(false);
 
   const entity = useMemo<LocationEntity>(() => ({
     id: nodeId,
     nodeId,
-    name: translations.panel.sampleName,
-    description: translations.panel.sampleDescription,
-    dataSourceName: 'openstreetmap',
+    dataSource: 'openstreetmap',
     licenseAgreement: true,
-    processingConfig: {
-      concurrentDownloads: 2,
-      enableLocationFiltering: false,
-      enableClustering: false,
-      enableGeocoding: false,
-    },
-    processingStatus: 'idle',
+    selectionMatrix: [],
+    concurrentDownloads: 2,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     version: 1,
-  }), [nodeId, translations]);
+  }), [nodeId]);
 
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return '-';
@@ -43,51 +38,84 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
     return new Date(timestamp).toLocaleString(formatterLocale);
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingPoints(true);
+    listLocationPoints(nodeId)
+      .then((points) => {
+        if (!cancelled) setPointCount(points.length);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.warn('[LocationPanel] Failed to load location points', error);
+          setPointCount(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPoints(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [nodeId]);
+
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={1}>
-            <LocationOn color="primary" />
-            <Typography variant="h6">{entity.name}</Typography>
-            <Chip
-              label={entity.processingStatus || 'idle'}
-              size="small"
-              color={
-                entity.processingStatus === 'completed' ? 'success' :
-                  entity.processingStatus === 'processing' ? 'primary' :
-                    entity.processingStatus === 'failed' ? 'error' : 'default'
-              }
-            />
-          </Box>
-          <Box display="flex" gap={1}>
-            <Tooltip title={translations.panel.refresh}>
-              <IconButton size="small">
-                <Refresh />
-              </IconButton>
-            </Tooltip>
-            {onEdit && (
-              <Tooltip title={translations.panel.edit}>
-                <IconButton size="small" onClick={onEdit}>
-                  <Edit />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Box>
-        </Box>
+    <Grid container direction="column" wrap="nowrap" sx={{ height: '100%' }}>
+      <Grid
+        container
+        columns={{ xs: 12 }}
+        wrap="nowrap"
+        columnSpacing={2}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ flexShrink: 0 }}
+      >
+        <Grid size={{ xs: 12 }} sx={{ minWidth: 0 }}>
+          <Paper elevation={0} sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Grid
+              container
+              columns={{ xs: 12 }}
+              wrap="nowrap"
+              columnSpacing={2}
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center">
+                <Grid size="auto">
+                  <LocationOn color="primary" />
+                </Grid>
+                <Grid size="auto">
+                  <Typography variant="h6" noWrap>{translations.panel.sampleName}</Typography>
+                </Grid>
+                <Grid size="auto">
+                  <Chip label="dataset" size="small" />
+                </Grid>
+              </Grid>
+              <Grid container columns={{ xs: 12 }} wrap="nowrap" columnSpacing={1} alignItems="center" justifyContent="flex-end">
+                <Grid size="auto">
+                  <Tooltip title={translations.panel.refresh}>
+                    <IconButton size="small">
+                      <Refresh />
+                    </IconButton>
+                  </Tooltip>
+                </Grid>
+                {onEdit && (
+                  <Grid size="auto">
+                    <Tooltip title={translations.panel.edit}>
+                      <IconButton size="small" onClick={onEdit}>
+                        <Edit />
+                      </IconButton>
+                    </Tooltip>
+                  </Grid>
+                )}
+              </Grid>
+            </Grid>
+          </Paper>
+        </Grid>
+      </Grid>
 
-        {entity.description && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {entity.description}
-          </Typography>
-        )}
-      </Paper>
-
-      {/* Content */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-        <Grid container spacing={3}>
-          {/* Basic Info */}
+      <Grid container direction="column" wrap="nowrap" sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+        <Grid container spacing={3} columns={{ xs: 12 }}>
           <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
@@ -97,7 +125,7 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
                 <ListItem>
                   <ListItemText
                     primary={translations.panel.dataSource}
-                    secondary={entity.dataSourceName}
+                    secondary={entity.dataSource}
                   />
                 </ListItem>
                 <ListItem>
@@ -124,56 +152,35 @@ export const LocationPanel: React.FC<LocationPanelProps> = ({ nodeId, onEdit }) 
             </Paper>
           </Grid>
 
-          {/* Processing Config */}
           <Grid size={{ xs: 12 }}>
             <Paper elevation={1} sx={{ p: 2 }}>
               <Typography variant="subtitle1" gutterBottom>
                 {translations.panel.processingSettings}
               </Typography>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {translations.panel.concurrentDownloads}
-                  </Typography>
-                  <Typography variant="body1">
-                    {entity.processingConfig?.concurrentDownloads}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {translations.panel.filtering}
-                  </Typography>
-                  <Typography variant="body1">
-                    {entity.processingConfig?.enableLocationFiltering
-                      ? translations.common.enabled
-                      : translations.common.disabled}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {translations.panel.clustering}
-                  </Typography>
-                  <Typography variant="body1">
-                    {entity.processingConfig?.enableClustering
-                      ? translations.common.enabled
-                      : translations.common.disabled}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {translations.panel.geocoding}
-                  </Typography>
-                  <Typography variant="body1">
-                    {entity.processingConfig?.enableGeocoding
-                      ? translations.common.enabled
-                      : translations.common.disabled}
-                  </Typography>
-                </Grid>
-              </Grid>
+              <List dense>
+                <ListItem>
+                  <ListItemText
+                    primary={translations.panel.concurrentDownloads}
+                    secondary={entity.concurrentDownloads}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText
+                    primary="Selection entries"
+                    secondary={entity.selectionMatrix.flat().filter(Boolean).length}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText
+                    primary={translations.panel.locationPointCount}
+                    secondary={isLoadingPoints ? translations.common.loading : (pointCount ?? '—')}
+                  />
+                </ListItem>
+              </List>
             </Paper>
           </Grid>
         </Grid>
-      </Box>
-    </Box>
+      </Grid>
+    </Grid>
   );
 };

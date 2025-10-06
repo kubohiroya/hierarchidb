@@ -23,8 +23,6 @@ export interface CreateShapeData {
   description?: string;
   dataSourceName: DataSourceName;
   processingConfig?: Partial<ProcessingConfig>;
-  selectedCountries?: string[];
-  adminLevels?: number[];
 }
 
 /**
@@ -152,9 +150,6 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       licenseAgreement: false, // Reset for editing
       processingConfig: { ...entity.processingConfig },
       checkboxState: entity.checkboxState,
-      selectedCountries: [...entity.selectedCountries],
-      adminLevels: [...entity.adminLevels],
-      urlMetadata: [...entity.urlMetadata],
       isDraft: false,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -189,9 +184,6 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       licenseAgreement: false,
       processingConfig: DEFAULT_PROCESSING_CONFIG,
       checkboxState: '',
-      selectedCountries: [],
-      adminLevels: [],
-      urlMetadata: [],
       isDraft: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -273,8 +265,6 @@ export class ShapeEntityHandler extends BaseEntityHandler<
           description: workingCopy.description,
           dataSourceName: workingCopy.dataSourceName,
           processingConfig: workingCopy.processingConfig,
-          selectedCountries: workingCopy.selectedCountries,
-          adminLevels: workingCopy.adminLevels,
         };
         const entity = await this.createEntity('' as NodeId, entityData);
         nodeId = entity.nodeId;

@@ -53,9 +53,11 @@ export interface ShapeEntity extends Partial<PeerEntity> {
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
 }
 
-// ShapeWorkingCopy extends the entity with working copy properties
-// To satisfy the WorkingCopy constraint, we need TreeNode properties
-export type ShapeWorkingCopy = ShapeEntity & Partial<{
+// ShapeWorkingCopy extends the entity with working copy properties but keeps wizard-derived
+// values (selectedCountries/adminLevels/urlMetadata) out of the persisted draft. Those values
+// must be derived from `checkboxState` by UI or batch pipelines.
+export type ShapeWorkingCopy = Omit<ShapeEntity, 'selectedCountries' | 'adminLevels' | 'urlMetadata'> &
+  Partial<{
   // TreeNode required properties (from NodeBase)
   id: NodeId; // NodeId instead of EntityId to match TreeNode
   parentId: NodeId;
@@ -78,8 +80,8 @@ export type ShapeWorkingCopy = ShapeEntity & Partial<{
 }>;
 
 export interface StepProps {
-  workingCopy: Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] };
-  onUpdate: (updates: Partial<ShapeWorkingCopy> & { selectedAdminLevels?: number[] }) => void;
+  workingCopy: Partial<ShapeWorkingCopy>;
+  onUpdate: (updates: Partial<ShapeWorkingCopy>) => void;
   disabled?: boolean;
 }
 

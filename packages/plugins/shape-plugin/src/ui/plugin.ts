@@ -3,7 +3,7 @@
  * UI environment plugin registration
  */
 
-import { ShapeMetadata } from '../shared/index.js';
+import { ShapeMetadata, summarizeCheckboxState } from '../shared/index.js';
 import { ShapeDialog, ShapePanel } from './components/index.js';
 
 /**
@@ -79,8 +79,10 @@ export const ShapeUIPlugin = {
         id: 'start-batch-processing',
         label: 'Start Processing',
         icon: 'play_arrow',
-        condition: (entity: any) =>
-          entity.selectedCountries?.length > 0 && entity.processingStatus !== 'processing',
+        condition: (entity: any) => {
+          const summary = summarizeCheckboxState(entity.checkboxState);
+          return summary.hasSelection && entity.processingStatus !== 'processing';
+        },
       },
       {
         id: 'view-processing-log',

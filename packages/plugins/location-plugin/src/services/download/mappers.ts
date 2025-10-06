@@ -1,11 +1,10 @@
-import { toNodeId } from '@hierarchidb/common-type';
+import { toNodeId, type Timestamp } from '@hierarchidb/common-type';
 import type {
   LocationCategory,
   LocationEntity,
   LocationType,
   LocationAttributes,
   LocationDataSource,
-  LocationPoint,
 } from '../../entities/LocationEntity.js';
 
 const CATEGORY_MAP: Record<string, LocationCategory> = {
@@ -74,17 +73,6 @@ export const sanitizeTags = (tags: unknown): Record<string, string> | undefined 
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 };
 
-export const createPoint = (
-  lon: number,
-  lat: number,
-  source: LocationDataSource,
-  timestamp: number,
-): LocationPoint => ({
-  coordinates: [lon, lat],
-  source,
-  timestamp,
-});
-
 export interface BaseEntityParams {
   prefix: string;
   rawId: string | number;
@@ -92,7 +80,6 @@ export interface BaseEntityParams {
   category: LocationCategory;
   type: LocationType;
   dataSource: LocationDataSource;
-  point: LocationPoint;
   attributes?: LocationAttributes;
   boundingBox?: [number, number, number, number];
   address?: LocationEntity['address'];
@@ -107,14 +94,13 @@ export const buildLocationEntity = ({
   category,
   type,
   dataSource,
-  point,
   attributes,
   boundingBox,
   address,
   importance,
   metadata,
 }: BaseEntityParams): LocationEntity => {
-  const now = Date.now();
+  const now = Date.now() as Timestamp;
   const idSegment = String(rawId);
   return {
     id: toNodeId(`${prefix}-${idSegment}`),
@@ -123,7 +109,6 @@ export const buildLocationEntity = ({
     category,
     type,
     dataSource,
-    point,
     boundingBox,
     address,
     attributes,
@@ -137,6 +122,10 @@ export const buildLocationEntity = ({
     updatedAt: now,
     version: 1,
     importance,
+    selectionMatrix: [],
+    concurrentDownloads: 1,
+    batchSessionId: undefined,
+    lastProcessedAt: undefined,
   };
 };
 

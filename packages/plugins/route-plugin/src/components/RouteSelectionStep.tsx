@@ -4,7 +4,7 @@
  */
 
 import type React from 'react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Box,
@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, MyLocation, Remove } from '@mui/icons-material';
-import type { RouteWorkingCopy } from '../types/index.js';
+import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
 
 export interface RouteSelectionStepProps {
@@ -39,11 +39,25 @@ interface Waypoint {
 }
 
 export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
-                                                                        workingCopy,
-                                                                        onUpdate,
-                                                                        onValidationChange,
-                                                                      }) => {
+  workingCopy,
+  onUpdate,
+  onValidationChange,
+}) => {
   const { t } = useTranslation();
+  const draft = (workingCopy.payload?.draft ?? workingCopy.draft ?? workingCopy) as Partial<RouteEntity>;
+  const draftVersion = draft.version;
+  const computeNextVersion = useCallback(() => {
+    const base = typeof draftVersion === 'number' ? draftVersion : workingCopy.version;
+    return typeof base === 'number' ? base + 1 : 0;
+  }, [draftVersion, workingCopy.version]);
+
+  const emitUpdate = useCallback((updates: Partial<RouteWorkingCopy>) => {
+    onUpdate({
+      ...updates,
+      updatedAt: Date.now(),
+      version: computeNextVersion(),
+    });
+  }, [computeNextVersion, onUpdate]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([
     { id: '1', name: t('base-dialog.routeSelection.startPoint', 'Start Point') },
     { id: '2', name: t('base-dialog.routeSelection.endPoint', 'End Point') },
@@ -117,15 +131,12 @@ export const RouteSelectionStep: React.FC<RouteSelectionStepProps> = ({
       // Simulate route calculation
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      const version = workingCopy.version ? workingCopy.version + 1 : 0;
-      // Update working copy with route configuration
-      onUpdate({
+      emitUpdate({
         waypoints: waypoints
           .map((wp) => wp.coordinates)
-          .filter((coords) => coords !== undefined) as [number, number][],
-        updatedAt: Date.now(),
-        version,
+          .filter((coords): coords is [number, number] => Array.isArray(coords)) as [number, number][],
       });
+      onValidationChange(true);
     } catch (error) {
       console.error('Route calculation error:', error);
     } finally {

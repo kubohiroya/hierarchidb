@@ -17,7 +17,7 @@ import type { LocationPointInput, LocationTileSettings } from './SessionControll
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { toBatchProgressEvent } from './ProgressAdapter.js';
 
-export interface LocationBatchConfig {
+export interface UnifiedLocationBatchConfig {
   concurrency?: number;
 }
 
@@ -38,7 +38,7 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
     this.manager = manager;
   }
 
-  async prepareSession(nodeId: NodeId, config: LocationBatchConfig | undefined, data: LocationBatchData): Promise<void> {
+  async prepareSession(nodeId: NodeId, config: UnifiedLocationBatchConfig | undefined, data: LocationBatchData): Promise<void> {
     const db = getEphemeralLocationDB();
     await db.pendingSessions.put({
       nodeId,
@@ -59,7 +59,7 @@ export class UnifiedLocationBatchManager implements IBatchSessionManager {
 
     const points = pending.points as LocationPointInput[] | undefined;
     const settings = pending.settings as LocationTileSettings | undefined;
-    const config = pending.config as LocationBatchConfig | undefined;
+    const config = pending.config as UnifiedLocationBatchConfig | undefined;
     if (!points || !settings) {
       throw new Error('Location batch session requires points and settings');
     }

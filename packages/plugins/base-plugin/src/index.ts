@@ -32,6 +32,23 @@ export * from './dialog/DialogStateChannel.js';
 export * from './dialog/NodeDialogPlugin.js';
 export { BaseDialogPlugin } from './dialog/BaseDialogPlugin.js';
 
+// Working copy helpers
+export type {
+  WorkingCopyBase,
+  WorkingCopyDraft,
+} from './working-copy/types.js';
+export {
+  createDraftWorkingCopyBase,
+  markWorkingCopyUpdated,
+} from './working-copy/helpers.js';
+
+export type {
+  PeerDataBase,
+  PeerEntityBase,
+  PeerStore,
+} from './peer-store/types.js';
+export { createPeerStoreNormalizer } from './peer-store/normalizer.js';
+
 // Plugin definition (for inheritance only)
 export const BasePluginDefinition = {
   nodeType: 'base',

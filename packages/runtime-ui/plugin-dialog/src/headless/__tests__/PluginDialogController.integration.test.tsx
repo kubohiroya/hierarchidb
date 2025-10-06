@@ -1,6 +1,7 @@
 import type React from 'react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
+import { useEffect } from 'react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { MultiStepDialogState, NodeId, TreeId } from '@hierarchidb/common-type';
@@ -42,39 +43,141 @@ const CHECKLIST = [
   'commits working copy, calls onSuccess, and closes the dialog',
 ];
 
-function createMockWorker(options: {
-  workingCopyId: NodeId;
+type WorkingCopyStub = {
+  id: NodeId;
   name?: string;
   description?: string;
+  data?: Record<string, unknown>;
+  parentId?: NodeId;
+};
+
+interface WorkerClientFactoryOptions {
+  workingCopyId: NodeId;
+  treeParentId?: NodeId;
+  existingWorkingCopy?: Omit<WorkingCopyStub, 'id'>;
+  draftWorkingCopy?: WorkingCopyStub;
   committedNodeId?: NodeId;
-}) {
+}
+
+interface WorkerClientFactoryResult {
+  workerClient: WorkerClientRef;
+  workingCopyAPI: any;
+  commitSpy: ReturnType<typeof vi.fn>;
+  createDraftSpy: ReturnType<typeof vi.fn>;
+  createFromNodeSpy: ReturnType<typeof vi.fn>;
+  updateWorkingCopySpy: ReturnType<typeof vi.fn>;
+  discardWorkingCopySpy: ReturnType<typeof vi.fn>;
+  holderId: NodeId;
+  committedNodeId: NodeId;
+}
+
+function normalizeWorkingCopy(stub: WorkingCopyStub, fallbackParentId: NodeId): WorkingCopyStub {
+  return {
+    id: stub.id,
+    name: stub.name ?? '',
+    description: stub.description ?? '',
+    data: { ...(stub.data ?? {}) },
+    parentId: stub.parentId ?? fallbackParentId,
+  };
+}
+
+function createWorkerClient(options: WorkerClientFactoryOptions): WorkerClientFactoryResult {
   const {
     workingCopyId,
-    name = 'Existing Folder Name',
-    description = 'Existing description',
-    committedNodeId = 'node-committed' as NodeId,
+    treeParentId = 'tree-parent' as NodeId,
+    existingWorkingCopy,
+    draftWorkingCopy,
+    committedNodeId = workingCopyId,
   } = options;
 
-  const workingCopy = {
-    id: workingCopyId,
-    name,
-    description,
-    data: {},
-  };
+  const holderId = (draftWorkingCopy?.parentId ?? `${workingCopyId}-holder`) as NodeId;
+  const holderNode = {
+    id: holderId,
+    holderType: 'workingCopy',
+    holderTargetId: workingCopyId,
+    parentId: treeParentId,
+  } as Record<string, unknown>;
 
-  const commitSpy = vi.fn(async () => ({ status: 'ok', nodeId: committedNodeId, node: { id: committedNodeId } }));
+  const store = new Map<NodeId, WorkingCopyStub>();
+
+  if (existingWorkingCopy) {
+    const normalized = normalizeWorkingCopy({ id: workingCopyId, ...existingWorkingCopy }, holderId);
+    store.set(workingCopyId, normalized);
+  }
+
+  const createDraftSpy = vi.fn(async (_nodeType: string, parentId: NodeId, _initial?: Record<string, unknown>) => {
+    const draft = normalizeWorkingCopy(
+      draftWorkingCopy ?? { id: workingCopyId, parentId: holderId },
+      holderId,
+    );
+    // Ensure the draft belongs to the provided parent
+    draft.parentId = draft.parentId ?? holderId;
+    store.set(draft.id, draft);
+    return { ...draft } as any;
+  });
+
+  const createFromNodeSpy = vi.fn(async (_id: NodeId) => {
+    const fallback = normalizeWorkingCopy(
+      { id: workingCopyId, ...(existingWorkingCopy ?? {}) },
+      holderId,
+    );
+    store.set(workingCopyId, fallback);
+    return { ...fallback } as any;
+  });
+
+  const getWorkingCopySpy = vi.fn(async (id: NodeId) => {
+    const entry = store.get(id);
+    return entry ? { ...entry } : null;
+  });
+
+  const updateWorkingCopySpy = vi.fn(async (id: NodeId, updates: Record<string, unknown>) => {
+    const current = store.get(id) ?? normalizeWorkingCopy({ id }, holderId);
+    const nextData = {
+      ...(current.data ?? {}),
+      ...(updates?.data as Record<string, unknown> | undefined ?? {}),
+    };
+    const next: WorkingCopyStub = {
+      ...current,
+      ...updates,
+      data: nextData,
+    };
+    store.set(id, next);
+    return { ...next } as any;
+  });
+
+  const commitSpy = vi.fn(async (nodeId: NodeId) => {
+    const effectiveId = nodeId ?? workingCopyId;
+    const committed = store.get(effectiveId) ?? normalizeWorkingCopy({ id: effectiveId }, holderId);
+    const nodePayload = { ...committed, id: committedNodeId } as Record<string, unknown>;
+    return { status: 'ok', nodeId: committedNodeId, node: nodePayload };
+  });
+
+  const discardWorkingCopySpy = vi.fn(async (id: NodeId) => {
+    store.delete(id);
+  });
 
   const workingCopyAPI = {
-    getWorkingCopy: vi.fn(async (id: NodeId) => (id === workingCopyId ? workingCopy : null)),
-    createDraftWorkingCopy: vi.fn(async () => ({ id: 'draft-id', name: '', description: '', data: {} })),
-    createWorkingCopyFromNode: vi.fn(async () => workingCopy),
-    updateWorkingCopy: vi.fn(async () => {}),
+    getWorkingCopy: getWorkingCopySpy,
+    createDraftWorkingCopy: createDraftSpy,
+    createWorkingCopyFromNode: createFromNodeSpy,
+    updateWorkingCopy: updateWorkingCopySpy,
     commitWorkingCopy: commitSpy,
-    discardWorkingCopy: vi.fn(async () => {}),
+    discardWorkingCopy: discardWorkingCopySpy,
   };
 
   const queryAPI = {
-    getNode: vi.fn(async () => ({ id: workingCopyId, parentId: 'holder-parent' })),
+    getNode: vi.fn(async (id: NodeId) => {
+      if (store.has(id)) {
+        return { ...store.get(id)! };
+      }
+      if (id === holderId) {
+        return { ...holderNode };
+      }
+      if (id === treeParentId) {
+        return { id: treeParentId };
+      }
+      return null;
+    }),
   };
 
   const tagAPI = {
@@ -93,10 +196,10 @@ function createMockWorker(options: {
   };
 
   const worker: WorkerAPI = {
-    getWorkingCopyAPI: async () => workingCopyAPI,
-    getQueryAPI: async () => queryAPI,
-    getTagAPI: async () => tagAPI,
-    getDialogStateAPI: async () => dialogStateAPI,
+    getWorkingCopyAPI: async () => workingCopyAPI as any,
+    getQueryAPI: async () => queryAPI as any,
+    getTagAPI: async () => tagAPI as any,
+    getDialogStateAPI: async () => dialogStateAPI as any,
   } as unknown as WorkerAPI;
 
   const workerClient: WorkerClientRef = {
@@ -111,8 +214,20 @@ function createMockWorker(options: {
     getAPI: () => worker,
   };
 
-  return { workerClient, workingCopyAPI, commitSpy };
+  return {
+    workerClient,
+    workingCopyAPI,
+    commitSpy,
+    createDraftSpy,
+    createFromNodeSpy,
+    updateWorkingCopySpy,
+    discardWorkingCopySpy,
+    holderId,
+    committedNodeId,
+  } satisfies WorkerClientFactoryResult;
 }
+
+type ControllerState = ReturnType<typeof usePluginDialogController>;
 
 type HarnessProps = {
   intent: 'create' | 'edit';
@@ -124,10 +239,15 @@ type HarnessProps = {
   open: boolean;
   onClose: () => void;
   onSuccess: (nodeId: NodeId) => void;
+  onController?: (controller: ControllerState) => void;
 };
 
 const TestHarness: React.FC<HarnessProps> = (props) => {
-  const controller = usePluginDialogController({ ...props, initialStep: 0 });
+  const { onController, ...rest } = props;
+  const controller = usePluginDialogController({ ...rest, initialStep: 0 });
+  useEffect(() => {
+    onController?.(controller);
+  }, [controller, onController]);
   if (controller.loading) {
     return <div data-testid="dialog-loading" />;
   }
@@ -140,7 +260,6 @@ describe('usePluginDialogController – folder create integration', () => {
   let pageNodeId: NodeId;
   let onSuccess: ReturnType<typeof vi.fn>;
   let onClose: ReturnType<typeof vi.fn>;
-  let commitSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     workingCopyId = 'wc-folder-1' as NodeId;
@@ -148,10 +267,6 @@ describe('usePluginDialogController – folder create integration', () => {
     pageNodeId = 'page-1' as NodeId;
     onSuccess = vi.fn();
     onClose = vi.fn();
-
-    const mock = createMockWorker({ workingCopyId });
-    mockWorkerRef = mock.workerClient;
-    commitSpy = mock.commitSpy;
   });
 
   afterEach(() => {
@@ -167,9 +282,22 @@ describe('usePluginDialogController – folder create integration', () => {
       'commits working copy, calls onSuccess, and closes the dialog',
     ]);
 
+    const mock = createWorkerClient({
+      workingCopyId,
+      treeParentId: pageNodeId,
+      existingWorkingCopy: {
+        name: 'Existing Folder Name',
+        description: 'Existing description',
+      },
+      committedNodeId: 'node-committed' as NodeId,
+    });
+    mockWorkerRef = mock.workerClient;
+
     locationRef.pathname = `/t/${treeId}/${pageNodeId}/${workingCopyId}/folder/create`;
     locationRef.searchStr = '';
     locationRef.hash = '';
+
+    let controllerRef: ControllerState | null = null;
 
     render(
       <TestHarness
@@ -182,25 +310,164 @@ describe('usePluginDialogController – folder create integration', () => {
         open
         onClose={onClose}
         onSuccess={onSuccess}
+        onController={(controller) => {
+          controllerRef = controller;
+        }}
       />,
     );
 
     await waitFor(() => expect(screen.queryByTestId('dialog-loading')).not.toBeInTheDocument());
+    await waitFor(() => controllerRef !== null);
 
     const nameInput = await screen.findByLabelText(/^Name/i);
     expect((nameInput as HTMLInputElement).value).toBe('Existing Folder Name');
 
     fireEvent.change(nameInput, { target: { value: 'Created Folder' } });
-
-    const saveButton = await screen.findByRole('button', { name: 'Create' });
     await act(async () => {
-      fireEvent.click(saveButton);
-      await Promise.resolve();
+      await controllerRef?.headlessProps.onRequestCommit?.();
     });
 
-    expect(commitSpy).toHaveBeenCalledTimes(1);
-    expect(commitSpy).toHaveBeenCalledWith(workingCopyId);
-    expect(onSuccess).toHaveBeenCalledWith('node-committed');
+    await waitFor(() => expect(mock.commitSpy).toHaveBeenCalledWith(workingCopyId));
+    expect(mock.updateWorkingCopySpy).toHaveBeenCalledWith(
+      workingCopyId,
+      expect.objectContaining({ name: 'Created Folder' }),
+    );
+    const discardTargets = mock.discardWorkingCopySpy.mock.calls.map(([id]) => id);
+    expect(discardTargets.some((id) => id === mock.committedNodeId || id === workingCopyId)).toBe(true);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith('node-committed'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('creates a draft working copy with default values for SpeedDial create flow', async () => {
+    const mock = createWorkerClient({
+      workingCopyId,
+      treeParentId: pageNodeId,
+      draftWorkingCopy: {
+        id: workingCopyId,
+        name: '',
+        description: '',
+        data: {},
+        parentId: `${workingCopyId}-holder` as NodeId,
+      },
+      committedNodeId: 'node-created' as NodeId,
+    });
+    mockWorkerRef = mock.workerClient;
+
+    locationRef.pathname = `/t/${treeId}/${pageNodeId}/${workingCopyId}/folder/create`;
+    locationRef.searchStr = '';
+    locationRef.hash = '';
+
+    let controllerRef: ControllerState | null = null;
+
+    render(
+      <TestHarness
+        intent="create"
+        mode="create"
+        nodeType="folder"
+        nodeId={workingCopyId}
+        pageNodeId={pageNodeId}
+        treeId={treeId}
+        open
+        onClose={onClose}
+        onSuccess={onSuccess}
+        onController={(controller) => {
+          controllerRef = controller;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('dialog-loading')).not.toBeInTheDocument());
+    await waitFor(() => controllerRef !== null);
+
+    expect(mock.createDraftSpy).toHaveBeenCalledWith('folder', pageNodeId, { name: '' });
+
+    const nameInput = await screen.findByLabelText(/^Name/i);
+    expect((nameInput as HTMLInputElement).value).toBe('');
+
+    fireEvent.change(nameInput, { target: { value: 'Folder via SpeedDial' } });
+    await act(async () => {
+      await controllerRef?.headlessProps.onRequestCommit?.();
+    });
+
+    await waitFor(() => expect(mock.commitSpy).toHaveBeenCalledWith(workingCopyId));
+    expect(mock.updateWorkingCopySpy).toHaveBeenCalledWith(
+      workingCopyId,
+      expect.objectContaining({ name: 'Folder via SpeedDial' }),
+    );
+    const discardTargets = mock.discardWorkingCopySpy.mock.calls.map(([id]) => id);
+    expect(discardTargets.some((id) => id === mock.committedNodeId || id === workingCopyId)).toBe(true);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith('node-created'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('creates an edit working copy seeded from the existing node via context menu flow', async () => {
+    const existingName = 'Marketing Assets';
+    const existingDescription = 'FY2025 plan';
+
+    const mock = createWorkerClient({
+      workingCopyId,
+      treeParentId: pageNodeId,
+      existingWorkingCopy: {
+        name: existingName,
+        description: existingDescription,
+        data: { category: 'marketing' },
+      },
+      committedNodeId: workingCopyId,
+    });
+    mockWorkerRef = mock.workerClient;
+
+    locationRef.pathname = `/t/${treeId}/${pageNodeId}/${workingCopyId}/folder/edit`;
+    locationRef.searchStr = '';
+    locationRef.hash = '';
+
+    let controllerRef: ControllerState | null = null;
+
+    render(
+      <TestHarness
+        intent="edit"
+        mode="edit"
+        nodeType="folder"
+        nodeId={workingCopyId}
+        pageNodeId={pageNodeId}
+        treeId={treeId}
+        open
+        onClose={onClose}
+        onSuccess={onSuccess}
+        onController={(controller) => {
+          controllerRef = controller;
+        }}
+      />,
+    );
+
+    await waitFor(() => expect(screen.queryByTestId('dialog-loading')).not.toBeInTheDocument());
+    await waitFor(() => controllerRef !== null);
+
+    expect(mock.createFromNodeSpy).toHaveBeenCalledWith(workingCopyId);
+
+    const nameInput = await screen.findByLabelText(/^Name/i);
+    expect((nameInput as HTMLInputElement).value).toBe(existingName);
+
+    const descriptionInput = await screen.findByLabelText(/^Description/i);
+    expect((descriptionInput as HTMLTextAreaElement).value).toBe(existingDescription);
+
+    fireEvent.change(nameInput, { target: { value: 'Marketing Assets (updated)' } });
+    fireEvent.change(descriptionInput, { target: { value: 'FY2026 plan' } });
+
+    await act(async () => {
+      await controllerRef?.headlessProps.onRequestCommit?.();
+    });
+
+    await waitFor(() => expect(mock.commitSpy).toHaveBeenCalledWith(workingCopyId));
+    expect(mock.updateWorkingCopySpy).toHaveBeenCalledWith(
+      workingCopyId,
+      expect.objectContaining({ name: 'Marketing Assets (updated)' }),
+    );
+    const discardTargets = mock.discardWorkingCopySpy.mock.calls.map(([id]) => id);
+    expect(discardTargets.some((id) => id === mock.committedNodeId || id === workingCopyId)).toBe(true);
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(workingCopyId));
     expect(onClose).toHaveBeenCalled();
   });
 });

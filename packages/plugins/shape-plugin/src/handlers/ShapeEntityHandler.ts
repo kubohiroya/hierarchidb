@@ -14,8 +14,6 @@ export interface CreateShapeData {
   description?: string;
   dataSourceName: DataSourceName;
   processingConfig?: Partial<ProcessingConfig>;
-  selectedCountries?: string[];
-  adminLevels?: number[];
   licenseAgreement?: boolean;
 }
 
@@ -58,8 +56,8 @@ export class ShapeEntityHandler {
       licenseAgreement: !!data.licenseAgreement,
       processingConfig: this.buildDefaultProcessingConfig(data.processingConfig),
       checkboxState: '',
-      selectedCountries: data.selectedCountries ?? [],
-      adminLevels: data.adminLevels ?? [],
+      selectedCountries: [],
+      adminLevels: [],
       urlMetadata: [],
       createdAt: now,
       updatedAt: now,
@@ -150,9 +148,6 @@ export class ShapeEntityHandler {
       licenseAgreement: entity.licenseAgreement ?? false,
       processingConfig: entity.processingConfig,
       checkboxState: entity.checkboxState,
-      selectedCountries: [...(entity.selectedCountries ?? [])],
-      adminLevels: [...(entity.adminLevels ?? [])],
-      urlMetadata: [...(entity.urlMetadata ?? [])],
       isDraft: false,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
@@ -176,9 +171,6 @@ export class ShapeEntityHandler {
       licenseAgreement: false,
       processingConfig: this.buildDefaultProcessingConfig(),
       checkboxState: '',
-      selectedCountries: [],
-      adminLevels: [],
-      urlMetadata: [],
       depth: 0,
       // Working copy props
       copiedAt: now,
@@ -198,9 +190,6 @@ export class ShapeEntityHandler {
       licenseAgreement: workingCopy.licenseAgreement,
       processingConfig: workingCopy.processingConfig,
       checkboxState: workingCopy.checkboxState,
-      selectedCountries: workingCopy.selectedCountries ?? [],
-      adminLevels: workingCopy.adminLevels ?? [],
-      urlMetadata: workingCopy.urlMetadata ?? [],
     };
     return this.updateEntity(nodeId, updates);
   }

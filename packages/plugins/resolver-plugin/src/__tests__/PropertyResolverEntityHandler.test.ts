@@ -180,10 +180,9 @@ describe('ResolverEntityHandler', () => {
       const workingCopy = await handler.createWorkingCopy(nodeId);
 
       expect(workingCopy).toBeDefined();
-      expect(workingCopy.name).toBe(entity.name);
-      expect(workingCopy.sourceSchema).toBe(entity.sourceSchema);
-      expect(workingCopy.isDirty).toBe(false);
-      expect(workingCopy.modifiedFields).toEqual([]);
+      expect(workingCopy.treeNodeId).toBe(nodeId);
+      expect(workingCopy.draft.name).toBe(entity.name);
+      expect(workingCopy.draft.sourceSchema).toBe(entity.sourceSchema);
     });
 
     it('should update a working copy', async () => {
@@ -193,16 +192,13 @@ describe('ResolverEntityHandler', () => {
       });
 
       const workingCopy = await handler.createWorkingCopy(nodeId);
-      const updated = await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
+      const updated = await handler.updateWorkingCopy(workingCopy.treeNodeId, {
         name: 'Modified',
         sourceSchema: 'NewSource',
       });
 
-      expect(updated.name).toBe('Modified');
-      expect(updated.sourceSchema).toBe('NewSource');
-      expect(updated.isDirty).toBe(true);
-      expect(updated.modifiedFields).toContain('name');
-      expect(updated.modifiedFields).toContain('sourceSchema');
+      expect(updated.draft.name).toBe('Modified');
+      expect(updated.draft.sourceSchema).toBe('NewSource');
     });
 
     it('should commit working copy changes', async () => {
@@ -212,11 +208,11 @@ describe('ResolverEntityHandler', () => {
       });
 
       const workingCopy = await handler.createWorkingCopy(nodeId);
-      await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
+      await handler.updateWorkingCopy(workingCopy.treeNodeId, {
         name: 'Committed',
       });
 
-      const committed = await handler.commitWorkingCopy(workingCopy.workingCopyId!);
+      const committed = await handler.commitWorkingCopy(workingCopy.treeNodeId);
 
       expect(committed.name).toBe('Committed');
       expect(committed.version).toBe(2);
@@ -233,11 +229,11 @@ describe('ResolverEntityHandler', () => {
       });
 
       const workingCopy = await handler.createWorkingCopy(nodeId);
-      await handler.updateWorkingCopy(workingCopy.workingCopyId!, {
+      await handler.updateWorkingCopy(workingCopy.treeNodeId, {
         name: 'To Be Discarded',
       });
 
-      await handler.discardWorkingCopy(workingCopy.workingCopyId!);
+      await handler.discardWorkingCopy(workingCopy.treeNodeId);
 
       // Entity should remain unchanged
       const unchangedEntity = await handler.getEntity(entity.id);
