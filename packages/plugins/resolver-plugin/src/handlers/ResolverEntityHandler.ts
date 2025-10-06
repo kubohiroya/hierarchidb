@@ -7,6 +7,7 @@ import type {
   DuplicateResolutionStrategy,
   PropertyMappingRule,
   ResolverEntity,
+  ResolverDraftPayload,
   ResolverWorkingCopy,
   ValidationRule,
 } from '../types/index.js';

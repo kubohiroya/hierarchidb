@@ -1115,9 +1115,15 @@ importers:
       '@hierarchidb/ui-core':
         specifier: workspace:*
         version: link:../../ui/core
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../../ui/datasource
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../ui/dialog
+      '@hierarchidb/ui-license':
+        specifier: workspace:*
+        version: link:../../ui/license
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1379,6 +1385,12 @@ importers:
       '@hierarchidb/ui-country-select':
         specifier: workspace:*
         version: link:../../ui/country-select
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../../ui/datasource
+      '@hierarchidb/ui-license':
+        specifier: workspace:*
+        version: link:../../ui/license
       '@hierarchidb/ui-lru-splitview':
         specifier: workspace:*
         version: link:../../ui/lru-splitview
@@ -2444,6 +2456,8 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  packages/ui/datasource: {}
+
   packages/ui/date:
     dependencies:
       '@mui/material':
@@ -2558,18 +2572,9 @@ importers:
       '@mui/x-date-pickers':
         specifier: ^8.10.2
         version: 8.11.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@mui/system@7.3.3(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(date-fns@4.1.0)(dayjs@1.11.18)(luxon@3.6.1)(moment@2.30.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
       i18next:
         specifier: 22.5.0
         version: 22.5.0
-      i18next-browser-languagedetector:
-        specifier: ^8.2.0
-        version: 8.2.0
-      i18next-http-backend:
-        specifier: ^3.0.2
-        version: 3.0.2
       react-i18next:
         specifier: 12.3.1
         version: 12.3.1(i18next@22.5.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2589,6 +2594,15 @@ importers:
       '@vitejs/plugin-react':
         specifier: 4.3.4
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      i18next-browser-languagedetector:
+        specifier: ^8.2.0
+        version: 8.2.0
+      i18next-http-backend:
+        specifier: ^3.0.2
+        version: 3.0.2
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -2661,6 +2675,8 @@ importers:
       react:
         specifier: ^18.3.1
         version: 18.3.1
+
+  packages/ui/license: {}
 
   packages/ui/lru-splitview:
     dependencies:
@@ -14350,7 +14366,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:

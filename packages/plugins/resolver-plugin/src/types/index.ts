@@ -79,7 +79,9 @@ export interface PreviewConfig {
  */
 export type ResolverDraftPayload = Partial<ResolverEntity>;
 
-export type ResolverWorkingCopy = WorkingCopyDraft<ResolverEntity>;
+export type ResolverWorkingCopyEntity = WorkingCopyDraft<ResolverEntity> & Partial<ResolverEntity>;
+
+export type ResolverWorkingCopy = ResolverWorkingCopyEntity;
 
 /**
  * Peer payload persisted for resolver nodes.
@@ -198,4 +200,3 @@ export interface StylerIntegration {
 }
 
 export type ResolverWorkingCopyTypes = ResolverWorkingCopyEntity;
-export type ResolverWorkingCopy = ResolverWorkingCopyEntity;
