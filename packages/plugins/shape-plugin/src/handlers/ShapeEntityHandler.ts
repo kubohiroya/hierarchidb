@@ -5,6 +5,9 @@
  */
 
 import type { DataSourceName, NodeId, NodeType, ProcessingConfig, ShapeEntity, ShapeWorkingCopy } from '../shared/index.js';
+import { createWorkingCopyFromEntity, mapWorkingCopyToUpdates } from '../shared/index.js';
+import { createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
+import type { Timestamp } from '@hierarchidb/common-type';
 
 /**
  * Create shape data interface (UI layer)
@@ -128,69 +131,52 @@ export class ShapeEntityHandler {
   }
 
   createWorkingCopy(entity: ShapeEntity): ShapeWorkingCopy {
-    const workingCopy: ShapeWorkingCopy = {
-      // TreeNode props
-      id: entity.nodeId as NodeId,
-      parentId: entity.nodeId as NodeId,
-      nodeType: 'shape' as NodeType,
-      nodeId: entity.nodeId,
-      name: entity.name,
-      depth: 0,
-      // Working copy props
-      originalNodeId: entity.nodeId,
-      copiedAt: Date.now(),
-      hasEntityCopy: true,
-      entityWorkingCopyId: entity.id,
-      originalVersion: entity.version,
-      // Shape fields
-      description: entity.description,
-      dataSourceName: entity.dataSourceName,
-      licenseAgreement: entity.licenseAgreement ?? false,
-      processingConfig: entity.processingConfig,
-      checkboxState: entity.checkboxState,
-      isDraft: false,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      version: entity.version,
-    };
-    return workingCopy;
+    return createWorkingCopyFromEntity(entity);
   }
 
   createNewDraftWorkingCopy(parentId: NodeId): ShapeWorkingCopy {
     const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as unknown as NodeId;
-    const now = Date.now();
+    const now = Date.now() as Timestamp;
+    const draft = {
+      name: '',
+      description: '',
+      dataSourceName: 'naturalearth' as DataSourceName,
+      licenseAgreement: false,
+      processingConfig: this.buildDefaultProcessingConfig(),
+      checkboxState: [],
+      processingStatus: 'idle' as ShapeEntity['processingStatus'],
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+    } satisfies Partial<ShapeEntity>;
+
+    const base = createDraftWorkingCopyBase<ShapeEntity>({
+      draft,
+      meta: {
+        treeNodeId: workingCopyId,
+        createdAt: now,
+        updatedAt: now,
+        originalVersion: 1,
+      },
+    });
+
     const workingCopy: ShapeWorkingCopy = {
-      // TreeNode props
+      ...base,
+      ...draft,
       id: workingCopyId,
       parentId,
       nodeType: 'shape' as NodeType,
       nodeId: '' as NodeId,
-      name: '',
-      description: '',
-      dataSourceName: 'naturalearth',
-      licenseAgreement: false,
-      processingConfig: this.buildDefaultProcessingConfig(),
-      checkboxState: '',
       depth: 0,
-      // Working copy props
       copiedAt: now,
       isDraft: true,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
     };
+
     return workingCopy;
   }
 
   async applyWorkingCopy(nodeId: NodeId, workingCopy: ShapeWorkingCopy): Promise<ShapeEntity> {
-    const updates: Partial<ShapeEntity> = {
-      name: workingCopy.name,
-      description: workingCopy.description,
-      dataSourceName: workingCopy.dataSourceName,
-      licenseAgreement: workingCopy.licenseAgreement,
-      processingConfig: workingCopy.processingConfig,
-      checkboxState: workingCopy.checkboxState,
-    };
+    const updates = mapWorkingCopyToUpdates(workingCopy);
     return this.updateEntity(nodeId, updates);
   }
 

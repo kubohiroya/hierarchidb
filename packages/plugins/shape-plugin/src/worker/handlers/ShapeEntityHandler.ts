@@ -7,13 +7,16 @@ import type { Table } from 'dexie';
 import type { DataSourceName, NodeId, NodeType } from '../../shared/index.js';
 import {
   buildShapeEntityFromCreate,
+  createWorkingCopyFromEntity,
   DEFAULT_PROCESSING_CONFIG,
   mapWorkingCopyToUpdates,
+  mergeProcessingConfig,
   type ProcessingConfig,
   type ShapeEntity,
   type ShapeWorkingCopy,
 } from '../../shared/index.js';
-import { BaseEntityHandler } from '@hierarchidb/plugins-base-plugin';
+import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
+import type { Timestamp } from '@hierarchidb/common-type';
 
 /**
  * Create shape data interface
@@ -128,35 +131,12 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    * Create working copy from entity
    */
   async createWorkingCopy(entity: ShapeEntity): Promise<ShapeWorkingCopy> {
-    const workingCopy: ShapeWorkingCopy = {
-      // Use nodeId as id for working copy
-      id: entity.nodeId as NodeId,
-      parentId: entity.nodeId, // Use nodeId as parentId for working copy
-      nodeType: 'shape' as NodeType,
-      nodeId: entity.nodeId,
-      name: entity.name,
-      depth: 0, // Set appropriate depth
+    const workingCopy = createWorkingCopyFromEntity(entity);
 
-      // WorkingCopyProperties
-      originalNodeId: entity.nodeId,
-      copiedAt: Date.now(),
-      hasEntityCopy: true,
-      entityWorkingCopyId: entity.id,
-      originalVersion: entity.version,
+    if (this.ephemeralDB?.workingCopies) {
+      await this.ephemeralDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
+    }
 
-      // Shape entity properties
-      description: entity.description,
-      dataSourceName: entity.dataSourceName,
-      licenseAgreement: false, // Reset for editing
-      processingConfig: { ...entity.processingConfig },
-      checkboxState: entity.checkboxState,
-      isDraft: false,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-      version: entity.version,
-    };
-
-    console.log(`Created working copy for entity: ${entity.id}`);
     return workingCopy;
   }
 
@@ -165,37 +145,47 @@ export class ShapeEntityHandler extends BaseEntityHandler<
    */
   async createNewDraftWorkingCopy(parentId: NodeId): Promise<ShapeWorkingCopy> {
     const workingCopyId = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`) as unknown as NodeId;
+    const now = Date.now() as Timestamp;
 
-    const workingCopy: ShapeWorkingCopy = {
-      // TreeNode required properties
-      id: workingCopyId,
-      parentId: parentId,
-      nodeType: 'shape' as NodeType,
-      nodeId: '' as NodeId, // Will be set when committed
+    const draft = {
       name: '',
-      depth: 0, // Set appropriate depth
-
-      // WorkingCopyProperties
-      copiedAt: Date.now(),
-
-      // Shape entity properties
       description: '',
       dataSourceName: 'naturalearth',
       licenseAgreement: false,
-      processingConfig: DEFAULT_PROCESSING_CONFIG,
-      checkboxState: '',
-      isDraft: true,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      processingConfig: mergeProcessingConfig(DEFAULT_PROCESSING_CONFIG),
+      checkboxState: [],
+      processingStatus: 'idle' as ShapeEntity['processingStatus'],
+      createdAt: now,
+      updatedAt: now,
       version: 1,
+    } satisfies Partial<ShapeEntity>;
+
+    const base = createDraftWorkingCopyBase<ShapeEntity>({
+      draft,
+      meta: {
+        treeNodeId: workingCopyId,
+        createdAt: now,
+        updatedAt: now,
+        originalVersion: 1,
+      },
+    });
+
+    const workingCopy: ShapeWorkingCopy = {
+      ...base,
+      ...draft,
+      id: workingCopyId,
+      parentId,
+      nodeType: 'shape' as NodeType,
+      nodeId: '' as NodeId,
+      depth: 0,
+      copiedAt: now,
+      isDraft: true,
     };
 
-    // Store in EphemeralDB if available
     if (this.ephemeralDB?.workingCopies) {
-      await this.ephemeralDB.workingCopies.put(workingCopy);
+      await this.ephemeralDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
     }
 
-    console.log(`Created new draft working copy: ${workingCopyId} for parent: ${parentId}`);
     return workingCopy;
   }
 
@@ -228,17 +218,19 @@ export class ShapeEntityHandler extends BaseEntityHandler<
         throw new Error(`Working copy not found: ${workingCopyId}`);
       }
 
+      const timestamp = Date.now() as Timestamp;
+      const base = markWorkingCopyUpdated(existing, data, timestamp);
       const updated: ShapeWorkingCopy = {
         ...existing,
         ...data,
-        updatedAt: Date.now(),
+        ...base,
+        updatedAt: timestamp,
       };
 
       if (this.ephemeralDB?.workingCopies) {
-        await this.ephemeralDB.workingCopies.put(updated);
+        await this.ephemeralDB.workingCopies.put(updated, updated.treeNodeId);
       }
 
-      console.log(`Updated working copy: ${workingCopyId}`);
       return updated;
     } catch (error) {
       console.error('Failed to update working copy:', error);
@@ -257,27 +249,34 @@ export class ShapeEntityHandler extends BaseEntityHandler<
         throw new Error(`Working copy not found: ${workingCopyId}`);
       }
 
+      const updates = mapWorkingCopyToUpdates(workingCopy);
       let nodeId: NodeId;
+
       if (workingCopy.isDraft) {
-        // Create new entity for draft
         const entityData: CreateShapeData = {
-          name: workingCopy.name,
-          description: workingCopy.description,
-          dataSourceName: workingCopy.dataSourceName,
-          processingConfig: workingCopy.processingConfig,
+          name: updates.name ?? workingCopy.draft.name ?? '',
+          description: updates.description ?? workingCopy.draft.description,
+          dataSourceName: updates.dataSourceName ?? workingCopy.draft.dataSourceName ?? 'naturalearth',
+          processingConfig: updates.processingConfig ?? workingCopy.draft.processingConfig ?? DEFAULT_PROCESSING_CONFIG,
         };
-        const entity = await this.createEntity('' as NodeId, entityData);
+
+        const entity = await this.createEntity(workingCopy.treeNodeId, entityData);
         nodeId = entity.nodeId;
+
+        const postCreateUpdates: Partial<ShapeEntity> = {
+          licenseAgreement: updates.licenseAgreement ?? workingCopy.draft.licenseAgreement ?? false,
+          checkboxState: updates.checkboxState ?? workingCopy.draft.checkboxState ?? [],
+          batchSessionId: updates.batchSessionId,
+          processingStatus: updates.processingStatus ?? 'idle',
+        };
+        await this.updateEntity(entity.id, postCreateUpdates);
       } else {
-        // Update existing entity
-        await this.updateEntity(workingCopy.id, workingCopy);
-        nodeId = workingCopy.nodeId;
+        const targetNodeId = workingCopy.nodeId || workingCopy.treeNodeId;
+        await this.updateEntity(targetNodeId, updates);
+        nodeId = targetNodeId;
       }
 
-      // Remove working copy from EphemeralDB
       await this.discardWorkingCopy(workingCopyId);
-
-      console.log(`Committed working copy: ${workingCopyId} to node: ${nodeId}`);
       return nodeId;
     } catch (error) {
       console.error('Failed to commit working copy:', error);
@@ -293,7 +292,6 @@ export class ShapeEntityHandler extends BaseEntityHandler<
       if (this.ephemeralDB?.workingCopies) {
         await this.ephemeralDB.workingCopies.delete(workingCopyId);
       }
-      console.log(`Discarded working copy: ${workingCopyId}`);
     } catch (error) {
       console.error('Failed to discard working copy:', error);
       throw error;

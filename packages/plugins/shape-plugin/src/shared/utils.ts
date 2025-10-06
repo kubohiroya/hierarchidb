@@ -4,6 +4,7 @@
  */
 
 import type {
+  NodeId,
   CountryMetadata,
   DataSourceName,
   ProcessingConfig,
@@ -11,6 +12,9 @@ import type {
   UrlMetadata,
   ValidationResult,
 } from './types.js';
+import type { ShapeEntity, ShapeWorkingCopy } from './types.js';
+import type { Timestamp } from '@hierarchidb/common-type';
+import { createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
 import { DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 /**
@@ -348,59 +352,105 @@ export function buildShapeEntityFromCreate(
 /**
  * Create a ShapeWorkingCopy from an entity (shared mapping)
  */
-export function createWorkingCopyFromEntity(
-  entity: import('./types.js').ShapeEntity,
-): import('./types.js').ShapeWorkingCopy {
-  const { selectedCountries, adminLevels, urlMetadata, ...rest } = entity;
-  const workingCopy = {
-    ...rest,
-    processingConfig: entity.processingConfig ? { ...entity.processingConfig } : undefined,
-    checkboxState: Array.isArray(entity.checkboxState)
-      ? entity.checkboxState
-      : typeof entity.checkboxState === 'string'
-        ? parseCheckboxState(entity.checkboxState)
-        : [],
-    isDraft: false,
+export function createWorkingCopyFromEntity(entity: ShapeEntity): ShapeWorkingCopy {
+  const checkboxState = Array.isArray(entity.checkboxState)
+    ? entity.checkboxState
+    : typeof entity.checkboxState === 'string'
+      ? parseCheckboxState(entity.checkboxState)
+      : [];
+
+  const draftPayload: Partial<ShapeEntity> = {
+    name: entity.name ?? '',
+    description: entity.description ?? '',
+    dataSourceName: entity.dataSourceName ?? 'naturalearth',
+    licenseAgreement: entity.licenseAgreement ?? false,
+    processingConfig: mergeProcessingConfig(entity.processingConfig ?? {}),
+    checkboxState,
+    batchSessionId: entity.batchSessionId,
+    processingStatus: entity.processingStatus ?? 'idle',
+    licenseAgreedAt: entity.licenseAgreedAt,
   };
-  return workingCopy as import('./types.js').ShapeWorkingCopy;
+
+  const treeNodeId = (entity.nodeId ?? entity.id ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)) as NodeId;
+  const createdAt = (entity.createdAt ?? Date.now()) as Timestamp;
+  const updatedAt = (entity.updatedAt ?? createdAt) as Timestamp;
+
+  const base = createDraftWorkingCopyBase<ShapeEntity>({
+    draft: {
+      ...draftPayload,
+      createdAt,
+      updatedAt,
+      version: entity.version ?? 1,
+    },
+    meta: {
+      treeNodeId,
+      createdAt,
+      updatedAt,
+      originalVersion: entity.version,
+    },
+  });
+
+  const workingCopy: ShapeWorkingCopy = {
+    ...base,
+    ...draftPayload,
+    id: treeNodeId,
+    parentId: treeNodeId,
+    nodeType: 'shape',
+    nodeId: treeNodeId,
+    depth: 0,
+    originalNodeId: treeNodeId,
+    copiedAt: updatedAt,
+    hasEntityCopy: true,
+    entityWorkingCopyId: entity.id,
+    originalVersion: entity.version,
+    isDraft: false,
+    resumeStep: entity.resumeStep,
+  };
+
+  return workingCopy;
 }
 
 /**
  * Map a working copy back to entity updates (shared mapping)
  */
 export function mapWorkingCopyToUpdates(
-  workingCopy: import('./types.js').ShapeWorkingCopy,
-): Partial<import('./types.js').ShapeEntity> {
-  const updates: Partial<import('./types.js').ShapeEntity> = {};
+  workingCopy: ShapeWorkingCopy,
+): Partial<ShapeEntity> {
+  const source: Partial<ShapeEntity> = {
+    ...workingCopy.draft,
+    ...workingCopy,
+  };
 
-  if (typeof workingCopy.name === 'string') {
-    updates.name = workingCopy.name;
-  }
-  if (typeof workingCopy.description === 'string') {
-    updates.description = workingCopy.description;
-  }
-  if (typeof workingCopy.dataSourceName === 'string') {
-    updates.dataSourceName = workingCopy.dataSourceName;
-  }
-  if (typeof workingCopy.licenseAgreement === 'boolean') {
-    updates.licenseAgreement = workingCopy.licenseAgreement;
-  }
-  if (workingCopy.processingConfig) {
-    updates.processingConfig = workingCopy.processingConfig;
-  }
-  if (workingCopy.checkboxState !== undefined) {
-    updates.checkboxState = workingCopy.checkboxState;
-  }
+  const updates: Partial<ShapeEntity> = {};
 
-  if (typeof workingCopy.batchSessionId === 'string') {
-    updates.batchSessionId = workingCopy.batchSessionId;
+  if (typeof source.name === 'string') {
+    updates.name = source.name;
   }
-  if (typeof workingCopy.processingStatus === 'string') {
-    updates.processingStatus = workingCopy.processingStatus;
+  if (typeof source.description === 'string') {
+    updates.description = source.description;
+  }
+  if (typeof source.dataSourceName === 'string') {
+    updates.dataSourceName = source.dataSourceName;
+  }
+  if (typeof source.licenseAgreement === 'boolean') {
+    updates.licenseAgreement = source.licenseAgreement;
+  }
+  if (source.processingConfig) {
+    updates.processingConfig = source.processingConfig;
+  }
+  if (source.checkboxState !== undefined) {
+    updates.checkboxState = source.checkboxState;
   }
 
-  if (workingCopy.licenseAgreedAt) {
-    updates.licenseAgreedAt = workingCopy.licenseAgreedAt;
+  if (typeof source.batchSessionId === 'string') {
+    updates.batchSessionId = source.batchSessionId;
+  }
+  if (typeof source.processingStatus === 'string') {
+    updates.processingStatus = source.processingStatus;
+  }
+
+  if (source.licenseAgreedAt) {
+    updates.licenseAgreedAt = source.licenseAgreedAt;
   }
 
   return updates;

@@ -3,7 +3,8 @@
  */
 
 // Local minimal type aliases to decouple from common-type DTS export quirks
-export type NodeId = string;
+import type { NodeId as CommonNodeId } from '@hierarchidb/common-type';
+export type NodeId = CommonNodeId;
 export type NodeType = string;
 
 export interface PeerEntity {
@@ -18,6 +19,7 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
+import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================
@@ -56,28 +58,29 @@ export interface ShapeEntity extends Partial<PeerEntity> {
 // ShapeWorkingCopy extends the entity with working copy properties but keeps wizard-derived
 // values (selectedCountries/adminLevels/urlMetadata) out of the persisted draft. Those values
 // must be derived from `checkboxState` by UI or batch pipelines.
-export type ShapeWorkingCopy = Omit<ShapeEntity, 'selectedCountries' | 'adminLevels' | 'urlMetadata'> &
+export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
+  Omit<ShapeEntity, 'selectedCountries' | 'adminLevels' | 'urlMetadata'> &
   Partial<{
-  // TreeNode required properties (from NodeBase)
-  id: NodeId; // NodeId instead of EntityId to match TreeNode
-  parentId: NodeId;
-  nodeType: NodeType;
-  nodeId: NodeId;
-  name: string;
-  depth: number;
+    // TreeNode required properties (from NodeBase)
+    id: NodeId; // Legacy compatibility: TreeNode identifier
+    parentId: NodeId;
+    nodeType: NodeType;
+    nodeId: NodeId;
+    name: string;
+    depth: number;
 
-  // WorkingCopyProperties
-  originalNodeId?: NodeId;
-  copiedAt: number;
-  hasEntityCopy?: boolean;
-  entityWorkingCopyId?: NodeId;
-  originalVersion?: number;
-  hasGroupEntityCopy?: Record<string, boolean>;
+    // Working copy metadata compatible with legacy handlers
+    originalNodeId?: NodeId;
+    copiedAt: number;
+    hasEntityCopy?: boolean;
+    entityWorkingCopyId?: NodeId;
+    hasGroupEntityCopy?: Record<string, boolean>;
 
-  // Shape-specific working copy metadata
-  isDraft?: boolean;
-  downloadedMatrix?: boolean[][]; // Cache status
-}>;
+    // Shape-specific working copy metadata
+    isDraft?: boolean;
+    downloadedMatrix?: boolean[][]; // Cache status
+    resumeStep?: number;
+  }>;
 
 export interface StepProps {
   workingCopy: Partial<ShapeWorkingCopy>;

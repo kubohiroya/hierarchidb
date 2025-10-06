@@ -40,6 +40,7 @@
     - 2025-10-06 20:07 start: Basemap プラグインの WorkingCopyDraft 再整備に着手。`BaseMapWorkingCopy` を `WorkingCopyDraft<BaseMapEntity>` + `Partial<BaseMapEntity>` の合成へ変更し、ハンドラーでの Draft Payload を整理予定。
     - 2025-10-06 20:10 progress: Basemap の `BaseMapDraftPayload` / `BaseMapWorkingCopy` を更新し、ハンドラーで Timestamp import と Dexie put/delete の NodeId 処理を是正。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-basemap-plugin build` を実行してグリーンを確認。
     - 2025-10-06 20:12 docs: WorkingCopy パターン水平展開ガイド（`docs/plugins/working-copy-horizontal-rollout.md`）を追加し、適用手順・チェックリスト・ロールバック方針を整理。横展開時は本ガイドに基づき進行ログを更新すること。
+    - 2025-10-06 20:32 progress: Shape プラグインへ WorkingCopy パターンを適用。`shared/types.ts` を `WorkingCopyDraft<ShapeEntity>` ベースへ刷新し、`shared/utils.ts` / `handlers/ShapeEntityHandler.ts` / `worker/handlers/ShapeEntityHandler.ts` で `createDraftWorkingCopyBase` / `markWorkingCopyUpdated` を用いた Draft フローに統一。`pnpm --filter @hierarchidb/plugins-shape-plugin {typecheck,build}` を実行してグリーンを確認。
   - [ ] 2. Entity↔WorkingCopy アダプタ共通化: base-plugin にアダプタを実装し、Jotai 派生 atom パターンを文書化して UI へ展開。
   - [ ] 3. BaseEntityHandler タイムスタンプ更新: `Date.now()` ベースへ統一し、版数更新との役割分担を明記。
   - [ ] 4. UI handler Adapter 化: in-memory Adapter を整備し、Folder/Shape 等の UI handler を移行。
