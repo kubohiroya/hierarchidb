@@ -37,7 +37,7 @@ import {
   Timeline as TimelineIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ResolverEntity, PropertyMappingRule } from '../types/index.js';
 
 interface MappingStatistics {

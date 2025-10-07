@@ -10,7 +10,7 @@
   */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { ShapeEntityHandler } from '../../services/ShapeEntityHandler.js';
 import type { ShapeWorkingCopy } from '../../types/ShapeEntity.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';

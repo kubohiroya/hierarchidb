@@ -107,7 +107,7 @@
   - [x] `ResolverWorkingCopyEntity` の型定義が WorkingCopyDraft ベースで一元化され、重複エイリアスが存在しない
   - [x] ハンドラー・UI で `ResolverDraftPayload` / `ResolverWorkingCopy` が正しく import され、暗黙の any が発生しない
 - チェックリスト：
-  - [x] `src/types/index.ts` で `ResolverWorkingCopyEntity` を定義し、関連エイリアスを整理
+  - [x] `src/types/RuntimeWorkerService.ts` で `ResolverWorkingCopyEntity` を定義し、関連エイリアスを整理
   - [x] `ResolverEntityHandler` に `ResolverDraftPayload` を import し draftPayload の型エラーを解消
   - [x] `ResolverDialog` 系コンポーネントで state 更新時の暗黙 any を排除
 - ロールバック手順：
@@ -463,10 +463,10 @@
   - ブランチ: `feat/route/plugin-definition-align`
   - 依存: なし（ローカル）
   - 受け入れ基準（DoD）:
-    - [ ] `RoutePluginDefinition` を追加し、`index.ts` から再エクスポート（UI/Worker で参照可能）
+    - [ ] `RoutePluginDefinition` を追加し、`RuntimeWorkerService.ts` から再エクスポート（UI/Worker で参照可能）
     - [ ] `entityHandler=new RouteEntityHandler()` / `batchManager=createRouteBatchManager()` を定義
     - [ ] `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン
-  - ロールバック: 定義ファイルを削除し、`index.ts` のエクスポートを元に戻す。
+  - ロールバック: 定義ファイルを削除し、`RuntimeWorkerService.ts` のエクスポートを元に戻す。
 
 - feat/location/runtime-worker-scaffold（Location ランタイムワーカー足場）
   - ブランチ: `feat/location/runtime-worker-scaffold`
@@ -835,9 +835,9 @@
   - 受け入れ基準（DoD）:
     - [ ] 候補リストが `TASKS.md`/docs に記録されている。
     - [ ] `.bak` ファイル（`entiry-working-copy-types.ts.bak`）の扱い方針が決定（削除 or `deprecated/` へ移動）。
-    - [ ] バレル（`index.ts`）の再エクスポートから未使用候補を除外（破壊的変更がないことを確認）。
+    - [ ] バレル（`RuntimeWorkerService.ts`）の再エクスポートから未使用候補を除外（破壊的変更がないことを確認）。
     - [ ] `pnpm typecheck && pnpm test` がグリーン。
-  - ロールバック手順: `index.ts` の再エクスポート差分をリバートで即復旧可能。削除に進む場合は削除コミット単位で個別リバート。
+  - ロールバック手順: `RuntimeWorkerService.ts` の再エクスポート差分をリバートで即復旧可能。削除に進む場合は削除コミット単位で個別リバート。
 
 // 追加: nodeType命名の統一（-plugin サフィックス廃止）
 （Doing へ移動）
@@ -958,7 +958,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - Workerで`localStorage`に依存した言語取得（Web Workerに存在しない前提）とガード付き参照が散在。
     - 該当: `packages/runtime-worker/worker/src/utils/workerLogger.ts` の言語取得・独自訳マップ。
   - 言語型・設定の固定化（'en' | 'ja' や `supportedLngs: ['en','ja']`）。追加言語がコード改変前提。
-    - 該当: `workerLogger.ts` の戻り型、`packages/ui/i18n/src/i18n/index.ts` の `supportedLngs`（SSR/CSR両方）。
+    - 該当: `workerLogger.ts` の戻り型、`packages/ui/i18n/src/i18n/RuntimeWorkerService.ts` の `supportedLngs`（SSR/CSR両方）。
   - feature/worker 層が React 依存なしで共通リソースを使えない構成（`react-i18next` 前提での初期化）。
   - UI→Worker のロケール伝達がなく、各層でバラバラに判定している。
 
@@ -991,7 +991,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - 内容: `@hierarchidb/ui-i18n` に `core` エントリを追加（`i18next` のみで初期化）。`react` 側は `core` を読み込んで `.use(initReactI18next)` を付与。
   - チェックリスト:
     - [ ] `packages/ui/i18n/src/i18n/core.ts` 追加（React依存なし）。
-    - [ ] 既存 `index.ts` から `core` を再利用する構成に整理。
+    - [ ] 既存 `RuntimeWorkerService.ts` から `core` を再利用する構成に整理。
     - [ ] `supportedLngs` の固定配列を一旦未指定（`fallbackLng: 'en'`, `load: 'languageOnly'`）。
   - 受け入れ基準: `pnpm --filter @hierarchidb/ui-i18n typecheck && build` がグリーン。
 
@@ -1152,7 +1152,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-07 start: docs/tasks — ガイド準拠の構造整備（セクション追加: 実行コマンドの原則/禁止事項・注意/失敗時の取り扱い、目次更新）。コード差分なし。
 - 2025-09-07 done: 上記を反映。運用方針（小粒PR・既定OFFフラグ・DoD/ロールバック明記）を本ファイル先頭にも再確認として明示。
 - 2025-09-06 done: node-type plugin-status-report を最新化（typecheck 集計）し、未メンテの `packages/plugins/docs` を削除。
-- 2025-09-07 done: fix/route-plugin/build — 重複依存キーの削除（`@hierarchidb/tabular-store`）、`AbstractBatchSession` の import を `@hierarchidb/runtime-shared-batch-processor` へ修正。併せて `@hierarchidb/runtime-shared-batch-processor` の `src/index.ts` に `AbstractBatchSession`/`AbstractWorkerPoolManager` の再エクスポートを追加。
+- 2025-09-07 done: fix/route-plugin/build — 重複依存キーの削除（`@hierarchidb/tabular-store`）、`AbstractBatchSession` の import を `@hierarchidb/runtime-shared-batch-processor` へ修正。併せて `@hierarchidb/runtime-shared-batch-processor` の `src/RuntimeWorkerService.ts` に `AbstractBatchSession`/`AbstractWorkerPoolManager` の再エクスポートを追加。
 - 2025-09-07 done: fix/runtime-shared/dts — shims.d.ts は採用せず、CONTRIBUTING の方針に合わせて解決。
  - 2025-09-07 done: tasks/plugins-analysis-followups — `packages/plugins/analysis-20250907.md` に基づく横断タスク（語彙統一/Engine Registry/Location Batch v2/Shape 集約/Validation/Lane/認証/VectorTiler/UI Wizard/EntityHandler/LocationDB/Batch API）を ToDo へ追加（既定OFFフラグと DoD/ロールバックを明記）。
   - runtime-shared/batch-processor: `tsconfig.json` の `rootDir` 固定を撤廃（TS6059回避）
@@ -1210,7 +1210,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - done: 2025-09-04 folder-plugin に `@hierarchidb/tag` を依存追加
 - done: 2025-09-04 AGENTS.md に型解決ポリシーを明文化
 - done: 2025-09-04 chore/common-types: `packages/common/types/src` の未使用 `export`（型/インターフェイス）候補を抽出し、ドキュメント化（docs/tech-debt/unused-common-types-2025-09-04.md）。
-- done: 2025-09-04 chore/common-types: 未使用候補に `@deprecated` を付与し、バレル `packages/common/types/src/index.ts` から再エクスポート除外（必要シンボルのみ明示再エクスポートに変更）。
+- done: 2025-09-04 chore/common-types: 未使用候補に `@deprecated` を付与し、バレル `packages/common/types/src/RuntimeWorkerService.ts` から再エクスポート除外（必要シンボルのみ明示再エクスポートに変更）。
   - 検証: `pnpm --filter @hierarchidb/common-type build` 成功（DTS 生成OK）。
   - フルビルド: ルート `pnpm build` 実行。`@hierarchidb/ui-core` の DTS 生成で未使用引数警告による失敗、`@hierarchidb/runtime-ui-plugin-dialog` の内部エラー（tsup）で停止。common-type の変更起因ではないため別途対処。
 - done: 2025-09-04 chore/common-types: `.bak` ファイル削除（packages/common/types/src/entiry-working-copy-types.ts.bak）。
@@ -1439,10 +1439,10 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
 - 2025-10-01 09:40 start: policy/ban-tsconfig-paths-dist-dts フォローアップ — `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` で `packages/runtime-shared/module-paths/tsconfig.json` の dist/*.d.ts 参照が検出されたため是正を開始。`git checkout -b chore/runtime-shared/module-paths-tsconfig` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成できなかったため、main 上で差分を管理しつつ `paths` を `src` 参照へ切替える方針。
-- 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker/src/index.ts`・`../runtime/worker-bootstrap/src/index.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
+- 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker/src/RuntimeWorkerService.ts`・`../runtime/worker-bootstrap/src/RuntimeWorkerService.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
 - 2025-10-01 10:12 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を実行し、前者は `tsc --noEmit` が成功、後者は `[policy] OK` を確認。ロールバックは `packages/runtime-shared/module-paths/tsconfig.json` を差分前へ戻し再度 typecheck/policy を実行するだけで可。
 - 2025-10-01 10:35 start: runtime-worker import failure in dev — `pnpm dev` 実行後もブラウザで `failed to resolve module specifier '@hierarchidb/runtime-worker'` 警告が継続するため、`@hierarchidb/runtime-shared-module-paths` の `importRuntimeWorker()` が dev 環境でモジュール解決できるよう調査・修正を開始。`git checkout -b fix/runtime-worker/import-dev` は sandbox 制約により作成不可だったため、main 上で差分を管理する。
-- 2025-10-01 10:55 progress: 同タスク — `packages/runtime-shared/module-paths/src/index.ts` から `@vite-ignore` を撤去し、`importRuntimeWorker` / `importOptionalFeature` / `importPluginWorker` が bare specifier をそのまま `import()` へ渡すよう更新。Vite が alias 解決を行う想定。ロールバックは当該行を差分前へ戻すのみ。
+- 2025-10-01 10:55 progress: 同タスク — `packages/runtime-shared/module-paths/src/RuntimeWorkerService.ts` から `@vite-ignore` を撤去し、`importRuntimeWorker` / `importOptionalFeature` / `importPluginWorker` が bare specifier をそのまま `import()` へ渡すよう更新。Vite が alias 解決を行う想定。ロールバックは当該行を差分前へ戻すのみ。
 - 2025-10-01 11:05 progress: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `pnpm --filter @hierarchidb/runtime-shared-module-paths build` を実行し成功。ブラウザでの再確認は未実施のため、`pnpm dev` 環境での挙動確認をユーザーへ依頼予定。
 - 2025-10-01 11:20 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` から `@hierarchidb/runtime-worker` / `@hierarchidb/runtime-worker-bootstrap` の paths 上書きを削除し、`~/*` のみを維持。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm check:deps:extra` を実行して当該パッケージの警告が消えたことを確認（他パッケージの警告は既存課題として残存）。
 - 2025-10-02 12:05 done: runtime-worker import failure in dev — `pnpm dev` 再起動後に Worker 初期化エラーが解消され、modulePaths 経由の解決結果を確認。
@@ -1450,7 +1450,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-10-01 11:40 start: dep-fence warnings cleanup — `pnpm check:deps:extra` に残存する `@hierarchidb/plugins-{location,route,shape}-plugin` の tsup.external 警告と `@hierarchidb/plugins-shape-plugin` / `@hierarchidb/runtime-ui-plugin-dialog` の tsconfig paths 警告を解消するため調査を開始。sandbox 制約で新規ブランチは作成できず main 上で差分管理。
 - 2025-10-01 11:55 progress: 同タスク — `packages/plugins/{location,route,shape}-plugin/package.json` の `tsup.external` に `@hierarchidb/plugins-runtime-worker-factory` を追記し、ポリシーが peerDependencies と整合するよう更新。`pnpm --filter @hierarchidb/plugins-{location,route,shape}-plugin typecheck` を実行し全て成功。
 - 2025-10-01 12:05 done: 同タスク — `packages/plugins/shape-plugin/tsconfig.json`・`tsconfig.build.json` と `packages/runtime-ui/plugin-dialog/tsconfig.json` の `paths` を `~/*` のみに整理。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` に成功し、`pnpm check:deps:extra` を再実行して WARN 0 件を確認。ロールバックは各 package.json / tsconfig の追加行を差分前へ戻し再度 typecheck/dep-fence を実行するだけで可。
-- 2025-10-01 12:15 progress: runtime-worker import failure in dev — 動的 import の警告を抑制するため `packages/runtime-shared/module-paths/src/index.ts` の importer 実装を `importModule(specifier: string)` 経由へ変更。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm dev` での挙動再確認をユーザーへ依頼。
+- 2025-10-01 12:15 progress: runtime-worker import failure in dev — 動的 import の警告を抑制するため `packages/runtime-shared/module-paths/src/RuntimeWorkerService.ts` の importer 実装を `importModule(specifier: string)` 経由へ変更。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` / `build` を再実行し成功。`pnpm dev` での挙動再確認をユーザーへ依頼。
 - 2025-10-01 12:28 progress: 同タスク — Vite dev での解決失敗を受け、importer を文字列リテラルの `import()`（`/* @vite-ignore */` 付き）に戻し、StoreRegistry の最小型を導入。`packages/runtime-shared/module-paths/tsup.config.ts` に対象モジュールを external として列挙し直し、`pnpm --filter @hierarchidb/runtime-shared-module-paths build` が成功。
 - 2025-10-01 12:36 progress: 同タスク — 型検証用に `packages/runtime-shared/module-paths/src/types/external-modules.d.ts` を追加（shim-check 非対象のファイル名）し、`tsconfig.json` の include を更新。`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` を再実行してグリーンを確認。
 - 2025-10-01 12:32 done: 同タスク — `packages/runtime-shared/module-paths/tsup.config.ts` に対象モジュールを external として追加し、`pnpm --filter @hierarchidb/runtime-shared-module-paths build` が成功。`pnpm dev` での再確認をユーザーへ依頼（現在の挙動共有待ち）。ロールバックは importer/tsconfig/tsup/シムを差分前へ戻し再ビルド。
@@ -1472,12 +1472,12 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-09-30 start: refactor/worker/wc-impl-align — Worker Commit の戻り値統一タスクに着手。sandbox 制約で新規ブランチ作成が拒否されたため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理しつつ TASKS を Doing へ移動。
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
-- 2025-09-04 done: basemap-plugin 型修正（Handlerを `HierarchicalEntityHandler<BaseMapEntity>` ベースに再実装、DexieのID型を `EntityId` に統一、`useBaseMapEntity`/`BaseMapPanel`/`BaseMapDisplay` のAPI整合、`index.ts` の不要export削除、`components/`/`hooks/` にbarrel追加、PluginDefinitionを現行形に整合）。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` グリーン。
+- 2025-09-04 done: basemap-plugin 型修正（Handlerを `HierarchicalEntityHandler<BaseMapEntity>` ベースに再実装、DexieのID型を `EntityId` に統一、`useBaseMapEntity`/`BaseMapPanel`/`BaseMapDisplay` のAPI整合、`RuntimeWorkerService.ts` の不要export削除、`components/`/`hooks/` にbarrel追加、PluginDefinitionを現行形に整合）。`pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck` グリーン。
  - 備考: 他プラグイン（project/shape/route）は別要因でtypecheck未クリア（外部依存や旧API型）。当タスク範囲外のため未対応。次のワークでleaf封じ込め/段階修正を検討。
  - 2025-09-04 done: route-plugin 型修正（Dexie Table型ズレ吸収、shape-plugin内部依存のローカルshim化、未使用引数/undefined推論の解消）。`pnpm --filter @hierarchidb/plugins-route-plugin typecheck` グリーン。
  - 2025-09-04 done: project-plugin（現 `@hierarchidb/plugins-linker-plugin`）の @mui/x-date-pickers 依存のleaf封じ込め（インストール不要の最小 d.ts shim を legacy `src/types/shims` に追加）。`pnpm --filter @hierarchidb/plugins-linker-plugin typecheck` グリーン（当時は `@hierarchidb/project-plugin` 名義）。
  - 2025-09-04 done: shape-plugin の leaf 封じ込め（tsconfig.build を最小対象へ縮小＋ `skipLibCheck:true`、`@hierarchidb/core`/`common-type`/UI周辺の最小shim追加、型定義の局所修正）。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` グリーン。
- - 2025-09-04 done: location-plugin の leaf 封じ込め（`tsconfig.json` の include を `src/types/**` + `src/index.ts` に縮小、`src/worker/**` を除外）。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` グリーン。
+ - 2025-09-04 done: location-plugin の leaf 封じ込め（`tsconfig.json` の include を `src/types/**` + `src/RuntimeWorkerService.ts` に縮小、`src/worker/**` を除外）。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` グリーン。
  - 2025-09-04 done: UI leaf微修正（小さな型負債の封じ込め）
    - `@hierarchidb/ui-tour`: `skipLibCheck: true`（理由: react-joyride/@gilbarbara/types/type-fest のTS5要件）。leaf限定、除去計画あり。
    - `@hierarchidb/ui-dialog`: `skipLibCheck: true`（理由: storybook@9の型とTS4.9の齟齬）。leaf限定、除去計画あり。
@@ -1575,13 +1575,13 @@ P2:
 - 2025-10-06 19:18 start: chore/ui/dep-fence-warn-cleanup — dep-fence WARN（tsconfig-no-base / jsx-mismatch / external-in-deps）解消へ向けて着手。`@hierarchidb/ui-datasource` と `@hierarchidb/ui-license` は tsconfig 未整備のため base 継承＋ `jsx: react-jsx` を追加予定。`@hierarchidb/ui-i18n` は external 指定の `i18next-browser-languagedetector` / `i18next-http-backend` / `date-fns` を peerDependencies へ移行し、devDependencies を補完してビルド環境を維持する方針。
 - 2025-10-06 19:43 progress: chore/ui/dep-fence-warn-cleanup — `packages/ui/{datasource,license}/tsconfig.json` を新規作成し base 継承＋ `jsx: react-jsx` を設定。`@hierarchidb/ui-i18n/package.json` で detector/backend/date-fns を peerDependencies へ移し、devDependencies に追加。`pnpm exec tsc -p packages/ui/datasource/tsconfig.json --pretty false` / `pnpm exec tsc -p packages/ui/license/tsconfig.json --pretty false` / `pnpm --filter @hierarchidb/ui-i18n build` / `pnpm exec dep-fence --strict` を順次実行し全てグリーン。
 - 2025-10-06 19:58 start: fix/plugins/resolver-workingcopy-types — Resolver プラグインで `ResolverWorkingCopyEntity` エクスポート欠如・暗黙 any が発生しているため、WorkingCopy 型を整理し build/typecheck が通過するよう修正に着手。`pnpm --filter @hierarchidb/plugins-resolver-plugin build` で TS2724/TS2300 等を再現済み。
-- 2025-10-06 20:00 progress: fix/plugins/resolver-workingcopy-types — `src/types/index.ts` で WorkingCopyDraft と Partial<ResolverEntity> の合成型を定義し直し、`ResolverEntityHandler` の import を補完。`pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-resolver-plugin build` を実行し、どちらもグリーンを確認。
+- 2025-10-06 20:00 progress: fix/plugins/resolver-workingcopy-types — `src/types/RuntimeWorkerService.ts` で WorkingCopyDraft と Partial<ResolverEntity> の合成型を定義し直し、`ResolverEntityHandler` の import を補完。`pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` / `pnpm --filter @hierarchidb/plugins-resolver-plugin build` を実行し、どちらもグリーンを確認。
 - 2025-10-03 09:30 progress: packages/ui/country-select の peer/dev 依存構成を確認し、`@mui/material` と `@mui/icons-material` を peerDependencies と devDependencies の両方で宣言する運用がローカル開発に必要であることを確認済。次ステップ: UI パッケージ全体で MUI 周辺依存の整理状況を棚卸しし、方針が揃っていない箇所を ToDo 化する。
-- 2025-10-03 13:55 progress: fix/app/preview-hydration — `pnpm preview` 時に Worker 初期化が進まず UI が `CircularProgress` のまま停止する問題を調査。`@hierarchidb/runtime-shared-module-paths/src/index.ts` から `/* @vite-ignore */` を除去し、Vite が bare specifier を本番ビルドでチャンク化できるよう修正。`pnpm --filter @hierarchidb/app typecheck` は成功、`pnpm exec tsc -p packages/runtime-shared/module-paths/tsconfig.json --noEmit --incremental false --composite false` で該当パッケージの型確認も実施（tsconfig.tsbuildinfo 書き込み制限を回避）。ロールバックは当該ファイルのコメント差分を戻し、上記コマンドを再実行するだけで可。ブラウザでの再確認はユーザー環境でお願いしたい。
+- 2025-10-03 13:55 progress: fix/app/preview-hydration — `pnpm preview` 時に Worker 初期化が進まず UI が `CircularProgress` のまま停止する問題を調査。`@hierarchidb/runtime-shared-module-paths/src/RuntimeWorkerService.ts` から `/* @vite-ignore */` を除去し、Vite が bare specifier を本番ビルドでチャンク化できるよう修正。`pnpm --filter @hierarchidb/app typecheck` は成功、`pnpm exec tsc -p packages/runtime-shared/module-paths/tsconfig.json --noEmit --incremental false --composite false` で該当パッケージの型確認も実施（tsconfig.tsbuildinfo 書き込み制限を回避）。ロールバックは当該ファイルのコメント差分を戻し、上記コマンドを再実行するだけで可。ブラウザでの再確認はユーザー環境でお願いしたい。
 - 2025-10-03 14:20 progress: fix/app/preview-hydration — `vite.preview.config.ts` にワークスペース alias を追加し、`@hierarchidb/runtime-worker`／`@hierarchidb/util` など preview ビルドで参照されるパッケージを dist 出力へ解決するように変更。`pnpm --filter @hierarchidb/app typecheck` を再実行して成功を確認。`pnpm --filter @hierarchidb/app build` は sandbox の依存未解決により未完了（途中で typecheck 用サブパッケージが `@hierarchidb/tabular` を解決できず停止）だが、ローカルフル環境では alias 追加により `commonjs--resolver` の解決失敗が解消される想定。ロールバックは `vite.preview.config.ts` の alias 追加部分を元に戻し再度 typecheck を実行するだけで可。
 - 2025-10-03 14:40 progress: fix/app/preview-hydration — `entry.client.tsx` で SSR マークアップ不在時は `hydrateRoot` ではなく `createRoot` を用いるフォールバックを実装。`#root` が存在しない／空の場合はクライアントレンダへ切り替え、`hydrateRoot` 失敗時も catch で再描画。`pnpm --filter @hierarchidb/app typecheck` を再実行して成功を確認。ロールバックは `entry.client.tsx` のフォールバック分岐を差分前へ戻すのみ。
 - 2025-10-03 15:05 progress: fix/ui/i18n-browser-detector-missing — `app/package.json` に `i18next-browser-languagedetector` / `i18next-http-backend` を追加し、`pnpm install --filter @hierarchidb/app --no-frozen-lockfile`（CI 変数付与）でワークスペースへ再リンク。インポート確認として `node -e "import('i18next-browser-languagedetector')"`（workdir=app）・`node -e "import('@hierarchidb/ui-i18n')"` を実行し成功を確認。`pnpm --filter @hierarchidb/ui-i18n typecheck` と `pnpm -C app typecheck` もグリーン。ロールバックは `app/package.json` の依存追記を戻し、再度 `pnpm install` と typecheck を実行する。
-- 2025-10-03 15:25 progress: fix/ui/i18n-browser-detector-missing — `LanguageProvider` が i18next の未初期化インスタンスを掴んでいたため、`packages/ui/i18n/src/provider/LanguageProvider.tsx` で `../i18n/index.ts` の構成済みインスタンスを参照するよう修正。`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行し成功（ブラウザ側の TreeTable `useTranslation` 警告解消を確認予定）。ロールバックは当該 import 変更を戻し再 typecheck。
+- 2025-10-03 15:25 progress: fix/ui/i18n-browser-detector-missing — `LanguageProvider` が i18next の未初期化インスタンスを掴んでいたため、`packages/ui/i18n/src/provider/LanguageProvider.tsx` で `../i18n/RuntimeWorkerService.ts` の構成済みインスタンスを参照するよう修正。`pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm -C app typecheck` を再実行し成功（ブラウザ側の TreeTable `useTranslation` 警告解消を確認予定）。ロールバックは当該 import 変更を戻し再 typecheck。
 - 2025-10-03 15:45 progress: fix/ui/i18n-browser-detector-missing — `@hierarchidb/ui-i18n` から `useTranslation` 等を再エクスポートし、`@hierarchidb/ui-treeconsole-treetable` 側で同 API を利用するよう変更。`pnpm --filter @hierarchidb/ui-i18n build` → `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し dist を再生成。続けて `pnpm --filter @hierarchidb/ui-i18n typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm -C app typecheck` を再度通過。ロールバックは import を `react-i18next` へ戻し再ビルド。
 - 2025-10-03 16:00 progress: fix/ui/i18n-browser-detector-missing — TreeTable のラベルが言語切替で更新されない問題に対し、`TreeTableCore` の `useMemo` 依存へ `i18n.resolvedLanguage` を組み込み、言語変更で列メタが再評価されるよう修正。再度 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `build` と `pnpm -C app typecheck` を実行し成功。ロールバックは当該依存追加を戻し再ビルドする。
 - 2025-10-03 16:30 progress: fix/ui/speeddial-dialog-state — SpeedDial 起点のフォルダ作成で Worker 側が古い DialogStateAPI を返し `publishState`/`subscribeState` が未定義となるケースに備え、`packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx` にフォールバック API を実装し、state bridge 不在でも例外なく動作するように調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` が成功。ロールバックはフォールバック実装を除去しガードを元に戻して再度 typecheck。
@@ -1997,14 +1997,14 @@ P2:
     - [x] `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` が違反なしで完了
     - [x] `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` がグリーン
   - チェックリスト：
-    - [x] runtime-worker / runtime-worker-bootstrap の参照を `src/index.ts` 起点へ変更
+    - [x] runtime-worker / runtime-worker-bootstrap の参照を `src/RuntimeWorkerService.ts` 起点へ変更
     - [x] TypeScript 型解決（`tsc --noEmit`）でエラーが出ないことを確認
     - [x] ロールバック手順と検証結果を運用ログに記録
   - ロールバック手順：
     - `packages/runtime-shared/module-paths/tsconfig.json` の該当 `paths` を元の `dist/index.d.ts` 参照に戻し、`pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を再実行して現状復旧を確認
   - 運用ログ：
     - start: 2025-10-01 09:40 policy/ban-tsconfig-paths-dist-dts フォローアップを開始（sandbox でブランチ作成不可のため main 上で作業）
-    - progress: 2025-10-01 10:05 tsconfig の `paths` を `src/index.ts` 参照へ更新（差分は単一ファイル）
+    - progress: 2025-10-01 10:05 tsconfig の `paths` を `src/RuntimeWorkerService.ts` 参照へ更新（差分は単一ファイル）
     - done: 2025-10-01 10:12 `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` がともに成功
 - dep-fence warnings cleanup — dep-fence WARN の解消（plugins external / tsconfig paths 整理）
   - ブランチ: `chore/plugins/dep-fence-cleanup`（sandbox 制約で作成不可のため main 上で暫定対応）
@@ -2188,7 +2188,7 @@ P2:
     - [x] ESLint ルールで旧パスを禁止し、`pnpm -w lint` が成功（2025-10-01 実行）
     - [x] `pnpm -r typecheck` にて import エラーがないことを確認（2025-10-01 実行）
     - [x] `docs/design/worker-dynamic-import-architecture.md` Phase 2 節へ移行結果と検証メモを更新
-  - ロールバック: 各プラグインの factory 差分をリバートし、旧 `worker/index.ts` 構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
+  - ロールバック: 各プラグインの factory 差分をリバートし、旧 `worker/RuntimeWorkerService.ts` 構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-25 19:58 Phase 2b 展開タスクに着手（テンプレート整備）
     - progress: 2025-09-25 21:58 ESLint ルール導入と folder/resolver プラグインの先行移行
@@ -2316,14 +2316,14 @@ P2:
     - [x] `WorkerModuleLoader` から新ファクトリーを呼び出すコードパスを追加し、テストで await するヘルパーを整備
     - [x] プラグインのビルド/テスト/型チェックを実行し結果を運用ログへ記録
   - ロールバック手順：
-    - プラグイン側のファクトリー導入差分をリバートし、旧 `worker/index.ts` 再エクスポート構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
+    - プラグイン側のファクトリー導入差分をリバートし、旧 `worker/RuntimeWorkerService.ts` 再エクスポート構成へ戻したうえで `pnpm --filter ... typecheck` を再実行
   - 運用ログ：
     - start: 2025-09-25 19:34 Phase 2a パイロットとして folder/resolver プラグインの worker ファクトリー化に着手
-    - progress: 2025-09-25 19:45 folder/resolver の `worker/index.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
+    - progress: 2025-09-25 19:45 folder/resolver の `worker/RuntimeWorkerService.ts` を `register*WorkerStores` エクスポートへ置換し、Dexie stores 登録をオプション化
     - progress: 2025-09-25 19:48 `WorkerModuleLoader` で storeRegistry を渡してファクトリーを呼び出すよう更新
     - progress: 2025-09-25 19:52 `pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build` / `pnpm --filter @hierarchidb/app build` が WARN のみで成功、設計ドキュメント Phase 2a ログを更新
     - progress: 2025-09-25 21:40 basemap/route/spreadsheet/styler の構成テンプレートをフォルダ/Resolver に合わせて整理し、`worker-public-types.ts` と型エントリを追加入力（ビルドは Phase 2b で一括再検証予定）
-    - progress: 2025-09-25 21:48 残務検証として再エクスポート残存を検索し、`packages/plugins/{folder,resolver}-plugin/src/worker/index.ts` がいずれも `worker-factory` 経由でのエクスポートに統一されていることを確認（旧 `export { … } from '../worker/*'` は不在）
+    - progress: 2025-09-25 21:48 残務検証として再エクスポート残存を検索し、`packages/plugins/{folder,resolver}-plugin/src/worker/RuntimeWorkerService.ts` がいずれも `worker-factory` 経由でのエクスポートに統一されていることを確認（旧 `export { … } from '../worker/*'` は不在）
     - done: 2025-09-25 21:58 Phase 2a プラグイン移行を完了し、`pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin typecheck` / `build` と `pnpm --filter @hierarchidb/app typecheck` の結果を記録
 
 - refactor/monorepo/as-any-hotspots — `as any` ホットスポットの型安全化（app / basemap / shape / linker / location）
@@ -2950,7 +2950,7 @@ P2:
 
 - fix/common-type/dist-dts-regeneration — @hierarchidb/common-type の d.ts 再生成と TS7016 解消
   - ブランチ: `fix/common-type/dist-dts-regeneration`（サンドボックス制約によりローカルでは `main` 上で作業）
-  - 依存: `@hierarchidb/common-type`, `app/src/ui/index.ts`
+  - 依存: `@hierarchidb/common-type`, `app/src/ui/RuntimeWorkerService.ts`
   - 受け入れ基準（DoD）：
     - [x] `pnpm --filter @hierarchidb/common-type build` が成功し `dist/index.d.ts` が生成される
     - [x] `pnpm --filter @hierarchidb/common-type typecheck` が成功する
@@ -2962,7 +2962,7 @@ P2:
   - ロールバック手順：
     - `packages/common/types/src/command-types.ts` の変更を戻し、`pnpm --filter @hierarchidb/common-type build` を再実行
   - 運用ログ：
-    - start: 2025-09-21 08:03 src/ui/index.ts の TS7016 を受け d.ts 再生成タスクに着手
+    - start: 2025-09-21 08:03 src/ui/RuntimeWorkerService.ts の TS7016 を受け d.ts 再生成タスクに着手
     - blocked: 2025-09-21 08:04 `pnpm --filter @hierarchidb/common-type build` が `RestoreFromTrashPayload` 重複定義で失敗
     - progress: 2025-09-21 08:06 同コマンドの再実行が成功し、`dist/index.d.ts` が再生成された
     - progress: 2025-09-21 08:07 `pnpm --filter @hierarchidb/common-type typecheck` が成功
@@ -3267,7 +3267,7 @@ P2:
     - progress: 2025-09-19 23:59 Phase1 レポートスクリプトを整備し `pnpm ts-node --esm scripts/naming/report-export-alignment.ts --verbose` を実行、reports/naming/export-alignment-phase1.json を生成
     - progress: 2025-09-20 00:08 Phase2 リネーム支援スクリプトを追加し `pnpm ts-node --esm scripts/naming/apply-export-alignment.ts --plan reports/naming/export-alignment-plan.json` を dry-run で確認
     - progress: 2025-09-20 00:18 命名ガイドラインとツール手順を CONTRIBUTING.md に追記し、TASKS DoD #3 を満たす
-    - progress: 2025-09-20 01:05 feature/index.ts 群の Plain オブジェクトを static クラス化し、依存パッケージ側のビルドと runtime wiring ハンドラを更新
+    - progress: 2025-09-20 01:05 feature/RuntimeWorkerService.ts 群の Plain オブジェクトを static クラス化し、依存パッケージ側のビルドと runtime wiring ハンドラを更新
 
 - fix/ui-treeconsole/treetable-transitive-selection — TreeTable 行選択 UI で推移的チェック状態を表示
   - ブランチ: `fix/ui-treeconsole/treetable-transitive-selection`（サンドボックス制約のためローカルは `main` 上で作業）
@@ -4506,11 +4506,11 @@ P2:
   - ブランチ: `chore/spreadsheet/ui-only-typecheck`（ローカル作業）
   - PR: #142 https://github.com/kubohiroya/hierarchidb/pull/142
   - ステータス: 2025-09-07 に main へマージ済。
-  - 要点: `tsconfig.ui.json` を導入し UI のみを型対象に限定。`src/ui/facade/index.ts` を追加して UI→サービス層の境界をダイナミックインポートで分離。`CSVUploadPanel` は `../services` から `../ui/facade` へ依存を切替。UI型チェック緑を確認。
+  - 要点: `tsconfig.ui.json` を導入し UI のみを型対象に限定。`src/ui/facade/RuntimeWorkerService.ts` を追加して UI→サービス層の境界をダイナミックインポートで分離。`CSVUploadPanel` は `../services` から `../ui/facade` へ依存を切替。UI型チェック緑を確認。
   - 受け入れ基準（DoD）:
     - [x] `pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` がグリーン（UI限定）
     - [x] サービス層（`src/services/**`, `src/worker/**`）は型チェックの対象外
-  - ロールバック: `src/ui/facade/index.ts` を削除し `CSVUploadPanel` の import を `../services` に戻す。`tsconfig.ui.json` の include を元に戻す。
+  - ロールバック: `src/ui/facade/RuntimeWorkerService.ts` を削除し `CSVUploadPanel` の import を `../services` に戻す。`tsconfig.ui.json` の include を元に戻す。
   - メモ: 本対応は Option 1（UIのみtypecheck）に相当。サービス層は将来、feature パッケージとして抽出予定（下記方針）。
 
 - feat/location/batch-mvt-fastpath-v1（location-plugin: batch/session/ephemeral DB + MVT fast-path）
@@ -4537,7 +4537,7 @@ P2:
 
 - refactor/shape/integrate-batch-download-compute（batch/download/compute の導入配線）
   - ブランチ: `refactor/shape/integrate-batch-download-compute`（PR #115、マージ後ブランチ削除）
-  - 要点: `services/batch/BatchSessionManager` への参照統一、レガシー `services/BatchSessionManager.ts` を削除、`services/index.ts` で `download/factory` を再エクスポート。テスト/参照パスも更新。
+  - 要点: `services/batch/BatchSessionManager` への参照統一、レガシー `services/BatchSessionManager.ts` を削除、`services/RuntimeWorkerService.ts` で `download/factory` を再エクスポート。テスト/参照パスも更新。
 
 - fix/app/init-loading-ux-polish（初回スプラッシュ簡素化＋0%フリッカー解消）
   - ブランチ: `fix/app/init-loading-ux-polish`（PR #104、マージ後ブランチ削除）
@@ -4771,7 +4771,7 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
-- 2025-10-06: Route プラグインの UI ユーティリティ（RouteDialog/RouteBasicInfoStep/RouteSelectionStep/RouteProcessingStep）を `RouteWorkingCopy.draft` ベースへ揃え、`getRouteDraft` ヘルパーを追加して旧 `workingCopy.*` 参照を除去。`pnpm --filter @hierarchidb/plugins-route-plugin typecheck` は sandbox 環境で `@hierarchidb/plugins-base-plugin` の型解決不足により失敗したため、依存 dist-types を揃えたうえで再実行する必要あり。
+- 2025-10-06: Route プラグインの UI ユーティリティ（RouteDialog/RouteBasicInfoStep/RouteSelectionStep/RouteProcessingStep）を `RouteWorkingCopy.draft` ベースへ揃え、`getRouteDraft` ヘルパーを追加して旧 `workingCopy.*` 参照を除去。`tsconfig.json` にローカルパスを追加して `pnpm --filter @hierarchidb/plugins-route-plugin typecheck` が sandbox 環境でもグリーンとなった。
 - 2025-09-20: ui-map デッキストーリーの公式型適用 — `@deck.gl/{geo-layers,layers,mapbox}` と `@types/geojson` を devDependencies として追加し、`tsconfig.json` の他パッケージ node_modules 参照を整理。`MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式シグネチャに沿って書き換え、`src/types/story-shims.d.ts` を削除。`pnpm install` → `pnpm --filter @hierarchidb/ui-map typecheck` → `node scripts/check-shims.mjs` → `pnpm as-any:report` まで成功。
 - 2025-09-20: runtime env 読み出しの共通化 — `@hierarchidb/util` に `readRuntimeEnvValue` / `readRuntimeMode` などのヘルパーを追加し、app / map-adapter / node-type plugins からの `process.env` 参照を排除。`eslint.config.js` の `no-restricted-globals: process` を `app/src` と `packages/**/src` へ拡張し、`pnpm --filter` {app,plugins-route-plugin,plugins-location-plugin,plugins-resolver-plugin,map-adapter} `typecheck` を実行してグリーンを確認。
 - 2025-09-20: Workspace `as any` ゼロ化 — ui-map / ui-monitoring / ui-lru-splitview / runtime-worker-bootstrap / feature-compute / runtime-shared-batch-processor / plugins-linker-plugin ほか残存パッケージから `as any` を全面撤廃。`pnpm --filter` による個別 typecheck（compute/util/runtime-worker-bootstrap/tools-vite-plugin-package-reader/auth-recovery/tabular-xlsx/runtime-shared-batch-processor/plugins-linker-plugin/analyze-licenses/ui-icon/ui-lru-splitview/ui-monitoring/ui-map/ui-accordion-config/ui-import-export/ui-treeconsole-base/ui-treeconsole-treetable/runtime-ui-search-result-window/ui-auth/ui-file/tag）と `pnpm as-any:report` で 0 件を確認。
@@ -4812,7 +4812,7 @@ P2:
 - done: `CHANGELOG.md` に日付セクションを追加し、deprecated フラグと常時CP経由化を明記
  
 2025-09-03
-- done: route-resolver の型検証/ビルド失敗を修正（`packages/feature/route-resolver/tsconfig.json` の `include` を `src/**/*` へ、`src/index.ts` を追加）。`pnpm --filter @hierarchidb/route-resolver typecheck && build` がグリーン。
+- done: route-resolver の型検証/ビルド失敗を修正（`packages/feature/route-resolver/tsconfig.json` の `include` を `src/**/*` へ、`src/RuntimeWorkerService.ts` を追加）。`pnpm --filter @hierarchidb/route-resolver typecheck && build` がグリーン。
  - done: map-source のビルドエラー修正（未使用型 `BBox`/`TileCoord` を除去、`dexie` 型不足のため最小 `src/shims/dexie.d.ts` を追加）。`pnpm --filter @hierarchidb/map-source typecheck && build` がグリーン。
 
 - start: E2E シナリオ整備（CP常時経由）
@@ -5015,7 +5015,7 @@ P2:
 - 2025-09-25 15:36 start: phase2/resolver-codemod-cleanup — Resolver/Styler codemod 適用差分の整形と Dexie 恒久対応の調整を再開
 - 2025-09-25 15:48 progress: phase2/resolver-codemod-cleanup — `ResolverDialog.e2e.test.tsx` を `describe.skip` に戻し、`pnpm --filter @hierarchidb/plugins-resolver-plugin test -- --run` を実行 (1 skip / 他グリーン)
 - 2025-09-25 15:49 progress: phase2/resolver-codemod-cleanup — Styler プラグインに `StylerDialog.e2e.test.tsx` が現状存在しないことを確認（`pnpm --filter @hierarchidb/plugins-styler-plugin test -- --list` で E2E 試験対象なしを確認）。必要なら後続タスクで e2e 再導入 + skip 管理を検討
-- 2025-09-25 15:55 progress: phase2/resolver-codemod-cleanup — Resolver/Styler plugin の `index.ts` / `worker/index.ts` / `database/index.ts` で type-only export 化されていた値を復元しつつ `load*Module` ヘルパーを共存。`pnpm --filter @hierarchidb/plugins-{resolver,styler}-plugin typecheck` と resolver-plugin テスト (`--run`) を再実行し、いずれも成功（ResolverDialog E2E は skip 継続）
+- 2025-09-25 15:55 progress: phase2/resolver-codemod-cleanup — Resolver/Styler plugin の `RuntimeWorkerService.ts` / `worker/RuntimeWorkerService.ts` / `database/RuntimeWorkerService.ts` で type-only export 化されていた値を復元しつつ `load*Module` ヘルパーを共存。`pnpm --filter @hierarchidb/plugins-{resolver,styler}-plugin typecheck` と resolver-plugin テスト (`--run`) を再実行し、いずれも成功（ResolverDialog E2E は skip 継続）
 - 2025-09-25 16:00 progress: phase1/worker-module-loader — `app/src/worker-runtime/WorkerModuleLoader.ts` を新設し、WorkerClientProxy の初期化経路を loader 経由に変更。resolver/styler プラグイン worker を preload しつつエラーはサプレッサ。`docs/requirements/dynamic-import-unification-todo.md` の該当項目を更新
 - 2025-09-25 16:11 progress: phase1/worker-state-store — WorkerStateStore を実装し、WorkerClientProxy / useWorkerRuntimeProxy を Store ベースへ差し替え。WorkerModuleLoader の preload 対象を basemap/folder/route/spreadsheet/styler/resolver へ拡張し、`pnpm --filter @hierarchidb/app typecheck` を再実行
 - 2025-09-25 16:15 progress: phase1/worker-state-store — `app/src/worker-runtime/__tests__/workerRuntime.integration.test.ts` を追加し、StateStore/ModuleLoader の成功・失敗ケースをモックベースで検証。sandbox の file watcher 制限で `pnpm --filter @hierarchidb/app test -- --run ...` は `EMFILE` となったため、CI 実行時に再確認が必要（詳細は報告）
@@ -5090,7 +5090,7 @@ P2:
 - 2025-09-21 08:07 progress: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type typecheck` が成功。
 - 2025-09-21 08:06 progress: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type build` が成功し `dist/index.d.ts` を再生成。
 - 2025-09-21 08:04 blocked: fix/common-type/dist-dts-regeneration — `pnpm --filter @hierarchidb/common-type build` が `RestoreFromTrashPayload` の重複定義で停止。
-- 2025-09-21 08:03 start: fix/common-type/dist-dts-regeneration — src/ui/index.ts の TS7016 を解消するため common-type の d.ts 再生成に着手。
+- 2025-09-21 08:03 start: fix/common-type/dist-dts-regeneration — src/ui/RuntimeWorkerService.ts の TS7016 を解消するため common-type の d.ts 再生成に着手。
 - 2025-09-20 22:05 done: fix/app/treeconsole-undo-subscription — useCommandProcessorTracker で undo-state 購読が DataCloneError になる問題に対し、Comlink.proxy でコールバックをラップし `pnpm --filter @hierarchidb/app typecheck` まで確認。
 - 2025-09-20 22:18 done: fix/app/trash-dialog-hooks — TrashDialogFrame で useEffect 順序が変動して Hook 順序警告が出ていたため、エフェクトを条件分岐前に再配置し再度 `pnpm --filter @hierarchidb/app typecheck` を実行。
 - 2025-09-20 start: refactor/worker/command-processor-split — CommandProcessor.ts 分割計画に着手（現行責務棚卸し開始）。
@@ -5367,7 +5367,7 @@ ToDo（Phase 2/3: any の完全撤去）
     - 2025-09-16 11:32 blocked: `pnpm -w build` が `@hierarchidb/analyze-licenses` 実行時に `tsx` の IPC pipe を開けず EPERM。sandbox 制約のため、代替検証（個別 build）へ切り替え予定。
     - 2025-09-16 12:05 done: `@hierarchidb/analyze-licenses` を ESM ビルド (`dist/cli.mjs`) 経由でエクスポートし、ルート `analyze:licenses` は `node dist/cli.mjs` を実行するよう更新。`pnpm run analyze:licenses` が EPERM なく成功。
     - 2025-09-16 12:15 done: `packages/backend/cors-proxy` に `"type": "module"` を付与し ESM 化。`pnpm --filter @hierarchidb/cors-proxy typecheck` が TS1479 なく成功。
-    - 2025-09-16 12:30 done: `packages/backend/cors-proxy/src/index.ts` を `.mts` へリネームし、ジェネリック arrow に `,` を付与して Node16 解決での parsing を確実化。
+    - 2025-09-16 12:30 done: `packages/backend/cors-proxy/src/RuntimeWorkerService.ts` を `.mts` へリネームし、ジェネリック arrow に `,` を付与して Node16 解決での parsing を確実化。
     - 2025-09-16 12:45 done: `@hierarchidb/{common-type,util}` を再ビルドし、`dist/index.d.ts` を生成。依存パッケージの TS7016 を解消。
     - 2025-09-16 12:55 done: resolver-plugin を Node16 仕様へ整合（`~/types` 相対化、Dexie import を名前付きに変更、テストの strict null パスを修正）。`pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck` グリーン。
     - 2025-09-16 13:05 done: spreadsheet-plugin の Dexie import/steps-provider を Node16 仕様へ更新。`pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck` グリーン。

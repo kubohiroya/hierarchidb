@@ -11,7 +11,7 @@
 ```bash
 pnpm codemod:run --codemod migrate-plugin-worker --plugin resolver
 pnpm lint --fix
-pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck
+pnpm --filter @hierarchidb/plugin-loader-resolver-plugin typecheck
 ```
 
 ## コーディング規約

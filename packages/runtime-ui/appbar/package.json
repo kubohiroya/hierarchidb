@@ -27,7 +27,7 @@
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@tanstack/react-router": "^1.132.33"
   },

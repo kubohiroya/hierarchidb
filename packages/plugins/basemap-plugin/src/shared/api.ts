@@ -3,7 +3,7 @@
  * @description BaseMap API interfaces
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../entities/BaseMapEntity.js';
 import type { BaseMapConfig } from './types.js';
 

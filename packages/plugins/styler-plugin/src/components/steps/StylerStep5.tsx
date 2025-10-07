@@ -7,7 +7,7 @@
   */
 
 import React, { useCallback } from 'react';
-import { wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';
 import { Box } from '@mui/material';
 import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
 import type { StylerConfig } from '../../types/stylerTypes.js';

@@ -67,7 +67,7 @@ BaseMapプラグインの開発・実装に関するガイドです。段階的�
 pnpm install
 
 # BaseMapプラグイン固有の依存関係は自動でインストールされます
-cd packages/plugins/basemap
+cd packages/plugin-loader/basemap
 pnpm install
 ```
 
@@ -85,7 +85,7 @@ pnpm dev
 
 ```bash
 # BaseMapプラグインの型チェック
-cd packages/plugins/basemap
+cd packages/plugin-loader/basemap
 pnpm typecheck
 
 # プロジェクト全体の型チェック
@@ -630,7 +630,7 @@ test.describe('BaseMap Plugin E2E', () => {
     
     // Open create base-dialog
     await page.click('[data-testid="create-node-button"]');
-    await page.click('[data-testid="plugins-basemap"]');
+    await page.click('[data-testid="plugin-loader-basemap"]');
     
     // Step 1: Basic Information
     await page.fill('[data-testid="map-name"]', 'Test Map');

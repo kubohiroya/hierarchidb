@@ -111,7 +111,7 @@ export const WithModifiedFiles: Story = {
       <Box sx={{ mt: 1 }}>
         <List dense>
           {[
-            { name: 'index.ts', status: 'modified', lines: '+12, -5' },
+            { name: 'RuntimeWorkerService.ts', status: 'modified', lines: '+12, -5' },
             { name: 'components/Dialog.tsx', status: 'new', lines: '+145' },
             { name: 'styles.css', status: 'modified', lines: '+8, -3' },
           ].map((file) => (

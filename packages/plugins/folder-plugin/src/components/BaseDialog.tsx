@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import type { DialogStepDefinition } from '@hierarchidb/common-type';
+import type { DialogStepDefinition } from '@hierarchidb/common-types';
 
 export interface BaseDialogProps {
   title: string;

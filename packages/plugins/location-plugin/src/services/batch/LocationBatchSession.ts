@@ -4,7 +4,7 @@ import {
   type BatchProgressEvent,
   type BatchProgressPayload,
 } from '@hierarchidb/runtime-shared-batch-processor';
-import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-types';
 import type { SessionController } from './SessionController.js';
 
 export interface LocationBatchConfig extends BaseBatchConfig {

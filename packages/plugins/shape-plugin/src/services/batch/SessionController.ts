@@ -8,7 +8,7 @@
  * - Ensures proper cleanup on completion/abort
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadStageAdapter } from './adapters/DownloadStageAdapter.js';
 import { RuntimeWorkerDownloadAdapter } from './adapters/RuntimeWorkerDownloadAdapter.js';
 import type { Simplify1Task, Simplify2Task, VectorTileTask } from '../types.js';

@@ -57,7 +57,7 @@ export type {
   EditDialogProps as BaseEditDialogProps,
 } from './types/dialog.js';
 
-// Re-export EditDialogProps from plugins (which is the main one used)
+// Re-export EditDialogProps from plugin-loader (which is the main one used)
 export type { EditDialogProps } from './plugins/index.js';
 
 // Notifications

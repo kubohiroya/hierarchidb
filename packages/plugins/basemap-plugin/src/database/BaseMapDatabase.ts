@@ -5,7 +5,7 @@
 
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../types/BaseMapEntity.js';
 
 /**

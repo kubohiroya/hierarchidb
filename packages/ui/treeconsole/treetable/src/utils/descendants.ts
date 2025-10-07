@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 
 /**
  * Compute descendants (including self) of a node from a flat TreeNode array.

@@ -19,7 +19,7 @@ import type {
   Seq,
   Timestamp,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;

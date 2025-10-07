@@ -3,10 +3,10 @@
  * @description Plugin lifecycle management API
  *
  * This API handles plugin registration, unregistration, validation, and health monitoring.
- * It's focused on the management aspects of plugins, separated from node type queries.
+ * It's focused on the management aspects of plugin-loader, separated from node type queries.
  */
 
-import type { NodeType, PluginDefinition } from '@hierarchidb/common-type';
+import type { NodeType, PluginDefinition } from '@hierarchidb/common-types';
 
 //  :
 //  :

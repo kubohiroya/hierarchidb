@@ -18,11 +18,11 @@
 
 ```typescript
 // 従来の方法（手動管理）
-import folderPlugin from '@hierarchidb/plugins-folder-plugin';
-import shapePlugin from '@hierarchidb/plugins-shape-plugin';
-import routePlugin from '@hierarchidb/plugins-route-plugin';
-import spreadsheetPlugin from '@hierarchidb/plugins-spreadsheet-plugin';
-import locationPlugin from '@hierarchidb/plugins-location-plugin';
+import folderPlugin from '@hierarchidb/plugin-loader-folder-plugin';
+import shapePlugin from '@hierarchidb/plugin-loader-shape-plugin';
+import routePlugin from '@hierarchidb/plugin-loader-route-plugin';
+import spreadsheetPlugin from '@hierarchidb/plugin-loader-spreadsheet-plugin';
+import locationPlugin from '@hierarchidb/plugin-loader-location-plugin';
 // ... 新しいプラグインを追加するたびにここを更新...
 
 const plugins = [
@@ -153,7 +153,7 @@ export default defineConfig({
       
       // Virtual Moduleを生成
       virtualModules: [{
-        moduleId: 'my-plugins',
+        moduleId: 'my-plugin-loader',
         generate: (packages) => {
           const imports = [];
           const exports = [];
@@ -192,7 +192,7 @@ declare module 'virtual:my-plugins' {
 
 ```typescript
 // src/main.ts
-import plugins from 'virtual:my-plugins';
+import plugins from 'virtual:my-plugin-loader';
 
 // すべてのプラグインを初期化
 plugins.forEach(plugin => {
@@ -348,7 +348,7 @@ vitePluginPackageReader({
   monorepo: {
     // パッケージの場所を指定
     packages: [
-      'packages/plugins/*',     // プラグインパッケージ
+      'packages/plugin-loader/*',     // プラグインパッケージ
       'packages/features/*',    // 機能パッケージ
       'apps/*',                 // アプリケーション
       'services/*'              // サービス

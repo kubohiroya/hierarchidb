@@ -8,7 +8,7 @@ import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 // `@hierarchidb/runtime-shared-module-paths` manifest so that both the runtime
 // bundle and each plugin worker can be resolved via a single, versioned entry
 // point.  This loader keeps the cache warm and preloads the optional peer store
-// registration helpers for the plugins that still expose Dexie-backed stores.
+// registration helpers for the plugin-loader that still expose Dexie-backed stores.
 
 type ModulePathsModule = typeof import('@hierarchidb/runtime-shared-module-paths');
 

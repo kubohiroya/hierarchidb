@@ -9,12 +9,12 @@ import type {
   StepValidation,
   ValidationExtension,
   ValidationResult,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
 import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
 
 /**
- * Base class for plugins that extend the folder-plugin plugin
+ * Base class for plugin-loader that extend the folder-plugin plugin
  */
 export abstract class BaseFolderPlugin {
   /**

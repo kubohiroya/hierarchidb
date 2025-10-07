@@ -54,7 +54,7 @@
 - **依存タスク**: TASK-0036
 - **実装詳細**:
   ```typescript
-  // packages/plugins/basemap/src/types/BaseMapEntity.ts
+  // packages/plugin-loader/basemap/src/types/BaseMapEntity.ts
   export interface BaseMapEntity extends BaseEntity {
     nodeId: TreeNodeId;
     name: string;

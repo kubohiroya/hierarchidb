@@ -1,5 +1,5 @@
 /**
- * Registry for standardized worker-side runtime exports discovered from plugins.
+ * Registry for standardized worker-side runtime exports discovered from plugin-loader.
  *
  * Stores factories and lifecycle objects per nodeType so the worker entry can
  * merge them into PluginDefinition metadata passed to WorkerService.

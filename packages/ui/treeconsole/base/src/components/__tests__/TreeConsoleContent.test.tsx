@@ -9,7 +9,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { vi } from 'vitest';
 import { TreeConsoleContent } from '../TreeConsoleContent.js';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = createTheme();

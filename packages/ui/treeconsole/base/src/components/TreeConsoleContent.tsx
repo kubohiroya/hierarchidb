@@ -9,10 +9,10 @@ import { memo, useEffect, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { TreeConsoleContentProps } from '../types/index.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;

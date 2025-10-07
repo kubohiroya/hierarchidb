@@ -151,7 +151,7 @@ interface BasemapEntity extends BaseEntity {
 ### 8.4.1 統合プラグインレジストリ（NodeTypeRegistry使用）
 
 ```typescript
-// packages/_app/src/plugins/registry.ts
+// packages/_app/src/plugin-loader/registry.ts
 import { NodeTypeRegistry } from '@hierarchidb/core';
 import type { UnifiedPluginDefinition } from '@hierarchidb/core';
 
@@ -245,7 +245,7 @@ pluginRegistry.registerPlugin(basemapPlugin);
 ```tsx
 // packages/_app/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
 import { useParams, useLoaderData } from 'provider-router-dom';
-import { pluginRegistry } from '@/plugins/registry';
+import { pluginRegistry } from '@/plugin-loader/registry';
 import { NotFound } from '@/components/NotFound';
 import { Forbidden } from '@/components/Forbidden';
 import { Suspense } from 'react';
@@ -390,7 +390,7 @@ export default function PluginRoute() {
 ### 8.4.3 プラグイン開発側の実装（Worker API拡張統合）
 
 ```tsx
-// packages/plugins/basemap/src/index.ts
+// packages/plugin-loader/basemap/src/RuntimeWorkerService.ts
 export { default as EditComponent } from './components/Edit';
 export { default as PreviewComponent } from './components/Preview';
 export { editLoader, previewLoader } from './loaders';
@@ -400,7 +400,7 @@ export { editAction, previewAction } from './actions';
 export { BasemapWorkerExtensions } from './worker/extensions';
 export type { BasemapEntity, BasemapWorkingCopy } from './types';
 
-// packages/plugins/basemap/src/components/Edit.tsx
+// packages/plugin-loader/basemap/src/components/Edit.tsx
 import type { BasemapEntity } from '../types';
 import { useWorkerAPI } from '@hierarchidb/api';
 
@@ -487,7 +487,7 @@ export default function BasemapEdit({
   );
 }
 
-// packages/plugins/basemap/src/worker/extensions.ts
+// packages/plugin-loader/basemap/src/worker/extensions.ts
 import type { WorkerAPIExtensions } from '@hierarchidb/core';
 import type { BasemapEntity } from '../types';
 
@@ -548,7 +548,7 @@ export const BasemapWorkerExtensions: WorkerAPIExtensions = {
 import { glob } from 'glob';
 
 export async function generatePluginRegistry() {
-  const plugins = await glob('packages/plugins/*/package.json');
+  const plugins = await glob('packages/plugin-loader/*/package.json');
   
   let registryCode = `
     import { lazy } from 'react';
@@ -576,7 +576,7 @@ export async function generatePluginRegistry() {
     `;
   }
   
-  await writeFile('packages/_app/src/plugins/registry.generated.ts', registryCode);
+  await writeFile('packages/_app/src/plugin-loader/registry.generated.ts', registryCode);
 }
 ```
 
@@ -752,7 +752,7 @@ export function useTreeNodeTAction() {
 ### 8.7.2 プラグイン設定ファイル仕様
 
 ```typescript
-// packages/plugins/basemap/plugin.config.ts
+// packages/plugin-loader/basemap/plugin.config.ts
 export default {
   nodeType: 'basemap',
   displayName: 'Basemap Plugin',
@@ -815,10 +815,10 @@ interface PluginInfo {
 }
 
 export async function generatePluginRegistry() {
-  console.log('🔍 Scanning for plugins...');
+  console.log('🔍 Scanning for plugin-loader...');
   
-  // packages/plugins/*/plugin.config.ts を検索
-  const configFiles = await glob('packages/plugins/*/plugin.config.ts', {
+  // packages/plugin-loader/*/plugin.config.ts を検索
+  const configFiles = await glob('packages/plugin-loader/*/plugin.config.ts', {
     cwd: process.cwd()
   });
   
@@ -847,7 +847,7 @@ export async function generatePluginRegistry() {
   const registryCode = generateRegistryCode(plugins);
   
   // 出力ファイルに書き込み
-  const outputPath = 'packages/_app/src/plugins/registry.generated.ts';
+  const outputPath = 'packages/_app/src/plugin-loader/registry.generated.ts';
   await writeFile(outputPath, registryCode, 'utf-8');
   
   console.log(`📝 Generated plugin registry: ${outputPath}`);
@@ -929,7 +929,7 @@ import { generatePluginRegistry } from './generate-registry.js';
 export function watchPlugins() {
   console.log('👀 Watching for plugin changes...');
   
-  const watcher = chokidar.watch('packages/plugins/*/plugin.config.ts', {
+  const watcher = chokidar.watch('packages/plugin-loader/*/plugin.config.ts', {
     ignored: /node_modules/,
     persistent: true
   });
@@ -978,7 +978,7 @@ packages/plugins/basemap/
 ├── tsconfig.json                   # TypeScript設定
 ├── vite.config.ts                 # ビルド設定
 ├── src/
-│   ├── index.ts                   # エントリーポイント
+│   ├── RuntimeWorkerService.ts                   # エントリーポイント
 │   ├── lifecycle-types.ts                   # プラグイン固有の型定義
 │   ├── components/                # Reactコンポーネント
 │   │   ├── BasemapView.tsx
@@ -1005,7 +1005,7 @@ packages/plugins/basemap/
 ### 8.8.3 プラグインパッケージの実装例
 
 ```json
-// packages/plugins/basemap/package.json
+// packages/plugin-loader/basemap/package.json
 {
   "name": "@hierarchidb/plugin-basemap",
   "version": "1.0.0",
@@ -1042,7 +1042,7 @@ packages/plugins/basemap/
 ```
 
 ```typescript
-// packages/plugins/basemap/src/index.ts
+// packages/plugin-loader/basemap/src/RuntimeWorkerService.ts
 export { default as BasemapView } from './components/BasemapView';
 export { default as BasemapEdit } from './components/BasemapEdit';
 export { default as BasemapSettings } from './components/BasemapSettings';
@@ -1064,7 +1064,7 @@ export const PLUGIN_METADATA = {
 ```
 
 ```tsx
-// packages/plugins/basemap/src/components/BasemapEdit.tsx
+// packages/plugin-loader/basemap/src/components/BasemapEdit.tsx
 import React from 'react';
 import { useLoaderData } from 'provider-router-dom';
 import type { HierarchicalRouteData } from '@hierarchidb/ui-routing';
@@ -1124,7 +1124,7 @@ export default function BasemapEdit() {
 npm run create-plugin shapes
 
 # プラグイン開発
-cd packages/plugins/shapes
+cd packages/plugin-loader/shapes
 npm run dev  # ウォッチモードでビルド
 
 # テスト実行

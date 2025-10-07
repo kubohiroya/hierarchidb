@@ -36,7 +36,7 @@ import { useShapeBatchCommand } from '../hooks/useShapeBatchCommand.js';
 import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const logBatchDialogWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

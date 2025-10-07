@@ -69,7 +69,7 @@
 ### 1. Folder プラグイン
 
 ```typescript
-// packages/plugins/core-folder-plugin/src/worker/definition.ts
+// packages/plugin-loader/core-folder-plugin/src/worker/definition.ts
 export const FolderPluginDefinition: WorkerPluginDefinition<FolderEntity> = {
   nodeType: 'folder-plugin',
   name: 'Folder',
@@ -131,7 +131,7 @@ export const FolderPluginDefinition: WorkerPluginDefinition<FolderEntity> = {
 ### 2. Document プラグイン（エンティティ付きノードの基本形）
 
 ```typescript
-// packages/plugins/core-document/src/worker/definition.ts
+// packages/plugin-loader/core-document/src/worker/definition.ts
 export const DocumentPluginDefinition: WorkerPluginDefinition<DocumentEntity> = {
   nodeType: 'document',
   name: 'Document',
@@ -347,7 +347,7 @@ async function migrateToPluginArchitecture() {
 **対策：**
 ```typescript
 // 基本プラグインをコアパッケージに含める
-// packages/core-plugins/
+// packages/core-plugin-loader/
 export const CORE_PLUGINS = [
   FolderPluginDefinition,
   DocumentPluginDefinition

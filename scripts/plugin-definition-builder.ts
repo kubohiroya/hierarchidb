@@ -14,7 +14,7 @@ import type {
   DatabaseSchema,
   NodeType,
   PluginMetadata,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 export type PluginManifestContent = PluginMetadata;
 

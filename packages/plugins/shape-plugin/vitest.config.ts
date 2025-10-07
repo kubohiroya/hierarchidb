@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
@@ -47,13 +47,13 @@ export default defineConfig({
     alias: {
       // Map legacy core imports to public dist builds for tests
       '@hierarchidb/core': path.resolve(__dirname, '../../common/types/dist/index.js'),
-      '@hierarchidb/common-type': path.resolve(__dirname, '../../common/types/dist/index.js'),
+      '@hierarchidb/common-types': path.resolve(__dirname, '../../common/types/dist/index.js'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../common/api/dist/index.js'),
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime/worker-bootstrap/dist/index.js'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../runtime/worker/dist/index.js'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.js'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.js'),
-      '@hierarchidb/plugins-base-plugin': basePluginEntry,
+      '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, './src'),
       // App client hook is now injected via registerWorkerClientHook in tests
     },

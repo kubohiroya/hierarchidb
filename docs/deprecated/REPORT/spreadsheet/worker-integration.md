@@ -107,7 +107,7 @@ export class SpreadsheetRefHandler extends PeerEntityHandler<SpreadsheetRefEntit
 ### SpreadsheetPlugin (UI側)
 
 ```typescript
-// packages/plugins/spreadsheet-plugin/src/SpreadsheetPlugin.ts
+// packages/plugin-loader/spreadsheet-plugin/src/SpreadsheetPlugin.ts
 
 export class SpreadsheetPlugin {
   constructor(private workerAPI: WorkerAPI) {}

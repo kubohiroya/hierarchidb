@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { GroupItemBase } from '@hierarchidb/runtime-worker';
 import { LocationEntitiesDB } from '../worker/locationEntitiesDB.js';
 import { toGroupRow, fromGroupRow } from '../worker/normalizers.js';

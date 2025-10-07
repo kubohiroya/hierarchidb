@@ -5,7 +5,7 @@ import { MessageChannel } from 'worker_threads';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import type { ImportData } from '@hierarchidb/common-api';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {

@@ -514,7 +514,7 @@ export class SixClassificationLifecycleManager extends AutoLifecycleManager {
 ### 6.1 マルチステップダイアログでの使用例
 
 ```typescript
-// packages/plugins/_shapes_buggy/src/ui/containers/ShapesCreateDialog.tsx
+// packages/plugin-loader/_shapes_buggy/src/ui/containers/ShapesCreateDialog.tsx
 export const ShapesCreateDialog: React.FC<Props> = ({ nodeId, onClose, onSave }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [batchSession, setBatchSession] = useState<BatchSessionEntity | null>(null);

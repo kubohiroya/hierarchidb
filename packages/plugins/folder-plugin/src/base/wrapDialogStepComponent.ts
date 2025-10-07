@@ -1,4 +1,4 @@
 /**
- * @deprecated Use `wrapDialogStepComponent` from `@hierarchidb/plugins-base-plugin` instead.
+ * @deprecated Use `wrapDialogStepComponent` from `@hierarchidb/plugin-loader-base-plugin` instead.
  */
-export { wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+export { wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';

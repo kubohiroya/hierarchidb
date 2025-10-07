@@ -1,15 +1,8 @@
-import type { NodeId } from '@hierarchidb/common-type';
-import type {
-  BatchProgressCallback,
-  BatchProgressEvent,
-  BatchSessionId,
-  BatchSessionStatus,
-  IBatchSessionManager,
-  StageKey,
-} from '@hierarchidb/runtime-shared-batch-processor';
+import type { NodeId } from '@hierarchidb/common-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import { RouteDatabase } from '../database/RouteDatabase.js';
 import { RouteBatchConfig } from './RouteBatchSession.js';
+import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSessionStatus, IBatchSessionManager, StageKey } from '@hierarchidb/common-api';
 
 export interface RouteBatchSessionConfig {
   corsProxyBaseURL?: string;

@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/common-types';
 
 /**
  * Import/Export API for data transfer operations

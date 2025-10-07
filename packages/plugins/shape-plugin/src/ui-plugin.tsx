@@ -5,7 +5,7 @@
 
 import type React from 'react';
 import { Layers as LayersIcon } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { CreateDialogProps, EditDialogProps, UIPluginDefinition } from '@hierarchidb/ui-core';
 import { ShapeDialog } from './components/ShapeDialog.js';
 

@@ -58,12 +58,6 @@
       "@hierarchidb/runtime-worker-bootstrap/*": [
         "../packages/runtime/worker-bootstrap/src/*"
       ],
-      "@hierarchidb/runtime-shared-module-paths": [
-        "../packages/runtime-shared/module-paths/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-module-paths/*": [
-        "../packages/runtime-shared/module-paths/src/*"
-      ],
       "@hierarchidb/common-api": [
         "../packages/common/api/src/index.ts"
       ],

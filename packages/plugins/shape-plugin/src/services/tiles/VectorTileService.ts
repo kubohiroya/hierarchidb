@@ -13,7 +13,7 @@
 //import Protobuf from 'pbf';
 import * as turf from '@turf/turf';
 import { shapeDB, type VectorTileRecord, type FeatureRecord } from '../database/ShapeDB.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature } from '../../shared/types.js';
 import type { BoundingBox, TileMetadata, LayerConfig } from '../types.js';
 import type { Geometry } from 'geojson';

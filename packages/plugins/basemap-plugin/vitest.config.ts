@@ -2,9 +2,9 @@ import { defineConfig } from 'vitest/config';
 import fs from 'node:fs';
 import path from 'path';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
-const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
+const pluginSdkDistEntry = path.resolve(__dirname, '../../plugin-sdk/dist/index.js');
+const pluginSdkSrcEntry = path.resolve(__dirname, '../../plugin-sdk/src/RuntimeWorkerService.ts');
+const pluginSdkEntry = fs.existsSync(pluginSdkDistEntry) ? pluginSdkDistEntry : pluginSdkSrcEntry;
 
 export default defineConfig({
   test: {
@@ -32,7 +32,7 @@ export default defineConfig({
     alias: {
       '~': 'src/*',
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
-      '@hierarchidb/plugins-base-plugin': basePluginEntry,
+      '@hierarchidb/plugin-sdk': pluginSdkEntry,
       '@hierarchidb/plugins-folder-plugin': path.resolve(__dirname, '../folder-plugin/dist/index.js'),
     },
   },

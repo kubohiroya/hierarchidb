@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import type { MultiStepDialogState } from '@hierarchidb/common-type';
+import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { DialogStateService } from '../DialogStateService.js';
 import { storeRegistry } from '../../entity/store-registry.js';
 import { registerFolderWorkerStores } from '../../../../../plugins/folder-plugin/src/worker-factory/registerFolderWorkerStores.ts';

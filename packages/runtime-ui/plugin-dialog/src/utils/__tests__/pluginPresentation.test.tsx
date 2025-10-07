@@ -29,7 +29,7 @@ describe('pluginPresentation.getIconComponent', () => {
     expect(React.isValidElement(iconNode)).toBe(true);
   });
 
-  it('falls back to a default icon for unknown plugins', async () => {
+  it('falls back to a default icon for unknown plugin-loader', async () => {
     const { getIconComponent } = await import('../pluginPresentation.js');
     const fallbackNode = getIconComponent('unknown-plugin');
 

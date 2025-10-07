@@ -13,7 +13,7 @@ import type {
   TreeId,
   TreeNodeEvent,
   UndoStateEvent,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 /**
  * Real-time data subscription and monitoring API

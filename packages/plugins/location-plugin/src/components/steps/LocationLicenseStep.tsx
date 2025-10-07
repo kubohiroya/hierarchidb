@@ -5,7 +5,7 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
-import type { Timestamp } from '@hierarchidb/common-type';
+import type { Timestamp } from '@hierarchidb/common-types';
 import type { LocationWorkingCopy } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 import { getLocationDataSource } from '../../datasources/LocationDataSourceDefinitions.js';

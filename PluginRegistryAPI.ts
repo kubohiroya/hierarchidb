@@ -14,7 +14,7 @@ import type {
   NodeType,
   PluginDefinition,
   ValidationResult,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 /**
  * @deprecated This API will be split into specialized APIs for better separation of concerns.
@@ -74,9 +74,9 @@ export interface PluginRegistryAPI {
   // ==================
 
   /**
-   * Get list of all registered plugins
+   * Get list of all registered plugin-loader
    *
-   * @returns Array of plugin metadata for all registered plugins
+   * @returns Array of plugin metadata for all registered plugin-loader
    */
   listRegisteredPlugins(): Promise<PluginDefinition[]>;
 

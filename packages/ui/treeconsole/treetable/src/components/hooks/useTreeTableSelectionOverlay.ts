@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeTableController } from '../../types.js';
 
 interface UseTreeTableSelectionOverlayParams {

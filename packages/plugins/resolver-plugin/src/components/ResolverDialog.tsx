@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ResolverEntity, ResolverWorkingCopyEntity, SchemaInfo, PreviewConfig } from '../types/index.js';
 import { ResolverBasicInfoStep } from './steps/ResolverBasicInfoStep.js';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';

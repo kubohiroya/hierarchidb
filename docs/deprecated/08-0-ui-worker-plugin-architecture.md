@@ -265,7 +265,7 @@ export class AutoEntityLifecycleManager {
 ### 2. プラグイン定義の拡張
 
 ```typescript
-// packages/core/src/plugins/WorkerPluginDefinition.ts
+// packages/core/src/plugin-loader/WorkerPluginDefinition.ts
 export interface WorkerPluginDefinition<TEntities = any> {
   // 基本情報
   nodeType: TreeNodeType;
@@ -335,7 +335,7 @@ type EntityManagerType =
 ### 1. 統一されたUIプラグイン定義
 
 ```typescript
-// packages/ui-core/src/plugins/UIPluginDefinition.ts
+// packages/ui-core/src/plugin-loader/UIPluginDefinition.ts
 export interface UIPluginDefinition {
   // 基本情報
   nodeType: TreeNodeType;
@@ -398,7 +398,7 @@ interface PluginCapabilities {
 ### 2. データアダプターの拡張
 
 ```typescript
-// packages/ui-core/src/plugins/adapters/EntityDataAdapter.ts
+// packages/ui-core/src/plugin-loader/adapters/EntityDataAdapter.ts
 export class EntityDataAdapter {
   constructor(private workerAPI: WorkerAPI) {}
   
@@ -470,7 +470,7 @@ export class EntityDataAdapter {
 ### 3. マルチステップUI対応
 
 ```typescript
-// packages/ui-core/src/plugins/multi-step/MultiStepDialogManager.ts
+// packages/ui-core/src/plugin-loader/multi-step/MultiStepDialogManager.ts
 export class MultiStepDialogManager {
   // Shapesプラグイン等の複雑なワークフロー対応
   async showMultiStepDialog(
@@ -571,7 +571,7 @@ export class MultiStepDialogManager {
 ### 1. Folderプラグイン（基本）
 
 ```typescript
-// packages/ui-core/src/plugins/basic/FolderPlugin.ts
+// packages/ui-core/src/plugin-loader/basic/FolderPlugin.ts
 export const FolderUIPlugin: UIPluginDefinition = {
   nodeType: 'folder-plugin',
   displayName: 'Folder',
@@ -633,7 +633,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
 ### 2. Shapesプラグイン（高度）
 
 ```typescript
-// packages/plugins/_shapes_buggy/src/ui/ShapesUIPlugin.ts
+// packages/plugin-loader/_shapes_buggy/src/ui/ShapesUIPlugin.ts
 export const ShapesUIPlugin: UIPluginDefinition = {
   nodeType: '_shapes_buggy',
   displayName: 'Vector Shapes',

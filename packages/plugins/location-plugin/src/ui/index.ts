@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PluginDialogComponent, PluginDialogProps, PluginPanelComponent, PluginPanelProps } from '@hierarchidb/ui-core';
-import { toNodeId } from '@hierarchidb/common-type';
+import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationDialogProps, LocationWorkingCopy } from '../types/index.js';
 import type { LocationPanelProps } from '../components/LocationPanel.js';
 

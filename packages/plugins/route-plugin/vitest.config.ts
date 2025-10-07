@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
-import fs from 'node:fs';
-import path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'path';
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
@@ -13,8 +13,6 @@ export default defineConfig({
     globals: true,
     setupFiles: [path.resolve(__dirname, '../../../vitest.setup.ts')],
     pool: 'threads',
-    maxThreads: 1,
-    minThreads: 1,
     include: RUN_ROUTE_TESTS ? [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
@@ -27,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/plugins-base-plugin': basePluginEntry,
+      '@hierarchidb/plugin-sdk': basePluginEntry,
     },
   },
 });

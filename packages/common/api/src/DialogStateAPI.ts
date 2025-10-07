@@ -3,7 +3,7 @@ import type {
   DialogStateSubscribeInput,
   DialogStateUpdateInput,
   MultiStepDialogState,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 /**
  * Subscription identifier used to manage dialog state listeners.

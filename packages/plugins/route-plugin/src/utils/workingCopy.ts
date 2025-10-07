@@ -1,5 +1,5 @@
-import type { NodeId } from '@hierarchidb/common-type';
-import { createEntityWorkingCopyAdapter } from '@hierarchidb/plugins-base-plugin';
+import type { NodeId } from '@hierarchidb/common-types';
+import { createEntityWorkingCopyAdapter } from '@hierarchidb/plugin-sdk';
 import type { RouteDraftPayload, RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 
@@ -12,7 +12,7 @@ const DEFAULT_PROCESSING_CONFIG = {
 } as RouteEntity['processingConfig'];
 
 const adapter = createEntityWorkingCopyAdapter<RouteEntity, RouteWorkingCopy>({
-  draftFromEntity(entity) {
+  draftFromEntity(entity: RouteEntity) {
     return {
       name: entity.name,
       description: entity.description,
@@ -39,7 +39,7 @@ const adapter = createEntityWorkingCopyAdapter<RouteEntity, RouteWorkingCopy>({
       version: entity.version,
     } satisfies Partial<RouteEntity>;
   },
-  draftDefaults(treeNodeId, overrides) {
+  draftDefaults(treeNodeId: NodeId, overrides: Partial<RouteDraftPayload> = {}) {
     const now = Date.now();
     return {
       name: overrides?.name ?? '',
@@ -68,21 +68,21 @@ const adapter = createEntityWorkingCopyAdapter<RouteEntity, RouteWorkingCopy>({
       nodeId: overrides?.nodeId ?? (treeNodeId as NodeId),
     } satisfies Partial<RouteEntity>;
   },
-  finalize(workingCopy) {
+  finalize(workingCopy: RouteWorkingCopy, source: RouteEntity) {
     return {
       ...workingCopy,
       id: workingCopy.treeNodeId,
-      nodeId: (workingCopy as any).nodeId ?? workingCopy.treeNodeId,
-      parentId: (workingCopy as any).parentId ?? workingCopy.treeNodeId,
+      nodeId: (workingCopy as RouteWorkingCopy & { nodeId?: NodeId }).nodeId ?? source.nodeId ?? workingCopy.treeNodeId,
+      parentId: (workingCopy as RouteWorkingCopy & { parentId?: NodeId }).parentId ?? workingCopy.treeNodeId,
       isDraft: false,
     } as RouteWorkingCopy;
   },
-  finalizeDraft(workingCopy) {
+  finalizeDraft(workingCopy: RouteWorkingCopy, treeNodeId: NodeId) {
     return {
       ...workingCopy,
       id: workingCopy.treeNodeId,
       nodeId: workingCopy.treeNodeId,
-      parentId: (workingCopy as any).parentId ?? workingCopy.treeNodeId,
+      parentId: (workingCopy as RouteWorkingCopy & { parentId?: NodeId }).parentId ?? treeNodeId,
       isDraft: true,
       resumeStep: 0,
     } as RouteWorkingCopy;
@@ -98,7 +98,7 @@ export function createRouteDraftWorkingCopy(
   overrides: Partial<RouteDraftPayload> = {},
   parentId?: NodeId,
 ): RouteWorkingCopy {
-  const draft = adapter.createDraft(nodeId, { ...overrides, parentId });
+  const draft = adapter.createDraft(nodeId, overrides);
   return {
     ...draft,
     parentId: parentId ?? nodeId,

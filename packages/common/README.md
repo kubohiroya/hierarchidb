@@ -69,7 +69,7 @@ api → core
 
 ### 型定義の追加
 ```typescript
-// core/src/types/index.ts
+// core/src/types/RuntimeWorkerService.ts
 export interface NewEntity {
   id: EntityId;
   name: string;

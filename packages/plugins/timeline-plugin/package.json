@@ -62,14 +62,12 @@
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

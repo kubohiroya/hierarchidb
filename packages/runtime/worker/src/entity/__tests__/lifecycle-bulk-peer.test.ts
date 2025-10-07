@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import type { CommandEnvelope, PasteNodesPayload } from '../../services/command-types.js';
 import type { CommandProcessor } from '../../services/CommandProcessor.js';

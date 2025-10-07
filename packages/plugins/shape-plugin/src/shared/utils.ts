@@ -13,8 +13,8 @@ import type {
   ValidationResult,
 } from './types.js';
 import type { ShapeEntity, ShapeWorkingCopy } from './types.js';
-import type { Timestamp } from '@hierarchidb/common-type';
-import { createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
+import type { Timestamp } from '@hierarchidb/common-types';
+import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-sdk';
 import { DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 /**

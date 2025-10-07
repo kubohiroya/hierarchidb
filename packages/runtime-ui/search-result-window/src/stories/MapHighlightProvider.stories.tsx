@@ -3,7 +3,7 @@ import { Provider } from 'jotai';
 import { useState } from 'react';
 import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
 import { MapHighlightProvider, useMapHighlightContext } from '../components/MapHighlightProvider.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const meta: Meta<typeof MapHighlightProvider> = {
   title: 'SearchResult/MapHighlightProvider',

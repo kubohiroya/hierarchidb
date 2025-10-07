@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import { WorkerAPIImpl } from './mocks/WorkerAPIImpl.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 describe('Multi-Step Dialog Integration', () => {
   let workerAPI: any; // WorkerAPIImpl type not available

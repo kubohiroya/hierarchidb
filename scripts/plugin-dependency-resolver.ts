@@ -1,4 +1,4 @@
-import type { PluginDefinition, NodeType } from '@hierarchidb/common-type';
+import type { PluginDefinition, NodeType } from '@hierarchidb/common-types';
 
 export class PluginDependencyResolver {
   /**

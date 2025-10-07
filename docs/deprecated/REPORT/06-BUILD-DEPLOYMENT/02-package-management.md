@@ -39,7 +39,7 @@ This document details the package management strategy for the HierarchiDB monore
 packages:
   - 'packages/*'
   - 'packages/ui/*'
-  - 'packages/plugins/*'
+  - 'packages/plugin-loader/*'
   - 'packages/ui-treeconsole/*'
 ```
 

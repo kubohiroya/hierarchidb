@@ -2,7 +2,7 @@ import { Suspense, lazy, useMemo } from 'react';
 import { Alert, Box, IconButton, Paper, Tooltip, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 import { type MapViewState, loadMapWithVectorTiles } from '@hierarchidb/ui-map';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadTask, VectorTileTask } from '../../shared';
 
 interface MapPreviewProps {

@@ -17,9 +17,9 @@ hierarchidbフレームワークとeria-cartographの実装パターンに基づ
 ├── tsconfig.json                       # TypeScript設定
 ├── README.md                          # プラグイン説明書
 ├── src/
-│   ├── index.ts                       # メインエクスポート
+│   ├── RuntimeWorkerService.ts                       # メインエクスポート
 │   ├── types/
-│   │   ├── index.ts                   # 型定義エクスポート
+│   │   ├── RuntimeWorkerService.ts                   # 型定義エクスポート
 │   │   ├── ShapesEntity.ts            # エンティティ型定義
 │   │   ├── ShapesWorkingCopy.ts       # Working Copy型定義
 │   │   ├── BatchTypes.ts              # バッチ処理型定義

@@ -310,16 +310,16 @@ npm install papaparse xlsx
 ### Build and Test Commands
 ```bash
 # Development
-pnpm dev --filter @hierarchidb/plugins-styler-plugin
+pnpm dev --filter @hierarchidb/plugin-loader-styler-plugin
 
 # Type checking
-pnpm typecheck --filter @hierarchidb/plugins-styler-plugin
+pnpm typecheck --filter @hierarchidb/plugin-loader-styler-plugin
 
 # Testing
-pnpm test --filter @hierarchidb/plugins-styler-plugin
+pnpm test --filter @hierarchidb/plugin-loader-styler-plugin
 
 # Build
-pnpm build --filter @hierarchidb/plugins-styler-plugin
+pnpm build --filter @hierarchidb/plugin-loader-styler-plugin
 ```
 
 ### Development Workflow

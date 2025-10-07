@@ -5,7 +5,7 @@
    */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-type';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
 // import { TreeObservableAdapter } from './subscriptions/TreeObservableAdapter.js'; // Currently unused
 import { TreeMutationCommandsAdapter } from './commands/TreeMutationCommands.js';
 import { WorkingCopyCommandsAdapter, type WorkingCopyEditSession } from './commands/WorkingCopyCommands.js';

@@ -69,7 +69,7 @@
   - `create(options)` で入力オプションを受け、`check(ctx)` を返す
 
 2. ルールの登録
-- ルールレジストリ（例：`src/rules/index.ts`）に `maplibre-allowlist` / `ui-peer-policy` を登録
+- ルールレジストリ（例：`src/rules/RuntimeWorkerService.ts`）に `maplibre-allowlist` / `ui-peer-policy` を登録
 - ドキュメント（`README` / サイト）に各ルールの目的・オプション・例を追記
 
 3. テスト（必須）

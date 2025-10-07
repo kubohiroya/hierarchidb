@@ -2,7 +2,7 @@
  * Type definitions for Shape plugin services
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { Feature as GeoJSONFeature } from 'geojson';
 import type {
   BoundingBox,
@@ -10,7 +10,7 @@ import type {
   DataSourceInfo,
   DataSourceName,
   ValidationResult,
-} from '@hierarchidb/runtime-ui-datasource';
+} from '@hierarchidb/ui-datasource';
 import type {
   ErrorInfo as SharedErrorInfo,
   ProcessingStage,
@@ -75,7 +75,7 @@ export interface ShapesAPIMethods extends Record<string, any> {
 // Re-export types from runtime/datasource for compatibility
 export type { DataSourceName, DataSourceInfo, CountryMetadata, ValidationResult, BoundingBox };
 // Re-export without importing into local scope to avoid unused import warnings
-export type { AdminLevelInfo } from '@hierarchidb/runtime-ui-datasource';
+export type { AdminLevelInfo } from '@hierarchidb/ui-datasource';
 
 export type CacheType =
   | 'features'

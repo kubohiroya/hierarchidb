@@ -4,7 +4,7 @@
  */
 
 import type { ComponentType } from 'react';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 import type { TreeTableController } from '../../types.js';
 
 interface TreeTableContextMenuState {

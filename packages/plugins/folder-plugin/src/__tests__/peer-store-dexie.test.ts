@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { FolderEntitiesDB } from '../worker/folderEntitiesDB.js';
 import { createFolderPeerStoreDexie } from '../worker/folderPeerStore.dexie.js';
 

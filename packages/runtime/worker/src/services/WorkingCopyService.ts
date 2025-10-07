@@ -8,7 +8,7 @@ import type {
   TreeId,
   TreeNode,
   ValidationResult,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { CoreDB } from './CoreDB.js';
 import {
   createDraftWorkingCopyGetOrCreate,

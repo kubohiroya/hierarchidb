@@ -6,7 +6,7 @@
  */
 
 import type { Dispatch, SetStateAction } from 'react';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';

@@ -30,7 +30,7 @@ import {
   Storage as StorageIcon,
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { summarizeCheckboxState, type ShapeEntity } from '../shared';
 import type { BatchStatus } from '../services/types';
 

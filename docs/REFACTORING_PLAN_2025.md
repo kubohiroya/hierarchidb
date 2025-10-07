@@ -223,7 +223,7 @@ packages/plugins/
 │   │   ├── handlers/
 │   │   │   ├── BaseEntityHandler.ts
 │   │   │   └── HierarchicalEntityHandler.ts
-│   │   └── index.ts
+│   │   └── RuntimeWorkerService.ts
 │   └── package.json              # visibility: false設定
 ├── folder-plugin/
 │   └── src/services/

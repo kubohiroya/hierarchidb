@@ -129,7 +129,7 @@ packages/plugins/basemap-plugin/
 ```typescript
 // BaseMapEntity.ts
 import type { NodeId } from '@hierarchidb/common-type';
-import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-loader-folder-plugin';
 
 export interface BaseMapEntity extends FolderEntity {
   // BaseMap固有のフィールド

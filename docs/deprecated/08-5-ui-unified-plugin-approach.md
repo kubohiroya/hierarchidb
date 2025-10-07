@@ -49,7 +49,7 @@ UI Layer（新設計）
 ### 1. UIPluginDefinition（統一インターフェース）
 
 ```typescript
-// packages/ui-core/src/plugins/lifecycle-types.ts
+// packages/ui-core/src/plugin-loader/lifecycle-types.ts
 export interface UIPluginDefinition {
   // 基本情報
   nodeType: TreeNodeType;
@@ -121,7 +121,7 @@ export interface UIPluginDefinition {
 ### 2. データアダプター（Worker側との橋渡し）
 
 ```typescript
-// packages/ui-core/src/plugins/adapters/NodeDataAdapter.ts
+// packages/ui-core/src/plugin-loader/adapters/NodeDataAdapter.ts
 export class NodeDataAdapter {
   constructor(private workerAPI: WorkerAPI) {}
   
@@ -240,7 +240,7 @@ interface UnifiedNodeData {
 #### フォルダプラグイン
 
 ```typescript
-// packages/ui-core/src/plugins/basic/FolderPlugin.tsx
+// packages/ui-core/src/plugin-loader/basic/FolderPlugin.tsx
 export const FolderUIPlugin: UIPluginDefinition = {
   nodeType: 'folder-plugin',
   displayName: 'Folder',
@@ -358,7 +358,7 @@ const FolderCreateDialog: React.FC<CreateDialogProps> = ({ onSubmit, onCancel })
 #### BaseMapプラグイン
 
 ```typescript
-// packages/plugins/basemap/src/ui/BaseMapUIPlugin.tsx
+// packages/plugin-loader/basemap/src/ui/BaseMapUIPlugin.tsx
 export const BaseMapUIPlugin: UIPluginDefinition = {
   nodeType: 'basemap',
   displayName: 'Base Map',

@@ -144,7 +144,7 @@ sequenceDiagram
 ### ShapeEntityHandler の実装
 
 ```typescript
-// packages/plugins/shape-plugin/src/worker/handlers/ShapeEntityHandler.ts
+// packages/plugin-loader/shape-plugin/src/worker/handlers/ShapeEntityHandler.ts
 
 export class ShapeEntityHandler {
   private coreDB: any;      // CoreDB接続
@@ -299,7 +299,7 @@ export class ShapeEntityHandler {
 ### React Hook の実装
 
 ```typescript
-// packages/plugins/shape-plugin/src/ui/hooks/useShapeWorkingCopy.ts
+// packages/plugin-loader/shape-plugin/src/ui/hooks/useShapeWorkingCopy.ts
 
 export function useShapeWorkingCopy(
   nodeId: NodeId | null,

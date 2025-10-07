@@ -68,5 +68,5 @@
 - `packages/plugins/base-plugin/src/working-copy/helpers.ts`
 - `docs/plugins/working-copy-baseline.md`
 - `packages/plugins/basemap-plugin/src/types/BaseMapEntity.ts`
-- `packages/plugins/resolver-plugin/src/types/index.ts`
+- `packages/plugins/resolver-plugin/src/types/RuntimeWorkerService.ts`
 

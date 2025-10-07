@@ -2,7 +2,7 @@ import type {
   CommandResult as CoreCommandResult,
   ErrorCode as CoreErrorCode,
   Timestamp,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 /**
  * Worker-specific command envelope

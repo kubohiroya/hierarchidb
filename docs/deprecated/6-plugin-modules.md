@@ -146,7 +146,7 @@ export const BaseMapUnifiedDefinition: UnifiedPluginDefinition<BaseMapEntity, ne
 ```
 packages/plugins/{plugin-name}/
 ├── src/
-│   ├── index.ts              # プラグインエントリポイント
+│   ├── RuntimeWorkerService.ts              # プラグインエントリポイント
 │   ├── types/                # エンティティ定義
 │   │   └── {Plugin}Entity.ts
 │   ├── handlers/             # EntityHandler実装
@@ -220,12 +220,12 @@ await pluginLoader.loadPlugin(ShapesPlugin);
 **モノレポ構成での開発**:
 ```bash
 # プラグイン開発
-cd packages/plugins/basemap
+cd packages/plugin-loader/basemap
 pnpm dev
 
 # アプリケーションとの統合テスト
 cd ../../..
-pnpm build:plugins
+pnpm build:plugin-loader
 pnpm dev
 ```
 

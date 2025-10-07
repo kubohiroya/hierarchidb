@@ -2,11 +2,11 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
   entry: {
-    index: 'src/index.ts',
-    'ui/index': 'src/ui/index.ts',
-    'shared/index': 'src/shared/index.ts',
-    'worker/index': 'src/worker/index.ts',
-    'worker-factory/index': 'src/worker-factory/index.ts',
+    index: 'src/RuntimeWorkerService.ts',
+    'ui/index': 'src/ui/RuntimeWorkerService.ts',
+    'shared/index': 'src/shared/RuntimeWorkerService.ts',
+    'worker/index': 'src/worker/RuntimeWorkerService.ts',
+    'worker-factory/index': 'src/worker-factory/RuntimeWorkerService.ts',
   },
   splitting: false,
   external: [
@@ -18,10 +18,10 @@ export default createTsupConfig({
     '@emotion/styled',
     // runtime peers
     'dexie',
-    // Optional node-type plugins loaded dynamically; keep external to avoid bundle-time resolution
-    '@hierarchidb/plugins-shape-plugin',
-    '@hierarchidb/plugins-spreadsheet-plugin',
-    '@hierarchidb/plugins-basemap-plugin',
-    '@hierarchidb/plugins-styler-plugin',
+    // Optional node-type plugin-loader loaded dynamically; keep external to avoid bundle-time resolution
+    '@hierarchidb/plugin-loader-shape-plugin',
+    '@hierarchidb/plugin-loader-spreadsheet-plugin',
+    '@hierarchidb/plugin-loader-basemap-plugin',
+    '@hierarchidb/plugin-loader-styler-plugin',
   ],
 });

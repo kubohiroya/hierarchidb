@@ -71,10 +71,8 @@
   "dependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/tabular": "workspace:*",

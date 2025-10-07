@@ -550,7 +550,7 @@ export class DependencyResolver {
 #### 3.4.1 簡略化されたプラグイン定義
 
 ```typescript
-// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
+// packages/plugin-loader/styler-plugin/src/definitions/StylerDefinition.ts
 
 export const StylerDefinition: PluginDefinition = {
   nodeType: 'styler-plugin',

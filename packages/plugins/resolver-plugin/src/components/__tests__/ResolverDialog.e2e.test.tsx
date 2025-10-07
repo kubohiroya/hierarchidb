@@ -8,7 +8,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type React from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ResolverEntity } from '../../types/index.js';
 import { ResolverDialog } from '../ResolverDialog.js';
 

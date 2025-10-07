@@ -277,7 +277,7 @@ export interface PluginDefinition<
 ### 9.4.2 実装例：Stylerプラグイン
 
 ```typescript
-// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
+// packages/plugin-loader/styler-plugin/src/definitions/StylerDefinition.ts
 
 export const StylerDefinition: PluginDefinition = {
   nodeType: 'styler-plugin',
@@ -376,7 +376,7 @@ export const StylerDefinition: PluginDefinition = {
 ### 9.4.3 実装例：Shapesプラグイン（6分類全使用）
 
 ```typescript
-// packages/plugins/_shapes_buggy/src/definitions/ShapesDefinition.ts
+// packages/plugin-loader/_shapes_buggy/src/definitions/ShapesDefinition.ts
 
 export const ShapesDefinition: PluginDefinition = {
   nodeType: '_shapes_buggy',
@@ -494,8 +494,8 @@ export const ShapesDefinition: PluginDefinition = {
 
 ```bash
 # 1. プラグインディレクトリ作成
-mkdir packages/plugins/my-plugin
-cd packages/plugins/my-plugin
+mkdir packages/plugin-loader/my-plugin
+cd packages/plugin-loader/my-plugin
 
 # 2. package.json作成
 npm init @hierarchidb/plugin

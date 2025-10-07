@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { UIPluginDefinition } from '../types.js';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry.js';
 import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
@@ -7,7 +7,7 @@ import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
  * Unified Node Operations
  *
  * Provides a consistent interface for CRUD operations across all node types.
- * Handles the coordination between plugins, data adapters, and UI services.
+ * Handles the coordination between plugin-loader, data adapters, and UI services.
  */
 export class UnifiedNodeOperations {
   constructor(

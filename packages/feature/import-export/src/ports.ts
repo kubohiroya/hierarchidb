@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 
 export interface ImportExportDBPort {
   bulkCreateNodes(nodes: TreeNode[]): Promise<void>;

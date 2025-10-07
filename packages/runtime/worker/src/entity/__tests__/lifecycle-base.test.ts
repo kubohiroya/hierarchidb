@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 
 describe('EntityLifecycleManager integration (base skeleton)', () => {

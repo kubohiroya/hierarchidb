@@ -260,7 +260,7 @@ Australia,25690000,51812,Oceania,2021`;
     console.log(`  - Generated Styler config with key: ${stylerConfig.selectedKeyColumn}`);
   });
 
-  it('should handle multiple plugins sharing the same CSV data', async () => {
+  it('should handle multiple plugin-loader sharing the same CSV data', async () => {
     // Upload CSV data once
     const csvContent = `region,sales,profit
 North,100000,20000
@@ -289,7 +289,7 @@ West,90000,18000`;
       filterRules: [],
     });
 
-    // Verify both plugins can access the data
+    // Verify both plugin-loader can access the data
     expect(salesData.totalRows).toBe(4);
     expect(profitData.totalRows).toBe(4);
 

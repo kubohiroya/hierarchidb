@@ -213,7 +213,7 @@ test.describe('Worker Initialization System', () => {
     // Perform multiple navigations to test connection stability
     const navigationTests = [
       '/hierarchidb/info',
-      '/hierarchidb/plugins',
+      '/hierarchidb/plugin-loader',
       '/hierarchidb/'
     ];
 

@@ -172,7 +172,7 @@ Add to `pnpm-workspace.yaml` (if not already included by `packages/*`):
 packages:
   - src
   - packages/*
-  - packages/plugins/*
+  - packages/plugin-loader/*
 ```
 
 ### 1.7 Update Monorepo Dependencies

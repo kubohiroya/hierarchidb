@@ -1,5 +1,4 @@
 /**
- * @file index.ts
  * @description Shared map components for HierarchiDB
  */
 

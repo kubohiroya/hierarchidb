@@ -11,7 +11,7 @@ import type {
   NodeId,
   RestoreFromTrashPayload,
   RemovePayload,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { createCommand } from '../utils.js';
 import type { CommandAdapterOptions } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';

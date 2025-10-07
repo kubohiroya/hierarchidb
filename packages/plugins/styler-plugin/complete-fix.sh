@@ -63,7 +63,7 @@ find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' \
 
 # 7. Fix imports from spreadsheet-plugin
 find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' \
-  's|from.*".*spreadsheet-plugin.*"|from "@hierarchidb/plugins-spreadsheet-plugin"|g' {} \;
+  's|from.*".*spreadsheet-plugin.*"|from "@hierarchidb/plugin-loader-spreadsheet-plugin"|g' {} \;
 
 # 8. Fix setup.ts
 if [ -f src/__tests__/setup.ts ]; then

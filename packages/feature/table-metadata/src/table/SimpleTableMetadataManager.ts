@@ -14,7 +14,7 @@ class CSVMetadataDB extends Dexie {
 }
 
 /**
- * Unified metadata manager used by both Spreadsheet and Styler plugins.
+ * Unified metadata manager used by both Spreadsheet and Styler plugin-loader.
  * Provides a superset API to remain backward compatible with both implementations.
  */
 export class SimpleTableMetadataManager {

@@ -1,6 +1,6 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/plugins-basemap-plugin' as const;
+export const PLUGIN_ID = '@hierarchidb/plugin-loader-basemap-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
 export const PLUGIN_DESCRIPTION = 'BaseMap Plugin for HierarchiDB - Geographic base layer configuration and management' as const;
 export const PLUGIN_NODE_TYPE = 'basemap' as NodeType;

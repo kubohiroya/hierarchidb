@@ -1,5 +1,5 @@
-import type { NodeId, PeerEntity } from '@hierarchidb/common-type';
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type { NodeId, PeerEntity } from '@hierarchidb/common-types';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-sdk';
 
 /**
  * Resolver entity represents a property mapping configuration

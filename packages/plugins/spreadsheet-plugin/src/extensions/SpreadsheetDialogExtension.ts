@@ -3,8 +3,8 @@
  * - Provides step state evaluator for Spreadsheet steps (2: data source, 3: filtering)
  */
 
-import type { PeerEntity } from '@hierarchidb/common-type';
-import { NodeDialogPlugin } from '@hierarchidb/plugins-base-plugin';
+import type { PeerEntity } from '@hierarchidb/common-types';
+import { NodeDialogPlugin } from '@hierarchidb/plugin-sdk';
 import { isDataSourceComplete, type SpreadsheetDialogData } from '../steps/DataSourceStep.js';
 import { STEP_CONFIG } from '../extension/constants.js';
 

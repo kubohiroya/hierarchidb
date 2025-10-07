@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 
 describe('ImportExportService importNodes bulk path', () => {

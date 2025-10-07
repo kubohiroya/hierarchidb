@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "notistack": "^3.0.2",
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "@types/react-resizable": "^3.0.8"

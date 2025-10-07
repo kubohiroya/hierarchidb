@@ -8,7 +8,7 @@ import type {
   NodeType,
   PasteNodesPayload,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { CommandEnvelope } from '../services/command-types.js';
 import type { CoreDB } from '../services/CoreDB.js';
 import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
@@ -49,7 +49,7 @@ const buildSourceNodeMap = (nodes?: Record<string, TreeNode | undefined>): Sourc
 };
 
 // Plugin-specific EntitiesDB loaders are not wired in the worker package to avoid
-// hard dependencies on app-selected plugins. The app build/runtime may register
+// hard dependencies on app-selected plugin-loader. The app build/runtime may register
 // loaders via an extension point when bundling with Vite.
 const peerDbLoaders = new Map<NodeType, PeerDbLoader>();
 

@@ -4,7 +4,7 @@ import type {
   NodeType,
   Tree,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 

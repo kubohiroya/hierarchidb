@@ -3,7 +3,7 @@
  * Provides standardized batch control API while maintaining backward compatibility
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type {
   BatchProgressCallback,
   BatchSessionStatus,

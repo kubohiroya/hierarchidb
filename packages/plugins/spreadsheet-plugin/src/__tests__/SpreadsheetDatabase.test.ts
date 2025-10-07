@@ -5,10 +5,10 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 // These are RED-phase spec tests. Skip by default to keep monorepo green.
-// Enable with: ENABLE_TDD_RED=1 pnpm -C packages/plugins/spreadsheet-plugin test:run
+// Enable with: ENABLE_TDD_RED=1 pnpm -C packages/plugin-loader/spreadsheet-plugin test:run
 const describeRed = process.env.ENABLE_TDD_RED === '1' ? describe : describe.skip;
 import 'fake-indexeddb/auto';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
 import type { SpreadsheetEntity } from '../types/index.js';
 // RawFileMetadata and RowChunk are used in commented out helper functions

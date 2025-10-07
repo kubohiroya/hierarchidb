@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
 import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 describe('Policy C: block move/remove when WC exists', () => {

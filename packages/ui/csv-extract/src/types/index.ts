@@ -133,7 +133,7 @@ export interface CSVColumnMapping {
 }
 
 /**
- * CSV Extract Result - final result for plugins
+ * CSV Extract Result - final result for plugin-loader
  */
 export interface CSVExtractResult {
   /** Table metadata ID for reference */
@@ -181,7 +181,7 @@ export interface CSVProcessingStatus {
 }
 
 /**
- * CSV API Interface - must be implemented by plugins
+ * CSV API Interface - must be implemented by plugin-loader
  */
 export interface ICSVDataApi {
   /**

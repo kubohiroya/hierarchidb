@@ -1,5 +1,5 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { ResourcePicker, type ResourceSummary } from './steps/ResourcePicker.js';
 import { AggregatedList } from './steps/AggregatedList.js';
 import { MapPreview } from './steps/MapPreview.js';

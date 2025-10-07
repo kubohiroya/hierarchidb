@@ -1,5 +1,5 @@
 /**
- * @file shared/index.ts
+ * @file shared/RuntimeWorkerService.ts
  * @description BaseMap shared exports
  */
 

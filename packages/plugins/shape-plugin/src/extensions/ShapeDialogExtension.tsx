@@ -3,8 +3,8 @@
  * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
-import type { DialogStepDefinition, PeerEntity, StepValidation } from '@hierarchidb/common-type';
-import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+import type { DialogStepDefinition, PeerEntity, StepValidation } from '@hierarchidb/common-types';
+import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';
 
 // Reuse existing step components from the Shape plugin
 import { DataSourceStep } from '../extension/components/DataSourceStep.js';

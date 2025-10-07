@@ -1,6 +1,6 @@
 /**
  * Common Data Source Types for Geographic Plugins
- * Base types shared by shape, location, and route plugins
+ * Base types shared by shape, location, and route plugin-loader
  */
 
 /**

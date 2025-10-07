@@ -4,7 +4,7 @@ import { CoreDB } from '../CoreDB.js';
 import { CommandProcessor } from '../CommandProcessor.js';
 import { WorkingCopyService } from '../WorkingCopyService.js';
 import { WorkerErrorCode } from '../command-types.js';
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 
 describe('WorkingCopy commit E2E (flags fixed ON)', () => {
   let core: CoreDB;

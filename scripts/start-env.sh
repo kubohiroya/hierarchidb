@@ -151,7 +151,7 @@ ensure_built "@hierarchidb/util" "packages/util/dist/index.js"
 # Feature registry (referenced by worker dist)
 ensure_built "@hierarchidb/feature-registry" "packages/feature/feature-registry/dist/index.js"
 # Additional shared/runtime UI packages used by app
-ensure_built "@hierarchidb/common-type" "packages/common/types/dist/index.js"
+ensure_built "@hierarchidb/common-types" "packages/common/types/dist/index.js"
 ensure_built "@hierarchidb/common-api" "packages/common/api/dist/index.js"
 ensure_built "@hierarchidb/ui-import-export" "packages/ui/import-export/dist/index.js"
 ensure_built "@hierarchidb/ui-layout" "packages/ui/layout/dist/index.js"

@@ -101,7 +101,7 @@ export class PluginMetadataAdapter {
 #### 2.1 プラグインアイコンプロバイダー
 
 ```typescript
-// packages/ui-core/src/plugins/PluginIconProvider.tsx
+// packages/ui-core/src/plugin-loader/PluginIconProvider.tsx
 export const PluginIconProvider: React.FC<{
   nodeType: TreeNodeType;
   size?: 'small' | 'medium' | 'large';
@@ -171,7 +171,7 @@ export function DynamicNodeContextMenu({
 #### 3.1 ダイアログレジストリ
 
 ```typescript
-// packages/ui-core/src/plugins/DialogRegistry.ts
+// packages/ui-core/src/plugin-loader/DialogRegistry.ts
 export class DialogRegistry {
   private static instance: DialogRegistry;
   private dialogs = new Map<TreeNodeType, React.ComponentType<DialogProps>>();
@@ -203,7 +203,7 @@ export class DialogRegistry {
 #### 3.2 プラグインダイアログローダー
 
 ```typescript
-// packages/ui-core/src/plugins/PluginDialogLoader.tsx
+// packages/ui-core/src/plugin-loader/PluginDialogLoader.tsx
 export const PluginDialogLoader: React.FC<{
   nodeType: TreeNodeType;
   open: boolean;
@@ -240,7 +240,7 @@ export const PluginDialogLoader: React.FC<{
 #### 4.1 BaseMapプラグインのUI実装
 
 ```typescript
-// packages/plugins/basemap/src/ui/BaseMapDialog.tsx
+// packages/plugin-loader/basemap/src/ui/BaseMapDialog.tsx
 export const BaseMapDialog: React.FC<DialogProps> = ({ 
   open, 
   onClose, 
@@ -292,7 +292,7 @@ export const BaseMapIcon: IconDefinition = {
 #### 4.2 プラグイン登録
 
 ```typescript
-// packages/plugins/basemap/src/openstreetmap-type.ts
+// packages/plugin-loader/basemap/src/openstreetmap-type.ts
 import { BaseMapUnifiedDefinition } from './definitions/BaseMapDefinition';
 import { BaseMapDialog } from './ui/BaseMapDialog';
 import { BaseMapIcon } from './ui/BaseMapIcon';

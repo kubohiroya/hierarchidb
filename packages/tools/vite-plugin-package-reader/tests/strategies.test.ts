@@ -87,7 +87,7 @@ describe('Strategies', () => {
     it('should match nested fields', () => {
       const strategy = new FieldStrategy({
         name: 'test-nested',
-        fields: ['config.plugins.enabled'],
+        fields: ['config.plugin-loader.enabled'],
         requireAll: true,
       });
 

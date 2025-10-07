@@ -13,7 +13,7 @@ import type {
   OnNameConflict,
   TreeNode,
   ValidationResult,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 export interface CommitWorkingCopyOptions {
   /**

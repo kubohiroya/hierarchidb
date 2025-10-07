@@ -3,7 +3,7 @@
  * Utility helpers to derive the visible TreeTable rows based on expansion state.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 
 export interface BuildVisibleNodesOptions {
   rootNodeId?: NodeId | string | null;

@@ -162,8 +162,8 @@ interface PluginDefinition {
 ### コード分割
 ```typescript
 // 動的インポートによる遅延ロード
-const MapPlugin = lazy(() => import('./plugins/map'));
-const SpreadsheetPlugin = lazy(() => import('./plugins/spreadsheet-plugin'));
+const MapPlugin = lazy(() => import('./plugin-loader/map'));
+const SpreadsheetPlugin = lazy(() => import('./plugin-loader/spreadsheet-plugin'));
 ```
 
 ### バンドルサイズ

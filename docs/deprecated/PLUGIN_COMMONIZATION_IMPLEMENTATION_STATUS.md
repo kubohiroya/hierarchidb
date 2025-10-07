@@ -11,21 +11,21 @@ packages/common/plugin-base/
 ├── tsconfig.json  
 ├── tsup.config.ts
 └── src/
-    ├── index.ts
+    ├── RuntimeWorkerService.ts
     ├── types/
     │   ├── base-lifecycle-types.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
-    │   └── index.ts
+    │   └── RuntimeWorkerService.ts
     ├── handlers/
     │   ├── BaseEntityHandler.ts        # 基底EntityHandler（500行）
     │   ├── HierarchicalEntityHandler.ts # 階層構造用Handler（430行）
     │   ├── MetadataEntityHandler.ts    # メタデータ管理Handler（380行）
-    │   └── index.ts
+    │   └── RuntimeWorkerService.ts
     ├── managers/
     │   ├── WorkingCopyManager.ts       # WorkingCopy統一管理（350行）
-    │   └── index.ts
+    │   └── RuntimeWorkerService.ts
     └── utils/
         ├── id-generator.ts              # ID生成ユーティリティ
-        └── index.ts
+        └── RuntimeWorkerService.ts
 ```
 
 ## 🚀 実装された共通コンポーネント

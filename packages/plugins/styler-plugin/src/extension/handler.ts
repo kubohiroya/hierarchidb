@@ -3,7 +3,7 @@
  * Processes Styler-specific data when creating/editing folders
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export interface StylerExtensionData {
   styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { FolderIcon } from './FolderIcon.js';
 import type { FolderCreateData } from '../types.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export interface FolderCreateDialogProps {
   /**

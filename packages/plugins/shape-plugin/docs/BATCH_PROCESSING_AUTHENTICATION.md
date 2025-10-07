@@ -321,7 +321,7 @@ export class AuthPromptService {
 ### 4. バッチ処理の一時停止・再開機能
 
 ```typescript
-// packages/plugins/shape-plugin/src/services/BatchSessionManager.ts (拡張)
+// packages/plugin-loader/shape-plugin/src/services/BatchSessionManager.ts (拡張)
 export class BatchSessionManager {
   private authHandler = new WorkerAuthHandler();
   

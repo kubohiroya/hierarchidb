@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { ImportExportDBPort } from '../ports.js';
 

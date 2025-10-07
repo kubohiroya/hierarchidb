@@ -2,17 +2,17 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
   entry: {
-    index: 'src/index.ts',
-    'database/index': 'src/database/index.ts',
-    'worker/index': 'src/worker/index.ts',
-    'worker-factory/index': 'src/worker-factory/index.ts',
+    index: 'src/RuntimeWorkerService.ts',
+    'database/index': 'src/database/RuntimeWorkerService.ts',
+    'worker/index': 'src/worker/RuntimeWorkerService.ts',
+    'worker-factory/index': 'src/worker-factory/RuntimeWorkerService.ts',
   },
   dts: {
     entry: {
-      index: 'src/index.ts',
-      'database/index': 'src/database/index.ts',
-      'worker/index': 'src/worker/index.ts',
-      'worker-factory/index': 'src/worker-factory/index.ts',
+      index: 'src/RuntimeWorkerService.ts',
+      'database/index': 'src/database/RuntimeWorkerService.ts',
+      'worker/index': 'src/worker/RuntimeWorkerService.ts',
+      'worker-factory/index': 'src/worker-factory/RuntimeWorkerService.ts',
     },
   },
   external: [

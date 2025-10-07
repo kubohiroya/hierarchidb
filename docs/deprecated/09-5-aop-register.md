@@ -116,12 +116,12 @@ await pluginLoader.loadPlugin(ShapePlugin);
 **モノレポ構成での開発**:
 ```bash
 # プラグイン開発
-cd packages/plugins/basemap
+cd packages/plugin-loader/basemap
 pnpm dev
 
 # アプリケーションとの統合テスト
 cd ../../..
-pnpm build:plugins
+pnpm build:plugin-loader
 pnpm dev
 ```
 

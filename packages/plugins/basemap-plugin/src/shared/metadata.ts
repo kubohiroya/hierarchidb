@@ -1,4 +1,4 @@
-import type { PluginMetadata } from '@hierarchidb/common-type';
+import type { PluginMetadata } from '@hierarchidb/common-types';
 import { PLUGIN_MANIFEST } from '../extension/plugin-manifest.js';
 
 /**

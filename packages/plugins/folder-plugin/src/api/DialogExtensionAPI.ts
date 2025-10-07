@@ -5,7 +5,7 @@ import type {
   ExtendingNodeTypeDefinition,
   TreeNode,
   ValidationExtension,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { FolderEntity } from '../entities/FolderEntity.js';
 
 /**

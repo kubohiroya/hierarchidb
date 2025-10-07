@@ -20,7 +20,7 @@ import {
 import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Link, useLocation } from '@tanstack/react-router';
 import { alpha } from '@mui/material/styles';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 
 export interface PluginDialogHeaderProps {
   title: string;

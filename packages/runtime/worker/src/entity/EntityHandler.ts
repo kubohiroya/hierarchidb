@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export interface EntityHandler {
   // Peer

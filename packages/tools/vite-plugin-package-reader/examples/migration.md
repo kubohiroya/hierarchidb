@@ -29,7 +29,7 @@ export default defineConfig({
       rootDir: path.resolve(__dirname, '..'),
       pluginPattern: /@hierarchidb\/plugins-.*-plugin$/
     }),
-    // ... other plugins
+    // ... other plugin-loader
   ]
 });
 ```
@@ -44,7 +44,7 @@ import { hierarchiDBPreset } from '@hierarchidb/tools-vite-plugin-package-reader
 export default defineConfig({
   plugins: [
     vitePluginPackageReader(hierarchiDBPreset()),
-    // ... other plugins
+    // ... other plugin-loader
   ]
 });
 ```
@@ -67,7 +67,7 @@ export default defineConfig({
       
       strategies: [
         new RegexStrategy({
-          name: 'hierarchidb-plugins',
+          name: 'hierarchidb-plugin-loader',
           pattern: /@hierarchidb\/plugins-.*-plugin$/,
           metadataExtractor: (pkg) => ({
             nodeType: pkg.name.replace('@hierarchidb/', '').replace('-plugin', ''),
@@ -81,7 +81,7 @@ export default defineConfig({
       virtualModules: [createPluginVirtualModule()],
       
       monorepo: {
-        packages: ['packages/plugins/*'],
+        packages: ['packages/plugin-loader/*'],
         usePnpmWorkspace: true
       },
       
@@ -90,7 +90,7 @@ export default defineConfig({
         prefix: '[HierarchiDB]'
       }
     }),
-    // ... other plugins
+    // ... other plugin-loader
   ]
 });
 ```

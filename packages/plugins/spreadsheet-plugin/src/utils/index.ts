@@ -1,5 +1,5 @@
 /**
-  * @file utils/index.ts
+  * @file utils/RuntimeWorkerService.ts
  * @description
  * Re-exports all utility functions for easy imports in test and implementation files
   */

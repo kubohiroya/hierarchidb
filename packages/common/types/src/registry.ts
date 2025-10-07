@@ -68,12 +68,12 @@ export interface IPluginRegistry extends INodeTypeRegistry<unknown> {
   validateDependencies(nodeType: NodeType): boolean;
 
   /**
-   * Get plugins by tag
+   * Get plugin-loader by tag
    */
   findPluginsByTag(tag: string): any[];
 
   /**
-   * Get all plugins
+   * Get all plugin-loader
    */
   getAllPlugins(): any[];
 }

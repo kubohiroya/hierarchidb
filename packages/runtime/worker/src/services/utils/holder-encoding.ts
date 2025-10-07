@@ -1,7 +1,7 @@
 // Holder name encoding utilities
 // NOTE: Shared utilities for WorkingCopy and Trash holder pair patterns.
 // Keep comments in English for codebase consistency.
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 // Public constant for holder name separator (v1)
 export const HOLDER_NAME_TAB = '\t'; // U+0009 (TAB)

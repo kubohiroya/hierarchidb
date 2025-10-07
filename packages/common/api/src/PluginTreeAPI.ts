@@ -5,11 +5,11 @@
  * @file PluginTreeAPI.ts
  * @description TreeTypes-specific plugin management facade API
  *
- * Provides a focused interface for retrieving plugins available for specific trees,
+ * Provides a focused interface for retrieving plugin-loader available for specific trees,
  * with type safety and proper filtering capabilities.
  */
 
-import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-types';
 
 //  : PluginTreeAPI
 //  :
@@ -166,7 +166,7 @@ export interface MetricOptions {
  * ```typescript
  * const pluginTreeAPI = workerAPI.getPluginTreeAPI();
  *
- * // Get plugins for a tree
+ * // Get plugin-loader for a tree
  * const response = await pluginTreeAPI.getPluginsForTree({
  *   treeId: 'my-tree-123' as TreeId
  * });

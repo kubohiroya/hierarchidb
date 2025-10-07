@@ -1,6 +1,6 @@
 import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/RuntimeWorkerService.ts'],
   format: ['esm'],
 });

@@ -1,4 +1,4 @@
-// Public worker API types for @hierarchidb/plugins-shape-plugin/worker
+// Public worker API types for @hierarchidb/plugin-loader-shape-plugin/worker
 // Keep this file type-only and decoupled from internal Dexie types
 
 import type {

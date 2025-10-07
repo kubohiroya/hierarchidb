@@ -2,7 +2,7 @@
   * Folder API interface - UI-Worker
   */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { CreateFolderData, FolderEntity, FolderSearchQuery, FolderSettings, UpdateFolderData } from './types.js';
 
 /**

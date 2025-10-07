@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
 
 describe('TrashDialog link wiring', () => {

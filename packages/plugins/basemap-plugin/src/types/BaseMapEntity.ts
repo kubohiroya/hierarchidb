@@ -3,13 +3,13 @@
  * @description BaseMap entity types extending Folder entity
  */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type {
   HierarchicalEntity,
   HierarchicalSearchCriteria,
   PeerDataBase,
   WorkingCopyDraft,
-} from '@hierarchidb/plugins-base-plugin';
+} from '@hierarchidb/plugin-api';
 
 /**
  * Map style configuration

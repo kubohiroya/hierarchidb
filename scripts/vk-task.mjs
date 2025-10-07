@@ -55,7 +55,7 @@ const PRESETS = {
     title: 'Group repo changes and create sequential commits',
     description: [
       '- Inspect current working tree changes',
-      '- Group diffs by work type (refactor, move, docs, new plugins)',
+      '- Group diffs by work type (refactor, move, docs, new plugin-loader)',
       '- Create ordered commits with Conventional Commit messages',
       '- Verify build/tests; adjust messages if needed',
     ].join('\n'),

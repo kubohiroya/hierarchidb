@@ -38,7 +38,7 @@ FolderPlugin (基底)
 ### Step 1: プラグイン拡張定義の作成
 
 ```typescript
-// packages/plugins-plugin/styler-plugin/src/extension/definition.ts
+// packages/plugin-loader-plugin/styler-plugin/src/extension/definition.ts
 
 import type { 
   ExtendableNodeTypeDefinition,
@@ -147,7 +147,7 @@ export const StylerExtension: ExtendableNodeTypeDefinition<
 ### Step 2: 拡張エンティティの定義
 
 ```typescript
-// packages/plugins-plugin/styler-plugin/src/entities/StylerEntity.ts
+// packages/plugin-loader-plugin/styler-plugin/src/entities/StylerEntity.ts
 
 import type { FolderEntity } from '@hierarchidb/plugin-folder-plugin';
 
@@ -184,7 +184,7 @@ export interface StylerStyle {
 ### Step 3: 拡張ハンドラーの実装
 
 ```typescript
-// packages/plugins-plugin/styler-plugin/src/handlers/StylerEntityHandler.ts
+// packages/plugin-loader-plugin/styler-plugin/src/handlers/StylerEntityHandler.ts
 
 import { FolderEntityHandler } from '@hierarchidb/plugin-folder-plugin';
 import type { BaseEntityExtension } from '@hierarchidb/common-core/types/plugin-extension';
@@ -253,7 +253,7 @@ export class StylerEntityHandler
 ### Step 4: ステップコンポーネントの実装
 
 ```typescript
-// packages/plugins-plugin/styler-plugin/src/steps/FileUploadStep.tsx
+// packages/plugin-loader-plugin/styler-plugin/src/steps/FileUploadStep.tsx
 
 import React, { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
@@ -354,7 +354,7 @@ export const FileUploadStep: React.FC<FileUploadStepProps> = ({
 ### Step 5: プラグインの登録
 
 ```typescript
-// packages/plugins-plugin/styler-plugin/src/index.ts
+// packages/plugin-loader-plugin/styler-plugin/src/RuntimeWorkerService.ts
 
 import { PluginExtensionRegistry } from '@hierarchidb/runtime-plugin-base';
 import { StylerExtension } from './extension/definition';

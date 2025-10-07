@@ -9,8 +9,8 @@
 ### ディレクトリ構造
 
 ```bash
-mkdir -p packages/plugins/my-plugin/src/{shared,ui,worker}
-cd packages/plugins/my-plugin
+mkdir -p packages/plugin-loader/my-plugin/src/{shared,ui,worker}
+cd packages/plugin-loader/my-plugin
 ```
 
 ```

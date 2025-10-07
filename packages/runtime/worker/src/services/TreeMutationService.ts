@@ -12,7 +12,7 @@ import {
   TreeId,
   TreeNode,
   UndoPayload,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { TreeMutationAPI } from '@hierarchidb/common-api';
 import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';

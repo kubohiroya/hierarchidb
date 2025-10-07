@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CreateMenuItem, CreateMenuItemOrDivider, IconComponent, NodeId } from '@hierarchidb/common-type';
+import type { CreateMenuItem, CreateMenuItemOrDivider, IconComponent, NodeId } from '@hierarchidb/common-types';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry.js';
 import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 
@@ -8,7 +8,7 @@ import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
  *
  * Generates context-aware create menu items based on:
  * - Parent node capabilities
- * - Available plugins
+ * - Available plugin-loader
  * - User permissions
  * - Worker-side restrictions
  */
@@ -45,10 +45,10 @@ export function useDynamicCreateMenu(
           return;
         }
 
-        // Get all available plugins
+        // Get all available plugin-loader
         const allPlugins = getUIPluginRegistry().getAll();
 
-        // Filter for creatable plugins
+        // Filter for creatable plugin-loader
         const creatablePlugins = allPlugins.filter((plugin) => plugin.capabilities.canCreate);
 
         // Get allowed child types from Worker layer
@@ -57,7 +57,7 @@ export function useDynamicCreateMenu(
           parentNode.nodeType,
         );
 
-        // Filter plugins by allowed types
+        // Filter plugin-loader by allowed types
         const allowedPlugins = creatablePlugins.filter((plugin) =>
           allowedChildTypes.includes(plugin.nodeType),
         );
@@ -127,7 +127,7 @@ async function getWorkerAllowedChildTypes(
     const allPlugins = getUIPluginRegistry().getAll();
     return allPlugins.map((p) => p.nodeType);
   } catch (error) {
-    console.warn('Failed to get allowed child types, using all plugins:', error);
+    console.warn('Failed to get allowed child types, using all plugin-loader:', error);
     const allPlugins = getUIPluginRegistry().getAll();
     return allPlugins.map((p) => p.nodeType);
   }

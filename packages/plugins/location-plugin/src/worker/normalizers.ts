@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { GroupItemBase, PeerEntity, RelationBase } from '@hierarchidb/runtime-worker';
 import type {
   LocationPeerData,

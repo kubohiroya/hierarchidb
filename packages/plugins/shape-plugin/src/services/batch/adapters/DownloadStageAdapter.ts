@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { DownloadTask } from '../../types.js';
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { StageControls } from './StageControls.js';

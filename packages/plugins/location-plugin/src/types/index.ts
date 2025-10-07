@@ -3,15 +3,15 @@
    */
 
 //  @hierarchidb/common-type
-import type { NodeId } from '@hierarchidb/common-type';
-export type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
+export type { NodeId } from '@hierarchidb/common-types';
 
 // ================================
 // Entity Types
 // ================================
 
-import type { Timestamp } from '@hierarchidb/common-type';
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type { Timestamp } from '@hierarchidb/common-types';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-sdk';
 import type {
   LocationEntity as LocationEntityDefinition,
   LocationDataSource,

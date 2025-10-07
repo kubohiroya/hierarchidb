@@ -10,7 +10,7 @@
   */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
+import type { DataSourceName } from '@hierarchidb/ui-datasource';
 import { DataSourceManager } from '@hierarchidb/runtime-ui-datasource';
 
 describe('DataSourceManager Migration Tests', () => {

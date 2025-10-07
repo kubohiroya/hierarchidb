@@ -162,7 +162,7 @@ packages/common/core/src/types/
 ├── plugin-pointcuts.ts              # 元の実装（後方互換性のため維持）
 ├── plugin-extension-refactored.ts   # リファクタリング版（完全版）
 └── plugin-extension/                # モジュール分割版（検討中）
-    ├── index.ts
+    ├── RuntimeWorkerService.ts
     ├── stepper-dialog-lifecycle-types.ts
     ├── step-definitions.ts
     ├── field-definitions.ts

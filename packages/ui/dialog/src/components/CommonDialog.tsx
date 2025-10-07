@@ -1,5 +1,5 @@
 /**
- * @fileoverview CommonDialog - Base base-dialog component for plugins
+ * @fileoverview CommonDialog - Base base-dialog component for plugin-loader
  */
 
 import type React from 'react';

@@ -221,8 +221,8 @@ turbo run build --filter=@hierarchidb/worker
 ### コード分割
 ```typescript
 // 動的インポート
-const BaseMapPlugin = () => import('./plugins/basemap');
-const SpreadsheetPlugin = () => import('./plugins/spreadsheet-plugin');
+const BaseMapPlugin = () => import('./plugin-loader/basemap');
+const SpreadsheetPlugin = () => import('./plugin-loader/spreadsheet-plugin');
 
 // React.lazy
 const LazyComponent = lazy(() => 
@@ -238,7 +238,7 @@ pnpm add -D rollup-plugin-visualizer
 # vite.config.ts
 import { visualizer } from 'rollup-plugin-visualizer';
 
-plugins: [
+plugin-loader: [
   visualizer({
     open: true,
     gzipSize: true,
@@ -255,7 +255,7 @@ plugins: [
   "scripts": {
     "build": "turbo run build",
     "build:packages": "turbo run build --filter='./packages/*'",
-    "build:plugins": "turbo run build --filter='./packages/plugins/*'",
+    "build:plugins": "turbo run build --filter='./packages/plugin-loader/*'",
     "build:app": "turbo run build --filter=@hierarchidb/_app",
     "build:force": "turbo run build --force",
     "build:analyze": "ANALYZE=true pnpm build:_app",

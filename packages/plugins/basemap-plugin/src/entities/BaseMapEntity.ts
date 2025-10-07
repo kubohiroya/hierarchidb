@@ -3,7 +3,7 @@
  * @description BaseMap entity definition following standard structure
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export interface BaseMapEntity {
   id: NodeId;

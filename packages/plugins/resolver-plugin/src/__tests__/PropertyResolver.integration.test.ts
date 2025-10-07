@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { ResolverEntityHandler } from '../handlers/ResolverEntityHandler.js';
 import { resolverDB } from '../database/ResolverDatabase.js';
 

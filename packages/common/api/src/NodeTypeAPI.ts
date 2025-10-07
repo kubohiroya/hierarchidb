@@ -13,7 +13,7 @@ import type {
   PluginDefinition,
   TreeNode,
   ValidationResult,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 /**
  * Node type management API

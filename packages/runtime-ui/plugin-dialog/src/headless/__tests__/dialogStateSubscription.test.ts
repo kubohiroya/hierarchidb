@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DialogStateSubscribeInput, MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
+import type { DialogStateSubscribeInput, MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 import { subscribeDialogState } from '../usePluginDialogController.js';
 
 type SnapshotFactoryOptions = {

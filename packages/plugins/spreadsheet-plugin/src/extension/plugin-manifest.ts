@@ -1,6 +1,6 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/plugins-spreadsheet-plugin' as const;
+export const PLUGIN_ID = '@hierarchidb/plugin-loader-spreadsheet-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;
 export const PLUGIN_DESCRIPTION = 'Spreadsheet plugin for HierarchiDB - extends folder plugin' as const;
 export const PLUGIN_NODE_TYPE = 'spreadsheet' as NodeType;

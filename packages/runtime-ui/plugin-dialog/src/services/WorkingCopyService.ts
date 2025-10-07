@@ -3,7 +3,7 @@
  * Manages working copy state and capabilities evaluation on Worker side
  */
 
-import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-type';
+import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-types';
 import type { CommitWorkingCopyOptions, WorkerAPI } from '@hierarchidb/common-api';
 
 /**

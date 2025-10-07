@@ -59,7 +59,7 @@ export interface PeerEntityCore {
 #### 9.3.4.1 エンティティ定義
 
 ```typescript
-// packages/plugins/styler-plugin/src/types/StylerEntity.ts
+// packages/plugin-loader/styler-plugin/src/types/StylerEntity.ts
 
 // Stylerのプロパティ定義
 export interface StylerProperties {
@@ -87,7 +87,7 @@ export interface TableMetadataEntity extends RelationalEntity {
 #### 9.3.4.2 エンティティハンドラー実装
 
 ```typescript
-// packages/plugins/styler-plugin/src/handlers/StylerEntityHandler.ts
+// packages/plugin-loader/styler-plugin/src/handlers/StylerEntityHandler.ts
 
 export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, never, StylerWorkingCopy> {
   constructor(
@@ -153,7 +153,7 @@ export class StylerEntityHandler implements PeerEntityHandler<StylerEntity, neve
 #### 9.3.4.3 RelationalEntityManager実装
 
 ```typescript
-// packages/plugins/styler-plugin/src/managers/TableMetadataManager.ts
+// packages/plugin-loader/styler-plugin/src/managers/TableMetadataManager.ts
 
 export class TableMetadataManager implements RelationalEntityManager<TableMetadataEntity> {
   constructor(private database: StylerDatabase) {}
@@ -224,7 +224,7 @@ export class TableMetadataManager implements RelationalEntityManager<TableMetada
 #### 9.3.4.4 ノードタイプ定義登録
 
 ```typescript
-// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts
+// packages/plugin-loader/styler-plugin/src/definitions/StylerDefinition.ts
 
 export const StylerDefinition: PluginDefinition<StylerEntity, never, StylerWorkingCopy> = {
   nodeType: 'styler-plugin',

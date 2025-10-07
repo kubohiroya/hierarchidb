@@ -10,8 +10,8 @@
 import type { BaseShapeError } from '../types/ShapeErrorHierarchy.js';
 import { ErrorCategory } from '../types/ShapeErrorHierarchy.js';
 import type { BatchConfig } from '../types/BatchConfig.js';
-import type { NodeId } from '@hierarchidb/common-type';
-import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { DataSourceName } from '@hierarchidb/ui-datasource';
 
 // ========================================
 // ========================================

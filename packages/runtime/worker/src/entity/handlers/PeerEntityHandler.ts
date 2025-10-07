@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '../store.js';
 
 // Lightweight handler that expects coreDB.peerEntities having Dexie-like API

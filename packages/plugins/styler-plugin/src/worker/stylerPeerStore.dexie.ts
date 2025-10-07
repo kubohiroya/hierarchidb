@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB.js';
 import type { StylerPeerData } from '../types/stylerTypes.js';
 

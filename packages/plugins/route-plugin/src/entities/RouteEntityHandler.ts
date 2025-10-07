@@ -3,9 +3,9 @@
  * @description Route entity handler using common base classes
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/plugins-base-plugin';
+import { BaseEntityHandler, type BaseSearchCriteria } from '@hierarchidb/plugin-api';
 import type {
   RouteEntity,
   RouteGenerationConfig,

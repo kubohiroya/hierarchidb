@@ -13,7 +13,7 @@
 ### 1. ITagAPI → TagAPI への改名
 **対象ファイル:**
 - `packages/common/api/src/ITagAPI.ts` → `packages/common/api/src/TagAPI.ts`
-- `packages/common/api/src/index.ts`
+- `packages/common/api/src/RuntimeWorkerService.ts`
 - `packages/common/api/src/WorkerAPI.ts`
 - `packages/runtime/worker/src/WorkerAPIImpl.ts`
 - `packages/runtime/worker/src/services/TagService.ts`

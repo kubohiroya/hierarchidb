@@ -1,12 +1,12 @@
 /**
  * usePluginsForTree Hook
  *
- * Fetches plugins available for a specific tree ID from the worker registry.
+ * Fetches plugin-loader available for a specific tree ID from the worker registry.
  * Provides dynamic plugin loading for SpeedDial menus.
  */
 
 import { useEffect, useState } from 'react';
-import type { PluginDefinition, TreeId } from '@hierarchidb/common-type';
+import type { PluginDefinition, TreeId } from '@hierarchidb/common-types';
 import type { TreePluginInfo, WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 

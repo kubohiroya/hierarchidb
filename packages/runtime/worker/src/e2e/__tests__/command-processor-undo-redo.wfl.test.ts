@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {

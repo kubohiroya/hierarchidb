@@ -39,8 +39,8 @@ import { BaseMapHandler, BaseMapUnifiedDefinition } from '@hierarchidb/plugin-ba
 #### UI Components
 **Before:**
 ```typescript
-import BasemapViewComponent from '@hierarchidb/ui-routing/plugins/BasemapViewComponent';
-import BasemapEditComponent from '@hierarchidb/ui-routing/plugins/BasemapEditComponent';
+import BasemapViewComponent from '@hierarchidb/ui-routing/plugin-loader/BasemapViewComponent';
+import BasemapEditComponent from '@hierarchidb/ui-routing/plugin-loader/BasemapEditComponent';
 ```
 
 **After:**

@@ -4,7 +4,7 @@
   */
 
 // Observable/Subscription types
-import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';

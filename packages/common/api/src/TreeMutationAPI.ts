@@ -1,4 +1,4 @@
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 
 /**
   * API

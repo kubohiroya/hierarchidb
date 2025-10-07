@@ -103,7 +103,7 @@ packages/plugins/styler/
 
 #### Before: 従来型定義
 ```typescript
-// packages/plugins/basemap/src/types/BaseMapEntity.ts (改修前)
+// packages/plugin-loader/basemap/src/types/BaseMapEntity.ts (改修前)
 export interface BaseMapEntity extends PeerEntity {
   nodeId: TreeNodeId;
   name: string;
@@ -114,7 +114,7 @@ export interface BaseMapEntity extends PeerEntity {
 
 #### After: 6分類対応型定義
 ```typescript
-// packages/plugins/basemap/src/types/BaseMapEntity.ts (改修後)
+// packages/plugin-loader/basemap/src/types/BaseMapEntity.ts (改修後)
 import { PeerEntity, WorkingCopyProperties } from '@hierarchidb/core';
 
 // BaseMap固有プロパティ
@@ -163,7 +163,7 @@ export function validateBaseMapEntity(entity: BaseMapEntity): ValidationResult {
 
 #### Before: 従来プラグイン定義
 ```typescript
-// packages/plugins/basemap/src/definitions/BaseMapDefinition.ts (改修前)
+// packages/plugin-loader/basemap/src/definitions/BaseMapDefinition.ts (改修前)
 export const BaseMapUnifiedDefinition: PluginDefinition<
   BaseMapEntity,
   never,
@@ -176,7 +176,7 @@ export const BaseMapUnifiedDefinition: PluginDefinition<
 
 #### After: 6分類対応プラグイン定義
 ```typescript
-// packages/plugins/basemap/src/definitions/BaseMapDefinition.ts (改修後)
+// packages/plugin-loader/basemap/src/definitions/BaseMapDefinition.ts (改修後)
 export const BaseMapWorkerPlugin: WorkerPluginDefinition = {
   nodeType: 'basemap',
   name: 'BaseMap',
@@ -243,7 +243,7 @@ export const BaseMapWorkerPlugin: WorkerPluginDefinition = {
 
 #### After: 統一UI定義
 ```typescript
-// packages/plugins/basemap/src/ui/BaseMapUIPlugin.tsx (改修後)
+// packages/plugin-loader/basemap/src/ui/BaseMapUIPlugin.tsx (改修後)
 export const BaseMapUIPlugin: UIPluginDefinition = {
   nodeType: 'basemap',
   displayName: 'Base Map',
@@ -345,7 +345,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 既存のBaseMapHandlerは最小限の変更で6分類システムに対応：
 
 ```typescript
-// packages/plugins/basemap/src/handlers/BaseMapHandler.ts (改修後)
+// packages/plugin-loader/basemap/src/handlers/BaseMapHandler.ts (改修後)
 // 既存実装をほぼそのまま維持し、6分類対応の型定義のみ適用
 
 export class BaseMapHandler implements EntityHandler<
@@ -364,7 +364,7 @@ export class BaseMapHandler implements EntityHandler<
 
 #### After: 6分類対応型定義
 ```typescript
-// packages/plugins/styler-plugin/src/types/StylerEntity.ts (改修後)
+// packages/plugin-loader/styler-plugin/src/types/StylerEntity.ts (改修後)
 import { PeerEntity, RelationalEntity, WorkingCopyProperties } from '@hierarchidb/core';
 
 // Styler固有プロパティ
@@ -401,7 +401,7 @@ export type TableMetadataEntity = RelationalEntity & TableMetadataProperties;
 
 #### After: 複合エンティティ対応
 ```typescript
-// packages/plugins/styler-plugin/src/definitions/StylerDefinition.ts (改修後)
+// packages/plugin-loader/styler-plugin/src/definitions/StylerDefinition.ts (改修後)
 export const StylerWorkerPlugin: WorkerPluginDefinition = {
   nodeType: 'styler-plugin',
   name: 'Styler',
@@ -457,7 +457,7 @@ export const StylerWorkerPlugin: WorkerPluginDefinition = {
 
 #### After: マルチステップ対応UI定義
 ```typescript
-// packages/plugins/styler-plugin/src/ui/StylerUIPlugin.tsx (改修後)
+// packages/plugin-loader/styler-plugin/src/ui/StylerUIPlugin.tsx (改修後)
 export const StylerUIPlugin: UIPluginDefinition = {
   nodeType: 'styler-plugin',
   displayName: 'Style Map',
@@ -548,7 +548,7 @@ export const StylerUIPlugin: UIPluginDefinition = {
 ### 5.1 エンティティマネージャー登録
 
 ```typescript
-// packages/worker/src/plugins/PluginRegistration.ts (新規)
+// packages/worker/src/plugin-loader/PluginRegistration.ts (新規)
 import { AutoEntityLifecycleManager } from '@hierarchidb/core';
 import { BaseMapWorkerPlugin } from '@hierarchidb/plugin-basemap';
 import { StylerWorkerPlugin } from '@hierarchidb/plugin-styler-plugin';
@@ -567,7 +567,7 @@ lifecycleManager.registerPlugin(StylerWorkerPlugin);
 ### 5.2 既存データベースとの互換性
 
 ```typescript
-// packages/plugins/basemap/src/database/BaseMapDatabase.ts (改修後)
+// packages/plugin-loader/basemap/src/database/BaseMapDatabase.ts (改修後)
 export class BaseMapDatabase extends Dexie {
   // 既存のテーブル定義をそのまま維持
   entities!: Table<BaseMapEntity, TreeNodeId>;
@@ -595,7 +595,7 @@ export class BaseMapDatabase extends Dexie {
 ### 5.3 RelationalEntityの自動管理
 
 ```typescript
-// packages/plugins/styler-plugin/src/managers/TableMetadataManager.ts (改修後)
+// packages/plugin-loader/styler-plugin/src/managers/TableMetadataManager.ts (改修後)
 export class TableMetadataManager extends RelationalEntityManager<TableMetadataEntity> {
   constructor() {
     super();

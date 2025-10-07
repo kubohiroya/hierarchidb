@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RouteBatchConfig, RouteBatchTask } from '../../src/services/RouteBatchSession.js';
 import { RouteBatchSession } from '../../src/services/RouteBatchSession.js';
 import { RouteDatabase } from '../../src/database/RouteDatabase.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 describe('RouteBatchSession pause/resume integration', () => {
   it('honors paused cursor flag and resumes processing', async () => {

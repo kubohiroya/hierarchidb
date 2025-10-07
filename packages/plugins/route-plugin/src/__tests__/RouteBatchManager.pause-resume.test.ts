@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RouteBatchManager, type RouteBatchRouteInput } from '../../src/services/RouteBatchManager.js';
 import { RouteDatabase } from '../../src/database/RouteDatabase.js';
 import type { RouteBatchConfig } from '../../src/services/RouteBatchSession.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 describe('RouteBatchManager pause/resume (smoke)', () => {
   it('creates cursor and toggles paused flag', async () => {

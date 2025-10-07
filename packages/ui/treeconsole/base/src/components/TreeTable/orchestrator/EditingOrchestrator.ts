@@ -7,7 +7,7 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { TreeViewController } from '../../../types/index.js';
 import { editingNodeIdAtom, editingValueAtom } from '../state/index.js';
 

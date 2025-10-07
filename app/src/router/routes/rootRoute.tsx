@@ -17,7 +17,7 @@ interface RootContext {
 
 export const rootRoute = createRootRoute({
   beforeLoad: async (): Promise<RootContext> => {
-    // Setup UI plugins before any routes load
+    // Setup UI plugin-loader before any routes load
     await setupUIPlugins();
     
     return {

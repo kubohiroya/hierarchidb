@@ -15,8 +15,8 @@ import {
   type ShapeEntity,
   type ShapeWorkingCopy,
 } from '../../shared/index.js';
-import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
-import type { Timestamp } from '@hierarchidb/common-type';
+import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-sdk';
+import type { Timestamp } from '@hierarchidb/common-types';
 
 /**
  * Create shape data interface

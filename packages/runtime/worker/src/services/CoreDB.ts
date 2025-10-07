@@ -8,7 +8,7 @@ import type {
   TreeId,
   TreeNode,
   TreeRootState,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import { Dexie, type Table } from 'dexie';

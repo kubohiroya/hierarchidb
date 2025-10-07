@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Add, Cancel, Delete, Save } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { StylerColorRule, StylerEntity, StylerStyle } from '../entities/StylerEntity.js';
 
 export interface StylerSimpleDialogProps {

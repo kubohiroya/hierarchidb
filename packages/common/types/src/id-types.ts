@@ -20,7 +20,7 @@ export type TagId = string & { readonly __brand: 'TagId' };
  */
 export type NodeType = string & { readonly __brand: 'NodeType' };
 
-// Optional branded ID used by some plugins for entity records (alias of NodeId)
+// Optional branded ID used by some plugin-loader for entity records (alias of NodeId)
 export type EntityId = NodeId;
 
 // Branded ID for tree nodes when explicitly distinguished from NodeId in some modules

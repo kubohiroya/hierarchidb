@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RouteBatchManager, type RouteBatchRouteInput } from '../services/RouteBatchManager.js';
 import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
 import { RouteDatabase } from '../database/RouteDatabase.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 const BASE_CONFIG: RouteBatchConfig = {
   routeGeneration: {

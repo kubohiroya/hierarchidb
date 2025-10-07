@@ -1,6 +1,6 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/plugins-location-plugin' as const;
+export const PLUGIN_ID = '@hierarchidb/plugin-loader-location-plugin' as const;
 export const PLUGIN_VERSION = '0.1.0' as const;
 export const PLUGIN_DESCRIPTION = 'Geographic location nodes with Shape integration' as const;
 export const PLUGIN_NODE_TYPE = 'location' as NodeType;

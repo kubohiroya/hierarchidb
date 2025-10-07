@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 import type { ShapePeerData } from '../types/entities.js';
 
 export type ShapePeerRow = {

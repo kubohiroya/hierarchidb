@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 
 // Minimal, stable props surface for plugin dialog/panel components.
-// Concrete plugins may accept追加 propsだが、公開境界ではこれ以上を約束しない。
+// Concrete plugin-loader may accept追加 propsだが、公開境界ではこれ以上を約束しない。
 
 export type PluginDialogProps = {
   open: boolean;

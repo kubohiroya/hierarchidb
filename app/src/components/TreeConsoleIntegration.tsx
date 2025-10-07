@@ -15,7 +15,7 @@ import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';

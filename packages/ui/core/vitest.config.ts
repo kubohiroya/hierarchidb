@@ -21,7 +21,7 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, './src'),
       // Provide bootstrap at source for unit tests
-      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/src/index.ts'),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, '../../runtime-worker/worker-bootstrap/src/RuntimeWorkerService.ts'),
       'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
     },
   },

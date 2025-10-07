@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type {
   BatchTaskStage,
   DownloadTask,

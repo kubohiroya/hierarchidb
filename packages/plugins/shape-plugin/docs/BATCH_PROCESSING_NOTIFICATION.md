@@ -228,7 +228,7 @@ catch (error) {
 
 ```typescript
 import { useState, useEffect } from 'react';
-import { BatchSessionManager } from '@hierarchidb/plugins-shape-plugin';
+import { BatchSessionManager } from '@hierarchidb/plugin-loader-shape-plugin';
 
 export function BatchProcessingPanel({ nodeId }: { nodeId: NodeId }) {
   const [progress, setProgress] = useState(0);

@@ -816,7 +816,7 @@ export class SimplePluginDiscovery {
 
   /**
    * app/package.jsonのdependenciesから自動検出
-   * @hierarchidb/plugins-*-plugin パターンに合致するものがプラグイン
+   * @hierarchidb/plugin-loader-*-plugin パターンに合致するものがプラグイン
    */
   discoverPluginsFromPackageJson(packageJson: PackageJson): NodeType[] {
     const plugins: NodeType[] = [];
@@ -838,9 +838,9 @@ export class SimplePluginDiscovery {
 各プラグインの`package.json`から依存関係を読み取り、推移的な依存関係を含めて解決します。
 
 ```json
-// packages/plugins-plugin/styler-plugin/package.json
+// packages/plugin-loader-plugin/styler-plugin/package.json
 {
-  "name": "@hierarchidb/plugins-styler-plugin-plugin",
+  "name": "@hierarchidb/plugin-loader-styler-plugin-plugin",
   "dependencies": {
     "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
   },

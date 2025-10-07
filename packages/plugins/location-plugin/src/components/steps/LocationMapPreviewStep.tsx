@@ -6,7 +6,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, CircularProgress, Divider, Stack, Typography } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
 import type { LocationWorkingCopy, LocationType } from '../../types/index.js';

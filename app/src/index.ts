@@ -1,6 +1,6 @@
 /**
  * Public exports for app package.
- * These can be imported by plugins and other packages.
+ * These can be imported by plugin-loader and other packages.
  */
 
 export type { WorkerAPIClient } from './WorkerAPIClient.js';

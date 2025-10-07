@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,

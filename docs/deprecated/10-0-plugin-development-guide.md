@@ -178,7 +178,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
   i18n: {
     namespace: 'plugin-myplugin',
     defaultLocale: 'en',
-    localesPath: '/plugins/myplugin/locales/{{lng}}/core.json',
+    localesPath: '/plugin-loader/myplugin/locales/{{lng}}/core.json',
   },
   
   // データベース設定

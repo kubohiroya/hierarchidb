@@ -1,0 +1,124 @@
+/**
+  * Auto-load HierarchiDB UI plugin-loader using virtual modules generated at build time.
+  *
+  * Relationship to app/src/generated/loader.ts:
+  * - loader.ts is generated at prebuild time to wire EntitiesDB/persistence (worker-side DBs)
+  *   and to register UI persistence overrides. It does NOT load UI plugin modules.
+  * - This file (auto-load.ts) is responsible for discovering and importing UI plugin entry points
+  *   so that components, menus, and registrations are initialized in the browser.
+  *
+  * If, in the future, the generator is extended to create static UI imports as well,
+  * this module can be deprecated. For now, it remains required.
+  *
+ * - virtual:plugin-definitions metadata for plugin-loader (sourced from plugin-manifest.ts)
+  * - virtual:plugin-registry-ui dynamic import map per nodeType
+  */
+
+import type { NodeType } from '@hierarchidb/common-types';
+
+// Provided by @hierarchidb/tools-vite-plugin-package-reader (vite virtual modules)
+// These module declarations are injected during dev by the Vite plugin.
+// In build, they are real modules generated at compile time.
+import pluginDefinitions from 'virtual:plugin-definitions';
+import { pluginMapUI as pluginMap } from 'virtual:plugin-registry-ui';
+
+type PluginDefinitionVM = {
+  name: string;
+  version: string;
+  packageName: string;
+  nodeType: string;
+  priority: number;
+  config?: {
+    dependencies?: string[];
+  };
+};
+
+/**
+ * @deprecated
+ */
+export type PluginLoadResult = {
+  plugins: string[]; // nodeType list
+  loadOrder: string[]; // nodeType in dependency order
+};
+
+function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
+  const nodes = new Set<string>();
+  const graph = new Map<string, Set<string>>(); // nodeType -> deps
+
+  for (const d of defs) {
+    const id = d.nodeType;
+    nodes.add(id);
+    const deps = new Set<string>(d.config?.dependencies ?? []);
+    graph.set(id, deps);
+  }
+
+  const visited = new Set<string>();
+  const temp = new Set<string>();
+  const out: string[] = [];
+
+  const visit = (n: string) => {
+    if (visited.has(n)) return;
+    if (temp.has(n)) {
+      throw new Error(`Circular plugin dependency detected at ${n}`);
+    }
+    temp.add(n);
+    for (const dep of graph.get(n) ?? []) {
+      if (nodes.has(dep)) visit(dep);
+    }
+    temp.delete(n);
+    visited.add(n);
+    out.push(n);
+  };
+
+  for (const n of nodes) visit(n);
+  return out;
+}
+
+/**
+ * Automatically discover and load plugin-loader based on virtual modules
+ * @deprecated
+ */
+export async function autoLoadPlugins(): Promise<PluginLoadResult> {
+  console.log('🔍 Auto-discovering plugin-loader via virtual modules...');
+
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const loadOrder = topoSortByDependencies(defs);
+
+  // Dynamically import in dependency order to ensure side effects register correctly
+  for (const nodeType of loadOrder) {
+    const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
+    if (typeof loader === 'function') {
+      await loader();
+    } else {
+      console.warn(`⚠️ No loader found for plugin: ${nodeType}`);
+    }
+  }
+
+  console.log('✨ All plugin-loader loaded successfully!');
+  return {
+    plugins: defs.map((d) => d.nodeType),
+    loadOrder,
+  };
+}
+
+/**
+ * Get the list of plugin-loader discovered (nodeType list)
+ * @deprecated
+ */
+export function getDiscoveredPlugins(): NodeType[] {
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  return defs.map((d) => d.nodeType as NodeType);
+}
+
+/**
+ * Get the plan including dependency order
+ * @deprecated
+ */
+export async function getPluginLoadPlan(): Promise<PluginLoadResult> {
+  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const loadOrder = topoSortByDependencies(defs);
+  return {
+    plugins: defs.map((d) => d.nodeType),
+    loadOrder,
+  };
+}

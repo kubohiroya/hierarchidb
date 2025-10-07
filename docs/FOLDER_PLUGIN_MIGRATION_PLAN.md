@@ -190,11 +190,11 @@ private getDefaultSettings(): FolderSettings {
 
 ### Phase 3: Import/Export 修正
 
-#### 3.1 types/index.ts の修正
+#### 3.1 types/RuntimeWorkerService.ts の修正
 **問題**: 型が正しくexportされていない
 
 ```typescript
-// src/types/index.ts - 完全な書き直し
+// src/types/RuntimeWorkerService.ts - 完全な書き直し
 export type {
   FolderEntity,
   FolderBookmark,
@@ -227,11 +227,11 @@ export interface FolderSearchCriteria extends HierarchicalSearchCriteria {
 export type { TagId } from '@hierarchidb/common-type';
 ```
 
-#### 3.2 shared/index.ts の修正
+#### 3.2 shared/RuntimeWorkerService.ts の修正
 **問題**: API クラスと型がexportされていない
 
 ```typescript
-// src/shared/index.ts
+// src/shared/RuntimeWorkerService.ts
 export class FolderAPI {
   // 実装が必要
 }
@@ -314,9 +314,9 @@ const handleUpdate = (updates: Partial<FolderEntityWorkingCopy>) => {
 };
 ```
 
-#### 5.2 ui/index.ts の修正
+#### 5.2 ui/RuntimeWorkerService.ts の修正
 ```typescript
-// src/ui/index.ts
+// src/ui/RuntimeWorkerService.ts
 export type {
   FolderEntity,
   FolderEntityWorkingCopy,
@@ -439,7 +439,7 @@ describe('FolderEntityHandler', () => {
 ### 各Phase完了後の確認
 ```bash
 # エラー数の段階的減少を確認
-pnpm --filter @hierarchidb/plugins-folder-plugin typecheck
+pnpm --filter @hierarchidb/plugin-loader-folder-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 109件 → 80件以下（Working Copy API解決）
@@ -452,10 +452,10 @@ pnpm --filter @hierarchidb/plugins-folder-plugin typecheck
 ### 最終確認
 ```bash
 # ビルド成功確認
-pnpm --filter @hierarchidb/plugins-folder-plugin build
+pnpm --filter @hierarchidb/plugin-loader-folder-plugin build
 
 # テスト実行確認
-pnpm --filter @hierarchidb/plugins-folder-plugin test
+pnpm --filter @hierarchidb/plugin-loader-folder-plugin test
 ```
 
 ## 重要な作業注意点

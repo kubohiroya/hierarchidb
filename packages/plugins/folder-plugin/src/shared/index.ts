@@ -1,5 +1,5 @@
 /**
- * @file shared/index.ts
+ * @file shared/RuntimeWorkerService.ts
  * @description Shared exports for Folder plugin (used by both UI and Worker)
  */
 

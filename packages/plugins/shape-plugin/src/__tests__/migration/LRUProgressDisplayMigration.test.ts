@@ -14,7 +14,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { ShapeBatchProgressDisplay } from '../../ui/components/ShapeBatchProgressDisplay.js';
 import type { BatchProgressEvent } from '../../types/BatchProgressEvent.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 type TreeNodeId = NodeId;
 const mockTreeNodeId = 'tree-node-123' as TreeNodeId;
 

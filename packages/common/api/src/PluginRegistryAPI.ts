@@ -3,7 +3,7 @@
  * @description Plugin registry query API for client-side access to plugin information
  */
 
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 
 /**
  * Plugin information exposed to clients
@@ -27,19 +27,19 @@ export interface PluginInfo {
  * @example
  * ```typescript
  * const api = worker.getPluginRegistryAPI();
- * const plugins = await api.getRegisteredPlugins();
+ * const plugin-loader = await api.getRegisteredPlugins();
  * ```
  */
 export interface PluginRegistryAPI {
   /**
-   * Get list of all registered plugins
+   * Get list of all registered plugin-loader
    *
    * @returns Array of plugin information sorted by load order
    *
    * @example
    * ```typescript
-   * const plugins = await api.getRegisteredPlugins();
-   * console.log(`Loaded ${plugins.length} plugins`);
+   * const plugin-loader = await api.getRegisteredPlugins();
+   * console.log(`Loaded ${plugin-loader.length} plugin-loader`);
    * ```
    */
   getRegisteredPlugins(): Promise<PluginInfo[]>;
@@ -63,7 +63,7 @@ export interface PluginRegistryAPI {
   /**
    * Get plugin load order
    *
-   * Returns the order in which plugins were loaded, respecting dependencies.
+   * Returns the order in which plugin-loader were loaded, respecting dependencies.
    *
    * @returns Array of node types in load order
    *
@@ -103,14 +103,14 @@ export interface PluginRegistryAPI {
   isPluginRegistered(nodeType: NodeType): Promise<boolean>;
 
   /**
-   * Get total count of registered plugins
+   * Get total count of registered plugin-loader
    *
-   * @returns Number of registered plugins
+   * @returns Number of registered plugin-loader
    *
    * @example
    * ```typescript
    * const count = await api.getPluginCount();
-   * console.log(`Total plugins: ${count}`);
+   * console.log(`Total plugin-loader: ${count}`);
    * ```
    */
   getPluginCount(): Promise<number>;

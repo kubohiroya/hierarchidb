@@ -3,12 +3,12 @@ import type {
   NodeDialogHooks,
   NodeDialogExtensionMetadata,
   StepArrayEvaluator,
-} from '@hierarchidb/plugins-base-plugin';
+} from '@hierarchidb/plugin-api';
 import {
   type NodeDialogExtensionRegistry,
   nodeDialogExtensionRegistry as baseNodeDialogRegistry,
   dialogExtensionRegistry as deprecatedDialogRegistry,
-} from '@hierarchidb/plugins-base-plugin';
+} from '@hierarchidb/plugin-sdk';
 import type {
   BaseEntityExtension,
   DialogStepDefinition,
@@ -16,7 +16,7 @@ import type {
   PeerEntity,
   TreeNode,
   ValidationExtension,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { FolderEntity } from '../entities/FolderEntity.js';
 
 export type FolderDialogHooks<TDialog extends PeerEntity = PeerEntity> = NodeDialogHooks<TDialog>;
@@ -226,7 +226,7 @@ export const folderExtensionRegistry = new FolderExtensionRegistry(baseNodeDialo
 export const nodeDialogExtensionRegistry = folderExtensionRegistry;
 
 /**
- * @deprecated Prefer importing from `@hierarchidb/plugins-base-plugin` directly.
+ * @deprecated Prefer importing from `@hierarchidb/plugin-loader-base-plugin` directly.
  */
 // eslint-disable-next-line deprecation/deprecation
 export const dialogExtensionRegistry = deprecatedDialogRegistry;

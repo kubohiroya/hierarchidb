@@ -3,13 +3,13 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 export default createTsupConfig({
   dts: {
     entry: {
-      index: 'src/index.ts',
-      'presets/index': 'src/presets/index.ts',
+      index: 'src/RuntimeWorkerService.ts',
+      'presets/index': 'src/presets/RuntimeWorkerService.ts',
     },
   },
   entry: {
-    index: 'src/index.ts',
-    'presets/index': 'src/presets/index.ts',
+    index: 'src/RuntimeWorkerService.ts',
+    'presets/index': 'src/presets/RuntimeWorkerService.ts',
   },
   format: ['esm'],
   external: ['vite'],

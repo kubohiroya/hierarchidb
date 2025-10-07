@@ -284,7 +284,7 @@ const projectPlugin: WorkerPlugin = {
 ```
 
 ```typescript
-// src/src/plugins/openstreetmap-type.ts
+// src/src/plugin-loader/openstreetmap-type.ts
 import { basemapPlugin } from '@hierarchidb/plugin-basemap';
 import { projectPlugin } from '@hierarchidb/plugin-project';
 

@@ -20,7 +20,7 @@ import plugin3 from '@myapp/plugin-3';
 // 新しいプラグインを追加するたびに更新が必要
 
 // このプラグインを使用：自動検出
-import plugins from 'virtual:detected-plugins';
+import plugins from 'virtual:detected-plugin-loader';
 // package.jsonから自動的に検出される
 ```
 
@@ -44,14 +44,14 @@ export default {
       // どのパッケージを検出するか
       strategies: [
         new RegexStrategy({
-          name: 'my-plugins',
+          name: 'my-plugin-loader',
           pattern: /^@myapp\/plugin-/,  // この名前パターンに一致するパッケージ
         })
       ],
       
       // Virtual Moduleとして何を出力するか
       virtualModules: [{
-        moduleId: 'detected-plugins',
+        moduleId: 'detected-plugin-loader',
         generate: (packages) => {
           // packagesはMap<packageName, packageJson>
           return `export default ${JSON.stringify([...packages.keys()])};`;
@@ -66,7 +66,7 @@ export default {
 
 ```typescript
 // src/main.ts
-import packageNames from 'virtual:detected-plugins';
+import packageNames from 'virtual:detected-plugin-loader';
 
 console.log('検出されたパッケージ:', packageNames);
 // ['@myapp/plugin-1', '@myapp/plugin-2', '@myapp/plugin-3']

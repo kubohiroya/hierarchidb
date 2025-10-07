@@ -6,7 +6,7 @@
  * : ExtendingNodeTypeDefinition
   */
 
-// import type { ExtendedPluginDefinition } from '@hierarchidb/common-type';
+// import type { ExtendedPluginDefinition } from '@hierarchidb/common-types';
 
 // Define base entity types since they're not exported
 interface SpreadsheetEntity {

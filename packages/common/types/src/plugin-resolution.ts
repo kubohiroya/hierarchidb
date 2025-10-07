@@ -10,7 +10,7 @@ import type { PluginDefinition } from './plugin-definition.js';
 export interface ResolutionResult {
   /** Whether resolution was successful */
   success: boolean;
-  /** Resolved plugins in load order */
+  /** Resolved plugin-loader in load order */
   resolvedOrder: ResolvedPlugin[];
   /** Dependency graph */
   graph: DependencyGraph;

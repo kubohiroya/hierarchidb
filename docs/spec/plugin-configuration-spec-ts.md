@@ -4,7 +4,7 @@
 
 ### プラグイン設定ファイル例
 ```typescript
-// plugins/basemap/basemap.plugin.ts
+// plugin-loader/basemap/basemap.plugin.ts
 import type { PluginConfig } from '@hierarchidb/core';
 import { TreeNodeType, LoadPriority } from '@hierarchidb/core';
 
@@ -78,7 +78,7 @@ export const basemapPlugin: PluginConfig = {
 ## 2. 依存関係のあるプラグイン例（routes → locations）
 
 ```typescript
-// plugins/routes/routes.plugin.ts
+// plugin-loader/routes/routes.plugin.ts
 import type { PluginConfig } from '@hierarchidb/core';
 import { TreeNodeType, LoadPriority } from '@hierarchidb/core';
 import { locationsPlugin } from '../locations/locations.plugin';
@@ -313,7 +313,7 @@ export class PluginLoader {
 ## 5. 使用例：プラグインの登録
 
 ```typescript
-// packages/worker/src/plugins/index.ts
+// packages/worker/src/plugin-loader/RuntimeWorkerService.ts
 import { basemapPlugin } from './basemap/basemap.plugin';
 import { shapesPlugin } from './shapes/shapes.plugin';
 import { locationsPlugin } from './locations/locations.plugin';

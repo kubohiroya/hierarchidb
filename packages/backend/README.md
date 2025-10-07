@@ -250,7 +250,7 @@ ALLOWED_ORIGINS=http://localhost:4200,https://your-app-domain.com
 ```toml
 # wrangler.toml（BFF）
 name = "hierarchidb-bff"
-main = "src/index.ts"
+main = "src/RuntimeWorkerService.ts"
 compatibility_date = "2024-08-21"
 
 [env.production]

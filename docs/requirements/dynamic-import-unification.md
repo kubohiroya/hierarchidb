@@ -40,7 +40,7 @@
 ## 8. 実装指針
 - `WorkerRuntimeProvider` / `WorkerClientProxy` / `WorkerModuleLoader` / `WorkerStateStore` を Phase 1 で導入。
 - プラグイン側では `loadXxxWorkerPeer(storeRegistry)` を導入し、Dexie 初期化等はファクトリ内部で完結させる。
-- 型情報は `worker-public-types.ts`（型のみ）と `worker/index.ts`（実装）へ分離し、呼び出し側は `import type` で参照する。
+- 型情報は `worker-public-types.ts`（型のみ）と `worker/RuntimeWorkerService.ts`（実装）へ分離し、呼び出し側は `import type` で参照する。
 - Codemod 方針:
   - `scripts/codemods` 配下に ts-morph ベースのユーティリティを追加し、import 差し替えやファクトリひな形挿入を自動化。
   - 実行テンプレート: `pnpm ts-node scripts/codemods/xxx.ts --plugin <name>` → `pnpm lint --fix` → `pnpm --filter <pkg> typecheck`。

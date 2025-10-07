@@ -164,7 +164,7 @@ export const ROUTE_TYPES_COLUMN_SET: ColumnSet = {
   ] as RouteTypeColumn[],
 };
 
-/** Airports only column set (simplified for airport-specific plugins) */
+/** Airports only column set (simplified for airport-specific plugin-loader) */
 export const AIRPORTS_COLUMN_SET: ColumnSet = {
   type: 'airports',
   name: 'Airport Categories',
@@ -200,7 +200,7 @@ export const AIRPORTS_COLUMN_SET: ColumnSet = {
   ] as TransportHubColumn[],
 };
 
-/** Ports only column set (simplified for maritime plugins) */
+/** Ports only column set (simplified for maritime plugin-loader) */
 export const PORTS_COLUMN_SET: ColumnSet = {
   type: 'ports',
   name: 'Port Categories',

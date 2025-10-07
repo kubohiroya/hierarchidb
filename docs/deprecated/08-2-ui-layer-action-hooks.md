@@ -334,7 +334,7 @@ export interface UIAdditionalHooks {
 ### BaseMapプラグインのUIフック実装
 
 ```typescript
-// packages/plugins/basemap/src/ui/hooks.ts
+// packages/plugin-loader/basemap/src/ui/hooks.ts
 export const BaseMapUIHooks: UIPluginHooks = {
   // Create フック
   beforeShowCreateDialog: async ({ parentNodeId, context }) => {

@@ -10,5 +10,5 @@ export async function getDialogComponent() {
 }
 
 // Register folder host profile so PluginDialog can compose base steps for
-// plugins that extend 'folder'. Safe to import for side-effects.
+// plugin-loader that extend 'folder'. Safe to import for side-effects.
 import './folder-host';

@@ -3,8 +3,8 @@
   * TreeTable
   */
 
-import type { NodeId } from '@hierarchidb/common-type';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
+import type { TreeNode } from '@hierarchidb/common-types';
 
 // import type { TreeNode } from '../types.js';
 

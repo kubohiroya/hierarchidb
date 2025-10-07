@@ -6,7 +6,7 @@
  * functionality while inheriting basic folder-plugin operations.
  */
 
-import type { BaseEntityExtension, NodeId } from '@hierarchidb/common-type';
+import type { BaseEntityExtension, NodeId } from '@hierarchidb/common-types';
 import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
 import { FolderEntityHandler } from '@hierarchidb/plugins-folder-plugin';
 import {

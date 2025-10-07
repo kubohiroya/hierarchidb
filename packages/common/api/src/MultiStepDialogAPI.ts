@@ -3,7 +3,7 @@
  * @description API for managing multi-step dialog workflows with working copies
  */
 
-import type { NodeId, ValidationResult } from '@hierarchidb/common-type';
+import type { NodeId, ValidationResult } from '@hierarchidb/common-types';
 import type { ProxyMarked } from 'comlink';
 
 /**

@@ -45,7 +45,7 @@ packages/plugins/project/
 ### 1.1 Create directories
 
 ```bash
-cd packages/plugins/your-plugin
+cd packages/plugin-loader/your-plugin
 mkdir -p src/{shared,ui,worker}
 mkdir -p src/ui/{components,hooks,validation,lifecycle}
 mkdir -p src/worker/{handlers,database,validation,lifecycle}

@@ -496,7 +496,7 @@ const { t } = useTranslation('plugin-basemap');
 ### ロケールファイル
 
 ```json
-// packages/plugins/basemap/src/locales/en/core.json
+// packages/plugin-loader/basemap/src/locales/en/core.json
 {
   "dialog": {
     "title": {

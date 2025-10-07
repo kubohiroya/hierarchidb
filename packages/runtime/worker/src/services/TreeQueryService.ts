@@ -9,7 +9,7 @@ import type {
   Tree,
   TreeId,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';

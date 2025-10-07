@@ -3,7 +3,7 @@
  * @description Location batch processing manager extending Shape's batch infrastructure
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type {
   LocationBatchConfig,
   LocationCategory,

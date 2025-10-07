@@ -69,7 +69,7 @@ const complexityMetrics = {
     files: [
       'worker/src/handlers/EntityHandler.ts',  // CC: 18
       'worker/src/operations/TreeOperations.ts',  // CC: 15
-      'plugins/basemap/src/handlers/BaseMapHandler.ts'  // CC: 14
+      'plugin-loader/basemap/src/handlers/BaseMapHandler.ts'  // CC: 14
     ]
   },
   
@@ -79,7 +79,7 @@ const complexityMetrics = {
     files: [
       'worker/src/services/TreeObservableService.ts',  // CC: 24
       'worker/src/lifecycle/NodeLifecycleManager.ts',  // CC: 22
-      'plugins/shapes/src/workers/BatchWorker.ts'  // CC: 28
+      'plugin-loader/shapes/src/workers/BatchWorker.ts'  // CC: 28
     ]
   }
 };
@@ -107,7 +107,7 @@ const typeAnalysis = {
     
     problemAreas: [
       {
-        file: 'plugins/shapes/src/types/openstreetmap-type.ts',
+        file: 'plugin-loader/shapes/src/types/openstreetmap-type.ts',
         issue: 'Excessive any usage in legacy code',
         count: 12
       },
@@ -186,7 +186,7 @@ const duplicationAnalysis = {
   
   hotspots: [
     {
-      location: 'plugins/basemap and plugins/styler-plugin',
+      location: 'plugin-loader/basemap and plugin-loader/styler-plugin',
       type: 'Handler implementation',
       lines: 245,
       suggestion: 'Extract BasePluginHandler class'

@@ -1,6 +1,6 @@
-import { createSharedDownloadService, type SharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
 import { registerRouteDownloadServiceFactory } from './registry.js';
 import type { RouteDownloadService, RouteDownloadFactoryOptions } from './factory.js';
+import { createSharedDownloadService, SharedDownloadService } from '@hierarchidb/runtime-worker';
 
 /**
  * Convenience hook for app startup: registers a shared download service

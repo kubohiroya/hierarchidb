@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 

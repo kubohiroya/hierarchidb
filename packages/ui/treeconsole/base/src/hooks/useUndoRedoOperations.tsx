@@ -9,7 +9,7 @@
   */
 
 import { useCallback, useMemo } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 // Use types from main types file to avoid conflicts
 import type { UndoRedoCommand, UndoRedoResult } from '../types/index.js';
 

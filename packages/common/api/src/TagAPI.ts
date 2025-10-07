@@ -1,4 +1,4 @@
-import type { TagId, NodeId, NodeTagAssociation, TagEntity, TagSuggestion } from '@hierarchidb/common-type';
+import type { TagId, NodeId, NodeTagAssociation, TagEntity, TagSuggestion } from '@hierarchidb/common-types';
 
 export interface CreateTagRequest {
   name: string;

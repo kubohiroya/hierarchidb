@@ -5,7 +5,7 @@
   */
 
 // Use native crypto.randomUUID() instead of uuid package
-import type { CommandEnvelope, OnNameConflict, Timestamp } from '@hierarchidb/common-type';
+import type { CommandEnvelope, OnNameConflict, Timestamp } from '@hierarchidb/common-types';
 
 /**
   * CommandEnvelope

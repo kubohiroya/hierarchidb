@@ -1,16 +1,21 @@
 packages:
   - app
+  - packages/common/*
   - packages/util
   - packages/tools/*
-  - packages/common/*
   - packages/runtime-ui/*
   - packages/runtime/*
   - packages/runtime-shared/*
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/backend/*
+  - packages/plugin-loader/*
   - packages/plugins/*
   - packages/feature/*
+  - packages/plugin-sdk
+  - packages/plugin-api
+  - packages/batch-sdk
+  - packages/batch-api
   # Spreadsheet plugin now included for local build/test
 
 ignoredBuiltDependencies:

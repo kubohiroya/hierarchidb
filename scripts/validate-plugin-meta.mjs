@@ -10,12 +10,12 @@ const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf-8'));
 const ajv = new Ajv({ allErrors: true, strict: false });
 const validate = ajv.compile(schema);
 
-const pluginDirs = fs.readdirSync(path.join(repoRoot, 'packages/plugins'))
-  .filter((d) => fs.existsSync(path.join(repoRoot, 'packages/plugins', d, 'src', 'extension', 'plugin-manifest.ts')));
+const pluginDirs = fs.readdirSync(path.join(repoRoot, 'packages/plugin-loader'))
+  .filter((d) => fs.existsSync(path.join(repoRoot, 'packages/plugin-loader', d, 'src', 'extension', 'plugin-manifest.ts')));
 
 let ok = true;
 for (const d of pluginDirs) {
-  const manifestPath = path.join(repoRoot, 'packages/plugins', d, 'src', 'extension', 'plugin-manifest.ts');
+  const manifestPath = path.join(repoRoot, 'packages/plugin-loader', d, 'src', 'extension', 'plugin-manifest.ts');
   const manifest = loadPluginManifestFromFile(manifestPath, { silent: true });
   if (!manifest) {
     console.error(`[validate-plugin-meta] Missing plugin manifest: ${manifestPath}`);

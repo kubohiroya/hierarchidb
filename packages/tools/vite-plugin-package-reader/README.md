@@ -37,7 +37,7 @@ export default {
     vitePluginPackageReader({
       strategies: [
         new RegexStrategy({
-          name: 'my-plugins',
+          name: 'my-plugin-loader',
           pattern: /^@myorg\/.*-plugin$/,
         })
       ],
@@ -66,7 +66,7 @@ export default {
 // In your application code
 import pluginDefinitions from 'virtual:plugin-definitions';
 
-console.log('Available plugins:', pluginDefinitions);
+console.log('Available plugin-loader:', pluginDefinitions);
 ```
 
 ## Advanced Configuration
@@ -127,7 +127,7 @@ vitePluginPackageReader({
   strategies: [/* ... */],
   
   virtualModules: [{
-    moduleId: 'my-plugins',
+    moduleId: 'my-plugin-loader',
     
     generate: (data) => {
       return `export default ${JSON.stringify(data, null, 2)};`;

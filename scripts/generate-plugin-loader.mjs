@@ -12,7 +12,7 @@ const outFile = path.join(outDir, 'loader.ts');
 const outUiFile = path.join(outDir, 'ui-loader.ts');
 
 /**
- * Derive nodeType from package name like @hierarchidb/plugins-<nodeType>-plugin
+ * Derive nodeType from package name like @hierarchidb/plugin-loader-<nodeType>-plugin
  */
 function deriveNodeType(pkgName) {
   const match = pkgName.match(/@hierarchidb\/plugins-([a-z0-9-]+)-plugin$/);
@@ -37,7 +37,7 @@ async function readPluginPackageJSON(pkgName, nodeType) {
     const json = JSON.parse(await fs.readFile(resolved, 'utf8'));
     return { json, path: resolved, dir: path.dirname(resolved) };
   } catch {
-    // Fallback to repo layout: packages/plugins/<nodeType>-plugin/package.json
+    // Fallback to repo layout: packages/plugin-loader/<nodeType>-plugin/package.json
     const fallback = path.join(repoRoot, 'packages', 'plugins', `${nodeType}-plugin`, 'package.json');
     if (await fileExists(fallback)) {
       const json = JSON.parse(await fs.readFile(fallback, 'utf8'));

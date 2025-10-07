@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { TreeTableController } from '../../types.js';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { RowSelectionState } from '@tanstack/react-table';
 import { computeDescendants, collectDescendantIdList } from '../../utils/descendants.js';
 import { buildVisibleNodes } from '../../utils/visible-nodes.js';

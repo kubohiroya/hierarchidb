@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 
 import { buildVisibleNodes } from '../utils/visible-nodes.js';
 

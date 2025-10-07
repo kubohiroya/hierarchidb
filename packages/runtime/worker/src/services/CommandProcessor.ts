@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { CommandId, NodeId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-type';
+import type { CommandId, NodeId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import { Subject } from 'rxjs';
 import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
@@ -356,7 +356,7 @@ export class CommandProcessor {
   }
 
   // Best-effort deletion of peerEntities (permanent delete only)
-  private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-type').TreeNode>): Promise<void> {
+  private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-types').TreeNode>): Promise<void> {
     const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
       const nodeType = n.nodeType;

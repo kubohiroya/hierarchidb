@@ -1,6 +1,6 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/plugins-resolver-plugin' as const;
+export const PLUGIN_ID = '@hierarchidb/plugin-loader-resolver-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
 export const PLUGIN_DESCRIPTION = 'Resolver node type plugin for property mapping between different data schemas' as const;
 export const PLUGIN_NODE_TYPE = 'resolver' as NodeType;

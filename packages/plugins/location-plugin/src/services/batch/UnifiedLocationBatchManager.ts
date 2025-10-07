@@ -3,7 +3,7 @@
  * Provides standardized batch control API based on persisted session metadata
  */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type {
   BatchProgressCallback,
   BatchProgressEvent,
@@ -12,7 +12,7 @@ import type {
   IBatchSessionManager,
 } from '@hierarchidb/runtime-shared-batch-processor';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/runtime-shared-batch-processor';
-import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/plugins-base-plugin';
+import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/plugin-sdk';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import type { LocationPointInput, LocationTileSettings } from './SessionController.js';
 import { getEphemeralLocationDB, type EphemeralLocationDB } from '../database/EphemeralLocationDB.js';

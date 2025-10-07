@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {

@@ -70,7 +70,7 @@ export interface UnifiedPluginDefinition extends PluginDefinition {
 以下は疑似コード（6章の Basemap 例に準拠）。
 
 ```tsx
-// packages/plugins/basemap/src/ui/MapEditor.tsx
+// packages/plugin-loader/basemap/src/ui/MapEditor.tsx
 export default function MapEditor() {
   const data = useRouteLoaderData(/* 上位loaderのid */) as LoaderData;
   const nodeId = data.targetNode?.treeNodeId ?? data.treeContext.currentNode?.treeNodeId;
@@ -80,7 +80,7 @@ export default function MapEditor() {
 ```
 
 ```ts
-// packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
+// packages/plugin-loader/basemap/src/definitions/BaseMapDefinition.ts
 export const BaseMapUnifiedDefinition: UnifiedPluginDefinition = {
   // ... PluginDefinition 部分（DB, handler, lifecycle等）
   routing: {

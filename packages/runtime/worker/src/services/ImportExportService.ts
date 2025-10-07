@@ -3,8 +3,8 @@ import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import type { CoreDB } from './CoreDB.js';
-import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/common-type';
-import type { Timestamp } from '@hierarchidb/common-type';
+import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/common-types';
+import type { Timestamp } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 
 // Augment base ImportExportService with lifecycle notifications.

@@ -4,7 +4,7 @@
  */
 
 import { Button, ButtonGroup, type ButtonProps } from '@mui/material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { useLoaderData, useNavigate } from '@tanstack/react-router';
 import { Folder as FolderIcon, AccountTree as AccountTreeIcon } from '@mui/icons-material';
 

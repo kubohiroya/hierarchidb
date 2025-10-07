@@ -3,8 +3,8 @@ import type { UIPluginDefinition } from '../types.js';
 /**
  * UI Plugin Registry
  *
- * Central registry for managing UI plugins in the HierarchiDB system.
- * Provides registration, validation, and retrieval of plugins.
+ * Central registry for managing UI plugin-loader in the HierarchiDB system.
+ * Provides registration, validation, and retrieval of plugin-loader.
  */
 export class UIPluginRegistry {
   private static instance: UIPluginRegistry | null = null;
@@ -52,7 +52,7 @@ export class UIPluginRegistry {
   }
 
   /**
-   * Get all registered plugins
+   * Get all registered plugin-loader
    *
    * @returns Array of all plugin definitions
    */
@@ -61,28 +61,28 @@ export class UIPluginRegistry {
   }
 
   /**
-   * Get plugins by group
+   * Get plugin-loader by group
    *
    * @param group - The group to filter by
-   * @returns Array of plugins in the specified group
+   * @returns Array of plugin-loader in the specified group
    */
   getByGroup(group: string): readonly UIPluginDefinition[] {
     return this.getAll().filter((plugin) => plugin.menu.group === group);
   }
 
   /**
-   * Get plugins that can be created
+   * Get plugin-loader that can be created
    *
-   * @returns Array of plugins with create capability
+   * @returns Array of plugin-loader with create capability
    */
   getCreatablePlugins(): readonly UIPluginDefinition[] {
     return this.getAll().filter((plugin) => plugin.capabilities.canCreate);
   }
 
   /**
-   * Get plugins sorted by create order
+   * Get plugin-loader sorted by create order
    *
-   * @returns Array of plugins sorted by create order
+   * @returns Array of plugin-loader sorted by create order
    */
   getPluginsByCreateOrder(): readonly UIPluginDefinition[] {
     return this.getAll()
@@ -115,7 +115,7 @@ export class UIPluginRegistry {
   }
 
   /**
-   * Clear all registered plugins
+   * Clear all registered plugin-loader
    */
   clear(): void {
     this.plugins.clear();

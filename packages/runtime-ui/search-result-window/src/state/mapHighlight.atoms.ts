@@ -7,7 +7,7 @@
   */
 
 import { atom } from 'jotai';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { MapHighlightStyles } from '../types/index.js';
 
 /**

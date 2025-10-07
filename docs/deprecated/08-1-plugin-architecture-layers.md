@@ -46,7 +46,7 @@ HierarchiDBのプラグインシステムは、Worker層とUI層の2つの独立
 #### 1. プラグイン定義（WorkerPluginDefinition）
 
 ```typescript
-// packages/worker/src/plugins/lifecycle-types.ts
+// packages/worker/src/plugin-loader/lifecycle-types.ts
 export interface WorkerPluginDefinition<
   TEntity extends BaseEntity,
   TSubEntity extends BaseSubEntity,
@@ -131,7 +131,7 @@ export interface WorkerPluginDefinition<
 #### 2. EntityHandler実装例
 
 ```typescript
-// packages/plugins/basemap/src/worker/BaseMapHandler.ts
+// packages/plugin-loader/basemap/src/worker/BaseMapHandler.ts
 export class BaseMapHandler implements EntityHandler<BaseMapEntity> {
   async create(parentId: TreeNodeId, data: Partial<BaseMapEntity>): Promise<BaseMapEntity> {
     // データベースにエンティティを作成
@@ -185,7 +185,7 @@ export class BaseMapHandler implements EntityHandler<BaseMapEntity> {
 #### 1. プラグイン定義（UIPluginDefinition）
 
 ```typescript
-// packages/ui-core/src/plugins/lifecycle-types.ts
+// packages/ui-core/src/plugin-loader/lifecycle-types.ts
 export interface UIPluginDefinition {
   // 基本情報
   nodeType: TreeNodeType;
@@ -266,7 +266,7 @@ export interface UIPluginDefinition {
 #### 2. UIコンポーネント実装例
 
 ```typescript
-// packages/plugins/basemap/src/ui/BaseMapCreateDialog.tsx
+// packages/plugin-loader/basemap/src/ui/BaseMapCreateDialog.tsx
 export const BaseMapCreateDialog: React.FC<CreateDialogProps> = ({
   open,
   onClose,
@@ -418,7 +418,7 @@ packages/plugins/[plugin-name]/
 ### 1. Worker層での登録
 
 ```typescript
-// packages/worker/src/plugins/registry.ts
+// packages/worker/src/plugin-loader/registry.ts
 import { BaseMapWorkerPlugin } from '@hierarchidb/plugin-basemap/worker';
 
 export class WorkerPluginRegistry {
@@ -449,7 +449,7 @@ registry.register(BaseMapWorkerPlugin);
 ### 2. UI層での登録
 
 ```typescript
-// packages/ui-core/src/plugins/registry.ts
+// packages/ui-core/src/plugin-loader/registry.ts
 import { BaseMapUIPlugin } from '@hierarchidb/plugin-basemap/ui';
 
 export class UIPluginRegistry {

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it, beforeAll, afterAll } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { CoreDB } from '../CoreDB.js';
 
 function legacyListChildrenProjection(children: TreeNode[]) {

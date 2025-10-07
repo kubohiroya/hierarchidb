@@ -5,7 +5,7 @@
 
 import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 import type { TreeTableController } from '../../types.js';
 
 interface UseTreeTableEditingParams {

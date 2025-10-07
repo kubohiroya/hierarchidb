@@ -61,10 +61,10 @@ export interface SpreadsheetEntity extends FolderEntity, SpreadsheetExtendedFiel
 ```typescript
 // src/extension/definition.ts
 // 修正前（エラーの原因）
-import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-loader-folder-plugin';
 
 // 修正後（folder-plugin修正完了後）
-import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-loader-folder-plugin';
 // 変更なし - folder-pluginの修正完了を待つ
 
 // SpreadsheetEntityは完成された実装を維持
@@ -197,7 +197,7 @@ export interface SpreadsheetWorkingCopy extends SpreadsheetEntity {
 ### 検証方法
 ```bash
 # 各Phase後にエラー数確認
-pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck
+pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin typecheck
 
 # 期待される改善:
 # Phase 2完了後: 242件 → 195件（i18next修正）
@@ -206,7 +206,7 @@ pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck
 # Phase 4-5完了後: 57件 → 10件以下（統合完了）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugins-spreadsheet-plugin build
+pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin build
 ```
 
 ## 依存関係と注意点

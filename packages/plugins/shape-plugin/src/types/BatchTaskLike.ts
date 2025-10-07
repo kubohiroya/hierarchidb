@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph:
   */
 
-import type { TreeNodeId } from '@hierarchidb/common-type';
+import type { TreeNodeId } from '@hierarchidb/common-types';
 
 export type BatchStage = 'download' | 'simplify1' | 'simplify2' | 'vectorTiles';
 export type BatchTaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'aborted';

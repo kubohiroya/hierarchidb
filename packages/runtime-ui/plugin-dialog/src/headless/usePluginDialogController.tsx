@@ -2,7 +2,7 @@
  * usePluginDialogController – core state machine for plugin dialogs.
  *
  * Coordinates worker access, step composition, navigation rules, and
- * capability evaluation so the headless dialog shell can render plugins with
+ * capability evaluation so the headless dialog shell can render plugin-loader with
  * consistent Next/Save guards derived from plugin-provided services.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -34,7 +34,7 @@ import type {
   NodeId,
   TagEntity,
   TreeId,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
 import { composeStepConfigs } from '../services/StepComposer.js';

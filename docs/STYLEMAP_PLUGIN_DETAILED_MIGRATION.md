@@ -82,21 +82,21 @@ src/components/steps/StylerStep6.tsx
 ```typescript
 // src/extensions/StylerDialogExtension.tsx
 // 修正前（エラーの原因）
-import { FolderEntityHandler } from '@hierarchidb/plugins-folder-plugin';
+import { FolderEntityHandler } from '@hierarchidb/plugin-loader-folder-plugin';
 
 // 修正後（folder-plugin修正完了後）
-import { FolderEntityHandler } from '@hierarchidb/plugins-folder-plugin';
+import { FolderEntityHandler } from '@hierarchidb/plugin-loader-folder-plugin';
 // 変更なし - folder-pluginの修正完了を待つ
 ```
 
 #### 2.2 spreadsheet-plugin参照の修正
 ```typescript
-// src/services/index.ts
+// src/services/RuntimeWorkerService.ts
 // 修正前（エラーの原因）
-import { SpreadsheetEntityHandler } from '@hierarchidb/plugins-spreadsheet-plugin';
+import { SpreadsheetEntityHandler } from '@hierarchidb/plugin-loader-spreadsheet-plugin';
 
 // 修正後（spreadsheet-plugin修正完了後）
-import { SpreadsheetEntityHandler } from '@hierarchidb/plugins-spreadsheet-plugin';
+import { SpreadsheetEntityHandler } from '@hierarchidb/plugin-loader-spreadsheet-plugin';
 // 変更なし - spreadsheet-pluginの修正完了を待つ
 ```
 
@@ -208,7 +208,7 @@ nodeType: 'styler' as NodeType  // branded type cast
 ### 検証方法
 ```bash
 # 各Phase後にエラー数確認
-pnpm --filter @hierarchidb/plugins-styler-plugin typecheck
+pnpm --filter @hierarchidb/plugin-loader-styler-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 141件 → 94件（i18next修正）
@@ -218,7 +218,7 @@ pnpm --filter @hierarchidb/plugins-styler-plugin typecheck
 # Phase 2完了後: 37件 → 10件以下（依存関係解決）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugins-styler-plugin build
+pnpm --filter @hierarchidb/plugin-loader-styler-plugin build
 ```
 
 ## 依存関係と注意点

@@ -80,7 +80,7 @@ Why this tool? (Positioning and differences)
 - No local alias leakage in public entries
   - Purpose: Public entry files must not rely on repo‑only aliases like "~/".
   - Snippet:
-    { from: ["**/src/index.ts", "**/src/ui/index.ts", "**/src/worker/index.ts"], to: "~/**", forbid: true }
+    { from: ["**/src/RuntimeWorkerService.ts", "**/src/ui/RuntimeWorkerService.ts", "**/src/worker/RuntimeWorkerService.ts"], to: "~/**", forbid: true }
   - Outcome: Publishing surface stays clean and portable.
 
 🔎 What It Checks (conceptual)
@@ -172,7 +172,7 @@ export default config;
 ✔ No violations (0)
 ✖ Violations (2)
  • from: packages/ui/button/src/useX.ts → to: packages/domain/src/private/db.ts (rule: deep-imports forbidden)
- • from: packages/feature/x/src/index.ts → to: @org/app (rule: layer: no upward imports)
+ • from: packages/feature/x/src/RuntimeWorkerService.ts → to: @org/app (rule: layer: no upward imports)
 
 🎯 Mental model
 - Treat Dep‑Fence as your “import firewall.” Write a few high‑signal rules that capture your architecture, run it on every PR, and let developers focus on features without accidentally dissolving your boundaries.

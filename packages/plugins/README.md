@@ -258,7 +258,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 
 ## Plugin Dev MUSTs（プラグイン実装の必須事項）
 - 公開TSXの戻り値型: プラグインが公開する TSX 関数/コンポーネントは `JSX.Element`（必要なら `| null`）を明示する（TS2742 回避）。
-- 型エクスポート: 各パッケージの `types` と `exports.types` は `src/index.ts` を指す（prebuild typecheck を安定化）。
+- 型エクスポート: 各パッケージの `types` と `exports.types` は `src/RuntimeWorkerService.ts` を指す（prebuild typecheck を安定化）。
 - パスエイリアス禁止: 公開ソースで `~/` など tsconfig の paths に依存しない。相対参照（../）またはビルド時置換のみ許可。
 - React/MUI をバンドルしない: UI を含むプラグインは React/MUI を `peerDependencies` に置き、tsup では `external` 指定する（ホストアプリでの単一インスタンス維持）。
 - 環境変数: ブラウザ向けコードで `process.env` は使用しない。`import.meta.env` / `VITE_*` を使用する（必要に応じて共通 `env` ヘルパーを利用）。

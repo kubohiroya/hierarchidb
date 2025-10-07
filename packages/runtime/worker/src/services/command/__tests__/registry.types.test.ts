@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../envelope.util.js';
 import type { PayloadOf, ResultOf } from '../registry.types.js';
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 
 describe('CommandRegistry types: envelope inference', () => {
   it('infers payload type from kind (moveNodes)', () => {

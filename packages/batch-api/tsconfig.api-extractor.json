@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../../",
+    "paths": {},
+    "noEmit": false
+  },
+  "include": ["./**/*"],
+  "exclude": ["node_modules", "dist", "build"]
+}

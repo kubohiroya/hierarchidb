@@ -3,7 +3,7 @@
  */
 
 // Local minimal type aliases to decouple from common-type DTS export quirks
-import type { NodeId as CommonNodeId } from '@hierarchidb/common-type';
+import type { NodeId as CommonNodeId } from '@hierarchidb/common-types';
 export type NodeId = CommonNodeId;
 export type NodeType = string;
 
@@ -19,7 +19,7 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-sdk';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================

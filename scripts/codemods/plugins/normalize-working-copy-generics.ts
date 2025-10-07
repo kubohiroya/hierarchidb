@@ -5,8 +5,8 @@ const project = new Project({
 });
 
 const targetGlobs = [
-  'packages/plugins/**/src/**/*.ts',
-  'packages/plugins/**/src/**/*.tsx',
+  'packages/plugin-loader/**/src/**/*.ts',
+  'packages/plugin-loader/**/src/**/*.tsx',
 ];
 
 const shouldRewriteWorkingCopyDraft = (node: TypeReferenceNode) => {

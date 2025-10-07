@@ -108,7 +108,7 @@ export interface NodeTypeIconDefinition {
 }
 
 /**
- * Category definition for plugins
+ * Category definition for plugin-loader
  * Defines which tree(s) a plugin should be available in
  */
 export interface CategoryDefinition {
@@ -155,10 +155,10 @@ export interface WorkerPluginRouterAction {
   componentPath?: string; // Path to the component to load on UI side
 }
 
-// Database configuration for plugins
+// Database configuration for plugin-loader
 export interface PluginDatabaseConfig {
   dbName: string;
-  // Optional default entity store name used by some plugins (e.g., folders)
+  // Optional default entity store name used by some plugin-loader (e.g., folders)
   entityStore?: string;
   schema: DatabaseSchema; // Dexie schema
   version: number;
@@ -197,7 +197,7 @@ export interface PluginI18nConfig {
   defaultLocale?: string;
   // Path pattern for locale files (e.g., './locales/{{lng}}/{{ns}}.json')
   localesPath?: string;
-  // Embedded translations (optional, for small plugins)
+  // Embedded translations (optional, for small plugin-loader)
   resources?: {
     [locale: string]: {
       menuItem?: {

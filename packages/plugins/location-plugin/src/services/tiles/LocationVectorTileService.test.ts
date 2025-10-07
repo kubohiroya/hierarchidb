@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { toNodeId } from '@hierarchidb/common-type';
+import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';

@@ -243,7 +243,7 @@ export function hierarchiDBPreset(
     pipeline: createPluginDefinitionPipeline(),
     virtualModules: [createPluginVirtualModule()],
     monorepo: {
-      packages: ['packages/plugins/*'],
+      packages: ['packages/plugin-loader/*'],
       resolveWorkspace: true,
       usePnpmWorkspace: true,
     },

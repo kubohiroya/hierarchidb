@@ -130,7 +130,7 @@ async function runTest() {
     }
   }
   if (folderDependencyCheck) {
-    console.log('✓ All non-folder plugins have folder dependency');
+    console.log('✓ All non-folder plugin-loader have folder dependency');
   }
   
   //  3.
@@ -146,7 +146,7 @@ async function runTest() {
     }
   }
   if (defaultValuesCheck) {
-    console.log('✓ All plugins have required fields and default values');
+    console.log('✓ All plugin-loader have required fields and default values');
   }
   
   //  4.
@@ -159,7 +159,7 @@ async function runTest() {
     }
   }
   if (schemaCheck) {
-    console.log('✓ All plugins have valid database schemas');
+    console.log('✓ All plugin-loader have valid database schemas');
   }
   
   console.log('\n=== Test Complete ===');

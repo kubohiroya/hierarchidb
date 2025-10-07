@@ -60,7 +60,7 @@
 app/
   src/
     router/
-      index.ts                 # createRouter() エントリ。Browser/Hash 切替ロジックをここに集約
+      RuntimeWorkerService.ts                 # createRouter() エントリ。Browser/Hash 切替ロジックをここに集約
       routes/                  # TanStack Router の createRoute 定義群
         rootRoute.ts
         mapRoute.ts
@@ -172,7 +172,7 @@ sequenceDiagram
 
 ### 0.8 リファクタ提案（1〜6）
 
-1. **Router エンジン切替の抽象化**: `router/index.ts` に `createHierarchiRouter({ mode })` を実装し、TanStack/React Router の切替を feature flag 化。移行中は両方を共存させ、緊急時ロールバックが可能。
+1. **Router エンジン切替の抽象化**: `router/RuntimeWorkerService.ts` に `createHierarchiRouter({ mode })` を実装し、TanStack/React Router の切替を feature flag 化。移行中は両方を共存させ、緊急時ロールバックが可能。
 2. **Worker 初期化サービスの分離**: `WorkerBootstrapService` を新設し、`WorkerProvider` / loader から初期化手順を切り出す。タイムアウト・リトライ戦略を一元管理。
 3. **UI プラグイン初期化 API (`setupUIPlugins`) の整備**: `loadAllUIPlugins()` + `registerAllUIPlugins()` をまとめ、結果を `Promise<{ registry, teardown, servicesReady }>` 形式で返却。エラー時の復旧手順（再試行）を定義。
 4. **データフェッチ API の統一 (`createRoute` サンプル) を用意**: TanStack Router の `context` と `loader` を活用し、`treeLoaders.ts` でフェッチ関数を統一。`createRoute` の擬似コードをチーム共有し、型推論を最大限活用。
@@ -188,7 +188,7 @@ sequenceDiagram
 - Runtime で `Browser` / `Hash` を切り替えるエンジン抽象 (`createHierarchiRouter`) を提供し、既存 React Router との比較検証が可能な状態を作る。
 
 ### タスク
-- [x] `@tanstack/router` を追加し、`app/src/router/index.ts` に `createHierarchiRouter({ mode })` を実装（RED: 新規テスト、GREEN: 実装）。
+- [x] `@tanstack/router` を追加し、`app/src/router/RuntimeWorkerService.ts` に `createHierarchiRouter({ mode })` を実装（RED: 新規テスト、GREEN: 実装）。
 - [x] `entry.client.tsx` からルータ生成を委譲し、`VITE_ROUTER_MODE` と `VITE_USE_HASH_ROUTING` の優先順位を記述（ドキュメント更新含む）。
 - [x] `AppProviders.tsx`（新設）で共通 Provider 群をラップし、React Router と TanStack Router の差し替えを容易にする。
 - [x] Feature flag (`VITE_ROUTER_ENGINE=tanstack` など) を導入し、両エンジンのトグル実行が可能な smoke テストを追加。

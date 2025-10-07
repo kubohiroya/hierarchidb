@@ -87,9 +87,9 @@ export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 - 追加の capability/schema などもこのオブジェクトに追記する
 
 ### 3) エントリ配置
-- UI: `src/index.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
-- Worker Factory: `src/worker-factory/index.ts`（Runtime が modulePaths 経由で遅延ロード）
-- Worker エントリ（任意）: `src/worker/index.ts`（旧来の直接 import 互換が必要な場合のみ公開）
+- UI: `src/RuntimeWorkerService.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
+- Worker Factory: `src/worker-factory/RuntimeWorkerService.ts`（Runtime が modulePaths 経由で遅延ロード）
+- Worker エントリ（任意）: `src/worker/RuntimeWorkerService.ts`（旧来の直接 import 互換が必要な場合のみ公開）
 - ビルド: tsup で `dist/` に出力（exports に合わせる）
 
 ## アプリへの接続（自動）
@@ -103,7 +103,7 @@ export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 ## UI 実装の取り込み例
 - メニュー構築やダイアログで `virtual:plugin-registry-ui` を用いる例（要約）
 ```ts
-// app/src/plugins/auto-load.ts
+// app/src/plugin-loader/auto-load.ts
 import { pluginMapUI as pluginMap } from 'virtual:plugin-registry-ui';
 
 for (const nodeType of loadOrder) {
@@ -149,7 +149,7 @@ export interface PluginStepConfigProvider<TData = unknown> {
 プラグインの UI で次のように登録します（例: route-plugin）。
 
 ```tsx
-// packages/plugins/route-plugin/src/ui/steps-provider.tsx
+// packages/plugin-loader/route-plugin/src/ui/steps-provider.tsx
 import React from 'react';
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep';
@@ -242,11 +242,11 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
 ```
 packages/plugins/foo-plugin/
 ├── package.json   // 上記の例に準拠
-├── tsup.config.ts // createTsupConfig({ entry: ['src/index.ts', 'src/worker/index.ts'] }) 等
+├── tsup.config.ts // createTsupConfig({ entry: ['src/RuntimeWorkerService.ts', 'src/worker/RuntimeWorkerService.ts'] }) 等
 └── src/
-    ├── index.ts        // UI エントリ（必要な export をまとめる）
+    ├── RuntimeWorkerService.ts        // UI エントリ（必要な export をまとめる）
     └── worker/
-        └── index.ts    // Worker エントリ（不要なら作らない）
+        └── RuntimeWorkerService.ts    // Worker エントリ（不要なら作らない）
 ```
 
 ## 既存プロジェクトへの導入手順（要約）

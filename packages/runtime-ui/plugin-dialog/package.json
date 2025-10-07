@@ -33,14 +33,11 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
     "@tanstack/react-router": "^1.132.33",
     "comlink": "^4.4.2"
   },

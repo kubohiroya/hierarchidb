@@ -1,7 +1,7 @@
 /**
  * Location SessionController - minimal point -> MVT pipeline
  */
-import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)

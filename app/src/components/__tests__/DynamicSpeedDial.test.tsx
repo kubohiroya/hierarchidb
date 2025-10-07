@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
-import type { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-types';
 import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
 import "@testing-library/jest-dom";
 

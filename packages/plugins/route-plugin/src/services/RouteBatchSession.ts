@@ -1,13 +1,13 @@
 import {
   AbstractBatchSession,
-  type BaseBatchConfig,
-} from '@hierarchidb/runtime-shared-batch-processor';
-import type { NodeId } from '@hierarchidb/common-type';
+} from '@hierarchidb/batch-sdk';
 import { BatchService } from '@hierarchidb/batch';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from '../database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
+import { NodeId } from 'src/types/index.js';
+import { BaseBatchConfig } from '@hierarchidb/common-api';
 
 export interface RouteBatchConfig extends BaseBatchConfig {
   routeGeneration: {

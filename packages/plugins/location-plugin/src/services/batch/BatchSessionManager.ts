@@ -2,7 +2,7 @@
  * BatchSessionManager for Location plugin
  */
 
-import type { NodeId, ProgressEvent } from '@hierarchidb/common-type';
+import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import {
   type LocationPointInput,
   type LocationTileSettings,

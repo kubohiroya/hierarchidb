@@ -1,6 +1,6 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 import type { BasemapPeerData } from '../types/BaseMapEntity.js';
 
 // Minimal peer row for runtime-worker standard flow

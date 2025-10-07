@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022", "dom"],
+    "moduleResolution": "Node16",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/common-types": ["../common/types/dist/index.d.ts"],
+      "@hierarchidb/common-types/*": ["../common/types/dist/*"],
+      "@hierarchidb/download": ["../feature/download/dist/index.d.ts"],
+      "@hierarchidb/download/*": ["../feature/download/dist/*"],
+      "@hierarchidb/auth-recovery": ["../feature/auth-recovery/dist/index.d.ts"],
+      "@hierarchidb/auth-recovery/*": ["../feature/auth-recovery/dist/*"],
+      "@hierarchidb/batch-sdk": ["../batch-sdk/dist/index.d.ts"]
+    },
+    "skipLibCheck": true
+  }
+}

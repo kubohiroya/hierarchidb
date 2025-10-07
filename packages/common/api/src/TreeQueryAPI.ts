@@ -5,7 +5,7 @@
  * This API provides efficient query operations for retrieving tree structures,
  * node information, and performing searches without modifying data.
  */
-import type { NodeId, Tree, TreeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, Tree, TreeId, TreeNode } from '@hierarchidb/common-types';
 
 /**
  * Read-only data access API for tree and node queries

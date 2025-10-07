@@ -30,7 +30,7 @@
   - 参考実装: resolver 適用済み差分 (`packages/plugins/resolver-plugin/…`)、`packages/plugins/dialog-impl-status.md`
   - やること: folder plugin への dry-run → 本適用 → typecheck/log 記録
 - [ ] Dexie 初期化・storeRegistry 登録処理をファクトリへ集約
-  - 参考実装: route/spreadsheet worker (`packages/plugins/*/src/worker/index.ts`)、`reference/packages/plugin-folder`
+  - 参考実装: route/spreadsheet worker (`packages/plugins/*/src/worker/RuntimeWorkerService.ts`)、`reference/packages/plugin-folder`
   - やること: 共通ヘルパー化（loader + storeRegistry）、ModuleLoader からの呼び出し統合
 - [ ] 代表プラグインの typecheck/test を実行し記録
 - [ ] Location / Timeline plugin: 現状 `load*EntitiesDbModule` が存在せず Dexie preload の対象外。Dexie バックエンド導入方針を決定し、必要であればヘルパーを実装して WorkerModuleLoader に統合
@@ -55,7 +55,7 @@
   - 参考実装: `packages/plugins/basemap-plugin/src/components/BaseMapPreview.tsx`, `reference/app0/src/features/tree-console`
   - 進捗: 両ステップでフレーム／座標情報をオーバーレイ表示するスタイリングを追加（MapIcon + coordinate chip）。今後は `@hierarchidb/ui-map` を用いた実マップ描画とバッチ進捗連携を実装
 - [x] Shape plugin: worker entry で Dexie PeerStore を自動登録するロジックと `loadShapeEntitiesDbModule` を追加し、route/spreadsheet プラグインと同じ preload パターンに揃える
-  - 対応: `packages/plugins/shape-plugin/src/worker/index.ts` に Dexie 登録を実装、`app/src/worker-runtime/WorkerModuleLoader.ts`・`runtime-shared/module-paths` へ shape を追加
+  - 対応: `packages/plugins/shape-plugin/src/worker/RuntimeWorkerService.ts` に Dexie 登録を実装、`app/src/worker-runtime/WorkerModuleLoader.ts`・`runtime-shared/module-paths` へ shape を追加
   - フォローアップ: テスト拡充とドキュメント整備（Phase 4 で実施）
 
 ## Phase 4: 仕上げとリリース準備

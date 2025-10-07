@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { GroupItemBase, GroupStore } from '@hierarchidb/runtime-worker';
 
 // Development-only in-memory GroupStore for the folder plugin.

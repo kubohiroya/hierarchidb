@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
-import { NodeId, TreeId } from '@hierarchidb/common-type';
+import { NodeId, TreeId } from '@hierarchidb/common-types';
 import { PluginDialogShell } from '../headless/PluginDialogShell.js';
 import { getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
 

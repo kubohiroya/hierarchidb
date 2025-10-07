@@ -9,9 +9,9 @@ import type {
   NodeType,
   PeerEntity,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugins-base-plugin';
+import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugin-sdk';
 
 /**
  * Base class for dialog-based extensions wired into the folder-plugin dialog system

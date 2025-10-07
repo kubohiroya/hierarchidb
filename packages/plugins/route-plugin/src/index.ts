@@ -43,7 +43,7 @@ export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier, resolve
 export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 export type { RouteAuthNotification } from './services/download/registry.js';
 
-// UI exports are available via subpath export "@hierarchidb/plugins-route-plugin/ui"
+// UI exports are available via subpath export "@hierarchidb/plugin-loader-route-plugin/ui"
 
 /**
  * Route Plugin Definition

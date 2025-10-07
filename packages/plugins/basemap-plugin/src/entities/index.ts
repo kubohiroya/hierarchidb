@@ -1,5 +1,5 @@
 /**
- * @file entities/index.ts
+ * @file entities/RuntimeWorkerService.ts
  * @description BaseMap entities export
  */
 

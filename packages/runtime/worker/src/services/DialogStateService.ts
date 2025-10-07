@@ -7,7 +7,7 @@ import type {
   DialogStateSubscribeInput,
   DialogStateUpdateInput,
   MultiStepDialogState,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { storeRegistry } from '../entity/store-registry.js';
 import type { PeerEntity } from '../entity/store.js';
 

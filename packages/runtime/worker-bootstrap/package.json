@@ -44,8 +44,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
@@ -65,7 +66,10 @@
   "peerDependencies": {
     "comlink": "^4.4.1",
     "react": "^18.3.1",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "peerDependenciesMeta": {
     "comlink": {

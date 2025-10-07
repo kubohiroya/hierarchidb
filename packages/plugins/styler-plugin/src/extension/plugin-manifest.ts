@@ -1,6 +1,6 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/plugins-styler-plugin' as const;
+export const PLUGIN_ID = '@hierarchidb/plugin-loader-styler-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
 export const PLUGIN_DESCRIPTION = 'Styler Plugin for HierarchiDB - Dynamic styling for map visualizations' as const;
 export const PLUGIN_NODE_TYPE = 'styler' as NodeType;
@@ -14,7 +14,7 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
   description: PLUGIN_DESCRIPTION,
   extends: 'spreadsheet',
   priority: 700,
-  dependencies: ['@hierarchidb/plugins-spreadsheet-plugin'],
+  dependencies: ['@hierarchidb/plugin-loader-spreadsheet-plugin'],
   icon: {
     mui: 'Palette',
     emoji: '🎨',

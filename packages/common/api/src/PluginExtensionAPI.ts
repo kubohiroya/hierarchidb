@@ -1,10 +1,10 @@
-import type { APIMethodArgs, APIMethodReturn, NodeType, WorkerAPIMethod } from '@hierarchidb/common-type';
+import type { APIMethodArgs, APIMethodReturn, NodeType, WorkerAPIMethod } from '@hierarchidb/common-types';
 
 /**
  * @file PluginAPI.ts
  * @description Plugin-specific API extension system
  *
- * This API allows plugins to define and expose their own custom methods
+ * This API allows plugin-loader to define and expose their own custom methods
  * that extend the base Worker API functionality.
  */
 

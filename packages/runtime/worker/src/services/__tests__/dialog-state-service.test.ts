@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import type { MultiStepDialogState } from '@hierarchidb/common-type';
+import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { DialogStateService } from '../DialogStateService.js';
 import { storeRegistry } from '../../entity/store-registry.js';
 import type { PeerEntity, PeerStore } from '../../entity/store.js';

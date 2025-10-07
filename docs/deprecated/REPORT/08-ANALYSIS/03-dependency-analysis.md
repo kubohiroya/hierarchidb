@@ -88,7 +88,7 @@ const coreDependencies = {
     version: '5.0.0',
     usage: 'Map rendering',
     size: '245KB gzipped',
-    optional: 'Only for map plugins'
+    optional: 'Only for map plugin-loader'
   }
 };
 ```
@@ -305,7 +305,7 @@ const codeSplitting = {
   
   recommendations: [
     'Split MUI icon into separate chunk',
-    'Lazy load heavy plugins',
+    'Lazy load heavy plugin-loader',
     'Use dynamic imports for routes'
   ]
 };

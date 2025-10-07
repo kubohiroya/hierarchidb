@@ -27,7 +27,7 @@
     "comlink": "^4.4.2",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@tanstack/react-router": "^1.132.33"
   },
   "devDependencies": {

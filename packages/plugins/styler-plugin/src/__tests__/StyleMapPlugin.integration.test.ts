@@ -7,7 +7,7 @@
   */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { StylerExtension } from '../extension/definition.js';
 import { StylerEntityHandler } from '../handlers/StylerEntityHandler.js';
 import { StylerDataService } from '../services/StylerDataService.js';

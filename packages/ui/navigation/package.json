@@ -24,7 +24,7 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

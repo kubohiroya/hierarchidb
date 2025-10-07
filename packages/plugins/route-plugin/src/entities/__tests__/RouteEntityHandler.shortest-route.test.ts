@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Table } from 'dexie';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { RouteEntityHandler } from '../RouteEntityHandler';
 import type { RouteEntity } from '../RouteEntity';
 

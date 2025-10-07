@@ -31,10 +31,10 @@
         "../packages/runtime/worker-bootstrap"
       ],
       "@hierarchidb/runtime-shared-module-paths": [
-        "../packages/runtime-shared/module-paths"
+        "src/plugin-loader/module-paths.ts"
       ],
       "@hierarchidb/runtime-shared-module-paths/*": [
-        "../packages/runtime-shared/module-paths/*"
+        "src/plugin-loader/*"
       ],
       "@hierarchidb/common-api": [
         "../packages/common/api/dist"

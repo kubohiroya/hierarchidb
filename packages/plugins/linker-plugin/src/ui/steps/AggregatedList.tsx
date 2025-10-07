@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Box, List, ListItem, ListItemText, Typography } from '@mui/material';
 import type { ResourceSummary } from './ResourcePicker.js';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 import type { TreeQueryAPI } from '@hierarchidb/common-api';

@@ -25,7 +25,7 @@
 
 ## 推奨ヘルパーの使い方
 ```ts
-import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
+import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-loader-base-plugin';
 
 const workingCopy = createDraftWorkingCopyBase<MyEntity>({
   draft: {

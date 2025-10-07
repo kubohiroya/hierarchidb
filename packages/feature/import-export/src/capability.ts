@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 
 const importerSet = new Set<NodeType>();
 const exporterSet = new Set<NodeType>();

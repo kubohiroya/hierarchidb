@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { FolderIcon } from './FolderIcon.js';
 import type { FolderDisplayData, FolderEditData } from '../types.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export interface FolderEditDialogProps {
   /**

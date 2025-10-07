@@ -26,7 +26,7 @@
   "dependencies": {
     "uuid": "^9.0.1",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {

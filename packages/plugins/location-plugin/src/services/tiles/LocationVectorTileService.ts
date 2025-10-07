@@ -1,4 +1,4 @@
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { UnifiedLocationBatchManager, type LocationBatchData, type UnifiedLocationBatchConfig } from '../batch/UnifiedLocationBatchManager.js';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/SessionController.js';

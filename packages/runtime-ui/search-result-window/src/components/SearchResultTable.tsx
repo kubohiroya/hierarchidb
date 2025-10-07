@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import type { SearchResult } from '../types/index.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import {
   clearSelectionAtom,
   isAllSelectedAtom,

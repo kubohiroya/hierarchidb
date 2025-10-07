@@ -28,7 +28,7 @@ describe('WorkerInitializationReporter', () => {
   const defaultSteps: InitializationStep[] = [
     { name: 'Loading modules', weight: 30 },
     { name: 'Initializing database', weight: 40 },
-    { name: 'Setting up plugins', weight: 30 },
+    { name: 'Setting up plugin-loader', weight: 30 },
   ];
 
   beforeEach(() => {
@@ -107,7 +107,7 @@ describe('WorkerInitializationReporter', () => {
       );
 
       // Complete third step
-      reporter.reportStepProgress('Setting up plugins', 100);
+      reporter.reportStepProgress('Setting up plugin-loader', 100);
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ progress: 100 }), // All complete

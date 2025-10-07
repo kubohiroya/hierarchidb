@@ -728,7 +728,7 @@ export class PluginLoader<TContext extends PluginContext = PluginContext> {
 ### 7.5.1 BaseMapエンティティ定義
 
 ```typescript
-// packages/plugins/basemap/src/types/BaseMapEntity.ts
+// packages/plugin-loader/basemap/src/types/BaseMapEntity.ts
 
 export interface BaseMapEntity extends BaseEntity {
   nodeId: TreeNodeId;
@@ -766,7 +766,7 @@ export interface BaseMapWorkingCopy extends BaseWorkingCopy {
 ### 7.5.2 BaseMapハンドラー実装
 
 ```typescript
-// packages/plugins/basemap/src/handlers/BaseMapHandler.ts
+// packages/plugin-loader/basemap/src/handlers/BaseMapHandler.ts
 
 export class BaseMapHandler implements EntityHandler<
   BaseMapEntity,
@@ -878,7 +878,7 @@ export class BaseMapHandler implements EntityHandler<
 ### 7.5.3 BaseMapノードタイプ定義
 
 ```typescript
-// packages/plugins/basemap/src/definitions/BaseMapDefinition.ts
+// packages/plugin-loader/basemap/src/definitions/BaseMapDefinition.ts
 
 export const BaseMapNodeDefinition: PluginDefinition<
   BaseMapEntity,
@@ -960,7 +960,7 @@ export const BaseMapNodeDefinition: PluginDefinition<
 ### 7.5.4 BaseMapプラグイン
 
 ```typescript
-// packages/plugins/basemap/src/index.ts
+// packages/plugin-loader/basemap/src/RuntimeWorkerService.ts
 
 // MapRenderer の型定義
 export interface MapRenderer {

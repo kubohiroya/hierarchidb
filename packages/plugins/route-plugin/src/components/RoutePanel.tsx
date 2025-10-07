@@ -35,7 +35,7 @@ import {
   Train,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteEntity, RouteType } from '../types/index.js';
 import { TransportMode } from '../types/index.js';
 import { RouteDatabase } from '../database/RouteDatabase.js';

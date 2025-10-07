@@ -9,7 +9,7 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import type { CreateMenuItem, NodeId } from '@hierarchidb/common-type';
+import type { CreateMenuItem, NodeId } from '@hierarchidb/common-types';
 import { useDynamicCreateMenu } from '../hooks/useDynamicCreateMenu.js';
 import type { NodeDataAdapter } from '../adapters/NodeDataAdapter.js';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
@@ -65,7 +65,7 @@ export interface DynamicCreateMenuProps {
  *
  * Renders a context-aware menu of items that can be created in the specified parent node.
  * The menu items are dynamically output based on:
- * - Available UI plugins
+ * - Available UI plugin-loader
  * - Parent node capabilities
  * - User permissions
  * - Worker layer restrictions

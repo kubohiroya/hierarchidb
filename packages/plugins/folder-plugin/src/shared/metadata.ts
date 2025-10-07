@@ -2,10 +2,10 @@
   * Folder plugin metadata - UIWorker
   */
 
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 
 export const FolderMetadata = {
-  id: '@hierarchidb/plugins-folder-plugin',
+  id: '@hierarchidb/plugin-loader-folder-plugin',
   nodeType: 'folder' as NodeType,
   name: 'Folder',
   description: 'Hierarchical folder-plugin organization plugin',
@@ -22,7 +22,7 @@ export const FolderMetadata = {
     supportedOperations: ['create', 'read', 'update', 'delete', 'move', 'copy'],
   },
 
-  dependencies: ['@hierarchidb/common-type', '@hierarchidb/common-api'],
+  dependencies: ['@hierarchidb/common-types', '@hierarchidb/common-api'],
 
   tags: ['organization', 'hierarchy', 'core'],
 };

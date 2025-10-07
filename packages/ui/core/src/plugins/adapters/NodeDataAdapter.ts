@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { UnifiedNodeData } from '../types.js';
 import { getUIPluginRegistry } from '../registry/UIPluginRegistry.js';
 

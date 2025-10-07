@@ -20,14 +20,13 @@ export default defineConfig(({ mode }) => {
   const aliases: AliasEntry[] = [];
   addAliasIfExists(rootDir, '../packages/runtime/worker/dist/index.js', '@hierarchidb/runtime-worker', aliases);
   addAliasIfExists(rootDir, '../packages/runtime/worker-bootstrap/dist/index.js', '@hierarchidb/runtime-worker-bootstrap', aliases);
-  addAliasIfExists(rootDir, '../packages/runtime-shared/module-paths/dist/index.js', '@hierarchidb/runtime-shared-module-paths', aliases);
   addAliasIfExists(rootDir, '../packages/feature/map-adapter/dist/index.js', '@hierarchidb/map-adapter', aliases);
   addAliasIfExists(rootDir, '../packages/feature/tabular-xlsx/dist/index.js', '@hierarchidb/tabular-xlsx', aliases);
   addAliasIfExists(rootDir, '../packages/util/dist/index.js', '@hierarchidb/util', aliases);
   addAliasIfExists(rootDir, '../packages/ui/core/dist/index.js', '@hierarchidb/ui-core', aliases);
-  addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-icon', aliases);
-  addAliasIfExists(rootDir, '../packages/runtime-ui/plugin-dialog/src/index.ts', '@hierarchidb/runtime-ui-plugin-dialog', aliases);
-  addAliasIfExists(rootDir, '../packages/plugins/base-plugin/dist/index.js', '@hierarchidb/plugins-base-plugin', aliases);
+  addAliasIfExists(rootDir, '../packages/ui/icon/src/RuntimeWorkerService.ts', '@hierarchidb/ui-icon', aliases);
+  addAliasIfExists(rootDir, '../packages/runtime-ui/plugin-dialog/src/RuntimeWorkerService.ts', '@hierarchidb/runtime-ui-plugin-dialog', aliases);
+  addAliasIfExists(rootDir, '../packages/plugin-loader/base-plugin/dist/index.js', '@hierarchidb/plugin-loader-base-plugin', aliases);
 
   return {
     base,
@@ -46,7 +45,6 @@ export default defineConfig(({ mode }) => {
       exclude: [
         '@hierarchidb/runtime-worker',
         '@hierarchidb/runtime-worker-bootstrap',
-        '@hierarchidb/runtime-shared-module-paths',
         '@hierarchidb/map-adapter',
         '@hierarchidb/tabular-xlsx',
         '@hierarchidb/runtime-ui-plugin-dialog',

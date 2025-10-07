@@ -28,7 +28,7 @@ export type StepTransitionHook = (
 ) => boolean | Promise<boolean>;
 
 /**
- * External step state evaluator supplied by plugins/hosts.
+ * External step state evaluator supplied by plugin-loader/hosts.
  * Returns boolean arrays (length = steps.length).
  */
 export interface StepStateEvaluator {

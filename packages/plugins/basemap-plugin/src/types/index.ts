@@ -1,5 +1,5 @@
 /**
- * @file types/index.ts
+ * @file types/RuntimeWorkerService.ts
  * @description BaseMap type exports
  */
 

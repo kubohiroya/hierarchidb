@@ -239,7 +239,7 @@ class PluginLoader {
 ### 2. UI側からの呼び出し
 
 ```typescript
-// UI側のフック（packages/plugins/shape-plugin/src/hooks/useShapesAPI.ts）
+// UI側のフック（packages/plugin-loader/shape-plugin/src/hooks/useShapesAPI.ts）
 import { useWorkerAPI } from '@hierarchidb/ui-client';
 import type { ShapesAPIMethods } from '../services/api/ShapesPluginAPI';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/common-type",
+  "name": "@hierarchidb/common-types",
   "version": "0.0.1",
   "description": "Core types and data models for hierarchidb",
   "type": "module",
@@ -16,7 +16,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
@@ -30,7 +30,6 @@
     "build:clean": "rm -rf dist dist-types",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs && node scripts/emit-ambient.mjs",
     "prebuild": "pnpm run build:clean"
   },
   "devDependencies": {

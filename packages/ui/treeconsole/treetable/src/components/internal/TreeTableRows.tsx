@@ -4,7 +4,7 @@ import { TableBody, TableCell, TableRow, Checkbox, Box } from '@mui/material';
 import type { SxProps } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 import { darken } from '@mui/material/styles';
-import type { TreeNode, NodeId } from '@hierarchidb/common-type';
+import type { TreeNode, NodeId } from '@hierarchidb/common-types';
 import { flexRender } from '@tanstack/react-table';
 import type { Table as ReactTable } from '@tanstack/react-table';
 import { NameCell, IndentSpace, StyledTableRow } from '../TreeTableStyles.js';

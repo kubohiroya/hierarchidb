@@ -127,7 +127,7 @@ export interface WorkerAPI {
 Folderプラグインの実装に基づいて標準化されたインターフェース：
 
 ```typescript
-// packages/ui-core/src/plugins/lifecycle-types.ts
+// packages/ui-core/src/plugin-loader/lifecycle-types.ts
 export interface UIPluginDefinition {
   // 基本情報
   readonly nodeType: string;
@@ -319,7 +319,7 @@ export interface UIActionHooks {
 ### データアダプター（Worker-UI橋渡し）
 
 ```typescript
-// packages/ui-core/src/plugins/adapters/NodeDataAdapter.ts
+// packages/ui-core/src/plugin-loader/adapters/NodeDataAdapter.ts
 export class NodeDataAdapter {
   constructor(private workerAPI: WorkerAPI) {}
   
@@ -485,7 +485,7 @@ export interface UnifiedNodeData {
 ### 1. Folder UIPlugin（基本型）
 
 ```typescript
-// packages/ui-core/src/plugins/basic/FolderUIPlugin.tsx
+// packages/ui-core/src/plugin-loader/basic/FolderUIPlugin.tsx
 export const FolderUIPlugin: UIPluginDefinition = {
   nodeType: 'folder-plugin',
   displayName: 'Folder',
@@ -701,7 +701,7 @@ const FolderCreateDialog: React.FC<CreateDialogProps> = ({
 ### 2. BaseMap UIPlugin（エンティティ型）
 
 ```typescript
-// packages/plugins/basemap/src/ui/BaseMapUIPlugin.tsx
+// packages/plugin-loader/basemap/src/ui/BaseMapUIPlugin.tsx
 export const BaseMapUIPlugin: UIPluginDefinition = {
   nodeType: 'basemap',
   displayName: 'Base Map',
@@ -932,7 +932,7 @@ export const BaseMapUIPlugin: UIPluginDefinition = {
 ### 3. Project UIPlugin（コンテナ型）
 
 ```typescript
-// packages/plugins/core-project/src/ui/ProjectUIPlugin.tsx
+// packages/plugin-loader/core-project/src/ui/ProjectUIPlugin.tsx
 export const ProjectUIPlugin: UIPluginDefinition = {
   nodeType: 'project',
   displayName: 'Project',
@@ -1082,7 +1082,7 @@ export const ProjectUIPlugin: UIPluginDefinition = {
 ### UnifiedNodeOperations
 
 ```typescript
-// packages/ui-core/src/plugins/operations/UnifiedNodeOperations.ts
+// packages/ui-core/src/plugin-loader/operations/UnifiedNodeOperations.ts
 export class UnifiedNodeOperations {
   constructor(
     private nodeAdapter: NodeDataAdapter,
@@ -1336,7 +1336,7 @@ export class UnifiedNodeOperations {
 ### UIPluginRegistry
 
 ```typescript
-// packages/ui-core/src/plugins/registry/UIPluginRegistry.ts
+// packages/ui-core/src/plugin-loader/registry/UIPluginRegistry.ts
 export class UIPluginRegistry {
   private static instance: UIPluginRegistry;
   private plugins = new Map<TreeNodeType, UIPluginDefinition>();
@@ -1413,7 +1413,7 @@ export function registerAllUIPlugins(): void {
 
 ```typescript
 // packages/_app/src/main.tsx
-import { registerAllUIPlugins } from '@hierarchidb/ui-core/plugins';
+import { registerAllUIPlugins } from '@hierarchidb/ui-core/plugin-loader';
 
 async function initializeApp() {
   // UI プラグインの登録

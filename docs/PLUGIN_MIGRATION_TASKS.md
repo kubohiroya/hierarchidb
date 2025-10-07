@@ -12,7 +12,7 @@
    ```json
    // package.json の dependencies を更新
    "@hierarchidb/common-plugin-base": "workspace:*"  // 削除
-   "@hierarchidb/plugins-base-plugin": "workspace:*"  // 追加
+   "@hierarchidb/plugin-loader-base-plugin": "workspace:*"  // 追加
    ```
 
 2. **import文の修正**
@@ -21,7 +21,7 @@
    import { MetadataEntityHandler } from '@hierarchidb/common-plugin-base';
    
    // 修正後  
-   import { HierarchicalEntityHandler } from '@hierarchidb/plugins-base-plugin';
+   import { HierarchicalEntityHandler } from '@hierarchidb/plugin-loader-base-plugin';
    ```
 
 3. **Entity定義の簡略化**
@@ -74,7 +74,7 @@
 2. `src/entities/FolderEntity.ts`の修正
    - metadata, tagsフィールドを型定義から完全削除
 
-3. `src/types/index.ts`の修正
+3. `src/types/RuntimeWorkerService.ts`の修正
    - MetadataSearchCriteria継承を削除
    - FolderSearchCriteriaをHierarchicalSearchCriteriaのみ継承に変更
 
@@ -198,7 +198,7 @@
 1. **型チェック実行**
    ```bash
    # 特定プラグインの型チェック
-   pnpm --filter @hierarchidb/plugins-folder-plugin typecheck
+   pnpm --filter @hierarchidb/plugin-loader-folder-plugin typecheck
    
    # 全体の型チェック  
    pnpm typecheck
@@ -207,7 +207,7 @@
 2. **ビルドテスト**
    ```bash
    # 特定プラグインのビルド
-   pnpm --filter @hierarchidb/plugins-folder-plugin build
+   pnpm --filter @hierarchidb/plugin-loader-folder-plugin build
    
    # 全体ビルド
    pnpm build

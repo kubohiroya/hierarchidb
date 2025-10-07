@@ -1,6 +1,6 @@
 /**
  * Where: app/src/services/plugin-presentation.ts
- * What: Resolve presentation metadata (label/icon/color) for plugins exposed in the UI.
+ * What: Resolve presentation metadata (label/icon/color) for plugin-loader exposed in the UI.
  * Why: SpeedDial and other menus must render icons straight from package metadata instead of placeholders.
  */
 

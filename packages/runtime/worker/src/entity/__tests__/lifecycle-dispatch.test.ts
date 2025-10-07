@@ -6,7 +6,7 @@ import type {
   ImportNodesPayload,
   PasteNodesPayload,
 } from '../../services/command-types.js';
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 

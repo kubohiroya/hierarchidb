@@ -51,7 +51,7 @@ export class MyPluginDB extends Dexie {
 ### 2. プラグインでのデータベース管理
 
 ```typescript
-// packages/worker/src/plugins/MyPlugin.ts
+// packages/worker/src/plugin-loader/MyPlugin.ts
 import { MyPluginDB } from '../services/MyPluginDB';
 import { MyPluginWorkerHandler } from '../handlers/MyPluginWorkerHandler';
 
@@ -201,7 +201,7 @@ export class StylerDB extends Dexie {
 ### 1. プラグインマネージャーでの初期化
 
 ```typescript
-// packages/worker/src/plugins/PluginManager.ts
+// packages/worker/src/plugin-loader/PluginManager.ts
 export class PluginManager {
   private async registerCorePlugins(): Promise<void> {
     // 各プラグインが独立してデータベースを初期化

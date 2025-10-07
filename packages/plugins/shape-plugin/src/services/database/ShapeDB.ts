@@ -10,7 +10,7 @@
 
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { ShapeEntity } from '../../types/ShapeEntity.js';
 import type { DataSourceName, VectorTileEntity } from '../../shared/types.js';
 import type { BatchSession, CacheStatistics, ProcessingStage, TaskStatus } from '../types.js';

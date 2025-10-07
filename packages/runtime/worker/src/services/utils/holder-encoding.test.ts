@@ -5,7 +5,7 @@ import {
   HOLDER_NAME_TAB,
   isValidWorkingCopyHolderName,
 } from './holder-encoding.js';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 describe('holder-encoding v1 (TAB separator)', () => {
   it('encodes and decodes WorkingCopy holder name roundtrip', () => {

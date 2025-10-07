@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeType, TreeId } from '@hierarchidb/common-types';
 import { GetPluginsForTreeRequest, PluginTreeAPI } from '../src/index.js';
 
 describe('PluginTreeAPI - TDD Red Phase', () => {

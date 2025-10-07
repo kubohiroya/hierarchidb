@@ -7,7 +7,7 @@ import path from 'path';
  * Policy: Ban tsconfig.paths entries that reference dist/*.d.ts
  * Rationale: Path aliasing to built declaration files hides source coupling,
  *            breaks editor features, and creates fragile cross-package types.
- *            Always map to source (e.g., src/index.ts) or use references.
+ *            Always map to source (e.g., src/RuntimeWorkerService.ts) or use references.
  */
 
 const DIST_DTS_RE = /(?:^|[\/])dist[\/].*\.d\.ts$/i;

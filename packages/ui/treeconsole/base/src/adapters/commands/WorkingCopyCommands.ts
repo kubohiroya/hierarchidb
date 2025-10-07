@@ -13,8 +13,8 @@ import type {
   NodeId,
   Timestamp,
   TreeNode,
-} from '@hierarchidb/common-type';
-import { toNodeType } from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import { createAdapterCommandId, createCommand } from '../utils.js';
 import type { CommandAdapterOptions } from '../../types/index.js';
 import { TreeConsoleAdapterError } from '../../types/index.js';

@@ -2,8 +2,8 @@
   * Route Plugin Type Definitions
    */
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
-import type { Timestamp } from '@hierarchidb/common-type';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-api';
+import type { Timestamp } from '@hierarchidb/common-types';
 
 // Branded types
 export type NodeId = string & { readonly __brand: 'NodeId' };
@@ -96,6 +96,8 @@ export type RouteEntity = {
   processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
 
   // Metadata
+  metadata?: Record<string, unknown>;
+  customFields?: Record<string, unknown>;
   createdAt: number;
   updatedAt: number;
   version: number;

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { createWorkerFlagOverrideLifecycle } from '../utils/worker-flag-helpers.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {

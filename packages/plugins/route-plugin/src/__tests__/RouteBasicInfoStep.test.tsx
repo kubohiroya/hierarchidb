@@ -1,9 +1,10 @@
 import { describe, expect, vi, it, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep.js';
-import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId } from '../types/index.js';
+import { RouteType, TransportMode, type RouteEntity, type RouteWorkingCopy, type NodeId, TagId } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { en as enTranslations } from '../i18n/en.js';
+import "@testing-library/jest-dom/vitest";
 
 vi.mock('../i18n/index.js', () => ({
   useTranslation: () => ({
@@ -29,7 +30,7 @@ describe('RouteBasicInfoStep', () => {
       routeType: RouteType.ROAD,
       transportModes: [TransportMode.CAR, TransportMode.BUS],
       category: 'logistics',
-      tags: ['draft-tag'],
+      tags: ['draft-tag' as TagId],
       version: 4,
     });
 

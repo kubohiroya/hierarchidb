@@ -31,8 +31,7 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "comlink": "^4.4.2",
     "rxjs": "^7.8.2"
   },

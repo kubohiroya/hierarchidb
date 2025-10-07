@@ -33,7 +33,7 @@ TDD Greenフェーズにおいて、13個のテストケースを全て通す最
 
 ## 実装ファイル構成
 
-### 1. 型定義 (`src/types/index.ts`)
+### 1. 型定義 (`src/types/RuntimeWorkerService.ts`)
 
 ```typescript
 // 主要な型定義

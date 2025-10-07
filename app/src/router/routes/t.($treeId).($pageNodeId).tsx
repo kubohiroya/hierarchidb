@@ -21,7 +21,7 @@ import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-materi
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { Tree } from '@hierarchidb/common-type';
+import type { Tree } from '@hierarchidb/common-types';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { Outlet, useNavigate, useLoaderData } from '@tanstack/react-router';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';

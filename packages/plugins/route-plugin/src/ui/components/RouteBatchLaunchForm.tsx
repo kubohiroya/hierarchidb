@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator.js';
 import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService.js';
 import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';

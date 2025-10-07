@@ -19,7 +19,7 @@ import type {
   TimePeriod,
   TreePluginInfo,
 } from '../src/PluginTreeAPI.js';
-import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-types';
 
 describe('PluginTreeAPI - TDD Green Phase', () => {
   let pluginTreeAPI: PluginTreeAPI;
@@ -217,7 +217,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
             nodeType1: 'conflicting-plugin-a' as NodeType,
             nodeType2: 'conflicting-plugin-b' as NodeType,
             severity: 'error',
-            description: 'These plugins have conflicting database schemas',
+            description: 'These plugin-loader have conflicting database schemas',
           });
         }
 
@@ -233,7 +233,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
           compatible: conflicts.length === 0,
           conflicts,
           warnings,
-          suggestions: conflicts.length > 0 ? ['Consider using alternative plugins'] : [],
+          suggestions: conflicts.length > 0 ? ['Consider using alternative plugin-loader'] : [],
         };
       },
 

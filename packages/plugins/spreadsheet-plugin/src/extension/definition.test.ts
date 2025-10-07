@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-// import type { DialogStepDefinition } from '@hierarchidb/common-type';
+// import type { DialogStepDefinition } from '@hierarchidb/common-types';
 //  Red
 import { SpreadsheetExtension } from './definition.js';
 // import { DataSourceStep } from '../steps/DataSourceStep.js';

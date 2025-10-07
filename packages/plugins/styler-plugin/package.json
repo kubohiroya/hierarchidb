@@ -75,16 +75,15 @@
   "dependencies": {
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/table-metadata": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-csv-extract": "workspace:*",
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
     "xlsx": "^0.18.5",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -107,8 +106,7 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "dexie": "^4.2.0",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

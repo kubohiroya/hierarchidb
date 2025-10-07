@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { WorkerAPIAdapter } from '../adapters/index.js';
 
 type StateManagerLike = Partial<{

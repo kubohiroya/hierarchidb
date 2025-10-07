@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
 import type { RouteBatchSpec } from './types.js';
 import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
@@ -65,7 +65,7 @@ export class RouteBatchOrchestrationService {
 function toSessionConfig(config: RouteBatchConfig): RouteBatchSessionConfig {
   return {
     corsProxyBaseURL: config.corsProxyBaseURL,
-    maxRetries: config.maxRetries,
+    maxRetries: config.routeGeneration.maxRetries,
     retryDelay: config.retryDelay,
     workerTimeout: config.workerTimeout,
     maxMemoryPerWorker: config.maxMemoryPerWorker,

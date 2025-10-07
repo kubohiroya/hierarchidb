@@ -33,7 +33,7 @@ import {
   Refresh,
   Settings,
 } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { BaseMapDisplay } from './BaseMapDisplay.js';
 import { useBaseMapEntity } from '../hooks/useBaseMapEntity.js';
 import type { MapViewState } from '@hierarchidb/ui-map';

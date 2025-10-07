@@ -246,11 +246,11 @@ sequenceDiagram
 flowchart LR
     subgraph Runtime Worker Package
         runtimeTypes[worker-public-types.ts]
-        runtimeImpl[worker/index.ts]
+        runtimeImpl[worker/RuntimeWorkerService.ts]
     end
     subgraph Plugin Package
         pluginTypes[worker-public-types.ts]
-        pluginImpl[worker/index.ts]
+        pluginImpl[worker/RuntimeWorkerService.ts]
     end
     runtimeTypes -->|emit| dist/worker/index.d.ts
     pluginTypes -->|emit| dist/worker/index.d.ts
@@ -268,7 +268,7 @@ flowchart LR
 ```ts
 // @hierarchidb/runtime-worker-loader.ts
 import type { StoreRegistry, WorkerClientRef } from '@hierarchidb/runtime-worker/types';
-import type { WorkerPeerLoader } from '@hierarchidb/plugins-styler-plugin/worker-types';
+import type { WorkerPeerLoader } from '@hierarchidb/plugin-loader-styler-plugin/worker-types';
 
 export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
   const runtimeMod = await import('@hierarchidb/runtime-worker');
@@ -301,7 +301,7 @@ export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
 | `@hierarchidb/runtime-worker` | `worker/src/services/StageProcessingService.ts` 内 `loadGeojsonVt` / `loadVtPbf` | CommonJS/UMD モジュール (`geojson-vt`, `vt-pbf`) を ESM から動的 import し、`default` 有無が環境でブレる | `const candidate = mod as unknown as { default?: GeojsonVtModule } & GeojsonVtModule;` | 型定義をラップする補助型 `GeojsonVtModule` を用意し、`unknown` → intersection で Narrowing。`any` 不使用。 |
 | `@hierarchidb/runtime-worker` | `worker/src/services/command/history/CommandHistoryManager.ts` | コマンド実行結果をロギング用に正規化する際、型パラメータ `TResult` を保持できない | `result: this.sanitizeResultForLogging(result) as unknown as CommandResult` | dynamic import 化とは独立した課題。`CommandResult` へ Narrowing するため `unknown` を経由。 |
 | `@hierarchidb/plugins-folder-plugin` | `src/worker/folderEntitiesDB.ts` の Dexie 継承 | Dexie のコンストラクタ typing がクラス継承と相性が悪く、`Dexie` 本体を派生クラスに割り当てられない | `const DexieBase = Dexie as unknown as DexieConstructor;` | Dexie v4 固有。型安全なラッパーを自前で定義するか、Dexie が公式に generics を公開するまでこの形。 |
-| `@hierarchidb/plugins-folder-plugin` | `src/worker/index.ts` | `Dexie` インスタンスに `open` が存在するかをランタイムで判定 | `const dexieLike = db as unknown as { open?: () => Promise<unknown> };` | `Dexie` が `open` を optional で公開していないため型上は `never` になる。再型定義で吸収可。 |
+| `@hierarchidb/plugins-folder-plugin` | `src/worker/RuntimeWorkerService.ts` | `Dexie` インスタンスに `open` が存在するかをランタイムで判定 | `const dexieLike = db as unknown as { open?: () => Promise<unknown> };` | `Dexie` が `open` を optional で公開していないため型上は `never` になる。再型定義で吸収可。 |
 | `@hierarchidb/plugins-spreadsheet-plugin` | `src/database/SpreadsheetDatabase.ts` (`crypto.randomUUID`) | ブランド型 `NodeId` に変換するため | `const entityId = crypto.randomUUID() as unknown as NodeId;` | `NodeId` は `string & { __brand: 'NodeId' }` 形式。ファクトリー関数を用意すれば置き換え可。 |
 | `@hierarchidb/plugins-spreadsheet-plugin` | `src/services/SpreadsheetTabularDriver.ts` / `SpreadsheetCSVApiAdapter.ts` | tabular ドライバが File API の代替インターフェイスを受け取るため | `file as unknown as FileLike`、`... as unknown as CSVTableMetadata` | input/output を共通 DTO に変換するラッパーを用意すると `unknown` なしで済む。 |
 | `@hierarchidb/plugins-resolver-plugin` | `src/handlers/ResolverEntityHandler.ts` | `crypto.randomUUID()` → `NodeId` ブランド化 | `crypto.randomUUID() as unknown as NodeId` | 上記と同様。 |
@@ -378,7 +378,7 @@ flowchart LR
 - [ ] 動的 import の戻り値に型エイリアスを付与し、`any` を発生させないこと
 
 進捗ログ（Phase 2a）
-- 2025-09-25: folder / resolver プラグインの `worker/index.ts` をファクトリー方式へ更新し、`register<Plugin>WorkerStores` をエクスポート。`WorkerModuleLoader` から `storeRegistry` を渡して呼び出す仕組みに変更し、`pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build`・`pnpm --filter @hierarchidb/app build` が成功
+- 2025-09-25: folder / resolver プラグインの `worker/RuntimeWorkerService.ts` をファクトリー方式へ更新し、`register<Plugin>WorkerStores` をエクスポート。`WorkerModuleLoader` から `storeRegistry` を渡して呼び出す仕組みに変更し、`pnpm --filter @hierarchidb/plugins-{folder,resolver}-plugin build`・`pnpm --filter @hierarchidb/app build` が成功
 
 ### 12.5 Phase 2b – 全プラグインへ展開
 - [ ] Phase 2a の手順をテンプレート化し、全プラグインで同様の再配置を行う
@@ -387,7 +387,7 @@ flowchart LR
 
 進捗ログ（Phase 2b）
 - 2025-09-25: basemap / route / spreadsheet / styler プラグインを `worker-factory` 構成へ移行し、`register*WorkerStores` を標準化。`WorkerModuleLoader` 側も該当 `register` 関数を順次呼び出すよう更新
-- 2025-09-25: shape プラグインを同テンプレートへ展開し、`worker/index.ts` を薄い re-export 化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` は成功するが、Dexie 4.x の型互換問題で `pnpm build` の DTS バンドルが失敗（`ShapeEntitiesDB` 継承で constructor/`version` が検出されない）。要対応メモとして残す
+- 2025-09-25: shape プラグインを同テンプレートへ展開し、`worker/RuntimeWorkerService.ts` を薄い re-export 化。`pnpm --filter @hierarchidb/plugins-shape-plugin typecheck` は成功するが、Dexie 4.x の型互換問題で `pnpm build` の DTS バンドルが失敗（`ShapeEntitiesDB` 継承で constructor/`version` が検出されない）。要対応メモとして残す
 - 2025-09-25: Dexie 4.x の型差異に `tsup.base.config.ts` の `esModuleInterop` 追記と `shapeEntitiesDB.ts` の named import 変更で対処。`pnpm --filter @hierarchidb/plugins-shape-plugin build` が成功することを確認
 - 2025-09-25: `register*WorkerStores.ts` に `vite/client` 型参照を付与し、`tsconfig.base.json` に `@hierarchidb/runtime-worker` のパスエイリアスを追加。`pnpm --filter @hierarchidb/app build` は WARN のみ（動的 import 既知警告）で通過
 - 2025-09-30: Phase 2b 再開にあたり `pnpm -w lint` / `pnpm -r typecheck` を実行し、ESLint の旧 `worker` パス禁止ルールと monorepo 全体の型チェックがグリーンであることを確認

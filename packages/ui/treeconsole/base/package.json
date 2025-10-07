@@ -33,7 +33,7 @@
   "dependencies": {
     "comlink": "^4.4.2",
     "@dnd-kit/modifiers": "^9.0.0",
-    "@hierarchidb/common-type": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",

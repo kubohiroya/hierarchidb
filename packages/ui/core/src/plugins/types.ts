@@ -1,10 +1,10 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type React from 'react';
 
 /**
  * UI Plugin Definition Interface
  *
- * Standardized interface for all UI plugins in the HierarchiDB system.
+ * Standardized interface for all UI plugin-loader in the HierarchiDB system.
  * This interface unifies the handling of all node types (folders, entities) in the UI layer.
  */
 export interface UIPluginDefinition {
@@ -67,7 +67,7 @@ export interface UIPluginDefinition {
  * UI Action Hooks Interface
  *
  * Defines lifecycle hooks for CRUD operations in the UI layer.
- * These hooks allow plugins to customize behavior at different stages.
+ * These hooks allow plugin-loader to customize behavior at different stages.
  */
 export interface UIActionHooks {
   // Create Hooks

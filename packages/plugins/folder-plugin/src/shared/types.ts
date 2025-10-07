@@ -2,7 +2,7 @@
   * Shared types for Folder plugin - UI-Worker
   */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { FolderEntity } from '../entities/FolderEntity.js';
 
 // Re-export existing types from the entities directory

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHierarchiRouter, getRouterMode, getBasePath } from '../index.js';
 
-// Mock UI plugin setup to avoid loading actual plugins
+// Mock UI plugin setup to avoid loading actual plugin-loader
 vi.mock('../loaders/uiPlugins.js', () => ({
   setupUIPlugins: vi.fn().mockResolvedValue({
     registry: {},

@@ -1,4 +1,4 @@
-import { toNodeId, type Timestamp } from '@hierarchidb/common-type';
+import { toNodeId, type Timestamp } from '@hierarchidb/common-types';
 import type {
   LocationCategory,
   LocationEntity,

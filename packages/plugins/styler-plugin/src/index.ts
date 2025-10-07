@@ -1,5 +1,5 @@
 /**
-  * @file index.ts
+  * @file RuntimeWorkerService.ts
  * @description Styler plugin main entry point
  * : Styler
  * :
@@ -77,7 +77,7 @@ export type {
 } from './utils/colorUtils.js';
 
 // UI components are exported from subpath to avoid worker-time deps
-// import from '@hierarchidb/plugins-styler-plugin/ui' when needed
+// import from '@hierarchidb/plugin-loader-styler-plugin/ui' when needed
 
 /**
  * Backward-compatible alias for consumers that expect the historic PLUGIN_INFO export.

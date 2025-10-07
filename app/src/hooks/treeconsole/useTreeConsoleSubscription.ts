@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { Subscriptions } from '~/subscriptions/controller.js';
 import { buildVisibleRows, rebuildAdjacency } from '~/state/treeconsole.derive.js';

@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 import type { TreeTableController } from '../../types.js';
 import { isElementWithClosest } from '../../utils/treeTableHelpers.js';
 

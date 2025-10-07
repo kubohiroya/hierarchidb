@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Observable } from 'rxjs';
 
-import type { CommandResult, TreeChangeEvent } from '@hierarchidb/common-type';
+import type { CommandResult, TreeChangeEvent } from '@hierarchidb/common-types';
 import { WorkerAPIAdapter } from '../WorkerAPIAdapter.js';
 
 //  WorkerAPI

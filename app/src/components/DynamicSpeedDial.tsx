@@ -1,7 +1,7 @@
 /**
  * DynamicSpeedDial Component
  *
- * A SpeedDial component that dynamically loads plugins from the registry
+ * A SpeedDial component that dynamically loads plugin-loader from the registry
  * and displays them as creation actions, filtered by treeId.
  */
 
@@ -9,9 +9,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
-import type { TreeContext } from '~/plugins/menu-builders.js';
+import type { TreeContext } from '~/plugin-loader/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeId } from '@hierarchidb/common-type';
+import type { TreeId } from '@hierarchidb/common-types';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;

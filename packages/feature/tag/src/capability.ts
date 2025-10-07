@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 
 /**
  * Taggable capability registry

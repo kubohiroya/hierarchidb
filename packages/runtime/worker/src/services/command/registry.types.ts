@@ -24,7 +24,7 @@ import type {
   Timestamp,
   TreeId,
   UndoPayload,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 
 // CommandMap covers the core mutation commands first. Additional commands can be
 // extended incrementally without breaking existing usages.

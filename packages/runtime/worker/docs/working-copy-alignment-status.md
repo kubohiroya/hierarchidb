@@ -12,7 +12,7 @@ vk:doc kind=analysis audience=dev scope=worker
   - `src/services/WorkingCopyService.ts`
   - `src/services/EphemeralDB.ts`
   - `src/services/WorkingCopyTreeNodeOperations.ts`
-  - `src/index.ts`（`WorkingCopyAPI` の公開）
+  - `src/RuntimeWorkerService.ts`（`WorkingCopyAPI` の公開）
 
 ---
 
@@ -27,7 +27,7 @@ vk:doc kind=analysis audience=dev scope=worker
   - `get/update/has/list/validate/hasUnsavedChanges`
   - `commitWorkingCopy(nodeId)`: 現状は Ephemeral 側を discard するだけ（Core 反映なし）
   - `commitMultipleWorkingCopies` / `createMultipleWorkingCopies` / `getWorkingCopyStats` / `cleanupOldWorkingCopies`
-- 公開: `src/index.ts` 経由で `WorkingCopyAPI` を WorkerAPI として公開済み
+- 公開: `src/RuntimeWorkerService.ts` 経由で `WorkingCopyAPI` を WorkerAPI として公開済み
 
 2) TreeNode ベースの WC ユーティリティ（CoreDB 直操作）
 - ファイル: `src/services/WorkingCopyTreeNodeOperations.ts`
@@ -49,7 +49,7 @@ vk:doc kind=analysis audience=dev scope=worker
 達成していること（仕様化に取り込みたい）
 - EphemeralDB による軽量な WC 作成/編集/一覧/統計・クリーンアップ（`WorkingCopyService`）。
 - CoreDB 直の WC コミット手順（名前重複の自動リネーム、楽観ロック検出）と破棄ロジック（`WorkingCopyTreeNodeOperations`）。
-- WorkerAPI から `WorkingCopyAPI` を取得できる導線（`index.ts`）。
+- WorkerAPI から `WorkingCopyAPI` を取得できる導線（`RuntimeWorkerService.ts`）。
 
 未達/課題（仕様と実装の乖離）
 - `commitWorkingCopy`（サービス実装）は CoreDB への反映をしておらず、破棄で代替している。

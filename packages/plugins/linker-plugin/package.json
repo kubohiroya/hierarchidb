@@ -50,8 +50,7 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
@@ -68,8 +67,6 @@
     "@deck.gl/mesh-layers": "^9.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "comlink": "^4.3.2",

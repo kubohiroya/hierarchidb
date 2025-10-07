@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { StepCapabilitiesState } from '../services/WorkingCopyService.js';
 import { useWorkerAPI } from './useWorkerAPI.js';
 import type { DialogStep } from '@hierarchidb/ui-dialog';

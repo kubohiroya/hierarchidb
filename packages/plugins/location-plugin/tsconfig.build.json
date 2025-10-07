@@ -4,6 +4,14 @@
     "outDir": "./dist-types",
     "rootDir": "./src",
     "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/plugin-sdk": [
+        "../../plugins/base-plugin/dist-types/index.d.ts"
+      ],
+      "@hierarchidb/plugin-sdk/*": [
+        "../../plugins/base-plugin/dist-types/*"
+      ]
+    },
     "declarationDir": "./dist-types",
     "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
     "noEmit": false,
@@ -30,6 +38,9 @@
     "**/*.test.tsx"
   ],
   "references": [
+    {
+      "path": "../../plugins/base-plugin/tsconfig.build.json"
+    },
     {
       "path": "../../ui/datasource/tsconfig.build.json"
     },

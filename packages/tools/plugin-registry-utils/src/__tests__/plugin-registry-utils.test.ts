@@ -26,7 +26,7 @@ beforeAll(() => {
     path.join(fooPkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: '@hierarchidb/plugins-foo-plugin',
+        name: '@hierarchidb/plugin-loader-foo-plugin',
         type: 'module',
         exports: {
           '.': './dist/index.js',
@@ -39,15 +39,15 @@ beforeAll(() => {
       2,
     ),
   );
-  writeFile(path.join(fooPkgDir, 'src/services/index.ts'), 'export const foo = true;\n');
-  writeFile(path.join(fooPkgDir, 'src/database/index.ts'), 'export const fooDb = true;\n');
+  writeFile(path.join(fooPkgDir, 'src/services/RuntimeWorkerService.ts'), 'export const foo = true;\n');
+  writeFile(path.join(fooPkgDir, 'src/database/RuntimeWorkerService.ts'), 'export const fooDb = true;\n');
 
   const barPkgDir = path.join(packagesDir, 'bar-plugin');
   writeFile(
     path.join(barPkgDir, 'package.json'),
     JSON.stringify(
       {
-        name: '@hierarchidb/plugins-bar-plugin',
+        name: '@hierarchidb/plugin-loader-bar-plugin',
         type: 'module',
         exports: {
           '.': './dist/index.js',
@@ -58,7 +58,7 @@ beforeAll(() => {
       2,
     ),
   );
-  writeFile(path.join(barPkgDir, 'src/index.ts'), 'export const bar = true;\n');
+  writeFile(path.join(barPkgDir, 'src/RuntimeWorkerService.ts'), 'export const bar = true;\n');
 });
 
 afterAll(() => {
@@ -66,14 +66,14 @@ afterAll(() => {
 });
 
 describe('plugin registry utils', () => {
-  it('discovers node-type plugins and their subpaths', () => {
+  it('discovers node-type plugin-loader and their subpaths', () => {
     const plugins = discoverNodeTypePlugins({ rootDir: tmpRoot });
     expect(plugins).toHaveLength(2);
 
     const foo = plugins.find((p) => p.nodeType === 'foo');
     expect(foo).toBeDefined();
     expect(foo?.subpaths.services.hasExport).toBe(true);
-    expect(foo?.subpaths.services.srcPath).toContain('foo-plugin/src/services/index.ts');
+    expect(foo?.subpaths.services.srcPath).toContain('foo-plugin/src/services/RuntimeWorkerService.ts');
     expect(foo?.subpaths.database.hasExport).toBe(true);
 
     const bar = plugins.find((p) => p.nodeType === 'bar');
@@ -90,12 +90,12 @@ describe('plugin registry utils', () => {
     expect(aliases).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          find: '@hierarchidb/plugins-foo-plugin/services',
-          replacement: expect.stringContaining('foo-plugin/src/services/index.ts'),
+          find: '@hierarchidb/plugin-loader-foo-plugin/services',
+          replacement: expect.stringContaining('foo-plugin/src/services/RuntimeWorkerService.ts'),
         }),
         expect.objectContaining({
-          find: '@hierarchidb/plugins-foo-plugin/database',
-          replacement: expect.stringContaining('foo-plugin/src/database/index.ts'),
+          find: '@hierarchidb/plugin-loader-foo-plugin/database',
+          replacement: expect.stringContaining('foo-plugin/src/database/RuntimeWorkerService.ts'),
         }),
       ]),
     );
@@ -122,11 +122,11 @@ describe('plugin registry utils', () => {
     });
 
     const updated = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
-    expect(updated.compilerOptions.paths['@hierarchidb/plugins-foo-plugin/services'][0]).toBe(
-      '../packages/plugins/foo-plugin/src/services/index.ts',
+    expect(updated.compilerOptions.paths['@hierarchidb/plugin-loader-foo-plugin/services'][0]).toBe(
+      '../packages/plugin-loader/foo-plugin/src/services/RuntimeWorkerService.ts',
     );
-    expect(updated.compilerOptions.paths['@hierarchidb/plugins-foo-plugin/database'][0]).toBe(
-      '../packages/plugins/foo-plugin/src/database/index.ts',
+    expect(updated.compilerOptions.paths['@hierarchidb/plugin-loader-foo-plugin/database'][0]).toBe(
+      '../packages/plugin-loader/foo-plugin/src/database/RuntimeWorkerService.ts',
     );
   });
 
@@ -153,8 +153,8 @@ describe('plugin registry utils', () => {
     expect(result?.resolve?.alias).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          find: '@hierarchidb/plugins-foo-plugin/services',
-          replacement: expect.stringContaining('foo-plugin/src/services/index.ts'),
+          find: '@hierarchidb/plugin-loader-foo-plugin/services',
+          replacement: expect.stringContaining('foo-plugin/src/services/RuntimeWorkerService.ts'),
         }),
       ]),
     );

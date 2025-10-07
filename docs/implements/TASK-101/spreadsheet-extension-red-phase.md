@@ -113,7 +113,7 @@ validate: async (data) => {
 
 ### 実行コマンド
 ```bash
-cd packages/plugins/spreadsheet-plugin
+cd packages/plugin-loader/spreadsheet-plugin
 pnpm test src/extension/definition.test.ts
 ```
 

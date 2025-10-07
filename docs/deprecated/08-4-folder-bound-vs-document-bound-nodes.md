@@ -28,7 +28,7 @@ Unified Plugin System
 #### 1. ContainerPluginBase（コンテナ型の基底）
 
 ```typescript
-// packages/core/src/plugins/ContainerPluginBase.ts
+// packages/core/src/plugin-loader/ContainerPluginBase.ts
 export abstract class ContainerPluginBase<TEntity extends ContainerEntity> {
   abstract nodeType: TreeNodeType;
   
@@ -85,7 +85,7 @@ interface ContainerEntity extends BaseEntity {
 #### 2. DocumentPluginBase（ドキュメント型の基底）
 
 ```typescript
-// packages/core/src/plugins/DocumentPluginBase.ts
+// packages/core/src/plugin-loader/DocumentPluginBase.ts
 export abstract class DocumentPluginBase<TEntity extends DocumentEntity> {
   abstract nodeType: TreeNodeType;
   
@@ -148,7 +148,7 @@ interface DocumentEntity extends BaseEntity {
 ### 1. Project Plugin（フォルダ紐づき）
 
 ```typescript
-// packages/plugins/core-project/src/worker/ProjectPlugin.ts
+// packages/plugin-loader/core-project/src/worker/ProjectPlugin.ts
 export class ProjectPlugin extends ContainerPluginBase<ProjectEntity> {
   nodeType = 'project' as TreeNodeType;
   
@@ -282,7 +282,7 @@ interface ProjectStats {
 ### 2. BaseMap Plugin（ドキュメント紐づき）
 
 ```typescript
-// packages/plugins/basemap/src/worker/BaseMapPlugin.ts
+// packages/plugin-loader/basemap/src/worker/BaseMapPlugin.ts
 export class BaseMapPlugin extends DocumentPluginBase<BaseMapEntity> {
   nodeType = 'basemap' as TreeNodeType;
   
@@ -374,7 +374,7 @@ interface BaseMapEntity extends DocumentEntity {
 ### 1. プラグインタイプの判定
 
 ```typescript
-// packages/ui-core/src/plugins/PluginTypeDetector.ts
+// packages/ui-core/src/plugin-loader/PluginTypeDetector.ts
 export class PluginTypeDetector {
   static isContainerType(nodeType: TreeNodeType): boolean {
     const plugin = UIPluginRegistry.get(nodeType);

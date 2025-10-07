@@ -32,22 +32,6 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/batch": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/compute": "workspace:*",
-    "@hierarchidb/download": "workspace:*",
-    "@hierarchidb/feature-registry": "workspace:*",
-    "@hierarchidb/import-export": "workspace:*",
-    "@hierarchidb/map-adapter": "workspace:*",
-    "@hierarchidb/map-source": "workspace:*",
-    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
-    "@hierarchidb/tabular": "workspace:*",
-    "@hierarchidb/tag": "workspace:*",
-    "@hierarchidb/util": "workspace:*",
-    "@maplibre/vt-pbf": "^4.0.3",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
     "geojson-vt": "^3.2.1",
@@ -56,6 +40,20 @@
     "zod": "^3.22.3"
   },
   "peerDependencies": {
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/compute": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/import-export": "workspace:*",
+    "@hierarchidb/map-adapter": "workspace:*",
+    "@hierarchidb/map-source": "workspace:*",
+    "@hierarchidb/tabular": "workspace:*",
+    "@hierarchidb/tag": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/feature-registry": "workspace:*",
+    "@maplibre/vt-pbf": "^4.0.3",
     "jotai": "^2.13.1"
   },
   "optionalDependencies": {

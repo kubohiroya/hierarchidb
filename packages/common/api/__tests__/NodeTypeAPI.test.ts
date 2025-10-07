@@ -5,7 +5,7 @@
   */
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { NodeTypeAPI } from '../src/NodeTypeAPI.js';
-import { NodeId, NodeType } from '@hierarchidb/common-type';
+import { NodeId, NodeType } from '@hierarchidb/common-types';
 
 describe('NodeTypeAPI', () => {
   let nodeTypeAPI: NodeTypeAPI;

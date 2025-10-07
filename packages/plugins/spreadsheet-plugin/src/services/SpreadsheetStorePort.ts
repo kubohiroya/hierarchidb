@@ -7,7 +7,7 @@ import type {
   TabularSchema,
   TabularStorePort,
 } from '@hierarchidb/tabular';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from '../database/SpreadsheetDatabase.js';
 import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
 import { MapHighlightService } from '~/services/MapHighlightService.js';
 

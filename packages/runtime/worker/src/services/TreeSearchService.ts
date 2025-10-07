@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { TreeQueryService } from './TreeQueryService.js';
 import type { CoreDB } from './CoreDB.js';
 

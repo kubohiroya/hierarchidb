@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity, BaseMapWorkingCopy } from '../extension/definition.js';
 import { BaseMapExtension } from '../extension/definition.js';
 

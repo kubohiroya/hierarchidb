@@ -36,7 +36,7 @@ const unique = <T,>(arr: T[]) => Array.from(new Set(arr));
 const DEFAULT_EXCLUDES = [
   '**/*.d.ts',
   '**/*.backup',
-  '**/index.ts',
+  '**/RuntimeWorkerService.ts',
   '**/__tests__/**',
   '**/__mocks__/**',
   '**/*.stories.{ts,tsx}',
@@ -386,8 +386,8 @@ async function main() {
     if (!DRY) await fs.writeFile(shimPath, shimContent, 'utf8');
     console.log(`SHIM:    ${rel(shimPath)}`);
 
-    //  index.ts
-    const indexPath = path.join(dir, 'index.ts');
+    //  RuntimeWorkerService.ts
+    const indexPath = path.join(dir, 'RuntimeWorkerService.ts');
     let indexLines: string[] = [];
     try {
       const prev = await fs.readFile(indexPath, 'utf8');

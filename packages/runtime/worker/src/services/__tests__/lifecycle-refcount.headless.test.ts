@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import type { NodeId, NodeType, PluginDefinition } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, PluginDefinition } from '@hierarchidb/common-types';
 import { CoreDB } from '../CoreDB.js';
 import { NodeLifecycleManager } from '../NodeLifecycleManager.js';
 

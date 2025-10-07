@@ -97,9 +97,11 @@ export class FetchNetworkPort implements NetworkPort {
     const base = await this.resolveHeaders();
     const merged = new Headers(base);
     if (!extra) return merged;
+    /*
     if (Array.isArray(extra)) {
       for (const [key, value] of extra) merged.set(key, value);
-    } else if (extra instanceof Headers) {
+    } else */
+    if (extra instanceof Headers) {
       extra.forEach((value, key) => merged.set(key, value));
     } else {
       Object.entries(extra as Record<string, string | number | readonly string[]>).forEach(([key, value]) => {

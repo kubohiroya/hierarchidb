@@ -14,7 +14,7 @@ import type {
   TreeNode,
   TreeNodeEvent,
   UndoStateEvent,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import { bufferTime, concat, filter as rxFilter, from, map, mergeMap, type Observable, share, Subject } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
 import { SingletonMixin } from '@hierarchidb/util';

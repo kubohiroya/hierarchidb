@@ -1,6 +1,6 @@
 import type React from 'react';
 import { memo } from 'react';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 import {
   Box,
   Checkbox,

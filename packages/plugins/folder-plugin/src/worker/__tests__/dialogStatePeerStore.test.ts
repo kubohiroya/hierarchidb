@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import type { MultiStepDialogState } from '@hierarchidb/common-type';
+import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { FolderEntitiesDB } from '../folderEntitiesDB.js';
 import { createFolderPeerStoreDexie } from '../folderPeerStore.dexie.js';
 

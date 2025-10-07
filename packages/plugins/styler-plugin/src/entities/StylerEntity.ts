@@ -1,11 +1,11 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 /**
   * : StylerEntity
  * : SpreadsheetEntity
  * : SpreadsheetEntity -> FolderEntity -> BaseEntity
  * :
   */
-//import type { SpreadsheetEntity } from '@hierarchidb/plugins-spreadsheet-plugin';
+//import type { SpreadsheetEntity } from '@hierarchidb/plugin-loader-spreadsheet-plugin';
 import type { StylerConfig } from '../types/stylerTypes.js';
 
 // Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available

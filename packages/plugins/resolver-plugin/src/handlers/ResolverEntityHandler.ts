@@ -1,6 +1,6 @@
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugins-base-plugin';
+import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-sdk';
 import { resolverDB } from '../database/ResolverDatabase.js';
 import type {
   DataTransformation,

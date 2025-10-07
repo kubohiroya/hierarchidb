@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 import type { LocationEntitiesDB } from './locationEntitiesDB.js';
 import type { LocationRelationMeta } from '../types/entities.js';

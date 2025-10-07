@@ -31,11 +31,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@hierarchidb/runtime-shared-batch-processor": [
-        "packages/runtime-shared/batch-processor/src/index.ts"
+      "@hierarchidb/batch-sdk": [
+        "packages/batch-sdk/src/index.ts"
       ],
-      "@hierarchidb/runtime-shared-batch-processor/*": [
-        "packages/runtime-shared/batch-processor/src/*"
+      "@hierarchidb/batch-sdk/*": [
+        "packages/batch-sdk/src/*"
+      ],
+      "@hierarchidb/batch-api": [
+        "packages/batch-sdk/src/index.ts"
       ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
@@ -43,10 +46,10 @@
       "@hierarchidb/runtime-shared-fetch-metadata/*": [
         "packages/runtime-shared/fetch-metadata/src/*"
       ],
-      "@hierarchidb/common-type": [
+      "@hierarchidb/common-types": [
         "packages/common/types/src/index.ts"
       ],
-      "@hierarchidb/common-type/*": [
+      "@hierarchidb/common-types/*": [
         "packages/common/types/src/*"
       ],
       "@hierarchidb/download": [
@@ -60,12 +63,6 @@
       ],
       "@hierarchidb/runtime-worker/*": [
         "packages/runtime/worker/src/*"
-      ],
-      "@hierarchidb/runtime-shared-module-paths": [
-        "packages/runtime-shared/module-paths/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-module-paths/*": [
-        "packages/runtime-shared/module-paths/src/*"
       ],
       "@hierarchidb/ui-file": [
         "packages/ui/file/src/index.ts"
@@ -124,10 +121,16 @@
       "@hierarchidb/ui-license/*": [
         "packages/ui/license/src/*"
       ],
-      "@hierarchidb/plugins-base-plugin": [
+      "@hierarchidb/runtime-ui-license": [
+        "packages/runtime-ui/license/src/index.ts"
+      ],
+      "@hierarchidb/runtime-ui-license/*": [
+        "packages/runtime-ui/license/src/*"
+      ],
+      "@hierarchidb/plugin-sdk": [
         "packages/plugins/base-plugin/src/index.ts"
       ],
-      "@hierarchidb/plugins-base-plugin/*": [
+      "@hierarchidb/plugin-sdk/*": [
         "packages/plugins/base-plugin/src/*"
       ],
       "@hierarchidb/ui-map": [

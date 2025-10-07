@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '../adapters/index.js';
 import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {

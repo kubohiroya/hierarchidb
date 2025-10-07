@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { LocationWorkingCopy } from '../../../types/index.js';
-import type { Timestamp } from '@hierarchidb/common-type';
+import type { Timestamp } from '@hierarchidb/common-types';
 import { LocationBatchParametersStep } from '../LocationBatchParametersStep.js';
 import { en } from '../../../i18n/en.js';
 

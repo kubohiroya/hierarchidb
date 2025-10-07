@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph:
   */
 
-import type { DataSourceName } from '@hierarchidb/runtime-ui-datasource';
+import type { DataSourceName } from '@hierarchidb/ui-datasource';
 
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 

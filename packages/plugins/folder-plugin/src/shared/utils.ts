@@ -2,7 +2,7 @@
   * Folder plugin utilities - UIWorker
   */
 
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { CreateFolderData, FolderBreadcrumb, FolderDisplayData, FolderEntity, FolderTreeNode } from './types.js';
 import { FOLDER_DISPLAY, FOLDER_VALIDATION } from './constants.js';
 

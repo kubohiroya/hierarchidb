@@ -75,7 +75,7 @@ describe('HierarchiDB preset virtual module integration', () => {
     const load = getHookHandler<(id: string, options?: any) => any>(plugin.load as any);
     const virtualContent = await load?.call(plugin, resolvedId as string, { ssr: false } as any);
     expect(virtualContent).toBeDefined();
-    expect(virtualContent).toContain("packageName: '@hierarchidb/plugins-folder-plugin'");
+    expect(virtualContent).toContain("packageName: '@hierarchidb/plugin-loader-folder-plugin'");
     expect(virtualContent).toContain("nodeType: 'folder'");
     expect(virtualContent).toContain('pluginDefinitions');
   });

@@ -109,8 +109,8 @@ type | ValidationFunction — packages/common/types/src/validation-types.ts
   - 実コードは削除せず、まずは「API表面の縮小」を目的に `export` を外し、ファイル内限定利用に降格できるものは降格。
 - 第二段階（次PR）
   - 実際に未使用が確定したものを削除（`.bak` は即時削除推奨）。
-  - バレル（`index.ts`）の再エクスポートからも除外。
+  - バレル（`RuntimeWorkerService.ts`）の再エクスポートからも除外。
 
 ## ロールバック指針
-- 影響発生時は、該当コミットをリバートし `index.ts` の再エクスポートを元に戻せば即時復旧可能。
+- 影響発生時は、該当コミットをリバートし `RuntimeWorkerService.ts` の再エクスポートを元に戻せば即時復旧可能。
 

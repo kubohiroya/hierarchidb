@@ -14,7 +14,7 @@ export function useOptionalPluginContext(): IPluginContext | null {
   try {
     return useContext(PluginContext);
   } catch {
-    // Context not found - plugins are disabled
+    // Context not found - plugin-loader are disabled
     return null;
   }
 }

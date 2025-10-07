@@ -67,19 +67,16 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch-sdk": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
-    "@hierarchidb/runtime-ui-datasource": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
-    "@hierarchidb/runtime-shared-batch-processor": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
@@ -99,10 +96,9 @@
     "pbf": "^4.0.1",
     "topojson-client": "^3.1.0",
     "topojson-server": "^3.0.1",
-    "@hierarchidb/common-type": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "peerDependencies": {
-    "@hierarchidb/plugins-runtime-worker-factory": "workspace:*",
     "dexie": "^4.2.0",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/download": "workspace:*",

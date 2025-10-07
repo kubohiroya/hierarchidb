@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { useFolderAPIGetter } from './useFolderAPI.js';
 import type { FolderEntity } from '../../shared/index.js';
 import type { CreateFolderData, FolderSettings, UpdateFolderData } from '../../shared/types.js';

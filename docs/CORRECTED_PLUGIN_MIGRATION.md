@@ -32,10 +32,10 @@
 ```typescript
 // src/extension/definition.ts
 // 修正前
-import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-loader-folder-plugin';
 
 // 修正後  
-import type { FolderEntity } from '@hierarchidb/plugins-folder-plugin';
+import type { FolderEntity } from '@hierarchidb/plugin-loader-folder-plugin';
 // または、新アーキテクチャでの正しい参照先に変更
 ```
 
@@ -120,9 +120,9 @@ pnpm build
 ### 修正前の状態確認
 ```bash
 # 現在のエラー数を記録
-pnpm --filter @hierarchidb/plugins-spreadsheet-plugin typecheck 2>&1 | grep "error" | wc -l
-pnpm --filter @hierarchidb/plugins-basemap-plugin typecheck 2>&1 | grep "error" | wc -l  
-pnpm --filter @hierarchidb/plugins-styler-plugin typecheck 2>&1 | grep "error" | wc -l
+pnpm --filter @hierarchidb/plugin-loader-spreadsheet-plugin typecheck 2>&1 | grep "error" | wc -l
+pnpm --filter @hierarchidb/plugin-loader-basemap-plugin typecheck 2>&1 | grep "error" | wc -l  
+pnpm --filter @hierarchidb/plugin-loader-styler-plugin typecheck 2>&1 | grep "error" | wc -l
 ```
 
 ### 修正後の改善確認

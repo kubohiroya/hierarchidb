@@ -3,7 +3,7 @@
  * @description Styler entity handler extending Spreadsheet functionality
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
 import type { StylerEntity } from '../entities/StylerEntity.js';

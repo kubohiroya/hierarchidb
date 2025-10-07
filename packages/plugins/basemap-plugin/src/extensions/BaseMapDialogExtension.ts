@@ -4,8 +4,8 @@
  * - Steps themselves may be provided by host; evaluator aligns by stepNumber [2,3,4].
  */
 
-import type { PeerEntity } from '@hierarchidb/common-type';
-import { NodeDialogPlugin } from '@hierarchidb/plugins-base-plugin';
+import type { PeerEntity } from '@hierarchidb/common-types';
+import { NodeDialogPlugin } from '@hierarchidb/plugin-sdk';
 
 function isValidUrl(u: string | undefined): boolean {
   if (!u) return false;

@@ -7,10 +7,10 @@ export default createTsupConfig({
     '@mui/material',
     '@emotion/react',
     '@emotion/styled',
-    // Optional node-type plugins loaded via dynamic import in register-default-extensions
-    '@hierarchidb/plugins-shape-plugin',
-    '@hierarchidb/plugins-spreadsheet-plugin',
-    '@hierarchidb/plugins-basemap-plugin',
-    '@hierarchidb/plugins-styler-plugin',
+    // Optional node-type plugin-loader loaded via dynamic import in register-default-extensions
+    '@hierarchidb/plugin-loader-shape-plugin',
+    '@hierarchidb/plugin-loader-spreadsheet-plugin',
+    '@hierarchidb/plugin-loader-basemap-plugin',
+    '@hierarchidb/plugin-loader-styler-plugin',
   ],
 });

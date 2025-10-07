@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
 import { ExtensibleFolderDialog } from '../components/ExtensibleFolderDialog.js';
-import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-types';
 import type { ExtensibleFolderDialogProps } from '../components/ExtensibleFolderDialog.js';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';

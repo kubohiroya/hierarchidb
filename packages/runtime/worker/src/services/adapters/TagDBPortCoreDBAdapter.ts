@@ -1,6 +1,6 @@
 import type { TagDBPort } from '@hierarchidb/tag';
 import type { CoreDB } from '../CoreDB.js';
-import type { TagId, NodeId, NodeTagAssociation, TagEntity } from '@hierarchidb/common-type';
+import type { TagId, NodeId, NodeTagAssociation, TagEntity } from '@hierarchidb/common-types';
 
 export class TagDBPortCoreDBAdapter implements TagDBPort {
   constructor(private coreDB: CoreDB) {

@@ -37,7 +37,7 @@ export interface PluginManifestValidationConfig {
 }
 
 /**
- * Lightweight, publish-stable metadata that plugins may expose for discovery.
+ * Lightweight, publish-stable metadata that plugin-loader may expose for discovery.
  * Keep this independent from runtime handler wiring so UI/registry can read it
  * without importing heavy worker-side code.
  */

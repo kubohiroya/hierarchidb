@@ -3,7 +3,7 @@
  */
 
 import { atom } from 'jotai';
-import type { NodeId, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
 
 /**

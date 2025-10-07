@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { TreeNode } from '@hierarchidb/common-type';
+import type { TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 
 export type ViewMode = 'list' | 'grid';

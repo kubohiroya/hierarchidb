@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService } from '@hierarchidb/batch';
 import { createLaneSemaphoreRegistry } from '@hierarchidb/runtime-shared-batch-processor';
 import type { DownloadTask } from '../../types.js';

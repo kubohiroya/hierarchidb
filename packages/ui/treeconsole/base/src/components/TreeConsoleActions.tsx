@@ -6,7 +6,7 @@
 
 import { DialogActions } from '@mui/material';
 import type { TreeConsoleActionsProps } from '../types/index.js';
-// import { getPageButtonColor } from '@hierarchidb/common-type'; // Function not found
+// import { getPageButtonColor } from '@hierarchidb/common-types'; // Function not found
 // Deprecated: in-panel SpeedDial has been removed; host should provide its own create affordances.
 
 /**

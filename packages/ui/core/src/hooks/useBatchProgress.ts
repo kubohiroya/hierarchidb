@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProgressPayload, BatchSessionId } from '@hierarchidb/runtime-shared-batch-processor';
 
 export interface UnifiedProgressInfo {

@@ -5,7 +5,7 @@ import type {
   Tree,
   TreeId,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';

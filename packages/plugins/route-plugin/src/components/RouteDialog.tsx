@@ -4,7 +4,7 @@
 
 import type React from 'react';
 import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy, getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';

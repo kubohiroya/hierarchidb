@@ -135,14 +135,14 @@ const { h3 } = result;  // 未使用変数
 ### 検証方法
 ```bash
 # Phase 1後にエラー数確認
-pnpm --filter @hierarchidb/plugins-shape-plugin typecheck
+pnpm --filter @hierarchidb/plugin-loader-shape-plugin typecheck
 
 # 期待される改善:
 # Phase 1完了後: 11件 → 3件（構文エラー修正）
 # Phase 2完了後: 3件 → 0件（未使用変数クリーンアップ）
 
 # 最終確認
-pnpm --filter @hierarchidb/plugins-shape-plugin build
+pnpm --filter @hierarchidb/plugin-loader-shape-plugin build
 ```
 
 ## 依存関係と注意点

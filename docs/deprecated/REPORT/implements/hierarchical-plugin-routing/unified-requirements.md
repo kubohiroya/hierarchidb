@@ -47,7 +47,7 @@ packages/app/src/routes/
 
 ### プラグインレジストリ
 ```typescript
-// packages/src/src/plugins/registry.ts
+// packages/src/src/plugin-loader/registry.ts
 export interface PluginDefinition {
   nodeType: string;  // treeNodeTypeと一致（basemap, shapes等）
   actions: {
@@ -84,7 +84,7 @@ pluginRegistry.set('basemap', {
 ```tsx
 // packages/src/src/routes/t/$treeId/$pageTreeNodeId/$targetTreeNodeId/$treeNodeType/$.tsx
 import { useParams, useLoaderData } from 'provider-router-dom';
-import { pluginRegistry } from '@/plugins/registry';
+import { pluginRegistry } from '@/plugin-loader/registry';
 import { NotFound } from '@/containers/NotFound';
 import { Forbidden } from '@/containers/Forbidden';
 
@@ -151,7 +151,7 @@ export default function PluginRoute() {
 ## プラグイン開発側の実装
 
 ```typescript
-// packages/plugins/basemap/src/openstreetmap-type.ts
+// packages/plugin-loader/basemap/src/openstreetmap-type.ts
 export { default as EditComponent } from './containers/Edit';
 export { default as PreviewComponent } from './containers/PreviewStep';
 export { editLoader, previewLoader } from './loaders';
@@ -159,7 +159,7 @@ export { editAction, previewAction } from './actions';
 ```
 
 ```tsx
-// packages/plugins/basemap/src/containers/Edit.tsx
+// packages/plugin-loader/basemap/src/containers/Edit.tsx
 export default function BasemapEdit({ treeContext, targetNode, pluginData }) {
   const { basemapEntity } = pluginData;
   
@@ -180,7 +180,7 @@ export default function BasemapEdit({ treeContext, targetNode, pluginData }) {
 import { glob } from 'glob';
 
 export async function generatePluginRegistry() {
-  const plugins = await glob('packages/plugins/*/package.json');
+  const plugins = await glob('packages/plugin-loader/*/package.json');
   
   let registryCode = `
     import { lazy } from 'react';
@@ -209,7 +209,7 @@ export async function generatePluginRegistry() {
     `;
   }
   
-  await writeFile('packages/src/src/plugins/registry.output.ts', registryCode);
+  await writeFile('packages/src/src/plugin-loader/registry.output.ts', registryCode);
 }
 ```
 

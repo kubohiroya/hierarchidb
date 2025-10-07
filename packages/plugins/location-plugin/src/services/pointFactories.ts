@@ -1,4 +1,4 @@
-import type { Timestamp } from '@hierarchidb/common-type';
+import type { Timestamp } from '@hierarchidb/common-types';
 import type {
   LocationPointProperties,
   LocationPointSource,

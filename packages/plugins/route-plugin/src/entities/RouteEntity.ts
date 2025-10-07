@@ -3,7 +3,7 @@
  * @description Route entity definition extending Shape plugin
  */
 
-import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
 
 /**
  * Transport mode types

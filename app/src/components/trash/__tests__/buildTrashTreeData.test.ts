@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { buildTrashTreeData } from '../buildTrashTreeData.js';
 
 function createNode(

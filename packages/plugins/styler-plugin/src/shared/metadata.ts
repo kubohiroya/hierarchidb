@@ -2,8 +2,8 @@
  * Styler plugin metadata with entity reference hints
  */
 
-import type { PluginMetadata } from '@hierarchidb/common-type';
-import { toNodeType } from '@hierarchidb/common-type';
+import type { PluginMetadata } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 
 export const StylerMetadata: PluginMetadata = {
   id: 'com.hierarchidb.styler-plugin',

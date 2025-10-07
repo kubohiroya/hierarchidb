@@ -5,7 +5,7 @@ import type {
   ObserveNodePayload,
   TreeChangeEvent,
   Timestamp,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { CommandEnvelope } from '../command-types.js';
 import { TreeSubscriptionService } from '../TreeSubscriptionService.js';
 import type { CoreDB } from '../CoreDB.js';

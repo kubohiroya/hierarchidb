@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 // Minimal placeholder for PeerEntity. Real shape is domain-specific and will be
 // introduced in subsequent PRs. We intentionally avoid UI-facing fields

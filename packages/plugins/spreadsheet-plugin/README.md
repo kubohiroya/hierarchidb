@@ -476,7 +476,7 @@ MIT License - HierarchiDBプロジェクトに従う
 
 Styler プラグインなど、スプレッドシートを基盤にした拡張は次の公開 API を参照します。
 
-- `createSpreadsheetCSVApi()`（`src/ui/facade/index.ts`）: UI から `ICSVDataApi` を取得し、ファイルアップロードや URL 指定に応じて取り込みを実行します。内部で `SpreadsheetCSVApiAdapter` を動的 import します。
+- `createSpreadsheetCSVApi()`（`src/ui/facade/RuntimeWorkerService.ts`）: UI から `ICSVDataApi` を取得し、ファイルアップロードや URL 指定に応じて取り込みを実行します。内部で `SpreadsheetCSVApiAdapter` を動的 import します。
 - `SpreadsheetCSVApiAdapter`（`src/services/SpreadsheetCSVApiAdapter.ts`）: `SpreadsheetTabularDriver` および `SpreadsheetCSVApiDriver` を用いて Dexie（`SpreadsheetDatabase`）にメタデータとチャンクを書き込みます。
 - `SpreadsheetTabularDriver`／`SpreadsheetStorePort`: TabularService と連携するファイル取り込み処理をカプセル化しており、派生プラグインからそのまま再利用できます。
 - `SimpleTableMetadataManager` や `SpreadsheetDatabase` などのサービス群: 取り込んだテーブル情報を共通スキーマで保持する仕組みで、スタイラ等から直接 import して活用できます。

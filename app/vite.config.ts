@@ -44,16 +44,16 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/runtime-shared-module-paths', '../packages/runtime-shared/module-paths/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/RuntimeWorkerService.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/RuntimeWorkerService.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts', { exclude: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/RuntimeWorkerService.ts', { exclude: true });
+    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/RuntimeWorkerService.ts', { exclude: true });
 
-    const pluginRoot = path.resolve(rootDir, '../packages/plugins');
+    const pluginRoot = path.resolve(rootDir, '../packages/plugin-loader');
     if (fs.existsSync(pluginRoot)) {
-      const workerCandidates = ['src/worker-factory/index.ts', 'src/worker-factory.ts'];
-      const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
+      const workerCandidates = ['src/worker-factory/RuntimeWorkerService.ts', 'src/worker-factory.ts'];
+      const uiCandidates = ['src/ui/RuntimeWorkerService.ts', 'src/ui.ts'];
 
       for (const entry of fs.readdirSync(pluginRoot, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
@@ -84,7 +84,7 @@ function createRuntimeAliasConfig({
   } else {
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js');
     addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/dist/index.js');
-    addAlias('@hierarchidb/runtime-shared-module-paths', '../packages/runtime-shared/module-paths/dist/index.js');
+    addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts');
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true });
     addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/dist/index.js', { exclude: true });
   }
@@ -142,7 +142,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     // HierarchiDB plugin package discovery -> virtual modules
     toolsVitePluginPackageReader({
       ...hierarchiDBMultiModulePreset({
-        // Include all node-type plugins used in menus
+        // Include all node-type plugin-loader used in menus
         pattern: /@hierarchidb\/plugins-(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
         priorityPlugin: 'folder',
         extractPluginConfig: true,
@@ -193,7 +193,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
   }
 
   if (process.env.DEBUG_WORKER_HMR === '1') {
-    console.log('[vite.config] main plugin order', plugins.map((p) => p && p.name));
+    console.log('[vite.config] main plugin order', plugins.map((p) => p && (p as any).name));
   }
 
   // beacon values captured in closure
@@ -319,7 +319,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
           const resp = await fetch(targetUrl, {
             method,
             headers: fwdHeaders,
-            body: rawBody,
+            // body: rawBody,
             redirect: 'manual',
           });
 
@@ -383,7 +383,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         '@emotion/styled',
         'provider',
         'provider-dom',
-        // Ensure a single instance for plugin dialog runtime across app and plugins
+        // Ensure a single instance for plugin dialog runtime across app and plugin-loader
         '@hierarchidb/runtime-ui-plugin-dialog',
       ],
       alias: [
@@ -399,20 +399,20 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Icons utility (always point to src for now)
-        { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
+        { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/RuntimeWorkerService.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
-        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
+        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/RuntimeWorkerService.ts') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
-        { find: '@hierarchidb/plugins-base-plugin', replacement: path.resolve(__dirname, '../packages/plugins/base-plugin/dist/index.js') },
+        { find: '@hierarchidb/plugin-loader-base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.js') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
         // Stub it for browser builds to avoid __vite-browser-external resolution errors.
         { find: 'child_process', replacement: path.resolve(__dirname, './src/virtual/child-process-shim.ts') },
-        // Legacy provider alias used by some plugins
+        // Legacy provider alias used by some plugin-loader
         { find: 'provider-i18next', replacement: 'react-i18next' },
-        // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugins
+        // Temporary workspace alias: ensure Vite resolves @hierarchidb/batch used by plugin-loader
         // Rationale: location-plugin bundles it as external; alias points to built dist
         // Temporary aliases removed after dynamic imports hardened
         // Note: do not alias workspace packages; rely on declared deps and workspace linking

@@ -62,7 +62,7 @@ export function initializeBrowserGlobals(): void {
         globalWindow.__uiPluginsRegistered = true;
       } catch (error) {
         globalWindow.__uiPluginsRegistered = false;
-        logWarning('Failed to register UI plugins', error);
+        logWarning('Failed to register UI plugin-loader', error);
         throw error;
       }
     })();
@@ -76,7 +76,7 @@ export function initializeBrowserGlobals(): void {
     console.error('[browser-globals] Failed to load WorkerAPIClient module:', error);
   });
 
-  void import('../../plugins/menu-builders.js')
+  void import('~/plugin-loader/menu-builders.js')
     .then(async (mod) => {
       (globalWindow as Window & { __HDB_MENU_BUILDERS__?: unknown }).__HDB_MENU_BUILDERS__ = mod;
       try {
@@ -86,7 +86,7 @@ export function initializeBrowserGlobals(): void {
       }
     })
     .catch((error) => {
-      logWarning('menu-builders preload failed (will fallback to worker plugins)', error);
+      logWarning('menu-builders preload failed (will fallback to worker plugin-loader)', error);
     });
 
   void import('virtual:plugin-definitions')

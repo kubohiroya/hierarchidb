@@ -89,7 +89,7 @@ export interface TreeTableCoreProps {
   plugins?: TreeTablePlugin[];
   extensionProps?: Record<string, any>;
   
-  // Feature flags for plugins
+  // Feature flags for plugin-loader
   enableInlineEditing?: boolean;
   enableAdvancedKeyboardNav?: boolean;
   enableDragDropEnhancements?: boolean;
@@ -149,7 +149,7 @@ export function TreeTableCore({
   
   // 🔌 Extension Point: onKeyDown
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    // Allow plugins to handle key events first
+    // Allow plugin-loader to handle key events first
     for (const plugin of pluginRegistry.getPlugins()) {
       if (plugin.hooks.onKeyDown?.(event)) {
         return; // Plugin handled the event

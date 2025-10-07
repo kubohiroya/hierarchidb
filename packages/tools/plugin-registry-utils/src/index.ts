@@ -444,7 +444,7 @@ export function createNodeTypeAliasPlugin(options?: CreateNodeTypeAliasPluginOpt
   const rootDir = options?.rootDir ?? process.cwd();
 
   return {
-    name: 'hierarchidb-plugins-alias-plugin',
+    name: 'hierarchidb-plugin-loader-alias-plugin',
     enforce: 'pre',
     config(config) {
       const plugins = discoverNodeTypePlugins({ rootDir });

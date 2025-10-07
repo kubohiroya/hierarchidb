@@ -36,7 +36,7 @@ export function pluginServicesRegistry(opts?: { rootDir?: string }): Plugin {
     const debugMode = process.env.HDB_SERVICES_DEBUG_MODE || '';
     if (debugMode === 'one') {
       const first = list.find(Boolean);
-      const pkgName = first?.pkgName || '@hierarchidb/plugins-basemap-plugin';
+      const pkgName = first?.pkgName || '@hierarchidb/plugin-loader-basemap-plugin';
       const sub = first?.sub || '/database';
       const code = `export const pluginServices = Object.freeze({ basemap: () => import('${pkgName}${sub}') });\n`;
       try {

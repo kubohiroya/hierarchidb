@@ -5,7 +5,7 @@
   */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeChangeEvent, TreeChangeEventType, TreeNode } from '@hierarchidb/common-types';
 
 /**
   * WorkerAPI

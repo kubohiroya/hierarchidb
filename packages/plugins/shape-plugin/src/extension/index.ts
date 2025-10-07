@@ -1,5 +1,5 @@
 /**
- * @file index.ts
+ * @file RuntimeWorkerService.ts
  * @description Shape plugin extension exports
  */
 

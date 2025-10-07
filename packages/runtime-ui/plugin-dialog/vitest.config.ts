@@ -65,59 +65,59 @@ export default defineConfig({
       'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
       '@hierarchidb/runtime-worker': path.resolve(
         __dirname,
-        '../../runtime/worker/src/index.ts',
+        '../../runtime/worker/src/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(
         __dirname,
-        '../../runtime/worker-bootstrap/src/index.ts',
+        '../../runtime/worker-bootstrap/src/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/map-adapter': path.resolve(
         __dirname,
-        '../../feature/map-adapter/src/index.ts',
+        '../../feature/map-adapter/src/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/tabular-xlsx': path.resolve(
         __dirname,
-        '../../feature/tabular-xlsx/src/index.ts',
+        '../../feature/tabular-xlsx/src/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-basemap-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/basemap-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/basemap-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-folder-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/folder-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/folder-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-resolver-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/resolver-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/resolver-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-route-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/route-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/route-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-spreadsheet-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/spreadsheet-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/spreadsheet-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-styler-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/styler-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/styler-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-shape-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/shape-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/shape-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-location-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/location-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/location-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-linker-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/linker-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/linker-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       '@hierarchidb/plugins-timeline-plugin/worker-factory': path.resolve(
         __dirname,
-        '../../plugins/timeline-plugin/src/worker-factory/index.ts',
+        '../../plugin-loader/timeline-plugin/src/worker-factory/RuntimeWorkerService.ts',
       ),
       ...nodeTypeAliases,
       ...legacyNodeTypeAliases,

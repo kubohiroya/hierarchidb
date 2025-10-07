@@ -181,7 +181,7 @@ interface BasicInfoFormProps {
 
 #### 1. 型定義の拡張
 ```typescript
-// packages/plugins/[plugin]/src/types/index.ts
+// packages/plugin-loader/[plugin]/src/types/RuntimeWorkerService.ts
 export interface LocationEntity extends PeerEntity {
   name: string;
   description?: string;

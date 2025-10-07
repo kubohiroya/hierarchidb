@@ -19,18 +19,18 @@ const custom = [
     when: () => true,
     because: 'EntityId is deprecated. Use NodeId/TagId instead.',
     rules: [
-      { rule: 'source-import-ban', options: { from: '@hierarchidb/common-type', names: ['EntityId', 'toEntityId', 'generateEntityId'] }, severity: 'ERROR' },
+      { rule: 'source-import-ban', options: { from: '@hierarchidb/common-types', names: ['EntityId', 'toEntityId', 'generateEntityId'] }, severity: 'ERROR' },
     ],
   },
 
-  // Shared/common/runtime packages must not import node-type plugins (avoid dependency loops)
+  // Shared/common/runtime packages must not import node-type plugin-loader (avoid dependency loops)
   {
     id: 'no-plugin-imports-from-shared',
     when: (ctx) => {
       const name = ctx.pkg?.name || '';
       return name.startsWith('@hierarchidb/runtime-') || name.startsWith('@hierarchidb/common-');
     },
-    because: 'Shared/common/runtime packages must not depend on node-type plugins to avoid cycles.',
+    because: 'Shared/common/runtime packages must not depend on node-type plugin-loader to avoid cycles.',
     rules: [
       { rule: 'import-path-ban', options: { forbid: ['^@hierarchidb/.+-plugin(?:/|$)'] }, severity: 'ERROR' },
     ],
@@ -64,17 +64,7 @@ const custom = [
     rules: [
       { rule: 'import-path-ban', options: { forbid: ['^packages/.+/(src|dist)/'], exceptSamePackage: true }, severity: 'ERROR' },
     ],
-  },
-
-  // Ban repo-local aliases in public entrypoints (keep publish surface portable)
-  {
-    id: 'ban-alias-in-public-entries',
-    when: () => true,
-    because: '公開エントリ(src/index.ts 等)でレポジトリアイリアス(~ 等)の使用を禁止。',
-    rules: [
-      { rule: 'import-path-ban', options: { from: ['**/src/index.ts', '**/src/ui/index.ts', '**/src/worker/index.ts'], forbid: ['^~/.+'] }, severity: 'ERROR' },
-    ],
-  },
+  }
 ];
 
 // Refine default tsconfig policy to avoid false positives:

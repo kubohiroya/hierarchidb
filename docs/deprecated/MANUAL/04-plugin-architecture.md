@@ -382,7 +382,7 @@ packages/plugins/project/
 ### UI側レジストリ
 
 ```typescript
-// packages/ui-client/src/plugins/UIPluginRegistry.ts
+// packages/ui-client/src/plugin-loader/UIPluginRegistry.ts
 export class UIPluginRegistry {
   private plugins = new Map<TreeNodeType, UIPlugin>();
   
@@ -403,7 +403,7 @@ registry.register(ProjectUIPlugin);
 ### Worker側レジストリ
 
 ```typescript
-// packages/worker/src/plugins/WorkerPluginRegistry.ts
+// packages/worker/src/plugin-loader/WorkerPluginRegistry.ts
 export class WorkerPluginRegistry {
   private plugins = new Map<TreeNodeType, WorkerPlugin>();
   

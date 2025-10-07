@@ -10,7 +10,7 @@
   */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { BatchSessionManager } from '../../services/BatchSessionManager.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';
 import type { BatchProgressEvent } from '../../types/BatchProgressEvent.js';

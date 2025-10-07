@@ -65,9 +65,9 @@
   },
   "dependencies": {
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/common-type": "workspace:*",
-    "@hierarchidb/runtime-shared-module-paths": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/plugin-sdk": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",

@@ -3,9 +3,9 @@
  * @description BaseMap entity handler built on HierarchicalEntityHandler
  */
 
-import type { NodeId, Timestamp } from '@hierarchidb/common-type';
+import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Collection, IndexableType, Table } from 'dexie';
-import { HierarchicalEntityHandler, createDraftWorkingCopyBase } from '@hierarchidb/plugins-base-plugin';
+import { HierarchicalEntityHandler, createDraftWorkingCopyBase } from '@hierarchidb/plugin-sdk';
 import type {
   BaseMapEntity,
   BaseMapSearchCriteria,

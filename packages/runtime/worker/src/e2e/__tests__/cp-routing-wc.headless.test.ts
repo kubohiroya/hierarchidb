@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { CoreDB } from '../../services/CoreDB.js';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
 

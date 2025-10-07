@@ -1,10 +1,10 @@
 /**
-  * @file index.ts
+  * @file RuntimeWorkerService.ts
  * @description Styler plugin services export
  * : SpreadsheetCSVApiDriver
   */
 
-//  NOTE: SpreadsheetCSVApiDriver@hierarchidb/plugins-spreadsheet-plugin
+//  NOTE: SpreadsheetCSVApiDriver@hierarchidb/plugin-loader-spreadsheet-plugin
 
 //  Styler
 export { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';

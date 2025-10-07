@@ -3,7 +3,7 @@
  * @description ERIA-Cartograph:
   */
 
-import type { TreeNodeId } from '@hierarchidb/common-type';
+import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from './BatchTaskLike.js';
 
 /**

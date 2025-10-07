@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { useWorker } from '../contexts/WorkerProvider.js';
 import type { PluginInfo } from '@hierarchidb/common-api';
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 
 /**
  * Hook for accessing plugin registry information
@@ -14,14 +14,14 @@ import type { NodeType } from '@hierarchidb/common-type';
  * @example
  * ```tsx
  * function PluginList() {
- *   const { plugins, loading, error } = usePluginRegistry();
+ *   const { plugin-loader, loading, error } = usePluginRegistry();
  *
- *   if (loading) return <div>Loading plugins...</div>;
+ *   if (loading) return <div>Loading plugin-loader...</div>;
  *   if (error) return <div>Error: {error}</div>;
  *
  *   return (
  *     <ul>
- *       {plugins.map(plugin => (
+ *       {plugin-loader.map(plugin => (
  *         <li key={plugin.nodeType}>
  *           {plugin.displayName} (v{plugin.version})
  *         </li>
@@ -48,7 +48,7 @@ export function usePluginRegistry() {
         setPlugins(pluginList);
       } catch (err) {
         console.error('Failed to load plugins:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load plugins');
+        setError(err instanceof Error ? err.message : 'Failed to load plugin-loader');
       } finally {
         setLoading(false);
       }

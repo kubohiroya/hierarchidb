@@ -14,7 +14,7 @@ import {
   type MapViewState,
   loadMapLibreMap,
 } from '@hierarchidb/ui-map';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 import { BUILT_IN_STYLES } from '../constants/builtInStyles.js';

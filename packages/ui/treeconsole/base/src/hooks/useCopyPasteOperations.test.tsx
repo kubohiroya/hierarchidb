@@ -5,7 +5,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { useCopyPasteOperations } from './useCopyPasteOperations.js';
 
 describe('useCopyPasteOperations', () => {

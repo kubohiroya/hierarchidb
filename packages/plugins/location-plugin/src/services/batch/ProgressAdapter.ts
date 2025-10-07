@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/runtime-shared-batch-processor';
 
 // Location plugin internal stage names → shared vocabulary

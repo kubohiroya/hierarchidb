@@ -4,7 +4,7 @@ import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-libra
 import { useEffect } from 'react';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
-import type { MultiStepDialogState, NodeId, TreeId } from '@hierarchidb/common-type';
+import type { MultiStepDialogState, NodeId, TreeId } from '@hierarchidb/common-types';
 import { HeadlessMultiStepDialog } from '@hierarchidb/ui-dialog';
 import { usePluginDialogController } from '../usePluginDialogController.js';
 

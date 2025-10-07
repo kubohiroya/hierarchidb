@@ -210,7 +210,7 @@ HierarchiDB のユーザーインターフェース層を構成するReactコン
 ## tsconfig のパスエイリアス使用ポリシー
 
 - 公開ソースでのエイリアス禁止（MUST）: ライブラリの公開ソース内では、パッケージ内専用の tsconfig paths（例: `~/*`）に依存しないでください。外部が同じエイリアスを持たない場合に解決できず、依存側の typecheck/ビルドが失敗します。
-- `types` は `src` 指向で統一（MUST）: すべての内部パッケージは `package.json` で `types: "src/index.ts"`、`exports.types: "./src/index.ts"` に統一し、ビルド前 typecheck を安定化します。
+- `types` は `src` 指向で統一（MUST）: すべての内部パッケージは `package.json` で `types: "src/RuntimeWorkerService.ts"`、`exports.types: "./src/RuntimeWorkerService.ts"` に統一し、ビルド前 typecheck を安定化します。
 - エイリアスが必要な場合（SHOULD）: 次のいずれかを採用します。
   - ビルド時に相対へ書き換える構成（例: ts-transform-paths / tsc-alias）を使う。
   - 公開面（エクスポートされるファイル）では相対参照を用いる。
@@ -551,7 +551,7 @@ it('should be accessible', () => {
 ```typescript
 // tsup.config.ts
 export default {
-  entry: ['src/index.ts'],
+  entry: ['src/RuntimeWorkerService.ts'],
   format: ['esm'],
   dts: true,
   clean: true,
@@ -608,7 +608,7 @@ ui-usermenu ← ui-auth, ui-i18n, ui-monitoring, ui-theme
 - [アーキテクチャ詳細](../../docs/7-aop-architecture.md)
 ## Plugin/Library MUSTs (重要な開発規約)
 - 公開TSXの戻り値型: すべての公開 TSX 関数/コンポーネントは `JSX.Element`（必要なら `| null`）を明示する（TS2742 回避）。
-- 型エクスポート: `package.json` の `types` と `exports.types` は必ず `src/index.ts` を指す（prebuild typecheck を安定化）。
+- 型エクスポート: `package.json` の `types` と `exports.types` は必ず `src/RuntimeWorkerService.ts` を指す（prebuild typecheck を安定化）。
 - パスエイリアス禁止: 公開ソースでは `~/` など tsconfig の paths に依存しない。相対参照（../）かビルド時のパス置換のみ許可。
 - React/MUI をバンドルしない: UI パッケージは React/MUI を `peerDependencies` に置き、tsup では `external` 指定する（ホストアプリでの単一インスタンス維持）。
 - 環境変数: ブラウザコードで `process.env` は使用しない。`import.meta.env` / `VITE_*` を用いる（必要なら共通の `env` ヘルパーを利用）。

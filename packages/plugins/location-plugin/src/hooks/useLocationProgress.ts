@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeType, ProgressEvent } from '@hierarchidb/common-type';
+import type { NodeType, ProgressEvent } from '@hierarchidb/common-types';
 import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';

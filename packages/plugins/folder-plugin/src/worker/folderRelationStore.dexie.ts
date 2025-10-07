@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 import type { FolderEntitiesDB, FolderRelationRow } from './folderEntitiesDB.js';
 

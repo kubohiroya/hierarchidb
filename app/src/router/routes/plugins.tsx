@@ -49,8 +49,8 @@ import {
 // import { WorkerAPIClient } from '../WorkerAPIClient.js';
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeType, TreeId } from '@hierarchidb/common-type';
-import type { PluginDefinition } from '@hierarchidb/common-type';
+import type { NodeType, TreeId } from '@hierarchidb/common-types';
+import type { PluginDefinition } from '@hierarchidb/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
@@ -60,7 +60,7 @@ import { useNavigate } from '@tanstack/react-router';
 export function meta() {
   return [
     { title: 'Plugin Registry - HierarchiDB' },
-    { name: 'description', content: 'View and manage all registered plugins' },
+    { name: 'description', content: 'View and manage all registered plugin-loader' },
   ];
 }
 
@@ -251,7 +251,7 @@ function EnhancedPluginRow({
                   ) : (
                     <Typography variant="body2" color="text.secondary">
                       {isFolderPlugin
-                        ? 'Core plugin - Foundation for all other plugins'
+                        ? 'Core plugin - Foundation for all other plugin-loader'
                         : 'This plugin has no dependencies'}
                     </Typography>
                   )}
@@ -512,7 +512,7 @@ export default function PluginsPage() {
     setPluginDependencies(dependencies);
   };
 
-  // Calculate affected plugins (children) when operating on a parent
+  // Calculate affected plugin-loader (children) when operating on a parent
   const calculateAffectedPlugins = (pluginName: string): string[] => {
     const affected = new Set<string>([pluginName]);
     const queue = [pluginName];
@@ -520,7 +520,7 @@ export default function PluginsPage() {
     while (queue.length > 0) {
       const current = queue.shift()!;
 
-      // Find all plugins that depend on the current one
+      // Find all plugin-loader that depend on the current one
       for (const [plugin, deps] of Object.entries(pluginDependencies)) {
         if (deps.includes(current) && !affected.has(plugin)) {
           affected.add(plugin);
@@ -555,7 +555,7 @@ export default function PluginsPage() {
         // await client.deletePlugin(plugin, { clearDatabase });
       }
 
-      // Reload plugins
+      // Reload plugin-loader
       await loadPlugins();
     } catch (err) {
       console.error('Failed to delete plugin:', err);
@@ -614,7 +614,7 @@ export default function PluginsPage() {
         }
       }
 
-      // Reload plugins
+      // Reload plugin-loader
       await loadPlugins();
     } catch (err) {
       console.error('Failed to reset plugin:', err);
@@ -656,7 +656,7 @@ export default function PluginsPage() {
       loadPluginDependencies();
     } catch (err) {
       console.error('Failed to load plugins:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load plugins');
+      setError(err instanceof Error ? err.message : 'Failed to load plugin-loader');
     } finally {
       setLoading(false);
     }
@@ -666,7 +666,7 @@ export default function PluginsPage() {
     loadPlugins();
   }, [loadPlugins]);
 
-  // UI plugins list now comes from vite metadata (uiPluginsList)
+  // UI plugin-loader list now comes from vite metadata (uiPluginsList)
 
   if (loading) {
     return (

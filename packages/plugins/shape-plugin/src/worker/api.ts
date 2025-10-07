@@ -35,7 +35,7 @@ import { metadataLoader } from '../services/metadata/MetadataLoader.js';
 import { createShapeBatchManager } from '../services/batch/UnifiedShapeBatchManager.js';
 import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
-import type { TreeNodeId } from '@hierarchidb/common-type';
+import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../types/BatchTaskLike.js';
 import { createComlinkEventBridge, type RemoteEventListener } from '@hierarchidb/runtime-worker-bootstrap';
 import type { StandardProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';

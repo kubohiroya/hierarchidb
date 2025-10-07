@@ -5,7 +5,7 @@ import type {
   SubscriptionOptions,
   TreeChangeEvent,
   TreeId,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { Subject } from 'rxjs';
 
 export type SubscriptionKind =

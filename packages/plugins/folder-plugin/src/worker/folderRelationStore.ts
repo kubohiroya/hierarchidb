@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
 
 // Development-only in-memory RelationStore for the folder plugin.

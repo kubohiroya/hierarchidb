@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
-import { toNodeId, toNodeType } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType } from '@hierarchidb/common-types';
 import { filterNodesBySearch, getNodePath } from '../utils/index.js';
 
 const ROOT_PARENT_ID = null as unknown as NodeId;

@@ -115,11 +115,11 @@ export default [
 
   // Type-aware deprecation checks (shape-plugin)
   {
-    files: ['packages/plugins/shape-plugin/**/*.{ts,tsx}'],
+    files: ['packages/plugin-loader/shape-plugin/**/*.{ts,tsx}'],
     languageOptions: {
       parserOptions: {
         tsconfigRootDir: new URL('.', import.meta.url).pathname,
-        project: ['./packages/plugins/shape-plugin/tsconfig.json'],
+        project: ['./packages/plugin-loader/shape-plugin/tsconfig.json'],
         warnOnUnsupportedTypeScriptVersion: false,
       },
     },
@@ -147,11 +147,11 @@ export default [
   },
 
   // Plugin packages: forbid legacy worker direct paths
-  // Purpose: during Phase 2b rollout, ensure all plugins use `worker-factory`
+  // Purpose: during Phase 2b rollout, ensure all plugin-loader use `worker-factory`
   // and avoid direct `../worker/*` or package `*/worker` imports.
   {
-    files: ['packages/plugins/**/src/**/*.{ts,tsx,js,jsx}'],
-    ignores: ['packages/plugins/**/src/**/__tests__/**', 'packages/plugins/**/src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
+    files: ['packages/plugin-loader/**/src/**/*.{ts,tsx,js,jsx}'],
+    ignores: ['packages/plugin-loader/**/src/**/__tests__/**', 'packages/plugin-loader/**/src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [

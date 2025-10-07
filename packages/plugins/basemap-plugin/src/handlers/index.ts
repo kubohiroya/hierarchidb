@@ -1,5 +1,5 @@
 /**
- * @file handlers/index.ts
+ * @file handlers/RuntimeWorkerService.ts
  * @description Entity handlers exports for BaseMap plugin
  */
 

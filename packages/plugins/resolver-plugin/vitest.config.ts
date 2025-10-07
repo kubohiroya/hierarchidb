@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
@@ -27,11 +27,11 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
-      '@hierarchidb/plugins-base-plugin': basePluginEntry,
+      '@hierarchidb/plugin-sdk': basePluginEntry,
       // Needed when ui/core (dist) imports runtime-worker-bootstrap
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(
         __dirname,
-        '../../runtime-worker/worker-bootstrap/src/index.ts',
+        '../../runtime-worker/worker-bootstrap/src/RuntimeWorkerService.ts',
       ),
     },
   },

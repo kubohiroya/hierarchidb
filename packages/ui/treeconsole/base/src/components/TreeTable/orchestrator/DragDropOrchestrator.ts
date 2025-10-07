@@ -8,7 +8,7 @@
 
 import { useAtom } from 'jotai';
 import { useCallback, useRef } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeViewController } from '../../../types/index.js';
 import { draggingNodeIdAtom, dropTargetNodeIdAtom, forbiddenDropTargetsAtom } from '../state/index.js';
 import { computeDescendants } from '@hierarchidb/ui-treeconsole-treetable';

@@ -1,5 +1,5 @@
 import type { Remote } from 'comlink';
-import type { NodeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   BatchProgressEvent,

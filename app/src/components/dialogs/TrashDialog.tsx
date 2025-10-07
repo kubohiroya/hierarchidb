@@ -32,7 +32,7 @@ import {
   type MultiDialogSize,
 } from '@hierarchidb/ui-dialog';
 import { alpha } from '@mui/material/styles';
-import type { NodeId, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import {
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,

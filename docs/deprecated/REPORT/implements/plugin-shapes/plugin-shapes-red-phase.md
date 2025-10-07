@@ -15,7 +15,7 @@ TDD Redフェーズにおける失敗テストの実装内容を記録します�
 
 ```bash
 # プラグインディレクトリに移動
-cd packages/plugins/_shapes_buggy
+cd packages/plugin-loader/_shapes_buggy
 
 # テスト実行
 pnpm test

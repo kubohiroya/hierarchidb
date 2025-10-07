@@ -5,7 +5,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import { BatchSessionManager } from '../../services/BatchSessionManager.js';
 import { closeEphemeralShapeDB, getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 import type { BatchConfig } from '../../types/BatchConfig.js';

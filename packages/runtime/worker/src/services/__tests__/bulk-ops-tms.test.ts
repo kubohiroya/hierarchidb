@@ -7,7 +7,7 @@ import type {
   PasteNodesPayload,
   Timestamp,
   TreeNode,
-} from '@hierarchidb/common-type';
+} from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandProcessor } from '../CommandProcessor.js';
 

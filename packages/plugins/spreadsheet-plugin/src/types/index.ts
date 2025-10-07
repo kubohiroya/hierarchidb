@@ -1,9 +1,9 @@
 /**
- * @file types/index.ts
+ * @file types/RuntimeWorkerService.ts
  * @description Type definitions for Spreadsheet plugin entities
  */
 
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 
 // ============================================================================
 // Raw File Metadata (PersistentRelationalEntity)

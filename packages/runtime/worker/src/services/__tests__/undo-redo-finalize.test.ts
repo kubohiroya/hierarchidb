@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-type';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 type TreeNodeState = Partial<Record<NodeId, TreeNode>>;

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
@@ -11,7 +11,7 @@ export default defineConfig({
     alias: {
       '@hierarchidb/batch': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
       '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
-      '@hierarchidb/plugins-base-plugin': basePluginEntry,
+      '@hierarchidb/plugin-sdk': basePluginEntry,
       '@hierarchidb/runtime-worker': path.resolve(__dirname, 'src/test-shims/runtime-worker.ts'),
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, 'src/test-shims/runtime-worker.ts'),
       '@hierarchidb/map-adapter': path.resolve(__dirname, 'src/test-shims/optional-features.ts'),

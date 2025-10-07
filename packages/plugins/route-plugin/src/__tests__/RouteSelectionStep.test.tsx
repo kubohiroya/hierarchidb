@@ -1,6 +1,5 @@
 import { describe, expect, vi, it, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import React from 'react';
 import { RouteSelectionStep } from '../components/RouteSelectionStep.js';
 import type { RouteEntity, RouteWorkingCopy, NodeId } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';

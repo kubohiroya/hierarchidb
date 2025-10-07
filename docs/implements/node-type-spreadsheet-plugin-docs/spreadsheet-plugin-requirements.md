@@ -39,7 +39,7 @@
 - 🟢 **UI→Worker**: Comlink RPC経由でデータ処理要求
 - 🟢 **Worker→Database**: CoreDB/EphemeralDBでの永続化・作業コピー管理
 - 🟢 **参照管理**: CSVTableMetadataの参照カウント機能による共有データ管理
-- **参照した設計文書**: `packages/ui/csv-extract/src/types/index.ts` (型定義)
+- **参照した設計文書**: `packages/ui/csv-extract/src/types/RuntimeWorkerService.ts` (型定義)
 
 ## 3. 制約条件（EARS非機能要件・アーキテクチャ設計ベース）
 
@@ -108,7 +108,7 @@
 ### 参照した設計文書
 - **アーキテクチャ**: `CLAUDE.md` - プラグインシステム、Working Copy パターン
 - **データフロー**: UIコンポーネント → Worker → Database の分離アーキテクチャ
-- **型定義**: `packages/ui/csv-extract/src/types/index.ts` - 完全なTypeScript型システム
+- **型定義**: `packages/ui/csv-extract/src/types/RuntimeWorkerService.ts` - 完全なTypeScript型システム
 - **テストケース**: `docs/implements/styler-csv-api-driver/StylerCSVApiDriver-testcases.md` - CSV処理仕様
 
 ### 参照した機能要件

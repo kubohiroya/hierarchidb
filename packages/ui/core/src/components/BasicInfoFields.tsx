@@ -1,6 +1,6 @@
 /**
  * BasicInfoFields
- * Shared name/description form fields for Step1 across plugins.
+ * Shared name/description form fields for Step1 across plugin-loader.
  */
 
 import type React from 'react';

@@ -1,11 +1,11 @@
 /**
  * Application Plugin Configuration
  *
- * Defines which plugins the application wants to use.
+ * Defines which plugin-loader the application wants to use.
  * The system will automatically resolve dependencies and load in correct order.
  */
 
-import type { NodeType } from '@hierarchidb/common-type';
+import type { NodeType } from '@hierarchidb/common-types';
 import { readRuntimeMode } from '@hierarchidb/util';
 
 const NT = (s: string) => s as NodeType;
@@ -20,10 +20,10 @@ export interface PluginConfig {
   // Plugins to exclude even if they are dependencies
   excluded?: NodeType[];
 
-  // Enable auto-discovery of available plugins
+  // Enable auto-discovery of available plugin-loader
   autoDiscovery?: boolean;
 
-  // Load all discovered plugins
+  // Load all discovered plugin-loader
   loadAll?: boolean;
 
   // Plugin loading options
@@ -46,7 +46,7 @@ export interface PluginConfig {
  * Default application plugin configuration
  */
 export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
-  // Application explicitly requests these plugins
+  // Application explicitly requests these plugin-loader
   requested: [
     NT('folder'),      // Basic folder-plugin functionality
     NT('basemap'),     // Map layers
@@ -58,16 +58,16 @@ export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
   // No exclusions by default
   excluded: [],
 
-  // Enable auto-discovery to find all available plugins
+  // Enable auto-discovery to find all available plugin-loader
   autoDiscovery: true,
 
-  // Don't load all discovered plugins, only requested + dependencies
+  // Don't load all discovered plugin-loader, only requested + dependencies
   loadAll: false,
 
   options: {
-    failOnMissing: false,  // Continue even if some plugins fail
+    failOnMissing: false,  // Continue even if some plugin-loader fail
     verbose: true,          // Log details in development
-    lazyLoad: false,        // Load all plugins at startup
+    lazyLoad: false,        // Load all plugin-loader at startup
     loadTimeout: 5000,      // 5 second timeout per plugin
   },
 };
@@ -128,7 +128,7 @@ function resolveRuntimeMode(): string {
  */
 export const PLUGIN_FEATURES = {
   // Geographic features
-  enableGeographic: true,  // Enables basemap, shape-plugin plugins
+  enableGeographic: true,  // Enables basemap, shape-plugin plugin-loader
 
   // Data processing features
   enableDataProcessing: true,  // Enables spreadsheet-plugin plugin
@@ -137,7 +137,7 @@ export const PLUGIN_FEATURES = {
   enableStyling: true,  // Enables styler-plugin plugin
 
   // Experimental features
-  enableExperimental: false,  // Enables experimental plugins
+  enableExperimental: false,  // Enables experimental plugin-loader
 } as const;
 
 /**
@@ -160,7 +160,7 @@ export function getRequestedPlugins(): NodeType[] {
     requested = requested.filter(p => p !== NT('styler'));
   }
 
-  // Remove excluded plugins
+  // Remove excluded plugin-loader
   if (config.excluded && config.excluded.length > 0) {
     requested = requested.filter(p => !config.excluded!.includes(p));
   }

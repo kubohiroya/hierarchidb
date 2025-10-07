@@ -327,11 +327,11 @@ interface ValidationResult {
 ```typescript
 // プラグインの動的インポート
 const pluginLoaders = {
-  basemap: () => import('./plugins/basemap'),
-  styler: () => import('./plugins/styler-plugin'),
-  shape: () => import('./plugins/shape-plugin'),
-  spreadsheet: () => import('./plugins/spreadsheet-plugin'),
-  project: () => import('./plugins/project')
+  basemap: () => import('./plugin-loader/basemap'),
+  styler: () => import('./plugin-loader/styler-plugin'),
+  shape: () => import('./plugin-loader/shape-plugin'),
+  spreadsheet: () => import('./plugin-loader/spreadsheet-plugin'),
+  project: () => import('./plugin-loader/project')
 };
 
 async function loadPlugin(nodeType: TreeNodeType): Promise<PluginDefinition> {

@@ -10,7 +10,7 @@
  * -> ShapePlugin (Step 2: Data Source, Step 3: License, Step 4: Processing, Step 5: Country Selection)
  */
 
-import { wrapDialogStepComponent } from '@hierarchidb/plugins-base-plugin';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';
 // Step Components
 import { DataSourceStep } from './components/DataSourceStep.js';
 import { LicenseStep } from './components/LicenseStep.js';

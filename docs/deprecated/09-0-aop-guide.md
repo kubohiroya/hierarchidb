@@ -400,7 +400,7 @@ packages/plugins/[plugin-name]/
 ### 4.1 型定義
 
 ```typescript
-// packages/plugins/[plugin-name]/src/types/openstreetmap-type.ts
+// packages/plugin-loader/[plugin-name]/src/types/openstreetmap-type.ts
 import type { TreeNodeId } from '@hierarchidb/core';
 import type { BaseEntity, BaseWorkingCopy } from '~/registry/unified-plugin';
 
@@ -432,7 +432,7 @@ export interface MyPluginWorkingCopy extends BaseWorkingCopy {
 **設計方針**: 各プラグインは独自のDexieインスタンスを持ち、プラグイン固有のデータを管理します。これにより、プラグイン間のデータ分離と独立したマイグレーション管理が可能になります。
 
 ```typescript
-// packages/plugins/[plugin-name]/src/database/MyPluginDatabase.ts
+// packages/plugin-loader/[plugin-name]/src/database/MyPluginDatabase.ts
 import Dexie, { type Table } from 'dexie';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
 
@@ -517,7 +517,7 @@ export function getMyPluginDatabase(): MyPluginDatabase {
 #### 4.3.1 EntityHandler実装
 
 ```typescript
-// packages/plugins/[plugin-name]/src/handlers/MyPluginHandler.ts
+// packages/plugin-loader/[plugin-name]/src/handlers/MyPluginHandler.ts
 import type { TreeNodeId } from '@hierarchidb/core';
 import type { EntityHandler } from '~/registry/unified-plugin';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
@@ -599,7 +599,7 @@ export class MyPluginHandler implements EntityHandler<MyPluginEntity, never, MyP
 #### 4.3.2 プラグイン専用サービス実装
 
 ```typescript
-// packages/plugins/[plugin-name]/src/services/MyPluginService.ts
+// packages/plugin-loader/[plugin-name]/src/services/MyPluginService.ts
 import type { TreeNodeId } from '@hierarchidb/core';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
 import { MyPluginHandler } from '../handlers/MyPluginHandler';
@@ -757,7 +757,7 @@ export class WorkerAPIImpl {
 ### 4.4 ライフサイクルフック
 
 ```typescript
-// packages/plugins/[plugin-name]/src/definitions/MyPluginDefinition.ts（一部）
+// packages/plugin-loader/[plugin-name]/src/definitions/MyPluginDefinition.ts（一部）
 import type { NodeLifecycleHooks } from '~/registry/unified-plugin';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
 
@@ -804,7 +804,7 @@ const myPluginLifecycle: NodeLifecycleHooks<MyPluginEntity, MyPluginWorkingCopy>
 #### 表示コンポーネント
 
 ```tsx
-// packages/plugins/[plugin-name]/src/ui/MyPluginView.tsx
+// packages/plugin-loader/[plugin-name]/src/ui/MyPluginView.tsx
 import { useEffect, useState } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { useLoaderData } from 'provider-router-dom';
@@ -839,7 +839,7 @@ export function MyPluginView() {
 #### 編集コンポーネント
 
 ```tsx
-// packages/plugins/[plugin-name]/src/ui/MyPluginEditor.tsx
+// packages/plugin-loader/[plugin-name]/src/ui/MyPluginEditor.tsx
 import { useState } from 'react';
 import { Box, TextField, Button } from '@mui/material';
 import { useLoaderData } from 'provider-router-dom';
@@ -886,7 +886,7 @@ export function MyPluginEditor() {
 ### 4.6 PluginDefinition
 
 ```typescript
-// packages/plugins/[plugin-name]/src/definitions/MyPluginDefinition.ts
+// packages/plugin-loader/[plugin-name]/src/definitions/MyPluginDefinition.ts
 import type { PluginDefinition, IconDefinition } from '~/registry/unified-plugin';
 import type { MyPluginEntity, MyPluginWorkingCopy } from '../types';
 import { MyPluginHandler } from '../handlers/MyPluginHandler';
@@ -978,7 +978,7 @@ export const MyPluginDefinition: PluginDefinition<MyPluginEntity, never, MyPlugi
 ### 4.7 プラグインの登録
 
 ```typescript
-// packages/_app/src/plugins/register.ts
+// packages/_app/src/plugin-loader/register.ts
 import { PluginRegistryImpl } from '~/registry'; // Workerパッケージ内のregistry
 import { MyPluginDefinition } from '@hierarchidb/plugin-myplugin';
 
@@ -1001,7 +1001,7 @@ export function registerPlugins() {
 ### 5.1 単体テスト
 
 ```typescript
-// packages/plugins/[plugin-name]/src/handlers/__tests__/MyPluginHandler.test.ts
+// packages/plugin-loader/[plugin-name]/src/handlers/__tests__/MyPluginHandler.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MyPluginHandler } from '../MyPluginHandler';
 import 'fake-indexeddb/auto';
@@ -1039,7 +1039,7 @@ describe('MyPluginHandler', () => {
 ### 5.2 統合テスト
 
 ```typescript
-// packages/plugins/[plugin-name]/src/__tests__/integration.test.ts
+// packages/plugin-loader/[plugin-name]/src/__tests__/integration.test.ts
 import { describe, it, expect } from 'vitest';
 import { PluginRegistryImpl } from '~/registry'; // 実際のレジストリの場所に応じて調整
 import { MyPluginDefinition } from '../definitions/MyPluginDefinition';

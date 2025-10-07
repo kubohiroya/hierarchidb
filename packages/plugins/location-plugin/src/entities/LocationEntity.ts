@@ -3,8 +3,8 @@
  * @description Location dataset entity definition and shared configuration types.
  */
 
-import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-type';
-import type { WorkingCopyDraft } from '@hierarchidb/plugins-base-plugin';
+import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-api';
 
 /**
  * Category taxonomy used when importing / classifying locations.

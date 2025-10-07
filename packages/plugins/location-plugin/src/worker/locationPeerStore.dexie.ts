@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/common-type';
+import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { LocationEntitiesDB } from './locationEntitiesDB.js';
 import type { LocationPeerData } from '../types/entities.js';

@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Button, Typography, TextField, Stack } from '@mui/material';
 import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
-import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-type';
+import type { DialogStepDefinition, NodeId } from '@hierarchidb/common-types';
 import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../types.js';
 import { wrapDialogStepComponent } from '../base/wrapDialogStepComponent.js';
 

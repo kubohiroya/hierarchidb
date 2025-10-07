@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
-import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-type';
+import type { NodeId, TreeId, NodeType } from '@hierarchidb/common-types';
 import { useWorkingCopy } from '../useWorkingCopy.js';
 import {Remote} from "comlink";
 

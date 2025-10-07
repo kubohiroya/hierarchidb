@@ -5,7 +5,7 @@
 
 import './worker-react-refresh-shim.js';
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
-import type { PluginDefinition } from '@hierarchidb/common-type';
+import type { PluginDefinition } from '@hierarchidb/common-types';
 import {
   WORKER_FLAG_ALLOWED_OVERRIDES,
   WORKER_FLAG_PARAM_PREFIX,
@@ -86,7 +86,7 @@ const reporter = new WorkerInitializationReporter(
   [
     { name: 'Load Comlink', weight: 5 },
     { name: 'Load plugin loaders', weight: 10 },
-    { name: 'Load plugins', weight: 35 },
+    { name: 'Load plugin-loader', weight: 35 },
     { name: 'Bootstrap services', weight: 30 },
     { name: 'Create API facade', weight: 10 },
     { name: 'Expose API', weight: 10 },

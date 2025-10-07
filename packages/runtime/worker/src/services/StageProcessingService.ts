@@ -1,8 +1,8 @@
 import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
 // Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime
 import type vtPbfNS = require('vt-pbf');
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
-import type { SharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import { createSharedDownloadService } from './downloadAdapter.js';
+import type { SharedDownloadService } from './downloadAdapter.js';
 import { TilesDB } from './TilesDB.js';
 
 /**

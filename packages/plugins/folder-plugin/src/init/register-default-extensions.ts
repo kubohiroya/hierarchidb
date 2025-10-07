@@ -18,15 +18,15 @@ async function registerNodeDialogDefaults(): Promise<void> {
         inits.push(fn);
       }
     } catch {
-      // ignore missing packages or load errors in environments that don't bundle these plugins
+      // ignore missing packages or load errors in environments that don't bundle these plugin-loader
     }
   };
 
   // Avoid TS resolving optional deps by using non-literal specifiers
-  const SHAPE = '@hierarchidb/plugins-shape-plugin' as string;
-  const SHEET = '@hierarchidb/plugins-spreadsheet-plugin' as string;
-  const BASEMAP = '@hierarchidb/plugins-basemap-plugin' as string;
-  const STYLER = '@hierarchidb/plugins-styler-plugin' as string;
+  const SHAPE = '@hierarchidb/plugin-loader-shape-plugin' as string;
+  const SHEET = '@hierarchidb/plugin-loader-spreadsheet-plugin' as string;
+  const BASEMAP = '@hierarchidb/plugin-loader-basemap-plugin' as string;
+  const STYLER = '@hierarchidb/plugin-loader-styler-plugin' as string;
 
   await Promise.all([
     tryInit<ShapeExtensionModule>(

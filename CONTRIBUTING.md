@@ -2,7 +2,7 @@
 
 This repository prioritizes prebuild typecheck stability and consistent CI results. Follow these MUSTs for any package (UI, runtime-ui, node-type, features, tools).
 
-- Types at source: package.json must set `types` and `exports.types` to `src/index.ts`.
+- Types at source: package.json must set `types` and `exports.types` to `src/RuntimeWorkerService.ts`.
 - Public TSX return types: exported TSX must return `JSX.Element` (or `JSX.Element | null`).
 - No tsconfig paths in public source: do not use `~/` or custom paths – use relative imports.
   - `@hierarchidb/app` の node-type サブパスは `@hierarchidb/tools-plugin-registry-utils` が自動同期します。`tsconfig*.json` に手動で追記しないでください。
@@ -26,7 +26,7 @@ Further details are duplicated in:
   - クラスや interface など UpperCamelCase の識別子は、同じ綴りのファイル名（例: `LocationEntitiesDB.ts` ↔ `export class LocationEntitiesDB {}`）にします。
   - 先頭小文字の関数・フック・ファクトリは lowerCamelCase で統一し、ファイル名も同じ綴りにします（例: `createLocationGroupStoreDexie.ts` ↔ `export function createLocationGroupStoreDexie()`).
 - ドット区切りやスネークケースを混在させたファイル名（`locationGroupStore.dexie.ts` など）は不可。必要な語句は CamelCase に織り込みます。
-- 例外は `index.ts` / `index.tsx` のみ。バレル export が必要な場合は index ファイルで明示し、その他のファイルは単一 export に揃えます。
+- 例外は `RuntimeWorkerService.ts` / `index.tsx` のみ。バレル export が必要な場合は index ファイルで明示し、その他のファイルは単一 export に揃えます。
 
 ### 例外と補足
 - ユーティリティ集は `fooBarUtil.ts` のように lowerCamelCase で命名し、同名の関数が存在しなくても構いません。ただしファイルの責務はファイル名に沿って最小限に保ちます。
