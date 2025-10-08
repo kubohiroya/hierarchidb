@@ -11,7 +11,6 @@ export type { NodeId } from '@hierarchidb/common-types';
 // ================================
 
 import type { Timestamp } from '@hierarchidb/common-types';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-sdk';
 import type {
   LocationEntity as LocationEntityDefinition,
   LocationDataSource,

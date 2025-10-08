@@ -177,7 +177,7 @@ export class SessionController {
 
     const tasks: DownloadTask[] = this.urlMetadata.map((metadata, index) => ({
       taskId: `${this.sessionId}-download-${index}`,
-      sessionId: this.sessionId,
+      sessionId: this.sessionId as NodeId,
       taskType: 'download',
       stage: BatchTaskStage.WAIT,
       type: 'download',
@@ -225,7 +225,7 @@ export class SessionController {
 
     const tasks: Simplify1Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify1-${index}`,
-      sessionId: this.sessionId,
+      sessionId: this.sessionId as NodeId,
       taskType: 'simplify1',
       stage: BatchTaskStage.WAIT,
       type: 'simplify1',
@@ -258,7 +258,7 @@ export class SessionController {
 
     const tasks: Simplify2Task[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-simplify2-${index}`,
-      sessionId: this.sessionId,
+      sessionId: this.sessionId as NodeId,
       taskType: 'simplify2',
       stage: BatchTaskStage.WAIT,
       type: 'simplify2',
@@ -297,7 +297,7 @@ export class SessionController {
 
     const tasks: VectorTileTask[] = this.urlMetadata.map((_metadata, index) => ({
       taskId: `${this.sessionId}-vectortile-${index}`,
-      sessionId: this.sessionId,
+      sessionId: this.sessionId as NodeId,
       taskType: 'vectortile',
       stage: BatchTaskStage.WAIT,
       type: 'vectortile',

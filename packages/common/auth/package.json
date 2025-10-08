@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
@@ -35,10 +35,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "pnpm run build:types",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs",
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {

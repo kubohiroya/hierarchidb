@@ -1,10 +1,9 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/RuntimeWorkerService.ts'],
+  entry: ['src/index.ts'],
   format: ['esm'],
   sourcemap: true,
   dts: true,
   clean: true,
 });
-

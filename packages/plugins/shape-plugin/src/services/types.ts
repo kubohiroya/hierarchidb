@@ -123,7 +123,7 @@ export interface FilterRule {
 export interface BatchSession {
   sessionId: string;
   nodeId: NodeId;
-  status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
   config: BatchProcessConfig;
   startedAt: number;
   updatedAt: number;

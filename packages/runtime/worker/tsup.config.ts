@@ -1,8 +1,8 @@
 import { createTsupConfig } from '../../../tsup.base.config.js';
 
 const cfg = createTsupConfig({
-  // Build both the main entry and the worker entry
-  entry: ['src/RuntimeWorkerService.ts', 'src/stageWorker.entry.ts'],
+  // Build main entry (index) and worker entry
+  entry: ['src/index.ts', 'src/RuntimeWorkerService.ts', 'src/stageWorker.entry.ts'],
   dts: true,
   external: [
     'provider',

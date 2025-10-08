@@ -57,14 +57,6 @@ const optionalFeatureImporters: Record<OptionalFeatureId, () => Promise<Optional
 };
 
 /**
- * Dynamically import the runtime worker bundle. Callers can then access
- * exports such as `storeRegistry`.
-export function importRuntimeWorker() {
-  return runtimeWorkerImporter();
-}
- */
-
-/**
  * Dynamically import the runtime worker bootstrap utilities.
 export function importRuntimeWorkerBootstrap() {
   return runtimeWorkerBootstrapImporter();

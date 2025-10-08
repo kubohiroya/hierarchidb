@@ -3,7 +3,6 @@
  * Displays Shape node information and provides management controls
  */
 
-import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,

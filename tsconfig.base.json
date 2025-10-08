@@ -59,10 +59,10 @@
         "packages/feature/download/src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "packages/runtime/worker/src/index.ts"
+        "packages/runtime/worker/dist/index.d.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "packages/runtime/worker/src/*"
+        "packages/runtime/worker/dist/*"
       ],
       "@hierarchidb/ui-file": [
         "packages/ui/file/src/index.ts"

@@ -2,7 +2,6 @@
  * Location Dialog Component composed with the headless multi-step dialog shell.
  */
 
-import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { Box, Button, Grid, Typography } from '@mui/material';

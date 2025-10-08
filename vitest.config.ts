@@ -1,5 +1,3 @@
-
-
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
 import {
@@ -87,12 +85,12 @@ export default defineConfig({
   resolve: {
     alias: {
       // Map frequently referenced workspace packages to source to avoid prebuilding
-      '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/RuntimeWorkerService.ts'),
-      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-ui/plugin-dialog/src/RuntimeWorkerService.ts'),
-      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, './packages/runtime/worker-bootstrap/src/RuntimeWorkerService.ts'),
-      '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/RuntimeWorkerService.ts'),
-      '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/RuntimeWorkerService.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/RuntimeWorkerService.ts'),
+      '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
+      '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-ui/plugin-dialog/src/index.ts'),
+      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, './packages/runtime/worker-bootstrap/src/index.ts'),
+      '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
+      '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
+      '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),
       // Node-type plugin aliases are generated automatically (root/src/services/database/shared)
       ...nodeTypeAliases,
       ...nodeTypeSrcAliases,

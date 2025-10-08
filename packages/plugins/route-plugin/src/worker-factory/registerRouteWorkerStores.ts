@@ -19,8 +19,7 @@ async function resolveStoreRegistry(options: RegisterRouteWorkerStoresOptions = 
     return options.storeRegistry;
   }
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-shared-module-paths');
-    const runtime = await importRuntimeWorker();
+    const runtime = await import('@hierarchidb/runtime-worker');
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
     if (import.meta.env?.DEV) {

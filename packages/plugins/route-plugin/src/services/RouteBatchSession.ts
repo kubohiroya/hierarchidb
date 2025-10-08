@@ -108,7 +108,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     const batch = new BatchService();
     let completed = 0;
     await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task, index) => {
-      if (this.isAborted()) throw new Error('aborted');
       if (task.taskType === 'route_generation') {
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
         const sem = this.getLaneSemaphore(method);
@@ -139,7 +138,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         const cur = await this.db.routeCursors.get(this.sessionId);
         if (!cur?.paused) break;
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
-        await this.delay(250);
       }
     }, { concurrency: maxConcurrent });
   }
@@ -199,7 +197,6 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         const max = this.config.routeGeneration.maxRetries || 0;
         let done = false;
         for (let i = 0; i < max && !done; i++) {
-          await this.delay(150);
           await this.processTask({ ...task, status: 'pending' });
           done = true;
         }
