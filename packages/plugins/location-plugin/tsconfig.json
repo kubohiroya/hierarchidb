@@ -14,28 +14,24 @@
         "./src/*"
       ],
       "@hierarchidb/ui-datasource": [
-        "../../ui/datasource/dist-types/index.d.ts",
         "../../ui/datasource/src/index.ts"
       ],
       "@hierarchidb/ui-datasource/*": [
-        "../../ui/datasource/dist-types/*",
         "../../ui/datasource/src/*"
       ],
       "@hierarchidb/ui-license": [
-        "../../ui/license/dist-types/index.d.ts",
         "../../ui/license/src/index.ts"
       ],
       "@hierarchidb/ui-license/*": [
-        "../../ui/license/dist-types/*",
+        "../../ui/license/dist/*",
         "../../ui/license/src/*"
       ],
       "@hierarchidb/plugin-sdk": [
-        "../../plugins/base-plugin/dist-types/index.d.ts",
-        "../../plugins/base-plugin/src/index.ts"
+        "../../plugin-sdk/src/index.ts"
       ],
       "@hierarchidb/plugin-sdk/*": [
-        "../../plugins/base-plugin/dist-types/*",
-        "../../plugins/base-plugin/src/*"
+        "../../plugin-sdk/dist/*",
+        "../../plugin-sdk/src/*"
       ]
     }
   },

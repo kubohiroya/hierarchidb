@@ -1,19 +1,19 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist-types",
+    "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
       "@hierarchidb/plugin-sdk": [
-        "../../plugins/base-plugin/dist-types/index.d.ts"
+        "../../plugin-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-sdk/*": [
-        "../../plugins/base-plugin/dist-types/*"
+        "../../plugin-sdk/dist/*"
       ]
     },
-    "declarationDir": "./dist-types",
-    "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
+    "declarationDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
     "emitDeclarationOnly": true,
     "declaration": true,
@@ -38,9 +38,6 @@
     "**/*.test.tsx"
   ],
   "references": [
-    {
-      "path": "../../plugins/base-plugin/tsconfig.build.json"
-    },
     {
       "path": "../../ui/datasource/tsconfig.build.json"
     },
