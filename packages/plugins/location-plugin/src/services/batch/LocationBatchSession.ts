@@ -3,16 +3,16 @@ import {
   type BaseBatchConfig,
   type BatchProgressEvent,
   type BatchProgressPayload,
-} from '@hierarchidb/runtime-shared-batch-processor';
+} from '@hierarchidb/batch-api';
 import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-types';
-import type { SessionController } from './SessionController.js';
+import type { LocationSessionController } from './LocationSessionController.js';
 
 export interface LocationBatchConfig extends BaseBatchConfig {
   concurrency?: number;
 }
 
 export class LocationBatchSession extends AbstractBatchSession<LocationBatchConfig, any, void> {
-  constructor(sessionId: string, nodeId: NodeId, config: LocationBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) {
+  constructor(sessionId: string, nodeId: NodeId, config: LocationBatchConfig, private controller: LocationSessionController, private sink?: (e: ProgressEvent) => void) {
     super(sessionId, nodeId, config);
   }
 

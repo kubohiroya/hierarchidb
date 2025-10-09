@@ -2,13 +2,27 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 const cfg = createTsupConfig({
   // Build main entry (index) and worker entry
-  entry: ['src/index.ts', 'src/RuntimeWorkerService.ts', 'src/stageWorker.entry.ts'],
+  entry: ['src/index.ts', 'src/index.ts', 'src/stageWorker.entry.ts'],
   dts: true,
   external: [
     'provider',
     'provider-dom',
     'jotai',
-    // UI libs are already in base externals; internal/workers deps should bundle
+    "@hierarchidb/auth-recovery",
+    "@hierarchidb/common-api",
+    "@hierarchidb/common-types",
+    "@hierarchidb/compute",
+    "@hierarchidb/download",
+    "@hierarchidb/import-export",
+  "@hierarchidb/map-adapter",
+  "@hierarchidb/map-source",
+  "@hierarchidb/tabular",
+  "@hierarchidb/tag",
+  "@hierarchidb/util",
+  "@hierarchidb/batch-api",
+  "@hierarchidb/feature-registry",
+  "@maplibre/vt-pbf"
+// UI libs are already in base externals; internal/workers deps should bundle
   ],
 });
 

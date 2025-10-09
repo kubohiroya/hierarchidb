@@ -6,9 +6,9 @@ import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import {
   type LocationPointInput,
   type LocationTileSettings,
-  SessionController,
+  LocationSessionController,
   type SessionSummary,
-} from './SessionController.js';
+} from './LocationSessionController.js';
 import { LocationBatchSession } from './LocationBatchSession.js';
 import { isDevEnvironment } from '../../utils/env.js';
 
@@ -28,7 +28,7 @@ export class LocationBatchSessionManager {
     options?: { concurrency?: number },
   ): Promise<SessionSummary> {
     const sessionId = `loc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-    const controller = new SessionController(sessionId, nodeId, points, settings);
+    const controller = new LocationSessionController(sessionId, nodeId, points, settings);
     const bbox = computeBbox(points);
     const summary: SessionSummary = {
       sessionId,

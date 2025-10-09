@@ -48,7 +48,7 @@
   },
   "scripts": {
     "dev": "tsup --watch",
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:watch": "vitest",
@@ -57,24 +57,10 @@
     "build:clean": "rm -rf dist dist",
     "build:types": "tsc --build tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-datasource": "workspace:*",
-    "@hierarchidb/ui-license": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/common-auth": "workspace:*",
-    "@hierarchidb/plugins-shape-plugin": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
@@ -91,7 +77,21 @@
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/download": "workspace:*"
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-license": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "tsup": {
     "external": [

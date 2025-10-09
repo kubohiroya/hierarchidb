@@ -180,7 +180,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
           createdAt: Date.now(),
           updatedAt: Date.now(),
           version: 1,
-        } as ShapeEntity;
+        };
       });
 
       const result = entities as NaturalEarthProcessedData;

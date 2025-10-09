@@ -1,5 +1,4 @@
 import type { CountryMetadata } from '../../shared/index.js';
-import type { CountryMetadata as FetchedCountryMetadata } from '@hierarchidb/runtime-shared-fetch-metadata';
 
 /**
  * MetadataLoader service
@@ -88,14 +87,14 @@ export class MetadataLoader {
    * Transform raw metadata to CountryMetadata format
    */
   private transformMetadata(
-    rawData: FetchedCountryMetadata[],
+    rawData: CountryMetadata[],
     _dataSource: string,
   ): CountryMetadata[] {
     return rawData.map((item) => ({
-      countryCode: item.iso3 ?? item.countryCode ?? item.id ?? 'UNKNOWN',
-      countryName: item.name || item.countryName || '',
+      countryCode: item.countryCode ?? 'UNKNOWN',
+      countryName: item.countryName || '',
       continent: item.continent || '',
-      availableAdminLevels: item.adminLevels || [],
+      availableAdminLevels: item.availableAdminLevels || [],
       population: item.population,
       area: item.area,
       dataQuality: this.determineDataQuality(item),

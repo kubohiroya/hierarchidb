@@ -1,12 +1,12 @@
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { UnifiedLocationBatchManager, type LocationBatchData, type UnifiedLocationBatchConfig } from '../batch/UnifiedLocationBatchManager.js';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/SessionController.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../batch/LocationSessionController.js';
 import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
-} from '@hierarchidb/runtime-shared-batch-processor';
+} from '@hierarchidb/batch-api';
 import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 
 interface BatchBridge {

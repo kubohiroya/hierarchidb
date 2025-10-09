@@ -4,6 +4,9 @@ export default createTsupConfig({
   external: [
     'provider',
     'provider-dom',
+    // peer libs
+    'comlink',
+    'dexie',
     // UI peers
     'react',
     'react-dom',
@@ -11,8 +14,8 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    // peer libs
-    'comlink',
-    'dexie',
+    "@hierarchidb/common-types",
+    "@hierarchidb/common-api",
+    "@hierarchidb/runtime-worker"
   ],
 });

@@ -1,9 +1,6 @@
-import {
-  createSharedDownloadService,
-  type SharedDownloadService,
-} from '@hierarchidb/runtime-shared-batch-processor';
 import type { ILocationDownloadStrategy } from './types.js';
 import type { LocationSearchConfig } from '../../entities/LocationEntity.js';
+import { createSharedDownloadService, SharedDownloadService } from '@hierarchidb/runtime-worker';
 
 export type LocationNetService = SharedDownloadService;
 

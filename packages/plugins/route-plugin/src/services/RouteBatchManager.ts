@@ -9,7 +9,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { RouteGenerationConfig } from '../entities/RouteEntity.js';
 import { RouteDatabase, type RouteCursorRow } from '../database/RouteDatabase.js';
 import { type RouteBatchConfig, RouteBatchSession, type RouteBatchTask } from './RouteBatchSession.js';
-import { BatchProgressEvent } from '@hierarchidb/common-api';
+import { BatchProgressEvent } from '@hierarchidb/batch-api';
 
 export type ProgressUpdate = { jobId: string; progress: number; phase: string; ts: number };
 export type ProgressEmitter = { emit?: (event: ProgressUpdate) => void };

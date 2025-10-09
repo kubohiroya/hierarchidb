@@ -5,15 +5,15 @@
   "type": "module",
   "main": "src/index.ts",
   "module": "src/index.ts",
-  "types": "dist-types/index.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist-types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "default": "./src/index.ts"
     }
   },
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
-    "clean": "rm -rf dist-types"
+    "clean": "rm -rf dist"
   }
 }

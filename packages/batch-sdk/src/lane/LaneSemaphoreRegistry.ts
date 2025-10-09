@@ -4,6 +4,32 @@ export interface LaneLimits {
   [lane: string]: number;
 }
 
+
+interface ParsedLaneLimits {
+  limits: LaneLimits;
+  disabled: boolean;
+}
+
+function parseLaneLimits(defaults: LaneLimits): ParsedLaneLimits {
+  const limits: LaneLimits = {};
+  for (const [lane, value] of Object.entries(defaults ?? {})) {
+    const normalizedLane = lane?.toLowerCase?.();
+    const numeric = Number(value);
+    if (!normalizedLane) continue;
+    if (!Number.isFinite(numeric) || numeric <= 0) continue;
+    limits[normalizedLane] = Math.floor(numeric);
+  }
+
+  return { limits, disabled: false };
+
+}
+
+export function createLaneSemaphoreRegistry(options: LaneRegistryOptions): LaneSemaphoreRegistry {
+  const fallback = options.fallback && options.fallback > 0 ? Math.floor(options.fallback) : 4;
+  const parsed = parseLaneLimits(options.defaults);
+  return new LaneSemaphoreRegistry(parsed.limits, parsed.disabled, fallback);
+}
+
 export interface LaneRegistryOptions {
   /** Default capacities per lane. */
   defaults: LaneLimits;
@@ -11,11 +37,6 @@ export interface LaneRegistryOptions {
   envKey?: string;
   /** Capacity applied when an unknown lane is requested. */
   fallback?: number;
-}
-
-interface ParsedLaneLimits {
-  limits: LaneLimits;
-  disabled: boolean;
 }
 
 class Semaphore {

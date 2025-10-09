@@ -5,9 +5,10 @@
 import type React from 'react';
 import { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
-import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
+import { DataSourceSelector } from '@hierarchidb/ui-datasource';
 import type { LocationDataSource, LocationWorkingCopy } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
+import { DataSourceOption } from '@hierarchidb/ui-datasource';
 
 const ORDERED_DATA_SOURCES: LocationDataSource[] = [
   'openstreetmap',

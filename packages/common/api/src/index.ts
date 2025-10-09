@@ -82,4 +82,3 @@ export * from './TagAPI.js';
 // Multi-Step Dialog API
 export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI.js';
 
-export * from './BatchControlAPI.js';

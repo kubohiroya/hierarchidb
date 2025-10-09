@@ -3,7 +3,7 @@ import type { Table } from 'dexie';
 import {
   BaseEntityHandler,
   createDraftWorkingCopyBase,
-} from '@hierarchidb/plugin-sdk';
+} from '@hierarchidb/plugin-api';
 import type { LocationEntity, LocationDataSource, LocationWorkingCopy } from './LocationEntity.js';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-api';
 import { clearLocationPoints } from '../services/pointRepository.js';

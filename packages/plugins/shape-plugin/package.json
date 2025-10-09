@@ -67,12 +67,27 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@mapbox/vector-tile": "^2.0.3",
+    "@tanstack/react-virtual": "^3.2.0",
+    "@turf/turf": "^7.0.0",
+    "allotment": "^1.20.0",
+    "comlink": "^4.4.2",
+    "jszip": "^3.10.1",
+    "notistack": "^3.0.1",
+    "pako": "^2.1.0",
+    "pbf": "^4.0.1",
+    "topojson-client": "^3.1.0",
+    "topojson-server": "^3.0.1"
+  },
+  "peerDependencies": {
+    "dexie": "^4.2.0",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/batch-sdk": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -85,21 +100,6 @@
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
-    "@mapbox/vector-tile": "^2.0.3",
-    "@tanstack/react-virtual": "^3.2.0",
-    "@turf/turf": "^7.0.0",
-    "allotment": "^1.20.0",
-    "comlink": "^4.4.2",
-    "jszip": "^3.10.1",
-    "notistack": "^3.0.1",
-    "pako": "^2.1.0",
-    "pbf": "^4.0.1",
-    "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1",
-    "@hierarchidb/common-types": "workspace:*"
-  },
-  "peerDependencies": {
-    "dexie": "^4.2.0",
     "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@mui/icons-material": "^7.3.2",
@@ -108,7 +108,6 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
     "dexie": "^4.2.0",
     "uuid": "^11.1.0",
     "@types/uuid": "^10.0.0",

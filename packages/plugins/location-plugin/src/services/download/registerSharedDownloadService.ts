@@ -1,4 +1,4 @@
-import { createSharedDownloadService } from '@hierarchidb/runtime-shared-batch-processor';
+import { createSharedDownloadService } from '@hierarchidb/runtime-worker';
 import { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from './registry.js';
 
 export function registerLocationSharedDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }) {

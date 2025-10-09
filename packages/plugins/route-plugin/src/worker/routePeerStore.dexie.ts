@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
+import type { PeerEntityBase, PeerStore } from '@hierarchidb/plugin-api';
 import type { RouteEntitiesDB, RoutePeerRow } from './routeEntitiesDB.js';
 import type { RoutePeerData } from '../types/index.js';
 
@@ -14,13 +14,14 @@ export function createRoutePeerStoreDexie(db: RouteEntitiesDB): PeerStore<RouteP
     async get(nodeId: NodeId) {
       const row = await db.peerEntities.get(nodeId);
       if (!row) return undefined;
-      const entity: PeerEntity<RoutePeerData> = {
+      // PeerEntityBase型を厳密に満たすようにdataを必ずRoutePeerData型で返す
+      const entity: PeerEntityBase<RoutePeerData> = {
         ...row,
         data: normalizeRoutePeerData(row.data),
       };
       return entity;
     },
-    async put(entity: PeerEntity<RoutePeerData>) {
+    async put(entity: PeerEntityBase<RoutePeerData>) {
       const row: RoutePeerRow = {
         ...entity,
         data: normalizeRoutePeerData(entity.data),
@@ -31,7 +32,7 @@ export function createRoutePeerStoreDexie(db: RouteEntitiesDB): PeerStore<RouteP
     async delete(nodeId: NodeId) {
       await db.peerEntities.delete(nodeId);
     },
-    async bulkUpsert(entities: PeerEntity<RoutePeerData>[]) {
+    async bulkUpsert(entities: PeerEntityBase<RoutePeerData>[]) {
       const now = Date.now();
       const rows: RoutePeerRow[] = entities.map((e) => ({
         ...e,

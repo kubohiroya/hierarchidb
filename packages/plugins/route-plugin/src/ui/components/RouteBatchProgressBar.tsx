@@ -1,4 +1,4 @@
-import { ProgressSnapshot } from '@hierarchidb/batch-sdk';
+import { ProgressSnapshot } from '@hierarchidb/batch-api';
 
 export function RouteBatchProgressBar({ snapshot }: { snapshot?: ProgressSnapshot }) {
   const p = Math.round(snapshot?.progress ?? 0);

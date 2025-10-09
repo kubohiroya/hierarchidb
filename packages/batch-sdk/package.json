@@ -28,13 +28,12 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
+  },
+  "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
-  },
-  "peerDependencies": {
-    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

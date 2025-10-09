@@ -4,22 +4,22 @@ export default createTsupConfig({
   // Full build: library + UI + worker + dedicated workers
   dts: {
     entry: {
-      'index': 'src/RuntimeWorkerService.ts',
-      'shared/index': 'src/shared/RuntimeWorkerService.ts',
-      'ui/index': 'src/ui/RuntimeWorkerService.ts',
+      'index': 'src/index.ts',
+      'shared/index': 'src/shared/index.ts',
+      'ui/index': 'src/ui/index.ts',
       'worker/index': 'src/worker/public.ts',
       'worker-factory/index': 'src/worker-factory/public-types.ts',
-      'services/index': 'src/services/RuntimeWorkerService.ts',
+      'services/index': 'src/services/index.ts',
       // worker entriesは内部型が多いため一旦除外
     },
   },
   entry: {
-    'index': 'src/RuntimeWorkerService.ts',
-    'shared/index': 'src/shared/RuntimeWorkerService.ts',
-    'ui/index': 'src/ui/RuntimeWorkerService.ts',
-    'worker/index': 'src/worker/RuntimeWorkerService.ts',
-    'worker-factory/index': 'src/worker-factory/RuntimeWorkerService.ts',
-    'services/index': 'src/services/RuntimeWorkerService.ts',
+    'index': 'src/index.ts',
+    'shared/index': 'src/shared/index.ts',
+    'ui/index': 'src/ui/index.ts',
+    'worker/index': 'src/worker/index.ts',
+    'worker-factory/index': 'src/worker-factory/index.ts',
+    'services/index': 'src/services/index.ts',
   },
   external: [
     'provider',

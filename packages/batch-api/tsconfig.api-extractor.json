@@ -1,10 +1,19 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../../",
-    "paths": {},
-    "noEmit": false
-  },
-  "include": ["./**/*"],
-  "exclude": ["node_modules", "dist", "build"]
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022", "dom"],
+    "moduleResolution": "Node16",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/common-types": ["../common/types/dist-types/index.d.ts"],
+      "@hierarchidb/common-types/*": ["../common/types/dist-types/*"],
+      "@hierarchidb/common-api": ["../common/api/dist-types/index.d.ts"],
+      "@hierarchidb/common-api/*": ["../common/api/dist-types/*"],
+      "@hierarchidb/runtime-worker": ["../runtime/worker/dist/index.d.ts"],
+      "@hierarchidb/runtime-worker/*": ["../runtime/worker/dist/*"],
+      "@hierarchidb/plugin-sdk": ["../plugin-sdk/dist/index.d.ts"]
+    },
+    "skipLibCheck": true
+  }
 }

@@ -7,8 +7,8 @@ import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService } from '@hierarchidb/batch';
-import { createLaneSemaphoreRegistry } from '@hierarchidb/runtime-shared-batch-processor';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
+import { createLaneSemaphoreRegistry } from '@hierarchidb/batch-api';
 
 export interface LocationPointInput {
   lon: number;
@@ -41,7 +41,7 @@ export interface SessionSummary {
   layers: string[];
 }
 
-export class SessionController {
+export class LocationSessionController {
   private static readonly laneRegistry = createLaneSemaphoreRegistry({
     defaults: {
       tilegen: 4,
@@ -140,7 +140,7 @@ export class SessionController {
       console.warn('[Location][Session] runtime worker client unavailable; skipping worker delegation');
       return;
     }
-    await SessionController.laneRegistry.runWithLane('tilegen', async () => {
+    await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
       await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
     });
 
@@ -151,10 +151,10 @@ export class SessionController {
     let completed = 0;
     const batch = new BatchService();
     const laneName = 'tilegen';
-    const concurrency = SessionController.laneRegistry.recommendConcurrency([laneName], 4);
+    const concurrency = LocationSessionController.laneRegistry.recommendConcurrency([laneName], 4);
 
     await batch.mapChunks<VectorTileRecord, void>(list, async (t) => {
-      await SessionController.laneRegistry.runWithLane(laneName, async () => {
+      await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {
         if (this.cancelled) return;
         while (this.paused) await new Promise(r => setTimeout(r, 100));
         const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);

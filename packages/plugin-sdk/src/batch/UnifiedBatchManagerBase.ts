@@ -1,7 +1,4 @@
-import { BatchProgressCallback, BatchProgressEvent } from '@hierarchidb/common-api';
-import { BatchSessionStatus } from '@hierarchidb/common-api';
-import { IBatchSessionManager } from '@hierarchidb/common-api';
-import { BatchSessionId } from '@hierarchidb/common-api';
+import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSessionStatus, IBatchSessionManager } from '@hierarchidb/batch-api';
 import type { NodeId, Timestamp,
 } from '@hierarchidb/common-types';
 

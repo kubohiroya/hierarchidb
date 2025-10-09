@@ -1120,6 +1120,9 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../feature/batch
+      '@hierarchidb/batch-api':
+        specifier: workspace:*
+        version: link:../../batch-api
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -1129,9 +1132,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../common/types
-      '@hierarchidb/plugins-shape-plugin':
+      '@hierarchidb/plugin-api':
         specifier: workspace:*
-        version: link:../shape-plugin
+        version: link:../../plugin-api
       '@hierarchidb/runtime-ui-plugin-dialog':
         specifier: workspace:*
         version: link:../../runtime-ui/plugin-dialog
@@ -1354,9 +1357,6 @@ importers:
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../batch-api
-      '@hierarchidb/batch-sdk':
-        specifier: workspace:*
-        version: link:../../batch-sdk
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -1369,6 +1369,9 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../feature/download
+      '@hierarchidb/plugin-api':
+        specifier: workspace:*
+        version: link:../../plugin-api
       '@hierarchidb/plugins-folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
@@ -1381,6 +1384,9 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../runtime/worker
+      '@hierarchidb/runtime-worker-bootstrap':
+        specifier: workspace:*
+        version: link:../../runtime/worker-bootstrap
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../feature/tabular-store
@@ -1439,9 +1445,6 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
     devDependencies:
-      '@hierarchidb/runtime-worker-bootstrap':
-        specifier: workspace:*
-        version: link:../../runtime/worker-bootstrap
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.2(@mui/material@7.3.2(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react@18.3.1))(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.24)(react@18.3.1)

@@ -6,7 +6,7 @@ import {
   registerRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,
   type RuntimeWorkerStageClient,
-} from '@hierarchidb/plugins-runtime-worker-factory';
+} from '@hierarchidb/plugin-api';
 
 /**
  * TODO(shape-runtime-worker-integration): ensure the shape plugin's

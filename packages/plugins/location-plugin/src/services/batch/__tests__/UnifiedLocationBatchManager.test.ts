@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
-import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../SessionController.js';
+import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../LocationSessionController.js';
 
 vi.mock('@hierarchidb/batch', () => ({
   BatchService: class {

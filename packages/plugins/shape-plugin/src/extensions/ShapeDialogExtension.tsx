@@ -3,16 +3,17 @@
  * - Provides dialog steps for the Shape plugin and accompanying evaluators.
  */
 
-import type { DialogStepDefinition, PeerEntity, StepValidation } from '@hierarchidb/common-types';
-import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';
+import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-api';
 
 // Reuse existing step components from the Shape plugin
 import { DataSourceStep } from '../extension/components/DataSourceStep.js';
 import { LicenseStep } from '../extension/components/LicenseStep.js';
 import { ProcessingStep } from '../extension/components/ProcessingStep.js';
 import { CountrySelectionStep } from '../extension/components/CountrySelectionStep.js';
+import { PeerEntity } from '../shared/types.js';
+import {StepValidation, DialogStepDefinition} from '@hierarchidb/common-types';
 
-type ShapeDialogPeer = PeerEntity<Record<string, unknown>>;
+type ShapeDialogPeer = PeerEntity;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 

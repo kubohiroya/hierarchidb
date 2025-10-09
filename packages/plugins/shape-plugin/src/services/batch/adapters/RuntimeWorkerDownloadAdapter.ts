@@ -1,11 +1,11 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { BatchService } from '@hierarchidb/batch';
-import { createLaneSemaphoreRegistry } from '@hierarchidb/runtime-shared-batch-processor';
 import type { DownloadTask } from '../../types.js';
 import type { ProgressInfo } from '../../../shared/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
+import { createLaneSemaphoreRegistry } from '@hierarchidb/batch-api';
 
 /**
  * RuntimeWorkerDownloadAdapter
@@ -47,7 +47,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
       4,
     );
 
-    await batch.mapChunks<DownloadTask>(
+    await batch.mapChunks<DownloadTask, {}>(
       tasks,
       async (task, index) => {
         const lane = (task.config?.dataSource ?? 'default').toLowerCase();

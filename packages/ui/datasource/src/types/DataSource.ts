@@ -63,7 +63,6 @@ export function getDataSourcesByCategory(category: DataSourceConfig['category'])
  * only for backward-compatibility of import sites. Do not rely on it.
  * @deprecated Define and consume data sources from each plugin package.
  */
-// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 export const DATA_SOURCES = Object.freeze({}) as Readonly<Record<DataSourceName, DataSourceConfig>>;
 
 // Type aliases for compatibility

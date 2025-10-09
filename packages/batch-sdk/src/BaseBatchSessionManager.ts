@@ -6,7 +6,7 @@
 import type { NodeId,
 } from '@hierarchidb/common-types';
 import type { AbstractBatchSession } from './AbstractBatchSession.js';
-import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSessionStatus, IBatchSessionManager, isBatchControlAPIV2Enabled } from '@hierarchidb/common-api';
+import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSessionStatus, IBatchSessionManager, isBatchControlAPIV2Enabled } from './BatchControlAPI.js';
 
 /**
  * Base implementation for batch session managers
