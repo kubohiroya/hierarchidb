@@ -44,11 +44,11 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/RuntimeWorkerService.ts', { exclude: true });
-    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/RuntimeWorkerService.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts', { exclude: true });
-    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/RuntimeWorkerService.ts', { exclude: true });
-    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/RuntimeWorkerService.ts', { exclude: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/index.ts', { exclude: true });
 
     const pluginRoot = path.resolve(rootDir, '../packages/plugin-loader');
     if (fs.existsSync(pluginRoot)) {
@@ -399,9 +399,9 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
         { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
         // Icons utility (always point to src for now)
-        { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/RuntimeWorkerService.ts') },
+        { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
-        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/RuntimeWorkerService.ts') },
+        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
         { find: '@hierarchidb/plugin-loader-base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.js') },

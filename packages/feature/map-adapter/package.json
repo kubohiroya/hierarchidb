@@ -24,17 +24,15 @@
   },
   "peerDependencies": {
     "maplibre-gl": "^4.7.1",
-    "deck.gl": "^9.1.14"
-  },
-  "dependencies": {
+    "deck.gl": "^9.1.14",
     "@hierarchidb/map-source": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
-    "deck.gl": "^9.0.0",
-    "maplibre-gl": "^4.7.1",
     "tsup": "^8.0.1",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/map-source": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   },
   "tsup": {
     "external": [

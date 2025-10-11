@@ -57,7 +57,7 @@
     "build:clean": "rm -rf dist dist",
     "build:types": "tsc --build tsconfig.build.json",
     "build:bundle": "tsup",
-    "prebuild": "pnpm run build:clean",
+    "prebuild": "pnpm --filter @hierarchidb/common-types... run build && pnpm --filter @hierarchidb/ui-dialog... run build && pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
@@ -66,7 +66,22 @@
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3",
-    "@hierarchidb/download": "workspace:*"
+    "@hierarchidb/batch": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-datasource": "workspace:*",
+    "@hierarchidb/ui-license": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",

@@ -22,7 +22,7 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "uuid": "^9.0.1",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
@@ -30,6 +30,9 @@
   },
   "devDependencies": {
     "tsup": "^8.0.1",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   }
 }

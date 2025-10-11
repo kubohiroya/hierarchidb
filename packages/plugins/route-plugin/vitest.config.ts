@@ -4,7 +4,7 @@ import * as path from 'path';
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({

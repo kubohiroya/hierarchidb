@@ -1,11 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist-types",
+    "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "declarationDir": "./dist-types",
-    "tsBuildInfoFile": "./dist-types/.tsbuildinfo",
+    "declarationDir": "./dist",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
     "emitDeclarationOnly": true,
     "declaration": true,
@@ -16,11 +16,12 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    "src/**/*.d.ts"
+    "src/**/*.css",
+    "src/**/*.d.ts",
+    "../../global.d.ts"
   ],
   "exclude": [
     "dist",
-    "dist-types",
     "node_modules",
     "src/__tests__/**",
     "src/tests/**",

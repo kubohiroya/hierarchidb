@@ -65,19 +65,19 @@ export default defineConfig({
       'node-fetch': path.resolve(__dirname, '../../../app/src/virtual/node-fetch.ts'),
       '@hierarchidb/runtime-worker': path.resolve(
         __dirname,
-        '../../runtime/worker/src/RuntimeWorkerService.ts',
+        '../../runtime/worker/src/index.ts',
       ),
       '@hierarchidb/runtime-worker-bootstrap': path.resolve(
         __dirname,
-        '../../runtime/worker-bootstrap/src/RuntimeWorkerService.ts',
+        '../../runtime/worker-bootstrap/src/index.ts',
       ),
       '@hierarchidb/map-adapter': path.resolve(
         __dirname,
-        '../../feature/map-adapter/src/RuntimeWorkerService.ts',
+        '../../feature/map-adapter/src/index.ts',
       ),
       '@hierarchidb/tabular-xlsx': path.resolve(
         __dirname,
-        '../../feature/tabular-xlsx/src/RuntimeWorkerService.ts',
+        '../../feature/tabular-xlsx/src/index.ts',
       ),
       '@hierarchidb/plugins-basemap-plugin/worker-factory': path.resolve(
         __dirname,

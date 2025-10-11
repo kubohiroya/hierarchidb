@@ -58,7 +58,7 @@ beforeAll(() => {
       2,
     ),
   );
-  writeFile(path.join(barPkgDir, 'src/RuntimeWorkerService.ts'), 'export const bar = true;\n');
+  writeFile(path.join(barPkgDir, 'src/index.ts'), 'export const bar = true;\n');
 });
 
 afterAll(() => {

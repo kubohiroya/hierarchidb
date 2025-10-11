@@ -1,8 +1,9 @@
 {
   "name": "@hierarchidb/ui-core",
-  "version": "1.0.0",
-  "description": "Core UI components and plugin system for HierarchiDB",
-  "types": "dist/index.d.ts",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -10,77 +11,52 @@
       "default": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "prebuild": "pnpm run build:clean",
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
-    "build:clean": "rm -rf dist dist-types",
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs",
-    "dev": "tsup --watch",
-    "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "coverage": "vitest run --coverage",
-    "build:tsc": "pnpm run build:types",
-    "dev:tsc": "tsc --watch"
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "react-gravatar": "^2.6.3",
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/runtime-worker-bootstrap": "workspace:*",
-    "@hierarchidb/ui-data-grid": "workspace:*",
-    "@hierarchidb/table-metadata": "workspace:*",
-    "@hierarchidb/tabular-store": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
-    "@tanstack/react-router": "^1.132.33"
+    "react-virtuoso": "^4.14.0"
   },
   "peerDependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
-    "react": ">=18.0.0",
-    "@tanstack/react-router": "^1.132.33"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^6.8.0",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "@types/react-gravatar": "^2.6.14",
-    "@types/node": "^24.3.0",
-    "@vitejs/plugin-react": "^5.0.1",
-    "jsdom": "^26.1.0",
-    "react": ">=18.0.0",
+    "react": "^18.3.1",
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
-    "vitest": "^3.2.4"
+    "@hierarchidb/common-types": "workspace:*"
   },
   "keywords": [
-    "hierarchidb",
-    "ui-core",
-    "plugin-system",
-    "react",
-    "material-ui"
   ],
   "author": "HierarchiDB Team",
   "license": "MIT",
-  "module": "dist/index.js",
-  "type": "module",
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
+  },
   "tsup": {
     "external": [
-      "@emotion/react",
-    "@emotion/styled",
-    "@mui/icons-material",
-    "@mui/material",
-    "react",
-    "@tanstack/react-router",
-    "@hierarchidb/ui-icon"
-  ]
-}
-}
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
+  }}
+

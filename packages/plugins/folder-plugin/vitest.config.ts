@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'path';
 
 const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/RuntimeWorkerService.ts');
+const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
 export default defineConfig({
@@ -27,7 +27,7 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, './src'),
       // Use source during tests to avoid requiring a prebuild
-      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/RuntimeWorkerService.ts'),
+      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
       '@hierarchidb/plugin-sdk': basePluginEntry,

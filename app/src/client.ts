@@ -2,7 +2,6 @@
  * UI-side worker bootstrap: create and wrap app/src/worker.ts via Comlink.
  */
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
 import workerScriptUrl from './worker.ts?worker&url';
 import { bootLog } from './utils/bootLog.js';
 import {
@@ -11,6 +10,7 @@ import {
   isAllowedWorkerFlag,
 } from './config/worker-flag-overrides.js';
 import { APP_VERSION } from './version.js';
+import { WorkerAPI } from '@hierarchidb/runtime-worker';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-worker-bootstrap to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.

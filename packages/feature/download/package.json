@@ -22,13 +22,14 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0",
     "@noble/hashes": "^1.4.0"
   },
   "devDependencies": {
     "tsup": "^8.0.1",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/util": "workspace:*"
   }
 }

@@ -194,3 +194,4 @@ vitest.config.ts.*.mjs
 /packages/ui/dialog/storybook-static/
 /eria-cartograph/
 dist-types
+/.codex/

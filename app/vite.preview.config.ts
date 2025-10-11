@@ -24,8 +24,8 @@ export default defineConfig(({ mode }) => {
   addAliasIfExists(rootDir, '../packages/feature/tabular-xlsx/dist/index.js', '@hierarchidb/tabular-xlsx', aliases);
   addAliasIfExists(rootDir, '../packages/util/dist/index.js', '@hierarchidb/util', aliases);
   addAliasIfExists(rootDir, '../packages/ui/core/dist/index.js', '@hierarchidb/ui-core', aliases);
-  addAliasIfExists(rootDir, '../packages/ui/icon/src/RuntimeWorkerService.ts', '@hierarchidb/ui-icon', aliases);
-  addAliasIfExists(rootDir, '../packages/runtime-ui/plugin-dialog/src/RuntimeWorkerService.ts', '@hierarchidb/runtime-ui-plugin-dialog', aliases);
+  addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-icon', aliases);
+  addAliasIfExists(rootDir, '../packages/runtime-ui/plugin-dialog/src/index.ts', '@hierarchidb/runtime-ui-plugin-dialog', aliases);
   addAliasIfExists(rootDir, '../packages/plugin-loader/base-plugin/dist/index.js', '@hierarchidb/plugin-loader-base-plugin', aliases);
 
   return {

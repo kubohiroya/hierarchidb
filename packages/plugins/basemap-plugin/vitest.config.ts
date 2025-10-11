@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'path';
 
 const pluginSdkDistEntry = path.resolve(__dirname, '../../plugin-sdk/dist/index.js');
-const pluginSdkSrcEntry = path.resolve(__dirname, '../../plugin-sdk/src/RuntimeWorkerService.ts');
+const pluginSdkSrcEntry = path.resolve(__dirname, '../../plugin-sdk/src/index.ts');
 const pluginSdkEntry = fs.existsSync(pluginSdkDistEntry) ? pluginSdkDistEntry : pluginSdkSrcEntry;
 
 export default defineConfig({

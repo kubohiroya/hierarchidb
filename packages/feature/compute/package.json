@@ -22,7 +22,7 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {

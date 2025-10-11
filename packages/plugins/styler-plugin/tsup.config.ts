@@ -2,7 +2,7 @@ import { createTsupConfig } from "../../../tsup.base.config.js";
 
 export default createTsupConfig({
   entry: {
-    'index': 'src/RuntimeWorkerService.ts',
+    'index': 'src/index.ts',
     'ui/index': 'src/ui/RuntimeWorkerService.ts',
     'shared/index': 'src/shared/RuntimeWorkerService.ts',
     'services/index': 'src/services/RuntimeWorkerService.ts',
@@ -11,7 +11,7 @@ export default createTsupConfig({
   },
   dts: {
     entry: {
-      'index': 'src/RuntimeWorkerService.ts',
+      'index': 'src/index.ts',
       'ui/index': 'src/ui/RuntimeWorkerService.ts',
       'shared/index': 'src/shared/RuntimeWorkerService.ts',
       'services/index': 'src/services/RuntimeWorkerService.ts',

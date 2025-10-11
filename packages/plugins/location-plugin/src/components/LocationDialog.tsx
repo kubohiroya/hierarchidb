@@ -13,6 +13,14 @@ import type {
   LocationDataSource,
 } from '../types/index.js';
 import { useTranslation } from '../i18n/index.js';
+import { LocationBasicInfoStep } from './steps/LocationBasicInfoStep.js';
+import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
+import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
+import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
+import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
+import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
+import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
+import { listLocationPoints } from '../services/pointRepository.js';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -32,14 +40,6 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
-import { LocationBasicInfoStep } from './steps/LocationBasicInfoStep.js';
-import { LocationDataSourceStep } from './steps/LocationDataSourceStep.js';
-import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
-import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
-import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
-import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
-import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
-import { listLocationPoints } from '../services/pointRepository.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
   value ? `${value}` : undefined;
@@ -192,42 +192,42 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     {
       id: 'basic-info',
       label: translations.basicInfo.title,
-      component: ({ data, onChange }) => (
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationBasicInfoStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'data-source',
       label: translations.dialog.dataSourceLabel,
-      component: ({ data, onChange }) => (
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationDataSourceStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'license',
       label: translations.dialog.licenseAgreementLabel,
-      component: ({ data, onChange }) => (
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationLicenseStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'selection',
       label: translations.selection.title,
-      component: ({ data, onChange }) => (
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationSelectionStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'batch-parameters',
       label: translations.panel.processingSettings,
-      component: ({ data, onChange }) => (
+      component: ({ data, onChange }: { data: LocationWorkingCopy; onChange: (patch: Partial<LocationWorkingCopy>) => void }) => (
         <LocationBatchParametersStep workingCopy={data} onUpdate={onChange} />
       ),
     },
     {
       id: 'map-preview',
       label: translations.mapPreview?.title ?? 'Map Preview',
-      component: ({ data }) => (
+      component: ({ data }: { data: LocationWorkingCopy }) => (
         <LocationMapPreviewStep workingCopy={data} />
       ),
     },

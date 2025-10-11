@@ -16,7 +16,7 @@
     "build:bundle": "tsup",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },

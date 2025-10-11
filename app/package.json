@@ -57,7 +57,6 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
-    "@hierarchidb/ui-import-export": "workspace:*",
     "@hierarchidb/ui-layout": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-navigation": "workspace:*",

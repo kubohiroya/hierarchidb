@@ -31,5 +31,6 @@ export default createTsupConfig({
     '@hierarchidb/plugin-loader-runtime-worker-factory',
     // Treat ui-dialog as external optional peer to avoid bundling resolution
     '@hierarchidb/ui-dialog',
+    '@hierarchidb/ui-core',
   ],
 });

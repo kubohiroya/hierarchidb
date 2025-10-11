@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportProgress as APIImportProgress } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
+import { WorkerAPI } from '@hierarchidb/runtime-worker';
 
 // Import/Export Types
 export interface ImportFileOptions {
@@ -62,7 +63,7 @@ export interface ValidationResult {
  * @param client - Worker API client instance
  * @param ready - Whether the worker is ready
  */
-export function useImportExport(client?: Remote<WorkerAPIClient>, ready?: boolean) {
+export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [importError, setImportError] = useState<Error | null>(null);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchProgressPayload, BatchSessionId } from '@hierarchidb/runtime-shared-batch-processor';
+import type { BatchProgressPayload, BatchSessionId } from '@hierarchidb/batch-api';
 
 export interface UnifiedProgressInfo {
   stage: string;
@@ -67,11 +67,8 @@ export function useBatchProgress(
     if (progress?.phase === 'completed' || progress?.phase === 'cancelled') return;
     let id: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
-      try {
-        const p = await poll();
-        if (p) setProgress(p);
-      } catch {
-      }
+      const p = await poll();
+      if (p) setProgress(p);
       id = setTimeout(tick, 2000);
     };
     tick();

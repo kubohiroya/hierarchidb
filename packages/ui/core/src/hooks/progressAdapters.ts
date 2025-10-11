@@ -1,4 +1,4 @@
-import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
+import { BatchProgressEvent } from '@hierarchidb/batch-api';
 import type { BatchProgressAdapter, UnifiedProgressInfo } from './useBatchProgress.js';
 
 export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgressInfo {

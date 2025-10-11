@@ -18,7 +18,6 @@
   ],
   "exclude": [
     "dist",
-    "dist-types",
     "node_modules",
     "src/__tests__/**",
     "src/tests/**",
@@ -35,6 +34,9 @@
     },
     {
       "path": "../../ui/license/tsconfig.build.json"
+    },
+    {
+      "path": "../../runtime/worker/tsconfig.build.json"
     }
   ]
 }

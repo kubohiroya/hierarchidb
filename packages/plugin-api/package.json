@@ -17,7 +17,7 @@
     "build": "pnpm -w --filter @hierarchidb/common-types run build:types && pnpm -w --filter @hierarchidb/common-api run build:types && pnpm -w --filter @hierarchidb/runtime-worker run build:types && pnpm -w --filter @hierarchidb/plugin-sdk run build:types && pnpm run build:types",
     "build:types": "api-extractor run --local"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/plugin-sdk": "workspace:*"
   },
   "devDependencies": {

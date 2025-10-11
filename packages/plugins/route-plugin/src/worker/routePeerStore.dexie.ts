@@ -1,7 +1,7 @@
-import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntityBase, PeerStore } from '@hierarchidb/plugin-api';
 import type { RouteEntitiesDB, RoutePeerRow } from './routeEntitiesDB.js';
 import type { RoutePeerData } from '../types/index.js';
+import { NodeId } from '@hierarchidb/common-types';
 
 const normalizeRoutePeerData = (data?: RoutePeerData | null): RoutePeerData => ({
   schemaVersion: 1,

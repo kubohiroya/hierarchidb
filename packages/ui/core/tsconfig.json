@@ -1,44 +1,14 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "noEmit": false,
-    "emitDeclarationOnly": true,
-    "outDir": "./dist-types",
-    "baseUrl": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "composite": false,
     "jsx": "react-jsx",
-    "types": [
-      "node"
-    ],
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "skipLibCheck": true,
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    }
+    "esModuleInterop": true,
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "src/**/*.stories.ts",
-    "src/**/*.stories.tsx",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/vite-env.d.ts"
-  ],
-  "checkDeps": {
-    "allowSkipLibCheck": true,
-    "reason": "Temporary: upstream/transitive types; scheduled to remove."
-  }
+  "include": ["src/**/*"]
 }
+

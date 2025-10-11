@@ -24,7 +24,7 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/table-metadata": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0"

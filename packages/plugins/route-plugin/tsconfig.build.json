@@ -29,5 +29,10 @@
     "**/*.test.*",
     "**/*.spec.ts",
     "__tests__/**"
+  ],
+  "references": [
+    {
+      "path": "../../runtime/worker/tsconfig.build.json"
+    }
   ]
 }

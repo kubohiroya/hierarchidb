@@ -18,7 +18,7 @@ const skipMatchers: ((filePath: string) => boolean)[] = [
   // React Router route modules (default export required)
   filePath => filePath.includes('/app/src/routes/'),
   filePath => filePath.includes('packages/ui/theme/src/theme/createTheme'),
-  filePath => filePath.includes('packages/tools/vite-plugin-dev-health/src/RuntimeWorkerService.ts'),
+  filePath => filePath.includes('packages/tools/vite-plugin-dev-health/src/index.ts'),
   filePath => filePath.includes('app/src/components/AppLogoIcon.tsx'),
   filePath => filePath.includes('app/src/components/dialogs/TrashDialog.tsx'),
   filePath => filePath.includes('app/src/virtual/child-process-shim.ts'),
