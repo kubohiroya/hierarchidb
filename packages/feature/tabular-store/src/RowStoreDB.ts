@@ -27,7 +27,7 @@ export class RowStoreDB extends Dexie {
   rowChunks!: Table<RowChunk, string>;
   rowIndexes!: Table<RowIndexEntry, string>;
 
-  constructor(name: string = getDBName('tabular-rowstore-db')) {
+  constructor(name: string = getDBName('tabular-source-rowstore-db')) {
     super(name);
     this.version(1).stores({
       rowChunks: '&id, [pluginId+tableId], tableId, pluginId, chunkIndex, createdAt',

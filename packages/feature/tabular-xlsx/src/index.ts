@@ -1,4 +1,4 @@
-import { registerParser } from '@hierarchidb/tabular/registry';
+import { registerParser } from '@hierarchidb/tabular-source';
 import { xlsxParser } from './xlsxParser.js';
 
 export function installTabularXlsx(): void {
@@ -17,7 +17,7 @@ export function markTabularXlsxInstalled(): void {
 }
 
 export class FeatureDefinition {
-  static readonly manifest = { name: '@hierarchidb/tabular-xlsx', depends: ['@hierarchidb/tabular'], provides: ['tabular-xlsx'] };
+  static readonly manifest = { name: '@hierarchidb/tabular-xlsx', depends: ['@hierarchidb/tabular-source'], provides: ['tabular-source'] };
 
   static init(): void {
     installTabularXlsx();

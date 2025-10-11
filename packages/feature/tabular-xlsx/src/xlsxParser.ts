@@ -1,15 +1,13 @@
-import type { TabularParserPort } from '@hierarchidb/tabular/ports';
-import type {
-  DetectionResult,
+import type { TabularParserPort, DetectionResult,
   FileLike,
   ParseOptions,
   TabularChunk,
   TabularParseResult,
   TabularPreview,
-} from '@hierarchidb/tabular/types';
+} from '@hierarchidb/tabular-source';
 
 // Uses 'xlsx' package, which is a dependency of this optional package
-// to keep @hierarchidb/tabular core lean.
+// to keep @hierarchidb/tabular-source core lean.
 
 export const xlsxParser: TabularParserPort = {
   id: 'xlsx',

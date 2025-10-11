@@ -8,5 +8,6 @@ export default createTsupConfig({
     '@mui/icons-material',
     'react-draggable',
     'react-resizable',
+    '@hierarchidb/common-types',
   ],
 });

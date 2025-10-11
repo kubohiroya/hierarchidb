@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
   addAliasIfExists(rootDir, '../packages/runtime/worker/dist/index.js', '@hierarchidb/runtime-worker', aliases);
   addAliasIfExists(rootDir, '../packages/runtime/worker-bootstrap/dist/index.js', '@hierarchidb/runtime-worker-bootstrap', aliases);
   addAliasIfExists(rootDir, '../packages/feature/map-adapter/dist/index.js', '@hierarchidb/map-adapter', aliases);
-  addAliasIfExists(rootDir, '../packages/feature/tabular-xlsx/dist/index.js', '@hierarchidb/tabular-xlsx', aliases);
+  addAliasIfExists(rootDir, '../packages/feature/tabular-source-xlsx/dist/index.js', '@hierarchidb/tabular-source-xlsx', aliases);
   addAliasIfExists(rootDir, '../packages/util/dist/index.js', '@hierarchidb/util', aliases);
   addAliasIfExists(rootDir, '../packages/ui/core/dist/index.js', '@hierarchidb/ui-core', aliases);
   addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-icon', aliases);
@@ -46,7 +46,7 @@ export default defineConfig(({ mode }) => {
         '@hierarchidb/runtime-worker',
         '@hierarchidb/runtime-worker-bootstrap',
         '@hierarchidb/map-adapter',
-        '@hierarchidb/tabular-xlsx',
+        '@hierarchidb/tabular-source-xlsx',
         '@hierarchidb/runtime-ui-plugin-dialog',
       ],
     },

@@ -16,7 +16,7 @@ const cfg = createTsupConfig({
     "@hierarchidb/import-export",
   "@hierarchidb/map-adapter",
   "@hierarchidb/map-source",
-  "@hierarchidb/tabular",
+  "@hierarchidb/tabular-source",
   "@hierarchidb/tag",
   "@hierarchidb/util",
   "@hierarchidb/batch-api",

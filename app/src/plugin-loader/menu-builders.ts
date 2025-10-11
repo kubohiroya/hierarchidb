@@ -27,7 +27,7 @@ export interface PluginMenuItem {
     emoji?: string;
     color?: string;
   };
-  group?: 'core' | 'base' | 'geo' | 'tabular' | 'project' | string;
+  group?: 'core' | 'base' | 'geo' | 'tabular-source' | 'project' | string;
   priority: number; // lower first
 }
 

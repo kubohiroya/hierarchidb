@@ -25,8 +25,8 @@ export default createTsupConfig({
     "@mui/icons-material",
     "@emotion/react",
     "@emotion/styled",
-    "@hierarchidb/download",
     "@hierarchidb/batch",
+    "@hierarchidb/download",
     "@hierarchidb/util",
     "@hierarchidb/common-types",
     "@hierarchidb/common-api",
@@ -40,6 +40,6 @@ export default createTsupConfig({
     "@hierarchidb/auth-recovery",
     "@hierarchidb/common-auth",
     "@hierarchidb/runtime-worker",
-    "@hierarchidb/ui-dialog",
+    "@hierarchidb/ui-dialog"
   ]
 });

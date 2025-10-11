@@ -1,0 +1,55 @@
+{
+  "name": "@hierarchidb/ui-basic-info",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "dependencies": {
+    "react-virtuoso": "^4.14.0"
+  },
+  "peerDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": "^18.3.1"
+  },
+  "keywords": [],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": "^18.3.1"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "react"
+    ]
+  }
+}

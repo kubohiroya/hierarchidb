@@ -48,7 +48,7 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts', { exclude: true });
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', { exclude: true });
 
     const pluginRoot = path.resolve(rootDir, '../packages/plugin-loader');
     if (fs.existsSync(pluginRoot)) {
@@ -86,7 +86,7 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-worker-bootstrap', '../packages/runtime/worker-bootstrap/dist/index.js');
     addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts');
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true });
-    addAlias('@hierarchidb/tabular-xlsx', '../packages/feature/tabular-xlsx/dist/index.js', { exclude: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js', { exclude: true });
   }
 
   return {

@@ -64,6 +64,14 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
+  },
+  "peerDependencies": {
+    "dexie": "^4.2.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": ">=18.0.0",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-sdk": "workspace:*",
@@ -73,15 +81,8 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/util": "workspace:*"
-  },
-  "peerDependencies": {
-    "dexie": "^4.2.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.3.2",
-    "@mui/material": "^7.3.2",
-    "react": ">=18.0.0"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
@@ -91,7 +92,18 @@
     "react": ">=18.0.0",
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/plugin-sdk": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugins-folder-plugin": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

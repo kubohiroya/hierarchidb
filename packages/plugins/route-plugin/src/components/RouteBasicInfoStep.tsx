@@ -19,8 +19,8 @@ import {
   Typography,
 } from '@mui/material';
 import { Route as RouteIcon } from '@mui/icons-material';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
-import type { BasicInfoValue } from '@hierarchidb/ui-core';
+import { BasicInfoFields } from '@hierarchidb/ui-basic-info';
+import type { BasicInfoValue } from '@hierarchidb/ui-basic-info';
 import type { RouteCategory, RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 import { getRouteDraft } from '../utils/workingCopy.js';
@@ -45,7 +45,9 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
   const resolvedName = typeof draft.name === 'string' ? draft.name : '';
   const resolvedDescription = typeof draft.description === 'string' ? draft.description : '';
   const resolvedRouteType = draft.routeType ?? RouteType.ROAD;
-  const resolvedTransportModes = draft.transportModes ?? [];
+  const resolvedTransportModes = useMemo(()=>draft.transportModes ?? [], [
+    draft.transportModes,
+  ]);
   const resolvedCategory = (draft.category as RouteCategory | undefined) ?? 'transportation';
   const resolvedTags = draft.tags ?? [];
 

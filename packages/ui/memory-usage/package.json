@@ -1,0 +1,49 @@
+{
+  "name": "@hierarchidb/memory-usage",
+  "version": "0.1.0",
+  "description": "Memory usage component for HierarchiDB with intelligent pane management for HierarchiDB",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "dependencies": {
+    "allotment": "^1.20.4"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "@hierarchidb/util": "workspace:*"
+  },
+  "keywords": [
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "devDependencies": {
+    "react": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "@hierarchidb/util": "workspace:*"
+  }
+}

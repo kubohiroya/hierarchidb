@@ -1,4 +1,4 @@
-// Local minimal copies of csv-extract types to keep service-only typecheck isolated
+// Local minimal copies of tabular-extract types to keep service-only typecheck isolated
 interface CSVProcessingConfig {
   [key: string]: any;
 }

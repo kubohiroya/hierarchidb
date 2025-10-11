@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "dev": "tsup --watch",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -22,12 +22,10 @@
     "build:clean": "rm -rf dist dist-types",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/common-types": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -38,12 +36,14 @@
     "maplibre-gl": "^5.7.3",
     "@deck.gl/geo-layers": "^9.1.14",
     "@deck.gl/layers": "^9.1.14",
-    "@deck.gl/mapbox": "^9.1.14"
+    "@deck.gl/mapbox": "^9.1.14",
+    "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "react": ">=18.0.0",
     "@mui/material": "^7.3.2",
-    "@types/geojson": "^7946.0.8"
+    "@types/geojson": "^7946.0.8",
+    "@hierarchidb/common-types": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js",

@@ -45,9 +45,9 @@ describe('CSV Parser', () => {
 });
 TESTFILE
 
-# 3. Fix all imports from ui-csv-extract
+# 3. Fix all imports from ui-tabular-extract
 find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' \
-  's/import.*{.*CSVPreviewData.*}.*from.*ui-csv-extract.*/import type { CSVTableMetadata, CSVColumnInfo, CSVDataResult, CSVSelectionConfig, CSVFileUploadStep, ICSVDataApi } from "@hierarchidb\/ui-csv-extract";/g' {} \;
+  's/import.*{.*CSVPreviewData.*}.*from.*ui-tabular-extract.*/import type { CSVTableMetadata, CSVColumnInfo, CSVDataResult, CSVSelectionConfig, CSVFileUploadStep, ICSVDataApi } from "@hierarchidb\/ui-tabular-extract";/g' {} \;
 
 # 4. Add missing CSVFilterRule type
 find src -type f \( -name "*.ts" -o -name "*.tsx" \) -exec sed -i '' \

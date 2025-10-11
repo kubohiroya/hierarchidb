@@ -5,7 +5,7 @@
 import { FeatureDefinition as TagFeatureDefinition } from '@hierarchidb/tag';
 import { FeatureDefinition as ImportExportFeatureDefinition } from '@hierarchidb/import-export';
 import { FeatureDefinition as TabularFeatureDefinition } from '@hierarchidb/tabular';
-// tabular-xlsx is optional; load lazily in bootstrap below
+// tabular-source-xlsx is optional; load lazily in bootstrap below
 import { FeatureDefinition as ComputeFeatureDefinition } from '@hierarchidb/compute';
 import { FeatureDefinition as DownloadFeatureDefinition } from '@hierarchidb/download';
 import { FeatureDefinition as MapSourceFeatureDefinition } from '@hierarchidb/map-source';
@@ -34,7 +34,7 @@ export async function bootstrapFeatures(): Promise<FeatureRegistry> {
       // optional, ignore
     });
 
-  // Optional feature: tabular-xlsx
+  // Optional feature: tabular-source-xlsx
   await import('@hierarchidb/tabular-xlsx')
     .then((mod: any) => {
       if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);

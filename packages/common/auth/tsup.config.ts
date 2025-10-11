@@ -7,5 +7,7 @@ export default createTsupConfig({
       AuthNotificationSystem: 'src/AuthNotificationSystem.ts',
     },
   },
+  external: [
+    '@hierarchidb/common-types',
+  ],
 });
-

@@ -1,0 +1,62 @@
+{
+  "name": "@hierarchidb/fetch-metadata",
+  "version": "0.0.1",
+  "description": "Fetch and transform metadata from various open data sources",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./output/gadm.json": "./output/gadm.json",
+    "./output/geoboundaries.json": "./output/geoboundaries.json",
+    "./output/naturalearth.json": "./output/naturalearth.json",
+    "./output/osm.json": "./output/osm.json"
+  },
+  "scripts": {
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.11",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
+    "eslint": "^9.34.0",
+    "prettier": "^3.2.5",
+    "tsup": "^8.0.2",
+    "typescript": "workspace:^5.9.3",
+    "undici-types": "^7.15.0"
+  },
+  "files": [
+    "output",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "metadata",
+    "gadm",
+    "osm",
+    "open-data",
+    "geo",
+    "country"
+  ],
+  "author": "",
+  "license": "MIT"
+}

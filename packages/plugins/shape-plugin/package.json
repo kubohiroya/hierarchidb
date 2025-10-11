@@ -91,7 +91,7 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/plugins-folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
+    "@hierarchidb/fetch-metadata": "workspace:*",
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",

@@ -15,7 +15,7 @@ vi.mock('@hierarchidb/batch', () => ({
   },
 }));
 
-vi.mock('@hierarchidb/tabular-store', () => ({
+vi.mock('@hierarchidb/tabular-source-store', () => ({
   TabularWriter: class {
     async begin() {}
     async writeRows() {}

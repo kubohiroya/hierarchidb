@@ -1,5 +1,5 @@
-import { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
-import type { CSVColumnInfo, CSVTableMetadataLike } from '@hierarchidb/table-metadata';
+import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
+import type { CSVColumnInfo, CSVTableMetadataLike } from './types.js';
 import { getDBName } from '@hierarchidb/util';
 import { getRowStoreDB, type RowChunk } from './RowStoreDB.js';
 

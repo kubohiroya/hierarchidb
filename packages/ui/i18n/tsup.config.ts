@@ -7,7 +7,9 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/react',
     '@emotion/styled',
-    // Keep runtime deps external to avoid bundling and dts chasing
+    '@mui/x-date-pickers',
+    'i18next',
+    'react-i18next',
     'i18next-browser-languagedetector',
     'i18next-http-backend',
     'date-fns',

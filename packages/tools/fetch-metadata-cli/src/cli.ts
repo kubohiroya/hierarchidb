@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { argv, exit } from 'node:process';
 import { Command } from 'commander';
-import { fetchMetadata, getAvailableDataSources } from '@hierarchidb/runtime-shared-fetch-metadata';
+import { fetchMetadata, getAvailableDataSources } from '@hierarchidb/fetch-metadata';
 
 const program = new Command()
   .name('fetch-metadata')

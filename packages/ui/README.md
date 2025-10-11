@@ -126,7 +126,7 @@ HierarchiDB のユーザーインターフェース層を構成するReactコン
   - プログレス表示
   - プレビュー機能
 
-#### [@hierarchidb/ui-csv-extract](./csv-extract/)
+#### [@hierarchidb/ui-csv-extract](tabular-extract/)
 **CSV データ抽出**
 
 - **役割**: CSVファイルの解析・プレビュー・抽出

@@ -16,7 +16,7 @@ How it works
 Usage
 -----
 ```ts
-import { installTabularXlsx } from '@hierarchidb/tabular-xlsx';
+import { installTabularXlsx } from '@hierarchidb/tabular-source-xlsx';
 installTabularXlsx(); // once at startup
 ```
 

@@ -88,6 +88,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   // Simple computed validity based on workingCopy to ease testing and determinism
   const isBasicValid = useMemo(() => {
+    if(workingCopy === null) return false;
     const draft = getRouteDraft(workingCopy);
     const name = typeof draft.name === 'string' ? draft.name : '';
     const routeType = draft.routeType;

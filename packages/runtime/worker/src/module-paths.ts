@@ -17,7 +17,7 @@ export const RUNTIME_MODULE_IDS = {
 
 export const OPTIONAL_FEATURE_MODULE_IDS = {
   mapAdapter: '@hierarchidb/map-adapter',
-  tabularXlsx: '@hierarchidb/tabular-xlsx',
+  tabularXlsx: '@hierarchidb/tabular-source-xlsx',
 } as const;
 
 // Expose discovered plugin IDs as a map for backward compatibility.

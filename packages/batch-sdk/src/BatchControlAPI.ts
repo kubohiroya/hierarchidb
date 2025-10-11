@@ -26,6 +26,30 @@ export interface BatchProgressPayload {
   meta?: Record<string, unknown>;
 }
 
+export interface UnifiedProgressInfo {
+  stage: string;
+  total: number;
+  completed: number;
+  failed: number;
+  percentage: number;
+  currentTask: string;
+  phase?: string;
+  timestamp?: number;
+  payload?: BatchProgressPayload;
+  message?: string;
+  nodeId?: NodeId;
+  sessionId?: BatchSessionId;
+}
+
+export interface UseBatchProgressOptions {
+  autoSubscribe?: boolean;
+  poll?: () => Promise<UnifiedProgressInfo | null>;
+}
+
+export interface BatchProgressAdapter {
+  subscribe: (cb: (p: UnifiedProgressInfo) => void) => (() => void) | Promise<() => void>;
+}
+
 /**
  * Common interface for batch session management across all plugin-loader
  */

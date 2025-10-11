@@ -53,7 +53,7 @@ export class EphemeralLocationDB extends Dexie {
     this.version(2).stores({
       sessions: '&sessionId, nodeId, createdAt, status',
     });
-    // v3: add optional tableId for tabular (column-wise) search linkage
+    // v3: add optional tableId for tabular-source (column-wise) search linkage
     this.version(3).upgrade(async () => {
       // No index changes needed; keep shape and allow nullable field
       // Existing sessions will simply not have tableId

@@ -33,9 +33,9 @@ describe('menu-builders', () => {
       'geo', // shape
       'geo', // location
       'geo', // route
-      'tabular', // spreadsheet
-      'tabular', // styler
-      'tabular', // resolver
+      'tabular-source', // spreadsheet
+      'tabular-source', // styler
+      'tabular-source', // resolver
     ]);
   });
 

@@ -74,7 +74,7 @@ export class LocationSessionController {
     const norm = this.normalizePoints(this.points);
     this.emit('normalize', 1, 1, 0, `Normalized ${norm.features.length} points`);
 
-    // Optional: persist tabular rows for column-wise search
+    // Optional: persist tabular-source rows for column-wise search
     try {
       const columns = determineColumns(norm.features, this.settings.attributeAllowlist);
       const writer = new TabularWriter('location');
@@ -90,7 +90,7 @@ export class LocationSessionController {
         const db = getEphemeralLocationDB();
         await db.table('sessions').update(this.sessionId, { tableId: committedId });
     } catch (e) {
-      console.warn('[Location][Session] tabular persist skipped:', e);
+      console.warn('[Location][Session] tabular-source persist skipped:', e);
     }
 
     // Stage 3: tilegen

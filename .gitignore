@@ -160,7 +160,7 @@ playwright-report/
 test-results/
 
 # Generated metadata snapshot (documentation reference only)
-packages/runtime-shared/fetch-metadata/docs/metadata.ts
+packages/runtime-shared/shape-plugin-fetch-metadata/docs/metadata.ts
 
 # pnpm
 .pnpm-store/

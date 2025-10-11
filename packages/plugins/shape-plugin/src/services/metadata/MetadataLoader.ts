@@ -47,7 +47,7 @@ export class MetadataLoader {
 
       switch (dataSource) {
         case 'GADM':
-          rawData = await import('@hierarchidb/runtime-shared-fetch-metadata/output/gadm.json').then(
+          rawData = await import('@hierarchidb/features/fetch-metadata/output/gadm.json').then(
             (m) => m.default,
           );
           break;

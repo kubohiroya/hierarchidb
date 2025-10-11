@@ -14,7 +14,7 @@
     { "path": "./packages/feature/route-searoute/tsconfig.typecheck.json" },
     { "path": "./packages/feature/map-source/tsconfig.typecheck.json" },
     { "path": "./packages/feature/tabular-store/tsconfig.typecheck.json" },
-    { "path": "./packages/feature/tabular/tsconfig.typecheck.json" },
+    { "path": "./packages/feature/tabular-source/tsconfig.typecheck.json"},
     { "path": "./packages/feature/tag/tsconfig.typecheck.json" },
     { "path": "./packages/feature/map-adapter/tsconfig.typecheck.json" },
     { "path": "./packages/feature/route-resolver/tsconfig.typecheck.json" }
@@ -39,7 +39,7 @@
     ,{ "path": "./packages/ui/tour/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/map/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/import-export/tsconfig.typecheck.json" }
-    ,{ "path": "./packages/ui/csv-extract/tsconfig.typecheck.json" }
+    ,{ "path": "./packages/ui/tabular-extract/tsconfig.typecheck.json"}
     ,{ "path": "./packages/ui/country-select/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/accordion-config/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/file/tsconfig.typecheck.json" }

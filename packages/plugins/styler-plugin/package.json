@@ -73,17 +73,9 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
-    "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/table-metadata": "workspace:*",
-    "@hierarchidb/plugins-folder-plugin": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-csv-extract": "workspace:*",
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
-    "xlsx": "^0.18.5",
-    "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
+    "xlsx": "^0.18.5"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -93,8 +85,15 @@
     "dexie": "^4.2.0",
     "react-i18next": "12.3.1",
     "i18next": "22.5.0",
-    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*",
-    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/plugins-folder-plugin": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
@@ -106,6 +105,14 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "dexie": "^4.2.0",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/plugins-folder-plugin": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugins-spreadsheet-plugin": "workspace:*",
     "@hierarchidb/runtime-ui-plugin-dialog": "workspace:*"
   },
   "keywords": [

@@ -29,20 +29,20 @@
   "dependencies": {},
   "peerDependencies": {
     "commander": "^11.1.0",
-    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*"
+    "@hierarchidb/fetch-metadata": "workspace:*"
   },
   "peerDependenciesMeta": {
     "commander": {
       "optional": false
     },
-    "@hierarchidb/runtime-shared-fetch-metadata": {
+    "@hierarchidb/fetch-metadata": {
       "optional": false
     }
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
     "commander": "^11.1.0",
-    "@hierarchidb/runtime-shared-fetch-metadata": "workspace:*",
+    "@hierarchidb/fetch-metadata": "workspace:*",
     "tsup": "^8.0.2",
     "typescript": "workspace:^5.9.3"
   },

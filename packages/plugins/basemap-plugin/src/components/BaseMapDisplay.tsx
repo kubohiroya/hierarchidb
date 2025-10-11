@@ -14,11 +14,13 @@ import {
   type MapViewState,
   loadMapLibreMap,
 } from '@hierarchidb/ui-map';
+
+import {CrossViewSnackbar, useCrossHighlightSync} from '@hierarchidb/ui-data-grid';
+
 import type { NodeId } from '@hierarchidb/common-types';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 import { BUILT_IN_STYLES } from '../constants/builtInStyles.js';
-import { CrossViewSnackbar, useCrossHighlightSync, useMapLibreFeatureState, ensureDefaultStyles } from '@hierarchidb/ui-core';
 
 interface DemoFeatureCollection {
   type: 'FeatureCollection';
@@ -91,12 +93,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
 
   const dsId = useMemo(() => datasetId ?? `basemap:${nodeId}`, [datasetId, nodeId]);
   const { bindMapLibre } = useCrossHighlightSync({ datasetId: dsId, withDeckAccessors: false });
-  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: bindSourceId || '', throttleMs: 16 });
-  // Also mirror demo overlay feature-state if enabled
-  useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: 'demo-source', throttleMs: 16 });
+ // useMapLibreFeatureState({ datasetId: dsId, map: _mapInstance, sourceId: bindSourceId || '', throttleMs: 16 });
   // Default styles for hover/select
   useEffect(() => {
-    ensureDefaultStyles(dsId, { includeRow: false, includeMap: true });
+    //ensureDefaultStyles(dsId, { includeRow: false, includeMap: true });
   }, [dsId]);
 
   // Fetch entity if not provided

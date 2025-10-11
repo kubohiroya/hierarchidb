@@ -5,3 +5,4 @@ export {
   setGlobalMuiIconMap,
   getMuiIconWithColor,
 } from './getMuiIconComponent.js';
+export * from './EriaCartLogo.js';

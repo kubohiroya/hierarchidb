@@ -60,7 +60,7 @@ export class WorkerService {
       enableAllImporters();
       enableAllExporters();
 
-      // Optionally install XLSX parser for tabular if available
+      // Optionally install XLSX parser for tabular-source if available
       await import('@hierarchidb/tabular-xlsx')
         .then((mod: any) => {
           if (mod && typeof mod.installTabularXlsx === 'function') {

@@ -406,7 +406,7 @@ import {
   CSVFileUploadStep,
   CSVColumnSelectionStep,
   CSVFilterStep 
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/ui-tabular-extract';
 
 const SpreadsheetImportWizard = () => {
   const [currentStep, setCurrentStep] = useState(0);

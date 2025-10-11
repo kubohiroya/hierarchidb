@@ -1,0 +1,71 @@
+{
+  "name": "@hierarchidb/ui-csv-extract",
+  "version": "0.1.0",
+  "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "src/**/*"
+  ],
+  "scripts": {
+    "prebuild": "pnpm run build:clean",
+    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build:tsc": "pnpm run build:types",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist dist-types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "build:pack": "node ../../../scripts/pkg-build/copy-dist-types.mjs"
+  },
+  "dependencies": {
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0"
+  },
+  "devDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2"
+  },
+  "keywords": [
+    "hierarchidb",
+    "csv",
+    "extract",
+    "ui",
+    "react",
+    "components"
+  ],
+  "author": "HierarchiDB Team",
+  "license": "MIT",
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom"
+    ]
+  }
+}

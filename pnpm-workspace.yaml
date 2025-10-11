@@ -1,5 +1,6 @@
 packages:
   - app
+  - packages/components
   - packages/common/*
   - packages/util
   - packages/tools/*

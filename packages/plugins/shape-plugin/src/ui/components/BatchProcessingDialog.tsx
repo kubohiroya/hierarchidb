@@ -33,7 +33,6 @@ import {
 } from '@mui/icons-material';
 import { useShapeProgress } from '../hooks/useShapeProgress.js';
 import { useShapeBatchCommand } from '../hooks/useShapeBatchCommand.js';
-import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
 
 import type { NodeId } from '@hierarchidb/common-types';
@@ -186,7 +185,7 @@ export function BatchProcessingDialog({
   }, [sessionId]);
 
   // Format duration
-  const formatDuration = (ms: number): string => {
+  const _formatDuration = (ms: number): string => {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);

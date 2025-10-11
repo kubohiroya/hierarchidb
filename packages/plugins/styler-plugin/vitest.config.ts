@@ -21,7 +21,7 @@ export default defineConfig({
       '@hierarchidb/plugins-spreadsheet-plugin': path.resolve(__dirname, './src/__tests__/mocks/spreadsheet-plugin.ts'),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/ui-csv-extract': path.resolve(__dirname, '../../ui/csv-extract/dist/index.js'),
+      '@hierarchidb/ui-csv-extract': path.resolve(__dirname, '../../ui/tabular-extract/dist/index.js'),
       '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
     },
   },

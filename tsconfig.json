@@ -15,7 +15,11 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "scripts/**/*.ts"
+    "global.d.ts",
+    "scripts/**/*.ts",
+    "packages/components/src/**/*.tsx",
+    "packages/components/src/**/*.ts",
+    "packages/components/src/**/*.d.ts"
   ],
   "files": []
 }

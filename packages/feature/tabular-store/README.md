@@ -10,7 +10,7 @@ Shared tabular persistence for plugin tables (location/shape/route). Provides ch
 ## APIs
 
 ```ts
-import { TabularWriter, TabularQueryService } from '@hierarchidb/tabular-store';
+import { TabularWriter, TabularQueryService } from '@hierarchidb/tabular-source-store';
 
 // Write
 const writer = new TabularWriter('location', { indexColumns: ['type','countryCode'] });

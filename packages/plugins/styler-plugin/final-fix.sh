@@ -24,7 +24,7 @@ sed -i '' 's/config\.keyColumn/config?.keyColumn || 0/g' src/utils/csvParser.ts
 sed -i '' 's/config\.valueColumn/config?.valueColumn || 0/g' src/utils/csvParser.ts
 sed -i '' 's/config\.colorColumn/config?.colorColumn || 0/g' src/utils/csvParser.ts
 
-# Fix missing exports from ui-csv-extract
+# Fix missing exports from ui-tabular-extract
 find src -name "*.ts" -o -name "*.tsx" | xargs sed -i '' 's/CSVPreviewData/CSVTableMetadata/g'
 find src -name "*.ts" -o -name "*.tsx" | xargs sed -i '' 's/CSVFileUploadResult/CSVFileUploadStep/g'
 
