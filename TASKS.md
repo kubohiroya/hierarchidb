@@ -121,10 +121,10 @@
   - [ ] `pnpm --filter @hierarchidb/ui-core typecheck` が成功する
   - [ ] 再エクスポートした型に依存する既存パッケージで追加のビルドエラーが発生しない
 - チェックリスト:
-  - [ ] `components/BasicInfoFields.tsx` と `components/TabularPreview/TabularPreview.tsx` を index から再エクスポート
-  - [ ] `components/NotificationSystem/NotificationSystem.tsx` の `NotificationSystem`/`notify` を index から再エクスポート
-  - [ ] `hooks/useWorkingCopy.ts` のフックと関連型を index から再エクスポート
-  - [ ] `hooks/useBatchProgress.ts` および `hooks/progressAdapters.ts` のフック・型を index から再エクスポート
+  - [x] `components/BasicInfoFields.tsx` と `components/TabularPreview/TabularPreview.tsx` を index から再エクスポート
+  - [x] `components/NotificationSystem/NotificationSystem.tsx` の `NotificationSystem`/`notify` を index から再エクスポート
+  - [x] `hooks/useWorkingCopy.ts` のフックと関連型を index から再エクスポート
+  - [x] `hooks/useBatchProgress.ts` および `hooks/progressAdapters.ts` のフック・型を index から再エクスポート
 - ロールバック手順: `packages/ui/core/src/index.ts` を差分前に戻し、`pnpm --filter @hierarchidb/ui-core typecheck` を再実行して従来状態を確認
 
 
@@ -5453,3 +5453,7 @@ ToDo（Phase 2/3: any の完全撤去）
 ## 今日の着手（運用ログ） <a id="worklog-6"></a>
 
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
+- 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
+- 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。
+- 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 TabularPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
+- 2025-10-11 11:25 command: pnpm --filter @hierarchidb/plugins-route-plugin build:types — ワークスペース内パッケージ未解決（TS2307）と RouteBatchConfig 既存プロパティ不整合により失敗。今回の UI コード差分による追加エラーは発生せず。

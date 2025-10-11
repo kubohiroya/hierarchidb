@@ -1,24 +1,39 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
 
 type WorkingCopyAPI = {
-  createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: any) => Promise<string>;
-  getWorkingCopy: (nodeId: string) => Promise<any>;
-  commitWorkingCopy: (nodeId: string) => Promise<string>;
+  createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: unknown) => Promise<string>;
+  getWorkingCopy: (nodeId: string) => Promise<unknown>;
+  commitWorkingCopy: (nodeId: string) => Promise<unknown>;
   discardWorkingCopy: (nodeId: string) => Promise<void>;
 };
 
-export interface UseWorkingCopyOptions {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const extractWorkingCopyId = (value: unknown, fallback?: string | null): string | null => {
+  if (isRecord(value) && 'id' in value && typeof value.id === 'string') {
+    return value.id;
+  }
+  return fallback ?? null;
+};
+
+export interface UseWorkingCopyOptions<TWorkingCopy> {
   nodeType: string;
   mode: 'create' | 'edit';
-  nodeId?: string;     // when edit
-  parentId?: string;   // when create
+  nodeId?: string;
+  parentId?: string;
+  /**
+   * Optional mapper that converts raw worker payloads into desired working copy shape.
+   * Defaults to runtime cast.
+   */
+  mapFromWorker?: (raw: unknown) => TWorkingCopy;
 }
 
-export interface UseWorkingCopyResult<T> {
+export interface UseWorkingCopyResult<TWorkingCopy> {
   wcId: string | null;
-  workingCopy: T;
-  setWorkingCopy: (updater: (prev: T ) => T) => void;
+  workingCopy: TWorkingCopy | null;
+  setWorkingCopy: Dispatch<SetStateAction<TWorkingCopy | null>>;
   init: () => Promise<void>;
   commit: () => Promise<void>;
   discard: () => Promise<void>;
@@ -26,82 +41,136 @@ export interface UseWorkingCopyResult<T> {
   error: unknown;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+export function useWorkingCopy<TWorkingCopy>(
+  options: UseWorkingCopyOptions<TWorkingCopy>,
+): UseWorkingCopyResult<TWorkingCopy> {
+  const { nodeType, mode, nodeId, parentId, mapFromWorker } = options;
 
-const extractWorkingCopyId = (value: unknown, fallback: string): string => {
-  if (isRecord(value) && 'id' in value && typeof value.id === 'string') {
-    return value.id;
-  }
-  return fallback;
-};
-
-export function useWorkingCopy<T>(opts: UseWorkingCopyOptions): UseWorkingCopyResult<T> {
-  const { nodeType, mode, nodeId, parentId } = opts;
-  const useWorker = getWorkerClientHook<WorkerClientRef>();
   const [wcId, setWcId] = useState<string | null>(null);
-  const [workingCopy, setWorkingCopy] = useState<T>({} as T);
+  const [workingCopy, setWorkingCopy] = useState<TWorkingCopy | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const committedRef = useRef(false);
 
-  const getAPI = useMemo(() => async (): Promise<WorkingCopyAPI> => {
-    if (!useWorker) throw new Error('Worker client not available');
-    const ref = useWorker();
-    if (!ref) throw new Error('Worker client not initialized');
+  const mapWorkingCopy = useCallback(
+    (raw: unknown): TWorkingCopy | null => {
+      if (raw == null) return null;
+      if (mapFromWorker) return mapFromWorker(raw);
+      return raw as TWorkingCopy;
+    },
+    [mapFromWorker],
+  );
+
+  const getWorkingCopyAPI = useCallback(async (): Promise<WorkingCopyAPI> => {
+    let workerHook: (() => WorkerClientRef) | null;
+    try {
+      workerHook = getWorkerClientHook<WorkerClientRef>();
+    } catch (err) {
+      const message =
+        process.env.NODE_ENV !== 'production'
+          ? `Worker client hook is not registered. Ensure registerWorkerClientHook is called. Original error: ${String(err)}`
+          : 'Worker initialization is not ready yet.';
+      throw new Error(message);
+    }
+
+    if (!workerHook) {
+      throw new Error('Worker client hook is not registered.');
+    }
+
+    const ref = workerHook();
+    if (!ref) {
+      throw new Error('Worker client is not initialized.');
+    }
+
     const api = ref.getAPI();
     const wc = await api.getWorkingCopyAPI();
     return wc as unknown as WorkingCopyAPI;
-  }, [useWorker]);
-
-  /*
-  const setWorkingCopy = useCallback((updater: (prev: T) => T) => {
-    _setWorkingCopy((prev) => (prev ? updater(prev) : prev));
   }, []);
-   */
 
   const init = useCallback(async () => {
     setLoading(true);
     setError(null);
+    committedRef.current = false;
+
     try {
-      const wc = await getAPI();
-      if (mode === 'edit' && nodeId) {
-        const data = await wc.getWorkingCopy(nodeId);
-        setWorkingCopy(data);
-        setWcId(extractWorkingCopyId(data, nodeId));
-      } else if (mode === 'create' && parentId) {
-        const id = await wc.createDraftWorkingCopy(nodeType, parentId, {});
-        const data = await wc.getWorkingCopy(id);
-        setWorkingCopy(data);
-        setWcId(id);
+      const wc = await getWorkingCopyAPI();
+
+      if (mode === 'edit') {
+        if (!nodeId) {
+          throw new Error('Edit mode requires nodeId.');
+        }
+        const raw = await wc.getWorkingCopy(nodeId);
+        setWorkingCopy(mapWorkingCopy(raw));
+        setWcId(extractWorkingCopyId(raw, nodeId));
+        return;
       }
-    } catch (e) {
-      setError(e);
+
+      if (mode === 'create') {
+        if (!parentId) {
+          throw new Error('Create mode requires parentId.');
+        }
+        const createdId = await wc.createDraftWorkingCopy(nodeType, parentId, {});
+        const raw = await wc.getWorkingCopy(createdId);
+        setWorkingCopy(mapWorkingCopy(raw));
+        setWcId(extractWorkingCopyId(raw, createdId) ?? createdId);
+        return;
+      }
+
+      throw new Error(`Unsupported working copy mode: ${mode}`);
+    } catch (err) {
+      setError(err);
+      setWorkingCopy(null);
+      setWcId(null);
     } finally {
       setLoading(false);
     }
-  }, [getAPI, mode, nodeId, parentId, nodeType]);
+  }, [getWorkingCopyAPI, mapWorkingCopy, mode, nodeId, nodeType, parentId]);
 
   const commit = useCallback(async () => {
-    if (!wcId && !nodeId) return;
-    try {
-      const wc = await getAPI();
-      await wc.commitWorkingCopy((wcId ?? nodeId) as string);
-      committedRef.current = true;
-    } catch (e) {
-      setError(e);
-      throw e;
+    const targetId = wcId ?? nodeId ?? null;
+    if (!targetId) {
+      throw new Error('No working copy id available to commit.');
     }
-  }, [getAPI, wcId, nodeId]);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const wc = await getWorkingCopyAPI();
+      await wc.commitWorkingCopy(targetId);
+      committedRef.current = true;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [getWorkingCopyAPI, nodeId, wcId]);
 
   const discard = useCallback(async () => {
     if (!wcId || committedRef.current) return;
-    try {
-      const wc = await getAPI();
-      await wc.discardWorkingCopy(wcId);
-    } catch (e) {
-      // best-effort discard; do not rethrow
-    }
-  }, [getAPI, wcId]);
 
-  return { wcId, workingCopy, setWorkingCopy, init, commit, discard, loading, error };
+    try {
+      const wc = await getWorkingCopyAPI();
+      await wc.discardWorkingCopy(wcId);
+    } catch (err) {
+      // best-effort discard; surface only in debug environments
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('[ui-core/useWorkingCopy] discard failed', err);
+      }
+    } finally {
+      setWcId(null);
+    }
+  }, [getWorkingCopyAPI, wcId]);
+
+  return {
+    wcId,
+    workingCopy,
+    setWorkingCopy,
+    init,
+    commit,
+    discard,
+    loading,
+    error,
+  };
 }

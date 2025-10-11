@@ -67,14 +67,19 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-  const updateWorkingCopy = useCallback((updater: (prev: RouteWorkingCopy) => RouteWorkingCopy) => {
-    setWorkingCopy((prev) => (prev ? updater(prev) : prev));
-  }, [setWorkingCopy]);
+  const updateWorkingCopy = useCallback(
+    (updater: (prev: RouteWorkingCopy | null) => RouteWorkingCopy | null) => {
+      setWorkingCopy((prev: RouteWorkingCopy | null) => updater(prev));
+    },
+    [setWorkingCopy],
+  );
 
   useEffect(() => {
     if (!open || workingCopy || mode !== 'create') return;
     const fallbackNodeId = (nodeId ?? parentId ?? (globalThis.crypto?.randomUUID?.() ?? `route-${Date.now()}`)) as NodeId;
-    setWorkingCopy((prev) => prev ?? createRouteDraftWorkingCopy(fallbackNodeId, {}, parentId));
+    setWorkingCopy((prev: RouteWorkingCopy | null) => (
+      prev ?? createRouteDraftWorkingCopy(fallbackNodeId, {}, parentId)
+    ));
   }, [open, mode, nodeId, parentId, workingCopy, setWorkingCopy]);
 
   const applyUpdates = useCallback((updates: Partial<RouteEntity>) => {
@@ -423,7 +428,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         open={open}
         stepComponents={stepDescriptors}
         stepData={workingCopy}
-        onStepDataChange={(patch) => {
+        onStepDataChange={(patch: Partial<RouteWorkingCopy> | null) => {
           if (!patch || !workingCopy) return;
           applyUpdates(patch as Partial<RouteWorkingCopy>);
         }}
@@ -436,7 +441,7 @@ export const RouteDialog: React.FC<RouteDialogProps> = ({
         onRequestClose={handleCancel}
         onRequestCommit={handleCommit}
         displayMode={displayMode}
-        onDisplayModeChange={(mode) => { transitionDisplayMode(mode); }}
+        onDisplayModeChange={(mode: DialogDisplayMode) => { transitionDisplayMode(mode); }}
         position={dialogPosition}
         onPositionChange={handlePositionChange}
         size={dialogSize}

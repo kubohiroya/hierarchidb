@@ -3,6 +3,7 @@ import type { NodeType } from '@hierarchidb/common-types';
 import { createAdapterFromProgressSubscribe, useBatchProgress } from '@hierarchidb/ui-core';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
+import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 import { BatchSessionStatus, ProgressPhase } from '@hierarchidb/batch-api';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
@@ -41,10 +42,12 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
 
   const adapter = useMemo(() => {
     if (!jobId) return null;
-    return createAdapterFromProgressSubscribe((cb) => bridgeRef.current.subscribeBatchProgress(
+    return createAdapterFromProgressSubscribe((eventCallback) => bridgeRef.current.subscribeBatchProgress(
       ROUTE_NODE_TYPE,
       jobId,
-      cb,
+      (event: BatchProgressEvent) => {
+        eventCallback(event);
+      },
     ));
   }, [jobId]);
 

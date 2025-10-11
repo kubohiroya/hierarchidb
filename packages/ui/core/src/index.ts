@@ -12,6 +12,7 @@ export type { DropdownMenuItemType } from './components/DropdownMenu/DropdownMen
 export { TagInput } from './components/TagInput.js';
 export { CategorySelector } from './components/CategorySelector.js';
 export { BasicInfoFields } from './components/BasicInfoFields.js';
+export type { BasicInfoFieldsProps, BasicInfoValue } from './components/BasicInfoFields.js';
 export { TagChipsInput } from './components/TagChipsInput.js';
 export type { TagChipsInputProps } from './components/TagChipsInput.js';
 export { TabularPreview } from './components/TabularPreview/TabularPreview.js';
@@ -29,8 +30,8 @@ export { useFormState } from './hooks/useFormState.js';
 export type { UseFormStateOptions, UseFormStateResult, FormFieldError } from './hooks/useFormState.js';
 // Batch progress hooks (public API)
 export { useBatchProgress } from './hooks/useBatchProgress.js';
-export { createAdapterFromProgressSubscribe } from './hooks/progressAdapters.js';
-export type { UnifiedProgressInfo, BatchProgressAdapter } from './hooks/useBatchProgress.js';
+export { createAdapterFromProgressSubscribe, progressEventToUnified } from './hooks/progressAdapters.js';
+export type { UnifiedProgressInfo, BatchProgressAdapter, UseBatchProgressOptions } from './hooks/useBatchProgress.js';
 
 // Utility Exports
 // Logger now exported from @hierarchidb/common-core
@@ -61,7 +62,17 @@ export type {
 export type { EditDialogProps } from './plugins/index.js';
 
 // Notifications
-export { NotificationSystem, notify } from './components/NotificationSystem/NotificationSystem.js';
+export {
+  NotificationSystem,
+  notify,
+  showNotification,
+  replaceWindowAlert,
+} from './components/NotificationSystem/NotificationSystem.js';
+export type {
+  Notification,
+  NotificationSeverity,
+  NotifyApi,
+} from './components/NotificationSystem/NotificationSystem.js';
 
 // Plugin host-facing component types
 export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports.js';
