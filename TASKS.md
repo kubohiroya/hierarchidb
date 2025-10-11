@@ -78,7 +78,7 @@
 - チェックリスト:
   - [x] DialogStateAPI の取得・購読フローで undefined を許容するガードを追加
   - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
-  - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
+ - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
 - ロールバック手順：
  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
@@ -108,10 +108,24 @@
   - [x] ハンドラー・UI で `ResolverDraftPayload` / `ResolverWorkingCopy` が正しく import され、暗黙の any が発生しない
 - チェックリスト：
   - [x] `src/types/RuntimeWorkerService.ts` で `ResolverWorkingCopyEntity` を定義し、関連エイリアスを整理
-  - [x] `ResolverEntityHandler` に `ResolverDraftPayload` を import し draftPayload の型エラーを解消
-  - [x] `ResolverDialog` 系コンポーネントで state 更新時の暗黙 any を排除
+ - [x] `ResolverEntityHandler` に `ResolverDraftPayload` を import し draftPayload の型エラーを解消
+ - [x] `ResolverDialog` 系コンポーネントで state 更新時の暗黙 any を排除
 - ロールバック手順：
-  - 型定義と import 差分を元に戻し、`pnpm --filter @hierarchidb/plugins-resolver-plugin build` が従来エラーを再現することを確認
+ - 型定義と import 差分を元に戻し、`pnpm --filter @hierarchidb/plugins-resolver-plugin build` が従来エラーを再現することを確認
+
+5) ui-core のエントリーポイント整備（P1）
+- ブランチ: `chore/ui-core/export-surface`
+- 依存: `@hierarchidb/ui-core` 既存モジュール（BasicInfoFields/TabularPreview/NotificationSystem/BatchProgress/WorkingCopy）
+- 受け入れ基準（DoD）:
+  - [ ] `packages/ui/core/src/index.ts` から BasicInfoFields/TabularPreview/NotificationSystem/notify/useWorkingCopy/useBatchProgress/progressAdapters の実装・型が再エクスポートされている
+  - [ ] `pnpm --filter @hierarchidb/ui-core typecheck` が成功する
+  - [ ] 再エクスポートした型に依存する既存パッケージで追加のビルドエラーが発生しない
+- チェックリスト:
+  - [x] `components/BasicInfoFields.tsx` と `components/TabularPreview/TabularPreview.tsx` を index から再エクスポート
+  - [x] `components/NotificationSystem/NotificationSystem.tsx` の `NotificationSystem`/`notify` を index から再エクスポート
+  - [x] `hooks/useWorkingCopy.ts` のフックと関連型を index から再エクスポート
+  - [x] `hooks/useBatchProgress.ts` および `hooks/progressAdapters.ts` のフック・型を index から再エクスポート
+- ロールバック手順: `packages/ui/core/src/index.ts` を差分前に戻し、`pnpm --filter @hierarchidb/ui-core typecheck` を再実行して従来状態を確認
 
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -5435,3 +5449,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-05 13:55 progress: test/base-plugin/minimal-unit — README に WorkingCopy/PeerStore ヘルパーの利用例を追記し、`docs/plugins/working-copy-initial-payloads.md` へドラフト/PeerStore 初期値ドキュメントを移設。ドキュメント更新のみのため追加コマンド実行は無し。
 - 2025-10-05 14:20 progress: test/base-plugin/minimal-unit — WorkingCopyBase に `schemaVersion` / `isDraft` を追加しヘルパー・テストを更新。さらに ts-morph codemod (`scripts/codemods/plugins/apply-basemap-working-copy-helpers.ts`) で basemap プラグインの Working Copy / PeerStore 初期化を共通ヘルパーへ移行。`pnpm --filter @hierarchidb/plugins-base-plugin {test,typecheck}` と `pnpm --filter @hierarchidb/plugins-basemap-plugin {test,typecheck}` を再実行し、いずれもグリーンを確認。
 - 2025-10-05 14:55 progress: refactor/plugins/entity-type-safety — Working Copy ベースラインガイドライン（`docs/plugins/working-copy-baseline.md`）を追加し、共通契約と DoD を明文化。ドキュメント整備のみのため追加コマンド実行は無し。
+
+## 今日の着手（運用ログ） <a id="worklog-6"></a>
+
+- 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
+- 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
+- 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。
+- 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 TabularPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
+- 2025-10-11 11:25 command: pnpm --filter @hierarchidb/plugins-route-plugin build:types — ワークスペース内パッケージ未解決（TS2307）と RouteBatchConfig 既存プロパティ不整合により失敗。今回の UI コード差分による追加エラーは発生せず。

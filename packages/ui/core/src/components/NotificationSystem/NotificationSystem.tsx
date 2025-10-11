@@ -69,15 +69,20 @@ export function showNotification(
 /**
  * Convenience functions for different severity levels
  */
-export const notify = {
-  success: (message: string, options?: Parameters<typeof showNotification>[2]) =>
-    showNotification(message, 'success', options),
-  info: (message: string, options?: Parameters<typeof showNotification>[2]) =>
-    showNotification(message, 'info', options),
-  warning: (message: string, options?: Parameters<typeof showNotification>[2]) =>
-    showNotification(message, 'warning', options),
-  error: (message: string, options?: Parameters<typeof showNotification>[2]) =>
-    showNotification(message, 'error', options),
+type NotificationOptions = Parameters<typeof showNotification>[2];
+
+export type NotifyApi = {
+  success: (message: string, options?: NotificationOptions) => void;
+  info: (message: string, options?: NotificationOptions) => void;
+  warning: (message: string, options?: NotificationOptions) => void;
+  error: (message: string, options?: NotificationOptions) => void;
+};
+
+export const notify: NotifyApi = {
+  success: (message, options) => showNotification(message, 'success', options),
+  info: (message, options) => showNotification(message, 'info', options),
+  warning: (message, options) => showNotification(message, 'warning', options),
+  error: (message, options) => showNotification(message, 'error', options),
 };
 
 /**

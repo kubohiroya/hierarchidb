@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import { Route as RouteIcon } from '@mui/icons-material';
 import { BasicInfoFields } from '@hierarchidb/ui-core';
+import type { BasicInfoValue } from '@hierarchidb/ui-core';
 import type { RouteCategory, RouteEntity, RouteWorkingCopy, TagId } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 import { getRouteDraft } from '../utils/workingCopy.js';
@@ -112,7 +113,7 @@ export const RouteBasicInfoStep: React.FC<RouteBasicInfoStepProps> = ({
       <Stack spacing={3}>
         <BasicInfoFields
           value={{ name: resolvedName, description: resolvedDescription }}
-          onChange={(updates) => {
+          onChange={(updates: Partial<BasicInfoValue>) => {
             if (updates.name !== undefined) handleNameChange(updates.name);
             if (updates.description !== undefined) handleDescriptionChange(updates.description);
           }}

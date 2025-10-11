@@ -93,9 +93,10 @@ export function TabularPreview({ pluginId, tableId }: {
       try {
         const manager = new SimpleTableMetadataManager(getDBName(`${pluginId}-metadata-db`));
         const meta = await manager.get(tableId);
-        const rawColumns = Array.isArray(meta?.columns) ? meta.columns : [];
+        type ColumnMeta = string | { name?: unknown; id?: unknown } | undefined | null;
+        const rawColumns: ColumnMeta[] = Array.isArray(meta?.columns) ? meta.columns : [];
         const cols = rawColumns
-          .map((col) => {
+          .map((col: ColumnMeta) => {
             if (typeof col === 'string') return col;
             if (col && typeof col === 'object') {
               if ('name' in col && typeof col.name === 'string') {
@@ -110,7 +111,7 @@ export function TabularPreview({ pluginId, tableId }: {
             }
             return undefined;
           })
-          .filter((value): value is string => typeof value === 'string');
+          .filter((value: string | undefined): value is string => typeof value === 'string');
         if (!cancelled) {
           setColumns(cols);
           if (!visibleCols) setVisibleCols(cols);
