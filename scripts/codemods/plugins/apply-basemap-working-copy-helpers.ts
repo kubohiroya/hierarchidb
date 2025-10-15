@@ -34,7 +34,7 @@ function ensureNamedImport(source = handlerFile, moduleSpecifier: string, name: 
 ensureNamedImport(handlerFile, '@hierarchidb/base-plugin', 'createDraftWorkingCopyBase');
 
 const typesImport = handlerFile
-  .getImportDeclaration((decl) => decl.getModuleSpecifierValue() === '../types/index.js');
+  .getImportDeclaration((decl) => decl.getModuleSpecifierValue() === '../types/index.ts');
 if (typesImport && !typesImport.getNamedImports().some((n) => n.getName() === 'BaseMapDraftPayload')) {
   typesImport.addNamedImport('BaseMapDraftPayload');
 }

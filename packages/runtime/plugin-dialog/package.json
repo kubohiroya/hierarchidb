@@ -50,7 +50,6 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*"
@@ -69,7 +68,6 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-basic-info": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/ui-core": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*"

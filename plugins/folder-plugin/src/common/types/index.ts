@@ -1,21 +1,13 @@
-// Re-export the comprehensive folder-plugin entity definitions from entities
-export type {
-  FolderEntity,
-  FolderOperationResult,
-  FolderSearchQuery,
-  FolderStatsSummary,
-  FolderStructureNode,
-} from '../entities/FolderEntity.js';
-
 // Import tag-related types
 export type { TagId } from '@hierarchidb/common-types';
 // Keep existing simple types for backward compatibility if needed
-import type { FolderSettings as ImportedFolderSettings } from '../shared/types.js';
+export * from './folder-dialog-data.js';
 
 export type { TagSuggestion } from '@hierarchidb/common-types';
 
 // Additional display types for UI
 import type { NodeId } from '@hierarchidb/common-types';
+import { FolderSettings } from './types.js';
 
 export interface FolderDisplayData {
   id: NodeId;
@@ -30,5 +22,9 @@ export interface FolderDisplayData {
 export interface FolderEditData {
   name: string;
   description?: string;
-  settings: ImportedFolderSettings;
+  settings: FolderSettings;
 }
+
+// Export entity definition
+export * from './FolderEntity.js';
+export * from './types.js';

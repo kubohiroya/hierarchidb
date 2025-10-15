@@ -3,22 +3,23 @@
  */
 
 // import type { UIPluginDefinition } from '@hierarchidb/ui-core';
+import { PluginDefinition } from '@hierarchidb/plugin-api';
 import { validateFolderData } from '../common/shared/utils.js';
-import type { CreateFolderData } from '../common/shared/types.js';
-import { FolderCreateDialog } from '../components/FolderCreateDialog.js';
-import { FolderEditDialog } from '../components/FolderEditDialog.js';
-import { FolderIcon } from '../components/FolderIcon.js';
-import { UIPluginDefinition } from 'node_modules/@hierarchidb/ui-core/src/plugins/index.js';
+import type { CreateFolderData } from '../common/types/types.js';
+import { FolderCreateDialog } from './components/FolderCreateDialog.js';
+import { FolderEditDialog } from './components/FolderEditDialog.js';
+import { FolderIcon } from './components/FolderIcon.js';
 
 /**
  * Folder UI Plugin
  */
-export const FolderUIPlugin: UIPluginDefinition = {
+export const FolderUIPlugin: PluginDefinition = {
   // Basic Information
-  nodeType: 'folder',
+  //nodeType: 'folder',
   displayName: 'Folder',
   description: 'Hierarchical folder-plugin organization',
 
+  /*
   // Data Source Configuration
   dataSource: {
     requiresEntity: false, // Folders are TreeNodes themselves
@@ -37,6 +38,7 @@ export const FolderUIPlugin: UIPluginDefinition = {
     supportsExport: false,
     supportsBulkOperations: true,
   },
+   */
 
   // UI Components
   components: {

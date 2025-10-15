@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import type { ModuleNode, Plugin as VitePlugin, ViteDevServer } from 'vite';
 import { detectNodeTypePlugins } from './detect-plugins.js';
 import type {
@@ -11,6 +12,26 @@ import type {
 
 const require = createRequire(import.meta.url);
 const { loadPluginManifestFromFile } = require('../../../../tools/plugin-manifest-loader.js') as typeof import('../../../../tools/plugin-manifest-loader.js');
+
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(moduleDir, '..');
+const defaultRootDir = path.resolve(packageRoot, '..', '..', '..');
+
+type MetaEnvRecord = Record<string, string | undefined>;
+
+function getMetaEnv(): MetaEnvRecord {
+  return (import.meta as { env?: MetaEnvRecord }).env ?? {};
+}
+
+function parseBooleanFlag(value?: string | boolean): boolean | undefined {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === '1' || normalized === 'true') return true;
+    if (normalized === '0' || normalized === 'false') return false;
+  }
+  return undefined;
+}
 
 const MODULE_DEFINITIONS = {
   maps: { id: 'virtual:plugin-node-types/maps', resolved: '\0virtual:plugin-node-types/maps' },
@@ -319,16 +340,20 @@ export default pluginDefinitions;
 }
 
 export function createNodeTypeRegistryPlugin(options: CreateRegistryPluginOptions = {}): VitePlugin {
-  const rootDir = options.rootDir ? path.resolve(options.rootDir) : process.cwd();
-  const minimalEnv = process.env.HDB_PLUGIN_MINIMAL === '1';
-  const debugEnv = process.env.HDB_PLUGIN_DEBUG_MODE;
+  const metaEnv = getMetaEnv();
+  const rootDir = options.rootDir ? path.resolve(options.rootDir) : defaultRootDir;
+  const minimal =
+    options.minimal ??
+    parseBooleanFlag(metaEnv.HDB_PLUGIN_MINIMAL) ??
+    false;
+  const debugPath =
+    options.debugSnapshotDir ?? metaEnv.HDB_PLUGIN_DEBUG_MODE ?? null;
   const ctx: GeneratorContext = {
     rootDir,
-    minimal: options.minimal ?? minimalEnv,
-    debugDir: options.debugSnapshotDir
-      ? path.resolve(rootDir, options.debugSnapshotDir)
-      : debugEnv
-        ? path.resolve(rootDir, typeof debugEnv === 'string' ? debugEnv : 'app/.debug')
+    minimal,
+    debugDir:
+      typeof debugPath === 'string' && debugPath.length > 0
+        ? path.resolve(rootDir, debugPath)
         : null,
   };
 

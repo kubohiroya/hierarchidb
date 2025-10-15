@@ -1,4 +1,5 @@
-import { toNodeType, PluginMetadata } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
+import { PluginMetadata } from '@hierarchidb/plugin-api';
 
 export const PLUGIN_ID = '@hierarchidb/basemap-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;

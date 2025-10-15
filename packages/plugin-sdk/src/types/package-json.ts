@@ -1,4 +1,4 @@
-import type { PluginDefinition } from '@hierarchidb/common-api';
+import type { PluginDefinition } from './plugin-definition.js';
 
 /**
  * Package.json structure for plugin discovery

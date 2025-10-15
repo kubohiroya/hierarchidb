@@ -3,8 +3,8 @@
  * @description BaseMap utility functions
  */
 
-import { VALIDATION_LIMITS } from './constants.js';
-import type { MapViewport } from './types.js';
+import { VALIDATION_LIMITS } from '../constants/constants.js';
+import type { MapViewport } from '../types/types.js';
 
 export function validateLongitude(lng: number): boolean {
   return lng >= VALIDATION_LIMITS.LONGITUDE_MIN && lng <= VALIDATION_LIMITS.LONGITUDE_MAX;

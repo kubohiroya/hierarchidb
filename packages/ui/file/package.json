@@ -23,18 +23,19 @@
     "prebuild": "pnpm run build:clean"
   },
   "dependencies": {
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js",
   "peerDependencies": {
+    "@hierarchidb/util": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": "^18.3.1"
   },
   "devDependencies": {
+    "@hierarchidb/util": "workspace:*",
+    "@emotion/react": "^11.14.0",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": "^18.3.1"

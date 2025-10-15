@@ -37,22 +37,22 @@ async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions =
 }
 
 async function ensureFolderStores(registry: StoreRegistry): Promise<void> {
-  const { FolderEntitiesDB } = await import('../worker/folderEntitiesDB.js');
+  const { FolderEntitiesDB } = await import('../folderEntitiesDB.js');
   const db = new FolderEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('folder')) {
-    const { createFolderPeerStoreDexie } = await import('../worker/folderPeerStore.dexie.js');
+    const { createFolderPeerStoreDexie } = await import('../folderPeerStore.dexie.js');
     registry.registerPeer('folder', createFolderPeerStoreDexie(db));
   }
 
   if (!registry.getGroup('folder')) {
-    const { createFolderGroupStoreDexie } = await import('../worker/folderGroupStore.dexie.js');
+    const { createFolderGroupStoreDexie } = await import('../folderGroupStore.dexie.js');
     registry.registerGroup('folder', createFolderGroupStoreDexie(db));
   }
 
   if (!registry.getRelations('folder')) {
-    const { createFolderRelationStoreDexie } = await import('../worker/folderRelationStore.dexie.js');
+    const { createFolderRelationStoreDexie } = await import('../folderRelationStore.dexie.js');
     registry.registerRelations('folder', createFolderRelationStoreDexie(db));
   }
 }
@@ -77,7 +77,7 @@ export async function registerFolderWorkerStores(options: RegisterFolderWorkerSt
 }
 
 export async function loadFolderEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/folderEntitiesDB.js');
+  return import(/* @vite-ignore */ '../folderEntitiesDB.js');
 }
 
 // Maintain legacy side-effect registration for existing consumers

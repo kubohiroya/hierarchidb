@@ -258,7 +258,7 @@ export interface TreeTableViewProps {
 {
   "name": "@hierarchidb/ui-treeconsole-toolbar",
   "version": "0.1.0",
-  "main": "dist/index.js",
+  "main": "dist/index.ts",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -336,7 +336,7 @@ packages/ui-treeconsole/
 {
   "size-limit": [
     {
-      "path": "dist/index.js",
+      "path": "dist/index.ts",
       "limit": "50 KB"
     }
   ]

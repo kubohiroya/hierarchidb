@@ -20,7 +20,7 @@ import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
-import { rainbowColors } from '@hierarchidb/ui-core';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { NodeTypeIcon } from './NodeTypeIcon.js';
 import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';

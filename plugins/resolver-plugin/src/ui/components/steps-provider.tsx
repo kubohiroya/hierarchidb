@@ -4,7 +4,7 @@ import { PropertyMappingStep } from '../common/components/steps/PropertyMappingS
 import { ValidationConfigStep } from '../common/components/steps/ValidationConfigStep.js';
 import { DuplicateResolutionStep } from '../common/components/steps/DuplicateResolutionStep.js';
 import { PreviewTestStep } from '../common/components/steps/PreviewTestStep.js';
-import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '../types/index.js';
+import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '../types/index.ts';
 
 const registry = PluginStepRegistry.getInstance();
 

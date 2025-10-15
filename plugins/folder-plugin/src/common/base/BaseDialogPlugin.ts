@@ -1,4 +1,4 @@
-import type { FolderEntity } from '../entities/FolderEntity.js';
+import type { FolderEntity } from '~/common/types/FolderEntity.js';
 import type {
   FolderEntityExtension,
   FolderExtension,
@@ -12,7 +12,7 @@ import type {
 } from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
 import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugin-api';
-import { folderExtensionRegistry } from '~/api/DialogExtensionAPI.js';
+import { folderExtensionRegistry } from '~/common/api/DialogExtensionAPI.js';
 
 /**
  * Base class for dialog-based extensions wired into the folder-plugin dialog system
@@ -44,8 +44,8 @@ export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity> 
   protected readonly dependencies: string[] = [];
 
   async initialize(): Promise<void> {
-    const extension = this.createExtension();
-    folderExtensionRegistry.register(extension);
+    // const extension = this.createExtension();
+    // folderExtensionRegistry.register(extension);
     await super.onInitialize();
     registerTaggable('folder' as NodeType);
   }
@@ -86,6 +86,7 @@ export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity> 
     const beforeSave = this.beforeSaveEntity?.bind(this);
     const afterLoad = this.afterLoadEntity?.bind(this);
     const validateEntity = this.validateEntity?.bind(this);
+
     const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({}));
     const saveExtendedData =
       this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, unknown>) => {
@@ -101,7 +102,7 @@ export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity> 
       afterLoad,
       validateEntity,
       getExtendedData,
-      saveExtendedData,
+      saveExtendedData
     };
   }
 

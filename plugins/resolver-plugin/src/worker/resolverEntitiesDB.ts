@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
-import type { ResolverPeerData } from '../types/index.js';
+import type { ResolverPeerData } from '../types/index.ts';
 
 export type ResolverPeerRow = {
   nodeId: NodeId;

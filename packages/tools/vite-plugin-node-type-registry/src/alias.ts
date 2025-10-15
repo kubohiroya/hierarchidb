@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Alias } from 'vite';
 import { detectNodeTypePlugins } from './detect-plugins.js';
 import { toPosixPath } from './fs-utils.js';
@@ -17,6 +18,10 @@ interface TsconfigShape {
 }
 
 const DEFAULT_ALIAS_KINDS: PluginEntryKind[] = ['services', 'database', 'common', 'ui', 'worker'];
+
+const moduleDir = path.dirname(fileURLToPath(import.meta.url));
+const packageRoot = path.resolve(moduleDir, '..');
+const defaultRootDir = path.resolve(packageRoot, '..', '..', '..');
 
 function filterKinds(kinds?: PluginEntryKind[]): PluginEntryKind[] {
   return kinds && kinds.length > 0 ? kinds : DEFAULT_ALIAS_KINDS;
@@ -94,7 +99,7 @@ function ensureTsconfigPaths(tsconfigPath: string, entries: readonly AliasEntry[
 }
 
 export function createNodeTypeAliasPlugin(options: CreateAliasPluginOptions = {}) {
-  const rootDir = options.rootDir ?? process.cwd();
+  const rootDir = options.rootDir ? path.resolve(options.rootDir) : defaultRootDir;
   const allowedKinds = filterKinds(options.kinds);
   
   return {

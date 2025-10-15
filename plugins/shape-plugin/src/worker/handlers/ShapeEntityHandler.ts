@@ -4,7 +4,7 @@
  */
 
 import type { Table } from 'dexie';
-import type { DataSourceName, NodeId, NodeType } from '../../shared/index.js';
+import type { DataSourceName, NodeId, NodeType } from '../../shared/index.ts';
 import {
   buildShapeEntityFromCreate,
   createWorkingCopyFromEntity,
@@ -14,7 +14,7 @@ import {
   type ProcessingConfig,
   type ShapeEntity,
   type ShapeWorkingCopy,
-} from '../../shared/index.js';
+} from '../../shared/index.ts';
 import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-sdk';
 import type { Timestamp } from '@hierarchidb/common-types';
 

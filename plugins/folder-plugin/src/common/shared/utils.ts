@@ -3,8 +3,8 @@
   */
 
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import type { CreateFolderData, FolderBreadcrumb, FolderDisplayData, FolderEntity, FolderTreeNode } from './types.js';
-import { FOLDER_DISPLAY, FOLDER_VALIDATION } from './constants.js';
+import { CreateFolderData, FolderBreadcrumb, FolderDisplayData, FolderEntity, FolderTreeNode } from '../types/types.js';
+import { FOLDER_DISPLAY, FOLDER_VALIDATION } from '../types/constants.js';
 
 /**
  * ID generation utilities

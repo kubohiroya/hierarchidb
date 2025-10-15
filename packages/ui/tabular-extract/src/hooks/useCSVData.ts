@@ -8,10 +8,9 @@ import { useCSVApi } from '../context/CSVContext.js';
 import type {
   CSVProcessingConfig,
   CSVTableListResult,
-  CSVTableMetadata,
-  CSVTableMetadataLike,
   PaginationOptions,
 } from '../types/index.js';
+import { CSVTableMetadata, CSVTableMetadataLike } from '@hierarchidb/tabular-store';
 
 /**
  * Options for useCSVData hook

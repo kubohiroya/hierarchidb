@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { PeerStore } from '@hierarchidb/plugin-api';
-import type { RoutePeerData } from 'src/types/index.js';
+import type { RoutePeerData } from 'src/types/index.ts';
 
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 

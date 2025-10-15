@@ -3,7 +3,7 @@ import * as path from 'path';
 import {
   deriveNodeTypePluginAliases,
   discoverNodeTypePlugins,
-} from './packages/tools/plugin-registry-utils/dist/index.js';
+} from './packages/tools/plugin-registry-utils/dist/index.ts';
 
 const nodeTypePlugins = discoverNodeTypePlugins({ rootDir: __dirname });
 const nodeTypeAliasEntries = deriveNodeTypePluginAliases(nodeTypePlugins, {

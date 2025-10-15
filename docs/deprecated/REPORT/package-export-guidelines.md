@@ -19,7 +19,7 @@ export default defineConfig({
 ```
 
 **出力ファイル:**
-- ESM: `dist/index.js`
+- ESM: `dist/index.ts`
 - CommonJS: `dist/index.cjs`
 - 型定義: `dist/index.d.ts`
 
@@ -27,12 +27,12 @@ export default defineConfig({
 ```json
 {
   "main": "dist/index.cjs",
-  "module": "dist/index.js",
+  "module": "dist/index.ts",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/index.ts",
       "require": "./dist/index.cjs"
     }
   }
@@ -94,7 +94,7 @@ export default defineConfig({
 
 ```json
 {
-  "main": "dist/index.js",  // ❌ CommonJSには.cjsを使うべき
+  "main": "dist/index.ts",  // ❌ CommonJSには.cjsを使うべき
   "exports": {
     ".": {
       "require": "./dist/index.cjs"  // mainと不一致

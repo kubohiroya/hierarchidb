@@ -31,12 +31,12 @@ async function resolveStoreRegistry(options: RegisterBasemapWorkerStoresOptions 
 }
 
 async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
-  const { BasemapEntitiesDB } = await import('../worker/basemapEntitiesDB.js');
+  const { BasemapEntitiesDB } = await import('../basemapEntitiesDB.js');
   const db = new BasemapEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('basemap')) {
-    const { createBasemapPeerStoreDexie } = await import('../worker/basemapPeerStore.dexie.js');
+    const { createBasemapPeerStoreDexie } = await import('../basemapPeerStore.dexie.js');
     registry.registerPeer('basemap', createBasemapPeerStoreDexie(db));
   }
 }
@@ -61,7 +61,7 @@ export async function registerBasemapWorkerStores(options: RegisterBasemapWorker
 }
 
 export async function loadBasemapEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/basemapEntitiesDB.js');
+  return import(/* @vite-ignore */ '../basemapEntitiesDB.js');
 }
 
 // Preserve legacy side-effect registration

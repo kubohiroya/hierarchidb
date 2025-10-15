@@ -429,10 +429,10 @@ registry.register(ProjectWorkerPlugin);
 {
   "name": "@hierarchidb/plugin-project",
   "exports": {
-    ".": "./dist/index.js",
-    "./shared": "./dist/shared/index.js",
-    "./ui": "./dist/ui/index.js",
-    "./worker": "./dist/worker/index.js"
+    ".": "./dist/index.ts",
+    "./shared": "./dist/shared/index.ts",
+    "./ui": "./dist/ui/index.ts",
+    "./worker": "./dist/worker/index.ts"
   },
   "sideEffects": false
 }

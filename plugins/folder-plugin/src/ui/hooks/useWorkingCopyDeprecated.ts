@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getWorkerClientHook, type WorkerClientRef } from '../../../../../runtime/client';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 
 type WorkingCopyAPI = {
   createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: any) => Promise<string>;

@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import type { PluginDialogComponent, PluginDialogProps, PluginPanelComponent, PluginPanelProps } from '@hierarchidb/ui-core';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ShapeEntity } from '../shared/index.js';
+import type { ShapeEntity } from '../shared/index.ts';
 import type { ShapeDialogProps } from '../ui/components/ShapeDialog.js';
 import type { ShapeViewPanelProps } from '../ui/components/ShapeViewPanel.js';
 

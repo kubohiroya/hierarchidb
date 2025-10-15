@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { shapePluginAPI } from '../api.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { CreateShapeData, UpdateShapeData } from '../../shared/index.js';
+import type { CreateShapeData, UpdateShapeData } from '../../shared/index.ts';
 
 // Mock ShapeEntityHandler (module path must match api.ts import './handlers')
 vi.mock('../handlers', () => ({

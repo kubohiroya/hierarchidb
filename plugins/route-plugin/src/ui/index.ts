@@ -2,7 +2,7 @@
 import { createElement } from 'react';
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteEntity } from '../types/index.js';
+import type { RouteEntity } from '../types/index.ts';
 import type { RouteDialogProps } from '../common/components/RouteDialog.js';
 import type { RoutePanelProps } from '../common/components/RoutePanel.js';
 

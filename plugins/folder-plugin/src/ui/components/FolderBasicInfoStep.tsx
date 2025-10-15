@@ -10,7 +10,6 @@ import { Folder as FolderIcon, LocalOffer } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import type { TagId } from '@hierarchidb/common-types';
 import { TagInput } from './TagInput.js';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
 
 // TagId is a local branded string type
 

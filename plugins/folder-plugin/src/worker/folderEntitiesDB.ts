@@ -1,7 +1,7 @@
 import Dexie, { type DexieConstructor, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
-import type { FolderPeerData } from '../common/shared/types.js';
+import { FolderPeerData } from '~/common/types/types.js';
 
 export type FolderGroupRow = {
   nodeId: NodeId;

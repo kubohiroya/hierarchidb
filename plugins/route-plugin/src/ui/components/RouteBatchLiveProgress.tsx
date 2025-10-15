@@ -4,7 +4,7 @@ import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { useRouteBatchProgress } from '../../ui/hooks/useRouteBatchProgress.js';
-import { useTranslation } from '../../i18n/index.js';
+import { useTranslation } from '../../i18n/index.ts';
 
 export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
   const {

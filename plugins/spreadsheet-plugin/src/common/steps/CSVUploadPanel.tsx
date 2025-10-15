@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
 import type { CSVProcessingConfig, CSVTableMetadata } from '@hierarchidb/ui-csv-extract';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
-import { createSpreadsheetCSVApi } from '../ui/facade/index.js';
+import { createSpreadsheetCSVApi } from '../ui/facade/index.ts';
 import { PLUGIN_METADATA } from '../extension/constants.js';
 
 export interface CSVUploadResult {

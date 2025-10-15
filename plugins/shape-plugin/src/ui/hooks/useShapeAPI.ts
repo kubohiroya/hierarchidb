@@ -5,7 +5,7 @@
   */
 
 import { useMemo } from 'react';
-import type { ShapeAPI } from '../../shared/index.js';
+import type { ShapeAPI } from '../../shared/index.ts';
 import { getWorkerClientHook, type WorkerClientRef } from 'packages/runtime/client';
 
 /**

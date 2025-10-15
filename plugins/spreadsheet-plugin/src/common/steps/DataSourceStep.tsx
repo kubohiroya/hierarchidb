@@ -23,7 +23,7 @@ import { useTranslation } from 'react-i18next';
 import type { DataSourceConfig, FileInfo } from '../extension/types.js';
 import { DATA_SOURCE_TYPES, SUPPORTED_FILE_EXTENSIONS, FILE_SIZE_LIMITS, PLUGIN_METADATA, type DataSourceType } from '../extension/constants.js';
 import { CSVUploadPanel, type CSVUploadResult } from './CSVUploadPanel.js';
-import { createSpreadsheetCSVApi } from '../ui/facade/index.js';
+import { createSpreadsheetCSVApi } from '../ui/facade/index.ts';
 
 const DATA_SOURCE_TAB_FILE = 'file';
 const DATA_SOURCE_TAB_MANUAL = 'manual';

@@ -1,4 +1,4 @@
-import { PluginDefinition } from '@hierarchidb/common-api';
+import { PluginDefinition } from './plugin-definition.js';
 import type { NodeType } from '@hierarchidb/common-types';
 
 /**

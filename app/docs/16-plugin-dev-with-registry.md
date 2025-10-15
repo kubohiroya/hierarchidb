@@ -37,9 +37,9 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./worker": { "import": "./dist/worker/index.js" },          // Legacy 互換（必要な場合のみ）
-    "./worker-factory": { "import": "./dist/worker-factory/index.js" }
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.ts" },
+    "./worker": { "import": "./dist/worker/index.ts" },          // Legacy 互換（必要な場合のみ）
+    "./worker-factory": { "import": "./dist/worker-factory/index.ts" }
   },
   "scripts": { "build": "tsup" }
 }
@@ -224,7 +224,7 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
   - 変更後は devサーバが自動再生成（HMR）。表示が変わらなければ一度再起動
 - Worker が期待どおり動かない
   - `exports["./worker-factory"]` が存在するか確認（既定の初期化ルート）。
-  - 旧互換が必要な場合のみ `exports["./worker"]` が `dist/worker/index.js` を指しているか確認
+  - 旧互換が必要な場合のみ `exports["./worker"]` が `dist/worker/index.ts` を指しているか確認
   - Worker不要なプラグインはダミーとして扱われ、呼び出しが無視されます
 - GitHub Pages での挙動
   - 仮想モジュールはすべてビルド時に JS へ実体化・分割。追加設定は不要

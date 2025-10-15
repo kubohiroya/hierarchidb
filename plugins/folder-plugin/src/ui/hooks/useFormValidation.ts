@@ -4,7 +4,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { validateFolderData, validateFolderName } from '../../common/shared/utils.js';
-import type { CreateFolderData, UpdateFolderData, FolderSettings } from '../../common/shared/types.js';
+import { CreateFolderData, FolderSettings, UpdateFolderData } from '~/common/types/types.js';
 
 export interface FormValidationResult {
   isValid: boolean;

@@ -79,11 +79,11 @@ function createRuntimeAliasConfig({
       }
     }
   } else {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js');
-    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js');
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.ts');
+    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.ts');
     addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts');
-    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true });
-    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js', { exclude: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.ts', { exclude: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.ts', { exclude: true });
   }
 
   return {
@@ -374,20 +374,20 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         // Force ESM/modern entrypoints for MUI to avoid SSR CJS 'require is not defined'
         // These aliases are safe across v5/v7 as they point to ESM builds.
         // Do not alias MUI packages to ESM entry files.
-        // Aliasing to index.js breaks subpath imports like '@mui/system/Grid'
-        // which would resolve to '.../esm/index.js/Grid' and fail.
+        // Aliasing to index.ts breaks subpath imports like '@mui/system/Grid'
+        // which would resolve to '.../esm/index.ts/Grid' and fail.
         // Active dev packages: resolve to src for instant HMR
         //...devAliases,
         ...runtimeAliasConfig.aliases,
         // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
-        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.js') },
+        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.ts') },
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
         { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
-        { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.js') },
+        { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.ts') },
         // Virtual modules are provided by tools-vite-plugin-package-reader.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
@@ -421,6 +421,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     worker: {
       format: 'es',
       plugins: () => [
+        /*
         pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
         toolsVitePluginPackageReader({
           ...hierarchiDBMultiModulePreset({
@@ -433,6 +434,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
             beforeTransform: async (packages: any) => packages,
           },
         }),
+         */
         comlink(),
       ],
       rollupOptions: {

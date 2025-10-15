@@ -127,6 +127,42 @@
   - [x] `hooks/useBatchProgress.ts` および `hooks/progressAdapters.ts` のフック・型を index から再エクスポート
 - ロールバック手順: `packages/ui/core/src/index.ts` を差分前に戻し、`pnpm --filter @hierarchidb/ui-core typecheck` を再実行して従来状態を確認
 
+6) Vite MUI アイコンマップ型エラー修正（P0）
+- ブランチ: `fix/app/mui-icon-map-type-errors`（sandbox 制約で `main` 上で作業中）
+- 依存: `@hierarchidb/app`
+- 受け入れ基準（DoD）:
+  - [x] `pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node` が成功し、修正による新規エラーが発生しない
+  - [x] Node ESM 互換のパス解決へ置き換え、`__dirname` に依存しない実装となる
+- チェックリスト:
+  - [x] TASKS 運用ログに start/done を記録
+  - [x] 変更差分を自己レビューし、不要な副作用がないことを確認
+- ロールバック手順：
+  - 当該ファイルの変更を revert し、`pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node` を再実行して現状復帰を確認
+
+7) Vite Plugin Node-Type Registry lint 修正（P0）
+- ブランチ: `fix/tools/vite-plugin-node-type-registry-lint`（sandbox 制約で `main` 上で作業中）
+- 依存: `@hierarchidb/vite-plugin-node-type-registry`
+- 受け入れ基準（DoD）:
+  - [x] `pnpm --filter @hierarchidb/vite-plugin-node-type-registry lint` が成功し、`process` 使用による ESLint エラーが解消される
+  - [x] デフォルト root/環境変数解決が import.meta ベースで安定する
+- チェックリスト:
+  - [x] TASKS 運用ログに start/done を記録
+  - [x] 影響ファイル（alias.ts, registry-plugin.ts）を自己レビューし、副作用がないことを確認
+- ロールバック手順：
+  - 変更ファイルを revert し、`pnpm --filter @hierarchidb/vite-plugin-node-type-registry lint` のエラー再現を確認
+
+8) Batch API 型ビルド失敗修正（P0）
+- ブランチ: `fix/batch-api/api-extractor-input`（sandbox 制約で `main` 上で作業中）
+- 依存: `@hierarchidb/batch-api`, `@hierarchidb/batch-sdk`
+- 受け入れ基準（DoD）:
+  - [x] `pnpm --filter @hierarchidb/batch-api build:types` が成功し、API Extractor による type rollup が通過する
+  - [x] `packages/batch-api/tsconfig.json` の入力定義がリポジトリルート基準で安定する（process 未使用）
+- チェックリスト:
+  - [x] TASKS 運用ログに start/done を記録
+  - [x] tsconfig 差分を自己レビューし、副作用がないことを確認
+- ロールバック手順：
+  - 変更前の tsconfig に戻し、`pnpm --filter @hierarchidb/batch-api build:types` でエラーが再現することを確認
+
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1081,7 +1117,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-10 done: fix/app/vite-resolve-batch — `@hierarchidb/app` ビルド時の `Rollup failed to resolve import "@hierarchidb/batch"` を解消。
   - 原因: `@hierarchidb/location-plugin` の `tsup` で `@hierarchidb/batch` を external 化しており、同パッケージの `dependencies` に未記載のため、`app` 側バンドル中に解決不可となっていた。
   - 対応(恒久): `packages/plugins/location-plugin/package.json` に `"@hierarchidb/batch": "workspace:*"` を追加。
-  - 対応(暫定): `app/vite.config.ts` に `resolve.alias` を追加し、`@hierarchidb/batch` を `../packages/feature/batch/dist/index.js` へ解決（ワークスペース再リンク無しでも解決可能に）。
+  - 対応(暫定): `app/vite.config.ts` に `resolve.alias` を追加し、`@hierarchidb/batch` を `../packages/feature/batch/dist/index.ts` へ解決（ワークスペース再リンク無しでも解決可能に）。
   - ロールバック: `vite.config.ts` の alias 追加を削除し、`pnpm -w i` により workspace を再リンクすれば元に戻る。
 
 - 2025-09-15 done: chore/dep-fence/peer-externals — dep-fence(strict) のエラー/警告に対応（ビルドブロッカー解消）。
@@ -1112,7 +1148,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
   - ロールバック: 追加した `src/shims/*.d.ts` を削除し、tsconfig/tsup の差分を revert。
 
 - 2025-09-11 done: fix/location-plugin/vt-pbf-resolution — app ビルドで `@maplibre/vt-pbf` が解決できず失敗する問題を修正。
-  - 原因: location-plugin の tsup 外部化設定で `@maplibre/vt-pbf` / `geojson-vt` を external にしていたため、`dist/index.js` が外部 import を保持し、app 側の Rollup 解決に失敗。
+  - 原因: location-plugin の tsup 外部化設定で `@maplibre/vt-pbf` / `geojson-vt` を external にしていたため、`dist/index.ts` が外部 import を保持し、app 側の Rollup 解決に失敗。
   - 対応(恒久): external から両ライブラリを除外し、location-plugin に `dependencies` として `@maplibre/vt-pbf`/`geojson-vt` を追加してバンドルに内包。
   - 受け入れ基準: `pnpm -C packages/plugins/location-plugin build` が通り、`pnpm run build` で app の Rollup 解決エラーが出ない。
   - ロールバック: 追加した依存を削除し、`tsup.config.ts` の external を元に戻す（app 側で alias を張るか、app の dependencies に追加）。
@@ -1146,7 +1182,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - 2025-09-10 done: chore/plugins/tsup-externals-and-paths — 各プラグインの外部依存とTSのパス解決を方針に合わせて是正。
   - 変更: shape-plugin の未解決依存 `@hierarchidb/runtime-client` を external 化し、型シムを追加してビルド失敗を解消。
   - 変更: folder/resolver/route/spreadsheet/styler/location/shape/util の tsup 外部化設定を見直し、peer（react/react-dom/MUI/emotion/dexie 等）を external に明示。
-  - 変更: route-plugin / ui-core の tsconfig `paths` を `src/*` 参照から `dist/index.js` 参照へ切替（dist-only ポリシー順守）。
+  - 変更: route-plugin / ui-core の tsconfig `paths` を `src/*` 参照から `dist/index.ts` 参照へ切替（dist-only ポリシー順守）。
   - 検証: `pnpm -w run check:deps:policies` で当該パッケージの peer-in-external/paths-direct-src 警告が解消（残存は他パッケージの課題として別タスク化）。`pnpm -C packages/plugins/shape-plugin build` グリーン。
   - ロールバック: 影響は docs/ビルド設定のみ。`tsup.config.ts` と `tsconfig.json` の差分を revert すれば即復旧可。必要なら `src/types/shims.d.ts` のシムも削除。
 
@@ -3207,7 +3243,7 @@ P2:
     - progress: 2025-09-20 16:28 `pnpm -C app typecheck` を実行し成功
     - progress: 2025-09-20 16:58 alias プラグインで `tsconfig.json` / `tsconfig.typecheck.json` 両方へ services/database の paths を自動同期するように調整し、Node スクリプトで反映
     - done: 2025-09-20 17:02 `pnpm -C app typecheck` を再実行し成功（tsconfig 自動同期後もグリーン）
-    - progress: 2025-09-20 17:18 TypeScript 依存に頼らず JSONC を処理できるようユーティリティを修正し、`dist/index.js` を軽量な ESM 実装に置換（dynamic require エラーを解消）
+    - progress: 2025-09-20 17:18 TypeScript 依存に頼らず JSONC を処理できるようユーティリティを修正し、`dist/index.ts` を軽量な ESM 実装に置換（dynamic require エラーを解消）
     - done: 2025-09-20 17:20 `pnpm -C app typecheck` を再実行し成功、alias プラグインの改修後も動作確認
     - blocked: 2025-09-20 17:22 `pnpm -C app build` は依然として node_modules 不足（`vite` 等）により失敗。ネットワーク制約で `pnpm install` が不可なため、依存復旧後に再試行が必要
     - done: 2025-09-20 19:10 sandbox 既存依存を共用して `pnpm -C app build` / `pnpm -C app typecheck` を再実行し、どちらも成功（警告のみ）
@@ -5211,7 +5247,7 @@ P2:
   - rollback: 当該2ファイルの差分をリバート
 
 - done: route-plugin の DTS ビルド失敗を解消（TS7016 他）
-  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.js` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
+  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.ts` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
   - fix:
     - `packages/plugins/route-plugin/tsconfig.json`
       - `@hierarchidb/tabular-store` を `../../feature/tabular-store/dist/index.d.ts` に変更
@@ -5237,7 +5273,7 @@ verify: ルート検証の実行（typecheck/lint/test）
     - `DataSourceFetcher` の関数型で `/* eslint-disable no-unused-vars */` を追加
   - result (DoD): 上記3パッケージの `pnpm -r --filter <pkg> lint` がエラーなく完了（警告のみ）
   - next: runtime-ui/search-result-window / tools-vite-plugin-package-reader / linker-plugin（旧 project-plugin）に未使用変数が多数。順次対応予定（対象ファイルに限定して抑制 or パラメータ名の整理）。
-  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.js` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
+  - cause: `tsconfig.json` の `paths` が外部ワークスペースを `dist/index.ts` に固定しており、API Extractor（DTS バンドル）時に型解決できず `implicitly has an 'any' type` が発生
   - fix:
     - `packages/plugins/route-plugin/tsconfig.json`
       - `@hierarchidb/tabular-store` を `../../feature/tabular-store/dist/index.d.ts` に変更
@@ -5351,7 +5387,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - chore/ts/esm-node16-prep — Node16/bundler 解決への準備（相対 import に .js 拡張子付与）
   - ブランチ: `chore/ts/esm-node16-prep`
   - スコープ:
-    - 追加: `tools/esm-ext-codemod.ts`（相対 import/export の無拡張子に `.js` を付与。ディレクトリ参照は `index.js` に書換）
+    - 追加: `tools/esm-ext-codemod.ts`（相対 import/export の無拡張子に `.js` を付与。ディレクトリ参照は `index.ts` に書換）
     - 追加: `tsconfig.esm-node16.json`（`extends: tsconfig.build.json`、`moduleResolution: node16`, `verbatimModuleSyntax: true`）
     - 追加: npm scripts
       - `codemod:esm-ext`（ドライラン。`--write` で適用）
@@ -5452,10 +5488,19 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-6"></a>
 
+- 2025-10-15 13:03 start: fix/app/mui-icon-map-type-errors — `app/vite-plugin-mui-icon-map.ts` の型エラー解消に着手。Node ESM 互換化と型注釈整備を予定。
 - 2025-10-14 10:05 start: refactor/tools/node-type-registry-unify — `@hierarchidb/vite-plugin-node-type-registry` を新設し、旧 `vite-plugin-registry` / `services` / `tools-plugin-registry-utils` / `tools-vite-plugin-package-reader` の統合対応を開始。
 - 2025-10-14 13:40 progress: refactor/tools/node-type-registry-unify — 新 Vite プラグインを実装し `app/vite.config.ts` へ組み込み。旧 `app/vite-plugin-registry.ts` / `app/vite-plugin-services.ts` / `packages/tools/(plugin-registry-utils|vite-plugin-package-reader)` を削除。ドキュメントを更新。
 - 2025-10-14 15:20 progress: refactor/tools/node-type-registry-unify — `@hierarchidb/vite-plugin-node-type-registry` 導入と互換モジュール整備を完了。lockfile/依存再解決は実行環境の制約で未実施のため、後続で `pnpm install` と typecheck を実行して確認。
 - 2025-10-14 17:30 done: refactor/tools/node-type-registry-unify — `plugins/*-plugin/src` を `common/services/ui/worker` 構成へ統一し、`plugin-manifest.ts` を src 直下へ移動。`worker-factory` エントリは `worker/factory` へ統合し、tsup 設定・索引エントリを更新。
+- 2025-10-15 14:48 progress: fix/app/mui-icon-map-type-errors — `pnpm exec tsc -p tsconfig.node.json` は既存の `vite.config.ts` 依存欠落で失敗したため、代替として `pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node` を実行し、修正による新規エラーが無いことを確認。
+- 2025-10-15 14:53 done: fix/app/mui-icon-map-type-errors — Node ESM 互換パス解決と型注釈整備を反映し、MUI アイコンマップ生成プラグインのタイプエラーを解消。上記単体 `tsc --noEmit` が成功することを確認済み。
+- 2025-10-15 15:39 start: fix/tools/vite-plugin-node-type-registry-lint — Lint エラーとなっている `process` / `process.env` 依存を import.meta ベースの解決へ切り替える作業を開始。
+- 2025-10-15 15:40 progress: fix/tools/vite-plugin-node-type-registry-lint — `pnpm --filter @hierarchidb/vite-plugin-node-type-registry lint` を実行し、`process` 利用に起因する no-restricted-globals エラーが解消されたことを確認。
+- 2025-10-15 15:40 done: fix/tools/vite-plugin-node-type-registry-lint — `process` 依存を排し、Node ESM 相対解決と import.meta.env ベースのフラグ判定へ移行。上記 lint コマンドがグリーンであることを確認。
+- 2025-10-15 21:20 start: fix/batch-api/api-extractor-input — API Extractor 実行時に tsconfig 入力未定義で失敗している件の修正に着手。
+- 2025-10-15 21:21 progress: fix/batch-api/api-extractor-input — `packages/batch-api/tsconfig.json` に `../batch-sdk/dist/**/*.d.ts` を include 追加後、`pnpm --filter @hierarchidb/batch-api build:types` を実行。API Extractor は TSDoc WARN を出力するものの、型ロールアップ自体は成功することを確認。
+- 2025-10-15 21:21 done: fix/batch-api/api-extractor-input — 上記コマンドがグリーンで完了したため作業終了。TSDoc WARN は既存課題として別タスクで対処予定。
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
 - 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
 - 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。

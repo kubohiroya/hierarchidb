@@ -3,7 +3,7 @@ import * as path from 'path';
 import {
   deriveNodeTypePluginAliases,
   discoverNodeTypePlugins,
-} from '../../tools/plugin-registry-utils/dist/index.js';
+} from '../../tools/plugin-registry-utils/dist/index.ts';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 const nodeTypePlugins = discoverNodeTypePlugins({ rootDir: workspaceRoot });

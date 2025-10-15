@@ -2,20 +2,7 @@
  * @file types/openstreetmap-type.ts
  * @description Type definitions for CSV data extraction system
  */
-
-import type {
-  CSVColumnInfo,
-  CSVColumnType,
-  CSVTableMetadata,
-  CSVTableMetadataLike,
-} from '@hierarchidb/table-metadata';
-
-export type {
-  CSVColumnInfo,
-  CSVColumnType,
-  CSVTableMetadata,
-  CSVTableMetadataLike,
-} from '@hierarchidb/table-metadata';
+import {CSVColumnInfo, CSVColumnType, CSVTableMetadata, CSVTableMetadataLike} from '@hierarchidb/tabular-store';
 
 /**
  * CSV Filter Rule for row filtering

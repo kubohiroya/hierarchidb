@@ -1,7 +1,11 @@
-import type { Plugin } from 'vite';
-import * as fs from 'fs';
-import * as path from 'path';
+import type { HmrContext, Plugin } from 'vite';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { loadPluginManifestFromFile } from '../tools/plugin-manifest-loader.js';
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const defaultRootDir = path.resolve(currentDir, '..');
 
 function toPascalCase(name?: string): string {
   if (!name) return '';
@@ -35,12 +39,12 @@ function normalizeMuiName(name?: string): string | undefined {
 export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }): Plugin {
   const VIRTUAL_ID = 'virtual:mui-icon-map';
   const RESOLVED = '\0' + VIRTUAL_ID;
-  const rootDir = opts?.rootDir || path.resolve(__dirname, '..');
+  const rootDir = opts?.rootDir || defaultRootDir;
   const include = opts?.include || /packages\/plugins\/.*-plugin\/src\/extension\/plugin-manifest\.ts$/;
 
   function collectIconNames(): string[] {
     const nodeTypeDir = path.resolve(rootDir, 'packages', 'plugins');
-    let icons = new Set<string>();
+    const icons = new Set<string>();
     try {
       const entries = fs.readdirSync(nodeTypeDir, { withFileTypes: true });
       for (const ent of entries) {
@@ -73,20 +77,23 @@ export function muiIconMapPlugin(opts?: { rootDir?: string; include?: RegExp }):
   return {
     name: 'vite-plugin-mui-icon-map',
     enforce: 'pre',
-    resolveId(id) {
+    resolveId(id: string): string | null {
       if (id === VIRTUAL_ID) return RESOLVED;
       return null;
     },
-    load(id) {
+    load(id: string): string | null {
       if (id === RESOLVED) {
         return generateModule();
       }
       return null;
     },
-    handleHotUpdate(ctx) {
+    handleHotUpdate(ctx: HmrContext) {
       // Regenerate when any plugin manifest changes
       if (include.test(ctx.file)) {
-        ctx.server.moduleGraph.invalidateModule(ctx.server.moduleGraph.getModuleById(RESOLVED)!);
+        const module = ctx.server.moduleGraph.getModuleById(RESOLVED);
+        if (module) {
+          ctx.server.moduleGraph.invalidateModule(module);
+        }
         return [];
       }
     },

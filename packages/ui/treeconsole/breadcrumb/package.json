@@ -23,13 +23,13 @@
     "build:bundle": "tsup"
   },
   "dependencies": {
-    "comlink": "^4.4.2",
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-icon": "workspace:*",
-    "@hierarchidb/common-types": "workspace:*",
-    "@tanstack/react-router": "^1.132.33"
   },
   "devDependencies": {
+    "comlink": "^4.4.2",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@tanstack/react-router": "^1.132.33",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.2",
@@ -40,13 +40,17 @@
     "react-dom": ">=18.0.0"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0",
+    "comlink": "^4.4.2",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@tanstack/react-router": "^1.132.33",
-    "@mui/material": "^7.3.2",
-    "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0"
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "files": [
     "dist",

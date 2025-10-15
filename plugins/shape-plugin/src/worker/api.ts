@@ -28,7 +28,7 @@ import {
   type UrlMetadata,
   validateProcessingConfig,
   type ValidationResult,
-} from '../shared/index.js';
+} from '../shared/index.ts';
 import { ShapeEntityHandler } from './handlers/index.js';
 
 import { metadataLoader } from '../services/metadata/MetadataLoader.js';

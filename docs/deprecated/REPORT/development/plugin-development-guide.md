@@ -55,19 +55,19 @@ packages/plugins/my-plugin/
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.ts"
     },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
-      "import": "./dist/shared/index.js"
+      "import": "./dist/shared/index.ts"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
-      "import": "./dist/ui/index.js"
+      "import": "./dist/ui/index.ts"
     },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js"
+      "import": "./dist/worker/index.ts"
     }
   },
   

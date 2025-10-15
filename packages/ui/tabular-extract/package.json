@@ -1,5 +1,5 @@
 {
-  "name": "@hierarchidb/ui-csv-extract",
+  "name": "@hierarchidb/ui-tabular-extract",
   "version": "0.1.0",
   "description": "Reusable CSV data extraction UI components and API interface for HierarchiDB plugins",
   "type": "module",
@@ -29,11 +29,11 @@
     "build:bundle": "tsup"
   },
   "dependencies": {
-    "@hierarchidb/ui-core": "workspace:*",
-    "@hierarchidb/ui-file": "workspace:*",
-    "@hierarchidb/tabular-source": "workspace:*"
   },
   "peerDependencies": {
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.2",
@@ -42,6 +42,9 @@
     "@emotion/styled": "^11.14.0"
   },
   "devDependencies": {
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0",
     "@mui/material": "^7.3.2",

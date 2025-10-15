@@ -8,7 +8,7 @@
 import { PLUGIN_MANIFEST as BaseMapPluginManifest } from './plugin-manifest.js';
 
 // Entity/handler/definition exports
-export * from './common/handlers/index.js';
+
 export { PLUGIN_MANIFEST as BaseMapPluginManifest } from './plugin-manifest.js';
 
 // UI components

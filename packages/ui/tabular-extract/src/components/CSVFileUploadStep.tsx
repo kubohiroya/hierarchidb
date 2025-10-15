@@ -20,8 +20,9 @@ import {
   Typography,
 } from '@mui/material';
 import { CloudUpload, Download, InsertDriveFile } from '@mui/icons-material';
-import type { CSVProcessingConfig, CSVTableMetadata } from '../types/index.js';
+import type { CSVProcessingConfig } from '../types/index.js';
 import { useCSVData } from '../hooks/useCSVData.js';
+import { CSVTableMetadata } from '@hierarchidb/tabular-store';
 
 export interface CSVFileUploadStepProps {
   onFileUploaded: (metadata: CSVTableMetadata) => void;

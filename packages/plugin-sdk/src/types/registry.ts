@@ -3,7 +3,7 @@
  * @description Base interfaces for node type and plugin registries
  * Moved from common-core/src/registry/INodeTypeRegistry.ts
  */
-import { PluginDefinition } from '@hierarchidb/common-api';
+import { PluginDefinition } from './plugin-definition.js';
 import type {  EntityHandler, NodeType } from '@hierarchidb/common-types';
 
 /**

@@ -4,9 +4,10 @@ import type {
   NodeDialogExtensionMetadata,
   StepArrayEvaluator,
   NodeDialogExtensionRegistry,
-  nodeDialogExtensionRegistry,
-  dialogExtensionRegistry,
   DialogStepDefinition,
+  BaseEntityExtension,
+  ValidationExtension,
+  ExtendingNodeTypeDefinition,
 } from '@hierarchidb/plugin-api';
 import {
 } from '@hierarchidb/common-api';
@@ -14,7 +15,7 @@ import type {
   PeerEntity,
   TreeNode
 } from '@hierarchidb/common-types';
-import type { FolderEntity } from '../entities/FolderEntity.js';
+import type { FolderEntity } from '../types/FolderEntity.js';
 
 export type FolderDialogHooks<TDialog extends PeerEntity = PeerEntity> = NodeDialogHooks<TDialog>;
 export type NodeDialogStepEvaluator<TDialog extends PeerEntity = PeerEntity> = StepArrayEvaluator<TDialog>;

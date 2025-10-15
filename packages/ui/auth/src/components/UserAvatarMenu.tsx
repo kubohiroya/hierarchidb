@@ -10,8 +10,9 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
+import {Dropdown} from '@mui/base/Dropdown';
+
 import { UserAvatar } from './UserAvatar.js';
-// import { KeyboardArrowDownIcon, LoginIcon, LogoutIcon } from "@/icon";
 import {
   DeleteForever,
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -19,7 +20,6 @@ import {
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 
-import { DropdownMenu } from '@hierarchidb/ui-core';
 // Working copy cleanup removed - functionality was deprecated
 
 export const UserProfile = (props: { auth: AuthContextProps }) => {
@@ -122,7 +122,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         width: '100%',
       }}
     >
-      <DropdownMenu id={`avatarMenu`} items={userMenu}>
+      <Dropdown id={`avatarMenu`} items={userMenu}>
         <Button
           title={`${auth.user?.profile.name} ${auth.user?.profile.email}`}
           style={{ borderRadius: '5px', width: '100%', margin: '3px' }}
@@ -140,7 +140,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
           </Box>
           <Typography>{auth.user?.profile.name}</Typography>
         </Button>
-      </DropdownMenu>
+      </Dropdown>
       <Dialog
         open={clearCacheDialogOpen}
         onClose={() => setClearCacheDialogOpen(false)}

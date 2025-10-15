@@ -6,7 +6,7 @@ import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/wor
 import { en as enTranslations } from '../i18n/en.js';
 import "@testing-library/jest-dom/vitest";
 
-vi.mock('../i18n/index.js', () => ({
+vi.mock('../i18n/index.ts', () => ({
   useTranslation: () => ({
     translations: enTranslations,
     t: (key: string, fallback?: string) => fallback ?? key,

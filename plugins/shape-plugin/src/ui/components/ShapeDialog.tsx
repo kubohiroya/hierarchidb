@@ -17,7 +17,7 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
-import type { NodeId } from '../../shared/index.js';
+import type { NodeId } from '../../shared/index.ts';
 import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import {
   type ShapeEntity,
@@ -25,7 +25,7 @@ import {
   UI_CONSTANTS,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
-} from '../../shared/index.js';
+} from '../../shared/index.ts';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';

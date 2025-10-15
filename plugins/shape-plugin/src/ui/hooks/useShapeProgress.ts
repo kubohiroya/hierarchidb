@@ -8,7 +8,7 @@ import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 import {
   type ProcessingStatus,
   type ProgressInfo,
-} from '../../shared/index.js';
+} from '../../shared/index.ts';
 import { useShapeAPIGetter } from './useShapeAPI.js';
 
 type WorkerBridgeLike = ReturnType<typeof getWorkerBridge>;

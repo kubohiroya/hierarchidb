@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
-import type { BasemapPeerData } from '../types/BaseMapEntity.js';
-import { createPeerStoreNormalizer } from '@hierarchidb/plugin-sdk';
+import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
+import { createPeerStoreNormalizer } from '@hierarchidb/plugin-api';
 
 // TODO(basemap-runtime-worker-integration): when basemap adopts the shared
 // runtime worker factory, register its client via

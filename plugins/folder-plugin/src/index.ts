@@ -5,7 +5,6 @@
 
 // Export types
 export * from './common/types/index.js';
-export * from './common/entities/FolderEntity.js';
 export { PLUGIN_MANIFEST as FolderPluginManifest } from './plugin-manifest.js';
 
 // Export plugin definition for worker consumption
@@ -14,7 +13,6 @@ export { PLUGIN_MANIFEST as FolderPluginManifest } from './plugin-manifest.js';
 // Export BaseDialogPlugin for dialog-based extensions
 export * from './common/base/BaseDialogPlugin.js';
 export * from './common/base/BaseFolderPlugin.js';
-export { wrapDialogStepComponent } from './common/base/wrapDialogStepComponent.js';
 
 // Convenience initializer to register common extensions
 export { initializeDefaultFolderExtensions, initializeDefaultNodeDialogExtensions } from './common/init/register-default-extensions.js';

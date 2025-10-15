@@ -1,17 +1,16 @@
 import type { ComponentType } from 'react';
-import type { FolderEntity } from '../entities/FolderEntity.js';
+import type { FolderEntity } from '../types/FolderEntity.js';
 import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.js';
 import { createFolderExtension, folderExtensionRegistry } from '../api/DialogExtensionAPI.js';
 import type {
-  DialogStepDefinition,
   NodeId,
   NodeType,
   StepValidation,
-  ValidationExtension,
   ValidationResult,
 } from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-api';
+import { DialogStepDefinition, ValidationExtension } from '@hierarchidb/plugin-api';
 
 /**
  * Base class for plugin-loader that extend the folder-plugin plugin

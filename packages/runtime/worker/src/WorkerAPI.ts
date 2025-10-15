@@ -9,10 +9,11 @@
 
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type { DialogStateAPI,
-  ImportExportAPI, PluginLifecycleAPI, TagAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
+  ImportExportAPI, TagAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
 
 import type { Remote } from 'comlink';
 import { BatchProgressEvent, BatchSessionId, BatchSessionStatus } from '@hierarchidb/common-api';
+import { PluginLifecycleAPI } from '@hierarchidb/plugin-api';
 
 /**
  * Main worker facade API

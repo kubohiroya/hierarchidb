@@ -25,8 +25,7 @@ import {
   MemoryOutlined as MemoryOutlinedIcon,
 } from '@mui/icons-material';
 import { AuthProviderDialog, type AuthProviderType, useAuth, UserAvatar } from '@hierarchidb/ui-auth';
-import { ThemeContext, type ThemeMode, type ThemeContextType } from '@hierarchidb/ui-theme';
-import { getThemeDisplayName, getThemeIcon } from '@hierarchidb/ui-core';
+import { ThemeContext, type ThemeMode, type ThemeContextType, getThemeIcon, getThemeDisplayName } from '@hierarchidb/ui-theme';
 import { useLanguage, SUPPORTED_LANGUAGES } from '@hierarchidb/ui-i18n';
 
 type LanguageConfig = (typeof SUPPORTED_LANGUAGES)[number];

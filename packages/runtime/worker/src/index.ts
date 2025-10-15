@@ -14,7 +14,7 @@ import { CommandProcessor } from './services/CommandProcessor.js';
 import { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
-import {PluginDefinition} from '@hierarchidb/common-api';
+//import {PluginDefinition} from '@hierarchidb/common-api';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TagService } from '@hierarchidb/tag';
@@ -26,6 +26,7 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
 import { DialogStateService } from './services/DialogStateService.js';
+import { PluginDefinition } from '@hierarchidb/plugin-api';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -202,7 +203,7 @@ export class WorkerService {
   }
 
   // Minimal stub to satisfy interface; not yet wired.
-  getPluginLifecycleAPI(): import('@hierarchidb/common-api').PluginLifecycleAPI {
+  getPluginLifecycleAPI(): import('@hierarchidb/plugin-api').PluginLifecycleAPI {
     return {
       async register() {
         return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };

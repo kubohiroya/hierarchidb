@@ -1,4 +1,4 @@
-import { PluginMetadata } from '@hierarchidb/plugin-sdk';
+import { PluginMetadata } from '@hierarchidb/plugin-api';
 import { PLUGIN_MANIFEST } from '../../plugin-manifest.js';
 
 /**

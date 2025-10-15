@@ -50,11 +50,13 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
     "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3"
   }

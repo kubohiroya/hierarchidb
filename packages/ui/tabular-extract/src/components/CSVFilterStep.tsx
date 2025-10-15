@@ -35,15 +35,9 @@ import {
   FilterList as FilterListIcon,
   Preview as PreviewIcon,
 } from '@mui/icons-material';
-import type {
-  CSVColumnInfo,
-  CSVColumnType,
-  CSVDataResult,
-  CSVFilterOperator,
-  CSVFilterRule,
-  CSVTableMetadata,
-} from '../types/index.js';
 import { useCSVFilter } from '../hooks/useCSVFilter.js';
+import { CSVColumnInfo, CSVColumnType, CSVTableMetadata } from '@hierarchidb/tabular-store';
+import { CSVDataResult, CSVFilterOperator, CSVFilterRule } from '~/types/index.js';
 
 export interface CSVFilterStepProps {
   tableMetadata: CSVTableMetadata;

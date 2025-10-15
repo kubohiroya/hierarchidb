@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import fs from 'node:fs';
 import path from 'path';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.js');
+const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.ts');
 const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
 
@@ -26,7 +26,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.js'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.ts'),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       // Needed when ui/core (dist) imports runtime-client
       '@hierarchidb/runtime-client': path.resolve(

@@ -34,12 +34,10 @@ import {
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 import type {
-  CSVColumnInfo,
   CSVColumnMapping,
-  CSVColumnType,
   CSVDataResult,
-  CSVTableMetadata,
 } from '../types/index.js';
+import { CSVColumnInfo, CSVColumnType, CSVTableMetadata } from '@hierarchidb/tabular-store';
 
 export interface CSVColumnSelectionStepProps {
   tableMetadata: CSVTableMetadata;

@@ -17,3 +17,6 @@ export { useThemeMode } from './hooks/useThemeMode.js';
 
 
 export { getStoredThemeMode, storeThemeMode, getSystemTheme } from './utils/storage.js';
+
+export * from './theme/RainbowColors.js'
+export * from './theme/get-theme-view.js'

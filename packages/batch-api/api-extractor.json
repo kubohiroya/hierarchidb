@@ -31,6 +31,6 @@
     }
   },
   "compiler": {
-    "tsconfigFilePath": "./tsconfig.api-extractor.json"
+    "tsconfigFilePath": "./tsconfig.json"
   }
 }

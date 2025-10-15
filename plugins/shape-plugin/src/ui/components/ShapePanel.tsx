@@ -30,7 +30,7 @@ import {
 import type { NodeId } from '../../shared/types.js';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
 import { useShapeEntityProgress } from '../hooks/useShapeProgress.js';
-import { formatBytes, summarizeCheckboxState, type ShapeEntity } from '../../shared/index.js';
+import { formatBytes, summarizeCheckboxState, type ShapeEntity } from '../../shared/index.ts';
 
 export interface ShapePanelProps {
   nodeId: NodeId;

@@ -8,7 +8,7 @@ vi.mock('react-i18next', () => ({
 
 const getTableMetadataMock = vi.fn();
 
-vi.mock('../../ui/facade/index.js', () => ({
+vi.mock('../../ui/facade/index.ts', () => ({
   createSpreadsheetCSVApi: vi.fn(() => ({
     getTableMetadata: getTableMetadataMock,
   })),

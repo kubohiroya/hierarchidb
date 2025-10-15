@@ -20,7 +20,7 @@ import {
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { useTranslation } from 'react-i18next';
 import type { StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { createSpreadsheetCSVApi } from '../ui/facade/index.js';
+import { createSpreadsheetCSVApi } from '../ui/facade/index.ts';
 import type { ColumnFilter, FilterConfig, RowFilter } from '../extension/types.js';
 import { PLUGIN_METADATA } from '../extension/constants.js';
 

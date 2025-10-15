@@ -64,3 +64,57 @@ export * from './types/operationResult.js';
 export * from './types/baseSearchCriteria.js';
 export * from './types/paginatedResult.js';
 export * from './types/entityLifecycleHooks.js';
+
+// New exports from PluginLifecycleAPI
+export type {
+  PluginLifecycleAPI,
+  PluginRegistrationResult as PluginRegistrationResultNew,
+  UnregistrationResult as UnregistrationResultNew,
+  PluginValidationResult as PluginValidationResultNew,
+  PluginHealthStatus as PluginHealthStatusNew,
+  PluginRegistrationInfo as PluginRegistrationInfoNew,
+  PluginListOptions as PluginListOptionsNew,
+  PluginDependencyInfo as PluginDependencyInfoNew,
+  BulkOperationOptions as BulkOperationOptionsNew,
+  BulkOperationResult as BulkOperationResultNew,
+  PluginResetOptions as PluginResetOptionsNew,
+  PluginResetResult as PluginResetResultNew,
+  PluginDeleteResult as PluginDeleteResultNew,
+} from './types/PluginLifecycleAPI.js';
+export type {
+  // Legacy export (deprecated)
+  PluginTreeAPI,
+  TreePluginInfo,
+  GetPluginsForTreeRequest,
+  GetPluginsForTreeResponse,
+  PluginUsageStats,
+  CompatibilityResult,
+  OptimizationResult,
+  DependencyGraph,
+  PluginMetrics,
+  TimePeriod,
+  GraphOptions,
+  MetricOptions,
+} from './types/PluginTreeAPI.js';
+// Node16 requires extension for re-export specifiers
+export type {
+  PluginTreeAPI as _PluginTreeAPI,
+  TreePluginInfo as _TreePluginInfo,
+  GetPluginsForTreeRequest as _GetPluginsForTreeRequest,
+  GetPluginsForTreeResponse as _GetPluginsForTreeResponse,
+  PluginUsageStats as _PluginUsageStats,
+  CompatibilityResult as _CompatibilityResult,
+  OptimizationResult as _OptimizationResult,
+  DependencyGraph as _DependencyGraph,
+  PluginMetrics as _PluginMetrics,
+  TimePeriod as _TimePeriod,
+  GraphOptions as _GraphOptions,
+  MetricOptions as _MetricOptions,
+} from './types/PluginTreeAPI.js';
+// Plugin Registry API
+export type { PluginExtensionAPI } from './types/PluginExtensionAPI.js';
+export { PluginExtensionRegistry } from './types/PluginExtensionAPI.js';
+export type { PluginRegistryAPI, PluginInfo } from './types/PluginRegistryAPI.js';
+// Plugin-related APIs (new architecture)
+export type { NodeTypeAPI } from './types/NodeTypeAPI.js';
+

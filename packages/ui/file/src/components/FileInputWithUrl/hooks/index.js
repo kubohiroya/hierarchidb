@@ -1,4 +1,4 @@
 export { useDragDrop } from './useDragDrop';
 export { useFileInput } from './useFileInput';
 export { useUrlDownload } from './useUrlDownload';
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index.ts.map

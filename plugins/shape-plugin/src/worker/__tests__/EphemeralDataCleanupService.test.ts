@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EphemeralDataCleanupService } from '../services/EphemeralDataCleanupService.js';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchSession, ShapeWorkingCopy } from '../../shared/index.js';
+import type { BatchSession, ShapeWorkingCopy } from '../../shared/index.ts';
 
 describe('EphemeralDataCleanupService', () => {
   let cleanupService: EphemeralDataCleanupService;

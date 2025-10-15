@@ -106,7 +106,7 @@ async function main() {
         if (typeof workerRel === 'string' && workerRel) {
           workerEntryPath = path.join(dir, workerRel);
         } else {
-          workerEntryPath = path.join(dir, 'dist', 'worker', 'index.js');
+          workerEntryPath = path.join(dir, 'dist', 'worker', 'index.ts');
         }
         // Robust check: dynamically import the worker entry and verify named export exists
         const className = `${capitalize(nodeType)}EntitiesDB`;

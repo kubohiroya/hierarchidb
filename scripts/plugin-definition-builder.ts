@@ -1,5 +1,7 @@
 import type {
-  PluginDefinition,
+  NodeType,
+} from '@hierarchidb/common-types';
+import {PluginDefinition,
   NodeTypeIconDefinition,
   CategoryDefinition,
   PluginDatabaseConfig,
@@ -11,10 +13,7 @@ import type {
   PluginManifestDatabaseSchema,
   PluginManifestUIConfig,
   PluginManifestValidationConfig,
-  DatabaseSchema,
-  NodeType,
-  PluginMetadata,
-} from '@hierarchidb/common-types';
+  DatabaseSchema} from '@hierarchidb/plugin-api';
 
 export type PluginManifestContent = PluginMetadata;
 

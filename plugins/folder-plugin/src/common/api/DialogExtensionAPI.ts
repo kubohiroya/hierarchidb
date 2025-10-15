@@ -1,12 +1,6 @@
-// Import types from correct common-type package
-import type {
-  BaseEntityExtension,
-  DialogStepDefinition,
-  ExtendingNodeTypeDefinition,
-  TreeNode,
-  ValidationExtension,
-} from '@hierarchidb/common-types';
-import type { FolderEntity } from '../entities/FolderEntity.js';
+import { BaseEntityExtension, DialogStepDefinition, ExtendingNodeTypeDefinition, ValidationExtension } from '@hierarchidb/plugin-api';
+import type { FolderEntity } from '../types/FolderEntity.js';
+import { TreeNode } from '@hierarchidb/common-types';
 
 /**
  * Lightweight evaluator interface for folder-plugin extensions.

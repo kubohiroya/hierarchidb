@@ -55,41 +55,41 @@ export interface BatchProgressAdapter {
  */
 export interface IBatchSessionManager {
   /**
-   * Start a new batch session
-   * @param nodeId Target node ID
-   * @returns Session ID
+   * Start a new batch session.
+   * @param nodeId - Target node identifier that owns the session.
+   * @returns A promise that resolves to the created batch session identifier.
    */
   startBatchSession(nodeId: NodeId): Promise<BatchSessionId>;
 
   /**
-   * Pause a running batch session
-   * @param sessionId Session to pause
+   * Pause a running batch session.
+   * @param sessionId - Identifier of the session to pause.
    */
   pauseBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
-   * Resume a paused batch session
-   * @param sessionId Session to resume
+   * Resume a paused batch session.
+   * @param sessionId - Identifier of the session to resume.
    */
   resumeBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
-   * Cancel a batch session
-   * @param sessionId Session to cancel
+   * Cancel a batch session.
+   * @param sessionId - Identifier of the session to cancel.
    */
   cancelBatchSession(sessionId: BatchSessionId): Promise<void>;
 
   /**
-   * Get current session status
-   * @param sessionId Session to query
+   * Retrieve the current session status.
+   * @param sessionId - Identifier of the session to query.
    */
   getBatchSessionStatus(sessionId: BatchSessionId): Promise<BatchSessionStatus>;
 
   /**
-   * Subscribe to progress updates
-   * @param sessionId Session to monitor
-   * @param callback Progress callback
-   * @returns Unsubscribe function
+   * Subscribe to progress updates.
+   * @param sessionId - Identifier of the session to monitor.
+   * @param callback - Callback invoked whenever progress information changes.
+   * @returns A function that removes the subscription when invoked.
    */
   onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void;
 }
@@ -127,9 +127,9 @@ export interface BatchProgressEvent<P = BatchProgressPayload> {
   error?: { code?: string; detail?: unknown };
 }
 
-/** @deprecated use BatchProgressEvent instead */
+/** @deprecated Use BatchProgressEvent instead. */
 export type StandardProgressEvent<P = BatchProgressPayload> = BatchProgressEvent<P>;
-/** @deprecated use BatchProgressPayload instead */
+/** @deprecated Use BatchProgressPayload instead. */
 export type StandardProgressPayload = BatchProgressPayload;
 
 /**

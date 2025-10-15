@@ -42,7 +42,7 @@ export interface TreeQueryAPI {
    * }
    * ```
    *
-   * @throws {Error} If database connection fails
+   * @throws Error - Thrown when the database connection cannot be established.
    */
   getTree(treeId: TreeId): Promise<Tree | undefined>;
 
@@ -134,7 +134,7 @@ export interface TreeQueryAPI {
    * - Performance: O(n) where n is number of descendants
    * - For large trees, consider using pagination or streaming
    *
-   * @throws {Error} If nodeId doesn't exist
+   * @throws Error - Thrown when the requested node cannot be found.
    */
   listDescendants(nodeId: NodeId, maxDepth?: number): Promise<TreeNode[]>;
 
@@ -165,7 +165,7 @@ export interface TreeQueryAPI {
    * - Includes all nodes from root to immediate parent
    * - Does not include the node itself
    *
-   * @throws {Error} If nodeId doesn't exist
+   * @throws Error - Thrown when the requested node cannot be found.
    */
   listAncestors(nodeId: NodeId): Promise<TreeNode[]>;
 
@@ -175,18 +175,7 @@ export interface TreeQueryAPI {
    * Performs efficient text-based search across node names and optionally descriptions.
    * Supports multiple matching modes and search constraints for performance optimization.
    *
-   * @param options - Search configuration object
-   * @param options.rootNodeId - Starting node for search scope
-   * @param options.query - Search query string (min 1 character)
-   * @param options.mode - Text matching strategy:
-   *   - 'exact': Full string match
-   *   - 'prefix': Starts with query
-   *   - 'suffix': Ends with query
-   *   - 'partial': Contains query (default)
-   * @param options.maxDepth - Maximum tree depth to search (unlimited if omitted)
-   * @param options.maxResults - Maximum results to return (default: 100)
-   * @param options.caseSensitive - Enable case-sensitive matching (default: false)
-   * @param options.searchInDescription - Include descriptions in search (default: false)
+   * @param options - Search configuration object.
    *
    * @returns Array of matching nodes sorted by relevance
    *
@@ -216,14 +205,21 @@ export interface TreeQueryAPI {
    * ```
    *
    * @remarks
-   * - Empty query returns empty array
-   * - Special characters are escaped in regex modes
-   * - Results are deduplicated
-   * - Performance scales with tree size and maxDepth
-   * - Consider using subscriptions for real-time search updates
+   * - Empty query returns empty array.
+   * - Special characters are escaped in regex modes.
+   * - Results are deduplicated.
+   * - Performance scales with tree size and `maxDepth`.
+   * - Consider using subscriptions for real-time search updates.
+   * - `query` must contain at least one character (length ≤ 256 enforced separately).
+   * - `rootNodeId` sets the search scope (defaults to the entire tree).
+   * - `mode` accepts `'exact' | 'prefix' | 'suffix' | 'partial'` (defaults to `'partial'`).
+   * - `maxDepth` limits traversal depth; when omitted the search is unbounded.
+   * - `maxResults` caps the number of returned nodes (defaults to `100`).
+   * - `caseSensitive` toggles case-sensitive comparisons (defaults to `false`).
+   * - `searchInDescription` includes description fields in the search (defaults to `false`).
    *
-   * @throws {Error} If rootNodeId doesn't exist
-   * @throws {RangeError} If query length exceeds 256 characters
+   * @throws Error - Thrown when the `rootNodeId` cannot be resolved.
+   * @throws RangeError - Thrown when the query length exceeds 256 characters.
    */
   searchNodes(options: {
     rootNodeId: NodeId;

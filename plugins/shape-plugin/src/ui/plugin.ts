@@ -3,7 +3,7 @@
  * UI environment plugin registration
  */
 
-import { ShapeMetadata, summarizeCheckboxState } from '../shared/index.js';
+import { ShapeMetadata, summarizeCheckboxState } from '../shared/index.ts';
 import { ShapeDialog, ShapePanel } from './components/index.js';
 
 /**

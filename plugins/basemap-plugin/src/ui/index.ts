@@ -1,4 +1,4 @@
-export * from '../components/index.js';
-export * from '../hooks/index.js';
+export * from './components/index.js';
+export * from './hooks/index.js';
 // Register host-composed steps for BaseMap (idempotent)
-import './steps-provider';
+import './components/steps-provider.js';
