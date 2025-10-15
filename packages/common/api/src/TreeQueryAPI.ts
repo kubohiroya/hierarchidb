@@ -1,6 +1,5 @@
 /**
- * @file TreeQueryAPI.ts
- * @description Read-only data access API for tree and node queries
+ * Read-only data access API for tree and node queries.
  *
  * This API provides efficient query operations for retrieving tree structures,
  * node information, and performing searches without modifying data.

@@ -5500,7 +5500,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-15 15:40 done: fix/tools/vite-plugin-node-type-registry-lint — `process` 依存を排し、Node ESM 相対解決と import.meta.env ベースのフラグ判定へ移行。上記 lint コマンドがグリーンであることを確認。
 - 2025-10-15 21:20 start: fix/batch-api/api-extractor-input — API Extractor 実行時に tsconfig 入力未定義で失敗している件の修正に着手。
 - 2025-10-15 21:21 progress: fix/batch-api/api-extractor-input — `packages/batch-api/tsconfig.json` に `../batch-sdk/dist/**/*.d.ts` を include 追加後、`pnpm --filter @hierarchidb/batch-api build:types` を実行。API Extractor は TSDoc WARN を出力するものの、型ロールアップ自体は成功することを確認。
-- 2025-10-15 21:21 done: fix/batch-api/api-extractor-input — 上記コマンドがグリーンで完了したため作業終了。TSDoc WARN は既存課題として別タスクで対処予定。
+- 2025-10-16 01:47 progress: fix/batch-api/api-extractor-input — `@hierarchidb/common-api` の TSDoc コメントを整備し、`pnpm --filter @hierarchidb/common-api clean && pnpm --filter @hierarchidb/common-api build:types` 後に `pnpm --filter @hierarchidb/batch-api build:types` を再実行。警告なしで完了することを確認。
+- 2025-10-16 01:47 done: fix/batch-api/api-extractor-input — API Extractor の警告が解消されたためタスク完了。
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
 - 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
 - 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。

@@ -1,6 +1,5 @@
 /**
- * @file MultiStepDialogAPI.ts
- * @description API for managing multi-step dialog workflows with working copies
+ * API for managing multi-step dialog workflows with working copies.
  */
 
 import type { NodeId, ValidationResult } from '@hierarchidb/common-types';

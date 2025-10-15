@@ -30,13 +30,13 @@
   ],
   "references": [
     {
-      "path": "../../ui/datasource/tsconfig.build.json"
+      "path": "../../packages/ui/datasource/tsconfig.build.json"
     },
     {
-      "path": "../../ui/license/tsconfig.build.json"
+      "path": "../../packages/ui/license/tsconfig.build.json"
     },
     {
-      "path": "../../runtime/worker/tsconfig.build.json"
+      "path": "../../packages/runtime/worker/tsconfig.build.json"
     }
   ]
 }
