@@ -44,7 +44,7 @@
 - [ ] プラグイン全体へ codemod を適用（basemap / styler / spreadsheet / route / timeline 等）
   - 参考資料: `packages/plugins/dialog-impl-status.md`、`scripts/codemods/migrate-plugin-worker.ts`
   - やること: 未適用プラグインの洗い出し、dry-run 記録、適用順序の策定
-- [ ] 旧再エクスポートの削除と型エクスポート (`worker-public-types.ts`) の整備
+- [ ] 旧再エクスポートの削除と型エクスポート (`worker-public-plugin-definition.ts`) の整備
 - [ ] `pnpm -r typecheck` と主要テストスイートを実行
 - [ ] `.github/workflows` / `.github/actions` のスクリプトで参照するパッケージ名・パスを新構成へ更新し、CI dry-run を確認
 - [ ] `TASKS.md` に各プラグインの移行完了を記録

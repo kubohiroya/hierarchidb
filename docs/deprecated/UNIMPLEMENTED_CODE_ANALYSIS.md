@@ -51,7 +51,7 @@ This report identifies unimplemented, mock, or placeholder code patterns through
 ### 3. 🟡 MEDIUM PRIORITY - Plugin Systems
 
 #### Shape Plugin - Core API Missing
-**File**: `packages/plugins-plugin/shape/src/services/ShapesPluginAPI.ts`
+**File**: `packages/plugin/shape/src/services/ShapesPluginAPI.ts`
 - **Issue**: Main plugin functionality not implemented
 - **Methods**: 
   - `addFeatures()` (Line 186)
@@ -63,7 +63,7 @@ This report identifies unimplemented, mock, or placeholder code patterns through
 - **Impact**: Shape plugin non-functional
 
 #### Styler Plugin - Database Operations Missing
-**File**: `packages/plugins-plugin/styler/src/handlers/StylerEntityHandler.ts`
+**File**: `packages/plugin/styler/src/handlers/StylerEntityHandler.ts`
 - **Issue**: All database operations throw "Not implemented - should be handled by Worker"
 - **Methods**:
   - `storeStylerEntity()` (Line 258)
@@ -95,13 +95,13 @@ This report identifies unimplemented, mock, or placeholder code patterns through
 ### Complete Mock Systems (Development Ready)
 These have full mock implementations suggesting active development:
 
-1. **Shape Plugin Service** (`packages/plugins-plugin/shape/src/services/`)
+1. **Shape Plugin Service** (`packages/plugin/shape/src/services/`)
    - Mock data generators
    - Mock worker implementations  
    - Mock database handlers
    - **Status**: Ready for real implementation swap
 
-2. **Worker Pool** (`packages/plugins-plugin/shape/src/services/workers/WorkerPool.ts`)
+2. **Worker Pool** (`packages/plugin/shape/src/services/workers/WorkerPool.ts`)
    - Complete pool management
    - **Gap**: Worker resizing (Line 203)
 

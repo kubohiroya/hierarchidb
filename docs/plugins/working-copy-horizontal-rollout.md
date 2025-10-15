@@ -4,7 +4,7 @@
 
 - **なぜここまで厳格化するのか**
   - WorkingCopy に UI 状態やフラグが混在すると、Undo/Redo・Batch 処理・IndexedDB 永続化で不整合が起きやすくなる。
-  - `@hierarchidb/plugins-base-plugin` で定義した `WorkingCopyDraft<TEntity>` を全プラグインで共通利用すれば、型安全性・更新ロジック・ロールバックが一元化できる。
+  - `@hierarchidb/base-plugin` で定義した `WorkingCopyDraft<TEntity>` を全プラグインで共通利用すれば、型安全性・更新ロジック・ロールバックが一元化できる。
   - Basemap / Location で導入した「WorkingCopy = WorkingCopyDraft + エンティティ部分スナップショット」という構造を横展開することで、テスト・リファクタ・ドキュメントの重複を削減する。
 
 - **このガイドの読み手**

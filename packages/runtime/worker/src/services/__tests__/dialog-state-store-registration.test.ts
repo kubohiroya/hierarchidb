@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { DialogStateService } from '../DialogStateService.js';
 import { storeRegistry } from '../../entity/store-registry.js';
-import { registerFolderWorkerStores } from '../../../../../plugins/folder-plugin/src/worker-factory/registerFolderWorkerStores.ts';
+import { registerFolderWorkerStores } from '../../../../../plugins/folder-plugin/src/worker/factory/registerFolderWorkerStores.ts';
 
 describe('DialogStateService with plugin-provided peer stores', () => {
   it('publishes state when folder peer store is registered via plugin wiring', async () => {

@@ -43,7 +43,7 @@ HierarchiDBでは、プラグインによって管理されるエンティティ
 #### 9.3.3.2 ノードタイプ定義インターフェース
 
 ```typescript
-// packages/core/src/types/entity-lifecycle-types.ts
+// packages/core/src/types/entity-lifecycle-plugin-definition.ts
 
 // エンティティ基底インターフェース群
 export interface PeerEntityCore {

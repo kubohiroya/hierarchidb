@@ -29,3 +29,7 @@ export type {
 
 // Built-in providers
 export { InMemoryDataProvider } from './providers/InMemoryDataProvider.js';
+
+export {CrossViewStyles} from './CrossViewStyles.js';
+export * from './CrossViewSnackbar.js';
+export * from './hooks/useCrossHighlightSync.js';

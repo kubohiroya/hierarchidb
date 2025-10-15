@@ -5,7 +5,7 @@
  * typed without requiring the full TypeScript build pipeline during docs/dev
  * tasks executed inside the monorepo.
  */
-declare module '@hierarchidb/runtime-worker-bootstrap' {
+declare module '../../../packages/runtime/client' {
   import type { Remote } from 'comlink';
   import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -47,16 +47,35 @@ declare module '@hierarchidb/runtime-worker-bootstrap' {
 }
 declare module '@hierarchidb/ui-i18n';
 declare module '@hierarchidb/runtime-ui-plugin-dialog';
-declare module '@hierarchidb/plugins-basemap-plugin/database';
-declare module '@hierarchidb/plugins-shape-plugin/services';
-declare module '@hierarchidb/plugins-basemap-plugin/ui';
-declare module '@hierarchidb/plugins-folder-plugin/ui';
-declare module '@hierarchidb/plugins-location-plugin/ui';
-declare module '@hierarchidb/plugins-route-plugin/ui';
-declare module '@hierarchidb/plugins-shape-plugin/ui';
-declare module '@hierarchidb/plugins-spreadsheet-plugin/ui';
-declare module '@hierarchidb/plugins-styler-plugin/ui';
-declare module '@hierarchidb/plugins-timeline-plugin/ui';
+declare module '@hierarchidb/basemap-plugin/database';
+declare module '@hierarchidb/shape-plugin/services';
+declare module '@hierarchidb/basemap-plugin/ui';
+declare module '@hierarchidb/folder-plugin/ui';
+declare module '@hierarchidb/location-plugin/ui';
+declare module '@hierarchidb/route-plugin/ui';
+declare module '@hierarchidb/shape-plugin/ui';
+declare module '@hierarchidb/spreadsheet-plugin/ui';
+declare module '@hierarchidb/styler-plugin/ui';
+declare module '@hierarchidb/timeline-plugin/ui';
 
 // Minimal ambient type for geojson-vt so app typecheck passes when worker imports it.
 // Prefer installing official types: `pnpm add -D @types/geojson-vt` at the workspace root.
+
+declare module 'virtual:plugin-node-types/meta' {
+  import type { PluginMetadata } from '@hierarchidb/common-types';
+
+  export interface PluginRegistryEntry {
+    nodeType: string;
+    packageName: string;
+    version: string | null;
+    hasUI: boolean;
+    hasWorker: boolean;
+    hasServices: boolean;
+    hasCommon: boolean;
+    fallbackServiceImport: string;
+    manifest: PluginMetadata | null;
+  }
+
+  const entries: PluginRegistryEntry[];
+  export default entries;
+}

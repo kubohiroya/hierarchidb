@@ -1,12 +1,12 @@
 import type { ComponentType } from 'react';
 import type {
-  DialogStepDefinition,
   PeerEntity,
   StepValidation,
   ValidationResult,
 } from '@hierarchidb/common-types';
 import { NodeDialogPlugin } from './NodeDialogPlugin.js';
 import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
+import { DialogStepDefinition } from '~/types/plugin-pointcuts.js';
 
 export interface DialogStepConfig<TProps extends object> {
   id: string;

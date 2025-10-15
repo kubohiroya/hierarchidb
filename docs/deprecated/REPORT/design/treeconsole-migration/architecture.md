@@ -188,8 +188,8 @@ packages/ui-treeconsole/
 │   │   ├── WorkerAPIAdapter.ts        # メインアダプター
 │   │   ├── commands/                  # コマンド変換
 │   │   ├── subscriptions/             # サブスクリプション変換
-│   │   ├── lifecycle-types.ts                  # アダプター専用型
-│   │   └── utils.ts                  # ヘルパー関数
+│   │   ├── lifecycle-plugin-definition.ts                  # アダプター専用型
+│   │   └── fetchSaveMetadata.ts                  # ヘルパー関数
 │   ├── types/               # 🟢 UI層特有の型定義のみ
 │   └── openstreetmap-type.ts             # 公開API
 ├── tests/                   # テストファイル（アダプター集中テスト）

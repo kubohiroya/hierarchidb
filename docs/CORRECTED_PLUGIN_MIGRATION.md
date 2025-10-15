@@ -10,7 +10,7 @@
 - ✅ **実装状況**: 完成済み（FolderEntity拡張パターン）
 - ✅ **主要機能**: CSV/Excel処理、データフィルタリング、バリデーション
 - ✅ **UI コンポーネント**: DataSourceStep, FilteringStep
-- ❌ **問題**: 型参照のみ（`@hierarchidb/plugins-folder-plugin`等）
+- ❌ **問題**: 型参照のみ（`@hierarchidb/folder-plugin`等）
 
 ### basemap-plugin  
 - ✅ **実装状況**: 完成済み（FolderEntity拡張パターン）
@@ -70,8 +70,8 @@ export const BaseMapPluginDefinition: ExtendingNodeTypeDefinition<
   "dependencies": {
     "@hierarchidb/common-type": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugins-base-plugin": "workspace:*",  // 追加
-    "@hierarchidb/plugins-folder-plugin": "workspace:*", // 既存維持
+    "@hierarchidb/base-plugin": "workspace:*",  // 追加
+    "@hierarchidb/folder-plugin": "workspace:*", // 既存維持
     // その他は既存のまま保持
   }
 }

@@ -40,25 +40,25 @@ awk -F'|' '$4==0 {print $1 "|" $2 "|" $3}' .codex/tmp/usage_raw.txt > .codex/tmp
 > 形式: `kind | name — file`
 
 <!-- BEGIN GENERATED CANDIDATES -->
-interface | AutoLifecycleConfig — packages/common/types/src/entity-types.ts
+interface | AutoLifecycleConfig — packages/common/types/src/entity-plugin-definition.ts
 interface | BaseDataSourceConfig — packages/common/types/src/datasource.ts
 interface | BaseNodeDefinition — packages/common/types/src/plugin-pointcuts.ts
 interface | BaseUrlMetadata — packages/common/types/src/datasource.ts
 interface | BinaryPropertyConfig — packages/common/types/src/plugin-serialization.ts
 interface | DependencyError — packages/common/types/src/plugin-resolution.ts
-interface | DescendantProperties — packages/common/types/src/tree-node-types.ts
-interface | DraftProperties — packages/common/types/src/tree-node-types.ts
-interface | EntityRelationship — packages/common/types/src/entity-types.ts
-interface | ExpandedStateChanges — packages/common/types/src/tree-root-state-types.ts
-interface | ExportManifest — packages/common/types/src/import-export-types.ts
-interface | ExportOptions — packages/common/types/src/import-export-types.ts
+interface | DescendantProperties — packages/common/types/src/tree-node-plugin-definition.ts
+interface | DraftProperties — packages/common/types/src/tree-node-plugin-definition.ts
+interface | EntityRelationship — packages/common/types/src/entity-plugin-definition.ts
+interface | ExpandedStateChanges — packages/common/types/src/tree-root-state-plugin-definition.ts
+interface | ExportManifest — packages/common/types/src/import-export-plugin-definition.ts
+interface | ExportOptions — packages/common/types/src/import-export-plugin-definition.ts
 interface | ExtendedFieldDefinition — packages/common/types/src/plugin-pointcuts.ts
 interface | ExtensionMetadata — packages/common/types/src/plugin-pointcuts.ts
-interface | FileImportOptions — packages/common/types/src/import-export-types.ts
-interface | GetNodePayload — packages/common/types/src/command-types.ts
-interface | GetTreePayload — packages/common/types/src/command-types.ts
-interface | ImportManifest — packages/common/types/src/import-export-types.ts
-interface | ImportOptions — packages/common/types/src/import-export-types.ts
+interface | FileImportOptions — packages/common/types/src/import-export-plugin-definition.ts
+interface | GetNodePayload — packages/common/types/src/command-plugin-definition.ts
+interface | GetTreePayload — packages/common/types/src/command-plugin-definition.ts
+interface | ImportManifest — packages/common/types/src/import-export-plugin-definition.ts
+interface | ImportOptions — packages/common/types/src/import-export-plugin-definition.ts
 interface | LicenseAgreement — packages/common/types/src/datasource.ts
 interface | LocationCountryMetadata — packages/common/types/src/datasource.ts
 interface | LocationDataSourceConfig — packages/common/types/src/datasource.ts
@@ -67,39 +67,39 @@ interface | LocationUrlMetadata — packages/common/types/src/datasource.ts
 interface | PluginI18nConfig — packages/common/types/src/plugin-definition.ts
 interface | PluginRegistrationConfig — packages/common/types/src/plugin-resolution.ts
 interface | PluginSerializationConfig — packages/common/types/src/plugin-serialization.ts
-interface | ReferenceManagement — packages/common/types/src/entity-types.ts
-interface | ReferenceProperties — packages/common/types/src/tree-node-types.ts
-interface | RelationalEntityManager — packages/common/types/src/entity-manager-types.ts
+interface | ReferenceManagement — packages/common/types/src/entity-plugin-definition.ts
+interface | ReferenceProperties — packages/common/types/src/tree-node-plugin-definition.ts
+interface | RelationalEntityManager — packages/common/types/src/entity-manager-plugin-definition.ts
 interface | ResolutionResult — packages/common/types/src/plugin-resolution.ts
 interface | ResolvedPlugin — packages/common/types/src/plugin-resolution.ts
 interface | RouteCountryMetadata — packages/common/types/src/datasource.ts
 interface | RouteDataSourceConfig — packages/common/types/src/datasource.ts
 interface | RouteSelectionRowData — packages/common/types/src/datasource.ts
 interface | RouteUrlMetadata — packages/common/types/src/datasource.ts
-interface | SearchNodesPayload — packages/common/types/src/command-types.ts
+interface | SearchNodesPayload — packages/common/types/src/command-plugin-definition.ts
 interface | SelectionColumn — packages/common/types/src/datasource.ts
 interface | SelectionRow — packages/common/types/src/datasource.ts
 interface | ShapeCountryMetadata — packages/common/types/src/datasource.ts
 interface | ShapeDataSourceConfig — packages/common/types/src/datasource.ts
 interface | ShapeSelectionRowData — packages/common/types/src/datasource.ts
 interface | ShapeUrlMetadata — packages/common/types/src/datasource.ts
-interface | TagSearchOptions — packages/common/types/src/tag-entity-types.ts
-interface | TagUsageStatistics — packages/common/types/src/tag-entity-types.ts
-interface | TemplateDefinition — packages/common/types/src/import-export-types.ts
-interface | TemplateImportOptions — packages/common/types/src/import-export-types.ts
-interface | TreeNodeExportData — packages/common/types/src/import-export-types.ts
-interface | TypedClientAPIExtensions — packages/common/types/src/api-types.ts
-interface | TypedWorkerAPIExtensions — packages/common/types/src/api-types.ts
+interface | TagSearchOptions — packages/common/types/src/tag-entity-plugin-definition.ts
+interface | TagUsageStatistics — packages/common/types/src/tag-entity-plugin-definition.ts
+interface | TemplateDefinition — packages/common/types/src/import-export-plugin-definition.ts
+interface | TemplateImportOptions — packages/common/types/src/import-export-plugin-definition.ts
+interface | TreeNodeExportData — packages/common/types/src/import-export-plugin-definition.ts
+interface | TypedClientAPIExtensions — packages/common/types/src/api-plugin-definition.ts
+interface | TypedWorkerAPIExtensions — packages/common/types/src/api-plugin-definition.ts
 interface | WorkerPluginRouterAction — packages/common/types/src/plugin-definition.ts
-type | BaseFieldName — packages/common/types/src/stepper-dialog-types.ts
-type | ClientAPIMethod — packages/common/types/src/api-types.ts
-type | CommandGroupId — packages/common/types/src/command-types.ts
-type | IdMapping — packages/common/types/src/import-export-types.ts
-type | ValidationFunction — packages/common/types/src/validation-types.ts
+type | BaseFieldName — packages/common/types/src/stepper-dialog-plugin-definition.ts
+type | ClientAPIMethod — packages/common/types/src/api-plugin-definition.ts
+type | CommandGroupId — packages/common/types/src/command-plugin-definition.ts
+type | IdMapping — packages/common/types/src/import-export-plugin-definition.ts
+type | ValidationFunction — packages/common/types/src/validation-plugin-definition.ts
 <!-- END GENERATED CANDIDATES -->
 
 ## 既知の特殊ケース
-- `packages/common/types/src/entiry-working-copy-types.ts.bak`（typo あり、`.bak`）
+- `packages/common/types/src/entiry-working-copy-plugin-definition.ts.bak`（typo あり、`.bak`）
   - 下記エクスポートはすべて外部未使用: `EntityWorkingCopy*`, `*WorkingCopy`, `EntiryWorkingCopyTypes` など計12件。
   - 方針: 削除 or `deprecated/` へ移動を検討。
 

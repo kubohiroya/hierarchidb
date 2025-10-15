@@ -15,7 +15,7 @@ const outUiFile = path.join(outDir, 'ui-loader.ts');
  * Derive nodeType from package name like @hierarchidb/plugin-loader-<nodeType>-plugin
  */
 function deriveNodeType(pkgName) {
-  const match = pkgName.match(/@hierarchidb\/plugins-([a-z0-9-]+)-plugin$/);
+  const match = pkgName.match(/@hierarchidb\/([a-z0-9-]+)-plugin$/);
   if (!match) return undefined;
   return match[1];
 }
@@ -78,7 +78,7 @@ async function main() {
     ...(pkgJson.optionalDependencies || {}),
   };
   const pluginPkgs = Object.keys(allDeps)
-    .filter((name) => /@hierarchidb\/plugins-[a-z0-9-]+-plugin$/.test(name))
+    .filter((name) => /@hierarchidb\/[a-z0-9-]+-plugin$/.test(name))
     .sort();
 
   // Build metadata for each plugin, including whether it exports "./worker" and "./ui"
@@ -244,7 +244,7 @@ export function registerUIPersistenceOverrides(): void {
   for (const m of uiPlugins) {
     for (const depRaw of m.uiDeps) {
       let depNode = depRaw;
-      if (/^@hierarchidb\/plugins-.*-plugin$/.test(depRaw)) {
+      if (/^@hierarchidb\/.*-plugin$/.test(depRaw)) {
         depNode = deriveNodeType(depRaw) || depRaw;
       }
       if (nodeTypeSet.has(depNode)) {

@@ -18,8 +18,8 @@ import {
 } from '@mui/material';
 import { Add, Delete, FilterAlt, ViewColumn } from '@mui/icons-material';
 import { GenericDataGrid } from './GenericDataGrid.js';
-import { CrossViewStyles } from './sync/CrossViewStyles.js';
-import type { Id } from './sync/CrossViewStyles.js';
+import { CrossViewStyles } from './CrossViewStyles.js';
+import type { Id } from './CrossViewStyles.js';
 import { useCrossHighlightSync } from './hooks/useCrossHighlightSync.js';
 import { ensureDefaultStyles } from './utils/ensureDefaultStyles.js';
 import { CrossViewSnackbar } from './CrossViewSnackbar.js';

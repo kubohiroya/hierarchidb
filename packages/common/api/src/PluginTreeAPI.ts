@@ -9,7 +9,8 @@
  * with type safety and proper filtering capabilities.
  */
 
-import type { NodeCapability, NodeType, TreeId } from '@hierarchidb/common-types';
+import type { NodeType, TreeId } from '@hierarchidb/common-types';
+import { NodeCapability } from './plugin-definition.js';
 
 //  : PluginTreeAPI
 //  :

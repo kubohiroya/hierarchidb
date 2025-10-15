@@ -31,7 +31,7 @@ function ensureNamedImport(source = handlerFile, moduleSpecifier: string, name: 
 }
 
 // Update handler imports
-ensureNamedImport(handlerFile, '@hierarchidb/plugin-loader-base-plugin', 'createDraftWorkingCopyBase');
+ensureNamedImport(handlerFile, '@hierarchidb/base-plugin', 'createDraftWorkingCopyBase');
 
 const typesImport = handlerFile
   .getImportDeclaration((decl) => decl.getModuleSpecifierValue() === '../types/index.js');
@@ -101,7 +101,7 @@ createWorkingCopyMethod.setBodyText(`{
 }`);
 
 // Update peer store normalizer
-ensureNamedImport(peerStoreFile, '@hierarchidb/plugin-loader-base-plugin', 'createPeerStoreNormalizer');
+ensureNamedImport(peerStoreFile, '@hierarchidb/base-plugin', 'createPeerStoreNormalizer');
 
 const normalizeFn = peerStoreFile.getFunction('normalizeBasemapPeerData');
 if (normalizeFn) {

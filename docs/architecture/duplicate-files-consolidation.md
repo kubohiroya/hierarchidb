@@ -33,7 +33,7 @@
 
 ### Step 1: EntityHandler統合
 ```typescript
-// packages/worker/src/handlers/lifecycle-types.ts
+// packages/worker/src/handlers/lifecycle-plugin-definition.ts
 export type { EntityHandler } from '@hierarchidb/core/types';
 
 // packages/worker/src/registry/types/unified-plugin.ts
@@ -42,7 +42,7 @@ export type { EntityHandler } from '@hierarchidb/core/types';
 
 ### Step 2: CommandEnvelope統合
 ```typescript
-// packages/worker/src/command/lifecycle-types.ts
+// packages/worker/src/command/lifecycle-plugin-definition.ts
 import type { CommandEnvelope as CoreCommandEnvelope } from '@hierarchidb/core/types';
 
 // Worker固有の拡張が必要な場合

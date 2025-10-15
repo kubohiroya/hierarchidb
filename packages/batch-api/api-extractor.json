@@ -1,8 +1,12 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
   "mainEntryPointFilePath": "../batch-sdk/dist/index.d.ts",
-  "apiReport": { "enabled": false },
-  "docModel": { "enabled": false },
+  "apiReport": {
+    "enabled": false
+  },
+  "docModel": {
+    "enabled": false
+  },
   "dtsRollup": {
     "enabled": true,
     "untrimmedFilePath": "./dist/index.d.ts",
@@ -10,12 +14,20 @@
   },
   "messages": {
     "extractorMessageReporting": {
-      "ae-missing-release-tag": { "logLevel": "none" },
-      "ae-forgotten-export": { "logLevel": "none" },
-      "ae-wrong-input-file-type": { "logLevel": "error" }
+      "ae-missing-release-tag": {
+        "logLevel": "none"
+      },
+      "ae-forgotten-export": {
+        "logLevel": "none"
+      },
+      "ae-wrong-input-file-type": {
+        "logLevel": "error"
+      }
     },
     "tsdocMessageReporting": {
-      "tsdoc-param-tag-missing-hyphen": { "logLevel": "none" }
+      "tsdoc-param-tag-missing-hyphen": {
+        "logLevel": "none"
+      }
     }
   },
   "compiler": {

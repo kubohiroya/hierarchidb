@@ -13,15 +13,14 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle && pnpm run build:pack",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "build:pack": "node ../../../../scripts/pkg-build/copy-dist-types.mjs",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },

@@ -27,5 +27,5 @@ Envelope v1 マッピング（抜粋）
 - すべての段階導入はフラグ既定OFFで行い、問題発生時はフラグOFFで即切戻し。
 
 備考
-- CommandMap（registry.types.ts）で型を単一箇所に集約し、`PayloadOf<K>` / `ResultOf<K>` を通して利用側の整合を強制する。
+- CommandMap（registry.plugin-definition.ts）で型を単一箇所に集約し、`PayloadOf<K>` / `ResultOf<K>` を通して利用側の整合を強制する。
 

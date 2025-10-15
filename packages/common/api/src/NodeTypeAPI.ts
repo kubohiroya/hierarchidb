@@ -10,10 +10,10 @@ import type {
   NodeId,
   NodeLifecycleHooks,
   NodeType,
-  PluginDefinition,
   TreeNode,
   ValidationResult,
 } from '@hierarchidb/common-types';
+import { PluginDefinition } from './plugin-definition.js';
 
 /**
  * Node type management API

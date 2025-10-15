@@ -14,11 +14,10 @@
     }
   },
   "files": [
-    "dist",
-    "dist-types"
+    "dist"
   ],
   "scripts": {
-    "clean": "rm -rf dist dist-types",
+    "clean": "rm -rf dist",
     "prebuild": "pnpm run clean",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "build:types": "tsc -p tsconfig.build.json",
@@ -38,9 +37,10 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
-    "typescript": "workspace:^5.9.3"
-  },
-  "tsup": {
-    "external": []
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/auth-recovery": "workspace:*"
   }
 }

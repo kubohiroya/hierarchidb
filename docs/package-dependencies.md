@@ -41,16 +41,16 @@ graph LR
     N19["@hierarchidb/tag"]
   end
   subgraph node-type
-    N20["@hierarchidb/plugins-base-plugin"]
-    N21["@hierarchidb/plugins-basemap-plugin"]
-    N22["@hierarchidb/plugins-folder-plugin"]
-    N23["@hierarchidb/plugins-location-plugin"]
-    N24["@hierarchidb/plugins-linker-plugin"]
-    N25["@hierarchidb/plugins-resolver-plugin"]
-    N26["@hierarchidb/plugins-route-plugin"]
-    N27["@hierarchidb/plugins-shape-plugin"]
-    N28["@hierarchidb/plugins-spreadsheet-plugin"]
-    N29["@hierarchidb/plugins-styler-plugin"]
+    N20["@hierarchidb/base-plugin"]
+    N21["@hierarchidb/basemap-plugin"]
+    N22["@hierarchidb/folder-plugin"]
+    N23["@hierarchidb/location-plugin"]
+    N24["@hierarchidb/linker-plugin"]
+    N25["@hierarchidb/resolver-plugin"]
+    N26["@hierarchidb/route-plugin"]
+    N27["@hierarchidb/shape-plugin"]
+    N28["@hierarchidb/spreadsheet-plugin"]
+    N29["@hierarchidb/styler-plugin"]
   end
   subgraph runtime-shared
     N30["@hierarchidb/runtime-shared-batch-processor"]
@@ -66,7 +66,7 @@ graph LR
   end
   subgraph runtime-worker
     N38["@hierarchidb/runtime-worker"]
-    N39["@hierarchidb/runtime-worker-bootstrap"]
+    N39["@hierarchidb/runtime-client"]
   end
   subgraph tools
     N40["@hierarchidb/analyze-licenses"]

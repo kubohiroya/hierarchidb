@@ -1,0 +1,145 @@
+{
+  "name": "@hierarchidb/resolver-plugin",
+  "version": "1.0.0",
+  "description": "Resolver node type plugin for property mapping between different data schemas",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "database": [
+        "dist/database/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build:database": "tsup --config tsup.database.config.ts",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "dependencies": {
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "dexie": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "comlink": "^4.4.1",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
+  },
+  "devDependencies": {
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "@types/react": "^18.3.24",
+    "@types/react-dom": "^18.3.7",
+    "@vitest/ui": "^3.2.4",
+    "dexie": "^4.2.0",
+    "fake-indexeddb": "^6.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4",
+    "comlink": "^4.4.1",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@hierarchidb/runtime-worker",
+      "@mui/icons-material",
+      "@mui/material",
+      "dexie",
+      "react",
+      "react-dom"
+    ]
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "resolver",
+      "name": "Resolver Plugin",
+      "displayName": "Resolver",
+      "description": "Property mapping and schema resolution",
+      "icon": {
+        "mui": "Extension",
+        "emoji": "🧩",
+        "color": "#ffb3c1"
+      },
+      "category": {
+        "treeId": "*",
+        "menuGroup": "document",
+        "createOrder": 60
+      },
+      "priority": 60,
+      "creatable": true,
+      "tags": [
+        "mapping",
+        "schema"
+      ],
+      "capabilities": [
+        "relationalData"
+      ]
+    }
+  }
+}

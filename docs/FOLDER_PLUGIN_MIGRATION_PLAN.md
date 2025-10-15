@@ -23,7 +23,7 @@
 3. **tags・metadataフィールド**: 新アーキテクチャから除外
 
 ### 新規導入されたもの
-1. **@hierarchidb/plugins-base-plugin**: 新しい基底クラス群
+1. **@hierarchidb/base-plugin**: 新しい基底クラス群
    - `BaseEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
    - `HierarchicalEntityHandler<TEntity, TWorkingCopy, TCreateData, TSearchCriteria>`
 2. **HierarchicalEntity interface**: nodeId必須フィールド追加
@@ -358,11 +358,11 @@ export const FolderMetadata: PluginMetadata = {
 };
 ```
 
-#### 6.2 shared/utils.ts の修正
+#### 6.2 shared/fetchSaveMetadata.ts の修正
 **問題**: FolderEntityにtagsプロパティが存在しない
 
 ```typescript
-// src/shared/utils.ts
+// src/shared/fetchSaveMetadata.ts
 export function createDefaultFolderEntity(data: Partial<FolderEntity>): FolderEntity {
   return {
     id: crypto.randomUUID() as EntityId,

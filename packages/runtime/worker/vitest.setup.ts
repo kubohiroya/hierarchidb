@@ -62,7 +62,7 @@ const createMockEntitiesDB = (): EntitiesDbAdapter => {
 };
 
 const overrides = (globalWithOverrides.__HDB_PLUGIN_ENTITY_OVERRIDES__ ??= {});
-for (const type of ['folder', 'route', 'resolver', 'shape', 'location', 'spreadsheet', 'styler', 'basemap']) {
+for (const type of ['folder', 'route', 'resolver', 'shape', 'location', 'spreadsheet', 'styler', 'basemap', 'linker', 'timeline']) {
   if (!overrides[type]) {
     overrides[type] = async () => createMockEntitiesDB();
   }

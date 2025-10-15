@@ -11,7 +11,7 @@
 packages/ui-routing/src/plugins/
 ├── HierarchicalPluginRouter.test.ts  # メインテストファイル
 ├── HierarchicalPluginRouter.ts       # 実装ファイル (未作成)
-└── lifecycle-types.ts                          # TypeScript型定義
+└── lifecycle-plugin-definition.ts                          # TypeScript型定義
 ```
 
 ### テストケース設計
@@ -97,7 +97,7 @@ HierarchicalPluginRouter is not defined
 
 ### TypeScript型定義
 
-以下の型定義がすでに`lifecycle-types.ts`に実装済み：
+以下の型定義がすでに`lifecycle-plugin-definition.ts`に実装済み：
 - `PluginRouteParams`
 - `PluginAction`
 - `PluginDefinition`

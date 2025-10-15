@@ -12,6 +12,12 @@ const iconModule = vi.hoisted(() => ({
 
 vi.mock('@hierarchidb/ui-icon', () => iconModule);
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
+  }),
+}));
+
 const menuItemsModule = vi.hoisted(() => ({
   usePluginMenuItems: vi.fn((): PluginMenuItem[] => [
     {
@@ -25,6 +31,8 @@ const menuItemsModule = vi.hoisted(() => ({
       },
       group: 'base',
       priority: 10,
+      description: 'Basemap',
+      backgroundColor: '#12345622',
     },
   ]),
 }));

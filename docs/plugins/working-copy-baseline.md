@@ -5,7 +5,7 @@
 ## 目的
 - WC を「PeerEntity の部分スナップショット」として統一し、UI 専用の一時データを混在させない。
 - Dexie 上の永続データと UI の一時状態を明確に分離することで、回帰や競合を防ぐ。
-- `@hierarchidb/plugins-base-plugin` が提供する共通ヘルパーを利用し、実装重複とバグ温床を排除する。
+- `@hierarchidb/base-plugin` が提供する共通ヘルパーを利用し、実装重複とバグ温床を排除する。
 
 ## 基本原則
 - **WC は Partial<TEntity>**: `draft` プロパティにエンティティ本来の構造を `Partial` で保持する。UI での入力途中の値もすべてここに格納する。
@@ -66,7 +66,7 @@ const updated = markWorkingCopyUpdated(workingCopy, { name: 'New name' });
 - [ ] プラグインごとの `WorkingCopy` 型が `WorkingCopyDraft<TEntity>` で定義されている。
 - [ ] Worker Handler が `createDraftWorkingCopyBase` と `markWorkingCopyUpdated` を利用している。
 - [ ] UI コンポーネントが WC の `draft` を前提に実装され、UI 固有状態は別管理になっている。
-- [ ] `pnpm --filter @hierarchidb/plugins-*-plugin typecheck` と関連ユニットテストがグリーン。
+- [ ] `pnpm --filter @hierarchidb/*-plugin typecheck` と関連ユニットテストがグリーン。
 - [ ] `docs/plugins/working-copy-initial-payloads.md` の内容と実装が一致している。
 
 ## 関連ドキュメント

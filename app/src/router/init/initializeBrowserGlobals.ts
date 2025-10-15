@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-worker-bootstrap';
+import { registerWorkerClientHook, getWorkerClientHook } from '../../../../packages/runtime/client';
 import { registerAllUIPlugins } from '@hierarchidb/ui-core';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 import { bootLog } from '../../utils/bootLog.js';

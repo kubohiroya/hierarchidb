@@ -4,14 +4,14 @@ export default createTsupConfig({
   dts: {
     entry: {
       index: 'src/index.ts',
-      types: 'src/types.ts',
+      types: 'src/plugin-definition.ts',
       ports: 'src/ports.ts',
       registry: 'src/registry.ts',
     },
   },
   entry: {
     index: 'src/index.ts',
-    types: 'src/types.ts',
+    types: 'src/plugin-definition.ts',
     ports: 'src/ports.ts',
     registry: 'src/registry.ts',
   },

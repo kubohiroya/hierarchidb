@@ -26,7 +26,7 @@
 - 追加フィールド許容: 既存の互換性維持のため、未知フィールドは削除せず無視。
 
 関連コード参照:
-- `packages/runtime/worker/src/services/command-types.ts`
+- `packages/runtime/worker/src/services/command-plugin-definition.ts`
 - `packages/runtime/worker/src/services/CommandProcessor.ts`
 
 ## タスク一覧（ZE-1 〜 ZE-5）

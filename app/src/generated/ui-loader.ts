@@ -40,49 +40,49 @@ const uiLoaders: Record<string, () => Promise<unknown>> = {
   'timeline': () =>
     loadWithFallback(
       'timeline',
-      () => import('@hierarchidb/plugins-timeline-plugin/ui'),
+      () => import('@hierarchidb/timeline-plugin/ui'),
       () => import('../virtual/stubs/timeline-plugin-stub.js'),
     ),
   'route': () =>
     loadWithFallback(
       'route',
-      () => import('@hierarchidb/plugins-route-plugin/ui'),
+      () => import('@hierarchidb/route-plugin/ui'),
       () => import('../virtual/stubs/route-plugin-stub.js'),
     ),
   'location': () =>
     loadWithFallback(
       'location',
-      () => import('@hierarchidb/plugins-location-plugin/ui'),
+      () => import('@hierarchidb/location-plugin/ui'),
       () => import('../virtual/stubs/location-plugin-stub.js'),
     ),
   'folder': () =>
     loadWithFallback(
       'folder',
-      () => import('@hierarchidb/plugins-folder-plugin/ui'),
+      () => import('@hierarchidb/folder-plugin/ui'),
       () => import('../virtual/stubs/folder-plugin-stub.js'),
     ),
   'spreadsheet': () =>
     loadWithFallback(
       'spreadsheet',
-      () => import('@hierarchidb/plugins-spreadsheet-plugin/ui'),
+      () => import('@hierarchidb/spreadsheet-plugin/ui'),
       () => import('../virtual/stubs/spreadsheet-plugin-stub.js'),
     ),
   'styler': () =>
     loadWithFallback(
       'styler',
-      () => import('@hierarchidb/plugins-styler-plugin/ui'),
+      () => import('@hierarchidb/styler-plugin/ui'),
       () => import('../virtual/stubs/styler-plugin-stub.js'),
     ),
   'shape': () =>
     loadWithFallback(
       'shape',
-      () => import('@hierarchidb/plugins-shape-plugin/ui'),
+      () => import('@hierarchidb/shape-plugin/ui'),
       () => import('../virtual/stubs/shape-plugin-stub.js'),
     ),
   'basemap': () =>
     loadWithFallback(
       'basemap',
-      () => import('@hierarchidb/plugins-basemap-plugin/ui'),
+      () => import('@hierarchidb/basemap-plugin/ui'),
       () => import('../virtual/stubs/basemap-plugin-stub.js'),
     ),
 };

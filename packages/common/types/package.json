@@ -27,7 +27,7 @@
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
     "coverage": "vitest run --coverage",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
     "prebuild": "pnpm run build:clean"

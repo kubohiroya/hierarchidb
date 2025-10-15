@@ -30,7 +30,7 @@
     "storybook:build": "storybook build -c ./.storybook",
     "pretest:playwright": "pnpm storybook:build",
     "test:playwright": "playwright test -c playwright.config.ts",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
     "prebuild": "pnpm run build:clean",

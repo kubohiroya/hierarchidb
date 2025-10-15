@@ -4,7 +4,7 @@
  */
 
 import './worker-react-refresh-shim.js';
-import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-worker-bootstrap';
+import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '../../packages/runtime/client';
 import type { PluginDefinition } from '@hierarchidb/common-types';
 import {
   WORKER_FLAG_ALLOWED_OVERRIDES,

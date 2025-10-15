@@ -49,12 +49,14 @@ import {
 // import { WorkerAPIClient } from '../WorkerAPIClient.js';
 // import type { Remote } from 'comlink';
 // import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeType, TreeId } from '@hierarchidb/common-types';
-import type { PluginDefinition } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
 // import { getUIPluginRegistry } from '@hierarchidb/ui-core';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 import { useNavigate } from '@tanstack/react-router';
+import { getInstalledPlugins } from '~/services/plugin-registry.js';
+import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
+import { useTranslation } from 'react-i18next';
 
 // Meta function for React Router v7
 export function meta() {
@@ -65,7 +67,7 @@ export function meta() {
 }
 
 interface EnhancedPluginRowProps {
-  plugin: PluginDefinition;
+  plugin: DisplayPlugin;
   index: number;
   dependencies: string[];
   onDelete: (pluginName: string) => void;
@@ -96,27 +98,44 @@ interface ResetPluginDialogProps {
 type DisplayPlugin = {
   nodeType: NodeType;
   displayName: string;
-  category?: { treeId?: TreeId; menuGroup?: string; createOrder?: number };
-  database?: { entityStore?: string };
-  ui?: { dialogComponentPath?: string };
-  lifecycle?: unknown;
+  description: string;
+  dependencies: string[];
+  menuGroup: string;
+  createOrder: number;
+  icon: { muiIconName?: string; emoji?: string; color?: string };
+  iconColor?: string;
+  backgroundColor: string;
+  hasUI: boolean;
+  hasWorker: boolean;
+  hasServices: boolean;
+  hasCommon: boolean;
+  packageName: string;
+  version: string | null;
 };
 
 function EnhancedPluginRow({
-                             plugin,
-                             index,
-                             dependencies,
-                             onDelete,
-                             onReload,
-                             disabled = false,
-                           }: Omit<EnhancedPluginRowProps, 'plugin'> & { plugin: DisplayPlugin }) {
+  plugin,
+  index,
+  dependencies,
+  onDelete,
+  onReload,
+  disabled = false,
+}: EnhancedPluginRowProps) {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
+  const { t } = useTranslation('common');
 
-  // Folder plugin cannot be deleted as it's the foundation plugin
   const isFolderPlugin = plugin.nodeType === 'folder';
   const canDelete = !isFolderPlugin;
+  const iconNode = getMuiIconComponent(
+    plugin.icon.muiIconName,
+    plugin.icon.emoji,
+    plugin.iconColor,
+  );
+  const description = t(`plugins.${plugin.nodeType}.description`, {
+    defaultValue: plugin.description || plugin.displayName,
+  });
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -127,7 +146,7 @@ function EnhancedPluginRow({
   };
 
   const handleReset = () => {
-    onReload(plugin.nodeType, true); // Reset always clears database
+    onReload(plugin.nodeType, true);
     handleMenuClose();
   };
 
@@ -141,7 +160,7 @@ function EnhancedPluginRow({
     <>
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>
-          <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open)}>
+          <IconButton aria-label="expand row" size="small" onClick={() => setOpen((v) => !v)}>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
@@ -150,13 +169,21 @@ function EnhancedPluginRow({
         </TableCell>
         <TableCell>
           <Stack direction="row" spacing={1} alignItems="center">
-            <ExtensionIcon fontSize="small" color="primary" />
+            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+              {iconNode ?? <ExtensionIcon fontSize="small" color="primary" />}
+            </Box>
             <Typography variant="body1" fontWeight="medium">
               {plugin.nodeType}
             </Typography>
           </Stack>
         </TableCell>
-        <TableCell>{plugin.displayName}</TableCell>
+        <TableCell>
+          <Tooltip title={description} placement="top-start">
+            <Typography variant="body2" sx={{ cursor: 'default' }}>
+              {plugin.displayName}
+            </Typography>
+          </Tooltip>
+        </TableCell>
         <TableCell>
           {dependencies.length > 0 ? (
             <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
@@ -174,22 +201,22 @@ function EnhancedPluginRow({
             </Stack>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              No dependencies
+              {t('plugins.noDependencies', 'No dependencies')}
             </Typography>
           )}
         </TableCell>
         <TableCell>
           <Stack direction="row" spacing={1}>
-            {plugin.ui && <Chip label="UI" size="small" color="primary" variant="outlined" />}
-            {plugin.database && (
-              <Chip label="DB" size="small" color="secondary" variant="outlined" />
+            {plugin.hasUI && <Chip label="UI" size="small" color="primary" variant="outlined" />}
+            {plugin.hasServices && (
+              <Chip label="Services" size="small" color="secondary" variant="outlined" />
             )}
-            {!!plugin.lifecycle && (
-              <Chip label="Lifecycle" size="small" color="success" variant="outlined" />
+            {plugin.hasWorker && (
+              <Chip label="Worker" size="small" color="success" variant="outlined" />
             )}
           </Stack>
         </TableCell>
-        <TableCell align="center">{plugin.category?.createOrder || 'N/A'}</TableCell>
+        <TableCell align="center">{plugin.createOrder || 'N/A'}</TableCell>
         <TableCell>
           <IconButton
             aria-label="more"
@@ -212,18 +239,18 @@ function EnhancedPluginRow({
           >
             <MenuItem onClick={handleReset}>
               <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
-              Reset {isFolderPlugin ? '(All Plugins)' : 'Plugin'}
+              {t('plugins.actions.reset', 'Reset Plugin')}
             </MenuItem>
             <Divider />
             {canDelete ? (
               <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
                 <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                Delete Plugin
+                {t('plugins.actions.delete', 'Delete Plugin')}
               </MenuItem>
             ) : (
               <MenuItem disabled sx={{ color: 'text.disabled' }}>
                 <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-                Delete (Disabled for Core Plugin)
+                {t('plugins.actions.deleteDisabled', 'Delete (Disabled for Core Plugin)')}
               </MenuItem>
             )}
           </Menu>
@@ -234,13 +261,31 @@ function EnhancedPluginRow({
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2 }}>
               <Typography variant="h6" gutterBottom component="div">
-                Plugin Details
+                {t('plugins.details', 'Plugin Details')}
               </Typography>
 
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Dependencies Graph
+                    {t('plugins.fields.package', 'Package')}
+                  </Typography>
+                  <Typography variant="body2">
+                    {plugin.packageName} ({plugin.version ?? 'workspace'})
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('plugins.fields.description', 'Description')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {description}
+                  </Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('plugins.fields.dependencies', 'Dependencies')}
                   </Typography>
                   {dependencies.length > 0 ? (
                     <Box sx={{ mt: 1, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
@@ -250,37 +295,28 @@ function EnhancedPluginRow({
                     </Box>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      {isFolderPlugin
-                        ? 'Core plugin - Foundation for all other plugin-loader'
-                        : 'This plugin has no dependencies'}
+                      {t('plugins.noDependencies', 'No dependencies')}
                     </Typography>
                   )}
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('plugins.fields.menuGroup', 'Menu Group')}
+                  </Typography>
+                  <Typography variant="body2">{plugin.menuGroup}</Typography>
                 </Box>
 
                 {isFolderPlugin && (
                   <Box>
                     <Alert severity="info" icon={<AccountTreeIcon />}>
                       <Typography variant="body2">
-                        <strong>Core Plugin:</strong> This plugin cannot be deleted as it provides
-                        the foundation for all other plugins.
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>Reset behavior:</strong> Resetting the folder plugin will completely
-                        clear ALL data: TreeNodes, PeerEntity, GroupEntity, and RelationalEntity for
-                        all plugins, then recreate initial trees.
+                        <strong>{t('plugins.corePlugin', 'Core Plugin')}:</strong> {t(
+                          'plugins.corePluginMessage',
+                          'This plugin cannot be deleted as it provides the foundation for all other plugins.',
+                        )}
                       </Typography>
                     </Alert>
-                  </Box>
-                )}
-
-                {plugin.database && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Database Configuration
-                    </Typography>
-                    <Typography variant="body2">
-                      Entity Store: {plugin.database?.entityStore || `${plugin.nodeType}s`}
-                    </Typography>
                   </Box>
                 )}
               </Stack>
@@ -485,6 +521,7 @@ function DeletePluginDialog({
 
 export default function PluginsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
   const [workerPlugins, setWorkerPlugins] = useState<DisplayPlugin[]>([]);
   const [uiPluginsList, setUiPluginsList] = useState<DisplayPlugin[]>([]);
   const [pluginDependencies, setPluginDependencies] = useState<Record<string, string[]>>({});
@@ -498,19 +535,6 @@ export default function PluginsPage() {
 
   // Check if running in production mode
   const isProduction = import.meta.env.MODE === 'production';
-
-  // Load plugin dependencies from package.json metadata
-  const loadPluginDependencies = () => {
-    // This would be loaded from the plugin metadata in package.json
-    const dependencies: Record<string, string[]> = {
-      folder: [],
-      basemap: ['folder'],
-      shape: ['folder'],
-      spreadsheet: ['folder'],
-      styler: ['spreadsheet'], // styler-plugin depends on spreadsheet-plugin for CSV/TSV handling
-    };
-    setPluginDependencies(dependencies);
-  };
 
   // Calculate affected plugin-loader (children) when operating on a parent
   const calculateAffectedPlugins = (pluginName: string): string[] => {
@@ -636,27 +660,40 @@ export default function PluginsPage() {
     }
   };
    */
-  const loadPlugins = useCallback(async function() {
+  const loadPlugins = useCallback(() => {
     try {
       setLoading(true);
-      // Source of truth: vite virtual module `virtual:plugin-definitions`
-      const mod: any = await import('virtual:plugin-definitions');
-      const defs: any[] = Array.isArray(mod?.default) ? mod.default : [];
-      const plugins: DisplayPlugin[] = defs.map((d, idx) => ({
-        nodeType: d.nodeType as NodeType,
-        displayName: (d.displayName || d.name || d.nodeType) as string,
-        category: { createOrder: d?.category?.createOrder ?? (idx + 1) },
-        database: d?.database ? { entityStore: d.database?.entityStore || '' } : undefined,
-        ui: d?.ui ? { dialogComponentPath: d.ui?.dialogComponentPath } : undefined,
-        lifecycle: d?.lifecycle ?? undefined,
+      const installed = getInstalledPlugins();
+      const display: DisplayPlugin[] = installed.map((plugin) => ({
+        nodeType: plugin.nodeType as NodeType,
+        displayName: plugin.label,
+        description: plugin.description,
+        dependencies: plugin.dependencies,
+        menuGroup: plugin.menuGroup,
+        createOrder: plugin.createOrder,
+        icon: plugin.icon,
+        iconColor: plugin.iconColor,
+        backgroundColor: plugin.backgroundColor,
+        hasUI: plugin.hasUI,
+        hasWorker: plugin.hasWorker,
+        hasServices: plugin.hasServices,
+        hasCommon: plugin.hasCommon,
+        packageName: plugin.packageName,
+        version: plugin.version,
       }));
-      setWorkerPlugins(plugins);
-      setUiPluginsList(plugins);
 
-      loadPluginDependencies();
+      const dependencyMap: Record<string, string[]> = {};
+      for (const plugin of display) {
+        dependencyMap[plugin.nodeType] = plugin.dependencies;
+      }
+
+      setWorkerPlugins(display);
+      setUiPluginsList(display);
+      setPluginDependencies(dependencyMap);
+      setError(null);
     } catch (err) {
       console.error('Failed to load plugins:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load plugin-loader');
+      setError(err instanceof Error ? err.message : 'Failed to load plugin metadata');
     } finally {
       setLoading(false);
     }
@@ -763,7 +800,7 @@ export default function PluginsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {workerPlugins.map((plugin: any, index: number) => (
+                {workerPlugins.map((plugin: DisplayPlugin, index: number) => (
                   <EnhancedPluginRow
                     key={plugin.nodeType}
                     plugin={plugin}
@@ -823,18 +860,22 @@ export default function PluginsPage() {
                 <TableRow>
                   <TableCell>#</TableCell>
                   <TableCell>Node Type</TableCell>
-                  <TableCell>Components</TableCell>
+                  <TableCell>Capabilities</TableCell>
                   <TableCell>Create Order</TableCell>
                   <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {uiPluginsList.map((plugin: any, index: number) => (
+                {uiPluginsList.map((plugin: DisplayPlugin, index: number) => (
                   <TableRow key={plugin.nodeType}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <ExtensionIcon fontSize="small" color="primary" />
+                        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                          {getMuiIconComponent(plugin.icon.muiIconName, plugin.icon.emoji, plugin.iconColor) ?? (
+                            <ExtensionIcon fontSize="small" color="primary" />
+                          )}
+                        </Box>
                         <Typography variant="body1" fontWeight="medium">
                           {plugin.nodeType}
                         </Typography>
@@ -842,20 +883,18 @@ export default function PluginsPage() {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1}>
-                        {plugin.components?.createDialog && (
-                          <Chip label="Dialog" size="small" variant="outlined" />
-                        )}
-                        {plugin.components?.editDialog && (
-                          <Chip label="Edit" size="small" variant="outlined" />
-                        )}
-                        {plugin.components?.icon && (
-                          <Chip label="Icon" size="small" variant="outlined" />
-                        )}
+                        {plugin.hasUI && <Chip label="UI" size="small" variant="outlined" />}
+                        {plugin.hasServices && <Chip label="Services" size="small" variant="outlined" />}
+                        {plugin.hasWorker && <Chip label="Worker" size="small" variant="outlined" />}
                       </Stack>
                     </TableCell>
-                    <TableCell align="center">{plugin.menu?.createOrder || 'N/A'}</TableCell>
+                    <TableCell align="center">{plugin.createOrder || 'N/A'}</TableCell>
                     <TableCell>
-                      <Tooltip title="Plugin is active">
+                      <Tooltip
+                        title={t(`plugins.${plugin.nodeType}.description`, {
+                          defaultValue: plugin.description || plugin.displayName,
+                        })}
+                      >
                         <CheckCircleIcon color="success" fontSize="small" />
                       </Tooltip>
                     </TableCell>

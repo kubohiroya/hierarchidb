@@ -75,8 +75,8 @@ visibility?: {
 ### Phase -1: BaseEntity重複定義の統合
 
 #### 作業内容
-1. `packages/common/plugin-base/src/types/base-lifecycle-types.ts`のBaseEntity削除
-2. `packages/common/types/src/entity-lifecycle-types.ts`の定義に統一
+1. `packages/common/plugin-base/src/types/base-lifecycle-plugin-definition.ts`のBaseEntity削除
+2. `packages/common/types/src/entity-lifecycle-plugin-definition.ts`の定義に統一
 3. 全参照を更新
 
 ### Phase -1: 未使用パッケージの削除（新規追加）

@@ -23,16 +23,16 @@ declare global {
   var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, unknown> | undefined;
 }
 
-import { loadBasemapEntitiesDbModule } from '@hierarchidb/plugins-basemap-plugin/worker-factory';
-import { loadFolderEntitiesDbModule } from '@hierarchidb/plugins-folder-plugin/worker-factory';
-import { loadLinkerEntitiesDbModule } from '@hierarchidb/plugins-linker-plugin/worker-factory';
-import { loadLocationEntitiesDbModule } from '@hierarchidb/plugins-location-plugin/worker-factory';
-import { loadResolverEntitiesDbModule } from '@hierarchidb/plugins-resolver-plugin/worker-factory';
-import { loadRouteEntitiesDbModule } from '@hierarchidb/plugins-route-plugin/worker-factory';
-import { loadShapeEntitiesDbModule } from '@hierarchidb/plugins-shape-plugin/worker-factory';
-import { loadSpreadsheetEntitiesDbModule } from '@hierarchidb/plugins-spreadsheet-plugin/worker-factory';
-import { loadStylerEntitiesDbModule } from '@hierarchidb/plugins-styler-plugin/worker-factory';
-import { loadTimelineEntitiesDbModule } from '@hierarchidb/plugins-timeline-plugin/worker-factory';
+import { loadBasemapEntitiesDbModule } from '@hierarchidb/basemap-plugin/worker-factory';
+import { loadFolderEntitiesDbModule } from '@hierarchidb/folder-plugin/worker-factory';
+import { loadLinkerEntitiesDbModule } from '@hierarchidb/linker-plugin/worker-factory';
+import { loadLocationEntitiesDbModule } from '@hierarchidb/location-plugin/worker-factory';
+import { loadResolverEntitiesDbModule } from '@hierarchidb/resolver-plugin/worker-factory';
+import { loadRouteEntitiesDbModule } from '@hierarchidb/route-plugin/worker-factory';
+import { loadShapeEntitiesDbModule } from '@hierarchidb/shape-plugin/worker-factory';
+import { loadSpreadsheetEntitiesDbModule } from '@hierarchidb/spreadsheet-plugin/worker-factory';
+import { loadStylerEntitiesDbModule } from '@hierarchidb/styler-plugin/worker-factory';
+import { loadTimelineEntitiesDbModule } from '@hierarchidb/timeline-plugin/worker-factory';
 
 export const peerDbLoaders: Record<string, PeerDbLoader> = {
   'basemap': async () => {

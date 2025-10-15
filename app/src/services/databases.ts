@@ -24,48 +24,48 @@ async function loadDatabase<T extends PrewarmDatabase>(
 
 export async function getBaseMapDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('basemap', async () => {
-    const mod = await import('@hierarchidb/plugins-basemap-plugin/database');
-    const { BaseMapDatabase } = mod as typeof import('@hierarchidb/plugins-basemap-plugin/database');
+    const mod = await import('@hierarchidb/basemap-plugin/database');
+    const { BaseMapDatabase } = mod as typeof import('@hierarchidb/basemap-plugin/database');
     return new BaseMapDatabase() as unknown as PrewarmDatabase;
   });
 }
 
 export async function getResolverDB(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('resolver', async () => {
-    const mod = await import('@hierarchidb/plugins-resolver-plugin/database');
-    const { resolverDB } = mod as typeof import('@hierarchidb/plugins-resolver-plugin/database');
+    const mod = await import('@hierarchidb/resolver-plugin/database');
+    const { resolverDB } = mod as typeof import('@hierarchidb/resolver-plugin/database');
     return resolverDB as unknown as PrewarmDatabase;
   });
 }
 
 export async function getSpreadsheetDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('spreadsheet', async () => {
-    const mod = await import('@hierarchidb/plugins-spreadsheet-plugin/database');
-    const { SpreadsheetDatabase } = mod as typeof import('@hierarchidb/plugins-spreadsheet-plugin/database');
+    const mod = await import('@hierarchidb/spreadsheet-plugin/database');
+    const { SpreadsheetDatabase } = mod as typeof import('@hierarchidb/spreadsheet-plugin/database');
     return new SpreadsheetDatabase() as unknown as PrewarmDatabase;
   });
 }
 
 export async function getRouteDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('route', async () => {
-    const mod = await import('@hierarchidb/plugins-route-plugin/database');
-    const { RouteDatabase } = mod as typeof import('@hierarchidb/plugins-route-plugin/database');
+    const mod = await import('@hierarchidb/route-plugin/database');
+    const { RouteDatabase } = mod as typeof import('@hierarchidb/route-plugin/database');
     return new RouteDatabase() as unknown as PrewarmDatabase;
   });
 }
 
 export async function getShapeDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('shape', async () => {
-    const mod = await import('@hierarchidb/plugins-shape-plugin/services');
-    const { ShapeDB } = mod as typeof import('@hierarchidb/plugins-shape-plugin/services');
+    const mod = await import('@hierarchidb/shape-plugin/services');
+    const { ShapeDB } = mod as typeof import('@hierarchidb/shape-plugin/services');
     return new ShapeDB() as unknown as PrewarmDatabase;
   });
 }
 
 export async function getLocationEphemeralDB(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('location', async () => {
-    const mod = await import('@hierarchidb/plugins-location-plugin/services');
-    const { getEphemeralLocationDB } = mod as typeof import('@hierarchidb/plugins-location-plugin/services');
+    const mod = await import('@hierarchidb/location-plugin/services');
+    const { getEphemeralLocationDB } = mod as typeof import('@hierarchidb/location-plugin/services');
     return getEphemeralLocationDB() as unknown as PrewarmDatabase;
   });
 }

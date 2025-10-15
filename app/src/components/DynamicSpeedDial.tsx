@@ -12,6 +12,7 @@ import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
 import type { TreeContext } from '~/plugin-loader/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeId } from '@hierarchidb/common-types';
+import { useTranslation } from 'react-i18next';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
@@ -57,6 +58,7 @@ export function DynamicSpeedDial({
   const vmItems = usePluginMenuItems(treeId);
   // Use VM path only when we actually have menu items
   const useVM = vmItems.length > 0;
+  const { t } = useTranslation('common');
 
   const handleClose = () => setOpen(false);
   // const handleToggle = () => setOpen((v) => !v);
@@ -227,7 +229,9 @@ export function DynamicSpeedDial({
               <SpeedDialAction
                 key={item.key}
                 icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji, item.icon?.color)}
-                tooltipTitle={item.label}
+                tooltipTitle={t(`plugins.${item.nodeType}.description`, {
+                  defaultValue: item.description || item.label,
+                })}
                 onClick={() => handleVMActionClick(item.nodeType)}
                 sx={{
                   '& .MuiTooltip-tooltip': {
@@ -242,9 +246,10 @@ export function DynamicSpeedDial({
                     pointerEvents: 'auto',
                     touchAction: 'manipulation',
                     transform: 'translate3d(0,0,0)',
-                    // Keep background accent with slight transparency to improve contrast
-                    bgcolor: item.icon?.color ? `${item.icon.color}1A` : undefined, // ~10% opacity
-                    '&:hover': { bgcolor: item.icon?.color ? `${item.icon.color}33` : undefined },
+                    bgcolor: item.backgroundColor,
+                    '&:hover': {
+                      bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
+                    },
                   },
                 }}
                 tooltipPlacement="left"

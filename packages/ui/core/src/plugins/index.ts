@@ -1,7 +1,7 @@
 // Main plugin system exports
 export { UIPluginRegistry, getUIPluginRegistry } from './registry/UIPluginRegistry.js';
 import { getUIPluginRegistry } from './registry/UIPluginRegistry.js';
-import type { UIActionHooks, UIPluginDefinition } from './types.js';
+import type { UIActionHooks, UIPluginDefinition } from './plugin-definition.js';
 
 export { NodeDataAdapter } from './adapters/NodeDataAdapter.js';
 export { UnifiedNodeOperations } from './operations/UnifiedNodeOperations.js';
@@ -50,7 +50,7 @@ export type {
   DragStartResult,
   DropParams,
   DropResult,
-} from './types.js';
+} from './plugin-definition.js';
 
 // Plugin registration helper
 export function registerAllUIPlugins(): void {

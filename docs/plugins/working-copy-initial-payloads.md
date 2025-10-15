@@ -2,7 +2,7 @@
 
 本ドキュメントでは、ツリーノードを新規作成する際に各プラグインの PeerEntity（ワーキングコピー／ドラフト）がどのような初期値で生成されるかを JSON 形式で整理する。記述している値はリポジトリ内の実装値をそのまま反映しており、タイムスタンプなどの実行時に決定する値はコメントで補足した。
 
-Working Copy と PeerStore の初期化は `@hierarchidb/plugins-base-plugin` が提供する `createDraftWorkingCopyBase`／`createPeerStoreNormalizer` で段階的に統一する方針であり、今後はここに記載した既定値をそれらのヘルパーへ実装していく予定である。
+Working Copy と PeerStore の初期化は `@hierarchidb/base-plugin` が提供する `createDraftWorkingCopyBase`／`createPeerStoreNormalizer` で段階的に統一する方針であり、今後はここに記載した既定値をそれらのヘルパーへ実装していく予定である。
 
 > 最終更新: 2025-10-05
 

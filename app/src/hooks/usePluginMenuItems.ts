@@ -4,17 +4,10 @@
 import type { TreeId } from '@hierarchidb/common-types';
 import { useEffect, useState } from 'react';
 import { prefetchMuiIcons } from '@hierarchidb/ui-icon';
-import type { TreeContext } from '~/plugin-loader/menu-builders.js';
+import type { TreeContext, PluginMenuItem as LoaderMenuItem } from '~/plugin-loader/menu-builders.js';
 // Local replicas of menu types to avoid hard dependency on virtual modules
 
-export interface PluginMenuItem {
-  key: string;
-  nodeType: string;
-  label: string;
-  icon?: { muiIconName?: string; emoji?: string; color?: string };
-  group?: 'basic' | 'container' | 'document' | 'advanced' | string;
-  priority: number;
-}
+export type PluginMenuItem = LoaderMenuItem;
 
 type MenuBuildersCache = {
   buildMenuItemsForTreeId?: (treeId?: TreeId | null) => PluginMenuItem[];

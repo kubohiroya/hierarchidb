@@ -4,7 +4,7 @@
 
 - `docs/13-trash-operations-analysis.md` - 要件分析・実装方針
 - `packages/worker/src/services/TreeMutationServiceImpl.ts` - メイン実装
-- `packages/core/src/types/tree-lifecycle-types.ts` - 型定義拡張
+- `packages/core/src/types/tree-lifecycle-plugin-definition.ts` - 型定義拡張
 - `packages/worker/src/__tests__/integration/folder-operations.test.ts` - 統合テスト
 
 ## 🎯 最終結果 (2025-01-19)

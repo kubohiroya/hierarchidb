@@ -45,4 +45,16 @@ export * from './AbstractWorkerPoolManager.js';
 // Unified batch control API
 export * from './BaseBatchSessionManager.js';
 export * from './lane/LaneSemaphoreRegistry.js';
-export * from './BatchControlAPI.js';
+export * from './BatchService.js';
+export * from './ports.js';
+export * from './capability.js';
+
+export class FeatureDefinition {
+  static readonly manifest = { name: '@hierarchidb/batch', depends: ['@hierarchidb/compute'], provides: ['batch'] };
+
+  static init(): void {
+    // no-op
+  }
+}
+export * from './UnifiedBatchManagerBase.js';
+export * from './hooks/useBatchProgress.js';

@@ -12,7 +12,7 @@ import { pluginMapWorker } from 'virtual:plugin-registry-worker';
 
 export const RUNTIME_MODULE_IDS = {
   runtimeWorker: '@hierarchidb/runtime-worker',
-  runtimeWorkerBootstrap: '@hierarchidb/runtime-worker-bootstrap',
+  runtimeWorkerBootstrap: '@hierarchidb/runtime-client',
 } as const;
 
 export const OPTIONAL_FEATURE_MODULE_IDS = {
@@ -48,12 +48,12 @@ export type PluginWorkerModule = Record<string, any> | any;
 const runtimeWorkerImporter = () =>
   import('@hierarchidb/runtime-worker') as Promise<RuntimeWorkerModule>;
 const runtimeWorkerBootstrapImporter = () =>
-  import('@hierarchidb/runtime-worker-bootstrap') as Promise<Record<string, unknown>>;
+  import('@hierarchidb/runtime-client') as Promise<Record<string, unknown>>;
  */
 
 const optionalFeatureImporters: Record<OptionalFeatureId, () => Promise<OptionalFeatureModule>> = {
   mapAdapter: () => import('@hierarchidb/map-adapter') as Promise<OptionalFeatureModule>,
-  tabularXlsx: () => import('@hierarchidb/tabular-xlsx') as Promise<OptionalFeatureModule>,
+  tabularXlsx: () => import('@hierarchidb/tabular-source-xlsx') as Promise<OptionalFeatureModule>,
 };
 
 /**
@@ -81,7 +81,7 @@ export function getPluginWorkerModuleId(id: PluginWorkerId): string {
 /**
  * Dynamically import a plugin worker bundle using the virtual plugin registry.
  */
-/*
+
 export function importPluginWorker<T extends PluginWorkerId>(id: T) {
   const loader = (pluginMapWorker as Record<string, () => Promise<unknown>>)[id as string];
   if (!loader) {
@@ -89,4 +89,4 @@ export function importPluginWorker<T extends PluginWorkerId>(id: T) {
   }
   return loader() as Promise<PluginWorkerModule>;
 }
- */
+

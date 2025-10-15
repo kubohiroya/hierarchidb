@@ -16,7 +16,7 @@
 
 import type { NodeType } from '@hierarchidb/common-types';
 
-// Provided by @hierarchidb/tools-vite-plugin-package-reader (vite virtual modules)
+// Provided by @hierarchidb/vite-plugin-node-type-registry (vite virtual modules)
 // These module declarations are injected during dev by the Vite plugin.
 // In build, they are real modules generated at compile time.
 import pluginDefinitions from 'virtual:plugin-definitions';

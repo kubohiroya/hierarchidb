@@ -49,7 +49,7 @@ UI Layer（新設計）
 ### 1. UIPluginDefinition（統一インターフェース）
 
 ```typescript
-// packages/ui-core/src/plugin-loader/lifecycle-types.ts
+// packages/ui-core/src/plugin-loader/lifecycle-plugin-definition.ts
 export interface UIPluginDefinition {
   // 基本情報
   nodeType: TreeNodeType;

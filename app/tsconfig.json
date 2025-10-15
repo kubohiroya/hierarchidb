@@ -27,7 +27,7 @@
       "@hierarchidb/runtime-worker": [
         "../packages/runtime/worker"
       ],
-      "@hierarchidb/runtime-worker-bootstrap": [
+      "@hierarchidb/runtime-client": [
         "../packages/runtime/worker-bootstrap"
       ],
       "@hierarchidb/runtime-shared-module-paths": [
@@ -81,31 +81,31 @@
       "@hierarchidb/ui-treeconsole-treetable": [
         "../packages/ui/treeconsole/treetable/dist"
       ],
-      "@hierarchidb/plugins-basemap-plugin/database": [
-        "../packages/plugins/basemap-plugin/src/database/index.ts"
+      "@hierarchidb/basemap-plugin/database": [
+        "../packages/plugins/basemap-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/plugins-linker-plugin/services": [
+      "@hierarchidb/linker-plugin/services": [
         "../packages/plugins/linker-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-location-plugin/services": [
+      "@hierarchidb/location-plugin/services": [
         "../packages/plugins/location-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-resolver-plugin/database": [
-        "../packages/plugins/resolver-plugin/src/database/index.ts"
+      "@hierarchidb/resolver-plugin/database": [
+        "../packages/plugins/resolver-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/plugins-route-plugin/database": [
-        "../packages/plugins/route-plugin/src/database/index.ts"
+      "@hierarchidb/route-plugin/database": [
+        "../packages/plugins/route-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/plugins-shape-plugin/services": [
+      "@hierarchidb/shape-plugin/services": [
         "../packages/plugins/shape-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-spreadsheet-plugin/database": [
-        "../packages/plugins/spreadsheet-plugin/src/database/index.ts"
+      "@hierarchidb/spreadsheet-plugin/database": [
+        "../packages/plugins/spreadsheet-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/plugins-styler-plugin/services": [
+      "@hierarchidb/styler-plugin/services": [
         "../packages/plugins/styler-plugin/src/services/index.ts"
       ],
-      "@hierarchidb/plugins-timeline-plugin/services": [
+      "@hierarchidb/timeline-plugin/services": [
         "../packages/plugins/timeline-plugin/src/services/index.ts"
       ]
     },

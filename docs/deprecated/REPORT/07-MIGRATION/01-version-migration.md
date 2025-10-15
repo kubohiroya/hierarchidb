@@ -65,7 +65,7 @@ interface TreeNode {
 
 **Migration Script:**
 ```typescript
-// migrate-id-lifecycle-types.ts
+// migrate-id-lifecycle-plugin-definition.ts
 import { NodeId, TreeId, EntityId } from '@hierarchidb/core';
 
 async function migrateDatabase() {

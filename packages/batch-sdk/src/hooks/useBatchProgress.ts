@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BatchProgressAdapter, UnifiedProgressInfo, UseBatchProgressOptions } from '~/BatchControlAPI.js';
+import { BatchProgressAdapter, UnifiedProgressInfo, UseBatchProgressOptions } from '@hierarchidb/common-api';
 
 export function useBatchProgress(
   adapter: BatchProgressAdapter | null,

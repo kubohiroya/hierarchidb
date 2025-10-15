@@ -46,7 +46,7 @@ HierarchiDBのプラグインシステムは、Worker層とUI層の2つの独立
 #### 1. プラグイン定義（WorkerPluginDefinition）
 
 ```typescript
-// packages/worker/src/plugin-loader/lifecycle-types.ts
+// packages/worker/src/plugin-loader/lifecycle-plugin-definition.ts
 export interface WorkerPluginDefinition<
   TEntity extends BaseEntity,
   TSubEntity extends BaseSubEntity,
@@ -185,7 +185,7 @@ export class BaseMapHandler implements EntityHandler<BaseMapEntity> {
 #### 1. プラグイン定義（UIPluginDefinition）
 
 ```typescript
-// packages/ui-core/src/plugin-loader/lifecycle-types.ts
+// packages/ui-core/src/plugin-loader/lifecycle-plugin-definition.ts
 export interface UIPluginDefinition {
   // 基本情報
   nodeType: TreeNodeType;
@@ -384,7 +384,7 @@ packages/plugins/[plugin-name]/
 │   │       └── theme.ts
 │   │
 │   ├── shared/                  # 共有型定義・ユーティリティ
-│   │   ├── lifecycle-types.ts
+│   │   ├── lifecycle-plugin-definition.ts
 │   │   └── constants.ts
 │   │
 │   └── tests/                   # テスト

@@ -16,8 +16,8 @@ src/adapters/
 ├── subscriptions/               # サブスクリプション変換
 │   ├── TreeObservableAdapter.ts # Observable → Callback変換
 │   └── SubscriptionManager.ts   # サブスクリプション管理
-├── lifecycle-types.ts                     # アダプター専用型定義
-└── utils.ts                     # CommandEnvelope生成等ヘルパー
+├── lifecycle-plugin-definition.ts                     # アダプター専用型定義
+└── fetchSaveMetadata.ts                     # CommandEnvelope生成等ヘルパー
 ```
 
 ## 段階的実装アプローチ
@@ -27,7 +27,7 @@ src/adapters/
 #### 1.1 CommandEnvelope生成ヘルパー
 
 ```typescript
-// adapters/utils.ts
+// adapters/fetchSaveMetadata.ts
 export function createCommand<K extends string, P>(
   kind: K,
   payload: P,
@@ -52,7 +52,7 @@ export function createCommand<K extends string, P>(
 #### 1.2 アダプター専用型定義
 
 ```typescript
-// adapters/lifecycle-types.ts
+// adapters/lifecycle-plugin-definition.ts
 export type LegacyCallback<T> = (data: T) => void;
 export type LegacySubscription = () => void;
 
@@ -252,7 +252,7 @@ export class WorkingCopyCommandsAdapter {
 
 実装は以下の優先順位で段階的に行います：
 
-1. **Phase 1**: `utils.ts` と `lifecycle-types.ts` (基盤)
+1. **Phase 1**: `fetchSaveMetadata.ts` と `lifecycle-plugin-definition.ts` (基盤)
 2. **Phase 2**: `TreeObservableAdapter.ts` (サブスクリプション変換)
 3. **Phase 3**: `TreeMutationCommands.ts` (基本CRUD)  
 4. **Phase 4**: `WorkingCopyCommands.ts` (編集フロー)

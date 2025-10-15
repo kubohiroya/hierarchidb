@@ -53,7 +53,7 @@
 - **依存タスク**: TASK-0001
 - **実装詳細**:
   ```typescript
-  // packages/core/src/types/entity-lifecycle-types.ts
+  // packages/core/src/types/entity-lifecycle-plugin-definition.ts
   export interface BaseEntity {
     nodeId: TreeNodeId;
     createdAt: Timestamp;

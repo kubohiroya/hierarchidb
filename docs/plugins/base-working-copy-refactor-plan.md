@@ -45,8 +45,8 @@
 
 | プラグイン/モジュール | 主な対応内容 | 備考 |
 | --- | --- | --- |
-| `@hierarchidb/plugins-location-plugin` | `workingCopy.x` -> `workingCopy.draft.x` へ置換。TanStack Router 移行済みのため比較的少ない。 | ステップ UI と handler の両方を更新予定。 |
-| `@hierarchidb/plugins-route-plugin` | ステップ UI 全体で `workingCopy.*` を `draft.*` に置換。バリデーションロジック更新。 | `useWorkingCopy` hook との整合性確認が必要。 |
+| `@hierarchidb/location-plugin` | `workingCopy.x` -> `workingCopy.draft.x` へ置換。TanStack Router 移行済みのため比較的少ない。 | ステップ UI と handler の両方を更新予定。 |
+| `@hierarchidb/route-plugin` | ステップ UI 全体で `workingCopy.*` を `draft.*` に置換。バリデーションロジック更新。 | `useWorkingCopy` hook との整合性確認が必要。 |
 | `@hierarchidb/plugins/shape-plugin` | UI/Worker/API/Docs 全域に `draft` 化が必要。 | バッチセッション連携あり、影響大。 |
 | `@hierarchidb/plugins/basemap-plugin` | Handler と tests の `workingCopy` 参照が多いため、先に共通ユーティリティで `draft` を参照するヘルパーを導入予定。 | |
 | `@hierarchidb/plugins/resolver-plugin` | Handler が `draft` を既に併用しているため、置換規模は小さめ。 | |

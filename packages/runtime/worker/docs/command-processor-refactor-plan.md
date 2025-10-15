@@ -59,7 +59,7 @@
   - `CommandEnvelope` の `kind` を正規フィールドとし、`type` は後方互換のエイリアス（読み取り専用）に限定。
   - `commandId/groupId/correlationId/timestamp` の意味と必須性を明文化、型に反映。
 - 手順:
-  1) 型定義ファイル（`src/services/command-types.ts`）で `type` を Deprecated 扱いに注釈し、`kind` の使用を強制。
+  1) 型定義ファイル（`src/services/command-plugin-definition.ts`）で `type` を Deprecated 扱いに注釈し、`kind` の使用を強制。
   2) 生成系（`createEnvelope`）の出力を `kind` 基準に統一、`type` は自動同期のみ。
   3) 依存箇所の使用を `kind` に寄せる（検索置換＋型エラー修正）。
 - 成果物: 統一されたエンベロープ仕様と型、最小限の呼び出し箇所の更新。

@@ -930,7 +930,7 @@ packages/plugins/basemap/
 ├── vite.config.ts                 # ビルド設定
 ├── src/
 │   ├── openstreetmap-type.ts                   # エントリーポイント
-│   ├── lifecycle-types.ts                   # プラグイン固有の型定義
+│   ├── lifecycle-plugin-definition.ts                   # プラグイン固有の型定義
 │   ├── components/                # Reactコンポーネント
 │   │   ├── BasemapView.tsx
 │   │   ├── BasemapEdit.tsx

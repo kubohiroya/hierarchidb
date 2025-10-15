@@ -11,7 +11,7 @@ packages/plugins/spreadsheet/
 │   ├── entities/                    # エンティティ定義
 │   │   ├── SpreadsheetMetadata.ts   # PersistentRelationalEntity
 │   │   ├── SpreadsheetRefEntity.ts  # PersistentPeerEntity
-│   │   └── lifecycle-types.ts                 # 型定義
+│   │   └── lifecycle-plugin-definition.ts                 # 型定義
 │   │
 │   ├── storage/                     # ストレージ層
 │   │   ├── SpreadsheetDB.ts        # Dexieデータベース

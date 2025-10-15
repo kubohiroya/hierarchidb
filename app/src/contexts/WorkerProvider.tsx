@@ -8,8 +8,8 @@
 import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import { WorkerInitializationChannel, type WorkerClientRef } from '@hierarchidb/runtime-worker-bootstrap';
+import type { WorkerAPI } from '@hierarchidb/runtime-worker';
+import { WorkerInitializationChannel, type WorkerClientRef } from '../../../packages/runtime/client';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;

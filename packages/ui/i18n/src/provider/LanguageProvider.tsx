@@ -7,7 +7,8 @@
 
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
-import { AdapterDateFns, LocalizationProvider } from '@hierarchidb/ui-date';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { enUS, ja } from 'date-fns/locale';
 import { type i18n as I18nInstance } from 'i18next';
 import { isDevEnv } from '../utils/env.js';

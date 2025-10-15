@@ -3,7 +3,7 @@
 ## 概要
 
 - Location / Route / Timeline / Shape / Styler / Spreadsheet / Linker の各プラグインは、`tsup` の d.ts 出力と `package.json` の `exports` / `typesVersions` を整備済み。App 側のシムはこれらに依存する分を削除済み。
-- 2025-09-18: App の `@hierarchidb/ui-theme` / `@hierarchidb/ui-auth` / `@hierarchidb/ui-treeconsole-toolbar` / `@hierarchidb/plugins-folder-plugin` シムを削除し、正式 d.ts へ移行。`@hierarchidb/common-type` の ambient からも `ui-theme` シムを除去済み。
+- 2025-09-18: App の `@hierarchidb/ui-theme` / `@hierarchidb/ui-auth` / `@hierarchidb/ui-treeconsole-toolbar` / `@hierarchidb/folder-plugin` シムを削除し、正式 d.ts へ移行。`@hierarchidb/common-type` の ambient からも `ui-theme` シムを除去済み。
 - 2025-09-18: Styler plugin の typecheck が通るよう import パス／Dexie 型宣言を修正（`dist` 経由の公式 d.ts を参照）。ワークスペース全体の `pnpm -w typecheck` で P0 エラーは解消。
 - 2025-09-19 23:05: RouteBatchManager / RouteBatchSession / RouteEntitiesDB の Dexie 操作から `as any` を撤廃し、進捗通知のレガシー互換 I/F を型安全に再実装。`packages/plugins/route-plugin` の `as any` 件数を 93 → 75 まで削減。
 - 2025-09-19 23:32: SearouteEngine / OsrmEngine / download registry / config / net ポート周辺を型安全化し、環境変数解決・共有ダウンロードサービス連携を見直し。`packages/plugins/route-plugin` の `as any` は 44 件まで縮減。
@@ -15,18 +15,18 @@
 - 2025-09-20 01:55: Shape plugin の UI パネル／Map preview／Worker API まわりを調整し、`packages/plugins/shape-plugin` は 11 件、ワークスペース総数は 678 に減少（残りはテスト／モックのみ）。
 - 2025-09-20 02:10: Shape plugin の extension steps / ハンドラを型安全化し、実装コードの `as any` を 0 件に削減。ワークスペース総数は 667（残差はテスト／モックのみ）。
 - 2025-09-20 02:25: Folder plugin の base helpers / dialog steps / in-memory stores を型安全化し、実装コードでの `as any` を削減。ワークスペース総数は 651（残差はテスト・モック中心）。
-- 2025-09-20 02:45: Location plugin のダイアログ/パネル/バッチ UI を公式型へ揃え、公開アダプタからの `as any` を撤廃。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` グリーン、ワークスペース総数は 644（location-plugin は 41 件）。
-- 2025-09-20 03:05: Location plugin の Dexie ベース stores を型安全化し、peer/group/relation ストアから `as any` を排除。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` / `pnpm as-any:report` で location-plugin 33 件 / ワークスペース 636 件を確認。
-- 2025-09-20 03:25: Location plugin のダウンロード戦略とバッチ制御（registry/Overpass/Nominatim/SessionManager）を型整備し、`as any` を実装コードから 10 件まで削減。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` / `pnpm as-any:report` で location-plugin 10 件 / ワークスペース 613 件を確認。
-- 2025-09-20 03:35: Location plugin の LocationVectorTileService / SessionController / Custom search ルートを型安全化し、実装コードの `as any` を 0 件へ。`pnpm --filter @hierarchidb/plugins-location-plugin typecheck` / `pnpm as-any:report` で location-plugin 0 件 / ワークスペース 603 件を確認。
-- 2025-09-20 19:05: TreeConsole breadcrumb / timeline plugin から react-router / react-transition-group シムを撤去し、`packages/common/types/src/@types/react-transition-group` で Node16 対応の公式型を再定義。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck && build` と `pnpm --filter @hierarchidb/plugins-timeline-plugin typecheck && build` を実行し問題なし。
+- 2025-09-20 02:45: Location plugin のダイアログ/パネル/バッチ UI を公式型へ揃え、公開アダプタからの `as any` を撤廃。`pnpm --filter @hierarchidb/location-plugin typecheck` グリーン、ワークスペース総数は 644（location-plugin は 41 件）。
+- 2025-09-20 03:05: Location plugin の Dexie ベース stores を型安全化し、peer/group/relation ストアから `as any` を排除。`pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm as-any:report` で location-plugin 33 件 / ワークスペース 636 件を確認。
+- 2025-09-20 03:25: Location plugin のダウンロード戦略とバッチ制御（registry/Overpass/Nominatim/SessionManager）を型整備し、`as any` を実装コードから 10 件まで削減。`pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm as-any:report` で location-plugin 10 件 / ワークスペース 613 件を確認。
+- 2025-09-20 03:35: Location plugin の LocationVectorTileService / SessionController / Custom search ルートを型安全化し、実装コードの `as any` を 0 件へ。`pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm as-any:report` で location-plugin 0 件 / ワークスペース 603 件を確認。
+- 2025-09-20 19:05: TreeConsole breadcrumb / timeline plugin から react-router / react-transition-group シムを撤去し、`packages/common/types/src/@types/react-transition-group` で Node16 対応の公式型を再定義。`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck && build` と `pnpm --filter @hierarchidb/timeline-plugin typecheck && build` を実行し問題なし。
 - 2025-09-20 03:45: download ヘルパ（localProxy/DownloadService/DexieContentIndexPort）と FetchNetworkPort テストを型整備し、`@hierarchidb/feature-download` の実装 `as any` を撤廃。`pnpm as-any:report` でワークスペース合計 590 件を確認。
 - 2025-09-20 03:55: TabularWriter/Indexer/Query を再型付けし、`@hierarchidb/feature-tabular-store` 実装の `as any` を 0 件化。`pnpm as-any:report` でワークスペース 578 件を確認。
 - 2025-09-20 04:05: runtime-ui/plugin-dialog の controller/hooks/persistence/route/mocks を型整備し、UI 側実装から `as any` を撤廃。`pnpm as-any:report` でワークスペース 566 件を確認。
 - 2025-09-20 04:15: import-export サービスと base-plugin 基盤を型安全化し、ワークスペース全体を 545 件まで削減。`pnpm as-any:report` で feature-import-export/base-plugin の実装 `as any` が 0 件であることを確認。
 - 2025-09-20 04:25: runtime-worker NodeLifecycleManager のライフサイクル/参照カウント処理を型安全化し、Worker 側の `as any` を削減。`pnpm as-any:report` でワークスペース 533 件を確認。
 - 2025-09-20 07:50: runtime-worker CommandProcessor のバッチ/トラッシュ処理を正式型へ寄せ、superRoot 由来の Trash 解決も型付きでサポート。`pnpm --filter @hierarchidb/runtime-worker typecheck`・`pnpm --filter @hierarchidb/runtime-worker test:run`・`pnpm as-any:report` により runtime-worker 66 件 / ワークスペース 469 件を確認。
-- 2025-09-20 07:55: StylerEntityHandler の基底ハンドラ戻り値を型安全にアンラップし、spreadsheetMetadataId の参照漏れを防止。`pnpm --filter @hierarchidb/plugins-styler-plugin typecheck` / `pnpm as-any:report` で styler-plugin 18 件 / ワークスペース 421 件を確認。
+- 2025-09-20 07:55: StylerEntityHandler の基底ハンドラ戻り値を型安全にアンラップし、spreadsheetMetadataId の参照漏れを防止。`pnpm --filter @hierarchidb/styler-plugin typecheck` / `pnpm as-any:report` で styler-plugin 18 件 / ワークスペース 421 件を確認。
 - 2025-09-20 08:16: WorkingCopyService の手動コミット経路を型付けし、WorkingCopy ホルダー/ノード解決で `as any` を排除。`pnpm --filter @hierarchidb/runtime-worker typecheck`・`pnpm --filter @hierarchidb/runtime-worker test:run`・`pnpm as-any:report` により runtime-worker 33 件 / ワークスペース 388 件を確認。
 - 2025-09-20 08:20: WorkingCopyTreeNodeOperations のドラフト/破棄ハンドラを正式型で再構築し、CommandEnvelope 生成から `as any` を排除。`pnpm --filter @hierarchidb/runtime-worker typecheck`・`pnpm as-any:report` で runtime-worker 21 件 / ワークスペース 376 件を確認。
 - 2025-09-20 08:30: StageProcessingService のダウンロード/タイル生成パスを型付けし、geojson-vt / vt-pbf の動的 import とストレージ参照から `as any` を除去。`pnpm --filter @hierarchidb/runtime-worker typecheck`・`pnpm --filter @hierarchidb/runtime-worker test:run`・`pnpm as-any:report` により runtime-worker 14 件 / ワークスペース 369 件を確認。
@@ -49,7 +49,7 @@
 | `packages/plugins/feature/map-source/src/types/dexie.d.ts` など | 外部ライブラリ | 公式型未提供 | ライブラリの型確認／導入 or コメント付き維持 |
 | `packages/common/types/src/ambient-ui.d.ts` | `@hierarchidb/ui-icon`, `@hierarchidb/ui-core` など | UI 全体共通シム | 各 UI パッケージで dist 型を公開して縮退（`ui-theme` 分は削除済み） |
 | `packages/ui/treeconsole/*/ambient-breadcrumb.d.ts` | `@hierarchidb/ui-treeconsole-breadcrumb` | dist 型未検証 | treeconsole-breadcrumb で型を公開し削除 |
-| `app/src/types/shims.d.ts` | runtime-worker-bootstrap, common-type, util | FeatureFlags の ambient 定義のみ残存。追加宣言は禁止（virtual モジュールは `.generated/types`） |
+| `app/src/types/shims.d.ts` | runtime-client, common-type, util | FeatureFlags の ambient 定義のみ残存。追加宣言は禁止（virtual モジュールは `.generated/types`） |
 | （削除済み）`app/src/types/shims-ui-treeconsole-treetable.d.ts` | - | - | `@hierarchidb/ui-treeconsole-treetable` の公式 d.ts 参照へ移行（2025-09-18） |
 
 ### 現在残っている shim と理由
@@ -874,7 +874,7 @@ total occurrences: 201
 top packages:
   packages.node-type/spreadsheet-plugin       30
   packages.ui.core                            25
-  packages.plugins-styler-plugin            18
+  packages.styler-plugin            18
   packages.runtime-worker/worker              14
   packages.ui.treeconsole                     12
   packages.backend/bff                        10
@@ -1044,7 +1044,7 @@ total occurrences: 56
 total occurrences: 50
 
 追加メモ:
-  - tabular パーサ（CSV/JSONL）と RequiredColumnsValidator から `as any` を撤廃し、FileLike メタデータの扱いを共通化。`pnpm --filter @hierarchidb/tabular typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計 50 件を確認（次のフォーカス: ui/file・ui/map・runtime-worker-bootstrap など）。
+  - tabular パーサ（CSV/JSONL）と RequiredColumnsValidator から `as any` を撤廃し、FileLike メタデータの扱いを共通化。`pnpm --filter @hierarchidb/tabular typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計 50 件を確認（次のフォーカス: ui/file・ui/map・runtime-client など）。
 ```
 
 ### 2025-09-20 21:10 再集計（`pnpm as-any:report`）
@@ -1053,17 +1053,17 @@ total occurrences: 50
 total occurrences: 0
 
 追加メモ:
-  - ui-map・ui-monitoring・ui-lru-splitview・runtime-worker-bootstrap・feature-compute など残存ホットスポットの `as any` を段階的に除去。Deck.gl ストーリー向けに最小限の ambient module を追加し、Node16 モジュール解決に合わせて `.js` 拡張子を補完。
-  - feature-auth-recovery / tabular-xlsx / runtime-shared-batch-processor / plugins-linker-plugin 等も正式型で再構築し、ログ出力や環境判定ロジックでの `process` 依存を `globalThis` ベースへ統一。
+  - ui-map・ui-monitoring・ui-lru-splitview・runtime-client・feature-compute など残存ホットスポットの `as any` を段階的に除去。Deck.gl ストーリー向けに最小限の ambient module を追加し、Node16 モジュール解決に合わせて `.js` 拡張子を補完。
+  - feature-auth-recovery / tabular-xlsx / runtime-shared-batch-processor / linker-plugin 等も正式型で再構築し、ログ出力や環境判定ロジックでの `process` 依存を `globalThis` ベースへ統一。
   - `pnpm as-any:report` で 0 件を確認。あわせて以下を実行し、対応パッケージの型検証がすべてグリーンであることを確認済み。
     - `pnpm --filter @hierarchidb/compute typecheck`
     - `pnpm --filter @hierarchidb/util typecheck`
-    - `pnpm --filter @hierarchidb/runtime-worker-bootstrap typecheck`
+    - `pnpm --filter @hierarchidb/runtime-client typecheck`
     - `pnpm --filter @hierarchidb/tools-vite-plugin-package-reader typecheck`
     - `pnpm --filter @hierarchidb/auth-recovery typecheck`
     - `pnpm --filter @hierarchidb/tabular-xlsx typecheck`
     - `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck`
-    - `pnpm --filter @hierarchidb/plugins-linker-plugin typecheck`
+    - `pnpm --filter @hierarchidb/linker-plugin typecheck`
     - `pnpm --filter @hierarchidb/analyze-licenses typecheck`
     - `pnpm --filter @hierarchidb/ui-icon typecheck`
     - `pnpm --filter @hierarchidb/ui-lru-splitview typecheck`
@@ -1096,13 +1096,13 @@ total occurrences: 0
 
 
 追加メモ:
-  - map-adapter の MapLibreDeckAdapter から `as any` を撤廃し、動的ロード時の環境変数判定と Layer 更新を型安全化。`pnpm --filter @hierarchidb/map-adapter typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計が 56 件に減少（主な残件: feature/tabular・ui/file・ui/map・runtime-worker-bootstrap など）。
+  - map-adapter の MapLibreDeckAdapter から `as any` を撤廃し、動的ロード時の環境変数判定と Layer 更新を型安全化。`pnpm --filter @hierarchidb/map-adapter typecheck` → `pnpm as-any:report` を実行し、ワークスペース合計が 56 件に減少（主な残件: feature/tabular・ui/file・ui/map・runtime-client など）。
 ```
 
 
 ## 推奨アクション
 
-1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/runtime-worker-bootstrap` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。
+1. **App shim の段階削減** — `@hierarchidb/common-type` / `@hierarchidb/util` / `@hierarchidb/runtime-client` など、すでに dist 型があるものから順に置換。`virtual:plugin-*` は `scripts/generate-virtual-dts.mjs` の強化が必要。
 2. **Node-type shim の統合** — 上表の shim をそれぞれ公式 d.ts へ移行。特に plugin-dialog 関連 shim を早期に撤去。
 3. **UI ambient の縮退** — `@hierarchidb/ui-icon` 等、軽量な UI パッケージの dist 型公開を確認し `ambient-ui.d.ts` を縮小。
 4. **`as any` の削減プラン** — runtime-worker（14 件）→ ui/treeconsole（12 件）→ node-type/linker-plugin（8 件）の順で重点的に型付け。型公開済みの API から優先して `as any` を排除する。

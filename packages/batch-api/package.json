@@ -14,14 +14,14 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm -w --filter @hierarchidb/common-types run build:types && pnpm -w --filter @hierarchidb/download run build:types && pnpm -w --filter @hierarchidb/auth-recovery run build:types && pnpm -w --filter @hierarchidb/batch-sdk run build:types && pnpm run build:types",
+    "build": "pnpm -w --filter @hierarchidb/batch-sdk run build:types && pnpm run build:types",
     "build:types": "api-extractor run --local"
   },
-  "dependencies": {
+  "peerDependencies": {
+    "@hierarchidb/batch-sdk": "workspace:*"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.49.3"
-  },
-  "peerDependencies": {
+    "@microsoft/api-extractor": "^7.49.3",
+    "@hierarchidb/batch-sdk": "workspace:*"
   }
 }

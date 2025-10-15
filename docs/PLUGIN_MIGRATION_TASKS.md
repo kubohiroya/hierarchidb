@@ -2,7 +2,7 @@
 
 ## 概要
 
-アーキテクチャリファクタリング後、全プラグインパッケージで型エラーが発生している状況を修正するための作業計画です。各プラグインを新しい`@hierarchidb/plugins-base-plugin`アーキテクチャに移行し、削除されたmetadata/tagsフィールドに依存しない構造に変更します。
+アーキテクチャリファクタリング後、全プラグインパッケージで型エラーが発生している状況を修正するための作業計画です。各プラグインを新しい`@hierarchidb/base-plugin`アーキテクチャに移行し、削除されたmetadata/tagsフィールドに依存しない構造に変更します。
 
 ## 共通修正方針
 
@@ -80,7 +80,7 @@
 
 4. `package.json`の修正
    - `@hierarchidb/common-plugin-base`依存関係を削除
-   - `@hierarchidb/plugins-base-plugin`依存関係を追加
+   - `@hierarchidb/base-plugin`依存関係を追加
 
 ### タスク2: shape-plugin の修正
 
@@ -141,7 +141,7 @@
 
 ### タスク6: project-plugin の修正（アーカイブ）
 
-> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/plugins-linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
+> 2025-09-16 更新: `project-plugin` は Deprecated となり、後継の `@hierarchidb/linker-plugin` に統合されました。本セクションは履歴目的で保持しています。実装/修正は `linker-plugin` を対象にしてください。
 
 **対象**: `packages/plugins/linker-plugin`（旧 `project-plugin`）
 

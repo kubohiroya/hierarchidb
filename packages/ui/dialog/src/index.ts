@@ -4,6 +4,7 @@ export * from './components/CommonDialogTitle.js';
 export * from './components/CommonDialogActions.js';
 export * from './components/UnsavedChangesDialog.js';
 export * from './types/MultiStepDialog.types.js';
+export * from './types/stepper-dialog-types.js';
 export * from './headless/MultiStepDialog.js';
 export * from './headless/MultiDialogContent.js';
 export * from './headless/MultiStepDialogHeader.js';

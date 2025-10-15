@@ -1,4 +1,4 @@
-# plugins-spreadsheet-plugin テストケース洗い出し
+# spreadsheet-plugin テストケース洗い出し
 
 ## 開発言語・フレームワーク
 

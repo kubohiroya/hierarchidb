@@ -23,7 +23,7 @@ packages/plugins/my-plugin/
     ├── shared/
     │   ├── openstreetmap-type.ts
     │   ├── metadata.ts
-    │   ├── lifecycle-types.ts
+    │   ├── lifecycle-plugin-definition.ts
     │   └── constants.ts
     ├── ui/
     │   ├── openstreetmap-type.ts
@@ -141,7 +141,7 @@ export default defineConfig([
 
 ## 3. Shared Layer Implementation
 
-### src/shared/lifecycle-types.ts
+### src/shared/lifecycle-plugin-definition.ts
 
 ```typescript
 import type { NodeId, EntityId } from '@hierarchidb/core';

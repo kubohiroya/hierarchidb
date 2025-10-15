@@ -10,13 +10,12 @@ packages:
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/backend/*
-  - packages/plugin-loader/*
-  - packages/plugins/*
   - packages/feature/*
   - packages/plugin-sdk
   - packages/plugin-api
   - packages/batch-sdk
   - packages/batch-api
+  - plugins/*
   # Spreadsheet plugin now included for local build/test
 
 ignoredBuiltDependencies:

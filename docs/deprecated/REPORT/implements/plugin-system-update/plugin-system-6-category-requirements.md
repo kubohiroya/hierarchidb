@@ -66,7 +66,7 @@
 - 🟢 RelationalEntity: TreeNodeとN:N対応、参照カウント管理
 
 **参照したEARS要件**: docs/03-requirement.md 3.3.2節（データスキーマ拡張とエンティティ関係）
-**参照した設計文書**: packages/core/src/types/entity-lifecycle-types.ts（エンティティ基底インターフェース群）
+**参照した設計文書**: packages/core/src/types/entity-lifecycle-plugin-definition.ts（エンティティ基底インターフェース群）
 
 ## 3. 制約条件（EARS非機能要件・アーキテクチャ設計ベース）
 
@@ -169,7 +169,7 @@ await manager.cleanup(nodeId); // TreeNode削除時の自動クリーンアッ�
 ### 参照した設計文書
 - **アーキテクチャ**: docs/10-0-plugin-comprehensive-specification.md 第1章
 - **データフロー**: docs/10-0-plugin-comprehensive-specification.md 第3章（EntityManager階層）
-- **型定義**: packages/core/src/types/entity-lifecycle-types.ts（全インターフェース）
+- **型定義**: packages/core/src/types/entity-lifecycle-plugin-definition.ts（全インターフェース）
 - **データベース**: CoreDB/EphemeralDBの分離戦略
 - **API仕様**: packages/api/src/WorkerAPIExtension.ts（拡張API定義）
 

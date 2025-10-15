@@ -225,7 +225,7 @@ export const ProjectMetadata: PluginMetadata = {
   // ...
 };
 
-// src/shared/lifecycle-types.ts
+// src/shared/lifecycle-plugin-definition.ts
 export interface ProjectEntity {
   id: EntityId;
   nodeId: NodeId;
@@ -345,9 +345,9 @@ packages/plugins/project/
 │   │   ├── openstreetmap-type.ts                # 共通エクスポート
 │   │   ├── api.ts                  # 🔑 API interface定義
 │   │   ├── metadata.ts             # プラグインメタデータ
-│   │   ├── lifecycle-types.ts                # 型定義
+│   │   ├── lifecycle-plugin-definition.ts                # 型定義
 │   │   ├── constants.ts            # 定数
-│   │   └── utils.ts                # 純粋関数
+│   │   └── fetchSaveMetadata.ts                # 純粋関数
 │   │
 │   ├── ui/                         # UI層
 │   │   ├── openstreetmap-type.ts                # UI専用エクスポート

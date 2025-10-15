@@ -16,7 +16,7 @@
     "build": "pnpm run build:types && pnpm run build:bundle",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
     "prebuild": "pnpm run build:clean",

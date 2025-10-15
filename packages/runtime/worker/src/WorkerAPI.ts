@@ -12,7 +12,7 @@ import type { DialogStateAPI,
   ImportExportAPI, PluginLifecycleAPI, TagAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
 
 import type { Remote } from 'comlink';
-import { BatchProgressEvent, BatchSessionId, BatchSessionStatus } from '@hierarchidb/batch-api';
+import { BatchProgressEvent, BatchSessionId, BatchSessionStatus } from '@hierarchidb/common-api';
 
 /**
  * Main worker facade API

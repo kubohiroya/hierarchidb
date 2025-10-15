@@ -1,0 +1,169 @@
+{
+  "name": "@hierarchidb/spreadsheet-plugin",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js",
+      "default": "./dist/worker-factory/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js",
+      "default": "./dist/ui/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "database": [
+        "dist/database/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage",
+    "typecheck:ui": "tsc -p tsconfig.ui.json --noEmit",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "dependencies": {
+    "@types/pako": "^2.0.3",
+    "pako": "^2.1.0"
+  },
+  "peerDependencies": {
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "i18next": "22.5.0",
+    "react": "^18.3.1",
+    "react-i18next": "12.3.1"
+  },
+  "devDependencies": {
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/ui-csv-extract": "workspace:*",
+    "@hierarchidb/ui-file": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "i18next": "22.5.0",
+    "react": "^18.3.1",
+    "fake-indexeddb": "^6.1.0",
+    "react-i18next": "12.3.1",
+    "tsup": "^8.5.0",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "spreadsheet",
+      "name": "Spreadsheet Plugin",
+      "icon": {
+        "mui": "Assessment",
+        "emoji": "📈",
+        "color": "#dcbc50"
+      },
+      "priority": 600,
+      "category": "data",
+      "extends": "folder",
+      "dependencies": [
+        "folder"
+      ],
+      "capabilities": {
+        "canHaveChildren": false,
+        "canBeRoot": false,
+        "canBeDeleted": true,
+        "canBeRenamed": true,
+        "canBeMoved": true,
+        "canBeCopied": true
+      },
+      "schema": {
+        "inherits": "folder",
+        "fields": [
+          {
+            "name": "spreadsheetData",
+            "type": "object",
+            "required": true
+          },
+          {
+            "name": "formulas",
+            "type": "object",
+            "required": false
+          }
+        ]
+      }
+    }
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "dexie",
+      "i18next",
+      "react",
+      "react-i18next",
+      "@hierarchidb/runtime-ui-plugin-dialog"
+    ]
+  }
+}

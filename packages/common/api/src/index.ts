@@ -71,7 +71,7 @@ export type {
 // New exports
 export type { PluginExtensionAPI } from './PluginExtensionAPI.js';
 export { PluginExtensionRegistry } from './PluginExtensionAPI.js';
-
+export * from './plugin-definition.js';
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
 export type { PluginRuntimeWiring } from './RuntimeWiring.js';
 
@@ -82,3 +82,4 @@ export * from './TagAPI.js';
 // Multi-Step Dialog API
 export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI.js';
 
+export * from './BatchControlAPI.js';

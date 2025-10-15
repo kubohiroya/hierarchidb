@@ -1,4 +1,5 @@
-import type { DialogStepDefinition, PeerEntity, ValidationExtension } from '@hierarchidb/common-types';
+import type { PeerEntity } from '@hierarchidb/common-types';
+import { DialogStepDefinition, ValidationExtension } from '~/types/plugin-pointcuts.js';
 
 export interface StepArrayEvaluator<TDialog extends PeerEntity = PeerEntity> {
   getEnabledSteps: (data: TDialog, stepNumbers?: ReadonlyArray<number>) => boolean[];

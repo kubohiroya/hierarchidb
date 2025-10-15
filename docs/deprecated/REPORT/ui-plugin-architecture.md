@@ -78,7 +78,7 @@ graph TB
 
 #### TreeTableCore Extension Points
 ```typescript
-// packages/ui/treeconsole/treetable/src/lifecycle-types.ts
+// packages/ui/treeconsole/treetable/src/lifecycle-plugin-definition.ts
 export interface TreeTableCoreProps {
   // 既存のprops...
   controller: TreeTableController | null;

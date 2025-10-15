@@ -12,7 +12,7 @@
 |-------------|------------------|--------------|------|
 | `hierarchidb-core` | `@hierarchidb/common-*`, `@hierarchidb/runtime-worker`, UI 基盤 (`@hierarchidb/ui-*`) など | 基本監視なし。必要時にパッケージ単位または全体を手動ビルド。 | 安定領域。ビルド成果物を別レポジトリへ供給。 |
 | `hierarchidb-app` | `@hierarchidb/app`（エンドユーザー向け SPA） | Vite/React Router dev サーバで通常の HMR を有効化。 | core / plugins を依存として取り込み。 |
-| `hierarchidb-plugins` | `@hierarchidb/plugins-{shape,location,route,...}` など | 環境変数 `WATCH_PACKAGES` でカンマ区切り指定し、該当パッケージごとに `tsup --watch` を起動。 | アクティブ開発領域。必要なプラグインのみ watch。 |
+| `hierarchidb-plugins` | `@hierarchidb/{shape,location,route,...}` など | 環境変数 `WATCH_PACKAGES` でカンマ区切り指定し、該当パッケージごとに `tsup --watch` を起動。 | アクティブ開発領域。必要なプラグインのみ watch。 |
 
 ## 運用イメージ
 1. **core**

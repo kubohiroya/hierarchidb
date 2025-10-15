@@ -1,0 +1,138 @@
+{
+  "name": "@hierarchidb/route-plugin",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Route management plugin extending Shape plugin for HierarchiDB",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
+    },
+    "./worker-factory": {
+      "types": "./dist/worker-factory/index.d.ts",
+      "import": "./dist/worker-factory/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "worker": [
+        "dist/worker/index.d.ts"
+      ],
+      "worker-factory": [
+        "dist/worker-factory/index.d.ts"
+      ],
+      "ui": [
+        "dist/ui/index.d.ts"
+      ],
+      "database": [
+        "dist/database/index.d.ts"
+      ],
+      "*": [
+        "dist/index.d.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "prebuild": "pnpm -t hierarchidb@ui-core build",
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "dependencies": {
+    "dexie": "^4.2.0",
+    "searoute-js": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-basic-info": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@hierarchidb/auth-recovery": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*",
+    "@hierarchidb/ui-basic-info": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@mui/icons-material": "^7.3.2",
+    "@mui/material": "^7.3.2",
+    "@types/node": "^20.10.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsup": "^8.0.1",
+    "typescript": "workspace:^5.9.3"
+  },
+  "hierarchidb": {
+    "plugin": {
+      "nodeType": "route",
+      "name": "Route Plugin",
+      "icon": {
+        "mui": "Route",
+        "emoji": "〰️",
+        "color": "#a3b030"
+      }
+    }
+  },
+  "tsup": {
+    "external": [
+      "@emotion/react",
+      "@emotion/styled",
+      "@hierarchidb/ui-core",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-client",
+      "@hierarchidb/ui-dialog",
+      "@mui/icons-material",
+      "@mui/material",
+      "react",
+      "react-dom",
+      "@hierarchidb/runtime-worker-factory"
+    ]
+  }
+}

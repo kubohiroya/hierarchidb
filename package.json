@@ -192,7 +192,7 @@
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
-  "packageManager": "pnpm@10.18.1",
+  "packageManager": "pnpm@10.18.3",
   "pnpm": {
     "overrides": {
       "@biomejs/biome": "2.2.0",

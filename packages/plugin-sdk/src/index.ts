@@ -8,14 +8,6 @@ export { BaseEntityHandler } from './handlers/BaseEntityHandler.js';
 export { HierarchicalEntityHandler } from './handlers/HierarchicalEntityHandler.js';
 export type { HierarchicalEntity, HierarchicalSearchCriteria, TreeNode } from './handlers/HierarchicalEntityHandler.js';
 
-// Export types
-export type {
-  BaseSearchCriteria,
-  PaginatedResult,
-  EntityLifecycleHooks,
-  OperationResult,
-} from './types.js';
-
 export {
   NodeDialogExtensionRegistry,
   nodeDialogExtensionRegistry,
@@ -44,9 +36,6 @@ export {
 export type { EntityWorkingCopyAdapter } from './working-copy/adapter.js';
 export { createEntityWorkingCopyAdapter } from './working-copy/adapter.js';
 
-export { UnifiedBatchManagerBase } from './batch/UnifiedBatchManagerBase.js';
-export type { BatchPersistence, UnifiedBatchSession } from './batch/UnifiedBatchManagerBase.js';
-
 export type {
   PeerDataBase,
   PeerEntityBase,
@@ -66,7 +55,12 @@ export const BasePluginDefinition = {
   },
 };
 
-export * from './batch/RuntimeWorkerService.js';
-
-// Optional runtime wiring (no-op for base plugin)
-export class RuntimeWiring {}
+export * from './types/package-json.js';
+export * from './types/plugin-pointcuts.js';
+export * from './types/plugin-definition.js';
+export * from './types/plugin-metadata.js';
+export * from './types/registry.js';
+export * from './types/operationResult.js';
+export * from './types/baseSearchCriteria.js';
+export * from './types/paginatedResult.js';
+export * from './types/entityLifecycleHooks.js';

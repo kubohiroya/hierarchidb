@@ -11,13 +11,14 @@ import { CoreDB } from './services/CoreDB.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 import { CommandProcessor } from './services/CommandProcessor.js';
-import { NodeId, NodeType, PluginDefinition, TreeId } from '@hierarchidb/common-types';
+import { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { SingletonMixin } from '@hierarchidb/util';
+import {PluginDefinition} from '@hierarchidb/common-api';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 import { TagService } from '@hierarchidb/tag';
-// import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
+
 import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
 import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
@@ -61,7 +62,7 @@ export class WorkerService {
       enableAllExporters();
 
       // Optionally install XLSX parser for tabular-source if available
-      await import('@hierarchidb/tabular-xlsx')
+      await import('@hierarchidb/tabular-source-xlsx')
         .then((mod: any) => {
           if (mod && typeof mod.installTabularXlsx === 'function') {
             mod.installTabularXlsx();
@@ -71,6 +72,7 @@ export class WorkerService {
         .catch(() => {
           // XLSX support not installed; proceed without it
         });
+
       // Tag service
       const tagDBPort = new TagDBPortCoreDBAdapter(coreDB);
       const tagService: TagAPI = await TagService.getSingleton(tagDBPort);
@@ -295,4 +297,5 @@ export type {
 export { storeRegistry } from './entity/store-registry.js';
 export { entityRegistry } from './entity/EntityRegistry.js';
 export type {WorkerAPI} from './WorkerAPI.js';
-export * from './services/downloadAdapter.js'
+export * from './services/downloadAdapter.js';
+export * from './module-paths.js';

@@ -76,13 +76,14 @@
       "@hierarchidb/util/*": [
         "packages/util/src/*"
       ],
-      "@hierarchidb/plugins-*-plugin/worker-factory": [
+      "@hierarchidb/*-plugin/worker-factory": [
+        "packages/plugins/*-plugin/src/worker/factory/index.ts",
         "packages/plugins/*-plugin/src/worker-factory/index.ts"
       ],
-      "@hierarchidb/plugins-spreadsheet-plugin": [
+      "@hierarchidb/spreadsheet-plugin": [
         "packages/plugins/spreadsheet-plugin/src/index.ts"
       ],
-      "@hierarchidb/plugins-spreadsheet-plugin/*": [
+      "@hierarchidb/spreadsheet-plugin/*": [
         "packages/plugins/spreadsheet-plugin/src/*"
       ],
       "@hierarchidb/common-api": [

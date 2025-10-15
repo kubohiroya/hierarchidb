@@ -5,7 +5,7 @@
 ### Technical Specifications & Architecture
 - **[technical-architecture-specification.md](./technical-architecture-specification.md)** - Detailed Technical Architecture Specification
 - **[architecture/](./architecture/)** - Architecture-related documents
-  - plugins-definition-migration.md
+  - definition-migration.md
   - registry-consolidation-plan.md
   - duplicate-files-consolidation.md
 

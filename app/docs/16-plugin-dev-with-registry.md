@@ -13,25 +13,21 @@
 
 ## 仕組みの概要
 - 生成プラグイン（Vite）
-  - `app/vite-plugin-registry.ts`（UI/Worker のレジストリ）
-    - 走査対象: `packages/plugins/*-plugin/package.json`
-    - 生成: `virtual:plugin-registry-ui`, `virtual:plugin-registry-worker`
-      - `pluginMapUI = { nodeType: () => import('<pkg>') }`
-      - `pluginMapWorker = { nodeType: () => import('<pkg>/worker') | async () => ({ default: {} }) }`
-  - `app/vite-plugin-plugin-services.ts`（Services/DB レジストリ）
-    - 走査対象: 同上
-    - 生成: `virtual:plugin-registry-services`
-      - `pluginServices = { nodeType: () => import('<pkg>/services|/database|/shared') | async () => ({}) }`
+  - `@hierarchidb/vite-plugin-node-type-registry`
+    - 走査対象: `plugins/*-plugin/package.json`
+    - 生成: `virtual:plugin-node-types/maps`（UI/Worker/Common）、`virtual:plugin-node-types/services`、`virtual:plugin-definitions`
+      - 互換モジュールとして `virtual:plugin-registry-ui` / `worker` / `services` も引き続き提供
+      - `onRegister` を export したエントリは自動的に await され、IndexedDB メタデータの事前読み込みなどの初期化を行える
   - `app/vite-plugin-mui-icon-map.ts`（アイコンマップ）
     - 走査対象: 同上
     - 生成: `virtual:mui-icon-map`（`{ 'AccountTree': AccountTreeIcon, ... }` を静的 import して map を export）
 - アプリ側の利用箇所
-  - Worker: `virtual:plugin-registry-worker` を取り込み、nodeType→loader のマップを使用（実体は `WorkerModuleLoader` が `@hierarchidb/runtime-shared-module-paths.importPluginWorker()` を経由して `./worker-factory` を解決）
-  - UI: `virtual:plugin-registry-ui` を取り込み、メニューやダイアログ等のロードに使用
+  - Worker: `virtual:plugin-node-types/maps` もしくは互換モジュール `virtual:plugin-registry-worker` からローダーを取得し、nodeType→loader のマップを使用
+  - UI: `virtual:plugin-node-types/maps`（または `virtual:plugin-registry-ui`）を取り込み、メニューやダイアログ等のロードに使用
   - アイコン: `virtual:mui-icon-map` を `setGlobalMuiIconMap()` で注入（実描画は静的解決）
 - メタデータ
-  - 一次情報は各プラグインの `src/extension/plugin-manifest.ts`
-  - `virtual:plugin-definitions`（tools-vite-plugin-package-reader 由来）は manifest から収集した表示名/順序などを提供
+  - 一次情報は各プラグインの `src/plugin-manifest.ts`（従来の `src/extension/plugin-manifest.ts` も後方互換としてサポート）
+  - `virtual:plugin-definitions` と `virtual:plugin-node-types/meta` が manifest から収集した表示名/順序・依存情報を提供
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
@@ -50,11 +46,11 @@
 ```
 - Runtime は `@hierarchidb/runtime-shared-module-paths.importPluginWorker('<id>')` を通じて `./worker-factory` を解決します。
 - 旧 API 互換（直接 `*/worker` を import するツール等）が不要であれば `exports["./worker"]` は省略可能です。
-- メタデータは `src/extension/plugin-manifest.ts` に記述する（次項）。`package.json` からは撤去済み
+- メタデータは `src/plugin-manifest.ts` に記述する（次項）。`package.json` からは撤去済み
 
 ### 2) plugin-manifest.ts（拡張メタデータ）
 ```ts
-// src/extension/plugin-manifest.ts
+// src/plugin-manifest.ts
 import type { NodeType, PluginMetadata } from '@hierarchidb/common-type';
 
 export const PLUGIN_ID = '@hierarchidb/foo-plugin' as const;
@@ -88,16 +84,16 @@ export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 
 ### 3) エントリ配置
 - UI: `src/RuntimeWorkerService.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
-- Worker Factory: `src/worker-factory/RuntimeWorkerService.ts`（Runtime が modulePaths 経由で遅延ロード）
+- Worker Factory: `src/worker/factory/RuntimeWorkerService.ts`（Runtime が modulePaths 経由で遅延ロード）
 - Worker エントリ（任意）: `src/worker/RuntimeWorkerService.ts`（旧来の直接 import 互換が必要な場合のみ公開）
 - ビルド: tsup で `dist/` に出力（exports に合わせる）
 
 ## アプリへの接続（自動）
-- 開発時は Vite が `packages/plugins/*-plugin/src/extension/plugin-manifest.ts` を監視し、以下を再生成します。
+- 開発時は Vite が `packages/plugins/*-plugin/src/plugin-manifest.ts` を監視し、以下を再生成します。
   - `virtual:plugin-registry-ui` … UI ローダ
   - `virtual:plugin-registry-worker` … Worker ローダ
   - `virtual:mui-icon-map` … アイコンマップ
-- `@hierarchidb/tools-plugin-registry-utils` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/plugins-*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
+- `@hierarchidb/vite-plugin-node-type-registry` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
 - 文字列リテラルの import() なので、Vite/Rollup が確実に解決・分割し、GitHub Pages でも問題ありません。
 
 ## UI 実装の取り込み例
@@ -224,7 +220,7 @@ const db = await loadPluginService('shape'); // exports['./database'] や ./shar
 
 ## よくある落とし穴と対処
 - アイコンが表示されない
-  - `src/extension/plugin-manifest.ts` の `icon.mui`（または `muiIconName`）を PascalCase で記述（例: `AccountTree`）
+  - `src/plugin-manifest.ts` の `icon.mui`（または `muiIconName`）を PascalCase で記述（例: `AccountTree`）
   - 変更後は devサーバが自動再生成（HMR）。表示が変わらなければ一度再起動
 - Worker が期待どおり動かない
   - `exports["./worker-factory"]` が存在するか確認（既定の初期化ルート）。
@@ -250,7 +246,7 @@ packages/plugins/foo-plugin/
 ```
 
 ## 既存プロジェクトへの導入手順（要約）
-1) プラグインごとの `package.json` に `exports` を整備し、`src/extension/plugin-manifest.ts` を追加
+1) プラグインごとの `package.json` に `exports` を整備し、`src/plugin-manifest.ts` を追加
 2) アプリの Vite 設定に `pluginRegistryPlugin` と `muiIconMapPlugin` を追加（本リポジトリは導入済み）
 3) 旧来の `virtual:plugin-map` 依存を `virtual:plugin-registry-ui/worker` に置き換え
 4) 旧来の動的 bare specifier import を撤去（本ガイドの方式へ移行）

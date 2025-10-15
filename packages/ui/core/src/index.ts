@@ -48,38 +48,14 @@ export {
 } from './utils/theme.js';
 export type { ThemeMode } from './utils/theme.js';
 
-// Type Exports (explicitly import to avoid conflicts with plugin types)
-export type {
-  BaseDialogProps,
-  NodeDialogProps,
-  ConfirmDialogProps,
-  BaseFormData,
-  DialogResult,
-  EditDialogProps as BaseEditDialogProps,
-} from './types/dialog.js';
 
 // Re-export EditDialogProps from plugin-loader (which is the main one used)
 export type { EditDialogProps } from './plugins/index.js';
 
-// Notifications
-export {
-  NotificationSystem,
-  notify,
-  showNotification,
-  replaceWindowAlert,
-} from './components/NotificationSystem/NotificationSystem.js';
-export type {
-  Notification,
-  NotificationSeverity,
-  NotifyApi,
-} from './components/NotificationSystem/NotificationSystem.js';
 
 // Plugin host-facing component types
 export type { PluginDialogComponent, PluginPanelComponent, PluginDialogProps, PluginPanelProps } from './types/plugin-exports.js';
 
-// Common hooks
-export { useWorkingCopy } from './hooks/useWorkingCopy.js';
-export type { UseWorkingCopyOptions, UseWorkingCopyResult } from './hooks/useWorkingCopy.js';
 
 // Misc types/utilities
 export { rainbowColors } from './types/RainbowColors.js';

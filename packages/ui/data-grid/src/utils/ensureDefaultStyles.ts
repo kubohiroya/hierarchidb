@@ -1,4 +1,4 @@
-import { CrossViewStyles } from '../sync/CrossViewStyles.js';
+import { CrossViewStyles } from '../CrossViewStyles.js';
 
 export interface EnsureDefaultStylesOptions {
   includeRow?: boolean;

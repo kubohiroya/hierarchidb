@@ -5,7 +5,7 @@
  */
 
 import { prefetchMuiIcons } from '@hierarchidb/ui-icon';
-import pluginDefinitions from 'virtual:plugin-definitions';
+import { getInstalledPlugins, type InstalledPlugin } from './plugin-registry.js';
 
 export interface PluginIconInfo {
   muiIconName?: string;
@@ -20,24 +20,6 @@ export interface PluginPresentation {
   priority: number;
 }
 
-interface PluginDefinition {
-  nodeType: string;
-  name?: string;
-  version?: string;
-  priority?: number;
-  config?: {
-    name?: string;
-    displayName?: string;
-    priority?: number;
-    icon?: {
-      mui?: string;
-      muiIconName?: string;
-      emoji?: string;
-      color?: string;
-    };
-  };
-}
-
 const ICON_NAME_NORMALIZATION_MAP: Record<string, string> = {
   LocationPin: 'LocationOn',
   Location: 'LocationOn',
@@ -46,21 +28,6 @@ const ICON_NAME_NORMALIZATION_MAP: Record<string, string> = {
 
 let presentationCache: Map<string, PluginPresentation> | null = null;
 let presentationSignature: string | null = null;
-
-function isPluginDefinition(value: unknown): value is PluginDefinition {
-  return Boolean(value) && typeof value === 'object' && typeof (value as PluginDefinition).nodeType === 'string';
-}
-
-function getDefinitions(): PluginDefinition[] {
-  const globalDefs = (globalThis as { __HDB_PLUGIN_DEFS__?: unknown }).__HDB_PLUGIN_DEFS__;
-  if (Array.isArray(globalDefs) && globalDefs.every(isPluginDefinition)) {
-    return globalDefs as PluginDefinition[];
-  }
-  if (Array.isArray(pluginDefinitions) && pluginDefinitions.every(isPluginDefinition)) {
-    return pluginDefinitions as PluginDefinition[];
-  }
-  return [];
-}
 
 function normalizeMuiIconName(name?: string): string | undefined {
   if (!name) return undefined;
@@ -74,14 +41,12 @@ function sanitizeLabel(source: unknown, fallback: string): string {
   return source.replace(/\s+Plugin$/i, '').trim();
 }
 
-function buildPresentation(def: PluginDefinition): PluginPresentation {
-  const cfg = def.config ?? {};
-  const iconConfig = cfg.icon ?? {};
-  const fallbackLabel = def.name || def.nodeType;
-  const label = sanitizeLabel(cfg.displayName ?? cfg.name, fallbackLabel);
-  const priorityCandidate = typeof cfg.priority === 'number' ? cfg.priority : def.priority;
+function buildPresentation(def: InstalledPlugin): PluginPresentation {
+  const iconConfig = def.icon ?? {};
+  const fallbackLabel = def.label || def.nodeType;
+  const label = sanitizeLabel(def.label, fallbackLabel);
+  const priorityCandidate = def.manifest?.priority ?? def.createOrder;
   const muiIconName = normalizeMuiIconName(iconConfig.muiIconName ?? iconConfig.mui);
-
   return {
     nodeType: def.nodeType,
     label,
@@ -94,18 +59,16 @@ function buildPresentation(def: PluginDefinition): PluginPresentation {
   };
 }
 
-function createSignature(defs: PluginDefinition[]): string {
+function createSignature(defs: InstalledPlugin[]): string {
   try {
     const parts = defs.map((def) => {
-      const cfg = def.config ?? {};
-      const icon = cfg.icon ?? {};
       return [
         def.nodeType,
-        cfg.displayName ?? cfg.name ?? def.name ?? '',
-        icon.mui ?? icon.muiIconName ?? '',
-        icon.color ?? '',
-        cfg.priority ?? '',
-        def.priority ?? '',
+        def.label ?? '',
+        def.icon?.muiIconName ?? '',
+        def.icon?.color ?? '',
+        def.manifest?.priority ?? '',
+        def.createOrder ?? '',
       ];
     });
     return JSON.stringify(parts);
@@ -115,12 +78,11 @@ function createSignature(defs: PluginDefinition[]): string {
 }
 
 function ensureCache(): Map<string, PluginPresentation> {
-  const defs = getDefinitions();
+  const defs = getInstalledPlugins();
   const signature = createSignature(defs);
   if (!presentationCache || presentationSignature !== signature) {
     const map = new Map<string, PluginPresentation>();
     for (const def of defs) {
-      if (!isPluginDefinition(def)) continue;
       const presentation = buildPresentation(def);
       map.set(presentation.nodeType, presentation);
     }

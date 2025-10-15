@@ -5,7 +5,7 @@
 
 import type { NodeId } from '@hierarchidb/common-types';
 import { BaseBatchConfig, BatchProgress, BatchProgressEvent,
-  BatchProgressPayload, BatchSessionState, ProgressPhase, ResourceUsage } from './BatchControlAPI.js';
+  BatchProgressPayload, BatchSessionState, ProgressPhase, ResourceUsage } from '@hierarchidb/common-api';
 
 /**
  * Abstract base class for batch processing sessions

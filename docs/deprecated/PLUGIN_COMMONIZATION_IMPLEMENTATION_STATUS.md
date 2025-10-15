@@ -13,7 +13,7 @@ packages/common/plugin-base/
 └── src/
     ├── RuntimeWorkerService.ts
     ├── types/
-    │   ├── base-lifecycle-types.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
+    │   ├── base-lifecycle-plugin-definition.ts      # BaseEntity, BaseWorkingCopy等の基底型定義
     │   └── RuntimeWorkerService.ts
     ├── handlers/
     │   ├── BaseEntityHandler.ts        # 基底EntityHandler（500行）

@@ -28,8 +28,6 @@ import {
 import { Download, FilterList, KeyboardArrowDown, KeyboardArrowUp, Refresh, Search } from '@mui/icons-material';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-// import { useVirtualizer } from '@tanstack/provider-virtual';
-
 /**
  * Generic column definition
  * @template T The row data type

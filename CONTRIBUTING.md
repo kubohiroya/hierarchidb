@@ -5,7 +5,7 @@ This repository prioritizes prebuild typecheck stability and consistent CI resul
 - Types at source: package.json must set `types` and `exports.types` to `src/RuntimeWorkerService.ts`.
 - Public TSX return types: exported TSX must return `JSX.Element` (or `JSX.Element | null`).
 - No tsconfig paths in public source: do not use `~/` or custom paths – use relative imports.
-  - `@hierarchidb/app` の node-type サブパスは `@hierarchidb/tools-plugin-registry-utils` が自動同期します。`tsconfig*.json` に手動で追記しないでください。
+  - `@hierarchidb/app` の node-type サブパスは `@hierarchidb/vite-plugin-node-type-registry` が自動同期します。`tsconfig*.json` に手動で追記しないでください。
 - Do not bundle React/MUI: put them in `peerDependencies` and mark them `external` in tsup.
 - No `../src` deep imports across packages: import the public entry or d.ts only.
 - Browser env: do not use `process.env`; use `import.meta.env` (`VITE_*`).
@@ -35,7 +35,7 @@ Further details are duplicated in:
 
 ### 型公開ファイルについて
 - 型定義のみを提供するファイルも CamelCase 命名を維持し、公開する主要 type alias / interface 名と一致させます（例: `ProjectEntityTypes.ts` ↔ `export type ProjectEntityTypes = …`).
-- 抽象的な `types.ts` のような名前は避け、内容が変わっても耐えられる固有名（`ProjectEntityContract.ts` など）を付けてください。
+- 抽象的な `plugin-definition.ts` のような名前は避け、内容が変わっても耐えられる固有名（`ProjectEntityContract.ts` など）を付けてください。
 - パッケージ公開時は `package.json` の `types` が指す `dist/index.d.ts` を単一エントリとし、型専用モジュールを追加する場合もビルド結果に取り込まれるよう tsup/tsconfig を調整します。
 
 ### ツールによる整合性チェック

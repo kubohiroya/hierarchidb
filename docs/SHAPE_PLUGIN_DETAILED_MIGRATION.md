@@ -58,7 +58,7 @@ export interface ShapeEntity extends FolderEntity {
 
 #### 1.1 category-types.tsのJSX構文修正
 ```typescript
-// src/types/category-lifecycle-types.ts
+// src/types/category-lifecycle-plugin-definition.ts
 // 修正前（構文エラー）
 export const SHAPE_CATEGORIES: CategoryOption<ShapeCategory>[] = [
   {

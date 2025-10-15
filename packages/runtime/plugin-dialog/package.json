@@ -1,0 +1,90 @@
+{
+  "name": "@hierarchidb/runtime-plugin-dialog",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Runtime plugin dialog components for HierarchiDB",
+  "author": "HierarchiDB Contributors",
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "prebuild": "pnpm run build:clean",
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build:tsc": "pnpm run build:types",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4",
+    "tsup": "^8.3.5",
+    "typescript": "workspace:^5.9.3",
+    "@types/react": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "jotai": "^2.11.2",
+    "comlink": "^4.4.2",
+    "@tanstack/react-router": "^1.132.33",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-basic-info": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "jotai": "^2.11.2",
+    "comlink": "^4.4.2",
+    "@tanstack/react-router": "^1.132.33",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-basic-info": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-core": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@mui/icons-material",
+      "@mui/material",
+      "@hierarchidb/ui-icon",
+      "@hierarchidb/runtime-client",
+      "@hierarchidb/ui-core",
+      "jotai",
+      "@tanstack/react-router",
+      "react",
+      "react-dom"
+    ]
+  }
+}

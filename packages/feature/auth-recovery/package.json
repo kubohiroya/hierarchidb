@@ -22,6 +22,8 @@
   },
   "devDependencies": {
     "tsup": "^8.5.0",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-auth": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   }
 }

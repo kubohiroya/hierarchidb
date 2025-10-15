@@ -15,7 +15,7 @@
   },
   "files": [
     "dist",
-    "dist-types"
+    "dist"
   ],
   "scripts": {
     "clean": "rm -rf dist",
@@ -39,11 +39,15 @@
     "@hierarchidb/runtime-worker": "workspace:*"
   },
   "devDependencies": {
-    "dexie": "^4.2.0",
-    "react": ">=18.0.0",
     "@types/node": "^22.10.2",
     "tsup": "^8.3.5",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "dexie": "^4.2.0",
+    "react": ">=18.0.0",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*"
   },
   "tsup": {
     "external": [

@@ -14,7 +14,7 @@
 4. 型情報は従来どおり静的に配布し、`import type` を活用して `any` へ退避しない設計を保つ。
 
 ## 4. スコープ
-- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-worker-bootstrap`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `storeRegistry` 等)。
+- 対象: `@hierarchidb/app`, `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-client`, `packages/plugins/*`、関連ユーティリティ (`WorkerAPIClient`, `WorkerProvider`, `storeRegistry` 等)。
 - 含む: React Provider/Hook 層の再設計、Worker ローダーの新規実装、プラグイン worker のファクトリ化、テスト/型更新、ドキュメント整備。
 - 含まない: プラグイン個別仕様の大幅変更、既存ビジネスロジックの改修、SSR 全面対応（影響調査と最小差分対応のみ）。
 
@@ -40,7 +40,7 @@
 ## 8. 実装指針
 - `WorkerRuntimeProvider` / `WorkerClientProxy` / `WorkerModuleLoader` / `WorkerStateStore` を Phase 1 で導入。
 - プラグイン側では `loadXxxWorkerPeer(storeRegistry)` を導入し、Dexie 初期化等はファクトリ内部で完結させる。
-- 型情報は `worker-public-types.ts`（型のみ）と `worker/RuntimeWorkerService.ts`（実装）へ分離し、呼び出し側は `import type` で参照する。
+- 型情報は `worker-public-plugin-definition.ts`（型のみ）と `worker/RuntimeWorkerService.ts`（実装）へ分離し、呼び出し側は `import type` で参照する。
 - Codemod 方針:
   - `scripts/codemods` 配下に ts-morph ベースのユーティリティを追加し、import 差し替えやファクトリひな形挿入を自動化。
   - 実行テンプレート: `pnpm ts-node scripts/codemods/xxx.ts --plugin <name>` → `pnpm lint --fix` → `pnpm --filter <pkg> typecheck`。
@@ -80,7 +80,7 @@
 ## 13. 現状調査メモ
 - `WorkerAPIClient` は同期シングルトンとして `getWorkerClient()` を直接呼び出しており、状態遷移は内部ステートと window グローバルに依存。Suspense 互換ではない。
 - `WorkerProvider` は `WorkerAPIClient` と `WorkerInitializationChannel` を組み合わせた独自の状態管理を実装しており、fallback UI はあるが Promise を手動で扱っている。
-- `app/src/client.ts` の `initializeWorker()` はローカル Worker エントリ (`./worker.ts`) を生成した後、`WorkerProvider` が公開する `window.__HDB_WORKER_CLIENT_REF__` を通じて `WorkerBridge` へクライアント参照を共有する。プラグイン側で直接 `@hierarchidb/plugins-*/worker` を import する経路は排除済み。
+- `app/src/client.ts` の `initializeWorker()` はローカル Worker エントリ (`./worker.ts`) を生成した後、`WorkerProvider` が公開する `window.__HDB_WORKER_CLIENT_REF__` を通じて `WorkerBridge` へクライアント参照を共有する。プラグイン側で直接 `@hierarchidb/*/worker` を import する経路は排除済み。
 - （2025-09-30 更新）プラグイン worker は `register*WorkerStores` ファクトリ経由に統一済みで、`StylerEntitiesDB` などの静的再エクスポートは撤去された。現在はモジュール末尾で `export { StylerEntitiesDB }` する実装はなく、chunk 分割は阻害されていない。
 - runtime 側では `FeatureBootstrap` が多数の静的 import を保持し、オプション機能のみ `importOptionalFeature()` で遅延化している。
 - 既存の codemod/自動化仕組みは未整備だったため runner.ts を新設。今後のフェーズでは各プラグイン向け codemod を `scripts/codemods/mods/*.ts` に配置する想定。

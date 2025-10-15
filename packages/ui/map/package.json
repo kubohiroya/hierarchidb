@@ -19,7 +19,7 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:clean": "rm -rf dist dist-types",
+    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
     "prebuild": "pnpm run build:clean",
@@ -37,13 +37,15 @@
     "@deck.gl/geo-layers": "^9.1.14",
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*"
   },
   "devDependencies": {
     "react": ">=18.0.0",
     "@mui/material": "^7.3.2",
     "@types/geojson": "^7946.0.8",
-    "@hierarchidb/common-types": "workspace:*"
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/ui-data-grid": "workspace:*"
   },
   "license": "MIT",
   "module": "dist/index.js",

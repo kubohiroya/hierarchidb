@@ -43,14 +43,15 @@ export type ClientAPIMethod<
   TReturn extends APIMethodReturn = APIMethodReturn,
 > = (...args: TArgs) => TReturn;
 
+/*
 export interface ClientAPIExtensions {
   [methodName: string]: ClientAPIMethod;
 }
 
 //  Client API
-/**
- * @deprecated Unused across the repository; scheduled for removal.
- */
+
+// @deprecated Unused across the repository; scheduled for removal.
 export interface TypedClientAPIExtensions<T extends Record<string, ClientAPIMethod>> {
   methods: T;
 }
+*/

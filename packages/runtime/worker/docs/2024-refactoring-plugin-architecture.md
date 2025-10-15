@@ -9,7 +9,7 @@
 ### 1. plugin-baseパッケージの分割
 **変更前**: `@hierarchidb/common-plugin-base` - UIと継承の両方を含む混在したパッケージ
 
-**変更後**: `@hierarchidb/plugins-base-plugin` - 継承専用のベースクラスパッケージ
+**変更後**: `@hierarchidb/base-plugin` - 継承専用のベースクラスパッケージ
 - BaseEntityHandler: エンティティ操作の基本クラス
 - HierarchicalEntityHandler: 階層構造を持つエンティティ用
 - UI表示なし（visibility設定でcreateMenuとpluginListから除外）

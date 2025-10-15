@@ -49,7 +49,7 @@
     "app/vite.preview.config.ts",
     "coverage/**",
     "docs/pdf/**",
-    "packages/**/dist-types/**",
+    "packages/**/dist/**",
     "packages/**/storybook-static/**",
     "packages/plugins/folder-plugin/plugin.config.ts",
     "packages/plugins/route-plugin/scripts/smoke.mjs",

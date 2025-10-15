@@ -1,11 +1,9 @@
 //import { FeatureRegistry } from '@hierarchidb/feature-registry';
 //import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
-
 // Import feature definitions (static list for now; scanning can be added later)
 import { FeatureDefinition as TagFeatureDefinition } from '@hierarchidb/tag';
 import { FeatureDefinition as ImportExportFeatureDefinition } from '@hierarchidb/import-export';
-import { FeatureDefinition as TabularFeatureDefinition } from '@hierarchidb/tabular';
-// tabular-source-xlsx is optional; load lazily in bootstrap below
+import { FeatureDefinition as TabularFeatureDefinition } from '@hierarchidb/tabular-source';
 import { FeatureDefinition as ComputeFeatureDefinition } from '@hierarchidb/compute';
 import { FeatureDefinition as DownloadFeatureDefinition } from '@hierarchidb/download';
 import { FeatureDefinition as MapSourceFeatureDefinition } from '@hierarchidb/map-source';
@@ -35,7 +33,7 @@ export async function bootstrapFeatures(): Promise<FeatureRegistry> {
     });
 
   // Optional feature: tabular-source-xlsx
-  await import('@hierarchidb/tabular-xlsx')
+  await import('@hierarchidb/tabular-source-xlsx')
     .then((mod: any) => {
       if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
     })

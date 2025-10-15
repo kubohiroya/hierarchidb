@@ -29,6 +29,9 @@
   },
   "devDependencies": {
     "tsup": "^8.0.1",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/util": "workspace:*"
   }
 }

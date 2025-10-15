@@ -73,7 +73,7 @@ Motto: "Small, clear, safe steps — always grounded in real docs."
 * 実行フロー テンプレート
   - `pnpm ts-node scripts/codemods/move-to-worker-factory.ts --plugin resolver`
   - `pnpm lint --fix`
-  - `pnpm --filter @hierarchidb/plugins-resolver-plugin typecheck`
+  - `pnpm --filter @hierarchidb/resolver-plugin typecheck`
 * 導入手順
   1. `scripts/codemods/README.md` を用意し、実行方法・注意点をまとめる。
   2. `ts-morph` と整形ツールを codemod 用の devDependencies に追加する。

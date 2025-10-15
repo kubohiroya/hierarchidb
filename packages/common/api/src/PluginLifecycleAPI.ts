@@ -6,7 +6,8 @@
  * It's focused on the management aspects of plugin-loader, separated from node type queries.
  */
 
-import type { NodeType, PluginDefinition } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
+import { PluginDefinition } from './plugin-definition.js';
 
 //  :
 //  :

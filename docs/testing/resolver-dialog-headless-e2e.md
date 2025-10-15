@@ -13,7 +13,7 @@
 
 ## 実行手順
 - パッケージローカルでの検証
-  - `pnpm --filter @hierarchidb/plugins-resolver-plugin test -- --run`
+  - `pnpm --filter @hierarchidb/resolver-plugin test -- --run`
 - ワークスペース全体での検証が必要な場合
   - `pnpm -w test -- --filter resolver-plugin`
 

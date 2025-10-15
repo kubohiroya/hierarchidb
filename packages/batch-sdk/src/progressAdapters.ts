@@ -1,4 +1,4 @@
-import { BatchProgressAdapter, BatchProgressEvent, UnifiedProgressInfo } from './BatchControlAPI.js';
+import { BatchProgressAdapter, BatchProgressEvent, UnifiedProgressInfo } from '@hierarchidb/common-api';
 
 export function progressEventToUnified(event: BatchProgressEvent): UnifiedProgressInfo {
   const payload = event.payload ?? {};

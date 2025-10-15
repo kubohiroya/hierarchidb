@@ -91,7 +91,7 @@ export default [
   {
     files: [
       'packages/tools/vite-plugin-dev-health/src/**/*.{js,jsx,ts,tsx}',
-      'packages/tools/fetch-metadata-cli/src/**/*.{js,jsx,ts,tsx}',
+      'packages/tools/fetch-save-metadata-cli/src/**/*.{js,jsx,ts,tsx}',
     ],
     rules: {
       'no-restricted-globals': 'off',

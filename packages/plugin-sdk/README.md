@@ -1,4 +1,4 @@
-@hierarchidb/plugins-base-plugin
+@hierarchidb/base-plugin
 =======================
 
 このパッケージは各ノードタイプ実装から再利用される「共通基盤」です。UI には表示されず、エンティティ操作や階層処理の抽象を提供します。

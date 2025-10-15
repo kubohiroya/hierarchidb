@@ -1,0 +1,36 @@
+{
+  "name": "@hierarchidb/tabular-source-xlsx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm run build:types && pnpm run build:bundle",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build:clean": "rm -rf dist",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "tsup",
+    "prebuild": "pnpm run build:clean",
+    "build:tsc": "pnpm run build:types"
+  },
+  "peerDependencies": {
+    "xlsx": "^0.18.5",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/tabular-source": "workspace:*",
+    "@hierarchidb/tabular-store": "workspace:*"
+  }
+}

@@ -10,8 +10,8 @@ basemap-pluginをfolder-pluginの拡張として、新しいbase-pluginアーキ
 
 ### 1. 依存関係
 - **folder-pluginの状態**: 未移行（109個のTypeScriptエラー）
-- **basemap-pluginの依存**: `@hierarchidb/plugins-folder-plugin`に依存
-- **base-pluginの依存**: `@hierarchidb/plugins-base-plugin`への移行が必要
+- **basemap-pluginの依存**: `@hierarchidb/folder-plugin`に依存
+- **base-pluginの依存**: `@hierarchidb/base-plugin`への移行が必要
 
 ### 2. 現在の実装構造
 ```

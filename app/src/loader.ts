@@ -7,7 +7,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
-import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { DialogStateAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/runtime-worker';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
 import { loadAppConfig } from '~/loadAppConfig.js';
 import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';

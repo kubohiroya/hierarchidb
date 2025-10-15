@@ -1,5 +1,5 @@
 import { createElement, type ComponentType } from 'react';
-import type { StepComponent } from '@hierarchidb/common-types';
+import { StepComponent } from '~/types/plugin-pointcuts.js';
 
 export const wrapDialogStepComponent = <TProps extends object>(
   Component: ComponentType<TProps>,

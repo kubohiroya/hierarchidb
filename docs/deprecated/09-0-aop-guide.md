@@ -368,7 +368,7 @@ packages/plugins/[plugin-name]/
 
 ```json
 {
-  "name": "@hierarchidb/plugin-[name]",
+  "name": "@hierarchidb/plugins[name]",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",

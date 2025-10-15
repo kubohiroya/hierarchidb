@@ -10,7 +10,7 @@
 - 既存の `CommandProcessor.executeCommand` の実装は触らない（今後の置換準備）。
 
 提案ファイル/配置
-- `packages/runtime/worker/src/services/command/registry.types.ts`
+- `packages/runtime/worker/src/services/command/registry.plugin-definition.ts`
 - `packages/runtime/worker/src/services/command/envelope.util.ts`
 
 仕様詳細

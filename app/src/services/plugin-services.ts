@@ -1,4 +1,4 @@
-// Thin facade over virtual:plugin-registry-services
+// Thin facade over virtual:plugin-node-types/services (互換として virtual:plugin-registry-services も提供)
 // Provides a stable way to resolve optional per-plugin services/DB modules.
 // NOTE: Avoid top-level import of the virtual module to prevent early boot races.
 //       Lazy-load on first use instead.
@@ -20,15 +20,15 @@ async function getServices(): Promise<Record<string, Loader>> {
 }
 
 type KnownPluginServiceReturnMap = {
-  basemap: typeof import('@hierarchidb/plugins-basemap-plugin/database') | null;
-  resolver: typeof import('@hierarchidb/plugins-resolver-plugin/database') | null;
-  spreadsheet: typeof import('@hierarchidb/plugins-spreadsheet-plugin/database') | null;
-  route: typeof import('@hierarchidb/plugins-route-plugin/database') | null;
-  shape: typeof import('@hierarchidb/plugins-shape-plugin/services') | null;
-  location: typeof import('@hierarchidb/plugins-location-plugin/services') | null;
-  styler: typeof import('@hierarchidb/plugins-styler-plugin/services') | null;
-  timeline: typeof import('@hierarchidb/plugins-timeline-plugin/services') | null;
-  linker: typeof import('@hierarchidb/plugins-linker-plugin/services') | null;
+  basemap: typeof import('@hierarchidb/basemap-plugin/database') | null;
+  resolver: typeof import('@hierarchidb/resolver-plugin/database') | null;
+  spreadsheet: typeof import('@hierarchidb/spreadsheet-plugin/database') | null;
+  route: typeof import('@hierarchidb/route-plugin/database') | null;
+  shape: typeof import('@hierarchidb/shape-plugin/services') | null;
+  location: typeof import('@hierarchidb/location-plugin/services') | null;
+  styler: typeof import('@hierarchidb/styler-plugin/services') | null;
+  timeline: typeof import('@hierarchidb/timeline-plugin/services') | null;
+  linker: typeof import('@hierarchidb/linker-plugin/services') | null;
 };
 
 type KnownPluginNodeType = keyof KnownPluginServiceReturnMap;

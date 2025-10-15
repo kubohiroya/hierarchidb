@@ -102,16 +102,16 @@ if [ "$COMMAND" = "dev" ]; then
 fi
 
 # 開発サーバ起動前に、必要なローカル Vite ツールのビルドを最低限チェック
-# app の vite.config.ts が参照する @hierarchidb/tools-vite-plugin-package-reader は
+# app の vite.config.ts が参照する @hierarchidb/vite-plugin-node-type-registry は
 # dist 出力が存在しないと Vite の externalize-deps 解決が失敗するため、未ビルドならビルドする
-if [ ! -f "packages/tools/vite-plugin-package-reader/dist/index.js" ]; then
-    echo "🔨 Building @hierarchidb/tools-vite-plugin-package-reader (first-time or clean checkout) ..."
-    pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build || {
-        echo "❌ Failed to build @hierarchidb/tools-vite-plugin-package-reader"
-        echo "   Try running: pnpm --filter @hierarchidb/tools-vite-plugin-package-reader build"
+if [ ! -f "packages/tools/vite-plugin-node-type-registry/dist/index.js" ]; then
+    echo "🔨 Building @hierarchidb/vite-plugin-node-type-registry (first-time or clean checkout) ..."
+    pnpm --filter @hierarchidb/vite-plugin-node-type-registry build || {
+        echo "❌ Failed to build @hierarchidb/vite-plugin-node-type-registry"
+        echo "   Try running: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build"
         exit 1
     }
-    echo "✅ tools-vite-plugin-package-reader built"
+    echo "✅ vite-plugin-node-type-registry built"
     echo ""
 fi
 
@@ -145,7 +145,7 @@ ensure_built "@hierarchidb/ui-treeconsole-trashbin" "packages/ui/treeconsole/tra
 ensure_built "@hierarchidb/ui-treeconsole-footer" "packages/ui/treeconsole/footer/dist/index.js"
 ensure_built "@hierarchidb/ui-treeconsole-speeddial" "packages/ui/treeconsole/speeddial/dist/index.js"
 ensure_built "@hierarchidb/runtime-worker" "packages/runtime/worker/dist/index.js"
-ensure_built "@hierarchidb/runtime-worker-bootstrap" "packages/runtime/worker-bootstrap/dist/index.js"
+ensure_built "@hierarchidb/runtime-client" "packages/runtime/worker-bootstrap/dist/index.js"
 # Core util library used across many packages
 ensure_built "@hierarchidb/util" "packages/util/dist/index.js"
 # Feature registry (referenced by worker dist)
@@ -161,13 +161,13 @@ ensure_built "@hierarchidb/ui-routing" "packages/ui/routing/dist/index.js"
 ensure_built "@hierarchidb/runtime-ui-landingpage" "packages/runtime-ui/landingpage/dist/index.js"
 ensure_built "@hierarchidb/runtime-ui-plugin-dialog" "packages/runtime-ui/plugin-dialog/dist/index.js"
 ensure_built "@hierarchidb/runtime-ui-tour" "packages/runtime-ui/tour/dist/index.js"
-ensure_built "@hierarchidb/plugins-basemap-plugin" "packages/plugins/basemap-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-folder-plugin" "packages/plugins/folder-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-shape-plugin" "packages/plugins/shape-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-styler-plugin" "packages/plugins/styler-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-route-plugin" "packages/plugins/route-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-location-plugin" "packages/plugins/location-plugin/dist/index.js"
-ensure_built "@hierarchidb/plugins-linker-plugin" "packages/plugins/linker-plugin/dist/index.js"
+ensure_built "@hierarchidb/basemap-plugin" "packages/plugins/basemap-plugin/dist/index.js"
+ensure_built "@hierarchidb/folder-plugin" "packages/plugins/folder-plugin/dist/index.js"
+ensure_built "@hierarchidb/shape-plugin" "packages/plugins/shape-plugin/dist/index.js"
+ensure_built "@hierarchidb/styler-plugin" "packages/plugins/styler-plugin/dist/index.js"
+ensure_built "@hierarchidb/route-plugin" "packages/plugins/route-plugin/dist/index.js"
+ensure_built "@hierarchidb/location-plugin" "packages/plugins/location-plugin/dist/index.js"
+ensure_built "@hierarchidb/linker-plugin" "packages/plugins/linker-plugin/dist/index.js"
 
 case "$COMMAND" in
     dev)

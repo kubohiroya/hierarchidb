@@ -323,10 +323,10 @@ import { styled } from '@hierarchidb/ui-theme';
 packages/ui-treeconsole/src/contexts/
 ├── DragDropConfigContext/
 │   ├── index.tsx
-│   └── lifecycle-types.ts
+│   └── lifecycle-plugin-definition.ts
 └── TreeTableConsolePanelContext/
     ├── index.tsx
-    └── lifecycle-types.ts
+    └── lifecycle-plugin-definition.ts
 ```
 
 **Migration Template:**
@@ -663,7 +663,7 @@ export interface TreeViewControllerConfig {
 
 #### 4.1.2 Context API Contracts
 
-Update `packages/ui-treeconsole/src/contexts/TreeTableConsolePanelContext/lifecycle-types.ts`:
+Update `packages/ui-treeconsole/src/contexts/TreeTableConsolePanelContext/lifecycle-plugin-definition.ts`:
 
 ```typescript
 import type { TreeNode } from '@hierarchidb/core';
@@ -704,7 +704,7 @@ export interface TreeTableConsolePanelContextValue {
 
 #### 4.2.1 useTreeViewController Contract
 
-Create `packages/ui-treeconsole/src/hooks/useTreeViewController/lifecycle-types.ts`:
+Create `packages/ui-treeconsole/src/hooks/useTreeViewController/lifecycle-plugin-definition.ts`:
 
 ```typescript
 export interface UseTreeViewControllerOptions {

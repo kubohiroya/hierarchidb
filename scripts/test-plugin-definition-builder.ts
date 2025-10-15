@@ -39,13 +39,13 @@ class MockPluginManifestReader {
       if (fs.existsSync(manifestPath)) {
         try {
           const manifest = loadPluginManifestFromFile(manifestPath, { silent: true }) as PluginManifestContent | undefined;
-          packages.set(`@hierarchidb/plugins-${pkg}`, manifest);
+          packages.set(`@hierarchidb/${pkg}`, manifest);
         } catch (error) {
           console.error(`Failed to load manifest ${manifestPath}:`, error);
         }
       } else {
         console.warn(`Manifest not found for ${pkg} (${manifestPath})`);
-        packages.set(`@hierarchidb/plugins-${pkg}`, undefined);
+        packages.set(`@hierarchidb/${pkg}`, undefined);
       }
     }
 

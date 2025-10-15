@@ -74,7 +74,7 @@ export default defineConfig({
       './packages/plugin-loader/spreadsheet-plugin',
       './packages/plugin-loader/styler-plugin',
       './packages/runtime-ui/plugin-dialog',
-      './packages/runtime/worker-bootstrap',
+      './packages/runtime/client',
       './packages/runtime/worker',
       './packages/tools/vite-plugin-package-reader',
       './packages/ui/auth',
@@ -87,7 +87,7 @@ export default defineConfig({
       // Map frequently referenced workspace packages to source to avoid prebuilding
       '@hierarchidb/ui-dialog': path.resolve(__dirname, './packages/ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-ui-plugin-dialog': path.resolve(__dirname, './packages/runtime-ui/plugin-dialog/src/index.ts'),
-      '@hierarchidb/runtime-worker-bootstrap': path.resolve(__dirname, './packages/runtime/worker-bootstrap/src/index.ts'),
+      '@hierarchidb/runtime-client': path.resolve(__dirname, './packages/runtime/client/src/index.ts'),
       '@hierarchidb/common-api': path.resolve(__dirname, './packages/common/api/src/index.ts'),
       '@hierarchidb/ui-core': path.resolve(__dirname, './packages/ui/core/src/index.ts'),
       '@hierarchidb/util': path.resolve(__dirname, './packages/util/src/index.ts'),

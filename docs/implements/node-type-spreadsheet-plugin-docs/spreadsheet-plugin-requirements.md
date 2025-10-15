@@ -1,11 +1,11 @@
-# plugins-spreadsheet-plugin TDD要件定義書
+# spreadsheet-plugin TDD要件定義書
 
 ## 1. 機能の概要（EARS要件定義書・設計文書ベース）
 
-- 🟢 **機能目的**: plugins-spreadsheet-pluginをモックアップから実際に機能するプラグインに変換する
+- 🟢 **機能目的**: spreadsheet-pluginをモックアップから実際に機能するプラグインに変換する
 - 🟢 **問題解決**: ユーザーがCSVデータをツリー構造内で管理・フィルタリング・表示できるように
 - 🟢 **想定ユーザー**: HierarchiDBを使用してデータ分析・可視化を行うユーザー
-- 🟢 **システム位置づけ**: plugins-folder-pluginの拡張として実装、プラグインシステム内で動作
+- 🟢 **システム位置づけ**: folder-pluginの拡張として実装、プラグインシステム内で動作
 - 🟢 **継承パターン**: FolderEntityHandlerを継承し、CSV固有機能を追加する拡張プラグイン
 - **参照した設計文書**: 
   - `packages/plugins/spreadsheet-plugin/src/extension/definition.ts` (既存モックアップ定義)
@@ -54,7 +54,7 @@
 - 🟢 **データ隔離**: プラグイン間でのデータ漏洩防止
 
 ### アーキテクチャ制約
-- 🟢 **継承制約**: plugins-folder-pluginを必ず継承
+- 🟢 **継承制約**: folder-pluginを必ず継承
 - 🟢 **UI-Worker分離**: UI層から直接データベースアクセス禁止
 - 🟢 **Working Copy**: EphemeralDBでの編集セッション管理
 - 🟢 **参照管理**: CSVTableMetadataの参照カウント機能必須
@@ -101,8 +101,8 @@
 ## 5. EARS要件・設計文書との対応関係
 
 ### 参照した既存実装
-- **継承元プラグイン**: `packages/plugins-plugin/folder/src/` (完全実装)
-- **拡張定義**: `packages/plugins-plugin/spreadsheet/src/extension/definition.ts` (モックアップ)
+- **継承元プラグイン**: `packages/plugin/folder/src/` (完全実装)
+- **拡張定義**: `packages/plugin/spreadsheet/src/extension/definition.ts` (モックアップ)
 - **UI コンポーネント**: `packages/ui/csv-extract/src/components/` (実装済み)
 
 ### 参照した設計文書
