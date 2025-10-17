@@ -6,7 +6,7 @@ import {
 } from '@hierarchidb/plugin-api';
 import type { LocationEntity, LocationDataSource, LocationWorkingCopy } from './LocationEntity.js';
 import type { BaseSearchCriteria } from '@hierarchidb/plugin-api';
-import { clearLocationPoints } from '../services/pointRepository.js';
+import { clearLocationPoints } from '../../services/pointRepository.js';
 
 export interface CreateLocationData {
   dataSource: LocationDataSource;

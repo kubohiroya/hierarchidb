@@ -1,15 +1,16 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { DataSourceSelector, type DataSourceOption } from '@hierarchidb/ui-datasource';
-import type { DataSourceName, StepProps } from '../../shared';
-import { DATA_SOURCE_CONFIGS } from '../../mock/data';
+import type { DataSourceConfig, DataSourceName, StepProps } from '../../shared/index.js';
+import { DATA_SOURCE_CONFIGS } from '../../mock/data.js';
 
 /**
  * Step 2: Data Source Selection
  * Uses @hierarchidb/_app-datasource components for data source selection
  */
 export const Step2DataSource: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
-  const options: DataSourceOption[] = Object.values(DATA_SOURCE_CONFIGS).map((source) => ({
+  const sources = Object.values(DATA_SOURCE_CONFIGS) as DataSourceConfig[];
+  const options: DataSourceOption[] = sources.map((source) => ({
     id: source.name,
     name: source.displayName,
     description: source.description,

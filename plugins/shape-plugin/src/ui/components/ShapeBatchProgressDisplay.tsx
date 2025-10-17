@@ -4,7 +4,7 @@
   */
 
 import * as React from 'react';
-import type { NodeId as TreeNodeId } from '../../shared/types.js';
+import type { NodeId as TreeNodeId } from '../../common/shared/index.js';
 import type { BatchProgressEvent } from '../../common/types/BatchProgressEvent.js';
 
 // Mock PaneProgress type for now

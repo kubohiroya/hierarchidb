@@ -4,7 +4,8 @@
  * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
-import type { CSVColumnType, CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
+import { CSVColumnType } from '@hierarchidb/tabular-store';
+import type { CSVProcessingConfig } from '@hierarchidb/ui-tabular-extract';
 
 interface ParsedCSV {
   rows: Array<Record<string, string | number | null>>;
@@ -15,13 +16,6 @@ interface TypedColumn {
   name: string;
   type: CSVColumnType;
 }
-
-/**
-  * : CSV
- * : RFC4180CSV
- * :
- * : RFC
-  */
 export async function parseCSVContent(
   content: string,
   config: CSVProcessingConfig = {},
@@ -106,12 +100,6 @@ export async function parseCSVContent(
   return { rows, columns };
 }
 
-/**
- * 【機能概要】: 列の型検出処理
- * 【実装方針】: サンプリングベースの効率的な型検出
- * 【テスト対応】: 各データ型の検出精度テスト
- * 🟢 信頼性レベル: サンプリング＋統計的判定
- */
 export function detectColumnTypes(
   columnNames: string[],
   rows: Array<Record<string, any>>,
@@ -171,11 +159,6 @@ export function detectColumnTypes(
   });
 }
 
-/**
- * 【機能概要】: CSVコンテンツの行分割（クォート内改行を考慮）
- * 【実装方針】: 状態機械によるクォート状態管理
- * 🟢 信頼性レベル: RFC4180準拠の実装
- */
 function parseCSVLines(content: string, quoteChar: string): string[] {
   const lines: string[] = [];
   let currentLine = '';
@@ -216,11 +199,6 @@ function parseCSVLines(content: string, quoteChar: string): string[] {
   return lines;
 }
 
-/**
- * 【機能概要】: CSV行のフィールド分割処理
- * 【実装方針】: 区切り文字とクォート文字を考慮した分割
- * 🟢 信頼性レベル: RFC4180準拠の実装
- */
 function parseCSVLine(
   line: string,
   delimiter: string,
@@ -261,30 +239,20 @@ function parseCSVLine(
     }
   }
 
-  // 最終フィールドを追加
   fields.push(currentField);
 
   return fields;
 }
 
-/**
- * 【機能概要】: 数値型判定
- * 🟡 信頼性レベル: 基本的な数値パターン対応
- */
 function isNumericValue(value: string): boolean {
   if (value === '') return false;
   const num = parseFloat(value);
   return !isNaN(num) && isFinite(num);
 }
 
-/**
- * 【機能概要】: 日付型判定
- * 🟡 信頼性レベル: 基本的な日付パターン対応、多言語対応要検討
- */
 function isDateValue(value: string): boolean {
   if (value === '') return false;
 
-  // 【日付パターン】: ISO形式、スラッシュ区切り、ハイフン区切り
   const datePatterns = [
     /^\d{4}-\d{2}-\d{2}$/, // YYYY-MM-DD
     /^\d{4}\/\d{2}\/\d{2}$/, // YYYY/MM/DD
@@ -299,15 +267,10 @@ function isDateValue(value: string): boolean {
     }
   }
 
-  // 【自然言語日付】: Date.parse()による判定
   const parsed = Date.parse(value);
   return !isNaN(parsed);
 }
 
-/**
- * 【機能概要】: 真偽値型判定
- * 🟡 信頼性レベル: 基本的な真偽値パターン対応、国際化要検討
- */
 function isBooleanValue(value: string): boolean {
   const lowerValue = value.toLowerCase();
   return ['true', 'false', 'yes', 'no', '1', '0', 'on', 'off', 'enabled', 'disabled'].includes(

@@ -1,7 +1,7 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
-import type { RoutePeerData } from '../types/index.ts';
+import type { RoutePeerData } from '../common/types/index.js';
 
 export type RoutePeerRow = {
   nodeId: NodeId;

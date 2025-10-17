@@ -3,12 +3,12 @@ import type { NodeId, NodeType } from '@hierarchidb/common-types';
 import type {
   BatchProgressEvent,
   BatchSessionStatus,
-} from '@hierarchidb/runtime-shared-batch-processor';
+} from '@hierarchidb/common-api';
 import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
 import {
   type ProcessingStatus,
   type ProgressInfo,
-} from '../../shared/index.ts';
+} from '../../common/shared/index.js';
 import { useShapeAPIGetter } from './useShapeAPI.js';
 
 type WorkerBridgeLike = ReturnType<typeof getWorkerBridge>;

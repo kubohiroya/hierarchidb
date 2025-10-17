@@ -52,7 +52,7 @@ export interface ShapeEntity extends Partial<PeerEntity> {
 
   // Processing Status
   batchSessionId?: string;
-  processingStatus?: 'idle' | 'processing' | 'completed' | 'failed';
+  processingStatus?: 'idle' | 'processing' | 'paused' | 'completed' | 'failed' | 'cancelled';
 }
 
 // ShapeWorkingCopy extends the entity with working copy properties but keeps wizard-derived
@@ -80,6 +80,10 @@ export type ShapeWorkingCopy = WorkingCopyDraft<ShapeEntity> &
     isDraft?: boolean;
     downloadedMatrix?: boolean[][]; // Cache status
     resumeStep?: number;
+    selectedCountries?: string[];
+    selectedAdminLevels?: number[];
+    checkboxState?: boolean[][] | string;
+    urlMetadata?: UrlMetadata[];
   }>;
 
 export interface StepProps {
@@ -223,6 +227,10 @@ export interface DownloadTask extends BatchTaskBase {
   taskType: 'download';
   url?: string;
   config?: DownloadTaskConfig;
+  countryCode?: string;
+  adminLevel?: number;
+  fileSize?: number;
+  downloadedBytes?: number;
 }
 
 export interface SimplifyTaskConfig {
@@ -240,6 +248,10 @@ export interface Simplify1Task extends BatchTaskBase {
   tolerance?: number;
   minArea?: number;
   config?: SimplifyTaskConfig;
+  countryCode?: string;
+  adminLevel?: number;
+  featureCount?: number;
+  processedFeatures?: number;
 }
 
 export interface TileSimplifyConfig extends SimplifyTaskConfig {
@@ -282,6 +294,11 @@ export interface VectorTileTask extends BatchTaskBase {
   compression?: boolean;
   outputFormat?: string;
   config?: VectorTileTaskConfig;
+  countryCode?: string;
+  adminLevel?: number;
+  zoomLevel?: number;
+  tileCount?: number;
+  generatedTiles?: number;
 }
 
 export interface BatchSession {

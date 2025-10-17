@@ -58,3 +58,4 @@ export class FeatureDefinition {
 }
 export * from './UnifiedBatchManagerBase.js';
 export * from './hooks/useBatchProgress.js';
+export * from './progressAdapters.js';

@@ -1,5 +1,5 @@
 import type { OdPair, RouteBatchSpec } from './types.js';
-import type { RouteBatchRouteInput } from '../services/RouteBatchManager.js';
+import type { RouteBatchRouteInput } from '../../services/RouteBatchManager.js';
 
 export type RouteTaskInput = RouteBatchRouteInput;
 

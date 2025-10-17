@@ -3,7 +3,7 @@ import {
   registerRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,
   type RuntimeWorkerStageClient,
-} from '@hierarchidb/plugin-api';
+} from '@hierarchidb/runtime-worker';
 
 /**
  * TODO(route-runtime-worker-integration): expand test coverage so that

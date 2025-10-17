@@ -1,8 +1,8 @@
 import { Dexie, type Table } from 'dexie';
 import { getDBName } from '@hierarchidb/util';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
-import type { SpreadsheetPeerData } from '../types/index.ts';
-import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../types/entities.js';
+import type { SpreadsheetPeerData } from '../common/types/index.ts';
+import type { SpreadsheetGroupItemData, SpreadsheetRelationMeta } from '../common/types/entities.js';
 
 export type SheetPeerRow = {
   nodeId: NodeId;

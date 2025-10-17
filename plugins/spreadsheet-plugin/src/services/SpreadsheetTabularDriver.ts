@@ -1,5 +1,5 @@
-import { type FileLike, TabularService } from '@hierarchidb/tabular';
-import type { SimpleTableMetadataManager } from '@hierarchidb/table-metadata';
+import { type FileLike, TabularService } from '@hierarchidb/tabular-source';
+import type { SimpleTableMetadataManager } from '@hierarchidb/tabular-store';
 type CSVTableMetadataLike = Parameters<SimpleTableMetadataManager['create']>[0];
 import { SpreadsheetStorePort } from './SpreadsheetStorePort.js';
 

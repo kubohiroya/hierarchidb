@@ -3,12 +3,12 @@
  * - Provides dialog steps and evaluators for the Styler plugin using the base NodeDialogPlugin.
  */
 
-import type { DialogStepDefinition, PeerEntity } from '@hierarchidb/common-types';
-import { NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-sdk';
+import type { PeerEntity } from '@hierarchidb/common-types';
+import { DialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-api';
 
 import type { StylerConfig } from '../types/stylerTypes.js';
-import { StylerStep5 } from '../components/steps/StylerStep5.js';
-import { StylerStep6 } from '../components/steps/StylerStep6.js';
+import { StylerStep5 } from '../../ui/components/steps/StylerStep5.js';
+import { StylerStep6 } from '../../ui/components/steps/StylerStep6.js';
 
 type StylerDialogPeer = PeerEntity<Record<string, unknown>>;
 

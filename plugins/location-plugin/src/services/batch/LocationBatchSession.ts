@@ -1,9 +1,7 @@
 import {
   AbstractBatchSession,
-  type BaseBatchConfig,
-  type BatchProgressEvent,
-  type BatchProgressPayload,
 } from '@hierarchidb/batch-api';
+import type { BatchProgressEvent, BatchProgressPayload, BaseBatchConfig } from '@hierarchidb/common-api';
 import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-types';
 import type { LocationSessionController } from './LocationSessionController.js';
 

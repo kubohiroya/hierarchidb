@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
-import { RouteSourceOrchestrator } from '../../orchestrator/RouteSourceOrchestrator.js';
-import { RouteBatchOrchestrationService } from '../../orchestrator/RouteBatchOrchestrationService.js';
+import { RouteSourceOrchestrator } from '../../common/orchestrator/RouteSourceOrchestrator.js';
+import { RouteBatchOrchestrationService } from '../../common/orchestrator/RouteBatchOrchestrationService.js';
 import type { createRouteBatchManager as createMgrFn } from '../../services/createRouteBatchManager.js';
 import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
-import type { RouteBatchSpec } from '../../orchestrator/types.js';
+import type { RouteBatchSpec } from '../../common/orchestrator/types.js';
 import { getOsrmEngineDefaults, getOsrmThrottleDefaults } from '../../services/config/osrm-defaults.js';
 import { getNetPort } from '../../services/net/getNetPort.js';
-import type { RouteGenerationOptions } from '../../entities/RouteEntity.js';
+import type { RouteGenerationOptions } from '../../common/entities/RouteEntity.js';
 
 type JobKind = 'recompute' | 'matrix' | 'enrich';
 

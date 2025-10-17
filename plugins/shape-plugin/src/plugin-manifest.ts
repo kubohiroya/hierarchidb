@@ -1,11 +1,11 @@
-import { toNodeType, type PluginMetadata } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 
 export const PLUGIN_ID = '@hierarchidb/shape-plugin' as const;
 export const PLUGIN_VERSION = '0.1.0' as const;
 export const PLUGIN_DESCRIPTION = 'Geographic shape data management plugin for HierarchiDB' as const;
-export const PLUGIN_NODE_TYPE = toNodeType('shape');
+export const PLUGIN_NODE_TYPE = 'shape' as NodeType;
 
-export const PLUGIN_MANIFEST: PluginMetadata = {
+export const PLUGIN_MANIFEST = {
   id: PLUGIN_ID,
   name: 'Shape Plugin',
   displayName: 'Shape',

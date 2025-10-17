@@ -1,12 +1,9 @@
-// Re-export worker API types so they remain part of the public surface
-export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '@hierarchidb/runtime-worker';
-
 import {
   getRuntimeWorkerClient,
   registerRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,
   type RuntimeWorkerStageClient,
-} from '@hierarchidb/plugin-api';
+} from '@hierarchidb/runtime-worker';
 
 /**
  * TODO(shape-runtime-worker-integration): ensure the shape plugin's

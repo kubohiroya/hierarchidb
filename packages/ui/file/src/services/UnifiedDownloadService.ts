@@ -19,6 +19,7 @@ export class UnifiedDownloadService {
     let loaded = 0;
 
     const reader = response.body?.getReader();
+    const contentType = response.headers.get('content-type') ?? '';
     const chunks: Uint8Array[] = [];
 
     if (reader) {
@@ -43,6 +44,6 @@ export class UnifiedDownloadService {
       view.set(chunk);
       return buffer;
     });
-    return new Blob(buffers);
+    return new Blob(buffers, { type: contentType });
   }
 }

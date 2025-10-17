@@ -2512,6 +2512,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/feature/tabular-store
+      '@hierarchidb/ui-data-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -2712,6 +2715,12 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/plugin-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-plugin-dialog':
         specifier: workspace:*
         version: link:../../packages/runtime/plugin-dialog
@@ -2724,6 +2733,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/feature/tabular-store
+      '@hierarchidb/ui-datasource':
+        specifier: workspace:*
+        version: link:../../packages/ui/datasource
       '@hierarchidb/ui-file':
         specifier: workspace:*
         version: link:../../packages/ui/file
@@ -2788,9 +2800,18 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/plugin-api':
+        specifier: workspace:*
+        version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-plugin-dialog':
         specifier: workspace:*
         version: link:../../packages/runtime/plugin-dialog
@@ -2900,6 +2921,7 @@ packages:
 
   '@arcgis/lumina@4.34.0-next.163':
     resolution: {integrity: sha512-16oF3f4+vpUzKlch/tJ0pQyzhCwZdb1BUJxxz04XTU5NMkNOiAVO1t7bh8oNHnqTUNLm1HeDjfjBDanm4OrnFw==}
+    deprecated: This version is no longer supported. Upgrade to @latest
     peerDependencies:
       '@lit/context': ^1.1.5
       lit: ^3.3.0
@@ -2909,6 +2931,7 @@ packages:
 
   '@arcgis/toolkit@4.34.0-next.163':
     resolution: {integrity: sha512-E9DrvF2IOTVGQRkyJKTNOn+4RDxgUBnfar+sENnsbaykFof1o+zTq9yLgAgxCHtvLgArWKUbGN7cqpCXOq8ujA==}
+    deprecated: This version is no longer supported. Upgrade to @latest
 
   '@asamuzakjp/css-color@3.2.0':
     resolution: {integrity: sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==}

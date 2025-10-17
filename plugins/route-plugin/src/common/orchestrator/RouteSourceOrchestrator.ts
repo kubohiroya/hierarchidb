@@ -1,6 +1,6 @@
 import type { DataSourceSpec, DataSourceStrategy, OdPair, ParseTask, RouteBatchSpec, StrategyContext, TaskPlan } from './types.js';
-import type { NetworkPortLike } from '../services/createRouteBatchManager.js';
-import { getRouteDownloadService, notifyAuthRequired } from '../services/download/registry.js';
+import type { NetworkPortLike } from '../../services/createRouteBatchManager.js';
+import { getRouteDownloadService, notifyAuthRequired } from '../../services/download/registry.js';
 import { CsvStrategy } from './strategies/CsvStrategy.js';
 import { GeoJsonStrategy } from './strategies/GeoJsonStrategy.js';
 

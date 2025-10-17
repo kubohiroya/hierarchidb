@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/batch-api';
+import type { BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/common-api';
 
 // Location plugin internal stage names → shared vocabulary
 // Shape uses: download, simplify1, simplify2, vectortile

@@ -5,8 +5,8 @@ import type {
   SimplifyTask,
   UrlMetadata,
   VectorTileTask,
-} from '../shared';
-import { BatchTaskStage } from '../shared';
+} from '../shared/index.js';
+import { BatchTaskStage } from '../shared/index.js';
 
 // ================================
 // Data Source Configurations

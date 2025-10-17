@@ -8,7 +8,7 @@
 // =========================================
 // =========================================
 
-import { PLUGIN_MANIFEST } from './plugin-manifest.js';
+import { PLUGIN_MANIFEST } from '../../plugin-manifest.js';
 
 /**
   * Plugin metadata bridge (legacy fields kept for incremental migration)

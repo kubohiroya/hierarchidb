@@ -1,3 +1,4 @@
+import { CSVTableMetadata } from '@hierarchidb/tabular-store';
 import type {
   CSVDataResult,
   CSVFilterRule,
@@ -5,10 +6,9 @@ import type {
   CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
-  CSVTableMetadata,
   ICSVDataApi,
   PaginationOptions,
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/ui-tabular-extract';
 
 // UI-only facade to avoid pulling service layer into typecheck.
 // Delegates at runtime via dynamic import.

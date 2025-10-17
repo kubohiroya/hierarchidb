@@ -18,13 +18,12 @@ export interface RegisterSpreadsheetWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
-  if (options.storeRegistry) {
-    return options.storeRegistry;
-  }
+async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOptions = {}): Promise<StoreRegistry | undefined> {
+  return options.storeRegistry;
 
+  /*
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-shared-module-paths');
+    const { importRuntimeWorker } = await import('@hierarchidb/runtime-worker');
     const runtime = await importRuntimeWorker();
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
@@ -32,26 +31,29 @@ async function resolveStoreRegistry(options: RegisterSpreadsheetWorkerStoresOpti
       console.warn('[spreadsheet-worker] failed to import runtime worker module', error);
     }
     return null;
+
   }
+  */
 }
 
+
 async function ensureSpreadsheetStores(registry: StoreRegistry): Promise<void> {
-  const { SpreadsheetEntitiesDB } = await import('../worker/spreadsheetEntitiesDB.js');
+  const { SpreadsheetEntitiesDB } = await import('..//spreadsheetEntitiesDB.js');
   const db = new SpreadsheetEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('spreadsheet')) {
-    const { createSpreadsheetPeerStoreDexie } = await import('../worker/spreadsheetPeerStore.dexie.js');
+    const { createSpreadsheetPeerStoreDexie } = await import('../spreadsheetPeerStore.dexie.js');
     registry.registerPeer('spreadsheet', createSpreadsheetPeerStoreDexie(db));
   }
 
   if (!registry.getGroup('spreadsheet')) {
-    const { createSpreadsheetGroupStoreDexie } = await import('../worker/spreadsheetGroupStore.dexie.js');
+    const { createSpreadsheetGroupStoreDexie } = await import('../spreadsheetGroupStore.dexie.js');
     registry.registerGroup('spreadsheet', createSpreadsheetGroupStoreDexie(db));
   }
 
   if (!registry.getRelations('spreadsheet')) {
-    const { createSpreadsheetRelationStoreDexie } = await import('../worker/spreadsheetRelationStore.dexie.js');
+    const { createSpreadsheetRelationStoreDexie } = await import('../spreadsheetRelationStore.dexie.js');
     registry.registerRelations('spreadsheet', createSpreadsheetRelationStoreDexie(db));
   }
 }
@@ -69,14 +71,12 @@ export async function registerSpreadsheetWorkerStores(options: RegisterSpreadshe
   try {
     await ensureSpreadsheetStores(registry);
   } catch (error) {
-    if (import.meta.env?.DEV) {
-      console.warn('[spreadsheet-worker] failed to register Dexie stores', error);
-    }
+    console.warn('[spreadsheet-worker] failed to register Dexie stores', error);
   }
 }
 
 export async function loadSpreadsheetEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/spreadsheetEntitiesDB.js');
+  return import(/* @vite-ignore */ '../spreadsheetEntitiesDB.js');
 }
 
 registerSpreadsheetWorkerStores().catch(() => {});

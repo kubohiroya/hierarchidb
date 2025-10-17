@@ -3,7 +3,7 @@
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
 import type { GroupItemBase, GroupStore, PeerStore, RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import { isDevEnvironment } from '../utils/env.js';
+import { isDevEnvironment } from '../../common/utils/env.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -25,20 +25,20 @@ async function resolveStoreRegistry(options: RegisterLocationWorkerStoresOptions
 }
 
 async function ensureLocationStores(registry: StoreRegistry): Promise<void> {
-  const { LocationEntitiesDB } = await import('../worker/locationEntitiesDB.js');
+  const { LocationEntitiesDB } = await import('../locationEntitiesDB.js');
   const db = new LocationEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('location')) {
-    const { createLocationPeerStoreDexie } = await import('../worker/locationPeerStore.dexie.js');
+    const { createLocationPeerStoreDexie } = await import('../locationPeerStore.dexie.js');
     registry.registerPeer('location', createLocationPeerStoreDexie(db));
   }
   if (!registry.getGroup('location')) {
-    const { createLocationGroupStoreDexie } = await import('../worker/locationGroupStore.dexie.js');
+    const { createLocationGroupStoreDexie } = await import('../locationGroupStore.dexie.js');
     registry.registerGroup('location', createLocationGroupStoreDexie(db));
   }
   if (!registry.getRelations('location')) {
-    const { createLocationRelationStoreDexie } = await import('../worker/locationRelationStore.dexie.js');
+    const { createLocationRelationStoreDexie } = await import('../locationRelationStore.dexie.js');
     registry.registerRelations('location', createLocationRelationStoreDexie(db));
   }
 }
@@ -54,11 +54,11 @@ export async function registerLocationWorkerStores(options: RegisterLocationWork
   }
 }
 
-type LocationEntitiesDbModule = typeof import('../worker/locationEntitiesDB.js');
+type LocationEntitiesDbModule = typeof import('../locationEntitiesDB.js');
 
 export async function loadLocationEntitiesDbModule(): Promise<LocationEntitiesDbModule | null> {
   try {
-    return await import(/* @vite-ignore */ '../worker/locationEntitiesDB.js');
+    return await import(/* @vite-ignore */ '../locationEntitiesDB.js');
   } catch {
     return null;
   }

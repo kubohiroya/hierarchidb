@@ -1,15 +1,16 @@
 import type React from 'react';
 import { Box, Typography } from '@mui/material';
 import { LicenseAgreementStep } from '@hierarchidb/ui-license';
-import type { StepProps } from '../../shared';
-import { DATA_SOURCE_CONFIGS } from '../../mock/data';
+import type { StepProps } from '../../shared/index.js';
+import { DATA_SOURCE_CONFIGS } from '../../mock/data.js';
 
 /**
  * Step 3: License Agreement
  * Uses @hierarchidb/_app-datasource components for license display
  */
 export const Step3License: React.FC<StepProps> = ({ workingCopy, onUpdate, disabled }) => {
-  const dataSource = DATA_SOURCE_CONFIGS[workingCopy.dataSourceName];
+  const dataSourceKey = workingCopy.dataSourceName ?? '';
+  const dataSource = dataSourceKey ? DATA_SOURCE_CONFIGS[dataSourceKey] : undefined;
 
   if (!dataSource) {
     return (

@@ -44,7 +44,7 @@ export class NominatimStrategy implements ILocationDownloadStrategy {
       params.append('accept-language', config.language);
     }
     try {
-      const { authFetch } = await import('../../common/utils/authFetch.js');
+      const { authFetch } = await import('../../utils/authFetch.js');
       const response = await authFetch(`${endpoint}?${params}`);
       const data = await response.json();
       if (!Array.isArray(data)) return [];

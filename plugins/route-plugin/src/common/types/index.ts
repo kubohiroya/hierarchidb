@@ -145,7 +145,6 @@ export interface RoutePeerData {
 
 export interface RouteProcessingConfig {
   concurrentRequests: number;
-  corsProxyBaseURL?: string;
   enableRouteOptimization: boolean;
   enableElevationData: boolean;
   enableTrafficData: boolean;

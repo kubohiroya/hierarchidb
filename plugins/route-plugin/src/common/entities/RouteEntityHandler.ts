@@ -15,8 +15,8 @@ import type {
   TransportMode,
 } from './RouteEntity.js';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
-import { RouteGenerator } from '../services/RouteGenerator.js';
-import { LocationResolver } from '../services/LocationResolver.js';
+import { RouteGenerator } from '../../services/RouteGenerator.js';
+import { LocationResolver } from '../../services/LocationResolver.js';
 
 /**
  * Metadata search criteria

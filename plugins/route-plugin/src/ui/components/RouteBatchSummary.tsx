@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
 import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
-import { useTranslation } from '../../i18n/index.ts';
+import { useTranslation } from '../../common/i18n/index.js';
 
 export function RouteBatchSummary({ sessionId }: { sessionId: string }) {
   const { progress, lastError } = useRouteBatchProgress(sessionId);

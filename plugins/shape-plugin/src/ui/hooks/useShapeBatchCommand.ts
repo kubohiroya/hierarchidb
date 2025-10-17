@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { ShapeBatchCommand, ShapeBatchCommandPayload } from '../../shared/index.ts';
+import type { ShapeBatchCommand, ShapeBatchCommandPayload } from '../../common/shared/index.js';
 import { useShapeAPIGetter } from './useShapeAPI.js';
 
 export function useShapeBatchCommand() {

@@ -1,11 +1,11 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 
 export const PLUGIN_ID = '@hierarchidb/route-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
 export const PLUGIN_DESCRIPTION = 'Route management plugin extending Shape plugin for HierarchiDB' as const;
 export const PLUGIN_NODE_TYPE = 'route' as NodeType;
 
-export const PLUGIN_MANIFEST: PluginMetadata = {
+export const PLUGIN_MANIFEST = {
   id: PLUGIN_ID,
   name: 'Route Plugin',
   displayName: 'Route',

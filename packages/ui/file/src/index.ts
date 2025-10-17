@@ -4,3 +4,7 @@ export type { FileInputWithUrlProps } from './components/FileInputWithUrl/FileIn
 
 // Services
 export { UnifiedDownloadService } from './services/UnifiedDownloadService.js';
+
+// Hooks
+export { useUrlDownload } from './hooks/useUrlDownload.js';
+export type { UseUrlDownloadOptions, UseUrlDownloadResult } from './hooks/useUrlDownload.js';

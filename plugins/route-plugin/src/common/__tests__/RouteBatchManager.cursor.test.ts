@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { RouteBatchManager, type RouteBatchRouteInput } from '../services/RouteBatchManager.js';
-import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
+import { RouteBatchManager, type RouteBatchRouteInput } from '../../services/RouteBatchManager.js';
+import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
 import type { NodeId } from '@hierarchidb/common-types';
 

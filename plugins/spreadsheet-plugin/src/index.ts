@@ -13,8 +13,6 @@ export type {
 export type { SpreadsheetEntity, SpreadsheetWorkingCopy } from './common/extension/definition.js';
 export * from './common/extension/constants.js';
 export { PLUGIN_MANIFEST as SpreadsheetPluginManifest } from './plugin-manifest.js';
-export * from './common/steps/DataSourceStep.js';
-export * from './common/steps/FilteringStep.js';
 export * from './services/index.js';
 
 // Folder dialog extension initializer (optional)

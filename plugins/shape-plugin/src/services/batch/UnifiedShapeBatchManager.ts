@@ -11,7 +11,7 @@ import {
   type IBatchSessionManager,
   type ProgressPhase,
   isBatchControlAPIV2Enabled,
-} from '@hierarchidb/batch-api';
+} from '@hierarchidb/common-api';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
 import type { BatchProcessConfig } from './types.js';
 import type { UrlMetadata } from '../../common/shared/types.js';

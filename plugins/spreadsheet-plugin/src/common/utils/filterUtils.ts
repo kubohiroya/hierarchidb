@@ -4,7 +4,7 @@
  * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
-import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';
+import type { CSVFilterRule } from '@hierarchidb/ui-tabular-extract';
 
 type LegacyFilterRule = CSVFilterRule & {
   field?: string;

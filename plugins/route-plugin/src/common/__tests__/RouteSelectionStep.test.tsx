@@ -5,7 +5,7 @@ import type { RouteEntity, RouteWorkingCopy, NodeId } from '../types/index.js';
 import { createRouteDraftWorkingCopy, mergeRouteWorkingCopy } from '../utils/workingCopy.js';
 import { en as enTranslations } from '../i18n/en.js';
 
-vi.mock('../i18n/index.ts', () => ({
+vi.mock('../i18n/index.js', () => ({
   useTranslation: () => ({
     translations: enTranslations,
     t: (key: string, fallback?: string) => fallback ?? key,

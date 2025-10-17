@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { SheetPeerRow, SpreadsheetEntitiesDB } from './spreadsheetEntitiesDB.js';
-import type { SpreadsheetPeerData } from '../types/index.ts';
+import type { SpreadsheetPeerData } from '../common/types/index.ts';
 
 const normalizeSpreadsheetPeerData = (data?: SpreadsheetPeerData | null): SpreadsheetPeerData => ({
   schemaVersion: 1,

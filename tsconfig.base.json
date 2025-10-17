@@ -92,6 +92,12 @@
       "@hierarchidb/components/*": [
         "packages/components/src/*"
       ],
+      "@hierarchidb/ui-data-grid": [
+        "packages/ui/data-grid/src/index.ts"
+      ],
+      "@hierarchidb/ui-data-grid/*": [
+        "packages/ui/data-grid/src/*"
+      ],
       "@hierarchidb/common-api": [
         "packages/common/api/src/index.ts"
       ],

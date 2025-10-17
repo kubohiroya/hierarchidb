@@ -3,7 +3,7 @@
  * Displays pending batch sessions that can be resumed from direct link access
  */
 
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Alert,
   Box,
@@ -19,7 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Delete as DeleteIcon, PlayArrow as PlayArrowIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
-import { type BatchSession, formatDuration } from '../../shared/index.ts';
+import { type BatchSession, formatDuration } from '../../common/shared/index.js';
 
 export interface BatchRecoveryDialogProps {
   open: boolean;

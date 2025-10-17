@@ -23,8 +23,8 @@ import {
   FilterAlt as FilterAltIcon,
   Layers as LayersIcon,
 } from '@mui/icons-material';
-import { DEFAULT_PROCESSING_CONFIG } from '../../shared';
-import type { FeatureFilterMethod, StepProps } from '../../shared';
+import { DEFAULT_PROCESSING_CONFIG } from '../../shared/index.js';
+import type { FeatureFilterMethod, StepProps } from '../../shared/index.js';
 
 /**
  * Step 4: Processing Configuration

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RouteSourceOrchestrator } from '../RouteSourceOrchestrator.js';
-import * as registry from '../../services/download/registry.js';
+import * as registry from '../../../services/download/registry.js';
 import type { RouteBatchSpec } from '../types.js';
-import type { RouteDownloadService } from '../../services/download/factory.js';
+import type { RouteDownloadService } from '../../../services/download/factory.js';
 import type { FetchNetworkPort } from '@hierarchidb/download';
-import type { NetworkPortLike } from '../../services/createRouteBatchManager.js';
+import type { NetworkPortLike } from '../../../services/createRouteBatchManager.js';
 
 describe('RouteSourceOrchestrator auth notifier', () => {
   it('notifies on auth error during preview download', async () => {

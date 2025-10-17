@@ -3,8 +3,8 @@ import { Button, CircularProgress, Tooltip } from '@mui/material';
 import PauseIcon from '@mui/icons-material/Pause';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { useRouteBatchProgress } from '../../ui/hooks/useRouteBatchProgress.js';
-import { useTranslation } from '../../i18n/index.ts';
+import { useRouteBatchProgress } from '../hooks/useRouteBatchProgress.js';
+import { useTranslation } from '../../common/i18n/index.js';
 
 export function RouteBatchLiveProgress({ jobId }: { jobId: string }) {
   const {

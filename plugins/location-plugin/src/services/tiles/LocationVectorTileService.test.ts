@@ -1,10 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toNodeId } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { UnifiedLocationBatchManager } from '../batch/UnifiedLocationBatchManager.js';
-import type { BatchProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
+import type { BatchProgressEvent } from '@hierarchidb/common-api';
 
 type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;
 

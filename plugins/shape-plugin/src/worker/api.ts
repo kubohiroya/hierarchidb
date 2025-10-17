@@ -37,7 +37,7 @@ import type { BatchProcessConfig } from '../services/batch/types.js';
 import { getEphemeralShapeDB } from '../services/database/EphemeralShapeDB.js';
 import type { TreeNodeId } from '@hierarchidb/common-types';
 import type { BatchStage, BatchTaskStatus } from '../common/types/BatchTaskLike.js';
-import { createComlinkEventBridge, type RemoteEventListener } from 'packages/runtime/client';
+import { createComlinkEventBridge, type RemoteEventListener } from '@hierarchidb/runtime-client';
 import type { StandardProgressEvent } from '@hierarchidb/runtime-shared-batch-processor';
 
 // Create singleton unified batch manager

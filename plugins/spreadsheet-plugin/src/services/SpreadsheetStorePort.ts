@@ -6,15 +6,14 @@ import type {
   TabularIngestSummary,
   TabularSchema,
   TabularStorePort,
-} from '@hierarchidb/tabular';
+} from '@hierarchidb/tabular-source';
 import type { NodeId } from '@hierarchidb/common-types';
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
-import type { CSVColumnInfo } from '@hierarchidb/ui-csv-extract';
-import type { SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/table-metadata';
+import type { CSVColumnInfo, SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/tabular-store';
 type CSVTableMetadataLike = Parameters<TableMetadataManagerPublic['create']>[0];
-import { calculateFileHash, calculateTextHash } from '../utils/hashUtils.js';
 import { getDBName } from '@hierarchidb/util';
+import { calculateFileHash, calculateTextHash } from '~/common/utils/hashUtils.js';
 
 type SessionData = {
   rawFileMetadataId: NodeId;
@@ -40,13 +39,10 @@ export class SpreadsheetStorePort implements TabularStorePort<CSVTableMetadataLi
     const filename = ctx.filename || 'unknown.csv';
     const size = ctx.sizeBytes || 0;
     let hash = 'na';
-    try {
-      if (typeof File !== 'undefined' && ctx.source instanceof File) {
-        hash = await calculateFileHash(ctx.source);
-      } else if (typeof ctx.source === 'string') {
-        hash = await calculateTextHash(ctx.source);
-      }
-    } catch {
+    if (typeof File !== 'undefined' && ctx.source instanceof File) {
+      hash = await calculateFileHash(ctx.source);
+    } else if (typeof ctx.source === 'string') {
+      hash = await calculateTextHash(ctx.source);
     }
 
     // Create RawFileMetadata

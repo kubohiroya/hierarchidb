@@ -2,16 +2,16 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import { RouteDatabase } from './database/RouteDatabase.js';
 import { RouteBatchConfig } from './RouteBatchSession.js';
-import { BatchProgressCallback, BatchProgressEvent, BatchSessionId, BatchSessionStatus, IBatchSessionManager, StageKey } from '@hierarchidb/batch-api';
+import {
+  BatchProgressCallback,
+  BatchProgressEvent,
+  BatchSessionId,
+  BatchSessionStatus,
+  IBatchSessionManager,
+  StageKey,
+} from '@hierarchidb/common-api';
 
 export interface RouteBatchSessionConfig {
-  corsProxyBaseURL?: string;
-  maxRetries?: number;
-  retryDelay?: number;
-  workerTimeout?: number;
-  maxMemoryPerWorker?: number;
-  enableProgressTracking?: boolean;
-  enableResourceMonitoring?: boolean;
   routeGeneration?: Partial<RouteBatchConfig['routeGeneration']>;
   locationResolution?: RouteBatchConfig['locationResolution'];
   validation?: RouteBatchConfig['validation'];
@@ -163,13 +163,6 @@ function resolveRouteConfig(config?: RouteBatchSessionConfig | RouteBatchConfig)
     maxRetries: 0,
   };
   return {
-    corsProxyBaseURL: config?.corsProxyBaseURL,
-    maxRetries: config?.maxRetries ?? 3,
-    retryDelay: config?.retryDelay ?? 1000,
-    workerTimeout: config?.workerTimeout,
-    maxMemoryPerWorker: config?.maxMemoryPerWorker,
-    enableProgressTracking: config?.enableProgressTracking,
-    enableResourceMonitoring: config?.enableResourceMonitoring,
     routeGeneration: {
       ...defaults,
       ...config?.routeGeneration,

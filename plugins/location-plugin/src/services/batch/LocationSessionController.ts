@@ -6,7 +6,7 @@ import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
-import { BatchService } from '@hierarchidb/batch';
+import { BatchService } from '@hierarchidb/batch-sdk';
 import { getLocationRuntimeWorkerClient } from './adapters/RuntimeWorkerClient.js';
 import { createLaneSemaphoreRegistry } from '@hierarchidb/batch-api';
 
@@ -140,13 +140,24 @@ export class LocationSessionController {
       console.warn('[Location][Session] runtime worker client unavailable; skipping worker delegation');
       return;
     }
+    const tileClient = client.vectortile;
+    if (!tileClient) {
+      console.warn('[Location][Session] vectortile client unavailable; skipping worker delegation');
+      return;
+    }
     await LocationSessionController.laneRegistry.runWithLane('tilegen', async () => {
-      await client.vectortile.generateTiles(fileId, { format: 'mvt', compression: 'none' });
+      await tileClient.generateTiles(fileId, { format: 'mvt', compression: 'none' });
     });
 
     // 3) Import generated tiles back into location DB for compatibility
     type VectorTileRecord = { z: number; x: number; y: number; size: number; timestamp?: number };
-    const list: VectorTileRecord[] = await client.vectortile.listTiles(fileId);
+    const list = (await tileClient.listTiles(fileId)).map((record) => ({
+      z: record.z,
+      x: record.x,
+      y: record.y,
+      size: record.size ?? 0,
+      timestamp: record.timestamp,
+    })) satisfies VectorTileRecord[];
     const total = list.length;
     let completed = 0;
     const batch = new BatchService();
@@ -157,7 +168,7 @@ export class LocationSessionController {
       await LocationSessionController.laneRegistry.runWithLane(laneName, async () => {
         if (this.cancelled) return;
         while (this.paused) await new Promise(r => setTimeout(r, 100));
-        const u8 = await client.vectortile.getTile(fileId, t.z, t.x, t.y);
+        const u8 = await tileClient.getTile(fileId, t.z, t.x, t.y);
         if (!u8) return;
         const copy = new Uint8Array(u8);
         const data: ArrayBuffer = copy.buffer.slice(0);

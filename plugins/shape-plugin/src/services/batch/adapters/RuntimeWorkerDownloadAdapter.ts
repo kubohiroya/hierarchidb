@@ -1,11 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import { BatchService } from '@hierarchidb/batch';
+import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch-sdk';
 import type { DownloadTask } from '../../common/types.js';
 import type { ProgressInfo } from '../../../common/shared/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';
 import type { StageControls } from './StageControls.js';
 import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
-import { createLaneSemaphoreRegistry } from '@hierarchidb/batch-api';
 
 /**
  * RuntimeWorkerDownloadAdapter
@@ -36,7 +35,10 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
   ): Promise<DownloadStageAdapterResult> {
     // Require a runtime worker client (no fallback here)
     const client = await getShapeRuntimeWorkerClient();
-    if (!client) throw new Error('Runtime worker client not available for download stage');
+    const downloadClient = client?.download;
+    if (!downloadClient) {
+      throw new Error('Runtime worker client not available for download stage');
+    }
     const batch = new BatchService();
     let completed = 0;
     let failed = 0;
@@ -61,7 +63,7 @@ export class RuntimeWorkerDownloadAdapter implements DownloadStageAdapter {
             if (!downloadUrl) {
               throw new Error(`Download task ${task.taskId} missing url`);
             }
-            const res = await client.download.download(downloadUrl, fileId);
+            const res = await downloadClient.download(downloadUrl, fileId);
             totalBytes += res.sizeBytes || 0;
             completed += 1;
           } catch {

@@ -183,7 +183,28 @@
   - progress: 2025-10-16 10:48 route-plugin へ `@hierarchidb/components` を peer/dev 依存として追加し、tsconfig.base のパスエイリアスを更新。`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行したところ `@hierarchidb/components` 未解決エラーは解消したが、既存の batch API／未実装サービス由来エラーが残存
   - progress: 2025-10-16 10:55 plugins/{location,route,shape}-plugin の tsconfig を `../../tsconfig.base.json` 参照＋ `baseUrl = ../..` へ揃え、空の `paths` 上書きを撤去
   - progress: 2025-10-16 11:02 shape-plugin の `tsconfig.build.json` に `src/shared/**/*`・`src/ui/**/*` など実体ファイルを含め TS18003 を解消（従来未整備だった UI/共有モジュールの型エラーが顕在化）
-  - blocked: 2025-10-16 11:05 `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck` は既存課題（happy-dom 型不整合、batch API の未エクスポート、UI/worker モジュールの欠落や unknown 型など）で失敗。今回の差分による新規エラーは確認されておらず、別タスクでの是正が必要
+  - progress: 2025-10-16 11:25 `useUrlDownload` を `@hierarchidb/ui-file` 配下に汎用化して移設し、`packages/ui/file` からエクスポート。`UnifiedDownloadService` の Blob 生成・progress 通知を共通フック対応に合わせて調整
+  - progress: 2025-10-16 11:32 Route plugin の batch 周辺を現行 API に合わせて整理（`@hierarchidb/common-api` 参照へ更新、Runtime Worker 向けの最小 d.ts を追加）。`route-plugin` の型検証が通過
+  - progress: 2025-10-17 20:02 Shape plugin の batch/service 層インポートと Runtime Worker 型の整合を整理し、`ShapeViewPanel`/各 Step の null 安全性を補強（UI/worker 未整理のため shape typecheck は引き続き未達）
+  - progress: 2025-10-17 20:35 Shape plugin の旧来 `common/api`・バッチ監視 UI・ダイアログ拡張を撤去し、route/location と同様に Worker/API 依存へ一本化。`pnpm --filter @hierarchidb/shape-plugin typecheck` が通過（legacy API への参照なし）
+  - blocked: 2025-10-16 11:40 `pnpm --filter @hierarchidb/{location,shape}-plugin typecheck` は引き続き既存課題（happy-dom 型不整合や UI/worker モジュール未整備）で失敗。Route plugin は batch API 整合化後に型検証通過。残りの課題は別タスクで対処が必要
+
+10) Repository Guidelines ドキュメント整備（P1）
+- ブランチ: `chore/docs/repository-guidelines`
+- 依存: TASKS.md 運用ルール
+- 受け入れ基準（DoD）:
+  - [x] `AGENTS.md` が「Repository Guidelines」をタイトルとし、200〜400語で主要セクションを網羅している
+  - [x] プロジェクト構成・主要ディレクトリ、ビルド/テストコマンド、コードスタイル、テスト方針、コミット/PR ガイドラインを具体的に記述している
+  - [x] 記載したコマンドやパスが現行リポジトリ構成と矛盾せず、自己レビューで確認済みである
+- チェックリスト:
+  - [x] ドキュメント草案を作成し、語数と見出し構造を確認
+  - [x] `TASKS.md` の Doing セクションと運用ログに start/done を記録
+  - [x] 掲載コマンド・パスを `package.json` / 既存ドキュメントと突き合わせて整合性を確認
+- ロールバック手順：
+  - 追加した `AGENTS.md` を削除（または旧版 `AGENTS.md-` を復元）し、関連ログを巻き戻す
+- 運用ログ：
+  - start: 2025-10-17 09:20 Repository Guidelines ドキュメント整備に着手（AGENTS.md 方針整理）
+  - done: 2025-10-17 10:40 AGENTS.md を 397 語で作成し、コマンド・運用手順を自己レビュー
 
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -204,6 +225,36 @@
     - [ ] フラグ初期化・DB リセットヘルパーを Playwright 共通モジュールへ切り出し
   - ロールバック手順：
     - 追加した Playwright テストとヘルパーを削除し、`pnpm playwright test` を再実行
+
+- refactor/folder-plugin/ui-definition-alignment（PluginDefinition スリム化追随, P1）
+  - ブランチ: `refactor/folder-plugin/ui-definition-alignment`
+  - 依存: `@hierarchidb/plugin-sdk`, `@hierarchidb/vite-plugin-node-type-registry`
+  - 受け入れ基準（DoD）：
+    - [x] `src/ui/plugin.ts` / `src/ui/components/FolderUIPlugin.tsx` の役割を整理し、不要なら削除または `legacy/` へ隔離して参照元を更新
+    - [x] `pnpm --filter @hierarchidb/folder-plugin typecheck` と `pnpm --filter @hierarchidb/folder-plugin build` が成功
+    - [ ] `virtual:plugin-registry-ui` 経由で Folder UI が問題なくロードされることを手動確認し、結果を運用ログへ記録（UI 実機確認は環境未整備のため保留）
+  - チェックリスト：
+    - [x] `rg "components:" plugins` などで他プラグインの旧 `PluginDefinition.components` 利用状況を棚卸し、必要なら別タスク化
+    - [x] cleanup 後の `dist/ui` 出力を確認し、`plugin-definition` に UI コンポーネント参照が混入していないことを確認
+    - [x] ロールバック手順と互換レイヤー有無の判断を `TASKS.md` 進捗メモへ追記
+  - ロールバック手順：
+    - 隔離または削除した UI 定義ファイルを元の場所へ戻し、`pnpm --filter @hierarchidb/folder-plugin typecheck` / `build` を再実行
+    - 影響があった場合は `virtual:plugin-registry-ui` でのロード確認を再度実施し、結果を運用ログへ記録
+
+- refactor/shape-plugin/ui-definition-alignment（UIPluginDefinition → registry 副作用移行, P1）
+  - ブランチ: `refactor/shape-plugin/ui-definition-alignment`
+  - 依存: `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/vite-plugin-node-type-registry`
+  - 受け入れ基準（DoD）：
+    - [x] `plugins/shape-plugin/src/common/ui-plugin.tsx` と `src/ui/plugin.ts` で旧 `components` マッピングを撤去し、新方式（`pluginMapUI` 副作用）へ統一
+    - [ ] `Shape` 固有ステップを `HostProfileRegistry` / `PluginStepRegistry` 経由で提供する仕組みに置換し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が成功（※現状は既存 UI コンポーネント群の型エラーで失敗。要追跡）
+    - [ ] `pnpm --filter @hierarchidb/shape-plugin build` が成功し、`dist/ui` 配下に旧 `plugin` エントリが生成されないことを確認（※ sandbox の EPERM により未実施）
+  - チェックリスト：
+    - [ ] 互換 API（UI レジストリ登録関数など）を必要に応じて残しつつ、エクスポート契約が破壊的でないか確認
+    - [ ] `virtual:plugin-registry-ui` で Shape UI がロードされることを手動確認し、運用ログに記録
+    - [ ] cleanup 後の `dist` を点検し、`plugin-definition` や manifest から UI コンポーネント参照が消えていることを確認（ビルド完了後に実施）
+  - ロールバック手順：
+    - 削除した UI 定義ファイルを復元し、`pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` を再実行
+    - 登録方式切替後に問題があれば `virtual:plugin-registry-ui` の Shape ローダーを旧実装へ戻し、挙動を確認
 
 - test/runtime-ui/speeddial-dialog-state-regression（DialogState 購読 E2E, P1）
   - ブランチ: `test/runtime-ui/speeddial-dialog-state-regression`
@@ -1510,6 +1561,14 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-10-17 11:30 start: refactor/folder-plugin/ui-definition-alignment 調査 — PluginDefinition の `components` 廃止後も folder-plugin に旧実装が残っていることを確認し、影響範囲を洗い出すためのメモ作成を開始。
+- 2025-10-17 12:10 done: refactor/folder-plugin/ui-definition-alignment 調査 — `TODO-refactoring20251017.md` を作成し、TASKS.md に ToDo/ログを追加してフォローアップ手順を整理。
+- 2025-10-17 13:05 start: refactor/folder-plugin/ui-definition-alignment 実装 — 旧 UI plugin 定義ファイルの撤去と host 登録ファイルの移設を開始。
+- 2025-10-17 13:40 done: refactor/folder-plugin/ui-definition-alignment 実装 — `src/ui/plugin.ts`/`components/FolderUIPlugin.tsx` を削除し、`folder-host` をトップレベルへ移設。`pnpm --filter @hierarchidb/folder-plugin typecheck` / build を実行し dist を確認。`virtual:plugin-registry-ui` 手動確認は開発環境未起動につき保留。
+- 2025-10-17 13:55 start: refactor/shape-plugin/ui-definition-alignment 調査 — `rg "components:" plugins` で shape-plugin の旧 UI 定義が残存していることを確認。
+- 2025-10-17 14:05 done: refactor/shape-plugin/ui-definition-alignment 調査 — shape-plugin の対象ファイル（`src/common/ui-plugin.tsx` / `src/ui/plugin.ts`）を特定し、TASKS.md へフォローアップタスクを追加。
+- 2025-10-17 14:20 progress: refactor/shape-plugin/ui-definition-alignment — `src/common/ui-plugin.tsx` / `src/ui/plugin.ts` を削除し、`src/ui/index.ts` の副作用 import を `./components/steps-provider.js` へ修正。
+- 2025-10-17 14:35 blocked: refactor/shape-plugin/ui-definition-alignment — `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行したところ、ShapeViewPanel・steps 系の局所エラー（undefined 耐性・型推論）に加え、services/batch 配下でモジュール解決（`../../common/types.js`）や `@hierarchidb/*` 未エクスポートに起因する大量エラーが残存することを確認。`build` は tsup の一時ファイル作成で `EPERM`（sandbox）となり未実施。型修正とビルド環境調整を次工程で対応。
 - 2025-10-01 09:40 start: policy/ban-tsconfig-paths-dist-dts フォローアップ — `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` で `packages/runtime-shared/module-paths/tsconfig.json` の dist/*.d.ts 参照が検出されたため是正を開始。`git checkout -b chore/runtime-shared/module-paths-tsconfig` は sandbox 制約で `fatal: cannot lock ref` となりブランチ作成できなかったため、main 上で差分を管理しつつ `paths` を `src` 参照へ切替える方針。
 - 2025-10-01 10:05 progress: 同タスク — `packages/runtime-shared/module-paths/tsconfig.json` の `paths` を `../runtime/worker/src/RuntimeWorkerService.ts`・`../runtime/worker-bootstrap/src/RuntimeWorkerService.ts` へ更新し、`dist/*.d.ts` 参照を排除。差分は単一ファイルでロールバック容易（該当行を元の dist 参照へ戻すだけで復旧可能）。
 - 2025-10-01 10:12 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-module-paths typecheck` と `node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` を実行し、前者は `tsc --noEmit` が成功、後者は `[policy] OK` を確認。ロールバックは `packages/runtime-shared/module-paths/tsconfig.json` を差分前へ戻し再度 typecheck/policy を実行するだけで可。
@@ -5510,6 +5569,8 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-6"></a>
 
+- 2025-10-17 09:20 start: chore/docs/repository-guidelines — Repository Guidelines ドキュメント整備に着手し、既存ドキュメント/スクリプトから構成・コマンドを調査開始。
+- 2025-10-17 10:40 done: chore/docs/repository-guidelines — AGENTS.md を 397 語で整備し、主要セクションとコマンドを自己レビュー済み。
 - 2025-10-15 13:03 start: fix/app/mui-icon-map-type-errors — `app/vite-plugin-mui-icon-map.ts` の型エラー解消に着手。Node ESM 互換化と型注釈整備を予定。
 - 2025-10-14 10:05 start: refactor/tools/node-type-registry-unify — `@hierarchidb/vite-plugin-node-type-registry` を新設し、旧 `vite-plugin-registry` / `services` / `tools-plugin-registry-utils` / `tools-vite-plugin-package-reader` の統合対応を開始。
 - 2025-10-14 13:40 progress: refactor/tools/node-type-registry-unify — 新 Vite プラグインを実装し `app/vite.config.ts` へ組み込み。旧 `app/vite-plugin-registry.ts` / `app/vite-plugin-services.ts` / `packages/tools/(plugin-registry-utils|vite-plugin-package-reader)` を削除。ドキュメントを更新。

@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { PeerStore } from '@hierarchidb/plugin-api';
-import type { RoutePeerData } from 'src/types/index.ts';
+import type { RoutePeerData } from '../../common/types/index.js';
 
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
@@ -23,7 +23,11 @@ async function resolveStoreRegistry(options: RegisterRouteWorkerStoresOptions = 
   }
   try {
     const runtime = await import('@hierarchidb/runtime-worker');
-    return runtime.storeRegistry as StoreRegistry;
+    const candidate = runtime as { storeRegistry?: StoreRegistry };
+    if (candidate.storeRegistry) {
+      return candidate.storeRegistry;
+    }
+    return null;
   } catch (error) {
     if (import.meta.env?.DEV) {
       console.warn('[route-worker] failed to import runtime worker module', error);
@@ -33,12 +37,12 @@ async function resolveStoreRegistry(options: RegisterRouteWorkerStoresOptions = 
 }
 
 async function ensureRouteStores(registry: StoreRegistry): Promise<void> {
-  const { RouteEntitiesDB } = await import('../worker/routeEntitiesDB.js');
+  const { RouteEntitiesDB } = await import('../routeEntitiesDB.js');
   const db = new RouteEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('route')) {
-    const { createRoutePeerStoreDexie } = await import('../worker/routePeerStore.dexie.js');
+    const { createRoutePeerStoreDexie } = await import('../routePeerStore.dexie.js');
     // 型アサートでplugin-api型に変換
     const store = createRoutePeerStoreDexie(db) as unknown as PeerStore<RoutePeerData>;
     registry.registerPeer('route', store);
@@ -65,7 +69,7 @@ export async function registerRouteWorkerStores(options: RegisterRouteWorkerStor
 }
 
 export async function loadRouteEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/routeEntitiesDB.js');
+  return import(/* @vite-ignore */ '../routeEntitiesDB.js');
 }
 
 registerRouteWorkerStores().catch(() => {});

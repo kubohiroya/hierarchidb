@@ -5,7 +5,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -15,18 +14,17 @@ import {
   Step,
   StepLabel,
   Stepper,
-  Typography,
 } from '@mui/material';
 import { notify } from '@hierarchidb/components';
 import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
-import type { NodeId } from '../../shared/index.ts';
+import type { NodeId } from '../../common/shared/index.js';
 import {
   type ShapeEntity,
   type ShapeWorkingCopy,
   UI_CONSTANTS,
   DEFAULT_PROCESSING_CONFIG,
   summarizeCheckboxState,
-} from '../../shared/index.ts';
+} from '../../common/shared/index.js';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';
@@ -47,20 +45,23 @@ export function ShapeDialog({
   onSuccess,
   onError,
 }: ShapeDialogProps) {
-  const { init, commit, discard } = useWorkingCopy<ShapeWorkingCopy>({ nodeType: 'shape', mode, nodeId, parentId });
+  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<ShapeWorkingCopy>({
+    nodeType: 'shape',
+    mode,
+    nodeId,
+    parentId,
+  });
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [workingCopy, setWorkingCopy] = useState<ShapeWorkingCopy>({});
-  const [initializing, setInitializing] = useState(false);
 
   const createInitialWorkingCopy = useCallback((): ShapeWorkingCopy => {
     const now = Date.now();
     const baseConfig = { ...DEFAULT_PROCESSING_CONFIG };
     return {
       id: (nodeId ?? parentId ?? `temp-${now}`) as NodeId,
-      nodeId: nodeId ?? '' as NodeId,
-      parentId: parentId ?? '' as NodeId,
+      nodeId: nodeId ?? ('' as NodeId),
+      parentId: parentId ?? ('' as NodeId),
       nodeType: 'shape',
       name: '',
       description: '',
@@ -78,10 +79,12 @@ export function ShapeDialog({
   }, [nodeId, parentId]);
 
   useEffect(() => {
-    if (open && !workingCopy && !initializing) {
-      setWorkingCopy(createInitialWorkingCopy());
+    if (!open || workingCopy || mode !== 'create') {
+      return;
     }
-  }, [open, initializing, workingCopy, createInitialWorkingCopy]);
+    const draft = createInitialWorkingCopy();
+    setWorkingCopy(() => draft);
+  }, [open, workingCopy, mode, createInitialWorkingCopy, setWorkingCopy]);
 
   useEffect(() => {
     if (open) void init();
@@ -118,10 +121,9 @@ export function ShapeDialog({
 
   const handleClose = useCallback(() => {
     setActiveStep(0);
-    setWorkingCopy(null);
-    setInitializing(false);
+    setWorkingCopy(() => null);
     onClose();
-  }, [onClose]);
+  }, [onClose, setWorkingCopy]);
 
   const isStepComplete = useCallback((step: number) => {
     if (!workingCopy) return false;
@@ -147,7 +149,7 @@ export function ShapeDialog({
   const isLastStep = activeStep === UI_CONSTANTS.STEPPER_STEPS.length - 1;
   const canSubmit = useMemo(() => UI_CONSTANTS.STEPPER_STEPS.every((_, index) => isStepComplete(index)), [isStepComplete]);
 
-  if (initializing || !workingCopy) {
+  if (!workingCopy) {
     return (
       <Dialog open={open} onClose={handleClose} maxWidth={UI_CONSTANTS.DIALOG_MAX_WIDTH} fullWidth>
         <DialogContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 240 }}>

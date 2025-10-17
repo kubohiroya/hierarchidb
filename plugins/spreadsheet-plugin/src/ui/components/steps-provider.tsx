@@ -1,8 +1,7 @@
-import type { PluginStepConfig, StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { PluginStepRegistry } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { DataSourceStep, isDataSourceComplete, type SpreadsheetDialogData } from '../common/steps/DataSourceStep.js';
-import { FilteringStep } from '../common/steps/FilteringStep.js';
-import { STEP_CONFIG } from '../extension/constants.js';
+import { PluginStepConfig, PluginStepRegistry, StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import { DataSourceStep, isDataSourceComplete, SpreadsheetDialogData } from './steps/DataSourceStep.js';
+import { STEP_CONFIG } from '~/common/extension/constants.js';
+import { FilteringStep } from './steps/FilteringStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -31,6 +31,7 @@ import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
+import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-data-grid';
 import { useShapeProgress } from '../hooks/useShapeProgress.js';
 import { useShapeBatchCommand } from '../hooks/useShapeBatchCommand.js';
 import { getEphemeralShapeDB } from '../../services/database/EphemeralShapeDB.js';
@@ -80,6 +81,7 @@ export function BatchProcessingDialog({
     progress,
     status,
     error: progressError,
+    isSubscribed,
   } = useShapeProgress(sessionId, {
     autoSubscribe: true,
     pollingInterval: 1000,
@@ -183,21 +185,6 @@ export function BatchProcessingDialog({
       cancelled = true;
     };
   }, [sessionId]);
-
-  // Format duration
-  const _formatDuration = (ms: number): string => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
-    }
-  };
 
   const renderProgressSection = () => {
     if (!progress) return null;

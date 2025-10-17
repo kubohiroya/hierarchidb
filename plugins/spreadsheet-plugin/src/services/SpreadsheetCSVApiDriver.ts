@@ -5,23 +5,19 @@
  */
 
 import type {
-  CSVColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   CSVSelectionConfig,
   CSVTableListResult,
-  CSVTableMetadata,
   ICSVDataApi,
   PaginationOptions,
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/ui-tabular-extract';
 
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
-import { calculateFileHash } from '../utils/hashUtils.js';
-import { detectColumnTypes, parseCSVContent } from '../utils/csvParser.js';
-import { processExcelFile, processZipFile } from '../utils/fileProcessingUtils.js';
-import { applyCsvFilters } from '../utils/filterUtils.js';
+import { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/tabular-store';
+import { applyCsvFilters, calculateFileHash, detectColumnTypes, parseCSVContent, processExcelFile, processZipFile } from '~/common/utils/index.js';
 
 // Chunk configuration for large table support
 interface ChunkConfig {
@@ -54,11 +50,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     enableVirtualization: true,
   };
 
-  /**
-      * :
-   * : SpreadsheetStyler
-   * :
-      */
   constructor(pluginIdOrTableManager: string | SimpleTableMetadataManager = 'spreadsheet') {
     if (typeof pluginIdOrTableManager === 'string') {
       //  Spreadsheet mode:
@@ -78,12 +69,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     // helpers are now wired into the flow via upload/download paths
   }
 
-  /**
-      * : CSV
-   * : Styler
-   * : CSV100K
-   * :
-      */
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
     try {
       // Validate and hash
@@ -129,12 +114,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * : URLCSV
-   * : StylerSSRF
-   * : URL
-   * :
-      */
   async downloadCSVFromUrl(
     url: string,
     config: CSVProcessingConfig = {},
@@ -172,12 +151,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * :
-   * :
-   * :
-   * :
-      */
   async getFilteredPreview(
     tableId: string,
     filters: CSVFilterRule[],
@@ -219,12 +192,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     };
   }
 
-  /**
-      * :
-   * : getFilteredPreview
-   * : CSVSelectionConfig
-   * :
-      */
   async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
     //  selectionfilterRulesgetFilteredPreview
     const filters = selection.filterRules || [];
@@ -232,12 +199,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     return await this.getFilteredPreview(tableId, filters, Number.MAX_SAFE_INTEGER, 0);
   }
 
-  /**
-      * :
-   * : SimpleTableMetadataManager
-   * :
-   * :
-      */
   async listTables(
     _pluginId?: string,
     pagination?: PaginationOptions,
@@ -256,12 +217,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     };
   }
 
-  /**
-      * :
-   * :
-   * : 0
-   * :
-      */
   async deleteTable(tableId: string): Promise<void> {
     //  :
     const shouldDelete =
@@ -286,12 +241,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * : SpreadsheetDB
-   * :
-   * : Hash-based Data Reuse
-   * :
-      */
   async getStatistics(): Promise<
     | {
     totalFiles: number;
@@ -321,12 +270,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     return { totalFiles, totalChunks, totalEntities, totalDataSize, averageRowsPerFile };
   }
 
-  /**
-      * :
-   * : Styler
-   * :
-   * : Styler
-      */
   async addTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('addReference' in this.tableManager) {
       await this.tableManager.addReference(tableId, pluginId);
@@ -335,12 +278,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * :
-   * : Styler
-   * :
-   * : Styler
-      */
   async removeTableReference(tableId: string, pluginId: string): Promise<void> {
     if ('removeReference' in this.tableManager) {
       await this.tableManager.removeReference(tableId, pluginId);
@@ -349,12 +286,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * :
-   * : Styler
-   * :
-   * : Styler
-      */
   async getTableMetadata(tableId: string): Promise<CSVTableMetadata | null> {
     const metadata = await this.tableManager.get(tableId);
     return metadata ? this.ensureFullMetadata(metadata) : null;
@@ -381,12 +312,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     };
   }
 
-  /**
-      * : CSV
-   * :
-   * :
-   * :
-      */
   private async parseCSVWithChunking(
     content: string,
     config: CSVProcessingConfig,
@@ -451,12 +376,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     };
   }
 
-  /**
-      * :
-   * : Styler
-   * :
-   * :
-      */
   private async processFile(
     file: File,
     config: CSVProcessingConfig,
@@ -486,39 +405,20 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * :
-   * :
-   * :
-      */
   private storeChunkedData(tableId: string, chunkedData: ChunkedData): void {
     this.csvDataStorage.set(tableId, chunkedData);
   }
 
-  /**
-      * :
-   * :
-      */
   private getStoredChunkedData(tableId: string): ChunkedData | undefined {
     return this.csvDataStorage.get(tableId);
   }
 
-  /**
-      * :
-   * :
-   * :
-      */
   private shouldUseChunking(rowCount: number, contentSize: number): boolean {
     return (
       rowCount > this.chunkConfig.maxRowsPerChunk || contentSize > this.chunkConfig.maxMemoryUsage
     );
   }
 
-  /**
-      * :
-   * :
-   * :
-      */
   private async processChunksWithFilter(
     chunkedData: ChunkedData,
     filters: CSVFilterRule[],
@@ -529,12 +429,9 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     let totalFilteredRows = 0;
     let currentRow = 0;
 
-    //  :
     for (const chunk of chunkedData.chunks) {
-      //  :
       const filteredChunk = applyCsvFilters(chunk || [], filters);
 
-      //  :
       for (const row of filteredChunk) {
         if (currentRow >= startRow && filteredRows.length < rowCount) {
           filteredRows.push(row);
@@ -542,13 +439,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
         currentRow++;
         totalFilteredRows++;
 
-        //  :
         if (filteredRows.length >= rowCount) {
           break;
         }
       }
 
-      //  :
       if (filteredRows.length >= rowCount) {
         //  totalFilteredRows
         for (let i = chunkedData.chunks.indexOf(chunk) + 1; i < chunkedData.chunks.length; i++) {
@@ -562,18 +457,11 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     return { filteredRows, totalFilteredRows };
   }
 
-  /**
-      * : RawFileMetadata
-   * : CSVColumnInfo
-   * :
-      */
   private reconstructColumnsFromMetadata(metadata: MetadataInput): CSVColumnInfo[] {
-    //  :
     if (metadata.columns) {
       return metadata.columns;
     }
 
-    //  :
     const columnCount = metadata.totalColumns || 0;
     const columns: CSVColumnInfo[] = [];
 
@@ -604,11 +492,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     return metadata.columns;
   }
 
-  /**
-      * :
-   * : Styler
-   * :
-      */
   private async validateFile(file: File): Promise<void> {
     //  : 100MB
     const maxSize = 100 * 1024 * 1024; // 100MB
@@ -618,7 +501,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
       );
     }
 
-    //  :
     const supportedExtensions = ['.csv', '.tsv', '.txt', '.xlsx', '.xls', '.zip'];
     const fileExtension = file.name.includes('.')
       ? '.' + file.name.split('.').pop()!.toLowerCase()
@@ -629,12 +511,6 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
   }
 
-  /**
-      * : SpreadsheetDatabase
-   * : RawFileMetadata + RowChunks
-   * : SpreadsheetCSVApiDriverDexie
-   * : EntityIDDexie
-      */
   private async saveToSpreadsheetDB(
     file: File,
     contentHash: string,

@@ -10,7 +10,7 @@ import {
   type FetchOptions,
   type ProcessOptions,
 } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../common/shared/types.js';
+import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
 
 //  OSM
 export interface OSMRawData {
@@ -212,9 +212,12 @@ export class OpenStreetMapStrategy extends BaseDataSourceStrategy<OSMRawData, OS
         const properties = feature.properties || {};
         const osmElement = feature.osmElement as OSMElement;
 
+        const entityId = this.generateEntityId(osmElement) as NodeId;
+        const nodeId = this.generateNodeId(osmElement) as NodeId;
+
         return {
-          id: this.generateEntityId(osmElement),
-          nodeId: this.generateNodeId(osmElement),
+          id: entityId,
+          nodeId,
           name: this.extractName(osmElement),
           description: this.extractDescription(osmElement),
           geometry: feature.geometry,

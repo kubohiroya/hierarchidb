@@ -40,12 +40,12 @@ import type { RouteEntity, RouteType } from '../types/index.js';
 import { TransportMode } from '../types/index.js';
 import { RouteDatabase } from '../../services/database/RouteDatabase.js';
 import { useTranslation } from '../i18n/index.js';
-import { RouteBatchLaunchForm } from '../ui/components/RouteBatchLaunchForm.js';
-import { RouteBatchSummary } from '../ui/components/RouteBatchSummary.js';
-import { RouteBatchLiveProgress } from '../ui/components/RouteBatchLiveProgress.js';
-import { TabularPreview } from '@hierarchidb/ui-core';
-import { createRouteBatchManager } from '../services/createRouteBatchManager.js';
-import { isFlagEnabled } from '../services/config/flags.js';
+import { RouteBatchLaunchForm } from '../../ui/components/RouteBatchLaunchForm.js';
+import { RouteBatchSummary } from '../../ui/components/RouteBatchSummary.js';
+import { RouteBatchLiveProgress } from '../../ui/components/RouteBatchLiveProgress.js';
+import { TabularPreview } from '@hierarchidb/ui-data-grid';
+import { createRouteBatchManager } from '../../services/createRouteBatchManager.js';
+import { isFlagEnabled } from '../../services/config/flags.js';
 
 const logRoutePanelWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

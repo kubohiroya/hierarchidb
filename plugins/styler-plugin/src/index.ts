@@ -17,7 +17,7 @@ export type {
   StylerEntity,
   StylerStyle,
   StylerColorRule,
-} from './common/entities/StylerEntity.js';
+} from './common/types/StylerEntity.js';
 
 export type {
   StylemapCategory,
@@ -26,7 +26,7 @@ export type {
 
 export type {
   StylemapBasicInfoData,
-} from './common/steps/BasicInfoStep.js';
+} from './ui/components/steps/BasicInfoStep.js';
 
 export type {
   StylerConfig,

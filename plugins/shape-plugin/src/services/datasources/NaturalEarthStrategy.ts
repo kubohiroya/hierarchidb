@@ -4,7 +4,7 @@
   */
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
-import type { ShapeEntity } from '../../common/shared/types.js';
+import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
 import JSZip from 'jszip';
 import type { Feature as GeoJSONFeature } from 'geojson';
 
@@ -159,10 +159,12 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       //  ShapeEntity
       const entities: ShapeEntity[] = features.map((feature, index) => {
         const properties = feature.properties || {};
+        const entityId = this.generateEntityId(properties, index) as NodeId;
+        const nodeId = this.generateNodeId(properties, index) as NodeId;
 
         return {
-          id: this.generateEntityId(properties, index),
-          nodeId: this.generateNodeId(properties, index),
+          id: entityId,
+          nodeId,
           name: this.extractName(properties),
           description: this.extractDescription(properties),
           geometry: feature.geometry,

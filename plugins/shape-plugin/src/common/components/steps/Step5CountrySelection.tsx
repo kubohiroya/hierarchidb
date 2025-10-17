@@ -19,8 +19,8 @@ import {
 } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import type { StepProps } from '../../shared';
-import { useCountryMetadata } from '../../hooks/useCountryMetadata';
+import type { CountryMetadata, StepProps } from '../../shared/index.js';
+import { useCountryMetadata } from '../../hooks/useCountryMetadata.js';
 import {
   calculateEstimatedFeatures,
   calculateEstimatedProcessingTime,
@@ -28,7 +28,7 @@ import {
   DATA_SOURCE_CONFIGS,
   formatBytes,
   formatNumber,
-} from '../../mock/data';
+} from '../../mock/data.js';
 
 /**
  * Step 5: Country & Admin Level Selection
@@ -42,26 +42,30 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   const { enqueueSnackbar } = useSnackbar();
 
   // Load country metadata from 02-fetch-save-metadata
+  const dataSourceKey = workingCopy.dataSourceName ?? 'gadm';
   const {
     metadata: countries,
     loading,
     error,
-    getCountryName,
-    getCountryByCode,
   } = useCountryMetadata({
-    dataSource: workingCopy.dataSourceName || 'GADM',
+    dataSource: dataSourceKey,
   });
 
-  const dataSourceConfig = DATA_SOURCE_CONFIGS[workingCopy.dataSourceName];
-  const maxAdminLevel = dataSourceConfig?.maxAdminLevel || 0;
+  const dataSourceConfig = DATA_SOURCE_CONFIGS[dataSourceKey];
+  const maxAdminLevel = dataSourceConfig?.maxAdminLevel ?? 0;
 
   // Initialize checkbox matrix
-  const checkboxMatrix = useMemo(() => {
+  const checkboxMatrix = useMemo<boolean[][]>(() => {
     if (Array.isArray(workingCopy.checkboxState)) {
-      return workingCopy.checkboxState;
+      return workingCopy.checkboxState.map((row) => {
+        if (!Array.isArray(row)) {
+          return Array.from({ length: maxAdminLevel + 1 }, () => false);
+        }
+        return Array.from({ length: maxAdminLevel + 1 }, (_, idx) => Boolean(row?.[idx]));
+      });
     }
     // Initialize empty matrix based on loaded countries
-    return countries.map(() => Array(maxAdminLevel + 1).fill(false));
+    return countries.map(() => Array.from({ length: maxAdminLevel + 1 }, () => false));
   }, [workingCopy.checkboxState, countries, maxAdminLevel]);
 
   // Calculate statistics
@@ -70,9 +74,9 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
     let countriesWithSelection = 0;
     const levelCounts = Array(maxAdminLevel + 1).fill(0);
 
-    checkboxMatrix.forEach((row) => {
+    checkboxMatrix.forEach((row: boolean[]) => {
       let hasAnySelection = false;
-      row.forEach((selected, levelIndex) => {
+      row.forEach((selected: boolean, levelIndex: number) => {
         if (selected && levelIndex <= maxAdminLevel) {
           totalSelected++;
           levelCounts[levelIndex]++;
@@ -95,16 +99,20 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
       ),
       estimatedTime: calculateEstimatedProcessingTime(totalSelected),
     };
-  }, [checkboxMatrix, maxAdminLevel]);
+  }, [checkboxMatrix, countries, maxAdminLevel]);
 
   const handleCellChange = useCallback(
     (countryIndex: number, levelIndex: number, checked: boolean) => {
-      const newMatrix = [...checkboxMatrix];
-      newMatrix[countryIndex] = [...newMatrix[countryIndex]];
-      newMatrix[countryIndex][levelIndex] = checked;
-
+      const clonedMatrix = checkboxMatrix.map((row) => [...row]);
+      const row = clonedMatrix[countryIndex];
+      if (!row || levelIndex < 0 || levelIndex >= row.length) {
+        return;
+      }
+      const nextRow = [...row];
+      nextRow[levelIndex] = checked;
+      clonedMatrix[countryIndex] = nextRow;
       onUpdate({
-        checkboxState: newMatrix,
+        checkboxState: clonedMatrix,
       });
     },
     [checkboxMatrix, onUpdate],
@@ -215,7 +223,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {countries.map((country, countryIndex) => (
+            {countries.map((country: CountryMetadata, countryIndex) => (
               <TableRow key={country.countryCode}>
                 <TableCell>
                   <Stack direction="row" spacing={1} alignItems="center">

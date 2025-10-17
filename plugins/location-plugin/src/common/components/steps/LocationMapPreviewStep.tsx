@@ -11,9 +11,9 @@ import { LocationMapPreview } from '../batch/LocationMapPreview.js';
 import type { PreviewLocationPoint } from '../batch/LocationMapPreview.js';
 import type { LocationWorkingCopy, LocationType } from '../../types/index.js';
 import { formatBytes, useTranslation } from '../../i18n/index.js';
-import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
-import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
-import { listLocationPoints } from '../../services/pointRepository.js';
+import { getEphemeralLocationDB } from '../../../services/database/EphemeralLocationDB.js';
+import { LocationVectorTileService } from '../../../services/tiles/LocationVectorTileService.js';
+import { listLocationPoints } from '../../../services/pointRepository.js';
 
 const KNOWN_LOCATION_TYPES: readonly LocationType[] = [
   'airport',
@@ -138,10 +138,11 @@ export const LocationMapPreviewStep: React.FC<LocationMapPreviewStepProps> = ({ 
         return;
       }
 
-      const latest = records.reduce((acc, current) => {
+      type SessionRecord = NonNullable<(typeof records)[number]>;
+      const latest = records.reduce<SessionRecord | null>((acc, current) => {
         if (!acc) return current;
         return (current.createdAt ?? 0) > (acc.createdAt ?? 0) ? current : acc;
-      });
+      }, null);
 
       if (!latest?.sessionId) {
         setSummary(null);

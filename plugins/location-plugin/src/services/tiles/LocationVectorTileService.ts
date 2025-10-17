@@ -6,8 +6,8 @@ import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
-} from '@hierarchidb/batch-api';
-import { getWorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+} from '@hierarchidb/common-api';
+import { getWorkerBridge } from '@hierarchidb/runtime-plugin-dialog';
 
 interface BatchBridge {
   initialize(): Promise<void>;

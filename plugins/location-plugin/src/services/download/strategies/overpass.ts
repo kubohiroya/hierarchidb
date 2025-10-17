@@ -30,7 +30,7 @@ export class OverpassStrategy implements ILocationDownloadStrategy {
       return [];
     }
     try {
-      const { authFetch } = await import('../../common/utils/authFetch.js');
+      const { authFetch } = await import('../../utils/authFetch.js');
       const res = await authFetch(endpoint, {
         method: 'POST',
         body: query,

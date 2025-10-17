@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeType, ProgressEvent } from '@hierarchidb/common-types';
-import type { UnifiedProgressInfo } from '@hierarchidb/ui-core';
-import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/ui-core';
+import type { UnifiedProgressInfo } from '@hierarchidb/common-api';
+import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch-sdk';
 import { AuthNotificationRegistry } from '@hierarchidb/common-auth';
-import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-ui-plugin-dialog';
+import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-plugin-dialog';
 
 export interface UseLocationProgressOptions {
   autoSubscribe?: boolean;

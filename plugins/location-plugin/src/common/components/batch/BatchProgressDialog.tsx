@@ -49,12 +49,11 @@ import {
   Warning,
 } from '@mui/icons-material';
 import type { NodeId } from '../../types/index.js';
-//import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-core';
-//import { getEphemeralLocationDB } from '../../services/database/EphemeralLocationDB.js';
 import { useLocationProgress } from '../../hooks/useLocationProgress.js';
 import { isDevEnvironment } from '../../utils/env.js';
 import { useTranslation, formatBytes as formatBytesIntl, formatNumber } from '../../i18n/index.js';
-import { getEphemeralLocationDB } from 'src/services/index.js';
+import { getEphemeralLocationDB } from '../../../services/index.js';
+import { CrossViewSnackbar, TabularPreview } from '@hierarchidb/ui-data-grid';
 
 interface ProgressInfo {
   percentage: number;

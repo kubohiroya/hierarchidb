@@ -4,9 +4,10 @@
  */
 
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { NodeDialogPlugin } from '@hierarchidb/plugin-sdk';
-import { isDataSourceComplete, type SpreadsheetDialogData } from '../steps/DataSourceStep.js';
+import { NodeDialogPlugin } from '@hierarchidb/plugin-api';
+
 import { STEP_CONFIG } from '../extension/constants.js';
+import { isDataSourceComplete, SpreadsheetDialogData } from '~/ui/components/steps/DataSourceStep.js';
 
 type SpreadsheetPeerEntity = PeerEntity<Record<string, unknown>>;
 

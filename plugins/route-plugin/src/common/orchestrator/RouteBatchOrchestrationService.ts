@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { RouteBatchConfig } from '../services/RouteBatchSession.js';
+import type { RouteBatchConfig } from '../../services/RouteBatchSession.js';
 import type { RouteBatchSpec } from './types.js';
 import type { RouteSourceOrchestrator } from './RouteSourceOrchestrator.js';
 import { mapEnrichTasks, mapMatrixTasks, mapRecomputeTasks, type RouteTaskInput } from './TaskMapper.js';
-import { RouteBatchSessionOrchestrator, type RouteBatchSessionConfig } from '../services/RouteBatchSessionOrchestrator.js';
-import type { RouteBatchManagerDeps } from '../services/RouteBatchManager.js';
+import { RouteBatchSessionOrchestrator, type RouteBatchSessionConfig } from '../../services/RouteBatchSessionOrchestrator.js';
+import type { RouteBatchManagerDeps } from '../../services/RouteBatchManager.js';
 
 export type RouteBatchManagerLike = RouteBatchSessionOrchestrator;
 
@@ -64,13 +64,6 @@ export class RouteBatchOrchestrationService {
 
 function toSessionConfig(config: RouteBatchConfig): RouteBatchSessionConfig {
   return {
-    corsProxyBaseURL: config.corsProxyBaseURL,
-    maxRetries: config.routeGeneration.maxRetries,
-    retryDelay: config.retryDelay,
-    workerTimeout: config.workerTimeout,
-    maxMemoryPerWorker: config.maxMemoryPerWorker,
-    enableProgressTracking: config.enableProgressTracking,
-    enableResourceMonitoring: config.enableResourceMonitoring,
     routeGeneration: {
       method: config.routeGeneration.method,
       parallel: config.routeGeneration.parallel,

@@ -3,7 +3,7 @@ import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../LocationSessionController.js';
 
-vi.mock('@hierarchidb/batch', () => ({
+vi.mock('@hierarchidb/batch-sdk', () => ({
   BatchService: class {
     async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>): Promise<R[]> {
       const results: R[] = [];

@@ -5,12 +5,12 @@ import type {
   CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
-  CSVTableMetadata,
   ICSVDataApi,
   PaginationOptions,
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/ui-tabular-extract';
 import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
 import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
+import { CSVTableMetadata } from '@hierarchidb/tabular-store';
 type AuthFetch = typeof import('./utils/authFetch.js')['authFetch'];
 
 const loadAuthFetch = async (): Promise<AuthFetch> => {

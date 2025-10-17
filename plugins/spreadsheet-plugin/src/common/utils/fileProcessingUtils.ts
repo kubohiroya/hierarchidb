@@ -4,7 +4,7 @@
  * Refactored from Styler plugin for Spreadsheet plugin use
  */
 
-import type { CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
+import type { CSVProcessingConfig } from '@hierarchidb/ui-tabular-extract';
 
 // SheetJS library for Excel file processing
 // Note: In actual implementation, this would be imported from 'xlsx'

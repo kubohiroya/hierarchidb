@@ -7,7 +7,8 @@ import { getShapeRuntimeWorkerClient } from './RuntimeWorkerClient.js';
 export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
   async process(tasks: VectorTileTask[], onProgress: (p: ProgressInfo) => void, controls?: StageControls) {
     const client = await getShapeRuntimeWorkerClient();
-    if (!client) throw new Error('Runtime worker vectortile not available');
+    const vectorTileClient = client?.vectortile;
+    if (!vectorTileClient) throw new Error('Runtime worker vectortile not available');
     let completed = 0, failed = 0;
     for (const task of tasks) {
       if (controls?.waitIfPaused) {
@@ -22,7 +23,7 @@ export class RuntimeWorkerVectorTileAdapter implements VectorTileStageAdapter {
         const compression = task.compression ?? task.config?.compression ?? false;
         const format = (task.outputFormat ?? task.config?.format ?? 'mvt') as 'mvt';
         const tileSize = task.config?.tileSize ?? 256;
-        await client.vectortile.generateTiles(
+        await vectorTileClient.generateTiles(
           inputBufferId,
           {
             format,

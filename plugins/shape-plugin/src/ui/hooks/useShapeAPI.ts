@@ -5,8 +5,8 @@
   */
 
 import { useMemo } from 'react';
-import type { ShapeAPI } from '../../shared/index.ts';
-import { getWorkerClientHook, type WorkerClientRef } from 'packages/runtime/client';
+import type { ShapeAPI } from '../../common/shared/index.js';
+import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 
 /**
   * Shape APIhook

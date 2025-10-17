@@ -4,7 +4,7 @@
  * doesn't expose setAuthToken().
  */
 
-import type { WorkerClientHook } from 'packages/runtime/client';
+import type { WorkerClientHook } from '@hierarchidb/runtime-client';
 
 interface PluginRegistryFacade {
   getExtension<T = unknown>(nodeType: string): Promise<T | undefined>;

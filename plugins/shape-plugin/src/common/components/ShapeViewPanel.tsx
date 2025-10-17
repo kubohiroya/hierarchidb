@@ -30,8 +30,8 @@ import {
   Timeline as TimelineIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import { summarizeCheckboxState, type ShapeEntity } from '../shared';
-import type { BatchStatus } from '../services/types';
+import { summarizeCheckboxState, type ShapeEntity, type UrlMetadata } from '../shared/index.js';
+import type { BatchStatus, BatchProcessConfig, StageStatus } from '../../services/types.js';
 
 export interface ShapeViewPanelProps {
   nodeId: NodeId;
@@ -41,11 +41,11 @@ export interface ShapeViewPanelProps {
 }
 
 export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
-                                                                nodeId: _nodeId,
-                                                                entity,
-                                                                onEdit,
-                                                                onRefresh,
-                                                              }) => {
+  nodeId,
+  entity,
+  onEdit,
+  onRefresh,
+}) => {
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +57,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       return [] as string[];
     }
     const codes = new Set<string>();
-    entity.urlMetadata.forEach((meta) => {
+    entity.urlMetadata.forEach((meta: UrlMetadata) => {
       if (meta?.countryCode) {
         codes.add(meta.countryCode);
       }
@@ -87,12 +87,14 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
       // In a real implementation, this would call the worker API
       // For now, we'll simulate the response
       const sessionStatus = mapProcessingStatus(entity.processingStatus);
+      const effectiveNodeId = entity.nodeId ?? nodeId;
+      const batchConfig = buildBatchConfig(entity);
       const mockStatus: BatchStatus = {
         session: {
           sessionId: entity.batchSessionId,
-          nodeId: entity.nodeId,
+          nodeId: effectiveNodeId,
           status: sessionStatus,
-          config: entity.processingConfig,
+          config: batchConfig,
           startedAt: Date.now() - 60000,
           updatedAt: Date.now(),
           progress: {
@@ -149,7 +151,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [entity.batchSessionId, entity.nodeId, entity.processingStatus, entity.processingConfig]);
+  }, [entity.batchSessionId, entity.processingStatus, entity, nodeId]);
 
   // Auto-refresh batch status
   useEffect(() => {
@@ -253,7 +255,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
               <Typography variant="body2" color="text.secondary">
                 Data Source
               </Typography>
-              <Typography variant="body1">{entity.dataSourceName.toUpperCase()}</Typography>
+              <Typography variant="body1">{entity.dataSourceName ? entity.dataSourceName.toUpperCase() : 'UNKNOWN'}</Typography>
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -387,7 +389,7 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
 
             {/* Stage Progress */}
             <Grid container spacing={2}>
-              {Object.entries(batchStatus.session.stages).map(([stage, stageStatus]) => (
+            {(Object.entries(batchStatus.session.stages) as Array<[string, StageStatus]>).map(([stage, stageStatus]) => (
                 <Grid key={stage} size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ p: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -447,6 +449,33 @@ export const ShapeViewPanel: React.FC<ShapeViewPanelProps> = ({
     </Box>
   );
 };
+
+function createFallbackBatchConfig(entity: ShapeEntity): BatchProcessConfig {
+  const fallbackCountry = entity.selectedCountries?.[0] ??
+    entity.urlMetadata?.[0]?.countryCode ??
+    'UNKNOWN';
+  return {
+    dataSource: (entity.dataSourceName ?? 'gadm') as BatchProcessConfig['dataSource'],
+    countryCode: fallbackCountry,
+    adminLevels: entity.adminLevels ?? [],
+  };
+}
+
+function buildBatchConfig(entity: ShapeEntity): BatchProcessConfig {
+  const base = createFallbackBatchConfig(entity);
+  const processing = entity.processingConfig;
+  if (!processing) {
+    return base;
+  }
+  return {
+    ...base,
+    workerPoolSize: processing.workerPoolSize,
+    enableFeatureExtraction: processing.enableFeatureFiltering,
+    simplificationLevels: processing.simplificationLevels,
+    tileZoomRange: processing.tileZoomRange,
+    corsProxy: processing.corsProxyBaseURL,
+  };
+}
 
 function mapProcessingStatus(status: ShapeEntity['processingStatus']): 'idle' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' {
   switch (status) {

@@ -1,7 +1,7 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { LocationSelectionStep } from '../common/components/steps/LocationSelectionStep.js';
-import type { LocationWorkingCopy } from '../common/types/index.ts';
-import { translations as locationTranslations } from '../common/i18n/index.ts';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import { LocationSelectionStep } from '../../common/components/steps/LocationSelectionStep.js';
+import type { LocationWorkingCopy } from '../../common/types/index.js';
+import { translations as locationTranslations } from '../../common/i18n/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -26,7 +26,9 @@ registry.registerConfigProvider({
         componentFactory: (p: P) => (
           <LocationSelectionStep
             workingCopy={p.data}
-            onUpdate={async (updates) => { p.onChange({ ...(p.data || {} as LocationWorkingCopy), ...updates }); }}
+            onUpdate={async (updates: Partial<LocationWorkingCopy>) => {
+              p.onChange({ ...(p.data ?? ({} as LocationWorkingCopy)), ...updates });
+            }}
           />
         ),
       },

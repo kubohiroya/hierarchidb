@@ -1,15 +1,22 @@
 import {
   AbstractBatchSession,
 } from '@hierarchidb/batch-api';
-import { BatchService } from '@hierarchidb/batch';
+import { BatchService } from '@hierarchidb/batch-sdk';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from './database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
 import type { NodeId } from '@hierarchidb/common-types';
-import { BaseBatchConfig } from '@hierarchidb/batch-api';
+type BaseBatchConfigShape = {
+  maxRetries?: number;
+  retryDelay?: number;
+  workerTimeout?: number;
+  maxMemoryPerWorker?: number;
+  enableProgressTracking?: boolean;
+  enableResourceMonitoring?: boolean;
+};
 
-export interface RouteBatchConfig extends BaseBatchConfig {
+export interface RouteBatchConfig extends BaseBatchConfigShape {
   routeGeneration: {
     method: 'direct' | 'osm_route' | 'great_circle' | 'searoute';
     parallel: boolean;

@@ -27,10 +27,10 @@ import {
   Refresh as RefreshIcon,
   Stop as StopIcon,
 } from '@mui/icons-material';
-import type { NodeId } from '../../shared/types.js';
+import type { NodeId } from '../../common/shared/types.js';
 import { useShapeAPIGetter } from '../hooks/useShapeAPI.js';
 import { useShapeEntityProgress } from '../hooks/useShapeProgress.js';
-import { formatBytes, summarizeCheckboxState, type ShapeEntity } from '../../shared/index.ts';
+import { formatBytes, summarizeCheckboxState, type ShapeEntity } from '../../common/shared/index.js';
 
 export interface ShapePanelProps {
   nodeId: NodeId;
