@@ -3,7 +3,7 @@ import { Box, Button, Typography, TextField, Stack } from '@mui/material';
 import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { FolderCreateData, FolderEditData, FolderDisplayData } from '../../common/types/index.js';
+import type { FolderEditData, FolderDisplayData } from '../../common/types/index.js';
 import { DialogStepDefinition, wrapDialogStepComponent } from '@hierarchidb/plugin-api';
 
 interface FolderStepData {
@@ -16,7 +16,7 @@ export interface ExtensibleFolderDialogProps {
   parentId?: NodeId;
   nodeId?: NodeId;
   currentData?: FolderDisplayData;
-  onSubmit: (data: FolderCreateData | FolderEditData) => Promise<void>;
+  onSubmit: (data: FolderEditData) => Promise<void>;
   onCancel: () => void;
   open?: boolean;
   additionalSteps?: DialogStepDefinition[];
@@ -148,7 +148,7 @@ const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
         : changes;
       await onSubmit(payload);
     } else {
-      const payload: FolderCreateData = { name: trimmedName };
+      const payload: FolderEditData = { name: trimmedName };
       if (description) payload.description = description;
       const merged = Object.keys(extensionPayload).length > 0
         ? { ...payload, ...extensionPayload }

@@ -28,7 +28,9 @@
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.12",
@@ -53,7 +55,9 @@
   "type": "module",
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/components": "workspace:*",
     "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.12",

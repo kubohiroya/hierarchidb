@@ -6,7 +6,8 @@ import {
 } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TreeNode, NodeId } from '@hierarchidb/common-types';
-import { rainbowColors, SparkleAnimation } from '@hierarchidb/ui-core';
+import { SparkleAnimation } from '@hierarchidb/components';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';

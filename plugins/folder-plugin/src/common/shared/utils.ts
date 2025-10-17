@@ -47,25 +47,6 @@ export function validateFolderData(data: CreateFolderData): { isValid: boolean; 
     errors.push('Name is too long');
   }
 
-  // Add folder-plugin-specific validations if needed
-  if (
-    data.settings?.displayOptions?.iconColor &&
-    !/^#[0-9A-Fa-f]{6}$/.test(data.settings.displayOptions.iconColor)
-  ) {
-    errors.push('Invalid icon color format');
-  }
-
-  if (data.settings?.rules?.maxChildren !== undefined) {
-    const maxChildren = data.settings.rules.maxChildren;
-    if (
-      typeof maxChildren !== 'number' ||
-      maxChildren < 0 ||
-      maxChildren > FOLDER_VALIDATION.MAX_CHILDREN_ABSOLUTE
-    ) {
-      errors.push(`Max children must be between 0 and ${FOLDER_VALIDATION.MAX_CHILDREN_ABSOLUTE}`);
-    }
-  }
-
   return {
     isValid: errors.length === 0,
     errors,

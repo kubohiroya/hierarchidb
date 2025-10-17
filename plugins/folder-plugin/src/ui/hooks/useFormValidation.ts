@@ -4,7 +4,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { validateFolderData, validateFolderName } from '../../common/shared/utils.js';
-import { CreateFolderData, FolderSettings, UpdateFolderData } from '~/common/types/types.js';
+import { CreateFolderData, UpdateFolderData } from '~/common/types/types.js';
 
 export interface FormValidationResult {
   isValid: boolean;
@@ -52,24 +52,6 @@ export function useFormValidation(
         fieldErrors.general = error;
       }
     });
-
-    // Additional UI-specific validations
-    const settings: Partial<FolderSettings> | undefined = formData.settings ?? undefined;
-    const iconColor = settings?.displayOptions?.iconColor ?? null;
-    if (iconColor) {
-      if (!/^#[0-9A-Fa-f]{6}$/.test(iconColor)) {
-        fieldErrors.iconColor = 'Invalid icon color format';
-        validation.errors.push('Invalid icon color format');
-      }
-    }
-
-    const maxChildren = settings?.rules?.maxChildren;
-    if (maxChildren !== undefined) {
-      if (typeof maxChildren !== 'number' || maxChildren < 0 || maxChildren > 10000) {
-        fieldErrors.maxChildren = 'Max children must be between 0 and 10000';
-        validation.errors.push('Max children must be between 0 and 10000');
-      }
-    }
 
     const result: FormValidationResult = {
       isValid: validation.isValid && Object.keys(fieldErrors).length === 0,

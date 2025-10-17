@@ -18,7 +18,6 @@ export type {
 export interface CreateFolderData {
   name: string;
   description?: string;
-  settings?: FolderSettings;
   tags?: string[];
   metadata?: Record<string, unknown>;
 }
@@ -26,40 +25,8 @@ export interface CreateFolderData {
 export interface UpdateFolderData {
   name?: string;
   description?: string;
-  settings?: Partial<FolderSettings>;
   tags?: string[];
   metadata?: Record<string, unknown>;
-}
-
-/**
- * Folder settings interface
- */
-export interface FolderSettings {
-  // Display settings
-  displayOptions?: {
-    iconColor?: string;
-    iconType?: 'default' | 'custom';
-    customIcon?: string;
-    sortOrder?: 'name' | 'date' | 'type' | 'custom';
-    sortDirection?: 'asc' | 'desc';
-    viewMode?: 'list' | 'grid' | 'tree';
-  };
-
-  // Access control
-  permissions?: {
-    isPublic?: boolean;
-    isReadOnly?: boolean;
-    allowedUsers?: string[];
-    deniedUsers?: string[];
-  };
-
-  // Folder rules
-  rules?: {
-    maxChildren?: number;
-    allowedChildTypes?: string[];
-    autoArchiveAfterDays?: number;
-    requireApprovalForChanges?: boolean;
-  };
 }
 
 /**

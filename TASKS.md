@@ -164,6 +164,28 @@
   - 変更前の tsconfig に戻し、`pnpm --filter @hierarchidb/batch-api build:types` でエラーが再現することを確認
 
 
+9) Location/Route/Shape 通知レイヤー統一（P1）
+- ブランチ: `refactor/ui/notify-unify`（sandbox 制約でブランチ作成不可のため `main` 上で作業）
+- 依存: `@hierarchidb/components`, `@hierarchidb/runtime-basic-info`, `@hierarchidb/{location,route,shape}-plugin`
+- 受け入れ基準（DoD）:
+  - [x] LocationDialog/RouteDialog/ShapeDialog の通知呼び出しを `@hierarchidb/components` の `notify` に統一し、未定義参照を解消
+  - [x] 各ダイアログで `useWorkingCopy` の参照を `@hierarchidb/runtime-basic-info` に統一し、型エラーが発生しない
+  - [ ] `pnpm --filter @hierarchidb/location-plugin typecheck`・`pnpm --filter @hierarchidb/route-plugin typecheck`・`pnpm --filter @hierarchidb/shape-plugin typecheck` が成功
+- チェックリスト:
+  - [x] LocationDialog.tsx の `notify`/`useWorkingCopy` インポートを更新し、不要なパス参照を解消
+  - [x] RouteDialog.tsx のインポートを同様に更新し、`notify` 依存を NotificationSystem ベースに揃える
+  - [x] ShapeDialog.tsx のインポートを更新し、通知 API を統一
+- ロールバック手順：関連ファイルのインポート差分を元に戻し、上記 typecheck コマンドを再実行して従来エラーを再現
+- 運用ログ：
+  - start: 2025-10-16 09:42 Location/Route/Shape ダイアログの通知 API 統一に着手（ブランチ作成は sandbox 制約で不可）
+  - progress: 2025-10-16 10:08 LocationDialog.tsx / RouteDialog.tsx / ShapeDialog.tsx の `notify` と `useWorkingCopy` インポートを `@hierarchidb/components` と `@hierarchidb/runtime-basic-info` へ更新
+  - progress: 2025-10-16 10:46 `pnpm --filter @hierarchidb/components build` を実行し dist/ 型出力を生成
+  - progress: 2025-10-16 10:48 route-plugin へ `@hierarchidb/components` を peer/dev 依存として追加し、tsconfig.base のパスエイリアスを更新。`pnpm --filter @hierarchidb/route-plugin typecheck` を再実行したところ `@hierarchidb/components` 未解決エラーは解消したが、既存の batch API／未実装サービス由来エラーが残存
+  - progress: 2025-10-16 10:55 plugins/{location,route,shape}-plugin の tsconfig を `../../tsconfig.base.json` 参照＋ `baseUrl = ../..` へ揃え、空の `paths` 上書きを撤去
+  - progress: 2025-10-16 11:02 shape-plugin の `tsconfig.build.json` に `src/shared/**/*`・`src/ui/**/*` など実体ファイルを含め TS18003 を解消（従来未整備だった UI/共有モジュールの型エラーが顕在化）
+  - blocked: 2025-10-16 11:05 `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck` は既存課題（happy-dom 型不整合、batch API の未エクスポート、UI/worker モジュールの欠落や unknown 型など）で失敗。今回の差分による新規エラーは確認されておらず、別タスクでの是正が必要
+
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。

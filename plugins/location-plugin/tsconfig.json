@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
     "types": [
@@ -8,9 +8,7 @@
     "jsx": "react-jsx",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "baseUrl": ".",
-    "paths": {
-    }
+    "baseUrl": "../.."
   },
   "include": [
     "src/**/*"

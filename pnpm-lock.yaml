@@ -959,15 +959,15 @@ importers:
       '@hierarchidb/plugin-api':
         specifier: workspace:*
         version: link:../../plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../basic-info
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../client
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../worker
-      '@hierarchidb/ui-basic-info':
-        specifier: workspace:*
-        version: link:../basic-info
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../ui/dialog
@@ -1153,9 +1153,6 @@ importers:
       '@hierarchidb/common-auth':
         specifier: workspace:*
         version: link:../../common/auth
-      '@mui/base':
-        specifier: 5.0.0-beta.70
-        version: 5.0.0-beta.70(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
@@ -1984,9 +1981,15 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../../common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../../components
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n
+      '@hierarchidb/ui-theme':
+        specifier: workspace:*
+        version: link:../../theme
       '@hierarchidb/ui-treeconsole-breadcrumb':
         specifier: workspace:*
         version: link:../breadcrumb
@@ -2157,9 +2160,15 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime/client
@@ -2348,6 +2357,9 @@ importers:
       '@hierarchidb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-plugin-dialog':
         specifier: workspace:*
         version: link:../../packages/runtime/plugin-dialog
@@ -2357,6 +2369,9 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/feature/tabular-store
+      '@hierarchidb/ui-data-grid':
+        specifier: workspace:*
+        version: link:../../packages/ui/data-grid
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
@@ -2473,12 +2488,18 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../packages/feature/download
       '@hierarchidb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime/client
@@ -2491,9 +2512,6 @@ importers:
       '@hierarchidb/tabular-store':
         specifier: workspace:*
         version: link:../../packages/feature/tabular-store
-      '@hierarchidb/ui-basic-info':
-        specifier: workspace:*
-        version: link:../../packages/runtime/basic-info
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -3917,12 +3935,6 @@ packages:
   '@floating-ui/dom@1.7.4':
     resolution: {integrity: sha512-OOchDgh4F2CchOX94cRVqhvy7b3AFb+/rQXyswmzmGakRfkMgoWVjfnLWkRirfLEfuD4ysVW16eXzwt3jHIzKA==}
 
-  '@floating-ui/react-dom@2.1.6':
-    resolution: {integrity: sha512-4JX6rEatQEvlmgU80wZyq9RT96HZJa88q8hp0pBd+LrczeDI4o6uA2M+uvxngVHo4Ihr8uibXxH6+70zhAFrVw==}
-    peerDependencies:
-      react: '>=16.8.0'
-      react-dom: '>=16.8.0'
-
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
 
@@ -4328,18 +4340,6 @@ packages:
   '@microsoft/tsdoc@0.15.1':
     resolution: {integrity: sha512-4aErSrCR/On/e5G2hDP0wjooqDdauzEbIq8hIkIe5pXV0rtWJZvdCEKL0ykZxex+IxIwBp0eGeV48hQN07dXtw==}
 
-  '@mui/base@5.0.0-beta.70':
-    resolution: {integrity: sha512-Tb/BIhJzb0pa5zv/wu7OdokY9ZKEDqcu1BDFnohyvGCoHuSXbEr90rPq1qeNW3XvTBIbNWHEF7gqge+xpUo6tQ==}
-    engines: {node: '>=14.0.0'}
-    deprecated: This package has been replaced by @base-ui-components/react
-    peerDependencies:
-      '@types/react': ^18.3.24
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
   '@mui/core-downloads-tracker@7.3.4':
     resolution: {integrity: sha512-BIktMapG3r4iXwIhYNpvk97ZfYWTreBBQTWjQKbNbzI64+ULHfYavQEX2w99aSWHS58DvXESWIgbD9adKcUOBw==}
 
@@ -4413,28 +4413,10 @@ packages:
       '@types/react':
         optional: true
 
-  '@mui/types@7.2.24':
-    resolution: {integrity: sha512-3c8tRt/CbWZ+pEg7QpSwbdxOk36EfmhbKf6AGZsD1EcLDLTSZoxxJ86FVtcjxvjuhdyBiWKSTGZFaXCnidO2kw==}
-    peerDependencies:
-      '@types/react': ^18.3.24
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
   '@mui/types@7.4.7':
     resolution: {integrity: sha512-8vVje9rdEr1rY8oIkYgP+Su5Kwl6ik7O3jQ0wl78JGSmiZhRHV+vkjooGdKD8pbtZbutXFVTWQYshu2b3sG9zw==}
     peerDependencies:
       '@types/react': ^18.3.24
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
-  '@mui/utils@6.4.9':
-    resolution: {integrity: sha512-Y12Q9hbK9g+ZY0T3Rxrx9m2m10gaphDuUMgWxyV5kNJevVxXYCLclYUCC9vXaIk1/NdNDTcW2Yfr2OGvNFNmHg==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      '@types/react': ^18.3.24
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
       '@types/react':
         optional: true
@@ -11007,12 +10989,6 @@ snapshots:
       '@floating-ui/core': 1.7.3
       '@floating-ui/utils': 0.2.10
 
-  '@floating-ui/react-dom@2.1.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@floating-ui/dom': 1.7.4
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-
   '@floating-ui/utils@0.2.10': {}
 
   '@gilbarbara/deep-equal@0.3.1': {}
@@ -11525,20 +11501,6 @@ snapshots:
 
   '@microsoft/tsdoc@0.15.1': {}
 
-  '@mui/base@5.0.0-beta.70(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      '@babel/runtime': 7.28.4
-      '@floating-ui/react-dom': 2.1.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@mui/types': 7.2.24(@types/react@18.3.26)
-      '@mui/utils': 6.4.9(@types/react@18.3.26)(react@18.3.1)
-      '@popperjs/core': 2.11.8
-      clsx: 2.1.1
-      prop-types: 15.8.1
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-    optionalDependencies:
-      '@types/react': 18.3.26
-
   '@mui/core-downloads-tracker@7.3.4': {}
 
   '@mui/icons-material@7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)':
@@ -11608,25 +11570,9 @@ snapshots:
       '@emotion/styled': 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
       '@types/react': 18.3.26
 
-  '@mui/types@7.2.24(@types/react@18.3.26)':
-    optionalDependencies:
-      '@types/react': 18.3.26
-
   '@mui/types@7.4.7(@types/react@18.3.26)':
     dependencies:
       '@babel/runtime': 7.28.4
-    optionalDependencies:
-      '@types/react': 18.3.26
-
-  '@mui/utils@6.4.9(@types/react@18.3.26)(react@18.3.1)':
-    dependencies:
-      '@babel/runtime': 7.28.4
-      '@mui/types': 7.2.24(@types/react@18.3.26)
-      '@types/prop-types': 15.7.15
-      clsx: 2.1.1
-      prop-types: 15.8.1
-      react: 18.3.1
-      react-is: 18.3.1
     optionalDependencies:
       '@types/react': 18.3.26
 
@@ -14028,7 +13974,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:

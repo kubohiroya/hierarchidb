@@ -48,11 +48,11 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/ui-basic-info": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-api": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*"
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.3.1",
@@ -66,11 +66,11 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/ui-basic-info": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-api": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*"
+    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
   },
   "tsup": {
     "external": [

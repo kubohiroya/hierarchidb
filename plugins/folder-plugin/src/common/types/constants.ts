@@ -212,6 +212,5 @@ export const FOLDER_MESSAGES = {
   // Template/Bookmark messages removed
 
   PERMISSIONS_UPDATED: 'Permissions updated successfully',
-  SETTINGS_UPDATED: 'Settings updated successfully',
   STATISTICS_REFRESHED: 'Statistics refreshed successfully',
 } as const;

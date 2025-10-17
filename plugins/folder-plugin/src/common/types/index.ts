@@ -1,13 +1,10 @@
 // Import tag-related types
 export type { TagId } from '@hierarchidb/common-types';
-// Keep existing simple types for backward compatibility if needed
-export * from './folder-dialog-data.js';
 
 export type { TagSuggestion } from '@hierarchidb/common-types';
 
 // Additional display types for UI
 import type { NodeId } from '@hierarchidb/common-types';
-import { FolderSettings } from './types.js';
 
 export interface FolderDisplayData {
   id: NodeId;
@@ -22,7 +19,6 @@ export interface FolderDisplayData {
 export interface FolderEditData {
   name: string;
   description?: string;
-  settings: FolderSettings;
 }
 
 // Export entity definition

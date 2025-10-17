@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { useFolderAPIGetter } from './useFolderAPI.js';
-import { FolderEntity, CreateFolderData, UpdateFolderData, FolderSettings } from '~/common/types/index.js';
+import { FolderEntity, CreateFolderData, UpdateFolderData } from '~/common/types/index.js';
 
 /**
  * Hook for managing folder-plugin data and operations
@@ -169,23 +169,6 @@ export function useFolderData(nodeId: NodeId) {
     [nodeId, getFolderAPI],
   );
 
-  // Update settings
-  const updateSettings = useCallback(
-    async (settings: FolderSettings): Promise<void> => {
-      try {
-        const api = await getFolderAPI();
-        if (!api) return;
-        await api.updateSettings(nodeId, settings);
-        await loadEntity(); // Reload to get updated settings
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to update settings');
-        setError(error);
-        throw error;
-      }
-    },
-    [nodeId, getFolderAPI, loadEntity],
-  );
-
   // Refresh statistics
   const refreshStatistics = useCallback(async (): Promise<void> => {
     try {
@@ -216,7 +199,6 @@ export function useFolderData(nodeId: NodeId) {
     deleteFolder,
     moveFolder,
     copyFolder,
-    updateSettings,
     refreshStatistics,
 
     // Computed

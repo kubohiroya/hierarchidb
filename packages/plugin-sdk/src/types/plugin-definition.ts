@@ -3,7 +3,7 @@
  * Combines core node definition with worker-side entity handler
  */
 
-import type { NodeLifecycleHooks, NodeType, TreeId, EntityHandler, PeerEntity, ValidationRule } from '@hierarchidb/common-types';
+import type { NodeType, TreeId, PeerEntity, ValidationRule } from '@hierarchidb/common-types';
 
 export interface PluginDefinition {
   // Basic node information
@@ -229,24 +229,4 @@ export interface DatabaseSchema {
 export interface PluginRoutingConfig {
   actions: Record<string, WorkerPluginRouterAction>;
   defaultAction?: string;
-}
-
-/**
- * Full plugin definition (extends EntityTypes with routing and metadata)
- * This is the complete definition used for plugin registration
- * @deprecated
-export interface ExtendedPluginDefinition extends PluginDefinition {
-  // Worker-side routing configuration
-  // Plugin metadata
-}
- */
-
-export interface PluginIntegrated extends PluginDefinition {
-  // Entity handler - manages CRUD operations
-  readonly entityHandler: EntityHandler;
-
-  // Lifecycle hooks with actual implementations
-  readonly lifecycle?: NodeLifecycleHooks;
-
-  readonly routing: PluginRoutingConfig;
 }

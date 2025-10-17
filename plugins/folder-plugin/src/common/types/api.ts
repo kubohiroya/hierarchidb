@@ -3,7 +3,7 @@
   */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import type { CreateFolderData, FolderEntity, FolderSearchQuery, FolderSettings, UpdateFolderData } from './types.js';
+import type { CreateFolderData, FolderEntity, FolderSearchQuery, UpdateFolderData } from './types.js';
 
 /**
  * Main Folder API interface for UI-Worker communication via PluginRegistryImpl
@@ -28,13 +28,6 @@ export interface FolderAPI {
   ): Promise<FolderEntity>;
 
   duplicateFolder(folderNodeId: NodeId): Promise<FolderEntity>;
-
-  // Folder settings operations
-  updateSettings(nodeId: NodeId, settings: FolderSettings): Promise<void>;
-
-  getSettings(nodeId: NodeId): Promise<FolderSettings | undefined>;
-
-  resetSettings(nodeId: NodeId): Promise<void>;
 
   // Folder search operations
   searchFolders(query: FolderSearchQuery): Promise<FolderSearchResult>;

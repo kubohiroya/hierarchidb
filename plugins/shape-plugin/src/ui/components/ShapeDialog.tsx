@@ -17,8 +17,9 @@ import {
   Stepper,
   Typography,
 } from '@mui/material';
+import { notify } from '@hierarchidb/components';
+import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
 import type { NodeId } from '../../shared/index.ts';
-import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import {
   type ShapeEntity,
   type ShapeWorkingCopy,

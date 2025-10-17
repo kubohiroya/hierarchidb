@@ -23,6 +23,7 @@ import type { RouteCategory, RouteEntity, RouteWorkingCopy, TagId } from '../typ
 import { RouteType, TransportMode } from '../types/index.js';
 import { getRouteDraft } from '../utils/workingCopy.js';
 import { useTranslation } from '../i18n/index.js';
+import { BasicInfoFields, type BasicInfoValue } from '@hierarchidb/runtime-basic-info';
 
 export interface RouteBasicInfoStepProps {
   workingCopy: RouteWorkingCopy;

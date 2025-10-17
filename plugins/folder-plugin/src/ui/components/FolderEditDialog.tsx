@@ -1,4 +1,3 @@
-import type React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
 import { FolderIcon } from './FolderIcon.js';
@@ -102,20 +101,17 @@ export const FolderEditDialog: React.FC<FolderEditDialogProps> = ({
   // Handle form submission
   const handleSubmit = useCallback(async () => {
     // Prepare changes object with only modified fields
-    const changes: FolderEditData = {};
-
-    if (formData.name?.trim() !== currentData.name) {
-      changes.name = formData.name!.trim();
-    }
-
+    //const changes: FolderEditData = {};
+    const newName = formData.name?.trim();
+    const name = (newName !== currentData.name) ? newName : undefined;
     const newDescription = formData.description?.trim() || undefined;
-    if (newDescription !== currentData.description) {
-      changes.description = newDescription;
-    }
+    const description = (newDescription !== currentData.description)? newDescription: undefined;
 
     // Only submit if there are actual changes
-    if (Object.keys(changes).length > 0) {
-      await onSubmit(changes);
+    if (name) {
+      await onSubmit({
+        name, description
+      });
     } else {
       onCancel();
     }

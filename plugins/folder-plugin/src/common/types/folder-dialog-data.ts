@@ -1,22 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 
 /**
- * Data required to create a new folder-plugin
- */
-export interface FolderCreateData {
-  name: string;
-  description?: string;
-}
-
-/**
- * Data for editing a folder-plugin
- */
-export interface FolderEditData {
-  name?: string;
-  description?: string;
-}
-
-/**
  * Additional folder-plugin-specific properties for display
  */
 export interface FolderDisplayData {

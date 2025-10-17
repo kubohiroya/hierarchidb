@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { FolderIcon } from './FolderIcon.js';
-import type { FolderCreateData } from '../../common/types/index.js';
+import type { FolderEditData } from '../../common/types/index.js';
 import type { NodeId } from '@hierarchidb/common-types';
 
 export interface FolderCreateDialogProps {
@@ -23,7 +23,7 @@ export interface FolderCreateDialogProps {
   /**
    * Called when user submits the form
    */
-  onSubmit: (data: FolderCreateData) => Promise<void>;
+  onSubmit: (data: FolderEditData) => Promise<void>;
 
   /**
    * Called when user cancels the base-dialog
@@ -45,7 +45,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
                                                                         onCancel,
                                                                         open = true,
                                                                       }) => {
-  const [formData, setFormData] = useState<FolderCreateData>({
+  const [formData, setFormData] = useState<FolderEditData>({
     name: '',
     description: '',
   });
@@ -70,7 +70,7 @@ export const FolderCreateDialog: React.FC<FolderCreateDialogProps> = ({
 
   // Update form data and mark as dirty
   const handleFormDataChange = useCallback(
-    (newData: FolderCreateData) => {
+    (newData: FolderEditData) => {
       setFormData(newData);
       setIsDirty(true);
       // Clear errors when user types

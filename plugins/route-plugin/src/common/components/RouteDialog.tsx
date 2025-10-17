@@ -12,8 +12,8 @@ import { RouteBasicInfoStep } from './RouteBasicInfoStep.js';
 import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
-import { notify } from '@hierarchidb/ui-core';
-import { useWorkingCopy } from '@hierarchidb/ui-core';
+import { notify } from '@hierarchidb/components';
+import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,

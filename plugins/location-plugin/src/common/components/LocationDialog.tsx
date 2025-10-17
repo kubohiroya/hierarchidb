@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { LocationOn } from '@mui/icons-material';
-import { notify, useWorkingCopy } from '@hierarchidb/ui-core';
 import type {
   LocationDialogProps,
   LocationWorkingCopy,
@@ -19,8 +18,8 @@ import { LocationLicenseStep } from './steps/LocationLicenseStep.js';
 import { LocationSelectionStep } from './steps/LocationSelectionStep.js';
 import { LocationBatchParametersStep } from './steps/LocationBatchParametersStep.js';
 import { LocationMapPreviewStep } from './steps/LocationMapPreviewStep.js';
-import { LocationVectorTileService } from '../services/tiles/LocationVectorTileService.js';
-import { listLocationPoints } from '../services/pointRepository.js';
+import { LocationVectorTileService } from '../../services/tiles/LocationVectorTileService.js';
+import { listLocationPoints } from '../../services/pointRepository.js';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,
@@ -40,6 +39,10 @@ import {
   type StepNavigationEvent,
   type StepComponentDescriptor,
 } from '@hierarchidb/ui-dialog';
+import { notify } from '@hierarchidb/components';
+
+import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
+// import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>
   value ? `${value}` : undefined;
@@ -81,6 +84,7 @@ export const LocationDialog: React.FC<LocationDialogProps> = ({
     nodeId: toIdString(nodeId),
     parentId: toIdString(parentId),
   });
+  // const notify = useToastNotifications();
 
   useEffect(() => { if (open) void init(); }, [open, init]);
   useEffect(() => () => { void discard().catch(() => {}); }, [discard]);
