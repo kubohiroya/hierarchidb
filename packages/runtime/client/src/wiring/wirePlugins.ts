@@ -1,6 +1,5 @@
 // Local copy of shared type to avoid build-time cross-package coupling
 export interface PluginRuntimeWiring {
-  registerSharedDownloadService?: () => Promise<void> | void;
   registerAuthNotifier?: () => Promise<void> | void;
   registerRuntimeWorkerAdapters?: () => Promise<void> | void;
 }
@@ -13,7 +12,6 @@ export interface PluginRuntimeWiring {
 import { registerRuntimeExports } from './runtime-export-registry.js';
 
 const RUNTIME_METHOD_KEYS: Array<keyof PluginRuntimeWiring> = [
-  'registerSharedDownloadService',
   'registerAuthNotifier',
   'registerRuntimeWorkerAdapters',
 ];
@@ -70,9 +68,6 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
       if (classWiring) wiringCandidates.push(classWiring);
 
       for (const wiring of wiringCandidates) {
-        if (typeof wiring.registerSharedDownloadService === 'function') {
-          await wiring.registerSharedDownloadService();
-        }
         if (typeof wiring.registerAuthNotifier === 'function') {
           await wiring.registerAuthNotifier();
         }

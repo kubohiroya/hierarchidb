@@ -2,7 +2,6 @@
  * Location Plugin Entry Point
  */
 
-import { readRuntimeEnvNumber } from '@hierarchidb/util';
 export { PLUGIN_MANIFEST as LocationPluginManifest } from './plugin-manifest.js';
 
 export * from './common/types/index.js';
@@ -22,7 +21,6 @@ export * from './services/batch/UnifiedLocationBatchManager.js';
 export { LocationBatchSessionManager } from './services/batch/BatchSessionManager.js';
 export { registerLocationRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
 export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults, registerLocationAuthNotifier } from './services/download/registry.js';
-export { registerLocationSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 
 // Import and re-export the plugin definition
 // Plugin definition exports removed: metadata is provided via src/plugin-manifest.ts
@@ -30,33 +28,7 @@ export { registerLocationSharedDownloadService } from './services/download/regis
 // Optional runtime wiring for shared bootstrap (no shared imports)
 type GlobalScope = Record<string, unknown>;
 
-function readNumberEnv(name: string, fallback: number): number {
-  try {
-    const scope = globalThis as GlobalScope;
-    const storage = typeof localStorage !== 'undefined' ? localStorage : undefined;
-    const envValue = readRuntimeEnvNumber(name);
-    const value = storage?.getItem(name)
-      ?? (scope[name] as string | undefined)
-      ?? (envValue != null ? String(envValue) : undefined);
-    if (value == null) return fallback;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export class RuntimeWiring {
-  static registerSharedDownloadService(): void {
-    try {
-      const phc = readNumberEnv('LOCATION_PER_HOST_CONCURRENCY', 4);
-      const { registerLocationSharedDownloadService } = require('./services/download/registerSharedDownloadService') as typeof import('./services/download/registerSharedDownloadService.js');
-      registerLocationSharedDownloadService({ perHostConcurrency: phc });
-    } catch {
-      /* noop */
-    }
-  }
-
   static registerAuthNotifier(): void {
     try {
       const { registerLocationAuthNotifier } = require('./services/download/registry') as typeof import('./services/download/registry.js');

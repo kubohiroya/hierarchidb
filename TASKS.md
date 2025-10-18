@@ -211,6 +211,48 @@
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
+11) Runtime Plugin Metadata 整備（P1）
+- ブランチ: `refactor/runtime/plugin-metadata-contract`
+- 依存: 現行プラグインマニフェスト（`hierarchidb.plugin`）、`scripts/generate-plugin-loader.mjs`
+- 受け入れ基準（DoD）:
+  - [ ] `hierarchidb.plugin` に runtime ローディング用の静的エントリ情報（worker adapters / batch API 参照）を追加し、既存プラグイン全てに適用
+  - [ ] `@hierarchidb/plugin-api` と `@hierarchidb/batch-api` で新メタデータ型を公開し、`pnpm --filter` での typecheck がグリーン
+  - [ ] `docs/runtime-wiring.md` を更新し、動的ワイヤリング廃止方針と新メタデータの適用手順を明記
+- チェックリスト:
+  - [ ] 対象プラグイン（route/shape/location/folder/styler/basemap/resolver）で metadata を追加し lint/typecheck を実行
+  - [ ] 既存 Feature flag 参照箇所を棚卸しし、新メタデータで代替する一覧を作成
+  - [ ] `scripts/generate-plugin-loader.mjs` の型チェックを更新するが、このタスクでは出力生成までは変更しない
+- ロールバック手順：
+  - 追加したメタデータ・型定義を revert し、`pnpm --filter @hierarchidb/plugin-api typecheck` と `pnpm --filter @hierarchidb/batch-api typecheck` が従来通り成功することを確認
+
+12) Runtime Plugin Loader 静的生成（P1）
+- ブランチ: `refactor/runtime/static-plugin-loader`
+- 依存: 11) Runtime Plugin Metadata 整備
+- 受け入れ基準（DoD）:
+  - [ ] `scripts/generate-plugin-loader.mjs` が runtime 向けの生成物（例: `app/src/generated/worker-runtime-loader.ts`）を出力し、各プラグインの登録関数を静的 import する
+  - [ ] 生成物が `@hierarchidb/plugin-api` / `@hierarchidb/batch-api` の型を満たし、`pnpm --filter @hierarchidb/app typecheck` が成功
+  - [ ] 生成コードに対するユニットテストまたは snapshot テストを追加し、ターゲットテストがグリーン
+- チェックリスト:
+  - [ ] 生成スクリプトを実行して差分を確認し、`pnpm lint` / `pnpm format` を通す
+  - [ ] Worker / UI 起動コードを新しい生成物に切り替え、旧 loader との重複を排除
+  - [ ] 生成物が import 失敗時に明示的なエラーを記録することを手動確認
+- ロールバック手順：
+  - スクリプトと生成ファイルを revert し、`pnpm generate-plugin-loader` 実行後に差分が無いことを確認
+
+13) Runtime 動的ワイヤリング撤去（P1）
+- ブランチ: `refactor/runtime/remove-dynamic-wiring`
+- 依存: 12) Runtime Plugin Loader 静的生成
+- 受け入れ基準（DoD）:
+  - [ ] `wirePluginsFromModules` / `registerRuntimeWorkerAdapters` 系の動的経路と関連 Feature flag を全廃し、静的 loader へ一本化
+  - [ ] 影響プラグインのテスト・型検証（`pnpm --filter <plugin> {test,typecheck}`）とワークスペース基盤コマンド (`pnpm lint && pnpm typecheck && pnpm test`) がグリーン
+  - [ ] `docs/runtime-wiring.md` / 各プラグイン README から動的ワイヤリング記述を削除し、新フローを説明
+- チェックリスト:
+  - [ ] `packages/runtime/client` から不要になった export を削除し、呼び出し側を更新
+  - [ ] Feature flag を参照していた設定（localStorage override, worker URL param など）を撤去し、関連テストを修正
+  - [ ] 新旧比較の WFL / Playwright シナリオを実行し、差分が目的通りであることを記録
+- ロールバック手順：
+  - 静的 loader への変更を revert し、`wirePluginsFromModules` と旧フックを復元後に `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
+
 -- テストファースト追加タスク（Doing #1/#2 フォロー） --
 - test/runtime-worker/undo-redo-playwright-smoke（Playwright スモーク導入, P1）
   - ブランチ: `test/runtime-worker/undo-redo-playwright-smoke`
@@ -321,8 +363,24 @@
     - [ ] `DialogStateAPI` の購読結果を BasicInfo/ステッパーへ反映するコードを整理
     - [ ] 新規テスト（失敗→修正→成功）を追加し、ログに結果を記録
     - [ ] 必要に応じて `PluginDialogShell` のログレベルを調整
-  - ロールバック手順：
+ - ロールバック手順：
     - 新規テストと同期ロジックをリバートし、従来挙動に戻して型検証を再実行
+
+16) Download サービスライフサイクル整理（P1）
+- ブランチ: `refactor/plugins/download-service-lifecycle`（sandbox 制約で `main` 上で進行）
+- 依存: `@hierarchidb/location-plugin`, `@hierarchidb/route-plugin`, `@hierarchidb/runtime-client`, `@hierarchidb/runtime-worker`, `@hierarchidb/common-api`
+- 受け入れ基準（DoD）:
+  - [x] `PluginRuntimeWiring` から `registerSharedDownloadService` フックを撤去し、`wirePluginsFromModules` で同名 Hook を呼ばない
+  - [x] location/route 両プラグインの RuntimeWiring で共有ダウンロードサービス登録処理を持たず、必要時に `get<Location|Route>DownloadService` で生成する構成に移行
+  - [x] `registerLocationSharedDownloadService.ts` / `registerRouteSharedDownloadService.ts` を削除しても `pnpm --filter @hierarchidb/{location-plugin,route-plugin} typecheck` が成功
+  - [ ] ダウンロードサービスの per-host concurrency 既定値が env/localStorage/global からの上書きを維持し、手動 regression 確認を記録
+- チェックリスト:
+  - [x] `packages/common/api/src/RuntimeWiring.ts` と `packages/runtime/client/src/wiring/wirePlugins.ts` から shared download hook 関連の型・呼び出しを削除
+  - [x] location/route プラグインのエントリとサービスレジストリから shared download export を撤去し、オプションマージ処理を実装
+  - [x] `registerSharedDownloadService.ts` 系ファイルを削除し、影響箇所の import を整理
+  - [x] `docs/runtime-wiring.md` 等の開発ドキュメントを最新構成へ更新
+  - [x] 必要な単体テスト／typecheck コマンドを実行し、運用ログに結果を追記
+- ロールバック手順：shared download hook の削除差分を戻し、該当プラグインから旧 `register*SharedDownloadService` 実装を復元したうえで `pnpm --filter @hierarchidb/{location-plugin,route-plugin} typecheck` を再実行
 
 - refactor/plugins/entity-type-safety — プラグイン拡張定義の型安全化（PeerEntity ジェネリクス適用）
   - ブランチ: `refactor/plugins/entity-type-safety`
@@ -1561,6 +1619,8 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-10-18 09:45 start: refactor/plugins/download-service-lifecycle — 前回セッションが `400 Bad Request` で中断した shared DownloadService 配線見直しを再開。RuntimeWiring から共有登録を撤去し、各バッチが `get<Location|Route>DownloadService` でオンデマンド生成する構成への移行を進める。
+- 2025-10-18 10:10 progress: refactor/plugins/download-service-lifecycle — `pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` を実行し、新しい on-demand 構成で型検証が通過することを確認。追加の自動テストは未実施。
 - 2025-10-17 11:30 start: refactor/folder-plugin/ui-definition-alignment 調査 — PluginDefinition の `components` 廃止後も folder-plugin に旧実装が残っていることを確認し、影響範囲を洗い出すためのメモ作成を開始。
 - 2025-10-17 12:10 done: refactor/folder-plugin/ui-definition-alignment 調査 — `TODO-refactoring20251017.md` を作成し、TASKS.md に ToDo/ログを追加してフォローアップ手順を整理。
 - 2025-10-17 13:05 start: refactor/folder-plugin/ui-definition-alignment 実装 — 旧 UI plugin 定義ファイルの撤去と host 登録ファイルの移設を開始。

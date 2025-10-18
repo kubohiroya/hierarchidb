@@ -9,7 +9,6 @@ import {
   registerRouteAuthNotifier,
   resolveAuthRegistry,
 } from './services/download/registry.js';
-import { readRuntimeEnvNumber, readRuntimeEnvValue } from '@hierarchidb/util';
 export { PLUGIN_MANIFEST as RoutePluginManifest } from './plugin-manifest.js';
 import type { RouteAuthNotification as DownloadAuthNotification } from './services/download/registry.js';
 type RouteAuthNotification = DownloadAuthNotification;
@@ -40,7 +39,6 @@ export * from './services/RouteBatchSessionOrchestrator.js';
 export { RouteBatchManager } from './services/RouteBatchManager.js';
 export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
 export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier, resolveAuthRegistry };
-export { registerRouteSharedDownloadService } from './services/download/registerSharedDownloadService.js';
 export type { RouteAuthNotification } from './services/download/registry.js';
 
 // UI exports are available via subpath export "@hierarchidb/route-plugin/ui"
@@ -50,35 +48,7 @@ export type { RouteAuthNotification } from './services/download/registry.js';
  */
 // Plugin definition exports removed: metadata is exposed via src/plugin-manifest.ts
 
-// Optional runtime wiring for shared bootstrap (no shared imports)
-function readNumberEnv(name: string, fallback: number): number {
-  const lsValue = typeof localStorage !== 'undefined' ? localStorage.getItem(name) ?? undefined : undefined;
-  const globalValue = readGlobalString(name);
-  const envNumber = readRuntimeEnvNumber(name);
-  const envFallback = envNumber ?? readRuntimeEnvValue(name, { prefixes: [''] });
-  const candidate = lsValue ?? globalValue ?? envFallback;
-  const value = typeof candidate === 'number' ? candidate : Number(candidate);
-  return Number.isFinite(value) ? value : fallback;
-}
-
-function readGlobalString(name: string): string | undefined {
-  const record = globalThis as Record<string, unknown>;
-  const value = record[name];
-  return typeof value === 'string' ? value : undefined;
-}
-
 export class RuntimeWiring {
-  static registerSharedDownloadService(): void {
-    const perHostConcurrency = readNumberEnv('ROUTE_PER_HOST_CONCURRENCY', 4);
-    void import('./services/download/registerSharedDownloadService.js')
-      .then(({ registerRouteSharedDownloadService }) =>
-        registerRouteSharedDownloadService({ perHostConcurrency })
-      )
-      .catch((error) => {
-        console.warn('[route-plugin] registerSharedDownloadService failed:', error);
-      });
-  }
-
   static registerAuthNotifier(): void {
     void import('./services/download/registry.js')
       .then(({ registerRouteAuthNotifier: setNotifier }) =>
