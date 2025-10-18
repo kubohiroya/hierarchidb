@@ -132,7 +132,7 @@ Consumers should import as follows:
 - App (main thread): `import { ... } from '@hierarchidb/shape-plugin'`
 - UI: `import { ... } from '@hierarchidb/shape-plugin/ui'`
 - Worker preload: `await import('@hierarchidb/runtime-shared-module-paths').then((m) => m.importPluginWorker('shape'))`
-- Worker factories: `import('@hierarchidb/shape-plugin/worker-factory')`
+- Worker factories: `import('@hierarchidb/shape-plugin/worker')`
 
 Notes:
 

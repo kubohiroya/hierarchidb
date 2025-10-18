@@ -14,14 +14,11 @@
       "shared": [
         "dist/shared/index.d.ts"
       ],
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
-      "worker-factory": [
-        "dist/worker-factory/index.d.ts"
-      ],
       "*": [
         "dist/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ]
     }
   },
@@ -29,6 +26,11 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
     },
     "./services": {
       "types": "./dist/services/index.d.ts",
@@ -41,16 +43,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
-    },
-    "./worker-factory": {
-      "types": "./dist/worker-factory/index.d.ts",
-      "import": "./dist/worker-factory/index.js",
-      "default": "./dist/worker-factory/index.js"
     }
   },
   "scripts": {

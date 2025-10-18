@@ -79,43 +79,43 @@ export default defineConfig({
         __dirname,
         '../../feature/tabular-source-xlsx/src/index.ts',
       ),
-      '@hierarchidb/basemap-plugin/worker-factory': path.resolve(
+      '@hierarchidb/basemap-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/basemap-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/folder-plugin/worker-factory': path.resolve(
+      '@hierarchidb/folder-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/folder-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/resolver-plugin/worker-factory': path.resolve(
+      '@hierarchidb/resolver-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/resolver-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/route-plugin/worker-factory': path.resolve(
+      '@hierarchidb/route-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/route-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/spreadsheet-plugin/worker-factory': path.resolve(
+      '@hierarchidb/spreadsheet-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/spreadsheet-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/styler-plugin/worker-factory': path.resolve(
+      '@hierarchidb/styler-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/styler-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/shape-plugin/worker-factory': path.resolve(
+      '@hierarchidb/shape-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/shape-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/location-plugin/worker-factory': path.resolve(
+      '@hierarchidb/location-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/location-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/linker-plugin/worker-factory': path.resolve(
+      '@hierarchidb/linker-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/linker-plugin/src/worker/factory/index.ts',
       ),
-      '@hierarchidb/timeline-plugin/worker-factory': path.resolve(
+      '@hierarchidb/timeline-plugin/worker': path.resolve(
         __dirname,
         '../../plugin-loader/timeline-plugin/src/worker/factory/index.ts',
       ),

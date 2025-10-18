@@ -5664,6 +5664,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-15 21:21 progress: fix/batch-api/api-extractor-input — `packages/batch-api/tsconfig.json` に `../batch-sdk/dist/**/*.d.ts` を include 追加後、`pnpm --filter @hierarchidb/batch-api build:types` を実行。API Extractor は TSDoc WARN を出力するものの、型ロールアップ自体は成功することを確認。
 - 2025-10-16 01:47 progress: fix/batch-api/api-extractor-input — `@hierarchidb/common-api` の TSDoc コメントを整備し、`pnpm --filter @hierarchidb/common-api clean && pnpm --filter @hierarchidb/common-api build:types` 後に `pnpm --filter @hierarchidb/batch-api build:types` を再実行。警告なしで完了することを確認。
 - 2025-10-16 01:47 done: fix/batch-api/api-extractor-input — API Extractor の警告が解消されたためタスク完了。
+- 2025-10-18 09:40 progress: refactor/runtime/remove-dynamic-wiring — 全プラグインの `worker-factory` export を廃止し、`worker` へ統一する codemod を作成・適用。関連 tsup 設定／tsconfig パス／ドキュメント／ESLint ルールを更新し、ワーカー参照の命名揺れを解消。
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
 - 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
 - 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。

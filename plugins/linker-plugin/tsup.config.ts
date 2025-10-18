@@ -4,13 +4,13 @@ export default createTsupConfig({
   entry: {
     index: 'src/index.ts',
     'services/index': 'src/services/index.ts',
-    'worker-factory/index': 'src/worker/factory/index.ts',
+    'worker/index': 'src/worker/factory/index.ts',
   },
   dts: {
     entry: {
       index: 'src/index.ts',
       'services/index': 'src/services/index.ts',
-      'worker-factory/index': 'src/worker/factory/index.ts',
+      'worker/index': 'src/worker/factory/index.ts',
     },
   },
   external: [

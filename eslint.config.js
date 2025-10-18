@@ -146,9 +146,9 @@ export default [
     },
   },
 
-  // Plugin packages: forbid legacy worker direct paths
-  // Purpose: during Phase 2b rollout, ensure all plugin-loader use `worker-factory`
-  // and avoid direct `../worker/*` or package `*/worker` imports.
+  // Plugin packages: forbid legacy worker-factory paths
+  // Purpose: ensure all plugin-loader use the canonical `worker` export
+  // and avoid importing `../worker-factory/*` or package `*/worker-factory`.
   {
     files: ['packages/plugin-loader/**/src/**/*.{ts,tsx,js,jsx}'],
     ignores: ['packages/plugin-loader/**/src/**/__tests__/**', 'packages/plugin-loader/**/src/**/*.{test,spec}.{ts,tsx,js,jsx}'],
@@ -160,12 +160,12 @@ export default [
         ],
         patterns: [
           {
-            group: ['../worker/*', './worker/*'],
-            message: 'Use the worker-factory entry instead of direct ../worker/*.',
+            group: ['../worker-factory/*', './worker-factory/*'],
+            message: 'Use the canonical worker export instead of ../worker-factory/*.',
           },
           {
-            group: ['@hierarchidb/*/worker', '@hierarchidb/*/worker/*'],
-            message: 'Import from the package\'s worker-factory export, not */worker.',
+            group: ['@hierarchidb/*/worker-factory', '@hierarchidb/*/worker-factory/*'],
+            message: 'Import from the package\'s worker export; worker-factory is deprecated.',
           },
         ],
       }],

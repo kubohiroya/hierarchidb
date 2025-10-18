@@ -12,10 +12,6 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./worker-factory": {
-      "types": "./dist/worker-factory/index.d.ts",
-      "import": "./dist/worker-factory/index.js"
-    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
@@ -31,14 +27,14 @@
   },
   "typesVersions": {
     "*": {
-      "worker-factory": [
-        "dist/worker-factory/index.d.ts"
-      ],
       "services": [
         "dist/services/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ]
     }
   },
@@ -55,8 +51,7 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@deck.gl/aggregation-layers": "^9.0.0",
     "@deck.gl/core": "^9.0.0",

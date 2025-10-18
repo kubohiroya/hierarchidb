@@ -261,6 +261,9 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
+      '@hierarchidb/basemap-plugin':
+        specifier: workspace:*
+        version: link:../plugins/basemap-plugin
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../packages/batch-api
@@ -279,6 +282,12 @@ importers:
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../packages/components
+      '@hierarchidb/folder-plugin':
+        specifier: workspace:*
+        version: link:../plugins/folder-plugin
+      '@hierarchidb/location-plugin':
+        specifier: workspace:*
+        version: link:../plugins/location-plugin
       '@hierarchidb/map-adapter':
         specifier: workspace:*
         version: link:../packages/feature/map-adapter
@@ -288,6 +297,9 @@ importers:
       '@hierarchidb/plugin-sdk':
         specifier: workspace:*
         version: link:../packages/plugin-sdk
+      '@hierarchidb/route-plugin':
+        specifier: workspace:*
+        version: link:../plugins/route-plugin
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../packages/runtime/client
@@ -297,9 +309,21 @@ importers:
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../packages/runtime/worker
+      '@hierarchidb/shape-plugin':
+        specifier: workspace:*
+        version: link:../plugins/shape-plugin
+      '@hierarchidb/spreadsheet-plugin':
+        specifier: workspace:*
+        version: link:../plugins/spreadsheet-plugin
+      '@hierarchidb/styler-plugin':
+        specifier: workspace:*
+        version: link:../plugins/styler-plugin
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
         version: link:../packages/feature/tabular-source-xlsx
+      '@hierarchidb/timeline-plugin':
+        specifier: workspace:*
+        version: link:../plugins/timeline-plugin
       '@hierarchidb/ui-auth':
         specifier: workspace:*
         version: link:../packages/ui/auth

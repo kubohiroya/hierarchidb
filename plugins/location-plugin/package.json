@@ -10,17 +10,13 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./worker-factory": {
-      "types": "./dist/worker-factory/index.d.ts",
-      "import": "./dist/worker-factory/index.js"
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js"
     },
     "./services": {
       "types": "./dist/services/index.d.ts",
       "import": "./dist/services/index.js"
-    },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -29,12 +25,6 @@
   },
   "typesVersions": {
     "*": {
-      "worker-factory": [
-        "dist/worker-factory/index.d.ts"
-      ],
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
       "ui": [
         "dist/ui/index.d.ts"
       ],
@@ -43,6 +33,9 @@
       ],
       "*": [
         "dist/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ]
     }
   },
@@ -60,8 +53,7 @@
     "prebuild": "pnpm --filter @hierarchidb/common-types... run build && pnpm --filter @hierarchidb/ui-dialog... run build && pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/react": "^18.2.45",
     "tsup": "^8.0.1",

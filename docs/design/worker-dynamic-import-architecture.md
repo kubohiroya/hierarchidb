@@ -230,7 +230,7 @@ sequenceDiagram
 
 2. **実装取得ラッパーと型の橋渡し**
    - `loadStylerWorkerPeer` などのファクトリー関数は戻り値の型を明示し、`import type` で静的な型定義を参照する。
-- 例: `type StylerWorkerModule = typeof import('@hierarchidb/styler-plugin/worker-factory');` のように公開ファクトリを参照し、実装は `modulePaths.importPluginWorker('styler')` で取得する。
+- 例: `type StylerWorkerModule = typeof import('@hierarchidb/styler-plugin/worker');` のように公開ファクトリを参照し、実装は `modulePaths.importPluginWorker('styler')` で取得する。
 
 3. **API Contract の分離**
    - ランタイム側に `worker-public-plugin-definition.ts` (純粋に型のみを export) を新設し、`index.d.ts` から再エクスポートする。
@@ -274,7 +274,7 @@ export async function loadWorkerRuntime(): Promise<WorkerClientRef> {
   const runtimeMod = await import('@hierarchidb/runtime-worker');
   const storeRegistry: StoreRegistry = runtimeMod.storeRegistry;
 
-  const stylerPeerMod = await import('@hierarchidb/styler-plugin/worker-factory');
+  const stylerPeerMod = await import('@hierarchidb/styler-plugin/worker');
   const loadStylerPeer = stylerPeerMod.loadStylerWorkerPeer as WorkerPeerLoader;
   await loadStylerPeer(storeRegistry);
 

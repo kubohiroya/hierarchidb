@@ -11,14 +11,11 @@
       "database": [
         "dist/database/index.d.ts"
       ],
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
-      "worker-factory": [
-        "dist/worker-factory/index.d.ts"
-      ],
       "*": [
         "dist/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ]
     }
   },
@@ -28,6 +25,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./worker": {
+      "types": "./dist/worker/index.d.ts",
+      "import": "./dist/worker/index.js",
+      "default": "./dist/worker/index.js"
+    },
     "./database": {
       "types": "./dist/database/index.d.ts",
       "import": "./dist/database/index.js"
@@ -35,16 +37,6 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./worker": {
-      "types": "./dist/worker/index.d.ts",
-      "import": "./dist/worker/index.js",
-      "default": "./dist/worker/index.js"
-    },
-    "./worker-factory": {
-      "types": "./dist/worker-factory/index.d.ts",
-      "import": "./dist/worker-factory/index.js",
-      "default": "./dist/worker-factory/index.js"
     }
   },
   "files": [
@@ -66,8 +58,7 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

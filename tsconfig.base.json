@@ -76,9 +76,8 @@
       "@hierarchidb/util/*": [
         "packages/util/src/*"
       ],
-      "@hierarchidb/*-plugin/worker-factory": [
-        "packages/plugins/*-plugin/src/worker/factory/index.ts",
-        "packages/plugins/*-plugin/src/worker-factory/index.ts"
+      "@hierarchidb/*-plugin/worker": [
+        "packages/plugins/*-plugin/src/worker/factory/index.ts"
       ],
       "@hierarchidb/spreadsheet-plugin": [
         "packages/plugins/spreadsheet-plugin/src/index.ts"

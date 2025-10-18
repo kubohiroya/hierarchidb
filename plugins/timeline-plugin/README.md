@@ -33,7 +33,7 @@ Projects ツリーにおける「特殊なフォルダ」型ノードとして�
 ### 前提
 - 本リポの app を開発モードで起動します。
   - `pnpm -C app dev`
-- app 側では `@hierarchidb/runtime-shared-module-paths.importPluginWorker('timeline')` を通じて `@hierarchidb/timeline-plugin/worker-factory` を遅延ロードします。
+- app 側では `@hierarchidb/runtime-shared-module-paths.importPluginWorker('timeline')` を通じて `@hierarchidb/timeline-plugin/worker` を遅延ロードします。
   - app/src/worker-runtime/WorkerModuleLoader.ts で timeline の登録を確認してください
 - Projects の「作成」メニューに timeline/linker を表示する設定を追加済みです。
   - app/src/plugins/menu-spec.ts の projects.order に `timeline`, `linker` を追記

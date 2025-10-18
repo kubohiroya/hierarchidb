@@ -12,17 +12,13 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./database": {
-      "types": "./dist/database/index.d.ts",
-      "import": "./dist/database/index.js"
-    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
-    "./worker-factory": {
-      "types": "./dist/worker-factory/index.d.ts",
-      "import": "./dist/worker-factory/index.js"
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -31,12 +27,6 @@
   },
   "typesVersions": {
     "*": {
-      "worker": [
-        "dist/worker/index.d.ts"
-      ],
-      "worker-factory": [
-        "dist/worker-factory/index.d.ts"
-      ],
       "ui": [
         "dist/ui/index.d.ts"
       ],
@@ -45,11 +35,14 @@
       ],
       "*": [
         "dist/index.d.ts"
+      ],
+      "worker": [
+        "dist/worker/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "prebuild": "pnpm -t hierarchidb@ui-core build",
+    "prebuild": "pnpm run build:clean",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
@@ -59,7 +52,6 @@
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "tsup",
-    "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
   "dependencies": {

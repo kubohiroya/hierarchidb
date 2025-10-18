@@ -50,17 +50,17 @@ const fallbackRows = new Map<string, any>();
 
 vi.mock('@hierarchidb/runtime-shared-module-paths', () => ({
   PLUGIN_WORKER_MODULE_IDS: {
-    folder: '@hierarchidb/folder-plugin/worker-factory',
+    folder: '@hierarchidb/folder-plugin/worker',
   },
   importPluginWorker: (id: string) => {
     if (id !== 'folder') {
       return Promise.reject(new Error(`Unhandled plugin id ${id}`));
     }
-    return import('@hierarchidb/folder-plugin/worker-factory');
+    return import('@hierarchidb/folder-plugin/worker');
   },
 }));
 
-vi.mock('@hierarchidb/folder-plugin/worker-factory', () => ({
+vi.mock('@hierarchidb/folder-plugin/worker', () => ({
   loadFolderEntitiesDbModule: async () => ({
     FolderEntitiesDB: class {
       async open() { /* no-op */ }
