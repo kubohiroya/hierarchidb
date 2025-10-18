@@ -17,7 +17,7 @@ interface TsconfigShape {
   };
 }
 
-const DEFAULT_ALIAS_KINDS: PluginEntryKind[] = ['services', 'database', 'common', 'ui', 'worker'];
+const DEFAULT_ALIAS_KINDS: PluginEntryKind[] = ['database', 'common', 'ui', 'worker'];
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(moduleDir, '..');

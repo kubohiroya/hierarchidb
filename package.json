@@ -41,6 +41,7 @@
     "prebuild:app": "pnpm types:virtual:generate",
     "preview": "turbo run preview",
     "prepreview": "pnpm types:virtual:generate",
+    "dts:quick": "node scripts/generate-virtual-dts.mjs",
     "pretypecheck": "pnpm run dts:quick",
     "typecheck": "turbo run typecheck",
     "typecheck:graph": "tsc -b tsconfig.build.json",

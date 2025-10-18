@@ -5,6 +5,8 @@
 
 //  Shared layer -
 export * from './common/shared/index.js';
+// Services (database helpers previously exposed via ./services)
+export { ShapeDB, EphemeralShapeDB } from './services/index.js';
 
 // UI layer is internal to app; not exported in package API
 
@@ -38,5 +40,21 @@ export class RuntimeWiring {
     } catch {
       /* noop */
     }
+  }
+}
+
+let initialized = false;
+
+export async function onRegister(): Promise<void> {
+  if (initialized) return;
+  initialized = true;
+
+  try {
+    const { ShapeDB } = await import('./services/index.js');
+    const db = new ShapeDB();
+    await db.open();
+    await db.close();
+  } catch (error) {
+    console.warn('[shape-plugin] failed to pre-open ShapeDB:', error);
   }
 }

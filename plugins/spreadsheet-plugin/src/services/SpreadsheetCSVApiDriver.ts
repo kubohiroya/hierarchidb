@@ -18,6 +18,7 @@ import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
 import { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/tabular-store';
 import { applyCsvFilters, calculateFileHash, detectColumnTypes, parseCSVContent, processExcelFile, processZipFile } from '~/common/utils/index.js';
+import { createDownloadService, downloadWithService, type DownloadServiceHandle } from '@hierarchidb/plugin-sdk';
 
 // Chunk configuration for large table support
 interface ChunkConfig {
@@ -43,6 +44,8 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
   private csvDataStorage = new Map<string, ChunkedData>();
   private spreadsheetDB: SpreadsheetDatabase | null = null;
   private pluginId: string;
+  private static downloadServicePromise: Promise<DownloadServiceHandle> | null = null;
+  private static urlTransform: (url: string) => string | Promise<string> = (url) => url;
 
   private readonly chunkConfig: ChunkConfig = {
     maxRowsPerChunk: 10000, // 10K rows per chunk
@@ -67,6 +70,31 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     // without altering runtime behavior.
     // These helpers are wired in larger flows during full feature enablement.
     // helpers are now wired into the flow via upload/download paths
+  }
+
+  static configureDownloadUrlTransform(transform: (url: string) => string | Promise<string>): void {
+    this.urlTransform = transform;
+  }
+
+  private async ensureDownloadService(): Promise<DownloadServiceHandle> {
+    if (!SpreadsheetCSVApiDriver.downloadServicePromise) {
+      SpreadsheetCSVApiDriver.downloadServicePromise = createDownloadService({
+        dbPrefix: 'hidb-spreadsheet',
+      });
+    }
+    return SpreadsheetCSVApiDriver.downloadServicePromise;
+  }
+
+  private buildDownloadFileId(): string {
+    const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+    return `spreadsheet:${uuid}`;
+  }
+
+  private deriveFilename(sourceUrl: string): string {
+    const tail = sourceUrl.split('?')[0]?.split('/').pop();
+    return tail && tail.trim().length > 0 ? tail : 'downloaded.csv';
   }
 
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
@@ -119,30 +147,18 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     config: CSVProcessingConfig = {},
   ): Promise<CSVTableMetadata> {
     try {
-      //  : URLSSRF
-
-      //  : fetch API
-      const { authFetch } = await import('./utils/authFetch.js');
-      const response = await authFetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'text/csv, application/csv, text/plain, application/octet-stream',
-        },
+      const downloadService = await this.ensureDownloadService();
+      const outcome = await downloadWithService(downloadService, url, {
+        transformUrl: SpreadsheetCSVApiDriver.urlTransform,
+        fileId: () => this.buildDownloadFileId(),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      const buffer = await outcome.readAll();
+      const filename = this.deriveFilename(outcome.url);
+      const file = new File([buffer], filename, {
+        type: outcome.contentType ?? 'application/octet-stream',
+      });
 
-      //  : Content-Type
-      const contentType = response.headers.get('content-type') || '';
-      const filename = url.split('/').pop() || 'downloaded.csv';
-
-      //  : ArrayBuffer
-      const arrayBuffer = await response.arrayBuffer();
-      const file = new File([arrayBuffer], filename, { type: contentType });
-
-      //  : uploadCSVFile
       return await this.uploadCSVFile(file, config);
     } catch (error) {
       throw new Error(

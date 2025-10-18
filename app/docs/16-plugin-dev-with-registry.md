@@ -15,8 +15,8 @@
 - 生成プラグイン（Vite）
   - `@hierarchidb/vite-plugin-node-type-registry`
     - 走査対象: `plugins/*-plugin/package.json`
-    - 生成: `virtual:plugin-node-types/maps`（UI/Worker/Common）、`virtual:plugin-node-types/services`、`virtual:plugin-definitions`
-      - 互換モジュールとして `virtual:plugin-registry-ui` / `worker` / `services` も引き続き提供
+    - 生成: `virtual:plugin-node-types/maps`（UI/Worker/Common）、`virtual:plugin-definitions`
+      - 互換モジュールとして `virtual:plugin-registry-ui` / `worker` も引き続き提供
       - `onRegister` を export したエントリは自動的に await され、IndexedDB メタデータの事前読み込みなどの初期化を行える
   - `app/vite-plugin-mui-icon-map.ts`（アイコンマップ）
     - 走査対象: 同上
@@ -93,7 +93,7 @@ export type FooPluginManifest = typeof PLUGIN_MANIFEST;
   - `virtual:plugin-registry-ui` … UI ローダ
   - `virtual:plugin-registry-worker` … Worker ローダ
   - `virtual:mui-icon-map` … アイコンマップ
-- `@hierarchidb/vite-plugin-node-type-registry` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/*-plugin/services` や `/database` などのパスを手動で追加する必要はありません。
+- `@hierarchidb/vite-plugin-node-type-registry` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/*-plugin` 直下に再エクスポートした API を利用してください（旧 `./services` サブパスは廃止済みです）。
 - 文字列リテラルの import() なので、Vite/Rollup が確実に解決・分割し、GitHub Pages でも問題ありません。
 
 ## UI 実装の取り込み例
@@ -203,16 +203,12 @@ for (const nodeType of Object.keys(pluginMapWorker)) {
 - 以後は `@hierarchidb/ui-icon` が静的マップから解決し、動的 import を極力回避します。
 
 ## Services/DB の取り込み例
-- 共通ファサード（例）
+- プラグインのルートエントリから直接再エクスポートされた API を利用します
 ```ts
-// app/src/services/plugin-services.ts
-import { loadPluginService } from '~/services/plugin-services';
-
-const db = await loadPluginService('shape'); // exports['./database'] や ./shared を静的import
+// app/src/services/databases.ts
+const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
+const { ShapeDB } = await import('@hierarchidb/shape-plugin');
 ```
-
-> 補足: 各プラグインの package.json に `exports['./services']` あるいは `./database`/`./shared` を追加すると、
-> 自動的にレジストリへ登録されます。未定義のプラグインは no-op（空モジュール）になります。
 
 ## Lazy/Eager の切替
 - 既定は Lazy（`() => import('...')`）。初期バンドルを小さく保てます。
@@ -259,5 +255,5 @@ packages/plugins/foo-plugin/
 ---
 
 お問い合わせ・拡張
-- services/DB 用のレジストリ（`virtual:plugin-registry-services`）も同様に追加可能です（exports に専用エントリを設けて参照）。
+- DB やサービス向けの API は各プラグインのルートエントリ（例: `@hierarchidb/location-plugin`）から直接再エクスポートする構成に統一しました。以前の `virtual:plugin-registry-services` は提供されません。
 - Eager ロードやビルド分割戦略はプロダクト要件に合わせて調整できます。必要なら提案します。

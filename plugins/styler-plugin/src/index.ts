@@ -132,3 +132,12 @@ export class RuntimeWiring {
 
 // Dialog extension initializer
 export { initializeStylerDialogExtension, stylerDialogExtension } from './common/extensions/StylerDialogExtension.js';
+
+let initialized = false;
+
+export async function onRegister(): Promise<void> {
+  if (initialized) return;
+  initialized = true;
+  // Styler plugin currently has no pre-load side effects; this hook
+  // exists so the runtime executes once for symmetry with other plugins.
+}

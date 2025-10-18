@@ -868,6 +868,10 @@ importers:
         version: 7.53.1(@types/node@18.19.123)
 
   packages/plugin-sdk:
+    dependencies:
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../feature/download
     devDependencies:
       '@hierarchidb/batch-api':
         specifier: workspace:*

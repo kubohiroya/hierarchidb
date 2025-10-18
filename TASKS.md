@@ -211,12 +211,12 @@
 - ブランチ: `refactor/app/remove-ui-fallback`
 - 依存: `@hierarchidb/app`, `@hierarchidb/plugin-loader`, `scripts/generate-plugin-loader.mjs`
 - 受け入れ基準（DoD）:
-  - [ ] `scripts/generate-plugin-loader.mjs` が UI プラグインロードでスタブを参照せず、本番 UI モジュールのみを動的 import する実装になっている
-  - [ ] `app/src/generated/ui-loader.ts` に `../virtual/stubs` への import が存在しない状態で再生成されている
+  - [x] `scripts/generate-plugin-loader.mjs` が UI プラグインロードでスタブを参照せず、本番 UI モジュールのみを動的 import する実装になっている
+  - [x] `app/src/generated/ui-loader.ts` に `../virtual/stubs` への import が存在しない状態で再生成されている
   - [ ] Worker バンドル（`app/src/worker.ts` 経由）に UI パッケージ import が混入しないことを確認し、検証結果を運用ログへ記録
 - チェックリスト:
-  - [ ] `scripts/generate-plugin-loader.mjs` から `loadWithFallback` とスタブ import 生成ロジックを削除
-  - [ ] `pnpm --filter @hierarchidb/app generate:ui-loader`（または相当スクリプト）を実行し、差分をコミット前に自己レビュー
+  - [x] `scripts/generate-plugin-loader.mjs` から `loadWithFallback` とスタブ import 生成ロジックを削除
+  - [x] `pnpm --filter @hierarchidb/app generate:ui-loader`（または相当スクリプト）を実行し、差分をコミット前に自己レビュー
   - [ ] 既存テスト/型チェック（`pnpm -C app typecheck` など）を実行し、結果を運用ログへ記録
 - ロールバック手順：
   - `scripts/generate-plugin-loader.mjs` と `app/src/generated/ui-loader.ts` の差分を元に戻し、再生成・typecheck を再実行する
@@ -5613,6 +5613,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。
 - 2025-10-04 23:30 progress: refactor/worker/error-model-unify — エラー分類ユーティリティ追加と CommandProcessor 差し替えを中心とした改修計画を策定。
 - 2025-10-18 14:05 start: refactor/app/remove-ui-fallback — Worker 向け UI フォールバック撤去タスクに着手（virtual/stubs 参照の洗い出し開始）。
+- 2025-10-18 14:18 progress: refactor/app/remove-ui-fallback — `node scripts/generate-plugin-loader.mjs` を実行し、スタブ無しの UI ローダーを生成（`app/src/generated/ui-loader.ts` を手動検証）。
+- 2025-10-18 14:40 blocked: refactor/app/remove-ui-fallback — `pnpm install --filter @hierarchidb/app --lockfile-only` を実行したが、network access 制約で registry への接続が断続的に失敗（ENOTFOUND）が続きタイムアウト。依存追加による lockfile 更新は未完了。
+- 2025-10-18 14:48 blocked: refactor/app/remove-ui-fallback — `pnpm -C app typecheck` を実行したところ、既存の tour/UI モジュール未整備や `@hierarchidb/common-api` の API 不一致による型エラー多数で失敗（従来課題を再確認）。
+- 2025-10-18 15:05 progress: refactor/app/remove-ui-fallback — `app/package.json` に各 UI プラグインを workspace 依存として追加し、`scripts/generate-plugin-loader.mjs` の fallback 解決パスを `plugins/*` へ修正後に再実行。`app/src/generated/ui-loader.ts` が実プラグイン import のみを含む形で再生成されたことを確認。
+- 2025-10-18 15:12 progress: refactor/app/remove-ui-fallback — `pnpm install --filter @hierarchidb/app --lockfile-only` を再実行し、UI プラグイン依存を含めた `pnpm-lock.yaml` を更新（peer warning は既存の ESLint/TL 依存不整合のみ）。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。

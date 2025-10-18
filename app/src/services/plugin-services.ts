@@ -1,22 +1,23 @@
-// Thin facade over virtual:plugin-node-types/services (互換として virtual:plugin-registry-services も提供)
-// Provides a stable way to resolve optional per-plugin services/DB modules.
-// NOTE: Avoid top-level import of the virtual module to prevent early boot races.
-//       Lazy-load on first use instead.
+// Thin facade that lazily resolves plugin-specific helpers via dynamic import.
+// Maintains backward-compatible API (`loadPluginService`) without relying on
+// the legacy virtual:plugin-registry-services module.
 
 type Loader = () => Promise<unknown>;
 
-let _servicesMap: Record<string, Loader> | null = null;
+const loaderMap: Record<string, Loader> = {
+  basemap: async () => import('@hierarchidb/basemap-plugin/database'),
+  resolver: async () => import('@hierarchidb/resolver-plugin/database'),
+  spreadsheet: async () => import('@hierarchidb/spreadsheet-plugin/database'),
+  route: async () => import('@hierarchidb/route-plugin/database'),
+  shape: async () => import('@hierarchidb/shape-plugin'),
+  location: async () => import('@hierarchidb/location-plugin'),
+  styler: async () => import('@hierarchidb/styler-plugin'),
+  timeline: async () => import('@hierarchidb/timeline-plugin'),
+  linker: async () => import('@hierarchidb/linker-plugin'),
+};
+
 async function getServices(): Promise<Record<string, Loader>> {
-  if (_servicesMap) return _servicesMap;
-  try {
-    const mod = await import('virtual:plugin-registry-services');
-    _servicesMap = mod.pluginServices ?? {};
-  } catch (error) {
-    // During dev server warm-up the virtual module may not be ready yet.
-    // Return empty map; callers will receive null and can retry on demand.
-    _servicesMap = {};
-  }
-  return _servicesMap;
+  return loaderMap;
 }
 
 type KnownPluginServiceReturnMap = {
@@ -24,11 +25,11 @@ type KnownPluginServiceReturnMap = {
   resolver: typeof import('@hierarchidb/resolver-plugin/database') | null;
   spreadsheet: typeof import('@hierarchidb/spreadsheet-plugin/database') | null;
   route: typeof import('@hierarchidb/route-plugin/database') | null;
-  shape: typeof import('@hierarchidb/shape-plugin/services') | null;
-  location: typeof import('@hierarchidb/location-plugin/services') | null;
-  styler: typeof import('@hierarchidb/styler-plugin/services') | null;
-  timeline: typeof import('@hierarchidb/timeline-plugin/services') | null;
-  linker: typeof import('@hierarchidb/linker-plugin/services') | null;
+  shape: typeof import('@hierarchidb/shape-plugin') | null;
+  location: typeof import('@hierarchidb/location-plugin') | null;
+  styler: typeof import('@hierarchidb/styler-plugin') | null;
+  timeline: typeof import('@hierarchidb/timeline-plugin') | null;
+  linker: typeof import('@hierarchidb/linker-plugin') | null;
 };
 
 type KnownPluginNodeType = keyof KnownPluginServiceReturnMap;
@@ -38,7 +39,7 @@ type LoadPluginServiceResult<N extends string> =
 
 export async function loadPluginService<N extends string>(nodeType: N): Promise<LoadPluginServiceResult<N>> {
   const services = await getServices();
-  const loader: Loader | undefined = services[nodeType];
+  const loader = services[nodeType];
   if (typeof loader !== 'function') return null as LoadPluginServiceResult<N>;
   try {
     const mod = await loader();

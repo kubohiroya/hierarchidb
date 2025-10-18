@@ -6,13 +6,13 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 
 * `scripts/generate-plugin-loader.mjs` parses `app/package.json` to locate dependencies that match `@hierarchidb/*-plugin`, resolves each package’s `exports`, and builds two generated modules: `src/generated/worker-loader.ts` for worker-side entity database overrides and `src/generated/ui-loader.ts` for eager UI imports in dependency order.【F:scripts/generate-plugin-loader.mjs†L1-L229】【F:scripts/generate-plugin-loader.mjs†L200-L229】
 * The `hierarchiDBMultiModulePreset` in `@hierarchidb/tools-vite-plugin-package-reader` contributes several virtual modules (`plugin-definitions`, `plugin-map`, `plugin-map-worker`, `plugin-types`) by scanning workspace packages, deriving per-plugin configuration, and emitting dynamic `import()` wrappers that prefer dedicated worker and UI entry points when present.【F:packages/tools/vite-plugin-package-reader/src/presets/hierarchidb.ts†L16-L335】
-* `app/vite.config.ts` registers `@hierarchidb/vite-plugin-node-type-registry`, which exposes `virtual:plugin-node-types/maps` / `services` and互換モジュール `virtual:plugin-registry-*`. This keeps development and build pipelines aligned for plugin discovery.【F:app/vite.config.ts†L87-L153】【F:packages/tools/vite-plugin-node-type-registry/src/registry-plugin.ts†L1-L260】
+* `app/vite.config.ts` registers `@hierarchidb/vite-plugin-node-type-registry`, which exposes `virtual:plugin-node-types/maps`（UI/Worker/Common）と互換モジュール `virtual:plugin-registry-*`. This keeps development and build pipelines aligned for plugin discovery.【F:app/vite.config.ts†L87-L153】【F:packages/tools/vite-plugin-node-type-registry/src/registry-plugin.ts†L1-L260】
 
 ## Runtime metadata wiring in the app shell
 
 * At startup, `root.tsx` registers `useWorkerClient` as the shared worker hook, runs `registerAllUIPlugins()` (leveraging the generated UI loader), prefetches menu builders, and loads the `virtual:plugin-definitions` module into the `window.__HDB_PLUGIN_DEFS__` global for downstream consumers such as the dialog runtime.【F:app/src/root.tsx†L1-L162】【F:app/src/root.tsx†L58-L119】
 * `app/src/services/plugin-presentation.ts` consumes the virtual definitions (falling back to the global) to normalize labels, MUI icons, emoji, and priorities; `menu-builders.ts` then uses that presentation data when constructing speed-dial menus while still retaining a fallback for missing definitions.【F:app/src/services/plugin-presentation.ts†L1-L155】【F:app/src/plugins/menu-builders.ts†L1-L176】
-* `app/src/services/plugin-services.ts` lazily imports `virtual:plugin-registry-services` so features can request per-plugin service bundles (e.g., database helpers) without eagerly importing every plugin module.【F:app/src/services/plugin-services.ts†L1-L68】
+* `app/src/services/plugin-services.ts` lazily imports各プラグインのルートエントリを動的に解決し、必要なヘルパー（例: ShapeDB や getEphemeralLocationDB）を取得します。【F:app/src/services/plugin-services.ts†L1-L74】
 
 ## Dialog composition flow
 

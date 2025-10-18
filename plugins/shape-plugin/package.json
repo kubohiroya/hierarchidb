@@ -31,10 +31,6 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
-    "./services": {
-      "types": "./dist/services/index.d.ts",
-      "import": "./dist/services/index.js"
-    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"

@@ -11,12 +11,6 @@ import type {
 import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
 import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
 import { CSVTableMetadata } from '@hierarchidb/tabular-store';
-type AuthFetch = typeof import('./utils/authFetch.js')['authFetch'];
-
-const loadAuthFetch = async (): Promise<AuthFetch> => {
-  const mod = await import('./utils/authFetch.js');
-  return mod.authFetch;
-};
 
 export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   constructor(private pluginId: string = 'spreadsheet') {
@@ -29,13 +23,8 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
   }
 
   async downloadCSVFromUrl(url: string, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
-    const authFetch = await loadAuthFetch();
-    const res = await authFetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const buf = await res.arrayBuffer();
-    const filename = url.split('/').pop() || 'downloaded.csv';
-    const file = new File([buf], filename, { type: res.headers.get('content-type') || 'application/octet-stream' });
-    return await this.uploadCSVFile(file);
+    const driver = new SpreadsheetCSVApiDriver(this.pluginId);
+    return driver.downloadCSVFromUrl(url, _config ?? {});
   }
 
   async getFilteredPreview(

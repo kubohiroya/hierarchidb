@@ -84,29 +84,14 @@
       "@hierarchidb/basemap-plugin/database": [
         "../packages/plugins/basemap-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/linker-plugin/services": [
-        "../packages/plugins/linker-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/location-plugin/services": [
-        "../packages/plugins/location-plugin/src/services/index.ts"
-      ],
       "@hierarchidb/resolver-plugin/database": [
         "../packages/plugins/resolver-plugin/src/services/database/index.ts"
       ],
       "@hierarchidb/route-plugin/database": [
         "../packages/plugins/route-plugin/src/services/database/index.ts"
       ],
-      "@hierarchidb/shape-plugin/services": [
-        "../packages/plugins/shape-plugin/src/services/index.ts"
-      ],
       "@hierarchidb/spreadsheet-plugin/database": [
         "../packages/plugins/spreadsheet-plugin/src/services/database/index.ts"
-      ],
-      "@hierarchidb/styler-plugin/services": [
-        "../packages/plugins/styler-plugin/src/services/index.ts"
-      ],
-      "@hierarchidb/timeline-plugin/services": [
-        "../packages/plugins/timeline-plugin/src/services/index.ts"
       ]
     },
     "composite": false,

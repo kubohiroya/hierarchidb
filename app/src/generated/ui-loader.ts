@@ -3,88 +3,15 @@
 // This file exposes dynamic loaders for plugin UI entry points in dependency order.
 
 
-const hasDocumentHead = (): boolean => {
-  try {
-    return typeof document !== 'undefined' && !!document && !!document.head;
-  } catch {
-    return false;
-  }
-};
-
-const loadWithFallback = (
-  pluginName: string,
-  loadReal: () => Promise<unknown>,
-  loadStub: () => Promise<unknown>,
-): Promise<unknown> => {
-  if (!hasDocumentHead()) {
-    return loadStub();
-  }
-
-  try {
-    const promise = loadReal();
-    return promise.catch((error) => {
-      if (typeof console !== 'undefined') {
-        console.warn(`[ui-loader] Falling back to ${pluginName} stub due to error:`, error);
-      }
-      return loadStub();
-    });
-  } catch (error) {
-    if (typeof console !== 'undefined') {
-      console.warn(`[ui-loader] Falling back to ${pluginName} stub due to error:`, error);
-    }
-    return loadStub();
-  }
-};
-
 const uiLoaders: Record<string, () => Promise<unknown>> = {
-  'timeline': () =>
-    loadWithFallback(
-      'timeline',
-      () => import('@hierarchidb/timeline-plugin/ui'),
-      () => import('../virtual/stubs/timeline-plugin-stub.js'),
-    ),
-  'route': () =>
-    loadWithFallback(
-      'route',
-      () => import('@hierarchidb/route-plugin/ui'),
-      () => import('../virtual/stubs/route-plugin-stub.js'),
-    ),
-  'location': () =>
-    loadWithFallback(
-      'location',
-      () => import('@hierarchidb/location-plugin/ui'),
-      () => import('../virtual/stubs/location-plugin-stub.js'),
-    ),
-  'folder': () =>
-    loadWithFallback(
-      'folder',
-      () => import('@hierarchidb/folder-plugin/ui'),
-      () => import('../virtual/stubs/folder-plugin-stub.js'),
-    ),
-  'spreadsheet': () =>
-    loadWithFallback(
-      'spreadsheet',
-      () => import('@hierarchidb/spreadsheet-plugin/ui'),
-      () => import('../virtual/stubs/spreadsheet-plugin-stub.js'),
-    ),
-  'styler': () =>
-    loadWithFallback(
-      'styler',
-      () => import('@hierarchidb/styler-plugin/ui'),
-      () => import('../virtual/stubs/styler-plugin-stub.js'),
-    ),
-  'shape': () =>
-    loadWithFallback(
-      'shape',
-      () => import('@hierarchidb/shape-plugin/ui'),
-      () => import('../virtual/stubs/shape-plugin-stub.js'),
-    ),
-  'basemap': () =>
-    loadWithFallback(
-      'basemap',
-      () => import('@hierarchidb/basemap-plugin/ui'),
-      () => import('../virtual/stubs/basemap-plugin-stub.js'),
-    ),
+  'timeline': () => import('@hierarchidb/timeline-plugin/ui'),
+  'route': () => import('@hierarchidb/route-plugin/ui'),
+  'location': () => import('@hierarchidb/location-plugin/ui'),
+  'folder': () => import('@hierarchidb/folder-plugin/ui'),
+  'spreadsheet': () => import('@hierarchidb/spreadsheet-plugin/ui'),
+  'styler': () => import('@hierarchidb/styler-plugin/ui'),
+  'shape': () => import('@hierarchidb/shape-plugin/ui'),
+  'basemap': () => import('@hierarchidb/basemap-plugin/ui'),
 };
 
 export const uiPlugins = ["basemap","folder","location","route","shape","spreadsheet","styler","timeline"] as const;

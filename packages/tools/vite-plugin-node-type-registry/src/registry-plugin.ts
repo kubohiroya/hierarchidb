@@ -35,23 +35,19 @@ function parseBooleanFlag(value?: string | boolean): boolean | undefined {
 
 const MODULE_DEFINITIONS = {
   maps: { id: 'virtual:plugin-node-types/maps', resolved: '\0virtual:plugin-node-types/maps' },
-  services: { id: 'virtual:plugin-node-types/services', resolved: '\0virtual:plugin-node-types/services' },
   meta: { id: 'virtual:plugin-node-types/meta', resolved: '\0virtual:plugin-node-types/meta' },
   definitions: { id: 'virtual:plugin-definitions', resolved: '\0virtual:plugin-definitions' },
   legacyUI: { id: 'virtual:plugin-registry-ui', resolved: '\0virtual:plugin-registry-ui' },
   legacyWorker: { id: 'virtual:plugin-registry-worker', resolved: '\0virtual:plugin-registry-worker' },
-  legacyServices: { id: 'virtual:plugin-registry-services', resolved: '\0virtual:plugin-registry-services' },
   legacyCommon: { id: 'virtual:plugin-registry-common', resolved: '\0virtual:plugin-registry-common' },
 } as const;
 
 interface GeneratedModules {
   maps: string;
-  services: string;
   meta: string;
   definitions: string;
   legacyUI: string;
   legacyWorker: string;
-  legacyServices: string;
   legacyCommon: string;
 }
 
@@ -98,17 +94,6 @@ function filterByDependencies(
   return plugins.filter((plugin) => allowed.has(plugin.packageName));
 }
 
-function pickServiceExport(details: NodeTypePluginDetails): string {
-  const order: Array<[string, boolean]> = [
-    [details.subpaths.services.exportKey, details.subpaths.services.hasExport],
-    [details.subpaths.database.exportKey, details.subpaths.database.hasExport],
-    [details.subpaths.common.exportKey, details.subpaths.common.hasExport],
-    ['.', details.subpaths.root.hasExport],
-  ];
-  const match = order.find(([_, ok]) => ok);
-  return match ? match[0] : '.';
-}
-
 function loadManifest(details: NodeTypePluginDetails) {
   if (!details.manifestPath) return null;
   return loadPluginManifestFromFile(details.manifestPath, { silent: true }) ?? null;
@@ -121,11 +106,7 @@ function buildRegistryEntries(plugins: NodeTypePluginDetails[]): PluginRegistryE
     version: plugin.version,
     hasUI: plugin.subpaths.ui.hasExport,
     hasWorker: plugin.subpaths.worker.hasExport,
-    hasServices: plugin.subpaths.services.hasExport
-      || plugin.subpaths.database.hasExport
-      || plugin.subpaths.common.hasExport,
     hasCommon: plugin.subpaths.common.hasExport,
-    fallbackServiceImport: pickServiceExport(plugin),
     manifest: loadManifest(plugin),
   }));
 }
@@ -214,40 +195,6 @@ export default pluginMapUI;
 `;
 }
 
-function generateServicesModule(entries: PluginRegistryEntry[]): string {
-  const helper = createRegisterHelper();
-  const lines: string[] = [];
-  for (const entry of entries) {
-    const nodeType = entry.nodeType;
-    if (!entry.hasServices) {
-      lines.push(`  '${nodeType}': async () => ({ default: {} }),`);
-      continue;
-    }
-
-    const target = entry.fallbackServiceImport === '.'
-      ? entry.packageName
-      : `${entry.packageName}${entry.fallbackServiceImport.replace(/^\./, '')}`;
-
-    lines.push(`  '${nodeType}': async () => {
-    try {
-      const mod = await import('${target}');
-      return await __callOnRegister(mod, 'services:${nodeType}');
-    } catch (error) {
-      console.error('[plugin-node-types] Service import failed for ${nodeType}:', error);
-      return { default: {} };
-    }
-  },`);
-  }
-
-  return `${helper}
-export const pluginServices = Object.freeze({
-${lines.join('\n')}
-});
-
-export default pluginServices;
-`;
-}
-
 function generateDefinitionsModule(entries: PluginRegistryEntry[]): string {
   const defs = entries.map((entry) => ({
     name: entry.nodeType,
@@ -298,9 +245,6 @@ export const pluginMapWorker = Object.freeze({});
 export const pluginMapCommon = Object.freeze({});
 export default pluginMapUI;
 `;
-    const emptyServices = `export const pluginServices = Object.freeze({});
-export default pluginServices;
-`;
     const emptyDefinitions = `export const pluginDefinitions = [];
 export default pluginDefinitions;
 `;
@@ -308,12 +252,10 @@ export default pluginDefinitions;
       entries: [],
       modules: {
         maps: emptyMaps,
-        services: emptyServices,
         meta: generateMetaModule([]),
         definitions: emptyDefinitions,
         legacyUI: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapUI'),
         legacyWorker: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapWorker'),
-        legacyServices: generateCompatModule('virtual:plugin-node-types/services', 'pluginServices'),
         legacyCommon: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapCommon', 'pluginMapCommon'),
       },
     };
@@ -326,12 +268,10 @@ export default pluginDefinitions;
 
   const modules: GeneratedModules = {
     maps: generateMapsModule(entries),
-    services: generateServicesModule(entries),
     meta: generateMetaModule(entries),
     definitions: generateDefinitionsModule(entries),
     legacyUI: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapUI'),
     legacyWorker: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapWorker'),
-    legacyServices: generateCompatModule('virtual:plugin-node-types/services', 'pluginServices'),
     legacyCommon: generateCompatModule('virtual:plugin-node-types/maps', 'pluginMapCommon', 'pluginMapCommon'),
   };
 
@@ -399,8 +339,6 @@ export function createNodeTypeRegistryPlugin(options: CreateRegistryPluginOption
       switch (id) {
         case MODULE_DEFINITIONS.maps.resolved:
           return generated.modules.maps;
-        case MODULE_DEFINITIONS.services.resolved:
-          return generated.modules.services;
         case MODULE_DEFINITIONS.meta.resolved:
           return generated.modules.meta;
         case MODULE_DEFINITIONS.definitions.resolved:
@@ -409,8 +347,6 @@ export function createNodeTypeRegistryPlugin(options: CreateRegistryPluginOption
           return generated.modules.legacyUI;
         case MODULE_DEFINITIONS.legacyWorker.resolved:
           return generated.modules.legacyWorker;
-        case MODULE_DEFINITIONS.legacyServices.resolved:
-          return generated.modules.legacyServices;
         case MODULE_DEFINITIONS.legacyCommon.resolved:
           return generated.modules.legacyCommon;
         default:

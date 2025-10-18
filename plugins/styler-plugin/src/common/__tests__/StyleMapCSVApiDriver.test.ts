@@ -8,6 +8,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
 
+const originalFetch = global.fetch;
+
 // Mock hashUtils with deterministic hashes based on content
 vi.mock('../utils/hashUtils', () => ({
   hashUtils: {
@@ -36,6 +38,7 @@ describe('SpreadsheetCSVApiDriver', () => {
 
   afterEach(async () => {
     await tableManager.clear();
+    global.fetch = originalFetch;
   });
 
   describe('uploadCSVFile', () => {
@@ -279,32 +282,51 @@ B,2`;
 
   describe('downloadCSVFromUrl', () => {
     it('should download and process CSV from URL', async () => {
-      // Mock fetch
       const csvContent = `name,age
 John,30
 Jane,25`;
 
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        text: vi.fn().mockResolvedValue(csvContent),
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode(csvContent).buffer;
+
+      global.fetch = vi.fn().mockImplementation((_input, init?: RequestInit) => {
+        if (init?.method === 'HEAD') {
+          return Promise.resolve({
+            ok: true,
+            headers: new Headers({ 'content-type': 'text/csv' }),
+          } as Response);
+        }
+        return Promise.resolve({
+          ok: true,
+          arrayBuffer: async () => buffer,
+          headers: new Headers({ 'content-type': 'text/csv' }),
+        } as Response);
       });
 
       const result = await csvApi.downloadCSVFromUrl('https://example.com/data.csv');
 
       expect(result.filename).toBe('data.csv');
-      expect(result.fileUrl).toBe('https://example.com/data.csv');
       expect(result.totalRows).toBe(2);
     });
 
     it('should handle download errors', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
+      const encoder = new TextEncoder();
+      const buffer = encoder.encode('').buffer;
+
+      global.fetch = vi.fn().mockImplementation((_input, init?: RequestInit) => {
+        if (init?.method === 'HEAD') {
+          return Promise.resolve({ ok: true, headers: new Headers() } as Response);
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          arrayBuffer: async () => buffer,
+        } as Response);
       });
 
       await expect(csvApi.downloadCSVFromUrl('https://example.com/missing.csv')).rejects.toThrow(
-        'Failed to download: 404 Not Found',
+        'CSV download failed: HTTP 404',
       );
     });
   });

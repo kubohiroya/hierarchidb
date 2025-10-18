@@ -1,7 +1,6 @@
 /**
  * Location Plugin - Services entry
- * Aggregates service-layer utilities for consumption by the app via
- * the Vite-generated services registry (virtual:plugin-registry-services).
+ * Aggregates service-layer utilities for consumption by the app.
  */
 
 export { getEphemeralLocationDB, closeEphemeralLocationDB } from './database/EphemeralLocationDB.js';

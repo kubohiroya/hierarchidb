@@ -38,7 +38,7 @@ async function readPluginPackageJSON(pkgName, nodeType) {
     return { json, path: resolved, dir: path.dirname(resolved) };
   } catch {
     // Fallback to repo layout: packages/plugin-loader/<nodeType>-plugin/package.json
-    const fallback = path.join(repoRoot, 'packages', 'plugins', `${nodeType}-plugin`, 'package.json');
+    const fallback = path.join(repoRoot, 'plugins', `${nodeType}-plugin`, 'package.json');
     if (await fileExists(fallback)) {
       const json = JSON.parse(await fs.readFile(fallback, 'utf8'));
       return { json, path: fallback, dir: path.dirname(fallback) };

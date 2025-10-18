@@ -19,12 +19,6 @@ const CANDIDATE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.mjs', '.js', '.cjs'] as c
 
 const SUBPATH_DEFINITIONS: readonly SubpathDefinition[] = [
   {
-    kind: 'services',
-    exportKey: './services',
-    requireExport: true,
-    candidateBases: ['src/services/index', 'src/services'],
-  },
-  {
     kind: 'database',
     exportKey: './database',
     requireExport: true,

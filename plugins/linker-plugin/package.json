@@ -19,17 +19,10 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
-    },
-    "./services": {
-      "types": "./dist/services/index.d.ts",
-      "import": "./dist/services/index.js"
     }
   },
   "typesVersions": {
     "*": {
-      "services": [
-        "dist/services/index.d.ts"
-      ],
       "*": [
         "dist/index.d.ts"
       ],

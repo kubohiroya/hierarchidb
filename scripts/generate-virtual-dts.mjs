@@ -4,7 +4,6 @@
   - virtual:plugin-definitions
   - virtual:plugin-registry-ui
   - virtual:plugin-registry-worker
-  - virtual:plugin-registry-services
 
   Output: app/.generated/types/*.d.ts
 */
@@ -36,8 +35,7 @@ function collect() {
     const has = (k) => typeof ex === 'object' && !!ex[k];
     const hasUI = has('./ui');
     const hasWorker = has('./worker');
-    const serviceSub = has('./services') ? '/services' : has('./database') ? '/database' : has('./shared') ? '/shared' : '';
-    out.push({ nodeType, pkgName: pkg.name, version: pkg.version || '0.0.0', hasUI, hasWorker, serviceSub });
+    out.push({ nodeType, pkgName: pkg.name, version: pkg.version || '0.0.0', hasUI, hasWorker });
   }
   return out.sort((a,b)=> a.nodeType.localeCompare(b.nodeType));
 }
@@ -83,21 +81,6 @@ ${keys}
 `;
 }
 
-function genRegistryServicesDts(entries) {
-  const lines = entries.map(e => {
-    const sub = e.serviceSub;
-    const target = sub ? `${e.pkgName}${sub}` : e.pkgName;
-    return `    '${e.nodeType}': () => Promise<typeof import('${target}')>;`;
-  }).join('\n');
-  return `declare module 'virtual:plugin-registry-services' {
-  export const pluginServices: {
-${lines}
-    [nodeType: string]: () => Promise<unknown>;
-  };
-}
-`;
-}
-
 function main() {
   const entries = collect();
   ensureDir(OUT_DIR);
@@ -105,7 +88,6 @@ function main() {
     ['virtual-plugin-definitions.d.ts', genPluginDefinitionsDts(entries)],
     ['virtual-plugin-registry-ui.d.ts', genRegistryUiDts(entries)],
     ['virtual-plugin-registry-worker.d.ts', genRegistryWorkerDts(entries)],
-    ['virtual-plugin-registry-services.d.ts', genRegistryServicesDts(entries)],
     ['virtual-mui-icon-map.d.ts', `declare module 'virtual:mui-icon-map' {\n  export const iconMap: Record<string, any>;\n  export default iconMap;\n}\n`],
   ];
   for (const [name, code] of files) {

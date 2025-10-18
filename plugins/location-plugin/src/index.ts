@@ -16,6 +16,9 @@ export * from './common/components/steps/LocationSelectionStep.js';
 export * from './common/components/batch/BatchProgressDialog.js';
 export * from './common/components/batch/LocationMapPreview.js';
 
+// Services entry (DB, batch managers, download registry, etc.)
+export * from './services/index.js';
+
 // Unified Batch Control API (API v2)
 export * from './services/batch/UnifiedLocationBatchManager.js';
 export { LocationBatchSessionManager } from './services/batch/BatchSessionManager.js';
@@ -62,4 +65,23 @@ export class RuntimeWiring {
       /* noop */
     }
   }
+}
+
+let servicesInitialized = false;
+
+export async function onRegister(): Promise<void> {
+  if (servicesInitialized) return;
+  servicesInitialized = true;
+
+  try {
+    const { getEphemeralLocationDB } = await import('./services/index.js');
+    const db = getEphemeralLocationDB();
+    if (typeof db?.open === 'function') {
+      await db.open();
+    }
+  } catch (error) {
+    console.warn('[location-plugin] failed to prime EphemeralLocationDB:', error);
+  }
+
+  // Additional service setup can be added here when needed.
 }

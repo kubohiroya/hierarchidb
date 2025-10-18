@@ -48,7 +48,6 @@ declare module '../../../packages/runtime/client' {
 declare module '@hierarchidb/ui-i18n';
 declare module '@hierarchidb/runtime-ui-plugin-dialog';
 declare module '@hierarchidb/basemap-plugin/database';
-declare module '@hierarchidb/shape-plugin/services';
 declare module '@hierarchidb/basemap-plugin/ui';
 declare module '@hierarchidb/folder-plugin/ui';
 declare module '@hierarchidb/location-plugin/ui';

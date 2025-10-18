@@ -14,10 +14,6 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
-    "./services": {
-      "types": "./dist/services/index.d.ts",
-      "import": "./dist/services/index.js"
-    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
@@ -27,9 +23,6 @@
     "*": {
       "ui": [
         "dist/ui/index.d.ts"
-      ],
-      "services": [
-        "dist/services/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"

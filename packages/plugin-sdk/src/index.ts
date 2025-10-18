@@ -65,6 +65,17 @@ export * from './types/baseSearchCriteria.js';
 export * from './types/paginatedResult.js';
 export * from './types/entityLifecycleHooks.js';
 
+// Download helpers
+export {
+  createDownloadService,
+  downloadWithService,
+} from './download.js';
+export type {
+  DownloadServiceHandle,
+  DownloadTaskOptions,
+  ManagedDownloadOutcome,
+} from './download.js';
+
 // New exports from PluginLifecycleAPI
 export type {
   PluginLifecycleAPI,

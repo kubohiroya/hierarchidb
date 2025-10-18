@@ -56,16 +56,16 @@ export async function getRouteDatabase(): Promise<PrewarmDatabase | undefined> {
 
 export async function getShapeDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('shape', async () => {
-    const mod = await import('@hierarchidb/shape-plugin/services');
-    const { ShapeDB } = mod as typeof import('@hierarchidb/shape-plugin/services');
+    const mod = await import('@hierarchidb/shape-plugin');
+    const { ShapeDB } = mod as typeof import('@hierarchidb/shape-plugin');
     return new ShapeDB() as unknown as PrewarmDatabase;
   });
 }
 
 export async function getLocationEphemeralDB(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('location', async () => {
-    const mod = await import('@hierarchidb/location-plugin/services');
-    const { getEphemeralLocationDB } = mod as typeof import('@hierarchidb/location-plugin/services');
+    const mod = await import('@hierarchidb/location-plugin');
+    const { getEphemeralLocationDB } = mod as typeof import('@hierarchidb/location-plugin');
     return getEphemeralLocationDB() as unknown as PrewarmDatabase;
   });
 }

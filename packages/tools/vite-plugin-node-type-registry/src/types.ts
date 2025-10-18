@@ -1,4 +1,4 @@
-export type PluginEntryKind = 'ui' | 'worker' | 'services' | 'database' | 'common' | 'root';
+export type PluginEntryKind = 'ui' | 'worker' | 'database' | 'common' | 'root';
 
 export interface PluginSubpathInfo {
   readonly kind: PluginEntryKind;
@@ -56,8 +56,6 @@ export interface PluginRegistryEntry {
   readonly version: string | null;
   readonly hasUI: boolean;
   readonly hasWorker: boolean;
-  readonly hasServices: boolean;
   readonly hasCommon: boolean;
-  readonly fallbackServiceImport: string;
   readonly manifest: PluginManifestShape | null;
 }
