@@ -1,10 +1,11 @@
-import { createRouteDownloadService, type RouteDownloadFactoryOptions, type RouteDownloadService } from './factory.js';
-import { readRuntimeEnvNumber } from '@hierarchidb/util';
+import { createDownloadService } from '@hierarchidb/download';
+import { type RouteDownloadFactoryOptions, type RouteDownloadService } from './factory.js';
 
 type Factory = (opts?: RouteDownloadFactoryOptions) => Promise<RouteDownloadService>;
 
 let factory: Factory | null = null;
 let authNotifier: RouteAuthNotifier | null = null;
+const DEFAULT_OPTIONS: RouteDownloadFactoryOptions = { perHostConcurrency: 4 };
 
 /**
  * Allow host app to inject a shared download service (auth headers, CAS, concurrency),
@@ -18,7 +19,7 @@ export function registerRouteDownloadServiceFactory(f: Factory): void {
  * Resolve the route download service. Falls back to the built-in factory.
  */
 export async function getRouteDownloadService(opts?: RouteDownloadFactoryOptions): Promise<RouteDownloadService> {
-  const effectiveFactory = factory ?? createRouteDownloadService;
+  const effectiveFactory = factory ?? createDownloadService;
   return effectiveFactory(mergeOptions(opts));
 }
 
@@ -90,34 +91,8 @@ function isAuthRegistry(value: unknown): value is AuthNotificationRegistry {
 }
 
 function mergeOptions(opts?: RouteDownloadFactoryOptions): RouteDownloadFactoryOptions | undefined {
-  const merged: RouteDownloadFactoryOptions = { ...(opts || {}) };
-  if (merged.perHostConcurrency == null) {
-    const override = readNumericOverride('ROUTE_PER_HOST_CONCURRENCY');
-    if (override != null) {
-      merged.perHostConcurrency = override;
-    }
-  }
+  const merged: RouteDownloadFactoryOptions = { ...DEFAULT_OPTIONS, ...(opts || {}) };
   if (merged.dbPrefix == null) delete merged.dbPrefix;
   if (merged.perHostConcurrency == null) delete merged.perHostConcurrency;
   return Object.keys(merged).length > 0 ? merged : undefined;
-}
-
-function readNumericOverride(name: string): number | undefined {
-  try {
-    const storageValue = typeof localStorage !== 'undefined' ? localStorage.getItem(name) : null;
-    const globalScope = globalThis as Record<string, unknown> | undefined;
-    const globalValue = globalScope?.[name];
-    const envValue = readRuntimeEnvNumber(name);
-    const candidates: Array<unknown> = [storageValue, globalValue, envValue];
-    for (const candidate of candidates) {
-      if (candidate == null) continue;
-      const numeric = typeof candidate === 'number' ? candidate : Number(candidate);
-      if (Number.isFinite(numeric)) {
-        return numeric;
-      }
-    }
-  } catch {
-    // ignore lookup failures (e.g., localStorage not available)
-  }
-  return undefined;
 }

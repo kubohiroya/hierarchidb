@@ -64,7 +64,7 @@ class AuthRecoveryService {
 
 shape との統合例
 ----------------
-- ダウンロード経路は `createShapeDownloadService()` で `Authorization` ヘッダを注入済み。
+- ダウンロード経路は `@hierarchidb/download` の `createDownloadService()` を経由し、`AuthRecoveryService` で `Authorization` ヘッダを注入済み。
 - データソース（GADM / GeoBoundaries / NaturalEarth / OSM）は `authFetch()` に置換済み。
 
 今後の計画
@@ -72,4 +72,3 @@ shape との統合例
 - 任意の `NetworkPort` 実装へミドルウェアとして差し込めるヘルパを追加（download には `createAuthAwareNetworkPort` を提供済み）。
 - 失敗理由の詳細分類（CORS, 429, ネットワーク断）と UI 表示の標準化。
 - e2e（401→通知→成功通知→自動再試行）のサンプル追加。
-

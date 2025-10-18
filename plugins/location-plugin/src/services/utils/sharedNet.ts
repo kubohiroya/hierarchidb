@@ -1,7 +1,6 @@
-import { SharedDownloadOptions, SharedDownloadService } from '@hierarchidb/runtime-worker';
+import { type DownloadServiceOptions, type DownloadService, createDownloadService } from '@hierarchidb/download';
 import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
-import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
 let cached: Promise<Awaited<ReturnType<typeof getLocationDownloadService>>> | undefined;
 
@@ -39,23 +38,6 @@ export async function postJson(url: string, body: string | object, headers?: Rec
   return res.json();
 }
 
-export async function createSharedDownloadService(opts?: SharedDownloadOptions): Promise<SharedDownloadService> {
-  const auth = await AuthRecoveryService.getSingleton();
-  const net = new FetchNetworkPort({
-    headers: () => auth.getAuthHeaders(),
-    perHostConcurrency: opts?.perHostConcurrency ?? 4,
-  });
-  const storage = new DexieChunkStoragePort(`${opts?.dbPrefix || 'hidb'}-chunks`);
-  const integrity = new (class {
-    async compute(buffer: ArrayBuffer, algo: 'sha256' = 'sha256'): Promise<string> {
-      const digest = await crypto.subtle.digest(algo.toUpperCase(), buffer);
-      return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
-    }
-  })();
-  const service = new DownloadService(net, storage, integrity);
-  if (!storage.readAll) {
-    throw new Error('DexieChunkStoragePort.readAll is not available');
-  }
-  const readAll = storage.readAll.bind(storage) as (fileId: string) => Promise<ArrayBuffer>;
-  return { service, net, readAll };
+export async function createSharedDownloadService(opts?: DownloadServiceOptions): Promise<DownloadService> {
+  return createDownloadService(opts);
 }

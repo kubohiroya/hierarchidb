@@ -1,14 +1,17 @@
 import type { ILocationDownloadStrategy } from './types.js';
 import type { LocationSearchConfig } from '../../common/entities/LocationEntity.js';
-import { createSharedDownloadService, SharedDownloadService } from '@hierarchidb/runtime-worker';
-import { readRuntimeEnvNumber } from '@hierarchidb/util';
+import { createDownloadService, type DownloadService } from '@hierarchidb/download';
 
-export type LocationNetService = SharedDownloadService;
+export type LocationNetService = DownloadService;
 
 type Factory = (opts?: { dbPrefix?: string; perHostConcurrency?: number }) => Promise<LocationNetService>;
 
 let factory: Factory | null = null;
-let defaults: { dbPrefix?: string; perHostConcurrency?: number } = {};
+const DEFAULT_OPTIONS: { dbPrefix?: string; perHostConcurrency?: number } = {
+  perHostConcurrency: 4,
+};
+
+let defaults: { dbPrefix?: string; perHostConcurrency?: number } = { ...DEFAULT_OPTIONS };
 let authNotifier: ((info: { resource: string; provider?: string; hint?: string; status?: number }) => void) | null = null;
 
 export function registerLocationDownloadServiceFactory(f: Factory): void {
@@ -22,7 +25,7 @@ export function configureLocationDownloadDefaults(opts: { dbPrefix?: string; per
 export async function getLocationDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }): Promise<LocationNetService> {
   const effectiveOpts = mergeOptions(opts);
   if (factory) return factory(effectiveOpts);
-  return createSharedDownloadService(effectiveOpts);
+  return createDownloadService(effectiveOpts);
 }
 
 export function registerLocationAuthNotifier(fn: (info: { resource: string; provider?: string; hint?: string; status?: number }) => void): void {
@@ -51,35 +54,9 @@ type LocationDownloadOptions = { dbPrefix?: string; perHostConcurrency?: number 
 
 function mergeOptions(opts?: LocationDownloadOptions): LocationDownloadOptions | undefined {
   const merged: LocationDownloadOptions = { ...defaults, ...(opts || {}) };
-  if (merged.perHostConcurrency == null) {
-    const override = readNumericOverride('LOCATION_PER_HOST_CONCURRENCY');
-    if (override != null) {
-      merged.perHostConcurrency = override;
-    }
-  }
   if (merged.dbPrefix == null) delete merged.dbPrefix;
   if (merged.perHostConcurrency == null) delete merged.perHostConcurrency;
   return Object.keys(merged).length > 0 ? merged : undefined;
-}
-
-function readNumericOverride(name: string): number | undefined {
-  try {
-    const storageValue = typeof localStorage !== 'undefined' ? localStorage.getItem(name) : null;
-    const globalScope = globalThis as Record<string, unknown> | undefined;
-    const globalValue = globalScope?.[name];
-    const envValue = readRuntimeEnvNumber(name);
-    const candidates: Array<unknown> = [storageValue, globalValue, envValue];
-    for (const candidate of candidates) {
-      if (candidate == null) continue;
-      const numeric = typeof candidate === 'number' ? candidate : Number(candidate);
-      if (Number.isFinite(numeric)) {
-        return numeric;
-      }
-    }
-  } catch {
-    // ignore lookup failures (e.g., localStorage not available)
-  }
-  return undefined;
 }
 
 // Simple in-memory strategy registry

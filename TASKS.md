@@ -373,7 +373,7 @@
   - [x] `PluginRuntimeWiring` から `registerSharedDownloadService` フックを撤去し、`wirePluginsFromModules` で同名 Hook を呼ばない
   - [x] location/route 両プラグインの RuntimeWiring で共有ダウンロードサービス登録処理を持たず、必要時に `get<Location|Route>DownloadService` で生成する構成に移行
   - [x] `registerLocationSharedDownloadService.ts` / `registerRouteSharedDownloadService.ts` を削除しても `pnpm --filter @hierarchidb/{location-plugin,route-plugin} typecheck` が成功
-  - [ ] ダウンロードサービスの per-host concurrency 既定値が env/localStorage/global からの上書きを維持し、手動 regression 確認を記録
+  - [ ] ダウンロードサービスの per-host concurrency 既定値がホスト側のレジストリ設定（`configureLocationDownloadDefaults` / `registerRouteDownloadServiceFactory`）で上書きできることを手動 regression で確認し、結果を記録
 - チェックリスト:
   - [x] `packages/common/api/src/RuntimeWiring.ts` と `packages/runtime/client/src/wiring/wirePlugins.ts` から shared download hook 関連の型・呼び出しを削除
   - [x] location/route プラグインのエントリとサービスレジストリから shared download export を撤去し、オプションマージ処理を実装
@@ -662,7 +662,7 @@
   - ブランチ: `feat/route/download-adapter-registry`
   - 依存: `@hierarchidb/download`, `@hierarchidb/auth-recovery`
   - 受け入れ基準（DoD）:
-    - [ ] `services/download/factory.ts` を shape の戦略登録方式に合わせ整理
+    - [ ] shape download の既定サービス構成を整理（`createDownloadService` ベースに統一）
     - [ ] 認証復帰（401）時の再試行ハンドラを DI で注入可能に
     - [ ] 既存テストグリーン
   - ロールバック: factory.ts のみリバートで復旧可。
@@ -1621,6 +1621,9 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 - 2025-10-18 09:45 start: refactor/plugins/download-service-lifecycle — 前回セッションが `400 Bad Request` で中断した shared DownloadService 配線見直しを再開。RuntimeWiring から共有登録を撤去し、各バッチが `get<Location|Route>DownloadService` でオンデマンド生成する構成への移行を進める。
 - 2025-10-18 10:10 progress: refactor/plugins/download-service-lifecycle — `pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` を実行し、新しい on-demand 構成で型検証が通過することを確認。追加の自動テストは未実施。
+- 2025-10-18 10:28 progress: refactor/plugins/download-service-lifecycle — Worker 環境で `localStorage` が利用できない点を反映し、per-host concurrency の上書きを `.env` と明示的なレジストリ設定経由に限定。関連ドキュメント（app/docs/11-settings.md・15-runtime-flags.md）とタスク DoD を更新。
+- 2025-10-18 10:41 progress: refactor/plugins/download-service-lifecycle — `globalThis` 経由の値参照を撤廃し、環境変数またはアプリ側が注入する defaults のみを許可するよう registry 実装を整理。上記変更後に location/route typecheck を再実行しグリーンを確認。
+- 2025-10-18 10:52 progress: refactor/plugins/download-service-lifecycle — 環境変数依存も撤去し、Location/Route download registry のデフォルトは内部定数（perHostConcurrency=4）＋ホストが呼び出す設定関数に限定。関連ドキュメントを再更新し、typecheck を再実行して正常を確認。
 - 2025-10-17 11:30 start: refactor/folder-plugin/ui-definition-alignment 調査 — PluginDefinition の `components` 廃止後も folder-plugin に旧実装が残っていることを確認し、影響範囲を洗い出すためのメモ作成を開始。
 - 2025-10-17 12:10 done: refactor/folder-plugin/ui-definition-alignment 調査 — `TODO-refactoring20251017.md` を作成し、TASKS.md に ToDo/ログを追加してフォローアップ手順を整理。
 - 2025-10-17 13:05 start: refactor/folder-plugin/ui-definition-alignment 実装 — 旧 UI plugin 定義ファイルの撤去と host 登録ファイルの移設を開始。

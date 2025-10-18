@@ -403,16 +403,9 @@ Mapbox: [************]
 - `LOCATION_RUNTIME_WORKER` / `ROUTE_RUNTIME_WORKER`: `0|1`（既定OFF）
 - `LOCATION_PER_HOST_CONCURRENCY` / `ROUTE_PER_HOST_CONCURRENCY`: 数値（既定4）
 
-クイック設定（DevTools コンソール）例:
+HTTP ダウンロードの同時接続数は Dedicated Worker 内で解決されるため、`localStorage` での上書きは行えません。必要な場合はホストアプリの初期化コードで `configureLocationDownloadDefaults({ perHostConcurrency: 8 })` や `registerRouteDownloadServiceFactory(async (opts) => { ... })` を呼び、実行時に明示的な値を注入してください。
 
-```
-localStorage.setItem('LOCATION_RUNTIME_WORKER','1')
-localStorage.setItem('ROUTE_RUNTIME_WORKER','1')
-localStorage.setItem('LOCATION_PER_HOST_CONCURRENCY','8')
-localStorage.setItem('ROUTE_PER_HOST_CONCURRENCY','8')
-```
-
-より詳しくは「[15. ランタイムフラグ（プラグイン）](15-runtime-flags.md)」を参照してください。
+`localStorage.setItem('LOCATION_RUNTIME_WORKER','1')` のようなフラグは引き続き有効です。詳細は「[15. ランタイムフラグ（プラグイン）](15-runtime-flags.md)」を参照してください。
 ```
 
 ### API設定

@@ -8,6 +8,7 @@ export * from './adapters/DexieContentIndexPort.js';
 export * from './adapters/DexieChunkStoragePort.js';
 export * from './adapters/FetchNetworkPort.js';
 export * from './helpers/auth.js';
+export * from './createDownloadService.js';
 export class FeatureDefinition {
   static readonly manifest = { name: '@hierarchidb/download', provides: ['download', 'cas', 'net.port'] };
 
