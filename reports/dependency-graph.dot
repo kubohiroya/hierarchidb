@@ -205,17 +205,17 @@ strict digraph "dependency-cruiser output"{
     "app/src/entry.client.tsx" -> "node_modules/.pnpm/react@18.3.1" [penwidth="1.0"]
     "app/src/entry.client.tsx" -> "node_modules/.pnpm/react-dom@18.3.1_react@18.3.1" [penwidth="1.0"]
     "app/src/entry.client.tsx" -> "react-router/dom"
-    subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/generated" {label="generated" "app/src/generated/loader.ts" [label=<loader.ts> tooltip="loader.ts" URL="app/src/generated/loader.ts" fillcolor="#ddfeff"] } } }
-    "app/src/generated/loader.ts" -> "@hierarchidb/basemap-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/folder-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/linker-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/location-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/resolver-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/route-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/shape-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/spreadsheet-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/styler-plugin/worker/factory"
-    "app/src/generated/loader.ts" -> "@hierarchidb/timeline-plugin/worker/factory"
+    subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/generated" {label="generated" "app/src/generated/worker-loader.ts" [label=<worker-loader.ts> tooltip="worker-loader.ts" URL="app/src/generated/worker-loader.ts" fillcolor="#ddfeff"] } } }
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/basemap-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/folder-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/linker-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/location-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/resolver-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/route-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/shape-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/spreadsheet-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/styler-plugin/worker/factory"
+    "app/src/generated/worker-loader.ts" -> "@hierarchidb/timeline-plugin/worker/factory"
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/generated" {label="generated" "app/src/generated/ui-loader.ts" [label=<ui-loader.ts> tooltip="ui-loader.ts" URL="app/src/generated/ui-loader.ts" fillcolor="#ddfeff"] } } }
     "app/src/generated/ui-loader.ts" -> "@hierarchidb/basemap-plugin/ui"
     "app/src/generated/ui-loader.ts" -> "@hierarchidb/folder-plugin/ui"
@@ -433,7 +433,7 @@ strict digraph "dependency-cruiser output"{
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/services" {label="services" "app/src/services/preconnect.ts" [label=<preconnect.ts> tooltip="preconnect.ts" URL="app/src/services/preconnect.ts" fillcolor="#ccffcc"] } } }
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/shared" {label="shared" "app/src/shared/command-errors.ts" [label=<command-errors.ts> tooltip="command-errors.ts" URL="app/src/shared/command-errors.ts" fillcolor="#ccffcc"] } } }
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/shared" {label="shared" "app/src/shared/peer-display-mode.ts" [label=<peer-display-mode.ts> tooltip="peer-display-mode.ts" URL="app/src/shared/peer-display-mode.ts" fillcolor="#ddfeff"] } } }
-    "app/src/shared/peer-display-mode.ts" -> "app/src/generated/loader.ts"
+"app/src/shared/peer-display-mode.ts" -> "app/src/generated/worker-loader.ts"
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/shared" {label="shared" "app/src/shared/table-state.ts" [label=<table-state.ts> tooltip="table-state.ts" URL="app/src/shared/table-state.ts" fillcolor="#ddfeff"] } } }
     subgraph "cluster_app" {label="app" subgraph "cluster_app/src" {label="src" subgraph "cluster_app/src/state" {label="state" "app/src/state/treeconsole.atoms.ts" [label=<treeconsole.atoms.ts> tooltip="treeconsole.atoms.ts" URL="app/src/state/treeconsole.atoms.ts" fillcolor="#ddfeff"] } } }
     "app/src/state/treeconsole.atoms.ts" -> "node_modules/.pnpm/react@18.3.1" [penwidth="1.0"]

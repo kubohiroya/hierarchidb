@@ -2461,7 +2461,7 @@ P2:
   - ブランチ: `refactor/monorepo/as-any-hotspots`
   - 依存: なし
   - 受け入れ基準（DoD）：
-    - [x] `app/src/generated/loader.ts` と `app/src/shared/peer-display-mode.ts` から不要な `as any` を撤去し、型定義を導入してもビルド・実行パスが変わらないこと
+    - [x] `app/src/generated/worker-loader.ts` と `app/src/shared/peer-display-mode.ts` から不要な `as any` を撤去し、型定義を導入してもビルド・実行パスが変わらないこと
     - [x] basemap / shape / linker / location 各プラグインの `worker-factory` / `DialogExtension` 実装で `as any` を撤去し、`pnpm --filter @hierarchidb/{basemap,shape,linker,location}-plugin typecheck` が成功
     - [x] `pnpm as-any:report` 実行時に今回対象としたファイルの `as any` 件数が 0 になること（他箇所が残る場合は理由を記録）
   - チェックリスト：
@@ -5091,7 +5091,7 @@ P2:
 - 2025-09-30 20:12 progress: feat/route/progress-controls-pause-resume — `pnpm --filter @hierarchidb/route-plugin typecheck` を実行しグリーンを確認（Pause/Resume UI DoD を満たしたため checklist 更新）。
 - 2025-09-30 19:25 start: feat/app/ui-code-split — MapLibre 系再エクスポート削除と WorkerAPIClient 動的 import 化によるチャンク警告解消タスクを定義。`@hierarchidb/ui-map` / folder-plugin / Worker runtime の対応方針と検証手順（typecheck + app build）を整理。
 - 2025-09-30 19:48 progress: feat/app/ui-code-split — MapLibreMap 再エクスポート整理と WorkerProvider/WorkerModuleLoader/WorkerStateStore の動的 import 化を実施。`pnpm --filter @hierarchidb/ui-map typecheck` / `pnpm --filter @hierarchidb/folder-plugin typecheck` / `pnpm --filter @hierarchidb/app typecheck` / `pnpm -C app build:vite` が成功（maplibre chunk サイズ警告のみ）。
-- 2025-09-30 16:40 start: fix/shape/worker-factory-load-export — app/src/generated/loader.ts の型エラーを確認し、`packages/plugins/shape-plugin/src/worker-factory/public-plugin-definition.ts` で `loadShapeEntitiesDbModule` を公開する方針を決定。`git switch -c fix/shape/worker-factory-load-export` は sandbox 権限制約で失敗したため、ブランチ作成は保留。
+- 2025-09-30 16:40 start: fix/shape/worker-factory-load-export — app/src/generated/worker-loader.ts の型エラーを確認し、`packages/plugins/shape-plugin/src/worker-factory/public-plugin-definition.ts` で `loadShapeEntitiesDbModule` を公開する方針を決定。`git switch -c fix/shape/worker-factory-load-export` は sandbox 権限制約で失敗したため、ブランチ作成は保留。
 - 2025-09-30 16:48 progress: fix/shape/worker-factory-load-export — `packages/plugins/shape-plugin/src/worker-factory/public-plugin-definition.ts` から `registerShapeWorkerStores` / `loadShapeEntitiesDbModule` を再エクスポートし、`pnpm --filter @hierarchidb/shape-plugin typecheck` がグリーンで完了。
 - 2025-09-30 16:55 progress: fix/shape/worker-factory-load-export — `pnpm --filter @hierarchidb/shape-plugin build` を実行し、`dist/worker-factory/index.d.ts` に `loadShapeEntitiesDbModule` の宣言が生成されたことを確認。ロールバックは `public-plugin-definition.ts` を差分前へ戻して `pnpm --filter @hierarchidb/shape-plugin {build,typecheck}` を再実行。
 - 2025-09-30 17:05 start: fix/shape/map-preview-ui-map-import — MapPreview で発生している `@hierarchidb/ui-map` 解決エラーを確認。対策として `tsconfig.base.json` にパスエイリアスを追加し、shape-plugin での参照を復旧させる方針を決定。

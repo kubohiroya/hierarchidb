@@ -1,30 +1,7 @@
-/**
- * Shape Dialog Component - UI Layer
- * Main base-dialog for creating and editing Shape entities
- */
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Step,
-  StepLabel,
-  Stepper,
-} from '@mui/material';
-import { notify } from '@hierarchidb/components';
-import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
+import { useState } from 'react';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
 import type { NodeId } from '../../common/shared/index.js';
-import {
-  type ShapeEntity,
-  type ShapeWorkingCopy,
-  UI_CONSTANTS,
-  DEFAULT_PROCESSING_CONFIG,
-  summarizeCheckboxState,
-} from '../../common/shared/index.js';
+import { DEFAULT_PROCESSING_CONFIG, type ShapeEntity } from '../../common/shared/index.js';
 
 export interface ShapeDialogProps {
   mode: 'create' | 'edit';
@@ -44,145 +21,54 @@ export function ShapeDialog({
   onClose,
   onSuccess,
   onError,
-}: ShapeDialogProps) {
-  const { workingCopy, setWorkingCopy, init, commit, discard } = useWorkingCopy<ShapeWorkingCopy>({
-    nodeType: 'shape',
-    mode,
-    nodeId,
-    parentId,
-  });
+}: ShapeDialogProps): JSX.Element {
+  const [name, setName] = useState('');
+  void parentId;
 
-  const [activeStep, setActiveStep] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  const createInitialWorkingCopy = useCallback((): ShapeWorkingCopy => {
-    const now = Date.now();
-    const baseConfig = { ...DEFAULT_PROCESSING_CONFIG };
-    return {
-      id: (nodeId ?? parentId ?? `temp-${now}`) as NodeId,
-      nodeId: nodeId ?? ('' as NodeId),
-      parentId: parentId ?? ('' as NodeId),
-      nodeType: 'shape',
-      name: '',
-      description: '',
-      dataSourceName: 'naturalearth',
-      licenseAgreement: false,
-      processingConfig: baseConfig,
-      checkboxState: [],
-      isDraft: true,
-      copiedAt: now,
-      createdAt: now,
-      updatedAt: now,
-      version: 1,
-      depth: 0,
-    };
-  }, [nodeId, parentId]);
-
-  useEffect(() => {
-    if (!open || workingCopy || mode !== 'create') {
-      return;
-    }
-    const draft = createInitialWorkingCopy();
-    setWorkingCopy(() => draft);
-  }, [open, workingCopy, mode, createInitialWorkingCopy, setWorkingCopy]);
-
-  useEffect(() => {
-    if (open) void init();
-  }, [open, init]);
-
-  useEffect(() => () => {
-    void discard().catch(() => {});
-  }, [discard]);
-
-  const handleNext = useCallback(() => {
-    setActiveStep((prev) => Math.min(prev + 1, UI_CONSTANTS.STEPPER_STEPS.length - 1));
-  }, []);
-
-  const handleBack = useCallback(() => {
-    setActiveStep((prev) => Math.max(prev - 1, 0));
-  }, []);
-
-  const handleSubmit = useCallback(async () => {
-    if (!workingCopy) return;
-    setLoading(true);
+  const handleSubmit = () => {
     try {
-      await commit();
-      onSuccess?.(workingCopy);
-      notify.success('Shape saved successfully');
+      const now = Date.now();
+      const id = nodeId ?? (`shape-${now}` as NodeId);
+      const entity: ShapeEntity = {
+        id,
+        nodeId: id,
+        name: name.trim() || (mode === 'create' ? 'New shape' : 'Shape'),
+        description: '',
+        dataSourceName: 'naturalearth',
+        licenseAgreement: true,
+        processingConfig: { ...DEFAULT_PROCESSING_CONFIG },
+        checkboxState: [],
+        selectedCountries: [],
+        adminLevels: [],
+        urlMetadata: [],
+        createdAt: now,
+        updatedAt: now,
+        version: 1,
+      };
+      onSuccess?.(entity);
       onClose();
     } catch (error) {
-      console.error('Failed to submit shape:', error);
-      onError?.(error instanceof Error ? error : new Error('Failed to submit'));
-      notify.error('Failed to save shape');
-    } finally {
-      setLoading(false);
+      onError?.(error instanceof Error ? error : new Error('failed to submit shape'));
     }
-  }, [commit, onClose, onError, onSuccess, workingCopy]);
-
-  const handleClose = useCallback(() => {
-    setActiveStep(0);
-    setWorkingCopy(() => null);
-    onClose();
-  }, [onClose, setWorkingCopy]);
-
-  const isStepComplete = useCallback((step: number) => {
-    if (!workingCopy) return false;
-    switch (step) {
-      case 0:
-        return workingCopy.name.trim().length > 0;
-      case 1:
-        return !!workingCopy.dataSourceName;
-      case 2:
-        return workingCopy.licenseAgreement;
-      case 3:
-        return !!workingCopy.processingConfig;
-      case 4: {
-        const summary = summarizeCheckboxState(workingCopy.checkboxState);
-        return summary.hasSelection && summary.levels.length > 0;
-      }
-      default:
-        return false;
-    }
-  }, [workingCopy]);
-
-  const canProceed = useMemo(() => isStepComplete(activeStep), [activeStep, isStepComplete]);
-  const isLastStep = activeStep === UI_CONSTANTS.STEPPER_STEPS.length - 1;
-  const canSubmit = useMemo(() => UI_CONSTANTS.STEPPER_STEPS.every((_, index) => isStepComplete(index)), [isStepComplete]);
-
-  if (!workingCopy) {
-    return (
-      <Dialog open={open} onClose={handleClose} maxWidth={UI_CONSTANTS.DIALOG_MAX_WIDTH} fullWidth>
-        <DialogContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 240 }}>
-          <CircularProgress size={32} />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth={UI_CONSTANTS.DIALOG_MAX_WIDTH} fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>{mode === 'create' ? 'Create Shape' : 'Edit Shape'}</DialogTitle>
-      <DialogContent sx={{ minHeight: 320 }}>
-        <Stepper activeStep={activeStep} alternativeLabel>
-          {UI_CONSTANTS.STEPPER_STEPS.map((step, index) => (
-            <Step key={step} completed={isStepComplete(index)}>
-              <StepLabel>{step}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-        {/* step content placeholder */}
+      <DialogContent>
+        <TextField
+          fullWidth
+          label="Name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          margin="dense"
+        />
       </DialogContent>
-      <DialogActions sx={{ gap: 1 }}>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleBack} disabled={activeStep === 0}>Back</Button>
-        {!isLastStep && (
-          <Button onClick={handleNext} disabled={!canProceed}>Next</Button>
-        )}
-        {isLastStep && (
-          <Button onClick={handleSubmit} disabled={!canSubmit || loading} variant="contained">
-            {loading ? <CircularProgress size={16} /> : 'Save'}
-          </Button>
-        )}
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );

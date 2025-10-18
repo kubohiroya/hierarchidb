@@ -32,6 +32,10 @@
       "types": "./dist/database/index.d.ts",
       "import": "./dist/database/index.js"
     },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui/index.js"
+    },
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js",

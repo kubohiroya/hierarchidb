@@ -21,7 +21,7 @@ import {
   type PeerEntitiesDB,
   type PeerEntityRecord,
   type NodeId,
-} from '../generated/loader.js';
+} from '../generated/worker-loader.js';
 
 // Initialize UI persistence overrides at module load
 try { registerUIPersistenceOverrides(); } catch { /* ignore */ }

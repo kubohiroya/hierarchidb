@@ -8,7 +8,7 @@ const repoRoot = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)));
 const appDir = path.join(repoRoot, 'app');
 const appPkgPath = path.join(appDir, 'package.json');
 const outDir = path.join(appDir, 'src', 'generated');
-const outFile = path.join(outDir, 'loader.ts');
+const outWorkerFile = path.join(outDir, 'worker-loader.ts');
 const outUiFile = path.join(outDir, 'ui-loader.ts');
 
 /**
@@ -234,7 +234,7 @@ export function registerUIPersistenceOverrides(): void {
 
   const content = header + body;
   await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(outFile, content, 'utf8');
+  await fs.writeFile(outWorkerFile, content, 'utf8');
 
   // Build UI loader file with static imports in dependency order
   const uiPlugins = meta.filter(m => m.hasUi);
@@ -320,7 +320,7 @@ export function resetUiPluginLoadStateForTesting(): void {
 
   await fs.writeFile(outUiFile, uiHeader + '\n' + uiBody, 'utf8');
 
-  console.log(`[generate-plugin-loader] Generated ${path.relative(repoRoot, outFile)} and ${path.relative(repoRoot, outUiFile)} with ${meta.length} plugins (with-worker: ${meta.filter(m=>m.hasWorker).length}, with-ui: ${uiPlugins.length}).`);
+  console.log(`[generate-plugin-loader] Generated ${path.relative(repoRoot, outWorkerFile)} and ${path.relative(repoRoot, outUiFile)} with ${meta.length} plugins (with-worker: ${meta.filter(m=>m.hasWorker).length}, with-ui: ${uiPlugins.length}).`);
 }
 
 main().catch((err) => {

@@ -1,8 +1,8 @@
 /**
   * Auto-load HierarchiDB UI plugin-loader using virtual modules generated at build time.
   *
-  * Relationship to app/src/generated/loader.ts:
-  * - loader.ts is generated at prebuild time to wire EntitiesDB/persistence (worker-side DBs)
+  * Relationship to app/src/generated/worker-loader.ts:
+  * - worker-loader.ts is generated at prebuild time to wire EntitiesDB/persistence (worker-side DBs)
   *   and to register UI persistence overrides. It does NOT load UI plugin modules.
   * - This file (auto-load.ts) is responsible for discovering and importing UI plugin entry points
   *   so that components, menus, and registrations are initialized in the browser.
