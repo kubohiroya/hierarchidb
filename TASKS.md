@@ -203,8 +203,23 @@
 - ロールバック手順：
   - 追加した `AGENTS.md` を削除（または旧版 `AGENTS.md-` を復元）し、関連ログを巻き戻す
 - 運用ログ：
-  - start: 2025-10-17 09:20 Repository Guidelines ドキュメント整備に着手（AGENTS.md 方針整理）
+ - start: 2025-10-17 09:20 Repository Guidelines ドキュメント整備に着手（AGENTS.md 方針整理）
   - done: 2025-10-17 10:40 AGENTS.md を 397 語で作成し、コマンド・運用手順を自己レビュー
+
+
+11) UI ローダーのスタブ撤去（P0）
+- ブランチ: `refactor/app/remove-ui-fallback`
+- 依存: `@hierarchidb/app`, `@hierarchidb/plugin-loader`, `scripts/generate-plugin-loader.mjs`
+- 受け入れ基準（DoD）:
+  - [ ] `scripts/generate-plugin-loader.mjs` が UI プラグインロードでスタブを参照せず、本番 UI モジュールのみを動的 import する実装になっている
+  - [ ] `app/src/generated/ui-loader.ts` に `../virtual/stubs` への import が存在しない状態で再生成されている
+  - [ ] Worker バンドル（`app/src/worker.ts` 経由）に UI パッケージ import が混入しないことを確認し、検証結果を運用ログへ記録
+- チェックリスト:
+  - [ ] `scripts/generate-plugin-loader.mjs` から `loadWithFallback` とスタブ import 生成ロジックを削除
+  - [ ] `pnpm --filter @hierarchidb/app generate:ui-loader`（または相当スクリプト）を実行し、差分をコミット前に自己レビュー
+  - [ ] 既存テスト/型チェック（`pnpm -C app typecheck` など）を実行し、結果を運用ログへ記録
+- ロールバック手順：
+  - `scripts/generate-plugin-loader.mjs` と `app/src/generated/ui-loader.ts` の差分を元に戻し、再生成・typecheck を再実行する
 
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -5597,6 +5612,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — Doing へ移動し、TASKS チェックリストの初期状態を整備。
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。
 - 2025-10-04 23:30 progress: refactor/worker/error-model-unify — エラー分類ユーティリティ追加と CommandProcessor 差し替えを中心とした改修計画を策定。
+- 2025-10-18 14:05 start: refactor/app/remove-ui-fallback — Worker 向け UI フォールバック撤去タスクに着手（virtual/stubs 参照の洗い出し開始）。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。
