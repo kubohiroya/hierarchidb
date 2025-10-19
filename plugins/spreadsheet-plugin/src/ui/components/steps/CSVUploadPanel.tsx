@@ -5,7 +5,7 @@ import type { CSVProcessingConfig, } from '@hierarchidb/ui-tabular-extract';
 import { FileInputWithUrl } from '@hierarchidb/ui-file';
 import { PLUGIN_METADATA } from '../../../common/extension/constants.js';
 import { CSVTableMetadata } from '@hierarchidb/tabular-store';
-import { createSpreadsheetCSVApi } from '~/services/index.js';
+import { createSpreadsheetCSVApi } from '../../../services/index.js';
 
 export interface CSVUploadResult {
   metadata: CSVTableMetadata;

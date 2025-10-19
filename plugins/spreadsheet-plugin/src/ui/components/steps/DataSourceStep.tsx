@@ -20,9 +20,9 @@ import ArticleIcon from '@mui/icons-material/Article';
 import { useTranslation } from 'react-i18next';
 import { DATA_SOURCE_TYPES, SUPPORTED_FILE_EXTENSIONS, FILE_SIZE_LIMITS, PLUGIN_METADATA, type DataSourceType } from '../../../common/extension/constants.js';
 import { CSVUploadPanel, type CSVUploadResult } from './CSVUploadPanel.js';
-import { createSpreadsheetCSVApi } from '~/services/SpreadsheetCSVApiAdapter.js';
+import { createSpreadsheetCSVApi } from '../../../services/SpreadsheetCSVApiAdapter.js';
 // import { DataSourceConfig } from '@hierarchidb/common-types';
-import { DataSourceConfig, FileInfo } from '~/common/extension/types.js';
+import { DataSourceConfig, FileInfo } from '../../../common/extension/types.js';
 import { CSVTableMetadata } from '@hierarchidb/tabular-store';
 import { StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
 

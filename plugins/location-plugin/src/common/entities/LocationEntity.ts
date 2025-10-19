@@ -4,7 +4,7 @@
  */
 
 import type { BaseEntity, NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-api';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-ui-sdk';
 
 /**
  * Category taxonomy used when importing / classifying locations.

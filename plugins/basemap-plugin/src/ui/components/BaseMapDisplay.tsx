@@ -105,7 +105,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
       const handler = new BaseMapEntityHandler();
       setLoading(true);
       handler.getEntityByNodeId(nodeId)
-        .then((data) => {
+        .then((data: BaseMapEntity | null) => {
           if (data) {
             setEntity(data || undefined);
             setError(null);
@@ -113,7 +113,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
             setError('BaseMap entity not found');
           }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error('Failed to load BaseMap entity:', err);
           setError('Failed to load map configuration');
         })

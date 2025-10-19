@@ -8,11 +8,17 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
-      "@hierarchidb/plugin-entity-service": [
-        "../../packages/plugin-entity-service/dist/index.d.ts"
+      "@hierarchidb/plugin-runtime-entities": [
+        "../../packages/plugin-runtime-entities/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-entity-service/*": [
-        "../../packages/plugin-entity-service/dist/*"
+      "@hierarchidb/plugin-runtime-entities/*": [
+        "../../packages/plugin-runtime-entities/dist/*"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
       ]
     },
     "lib": [

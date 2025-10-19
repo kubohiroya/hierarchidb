@@ -11,6 +11,9 @@
       "~/*": [
         "./src/*"
       ],
+      "~/*.js": [
+        "./src/*.ts"
+      ],
       "@hierarchidb/ui-floating-window": [
         "../../ui/floating-window/dist/index.d.ts"
       ],

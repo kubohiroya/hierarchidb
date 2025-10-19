@@ -6,7 +6,7 @@ import type { NodeId } from '@hierarchidb/common-types';
  * :
   */
 //import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
-import type { StylerConfig } from '../types/stylerTypes.js';
+import type { StylerConfig } from './stylerTypes.js';
 
 // Define SpreadsheetMetadataId locally since plugin-spreadsheet-plugin may not be available
 export type SpreadsheetMetadataId = string & { readonly __brand: 'SpreadsheetMetadataId' };
@@ -75,7 +75,7 @@ export interface StylerStyle {
   borderWidth?: number;
   opacity?: number;
 }
-
+/*
 export interface StylerColorRule {
   column: string;
   operator: 'equals' | 'contains' | 'greaterThan' | 'lessThan' | 'range';
@@ -84,6 +84,7 @@ export interface StylerColorRule {
   style: StylerStyle;
   label?: string;
 }
+ */
 
 /**
   * : StylerEntity

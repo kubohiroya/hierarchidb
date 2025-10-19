@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { PeerStore } from '@hierarchidb/plugin-api';
+import type { PeerStore } from '@hierarchidb/plugin-types';
 import type { RoutePeerData } from '../../common/types/index.js';
 
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
@@ -43,7 +43,7 @@ async function ensureRouteStores(registry: StoreRegistry): Promise<void> {
 
   if (!registry.getPeer('route')) {
     const { createRoutePeerStoreDexie } = await import('../routePeerStore.dexie.js');
-    // 型アサートでplugin-api型に変換
+    // 型アサートでplugin-types型に変換
     const store = createRoutePeerStoreDexie(db) as unknown as PeerStore<RoutePeerData>;
     registry.registerPeer('route', store);
   }

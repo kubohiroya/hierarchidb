@@ -1,0 +1,30 @@
+{
+  "name": "@hierarchidb/plugin-types",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./runtime-stub.js",
+      "default": "./runtime-stub.js"
+    }
+  },
+  "files": [
+    "dist",
+    "runtime-stub.js"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build":  "pnpm -w --filter @hierarchidb/plugin-ui-sdk run build:types && pnpm run build:types",
+    "build:types": "api-extractor run --local"
+  },
+  "peerDependencies": {
+    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.49.3",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "@hierarchidb/plugin-ui-sdk",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm run build:bundle",
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "prebuild": "pnpm run clean",
+    "build:tsc": "pnpm run build:types",
+    "prebuild:bundle": "pnpm run build:types"
+  },
+  "dependencies": {
+    "@hierarchidb/download": "workspace:*"
+  },
+  "peerDependencies": {
+    "dexie": "^4.2.0",
+    "react": ">=18.0.0",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "workspace:^5.9.3",
+    "dexie": "^4.2.0",
+    "react": ">=18.0.0",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/batch-api": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "dexie",
+      "react"
+    ]
+  }
+}

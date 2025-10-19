@@ -26,7 +26,7 @@ export default createTsupConfig({
     '@hierarchidb/runtime-worker',
     '@hierarchidb/runtime-plugin-dialog',
     '@hierarchidb/common-types',
-    '@hierarchidb/plugin-api',
+    '@hierarchidb/plugin-types',
     '@hierarchidb/common-api',
     '@hierarchidb/runtime-client',
     '@hierarchidb/runtime-basic-info',

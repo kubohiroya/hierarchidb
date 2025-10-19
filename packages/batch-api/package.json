@@ -6,11 +6,14 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./runtime-stub.js",
+      "default": "./runtime-stub.js"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "runtime-stub.js"
   ],
   "scripts": {
     "clean": "rm -rf dist",

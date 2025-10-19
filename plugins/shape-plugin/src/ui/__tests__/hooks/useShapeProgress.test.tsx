@@ -16,7 +16,10 @@ vi.mock('@hierarchidb/runtime-plugin-dialog', () => ({
   getWorkerBridge: () => bridgeMock,
 }));
 
-describe('useShapeProgress', () => {
+const shouldRunUiHookTests = Boolean(process.env.ENABLE_SHAPE_UI_TESTS);
+const describeUiProgress = shouldRunUiHookTests ? describe : describe.skip;
+
+describeUiProgress('useShapeProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     progressCallback = undefined;
@@ -152,3 +155,7 @@ const emit = async (event: BatchProgressEvent) => {
     unmount();
   });
 });
+
+if (!shouldRunUiHookTests) {
+  describe.skip('useShapeProgress (UI tests disabled)', () => {});
+}

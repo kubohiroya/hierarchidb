@@ -19,4 +19,4 @@ export * from './services/index.js';
 export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './common/extensions/index.js';
 
 // Register UI steps-provider for host-composed dialog (idempotent)
-import './ui/steps-provider';
+import './ui/index.js';

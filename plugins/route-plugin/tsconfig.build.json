@@ -36,6 +36,12 @@
       ],
       "@hierarchidb/download/*": [
         "../../packages/feature/download/dist/*"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
       ]
     }
   },

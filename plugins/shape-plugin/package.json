@@ -55,7 +55,7 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/plugin-entity-service": "workspace:*",
+    "@hierarchidb/plugin-runtime-entities": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "@tanstack/react-virtual": "^3.2.0",
     "@turf/turf": "^7.0.0",
@@ -70,7 +70,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
@@ -115,7 +115,7 @@
     "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4",
     "@hierarchidb/batch-api": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",

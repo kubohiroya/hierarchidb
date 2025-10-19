@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { MapHighlightState, MapHighlightStyles } from '../types/index.js';
-import { MapHighlightService } from '~/services/MapHighlightService.js';
+import { MapHighlightService } from '../services/MapHighlightService.js';
 
 interface UseMapHighlightProps {
   mapInstance?: any; //  MapLibre GL JS
@@ -49,7 +49,7 @@ export const useMapHighlight = ({
 
   if (!serviceRef.current) {
     serviceRef.current = new MapHighlightService(initialStyles, mapInstance);
-    serviceRef.current.setOnStateChange((state) => {
+    serviceRef.current.setOnStateChange((state: MapHighlightState) => {
       setHighlightState(state);
       if (onStateChange) {
         onStateChange(state);
@@ -118,4 +118,3 @@ export const useMapHighlight = ({
     service: serviceRef.current,
   };
 };
-

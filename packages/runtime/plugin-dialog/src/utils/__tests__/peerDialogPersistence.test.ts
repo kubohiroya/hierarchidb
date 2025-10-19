@@ -48,7 +48,7 @@ describe('peerDialogPersistence default provider', () => {
 
 const fallbackRows = new Map<string, any>();
 
-vi.mock('@hierarchidb/runtime-shared-module-paths', () => ({
+vi.mock('@hierarchidb/runtime-worker', () => ({
   PLUGIN_WORKER_MODULE_IDS: {
     folder: '@hierarchidb/folder-plugin/worker',
   },

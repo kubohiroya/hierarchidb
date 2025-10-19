@@ -5,11 +5,11 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@hierarchidb/plugin-sdk": [
-        "../../packages/plugin-sdk/dist/index.d.ts"
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-sdk/*": [
-        "../../packages/plugin-sdk/dist/*"
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
       ]
     },
     "declarationDir": "./dist",

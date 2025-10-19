@@ -25,7 +25,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hierarchidb/plugin-sdk': basePluginEntry,
+      '@hierarchidb/plugin-ui-sdk': basePluginEntry,
     },
   },
 });

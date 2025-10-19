@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { Add, Cancel, Delete, Save } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { StylerColorRule, StylerEntity, StylerStyle } from '../entities/StylerEntity.js';
+import type { StylerColorRule, StylerEntity, StylerStyle } from '../../common/types/StylerEntity.js';
 
 export interface StylerSimpleDialogProps {
   open: boolean;

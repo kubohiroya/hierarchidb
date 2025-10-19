@@ -17,11 +17,14 @@ const importPluginWorkerMock = vi.hoisted(() => vi.fn<
   (id: string) => Promise<Record<string, unknown>>
 >());
 
-const importRuntimeWorkerMock = vi.hoisted(() => vi.fn<() => Promise<{ storeRegistry: unknown }>>());
+const mockStoreRegistry = {
+  getPeer: vi.fn(),
+  registerPeer: vi.fn(),
+};
 
-vi.mock('@hierarchidb/runtime-shared-module-paths', () => ({
+vi.mock('@hierarchidb/runtime-worker', () => ({
   importPluginWorker: importPluginWorkerMock,
-  importRuntimeWorker: importRuntimeWorkerMock,
+  storeRegistry: mockStoreRegistry,
 }));
 
 describe('WorkerModuleLoader', () => {
@@ -34,7 +37,8 @@ describe('WorkerModuleLoader', () => {
     workerClientMock.isReady.mockReset();
     workerClientMock.getSingleton.mockReset();
     importPluginWorkerMock.mockReset();
-    importRuntimeWorkerMock.mockReset();
+    mockStoreRegistry.getPeer.mockReset();
+    mockStoreRegistry.registerPeer.mockReset();
   });
 
   it('preloads plugin workers and swallows loader errors', async () => {
@@ -61,8 +65,6 @@ describe('WorkerModuleLoader', () => {
       const exportName = `load${id.charAt(0).toUpperCase()}${id.slice(1)}EntitiesDbModule` as const;
       return { [exportName]: loader } as Record<string, unknown>;
     });
-
-    importRuntimeWorkerMock.mockResolvedValue({ storeRegistry: {} });
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});

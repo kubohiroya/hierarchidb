@@ -25,11 +25,11 @@
       "@hierarchidb/common-api/*": [
         "../../packages/common/api/dist/*"
       ],
-      "@hierarchidb/plugin-api": [
-        "../../packages/plugin-api/dist/index.d.ts"
+      "@hierarchidb/plugin-types": [
+        "../../packages/plugin-types/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-api/*": [
-        "../../packages/plugin-api/dist/*"
+      "@hierarchidb/plugin-types/*": [
+        "../../packages/plugin-types/dist/*"
       ],
       "@hierarchidb/runtime-plugin-dialog": [
         "../../packages/runtime/plugin-dialog/dist/index.d.ts"
@@ -60,6 +60,12 @@
       ],
       "@hierarchidb/components/*": [
         "../../packages/components/dist/*"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
       ]
     }
   },

@@ -13,7 +13,7 @@ import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
 import type { CSVColumnInfo, SimpleTableMetadataManager as TableMetadataManagerPublic } from '@hierarchidb/tabular-store';
 type CSVTableMetadataLike = Parameters<TableMetadataManagerPublic['create']>[0];
 import { getDBName } from '@hierarchidb/util';
-import { calculateFileHash, calculateTextHash } from '~/common/utils/hashUtils.js';
+import { calculateFileHash, calculateTextHash } from '../common/utils/hashUtils.js';
 
 type SessionData = {
   rawFileMetadataId: NodeId;

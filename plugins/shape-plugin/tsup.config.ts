@@ -22,8 +22,8 @@ export default createTsupConfig({
   external: [
     'dexie',
     '@hierarchidb/batch-api',
-    '@hierarchidb/plugin-api',
-    '@hierarchidb/plugin-entity-service',
+    '@hierarchidb/plugin-types',
+    '@hierarchidb/plugin-runtime-entities',
     '@hierarchidb/util',
     '@hierarchidb/auth-recovery',
     '@hierarchidb/common-api',

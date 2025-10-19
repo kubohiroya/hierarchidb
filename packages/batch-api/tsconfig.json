@@ -12,7 +12,7 @@
       "@hierarchidb/common-api/*": ["../common/api/dist/*"],
       "@hierarchidb/runtime-worker": ["../runtime/worker/dist/index.d.ts"],
       "@hierarchidb/runtime-worker/*": ["../runtime/worker/dist/*"],
-      "@hierarchidb/plugin-sdk": ["../batch-sdk/dist/index.d.ts"]
+      "@hierarchidb/plugin-ui-sdk": ["../batch-sdk/dist/index.d.ts"]
     },
     "skipLibCheck": true
   },

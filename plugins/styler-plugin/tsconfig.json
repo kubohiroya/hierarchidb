@@ -24,6 +24,39 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "~/*.js": [
+        "./src/*.ts"
+      ],
+      "@hierarchidb/plugin-types": [
+        "../../packages/plugin-types/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-types/*": [
+        "../../packages/plugin-types/dist/*"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
+      ],
+      "@hierarchidb/plugin-runtime-entities": [
+        "../../packages/plugin-runtime-entities/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-runtime-entities/*": [
+        "../../packages/plugin-runtime-entities/dist/*"
+      ],
+      "@hierarchidb/ui-tabular-extract": [
+        "../../packages/ui/tabular-extract/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-tabular-extract/*": [
+        "../../packages/ui/tabular-extract/dist/*"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../../packages/runtime/worker/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-worker/*": [
+        "../../packages/runtime/worker/dist/*"
       ]
     },
     "module": "Node16"
@@ -35,7 +68,7 @@
   "exclude": [
     "dist",
     "node_modules",
-    "src/__tests__/**",
+    "**/__tests__/**",
     "**/*.test.*",
     "**/*.spec.*",
     "src/tests/**"

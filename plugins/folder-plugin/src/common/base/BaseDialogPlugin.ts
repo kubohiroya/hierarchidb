@@ -1,4 +1,4 @@
-import type { FolderEntity } from '~/common/types/FolderEntity.js';
+import type { FolderEntity } from '../types/FolderEntity.js';
 import type {
   FolderEntityExtension,
   FolderExtension,
@@ -11,8 +11,8 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugin-api';
-import { folderExtensionRegistry } from '~/common/api/DialogExtensionAPI.js';
+import { BaseDialogPlugin as CoreBaseDialogPlugin } from '@hierarchidb/plugin-ui-sdk';
+import { folderExtensionRegistry } from '../api/DialogExtensionAPI.js';
 
 /**
  * Base class for dialog-based extensions wired into the folder-plugin dialog system

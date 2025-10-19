@@ -38,7 +38,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "test": "vitest",
     "test:watch": "vitest",
@@ -50,10 +50,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "pnpm run build:types",
     "dev:tsc": "tsc --watch",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild": "pnpm run build:clean"
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -65,7 +64,9 @@
     "react": ">=18.0.0",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-runtime-entities": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -84,7 +85,9 @@
     "vitest": "^3.2.4",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-runtime-entities": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",

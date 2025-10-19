@@ -9,8 +9,8 @@ import type {
   ValidationResult,
 } from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
-import { wrapDialogStepComponent } from '@hierarchidb/plugin-api';
-import { DialogStepDefinition, ValidationExtension } from '@hierarchidb/plugin-api';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
+import type { DialogStepDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
 
 /**
  * Base class for plugin-loader that extend the folder-plugin plugin
@@ -122,9 +122,9 @@ export abstract class BaseFolderPlugin {
     const beforeSave = this.beforeSaveEntity?.bind(this);
     const afterLoad = this.afterLoadEntity?.bind(this);
     const validateEntity = this.validateEntity?.bind(this);
-    const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({}));
+    const getExtendedData = this.getExtendedData?.bind(this) ?? (async (_nodeId: NodeId) => ({} as Partial<FolderEntity>));
     const saveExtendedData =
-      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Record<string, any>) => {
+      this.saveExtendedData?.bind(this) ?? (async (_nodeId: NodeId, _data: Partial<FolderEntity>) => {
       });
 
     if (!additionalFields?.length && !beforeSave && !afterLoad && !validateEntity) {
@@ -215,14 +215,14 @@ export abstract class BaseFolderPlugin {
   /**
    * Override to get extended data from entity
    */
-  protected async getExtendedData?(_nodeId: NodeId): Promise<Record<string, any>> {
+  protected async getExtendedData?(_nodeId: NodeId): Promise<Partial<FolderEntity>> {
     return {};
   }
 
   /**
    * Override to save extended data to entity
    */
-  protected async saveExtendedData?(_nodeId: NodeId, _data: Record<string, any>): Promise<void> {
+  protected async saveExtendedData?(_nodeId: NodeId, _data: Partial<FolderEntity>): Promise<void> {
     // Default implementation does nothing
   }
 

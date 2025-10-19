@@ -4,7 +4,7 @@
  */
 
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { DialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-api';
+import { DialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 import type { StylerConfig } from '../types/stylerTypes.js';
 import { StylerStep5 } from '../../ui/components/steps/StylerStep5.js';

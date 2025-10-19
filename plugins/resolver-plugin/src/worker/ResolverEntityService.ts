@@ -4,7 +4,7 @@ import {
   BaseEntityService,
   createDraftWorkingCopyBase,
   markWorkingCopyUpdated,
-} from '@hierarchidb/plugin-entity-service';
+} from '@hierarchidb/plugin-runtime-entities';
 import { resolverDB } from './database/ResolverDatabase.js';
 import type {
   DataTransformation,
@@ -46,7 +46,7 @@ export interface CreateResolverData {
 
 /**
  * EntityHandler implementation for Resolver plugin
- * Built on top of the shared BaseEntityService to avoid plugin-sdk runtime dependency.
+ * Built on top of the shared BaseEntityService to avoid plugin-ui-sdk runtime dependency.
  */
 export class ResolverEntityService extends BaseEntityService<
   ResolverEntity,

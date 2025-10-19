@@ -50,8 +50,10 @@ const mockClient = {
   getAPI: vi.fn(() => mockWorkerAPI),
 };
 
+const shouldRunUiHookTests = Boolean(process.env.ENABLE_SHAPE_UI_TESTS);
+const describeUiHook = shouldRunUiHookTests ? describe : describe.skip;
 
-describe('useShapeAPI', () => {
+describeUiHook('useShapeAPI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockWorkerAPI.getPluginRegistryAPI.mockResolvedValue(mockPluginRegistry);
@@ -81,7 +83,7 @@ describe('useShapeAPI', () => {
   });
 });
 
-describe('useShapeAPIGetter', () => {
+describeUiHook('useShapeAPIGetter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockWorkerAPI.getPluginRegistryAPI.mockResolvedValue(mockPluginRegistry);
@@ -122,8 +124,6 @@ describe('useShapeAPIGetter', () => {
     expect(mockPluginRegistry.getExtension).toHaveBeenCalledTimes(2);
   });
 });
-// Skip UI hook tests by default (require app environment)
-if (!process.env.ENABLE_SHAPE_UI_TESTS) {
-  describe.skip('useShapeAPI (UI tests disabled)', () => {
-  });
+if (!shouldRunUiHookTests) {
+  describe.skip('useShapeAPI (UI tests disabled)', () => {});
 }

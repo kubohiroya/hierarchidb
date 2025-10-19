@@ -4,7 +4,16 @@
     "outDir": "./dist",
     "jsx": "react-jsx",
     "module": "Node16",
-    "moduleResolution": "Node16"
+    "moduleResolution": "Node16",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/plugin-ui-sdk": [
+        "../../packages/plugin-ui-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*"
+      ]
+    }
   },
   "include": [
     "src/**/*"

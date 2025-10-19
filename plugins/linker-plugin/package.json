@@ -32,17 +32,16 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild": "pnpm run build:clean",
-    "build:tsc": "pnpm run build:types"
+    "build:tsc": "pnpm run build:types",
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -63,7 +62,7 @@
     "react-dom": "^18.3.1",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
@@ -91,7 +90,7 @@
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",

@@ -6,7 +6,7 @@
 - folder-plugin には旧実装（`src/ui/plugin.ts` 等）が残存し、`PluginDefinition` への直接代入で型エラーが発生している。
 
 ## 現状整理メモ
-- `packages/plugin-sdk/src/types/plugin-definition.ts` では `ui?: { dialogComponentPath?: ... }` といったパス情報のみを保持する想定で、React コンポーネント参照を許容しない。
+- `packages/plugin-ui-sdk/src/types/plugin-definition.ts` では `ui?: { dialogComponentPath?: ... }` といったパス情報のみを保持する想定で、React コンポーネント参照を許容しない。
 - `packages/tools/vite-plugin-node-type-registry/src/registry-plugin.ts` が `virtual:plugin-registry-ui` を生成し、`packageName/ui` を import → `HostProfileRegistry` 等の副作用を実行する。
 - folder-plugin の `src/ui/index.ts` / `src/ui/components/folder-host.tsx` は新方式に沿っているが、`src/ui/plugin.ts` や `src/ui/components/FolderUIPlugin.tsx` が未整理のまま残っている。
 

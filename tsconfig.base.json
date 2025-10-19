@@ -116,10 +116,10 @@
         "packages/feature/batch/src/*"
       ],
       "@hierarchidb/runtime-plugin-dialog": [
-        "packages/runtime/plugin-dialog/src/index.ts"
+        "packages/runtime/plugin-dialog/dist/index.d.ts"
       ],
       "@hierarchidb/runtime-plugin-dialog/*": [
-        "packages/runtime/plugin-dialog/src/*"
+        "packages/runtime/plugin-dialog/dist/*"
       ],
       "@hierarchidb/ui-core": [
         "packages/ui/core/src/index.ts"
@@ -133,11 +133,11 @@
       "@hierarchidb/ui-datasource/*": [
         "packages/ui/datasource/src/*"
       ],
-      "@hierarchidb/plugin-api": [
-        "packages/plugin-api/src/index.ts"
+      "@hierarchidb/plugin-types": [
+        "packages/plugin-types/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-api/*": [
-        "packages/plugin-api/src/*"
+      "@hierarchidb/plugin-types/*": [
+        "packages/plugin-types/dist/*"
       ],
       "@hierarchidb/ui-license": [
         "packages/ui/license/src/index.ts"
@@ -151,17 +151,17 @@
       "@hierarchidb/runtime-ui-license/*": [
         "packages/runtime-ui/license/src/*"
       ],
-      "@hierarchidb/plugin-sdk": [
-        "packages/plugin-sdk/src/index.ts"
+      "@hierarchidb/plugin-ui-sdk": [
+        "packages/plugin-ui-sdk/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-sdk/*": [
-        "packages/plugin-sdk/src/*"
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "packages/plugin-ui-sdk/dist/*"
       ],
-      "@hierarchidb/plugin-entity-service": [
-        "packages/plugin-entity-service/src/index.ts"
+      "@hierarchidb/plugin-runtime-entities": [
+        "packages/plugin-runtime-entities/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-entity-service/*": [
-        "packages/plugin-entity-service/src/*"
+      "@hierarchidb/plugin-runtime-entities/*": [
+        "packages/plugin-runtime-entities/dist/*"
       ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"
@@ -170,10 +170,10 @@
         "packages/ui/map/src/*"
       ],
       "@hierarchidb/ui-csv-extract": [
-        "packages/ui/csv-extract/src/index.ts"
+        "packages/ui/tabular-extract/src/index.ts"
       ],
       "@hierarchidb/ui-csv-extract/*": [
-        "packages/ui/csv-extract/src/*"
+        "packages/ui/tabular-extract/src/*"
       ],
       "@hierarchidb/auth-recovery": [
         "packages/feature/auth-recovery/src/index.ts"

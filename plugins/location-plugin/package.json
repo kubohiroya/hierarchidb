@@ -34,16 +34,16 @@
   },
   "scripts": {
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:clean": "rm -rf dist dist",
     "build:types": "tsc --build tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "build:tsc": "pnpm run build:types"
+    "build:tsc": "pnpm run build:types",
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {},
   "devDependencies": {
@@ -55,7 +55,7 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch-sdk": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
@@ -67,7 +67,8 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -83,7 +84,7 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/batch-sdk": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
@@ -95,7 +96,8 @@
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-dialog": "workspace:*"
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*"
   },
   "tsup": {
     "external": [

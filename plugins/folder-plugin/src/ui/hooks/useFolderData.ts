@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
 import { useFolderAPIGetter } from './useFolderAPI.js';
-import { FolderEntity, CreateFolderData, UpdateFolderData } from '~/common/types/index.js';
+import { FolderEntity, CreateFolderData, UpdateFolderData } from '../../common/types/index.js';
 
 /**
  * Hook for managing folder-plugin data and operations

@@ -19,7 +19,7 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-api';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-ui-sdk';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================

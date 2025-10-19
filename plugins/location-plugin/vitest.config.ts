@@ -11,7 +11,7 @@ export default defineConfig({
     alias: {
       '@hierarchidb/batch': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
       '@hierarchidb/tabular-store': path.resolve(__dirname, 'src/test-shims/external-mocks.ts'),
-      '@hierarchidb/plugin-sdk': basePluginEntry,
+      '@hierarchidb/plugin-ui-sdk': basePluginEntry,
       '@hierarchidb/runtime-worker': path.resolve(__dirname, 'src/test-shims/runtime-worker.ts'),
       '@hierarchidb/runtime-client': path.resolve(__dirname, 'src/test-shims/runtime-worker.ts'),
       '@hierarchidb/map-adapter': path.resolve(__dirname, 'src/test-shims/optional-features.ts'),

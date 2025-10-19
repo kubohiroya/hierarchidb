@@ -22,18 +22,15 @@ async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions =
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  /*
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-shared-module-paths');
-    const runtime = await importRuntimeWorker();
-    return runtime.storeRegistry as StoreRegistry;
+    const runtime = await import('@hierarchidb/runtime-worker');
+    return (runtime.storeRegistry ?? null) as StoreRegistry | null;
   } catch (error) {
     if (import.meta.env?.DEV) {
       console.warn('[folder-worker] failed to import runtime worker module', error);
     }
     return null;
-  }*/
-  return null;
+  }
 }
 
 async function ensureFolderStores(registry: StoreRegistry): Promise<void> {

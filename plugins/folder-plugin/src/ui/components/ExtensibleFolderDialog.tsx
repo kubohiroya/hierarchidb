@@ -4,7 +4,8 @@ import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FolderEditData, FolderDisplayData } from '../../common/types/index.js';
-import { DialogStepDefinition, wrapDialogStepComponent } from '@hierarchidb/plugin-api';
+import type { DialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 interface FolderStepData {
   name: string;

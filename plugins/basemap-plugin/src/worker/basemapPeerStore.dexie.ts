@@ -2,7 +2,21 @@ import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
 import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
-import { createPeerStoreNormalizer } from '@hierarchidb/plugin-api';
+const createPeerStoreNormalizer = <TData>(
+  defaults: () => TData,
+): ((input?: Partial<TData> | null) => TData) => {
+  return (input) => {
+    const base = defaults();
+    return {
+      ...base,
+      ...(input ?? {}),
+      metadata: {
+        ...((base as any)?.metadata ?? {}),
+        ...((input as any)?.metadata ?? {}),
+      },
+    } as TData;
+  };
+};
 
 // TODO(basemap-runtime-worker-integration): when basemap adopts the shared
 // runtime worker factory, register its client via

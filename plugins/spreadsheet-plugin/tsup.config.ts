@@ -27,6 +27,7 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
+    '@hierarchidb/plugin-ui-sdk',
     '@hierarchidb/runtime-ui-plugin-dialog',
     // bundle internal workspace deps and non-UI libs
   ],

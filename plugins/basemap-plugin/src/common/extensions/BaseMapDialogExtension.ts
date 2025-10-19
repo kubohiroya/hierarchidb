@@ -5,7 +5,7 @@
  */
 
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { NodeDialogPlugin } from '@hierarchidb/plugin-api';
+import { NodeDialogPlugin } from '@hierarchidb/plugin-ui-sdk';
 
 function isValidUrl(u: string | undefined): boolean {
   if (!u) return false;

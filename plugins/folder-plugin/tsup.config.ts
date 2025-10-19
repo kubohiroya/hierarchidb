@@ -17,5 +17,6 @@ export default createTsupConfig({
     '@emotion/styled',
     // runtime peers
     'dexie',
+    '@hierarchidb/plugin-ui-sdk',
   ],
 });

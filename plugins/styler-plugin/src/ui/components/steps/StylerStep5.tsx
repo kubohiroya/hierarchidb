@@ -7,7 +7,7 @@ import { Box } from '@mui/material';
 import type { StylerConfig } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
 import { StylerConfiguration } from './StylerConfiguration.js';
-import { wrapDialogStepComponent } from '@hierarchidb/plugin-api';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 export interface StylerStep5Props {
   data: any;

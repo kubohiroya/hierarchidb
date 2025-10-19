@@ -1,17 +1,17 @@
 # TODO: Download Service Unification (Spreadsheet/Styler)
 
 ## Goals
-- Reuse `createDownloadService` (via plugin-sdk) across spreadsheet and styler plugin APIs.
+- Reuse `createDownloadService` (via plugin-ui-sdk) across spreadsheet and styler plugin APIs.
 - Handle CORS proxying via optional URL transformers supplied when invoking the shared helper.
 - Maintain Dexie-based chunk storage so large CSV downloads can resume.
 
 ## Investigation Tasks
 1. Locate current spreadsheet download flow via `plugins/spreadsheet-plugin` and ensure no remaining dependencies on `authFetch`.
 2. Repeat for styler plugin to confirm it consumes the updated CSV API driver.
-3. Confirm both plugins now import the new helper from `@hierarchidb/plugin-sdk` rather than ad-hoc fetch logic.
+3. Confirm both plugins now import the new helper from `@hierarchidb/plugin-ui-sdk` rather than ad-hoc fetch logic.
 
 ## Design Decisions
-- `downloadWithService` (plugin-sdk) accepts optional `transformUrl` / `onComplete` hooks rather than plugin-specific wrappers.
+- `downloadWithService` (plugin-ui-sdk) accepts optional `transformUrl` / `onComplete` hooks rather than plugin-specific wrappers.
 - Spreadsheet/Styler pass proxy transforms or additional hooks as needed; defaults fall back to identity behavior.
 - Dexie chunk storage remains the default; alternative storages can be introduced later by extending `createDownloadService` options.
 

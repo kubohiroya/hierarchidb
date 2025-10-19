@@ -19,7 +19,7 @@ import {
   BaseEntityService,
   createDraftWorkingCopyBase,
   markWorkingCopyUpdated,
-} from '@hierarchidb/plugin-entity-service';
+} from '@hierarchidb/plugin-runtime-entities';
 import type { Timestamp } from '@hierarchidb/common-types';
 
 /**

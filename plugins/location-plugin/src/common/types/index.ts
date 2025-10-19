@@ -23,7 +23,7 @@ import type {
   LocationAddress,
   LocationAttributes,
 } from '../entities/LocationEntity.js';
-import { WorkingCopyDraft } from '@hierarchidb/plugin-api';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-ui-sdk';
 export type {
   LocationPoint,
   LocationPointProperties,

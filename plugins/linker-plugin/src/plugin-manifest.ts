@@ -1,5 +1,5 @@
 import { toNodeType } from '@hierarchidb/common-types';
-import type { PluginMetadata } from '@hierarchidb/plugin-api';
+import type { PluginMetadata } from '@hierarchidb/plugin-types';
 
 export const PLUGIN_ID = '@hierarchidb/linker-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;

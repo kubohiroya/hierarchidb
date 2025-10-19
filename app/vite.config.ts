@@ -43,7 +43,6 @@ function createRuntimeAliasConfig({
   if (isDev) {
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', { exclude: true });
-    addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts', { exclude: true });
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', { exclude: true });
 
@@ -79,9 +78,8 @@ function createRuntimeAliasConfig({
       }
     }
   } else {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.ts');
-    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.ts');
-    addAlias('@hierarchidb/runtime-shared-module-paths', 'src/plugin-loader/module-paths.ts');
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js');
+    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js');
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.ts', { exclude: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.ts', { exclude: true });
   }
@@ -93,7 +91,7 @@ function createRuntimeAliasConfig({
 }
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode,isSsrBuild }) => {
+export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
   // Prefer VITE_APP_PREFIX if provided; otherwise default to root '/'
   const appPrefix = (env.VITE_APP_PREFIX || env.VITE_APP_NAME || '').replace(/^\/+|\/+$/g, '');
@@ -384,7 +382,7 @@ export default defineConfig(({ mode,isSsrBuild }) => {
         // Icons utility (always point to src for now)
         { find: '@hierarchidb/ui-icon', replacement: path.resolve(__dirname, '../packages/ui/icon/src/index.ts') },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
-        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/runtime-ui/plugin-dialog/src/index.ts') },
+        { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/plugin-ui-sdk/dist/index.js') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.ts') },
@@ -421,6 +419,11 @@ export default defineConfig(({ mode,isSsrBuild }) => {
     worker: {
       format: 'es',
       plugins: () => [
+        createNodeTypeRegistryPlugin({
+          rootDir: path.resolve(__dirname, '..'),
+          debugSnapshotDir: 'app/.debug',
+          minimal: false,
+        }),
         /*
         pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
         toolsVitePluginPackageReader({
@@ -454,6 +457,11 @@ export default defineConfig(({ mode,isSsrBuild }) => {
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
           'react-resizable',
           'react-draggable',
+          // Prevent bundling plugin database entry points; they stay lazy-loaded via plugin loader
+          '@hierarchidb/basemap-plugin/database',
+          '@hierarchidb/resolver-plugin/database',
+          '@hierarchidb/route-plugin/database',
+          '@hierarchidb/spreadsheet-plugin/database',
 
         ],
         output: {

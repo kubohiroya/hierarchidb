@@ -17,12 +17,12 @@ import type {
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
 import { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/tabular-store';
-import { applyCsvFilters, calculateFileHash, detectColumnTypes, parseCSVContent, processExcelFile, processZipFile } from '~/common/utils/index.js';
+import { applyCsvFilters, calculateFileHash, detectColumnTypes, parseCSVContent, processExcelFile, processZipFile } from '../common/utils/index.js';
 import {
   createDownloadService,
   downloadWithService,
   type DownloadServiceHandle,
-} from '@hierarchidb/plugin-entity-service';
+} from '@hierarchidb/plugin-runtime-entities';
 
 // Chunk configuration for large table support
 interface ChunkConfig {

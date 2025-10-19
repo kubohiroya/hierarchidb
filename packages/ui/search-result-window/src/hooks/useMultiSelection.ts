@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { SearchResult } from '~/types/index.js';
+import type { SearchResult } from '../types/index.js';
 import {
   clearSelectionAtom,
   searchResultsAtom,

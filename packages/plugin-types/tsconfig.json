@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022", "dom"],
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/common-types": ["../common/types/dist/index.d.ts"],
+      "@hierarchidb/common-types/*": ["../common/types/dist/*"],
+      "@hierarchidb/common-api": ["../common/api/dist/index.d.ts"],
+      "@hierarchidb/common-api/*": ["../common/api/dist/*"],
+      "@hierarchidb/runtime-worker": ["../runtime/worker/dist/index.d.ts"],
+      "@hierarchidb/runtime-worker/*": ["../runtime/worker/dist/*"],
+      "@hierarchidb/plugin-ui-sdk": ["../plugin-ui-sdk/dist/index.d.ts"]
+    },
+    "skipLibCheck": true
+  },
+  "include": [
+    "../plugin-ui-sdk/dist/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+  ]
+}

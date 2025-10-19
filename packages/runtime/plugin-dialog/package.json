@@ -16,8 +16,7 @@
   },
   "scripts": {
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "prebuild": "pnpm run build:clean",
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
@@ -26,9 +25,9 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup"
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {},
   "devDependencies": {
@@ -49,7 +48,7 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
@@ -67,7 +66,7 @@
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/batch-api": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },

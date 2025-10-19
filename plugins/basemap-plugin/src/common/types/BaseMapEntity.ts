@@ -9,7 +9,7 @@ import type {
   HierarchicalSearchCriteria,
   PeerDataBase,
   WorkingCopyDraft,
-} from '@hierarchidb/plugin-api';
+} from '@hierarchidb/plugin-types';
 
 /**
  * Map style configuration

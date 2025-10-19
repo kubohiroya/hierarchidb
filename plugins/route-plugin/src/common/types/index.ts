@@ -2,7 +2,7 @@
   * Route Plugin Type Definitions
    */
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-api';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-ui-sdk';
 import type { Timestamp } from '@hierarchidb/common-types';
 
 // Branded types

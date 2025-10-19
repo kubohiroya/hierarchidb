@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
@@ -25,10 +25,9 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild": "pnpm run build:clean"
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {
     "comlink": "^4.4.2",
@@ -40,7 +39,7 @@
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/compute": "workspace:*",
@@ -68,7 +67,7 @@
     "fake-indexeddb": "^6.2.2",
     "vitest": "^3.2.4",
     "@hierarchidb/auth-recovery": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/compute": "workspace:*",

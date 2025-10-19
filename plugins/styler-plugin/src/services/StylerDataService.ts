@@ -7,18 +7,20 @@
   */
 
 import type {
-  CSVColumnInfo,
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
+  ICSVDataApi,
+} from '@hierarchidb/ui-tabular-extract';
+import type {
+  CSVColumnInfo,
   CSVTableMetadata,
   CSVTableMetadataLike,
-  ICSVDataApi,
-} from '@hierarchidb/ui-csv-extract';
+} from '@hierarchidb/tabular-store';
 
-import type { StylerEntity } from '../entities/StylerEntity.js';
-import type { StylerConfig } from '../types/stylerTypes.js';
-import { valueToColor } from '../utils/colorUtils.js';
+import type { StylerEntity } from '../common/types/StylerEntity.js';
+import type { StylerConfig } from '../common/types/stylerTypes.js';
+import { valueToColor } from '../common/utils/colorUtils.js';
 
 /**
   * : Styler

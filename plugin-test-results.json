@@ -1,5 +1,5 @@
 [
-{"package":"@hierarchidb/plugin-sdk","dir":"packages/plugins/base-plugin","typecheck":"ok","test":"ok","coverage":null},
+{"package":"@hierarchidb/plugin-ui-sdk","dir":"packages/plugins/base-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/basemap-plugin","dir":"packages/plugins/basemap-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/folder-plugin","dir":"packages/plugins/folder-plugin","typecheck":"ok","test":"ok","coverage":null},
 {"package":"@hierarchidb/location-plugin","dir":"packages/plugins/location-plugin","typecheck":"ok","test":"ok","coverage":null},

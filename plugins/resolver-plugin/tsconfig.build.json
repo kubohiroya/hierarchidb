@@ -37,11 +37,11 @@
       "@hierarchidb/runtime-basic-info/*": [
         "../../packages/runtime/basic-info/dist/*"
       ],
-      "@hierarchidb/plugin-api": [
-        "../../packages/plugin-api/dist/index.d.ts"
+      "@hierarchidb/plugin-types": [
+        "../../packages/plugin-types/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-api/*": [
-        "../../packages/plugin-api/dist/*"
+      "@hierarchidb/plugin-types/*": [
+        "../../packages/plugin-types/dist/*"
       ]
     }
   },

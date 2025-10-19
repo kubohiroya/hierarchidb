@@ -19,8 +19,7 @@ async function resolveStoreRegistry(options: RegisterStylerWorkerStoresOptions =
     return options.storeRegistry;
   }
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-shared-module-paths');
-    const runtime = await importRuntimeWorker();
+    const runtime = await import('@hierarchidb/runtime-worker');
     return runtime.storeRegistry as StoreRegistry;
   } catch (error) {
     if (import.meta.env?.DEV) {
@@ -31,12 +30,12 @@ async function resolveStoreRegistry(options: RegisterStylerWorkerStoresOptions =
 }
 
 async function ensureStylerStores(registry: StoreRegistry): Promise<void> {
-  const { StylerEntitiesDB } = await import('../worker/stylerEntitiesDB.js');
+  const { StylerEntitiesDB } = await import('../stylerEntitiesDB.js');
   const db = new StylerEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('styler')) {
-    const { createStylerPeerStoreDexie } = await import('../worker/stylerPeerStore.dexie.js');
+    const { createStylerPeerStoreDexie } = await import('../stylerPeerStore.dexie.js');
     registry.registerPeer('styler', createStylerPeerStoreDexie(db));
   }
 }
@@ -61,7 +60,7 @@ export async function registerStylerWorkerStores(options: RegisterStylerWorkerSt
 }
 
 export async function loadStylerEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/stylerEntitiesDB.js');
+  return import(/* @vite-ignore */ '../stylerEntitiesDB.js');
 }
 
 registerStylerWorkerStores().catch(() => {});

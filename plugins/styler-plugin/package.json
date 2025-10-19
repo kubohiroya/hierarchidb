@@ -42,7 +42,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
@@ -54,10 +54,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "pnpm run build:types",
     "dev:tsc": "tsc --watch",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild": "pnpm run build:clean"
+    "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {
     "jszip": "^3.10.1",
@@ -81,7 +80,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*"
   },
   "devDependencies": {
@@ -103,7 +102,7 @@
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*"
   },
   "keywords": [

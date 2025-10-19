@@ -1,4 +1,4 @@
-import { BaseEntityExtension, DialogStepDefinition, ExtendingNodeTypeDefinition, ValidationExtension } from '@hierarchidb/plugin-api';
+import type { BaseEntityExtension, DialogStepDefinition, ExtendingNodeTypeDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
 import type { FolderEntity } from '../types/FolderEntity.js';
 import { TreeNode } from '@hierarchidb/common-types';
 

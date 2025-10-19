@@ -8,12 +8,13 @@ import type {
   BaseEntityExtension,
   ValidationExtension,
   ExtendingNodeTypeDefinition,
-} from '@hierarchidb/plugin-api';
+} from '@hierarchidb/plugin-ui-sdk';
 import {
 } from '@hierarchidb/common-api';
 import type {
   PeerEntity,
-  TreeNode
+  TreeNode,
+  NodeId,
 } from '@hierarchidb/common-types';
 import type { FolderEntity } from '../types/FolderEntity.js';
 
@@ -22,11 +23,13 @@ export type NodeDialogStepEvaluator<TDialog extends PeerEntity = PeerEntity> = S
 
 export interface FolderDialogExtension<TDialog extends PeerEntity = PeerEntity> extends FolderDialogHooks<TDialog> {}
 
-export interface FolderEntityExtension extends BaseEntityExtension<FolderEntity> {
+export interface FolderEntityExtension extends Partial<BaseEntityExtension<FolderEntity>> {
   additionalFields?: string[];
   beforeSave?: (entity: Partial<FolderEntity>) => Promise<Partial<FolderEntity>>;
   afterLoad?: (entity: FolderEntity) => Promise<FolderEntity>;
   validateEntity?: (entity: Partial<FolderEntity>) => Promise<string[]>;
+  getExtendedData?: (nodeId: NodeId) => Promise<Partial<FolderEntity>>;
+  saveExtendedData?: (nodeId: NodeId, data: Partial<FolderEntity>) => Promise<void>;
 }
 
 export interface FolderExtension<TDialog extends PeerEntity = PeerEntity>
