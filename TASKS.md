@@ -165,16 +165,16 @@
   - 変更ファイルを revert し、`pnpm --filter @hierarchidb/vite-plugin-node-type-registry lint` のエラー再現を確認
 
 8) Batch API 型ビルド失敗修正（P0）
-- ブランチ: `fix/batch-api/api-extractor-input`（sandbox 制約で `main` 上で作業中）
-- 依存: `@hierarchidb/batch-api`, `@hierarchidb/batch-sdk`
+- ブランチ: `fix/batch-types/api-extractor-input`（sandbox 制約で `main` 上で作業中）
+- 依存: `@hierarchidb/batch-types`, `@hierarchidb/batch-runtime-services`
 - 受け入れ基準（DoD）:
-  - [x] `pnpm --filter @hierarchidb/batch-api build:types` が成功し、API Extractor による type rollup が通過する
-  - [x] `packages/batch-api/tsconfig.json` の入力定義がリポジトリルート基準で安定する（process 未使用）
+  - [x] `pnpm --filter @hierarchidb/batch-types build:types` が成功し、API Extractor による type rollup が通過する
+  - [x] `packages/batch-types/tsconfig.json` の入力定義がリポジトリルート基準で安定する（process 未使用）
 - チェックリスト:
   - [x] TASKS 運用ログに start/done を記録
   - [x] tsconfig 差分を自己レビューし、副作用がないことを確認
 - ロールバック手順：
-  - 変更前の tsconfig に戻し、`pnpm --filter @hierarchidb/batch-api build:types` でエラーが再現することを確認
+  - 変更前の tsconfig に戻し、`pnpm --filter @hierarchidb/batch-types build:types` でエラーが再現することを確認
 
 
 9) Location/Route/Shape 通知レイヤー統一（P1）
@@ -251,6 +251,22 @@
   - progress: 2025-10-19 12:18 `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、エラーなく完了（BatchTaskStage の型参照が解消されたことを確認）
   - done: 2025-10-19 12:19 `BatchTaskStage` の型 alias を復旧し、shape plugin の typecheck がグリーンであることを確認
 
+12) Batch パッケージ命名再編（P0）
+- ブランチ: `refactor/batch/package-rename`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/batch-types`, `@hierarchidb/batch-runtime-services`, `@hierarchidb/route-plugin`, `@hierarchidb/location-plugin`, `@hierarchidb/shape-plugin`, `@hierarchidb/runtime-plugin-dialog`
+- 受け入れ基準（DoD）:
+  - [ ] `packages/batch-types` と `packages/batch-runtime-services` が新命名で構成され、`pnpm --filter @hierarchidb/batch-types build:types` および `pnpm --filter @hierarchidb/batch-runtime-services build:types` が成功する
+  - [ ] リポジトリ全体から `@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の参照が除去され、新命名へ差し替え済みである
+  - [ ] 代表的依存パッケージ（route/location/shape plugin と runtime plugin dialog）が `typecheck` / `build:types` でグリーンになる
+  - [ ] TASKS 運用ログに start/progress/done を記録している
+- チェックリスト:
+  - [ ] `scripts/rename-batch-packages.mjs` を作成し、dry-run→本番適用で `batch-types`/`batch-runtime-services` ディレクトリを移設
+  - [ ] `pnpm-workspace.yaml` / `tsconfig.base.json` / 主要 `tsconfig.*.json` のパスエイリアスと依存宣言を新命名へ更新
+  - [ ] route/location/shape plugin・runtime 系の import/tsup external/peerDependencies を `@hierarchidb/batch-{types,runtime-services}` へ差し替え
+  - [ ] `rg "@hierarchidb/batch-(api|sdk)"` で旧命名残存を確認し、必要に応じて修正
+- ロールバック手順：
+  - rename スクリプトで移動したディレクトリと差し替えた参照をすべて revert し、`@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の元構成へ戻したうえで関係パッケージの build/typecheck を再実行して整合を確認
+
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
@@ -260,21 +276,21 @@
 - 依存: 現行プラグインマニフェスト（`hierarchidb.plugin`）、`scripts/generate-plugin-loader.mjs`
 - 受け入れ基準（DoD）:
   - [ ] `hierarchidb.plugin` に runtime ローディング用の静的エントリ情報（worker adapters / batch API 参照）を追加し、既存プラグイン全てに適用
-  - [ ] `@hierarchidb/plugin-types` と `@hierarchidb/batch-api` で新メタデータ型を公開し、`pnpm --filter` での typecheck がグリーン
+  - [ ] `@hierarchidb/plugin-types` と `@hierarchidb/batch-types` で新メタデータ型を公開し、`pnpm --filter` での typecheck がグリーン
   - [ ] `docs/runtime-wiring.md` を更新し、動的ワイヤリング廃止方針と新メタデータの適用手順を明記
 - チェックリスト:
   - [ ] 対象プラグイン（route/shape/location/folder/styler/basemap/resolver）で metadata を追加し lint/typecheck を実行
   - [ ] 既存 Feature flag 参照箇所を棚卸しし、新メタデータで代替する一覧を作成
   - [ ] `scripts/generate-plugin-loader.mjs` の型チェックを更新するが、このタスクでは出力生成までは変更しない
 - ロールバック手順：
-  - 追加したメタデータ・型定義を revert し、`pnpm --filter @hierarchidb/plugin-types typecheck` と `pnpm --filter @hierarchidb/batch-api typecheck` が従来通り成功することを確認
+  - 追加したメタデータ・型定義を revert し、`pnpm --filter @hierarchidb/plugin-types typecheck` と `pnpm --filter @hierarchidb/batch-types typecheck` が従来通り成功することを確認
 
 12) Runtime Plugin Loader 静的生成（P1）
 - ブランチ: `refactor/runtime/static-plugin-loader`
 - 依存: 11) Runtime Plugin Metadata 整備
 - 受け入れ基準（DoD）:
   - [ ] `scripts/generate-plugin-loader.mjs` が runtime 向けの生成物（例: `app/src/generated/worker-runtime-loader.ts`）を出力し、各プラグインの登録関数を静的 import する
-  - [ ] 生成物が `@hierarchidb/plugin-types` / `@hierarchidb/batch-api` の型を満たし、`pnpm --filter @hierarchidb/app typecheck` が成功
+  - [ ] 生成物が `@hierarchidb/plugin-types` / `@hierarchidb/batch-types` の型を満たし、`pnpm --filter @hierarchidb/app typecheck` が成功
   - [ ] 生成コードに対するユニットテストまたは snapshot テストを追加し、ターゲットテストがグリーン
 - チェックリスト:
   - [ ] 生成スクリプトを実行して差分を確認し、`pnpm lint` / `pnpm format` を通す
@@ -5687,8 +5703,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 12:45 start: fix/resolver-plugin/import-paths — resolver plugin の UI/worker モジュール移行後も旧 `common/*` 階層への import や欠落ファイル参照が残存するため、現行構成へ揃える作業を開始。
 - 2025-10-19 13:05 progress: fix/resolver-plugin/import-paths — `tsup.config.ts` / `tsup.database.config.ts` のエントリを `src/worker/database/index.ts` へ更新し、外部参照を `@hierarchidb/runtime-plugin-dialog` など現行パッケージへ刷新。`tsconfig.json` の `paths`/`rootDir` も整理し、README の import 例を最新化。
 - 2025-10-19 13:12 progress: fix/resolver-plugin/import-paths — `pnpm --filter @hierarchidb/resolver-plugin build` を実行し、型生成とバンドルが `dist/` 配下に成功することを確認。
-- 2025-10-19 13:18 start: fix/location-plugin/import-paths — Location plugin で旧 `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/batch-sdk` 参照と DownloadService 型不整合が残存しているため、現行 API への揃え込みを開始。
-- 2025-10-19 13:32 progress: fix/location-plugin/import-paths — `package.json` の prebuild を削除し、dev/peer 依存に `@hierarchidb/{components,batch-sdk}` を追加。`tsup.config.ts` を現行 externals（runtime-plugin-dialog 等）に更新し、`tsconfig.build.json` に dist ベースの paths を追加。
+- 2025-10-19 13:18 start: fix/location-plugin/import-paths — Location plugin で旧 `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/batch-runtime-services` 参照と DownloadService 型不整合が残存しているため、現行 API への揃え込みを開始。
+- 2025-10-19 13:32 progress: fix/location-plugin/import-paths — `package.json` の prebuild を削除し、dev/peer 依存に `@hierarchidb/{components,batch-runtime-services}` を追加。`tsup.config.ts` を現行 externals（runtime-plugin-dialog 等）に更新し、`tsconfig.build.json` に dist ベースの paths を追加。
 - 2025-10-19 13:40 progress: fix/location-plugin/import-paths — DownloadService 利用箇所を `DownloadServiceBundle` ベースに切り替え、テスト/ambient d.ts も新型へ更新。`pnpm --filter @hierarchidb/location-plugin build` を実行し、型生成とバンドルが `dist/` 配下に出力されることを確認。
 - 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
 - 2025-10-19 11:32 progress: fix/timeline-plugin/typecheck-regression — tsup 実行を `NODE_OPTIONS="--loader ts-node/esm"` 付きに統一。各 package.json の `tsup` 系スクリプトを環境変数経由で loader 登録するよう更新し、上記 3 パッケージの `build:bundle` を再実行して正常終了を確認。
@@ -5731,7 +5747,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 12:26 progress: fix/app/plugin-database-externals — 重複していた `build` ブロックを統合し、`rollupOptions.external` に `@hierarchidb/{basemap,resolver,route,spreadsheet}-plugin/database` をまとめて指定。
 - 2025-10-19 12:34 blocked: fix/app/plugin-database-externals — `pnpm --filter @hierarchidb/app build` を実行したところ、`@hierarchidb/runtime-ui-plugin-dialog` の alias 参照先 (`packages/runtime-ui/plugin-dialog/src/index.ts`) が存在せず `ENOENT` で停止。rename されたディレクトリ構成の追従が別途必要。
 - 2025-10-19 12:40 progress: fix/app/plugin-database-externals — alias を `@hierarchidb/runtime-ui-plugin-dialog -> packages/plugin-ui-sdk/dist/index.js` へ更新し、新構成に追従。
-- 2025-10-19 12:46 progress: fix/app/plugin-database-externals — app build 再実行で `@hierarchidb/batch-api` のエントリ欠落エラーを確認。`packages/batch-api` に `runtime-stub.js` を追加し、`exports.import`/`default` を stub へ向けて外部参照を解決。
+- 2025-10-19 12:46 progress: fix/app/plugin-database-externals — app build 再実行で `@hierarchidb/batch-types` のエントリ欠落エラーを確認。`packages/batch-types` に `runtime-stub.js` を追加し、`exports.import`/`default` を stub へ向けて外部参照を解決。
 - 2025-10-19 12:52 progress: fix/app/plugin-database-externals — shape plugin の Worker バレルが旧 `worker-factory` ディレクトリを参照していたため、`worker/index.ts` の import を `./factory/registerShapeWorkerStores.js` に修正。
 - 2025-10-19 12:58 progress: fix/app/plugin-database-externals — spreadsheet plugin 内の `~` alias を相対パスへ置き換え（constants/types/utils/services）し、Vite がアプリ側の `~` alias に解決してしまう問題を解消。
 - 2025-10-19 13:05 progress: fix/app/plugin-database-externals — styler plugin も同様に `~` alias を撤廃し、worker/services/common/ui から相対パスで参照するよう更新。
@@ -5752,10 +5768,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-15 15:39 start: fix/tools/vite-plugin-node-type-registry-lint — Lint エラーとなっている `process` / `process.env` 依存を import.meta ベースの解決へ切り替える作業を開始。
 - 2025-10-15 15:40 progress: fix/tools/vite-plugin-node-type-registry-lint — `pnpm --filter @hierarchidb/vite-plugin-node-type-registry lint` を実行し、`process` 利用に起因する no-restricted-globals エラーが解消されたことを確認。
 - 2025-10-15 15:40 done: fix/tools/vite-plugin-node-type-registry-lint — `process` 依存を排し、Node ESM 相対解決と import.meta.env ベースのフラグ判定へ移行。上記 lint コマンドがグリーンであることを確認。
-- 2025-10-15 21:20 start: fix/batch-api/api-extractor-input — API Extractor 実行時に tsconfig 入力未定義で失敗している件の修正に着手。
-- 2025-10-15 21:21 progress: fix/batch-api/api-extractor-input — `packages/batch-api/tsconfig.json` に `../batch-sdk/dist/**/*.d.ts` を include 追加後、`pnpm --filter @hierarchidb/batch-api build:types` を実行。API Extractor は TSDoc WARN を出力するものの、型ロールアップ自体は成功することを確認。
-- 2025-10-16 01:47 progress: fix/batch-api/api-extractor-input — `@hierarchidb/common-api` の TSDoc コメントを整備し、`pnpm --filter @hierarchidb/common-api clean && pnpm --filter @hierarchidb/common-api build:types` 後に `pnpm --filter @hierarchidb/batch-api build:types` を再実行。警告なしで完了することを確認。
-- 2025-10-16 01:47 done: fix/batch-api/api-extractor-input — API Extractor の警告が解消されたためタスク完了。
+- 2025-10-15 21:20 start: fix/batch-types/api-extractor-input — API Extractor 実行時に tsconfig 入力未定義で失敗している件の修正に着手。
+- 2025-10-15 21:21 progress: fix/batch-types/api-extractor-input — `packages/batch-types/tsconfig.json` に `../batch-runtime-services/dist/**/*.d.ts` を include 追加後、`pnpm --filter @hierarchidb/batch-types build:types` を実行。API Extractor は TSDoc WARN を出力するものの、型ロールアップ自体は成功することを確認。
+- 2025-10-16 01:47 progress: fix/batch-types/api-extractor-input — `@hierarchidb/common-api` の TSDoc コメントを整備し、`pnpm --filter @hierarchidb/common-api clean && pnpm --filter @hierarchidb/common-api build:types` 後に `pnpm --filter @hierarchidb/batch-types build:types` を再実行。警告なしで完了することを確認。
+- 2025-10-16 01:47 done: fix/batch-types/api-extractor-input — API Extractor の警告が解消されたためタスク完了。
 - 2025-10-18 09:40 progress: refactor/runtime/remove-dynamic-wiring — 全プラグインの `worker-factory` export を廃止し、`worker` へ統一する codemod を作成・適用。関連 tsup 設定／tsconfig パス／ドキュメント／ESLint ルールを更新し、ワーカー参照の命名揺れを解消。
 - 2025-10-11 10:05 start: chore/ui-core/export-surface — `@hierarchidb/ui-core` のエントリーポイントを本実装へ差し替える作業を開始。Doing へ移動し、ブランチを作成済み。
 - 2025-10-11 10:40 progress: chore/ui-core/export-surface — `packages/ui/core/src/index.ts` で BasicInfoFields/TabularPreview/NotificationSystem/useWorkingCopy/useBatchProgress 系の再エクスポートを整理し、通知 API と型を公開。
@@ -5763,8 +5779,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 TabularPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
 - 2025-10-11 11:25 command: pnpm --filter @hierarchidb/route-plugin build:types — ワークスペース内パッケージ未解決（TS2307）と RouteBatchConfig 既存プロパティ不整合により失敗。今回の UI コード差分による追加エラーは発生せず。
 - 2025-10-19 18:48 start: fix/resolver/property-resolver-integration-test — `@hierarchidb/resolver-plugin` の `plugins/resolver-plugin/src/ui/components/__tests__/PropertyResolver.integration.test.ts` で発生している型/実行エラーの調査と修正に着手。sandbox 制約のため main ブランチ上で継続作業。
-- 2025-10-19 19:05 progress: fix/resolver/property-resolver-integration-test — plugin-ui-sdk 依存を除去するための共通ランタイム（仮称 `@hierarchidb/plugin-runtime-entities`）を新設し、resolver/shape/spreadsheet 向けに汎用化する方針へ拡張。pnpm-workspace.yaml を更新し、新パッケージの雛形を作成。
-- 2025-10-19 21:27 start: chore/plugins/package-rename — plugin API/SDK の命名整理 (`plugin-types` / `plugin-runtime-entities` / `plugin-ui-sdk`) に向けたパッケージリネーム作業に着手。dry-run スクリプトを作成して挙動確認後に本番適用する。
+- 2025-10-19 19:05 progress: fix/resolver/property-resolver-integration-test — plugin-ui-sdk 依存を除去するための共通ランタイム（仮称 `@hierarchidb/plugin-runtime-services`）を新設し、resolver/shape/spreadsheet 向けに汎用化する方針へ拡張。pnpm-workspace.yaml を更新し、新パッケージの雛形を作成。
+- 2025-10-19 21:27 start: chore/plugins/package-rename — plugin API/SDK の命名整理 (`plugin-types` / `plugin-runtime-services` / `plugin-ui-sdk`) に向けたパッケージリネーム作業に着手。dry-run スクリプトを作成して挙動確認後に本番適用する。
 - 2025-10-19 21:30 progress: chore/plugins/package-rename — `scripts/rename-plugin-packages.mjs` を作成し `node scripts/rename-plugin-packages.mjs --dry-run` で差分対象（86ファイル）とディレクトリ移動計画を確認。
 - 2025-10-19 21:31 progress: chore/plugins/package-rename — dry-run 内容を確認後、`node scripts/rename-plugin-packages.mjs` を実行し `packages/plugin-{types,runtime-entities,ui-sdk}` へディレクトリと参照を一括置換。
 - 2025-10-19 21:34 progress: chore/plugins/package-rename — `pnpm --filter @hierarchidb/resolver-plugin test -- PropertyResolver.integration.test.ts` はグリーン、`pnpm --filter @hierarchidb/shape-plugin test` は既存 TODO（Shape API 未実装フック）で失敗することを確認。後者は従来の Known issue として再整理予定。
+- 2025-10-19 22:05 start: refactor/batch/package-rename — Batch API/SDK を `batch-types` / `batch-runtime-services` 命名へ再編する作業に着手。現状のディレクトリ構成と参照状況を棚卸し。

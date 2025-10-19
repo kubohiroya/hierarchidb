@@ -13,17 +13,17 @@
     "composite": true,
     "incremental": true,
     "paths": {
-      "@hierarchidb/batch-api": [
-        "../../packages/batch-api/dist/index.d.ts"
+      "@hierarchidb/batch-types": [
+        "../../packages/batch-types/dist/index.d.ts"
       ],
-      "@hierarchidb/batch-api/*": [
-        "../../packages/batch-api/dist/*"
+      "@hierarchidb/batch-types/*": [
+        "../../packages/batch-types/dist/*"
       ],
-      "@hierarchidb/batch-sdk": [
-        "../../packages/batch-sdk/dist/index.d.ts"
+      "@hierarchidb/batch-runtime-services": [
+        "../../packages/batch-runtime-services/dist/index.d.ts"
       ],
-      "@hierarchidb/batch-sdk/*": [
-        "../../packages/batch-sdk/dist/*"
+      "@hierarchidb/batch-runtime-services/*": [
+        "../../packages/batch-runtime-services/dist/*"
       ],
       "@hierarchidb/runtime-plugin-dialog": [
         "../../packages/runtime/plugin-dialog/dist/index.d.ts"
@@ -48,8 +48,8 @@
   "include": [
     "src/**/*",
     "../../packages/runtime/plugin-dialog/dist/index.d.ts",
-    "../../packages/batch-sdk/dist/index.d.ts",
-    "../../packages/batch-api/dist/index.d.ts",
+    "../../packages/batch-runtime-services/dist/index.d.ts",
+    "../../packages/batch-types/dist/index.d.ts",
     "../../packages/feature/download/dist/index.d.ts"
   ],
   "exclude": [

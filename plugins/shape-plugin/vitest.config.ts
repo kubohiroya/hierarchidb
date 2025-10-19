@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config';
 import * as fs from 'node:fs';
 import * as path from 'path';
 
-const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-runtime-entities/dist/index.js');
-const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-runtime-entities/src/index.ts');
+const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/dist/index.js');
+const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
 const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
 
 export default defineConfig({
@@ -54,7 +54,7 @@ export default defineConfig({
       '@hierarchidb/runtime-plugin-dialog': path.resolve(__dirname, '../../packages/runtime/plugin-dialog/src/index.ts'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-ui/datasource/src/index.ts'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
-      '@hierarchidb/plugin-runtime-entities': entityServiceEntry,
+      '@hierarchidb/plugin-runtime-services': entityServiceEntry,
       '@hierarchidb/download': path.resolve(
         __dirname,
         '../../packages/feature/download/src/index.ts',

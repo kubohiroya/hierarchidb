@@ -59,3 +59,26 @@ export class FeatureDefinition {
 export * from './UnifiedBatchManagerBase.js';
 export * from './hooks/useBatchProgress.js';
 export * from './progressAdapters.js';
+export type {
+  BaseBatchConfig,
+  BatchProgress,
+  BatchProgressAdapter,
+  BatchProgressCallback,
+  BatchProgressEvent,
+  BatchProgressPayload,
+  BatchSessionId,
+  BatchSessionState,
+  BatchSessionStatus,
+  BatchManagerFactory,
+  IBatchSessionManager,
+  ProgressPhase,
+  StageKey,
+  UnifiedProgressInfo,
+  UseBatchProgressOptions,
+  ProgressSnapshot,
+  ProgressSnapshotStore,
+  BatchPersistence,
+  UnifiedBatchSession,
+  StandardProgressEvent,
+  StandardProgressPayload,
+} from './types.js';

@@ -1,10 +1,15 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "Node16",
-    "lib": ["ES2022", "dom"],
     "moduleResolution": "Node16",
     "baseUrl": ".",
+    "composite": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
     "paths": {
       "@hierarchidb/common-types": ["../common/types/dist/index.d.ts"],
       "@hierarchidb/common-types/*": ["../common/types/dist/*"],
@@ -12,15 +17,16 @@
       "@hierarchidb/common-api/*": ["../common/api/dist/*"],
       "@hierarchidb/runtime-worker": ["../runtime/worker/dist/index.d.ts"],
       "@hierarchidb/runtime-worker/*": ["../runtime/worker/dist/*"],
-      "@hierarchidb/plugin-ui-sdk": ["../batch-sdk/dist/index.d.ts"]
-    },
-    "skipLibCheck": true
+      "@hierarchidb/batch-runtime-services": ["../batch-runtime-services/dist/index.d.ts"],
+      "@hierarchidb/batch-runtime-services/*": ["../batch-runtime-services/dist/*"],
+      "@hierarchidb/batch-types": ["../batch-runtime-services/dist/types.d.ts"]
+    }
   },
   "include": [
-    "../batch-sdk/dist/**/*.d.ts"
+    "../batch-runtime-services/dist/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
+    "dist"
   ]
 }

@@ -10,9 +10,9 @@ import type {
   BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/batch-types';
 import { isBatchControlAPIV2Enabled } from '@hierarchidb/common-api';
-import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch-sdk';
+import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch-runtime-services';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import type { LocationPointInput, LocationTileSettings } from './LocationSessionController.js';
 import { getEphemeralLocationDB, type EphemeralLocationDB } from '../database/EphemeralLocationDB.js';

@@ -43,11 +43,11 @@
       "@hierarchidb/runtime-basic-info/*": [
         "../../packages/runtime/basic-info/dist/*"
       ],
-      "@hierarchidb/batch-sdk": [
-        "../../packages/batch-sdk/dist/index.d.ts"
+      "@hierarchidb/batch-runtime-services": [
+        "../../packages/batch-runtime-services/dist/index.d.ts"
       ],
-      "@hierarchidb/batch-sdk/*": [
-        "../../packages/batch-sdk/dist/*"
+      "@hierarchidb/batch-runtime-services/*": [
+        "../../packages/batch-runtime-services/dist/*"
       ],
       "@hierarchidb/download": [
         "../../packages/feature/download/dist/index.d.ts"

@@ -1,0 +1,24 @@
+{
+  "name": "@hierarchidb/batch-types",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm -w --filter @hierarchidb/batch-runtime-services run build:types && pnpm run build:types",
+    "build:types": "api-extractor run --local"
+  },
+  "devDependencies": {
+    "@hierarchidb/batch-runtime-services": "workspace:*",
+    "@microsoft/api-extractor": "^7.49.3"
+  }
+}

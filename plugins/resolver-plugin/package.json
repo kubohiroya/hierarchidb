@@ -58,7 +58,7 @@
     "prebuild:bundle": "pnpm run build:types"
   },
   "dependencies": {
-    "@hierarchidb/plugin-runtime-entities": "workspace:*"
+    "@hierarchidb/plugin-runtime-services": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",

@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Renames plugin packages and updates all references across the repo.
+ * Renames batch packages from the legacy @hierarchidb/batch-{api,sdk}
+ * naming to the new @hierarchidb/batch-{types,runtime-services} scheme
+ * and updates textual references across the repository.
  *
  * Usage:
- *   node scripts/rename-plugin-packages.mjs --dry-run
- *   node scripts/rename-plugin-packages.mjs
+ *   node scripts/rename-batch-packages.mjs --dry-run
+ *   node scripts/rename-batch-packages.mjs
  */
 
 import { execSync } from 'node:child_process';
 import { existsSync, renameSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,30 +22,26 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 
 const stringReplacements = [
-  // Package names (longest specific first)
-  { from: '@hierarchidb/plugin-entity-service', to: '@hierarchidb/plugin-runtime-services' },
-  { from: '@hierarchidb/plugin-sdk', to: '@hierarchidb/plugin-ui-sdk' },
-  { from: '@hierarchidb/plugin-api', to: '@hierarchidb/plugin-types' },
+  // Scoped package names (longest/specific first)
+  { from: '@hierarchidb/batch-api', to: '@hierarchidb/batch-types' },
+  { from: '@hierarchidb/batch-sdk', to: '@hierarchidb/batch-runtime-services' },
 
   // Workspace directory references
-  { from: 'packages/plugin-entity-service', to: 'packages/plugin-runtime-services' },
-  { from: 'packages/plugin-sdk', to: 'packages/plugin-ui-sdk' },
-  { from: 'packages/plugin-api', to: 'packages/plugin-types' },
+  { from: 'packages/batch-api', to: 'packages/batch-types' },
+  { from: 'packages/batch-sdk', to: 'packages/batch-runtime-services' },
 
-  // Bare identifiers (after the scoped replacements)
-  { from: 'plugin-entity-service', to: 'plugin-runtime-services' },
-  { from: 'plugin-sdk', to: 'plugin-ui-sdk' },
-  { from: 'plugin-api', to: 'plugin-types' },
+  // Unscoped identifiers
+  { from: 'batch-api', to: 'batch-types' },
+  { from: 'batch-sdk', to: 'batch-runtime-services' },
 ];
 
 const directoryRenames = [
-  { from: 'packages/plugin-entity-service', to: 'packages/plugin-runtime-services' },
-  { from: 'packages/plugin-sdk', to: 'packages/plugin-ui-sdk' },
-  { from: 'packages/plugin-api', to: 'packages/plugin-types' },
+  { from: 'packages/batch-api', to: 'packages/batch-types' },
+  { from: 'packages/batch-sdk', to: 'packages/batch-runtime-services' },
 ];
 
 function getGitFiles() {
-  const output = execSync('git ls-files', { encoding: 'utf8', cwd: dirname(__dirname) });
+  const output = execSync('git ls-files', { encoding: 'utf8', cwd: resolve(__dirname, '..') });
   return output.split('\n').filter(Boolean);
 }
 
@@ -58,27 +56,25 @@ function isTextualFile(path) {
 
 function applyReplacements(content) {
   let changed = false;
-  let next = content;
+  let result = content;
   for (const { from, to } of stringReplacements) {
-    if (next.includes(from)) {
-      next = next.split(from).join(to);
+    if (result.includes(from)) {
+      result = result.split(from).join(to);
       changed = true;
     }
   }
-  return { changed, content: next };
+  return { changed, content: result };
 }
 
-const repoRoot = dirname(__dirname);
-const files = getGitFiles().filter(path => path !== 'scripts/rename-plugin-packages.mjs');
+const repoRoot = resolve(__dirname, '..');
+const files = getGitFiles().filter(path => path !== 'scripts/rename-batch-packages.mjs');
 
 const modifiedFiles = [];
 
 for (const relativePath of files) {
-  if (!isTextualFile(relativePath)) {
-    continue;
-  }
+  if (!isTextualFile(relativePath)) continue;
 
-  const fullPath = `${repoRoot}/${relativePath}`;
+  const fullPath = resolve(repoRoot, relativePath);
   let original;
   try {
     original = readFileSync(fullPath, 'utf8');
@@ -90,7 +86,6 @@ for (const relativePath of files) {
   if (!changed) continue;
 
   modifiedFiles.push(relativePath);
-
   if (!dryRun) {
     writeFileSync(fullPath, content, 'utf8');
   }
@@ -98,8 +93,8 @@ for (const relativePath of files) {
 
 const dirActions = [];
 for (const { from, to } of directoryRenames) {
-  const fromPath = `${repoRoot}/${from}`;
-  const toPath = `${repoRoot}/${to}`;
+  const fromPath = resolve(repoRoot, from);
+  const toPath = resolve(repoRoot, to);
   if (!existsSync(fromPath)) {
     continue;
   }
@@ -109,7 +104,7 @@ for (const { from, to } of directoryRenames) {
   }
 }
 
-console.log(`Renaming packages ${dryRun ? '(dry-run)' : ''}`);
+console.log(`Batch package rename ${dryRun ? '(dry-run)' : ''}`);
 console.log('String replacements applied to', modifiedFiles.length, 'files.');
 if (modifiedFiles.length && dryRun) {
   for (const file of modifiedFiles) {

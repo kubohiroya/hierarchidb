@@ -10,6 +10,12 @@
       ],
       "@hierarchidb/plugin-ui-sdk/*": [
         "../../packages/plugin-ui-sdk/dist/*"
+      ],
+      "@hierarchidb/plugin-runtime-services": [
+        "../../packages/plugin-runtime-services/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-runtime-services/*": [
+        "../../packages/plugin-runtime-services/dist/*"
       ]
     },
     "declarationDir": "./dist",

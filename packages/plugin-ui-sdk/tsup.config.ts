@@ -7,7 +7,7 @@ export default createTsupConfig({
     'dexie', 'react',
   "@hierarchidb/common-types",
   "@hierarchidb/common-api",
-  "@hierarchidb/batch-api",
+  "@hierarchidb/batch-types",
   "@hierarchidb/runtime-worker"
 ],
 });

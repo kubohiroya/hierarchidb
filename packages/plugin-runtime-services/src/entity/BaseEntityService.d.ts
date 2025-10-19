@@ -1,6 +1,6 @@
 import type { Collection, IndexableType, Table } from 'dexie';
 import type { BaseEntity, NodeId } from '@hierarchidb/common-types';
-import type { BaseSearchCriteria, EntityLifecycleHooks, OperationResult, PaginatedResult } from '@hierarchidb/plugin-ui-sdk';
+import type { BaseSearchCriteria, EntityLifecycleHooks, OperationResult, PaginatedResult } from '@hierarchidb/plugin-types';
 /**
  * Lightweight runtime replacement for the legacy plugin-ui-sdk BaseEntityHandler.
  * Provides the CRUD/search primitives needed by in-repo plugins without

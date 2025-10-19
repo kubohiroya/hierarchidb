@@ -11,11 +11,11 @@ packages:
   - packages/ui/treeconsole/*
   - packages/backend/*
   - packages/feature/*
-  - packages/plugin-runtime-entities
+  - packages/plugin-runtime-services
   - packages/plugin-ui-sdk
   - packages/plugin-types
-  - packages/batch-sdk
-  - packages/batch-api
+  - packages/batch-runtime-services
+  - packages/batch-types
   - plugins/*
   # Spreadsheet plugin now included for local build/test
 

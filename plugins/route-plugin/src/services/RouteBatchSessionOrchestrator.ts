@@ -2,14 +2,14 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { RouteBatchManager, type RouteBatchRouteInput, type RouteBatchManagerDeps } from './RouteBatchManager.js';
 import { RouteDatabase } from './database/RouteDatabase.js';
 import { RouteBatchConfig } from './RouteBatchSession.js';
-import {
+import type {
   BatchProgressCallback,
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
   IBatchSessionManager,
   StageKey,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/batch-types';
 
 export interface RouteBatchSessionConfig {
   routeGeneration?: Partial<RouteBatchConfig['routeGeneration']>;

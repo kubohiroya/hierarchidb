@@ -4,7 +4,7 @@ import {
   BaseEntityService,
   createDraftWorkingCopyBase,
   markWorkingCopyUpdated,
-} from '@hierarchidb/plugin-runtime-entities';
+} from '@hierarchidb/plugin-runtime-services';
 import { resolverDB } from './database/ResolverDatabase.js';
 import type {
   DataTransformation,

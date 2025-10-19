@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch-sdk';
+import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch-runtime-services';
 import type { DownloadTask } from '../../common/types.js';
 import type { ProgressInfo } from '../../../common/shared/index.js';
 import type { DownloadStageAdapter, DownloadStageAdapterResult } from './DownloadStageAdapter.js';

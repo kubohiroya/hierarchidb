@@ -1,5 +1,5 @@
-import { AbstractBatchSession } from '@hierarchidb/batch-sdk';
-import type { BaseBatchConfig, BatchProgressEvent } from '@hierarchidb/common-api';
+import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
+import type { BaseBatchConfig, BatchProgressEvent } from '@hierarchidb/batch-types';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import type { ProgressInfo } from '../common/types.js';
 import type { ProcessingStage } from '../../common/shared/types.js';

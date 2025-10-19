@@ -49,7 +49,7 @@
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
   "peerDependencies": {
@@ -67,7 +67,7 @@
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
-    "@hierarchidb/batch-api": "workspace:*",
+    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
   "tsup": {

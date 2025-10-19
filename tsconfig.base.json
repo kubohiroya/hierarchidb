@@ -31,14 +31,14 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@hierarchidb/batch-sdk": [
-        "packages/batch-sdk/src/index.ts"
+      "@hierarchidb/batch-runtime-services": [
+        "packages/batch-runtime-services/src/index.ts"
       ],
-      "@hierarchidb/batch-sdk/*": [
-        "packages/batch-sdk/src/*"
+      "@hierarchidb/batch-runtime-services/*": [
+        "packages/batch-runtime-services/src/*"
       ],
-      "@hierarchidb/batch-api": [
-        "packages/batch-sdk/src/index.ts"
+      "@hierarchidb/batch-types": [
+        "packages/batch-runtime-services/src/types.ts"
       ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
@@ -157,11 +157,11 @@
       "@hierarchidb/plugin-ui-sdk/*": [
         "packages/plugin-ui-sdk/dist/*"
       ],
-      "@hierarchidb/plugin-runtime-entities": [
-        "packages/plugin-runtime-entities/dist/index.d.ts"
+      "@hierarchidb/plugin-runtime-services": [
+        "packages/plugin-runtime-services/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-runtime-entities/*": [
-        "packages/plugin-runtime-entities/dist/*"
+      "@hierarchidb/plugin-runtime-services/*": [
+        "packages/plugin-runtime-services/dist/*"
       ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"

@@ -1,7 +1,4 @@
-import {
-  AbstractBatchSession,
-} from '@hierarchidb/batch-api';
-import { BatchService } from '@hierarchidb/batch-sdk';
+import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from './database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';

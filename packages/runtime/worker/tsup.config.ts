@@ -19,7 +19,7 @@ const cfg = createTsupConfig({
   "@hierarchidb/tabular-source",
   "@hierarchidb/tag",
   "@hierarchidb/util",
-  "@hierarchidb/batch-api",
+  "@hierarchidb/batch-types",
   "@hierarchidb/feature-registry",
   "@maplibre/vt-pbf",
     'virtual:plugin-registry-worker'

@@ -22,7 +22,7 @@ import {
   createDownloadService,
   downloadWithService,
   type DownloadServiceHandle,
-} from '@hierarchidb/plugin-runtime-entities';
+} from '@hierarchidb/plugin-runtime-services';
 
 // Chunk configuration for large table support
 interface ChunkConfig {

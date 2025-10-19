@@ -4,14 +4,14 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
-import {
-  type BatchProgressCallback,
-  type BatchSessionStatus,
-  type BatchProgressEvent,
-  type IBatchSessionManager,
-  type ProgressPhase,
-  isBatchControlAPIV2Enabled,
-} from '@hierarchidb/common-api';
+import type {
+  BatchProgressCallback,
+  BatchProgressEvent,
+  BatchSessionStatus,
+  IBatchSessionManager,
+  ProgressPhase,
+} from '@hierarchidb/batch-types';
+import { isBatchControlAPIV2Enabled } from '@hierarchidb/common-api';
 import { BatchSessionManager, type BatchSessionOptions } from './BatchSessionManager.js';
 import type { BatchProcessConfig } from './types.js';
 import type { UrlMetadata } from '../../common/shared/types.js';

@@ -40,11 +40,11 @@
       "@hierarchidb/plugin-ui-sdk/*": [
         "../../packages/plugin-ui-sdk/dist/*"
       ],
-      "@hierarchidb/plugin-runtime-entities": [
-        "../../packages/plugin-runtime-entities/dist/index.d.ts"
+      "@hierarchidb/plugin-runtime-services": [
+        "../../packages/plugin-runtime-services/dist/index.d.ts"
       ],
-      "@hierarchidb/plugin-runtime-entities/*": [
-        "../../packages/plugin-runtime-entities/dist/*"
+      "@hierarchidb/plugin-runtime-services/*": [
+        "../../packages/plugin-runtime-services/dist/*"
       ],
       "@hierarchidb/ui-tabular-extract": [
         "../../packages/ui/tabular-extract/dist/index.d.ts"

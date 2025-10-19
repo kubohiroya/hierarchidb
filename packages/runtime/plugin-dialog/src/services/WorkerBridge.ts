@@ -5,7 +5,7 @@ import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
-} from '@hierarchidb/common-api';
+} from '@hierarchidb/batch-types';
 
 export interface WorkerBridge {
   initialize(): Promise<void>;
