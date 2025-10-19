@@ -1,4 +1,5 @@
-import type { PluginMetadata, NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
+import type { PluginMetadata } from '@hierarchidb/plugin-api';
 
 export const PLUGIN_ID = '@hierarchidb/resolver-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
