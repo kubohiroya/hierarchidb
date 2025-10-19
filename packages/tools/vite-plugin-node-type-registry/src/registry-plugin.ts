@@ -166,11 +166,8 @@ function generateMapsModule(entries: PluginRegistryEntry[]): string {
     }
 
     if (entry.hasCommon) {
-      const target = entry.fallbackServiceImport === './common' || entry.fallbackServiceImport === 'common'
-        ? `${pkg}/common`
-        : `${pkg}/common`;
       commonLines.push(`  '${nodeType}': async () => {
-    const mod = await import('${target}');
+    const mod = await import('${pkg}/common');
     return await __callOnRegister(mod, 'common:${nodeType}');
   },`);
     } else {

@@ -10,7 +10,7 @@ import {
   isAllowedWorkerFlag,
 } from './config/worker-flag-overrides.js';
 import { APP_VERSION } from './version.js';
-import { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-client to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.

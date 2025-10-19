@@ -69,9 +69,11 @@
     "react-dom": "^18.3.1",
     "comlink": "^4.4.1",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },
@@ -90,9 +92,11 @@
     "vitest": "^3.2.4",
     "comlink": "^4.4.1",
     "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*"
   },

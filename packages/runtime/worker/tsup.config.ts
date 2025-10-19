@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../../tsup.base.config.js';
+import { createTsupConfig } from '../../../tsup.base.config.ts';
 
 const cfg = createTsupConfig({
   // Build main entry (index) and worker entry

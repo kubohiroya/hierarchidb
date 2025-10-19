@@ -4,8 +4,7 @@
     "outDir": "./dist",
     "jsx": "react-jsx",
     "module": "Node16",
-    "moduleResolution": "Node16",
-    "baseUrl": "../.."
+    "moduleResolution": "Node16"
   },
   "include": [
     "src/**/*"

@@ -19,8 +19,11 @@ export function registerRouteDownloadServiceFactory(f: Factory): void {
  * Resolve the route download service. Falls back to the built-in factory.
  */
 export async function getRouteDownloadService(opts?: RouteDownloadFactoryOptions): Promise<RouteDownloadService> {
-  const effectiveFactory = factory ?? createDownloadService;
-  return effectiveFactory(mergeOptions(opts));
+  const options = mergeOptions(opts);
+  if (factory) {
+    return factory(options);
+  }
+  return createDownloadService(options);
 }
 
 /**

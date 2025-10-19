@@ -7,7 +7,7 @@ import type React from 'react';
 import { useCallback } from 'react';
 import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
-import {TagChipsInput} from '@hierarchidb/ui-basic-info';
+import { TagChipsInput } from '@hierarchidb/runtime-basic-info';
 
 export interface BasicInfoData {
   name: string;

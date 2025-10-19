@@ -57,6 +57,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
@@ -70,6 +71,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
@@ -92,7 +94,6 @@
       "@mui/material",
       "@hierarchidb/ui-dialog",
       "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-shared-module-paths",
       "react"
     ]
   }

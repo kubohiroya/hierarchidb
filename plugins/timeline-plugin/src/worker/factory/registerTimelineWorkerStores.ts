@@ -20,24 +20,23 @@ async function resolveStoreRegistry(options: RegisterTimelineWorkerStoresOptions
   }
 
   try {
-    const { importRuntimeWorker } = await import('@hierarchidb/runtime-shared-module-paths');
-    const runtime = await importRuntimeWorker();
-    return runtime.storeRegistry as StoreRegistry;
+    const runtimeModule = await import('@hierarchidb/runtime-worker');
+    return (runtimeModule as unknown as { storeRegistry?: StoreRegistry }).storeRegistry ?? null;
   } catch (error) {
     if (import.meta.env?.DEV) {
-      console.warn('[timeline-worker] failed to import runtime worker moduleが残っている', error);
+      console.warn('[timeline-worker] failed to resolve runtime worker module', error);
     }
     return null;
   }
 }
 
 async function ensureTimelineStores(registry: StoreRegistry): Promise<void> {
-  const { TimelineEntitiesDB } = await import('../worker/timelineEntitiesDB.js');
+  const { TimelineEntitiesDB } = await import('../timelineEntitiesDB.js');
   const db = new TimelineEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('timeline')) {
-    const { createTimelinePeerStoreDexie } = await import('../worker/timelinePeerStore.dexie.js');
+    const { createTimelinePeerStoreDexie } = await import('../timelinePeerStore.dexie.js');
     registry.registerPeer('timeline', createTimelinePeerStoreDexie(db));
   }
 }
@@ -62,9 +61,8 @@ export async function registerTimelineWorkerStores(options: RegisterTimelineWork
 }
 
 export async function loadTimelineEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/timelineEntitiesDB.js');
+  return import(/* @vite-ignore */ '../timelineEntitiesDB.js');
 }
 
 // Maintain legacy side-effect registration for existing consumers
 registerTimelineWorkerStores().catch(() => {});
-

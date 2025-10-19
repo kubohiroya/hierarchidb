@@ -22,15 +22,8 @@ async function resolveStoreRegistry(options: RegisterShapeWorkerStoresOptions = 
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  try {
-    const runtime = await import('@hierarchidb/runtime-worker');
-    return runtime.storeRegistry as StoreRegistry;
-  } catch (error) {
-    if (import.meta.env?.DEV) {
-      console.warn('[shape-worker] failed to import runtime worker module', error);
-    }
-    return null;
-  }
+  const runtime = await import('@hierarchidb/runtime-worker');
+  return runtime.storeRegistry as StoreRegistry;
 }
 
 async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
@@ -38,7 +31,7 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
     ShapeEntitiesDB: new () => { open?: () => Promise<unknown> };
   };
 
-  const { ShapeEntitiesDB } = (await import('../worker/shapeEntitiesDB.js')) as ShapeEntitiesDbModule;
+  const { ShapeEntitiesDB } = (await import('../shapeEntitiesDB.js')) as ShapeEntitiesDbModule;
   const db = new ShapeEntitiesDB();
   const maybeOpen = (db as { open?: () => Promise<unknown> }).open;
   if (typeof maybeOpen === 'function') {
@@ -46,21 +39,21 @@ async function ensureShapeStores(registry: StoreRegistry): Promise<void> {
   }
 
   if (!registry.getPeer('shape')) {
-    const { createShapePeerStoreDexie } = (await import('../worker/shapePeerStore.dexie.js')) as {
+    const { createShapePeerStoreDexie } = (await import('../shapePeerStore.dexie.js')) as {
       createShapePeerStoreDexie: (db: unknown) => PeerStore<unknown>;
     };
     registry.registerPeer('shape', createShapePeerStoreDexie(db));
   }
 
   if (!registry.getGroup('shape')) {
-    const { createShapeGroupStoreDexie } = (await import('../worker/shapeGroupStore.dexie.js')) as {
+    const { createShapeGroupStoreDexie } = (await import('../shapeGroupStore.dexie.js')) as {
       createShapeGroupStoreDexie: (db: unknown) => GroupStore<GroupItemBase<any>>;
     };
     registry.registerGroup('shape', createShapeGroupStoreDexie(db));
   }
 
   if (!registry.getRelations('shape')) {
-    const { createShapeRelationStoreDexie } = (await import('../worker/shapeRelationStore.dexie.js')) as {
+    const { createShapeRelationStoreDexie } = (await import('../shapeRelationStore.dexie.js')) as {
       createShapeRelationStoreDexie: (db: unknown) => RelationStore<RelationBase<any>>;
     };
     registry.registerRelations('shape', createShapeRelationStoreDexie(db));
@@ -77,17 +70,11 @@ export async function registerShapeWorkerStores(options: RegisterShapeWorkerStor
     return;
   }
 
-  try {
-    await ensureShapeStores(registry);
-  } catch (error) {
-    if (import.meta.env?.DEV) {
-      console.warn('[shape-worker] failed to register Dexie stores', error);
-    }
-  }
+  await ensureShapeStores(registry);
 }
 
 export async function loadShapeEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../worker/shapeEntitiesDB.js');
+  return import(/* @vite-ignore */ '../shapeEntitiesDB.js');
 }
 
 registerShapeWorkerStores().catch(() => {});

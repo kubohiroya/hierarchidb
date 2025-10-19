@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.js';
+import { createTsupConfig } from '../../tsup.base.config.ts';
 
 export default createTsupConfig({
   // Full build: library + UI + worker + dedicated workers

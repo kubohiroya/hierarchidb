@@ -1,7 +1,7 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { FramesPreviewStep } from './steps/FramesPreviewStep.js';
-import { MapPreviewStep } from './steps/MapPreviewStep.js';
-import { AnimationViewerStep } from './steps/AnimationViewerStep.js';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
+import { MapPreviewStep } from '../steps/MapPreviewStep.js';
+import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
 
 const registry = PluginStepRegistry.getInstance();
 

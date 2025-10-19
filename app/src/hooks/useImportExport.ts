@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportProgress as APIImportProgress } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
-import { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 // Import/Export Types
 export interface ImportFileOptions {

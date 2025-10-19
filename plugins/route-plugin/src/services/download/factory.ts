@@ -1,4 +1,4 @@
-import type { DownloadService, DownloadServiceOptions } from '@hierarchidb/download';
+import type { DownloadServiceBundle, DownloadServiceOptions } from '@hierarchidb/download';
 
-export type RouteDownloadService = DownloadService;
+export type RouteDownloadService = DownloadServiceBundle;
 export type RouteDownloadFactoryOptions = DownloadServiceOptions;

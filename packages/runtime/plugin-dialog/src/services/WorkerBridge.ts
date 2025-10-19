@@ -1,11 +1,11 @@
 import type { Remote } from 'comlink';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
-import type { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   BatchProgressEvent,
   BatchSessionId,
   BatchSessionStatus,
-} from '@hierarchidb/batch-api';
+} from '@hierarchidb/common-api';
 
 export interface WorkerBridge {
   initialize(): Promise<void>;

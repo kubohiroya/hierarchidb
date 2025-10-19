@@ -8,8 +8,8 @@
 import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/runtime-worker';
-import { WorkerInitializationChannel, type WorkerClientRef } from '../../../packages/runtime/client';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import { WorkerInitializationChannel, type WorkerClientRef } from '@hierarchidb/runtime-client';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -44,19 +44,6 @@ const getNotInitializedErrorCtor = () => getWorkerAPIClientModule()?.NotInitiali
 const isNotInitializedError = (error: unknown): boolean => {
   const NotInitialized = getNotInitializedErrorCtor();
   return Boolean(NotInitialized && error instanceof NotInitialized);
-};
-
-const getWorkerClientSingleton = (): Remote<WorkerAPI> | null => {
-  const Client = getWorkerClientClass();
-  if (!Client) return null;
-  try {
-    return Client.getSingleton();
-  } catch (error) {
-    if (isNotInitializedError(error)) {
-      return null;
-    }
-    throw error;
-  }
 };
 
 const isWorkerClientReady = (): boolean => {

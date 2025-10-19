@@ -1,10 +1,10 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
-import { SchemaSelectionStep } from '../common/components/steps/SchemaSelectionStep.js';
-import { PropertyMappingStep } from '../common/components/steps/PropertyMappingStep.js';
-import { ValidationConfigStep } from '../common/components/steps/ValidationConfigStep.js';
-import { DuplicateResolutionStep } from '../common/components/steps/DuplicateResolutionStep.js';
-import { PreviewTestStep } from '../common/components/steps/PreviewTestStep.js';
-import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '../types/index.ts';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
+import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
+import { ValidationConfigStep } from './steps/ValidationConfigStep.js';
+import { DuplicateResolutionStep } from './steps/DuplicateResolutionStep.js';
+import { PreviewTestStep } from './steps/PreviewTestStep.js';
+import type { ResolverWorkingCopyEntity, SchemaInfo, MappingValidationResult } from '../../common/types/index.js';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -14,7 +14,7 @@ type ResolverData = Partial<ResolverWorkingCopyEntity> & {
   lastValidation?: MappingValidationResult | null;
 };
 
-type P = StepComponentProps & { data: ResolverData };
+type ResolverStepProps = StepComponentProps & { data: ResolverData };
 
 registry.registerConfigProvider({
   nodeType: 'resolver',
@@ -22,62 +22,77 @@ registry.registerConfigProvider({
     return [
       {
         id: 'schema', label: 'Schema Selection', validate: () => true,
-        componentFactory: (p: P) => (
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData: ResolverData = p.data ?? {};
+          return (
           <SchemaSelectionStep
-            data={p.data}
-            onUpdate={(u) => p.onChange({ ...(p.data || {}), ...u })}
+            data={currentData}
+            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
             onValidationChange={p.setValid}
-            onSourceSchemaChange={(s) => p.onChange({ ...(p.data || {}), sourceSchema: s })}
-            onTargetSchemaChange={(s) => p.onChange({ ...(p.data || {}), targetSchema: s })}
+            onSourceSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, sourceSchema: schema })}
+            onTargetSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, targetSchema: schema })}
           />
-        ),
+          );
+        },
       },
       {
         id: 'mapping', label: 'Property Mapping', validate: () => true,
-        componentFactory: (p: P) => (
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData: ResolverData = p.data ?? {};
+          return (
           <PropertyMappingStep
-            data={p.data}
-            onUpdate={(u) => p.onChange({ ...(p.data || {}), ...u })}
+            data={currentData}
+            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
             onValidationChange={p.setValid}
-            sourceSchema={p.data?.sourceSchema ?? null}
-            targetSchema={p.data?.targetSchema ?? null}
+            sourceSchema={currentData.sourceSchema ?? null}
+            targetSchema={currentData.targetSchema ?? null}
           />
-        ),
+          );
+        },
       },
       {
         id: 'validation', label: 'Validation Rules', validate: () => true,
-        componentFactory: (p: P) => (
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData: ResolverData = p.data ?? {};
+          return (
           <ValidationConfigStep
-            data={p.data}
-            onUpdate={(u) => p.onChange({ ...(p.data || {}), ...u })}
+            data={currentData}
+            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
             onValidationChange={p.setValid}
-            sourceSchema={p.data?.sourceSchema ?? null}
-            targetSchema={p.data?.targetSchema ?? null}
+            sourceSchema={currentData.sourceSchema ?? null}
+            targetSchema={currentData.targetSchema ?? null}
           />
-        ),
+          );
+        },
       },
       {
         id: 'dedupe', label: 'Duplicate Resolution', validate: () => true,
-        componentFactory: (p: P) => (
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData: ResolverData = p.data ?? {};
+          return (
           <DuplicateResolutionStep
-            data={p.data}
-            onUpdate={(u) => p.onChange({ ...(p.data || {}), ...u })}
+            data={currentData}
+            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
             onValidationChange={p.setValid}
           />
-        ),
+          );
+        },
       },
       {
         id: 'preview', label: 'Preview/Test', validate: () => true,
-        componentFactory: (p: P) => (
+        componentFactory: (p: ResolverStepProps) => {
+          const currentData: ResolverData = p.data ?? {};
+          return (
           <PreviewTestStep
-            data={p.data}
-            onUpdate={(u) => p.onChange({ ...(p.data || {}), ...u })}
+            data={currentData}
+            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
             onValidationChange={p.setValid}
-            sourceSchema={p.data?.sourceSchema ?? null}
-            targetSchema={p.data?.targetSchema ?? null}
-            onValidationResult={(r) => p.onChange({ ...(p.data || {}), lastValidation: r })}
+            sourceSchema={currentData.sourceSchema ?? null}
+            targetSchema={currentData.targetSchema ?? null}
+            onValidationResult={(result: MappingValidationResult | null) => p.onChange({ ...currentData, lastValidation: result })}
           />
-        ),
+          );
+        },
       },
     ];
   },

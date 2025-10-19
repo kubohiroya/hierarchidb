@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CheckCircle as CheckIcon, Schema as SchemaIcon } from '@mui/icons-material';
-import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '../../types/index.js';
+import type { PropertyInfo, ResolverWorkingCopyEntity, SchemaInfo } from '../../../common/types/index.js';
 
 interface SchemaSelectionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -88,7 +88,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         }
       });
 
-      const properties: PropertyInfo[] = Array.from(allProperties).map(name => ({
+      const properties: PropertyInfo[] = Array.from(allProperties).map((name: string) => ({
         name,
         type: propertyTypes.get(name) as PropertyInfo['type'] || 'string',
         required: false, // Can't determine from sample alone
@@ -176,7 +176,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
         {schema.properties.length} properties detected
       </Typography>
       <List dense>
-        {schema.properties.slice(0, 8).map((prop) => (
+        {schema.properties.slice(0, 8).map((prop: PropertyInfo) => (
           <ListItem key={prop.name} sx={{ py: 0.5 }}>
             <ListItemText
               primary={prop.name}
@@ -229,7 +229,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
               onChange={(e) => setSourceInputMethod(e.target.value)}
               label="Input Method"
             >
-              {SCHEMA_INPUT_METHODS.map((method) => (
+              {SCHEMA_INPUT_METHODS.map((method: typeof SCHEMA_INPUT_METHODS[number]) => (
                 <MenuItem key={method.value} value={method.value}>
                   {method.label}
                 </MenuItem>
@@ -266,7 +266,7 @@ export const SchemaSelectionStep: React.FC<SchemaSelectionStepProps> = ({
               onChange={(e) => setTargetInputMethod(e.target.value)}
               label="Input Method"
             >
-              {SCHEMA_INPUT_METHODS.map((method) => (
+              {SCHEMA_INPUT_METHODS.map((method: typeof SCHEMA_INPUT_METHODS[number]) => (
                 <MenuItem key={method.value} value={method.value}>
                   {method.label}
                 </MenuItem>

@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add as AddIcon, Close as CloseIcon, Help as HelpIcon, Preview as PreviewIcon } from '@mui/icons-material';
-import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '../../types/index.js';
+import type { MappingPreviewResult, PropertyMappingRule, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo } from '../../../common/types/index.js';
 
 interface PropertyMappingStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -87,7 +87,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
 
   // Convert mapping rules back to text
   const formatMappingRules = useCallback((rules: PropertyMappingRule[]): string => {
-    return rules.map(rule => {
+    return rules.map((rule: PropertyMappingRule) => {
       let line = `${rule.sourceProperty} -> ${rule.targetProperty}`;
       if (rule.transformFunction) {
         line += ` | ${rule.transformFunction}`;
@@ -150,7 +150,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
         return sourceLower.includes(targetLower) || targetLower.includes(sourceLower);
       });
 
-      if (similarMatch && !suggestions.some(s => s.includes(sourceProp.name))) {
+      if (similarMatch && !suggestions.some((s: string) => s.includes(sourceProp.name))) {
         suggestions.push(`${sourceProp.name} -> ${similarMatch.name}`);
       }
     });
@@ -252,7 +252,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
             <Alert severity="error" sx={{ mt: 2 }}>
               <Typography variant="subtitle2">Mapping Errors:</Typography>
               <List dense>
-                {mappingErrors.map((error, index) => (
+                {mappingErrors.map((error: string, index: number) => (
                   <ListItem key={index} sx={{ py: 0 }}>
                     <ListItemText primary={error} />
                   </ListItem>
@@ -274,7 +274,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
                 Click to add suggested mappings:
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {suggestedMappings.map((suggestion, index) => (
+                {suggestedMappings.map((suggestion: string, index: number) => (
                   <Button
                     key={index}
                     variant="outlined"
@@ -296,7 +296,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
               Source Properties ({sourceSchema.properties.length})
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {sourceSchema.properties.map((prop) => (
+              {sourceSchema.properties.map((prop: PropertyInfo) => (
                 <Chip
                   key={prop.name}
                   label={prop.name}
@@ -314,7 +314,7 @@ export const PropertyMappingStep: React.FC<PropertyMappingStepProps> = ({
               Target Properties ({targetSchema.properties.length})
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {targetSchema.properties.map((prop) => (
+              {targetSchema.properties.map((prop: PropertyInfo) => (
                 <Chip
                   key={prop.name}
                   label={prop.name}
@@ -422,7 +422,7 @@ date -> created_at | parse_date
                       <Box sx={{ mt: 2 }}>
                         <Typography variant="body2" sx={{ mb: 1 }}>Unmapped Source Properties:</Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {previewResult.unmappedProperties.map(prop => (
+                    {previewResult.unmappedProperties.map((prop: string) => (
                             <Chip key={prop} label={prop} size="small" color="warning" variant="outlined" />
                           ))}
                         </Box>

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-types';
 import type { WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-client';
-import type { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { Remote } from 'comlink';
 
 export interface WorkingCopyData {

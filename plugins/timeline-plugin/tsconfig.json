@@ -20,12 +20,6 @@
 "noFallthroughCasesInSwitch": true,
 "jsx": "react-jsx",
 "jsxImportSource": "react",
-"baseUrl": ".",
-"paths": {
-  "~/*": [
-    "./src/*"
-  ]
-},
 "module": "Node16"
 },
 "include": [

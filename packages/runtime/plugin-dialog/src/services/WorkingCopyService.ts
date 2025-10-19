@@ -5,7 +5,7 @@
 
 import type { CommitResult, NodeId, TreeId } from '@hierarchidb/common-types';
 import type { CommitWorkingCopyOptions } from '@hierarchidb/common-api';
-import type {WorkerAPI} from '@hierarchidb/runtime-worker';
+import type {WorkerAPI} from '@hierarchidb/common-api';
 
 /**
  * Working copy state with capabilities

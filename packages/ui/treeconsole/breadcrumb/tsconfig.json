@@ -29,7 +29,5 @@
     "dist"
   ],
   "references": [
-    { "path": "../../core" },
-    { "path": "../../icon" }
   ]
 }

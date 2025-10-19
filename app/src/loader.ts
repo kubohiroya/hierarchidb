@@ -7,8 +7,7 @@ import type {
   TreeNode,
 } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
-import type { DialogStateAPI } from '@hierarchidb/common-api';
-import type { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
 import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
 import { loadAppConfig } from '~/loadAppConfig.js';
 import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
@@ -228,15 +227,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
     await ensureInitComplete();
 
     // Obtain the instance
-    let client: Remote<WorkerAPI>;
-    try {
-      client = WorkerAPIClient.getSingleton();
-    } catch (getSingletonError) {
-      // WorkerAPIClient may still be finalising verification even after INIT_COMPLETE.
-      // Fall back to the guarded path that waits for initialization to finish.
-      client = await WorkerAPIClient.getOrInit();
-    }
-
+    const client: Remote<WorkerAPI> = WorkerAPIClient.getSingleton();
     await ensureDialogStateAPI(client);
 
     return {

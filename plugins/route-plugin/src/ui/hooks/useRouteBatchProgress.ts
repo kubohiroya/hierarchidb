@@ -40,7 +40,7 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
 
   const adapter = useMemo(() => {
     if (!jobId) return null;
-    return createAdapterFromProgressSubscribe((eventCallback) => bridgeRef.current.subscribeBatchProgress(
+    return createAdapterFromProgressSubscribe((eventCallback: (event: BatchProgressEvent) => void) => bridgeRef.current.subscribeBatchProgress(
       ROUTE_NODE_TYPE,
       jobId,
       (event: BatchProgressEvent) => {

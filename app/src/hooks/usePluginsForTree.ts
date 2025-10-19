@@ -6,25 +6,10 @@
  */
 
 import { useEffect, useState } from 'react';
-import type { PluginDefinition, TreeId } from '@hierarchidb/common-types';
-import type { TreePluginInfo, WorkerAPI } from '@hierarchidb/common-api';
+import type { TreeId } from '@hierarchidb/common-types';
+import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/plugin-sdk';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
-
-// Extend WorkerAPI with optional experimental facades to avoid unsafe casts
-type NodeTypeRegistryAPI = { getPluginsForTree(treeId: TreeId): Promise<PluginDefinition[]> };
-type TreePluginAnalyzerAPI = {
-  getPluginsForTree(args: {
-    treeId: TreeId;
-    filters?: any;
-    sortBy?: string;
-    sortOrder?: string;
-  }): Promise<{ plugins: TreePluginInfo[] }>;
-};
-
-type ExtendedWorkerAPI = WorkerAPI & {
-  getNodeTypeRegistryAPI?: () => Promise<NodeTypeRegistryAPI>;
-  getTreePluginAnalyzer?: () => Promise<TreePluginAnalyzerAPI>;
-};
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];

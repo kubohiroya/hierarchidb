@@ -1,8 +1,8 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
 import type { NodeId } from '@hierarchidb/common-types';
-import { ResourcePicker, type ResourceSummary } from './steps/ResourcePicker.js';
-import { AggregatedList } from './steps/AggregatedList.js';
-import { MapPreview } from './steps/MapPreview.js';
+import { ResourcePicker, type ResourceSummary } from '../steps/ResourcePicker.js';
+import { AggregatedList } from '../steps/AggregatedList.js';
+import { MapPreview } from '../steps/MapPreview.js';
 
 type P = StepComponentProps & { data: { likedNodeIdSet?: Set<string> | string[] } };
 const registry = PluginStepRegistry.getInstance();
@@ -17,7 +17,8 @@ registry.registerConfigProvider({
         componentFactory: (p: P) => (
           <ResourcePicker
             value={new Set<string>(Array.isArray(p.data?.likedNodeIdSet) ? (p.data!.likedNodeIdSet as string[]) : Array.from(p.data?.likedNodeIdSet || new Set<string>()))}
-            onChange={(setLike) => p.onChange({ ...(p.data || {}), likedNodeIdSet: new Set<string>(setLike) })}
+            onChange={(setLike: Set<string>) =>
+              p.onChange({ ...(p.data || {}), likedNodeIdSet: new Set<string>(setLike) })}
             notice={'Select resources from the tree. Multiple selection is allowed. Data is read-only.'}
           />
         ),

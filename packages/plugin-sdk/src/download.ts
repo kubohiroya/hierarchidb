@@ -1,4 +1,5 @@
 import { createDownloadService } from '@hierarchidb/download';
+export { createDownloadService } from '@hierarchidb/download';
 import type { DownloadOptions, DownloadResult } from '@hierarchidb/download';
 
 export type DownloadServiceHandle = Awaited<ReturnType<typeof createDownloadService>>;
@@ -87,10 +88,7 @@ export async function downloadWithService(
   return outcome;
 }
 
-export { createDownloadService };
-export type { DownloadServiceOptions } from '@hierarchidb/download';
-
-function generateFileId(resolvedUrl: string): string {
+function generateFileId(_resolvedUrl: string): string {
   const uuid = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);

@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import {
   Box,
@@ -8,9 +8,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Divider,
+  Menu,
+  MenuItem,
   Typography,
 } from '@mui/material';
-import {Dropdown} from '@mui/base/Dropdown';
 
 import { UserAvatar } from './UserAvatar.js';
 import {
@@ -32,6 +34,14 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   const signOut = () => auth.signoutRedirect();
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
   // Working copy cleanup removed - functionality was deprecated
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  },[]);
+  const handleClose = useCallback(() => {
+    setAnchorEl(null);
+  }, []);
 
   const handleClearCache = async () => {
     try {
@@ -122,25 +132,36 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         width: '100%',
       }}
     >
-      <Dropdown id={`avatarMenu`} items={userMenu}>
-        <Button
-          title={`${auth.user?.profile.name} ${auth.user?.profile.email}`}
-          style={{ borderRadius: '5px', width: '100%', margin: '3px' }}
-          disableElevation
-          endIcon={<KeyboardArrowDownIcon />}
-          variant="outlined"
-        >
-          <Box sx={{ mr: 1 }}>
-            <UserAvatar
-              pictureUrl={auth.user?.profile.picture}
-              email={auth.user?.profile.email}
-              name={auth.user?.profile.name}
-              size={32}
-            />
-          </Box>
-          <Typography>{auth.user?.profile.name}</Typography>
-        </Button>
-      </Dropdown>
+      <Button
+        title={`${auth.user?.profile.name} ${auth.user?.profile.email}`}
+        style={{ borderRadius: '5px', width: '100%', margin: '3px' }}
+        disableElevation
+        endIcon={<KeyboardArrowDownIcon />}
+        variant="outlined"
+        onClick={handleClick}
+      >
+        <Box sx={{ mr: 1 }}>
+          <UserAvatar
+            pictureUrl={auth.user?.profile.picture}
+            email={auth.user?.profile.email}
+            name={auth.user?.profile.name}
+            size={32}
+          />
+        </Box>
+        <Typography>{auth.user?.profile.name}</Typography>
+      </Button>
+      <Menu id={`avatarMenu`}
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}>
+        {userMenu.map((item, index)=>(
+          (item) ? <MenuItem key={`menuItem-${index}`}>
+            {item.icon}
+            {item.label}
+          </MenuItem>: <Divider key={`divider-${index}`} />
+          ))
+        }
+      </Menu>
       <Dialog
         open={clearCacheDialogOpen}
         onClose={() => setClearCacheDialogOpen(false)}

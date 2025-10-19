@@ -55,7 +55,7 @@ import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { Remote, proxy, releaseProxy } from 'comlink';
-import { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';

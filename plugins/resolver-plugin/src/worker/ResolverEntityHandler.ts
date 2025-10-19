@@ -1,7 +1,7 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
-import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-sdk';
-import { resolverDB } from '../database/ResolverDatabase.js';
+import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-api';
+import { resolverDB } from './database/ResolverDatabase.js';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
@@ -10,7 +10,7 @@ import type {
   ResolverDraftPayload,
   ResolverWorkingCopy,
   ValidationRule,
-} from '../types/index.js';
+} from '../common/types/index.js';
 
 /**
  * Search criteria specific to Resolver entities

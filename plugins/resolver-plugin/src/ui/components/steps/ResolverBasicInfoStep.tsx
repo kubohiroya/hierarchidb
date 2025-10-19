@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Box, FormHelperText, Typography } from '@mui/material';
-import { BasicInfoFields } from '@hierarchidb/ui-core';
-import type { ResolverWorkingCopyEntity } from '../../types/index.js';
+import { BasicInfoFields } from '@hierarchidb/runtime-basic-info';
+import type { ResolverWorkingCopyEntity } from '../../../common/types/index.js';
 
 interface ResolverBasicInfoStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -39,11 +39,11 @@ export const ResolverBasicInfoStep: React.FC<ResolverBasicInfoStepProps> = ({
     return true;
   };
 
-  const validateStep = () => {
+  const validateStep = useCallback(() => {
     const isNameValid = validateName(data.name || '');
     const isDescriptionValid = validateDescription(data.description || '');
     return isNameValid && isDescriptionValid;
-  };
+  }, [data.description, data.name]);
 
   useEffect(() => {
     const isValid = validateStep();

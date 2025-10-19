@@ -1,4 +1,5 @@
-import { importPluginWorker, PLUGIN_WORKER_MODULE_IDS, type PluginWorkerId } from '@hierarchidb/runtime-worker';
+import type { PeerStore, PeerEntity } from '@hierarchidb/runtime-worker';
+import type { NodeId } from '@hierarchidb/common-types';
 
 export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
@@ -14,9 +15,11 @@ export interface PeerDialogPersistence {
   copyState?(fromNodeId: string, toNodeId: string): Promise<void>;
 }
 
+type LegacyDisplayMode = 'standard' | 'maximized' | 'fullscreen';
+
 type PeerDialogRow = {
   nodeId: string;
-  displayMode?: string;
+  displayMode?: PeerDisplayMode | LegacyDisplayMode;
   dialogPosition?: PeerDialogPosition;
   dialogSize?: PeerDialogSize;
   updatedAt?: number;
@@ -44,17 +47,72 @@ declare global {
   var __HDB_PLUGIN_ENTITY_OVERRIDES__: Record<string, unknown> | undefined;
 }
 
-const KNOWN_PLUGIN_WORKER_IDS = new Set<PluginWorkerId>(
-  Object.keys(PLUGIN_WORKER_MODULE_IDS) as PluginWorkerId[],
-);
+const VALID_DISPLAY_MODES: PeerDisplayMode[] = ['normal', 'maximize', 'full-screen'];
 
-function isPluginWorkerId(value: string): value is PluginWorkerId {
-  return KNOWN_PLUGIN_WORKER_IDS.has(value as PluginWorkerId);
+type StoreRegistryShim = {
+  getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
+};
+let storeRegistryPromise: Promise<StoreRegistryShim | null> | null = null;
+
+async function resolveStoreRegistry(): Promise<StoreRegistryShim | null> {
+  if (!storeRegistryPromise) {
+    storeRegistryPromise = (async () => {
+      try {
+        const mod = await import('@hierarchidb/runtime-worker');
+        if (mod && typeof mod === 'object' && 'storeRegistry' in mod) {
+          const registry = (mod as { storeRegistry?: StoreRegistryShim }).storeRegistry;
+          if (registry) return registry;
+        }
+      } catch (error) {
+        if (typeof console !== 'undefined') {
+          console.debug('[UIPersistenceRegistry] runtime-worker storeRegistry unavailable', error);
+        }
+      }
+      return null;
+    })();
+  }
+  return storeRegistryPromise;
 }
 
-function capitalize(value: string): string {
-  if (!value) return value;
-  return value.slice(0, 1).toUpperCase() + value.slice(1);
+function normalizeDisplayMode(value: string | undefined, fallback: PeerDisplayMode | undefined): PeerDisplayMode | undefined {
+  if (value && VALID_DISPLAY_MODES.includes(value as PeerDisplayMode)) {
+    return value as PeerDisplayMode;
+  }
+  return fallback;
+}
+
+function createAdapterFromPeerStore(store: PeerStore<any>): PeerEntitiesDBAdapter {
+  const mapEntityToRow = (entity: PeerEntity | undefined): PeerDialogRow | undefined => {
+    if (!entity) return undefined;
+    return {
+      nodeId: String(entity.nodeId),
+      displayMode: entity.displayMode,
+      dialogPosition: entity.dialogPosition ?? undefined,
+      dialogSize: entity.dialogSize ?? undefined,
+      updatedAt: entity.updatedAt,
+    } satisfies PeerDialogRow;
+  };
+
+  return {
+    table: () => ({
+      get: async (id: string) => mapEntityToRow(await store.get(id as NodeId)),
+      put: async (row: PeerDialogRow) => {
+        const existing = await store.get(row.nodeId as NodeId);
+        const nextDisplayMode = normalizeDisplayMode(row.displayMode, existing?.displayMode);
+        const next: PeerEntity = {
+          ...(existing ?? { nodeId: row.nodeId as NodeId }),
+          displayMode: nextDisplayMode,
+          dialogPosition: row.dialogPosition ?? existing?.dialogPosition ?? null,
+          dialogSize: row.dialogSize ?? existing?.dialogSize ?? null,
+          updatedAt: row.updatedAt ?? existing?.updatedAt ?? Date.now(),
+        };
+        await store.put(next);
+      },
+      delete: async (id: string) => {
+        await store.delete(id as NodeId);
+      },
+    }),
+  };
 }
 
 class UIPersistenceRegistry {
@@ -103,51 +161,16 @@ class UIPersistenceRegistry {
         return null;
       }
 
-      const className = `${capitalize(nodeType)}EntitiesDB`;
-      let lastError: unknown = null;
-
-      const instantiateFromModule = async (module: Record<string, unknown>): Promise<PeerEntitiesDBAdapter | null> => {
-        const Ctor = module?.[className] as (new () => { open?: () => Promise<void> | void; table: (name: string) => PeerEntitiesTable });
-        if (!Ctor) {
-          lastError = new Error(`Export ${className} missing`);
-          return null;
-        }
-        const db = new Ctor();
-        await db.open?.();
-        const adapter: PeerEntitiesDBAdapter = {
-          table: (name: string): PeerEntitiesTable => {
-            const tbl = db.table(name);
-            return {
-              get: (id: string) => tbl.get(id),
-              put: (row: PeerDialogRow) => tbl.put(row),
-            };
-          },
-        };
+      const registry = await resolveStoreRegistry();
+      const peerStore = registry?.getPeer(nodeType) as PeerStore<any> | undefined;
+      if (peerStore) {
+        const adapter = createAdapterFromPeerStore(peerStore);
         this.dbCache.set(nodeType, adapter);
         return adapter;
-      };
-
-      if (isPluginWorkerId(nodeType)) {
-        try {
-          const factoryModule = await importPluginWorker(nodeType as PluginWorkerId);
-          const loadFnName = `load${capitalize(nodeType)}EntitiesDbModule`;
-          const loadFn = (factoryModule as Record<string, unknown>)[loadFnName];
-          if (typeof loadFn === 'function') {
-            const entitiesModule = await (loadFn as () => Promise<Record<string, unknown>>)();
-            const adapter = await instantiateFromModule(entitiesModule ?? {});
-            if (adapter) {
-              return adapter;
-            }
-          } else {
-            lastError = new Error(`Function ${loadFnName} is not exported from worker-factory`);
-          }
-        } catch (error) {
-          lastError = error;
-        }
       }
 
-      if (lastError) {
-        console.warn('[UIPersistenceRegistry] Failed to load EntitiesDB for', nodeType, lastError);
+      if (typeof console !== 'undefined') {
+        console.warn('[UIPersistenceRegistry] No peer store registered for node type', nodeType);
       }
       this.dbCache.set(nodeType, null);
       return null;

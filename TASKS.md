@@ -216,10 +216,10 @@
   - [ ] Worker バンドル（`app/src/worker.ts` 経由）に UI パッケージ import が混入しないことを確認し、検証結果を運用ログへ記録
 - チェックリスト:
   - [x] `scripts/generate-plugin-loader.mjs` から `loadWithFallback` とスタブ import 生成ロジックを削除
-  - [x] `pnpm --filter @hierarchidb/app generate:ui-loader`（または相当スクリプト）を実行し、差分をコミット前に自己レビュー
-  - [ ] 既存テスト/型チェック（`pnpm -C app typecheck` など）を実行し、結果を運用ログへ記録
+ - [x] `pnpm --filter @hierarchidb/app generate:ui-loader`（または相当スクリプト）を実行し、差分をコミット前に自己レビュー
+ - [ ] 既存テスト/型チェック（`pnpm -C app typecheck` など）を実行し、結果を運用ログへ記録
 - ロールバック手順：
-  - `scripts/generate-plugin-loader.mjs` と `app/src/generated/ui-loader.ts` の差分を元に戻し、再生成・typecheck を再実行する
+ - `scripts/generate-plugin-loader.mjs` と `app/src/generated/ui-loader.ts` の差分を元に戻し、再生成・typecheck を再実行する
 
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -2073,6 +2073,24 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- fix/linker-plugin/typecheck-regression（P0） — Plugin manifest/import 配線の回帰を解消し typecheck を復旧
+  - ブランチ: `main`（sandbox 制約で直編集）
+  - 要点:
+    - `plugins/linker-plugin/src/plugin-manifest.ts` の `PluginMetadata` 参照を `@hierarchidb/plugin-api` へ移行し、共通 SDK と整合。
+    - Dialog ステップ登録を `@hierarchidb/runtime-plugin-dialog` 基盤に合わせ、ステップコンポーネントの import パスと `Set` ハンドラ型注釈を調整。
+    - `plugins/linker-plugin/package.json` に `@hierarchidb/plugin-api` を追加し、lockfile を同期して workspace 依存を解決。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/linker-plugin typecheck`
+  - ロールバック手順: 上記ファイル差分を元に戻し、`pnpm --filter @hierarchidb/linker-plugin typecheck` で旧エラーが再現することを確認。
+- fix/route-plugin/typecheck-regression（P0） — Runtime plugin dialog 依存の最新 API に追従し、route plugin typecheck を復旧
+  - ブランチ: `main`（sandbox 制約で直編集）
+  - 要点:
+    - `packages/runtime/plugin-dialog/src/utils/peerDialogPersistence.ts` から旧 runtime-worker import を排し、storeRegistry ベースの永続化に切替。
+    - `plugins/route-plugin/src/services/download/registry.ts` を工場分岐で明示し、`DownloadServiceBundle` 戻り値を保証。
+    - Route orchestrator でダウンロードサービス bundle を利用し、暗黙 any を除去。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/route-plugin typecheck`
+  - ロールバック手順: 上記差分を revert し、`pnpm --filter @hierarchidb/route-plugin typecheck` で既存エラーが再現することを確認。
 - refactor/worker/error-model-unify（P1） — CommandProcessor/TreeMutationService を Core `CommandResult` 準拠のエラーモデルへ統一
   - ブランチ: `main`（サンドボックス制約下で直編集）
   - 要点:
@@ -5618,6 +5636,23 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-18 14:48 blocked: refactor/app/remove-ui-fallback — `pnpm -C app typecheck` を実行したところ、既存の tour/UI モジュール未整備や `@hierarchidb/common-api` の API 不一致による型エラー多数で失敗（従来課題を再確認）。
 - 2025-10-18 15:05 progress: refactor/app/remove-ui-fallback — `app/package.json` に各 UI プラグインを workspace 依存として追加し、`scripts/generate-plugin-loader.mjs` の fallback 解決パスを `plugins/*` へ修正後に再実行。`app/src/generated/ui-loader.ts` が実プラグイン import のみを含む形で再生成されたことを確認。
 - 2025-10-18 15:12 progress: refactor/app/remove-ui-fallback — `pnpm install --filter @hierarchidb/app --lockfile-only` を再実行し、UI プラグイン依存を含めた `pnpm-lock.yaml` を更新（peer warning は既存の ESLint/TL 依存不整合のみ）。
+- 2025-10-18 15:48 progress: refactor/app/remove-ui-fallback — `WorkerAPI` 型を `@hierarchidb/common-api` に公開し、アプリ/プラグイン側の参照を共通APIへ戻して設計方針どおり疎結合を維持。
+- 2025-10-18 16:40 start: fix/linker-plugin/typecheck-regression — linker plugin の typecheck 回帰（PluginMetadata import 先と dialog/steps 参照）対応に着手。sandbox 制約により実ブランチ作成不可のため `main` 上で進行。
+- 2025-10-18 16:42 blocked: fix/linker-plugin/typecheck-regression — `git checkout -b fix/linker-plugin/typecheck-regression` が `unable to create directory for .git/refs/heads/...` で失敗。ブランチ切り替えは行わず main ブランチで継続。
+- 2025-10-18 17:02 progress: fix/linker-plugin/typecheck-regression — `plugins/linker-plugin/src/plugin-manifest.ts` の `PluginMetadata` import を `@hierarchidb/plugin-api` へ移し、`steps-provider.tsx` の dialog 依存パスと `Set` 型注釈を更新。
+- 2025-10-18 17:04 blocked: fix/linker-plugin/typecheck-regression — `pnpm --filter @hierarchidb/linker-plugin typecheck` が `@hierarchidb/plugin-sdk` 未解決（TS2307）で失敗。依存の明示化が必要と判明。
+- 2025-10-18 17:08 progress: fix/linker-plugin/typecheck-regression — `plugins/linker-plugin/package.json` に `@hierarchidb/plugin-api` を追加し、`pnpm install --filter @hierarchidb/linker-plugin --lockfile-only` → `pnpm install --filter @hierarchidb/linker-plugin` を実行して workspace 依存をリンク（plugin-api 未解決エラーを解消）。
+- 2025-10-18 17:12 progress: fix/linker-plugin/typecheck-regression — `pnpm --filter @hierarchidb/linker-plugin typecheck` が成功。PluginMetadata import/steps 参照の回帰が解消されたことを確認。
+- 2025-10-18 17:30 start: fix/route-plugin/typecheck-regression — route plugin typecheck 回帰（runtime-worker import/DownloadService 型不整合）対応に着手。sandbox 制約でブランチ作成不可のため `main` で作業。
+- 2025-10-18 17:34 progress: fix/route-plugin/typecheck-regression — `packages/runtime/plugin-dialog/src/utils/peerDialogPersistence.ts` の worker 依存を store registry ベースへ切り替え、`plugins/route-plugin/src/services/download/registry.ts` を明示的な工場分岐に修正。
+- 2025-10-18 17:38 progress: fix/route-plugin/typecheck-regression — 権限昇格で `pnpm --filter @hierarchidb/route-plugin typecheck` を実行しグリーン。差分内容と検証コマンドを本ログへ記録。
+- 2025-10-18 17:46 progress: fix/route-plugin/typecheck-regression — `packages/runtime/plugin-dialog/src/utils/peerDialogPersistence.ts` の runtime-worker 依存を動的 import＋存在チェックに差し替え、未公開エントリに直アクセスせず fallback 可能な実装へ更新。
+- 2025-10-18 17:50 progress: fix/route-plugin/typecheck-regression — `pnpm --filter @hierarchidb/runtime-plugin-dialog build:types` → `pnpm --filter @hierarchidb/route-plugin typecheck` を実行し、更新後も型ビルドと検証がグリーンであることを確認。
+- 2025-10-18 18:05 progress: fix/route-plugin/typecheck-regression — UILegacy display モードを列挙型で定義し、normalize した結果のみを `PeerEntity` に反映するよう修正。`pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し、不要な import.meta 参照が存在しないことを確認。
+- 2025-10-18 18:18 progress: fix/timeline-plugin/typecheck-regression — timeline-plugin の tsup 設定から共通ベース設定を解決できるよう `tsup.base.config.ts` を追加し、UI index の steps import を `./components/steps-provider.js` へ更新。`pnpm --filter @hierarchidb/timeline-plugin build` が警告（既知の CJS manifest）を除き成功することを確認。
+- 2025-10-18 18:36 progress: repo-wide declaration cleanup — `find`/`rg` でソース直下に残っていた `*.d.ts.map` と `sourceMappingURL` を含む `*.d.ts` を削除。`pnpm --recursive --if-present run build:types` を実行し、`@hierarchidb/resolver-plugin` で未整備（Steps import 等）起因のエラーが発生したことを確認（要別タスク）。その他パッケージは `dist/` 配下に宣言が再生成されたことを目視で確認。
+- 2025-10-18 18:44 progress: fix/route-plugin/typecheck-regression — 再生成後に `pnpm --filter @hierarchidb/route-plugin build` を実行し、バンドルと DTS が `dist/` 配下へ正しく出力されることを確認。
+- 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。

@@ -38,7 +38,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { ResolverEntity, PropertyMappingRule } from '../types/index.js';
+import type { ResolverEntity, PropertyMappingRule } from '../../common/types/index.js';
 
 interface MappingStatistics {
   totalSourceProperties: number;

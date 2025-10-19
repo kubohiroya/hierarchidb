@@ -6,7 +6,7 @@
  */
 
 import type { Remote } from 'comlink';
-import type {WorkerAPI} from '@hierarchidb/runtime-worker'
+import type {WorkerAPI} from '@hierarchidb/common-api'
 
 export interface WorkerClientRef {
   /** Active WorkerAPI proxy when initialized */
@@ -43,4 +43,3 @@ export function getWorkerClientHook<T = any>(): WorkerClientHook<T> {
   }
   return currentHook as WorkerClientHook<T>;
 }
-

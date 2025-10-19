@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { AccountTree, Folder } from '@mui/icons-material';
 import { Info as InfoIcon, GitHub as GitHubIcon, HelpOutline as HelpOutlineIcon, Extension as ExtensionIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material';
-import type { TreeConfig } from '@hierarchidb/ui-core';
-import { TreeToggleButtonGroup } from '@hierarchidb/ui-core';
+import type { TreeConfig } from '@hierarchidb/components';
+import { TreeToggleButtonGroup } from '@hierarchidb/components';
 import { TitleLogo } from '../../components/TitleLogo.js';
 import { useAppConfig } from '~/contexts/AppConfigContext.js';
 import { UserLoginButton } from '@hierarchidb/ui-usermenu';
-import { TopPageGuidedTour } from '@hierarchidb/runtime-ui-tour';
+import { TopPageGuidedTour } from '~/components/tour/index.js';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
 import { useNavigate } from '@tanstack/react-router';
 

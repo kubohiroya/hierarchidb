@@ -70,6 +70,12 @@
       "@hierarchidb/ui-file/*": [
         "packages/ui/file/src/*"
       ],
+      "@hierarchidb/ui-theme": [
+        "packages/ui/theme/src/index.ts"
+      ],
+      "@hierarchidb/ui-theme/*": [
+        "packages/ui/theme/src/*"
+      ],
       "@hierarchidb/util": [
         "packages/util/src/index.ts"
       ],
@@ -109,11 +115,11 @@
       "@hierarchidb/batch/*": [
         "packages/feature/batch/src/*"
       ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "packages/runtime-ui/plugin-dialog/src/index.ts"
+      "@hierarchidb/runtime-plugin-dialog": [
+        "packages/runtime/plugin-dialog/src/index.ts"
       ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "packages/runtime-ui/plugin-dialog/src/*"
+      "@hierarchidb/runtime-plugin-dialog/*": [
+        "packages/runtime/plugin-dialog/src/*"
       ],
       "@hierarchidb/ui-core": [
         "packages/ui/core/src/index.ts"
@@ -126,6 +132,12 @@
       ],
       "@hierarchidb/ui-datasource/*": [
         "packages/ui/datasource/src/*"
+      ],
+      "@hierarchidb/plugin-api": [
+        "packages/plugin-api/src/index.ts"
+      ],
+      "@hierarchidb/plugin-api/*": [
+        "packages/plugin-api/src/*"
       ],
       "@hierarchidb/ui-license": [
         "packages/ui/license/src/index.ts"
@@ -140,10 +152,10 @@
         "packages/runtime-ui/license/src/*"
       ],
       "@hierarchidb/plugin-sdk": [
-        "packages/plugins/base-plugin/src/index.ts"
+        "packages/plugin-sdk/src/index.ts"
       ],
       "@hierarchidb/plugin-sdk/*": [
-        "packages/plugins/base-plugin/src/*"
+        "packages/plugin-sdk/src/*"
       ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"

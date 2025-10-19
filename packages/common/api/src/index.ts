@@ -17,6 +17,7 @@ export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 export type { TreeQueryAPI, ListChildrenOptions, ListChildrenPrefetchOptions } from './TreeQueryAPI.js';
 export type { WorkingCopyAPI, CommitWorkingCopyOptions } from './WorkingCopyAPI.js';
 export type { DialogStateAPI, DialogStateSubscriptionId } from './DialogStateAPI.js';
+export type { WorkerAPI } from './WorkerAPI.js';
 
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)

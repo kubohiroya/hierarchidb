@@ -32,7 +32,7 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '../../types/index.js';
+import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule, PropertyInfo } from '../../../common/types/index.js';
 
 interface ValidationConfigStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -145,7 +145,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
     };
 
     if (editingRule) {
-      setValidationRules(prev => prev.map(r => r.id === rule.id ? rule : r));
+      setValidationRules((prev: ValidationRule[]) => prev.map((r: ValidationRule) => r.id === rule.id ? rule : r));
     } else {
       setValidationRules(prev => [...prev, rule]);
     }
@@ -330,7 +330,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
           {validationRules.length > 0 && (
             <Paper sx={{ mb: 2 }}>
               <List>
-                {validationRules.map((rule, index) => (
+              {validationRules.map((rule: ValidationRule, index: number) => (
                   <React.Fragment key={rule.id}>
                     <ListItem>
                       <ListItemText
@@ -423,7 +423,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
               onChange={(e) => updateRuleFormData({ property: e.target.value })}
               label="Property"
             >
-              {availableProperties.map((prop) => (
+              {availableProperties.map((prop: PropertyInfo) => (
                 <MenuItem key={prop} value={prop}>
                   {prop}
                 </MenuItem>
@@ -441,7 +441,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
               })}
               label="Rule Type"
             >
-              {VALIDATION_RULE_TYPES.map((type) => (
+              {VALIDATION_RULE_TYPES.map((type: typeof VALIDATION_RULE_TYPES[number]) => (
                 <MenuItem key={type.value} value={type.value}>
                   <Box>
                     <Typography variant="body2">{type.label}</Typography>

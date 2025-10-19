@@ -9,7 +9,7 @@ import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { AppThemeProvider } from '../../components/AppThemeProvider.js';
 import { registerTableStateCleanupEvents } from '../../shared/table-state.js';
 import { LanguageEventsBridge } from '../../components/LanguageEventsBridge.js';
-import { NotificationSystem } from '@hierarchidb/ui-core';
+import { NotificationSystem } from '@hierarchidb/components';
 import { WorkerProvider } from '../../contexts/WorkerProvider.js';
 import {
   WorkerProgressReporter,

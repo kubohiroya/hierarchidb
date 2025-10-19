@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { ResolverDialogProps } from './common/components/ResolverDialog.js';
+import type { ResolverDialogProps } from './ui/components/ResolverDialog.js';
 
 export type {
   ResolverEntity,
@@ -20,29 +20,29 @@ export {
   ResolverEntityHandler,
   type ResolverSearchCriteria,
   type CreateResolverData,
-} from './common/handlers/ResolverEntityHandler.js';
+} from './worker/ResolverEntityHandler.js';
 
-export { resolverDB } from './services/database/ResolverDatabase.js';
+export { resolverDB } from './worker/database/ResolverDatabase.js';
 
 export {
   ResolverDialog,
   ResolverPanel,
-} from './common/components/index.js';
+} from './ui/components/index.js';
 
 export async function loadResolverEntityHandlerModule() {
-  return import(/* @vite-ignore */ './common/handlers/ResolverEntityHandler.js');
+  return import(/* @vite-ignore */ './worker/ResolverEntityHandler.js');
 }
 
 export async function loadResolverDatabaseModule() {
-  return import(/* @vite-ignore */ './services/database/ResolverDatabase.js');
+  return import(/* @vite-ignore */ './worker/database/ResolverDatabase.js');
 }
 
 export async function loadResolverDialogModule() {
-  return import(/* @vite-ignore */ './common/components/ResolverDialog.js');
+  return import(/* @vite-ignore */ './ui/components/ResolverDialog.js');
 }
 
 export async function loadResolverPanelModule() {
-  return import(/* @vite-ignore */ './common/components/ResolverPanel.js');
+  return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');
 }
 
 // Standard entry for PluginDialogRoute to discover dialog component
@@ -52,7 +52,7 @@ export async function getDialogComponent(): Promise<ComponentType<ResolverDialog
 }
 
 // Register host-composed steps on import (idempotent)
-import './ui/steps-provider.js';
+import './ui/components/steps-provider.js';
 
 export { PLUGIN_MANIFEST as ResolverPluginManifest } from './plugin-manifest.js';
 

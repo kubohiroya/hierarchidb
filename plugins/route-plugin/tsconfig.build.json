@@ -11,10 +11,40 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "paths": {
+      "@hierarchidb/batch-api": [
+        "../../packages/batch-api/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-api/*": [
+        "../../packages/batch-api/dist/*"
+      ],
+      "@hierarchidb/batch-sdk": [
+        "../../packages/batch-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-sdk/*": [
+        "../../packages/batch-sdk/dist/*"
+      ],
+      "@hierarchidb/runtime-plugin-dialog": [
+        "../../packages/runtime/plugin-dialog/dist/index.d.ts"
+      ],
+      "@hierarchidb/runtime-plugin-dialog/*": [
+        "../../packages/runtime/plugin-dialog/dist/*"
+      ],
+      "@hierarchidb/download": [
+        "../../packages/feature/download/dist/index.d.ts"
+      ],
+      "@hierarchidb/download/*": [
+        "../../packages/feature/download/dist/*"
+      ]
+    }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../../packages/runtime/plugin-dialog/dist/index.d.ts",
+    "../../packages/batch-sdk/dist/index.d.ts",
+    "../../packages/batch-api/dist/index.d.ts",
+    "../../packages/feature/download/dist/index.d.ts"
   ],
   "exclude": [
     "dist",

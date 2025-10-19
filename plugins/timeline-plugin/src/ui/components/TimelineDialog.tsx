@@ -19,10 +19,10 @@ import {
   type MultiDialogSize,
   type MultiDialogPosition,
 } from '@hierarchidb/ui-dialog';
-import { BasicInfoStep, type BasicInfoValues } from './steps/BasicInfoStep.js';
-import { FramesPreviewStep, type TimelineFrame } from './steps/FramesPreviewStep.js';
-import { MapPreviewStep } from './steps/MapPreviewStep.js';
-import { AnimationViewerStep } from './steps/AnimationViewerStep.js';
+import { BasicInfoStep, type BasicInfoValues } from '../steps/BasicInfoStep.js';
+import { FramesPreviewStep, type TimelineFrame } from '../steps/FramesPreviewStep.js';
+import { MapPreviewStep } from '../steps/MapPreviewStep.js';
+import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';
 
 export interface TimelineDialogProps {
   mode: 'create' | 'edit';

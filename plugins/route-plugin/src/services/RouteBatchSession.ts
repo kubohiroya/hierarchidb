@@ -114,7 +114,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     const maxConcurrent = this.config.routeGeneration.maxConcurrent;
     const batch = new BatchService();
     let completed = 0;
-    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task, index) => {
+    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number) => {
       if (task.taskType === 'route_generation') {
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
         const sem = this.getLaneSemaphore(method);

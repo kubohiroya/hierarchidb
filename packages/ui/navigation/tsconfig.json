@@ -28,8 +28,5 @@
     "src"
   ],
   "references": [
-    {
-      "path": "../core"
-    }
   ]
 }

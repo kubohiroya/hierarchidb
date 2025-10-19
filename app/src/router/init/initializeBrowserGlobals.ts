@@ -1,11 +1,11 @@
 import type { ComponentType } from 'react';
-import { registerWorkerClientHook, getWorkerClientHook } from '../../../../packages/runtime/client';
-import { registerAllUIPlugins } from '@hierarchidb/ui-core';
+import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 import { bootLog } from '../../utils/bootLog.js';
 import { APP_VERSION, BUILD_TIME } from '../../version.js';
 import { loadAllUIPlugins } from '../../generated/ui-loader.js';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
+import { autoLoadPlugins } from '~/plugin-loader/auto-load.js';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -58,7 +58,7 @@ export function initializeBrowserGlobals(): void {
     globalWindow.__HDB_UI_PLUGIN_READY__ = (async () => {
       try {
         await loadAllUIPlugins();
-        registerAllUIPlugins();
+        await autoLoadPlugins();
         globalWindow.__uiPluginsRegistered = true;
       } catch (error) {
         globalWindow.__uiPluginsRegistered = false;

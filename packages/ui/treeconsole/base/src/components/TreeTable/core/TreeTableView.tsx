@@ -16,13 +16,13 @@ import {
   TableSortLabel,
   Typography,
 } from '@mui/material';
+import { rainbowColors } from '@hierarchidb/ui-theme';
 import {
   ChevronRight as ChevronRightIcon,
   ExpandMore as ExpandMoreIcon,
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
-import { rainbowColors } from '@hierarchidb/ui-core';
 import type { TreeNodeData } from '../../../types/index.js';
 
 export interface TreeTableColumn {

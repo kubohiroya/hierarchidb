@@ -192,7 +192,7 @@ export class PluginExtensionRegistry {
    * );
    * ```
    *
-   * @throws {Error} If plugin or method not found
+   * @throws \{Error\} If plugin or method not found
    */
   async invokeMethod<
     TMethods extends Record<string, WorkerAPIMethod>,

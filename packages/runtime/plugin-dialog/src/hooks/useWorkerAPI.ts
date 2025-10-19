@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import {
   getWorkerClientHook,
   type WorkerClientRef,

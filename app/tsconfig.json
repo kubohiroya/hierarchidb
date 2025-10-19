@@ -25,10 +25,10 @@
         "../packages/ui/icon/dist"
       ],
       "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker"
+        "../packages/runtime/worker/src/index.ts"
       ],
       "@hierarchidb/runtime-client": [
-        "../packages/runtime/worker-bootstrap"
+        "../packages/runtime/client/src/index.ts"
       ],
       "@hierarchidb/runtime-shared-module-paths": [
         "src/plugin-loader/module-paths.ts"
@@ -37,7 +37,7 @@
         "src/plugin-loader/*"
       ],
       "@hierarchidb/common-api": [
-        "../packages/common/api/dist"
+        "../packages/common/api/src/index.ts"
       ],
       "@hierarchidb/runtime-ui-appbar": [
         "../packages/runtime-ui/appbar/src/index.ts"
@@ -69,11 +69,11 @@
       "@hierarchidb/runtime-ui-search-result-window/*": [
         "../packages/runtime-ui/search-result-window/src/*"
       ],
-      "@hierarchidb/runtime-ui-tour": [
-        "../packages/runtime-ui/tour/src/index.ts"
+      "@hierarchidb/ui-tour": [
+        "../packages/ui/tour/src/index.ts"
       ],
-      "@hierarchidb/runtime-ui-tour/*": [
-        "../packages/runtime-ui/tour/src/*"
+      "@hierarchidb/ui-tour/*": [
+        "../packages/ui/tour/src/*"
       ],
       "@hierarchidb/ui-dialog": [
         "../packages/ui/dialog/src/index.ts"
@@ -82,16 +82,16 @@
         "../packages/ui/treeconsole/treetable/dist"
       ],
       "@hierarchidb/basemap-plugin/database": [
-        "../packages/plugins/basemap-plugin/src/services/database/index.ts"
+        "../plugins/basemap-plugin/src/services/database/index.ts"
       ],
       "@hierarchidb/resolver-plugin/database": [
         "../packages/plugins/resolver-plugin/src/services/database/index.ts"
       ],
       "@hierarchidb/route-plugin/database": [
-        "../packages/plugins/route-plugin/src/services/database/index.ts"
+        "../plugins/route-plugin/src/services/database/index.ts"
       ],
       "@hierarchidb/spreadsheet-plugin/database": [
-        "../packages/plugins/spreadsheet-plugin/src/services/database/index.ts"
+        "../plugins/spreadsheet-plugin/src/services/database/index.ts"
       ]
     },
     "composite": false,

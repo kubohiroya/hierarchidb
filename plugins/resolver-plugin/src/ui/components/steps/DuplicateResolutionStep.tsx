@@ -25,7 +25,7 @@ import {
   SkipNext as SkipIcon,
   Update as UpdateIcon,
 } from '@mui/icons-material';
-import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity, PropertyMappingRule } from '../../types/index.js';
+import type { DuplicateResolutionStrategy, ResolverWorkingCopyEntity, PropertyMappingRule } from '../../../common/types/index.js';
 
 interface DuplicateResolutionStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -89,7 +89,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
       strategy,
       customFunction: strategy === 'custom' ? customFunction : undefined,
       mergeProperties: strategy === 'merge' && mergeProperties
-        ? mergeProperties.split(',').map(p => p.trim()).filter(p => p)
+        ? mergeProperties.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
         : undefined,
     };
 
@@ -106,14 +106,9 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         setCustomFunctionError('Custom function is required');
       } else {
         // Basic validation of JavaScript function syntax
-        try {
-          // Try to check if it's valid JavaScript (basic check)
-          new Function(customFunction);
-          setCustomFunctionError('');
-        } catch (error) {
-          isValid = false;
-          setCustomFunctionError('Invalid JavaScript syntax');
-        }
+        // Try to check if it's valid JavaScript (basic check)
+        new Function(customFunction);
+        setCustomFunctionError('');
       }
     } else {
       setCustomFunctionError('');
@@ -269,7 +264,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
         control={
           <Switch
             checked={enableDuplicateDetection}
-            onChange={(e) => setEnableDuplicateDetection(e.target.checked)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setEnableDuplicateDetection(event.target.checked)}
           />
         }
         label="Enable duplicate detection"
@@ -285,7 +280,7 @@ export const DuplicateResolutionStep: React.FC<DuplicateResolutionStepProps> = (
               onChange={handleStrategyChange}
               sx={{ mt: 2 }}
             >
-              {RESOLUTION_STRATEGIES.map((option) => (
+              {RESOLUTION_STRATEGIES.map((option: typeof RESOLUTION_STRATEGIES[number]) => (
                 <FormControlLabel
                   key={option.value}
                   value={option.value}

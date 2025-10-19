@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB.js';
-import type { ResolverPeerData } from '../types/index.ts';
+import type { ResolverPeerData } from '../common/types/index.js';
 
 // TODO(resolver-runtime-worker-integration): once resolver plugin has runtime
 // worker adapters, expose its client through

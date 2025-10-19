@@ -35,7 +35,7 @@ import {
   Storage as StorageIcon,
   Warning as WarningIcon,
 } from '@mui/icons-material';
-import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../types/index.js';
+import type { MappingPreviewResult, MappingValidationResult, ResolverWorkingCopyEntity, SchemaInfo, PropertyInfo, PropertyMappingRule, ValidationWarning } from '../../../common/types/index.js';
 
 interface PreviewTestStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -309,7 +309,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
         <Paper>
           <Tabs
             value={selectedTab}
-            onChange={(_, newValue) => setSelectedTab(newValue)}
+            onChange={(_, newValue: number) => setSelectedTab(newValue)}
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
             <Tab label="Mapped Data" />
@@ -324,7 +324,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                 <TableHead>
                   <TableRow>
                     <TableCell width={40}></TableCell>
-                    {targetSchema.properties.slice(0, 5).map((prop) => (
+                    {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
                       <TableCell key={prop.name}>{prop.name}</TableCell>
                     ))}
                     {targetSchema.properties.length > 5 && (
@@ -333,7 +333,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {previewResult.mappedData.map((row, index) => (
+                  {previewResult.mappedData.map((row: Record<string, unknown>, index: number) => (
                     <React.Fragment key={index}>
                       <TableRow hover>
                         <TableCell>
@@ -344,7 +344,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                             {expandedRows.has(index) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                           </IconButton>
                         </TableCell>
-                        {targetSchema.properties.slice(0, 5).map((prop) => (
+                        {targetSchema.properties.slice(0, 5).map((prop: PropertyInfo) => (
                           <TableCell key={prop.name}>
                             {String(row[prop.name] ?? '-')}
                           </TableCell>
@@ -402,7 +402,7 @@ export const PreviewTestStep: React.FC<PreviewTestStepProps> = ({
                       Errors ({validationResult.errors.length})
                     </Typography>
                     <List dense>
-                      {validationResult.errors.map((error, index) => (
+                      {validationResult.errors.map((error: MappingValidationResult['errors'][number], index: number) => (
                         <ListItem key={index}>
                           <ListItemIcon>
                             <ErrorIcon color="error" fontSize="small" />

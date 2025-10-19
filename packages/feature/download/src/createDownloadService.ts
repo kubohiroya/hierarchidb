@@ -8,13 +8,13 @@ export interface DownloadServiceOptions {
   perHostConcurrency?: number;
 }
 
-export interface DownloadService {
+export interface DownloadServiceBundle {
   service: DownloadEngine;
   net: FetchNetworkPort;
   readAll: (fileId: string) => Promise<ArrayBuffer>;
 }
 
-export async function createDownloadService(opts?: DownloadServiceOptions): Promise<DownloadService> {
+export async function createDownloadService(opts?: DownloadServiceOptions): Promise<DownloadServiceBundle> {
   const auth = await AuthRecoveryService.getSingleton();
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
