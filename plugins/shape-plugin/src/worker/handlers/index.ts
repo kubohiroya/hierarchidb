@@ -2,4 +2,4 @@
  * Worker layer handlers exports
  */
 
-export * from './ShapeEntityHandler.js';
+export * from './ShapeEntityService.js';

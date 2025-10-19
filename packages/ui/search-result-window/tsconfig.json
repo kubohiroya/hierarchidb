@@ -10,6 +10,12 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/ui-floating-window": [
+        "../../ui/floating-window/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-floating-window/*": [
+        "../../ui/floating-window/dist/*"
       ]
     },
     "composite": false,
@@ -18,8 +24,8 @@
     "declarationMap": false,
     "noEmit": true,
     "jsx": "react-jsx",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "types": [
       "vite/client"
     ],

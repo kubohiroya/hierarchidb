@@ -7,8 +7,12 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": [
-        "./src/*"
+      "~/*": ["./src/*"],
+      "@hierarchidb/plugin-entity-service": [
+        "../../packages/plugin-entity-service/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-entity-service/*": [
+        "../../packages/plugin-entity-service/dist/*"
       ]
     },
     "lib": [

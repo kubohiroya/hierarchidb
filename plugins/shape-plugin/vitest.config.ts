@@ -2,9 +2,9 @@ import { defineConfig } from 'vitest/config';
 import * as fs from 'node:fs';
 import * as path from 'path';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.ts');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
-const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
+const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-entity-service/dist/index.js');
+const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-entity-service/src/index.ts');
+const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
 
 export default defineConfig({
   esbuild: {
@@ -53,7 +53,11 @@ export default defineConfig({
       '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../runtime/worker/dist/index.ts'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../runtime-ui/datasource/dist/index.ts'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../ui/lru-splitview/dist/index.ts'),
-      '@hierarchidb/plugin-sdk': basePluginEntry,
+      '@hierarchidb/plugin-entity-service': entityServiceEntry,
+      '@hierarchidb/download': path.resolve(
+        __dirname,
+        '../../packages/feature/download/src/index.ts',
+      ),
       '~': path.resolve(__dirname, './src'),
       // App client hook is now injected via registerWorkerClientHook in tests
     },

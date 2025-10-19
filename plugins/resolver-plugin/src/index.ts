@@ -17,10 +17,11 @@ export type {
 } from './common/types/index.js';
 
 export {
+  ResolverEntityService,
   ResolverEntityHandler,
   type ResolverSearchCriteria,
   type CreateResolverData,
-} from './worker/ResolverEntityHandler.js';
+} from './worker/ResolverEntityService.js';
 
 export { resolverDB } from './worker/database/ResolverDatabase.js';
 
@@ -30,7 +31,7 @@ export {
 } from './ui/components/index.js';
 
 export async function loadResolverEntityHandlerModule() {
-  return import(/* @vite-ignore */ './worker/ResolverEntityHandler.js');
+  return import(/* @vite-ignore */ './worker/ResolverEntityService.js');
 }
 
 export async function loadResolverDatabaseModule() {

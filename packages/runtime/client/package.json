@@ -17,7 +17,7 @@
     }
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
@@ -26,10 +26,10 @@
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "clean": "rm -rf dist",
-    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },

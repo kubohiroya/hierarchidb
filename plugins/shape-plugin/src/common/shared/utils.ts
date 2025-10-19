@@ -14,7 +14,7 @@ import type {
 } from './types.js';
 import type { ShapeEntity, ShapeWorkingCopy } from './types.js';
 import type { Timestamp } from '@hierarchidb/common-types';
-import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-api';
+import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-entity-service';
 import { DEFAULT_PROCESSING_CONFIG } from './constants.js';
 
 /**

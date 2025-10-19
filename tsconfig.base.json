@@ -157,6 +157,12 @@
       "@hierarchidb/plugin-sdk/*": [
         "packages/plugin-sdk/src/*"
       ],
+      "@hierarchidb/plugin-entity-service": [
+        "packages/plugin-entity-service/src/index.ts"
+      ],
+      "@hierarchidb/plugin-entity-service/*": [
+        "packages/plugin-entity-service/src/*"
+      ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"
       ],

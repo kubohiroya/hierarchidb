@@ -1,6 +1,10 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { Table } from 'dexie';
-import { BaseEntityHandler, createDraftWorkingCopyBase, markWorkingCopyUpdated } from '@hierarchidb/plugin-api';
+import type { Collection, IndexableType, Table } from 'dexie';
+import {
+  BaseEntityService,
+  createDraftWorkingCopyBase,
+  markWorkingCopyUpdated,
+} from '@hierarchidb/plugin-entity-service';
 import { resolverDB } from './database/ResolverDatabase.js';
 import type {
   DataTransformation,
@@ -42,9 +46,9 @@ export interface CreateResolverData {
 
 /**
  * EntityHandler implementation for Resolver plugin
- * Extends BaseEntityHandler for common CRUD operations
+ * Built on top of the shared BaseEntityService to avoid plugin-sdk runtime dependency.
  */
-export class ResolverEntityHandler extends BaseEntityHandler<
+export class ResolverEntityService extends BaseEntityService<
   ResolverEntity,
   CreateResolverData,
   ResolverSearchCriteria
@@ -86,9 +90,9 @@ export class ResolverEntityHandler extends BaseEntityHandler<
    * Apply Resolver-specific search criteria
    */
   protected applyAdditionalSearchCriteria(
-    query: any,
+    query: Collection<ResolverEntity, IndexableType, ResolverEntity>,
     criteria: ResolverSearchCriteria,
-  ): any {
+  ): Collection<ResolverEntity, IndexableType, ResolverEntity> {
     if (criteria.sourceSchema) {
       query = query.filter((entity: ResolverEntity) =>
         entity.sourceSchema?.toLowerCase().includes(criteria.sourceSchema!.toLowerCase()),
@@ -115,7 +119,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
    */
   protected async cleanupEntityData(entity: ResolverEntity): Promise<void> {
     // Delete working copies associated with this entity
-    await resolverDB.workingCopies.delete(entity.id);
+    await resolverDB.workingCopies.delete(entity.nodeId);
 
     // Additional cleanup for compiled functions or cached data could go here
   }
@@ -144,9 +148,26 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     const workingCopy: ResolverWorkingCopy = {
       ...base,
       ...draftPayload,
+      originalId: entity.id,
+      isDirty: false,
+      treeNodeId: entity.nodeId,
+      workingCopyId: entity.nodeId,
     };
 
+    if (typeof workingCopy.treeNodeId === 'undefined') {
+      throw new Error('Working copy missing treeNodeId during creation');
+    }
+
     await resolverDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
+    const stored = await resolverDB.workingCopies.get(workingCopy.treeNodeId);
+    if (stored) {
+      return {
+        ...stored,
+        treeNodeId: workingCopy.treeNodeId,
+        originalId: workingCopy.originalId,
+        isDirty: workingCopy.isDirty,
+      } as ResolverWorkingCopy;
+    }
     return workingCopy;
   }
 
@@ -165,12 +186,26 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     treeNodeId: NodeId,
     updates: Partial<ResolverEntity>,
   ): Promise<ResolverWorkingCopy> {
+    if (typeof treeNodeId !== 'string') {
+      throw new TypeError(`Working copy key must be string, received ${String(treeNodeId)}`);
+    }
     const workingCopy = await resolverDB.workingCopies.get(treeNodeId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${treeNodeId}`);
     }
 
-    const merged = markWorkingCopyUpdated(workingCopy, updates, Date.now() as Timestamp);
+    const timestamp = Date.now() as Timestamp;
+    const base = markWorkingCopyUpdated(workingCopy, updates, timestamp);
+
+    const merged: ResolverWorkingCopy = {
+      ...workingCopy,
+      ...updates,
+      ...base,
+      originalId: (workingCopy as ResolverWorkingCopy).originalId,
+      isDirty: true,
+      treeNodeId: workingCopy.treeNodeId,
+      workingCopyId: workingCopy.workingCopyId ?? workingCopy.treeNodeId,
+    };
 
     await resolverDB.workingCopies.put(merged, merged.treeNodeId);
     return merged;
@@ -184,7 +219,7 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
     }
-    const entityId = workingCopy.draft.id ?? workingCopy.treeNodeId;
+    const entityId = (workingCopy.draft as Partial<ResolverEntity>).id ?? workingCopy.treeNodeId;
     if (!entityId) {
       throw new Error('Working copy missing entity id');
     }
@@ -309,3 +344,6 @@ export class ResolverEntityHandler extends BaseEntityHandler<
     };
   }
 }
+
+// Backwards compat: downstream code may still import the old handler symbol.
+export { ResolverEntityService as ResolverEntityHandler };

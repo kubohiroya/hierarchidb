@@ -4,6 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/ui-floating-window": [
+        "../../ui/floating-window/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-floating-window/*": [
+        "../../ui/floating-window/dist/*"
+      ]
+    },
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,

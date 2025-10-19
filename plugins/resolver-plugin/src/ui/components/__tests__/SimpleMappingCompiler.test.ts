@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MappingCompiler } from '../services/SimpleMappingCompiler.js';
+import { MappingCompiler } from '../../../services/SimpleMappingCompiler.js';
 
 describe('SimpleMappingCompiler', () => {
   it('should handle basic transformations', () => {
