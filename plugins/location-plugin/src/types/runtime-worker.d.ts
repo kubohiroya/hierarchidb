@@ -24,11 +24,7 @@ declare module '@hierarchidb/runtime-worker' {
     nodeType: string,
   ): Promise<RuntimeWorkerStageClient | null>;
 
-  export interface SharedDownloadService {
-    service: import('@hierarchidb/download').DownloadService;
-    net: import('@hierarchidb/download').FetchNetworkPort;
-    readAll: (fileId: string) => Promise<ArrayBuffer>;
-  }
+  export type SharedDownloadService = import('@hierarchidb/download').DownloadServiceBundle;
 
   export interface SharedDownloadOptions {
     dbPrefix?: string;

@@ -46,7 +46,15 @@
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/plugin-api": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
+  },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

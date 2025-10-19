@@ -1,0 +1,312 @@
+{
+  "generatedAt": "2025-10-19T08:57:25.662Z",
+  "entries": [
+    {
+      "nodeType": "basemap",
+      "packageName": "@hierarchidb/basemap-plugin",
+      "version": "1.0.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": null
+    },
+    {
+      "nodeType": "folder",
+      "packageName": "@hierarchidb/folder-plugin",
+      "version": "1.0.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/folder-plugin",
+        "name": "Folder Plugin",
+        "displayName": "Folder",
+        "nodeType": "folder",
+        "version": "1.0.0",
+        "description": "Basic folder plugin for HierarchiDB UI layer",
+        "priority": 1000,
+        "dependencies": [],
+        "icon": {
+          "mui": "Folder",
+          "emoji": "📁",
+          "color": "#c0eeff"
+        },
+        "category": "core",
+        "capabilities": {
+          "canHaveChildren": true,
+          "canBeRoot": true,
+          "canBeDeleted": true,
+          "canBeRenamed": true,
+          "canBeMoved": true,
+          "canBeCopied": true
+        },
+        "schema": {
+          "fields": [
+            {
+              "name": "name",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "required": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeType": "location",
+      "packageName": "@hierarchidb/location-plugin",
+      "version": "0.1.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/location-plugin",
+        "name": "Location Plugin",
+        "displayName": "Location",
+        "nodeType": "location",
+        "version": "0.1.0",
+        "description": "Geographic location nodes with Shape integration",
+        "priority": 40,
+        "dependencies": [],
+        "icon": {
+          "mui": "LocationOn",
+          "emoji": "📍",
+          "color": "#a3b030"
+        },
+        "category": {
+          "treeId": "*",
+          "menuGroup": "document",
+          "createOrder": 40
+        },
+        "tags": [
+          "geographic",
+          "location"
+        ],
+        "capabilities": {
+          "workingCopy": true,
+          "batch": true,
+          "visualization": true
+        }
+      }
+    },
+    {
+      "nodeType": "route",
+      "packageName": "@hierarchidb/route-plugin",
+      "version": "1.0.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/route-plugin",
+        "name": "Route Plugin",
+        "displayName": "Route",
+        "nodeType": "route",
+        "version": "1.0.0",
+        "description": "Route management plugin extending Shape plugin for HierarchiDB",
+        "extends": "shape",
+        "dependencies": [
+          "shape"
+        ],
+        "icon": {
+          "mui": "Route",
+          "emoji": "〰️",
+          "color": "#a3b030"
+        }
+      }
+    },
+    {
+      "nodeType": "shape",
+      "packageName": "@hierarchidb/shape-plugin",
+      "version": "0.1.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/shape-plugin",
+        "name": "Shape Plugin",
+        "displayName": "Shape",
+        "nodeType": "shape",
+        "version": "0.1.0",
+        "description": "Geographic shape data management plugin for HierarchiDB",
+        "extends": "folder",
+        "priority": 800,
+        "dependencies": [
+          "folder"
+        ],
+        "icon": {
+          "mui": "Hexagon",
+          "emoji": "♦️",
+          "color": "#a3b030"
+        },
+        "category": "geographic",
+        "capabilities": {
+          "canHaveChildren": false,
+          "canBeRoot": false,
+          "canBeDeleted": true,
+          "canBeRenamed": true,
+          "canBeMoved": true,
+          "canBeCopied": false,
+          "supportsBatchProcessing": true
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "dataSourceName",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "selectedCountries",
+              "type": "array",
+              "required": true
+            },
+            {
+              "name": "selectedAdminLevels",
+              "type": "array",
+              "required": true
+            },
+            {
+              "name": "licenseAgreement",
+              "type": "boolean",
+              "required": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeType": "spreadsheet",
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "version": "0.0.1",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/spreadsheet-plugin",
+        "name": "Spreadsheet Plugin",
+        "displayName": "Spreadsheet",
+        "nodeType": "spreadsheet",
+        "version": "0.0.1",
+        "description": "Spreadsheet plugin for HierarchiDB - extends folder plugin",
+        "extends": "folder",
+        "priority": 600,
+        "dependencies": [
+          "folder"
+        ],
+        "icon": {
+          "mui": "Assessment",
+          "emoji": "📈",
+          "color": "#dcbc50"
+        },
+        "category": "data",
+        "capabilities": {
+          "canHaveChildren": false,
+          "canBeRoot": false,
+          "canBeDeleted": true,
+          "canBeRenamed": true,
+          "canBeMoved": true,
+          "canBeCopied": true
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "spreadsheetData",
+              "type": "object",
+              "required": true
+            },
+            {
+              "name": "formulas",
+              "type": "object",
+              "required": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeType": "styler",
+      "packageName": "@hierarchidb/styler-plugin",
+      "version": "1.0.0",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": false,
+      "manifest": {
+        "id": "@hierarchidb/styler-plugin",
+        "name": "Styler Plugin",
+        "displayName": "Styler",
+        "nodeType": "styler",
+        "version": "1.0.0",
+        "description": "Styler Plugin for HierarchiDB - Dynamic styling for map visualizations",
+        "extends": "spreadsheet",
+        "priority": 700,
+        "dependencies": [
+          "@hierarchidb/spreadsheet-plugin"
+        ],
+        "icon": {
+          "mui": "Palette",
+          "emoji": "🎨",
+          "color": "#dcbc50"
+        },
+        "category": "visualization",
+        "capabilities": {
+          "canHaveChildren": false,
+          "canBeRoot": false,
+          "canBeDeleted": true,
+          "canBeRenamed": true,
+          "canBeMoved": true,
+          "canBeCopied": true
+        },
+        "schema": {
+          "inherits": "folder",
+          "fields": [
+            {
+              "name": "csvData",
+              "type": "string",
+              "required": true
+            },
+            {
+              "name": "mappingConfig",
+              "type": "object",
+              "required": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "nodeType": "timeline",
+      "packageName": "@hierarchidb/timeline-plugin",
+      "version": "0.0.1",
+      "hasUI": true,
+      "hasWorker": true,
+      "hasCommon": true,
+      "manifest": {
+        "id": "@hierarchidb/timeline-plugin",
+        "name": "Timeline Plugin",
+        "displayName": "Timeline",
+        "nodeType": "timeline",
+        "version": "0.0.1",
+        "description": "Timeline plugin scaffold for HierarchiDB (new design)",
+        "icon": {
+          "mui": "Timeline",
+          "emoji": "🕒",
+          "color": "#8a7cbf"
+        }
+      }
+    }
+  ],
+  "modules": {
+    "maps": "const __registerExecuted = new WeakSet();\nasync function __callOnRegister(mod, tag) {\n  const fn = mod && typeof mod === 'object' ? mod.onRegister : undefined;\n  if (typeof fn !== 'function') {\n    return mod;\n  }\n  if (__registerExecuted.has(mod)) {\n    return mod;\n  }\n  try {\n    const result = fn();\n    const awaited = result && typeof result.then === 'function' ? await result : result;\n    __registerExecuted.add(mod);\n    return awaited ?? mod;\n  } catch (error) {\n    __registerExecuted.delete(mod);\n    console.error('[plugin-node-types] onRegister failed for', tag, error);\n    throw error;\n  }\n}\n\nexport const pluginMapUI = Object.freeze({\n  'basemap': async () => {\n    try {\n      const mod = await import('@hierarchidb/basemap-plugin/ui');\n      return await __callOnRegister(mod, 'ui:basemap');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for basemap:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/basemap-plugin');\n      return await __callOnRegister(fallback, 'ui:basemap:fallback');\n    }\n  },\n  'folder': async () => {\n    try {\n      const mod = await import('@hierarchidb/folder-plugin/ui');\n      return await __callOnRegister(mod, 'ui:folder');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for folder:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/folder-plugin');\n      return await __callOnRegister(fallback, 'ui:folder:fallback');\n    }\n  },\n  'location': async () => {\n    try {\n      const mod = await import('@hierarchidb/location-plugin/ui');\n      return await __callOnRegister(mod, 'ui:location');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for location:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/location-plugin');\n      return await __callOnRegister(fallback, 'ui:location:fallback');\n    }\n  },\n  'route': async () => {\n    try {\n      const mod = await import('@hierarchidb/route-plugin/ui');\n      return await __callOnRegister(mod, 'ui:route');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for route:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/route-plugin');\n      return await __callOnRegister(fallback, 'ui:route:fallback');\n    }\n  },\n  'shape': async () => {\n    try {\n      const mod = await import('@hierarchidb/shape-plugin/ui');\n      return await __callOnRegister(mod, 'ui:shape');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for shape:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/shape-plugin');\n      return await __callOnRegister(fallback, 'ui:shape:fallback');\n    }\n  },\n  'spreadsheet': async () => {\n    try {\n      const mod = await import('@hierarchidb/spreadsheet-plugin/ui');\n      return await __callOnRegister(mod, 'ui:spreadsheet');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for spreadsheet:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/spreadsheet-plugin');\n      return await __callOnRegister(fallback, 'ui:spreadsheet:fallback');\n    }\n  },\n  'styler': async () => {\n    try {\n      const mod = await import('@hierarchidb/styler-plugin/ui');\n      return await __callOnRegister(mod, 'ui:styler');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for styler:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/styler-plugin');\n      return await __callOnRegister(fallback, 'ui:styler:fallback');\n    }\n  },\n  'timeline': async () => {\n    try {\n      const mod = await import('@hierarchidb/timeline-plugin/ui');\n      return await __callOnRegister(mod, 'ui:timeline');\n    } catch (error) {\n      console.warn('[plugin-node-types] UI fallback for timeline:', error?.message ?? error);\n      const fallback = await import('@hierarchidb/timeline-plugin');\n      return await __callOnRegister(fallback, 'ui:timeline:fallback');\n    }\n  },\n});\n\nexport const pluginMapWorker = Object.freeze({\n  'basemap': async () => {\n    const mod = await import('@hierarchidb/basemap-plugin/worker');\n    return await __callOnRegister(mod, 'worker:basemap');\n  },\n  'folder': async () => {\n    const mod = await import('@hierarchidb/folder-plugin/worker');\n    return await __callOnRegister(mod, 'worker:folder');\n  },\n  'location': async () => {\n    const mod = await import('@hierarchidb/location-plugin/worker');\n    return await __callOnRegister(mod, 'worker:location');\n  },\n  'route': async () => {\n    const mod = await import('@hierarchidb/route-plugin/worker');\n    return await __callOnRegister(mod, 'worker:route');\n  },\n  'shape': async () => {\n    const mod = await import('@hierarchidb/shape-plugin/worker');\n    return await __callOnRegister(mod, 'worker:shape');\n  },\n  'spreadsheet': async () => {\n    const mod = await import('@hierarchidb/spreadsheet-plugin/worker');\n    return await __callOnRegister(mod, 'worker:spreadsheet');\n  },\n  'styler': async () => {\n    const mod = await import('@hierarchidb/styler-plugin/worker');\n    return await __callOnRegister(mod, 'worker:styler');\n  },\n  'timeline': async () => {\n    const mod = await import('@hierarchidb/timeline-plugin/worker');\n    return await __callOnRegister(mod, 'worker:timeline');\n  },\n});\n\nexport const pluginMapCommon = Object.freeze({\n  'basemap': async () => ({ default: {} }),\n  'folder': async () => ({ default: {} }),\n  'location': async () => ({ default: {} }),\n  'route': async () => ({ default: {} }),\n  'shape': async () => ({ default: {} }),\n  'spreadsheet': async () => ({ default: {} }),\n  'styler': async () => ({ default: {} }),\n  'timeline': async () => {\n    const mod = await import('@hierarchidb/timeline-plugin/common');\n    return await __callOnRegister(mod, 'common:timeline');\n  },\n});\n\nexport default pluginMapUI;\n",
+    "meta": "export const pluginRegistry = [\n  {\n    \"nodeType\": \"basemap\",\n    \"packageName\": \"@hierarchidb/basemap-plugin\",\n    \"version\": \"1.0.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": null\n  },\n  {\n    \"nodeType\": \"folder\",\n    \"packageName\": \"@hierarchidb/folder-plugin\",\n    \"version\": \"1.0.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/folder-plugin\",\n      \"name\": \"Folder Plugin\",\n      \"displayName\": \"Folder\",\n      \"nodeType\": \"folder\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Basic folder plugin for HierarchiDB UI layer\",\n      \"priority\": 1000,\n      \"dependencies\": [],\n      \"icon\": {\n        \"mui\": \"Folder\",\n        \"emoji\": \"📁\",\n        \"color\": \"#c0eeff\"\n      },\n      \"category\": \"core\",\n      \"capabilities\": {\n        \"canHaveChildren\": true,\n        \"canBeRoot\": true,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"fields\": [\n          {\n            \"name\": \"name\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"description\",\n            \"type\": \"string\",\n            \"required\": false\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"nodeType\": \"location\",\n    \"packageName\": \"@hierarchidb/location-plugin\",\n    \"version\": \"0.1.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/location-plugin\",\n      \"name\": \"Location Plugin\",\n      \"displayName\": \"Location\",\n      \"nodeType\": \"location\",\n      \"version\": \"0.1.0\",\n      \"description\": \"Geographic location nodes with Shape integration\",\n      \"priority\": 40,\n      \"dependencies\": [],\n      \"icon\": {\n        \"mui\": \"LocationOn\",\n        \"emoji\": \"📍\",\n        \"color\": \"#a3b030\"\n      },\n      \"category\": {\n        \"treeId\": \"*\",\n        \"menuGroup\": \"document\",\n        \"createOrder\": 40\n      },\n      \"tags\": [\n        \"geographic\",\n        \"location\"\n      ],\n      \"capabilities\": {\n        \"workingCopy\": true,\n        \"batch\": true,\n        \"visualization\": true\n      }\n    }\n  },\n  {\n    \"nodeType\": \"route\",\n    \"packageName\": \"@hierarchidb/route-plugin\",\n    \"version\": \"1.0.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/route-plugin\",\n      \"name\": \"Route Plugin\",\n      \"displayName\": \"Route\",\n      \"nodeType\": \"route\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Route management plugin extending Shape plugin for HierarchiDB\",\n      \"extends\": \"shape\",\n      \"dependencies\": [\n        \"shape\"\n      ],\n      \"icon\": {\n        \"mui\": \"Route\",\n        \"emoji\": \"〰️\",\n        \"color\": \"#a3b030\"\n      }\n    }\n  },\n  {\n    \"nodeType\": \"shape\",\n    \"packageName\": \"@hierarchidb/shape-plugin\",\n    \"version\": \"0.1.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/shape-plugin\",\n      \"name\": \"Shape Plugin\",\n      \"displayName\": \"Shape\",\n      \"nodeType\": \"shape\",\n      \"version\": \"0.1.0\",\n      \"description\": \"Geographic shape data management plugin for HierarchiDB\",\n      \"extends\": \"folder\",\n      \"priority\": 800,\n      \"dependencies\": [\n        \"folder\"\n      ],\n      \"icon\": {\n        \"mui\": \"Hexagon\",\n        \"emoji\": \"♦️\",\n        \"color\": \"#a3b030\"\n      },\n      \"category\": \"geographic\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": false,\n        \"supportsBatchProcessing\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"dataSourceName\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"selectedCountries\",\n            \"type\": \"array\",\n            \"required\": true\n          },\n          {\n            \"name\": \"selectedAdminLevels\",\n            \"type\": \"array\",\n            \"required\": true\n          },\n          {\n            \"name\": \"licenseAgreement\",\n            \"type\": \"boolean\",\n            \"required\": true\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"nodeType\": \"spreadsheet\",\n    \"packageName\": \"@hierarchidb/spreadsheet-plugin\",\n    \"version\": \"0.0.1\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/spreadsheet-plugin\",\n      \"name\": \"Spreadsheet Plugin\",\n      \"displayName\": \"Spreadsheet\",\n      \"nodeType\": \"spreadsheet\",\n      \"version\": \"0.0.1\",\n      \"description\": \"Spreadsheet plugin for HierarchiDB - extends folder plugin\",\n      \"extends\": \"folder\",\n      \"priority\": 600,\n      \"dependencies\": [\n        \"folder\"\n      ],\n      \"icon\": {\n        \"mui\": \"Assessment\",\n        \"emoji\": \"📈\",\n        \"color\": \"#dcbc50\"\n      },\n      \"category\": \"data\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"spreadsheetData\",\n            \"type\": \"object\",\n            \"required\": true\n          },\n          {\n            \"name\": \"formulas\",\n            \"type\": \"object\",\n            \"required\": false\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"nodeType\": \"styler\",\n    \"packageName\": \"@hierarchidb/styler-plugin\",\n    \"version\": \"1.0.0\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": false,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/styler-plugin\",\n      \"name\": \"Styler Plugin\",\n      \"displayName\": \"Styler\",\n      \"nodeType\": \"styler\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Styler Plugin for HierarchiDB - Dynamic styling for map visualizations\",\n      \"extends\": \"spreadsheet\",\n      \"priority\": 700,\n      \"dependencies\": [\n        \"@hierarchidb/spreadsheet-plugin\"\n      ],\n      \"icon\": {\n        \"mui\": \"Palette\",\n        \"emoji\": \"🎨\",\n        \"color\": \"#dcbc50\"\n      },\n      \"category\": \"visualization\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"csvData\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"mappingConfig\",\n            \"type\": \"object\",\n            \"required\": true\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"nodeType\": \"timeline\",\n    \"packageName\": \"@hierarchidb/timeline-plugin\",\n    \"version\": \"0.0.1\",\n    \"hasUI\": true,\n    \"hasWorker\": true,\n    \"hasCommon\": true,\n    \"manifest\": {\n      \"id\": \"@hierarchidb/timeline-plugin\",\n      \"name\": \"Timeline Plugin\",\n      \"displayName\": \"Timeline\",\n      \"nodeType\": \"timeline\",\n      \"version\": \"0.0.1\",\n      \"description\": \"Timeline plugin scaffold for HierarchiDB (new design)\",\n      \"icon\": {\n        \"mui\": \"Timeline\",\n        \"emoji\": \"🕒\",\n        \"color\": \"#8a7cbf\"\n      }\n    }\n  }\n];\nexport default pluginRegistry;\n",
+    "definitions": "export const pluginDefinitions = [\n  {\n    \"name\": \"basemap\",\n    \"version\": \"1.0.0\",\n    \"packageName\": \"@hierarchidb/basemap-plugin\",\n    \"nodeType\": \"basemap\",\n    \"priority\": 1000,\n    \"config\": {}\n  },\n  {\n    \"name\": \"folder\",\n    \"version\": \"1.0.0\",\n    \"packageName\": \"@hierarchidb/folder-plugin\",\n    \"nodeType\": \"folder\",\n    \"priority\": 1000,\n    \"config\": {\n      \"id\": \"@hierarchidb/folder-plugin\",\n      \"name\": \"Folder Plugin\",\n      \"displayName\": \"Folder\",\n      \"nodeType\": \"folder\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Basic folder plugin for HierarchiDB UI layer\",\n      \"priority\": 1000,\n      \"dependencies\": [],\n      \"icon\": {\n        \"mui\": \"Folder\",\n        \"emoji\": \"📁\",\n        \"color\": \"#c0eeff\"\n      },\n      \"category\": \"core\",\n      \"capabilities\": {\n        \"canHaveChildren\": true,\n        \"canBeRoot\": true,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"fields\": [\n          {\n            \"name\": \"name\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"description\",\n            \"type\": \"string\",\n            \"required\": false\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"name\": \"location\",\n    \"version\": \"0.1.0\",\n    \"packageName\": \"@hierarchidb/location-plugin\",\n    \"nodeType\": \"location\",\n    \"priority\": 40,\n    \"config\": {\n      \"id\": \"@hierarchidb/location-plugin\",\n      \"name\": \"Location Plugin\",\n      \"displayName\": \"Location\",\n      \"nodeType\": \"location\",\n      \"version\": \"0.1.0\",\n      \"description\": \"Geographic location nodes with Shape integration\",\n      \"priority\": 40,\n      \"dependencies\": [],\n      \"icon\": {\n        \"mui\": \"LocationOn\",\n        \"emoji\": \"📍\",\n        \"color\": \"#a3b030\"\n      },\n      \"category\": {\n        \"treeId\": \"*\",\n        \"menuGroup\": \"document\",\n        \"createOrder\": 40\n      },\n      \"tags\": [\n        \"geographic\",\n        \"location\"\n      ],\n      \"capabilities\": {\n        \"workingCopy\": true,\n        \"batch\": true,\n        \"visualization\": true\n      }\n    }\n  },\n  {\n    \"name\": \"route\",\n    \"version\": \"1.0.0\",\n    \"packageName\": \"@hierarchidb/route-plugin\",\n    \"nodeType\": \"route\",\n    \"priority\": 1000,\n    \"config\": {\n      \"id\": \"@hierarchidb/route-plugin\",\n      \"name\": \"Route Plugin\",\n      \"displayName\": \"Route\",\n      \"nodeType\": \"route\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Route management plugin extending Shape plugin for HierarchiDB\",\n      \"extends\": \"shape\",\n      \"dependencies\": [\n        \"shape\"\n      ],\n      \"icon\": {\n        \"mui\": \"Route\",\n        \"emoji\": \"〰️\",\n        \"color\": \"#a3b030\"\n      }\n    }\n  },\n  {\n    \"name\": \"shape\",\n    \"version\": \"0.1.0\",\n    \"packageName\": \"@hierarchidb/shape-plugin\",\n    \"nodeType\": \"shape\",\n    \"priority\": 800,\n    \"config\": {\n      \"id\": \"@hierarchidb/shape-plugin\",\n      \"name\": \"Shape Plugin\",\n      \"displayName\": \"Shape\",\n      \"nodeType\": \"shape\",\n      \"version\": \"0.1.0\",\n      \"description\": \"Geographic shape data management plugin for HierarchiDB\",\n      \"extends\": \"folder\",\n      \"priority\": 800,\n      \"dependencies\": [\n        \"folder\"\n      ],\n      \"icon\": {\n        \"mui\": \"Hexagon\",\n        \"emoji\": \"♦️\",\n        \"color\": \"#a3b030\"\n      },\n      \"category\": \"geographic\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": false,\n        \"supportsBatchProcessing\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"dataSourceName\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"selectedCountries\",\n            \"type\": \"array\",\n            \"required\": true\n          },\n          {\n            \"name\": \"selectedAdminLevels\",\n            \"type\": \"array\",\n            \"required\": true\n          },\n          {\n            \"name\": \"licenseAgreement\",\n            \"type\": \"boolean\",\n            \"required\": true\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"name\": \"spreadsheet\",\n    \"version\": \"0.0.1\",\n    \"packageName\": \"@hierarchidb/spreadsheet-plugin\",\n    \"nodeType\": \"spreadsheet\",\n    \"priority\": 600,\n    \"config\": {\n      \"id\": \"@hierarchidb/spreadsheet-plugin\",\n      \"name\": \"Spreadsheet Plugin\",\n      \"displayName\": \"Spreadsheet\",\n      \"nodeType\": \"spreadsheet\",\n      \"version\": \"0.0.1\",\n      \"description\": \"Spreadsheet plugin for HierarchiDB - extends folder plugin\",\n      \"extends\": \"folder\",\n      \"priority\": 600,\n      \"dependencies\": [\n        \"folder\"\n      ],\n      \"icon\": {\n        \"mui\": \"Assessment\",\n        \"emoji\": \"📈\",\n        \"color\": \"#dcbc50\"\n      },\n      \"category\": \"data\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"spreadsheetData\",\n            \"type\": \"object\",\n            \"required\": true\n          },\n          {\n            \"name\": \"formulas\",\n            \"type\": \"object\",\n            \"required\": false\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"name\": \"styler\",\n    \"version\": \"1.0.0\",\n    \"packageName\": \"@hierarchidb/styler-plugin\",\n    \"nodeType\": \"styler\",\n    \"priority\": 700,\n    \"config\": {\n      \"id\": \"@hierarchidb/styler-plugin\",\n      \"name\": \"Styler Plugin\",\n      \"displayName\": \"Styler\",\n      \"nodeType\": \"styler\",\n      \"version\": \"1.0.0\",\n      \"description\": \"Styler Plugin for HierarchiDB - Dynamic styling for map visualizations\",\n      \"extends\": \"spreadsheet\",\n      \"priority\": 700,\n      \"dependencies\": [\n        \"@hierarchidb/spreadsheet-plugin\"\n      ],\n      \"icon\": {\n        \"mui\": \"Palette\",\n        \"emoji\": \"🎨\",\n        \"color\": \"#dcbc50\"\n      },\n      \"category\": \"visualization\",\n      \"capabilities\": {\n        \"canHaveChildren\": false,\n        \"canBeRoot\": false,\n        \"canBeDeleted\": true,\n        \"canBeRenamed\": true,\n        \"canBeMoved\": true,\n        \"canBeCopied\": true\n      },\n      \"schema\": {\n        \"inherits\": \"folder\",\n        \"fields\": [\n          {\n            \"name\": \"csvData\",\n            \"type\": \"string\",\n            \"required\": true\n          },\n          {\n            \"name\": \"mappingConfig\",\n            \"type\": \"object\",\n            \"required\": true\n          }\n        ]\n      }\n    }\n  },\n  {\n    \"name\": \"timeline\",\n    \"version\": \"0.0.1\",\n    \"packageName\": \"@hierarchidb/timeline-plugin\",\n    \"nodeType\": \"timeline\",\n    \"priority\": 1000,\n    \"config\": {\n      \"id\": \"@hierarchidb/timeline-plugin\",\n      \"name\": \"Timeline Plugin\",\n      \"displayName\": \"Timeline\",\n      \"nodeType\": \"timeline\",\n      \"version\": \"0.0.1\",\n      \"description\": \"Timeline plugin scaffold for HierarchiDB (new design)\",\n      \"icon\": {\n        \"mui\": \"Timeline\",\n        \"emoji\": \"🕒\",\n        \"color\": \"#8a7cbf\"\n      }\n    }\n  }\n];\nexport default pluginDefinitions;\n",
+    "legacyUI": "import { pluginMapUI } from 'virtual:plugin-node-types/maps';\nexport { pluginMapUI };\nexport default pluginMapUI;\n",
+    "legacyWorker": "import { pluginMapWorker } from 'virtual:plugin-node-types/maps';\nexport { pluginMapWorker };\nexport default pluginMapWorker;\n",
+    "legacyCommon": "import { pluginMapCommon } from 'virtual:plugin-node-types/maps';\nexport { pluginMapCommon };\nexport default pluginMapCommon;\n"
+  }
+}

@@ -280,7 +280,7 @@ class ChainCompiler {
       execute: async (data) => {
         const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
         await modulePaths.importPluginWorker('resolver');
-        const { getWorkerBridge } = await import('@hierarchidb/runtime-ui-plugin-dialog');
+        const { getWorkerBridge } = await import('@hierarchidb/runtime-plugin-dialog');
         const bridge = getWorkerBridge();
         await bridge.initialize();
 

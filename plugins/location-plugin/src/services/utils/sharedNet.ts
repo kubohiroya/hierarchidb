@@ -1,4 +1,4 @@
-import { type DownloadServiceOptions, type DownloadService, createDownloadService } from '@hierarchidb/download';
+import { type DownloadServiceOptions, type DownloadServiceBundle, createDownloadService } from '@hierarchidb/download';
 import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
@@ -38,6 +38,6 @@ export async function postJson(url: string, body: string | object, headers?: Rec
   return res.json();
 }
 
-export async function createSharedDownloadService(opts?: DownloadServiceOptions): Promise<DownloadService> {
+export async function createSharedDownloadService(opts?: DownloadServiceOptions): Promise<DownloadServiceBundle> {
   return createDownloadService(opts);
 }

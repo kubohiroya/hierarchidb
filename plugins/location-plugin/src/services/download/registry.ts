@@ -1,28 +1,28 @@
 import type { ILocationDownloadStrategy } from './types.js';
 import type { LocationSearchConfig } from '../../common/entities/LocationEntity.js';
-import { createDownloadService, type DownloadService } from '@hierarchidb/download';
+import { createDownloadService, type DownloadServiceBundle, type DownloadServiceOptions } from '@hierarchidb/download';
 
-export type LocationNetService = DownloadService;
+export type LocationDownloadService = DownloadServiceBundle;
 
-type Factory = (opts?: { dbPrefix?: string; perHostConcurrency?: number }) => Promise<LocationNetService>;
+type LocationDownloadOptions = Pick<DownloadServiceOptions, 'dbPrefix' | 'perHostConcurrency'>;
+
+type Factory = (opts?: LocationDownloadOptions) => Promise<LocationDownloadService>;
 
 let factory: Factory | null = null;
-const DEFAULT_OPTIONS: { dbPrefix?: string; perHostConcurrency?: number } = {
-  perHostConcurrency: 4,
-};
+const DEFAULT_OPTIONS: LocationDownloadOptions = { perHostConcurrency: 4 };
 
-let defaults: { dbPrefix?: string; perHostConcurrency?: number } = { ...DEFAULT_OPTIONS };
+let defaults: LocationDownloadOptions = { ...DEFAULT_OPTIONS };
 let authNotifier: ((info: { resource: string; provider?: string; hint?: string; status?: number }) => void) | null = null;
 
 export function registerLocationDownloadServiceFactory(f: Factory): void {
   factory = f;
 }
 
-export function configureLocationDownloadDefaults(opts: { dbPrefix?: string; perHostConcurrency?: number }): void {
+export function configureLocationDownloadDefaults(opts: LocationDownloadOptions): void {
   defaults = { ...defaults, ...opts };
 }
 
-export async function getLocationDownloadService(opts?: { dbPrefix?: string; perHostConcurrency?: number }): Promise<LocationNetService> {
+export async function getLocationDownloadService(opts?: LocationDownloadOptions): Promise<LocationDownloadService> {
   const effectiveOpts = mergeOptions(opts);
   if (factory) return factory(effectiveOpts);
   return createDownloadService(effectiveOpts);
@@ -49,8 +49,6 @@ export function notifyLocationAuthRequired(info: { resource: string; provider?: 
     ?? globalScope.authRegistry;
   registry?.onAuthRequired?.(info);
 }
-
-type LocationDownloadOptions = { dbPrefix?: string; perHostConcurrency?: number };
 
 function mergeOptions(opts?: LocationDownloadOptions): LocationDownloadOptions | undefined {
   const merged: LocationDownloadOptions = { ...defaults, ...(opts || {}) };

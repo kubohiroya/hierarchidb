@@ -32,7 +32,7 @@ import {
   Edit as EditIcon,
   Rule as RuleIcon,
 } from '@mui/icons-material';
-import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule, PropertyInfo } from '../../../common/types/index.js';
+import type { ResolverWorkingCopyEntity, SchemaInfo, ValidationRule } from '../../../common/types/index.js';
 
 interface ValidationConfigStepProps {
   data: Partial<ResolverWorkingCopyEntity>;
@@ -423,7 +423,7 @@ export const ValidationConfigStep: React.FC<ValidationConfigStepProps> = ({
               onChange={(e) => updateRuleFormData({ property: e.target.value })}
               label="Property"
             >
-              {availableProperties.map((prop: PropertyInfo) => (
+              {availableProperties.map((prop: string) => (
                 <MenuItem key={prop} value={prop}>
                   {prop}
                 </MenuItem>

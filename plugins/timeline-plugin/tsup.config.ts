@@ -22,6 +22,12 @@ export default createTsupConfig({
     '@mui/icons-material',
     '@mui/material',
     '@hierarchidb/ui-dialog',
+    '@hierarchidb/common-types',
+    '@hierarchidb/common-api',
+    '@hierarchidb/plugin-api',
+    '@hierarchidb/runtime-plugin-dialog',
+    '@hierarchidb/runtime-worker',
+    '@hierarchidb/util',
     'react',
   ],
 });

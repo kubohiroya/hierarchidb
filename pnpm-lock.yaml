@@ -2455,6 +2455,9 @@ importers:
       '@hierarchidb/plugin-api':
         specifier: workspace:*
         version: link:../../packages/plugin-api
+      '@hierarchidb/runtime-basic-info':
+        specifier: workspace:*
+        version: link:../../packages/runtime/basic-info
       '@hierarchidb/runtime-plugin-dialog':
         specifier: workspace:*
         version: link:../../packages/runtime/plugin-dialog
@@ -2915,13 +2918,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      '@mui/icons-material':
-        specifier: ^7.3.2
-        version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      '@mui/material':
-        specifier: ^7.3.2
-        version: 7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2943,6 +2939,13 @@ importers:
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../packages/util
+      '@mui/icons-material':
+        specifier: ^7.3.2
+        version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
+      '@mui/material':
+        specifier: ^7.3.2
+        version: 7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123

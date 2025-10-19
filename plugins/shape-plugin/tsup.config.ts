@@ -4,15 +4,16 @@ export default createTsupConfig({
   // Full build: library + UI + worker + dedicated workers
   dts: {
     entry: {
-      'index': 'src/index.ts',
+      index: 'src/index.ts',
       'shared/index': 'src/common/shared/index.ts',
       'ui/index': 'src/ui/index.ts',
-      'worker/index': 'src/worker/public.ts',      'services/index': 'src/services/index.ts',
+      'worker/index': 'src/worker/public.ts',
+      'services/index': 'src/services/index.ts',
       // worker entriesは内部型が多いため一旦除外
     },
   },
   entry: {
-    'index': 'src/index.ts',
+    index: 'src/index.ts',
     'shared/index': 'src/common/shared/index.ts',
     'ui/index': 'src/ui/index.ts',
     'worker/index': 'src/worker/factory/index.ts',
@@ -30,14 +31,13 @@ export default createTsupConfig({
     '@hierarchidb/tabular-store',
     '@hierarchidb/folder-plugin',
     '@hierarchidb/runtime-worker',
-    '@hierarchidb/runtime-shared-fetch-save-metadata',
     '@hierarchidb/ui-accordion-config',
     '@hierarchidb/ui-datasource',
     '@hierarchidb/ui-license',
     '@hierarchidb/batch',
     '@hierarchidb/ui-core',
     '@hierarchidb/ui-country-select',
-    '@hierarchidb/runtime-ui-plugin-dialog',
+    '@hierarchidb/runtime-plugin-dialog',
     '@hierarchidb/ui-lru-splitview',
     'react',
     'react-dom',

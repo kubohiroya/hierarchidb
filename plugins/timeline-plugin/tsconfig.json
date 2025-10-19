@@ -6,22 +6,30 @@
       "DOM"
     ],
     "moduleResolution": "Node16",
-"noEmit": true,
-"composite": false,
-"outDir": "./dist",
-"declaration": true,
-"declarationMap": true,
-"sourceMap": true,
-"strict": true,
-"noImplicitAny": true,
-"strictNullChecks": true,
-"strictFunctionTypes": true,
-"noImplicitReturns": true,
-"noFallthroughCasesInSwitch": true,
-"jsx": "react-jsx",
-"jsxImportSource": "react",
-"module": "Node16"
-},
+    "noEmit": true,
+    "composite": false,
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "module": "Node16",
+    "paths": {
+      "@hierarchidb/common-types": [
+        "../../packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "../../packages/common/types/src/*"
+      ]
+    }
+  },
 "include": [
 "src/**/*.ts",
 "src/**/*.tsx"

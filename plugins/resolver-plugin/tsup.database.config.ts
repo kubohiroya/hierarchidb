@@ -2,11 +2,11 @@ import { createTsupConfig } from '../../tsup.base.config.ts';
 
 const TsupDatabaseConfig = createTsupConfig({
   entry: {
-    'database/index': 'src/database/index.ts',
+    'database/index': 'src/worker/database/index.ts',
   },
   external: [
     'dexie',
+    '@hierarchidb/common-types',
   ],
 });
 export { TsupDatabaseConfig };
-

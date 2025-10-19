@@ -84,6 +84,19 @@
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
 
+3) Shape plugin import path 修正（P0）
+- ブランチ: `fix/shape-plugin/import-paths`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/shape-plugin`, `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/runtime-worker`
+- 受け入れ基準（DoD）:
+  - [ ] 形プラグインのビルド（`pnpm --filter @hierarchidb/shape-plugin build`）が警告・フォールバックなしで成功する
+  - [ ] 旧 `@hierarchidb/runtime-ui-plugin-dialog` など不在パッケージへの参照が無い
+  - [ ] prebuild スクリプトを含め、存在しないパッケージへの依存実行が発生しない
+- チェックリスト:
+  - [ ] `package.json` の prebuild / external / peerDependencies を最新パッケージ名へ更新
+  - [ ] ソース・テストの import を `@hierarchidb/runtime-plugin-dialog` 等の現行公開 API へ差し替え
+  - [ ] 実行コマンドと結果を TASKS 運用ログに記録
+- ロールバック手順：形プラグインで行った import/path 変更を差分前へ戻し、`pnpm --filter @hierarchidb/shape-plugin build` を再実行して従来挙動を確認
+
 3) dep-fence WARN cleanup（ui-datasource/ui-license/ui-i18n）（P2）
 - ブランチ: `chore/ui/dep-fence-warn-cleanup`（sandbox 制約で `main` 上で作業）
 - 依存: dep-fence 基盤, `@hierarchidb/ui-datasource`, `@hierarchidb/ui-license`, `@hierarchidb/ui-i18n`
@@ -5652,6 +5665,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-18 18:18 progress: fix/timeline-plugin/typecheck-regression — timeline-plugin の tsup 設定から共通ベース設定を解決できるよう `tsup.base.config.ts` を追加し、UI index の steps import を `./components/steps-provider.js` へ更新。`pnpm --filter @hierarchidb/timeline-plugin build` が警告（既知の CJS manifest）を除き成功することを確認。
 - 2025-10-18 18:36 progress: repo-wide declaration cleanup — `find`/`rg` でソース直下に残っていた `*.d.ts.map` と `sourceMappingURL` を含む `*.d.ts` を削除。`pnpm --recursive --if-present run build:types` を実行し、`@hierarchidb/resolver-plugin` で未整備（Steps import 等）起因のエラーが発生したことを確認（要別タスク）。その他パッケージは `dist/` 配下に宣言が再生成されたことを目視で確認。
 - 2025-10-18 18:44 progress: fix/route-plugin/typecheck-regression — 再生成後に `pnpm --filter @hierarchidb/route-plugin build` を実行し、バンドルと DTS が `dist/` 配下へ正しく出力されることを確認。
+- 2025-10-19 12:05 start: fix/shape-plugin/import-paths — 形プラグインで旧 `runtime-ui-plugin-dialog` 参照と存在しない prebuild 依存が残っているため、import パスを現行構成へ合わせる作業を開始。
+- 2025-10-19 12:32 progress: fix/shape-plugin/import-paths — `package.json` の prebuild を削除し、`tsup.external` と `tsup.config.ts` を `@hierarchidb/runtime-plugin-dialog` など現行公開 API に揃える。`useShapeProgress` テストの mock も同モジュールに更新。
+- 2025-10-19 12:36 progress: fix/shape-plugin/import-paths — `pnpm --filter @hierarchidb/shape-plugin build` を実行し、型・バンドル生成とも `dist/` 配下で成功することを確認。
+- 2025-10-19 12:45 start: fix/resolver-plugin/import-paths — resolver plugin の UI/worker モジュール移行後も旧 `common/*` 階層への import や欠落ファイル参照が残存するため、現行構成へ揃える作業を開始。
+- 2025-10-19 13:05 progress: fix/resolver-plugin/import-paths — `tsup.config.ts` / `tsup.database.config.ts` のエントリを `src/worker/database/index.ts` へ更新し、外部参照を `@hierarchidb/runtime-plugin-dialog` など現行パッケージへ刷新。`tsconfig.json` の `paths`/`rootDir` も整理し、README の import 例を最新化。
+- 2025-10-19 13:12 progress: fix/resolver-plugin/import-paths — `pnpm --filter @hierarchidb/resolver-plugin build` を実行し、型生成とバンドルが `dist/` 配下に成功することを確認。
+- 2025-10-19 13:18 start: fix/location-plugin/import-paths — Location plugin で旧 `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/batch-sdk` 参照と DownloadService 型不整合が残存しているため、現行 API への揃え込みを開始。
 - 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。

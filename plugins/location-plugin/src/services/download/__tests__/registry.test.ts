@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getLocationDownloadService, registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from '../../download/registry.js';
-import type { LocationNetService } from '../../download/registry.js';
+import type { LocationDownloadService } from '../../download/registry.js';
 import { DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 import type { StoragePort } from '@hierarchidb/download';
 
@@ -24,7 +24,7 @@ describe('location download registry', () => {
       const network = new FetchNetworkPort();
       const storage = new StubStoragePort();
       const service = new DownloadService(network, storage);
-      const fake: LocationNetService = {
+      const fake: LocationDownloadService = {
         net: network,
         service,
         readAll: storage.readAll.bind(storage),

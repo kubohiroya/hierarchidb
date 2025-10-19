@@ -25,13 +25,13 @@ registry.registerConfigProvider({
         componentFactory: (p: ResolverStepProps) => {
           const currentData: ResolverData = p.data ?? {};
           return (
-          <SchemaSelectionStep
-            data={currentData}
-            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
-            onValidationChange={p.setValid}
-            onSourceSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, sourceSchema: schema })}
-            onTargetSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, targetSchema: schema })}
-          />
+            <SchemaSelectionStep
+              data={currentData}
+              onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
+              onValidationChange={p.setValid}
+              onSourceSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, sourceSchema: schema })}
+              onTargetSchemaChange={(schema: SchemaInfo | null) => p.onChange({ ...currentData, targetSchema: schema })}
+            />
           );
         },
       },
@@ -40,13 +40,13 @@ registry.registerConfigProvider({
         componentFactory: (p: ResolverStepProps) => {
           const currentData: ResolverData = p.data ?? {};
           return (
-          <PropertyMappingStep
-            data={currentData}
-            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
-            onValidationChange={p.setValid}
-            sourceSchema={currentData.sourceSchema ?? null}
-            targetSchema={currentData.targetSchema ?? null}
-          />
+            <PropertyMappingStep
+              data={currentData}
+              onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
+              onValidationChange={p.setValid}
+              sourceSchema={currentData.sourceSchema ?? null}
+              targetSchema={currentData.targetSchema ?? null}
+            />
           );
         },
       },
@@ -55,13 +55,13 @@ registry.registerConfigProvider({
         componentFactory: (p: ResolverStepProps) => {
           const currentData: ResolverData = p.data ?? {};
           return (
-          <ValidationConfigStep
-            data={currentData}
-            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
-            onValidationChange={p.setValid}
-            sourceSchema={currentData.sourceSchema ?? null}
-            targetSchema={currentData.targetSchema ?? null}
-          />
+            <ValidationConfigStep
+              data={currentData}
+              onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
+              onValidationChange={p.setValid}
+              sourceSchema={currentData.sourceSchema ?? null}
+              targetSchema={currentData.targetSchema ?? null}
+            />
           );
         },
       },
@@ -70,11 +70,11 @@ registry.registerConfigProvider({
         componentFactory: (p: ResolverStepProps) => {
           const currentData: ResolverData = p.data ?? {};
           return (
-          <DuplicateResolutionStep
-            data={currentData}
-            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
-            onValidationChange={p.setValid}
-          />
+            <DuplicateResolutionStep
+              data={currentData}
+              onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
+              onValidationChange={p.setValid}
+            />
           );
         },
       },
@@ -83,14 +83,14 @@ registry.registerConfigProvider({
         componentFactory: (p: ResolverStepProps) => {
           const currentData: ResolverData = p.data ?? {};
           return (
-          <PreviewTestStep
-            data={currentData}
-            onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
-            onValidationChange={p.setValid}
-            sourceSchema={currentData.sourceSchema ?? null}
-            targetSchema={currentData.targetSchema ?? null}
-            onValidationResult={(result: MappingValidationResult | null) => p.onChange({ ...currentData, lastValidation: result })}
-          />
+            <PreviewTestStep
+              data={currentData}
+              onUpdate={(updates: Partial<ResolverWorkingCopyEntity>) => p.onChange({ ...currentData, ...updates })}
+              onValidationChange={p.setValid}
+              sourceSchema={currentData.sourceSchema ?? null}
+              targetSchema={currentData.targetSchema ?? null}
+              onValidationResult={(result: MappingValidationResult | null) => p.onChange({ ...currentData, lastValidation: result })}
+            />
           );
         },
       },

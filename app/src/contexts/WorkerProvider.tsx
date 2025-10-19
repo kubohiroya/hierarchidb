@@ -39,13 +39,6 @@ const logWorkerProviderWarning = (message: string, error: unknown): void => {
 
 const getWorkerClientClass = () => getWorkerAPIClientModule()?.WorkerAPIClient ?? null;
 
-const getNotInitializedErrorCtor = () => getWorkerAPIClientModule()?.NotInitializedError ?? null;
-
-const isNotInitializedError = (error: unknown): boolean => {
-  const NotInitialized = getNotInitializedErrorCtor();
-  return Boolean(NotInitialized && error instanceof NotInitialized);
-};
-
 const isWorkerClientReady = (): boolean => {
   const Client = getWorkerClientClass();
   return Client ? Client.isReady() : false;
