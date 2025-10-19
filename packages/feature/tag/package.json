@@ -13,14 +13,13 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
+    "build": "pnpm run build:bundle",
     "clean": "rm -rf dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild": "pnpm run build:clean",
-    "build:tsc": "pnpm run build:types"
+    "build:tsc": "pnpm run build:types",
+    "prebuild:bundle": "pnpm run build:types"
   },
   "peerDependencies": {
     "uuid": "^9.0.1",

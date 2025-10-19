@@ -32,7 +32,10 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
 
     // Output formats
     format: ['esm'],
-    
+
+    // Ensure dist folders are pruned before each build
+    clean: true,
+
     // TypeScript configuration
     target: 'es2022',
 
@@ -66,7 +69,6 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     // Build settings
     splitting: false,
     sourcemap: true,
-    clean: true,
 
     // Common external dependencies (kept out of plugin bundles)
     // Policy: peer-managed runtime libs must be externalized

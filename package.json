@@ -76,6 +76,7 @@
     "as-any:report": "node scripts/report-as-any.mjs",
     "as-any:check": "node scripts/report-as-any.mjs --max=975",
     "shims:check": "node scripts/check-shims.mjs",
+    "sync:package-scripts": "node scripts/sync-package-scripts.mjs",
     "generate:pdf": "node scripts/generate-pdf-with-translation.js",
     "generate:pdf:ja": "node scripts/generate-pdf-with-translation.js --japanese",
     "generate:pdf:en": "node scripts/generate-pdf-with-translation.js --english",
