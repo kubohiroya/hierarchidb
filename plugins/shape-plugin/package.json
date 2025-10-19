@@ -45,16 +45,17 @@
   ],
   "scripts": {
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
-    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
-    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
+    "@hierarchidb/plugin-entity-service": "workspace:*",
     "@mapbox/vector-tile": "^2.0.3",
     "@tanstack/react-virtual": "^3.2.0",
     "@turf/turf": "^7.0.0",

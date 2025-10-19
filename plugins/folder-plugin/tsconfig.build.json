@@ -4,6 +4,14 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
+    "paths": {
+      "@hierarchidb/plugin-sdk": [
+        "../../packages/plugin-sdk/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-sdk/*": [
+        "../../packages/plugin-sdk/dist/*"
+      ]
+    },
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,

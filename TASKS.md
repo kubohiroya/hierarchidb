@@ -5675,6 +5675,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 13:32 progress: fix/location-plugin/import-paths — `package.json` の prebuild を削除し、dev/peer 依存に `@hierarchidb/{components,batch-sdk}` を追加。`tsup.config.ts` を現行 externals（runtime-plugin-dialog 等）に更新し、`tsconfig.build.json` に dist ベースの paths を追加。
 - 2025-10-19 13:40 progress: fix/location-plugin/import-paths — DownloadService 利用箇所を `DownloadServiceBundle` ベースに切り替え、テスト/ambient d.ts も新型へ更新。`pnpm --filter @hierarchidb/location-plugin build` を実行し、型生成とバンドルが `dist/` 配下に出力されることを確認。
 - 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
+- 2025-10-19 11:32 progress: fix/timeline-plugin/typecheck-regression — tsup 実行を `NODE_OPTIONS="--loader ts-node/esm"` 付きに統一。各 package.json の `tsup` 系スクリプトを環境変数経由で loader 登録するよう更新し、上記 3 パッケージの `build:bundle` を再実行して正常終了を確認。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。
 - 2025-10-04 23:52 progress: refactor/worker/error-model-unify — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し成功（tsc --noEmit）。
@@ -5732,3 +5733,5 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-11 10:55 progress: chore/ui-core/export-surface — `useWorkingCopy` をジェネリック対応の薄いブリッジに更新し、RouteDialog/useRouteBatchProgress などの暗黙 any を解消。RouteBasicInfoStep で `Partial<BasicInfoValue>` を明示。
 - 2025-10-11 11:20 command: pnpm --filter @hierarchidb/ui-core typecheck — 依存パッケージ（@hierarchidb/util 等）の型宣言未解決と既存 TabularPreview 周辺の implicit any により失敗（TS2307/TS7006）。今回差分では新規エラー追加なし。
 - 2025-10-11 11:25 command: pnpm --filter @hierarchidb/route-plugin build:types — ワークスペース内パッケージ未解決（TS2307）と RouteBatchConfig 既存プロパティ不整合により失敗。今回の UI コード差分による追加エラーは発生せず。
+- 2025-10-19 18:48 start: fix/resolver/property-resolver-integration-test — `@hierarchidb/resolver-plugin` の `plugins/resolver-plugin/src/ui/components/__tests__/PropertyResolver.integration.test.ts` で発生している型/実行エラーの調査と修正に着手。sandbox 制約のため main ブランチ上で継続作業。
+- 2025-10-19 19:05 progress: fix/resolver/property-resolver-integration-test — plugin-sdk 依存を除去するための共通ランタイム（仮称 `@hierarchidb/plugin-entity-service`）を新設し、resolver/shape/spreadsheet 向けに汎用化する方針へ拡張。pnpm-workspace.yaml を更新し、新パッケージの雛形を作成。

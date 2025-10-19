@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "typecheck": "tsc --project tsconfig.json",
     "lint": "eslint 'src/**/*.ts'"
   },

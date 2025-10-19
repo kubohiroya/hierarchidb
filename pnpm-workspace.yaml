@@ -11,6 +11,7 @@ packages:
   - packages/ui/treeconsole/*
   - packages/backend/*
   - packages/feature/*
+  - packages/plugin-entity-service
   - packages/plugin-sdk
   - packages/plugin-api
   - packages/batch-sdk

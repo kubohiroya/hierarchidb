@@ -79,7 +79,12 @@ export interface PreviewConfig {
  */
 export type ResolverDraftPayload = Partial<ResolverEntity>;
 
-export type ResolverWorkingCopyEntity = WorkingCopyDraft<ResolverEntity> & Partial<ResolverEntity>;
+export type ResolverWorkingCopyEntity = WorkingCopyDraft<ResolverEntity> &
+  Partial<ResolverEntity> & {
+    originalId?: NodeId;
+    isDirty?: boolean;
+    workingCopyId?: NodeId;
+  };
 
 export type ResolverWorkingCopy = ResolverWorkingCopyEntity;
 

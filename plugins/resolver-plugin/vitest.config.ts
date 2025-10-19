@@ -2,15 +2,15 @@ import { defineConfig } from 'vitest/config';
 import fs from 'node:fs';
 import path from 'path';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.ts');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
-const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
+const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-entity-service/dist/index.js');
+const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-entity-service/src/index.ts');
+const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
 
 export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./src/ui/components/__tests__/setup.ts'],
     pool: 'threads',
     maxThreads: 1,
     minThreads: 1,
@@ -26,8 +26,12 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.ts'),
-      '@hierarchidb/plugin-sdk': basePluginEntry,
+      '@hierarchidb/util': path.resolve(__dirname, '../../packages/util/src/index.ts'),
+      '@hierarchidb/plugin-entity-service': entityServiceEntry,
+      '@hierarchidb/download': path.resolve(
+        __dirname,
+        '../../packages/feature/download/src/index.ts',
+      ),
       // Needed when ui/core (dist) imports runtime-client
       '@hierarchidb/runtime-client': path.resolve(
         __dirname,
