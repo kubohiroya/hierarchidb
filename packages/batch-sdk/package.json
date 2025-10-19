@@ -21,13 +21,12 @@
     "prebuild": "pnpm run clean",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup",
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "dev": "tsup --watch"
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",

@@ -18,10 +18,10 @@
   "scripts": {
     "build": "pnpm run build:types && pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
-    "dev": "tsup --watch",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "test": "vitest --passWithNoTests",
@@ -29,7 +29,7 @@
     "coverage": "vitest run --coverage",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup",
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run build:clean"
   },
   "devDependencies": {

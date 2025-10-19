@@ -18,7 +18,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup",
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },

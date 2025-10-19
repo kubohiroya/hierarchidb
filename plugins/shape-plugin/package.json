@@ -45,14 +45,14 @@
   ],
   "scripts": {
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
-    "dev": "tsup --watch",
-    "build": "tsup",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
+    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@mapbox/vector-tile": "^2.0.3",

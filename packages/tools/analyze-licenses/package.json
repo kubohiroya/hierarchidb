@@ -16,8 +16,8 @@
   ],
   "scripts": {
     "start": "node dist/cli.mjs",
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

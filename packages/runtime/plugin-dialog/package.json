@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "dev": "tsup --watch",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "prebuild": "pnpm run build:clean",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
@@ -23,15 +23,14 @@
     "lint": "eslint src",
     "format": "prettier --write src",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup"
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "vitest": "^3.2.4",
     "tsup": "^8.3.5",

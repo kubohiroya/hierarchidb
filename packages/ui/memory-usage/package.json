@@ -17,13 +17,13 @@
   ],
   "scripts": {
     "build": "pnpm run build:types && pnpm run build:bundle",
-    "dev": "tsup --watch",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup",
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run build:clean",
     "build:tsc": "pnpm run build:types"
   },
@@ -36,8 +36,7 @@
     "@mui/icons-material": "^7.3.2",
     "@hierarchidb/util": "workspace:*"
   },
-  "keywords": [
-  ],
+  "keywords": [],
   "author": "HierarchiDB Team",
   "license": "MIT",
   "devDependencies": {

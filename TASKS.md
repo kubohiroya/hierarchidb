@@ -5672,6 +5672,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 13:05 progress: fix/resolver-plugin/import-paths — `tsup.config.ts` / `tsup.database.config.ts` のエントリを `src/worker/database/index.ts` へ更新し、外部参照を `@hierarchidb/runtime-plugin-dialog` など現行パッケージへ刷新。`tsconfig.json` の `paths`/`rootDir` も整理し、README の import 例を最新化。
 - 2025-10-19 13:12 progress: fix/resolver-plugin/import-paths — `pnpm --filter @hierarchidb/resolver-plugin build` を実行し、型生成とバンドルが `dist/` 配下に成功することを確認。
 - 2025-10-19 13:18 start: fix/location-plugin/import-paths — Location plugin で旧 `@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/batch-sdk` 参照と DownloadService 型不整合が残存しているため、現行 API への揃え込みを開始。
+- 2025-10-19 13:32 progress: fix/location-plugin/import-paths — `package.json` の prebuild を削除し、dev/peer 依存に `@hierarchidb/{components,batch-sdk}` を追加。`tsup.config.ts` を現行 externals（runtime-plugin-dialog 等）に更新し、`tsconfig.build.json` に dist ベースの paths を追加。
+- 2025-10-19 13:40 progress: fix/location-plugin/import-paths — DownloadService 利用箇所を `DownloadServiceBundle` ベースに切り替え、テスト/ambient d.ts も新型へ更新。`pnpm --filter @hierarchidb/location-plugin build` を実行し、型生成とバンドルが `dist/` 配下に出力されることを確認。
 - 2025-10-19 11:20 progress: fix/timeline-plugin/typecheck-regression — JS shim (`tsup.base.config.js`, `packages/ui/floating-window/tsup.config.js`) を削除し、全 tsup 設定を `tsup.base.config.ts` 参照に統一。`pnpm --filter @hierarchidb/{timeline-plugin,runtime-plugin-dialog,ui-floating-window} build:bundle` を実行し、いずれも成功。
 - 2025-10-04 23:45 progress: refactor/worker/error-model-unify — `services/utils/error-adapter.ts` を新設し、CommandProcessor/TreeMutationService のエラー整流処理を新ユーティリティへ切替。
 - 2025-10-04 23:48 progress: refactor/worker/error-model-unify — `command-processor-error-model.test.ts` を追加して未知エラー/ConstraintError の分類を検証。

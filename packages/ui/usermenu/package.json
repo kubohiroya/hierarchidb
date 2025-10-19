@@ -19,14 +19,13 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "pnpm run build:types",
     "clean": "rm -rf dist",
-    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "clean:force": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup",
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run build:clean"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/ui-auth": "workspace:*",

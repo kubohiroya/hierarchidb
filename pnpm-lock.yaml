@@ -2385,6 +2385,9 @@ importers:
       '@hierarchidb/batch-api':
         specifier: workspace:*
         version: link:../../packages/batch-api
+      '@hierarchidb/batch-sdk':
+        specifier: workspace:*
+        version: link:../../packages/batch-sdk
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2394,6 +2397,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
+      '@hierarchidb/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../packages/feature/download

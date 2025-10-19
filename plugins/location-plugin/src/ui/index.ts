@@ -78,4 +78,4 @@ export async function getPanelComponent(): Promise<PluginPanelComponent> {
 }
 
 // Register host-composed steps on import (idempotent)
-import './steps-provider';
+import './components/steps-provider.js';

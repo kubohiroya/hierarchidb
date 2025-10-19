@@ -23,10 +23,10 @@
     "module": "Node16",
     "paths": {
       "@hierarchidb/common-types": [
-        "../../packages/common/types/src/index.ts"
+        "../../packages/common/types/dist/index.d.ts"
       ],
       "@hierarchidb/common-types/*": [
-        "../../packages/common/types/src/*"
+        "../../packages/common/types/dist/*"
       ]
     }
   },

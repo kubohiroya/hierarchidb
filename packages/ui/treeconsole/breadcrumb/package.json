@@ -16,14 +16,13 @@
     "prebuild": "pnpm run build:clean",
     "build": "pnpm run build:types && pnpm run build:bundle",
     "build:tsc": "pnpm run build:types",
-    "dev": "tsup --watch",
+    "dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "build:clean": "rm -rf dist",
     "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "tsup"
+    "build:bundle": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" tsup"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "comlink": "^4.4.2",
     "@hierarchidb/ui-icon": "workspace:*",
@@ -64,12 +63,12 @@
   "tsup": {
     "external": [
       "@emotion/react",
-    "@emotion/styled",
-    "@mui/icons-material",
-    "@mui/material",
-    "@tanstack/react-router",
-    "react",
-    "react-dom"
-  ]
-}
+      "@emotion/styled",
+      "@mui/icons-material",
+      "@mui/material",
+      "@tanstack/react-router",
+      "react",
+      "react-dom"
+    ]
+  }
 }
