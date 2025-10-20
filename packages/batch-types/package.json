@@ -14,11 +14,13 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm -w --filter @hierarchidb/batch run build:types && pnpm run build:types",
-    "build:types": "api-extractor run --local"
+    "build": "pnpm run build:types",
+    "build:types": "pnpm --workspace-root --filter @hierarchidb/batch run build:types && api-extractor run --local"
+  },
+  "dependencies": {
+    "@hierarchidb/batch": "workspace:*"
   },
   "devDependencies": {
-    "@hierarchidb/batch": "workspace:*",
     "@microsoft/api-extractor": "^7.49.3"
   }
 }

@@ -6,14 +6,8 @@ import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchi
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 
-type RouteProgressSnapshot = {
-  jobId: string;
-  progress: number;
-  phase: string;
-};
-
 export interface RouteBatchProgressResult {
-  snapshot: RouteProgressSnapshot | undefined;
+  snapshot: UnifiedProgressInfo | null;
   ready: boolean;
   progress: UnifiedProgressInfo | null;
   status: BatchSessionStatus | null;
@@ -65,21 +59,17 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
 
   const { progress } = useBatchProgress(adapter, { autoSubscribe: true, poll });
 
-  const [snapshot, setSnapshot] = useState<RouteProgressSnapshot | undefined>();
+  const [snapshot, setSnapshot] = useState<UnifiedProgressInfo | null>(null);
   useEffect(() => {
     if (!jobId) {
-      setSnapshot(undefined);
+      setSnapshot(null);
       setStatus(null);
       setMutationError(null);
     }
   }, [jobId]);
   useEffect(() => {
     if (!progress || !jobId) return;
-    setSnapshot({
-      jobId,
-      progress: Math.round(progress.percentage ?? 0),
-      phase: progress.stage ?? progress.phase ?? 'processing',
-    });
+    setSnapshot({ ...progress, sessionId: jobId });
   }, [progress, jobId]);
 
   const pause = useCallback(async () => {
@@ -137,11 +127,12 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
 }
 
 function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
-  const total = numeric(status.progress.total);
-  const completed = numeric(status.progress.completed);
-  const failed = numeric(status.progress.failed);
+  const progress = status.progress ?? {};
+  const total = numeric((progress as any).total);
+  const completed = numeric((progress as any).completed);
+  const failed = numeric((progress as any).failed);
   const phase = mapStatusToPhase(status.status);
-  const percentage = computePercentage(phase, total, completed, status.progress.percentage);
+  const percentage = computePercentage(phase, total, completed, (progress as any).percentage);
   const meta: Record<string, unknown> = {};
   if (status.error) {
     meta.lastError = status.error;
@@ -149,19 +140,19 @@ function statusToUnified(status: BatchSessionStatus): UnifiedProgressInfo {
   }
 
   return {
-    stage: status.progress.currentStage ?? 'processing',
+    stage: (progress as any).currentStage ?? 'processing',
     total,
     completed,
     failed,
     percentage,
-    currentTask: status.progress.currentTask ?? status.progress.currentStage ?? 'processing',
+    currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
     phase,
     timestamp: status.lastActivity ?? Date.now(),
     payload: {
       total,
       completed,
       failed,
-      currentTask: status.progress.currentTask ?? status.progress.currentStage ?? 'processing',
+      currentTask: (progress as any).currentTask ?? (progress as any).currentStage ?? 'processing',
       ...(Object.keys(meta).length > 0 ? { meta } : {}),
     },
     message: status.error,

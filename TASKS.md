@@ -441,9 +441,63 @@
     - [x] `rg "components:" plugins` などで他プラグインの旧 `PluginDefinition.components` 利用状況を棚卸し、必要なら別タスク化
     - [x] cleanup 後の `dist/ui` 出力を確認し、`plugin-definition` に UI コンポーネント参照が混入していないことを確認
     - [x] ロールバック手順と互換レイヤー有無の判断を `TASKS.md` 進捗メモへ追記
-  - ロールバック手順：
+- ロールバック手順：
     - 隔離または削除した UI 定義ファイルを元の場所へ戻し、`pnpm --filter @hierarchidb/folder-plugin typecheck` / `build` を再実行
     - 影響があった場合は `@hierarchidb/plugin-registry` のローダーで再確認し、結果を運用ログへ記録
+
+22) NodeNext 移行: 現状棚卸し（P0）
+- ブランチ: `chore/node-next/audit`
+- 依存: TASKS.md 運用ログ、`tsconfig*.json`、tsup 共通設定、ビルドスクリプト
+- 受け入れ基準（DoD）:
+  - [ ] Node16 固定箇所（tsconfig*, tsup.base, `NODE_OPTIONS="--loader ts-node/esm"`, codemod 等）を網羅した一覧を作成し、`TASKS.md` チェックリストへ追加
+  - [ ] 主要コマンド（`pnpm typecheck:graph`, `pnpm build:turbo`, `pnpm lint`, `pnpm test`）の現行成功ログを取得し、運用ログに記録
+  - [ ] 影響を受ける CI/スクリプト/API Extractor の依存関係を洗い出し、後続タスクの前提として明記
+- チェックリスト:
+  - [ ] `pnpm list @types/node` と `pnpm list ts-node` のバージョンを記録
+  - [ ] 過去の NodeNext 移行トラブル（例: TS5110）を整理し、再発防止メモを運用ログへ追記
+  - [ ] ESM 拡張子を確認するコマンドや codemod をリスト化
+- ロールバック手順：情報整理のみのため不要
+
+23) NodeNext 移行: 設定切替と import 整理（P0）
+- ブランチ: `chore/node-next/tsconfig`
+- 依存: 22) NodeNext 移行: 現状棚卸し
+- 受け入れ基準（DoD）:
+  - [ ] ルートおよび全パッケージの `tsconfig*.json` で `module` / `moduleResolution` を `NodeNext`（もしくは `ESNext` + `NodeNext`）へ統一
+  - [ ] `tsup.base.config.ts` の `dts.compilerOptions` を NodeNext に更新し、`pnpm codemod:esm-ext --write` 実行後に拡張子漏れがないことを確認
+  - [ ] NodeNext 設定で `pnpm typecheck:graph` がグリーンになり、結果を運用ログへ記録
+- チェックリスト:
+  - [ ] `pnpm codemod:esm-ext --dry-run` → `--write` を実行し、差分をレビュー
+  - [ ] `Node16` → `NodeNext` の置換は専用スクリプト（codemod もしくは repo 用ユーティリティ）で一括実行し、手作業の IDE 置換は禁止（スクリプトとログを運用ログへ記録）
+  - [ ] 代表パッケージで `pnpm exec tsc --noEmit` を手動実行
+  - [ ] `tsconfig.esm-node16.json` 等の命名・参照を更新し、不要なファイルを整理
+- ロールバック手順：対象ファイルの差分を revert し、Node16 設定で `pnpm typecheck:graph` が再度成功することを確認
+
+24) NodeNext 移行: ローダー／依存更新（P0）
+- ブランチ: `chore/node-next/runtime`
+- 依存: 23) NodeNext 移行: 設定切替と import 整理
+- 受け入れ基準（DoD）:
+  - [ ] `NODE_OPTIONS="--loader ts-node/esm"` を使用しているスクリプトを `tsx` など NodeNext 対応ランタイムへ置き換え、該当コマンドが成功
+  - [ ] `@types/node` を Node20 系へ引き上げ、`pnpm install --lockfile-only` 実行後のロックファイル差分を確認
+  - [ ] 変更後に `pnpm build:turbo`, `pnpm lint`, `pnpm test` がグリーンであることを運用ログに記録
+- チェックリスト:
+  - [ ] `NODE_OPTIONS="--loader ts-node/esm"` の置換は専用スクリプト（例: repo 内 codemod / ts-morph ユーティリティ）で一括実行し、実行ログを運用ログへ記録（手動 IDE 置換は禁止）
+  - [ ] `pnpm up @types/node` の実行ログを取得
+  - [ ] `tsx` へ置き換えたスクリプトで `--watch` / `build` / `dev` が期待通り動作するか確認
+  - [ ] API Extractor 対象パッケージ（例: `@hierarchidb/batch-types`）で `pnpm --filter ... build:types` を再実行
+- ロールバック手順：`package.json` とローダースクリプト変更を revert し、Node16 設定で `pnpm build:turbo` が成功することを確認
+
+25) NodeNext 移行: 検証とドキュメント更新（P0）
+- ブランチ: `chore/node-next/verification`
+- 依存: 24) NodeNext 移行: ローダー／依存更新
+- 受け入れ基準（DoD）:
+  - [ ] NodeNext 設定での `pnpm typecheck:graph`, `pnpm build:turbo`, `pnpm lint`, `pnpm test` 成功ログを運用ログに記録
+  - [ ] `AGENTS.md`, `TASKS.md`, `docs/runtime-wiring.md` 等に NodeNext 方針とロールバック手順を反映
+  - [ ] CI 設定（Turbo, GitHub Actions など）が Node20 + NodeNext 前提で動作するよう更新し、結果を確認
+- チェックリスト:
+  - [ ] CI ジョブまたはローカル再現ログを取得し、リンクを TASKS 運用ログへ追記
+  - [ ] ロールバック手順（Node16 へ戻す場合の手順）をドキュメント化
+  - [ ] 完了後に ToDo から該当タスクを Done へ移動
+- ロールバック手順：ドキュメント・CI 設定の差分を revert し、Node16 設定での基盤コマンドを再検証
 
 - refactor/shape-plugin/ui-definition-alignment（UIPluginDefinition → registry 副作用移行, P1）
   - ブランチ: `refactor/shape-plugin/ui-definition-alignment`
@@ -3873,7 +3927,7 @@ P2:
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
 - feat/route/batch-processing-implementation（M1: スキャフォールディング＆重複排除）
   - ブランチ: `feat/route/batch-processing-implementation`
-  - 依存: `@hierarchidb/batch`（workspace） / `@hierarchidb/download`（net.port, retry/rps） / `@hierarchidb/runtime-shared-batch-processor`
+- 依存: `@hierarchidb/batch`（workspace） / `@hierarchidb/download`（net.port, retry/rps） / `@hierarchidb/runtime-plugin-dialog`
   - フラグ: `ROUTE_BATCH_ENABLED`（prod 既定OFF）
   - スコープ（M1）:
     - ProgressEmitter/Store の共有化（runtime-shared へ昇格 or 参照切替）
@@ -3902,6 +3956,8 @@ P2:
 
 <!-- moved to Doing: feat/location/batch-session-v2 -->
   - 運用ログ:
+    - progress: 2025-10-20 10:32 `pnpm --filter @hierarchidb/route-plugin build:types` を実行し、`@hierarchidb/batch` への移行後も RouteBatchSession/RouteBatchManager/useRouteBatchProgress が型検証を通過することを確認。
+    - progress: 2025-10-20 10:36 Route/Location/Shape プラグインの tsconfig に dist 優先の paths を追加し、`plugins/location-plugin/src/common/types/batch.d.ts` の legacy スタブを削除。`pnpm --filter @hierarchidb/location-plugin build:types` / `typecheck` がグリーンであることを記録。
     - updated: 2025-09-07 19:45 進捗同期（前半完了・残タスク明記）。
     - updated: 2025-09-07 20:10 レーン別セマフォ実装とテスト確認（Session/Manager）。
     - progress: 2025-09-19 09:48 `pnpm -C packages/runtime-shared/batch-processor build` を実行し、`dist/index.d.ts` を再生成して共通バッチ基盤の型定義を揃えた。
@@ -5855,6 +5911,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 09:30 progress: refactor/tools/node-type-registry-unify — `packages/tools/vite-plugin-node-type-registry` から仮想モジュール生成ロジックを撤去し、alias 専用プラグインとして再構成。
 - 2025-10-20 09:33 progress: docs/plugin-registry-static-flow — プラグイン関連ドキュメント（app/docs/16-plugin-dev-with-registry.md, docs/architecture/plugin-dialog-integration.md ほか）を静的レジストリ基準へ更新。
 - 2025-10-20 09:35 command: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build && pnpm --filter @hierarchidb/vite-plugin-node-type-registry typecheck — エイリアス専用化後もビルド/型検証が成功することを確認。
+- 2025-10-20 10:32 progress: refactor/batch-service-migration — Route/Location/Shape の batch 依存を `@hierarchidb/batch` へ統一し、tsconfig の paths を dist 優先に調整。`pnpm --filter @hierarchidb/route-plugin build:types` を実行し、新 API への切替後も型検証が通過することを確認。
+- 2025-10-20 10:36 progress: refactor/batch-service-migration — `plugins/location-plugin/src/common/types/batch.d.ts` の legacy スタブを削除し、`pnpm --filter @hierarchidb/location-plugin build:types` / `typecheck` を実行して成功ログを記録。
 - 2025-10-19 12:20 start: fix/app/plugin-database-externals — app/vite.config.ts の `build` 設定重複と plugin database エントリの解決失敗に対応するため調査を開始。
 - 2025-10-19 12:26 progress: fix/app/plugin-database-externals — 重複していた `build` ブロックを統合し、`rollupOptions.external` に `@hierarchidb/{basemap,resolver,route,spreadsheet}-plugin/database` をまとめて指定。
 - 2025-10-19 12:34 blocked: fix/app/plugin-database-externals — `pnpm --filter @hierarchidb/app build` を実行したところ、`@hierarchidb/runtime-ui-plugin-dialog` の alias 参照先 (`packages/runtime-ui/plugin-dialog/src/index.ts`) が存在せず `ENOENT` で停止。rename されたディレクトリ構成の追従が別途必要。

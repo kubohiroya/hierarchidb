@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "../..",
+    "baseUrl": ".",
     "lib": [
       "ES2020",
       "DOM",
@@ -10,18 +10,31 @@
     "outDir": "./dist",
     "jsx": "react-jsx",
     "module": "Node16",
+    "moduleResolution": "Node16",
     "paths": {
-      "@hierarchidb/runtime-worker": [
-        "./src/types/runtime-worker.d.ts"
+      "@hierarchidb/batch": [
+        "../../packages/feature/batch/dist/index.d.ts",
+        "../../packages/feature/batch/src/index.ts"
       ],
-      "@hierarchidb/plugin-runtime-services": [
-        "./src/types/module-stubs.d.ts"
+      "@hierarchidb/batch/*": [
+        "../../packages/feature/batch/dist/*",
+        "../../packages/feature/batch/src/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
-        "./src/types/module-stubs.d.ts"
+        "../../packages/plugin-ui-sdk/dist/index.d.ts",
+        "../../packages/plugin-ui-sdk/src/index.ts"
       ],
-      "@hierarchidb/compute": [
-        "./src/types/module-stubs.d.ts"
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../../packages/plugin-ui-sdk/dist/*",
+        "../../packages/plugin-ui-sdk/src/*"
+      ],
+      "@hierarchidb/runtime-basic-info": [
+        "../../packages/runtime/basic-info/dist/index.d.ts",
+        "../../packages/runtime/basic-info/src/index.ts"
+      ],
+      "@hierarchidb/runtime-basic-info/*": [
+        "../../packages/runtime/basic-info/dist/*",
+        "../../packages/runtime/basic-info/src/*"
       ]
     }
   },

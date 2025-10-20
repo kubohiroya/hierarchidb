@@ -31,6 +31,15 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
+      "@hierarchidb/batch-runtime-services": [
+        "packages/batch-runtime-services/src/index.ts"
+      ],
+      "@hierarchidb/batch-runtime-services/*": [
+        "packages/batch-runtime-services/src/*"
+      ],
+      "@hierarchidb/batch-types": [
+        "packages/batch-runtime-services/src/types.ts"
+      ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
       ],
@@ -50,58 +59,16 @@
         "packages/feature/download/src/*"
       ],
       "@hierarchidb/runtime-worker": [
-        "packages/runtime/worker/src/index.ts"
+        "packages/runtime/worker/dist/index.d.ts"
       ],
       "@hierarchidb/runtime-worker/*": [
-        "packages/runtime/worker/src/*"
+        "packages/runtime/worker/dist/*"
       ],
       "@hierarchidb/ui-file": [
         "packages/ui/file/src/index.ts"
       ],
       "@hierarchidb/ui-file/*": [
         "packages/ui/file/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-base": [
-        "packages/ui/treeconsole/base/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-base/*": [
-        "packages/ui/treeconsole/base/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-breadcrumb": [
-        "packages/ui/treeconsole/breadcrumb/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-breadcrumb/*": [
-        "packages/ui/treeconsole/breadcrumb/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-footer": [
-        "packages/ui/treeconsole/footer/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-footer/*": [
-        "packages/ui/treeconsole/footer/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-speeddial": [
-        "packages/ui/treeconsole/speeddial/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-speeddial/*": [
-        "packages/ui/treeconsole/speeddial/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-toolbar": [
-        "packages/ui/treeconsole/toolbar/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-toolbar/*": [
-        "packages/ui/treeconsole/toolbar/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-trashbin": [
-        "packages/ui/treeconsole/trashbin/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-trashbin/*": [
-        "packages/ui/treeconsole/trashbin/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-treetable": [
-        "packages/ui/treeconsole/treetable/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-treetable/*": [
-        "packages/ui/treeconsole/treetable/src/*"
       ],
       "@hierarchidb/ui-theme": [
         "packages/ui/theme/src/index.ts"
@@ -125,11 +92,9 @@
         "packages/plugins/spreadsheet-plugin/src/*"
       ],
       "@hierarchidb/components": [
-        "packages/components/dist/index.d.ts",
         "packages/components/src/index.ts"
       ],
       "@hierarchidb/components/*": [
-        "packages/components/dist/*",
         "packages/components/src/*"
       ],
       "@hierarchidb/ui-data-grid": [
@@ -151,10 +116,10 @@
         "packages/feature/batch/src/*"
       ],
       "@hierarchidb/runtime-plugin-dialog": [
-        "packages/runtime/plugin-dialog/src/index.ts"
+        "packages/runtime/plugin-dialog/dist/index.d.ts"
       ],
       "@hierarchidb/runtime-plugin-dialog/*": [
-        "packages/runtime/plugin-dialog/src/*"
+        "packages/runtime/plugin-dialog/dist/*"
       ],
       "@hierarchidb/ui-core": [
         "packages/ui/core/src/index.ts"
@@ -167,6 +132,12 @@
       ],
       "@hierarchidb/ui-datasource/*": [
         "packages/ui/datasource/src/*"
+      ],
+      "@hierarchidb/plugin-types": [
+        "packages/plugin-types/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-types/*": [
+        "packages/plugin-types/dist/*"
       ],
       "@hierarchidb/ui-license": [
         "packages/ui/license/src/index.ts"
@@ -181,16 +152,16 @@
         "packages/runtime-ui/license/src/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
-        "packages/plugin-ui-sdk/src/index.ts"
+        "packages/plugin-ui-sdk/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-ui-sdk/*": [
-        "packages/plugin-ui-sdk/src/*"
+        "packages/plugin-ui-sdk/dist/*"
       ],
       "@hierarchidb/plugin-runtime-services": [
-        "packages/plugin-runtime-services/src/index.ts"
+        "packages/plugin-runtime-services/dist/index.d.ts"
       ],
       "@hierarchidb/plugin-runtime-services/*": [
-        "packages/plugin-runtime-services/src/*"
+        "packages/plugin-runtime-services/dist/*"
       ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"

@@ -31,9 +31,14 @@
     "__tests__/**"
   ],
   "references": [
-    { "path": "../../packages/feature/batch/tsconfig.build.json" },
-    { "path": "../../packages/batch-types/tsconfig.json" },
+    { "path": "../../packages/common/types/tsconfig.build.json" },
+    { "path": "../../packages/common/api/tsconfig.build.json" },
+    { "path": "../../packages/components/tsconfig.build.json" },
+    { "path": "../../packages/util/tsconfig.build.json" },
+    { "path": "../../packages/runtime/basic-info/tsconfig.build.json" },
     { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
-    { "path": "../../packages/feature/download/tsconfig.build.json" }
+    { "path": "../../packages/plugin-ui-sdk/tsconfig.build.json" },
+    { "path": "../../packages/feature/download/tsconfig.build.json" },
+    { "path": "../../packages/feature/batch/tsconfig.build.json" }
   ]
 }
