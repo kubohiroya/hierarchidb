@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.ts';
+import { createTsupConfig } from '../../tsup.base.config';
 
 export default createTsupConfig({
   entry: {
@@ -19,12 +19,6 @@ export default createTsupConfig({
     'provider',
     'provider-dom',
     'provider-i18next',
-    'react-i18next',
-    'i18next',
-    'react',
-    'dexie',
-    '@mui/material',
-    '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
     '@hierarchidb/plugin-ui-sdk',

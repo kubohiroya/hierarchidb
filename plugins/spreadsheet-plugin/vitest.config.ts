@@ -1,10 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import * as fs from 'node:fs';
 import * as path from 'path';
 
-const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/dist/index.js');
-const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
-const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
+const entityServiceEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -23,10 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,
-      '@hierarchidb/download': path.resolve(
-        __dirname,
-        '../../packages/feature/download/src/index.ts',
-      ),
+      '@hierarchidb/download': path.resolve(__dirname, '../../packages/feature/download/src/index.ts'),
     },
   },
 });

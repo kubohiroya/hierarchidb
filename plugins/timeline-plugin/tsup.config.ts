@@ -1,4 +1,4 @@
-import { createTsupConfig } from "../../tsup.base.config.ts";
+import { createTsupConfig } from "../../tsup.base.config";
 
 export default createTsupConfig({
   entry: [

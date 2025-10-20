@@ -1,0 +1,33 @@
+{
+  "name": "@hierarchidb/plugin-registry",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm run build:bundle",
+    "build:types": "api-extractor run --local",
+    "build:bundle": "pnpm run build:types && tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.53.1",
+    "tsup": "^8.5.0",
+    "typescript": "workspace:^5.9.3"
+  }
+}

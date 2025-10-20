@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.ts';
+import { createTsupConfig } from '../../tsup.base.config';
 
 export default createTsupConfig({
   // Full build: library + UI + worker + dedicated workers
@@ -20,7 +20,6 @@ export default createTsupConfig({
     'services/index': 'src/services/index.ts',
   },
   external: [
-    'dexie',
     '@hierarchidb/batch-types',
     '@hierarchidb/plugin-types',
     '@hierarchidb/plugin-runtime-services',
@@ -40,12 +39,6 @@ export default createTsupConfig({
     '@hierarchidb/ui-country-select',
     '@hierarchidb/runtime-plugin-dialog',
     '@hierarchidb/ui-lru-splitview',
-    'react',
-    'react-dom',
-    '@mui/material',
-    '@mui/icons-material',
-    '@emotion/provider',
-    '@emotion/styled',
     // workspace deps (keep external when not bundled by host)
     '@hierarchidb/runtime-worker-factory',
     '@hierarchidb/runtime-client',
@@ -53,5 +46,6 @@ export default createTsupConfig({
     'provider',
     'provider-dom',
   ],
+
   splitting: false,
 });

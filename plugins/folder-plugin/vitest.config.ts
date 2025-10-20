@@ -1,10 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import fs from 'node:fs';
 import path from 'path';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.ts');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
-const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
+const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -29,7 +26,7 @@ export default defineConfig({
       // Use source during tests to avoid requiring a prebuild
       '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/dist/index.ts'),
+      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
     },
   },

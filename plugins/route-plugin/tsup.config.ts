@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.ts';
+import { createTsupConfig } from '../../tsup.base.config';
 
 export default createTsupConfig({
   entry: {
@@ -16,8 +16,6 @@ export default createTsupConfig({
     },
   },
   external: [
-    '@emotion/react',
-    '@emotion/styled',
     '@hierarchidb/auth-recovery',
     '@hierarchidb/batch',
     '@hierarchidb/common-api',
@@ -33,10 +31,6 @@ export default createTsupConfig({
     '@hierarchidb/ui-core',
     '@hierarchidb/ui-dialog',
     '@hierarchidb/util',
-    '@mui/icons-material',
-    '@mui/material',
-    'react',
-    'react-dom',
     // workspace deps that must stay external in host app
     '@hierarchidb/runtime-client',
     '@hierarchidb/runtime-worker-factory',

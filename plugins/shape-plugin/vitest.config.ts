@@ -1,10 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import * as fs from 'node:fs';
 import * as path from 'path';
 
-const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/dist/index.js');
-const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
-const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
+const entityServiceEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
 
 export default defineConfig({
   esbuild: {
@@ -46,7 +43,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Map legacy core imports to public dist builds for tests
-      '@hierarchidb/core': path.resolve(__dirname, '../../common/types/dist/index.ts'),
+      '@hierarchidb/core': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       '@hierarchidb/common-types': path.resolve(__dirname, '../../packages/common/types/src/index.ts'),
       '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
       '@hierarchidb/runtime-client': path.resolve(__dirname, '../../packages/runtime/client/src/index.ts'),

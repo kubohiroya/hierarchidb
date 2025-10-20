@@ -1,11 +1,8 @@
 import { defineConfig } from 'vitest/config';
-import * as fs from 'node:fs';
 import * as path from 'path';
 const RUN_ROUTE_TESTS = process.env.ROUTE_TESTS === '1';
 
-const basePluginDistEntry = path.resolve(__dirname, '../base-plugin/dist/index.ts');
-const basePluginSrcEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
-const basePluginEntry = fs.existsSync(basePluginDistEntry) ? basePluginDistEntry : basePluginSrcEntry;
+const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 
 export default defineConfig({
   test: {

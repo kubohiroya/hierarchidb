@@ -1,4 +1,4 @@
-import { createTsupConfig } from "../../tsup.base.config.ts";
+import { createTsupConfig } from "../../tsup.base.config";
 
 export default createTsupConfig({
   entry: {
@@ -16,13 +16,6 @@ export default createTsupConfig({
     },
   },
   external: [
-    'react',
-    'react-dom',
-    'dexie',
-    '@mui/material',
-    '@mui/icons-material',
-    '@emotion/react',
-    '@emotion/styled',
     '@hierarchidb/components',
     '@hierarchidb/batch',
     '@hierarchidb/batch-runtime-services',

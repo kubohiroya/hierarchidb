@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.ts';
+import { createTsupConfig } from '../../tsup.base.config';
 
 export default createTsupConfig({
   entry: {
@@ -10,12 +10,6 @@ export default createTsupConfig({
   external: [
     'provider',
     'provider-dom',
-    'react',
-    '@mui/material',
-    '@mui/icons-material',
-    '@emotion/react',
     '@emotion/provider',
-    '@emotion/styled',
-    'dexie',
   ],
 });

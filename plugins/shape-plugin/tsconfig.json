@@ -9,7 +9,24 @@
     ],
     "outDir": "./dist",
     "jsx": "react-jsx",
-    "module": "Node16"
+    "module": "Node16",
+    "paths": {
+      "@hierarchidb/runtime-worker": [
+        "./src/types/runtime-worker.d.ts"
+      ],
+      "@hierarchidb/plugin-runtime-services": [
+        "./src/types/module-stubs.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "./src/types/module-stubs.d.ts"
+      ],
+      "@hierarchidb/batch-runtime-services": [
+        "./src/types/module-stubs.d.ts"
+      ],
+      "@hierarchidb/compute": [
+        "./src/types/module-stubs.d.ts"
+      ]
+    }
   },
   "include": [
     "src/shared/**/*",

@@ -1,4 +1,4 @@
-import { createTsupConfig } from "../../tsup.base.config.ts";
+import { createTsupConfig } from "../../tsup.base.config";
 
 export default createTsupConfig({
   entry: {
@@ -18,23 +18,13 @@ export default createTsupConfig({
     },
   },
   external: [
-    '@mui/icons-material',
-    '@mui/material',
-    'react',
-    'react-dom',
-    'dexie',
-    'react-i18next',
-    'i18next',
     '@hierarchidb/util',
     '@hierarchidb/tabular-store',
     '@hierarchidb/folder-plugin',
-    '@hierarchidb/ui-core',
     '@hierarchidb/ui-csv-extract',
     '@hierarchidb/common-types',
     '@hierarchidb/runtime-worker',
     '@hierarchidb/spreadsheet-plugin',
     '@hierarchidb/runtime-ui-plugin-dialog',
-    '@emotion/react',
-    '@emotion/styled',
   ],
 });

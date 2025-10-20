@@ -1,4 +1,4 @@
-import { createTsupConfig } from '../../tsup.base.config.ts';
+import { createTsupConfig } from '../../tsup.base.config';
 
 // Align with monorepo defaults and emit .d.ts files
 export default createTsupConfig({

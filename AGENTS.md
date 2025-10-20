@@ -3,6 +3,8 @@
 ## Project Structure & Module Organization
 The workspace relies on `pnpm`. `app/` contains the main UI, with shared documentation in `app/docs/`. Core libraries live in `packages/` (runtime services, UI components, tooling), feature plugins in `plugins/`, and shared assets inside `docs/`, `reports/`, or package-level `dist/`. Tests are colocated: unit suites in `packages/*/src/__tests__/`, worker flows in `packages/runtime-worker/src/e2e/__tests__/`, and Playwright smoke tests in `e2e/`.
 
+- **TypeScript path & references policy (2025-10-20)**: Resolve workspace imports via `src/` wherever possible and keep declaration builds incremental. Do **not** mix `dist/` targets into `tsconfig.base.json`. Instead, rely on project references (`tsconfig.build.json`) to generate `.d.ts` when needed, and wire Turbo `dependsOn: ['^build:types']` for packages that require downstream declarations. Avoid injecting `clean` steps into shared build scripts—trigger them manually if a rebuild is required.
+
 ## Build, Test, and Development Commands
 - `pnpm install --frozen-lockfile` – sync dependencies before editing.
 - `pnpm dev` / `pnpm dev:with-watch` – launch the app and worker watchers.

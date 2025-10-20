@@ -1,10 +1,7 @@
 import { defineConfig } from 'vitest/config';
-import fs from 'node:fs';
 import path from 'path';
 
-const entityServiceDistEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/dist/index.js');
-const entityServiceSrcEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
-const entityServiceEntry = fs.existsSync(entityServiceDistEntry) ? entityServiceDistEntry : entityServiceSrcEntry;
+const entityServiceEntry = path.resolve(__dirname, '../../packages/plugin-runtime-services/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -28,15 +25,8 @@ export default defineConfig({
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/util': path.resolve(__dirname, '../../packages/util/src/index.ts'),
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,
-      '@hierarchidb/download': path.resolve(
-        __dirname,
-        '../../packages/feature/download/src/index.ts',
-      ),
-      // Needed when ui/core (dist) imports runtime-client
-      '@hierarchidb/runtime-client': path.resolve(
-        __dirname,
-        '../../runtime-worker/client/src/index.ts',
-      ),
+      '@hierarchidb/download': path.resolve(__dirname, '../../packages/feature/download/src/index.ts'),
+      '@hierarchidb/runtime-client': path.resolve(__dirname, '../../packages/runtime/client/src/index.ts'),
     },
   },
 });
