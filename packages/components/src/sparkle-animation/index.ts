@@ -1,1 +1,1 @@
-export * from './SparkleAnimation'
+export * from './SparkleAnimation.tsx'

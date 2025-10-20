@@ -131,9 +131,11 @@
         "packages/plugins/spreadsheet-plugin/src/*"
       ],
       "@hierarchidb/components": [
+        "packages/components/dist/index.d.ts",
         "packages/components/src/index.ts"
       ],
       "@hierarchidb/components/*": [
+        "packages/components/dist/*",
         "packages/components/src/*"
       ],
       "@hierarchidb/ui-data-grid": [

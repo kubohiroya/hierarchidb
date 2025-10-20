@@ -13,11 +13,6 @@
     ],
     "module": "Node16",
     "moduleResolution": "Node16",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "baseUrl": "."
   },

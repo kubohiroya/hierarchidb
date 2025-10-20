@@ -6,12 +6,12 @@ import {
 } from '@mui/icons-material';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { TreeNode, NodeId } from '@hierarchidb/common-types';
-import { SparkleAnimation } from '@hierarchidb/components';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 type NodeTypeIconLikeProps = {
@@ -64,6 +64,43 @@ export interface ColumnBuilderParams {
   useTrashColumns: boolean;
   trashAction: 'restore' | 'empty';
 }
+
+const SparkleAnimation: React.FC<{ showSparkle: boolean; duration?: number }> = ({
+  showSparkle,
+  duration = 5000,
+}) => {
+  const [isVisible, setIsVisible] = useState(showSparkle);
+
+  useEffect(() => {
+    if (!showSparkle) {
+      setIsVisible(false);
+      return;
+    }
+
+    setIsVisible(true);
+    const timer = window.setTimeout(() => setIsVisible(false), duration);
+    return () => window.clearTimeout(timer);
+  }, [showSparkle, duration]);
+
+  if (!isVisible) return null;
+
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-block',
+        animation: 'sparkle 1s infinite alternate',
+        '@keyframes sparkle': {
+          '0%': { opacity: 1, transform: 'scale(1)' },
+          '50%': { opacity: 0.7, transform: 'scale(1.2)' },
+          '100%': { opacity: 1, transform: 'scale(1)' },
+        },
+      }}
+    >
+      ✨
+    </Box>
+  );
+};
 
 export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<TreeNode>[] {
   const {

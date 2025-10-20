@@ -11,11 +11,11 @@ export * from './MenuListItemButton/index.js';
 export * from './NotificationSystem/NotificationSystem.js';
 export * from './ResourceProjectPreviewGroup/ResourceProjectPreviewGroup.js';
 export * from './SelectField/SelectField.js';
-export * from './sparkle-animation/SparkleAnimation';
+export * from './sparkle-animation/SparkleAnimation.tsx';
 export * from './StyledMenu/StyledMenu.js';
 export * from './TextCopyComponent/TextCopyComponent.js';
 export * from './toast/index.js';
 export * from './ToggleButtonItemGroup/ToggleButtonItemGroup.js';
 export * from './TreeToggleButtonGroup/index.js';
 export * from './landingpage/LandingPage.js';
-export * from './sparkle-animation/index'
+export * from './sparkle-animation/index.ts'

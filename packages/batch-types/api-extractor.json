@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
-  "mainEntryPointFilePath": "../batch-runtime-services/dist/types.d.ts",
+  "mainEntryPointFilePath": "../batch-runtime-services/dist/index.d.ts",
   "apiReport": {
     "enabled": false
   },
