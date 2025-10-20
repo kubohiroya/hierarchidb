@@ -1,1 +1,1 @@
-export * from './SparkleAnimation.js'
+export * from './SparkleAnimation'
