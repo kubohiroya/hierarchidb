@@ -127,7 +127,7 @@
 ## 実装方針
 
 1. **Phase1**: FolderEntityHandlerの継承とSpreadsheetEntityHandlerの実装
-2. **Phase2**: CSV処理APIの統合（ICSVDataApi実装）
+2. **Phase2**: CSV処理APIの統合（TabularDataApi実装）
 3. **Phase3**: UI統合（csv-extractコンポーネントの組み込み）
 4. **Phase4**: テストケース実装（StylerCSVApiDriver-testcases.md準拠）
 

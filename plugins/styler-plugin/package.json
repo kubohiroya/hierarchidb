@@ -84,6 +84,7 @@
     "@hierarchidb/components": "workspace:*"
   },
   "devDependencies": {
+    "@hierarchidb/plugin-types": "workspace:*",
     "@testing-library/react": "^14.0.0",
     "@types/react-window": "^1.8.8",
     "@vitest/ui": "^3.2.4",

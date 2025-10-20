@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BatchProgressAdapter, UnifiedProgressInfo, UseBatchProgressOptions } from '@hierarchidb/common-api';
 
+type UnsubscribeFn = () => void;
+
 export function useBatchProgress(
   adapter: BatchProgressAdapter | null,
   { autoSubscribe = true, poll }: UseBatchProgressOptions = {},
@@ -11,11 +13,11 @@ export function useBatchProgress(
 
   const subscribe = useCallback(() => {
     if (!adapter || subscribed) return;
-    const result = adapter.subscribe((p) => setProgress(p));
+    const result = adapter.subscribe((p: UnifiedProgressInfo) => setProgress(p));
     if (typeof result === 'function') {
-      unsubRef.current = result;
+      unsubRef.current = result as UnsubscribeFn;
     } else if (result && typeof result === 'object' && 'then' in result && typeof result.then === 'function') {
-      result.then((fn) => {
+      void result.then((fn: UnsubscribeFn) => {
         unsubRef.current = fn;
       });
     } else {

@@ -27,5 +27,9 @@
     "src/examples/**",
     "**/*.test.ts",
     "**/*.spec.ts"
+  ],
+  "references": [
+    { "path": "../common/types/tsconfig.build.json" },
+    { "path": "../common/api/tsconfig.build.json" }
   ]
 }

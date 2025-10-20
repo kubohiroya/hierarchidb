@@ -2,7 +2,7 @@ import type { PeerEntity, NodeId, StepValidation } from '@hierarchidb/common-typ
 
 export type StepComponent = (...args: unknown[]) => unknown;
 
-export interface DialogStepDefinition {
+export interface NodeDialogStepDefinition {
   //  :
   stepNumber: number;
   //  : UI
@@ -67,7 +67,7 @@ export interface BaseNodeDefinition<_TEntity = any> {
   baseDialog: any;
   //  :
   extendedFields?: ExtendedFieldDefinition[];
-  extendedSteps?: DialogStepDefinition[];
+  extendedSteps?: NodeDialogStepDefinition[];
   extendedValidation?: ValidationExtension;
 }
 
@@ -208,7 +208,7 @@ export interface ExtendingNodeTypeDefinition<
   //  : UI
   displayName: string;
   //  :
-  extendedSteps?: DialogStepDefinition[];
+  extendedSteps?: NodeDialogStepDefinition[];
   //  :
   extendedFields?: ExtendedFieldDefinition[];
   //  :

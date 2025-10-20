@@ -139,7 +139,7 @@ export const ResolverDialog: React.FC<ResolverDialogProps> = ({
   }, [entity, nodeId]);
 
   const updateWorkingCopy = useCallback((updates: Partial<ResolverWorkingCopyEntity>) => {
-    setWorkingCopy(prev => ({ ...prev, ...updates }));
+    setWorkingCopy((prev: Partial<ResolverWorkingCopyEntity>) => ({ ...prev, ...updates }));
   }, []);
 
   const handleSave = useCallback(async () => {

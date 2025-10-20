@@ -10,7 +10,7 @@ import type {
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
-  ICSVDataApi,
+  TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
 import type {
   CSVColumnInfo,
@@ -29,10 +29,10 @@ import { valueToColor } from '../common/utils/colorUtils.js';
  * : Spreadsheet
   */
 export class StylerDataService {
-  private csvApiDriver: ICSVDataApi;
+  private csvApiDriver: TabularDataApi;
   private pluginId: string = 'styler';
 
-  constructor(csvApiDriver: ICSVDataApi) {
+  constructor(csvApiDriver: TabularDataApi) {
     this.csvApiDriver = csvApiDriver;
   }
 

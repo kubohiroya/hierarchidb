@@ -20,15 +20,7 @@
     "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "module": "Node16",
-    "paths": {
-      "@hierarchidb/common-types": [
-        "../../packages/common/types/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "../../packages/common/types/dist/*"
-      ]
-    }
+    "module": "Node16"
   },
 "include": [
 "src/**/*.ts",

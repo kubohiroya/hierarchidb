@@ -17,7 +17,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 #### 1. ui-csv-extract Package (`packages/ui-csv-extract/`)
 
 **Core Types** (`src/types/openstreetmap-type.ts`):
-- `ICSVDataApi` - Interface that plugins must implement
+- `TabularDataApi` - Interface that plugins must implement
 - `CSVTableMetadata` - Shared table metadata with reference counting
 - `CSVFilterRule` - Filtering configuration
 - `CSVColumnMapping` - Column selection and mapping
@@ -41,7 +41,7 @@ This document summarizes the successful implementation of the `ui-csv-extract` p
 #### 2. plugin-styler Integration
 
 **CSV API Driver** (`packages/plugins/styler/src/services/StylerCSVApiDriver.ts`):
-- Implements `ICSVDataApi` interface
+- Implements `TabularDataApi` interface
 - Manages CSV data storage and retrieval
 - Handles reference counting for shared data
 - Converts between CSV and Styler data formats

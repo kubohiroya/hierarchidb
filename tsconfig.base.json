@@ -158,10 +158,10 @@
         "packages/plugin-ui-sdk/dist/*"
       ],
       "@hierarchidb/plugin-runtime-services": [
-        "packages/plugin-runtime-services/dist/index.d.ts"
+        "packages/plugin-runtime-services/src/index.ts"
       ],
       "@hierarchidb/plugin-runtime-services/*": [
-        "packages/plugin-runtime-services/dist/*"
+        "packages/plugin-runtime-services/src/*"
       ],
       "@hierarchidb/ui-map": [
         "packages/ui/map/src/index.ts"

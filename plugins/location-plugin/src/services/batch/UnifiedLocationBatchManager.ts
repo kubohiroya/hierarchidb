@@ -4,14 +4,14 @@
  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type {
-  BatchProgressCallback,
-  BatchProgressEvent,
-  BatchSessionId,
-  BatchSessionStatus,
-  IBatchSessionManager,
-} from '@hierarchidb/batch-types';
-import { isBatchControlAPIV2Enabled } from '@hierarchidb/common-api';
+import {
+  isBatchControlAPIV2Enabled,
+  type BatchProgressCallback,
+  type BatchProgressEvent,
+  type BatchSessionId,
+  type BatchSessionStatus,
+  type IBatchSessionManager,
+} from '@hierarchidb/common-api';
 import { UnifiedBatchManagerBase, type BatchPersistence, type UnifiedBatchSession } from '@hierarchidb/batch-runtime-services';
 import { LocationBatchSessionManager } from './BatchSessionManager.js';
 import type { LocationPointInput, LocationTileSettings } from './LocationSessionController.js';

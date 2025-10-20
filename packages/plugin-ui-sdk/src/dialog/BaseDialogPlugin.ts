@@ -6,7 +6,7 @@ import type {
 } from '@hierarchidb/common-types';
 import { NodeDialogPlugin } from './NodeDialogPlugin.js';
 import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
-import { DialogStepDefinition } from '~/types/plugin-pointcuts.js';
+import { NodeDialogStepDefinition } from '~/types/plugin-pointcuts.js';
 
 export interface DialogStepConfig<TProps extends object> {
   id: string;
@@ -22,7 +22,7 @@ export interface DialogStepConfig<TProps extends object> {
 
 export abstract class BaseDialogPlugin<TDialog extends PeerEntity = PeerEntity>
   extends NodeDialogPlugin<TDialog> {
-  protected createDialogStep<TProps extends object>(config: DialogStepConfig<TProps>): DialogStepDefinition {
+  protected createDialogStep<TProps extends object>(config: DialogStepConfig<TProps>): NodeDialogStepDefinition {
     const StepWrapper = wrapDialogStepComponent(config.component);
 
     return {

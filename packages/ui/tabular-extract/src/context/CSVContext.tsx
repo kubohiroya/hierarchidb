@@ -4,19 +4,19 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { ICSVDataApi } from '../types/index.js';
+import type { TabularDataApi } from '../types/index.js';
 
 /**
  * CSV API Context
  */
-const CSVApiContext = createContext<ICSVDataApi | null>(null);
+const CSVApiContext = createContext<TabularDataApi | null>(null);
 
 /**
  * CSV Provider Props
  */
 export interface CSVProviderProps {
   children: React.ReactNode;
-  csvApi: ICSVDataApi;
+  csvApi: TabularDataApi;
 }
 
 /**
@@ -38,7 +38,7 @@ export const CSVProvider: React.FC<CSVProviderProps> = ({
  * Hook to access CSV API
  * Must be used within CSVProvider
  */
-export const useCSVApi = (): ICSVDataApi => {
+export const useCSVApi = (): TabularDataApi => {
   const api = useContext(CSVApiContext);
   if (!api) {
     throw new Error(

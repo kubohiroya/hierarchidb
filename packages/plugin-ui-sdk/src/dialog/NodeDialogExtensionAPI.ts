@@ -1,5 +1,5 @@
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { DialogStepDefinition, ValidationExtension } from '~/types/plugin-pointcuts.js';
+import { NodeDialogStepDefinition, ValidationExtension } from '~/types/plugin-pointcuts.js';
 
 export interface StepArrayEvaluator<TDialog extends PeerEntity = PeerEntity> {
   getEnabledSteps: (data: TDialog, stepNumbers?: ReadonlyArray<number>) => boolean[];
@@ -7,8 +7,8 @@ export interface StepArrayEvaluator<TDialog extends PeerEntity = PeerEntity> {
 }
 
 export interface NodeDialogHooks<TDialog extends PeerEntity = PeerEntity> {
-  createSteps?: DialogStepDefinition[];
-  editSteps?: DialogStepDefinition[];
+  createSteps?: NodeDialogStepDefinition[];
+  editSteps?: NodeDialogStepDefinition[];
   transformData?: (data: TDialog) => TDialog;
   evaluateSteps?: StepArrayEvaluator<TDialog>;
   validation?: ValidationExtension;
@@ -118,8 +118,8 @@ export class NodeDialogExtensionRegistry {
     return result;
   }
 
-  getCreateDialogSteps(): DialogStepDefinition[] {
-    const steps: DialogStepDefinition[] = [];
+  getCreateDialogSteps(): NodeDialogStepDefinition[] {
+    const steps: NodeDialogStepDefinition[] = [];
     const extensions = this.getExtensionsInOrder();
 
     for (const ext of extensions) {
@@ -131,8 +131,8 @@ export class NodeDialogExtensionRegistry {
     return steps.sort((a, b) => a.stepNumber - b.stepNumber);
   }
 
-  getEditDialogSteps(): DialogStepDefinition[] {
-    const steps: DialogStepDefinition[] = [];
+  getEditDialogSteps(): NodeDialogStepDefinition[] {
+    const steps: NodeDialogStepDefinition[] = [];
     const extensions = this.getExtensionsInOrder();
 
     for (const ext of extensions) {

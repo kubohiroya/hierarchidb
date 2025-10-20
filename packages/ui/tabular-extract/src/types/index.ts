@@ -168,9 +168,9 @@ export interface CSVProcessingStatus {
 }
 
 /**
- * CSV API Interface - must be implemented by plugin-loader
+ * Tabular data API Interface - must be implemented by plugin-loader
  */
-export interface ICSVDataApi {
+export interface TabularDataApi {
   /**
    * Upload and process CSV file
    */

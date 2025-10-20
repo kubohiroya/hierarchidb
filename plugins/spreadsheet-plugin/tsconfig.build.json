@@ -4,20 +4,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ],
-      "@hierarchidb/plugin-runtime-services": [
-        "../../packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "../../packages/plugin-runtime-services/dist/*"
-      ]
-    },
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
@@ -41,5 +27,8 @@
     "src/examples/**",
     "**/*.test.*",
     "**/*.spec.*"
+  ],
+  "references": [
+    { "path": "../../packages/plugin-runtime-services/tsconfig.build.json" }
   ]
 }

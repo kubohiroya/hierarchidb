@@ -1,1 +1,0 @@
-{"version":3,"file":"operationResult.d.ts","sourceRoot":"","sources":["operationResult.ts"],"names":[],"mappings":"AAAA;;GAEG;AACH,MAAM,WAAW,eAAe,CAAC,CAAC,GAAG,IAAI;IACvC,OAAO,EAAE,OAAO,CAAC;IACjB,IAAI,CAAC,EAAE,CAAC,CAAC;IACT,KAAK,CAAC,EAAE,KAAK,CAAC;IACd,OAAO,CAAC,EAAE,MAAM,CAAC;CAClB"}

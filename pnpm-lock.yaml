@@ -264,12 +264,12 @@ importers:
       '@hierarchidb/basemap-plugin':
         specifier: workspace:*
         version: link:../plugins/basemap-plugin
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../packages/batch-types
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../packages/batch-runtime-services
+      '@hierarchidb/batch-types':
+        specifier: workspace:*
+        version: link:../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../packages/common/api
@@ -511,15 +511,6 @@ importers:
         specifier: ^4.31.0
         version: 4.42.2(@cloudflare/workers-types@4.20251011.0)
 
-  packages/batch-types:
-    devDependencies:
-      '@hierarchidb/batch-runtime-services':
-        specifier: workspace:*
-        version: link:../batch-runtime-services
-      '@microsoft/api-extractor':
-        specifier: ^7.49.3
-        version: 7.53.1(@types/node@18.19.123)
-
   packages/batch-runtime-services:
     devDependencies:
       '@hierarchidb/auth-recovery':
@@ -543,6 +534,15 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+
+  packages/batch-types:
+    devDependencies:
+      '@hierarchidb/batch-runtime-services':
+        specifier: workspace:*
+        version: link:../batch-runtime-services
+      '@microsoft/api-extractor':
+        specifier: ^7.49.3
+        version: 7.53.1(@types/node@18.19.123)
 
   packages/common/api:
     dependencies:
@@ -2234,6 +2234,9 @@ importers:
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../../packages/plugin-types
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-basic-info':
         specifier: workspace:*
         version: link:../../packages/runtime/basic-info
@@ -2410,12 +2413,12 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../../packages/feature/auth-recovery
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../packages/batch-types
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
+      '@hierarchidb/batch-types':
+        specifier: workspace:*
+        version: link:../../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2434,6 +2437,9 @@ importers:
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../../packages/plugin-types
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-basic-info':
         specifier: workspace:*
         version: link:../../packages/runtime/basic-info
@@ -2492,6 +2498,9 @@ importers:
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../../packages/plugin-types
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-basic-info':
         specifier: workspace:*
         version: link:../../packages/runtime/basic-info
@@ -2565,12 +2574,12 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../../packages/feature/auth-recovery
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../packages/batch-types
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
+      '@hierarchidb/batch-types':
+        specifier: workspace:*
+        version: link:../../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2586,6 +2595,9 @@ importers:
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../../packages/plugin-types
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-basic-info':
         specifier: workspace:*
         version: link:../../packages/runtime/basic-info
@@ -2813,6 +2825,9 @@ importers:
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../../packages/plugin-types
+      '@hierarchidb/plugin-ui-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-ui-sdk
       '@hierarchidb/runtime-basic-info':
         specifier: workspace:*
         version: link:../../packages/runtime/basic-info
@@ -2901,6 +2916,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
+      '@hierarchidb/plugin-types':
+        specifier: workspace:*
+        version: link:../../packages/plugin-types
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -14125,7 +14143,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:

@@ -10,9 +10,10 @@ import type {
   CSVProcessingConfig,
   CSVSelectionConfig,
   CSVTableListResult,
-  ICSVDataApi,
+  TabularDataApi,
   PaginationOptions,
 } from '@hierarchidb/ui-tabular-extract';
+import type { NodeId } from '@hierarchidb/common-types';
 
 import { SimpleTableMetadataManager } from './SimpleTableMetadataManager.js';
 import { SpreadsheetDatabase } from './database/SpreadsheetDatabase.js';
@@ -43,7 +44,7 @@ type MetadataInput = Partial<CSVTableMetadata> & {
   totalColumns?: number;
 };
 
-export class SpreadsheetCSVApiDriver implements ICSVDataApi {
+export class SpreadsheetCSVApiDriver implements TabularDataApi {
   private tableManager: SimpleTableMetadataManager;
   private csvDataStorage = new Map<string, ChunkedData>();
   private spreadsheetDB: SpreadsheetDatabase | null = null;
@@ -184,7 +185,7 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     }
 
     //  :
-    const chunkedData = this.getStoredChunkedData(tableId);
+    const chunkedData = await this.getStoredChunkedData(tableId, metadata);
     if (!chunkedData) {
       throw new Error('CSV data not found for table');
     }
@@ -429,8 +430,90 @@ export class SpreadsheetCSVApiDriver implements ICSVDataApi {
     this.csvDataStorage.set(tableId, chunkedData);
   }
 
-  private getStoredChunkedData(tableId: string): ChunkedData | undefined {
-    return this.csvDataStorage.get(tableId);
+  private async getStoredChunkedData(
+    tableId: string,
+    metadata?: MetadataInput | null,
+  ): Promise<ChunkedData | undefined> {
+    const cached = this.csvDataStorage.get(tableId);
+    if (cached) {
+      return cached;
+    }
+
+    if (!this.spreadsheetDB) {
+      return undefined;
+    }
+
+    const rowChunks = await this.spreadsheetDB.getRowChunksByFileId(
+      tableId as unknown as NodeId,
+    );
+    if (!rowChunks.length) {
+      return undefined;
+    }
+
+    const decoder = new TextDecoder();
+    const hydratedChunks: Array<Array<Record<string, string | number | null>>> = [];
+    for (const chunk of rowChunks) {
+      try {
+        const uint8 = new Uint8Array(chunk.binaryData);
+        const decoded = decoder.decode(uint8);
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed)) {
+          hydratedChunks.push(parsed as Array<Record<string, string | number | null>>);
+        } else {
+          hydratedChunks.push([]);
+        }
+      } catch {
+        hydratedChunks.push([]);
+      }
+    }
+
+    const chunkSize = this.deriveChunkSize(metadata, rowChunks, hydratedChunks);
+    const totalRows = this.deriveTotalRowCount(metadata, rowChunks, hydratedChunks);
+
+    const hydrated: ChunkedData = {
+      chunks: hydratedChunks,
+      totalRows,
+      chunkSize,
+    };
+
+    this.csvDataStorage.set(tableId, hydrated);
+    return hydrated;
+  }
+
+  private deriveChunkSize(
+    metadata: MetadataInput | null | undefined,
+    rowChunks: Awaited<ReturnType<SpreadsheetDatabase['getRowChunksByFileId']>>,
+    hydratedChunks: Array<Array<Record<string, string | number | null>>>,
+  ): number {
+    if (metadata?.chunkCount && metadata.totalRows) {
+      const size = Math.ceil(metadata.totalRows / metadata.chunkCount);
+      if (size > 0) {
+        return size;
+      }
+    }
+
+    const firstChunkRowCount = rowChunks[0]?.rowCount ?? hydratedChunks[0]?.length ?? 0;
+    return Math.max(1, firstChunkRowCount);
+  }
+
+  private deriveTotalRowCount(
+    metadata: MetadataInput | null | undefined,
+    rowChunks: Awaited<ReturnType<SpreadsheetDatabase['getRowChunksByFileId']>>,
+    hydratedChunks: Array<Array<Record<string, string | number | null>>>,
+  ): number {
+    if (typeof metadata?.totalRows === 'number' && metadata.totalRows > 0) {
+      return metadata.totalRows;
+    }
+
+    const summed = rowChunks.reduce<number>((acc, chunk, index) => {
+      if (typeof chunk.rowCount === 'number' && chunk.rowCount > 0) {
+        return acc + chunk.rowCount;
+      }
+      const inferred = hydratedChunks[index]?.length ?? 0;
+      return acc + inferred;
+    }, 0);
+
+    return summed > 0 ? summed : hydratedChunks.reduce((acc, rows) => acc + rows.length, 0);
   }
 
   private shouldUseChunking(rowCount: number, contentSize: number): boolean {

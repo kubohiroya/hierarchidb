@@ -4,14 +4,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ]
-    },
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
@@ -38,5 +30,6 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/vite-env.d.ts"
-  ]
+  ],
+  "references": []
 }

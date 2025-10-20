@@ -92,13 +92,13 @@ export abstract class UnifiedBatchManagerBase<TConfig, TData> implements IBatchS
 
   onBatchProgress(sessionId: BatchSessionId, callback: BatchProgressCallback): () => void {
     const nodeId = this.sessions.get(sessionId);
-    return this.performSubscribe(sessionId, (event) => {
+    return this.performSubscribe(sessionId, (event: BatchProgressEvent) => {
       if (!event.nodeId && nodeId) {
         event = { ...event, nodeId };
       }
       callback(event);
       if (this.persistence?.onSessionProgress) {
-        void this.persistence.onSessionProgress(sessionId, event);
+          void this.persistence.onSessionProgress(sessionId, event);
       }
       if (event.phase === 'completed' || event.phase === 'failed') {
         this.sessions.delete(sessionId);

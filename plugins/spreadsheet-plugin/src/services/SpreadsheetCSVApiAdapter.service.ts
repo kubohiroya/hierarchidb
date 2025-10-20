@@ -51,7 +51,7 @@ interface CSVProcessingStatus {
   info?: string;
 }
 
-interface ICSVDataApi {
+interface TabularDataApi {
   uploadCSVFile(file: File, config: CSVProcessingConfig): Promise<CSVTableMetadata>;
 
   downloadCSVFromUrl(url: string, config: CSVProcessingConfig): Promise<CSVTableMetadata>;
@@ -73,7 +73,7 @@ interface ICSVDataApi {
   getProcessingStatus?(id: string): Promise<CSVProcessingStatus | null>;
 }
 
-export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
+export class SpreadsheetCSVApiAdapter implements TabularDataApi {
   constructor(_pluginId: string = 'spreadsheet') {
     void _pluginId;
   }

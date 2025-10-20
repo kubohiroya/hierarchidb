@@ -27,36 +27,6 @@
       ],
       "~/*.js": [
         "./src/*.ts"
-      ],
-      "@hierarchidb/plugin-types": [
-        "../../packages/plugin-types/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-types/*": [
-        "../../packages/plugin-types/dist/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ],
-      "@hierarchidb/plugin-runtime-services": [
-        "../../packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "../../packages/plugin-runtime-services/dist/*"
-      ],
-      "@hierarchidb/ui-tabular-extract": [
-        "../../packages/ui/tabular-extract/dist/index.d.ts"
-      ],
-      "@hierarchidb/ui-tabular-extract/*": [
-        "../../packages/ui/tabular-extract/dist/*"
-      ],
-      "@hierarchidb/runtime-worker": [
-        "../../packages/runtime/worker/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-worker/*": [
-        "../../packages/runtime/worker/dist/*"
       ]
     },
     "module": "Node16"

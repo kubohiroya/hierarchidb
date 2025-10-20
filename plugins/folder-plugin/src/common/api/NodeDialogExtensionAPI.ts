@@ -4,7 +4,7 @@ import type {
   NodeDialogExtensionMetadata,
   StepArrayEvaluator,
   NodeDialogExtensionRegistry,
-  DialogStepDefinition,
+  NodeDialogStepDefinition,
   BaseEntityExtension,
   ValidationExtension,
   ExtendingNodeTypeDefinition,
@@ -62,11 +62,11 @@ export class FolderExtensionRegistry {
     this.baseRegistry.unregister(extensionId);
   }
 
-  getCreateDialogSteps(): DialogStepDefinition[] {
+  getCreateDialogSteps(): NodeDialogStepDefinition[] {
     return this.baseRegistry.getCreateDialogSteps();
   }
 
-  getEditDialogSteps(): DialogStepDefinition[] {
+  getEditDialogSteps(): NodeDialogStepDefinition[] {
     return this.baseRegistry.getEditDialogSteps();
   }
 
@@ -154,8 +154,8 @@ export class FolderExtensionRegistry {
   buildExtensionConfig() {
     const extensions = this.getExtensionsInOrder();
 
-    let createSteps: DialogStepDefinition[] = [];
-    const editSteps: DialogStepDefinition[] = [];
+    let createSteps: NodeDialogStepDefinition[] = [];
+    const editSteps: NodeDialogStepDefinition[] = [];
     let combinedValidation: ValidationExtension | undefined;
     let combinedEntity: FolderEntityExtension | undefined;
 

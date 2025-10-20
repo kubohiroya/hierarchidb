@@ -4,7 +4,7 @@ import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
 import type { FolderEditData, FolderDisplayData } from '../../common/types/index.js';
-import type { DialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
+import type { NodeDialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 interface FolderStepData {
@@ -20,7 +20,7 @@ export interface ExtensibleFolderDialogProps {
   onSubmit: (data: FolderEditData) => Promise<void>;
   onCancel: () => void;
   open?: boolean;
-  additionalSteps?: DialogStepDefinition[];
+  additionalSteps?: NodeDialogStepDefinition[];
   icon?: React.ReactNode;
   title?: string;
 }
@@ -88,14 +88,14 @@ const FolderBaseStepComponent: React.FC<{ data: FolderStepData; onChange: (next:
 
 const BaseStepComponent = wrapDialogStepComponent(FolderBaseStepComponent);
 
-const baseStepDefinition: DialogStepDefinition = useMemo(() => ({
+const baseStepDefinition: NodeDialogStepDefinition = useMemo(() => ({
   stepNumber: 1,
   title: 'Basic Information',
   component: BaseStepComponent,
 }), [BaseStepComponent]);
 
   const sortedSteps = useMemo(() => {
-    const byNumber = new Map<number, DialogStepDefinition>();
+    const byNumber = new Map<number, NodeDialogStepDefinition>();
     byNumber.set(baseStepDefinition.stepNumber, baseStepDefinition);
     additionalSteps.forEach((step) => byNumber.set(step.stepNumber, step));
     return Array.from(byNumber.values()).sort((a, b) => a.stepNumber - b.stepNumber);

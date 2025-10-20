@@ -11,46 +11,10 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true,
-    "paths": {
-      "@hierarchidb/batch-types": [
-        "../../packages/batch-types/dist/index.d.ts"
-      ],
-      "@hierarchidb/batch-types/*": [
-        "../../packages/batch-types/dist/*"
-      ],
-      "@hierarchidb/batch-runtime-services": [
-        "../../packages/batch-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "../../packages/batch-runtime-services/dist/*"
-      ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "../../packages/runtime/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "../../packages/runtime/plugin-dialog/dist/*"
-      ],
-      "@hierarchidb/download": [
-        "../../packages/feature/download/dist/index.d.ts"
-      ],
-      "@hierarchidb/download/*": [
-        "../../packages/feature/download/dist/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ]
-    }
+    "incremental": true
   },
   "include": [
     "src/**/*",
-    "../../packages/runtime/plugin-dialog/dist/index.d.ts",
-    "../../packages/batch-runtime-services/dist/index.d.ts",
-    "../../packages/batch-types/dist/index.d.ts",
-    "../../packages/feature/download/dist/index.d.ts"
   ],
   "exclude": [
     "dist",
@@ -67,5 +31,9 @@
     "__tests__/**"
   ],
   "references": [
+    { "path": "../../packages/batch-runtime-services/tsconfig.build.json" },
+    { "path": "../../packages/batch-types/tsconfig.json" },
+    { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
+    { "path": "../../packages/feature/download/tsconfig.build.json" }
   ]
 }

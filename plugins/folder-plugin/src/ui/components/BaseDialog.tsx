@@ -1,11 +1,11 @@
 import type React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import type { DialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
+import type { NodeDialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
 
 export interface BaseDialogProps {
   title: string;
   icon?: React.ReactNode;
-  steps: ReadonlyArray<DialogStepDefinition>;
+  steps: ReadonlyArray<NodeDialogStepDefinition>;
   activeStepIndex: number;
   open: boolean;
   errors?: ReadonlyArray<string>;
@@ -16,7 +16,7 @@ export interface BaseDialogProps {
   canBack: boolean;
   canNext: boolean;
   canComplete: boolean;
-  renderStepContent: (step: DialogStepDefinition | undefined) => React.ReactNode;
+  renderStepContent: (step: NodeDialogStepDefinition | undefined) => React.ReactNode;
 }
 
 export const BaseDialog: React.FC<BaseDialogProps> = ({

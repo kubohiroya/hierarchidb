@@ -6,19 +6,19 @@ import type {
   CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
-  ICSVDataApi,
+  TabularDataApi,
   PaginationOptions,
 } from '@hierarchidb/ui-tabular-extract';
 
 // UI-only facade to avoid pulling service layer into typecheck.
 // Delegates at runtime via dynamic import.
-export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVDataApi {
+export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): TabularDataApi {
   const getAdapter = async () => {
     const mod = await import('../../services/SpreadsheetCSVApiAdapter.js');
     return mod.createSpreadsheetCSVApi(pluginId);
   };
 
-  const api: ICSVDataApi = {
+  const api: TabularDataApi = {
     uploadCSVFile: async (file: File, config?: CSVProcessingConfig): Promise<CSVTableMetadata> => {
       const a = await getAdapter();
       return a.uploadCSVFile(file, (config ?? {}) as CSVProcessingConfig);
@@ -67,4 +67,3 @@ export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVD
 
   return api;
 }
-

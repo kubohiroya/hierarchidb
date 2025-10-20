@@ -11,63 +11,7 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true,
-    "paths": {
-      "@hierarchidb/common-types": [
-        "../../packages/common/types/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "../../packages/common/types/dist/*"
-      ],
-      "@hierarchidb/common-api": [
-        "../../packages/common/api/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-api/*": [
-        "../../packages/common/api/dist/*"
-      ],
-      "@hierarchidb/plugin-types": [
-        "../../packages/plugin-types/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-types/*": [
-        "../../packages/plugin-types/dist/*"
-      ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "../../packages/runtime/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "../../packages/runtime/plugin-dialog/dist/*"
-      ],
-      "@hierarchidb/runtime-basic-info": [
-        "../../packages/runtime/basic-info/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-basic-info/*": [
-        "../../packages/runtime/basic-info/dist/*"
-      ],
-      "@hierarchidb/batch-runtime-services": [
-        "../../packages/batch-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "../../packages/batch-runtime-services/dist/*"
-      ],
-      "@hierarchidb/download": [
-        "../../packages/feature/download/dist/index.d.ts"
-      ],
-      "@hierarchidb/download/*": [
-        "../../packages/feature/download/dist/*"
-      ],
-      "@hierarchidb/components": [
-        "../../packages/components/dist/index.d.ts"
-      ],
-      "@hierarchidb/components/*": [
-        "../../packages/components/dist/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ]
-    }
+    "incremental": true
   },
   "include": [
     "src/**/*"
@@ -93,6 +37,27 @@
     },
     {
       "path": "../../packages/runtime/worker/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/basic-info/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/batch-runtime-services/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/feature/download/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/components/tsconfig.build.json"
     }
   ]
 }

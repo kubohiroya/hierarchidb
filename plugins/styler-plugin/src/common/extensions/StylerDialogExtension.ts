@@ -4,7 +4,7 @@
  */
 
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { DialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
+import { NodeDialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 import type { StylerConfig } from '../types/stylerTypes.js';
 import { StylerStep5 } from '../../ui/components/steps/StylerStep5.js';
@@ -62,7 +62,7 @@ const hasStylerConfiguration = (dialogData: StylerDialogRecord): boolean => {
 const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
 const StylerStep6Component = wrapDialogStepComponent(StylerStep6);
 
-const STYLER_STEP_DEFINITIONS: DialogStepDefinition[] = [
+const STYLER_STEP_DEFINITIONS: NodeDialogStepDefinition[] = [
   {
     stepNumber: 5,
     title: 'Style Mapping Configuration',
@@ -91,7 +91,7 @@ const STYLER_STEP_DEFINITIONS: DialogStepDefinition[] = [
   },
 ];
 
-const cloneStepDefinitions = (): DialogStepDefinition[] => STYLER_STEP_DEFINITIONS.map((step) => ({
+const cloneStepDefinitions = (): NodeDialogStepDefinition[] => STYLER_STEP_DEFINITIONS.map((step) => ({
   ...step,
   dependsOn: step.dependsOn ? [...step.dependsOn] : undefined,
   validation: step.validation ? { ...step.validation } : undefined,
@@ -114,11 +114,11 @@ export class StylerDialogExtension extends NodeDialogPlugin<StylerDialogPeer> {
   readonly pluginVersion = '1.0.0';
   protected readonly dependencies = ['spreadsheet-plugin-dialog-extension'];
 
-  protected getCreateDialogSteps(): DialogStepDefinition[] {
+  protected getCreateDialogSteps(): NodeDialogStepDefinition[] {
     return cloneStepDefinitions();
   }
 
-  protected getEditDialogSteps(): DialogStepDefinition[] {
+  protected getEditDialogSteps(): NodeDialogStepDefinition[] {
     return cloneStepDefinitions();
   }
 

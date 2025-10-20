@@ -54,6 +54,7 @@ export interface FolderSettings {
 }
 
 export interface BaseMapEntity extends HierarchicalEntity {
+  id: NodeId;
   // Common folder-like fields used in UI/handlers
   name?: string;
   description?: string;

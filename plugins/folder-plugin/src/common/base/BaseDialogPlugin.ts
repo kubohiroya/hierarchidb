@@ -2,8 +2,8 @@ import type { FolderEntity } from '../types/FolderEntity.js';
 import type {
   FolderEntityExtension,
   FolderExtension,
-} from '../api/FolderDialogExtensionAPI.js';
-import { createFolderExtension } from '../api/FolderDialogExtensionAPI.js';
+} from '../api/NodeDialogExtensionAPI.js';
+import { createFolderExtension } from '../api/NodeDialogExtensionAPI.js';
 import type {
   NodeId,
   NodeType,

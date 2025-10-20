@@ -12,15 +12,7 @@
     "rootDir": "./",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/plugin-types": ["../../packages/plugin-types/dist/index.d.ts"],
-      "@hierarchidb/plugin-types/*": ["../../packages/plugin-types/dist/*"],
-      "@hierarchidb/plugin-runtime-services": ["../../packages/plugin-runtime-services/dist/index.d.ts"],
-      "@hierarchidb/plugin-runtime-services/*": ["../../packages/plugin-runtime-services/dist/*"],
-      "@hierarchidb/plugin-ui-sdk": ["../../packages/plugin-ui-sdk/dist/index.d.ts"],
-      "@hierarchidb/plugin-ui-sdk/*": ["../../packages/plugin-ui-sdk/dist/*"],
-      "@hierarchidb/runtime-plugin-dialog": ["../../packages/runtime/plugin-dialog/dist/index.d.ts"],
-      "@hierarchidb/runtime-plugin-dialog/*": ["../../packages/runtime/plugin-dialog/dist/*"]
+      "~/*": ["./src/*"]
     },
     "incremental": true,
     "jsx": "react-jsx",

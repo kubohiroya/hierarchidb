@@ -11,51 +11,7 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true,
-    "paths": {
-      "@hierarchidb/common-types": [
-        "../../packages/common/types/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "../../packages/common/types/dist/*"
-      ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "../../packages/runtime/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "../../packages/runtime/plugin-dialog/dist/*"
-      ],
-      "@hierarchidb/common-api": [
-        "../../packages/common/api/dist/index.d.ts"
-      ],
-      "@hierarchidb/common-api/*": [
-        "../../packages/common/api/dist/*"
-      ],
-      "@hierarchidb/runtime-basic-info": [
-        "../../packages/runtime/basic-info/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-basic-info/*": [
-        "../../packages/runtime/basic-info/dist/*"
-      ],
-      "@hierarchidb/plugin-types": [
-        "../../packages/plugin-types/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-types/*": [
-        "../../packages/plugin-types/dist/*"
-      ],
-      "@hierarchidb/plugin-runtime-services": [
-        "../../packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "../../packages/plugin-runtime-services/dist/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ]
-    }
+    "incremental": true
   },
   "include": [
     "src/**/*"
@@ -71,5 +27,12 @@
     "src/examples/**",
     "**/*.test.ts",
     "**/*.test.tsx"
+  ],
+  "references": [
+    { "path": "../../packages/common/types/tsconfig.build.json" },
+    { "path": "../../packages/common/api/tsconfig.build.json" },
+    { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
+    { "path": "../../packages/runtime/basic-info/tsconfig.build.json" },
+    { "path": "../../packages/plugin-runtime-services/tsconfig.build.json" }
   ]
 }

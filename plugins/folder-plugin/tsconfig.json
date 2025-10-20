@@ -16,12 +16,6 @@
       ],
       "~/*.js": [
         "./src/*.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
       ]
     },
     "lib": [

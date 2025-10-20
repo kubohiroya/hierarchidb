@@ -6,10 +6,7 @@
  * : HierarchiDB
   */
 
-// Import classes and services for internal use
-import { StylerDataService } from './services/StylerDataService.js';
-import { StylerEntityHandler } from './common/handlers/StylerEntityHandler.js';
-import { StylerExtension } from './common/extension/definition.js';
+// Import manifest for legacy exports
 import { PLUGIN_MANIFEST } from './plugin-manifest.js';
 
 // Types exports
@@ -49,7 +46,6 @@ export {
 export { PLUGIN_MANIFEST as StylerPluginManifest } from './plugin-manifest.js';
 
 // Extension definition (main plugin definition)
-export { StylerExtension } from './common/extension/definition.js';
 
 // Entity handler
 export { StylerEntityHandler } from './common/handlers/StylerEntityHandler.js';
@@ -90,38 +86,10 @@ export const PLUGIN_INFO = PLUGIN_MANIFEST;
  * : HierarchiDB
  * :
   */
-export async function initializeStylerPlugin(context: {
-  spreadsheetPlugin: any;
-  csvApiDriver: any;
-  nodeTypeRegistry: any;
-}) {
-  try {
-    const { spreadsheetPlugin, csvApiDriver, nodeTypeRegistry } = context;
-
-    //  StylerDataService
-    const dataService = new StylerDataService(csvApiDriver);
-
-    //  StylerEntityHandler
-    const entityHandler = new StylerEntityHandler(spreadsheetPlugin.entityHandler, dataService);
-
-    nodeTypeRegistry.registerExtension({
-      definition: StylerExtension,
-      handler: entityHandler,
-      dataService,
-    });
-
-    console.log('[Styler] Plugin initialized successfully');
-
-    return {
-      definition: StylerExtension,
-      handler: entityHandler,
-      dataService,
-    };
-  } catch (error) {
-    console.error('[Styler] Plugin initialization failed:', error);
-    throw error;
-  }
-}
+/**
+ * Legacy initializeStylerPlugin helper has been removed. Consumers should rely on
+ * StylerDialogExtension / runtime registration instead of the old extension definition path.
+ */
 
 // Optional runtime wiring (no-op)
 export class RuntimeWiring {

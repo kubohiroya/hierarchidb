@@ -15,7 +15,7 @@ export type {
   PaginationOptions,
   CSVTableListResult,
   CSVProcessingStatus,
-  ICSVDataApi,
+  TabularDataApi,
 } from './types/index.js';
 
 // Context

@@ -1,4 +1,4 @@
-import type { BaseEntityExtension, DialogStepDefinition, ExtendingNodeTypeDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
+import type { BaseEntityExtension, NodeDialogStepDefinition, ExtendingNodeTypeDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
 import type { FolderEntity } from '../types/FolderEntity.js';
 import { TreeNode } from '@hierarchidb/common-types';
 
@@ -16,19 +16,16 @@ export interface StepArrayEvaluator {
  */
 export type NodeDialogStepEvaluator = StepArrayEvaluator;
 
-/**
- * Extension point for folder-plugin dialogs
- */
-export interface FolderDialogExtension {
+export interface NodeDialogExtension {
   /**
    * Additional steps for create base-dialog
    */
-  createSteps?: DialogStepDefinition[];
+  createSteps?: NodeDialogStepDefinition[];
 
   /**
    * Additional steps for edit base-dialog
    */
-  editSteps?: DialogStepDefinition[];
+  editSteps?: NodeDialogStepDefinition[];
 
   /**
    * Transform data before submission
@@ -52,11 +49,6 @@ export interface FolderDialogExtension {
    */
   canSubmit?: (data: any) => boolean | Promise<boolean>;
 }
-
-/**
- * Folder-agnostic alias for dialog extension. Prefer this in new code.
- */
-export type NodeDialogExtension = FolderDialogExtension;
 
 /**
  * Extension point for folder-plugin entity handling
@@ -116,7 +108,7 @@ export interface FolderExtension {
   /**
    * Dialog extensions
    */
-  dialog?: FolderDialogExtension;
+  dialog?: NodeDialogExtension;
 
   /**
    * Entity handler extensions
@@ -251,8 +243,8 @@ export class FolderExtensionRegistry {
   /**
    * Get all base-dialog steps for create mode
    */
-  getCreateDialogSteps(): DialogStepDefinition[] {
-    const steps: DialogStepDefinition[] = [];
+  getCreateDialogSteps(): NodeDialogStepDefinition[] {
+    const steps: NodeDialogStepDefinition[] = [];
     const extensions = this.getExtensionsInOrder();
 
     for (const ext of extensions) {
@@ -268,8 +260,8 @@ export class FolderExtensionRegistry {
   /**
    * Get all base-dialog steps for edit mode
    */
-  getEditDialogSteps(): DialogStepDefinition[] {
-    const steps: DialogStepDefinition[] = [];
+  getEditDialogSteps(): NodeDialogStepDefinition[] {
+    const steps: NodeDialogStepDefinition[] = [];
     const extensions = this.getExtensionsInOrder();
 
     for (const ext of extensions) {
@@ -438,8 +430,8 @@ export class FolderExtensionRegistry {
     const extensions = this.getExtensionsInOrder();
 
     // Combine all base-dialog steps from extensions
-    const createSteps: DialogStepDefinition[] = [];
-    const editSteps: DialogStepDefinition[] = [];
+    const createSteps: NodeDialogStepDefinition[] = [];
+    const editSteps: NodeDialogStepDefinition[] = [];
     let combinedValidation: ValidationExtension | undefined;
     let combinedEntity: BaseEntityExtension<any> | undefined;
 
@@ -574,7 +566,7 @@ export function createFolderExtension(config: {
   description?: string;
   version: string;
   dependencies?: string[];
-  dialog?: FolderDialogExtension;
+  dialog?: NodeDialogExtension;
   entity?: FolderEntityExtension;
   lifecycle?: FolderExtension['lifecycle'];
 }): FolderExtension {

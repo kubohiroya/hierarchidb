@@ -7,19 +7,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
-      "@hierarchidb/plugin-runtime-services": [
-        "../../packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "../../packages/plugin-runtime-services/dist/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*"
-      ]
+      "~/*": ["./src/*"]
     },
     "lib": [
       "ES2022",

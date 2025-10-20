@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-plugin-dialog';
-import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/batch-types';
+import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
 import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch-runtime-services';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
@@ -88,7 +88,7 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     setMutationError(null);
     try {
       await bridgeRef.current.pauseBatchSession(ROUTE_NODE_TYPE, jobId);
-      setStatus((prev) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
+      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'paused', lastActivity: Date.now() } : prev));
     } catch (error: unknown) {
       const message = toErrorMessage(error);
       console.error('[useRouteBatchProgress] pause failed', error);
@@ -104,7 +104,7 @@ export function useRouteBatchProgress(jobId: string | null, _deps?: unknown): Ro
     setMutationError(null);
     try {
       await bridgeRef.current.resumeBatchSession(ROUTE_NODE_TYPE, jobId);
-      setStatus((prev) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
+      setStatus((prev: BatchSessionStatus | null) => (prev ? { ...prev, status: 'running', lastActivity: Date.now() } : prev));
     } catch (error: unknown) {
       const message = toErrorMessage(error);
       console.error('[useRouteBatchProgress] resume failed', error);

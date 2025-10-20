@@ -5,26 +5,29 @@ import type {
   CSVProcessingStatus,
   CSVSelectionConfig,
   CSVTableListResult,
-  ICSVDataApi,
+  TabularDataApi,
   PaginationOptions,
 } from '@hierarchidb/ui-tabular-extract';
 import { SpreadsheetTabularDriver } from './SpreadsheetTabularDriver.js';
 import { SpreadsheetCSVApiDriver } from './SpreadsheetCSVApiDriver.js';
-import { CSVTableMetadata } from '@hierarchidb/tabular-store';
+import { CSVTableMetadata, type CSVTableMetadataLike } from '@hierarchidb/tabular-store';
 
-export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
+export class SpreadsheetCSVApiAdapter implements TabularDataApi {
+  private tabularDriver: SpreadsheetTabularDriver;
+  private driver: SpreadsheetCSVApiDriver;
+
   constructor(private pluginId: string = 'spreadsheet') {
+    this.tabularDriver = new SpreadsheetTabularDriver(pluginId);
+    this.driver = new SpreadsheetCSVApiDriver(pluginId);
   }
 
   async uploadCSVFile(file: File, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
-    const driver = new SpreadsheetTabularDriver(this.pluginId);
-    // Driver returns a CSVTableMetadataLike; cast to strict metadata for UI boundary.
-    return (await driver.ingestFile(file)) as unknown as CSVTableMetadata;
+    const metadataLike = await this.tabularDriver.ingestFile(file);
+    return await this.resolveMetadata(metadataLike);
   }
 
   async downloadCSVFromUrl(url: string, _config?: CSVProcessingConfig): Promise<CSVTableMetadata> {
-    const driver = new SpreadsheetCSVApiDriver(this.pluginId);
-    return driver.downloadCSVFromUrl(url, _config ?? {});
+    return await this.driver.downloadCSVFromUrl(url, _config ?? {});
   }
 
   async getFilteredPreview(
@@ -33,50 +36,67 @@ export class SpreadsheetCSVApiAdapter implements ICSVDataApi {
     rowCount: number,
     startRow?: number,
   ): Promise<CSVDataResult> {
-    // Delegate to existing driver which knows how to read stored chunks
-    const legacy = new SpreadsheetCSVApiDriver(this.pluginId);
-    return await legacy.getFilteredPreview(tableId, filters, rowCount, startRow);
+    return await this.driver.getFilteredPreview(tableId, filters, rowCount, startRow);
   }
 
-  // --- Stubs for full ICSVDataApi surface; delegate/NOOP for now ---
+  // --- Delegations for full TabularDataApi surface ---
   async getTableMetadata(_id: string): Promise<CSVTableMetadata | null> {
     try {
-      const legacy = new SpreadsheetCSVApiDriver(this.pluginId);
-      // Delegate to table manager when available; return null as placeholder
-      return await legacy.getTableMetadata(_id);
+      return await this.driver.getTableMetadata(_id);
     } catch {
       return null;
     }
   }
 
   async listTables(_pluginId?: string, _pagination?: PaginationOptions): Promise<CSVTableListResult> {
-    return { tables: [], total: 0 };
+    return await this.driver.listTables(_pluginId ?? this.pluginId, _pagination);
   }
 
   async deleteTable(_tableMetadataId: string): Promise<void> {
-    // NOOP stub for now
+    await this.driver.deleteTable(_tableMetadataId);
   }
 
   async getFilteredData(tableId: string, selection: CSVSelectionConfig): Promise<CSVDataResult> {
-    // Fallback to preview path; for large exports, driver will implement efficiently later
-    const filters = selection.filterRules ?? [];
-    return this.getFilteredPreview(tableId, filters, Number.MAX_SAFE_INTEGER, 0);
+    return await this.driver.getFilteredData(tableId, selection);
   }
 
   async addTableReference(_tableId: string, _pluginId: string): Promise<void> {
-    // NOOP stub (reference counting to be implemented in DB layer)
+    await this.driver.addTableReference(_tableId, _pluginId);
   }
 
   async removeTableReference(_tableId: string, _pluginId: string): Promise<void> {
-    // NOOP stub (reference counting to be implemented in DB layer)
+    await this.driver.removeTableReference(_tableId, _pluginId);
   }
 
   async getProcessingStatus?(_id: string): Promise<CSVProcessingStatus | null> {
     // Not tracked yet
     return null;
   }
+
+  private async resolveMetadata(metadata: CSVTableMetadataLike): Promise<CSVTableMetadata> {
+    const resolved = await this.driver.getTableMetadata(metadata.id);
+    if (resolved) {
+      return resolved;
+    }
+
+    return {
+      id: metadata.id,
+      filename: metadata.filename ?? 'untitled.csv',
+      fileUrl: metadata.fileUrl,
+      contentHash: metadata.contentHash ?? '',
+      fileSizeBytes: metadata.fileSizeBytes ?? 0,
+      totalRows: metadata.totalRows ?? 0,
+      columns: metadata.columns ?? [],
+      createdAt: metadata.createdAt ?? Date.now(),
+      updatedAt: metadata.updatedAt,
+      referenceCount: metadata.referenceCount ?? 0,
+      referencingPlugins: metadata.referencingPlugins ?? [],
+      isChunked: metadata.isChunked,
+      chunkCount: metadata.chunkCount,
+    };
+  }
 }
 
-export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): ICSVDataApi {
+export function createSpreadsheetCSVApi(pluginId: string = 'spreadsheet'): TabularDataApi {
   return new SpreadsheetCSVApiAdapter(pluginId);
 }

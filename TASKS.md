@@ -255,15 +255,15 @@
 - ブランチ: `refactor/batch/package-rename`（sandbox 制約で `main` 上で作業）
 - 依存: `@hierarchidb/batch-types`, `@hierarchidb/batch-runtime-services`, `@hierarchidb/route-plugin`, `@hierarchidb/location-plugin`, `@hierarchidb/shape-plugin`, `@hierarchidb/runtime-plugin-dialog`
 - 受け入れ基準（DoD）:
-  - [ ] `packages/batch-types` と `packages/batch-runtime-services` が新命名で構成され、`pnpm --filter @hierarchidb/batch-types build:types` および `pnpm --filter @hierarchidb/batch-runtime-services build:types` が成功する
-  - [ ] リポジトリ全体から `@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の参照が除去され、新命名へ差し替え済みである
-  - [ ] 代表的依存パッケージ（route/location/shape plugin と runtime plugin dialog）が `typecheck` / `build:types` でグリーンになる
-  - [ ] TASKS 運用ログに start/progress/done を記録している
+  - [x] `packages/batch-types` と `packages/batch-runtime-services` が新命名で構成され、`pnpm --filter @hierarchidb/batch-types build:types` および `pnpm --filter @hierarchidb/batch-runtime-services build:types` が成功する
+  - [x] リポジトリ全体から `@hierarchidb/batch-api` / `@hierarchidb/batch-sdk` の参照が除去され、新命名へ差し替え済みである
+  - [x] 代表的依存パッケージ（route/location/shape plugin と runtime plugin dialog）が `typecheck` / `build:types` でグリーンになる
+  - [x] TASKS 運用ログに start/progress/done を記録している
 - チェックリスト:
-  - [ ] `scripts/rename-batch-packages.mjs` を作成し、dry-run→本番適用で `batch-types`/`batch-runtime-services` ディレクトリを移設
-  - [ ] `pnpm-workspace.yaml` / `tsconfig.base.json` / 主要 `tsconfig.*.json` のパスエイリアスと依存宣言を新命名へ更新
-  - [ ] route/location/shape plugin・runtime 系の import/tsup external/peerDependencies を `@hierarchidb/batch-{types,runtime-services}` へ差し替え
-  - [ ] `rg "@hierarchidb/batch-(api|sdk)"` で旧命名残存を確認し、必要に応じて修正
+  - [x] `scripts/rename-batch-packages.mjs` を作成し、dry-run→本番適用で `batch-types`/`batch-runtime-services` ディレクトリを移設
+  - [x] `pnpm-workspace.yaml` / `tsconfig.base.json` / 主要 `tsconfig.*.json` のパスエイリアスと依存宣言を新命名へ更新
+  - [x] route/location/shape plugin・runtime 系の import/tsup external/peerDependencies を `@hierarchidb/batch-{types,runtime-services}` へ差し替え
+  - [x] `rg "@hierarchidb/batch-(api|sdk)"` で旧命名残存を確認し、必要に応じて修正
 - ロールバック手順：
   - rename スクリプトで移動したディレクトリと差し替えた参照をすべて revert し、`@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の元構成へ戻したうえで関係パッケージの build/typecheck を再実行して整合を確認
 
@@ -310,9 +310,111 @@
   - [ ] `packages/runtime/client` から不要になった export を削除し、呼び出し側を更新
   - [ ] Feature flag を参照していた設定（localStorage override, worker URL param など）を撤去し、関連テストを修正
   - [ ] 新旧比較の WFL / Playwright シナリオを実行し、差分が目的通りであることを記録
-- ロールバック手順：
+ - ロールバック手順：
   - 静的 loader への変更を revert し、`wirePluginsFromModules` と旧フックを復元後に `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
 
+14) Spreadsheet Dialog Step 実装復旧（P1）
+- ブランチ: `feat/spreadsheet/dialog-steps-wiring`
+- 依存: Spreadsheet CSV API ドライバ（現行実装）、PluginStepRegistry
+- 受け入れ基準（DoD）:
+  - [ ] `plugins/spreadsheet-plugin/src/ui/components/steps-provider.tsx` など StepRegistry 経路で DataSourceStep / FilteringStep が実装・結線され、フォルダダイアログから利用可能
+  - [ ] Wizard フローで CSV アップロード・フィルタ設定が実際に機能し、`pnpm --filter @hierarchidb/spreadsheet-plugin typecheck` および `pnpm --filter @hierarchidb/spreadsheet-plugin test` がグリーン
+  - [ ] 既存 TODO/TODO.md を更新し、モック状態であった旨を解消
+- チェックリスト:
+  - [ ] StepProvider 周辺の型（StepComponentProps）を整理し lint/format を通す
+  - [ ] UI smoke 手順を手元で実施し、動作確認結果を TASKS 運用ログへ記録
+- ロールバック手順：
+  - 変更したステップ定義を revert し、`pnpm --filter @hierarchidb/spreadsheet-plugin build:types` が従来通り成功することを確認
+
+15) Shape Plugin バッチ UI 復旧（P1）
+- ブランチ: `feat/shape/batch-ui-restore`
+- 依存: Shape worker API（`shapePluginAPI`）、Runtime batch イベント購読
+- 受け入れ基準（DoD）:
+  - [ ] `useShapeAPI` / `useShapeProgress` / `useShapeBatchCommand` が実 API を呼び出す実装に置き換わり、スタブ例外が解消
+  - [ ] `BatchProcessingDialog` / `BatchRecoveryDialog` が実際のセッション情報を表示し、バッチ進行・再開操作が可能
+  - [ ] `pnpm --filter @hierarchidb/shape-plugin {typecheck,test}` が成功
+- チェックリスト:
+  - [ ] WorkerBridge／PluginExtensionRegistry を利用した進捗購読を追加し、既存 UI テストを更新
+  - [ ] Dexie ストアや Auth Recovery 連携の確認結果を TASKS 運用ログへ追記
+- ロールバック手順：
+  - UI/フック変更を revert し、`pnpm --filter @hierarchidb/shape-plugin build:types` 成功を確認
+
+16) Route Plugin LocationResolver 実装（P2）
+- ブランチ: `feat/route/location-resolver-integration`
+- 依存: Location Plugin 公開 API、Runtime Worker Bridge
+- 受け入れ基準（DoD）:
+  - [ ] `LocationResolver` が Location プラグイン API へ実接続し、モックデータを撤去
+  - [ ] ルート作成フローで Location 参照が解決できることを手動確認
+  - [ ] `pnpm --filter @hierarchidb/route-plugin typecheck` グリーン
+- チェックリスト:
+  - [ ] キャッシュ・エラーハンドリングを整備し、ユニットテストを追加
+  - [ ] 既存モック用途のログを削除し lint を実行
+- ロールバック手順：
+  - LocationResolver 変更を戻し、`pnpm --filter @hierarchidb/route-plugin build:types` が成功することを確認
+
+17) Location Plugin 外部検索／Map プレビュー実装（P2）
+- ブランチ: `feat/location/search-integrations`
+- 依存: GeoNames / Wikidata / Overpass API クライアント、Map プレビュー要件
+- 受け入れ基準（DoD）:
+  - [ ] `searchGeoNames` / `searchWikidata` が実装され、プレースホルダー処理を撤去
+  - [ ] BatchProgressDialog のマップタブが実データを描画（最低限のベースレイヤー + ポイント表示）
+  - [ ] `pnpm --filter @hierarchidb/location-plugin {typecheck,test}` が成功
+- チェックリスト:
+  - [ ] API 呼び出しをモジュール分離し、ユニットテストでモック可能にする
+  - [ ] Map プレビュー実装を Storybook もしくはドキュメントで補足
+- ロールバック手順：
+  - 変更を revert し、`search*` が従来通り戻ることを確認
+
+18) Resolver Plugin プレビュー／統計 正式化（P2）
+- ブランチ: `feat/resolver/mapping-preview`
+- 依存: Resolver Worker API、Schema 情報取得
+- 受け入れ基準（DoD）:
+  - [ ] `PropertyMappingStep` のプレビュー生成が Worker 経由の結果を表示し、モック結果を廃止
+  - [ ] `ResolverPanel` の統計が実データに基づく値を示す
+  - [ ] `pnpm --filter @hierarchidb/resolver-plugin typecheck` が成功
+- チェックリスト:
+  - [ ] ワーカー連携用の API アダプタとテストを整備
+  - [ ] 旧モックに依存していたテストを更新
+- ロールバック手順：
+  - 該当ファイルを revert し、型チェック成功を確認
+
+19) Styler Plugin 設定永続化の実装（P2）
+- ブランチ: `feat/styler/config-persistence`
+- 依存: Spreadsheet プラグイン共有 API、Dexie/Staging DB
+- 受け入れ基準（DoD）:
+  - [ ] `StylerExtensionHandler` の `load/save/delete/cleanup/clearCache` が実 DB 操作となり、ログ出力のみのプレースホルダを撤去
+  - [ ] `StylerView` が最低限のプレビュー（マップ or テーブル）を表示
+  - [ ] `pnpm --filter @hierarchidb/styler-plugin typecheck` が成功
+- チェックリスト:
+  - [ ] データ保存処理のユニットテストとリグレッションカバレッジを追加
+  - [ ] `colorUtils` の TODO（Jenks 等）について実装／別タスク切り出しを判断
+- ロールバック手順：
+  - 変更を revert し、`pnpm --filter @hierarchidb/styler-plugin build:types` 成功を確認
+
+20) Linker / Timeline Plugin サービス実装（P3）
+- ブランチ: `feat/linker-timeline/service-backends`
+- 依存: Plugin runtime services、対象プラグイン仕様書
+- 受け入れ基準（DoD）:
+  - [ ] Linker / Timeline の `services/index.ts` がプレースホルダではなく、ワーカーまたは共有サービスと接続
+  - [ ] `pnpm --filter @hierarchidb/linker-plugin typecheck` および `pnpm --filter @hierarchidb/timeline-plugin typecheck` が成功
+  - [ ] `@hierarchidb/linker-plugin` 共通モジュールのプレースホルダコメントを撤去
+- チェックリスト:
+  - [ ] 最低限の API サーフェス（追加・一覧・削除など）を定義し、テストで検証
+  - [ ] 依存プラグインとの連携可否を評価し、必要に応じて後続タスク化
+- ロールバック手順：
+ - サービス実装を revert し、typecheck が従来通り成功することを確認
+
+21) Folder Plugin API Hook 取り扱い調査（P3）
+- ブランチ: `investigate/folder/api-hook-role`
+- 依存: フォルダ操作フロー（TreeMutation/TreeQuery）、Plugin UI SDK の既存フック構造
+- 受け入れ基準（DoD）:
+  - [ ] ダイアログ操作が WorkingCopy API のみで完結することを確認し、`useFolderAPI` / `useFolderAPIGetter` スタブを撤去した旨を運用ログに記録
+  - [ ] 必要であれば後続タスク（WorkingCopy ラッパー導入など）を起票、不要であれば本項目を Done へ移動
+- チェックリスト:
+  - [x] WorkingCopy API で完結している現状フローを確認し、スタブフックが不要であることを整理
+  - [x] 他プラグインの API フックとの役割差を評価し、フォルダは WorkingCopy を直接利用する方針を確認
+- ロールバック手順：
+  - 追加のアクションが不要と判断した場合は Done へ移す。再度フックが必要と判明した場合は専用タスクを起票
 -- テストファースト追加タスク（Doing #1/#2 フォロー） --
 - test/runtime-worker/undo-redo-playwright-smoke（Playwright スモーク導入, P1）
   - ブランチ: `test/runtime-worker/undo-redo-playwright-smoke`
@@ -1964,7 +2066,7 @@ P2:
   - 依存: `@hierarchidb/tabular`/`@hierarchidb/auth-recovery` などのAPI整合と UI 依存の peer/external 化
 - チェックリスト（抜粋）:
   - [ ] `SpreadsheetCSVApiDriver` の upload フロー（既存メタ/新規解析の分岐、プレビュー連携）を統合（今回の応急修正は pass だがプレビュー復元は未実装）
-  - [ ] Adapter 実装を `ICSVDataApi` に完全適合
+  - [ ] Adapter 実装を `TabularDataApi` に完全適合
   - [ ] `provider-i18next` 依存の除去または正規化
   - [ ] `@hierarchidb/runtime-worker` entity store の import 修正（exports に準拠）
   - [ ] vitest/jest 型整合（jest-dom types 参照の削除 or devDeps 揃え）
@@ -5785,3 +5887,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-19 21:31 progress: chore/plugins/package-rename — dry-run 内容を確認後、`node scripts/rename-plugin-packages.mjs` を実行し `packages/plugin-{types,runtime-entities,ui-sdk}` へディレクトリと参照を一括置換。
 - 2025-10-19 21:34 progress: chore/plugins/package-rename — `pnpm --filter @hierarchidb/resolver-plugin test -- PropertyResolver.integration.test.ts` はグリーン、`pnpm --filter @hierarchidb/shape-plugin test` は既存 TODO（Shape API 未実装フック）で失敗することを確認。後者は従来の Known issue として再整理予定。
 - 2025-10-19 22:05 start: refactor/batch/package-rename — Batch API/SDK を `batch-types` / `batch-runtime-services` 命名へ再編する作業に着手。現状のディレクトリ構成と参照状況を棚卸し。
+- 2025-10-20 10:28 progress: refactor/batch/package-rename — tsconfig 全体から隣接パッケージの `dist` 直接参照を撤去し、`tsconfig.base.json` に集約。依存プラグインの import/peerDependencies を新命名へ揃えたうえで、型ビルドと typecheck を再実行。
+- 2025-10-20 10:29 command: pnpm --filter @hierarchidb/batch-runtime-services build:types / pnpm --filter @hierarchidb/batch-types build:types （成功）
+- 2025-10-20 10:31 command: pnpm --filter @hierarchidb/{route-plugin,location-plugin,shape-plugin,resolver-plugin,spreadsheet-plugin,folder-plugin,runtime-plugin-dialog} typecheck （全て成功）

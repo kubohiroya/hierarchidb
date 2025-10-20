@@ -91,6 +91,7 @@
     "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3",
     "vitest": "^3.2.4",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "comlink": "^4.4.1",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",

@@ -9,7 +9,7 @@ import type {
   BatchSessionStatus,
   IBatchSessionManager,
   StageKey,
-} from '@hierarchidb/batch-types';
+} from '@hierarchidb/common-api';
 
 export interface RouteBatchSessionConfig {
   routeGeneration?: Partial<RouteBatchConfig['routeGeneration']>;

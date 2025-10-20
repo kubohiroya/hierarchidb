@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import type { FolderEntity } from '../types/FolderEntity.js';
-import type { FolderDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.js';
+import type { NodeDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.js';
 import { createFolderExtension, folderExtensionRegistry } from '../api/DialogExtensionAPI.js';
 import type {
   NodeId,
@@ -10,7 +10,7 @@ import type {
 } from '@hierarchidb/common-types';
 import { registerTaggable, unregisterTaggable } from '@hierarchidb/tag';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
-import type { DialogStepDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
+import type { NodeDialogStepDefinition, ValidationExtension } from '@hierarchidb/plugin-ui-sdk';
 
 /**
  * Base class for plugin-loader that extend the folder-plugin plugin
@@ -92,7 +92,7 @@ export abstract class BaseFolderPlugin {
   /**
    * Create base-dialog extension configuration
    */
-  protected createDialogExtension(): FolderDialogExtension | undefined {
+  protected createDialogExtension(): NodeDialogExtension | undefined {
     const createSteps = this.getCreateDialogSteps();
     const editSteps = this.getEditDialogSteps();
     const transformData = this.transformDialogData?.bind(this);
@@ -144,14 +144,14 @@ export abstract class BaseFolderPlugin {
   /**
    * Override to provide additional base-dialog steps for create mode
    */
-  protected getCreateDialogSteps(): DialogStepDefinition[] | undefined {
+  protected getCreateDialogSteps(): NodeDialogStepDefinition[] | undefined {
     return undefined;
   }
 
   /**
    * Override to provide additional base-dialog steps for edit mode
    */
-  protected getEditDialogSteps(): DialogStepDefinition[] | undefined {
+  protected getEditDialogSteps(): NodeDialogStepDefinition[] | undefined {
     return undefined;
   }
 
@@ -287,7 +287,7 @@ export abstract class BaseFolderPlugin {
     required?: boolean;
     order?: number;
     //dependsOn?: string[];
-  }): DialogStepDefinition {
+  }): NodeDialogStepDefinition {
     const StepWrapper = wrapDialogStepComponent(config.component);
 
     return {

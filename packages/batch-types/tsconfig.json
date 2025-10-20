@@ -5,22 +5,12 @@
     "module": "Node16",
     "moduleResolution": "Node16",
     "baseUrl": ".",
-    "composite": false,
+    "composite": true,
     "declaration": true,
+    "noEmit": false,
     "emitDeclarationOnly": true,
     "declarationMap": true,
-    "skipLibCheck": true,
-    "paths": {
-      "@hierarchidb/common-types": ["../common/types/dist/index.d.ts"],
-      "@hierarchidb/common-types/*": ["../common/types/dist/*"],
-      "@hierarchidb/common-api": ["../common/api/dist/index.d.ts"],
-      "@hierarchidb/common-api/*": ["../common/api/dist/*"],
-      "@hierarchidb/runtime-worker": ["../runtime/worker/dist/index.d.ts"],
-      "@hierarchidb/runtime-worker/*": ["../runtime/worker/dist/*"],
-      "@hierarchidb/batch-runtime-services": ["../batch-runtime-services/dist/index.d.ts"],
-      "@hierarchidb/batch-runtime-services/*": ["../batch-runtime-services/dist/*"],
-      "@hierarchidb/batch-types": ["../batch-runtime-services/dist/types.d.ts"]
-    }
+    "skipLibCheck": true
   },
   "include": [
     "../batch-runtime-services/dist/**/*.d.ts"
@@ -28,5 +18,10 @@
   "exclude": [
     "node_modules",
     "dist"
+  ],
+  "references": [
+    { "path": "../batch-runtime-services/tsconfig.build.json" },
+    { "path": "../common/types/tsconfig.build.json" },
+    { "path": "../common/api/tsconfig.build.json" }
   ]
 }
