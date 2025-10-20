@@ -67,6 +67,48 @@
       "@hierarchidb/ui-file/*": [
         "packages/ui/file/src/*"
       ],
+      "@hierarchidb/ui-treeconsole-base": [
+        "packages/ui/treeconsole/base/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-base/*": [
+        "packages/ui/treeconsole/base/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb": [
+        "packages/ui/treeconsole/breadcrumb/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb/*": [
+        "packages/ui/treeconsole/breadcrumb/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-footer": [
+        "packages/ui/treeconsole/footer/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-footer/*": [
+        "packages/ui/treeconsole/footer/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-speeddial": [
+        "packages/ui/treeconsole/speeddial/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-speeddial/*": [
+        "packages/ui/treeconsole/speeddial/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar": [
+        "packages/ui/treeconsole/toolbar/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar/*": [
+        "packages/ui/treeconsole/toolbar/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-trashbin": [
+        "packages/ui/treeconsole/trashbin/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-trashbin/*": [
+        "packages/ui/treeconsole/trashbin/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "packages/ui/treeconsole/treetable/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable/*": [
+        "packages/ui/treeconsole/treetable/src/*"
+      ],
       "@hierarchidb/ui-theme": [
         "packages/ui/theme/src/index.ts"
       ],

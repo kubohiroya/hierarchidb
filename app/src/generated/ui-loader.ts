@@ -5,17 +5,17 @@
 
 const uiLoaders: Record<string, () => Promise<unknown>> = {
   'timeline': () => import('@hierarchidb/timeline-plugin/ui'),
-  'route': () => import('@hierarchidb/route-plugin/ui'),
   'location': () => import('@hierarchidb/location-plugin/ui'),
   'folder': () => import('@hierarchidb/folder-plugin/ui'),
   'spreadsheet': () => import('@hierarchidb/spreadsheet-plugin/ui'),
   'styler': () => import('@hierarchidb/styler-plugin/ui'),
   'shape': () => import('@hierarchidb/shape-plugin/ui'),
+  'route': () => import('@hierarchidb/route-plugin/ui'),
   'basemap': () => import('@hierarchidb/basemap-plugin/ui'),
 };
 
 export const uiPlugins = ["basemap","folder","location","route","shape","spreadsheet","styler","timeline"] as const;
-export const uiLoadOrder = ["timeline","route","location","folder","spreadsheet","styler","shape","basemap"] as const;
+export const uiLoadOrder = ["timeline","location","folder","spreadsheet","styler","shape","route","basemap"] as const;
 
 const loadedPlugins = new Set<string>();
 let allLoaded = false;

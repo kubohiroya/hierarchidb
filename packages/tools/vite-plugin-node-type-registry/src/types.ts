@@ -38,24 +38,4 @@ export interface CreateAliasPluginOptions {
   readonly tsconfigKinds?: PluginEntryKind[];
 }
 
-export interface CreateRegistryPluginOptions {
-  readonly rootDir?: string;
-  readonly debugSnapshotDir?: string;
-  readonly minimal?: boolean;
-}
-
-export interface PluginManifestShape {
-  readonly nodeType?: string;
-  readonly dependencies?: string[];
-  readonly priority?: number;
-}
-
-export interface PluginRegistryEntry {
-  readonly nodeType: string;
-  readonly packageName: string;
-  readonly version: string | null;
-  readonly hasUI: boolean;
-  readonly hasWorker: boolean;
-  readonly hasCommon: boolean;
-  readonly manifest: PluginManifestShape | null;
-}
+// Registry plugin has been removed; related option/entry types are no longer exported.

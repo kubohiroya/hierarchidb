@@ -12,6 +12,7 @@ packages:
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services
+  - packages/plugin-registry
   - packages/plugin-ui-sdk
   - packages/plugin-types
   - packages/batch-runtime-services

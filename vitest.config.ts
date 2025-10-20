@@ -1,14 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
-import {
-  deriveNodeTypePluginAliases,
-  discoverNodeTypePlugins,
-} from './packages/tools/plugin-registry-utils/src/index';
+import { collectAliasEntries } from './packages/tools/vite-plugin-node-type-registry/src/alias';
 
-const nodeTypePlugins = discoverNodeTypePlugins({ rootDir: __dirname });
-const nodeTypeAliasEntries = deriveNodeTypePluginAliases(nodeTypePlugins, {
-  subpaths: ['root', 'ui', 'services', 'database', 'shared'],
-});
+const nodeTypeAliasEntries = collectAliasEntries(__dirname, ['root', 'ui', 'worker', 'database', 'common']);
 
 const nodeTypeAliases = Object.fromEntries(
   nodeTypeAliasEntries.map(({ find, replacement }) => [find, replacement]),
@@ -16,7 +10,7 @@ const nodeTypeAliases = Object.fromEntries(
 
 const nodeTypeSrcAliases = Object.fromEntries(
   nodeTypeAliasEntries
-    .filter(({ subpath }) => subpath === 'root')
+    .filter(({ kind }) => kind === 'root')
     .map(({ find, replacement }) => [`${find}/src`, path.dirname(replacement)]),
 );
 

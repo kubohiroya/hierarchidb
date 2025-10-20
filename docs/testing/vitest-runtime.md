@@ -48,7 +48,7 @@
 
 ## 4. 部分的に Vitest を実行する手順
 
-アプリケーション配下 (`/app`) のテストだけを素早く検証したい場合は、新設した `app/vitest.config.ts` を利用できます。ルートで下記を実行すると、`~` や `virtual:plugin-definitions` エイリアス、`node-fetch` スタブなどが自動適用された状態で対象ファイルのみを走らせられます。
+アプリケーション配下 (`/app`) のテストだけを素早く検証したい場合は、新設した `app/vitest.config.ts` を利用できます。ルートで下記を実行すると、`~` や `@hierarchidb/plugin-registry` エイリアス、`node-fetch` スタブなどが自動適用された状態で対象ファイルのみを走らせられます。
 
 ```bash
 # 例: plugin-presentation と worker-runtime のテスト群のみ実行

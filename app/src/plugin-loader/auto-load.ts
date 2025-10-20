@@ -10,27 +10,20 @@
   * If, in the future, the generator is extended to create static UI imports as well,
   * this module can be deprecated. For now, it remains required.
   *
- * - virtual:plugin-definitions metadata for plugin-loader (sourced from plugin-manifest.ts)
-  * - virtual:plugin-registry-ui dynamic import map per nodeType
-  */
+ * - plugin definitions and UI loader map are generated statically during build
+ */
 
 import type { NodeType } from '@hierarchidb/common-types';
-
-// Provided by @hierarchidb/vite-plugin-node-type-registry (vite virtual modules)
-// These module declarations are injected during dev by the Vite plugin.
-// In build, they are real modules generated at compile time.
-import pluginDefinitions from 'virtual:plugin-definitions';
-import { pluginMapUI as pluginMap } from 'virtual:plugin-registry-ui';
+import { pluginDefinitions, pluginMapUI as pluginMap } from '@hierarchidb/plugin-registry';
 
 type PluginDefinitionVM = {
-  name: string;
-  version: string;
-  packageName: string;
   nodeType: string;
+  name: string;
+  packageName: string;
+  version: string;
+  displayName: string;
   priority: number;
-  config?: {
-    dependencies?: string[];
-  };
+  dependencies: string[];
 };
 
 /**
@@ -48,7 +41,7 @@ function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
   for (const d of defs) {
     const id = d.nodeType;
     nodes.add(id);
-    const deps = new Set<string>(d.config?.dependencies ?? []);
+    const deps = new Set<string>(d.dependencies ?? []);
     graph.set(id, deps);
   }
 
@@ -79,7 +72,7 @@ function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
  * @deprecated
  */
 export async function autoLoadPlugins(): Promise<PluginLoadResult> {
-  console.log('🔍 Auto-discovering plugin-loader via virtual modules...');
+  console.log('🔍 Auto-discovering plugin-loader via plugin registry...');
 
   const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
   const loadOrder = topoSortByDependencies(defs);

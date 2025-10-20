@@ -17,7 +17,6 @@ export default defineConfig({
     alias: {
       '~': path.resolve(rootDir, 'src'),
       '#app': path.resolve(rootDir, 'src'),
-      'virtual:plugin-definitions': path.resolve(rootDir, 'src/virtual/plugin-definitions.ts'),
       'node-fetch': path.resolve(rootDir, 'src/virtual/node-fetch.ts'),
     },
   },

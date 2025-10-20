@@ -13,13 +13,19 @@
       "default": "./dist/index.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "": ["src/index.ts"],
+      "*": ["src/*"]
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm run build:bundle",
-    "build:types": "api-extractor run --local",
+    "build:types": "tsc -p tsconfig.build.json && api-extractor run --local",
     "build:bundle": "pnpm run build:types && tsup",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src"

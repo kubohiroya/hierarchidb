@@ -4,12 +4,16 @@
  */
 
 import './worker-react-refresh-shim.js';
-import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '../../packages/runtime/client';
-import type { PluginDefinition } from '@hierarchidb/common-types';
+import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-client';
+import type { PluginDefinition } from '@hierarchidb/plugin-registry';
 import {
   WORKER_FLAG_ALLOWED_OVERRIDES,
   WORKER_FLAG_PARAM_PREFIX,
 } from './config/worker-flag-overrides.js';
+import {
+  pluginDefinitions as staticPluginDefinitions,
+  pluginMapWorker as staticPluginMapWorker,
+} from '@hierarchidb/plugin-registry';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -103,22 +107,16 @@ reporter.reportStepProgress('Load Comlink', 0);
 
     reporter.reportStepProgress('Load plugin loaders', 100);
 
-    let pluginDefinitions: PluginDefinition[] = [];
-    if (!import.meta.env.DEV) {
-      try {
-        const mod = await import('virtual:plugin-definitions').catch(async () =>
-          import('./virtual/plugin-definitions.js')
-        );
-        const defs = (mod as { default?: unknown }).default;
-        pluginDefinitions = Array.isArray(defs) ? (defs as PluginDefinition[]) : [];
-      } catch {
-        const legacyDefs = (self as ManualPluginSelf).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__;
-        pluginDefinitions = Array.isArray(legacyDefs) ? legacyDefs : [];
-      }
+    const pluginDefinitions: PluginDefinition[] = Array.isArray(staticPluginDefinitions)
+      ? [...(staticPluginDefinitions as PluginDefinition[])]
+      : [];
+
+    const legacyDefs = (self as ManualPluginSelf).__HIERARCHIDB_MANUAL_PLUGIN_DEFS__;
+    if (Array.isArray(legacyDefs)) {
+      pluginDefinitions.push(...legacyDefs);
     }
 
-    const registryModule = await import('virtual:plugin-registry-worker').catch(() => null);
-    let pluginMap: PluginLoaderMap = registryModule?.pluginMapWorker ?? {};
+    const pluginMap: PluginLoaderMap = { ...staticPluginMapWorker };
 
     // Note: Legacy workerModuleLoaders are no longer generated; pluginMapWorker now provides all loaders.
 
@@ -224,7 +222,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     }
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
-    reporter.reportError(err.message, err);
+    reporter.reportError(err);
     throw err;
   }
 })();

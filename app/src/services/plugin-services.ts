@@ -1,6 +1,6 @@
 // Thin facade that lazily resolves plugin-specific helpers via dynamic import.
-// Maintains backward-compatible API (`loadPluginService`) without relying on
-// the legacy virtual:plugin-registry-services module.
+// Maintains backward-compatible API (`loadPluginService`) using the statically
+// generated loader metadata instead of the former virtual registry module.
 
 type Loader = () => Promise<unknown>;
 

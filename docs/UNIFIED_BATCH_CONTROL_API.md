@@ -7,7 +7,7 @@
 | レイヤ | ロード方法 | 備考 |
 | --- | --- | --- |
 | UI (親ウィンドウ) | 静的 import (`app/src/generated/ui-loader.ts`) | 起動時にすべての UI プラグインを読み込む。旧 `autoLoadPlugins()` は開発補助用途のみ。 |
-| Runtime Worker | 動的 import (`app/src/worker.ts`) | `virtual:plugin-registry-worker` による nodeType ごとの遅延ロード。deny-list 対応。 |
+| Runtime Worker | 動的 import (`app/src/worker.ts`) | `@hierarchidb/plugin-registry` の `pluginMapWorker` による nodeType ごとの遅延ロード（deny-list 対応）。 |
 | Stage Worker (孫 Worker) | プラグイン実装依存 | Runtime Worker 内で必要に応じて生成。 |
 
 ## 2. Runtime Worker 公開 API（予定）

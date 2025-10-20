@@ -46,7 +46,7 @@ function buildPresentation(def: InstalledPlugin): PluginPresentation {
   const fallbackLabel = def.label || def.nodeType;
   const label = sanitizeLabel(def.label, fallbackLabel);
   const priorityCandidate = def.manifest?.priority ?? def.createOrder;
-  const muiIconName = normalizeMuiIconName(iconConfig.muiIconName ?? iconConfig.mui);
+  const muiIconName = normalizeMuiIconName(iconConfig.muiIconName);
   return {
     nodeType: def.nodeType,
     label,

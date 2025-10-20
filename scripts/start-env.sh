@@ -102,8 +102,8 @@ if [ "$COMMAND" = "dev" ]; then
 fi
 
 # 開発サーバ起動前に、必要なローカル Vite ツールのビルドを最低限チェック
-# app の vite.config.ts が参照する @hierarchidb/vite-plugin-node-type-registry は
-# dist 出力が存在しないと Vite の externalize-deps 解決が失敗するため、未ビルドならビルドする
+# app の vite.config.ts が参照する @hierarchidb/vite-plugin-node-type-registry（alias プラグイン）は
+# dist 出力が無いと Vite の externalize-deps 解決が失敗するため、未ビルドならビルドする
 if [ ! -f "packages/tools/vite-plugin-node-type-registry/dist/index.js" ]; then
     echo "🔨 Building @hierarchidb/vite-plugin-node-type-registry (first-time or clean checkout) ..."
     pnpm --filter @hierarchidb/vite-plugin-node-type-registry build || {

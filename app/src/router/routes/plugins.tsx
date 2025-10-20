@@ -107,7 +107,6 @@ type DisplayPlugin = {
   backgroundColor: string;
   hasUI: boolean;
   hasWorker: boolean;
-  hasServices: boolean;
   hasCommon: boolean;
   packageName: string;
   version: string | null;
@@ -208,9 +207,6 @@ function EnhancedPluginRow({
         <TableCell>
           <Stack direction="row" spacing={1}>
             {plugin.hasUI && <Chip label="UI" size="small" color="primary" variant="outlined" />}
-            {plugin.hasServices && (
-              <Chip label="Services" size="small" color="secondary" variant="outlined" />
-            )}
             {plugin.hasWorker && (
               <Chip label="Worker" size="small" color="success" variant="outlined" />
             )}
@@ -676,7 +672,6 @@ export default function PluginsPage() {
         backgroundColor: plugin.backgroundColor,
         hasUI: plugin.hasUI,
         hasWorker: plugin.hasWorker,
-        hasServices: plugin.hasServices,
         hasCommon: plugin.hasCommon,
         packageName: plugin.packageName,
         version: plugin.version,
@@ -884,7 +879,6 @@ export default function PluginsPage() {
                     <TableCell>
                       <Stack direction="row" spacing={1}>
                         {plugin.hasUI && <Chip label="UI" size="small" variant="outlined" />}
-                        {plugin.hasServices && <Chip label="Services" size="small" variant="outlined" />}
                         {plugin.hasWorker && <Chip label="Worker" size="small" variant="outlined" />}
                       </Stack>
                     </TableCell>

@@ -232,7 +232,7 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 - `priority: number`: 並び順のヒント（小さいほど先）。
 
 この定義は Worker 層での実体（ハンドラ等）と UI 層の登録に共通して参照され、ビルド時に
-`virtual:plugin-definitions`（vite プラグイン経由）として集約されます。UI のメニュー構築や
+`@hierarchidb/plugin-registry` の `pluginDefinitions` として集約されます。UI のメニュー構築や
 ランタイムのロード順解決は、この定義配列から導出されます。
 
 ### メニューとロード順の導出
@@ -265,13 +265,13 @@ base-plugin は UI に表示されない「共通基盤」です。プラグイ�
 - 依存解決: 他パッケージの `../src` 直参照は禁止。公開API（パッケージ名）経由、または d.ts 参照に限定する。
 
 
-UI 側ユーティリティでは、`virtual:plugin-definitions` を読み取り、`label = nativeName || name || nodeType`
-のようなルールでメニューに整形します（実装は `app/src/plugins/menu-builders.ts` を参照）。
+UI 側ユーティリティでは、`@hierarchidb/plugin-registry` の `pluginDefinitions` を読み取り、`label = nativeName || name || nodeType`
+のようなルールでメニューに整形します（実装は `app/src/plugin-loader/menu-builders.ts` を参照）。
 
 ### プラグイン登録（ランタイム）
 
-ビルド後、UI は `virtual:plugin-map` からプラグイン UI を動的 import し、Worker は `PluginDefinition` を
-もとに必要なサービス/ハンドラを登録します（`WorkerService.getSingleton(defs)`）。
+ビルド後、UI/Worker は `pluginMapUI` / `pluginMapWorker`（いずれも `@hierarchidb/plugin-registry` で公開）を通じて動的 import を行い、
+必要なサービス/ハンドラを登録します（`WorkerService.getSingleton(defs)`）。
 
 #### サンプル（最小）
 ```ts
@@ -341,7 +341,7 @@ export class StylerEntityHandler extends BaseEntityHandler<StylerEntity> {
 ## ✅ 開発チェックリスト（最新版）
 
 - [ ] `PluginDefinition` を用いてトップレベルに `category/icon/dependencies/priority` を定義したか
-- [ ] UI/Worker ともに `virtual:plugin-definitions`（集約された定義）を前提にしているか
+- [ ] UI/Worker ともに `@hierarchidb/plugin-registry`（集約された定義）を前提にしているか
 - [ ] 依存解決（ロード順）に `dependencies` を設定したか
 - [ ] UI のメニュー表示に `displayName` と `category` を適切に設定したか
 - [ ] Dexie スキーマ（`database.schema`）と `version` を更新時に整合させたか

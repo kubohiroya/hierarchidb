@@ -1,101 +1,48 @@
 # @hierarchidb/vite-plugin-node-type-registry
 
-HierarchiDB の nodeType プラグイン群を自動検出し、UI/Worker/Common 向けの仮想モジュールとエイリアスを提供する Vite プラグインです。既存の `vite-plugin-registry.ts` と `@hierarchidb/tools-plugin-registry-utils` を統合する後継パッケージとして設計されています。
+HierarchiDB の nodeType プラグインを検出し、Vite からソースコードへ解決できるよう alias を付与する最小限のプラグインです。従来このパッケージは仮想モジュール (`virtual:plugin-*`) を生成していましたが、2025-10 時点では静的レジストリ (`scripts/generate-plugin-loader.mjs` → `@hierarchidb/plugin-registry`) が正となったため、役割を「エイリアス整備のみに限定」しました。
 
-## 目的
-- `packages/plugins/*-plugin` 配下のパッケージを検出し、nodeType ごとのメタデータを生成する
-- Vite の仮想モジュール (`virtual:plugin-node-types/*`) を通じて UI/Worker/Common のレジストリを提供する
-- tsconfig と Vite alias の同期を自動化し、手動メンテナンスを不要にする
-- フィーチャーフラグやデバッグ出力（スナップショット生成）を統一的に制御する
+## できること
+- `packages/plugins/*-plugin` を探索し、`./ui` や `./worker` 等のサブパスが存在する場合に Vite の `resolve.alias` へ `/@fs/.../src` を登録する
+- （任意）`tsconfig` の `paths` を同期させるオプションを残しつつ、デフォルトでは書き換えを行わない
 
-## 設計概要
-- **Detector レイヤ**: `packages/plugins/*-plugin` を探索し、`package.json` の `hierarchidb.plugin` と exports からメタ情報を収集します。`plugin-manifest.ts` の変更も監視対象に含め HMR をトリガーします。
-- **Transform レイヤ**: 収集したプラグイン情報を nodeType 毎の構造へ整形し、優先度・依存関係・UI/Worker サブパスを決定します。
-- **Virtual Module レイヤ**: UI/Worker に対応する仮想モジュールを生成し、`try/catch` ベースのフォールバックやデバッグ用スナップショット (`app/.debug/*`) を出力します。
-- **Alias/Path 同期レイヤ**: Vite の `resolve.alias` と `tsconfig.*.json` の `paths` を自動更新し、`@hierarchidb/<plugin>` 直下の公開 API 参照を最新に保ちます。
-
-## エントリカテゴリと利用層
-- **UI**: ブラウザメインスレッドで実行される UI コンポーネント／フック群（React など）。アプリ側では `pluginMapUI['location']()` のように読み込み、各 nodeType の UI をマウントします。
-- **Worker**: Web Worker 内で動作するバックエンドロジック。`pluginMapWorker['location']()` で読み込み、IndexedDB 操作や長時間処理を実装します。
-- 共有サービス API はプラグインのルートエクスポート経由で提供する方針に統一されました（旧 `./services` サブパスは廃止）。
-
-各カテゴリは `package.json` の `exports` で `./ui` / `./worker` / `./common` / `./database` を定義しておくことで自動検出されます。特定カテゴリのみを提供するプラグインもサポートされます。
-
-## Location プラグイン（例）の内部フロー
-1. Detector が `packages/plugin-/location-plugin/package.json` を読み込み、`hierarchidb.plugin.nodeType` を `location` として取得。
-2. `exports` フィールドから `./worker`, `./ui`, `./common`, `./database` のサブパス有無を確認し、存在するパスに対応する `dist/` ファイルへの絶対パスを `/@fs/` 形式で解決。
-3. Transform レイヤが `plugin-manifest.ts` から優先度・依存関係・Runtime 設定（例: `dependencies: ['route', 'shape']`）を抽出し、`location` 用のメタデータを組み立て。
-4. Virtual Module レイヤが次の仮想モジュールを生成:
-   - `virtual:plugin-node-types/maps`: `location` キーで UI/Worker のエントリポイントを登録（Worker 版は `@hierarchidb/location-plugin/worker` 等）。
-   - デバッグモードでは `app/.debug/plugin-node-types-location.json` 等のスナップショットを出力。
-5. Alias/Path 同期レイヤが `@hierarchidb/location-plugin` の tsconfig パスを `packages/plugins/location-plugin/src/index.ts` へ向けるよう自動更新。
+> 💡 プラグイン定義・ロード順・メタデータは `@hierarchidb/plugin-registry` によって提供されます。UI や Worker からは `import { pluginDefinitions } from '@hierarchidb/plugin-registry'` のように参照してください。
 
 ## 使い方
-
-### Vite 設定への組み込み
 
 ```ts
 // app/vite.config.ts
 import { defineConfig } from 'vite';
-import {
-  createNodeTypeRegistryPlugin,
-  createNodeTypeAliasPlugin,
-} from '@hierarchidb/vite-plugin-node-type-registry';
+import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-node-type-registry';
 
 export default defineConfig({
   plugins: [
     createNodeTypeAliasPlugin({
-      rootDir: __dirname,
-      tsconfigPath: './tsconfig.json',
-    }),
-    createNodeTypeRegistryPlugin({
-      rootDir: __dirname,
-      debugSnapshotDir: './app/.debug',
+      rootDir: path.resolve(__dirname, '..'), // plugins/ ディレクトリを探索するルート
+      // tsconfigPath や kinds は必要に応じて指定
     }),
   ],
 });
 ```
 
-### 非同期 onRegister の取り扱い
-- UI・Worker のどのカテゴリでも、プラグインは任意で `export async function onRegister(): Promise<void>` を定義できます。主な用途は Web Worker 起動時のリソース初期化や外部サービスとの接続など、インポートだけでは完結しない非同期処理です。
-- 仮想モジュールのローダーは `import()` 後に `onRegister` を自動実行し、完了するまで待機してからモジュールを返します。
-- 呼び出し側は単に `await pluginMapWorker['location']()` のように利用するだけで、初期化済みモジュールを取得できます。`onRegister` が未定義の場合は即座にモジュールが返ります。
+エイリアスの例:
 
-### Location プラグインの呼び出し例
+- `@hierarchidb/route-plugin/ui` → `/@fs/<repo>/plugins/route-plugin/src/ui/index.ts`
+- `@hierarchidb/route-plugin/worker` → `/@fs/<repo>/plugins/route-plugin/src/worker/index.ts`
+- `@hierarchidb/route-plugin` → `/@fs/<repo>/plugins/route-plugin/src/index.ts`
+
+これにより、開発時は常に `src/` を直接参照でき、ビルド時はパッケージの `exports`（dist）へフォールバックします。
+
+## オプション
 
 ```ts
-// app/src/features/location/loaders.ts
-import { pluginMapUI, pluginMapWorker } from 'virtual:plugin-node-types/maps';
-
-export async function mountLocationUI(root: HTMLElement) {
-  const loader = pluginMapUI['location'];
-  const module = await loader();
-  module.render(root);
-}
-
-export async function loadLocationWorker() {
-  const moduleLoader = pluginMapWorker['location'];
-  const { default: workerModule } = await moduleLoader();
-  return workerModule;
-}
-
-export async function loadLocationHelpers() {
-  const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
-  return { getEphemeralLocationDB };
-}
+createNodeTypeAliasPlugin({
+  rootDir?: string;           // 省略時はリポジトリ ルート
+  kinds?: ('ui'|'worker'|'database'|'common'|'root')[]; // デフォルトは全種
+  tsconfigPath?: string;      // 指定した場合のみ paths を同期
+  tsconfigKinds?: ...         // tsconfig へ同期するカテゴリ（tsconfigPath 指定時に使用）
+});
 ```
-
-上記の `pluginMapWorker['location']` は Detector/Transform レイヤが自動で登録した `@hierarchidb/location-plugin/worker` のエントリへの `() => import()` を返します。プラグインが `onRegister` を export している場合でも、呼び出し側は追加の処理を実装する必要はありません。
-
-### フィーチャーフラグ / デバッグ設定
-
-- `HDB_PLUGIN_DEBUG_MODE=1`: 仮想モジュール生成時に `app/.debug` へスナップショットを出力
-- `HDB_PLUGIN_MINIMAL=1`: 仮想モジュールを空実装に差し替え、Vite の import 解析を簡略化
-
-## 既存実装からの移行ガイド
-- `app/vite-plugin-registry.ts` のロジックは本プラグインへ取り込まれます。従来ファイルは削除し、Vite 設定から新プラグインを読み込むよう更新してください。
-- `@hierarchidb/tools-plugin-registry-utils` の `createNodeTypeAliasPlugin` / `syncNodeTypeAliasesToTsconfig` は本パッケージが代替します。
-- 仮想モジュールのインポートパスが `virtual:plugin-registry-*` から `virtual:plugin-node-types/*` に変更されるため、アプリ側の import を更新してください。
 
 ## スクリプト
 

@@ -1,118 +1,100 @@
-# プラグイン開発とアプリ接続ガイド（レジストリ生成方式）
+# プラグイン開発とアプリ接続ガイド（静的レジストリ版）
 
-本書は、Vite の仮想モジュール生成（virtual modules）を用いた「静的に解決可能なプラグインレジストリ」を前提に、
-新規プラグインの開発とアプリ本体への接続手順をまとめたガイドです。開発/本番ともに動的パス連結を廃し、
-ビルド時に生成された TypeScript から文字列リテラルの import() を使ってプラグインを解決します。
+2025-10 時点で HierarchiDB のプラグインは **静的に生成されたレジストリ** を唯一の情報源とします。従来の Vite 仮想モジュール（`virtual:plugin-*`）は廃止され、以下の 3 つの成果物がビルド／実行時の両方で利用されます。
 
-この方式により、開発中の解決失敗ログを無くしつつ、コード分割（lazy load）やキャッシュの利点を維持します。
+1. `app/src/generated/worker-loader.ts` – Worker 側の EntitiesDB ローダーを nodeType 単位で束ねる。
+2. `app/src/generated/ui-loader.ts` – UI の副作用 import を依存順序で列挙し、先にロードすべきプラグインを制御する。
+3. `@hierarchidb/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginMapUI` / `pluginMapWorker` を公開するワークスペース内パッケージ。
 
-> 2025-09 追記（重要）
-> - UI ダイアログは「拡張専用（ホスト合成）」を既定とします。各プラグインは「ステップ」だけを提供し、汎用ホスト `PluginDialog` に合成されます。
-> - 型安全な Step API（componentFactory + StepComponentProps）を導入し、`as any` に依存しない実装が可能になりました。
-> - 既存のスタンドアロン型（プラグインがダイアログ全体を提供）は例外用途とし、段階的にステップ提供型へ移行してください。
+これらは `scripts/generate-plugin-loader.mjs` が再生成します。アプリはレジストリの JSON スナップショットを直接読み、`import()` はすべて文字列リテラルなので Vite/Rollup が確実に解決します。
+
+> 重要: ダイアログ拡張は「ステップ提供型」が既定です。プラグインは `PluginStepRegistry` にステップを登録し、ホスト `PluginDialog` が合成します。スタンドアロン型は例外用途に限定してください。
 
 ## 仕組みの概要
-- 生成プラグイン（Vite）
-  - `@hierarchidb/vite-plugin-node-type-registry`
-    - 走査対象: `plugins/*-plugin/package.json`
-    - 生成: `virtual:plugin-node-types/maps`（UI/Worker/Common）、`virtual:plugin-definitions`
-      - 互換モジュールとして `virtual:plugin-registry-ui` / `worker` も引き続き提供
-      - `onRegister` を export したエントリは自動的に await され、IndexedDB メタデータの事前読み込みなどの初期化を行える
-  - `app/vite-plugin-mui-icon-map.ts`（アイコンマップ）
-    - 走査対象: 同上
-    - 生成: `virtual:mui-icon-map`（`{ 'AccountTree': AccountTreeIcon, ... }` を静的 import して map を export）
-- アプリ側の利用箇所
-  - Worker: `virtual:plugin-node-types/maps` もしくは互換モジュール `virtual:plugin-registry-worker` からローダーを取得し、nodeType→loader のマップを使用
-  - UI: `virtual:plugin-node-types/maps`（または `virtual:plugin-registry-ui`）を取り込み、メニューやダイアログ等のロードに使用
-  - アイコン: `virtual:mui-icon-map` を `setGlobalMuiIconMap()` で注入（実描画は静的解決）
-- メタデータ
-  - 一次情報は各プラグインの `src/plugin-manifest.ts`（従来の `src/extension/plugin-manifest.ts` も後方互換としてサポート）
-  - `virtual:plugin-definitions` と `virtual:plugin-node-types/meta` が manifest から収集した表示名/順序・依存情報を提供
+- **生成スクリプト**: `scripts/generate-plugin-loader.mjs` が `app/package.json` の `@hierarchidb/*-plugin` 依存を列挙し、各プラグインの `exports` と `src/plugin-manifest.ts` を解析して前述の 3 成果物を出力します。
+- **Vite 設定**: `@hierarchidb/vite-plugin-node-type-registry` から提供される alias プラグインのみを使用し、`@hierarchidb/<node>-plugin/<kind>` を `/@fs/.../src` に解決します。仮想モジュールは生成しません。
+- **実行時**: UI/Worker は `@hierarchidb/plugin-registry` のローダーを呼び出し、Dexie などの EntitiesDB は `worker-loader.ts` が自動的にインスタンス化します。
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
 ```jsonc
 {
-  "name": "@hierarchidb/<foo>-plugin",
+  "name": "@hierarchidb/foo-plugin",
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.ts" },
-    "./worker": { "import": "./dist/worker/index.ts" },          // Legacy 互換（必要な場合のみ）
-    "./worker-factory": { "import": "./dist/worker-factory/index.ts" }
+    ".":          { "types": "./dist/index.d.ts",      "import": "./dist/index.js" },
+    "./ui":       { "types": "./dist/ui/index.d.ts",   "import": "./dist/ui/index.js" },
+    "./worker":   { "types": "./dist/worker/index.d.ts","import": "./dist/worker/index.js" },
+    "./database": { "types": "./dist/database/index.d.ts","import": "./dist/database/index.js" }
   },
-  "scripts": { "build": "tsup" }
+  "scripts": {
+    "build": "pnpm run build:bundle",
+    "build:types": "tsc -p tsconfig.build.json",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup"
+  }
 }
 ```
-- Runtime は `@hierarchidb/runtime-shared-module-paths.importPluginWorker('<id>')` を通じて `./worker-factory` を解決します。
-- 旧 API 互換（直接 `*/worker` を import するツール等）が不要であれば `exports["./worker"]` は省略可能です。
-- メタデータは `src/plugin-manifest.ts` に記述する（次項）。`package.json` からは撤去済み
+- `exports` は存在するサブパスのみ定義すれば OK です。生成スクリプトは `exports` と `src/` をクロスチェックしてローダーを構成します。
+- Worker が `export class FooEntitiesDB` を公開すると、`worker-loader.ts` が自動的に Dexie ラッパーを生成します。
 
-### 2) plugin-manifest.ts（拡張メタデータ）
+### 2) plugin-manifest.ts（メタデータ）
 ```ts
-// src/plugin-manifest.ts
-import type { NodeType, PluginMetadata } from '@hierarchidb/common-type';
+// packages/plugins/foo-plugin/src/plugin-manifest.ts
+import type { NodeType, PluginMetadata } from '@hierarchidb/common-types';
 
-export const PLUGIN_ID = '@hierarchidb/foo-plugin' as const;
-export const PLUGIN_VERSION = '0.0.1' as const;
-export const PLUGIN_DESCRIPTION = 'Foo nodes for HierarchiDB' as const;
 export const PLUGIN_NODE_TYPE = 'foo' as NodeType;
-
 export const PLUGIN_MANIFEST: PluginMetadata = {
-  id: PLUGIN_ID,
+  id: '@hierarchidb/foo-plugin',
   name: 'Foo Plugin',
   displayName: 'Foo',
   nodeType: PLUGIN_NODE_TYPE,
-  version: PLUGIN_VERSION,
+  version: '0.0.1',
   priority: 10,
-  icon: {
-    mui: 'Extension',
-    emoji: '🧩',
-    color: '#607d8b'
-  },
+  icon: { mui: 'Extension', emoji: '🧩', color: '#607d8b' },
   dependencies: ['folder'],
   extends: 'folder',
-  description: PLUGIN_DESCRIPTION,
+  description: 'Foo nodes for HierarchiDB',
 };
-
-export type FooPluginManifest = typeof PLUGIN_MANIFEST;
 ```
-- `nodeType` はプラグインを識別する文字列。文字列リテラルに `as NodeType` でブランド型を付与する
-- バージョンや説明などのメタデータは `PACKAGE_VERSION` 定数などとして TypeScript 内で管理する（`package.json` import は不要）
-- `icon.mui`（または `muiIconName`）は MUI Icons の PascalCase 名称
-- 追加の capability/schema などもこのオブジェクトに追記する
+- ブランド型 (`as NodeType`) を付与すると `@hierarchidb/common-types` のユーティリティと整合します。
+- 追加の capability や schema があれば `capabilities` / `schema` フィールドに追記してください。
 
 ### 3) エントリ配置
-- UI: `src/RuntimeWorkerService.ts`（アプリが `@hierarchidb/<foo>-plugin` を動的 import）
-- Worker Factory: `src/worker/factory/RuntimeWorkerService.ts`（Runtime が modulePaths 経由で遅延ロード）
-- Worker エントリ（任意）: `src/worker/RuntimeWorkerService.ts`（旧来の直接 import 互換が必要な場合のみ公開）
-- ビルド: tsup で `dist/` に出力（exports に合わせる）
+- `src/index.ts` – 汎用 API（hooks など）をここで再エクスポート。
+- `src/ui/index.ts` – ステップ登録や UI 拡張の副作用を定義。
+- `src/worker/index.ts` – Worker 側処理。EntitiesDB を公開する場合は `export class FooEntitiesDB` をここで定義。
+- `src/database/index.ts` – UI から直接 Dexie にアクセスする際のヘルパー。
 
-## アプリへの接続（自動）
-- 開発時は Vite が `packages/plugins/*-plugin/src/plugin-manifest.ts` を監視し、以下を再生成します。
-  - `virtual:plugin-registry-ui` … UI ローダ
-  - `virtual:plugin-registry-worker` … Worker ローダ
-  - `virtual:mui-icon-map` … アイコンマップ
-- `@hierarchidb/vite-plugin-node-type-registry` が Vite エイリアス／`tsconfig` の `paths` を自動同期します。`@hierarchidb/*-plugin` 直下に再エクスポートした API を利用してください（旧 `./services` サブパスは廃止済みです）。
-- 文字列リテラルの import() なので、Vite/Rollup が確実に解決・分割し、GitHub Pages でも問題ありません。
+## アプリへの接続（自動化フロー）
+1. `pnpm dev` / `pnpm build` は事前に `scripts/generate-plugin-loader.mjs` を実行し、最新のレジストリを生成します。
+2. Vite の alias プラグインが `@hierarchidb/foo-plugin/ui` → `/@fs/.../packages/plugins/foo-plugin/src/ui/index.ts` のようにマッピング。
+3. UI 起動時は `@hierarchidb/plugin-registry` からメタデータとローダーを読み、順次 import。
+4. Worker bootstrap でも同じレジストリを参照するため、UI/Worker の整合性が保証されます。
 
 ## UI 実装の取り込み例
-- メニュー構築やダイアログで `virtual:plugin-registry-ui` を用いる例（要約）
 ```ts
 // app/src/plugin-loader/auto-load.ts
-import { pluginMapUI as pluginMap } from 'virtual:plugin-registry-ui';
+import { pluginDefinitions, pluginMapUI } from '@hierarchidb/plugin-registry';
 
-for (const nodeType of loadOrder) {
-  const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
-  if (typeof loader === 'function') await loader(); // ここでUIを遅延ロード
+const loadOrder = pluginDefinitions
+  .map((d) => ({ nodeType: d.nodeType, priority: d.priority ?? 1000 }))
+  .sort((a, b) => a.priority - b.priority)
+  .map((v) => v.nodeType);
+
+export async function autoLoadPlugins(): Promise<void> {
+  for (const nodeType of loadOrder) {
+    const loader = pluginMapUI[nodeType];
+    if (typeof loader === 'function') {
+      await loader();
+    }
+  }
 }
 ```
+- 各 UI モジュールは import 時の副作用で `PluginStepRegistry.registerConfigProvider()` を実行します。
 
-各 UI エントリは import 時の副作用として `PluginStepRegistry.registerConfigProvider()` を実行し、ホスト `PluginDialog` へステップを登録します。
-
-### 型安全なステップ提供（拡張専用、ホスト合成）
-
-`@hierarchidb/runtime-ui-plugin-dialog` に以下の型が用意されています。
+### 型安全なステップ提供
+`@hierarchidb/runtime-ui-plugin-dialog` は以下の型を提供します。
 
 ```ts
 export interface StepComponentProps<TData = unknown> {
@@ -129,131 +111,79 @@ export interface PluginStepConfig<TData = unknown> {
   id: string;
   label: string;
   componentFactory: (p: StepComponentProps<TData>) => React.ReactNode;
-  validate?: () => boolean | Promise<boolean>;
   optional?: boolean;
   icon?: React.ReactNode;
 }
-
-export interface PluginStepConfigProvider<TData = unknown> {
-  nodeType: string;
-  getCreateStepConfigs(): PluginStepConfig<TData>[];
-  getEditStepConfigs(nodeId: string, data?: TData): PluginStepConfig<TData>[];
-  validateAccess?(nodeId?: string): Promise<boolean>;
-}
 ```
 
-プラグインの UI で次のように登録します（例: route-plugin）。
+プラグイン側では次のように登録します（例: route-plugin）。
 
 ```tsx
-// packages/plugin-loader/route-plugin/src/ui/steps-provider.tsx
 import React from 'react';
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-ui-plugin-dialog';
 import { RouteBasicInfoStep } from '../components/RouteBasicInfoStep';
-import { RouteSelectionStep } from '../components/RouteSelectionStep';
-import { RouteProcessingStep } from '../components/RouteProcessingStep';
 
 type RouteData = { name: string; routeType?: string };
 
 PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
   nodeType: 'route',
   getCreateStepConfigs() {
-    const bind = (C: React.FC<any>) => (p: StepComponentProps<RouteData>) => (
-      <C
-        workingCopy={p.data}
-        onUpdate={(u: Partial<RouteData>) => p.onChange({ ...(p.data || {}), ...u })}
-        onValidationChange={p.setValid}
-      />
-    );
     return [
-      { id: 'basic', label: 'Basic Information', componentFactory: bind(RouteBasicInfoStep), validate: () => true },
-      { id: 'select', label: 'Route Selection', componentFactory: bind(RouteSelectionStep) },
-      { id: 'process', label: 'Processing', componentFactory: bind(RouteProcessingStep) },
+      {
+        id: 'route-basic',
+        label: '基本情報',
+        componentFactory: (props: StepComponentProps<RouteData>) => <RouteBasicInfoStep {...props} />,
+      },
     ];
   },
-  getEditStepConfigs() { return this.getCreateStepConfigs(); },
+  getEditStepConfigs() {
+    return this.getCreateStepConfigs();
+  },
 });
 ```
 
-ポイント:
-- `componentFactory` の引数 `StepComponentProps<TData>` をそのまま使えるため `as any` は不要です。
-- Step は `data/onChange` にのみ依存すればよく、保存やナビゲーション等はホストが担います。
-
-## Worker 実装の取り込み例
-- Worker 側初期化で `virtual:plugin-registry-worker` を用いる例（要約）
+## Worker 側の取り込み例
 ```ts
-// app/src/worker.ts
-import type { PluginWorkerId } from '@hierarchidb/runtime-shared-module-paths';
+import { pluginDefinitions, pluginMapWorker } from '@hierarchidb/plugin-registry';
+import { wirePluginsFromModules } from '@hierarchidb/runtime-client';
 
-const { pluginMapWorker } = await import('virtual:plugin-registry-worker');
-const modulePaths = await import('@hierarchidb/runtime-shared-module-paths');
+const modules = await Promise.all(
+  pluginDefinitions.map(async (definition) => {
+    const loader = pluginMapWorker[definition.nodeType];
+    if (typeof loader !== 'function') return null;
+    try {
+      const mod = await loader();
+      return { nodeType: definition.nodeType, mod };
+    } catch (error) {
+      console.warn('[worker] failed to load plugin worker', definition.nodeType, error);
+      return null;
+    }
+  }),
+);
 
-for (const nodeType of Object.keys(pluginMapWorker)) {
-  const originalLoader = pluginMapWorker[nodeType];
-  pluginMapWorker[nodeType] = async () => {
-    await modulePaths.importPluginWorker(nodeType as PluginWorkerId);
-    return originalLoader?.();
-  };
-}
-
-// 必要に応じて手動オーバーライドを合成（Dev ソースに差し替え等）
+await wirePluginsFromModules(modules.filter(Boolean) as Array<{ nodeType: string; mod: unknown }>);
 ```
 
-## アイコンの解決
-- `virtual:mui-icon-map` を `root.tsx` で読み込み、`setGlobalMuiIconMap()` に渡します。
-- 以後は `@hierarchidb/ui-icon` が静的マップから解決し、動的 import を極力回避します。
+## アイコンマップ
+- プラグインは `plugin-manifest.ts` の `icon.mui`（または `muiIconName`）/`emoji` を設定してください。
+- `app/vite-plugin-mui-icon-map.ts` が `virtual:mui-icon-map` を生成し、`setGlobalMuiIconMap()` へ渡すことで MUI Icon コンポーネントを解決します。こちらのみ仮想モジュール継続利用です。
 
-## Services/DB の取り込み例
-- プラグインのルートエントリから直接再エクスポートされた API を利用します
-```ts
-// app/src/services/databases.ts
-const { getEphemeralLocationDB } = await import('@hierarchidb/location-plugin');
-const { ShapeDB } = await import('@hierarchidb/shape-plugin');
-```
+## 手動メンテが必要なケース
+- 新しいプラグインを追加したのにレジストリへ反映されない → `pnpm dev` などで `scripts/generate-plugin-loader.mjs` が走っているか確認し、`app/package.json` の dependencies に対象プラグインを追加してください。
+- エイリアス解決が古いまま → `pnpm --filter @hierarchidb/vite-plugin-node-type-registry build` で dist を再生成するか、Vite dev server を再起動する。
 
-## Lazy/Eager の切替
-- 既定は Lazy（`() => import('...')`）。初期バンドルを小さく保てます。
-- すべてのプラグインを初期読み込みしたい場合は、生成側を `import '...'; export const ... = { foo: async () => ({}) }` のように Eager 版へ切替可能です（プラグイン側の要望に応じてカスタマイズ）。
+## チェックリスト（プラグイン追加時）
+1. `packages/plugins/<node>-plugin` を作成し、`package.json` で `@hierarchidb/<node>-plugin` を宣言。
+2. `exports` に必要なサブパス (`./ui`, `./worker`, `./database`) を登録。存在しないものは省略。
+3. `src/plugin-manifest.ts` で `PLUGIN_MANIFEST` を定義し、依存関係や優先度を記述。
+4. UI/Worker のエントリポイントを `src/ui/index.ts`, `src/worker/index.ts` へ配置。
+5. `pnpm --filter @hierarchidb/<node>-plugin build` で dist を生成。
+6. `pnpm --filter @hierarchidb/app typecheck` / `pnpm --filter @hierarchidb/app test` を実行し、エラーが無いことを確認。
 
-## よくある落とし穴と対処
-- アイコンが表示されない
-  - `src/plugin-manifest.ts` の `icon.mui`（または `muiIconName`）を PascalCase で記述（例: `AccountTree`）
-  - 変更後は devサーバが自動再生成（HMR）。表示が変わらなければ一度再起動
-- Worker が期待どおり動かない
-  - `exports["./worker-factory"]` が存在するか確認（既定の初期化ルート）。
-  - 旧互換が必要な場合のみ `exports["./worker"]` が `dist/worker/index.ts` を指しているか確認
-  - Worker不要なプラグインはダミーとして扱われ、呼び出しが無視されます
-- GitHub Pages での挙動
-  - 仮想モジュールはすべてビルド時に JS へ実体化・分割。追加設定は不要
-
-### as any を使わずに書くコツ
-- JSX を含むファイルは `.tsx` にし、Step の props 型を import して合わせる。
-- Step が独自 props（例: `workingCopy`/`onUpdate`）を想定している場合でも、`componentFactory` で `StepComponentProps<TData>` にブリッジすれば OK。
-- ホスト `PluginDialog` 側は `StepComponentProps` をそのまま渡すため、キャスト不要です。
-
-## 新規プラグインの最短テンプレート
-```
-packages/plugins/foo-plugin/
-├── package.json   // 上記の例に準拠
-├── tsup.config.ts // createTsupConfig({ entry: ['src/RuntimeWorkerService.ts', 'src/worker/RuntimeWorkerService.ts'] }) 等
-└── src/
-    ├── RuntimeWorkerService.ts        // UI エントリ（必要な export をまとめる）
-    └── worker/
-        └── RuntimeWorkerService.ts    // Worker エントリ（不要なら作らない）
-```
-
-## 既存プロジェクトへの導入手順（要約）
-1) プラグインごとの `package.json` に `exports` を整備し、`src/plugin-manifest.ts` を追加
-2) アプリの Vite 設定に `pluginRegistryPlugin` と `muiIconMapPlugin` を追加（本リポジトリは導入済み）
-3) 旧来の `virtual:plugin-map` 依存を `virtual:plugin-registry-ui/worker` に置き換え
-4) 旧来の動的 bare specifier import を撤去（本ガイドの方式へ移行）
-
-### スタンドアロン → ステップ合成への移行
-1) 各プラグインに `src/ui/steps-provider.tsx` を追加し、`registerConfigProvider()` でステップ定義を登録。
-2) ルーティング/SpeedDial はホスト `PluginDialog` へ統一（`getDialogComponent()` の利用は段階的に縮退）。
-3) evaluator/validation はホスト側で AND 合成されるため、既存ロジックをそのまま移設・併用可能です。
-
----
-
-お問い合わせ・拡張
-- DB やサービス向けの API は各プラグインのルートエントリ（例: `@hierarchidb/location-plugin`）から直接再エクスポートする構成に統一しました。以前の `virtual:plugin-registry-services` は提供されません。
-- Eager ロードやビルド分割戦略はプロダクト要件に合わせて調整できます。必要なら提案します。
+## FAQ
+- **Q. プラグインから `@hierarchidb/app` のコードを直接 import できますか？**  
+  **A.** できません。プラグインはホストとは独立したパッケージとして設計されているため、`packages/<scope>` や `plugins/<node>-plugin` の依存関係に限定してください。
+- **Q. 仮想モジュールは完全に無くなりましたか？**  
+  **A.** プラグインローダー/メタデータはすべて静的レジストリへ移行済みです。`virtual:mui-icon-map` のみが残っています（アイコン生成のため）。
+- **Q. `tsconfig` の paths をどう管理しますか？**  
+  **A.** 共通の `tsconfig.base.json` に `@hierarchidb/*` の `src/` を集約しました。個別の tsconfig で dist を参照しないでください。

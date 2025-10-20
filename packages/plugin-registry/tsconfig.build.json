@@ -12,7 +12,8 @@
     "incremental": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    ".generated/types/**/*.d.ts"
   ],
   "exclude": [
     "dist",

@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
+import { pluginDefinitions } from '@hierarchidb/plugin-registry';
 import { bootLog } from '../../utils/bootLog.js';
 import { APP_VERSION, BUILD_TIME } from '../../version.js';
 import { loadAllUIPlugins } from '../../generated/ui-loader.js';
@@ -89,13 +90,13 @@ export function initializeBrowserGlobals(): void {
       logWarning('menu-builders preload failed (will fallback to worker plugin-loader)', error);
     });
 
-  void import('virtual:plugin-definitions')
-    .then((mod: { default?: unknown[] }) => {
-      globalWindow.__HDB_PLUGIN_DEFS__ = mod?.default || [];
-    })
-    .catch((error) => {
-      logWarning('Failed to load virtual:plugin-definitions', error);
-    });
+  try {
+    globalWindow.__HDB_PLUGIN_DEFS__ = Array.isArray(pluginDefinitions)
+      ? [...pluginDefinitions]
+      : [];
+  } catch (error) {
+    logWarning('Failed to initialize plugin definitions from registry', error);
+  }
 
   void import('@hierarchidb/ui-treeconsole-base')
     .then((mod) => {

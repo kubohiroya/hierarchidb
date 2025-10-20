@@ -1,6 +1,6 @@
 /**
  * Build MenuItem arrays for TreeConsole SpeedDial/Menu based on plugin definitions.
- * Sources: virtual:plugin-node-types/meta (generated at build time)
+ * Sources: @hierarchidb/plugin-registry (generated at build time)
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
@@ -80,8 +80,9 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
   const baseOffset = spec.order.length;
   remaining.forEach((plugin, idx) => {
     const fallbackGroup = spec.groups.length > 0 ? spec.groups[spec.groups.length - 1] : 'core';
-    const group = spec.groupOf[plugin.nodeType] || plugin.menuGroup || fallbackGroup;
-    const priority = spec.groups.indexOf(group) * 100 + baseOffset + idx;
+    const group = (spec.groupOf[plugin.nodeType] ?? plugin.menuGroup ?? fallbackGroup) as string;
+    const groupIndex = Math.max(spec.groups.indexOf(group as typeof spec.groups[number]), 0);
+    const priority = groupIndex * 100 + baseOffset + idx;
     items.push(createMenuItem(plugin, group, priority));
   });
 

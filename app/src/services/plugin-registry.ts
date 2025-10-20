@@ -1,18 +1,11 @@
-import type { PluginMetadata } from '@hierarchidb/common-types';
-import appPackage from '../../package.json' assert { type: 'json' };
-import pluginMeta from 'virtual:plugin-node-types/meta';
-
-interface RawRegistryEntry {
-  nodeType: string;
-  packageName: string;
-  version: string | null;
-  hasUI: boolean;
-  hasWorker: boolean;
-  hasServices: boolean;
-  hasCommon: boolean;
-  fallbackServiceImport: string;
-  manifest: PluginMetadata | null;
-}
+import {
+  pluginRegistry,
+  type PluginManifest,
+  type PluginRegistryEntry,
+  type PluginIconConfig,
+  type PluginCategoryConfig,
+} from '@hierarchidb/plugin-registry';
+import appPackage from '../../package.json';
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;
@@ -24,12 +17,10 @@ export interface InstalledPlugin {
   nodeType: string;
   packageName: string;
   version: string | null;
-  manifest: PluginMetadata | null;
+  manifest: PluginManifest | null;
   hasUI: boolean;
   hasWorker: boolean;
-  hasServices: boolean;
   hasCommon: boolean;
-  fallbackServiceImport: string;
   label: string;
   icon: {
     muiIconName?: string;
@@ -77,7 +68,7 @@ function withAlpha(hex: string | undefined, alpha: string): string | undefined {
   return hex;
 }
 
-function createSignature(entries: RawRegistryEntry[]): string {
+function createSignature(entries: PluginRegistryEntry[]): string {
   try {
     return JSON.stringify(entries.map((entry) => ({
       nodeType: entry.nodeType,
@@ -90,7 +81,7 @@ function createSignature(entries: RawRegistryEntry[]): string {
 }
 
 function computeInstalledPlugins(): InstalledPlugin[] {
-  const rawEntries = (pluginMeta as RawRegistryEntry[]) ?? [];
+  const rawEntries = pluginRegistry as PluginRegistryEntry[];
   const allowedPackages = collectPluginDependencyNames(appPackage as PackageJsonShape);
   const filtered = allowedPackages.size > 0
     ? rawEntries.filter((entry) => allowedPackages.has(entry.packageName))
@@ -98,29 +89,28 @@ function computeInstalledPlugins(): InstalledPlugin[] {
 
   const plugins = filtered.map((entry) => {
     const manifest = entry.manifest ?? null;
-    const iconConfig = manifest?.icon ?? {};
+    const iconConfig: PluginIconConfig | undefined = manifest?.icon ?? undefined;
     const label = sanitizeLabel(
       manifest?.displayName ?? manifest?.name,
       manifest?.nodeType ?? entry.nodeType,
     );
-    const iconColor = typeof iconConfig.color === 'string' && iconConfig.color.trim().length > 0
+    const iconColor = typeof iconConfig?.color === 'string' && iconConfig.color.trim().length > 0
       ? iconConfig.color
       : undefined;
     const backgroundColor = iconColor
       ? withAlpha(iconColor, '22') ?? iconColor
       : 'rgba(0,0,0,0.08)';
-    const dependencies = Array.isArray(manifest?.dependencies)
-      ? (manifest!.dependencies as string[])
-      : [];
-    const menuGroup = typeof manifest?.category === 'object' && manifest.category
-      ? (manifest.category.menuGroup as string | undefined) ?? 'core'
-      : 'core';
-    const createOrder = typeof manifest?.category === 'object' && manifest.category
-      ? Number(manifest.category.createOrder ?? manifest.priority ?? 1000)
-      : Number(manifest?.priority ?? 1000);
-    const treeContext = typeof manifest?.category === 'object' && manifest.category
-      ? (manifest.category.treeId as string | undefined) ?? '*'
-      : '*';
+    const dependencies = entry.dependencies;
+    const category: PluginCategoryConfig | undefined = manifest?.category ?? undefined;
+    const categoryObject = category && typeof category === 'object' ? category : null;
+    const menuGroup = categoryObject?.menuGroup
+      ?? (typeof category === 'string' && category.trim().length > 0 ? category : 'core');
+    const createOrder = typeof categoryObject?.createOrder === 'number'
+      ? categoryObject.createOrder
+      : Number.isFinite(manifest?.priority)
+        ? Number(manifest?.priority)
+        : 1000;
+    const treeContext = categoryObject?.treeId ?? '*';
 
     return {
       nodeType: entry.nodeType,
@@ -129,13 +119,11 @@ function computeInstalledPlugins(): InstalledPlugin[] {
       manifest,
       hasUI: entry.hasUI,
       hasWorker: entry.hasWorker,
-      hasServices: entry.hasServices,
       hasCommon: entry.hasCommon,
-      fallbackServiceImport: entry.fallbackServiceImport,
       label,
       icon: {
-        muiIconName: iconConfig.muiIconName ?? iconConfig.mui ?? undefined,
-        emoji: iconConfig.emoji ?? undefined,
+        muiIconName: iconConfig?.muiIconName ?? iconConfig?.mui ?? undefined,
+        emoji: iconConfig?.emoji ?? undefined,
         color: iconColor,
       },
       iconColor,
@@ -159,7 +147,7 @@ function computeInstalledPlugins(): InstalledPlugin[] {
 }
 
 export function getInstalledPlugins(): InstalledPlugin[] {
-  const rawEntries = (pluginMeta as RawRegistryEntry[]) ?? [];
+  const rawEntries = pluginRegistry as PluginRegistryEntry[];
   const signature = createSignature(rawEntries);
   if (!installedPluginsCache || cacheSignature !== signature) {
     installedPluginsCache = computeInstalledPlugins();

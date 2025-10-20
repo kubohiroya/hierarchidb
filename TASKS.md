@@ -289,12 +289,12 @@
 - ブランチ: `refactor/runtime/static-plugin-loader`
 - 依存: 11) Runtime Plugin Metadata 整備
 - 受け入れ基準（DoD）:
-  - [ ] `scripts/generate-plugin-loader.mjs` が runtime 向けの生成物（例: `app/src/generated/worker-runtime-loader.ts`）を出力し、各プラグインの登録関数を静的 import する
-  - [ ] 生成物が `@hierarchidb/plugin-types` / `@hierarchidb/batch-types` の型を満たし、`pnpm --filter @hierarchidb/app typecheck` が成功
+  - [x] `scripts/generate-plugin-loader.mjs` が runtime 向けの生成物（例: `app/src/generated/worker-loader.ts`）を出力し、各プラグインの登録関数を静的 import する（2025-10-20 実行で確認済み）
+  - [x] 生成物が `@hierarchidb/plugin-types` / `@hierarchidb/batch-types` の型を満たし、`pnpm --filter @hierarchidb/app typecheck` が成功（2025-10-20 実行でグリーン）
   - [ ] 生成コードに対するユニットテストまたは snapshot テストを追加し、ターゲットテストがグリーン
 - チェックリスト:
-  - [ ] 生成スクリプトを実行して差分を確認し、`pnpm lint` / `pnpm format` を通す
-  - [ ] Worker / UI 起動コードを新しい生成物に切り替え、旧 loader との重複を排除
+  - [ ] 生成スクリプトを実行して差分を確認し、`pnpm lint` / `pnpm format` を通す（2025-10-20: generate + typecheck 済、lint/format 保留）
+  - [x] Worker / UI 起動コードを新しい生成物に切り替え、旧 loader との重複を排除（2025-10-20 完了）
   - [ ] 生成物が import 失敗時に明示的なエラーを記録することを手動確認
 - ロールバック手順：
   - スクリプトと生成ファイルを revert し、`pnpm generate-plugin-loader` 実行後に差分が無いことを確認
@@ -436,14 +436,14 @@
   - 受け入れ基準（DoD）：
     - [x] `src/ui/plugin.ts` / `src/ui/components/FolderUIPlugin.tsx` の役割を整理し、不要なら削除または `legacy/` へ隔離して参照元を更新
     - [x] `pnpm --filter @hierarchidb/folder-plugin typecheck` と `pnpm --filter @hierarchidb/folder-plugin build` が成功
-    - [ ] `virtual:plugin-registry-ui` 経由で Folder UI が問題なくロードされることを手動確認し、結果を運用ログへ記録（UI 実機確認は環境未整備のため保留）
+    - [ ] `@hierarchidb/plugin-registry`（`pluginMapUI`）経由で Folder UI が問題なくロードされることを手動確認し、結果を運用ログへ記録（UI 実機確認は環境未整備のため保留）
   - チェックリスト：
     - [x] `rg "components:" plugins` などで他プラグインの旧 `PluginDefinition.components` 利用状況を棚卸し、必要なら別タスク化
     - [x] cleanup 後の `dist/ui` 出力を確認し、`plugin-definition` に UI コンポーネント参照が混入していないことを確認
     - [x] ロールバック手順と互換レイヤー有無の判断を `TASKS.md` 進捗メモへ追記
   - ロールバック手順：
     - 隔離または削除した UI 定義ファイルを元の場所へ戻し、`pnpm --filter @hierarchidb/folder-plugin typecheck` / `build` を再実行
-    - 影響があった場合は `virtual:plugin-registry-ui` でのロード確認を再度実施し、結果を運用ログへ記録
+    - 影響があった場合は `@hierarchidb/plugin-registry` のローダーで再確認し、結果を運用ログへ記録
 
 - refactor/shape-plugin/ui-definition-alignment（UIPluginDefinition → registry 副作用移行, P1）
   - ブランチ: `refactor/shape-plugin/ui-definition-alignment`
@@ -454,11 +454,11 @@
     - [ ] `pnpm --filter @hierarchidb/shape-plugin build` が成功し、`dist/ui` 配下に旧 `plugin` エントリが生成されないことを確認（※ sandbox の EPERM により未実施）
   - チェックリスト：
     - [ ] 互換 API（UI レジストリ登録関数など）を必要に応じて残しつつ、エクスポート契約が破壊的でないか確認
-    - [ ] `virtual:plugin-registry-ui` で Shape UI がロードされることを手動確認し、運用ログに記録
+    - [ ] `@hierarchidb/plugin-registry` の `pluginMapUI` で Shape UI がロードされることを手動確認し、運用ログに記録
     - [ ] cleanup 後の `dist` を点検し、`plugin-definition` や manifest から UI コンポーネント参照が消えていることを確認（ビルド完了後に実施）
   - ロールバック手順：
     - 削除した UI 定義ファイルを復元し、`pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` を再実行
-    - 登録方式切替後に問題があれば `virtual:plugin-registry-ui` の Shape ローダーを旧実装へ戻し、挙動を確認
+    - 登録方式切替後に問題があれば `@hierarchidb/plugin-registry` を用いたローダー変更を差し戻し、挙動を確認
 
 - test/runtime-ui/speeddial-dialog-state-regression（DialogState 購読 E2E, P1）
   - ブランチ: `test/runtime-ui/speeddial-dialog-state-regression`
@@ -2458,7 +2458,7 @@ P2:
   - 要点: UI 側で i18n 初期化タイミングを保証し、TreeTableCore 等の翻訳フックが安全に動作するよう改善
 - fix/app/speeddial-icon-presentation — SpeedDial アイコン/カラーが package メタデータと乖離する不具合の修正
   - ブランチ: `fix/app/speeddial-icon-metadata`
-  - 依存: `@hierarchidb/ui-icon`, `virtual:plugin-definitions`
+- 依存: `@hierarchidb/ui-icon`, `@hierarchidb/plugin-registry`
   - 受け入れ基準（DoD）：
     - [x] `/hierarchidb/#/t/r` の SpeedDial で manifest ベースのアイコン・カラーが表示される
     - [x] `getPresentation` が `plugin-manifest.ts` の `icon` を活用しフォールバックしていない
@@ -3520,7 +3520,7 @@ P2:
   - 依存: `@hierarchidb/app`, `@hierarchidb/tools-vite-plugin-package-reader`
   - 受け入れ基準（DoD）：
     - [x] package-reader の検出パターンが `@hierarchidb/*-plugin` を正しくマッチする
-    - [x] `pnpm -C app build` 実行時に package-reader が 10 件のプラグインを検出し、`virtual:plugin-definitions` に icon 情報を含む
+    - [x] `pnpm -C app build` 実行時に package-reader が 10 件のプラグインを検出し、`@hierarchidb/plugin-registry` の metadata に icon 情報を含む
     - [x] SpeedDial/Menu 向けの `getPresentation()` が各 nodeType で `muiIconName` を取得できることを確認（手動スクリプトで JSON を確認）
   - チェックリスト：
     - [x] Vite config（メイン/worker 両方）の package-reader pattern を `` 付きパターンへ修正
@@ -5845,6 +5845,16 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-6"></a>
 
+- 2025-10-20 09:05 progress: refactor/runtime/static-plugin-loader — `node scripts/generate-plugin-loader.mjs` を実行し、`app/src/generated/{worker-loader.ts,ui-loader.ts}` と `packages/plugin-registry/src/generated.ts` を再生成。
+- 2025-10-20 09:09 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/plugin-registry build:types` を実行し、tsc/API Extractor がグリーンであることを確認。
+- 2025-10-20 09:14 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/app typecheck` を実行し、新レジストリ経路で型エラーが発生しないことを確認。
+- 2025-10-20 09:18 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し、worker 側でも plugin registry 参照が通ることを確認。
+- 2025-10-20 09:21 progress: refactor/runtime/static-plugin-loader — app の tsconfig paths を整理したところ `@hierarchidb/ui-treeconsole-base` 型参照が dist 依存で不足していることが判明（typecheck 失敗を確認）。
+- 2025-10-20 09:23 progress: refactor/runtime/static-plugin-loader — tsconfig.base/app 側の paths を src 指向へ再配置し、Vite alias から tsconfig 書き換え処理を排除。
+- 2025-10-20 09:24 command: pnpm --filter @hierarchidb/app typecheck — 上記パス整理後に再実行し、型検証がグリーンであることを確認。
+- 2025-10-20 09:30 progress: refactor/tools/node-type-registry-unify — `packages/tools/vite-plugin-node-type-registry` から仮想モジュール生成ロジックを撤去し、alias 専用プラグインとして再構成。
+- 2025-10-20 09:33 progress: docs/plugin-registry-static-flow — プラグイン関連ドキュメント（app/docs/16-plugin-dev-with-registry.md, docs/architecture/plugin-dialog-integration.md ほか）を静的レジストリ基準へ更新。
+- 2025-10-20 09:35 command: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build && pnpm --filter @hierarchidb/vite-plugin-node-type-registry typecheck — エイリアス専用化後もビルド/型検証が成功することを確認。
 - 2025-10-19 12:20 start: fix/app/plugin-database-externals — app/vite.config.ts の `build` 設定重複と plugin database エントリの解決失敗に対応するため調査を開始。
 - 2025-10-19 12:26 progress: fix/app/plugin-database-externals — 重複していた `build` ブロックを統合し、`rollupOptions.external` に `@hierarchidb/{basemap,resolver,route,spreadsheet}-plugin/database` をまとめて指定。
 - 2025-10-19 12:34 blocked: fix/app/plugin-database-externals — `pnpm --filter @hierarchidb/app build` を実行したところ、`@hierarchidb/runtime-ui-plugin-dialog` の alias 参照先 (`packages/runtime-ui/plugin-dialog/src/index.ts`) が存在せず `ENOENT` で停止。rename されたディレクトリ構成の追従が別途必要。

@@ -21,8 +21,7 @@ const cfg = createTsupConfig({
   "@hierarchidb/util",
   "@hierarchidb/batch-types",
   "@hierarchidb/feature-registry",
-  "@maplibre/vt-pbf",
-    'virtual:plugin-registry-worker'
+  "@maplibre/vt-pbf"
 // UI libs are already in base externals; internal/workers deps should bundle
   ],
 });

@@ -10,10 +10,8 @@ import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
 // import { muiIconsVirtualModule } from './vite-plugin-mui-icons.js';
 import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
-import {
-  createNodeTypeAliasPlugin,
-  createNodeTypeRegistryPlugin,
-} from '@hierarchidb/vite-plugin-node-type-registry';
+import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-node-type-registry';
+import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
 
 type AliasEntry = { find: string; replacement: string };
 
@@ -90,6 +88,53 @@ function createRuntimeAliasConfig({
   };
 }
 
+const pluginManifestWatchPattern = new RegExp(
+  `${path.sep}plugins${path.sep}[^${path.sep}]+-plugin${path.sep}(package.json|src${path.sep}plugin-manifest.ts|src${path.sep}extension${path.sep}plugin-manifest.ts)$`,
+);
+
+let pluginRegistryGenerationQueue: Promise<unknown> = Promise.resolve();
+
+function enqueuePluginRegistryGeneration() {
+  pluginRegistryGenerationQueue = pluginRegistryGenerationQueue
+    .then(() => generatePluginRegistry())
+    .catch((error) => {
+      console.error('[plugin-registry-generator] Failed to regenerate registry', error);
+    });
+  return pluginRegistryGenerationQueue;
+}
+
+function pluginRegistryGeneratorPlugin({ rootDir }: { rootDir?: string } = {}): Plugin {
+  const resolvedRoot = rootDir ? path.resolve(rootDir) : path.resolve(__dirname, '..');
+  const appPackagePath = path.resolve(resolvedRoot, 'app', 'package.json');
+
+  const shouldTrigger = (file: string): boolean => {
+    const normalized = path.resolve(file);
+    return normalized === appPackagePath || pluginManifestWatchPattern.test(normalized);
+  };
+
+  return {
+    name: 'hierarchidb:plugin-registry-generator',
+    async configResolved() {
+      await enqueuePluginRegistryGeneration();
+    },
+    configureServer(server) {
+      const schedule = (file: string) => {
+        if (shouldTrigger(file)) {
+          void enqueuePluginRegistryGeneration();
+        }
+      };
+      server.watcher.on('add', schedule);
+      server.watcher.on('change', schedule);
+    },
+    async handleHotUpdate(ctx) {
+      if (shouldTrigger(ctx.file)) {
+        await enqueuePluginRegistryGeneration();
+      }
+      return undefined;
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, isSsrBuild }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -108,19 +153,11 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const plugins = [
     // muiIconsVirtualModule(),
     muiIconMapPlugin({ rootDir: path.resolve(__dirname, '..') }),
-    createNodeTypeRegistryPlugin({
+    pluginRegistryGeneratorPlugin({
       rootDir: path.resolve(__dirname, '..'),
-      debugSnapshotDir: 'app/.debug',
     }),
     createNodeTypeAliasPlugin({
       rootDir: path.resolve(__dirname, '..'),
-      tsconfigPath: path.resolve(__dirname, 'tsconfig.json'),
-      tsconfigKinds: ['services', 'database'],
-    }),
-    createNodeTypeAliasPlugin({
-      rootDir: path.resolve(__dirname, '..'),
-      tsconfigPath: path.resolve(__dirname, 'tsconfig.typecheck.json'),
-      tsconfigKinds: ['services', 'database'],
     }),
     /*
     devHealthPlugin({
@@ -419,25 +456,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
     worker: {
       format: 'es',
       plugins: () => [
-        createNodeTypeRegistryPlugin({
-          rootDir: path.resolve(__dirname, '..'),
-          debugSnapshotDir: 'app/.debug',
-          minimal: false,
-        }),
-        /*
-        pluginRegistryPlugin({ rootDir: path.resolve(__dirname, '..') }),
-        toolsVitePluginPackageReader({
-          ...hierarchiDBMultiModulePreset({
-            pattern: /@hierarchidb\/(basemap|linker|folder|shape|styler|route|location|spreadsheet|resolver|timeline)-plugin$/,
-            priorityPlugin: 'folder',
-            extractPluginConfig: true,
-          }),
-          rootDir: path.resolve(__dirname, '..'),
-          hooks: {
-            beforeTransform: async (packages: any) => packages,
-          },
-        }),
-         */
         comlink(),
       ],
       rollupOptions: {

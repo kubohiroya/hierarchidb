@@ -12,86 +12,11 @@
       "~/*": [
         "src/*"
       ],
-      "@hierarchidb/ui-map": [
-        "../packages/ui/map/src/index.ts"
+      "@hierarchidb/ui-treeconsole-base": [
+        "../packages/ui/treeconsole/base/src/index.ts"
       ],
-      "@hierarchidb/ui-map/*": [
-        "../packages/ui/map/src/*"
-      ],
-      "@hierarchidb/ui-auth": [
-        "../packages/ui/auth/dist"
-      ],
-      "@hierarchidb/ui-icon": [
-        "../packages/ui/icon/dist"
-      ],
-      "@hierarchidb/runtime-worker": [
-        "../packages/runtime/worker/src/index.ts"
-      ],
-      "@hierarchidb/runtime-client": [
-        "../packages/runtime/client/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-module-paths": [
-        "src/plugin-loader/module-paths.ts"
-      ],
-      "@hierarchidb/runtime-shared-module-paths/*": [
-        "src/plugin-loader/*"
-      ],
-      "@hierarchidb/common-api": [
-        "../packages/common/api/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-appbar": [
-        "../packages/runtime-ui/appbar/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-appbar/*": [
-        "../packages/runtime-ui/appbar/src/*"
-      ],
-      "@hierarchidb/runtime-ui-datasource": [
-        "../packages/runtime-ui/datasource/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-datasource/*": [
-        "../packages/runtime-ui/datasource/src/*"
-      ],
-      "@hierarchidb/runtime-ui-landingpage": [
-        "../packages/runtime-ui/landingpage/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-landingpage/*": [
-        "../packages/runtime-ui/landingpage/src/*"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog": [
-        "../packages/runtime-ui/plugin-dialog/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-plugin-dialog/*": [
-        "../packages/runtime-ui/plugin-dialog/src/*"
-      ],
-      "@hierarchidb/runtime-ui-search-result-window": [
-        "../packages/runtime-ui/search-result-window/src/index.ts"
-      ],
-      "@hierarchidb/runtime-ui-search-result-window/*": [
-        "../packages/runtime-ui/search-result-window/src/*"
-      ],
-      "@hierarchidb/ui-tour": [
-        "../packages/ui/tour/src/index.ts"
-      ],
-      "@hierarchidb/ui-tour/*": [
-        "../packages/ui/tour/src/*"
-      ],
-      "@hierarchidb/ui-dialog": [
-        "../packages/ui/dialog/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-treetable": [
-        "../packages/ui/treeconsole/treetable/dist"
-      ],
-      "@hierarchidb/basemap-plugin/database": [
-        "../plugins/basemap-plugin/src/services/database/index.ts"
-      ],
-      "@hierarchidb/resolver-plugin/database": [
-        "../packages/plugins/resolver-plugin/src/services/database/index.ts"
-      ],
-      "@hierarchidb/route-plugin/database": [
-        "../plugins/route-plugin/src/services/database/index.ts"
-      ],
-      "@hierarchidb/spreadsheet-plugin/database": [
-        "../plugins/spreadsheet-plugin/src/services/database/index.ts"
+      "@hierarchidb/ui-treeconsole-base/*": [
+        "../packages/ui/treeconsole/base/src/*"
       ]
     },
     "composite": false,

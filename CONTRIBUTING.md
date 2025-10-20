@@ -5,7 +5,7 @@ This repository prioritizes prebuild typecheck stability and consistent CI resul
 - Types at source: package.json must set `types` and `exports.types` to `src/RuntimeWorkerService.ts`.
 - Public TSX return types: exported TSX must return `JSX.Element` (or `JSX.Element | null`).
 - No tsconfig paths in public source: do not use `~/` or custom paths – use relative imports.
-  - `@hierarchidb/app` の node-type サブパスは `@hierarchidb/vite-plugin-node-type-registry` が自動同期します。`tsconfig*.json` に手動で追記しないでください。
+- `@hierarchidb/*` のパス解決は `tsconfig.base.json` に集約済みです。各パッケージやアプリ側で `dist/` を指す paths を追加しないでください。
 - Do not bundle React/MUI: put them in `peerDependencies` and mark them `external` in tsup.
 - No `../src` deep imports across packages: import the public entry or d.ts only.
 - Browser env: do not use `process.env`; use `import.meta.env` (`VITE_*`).

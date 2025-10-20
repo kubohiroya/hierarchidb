@@ -50,6 +50,6 @@
     ,{ "path": "./packages/ui/treeconsole/treetable/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/treeconsole/trashbin/tsconfig.typecheck.json" }
     ,{ "path": "./packages/ui/treeconsole/footer/tsconfig.typecheck.json" }
-    
+    ,{ "path": "./packages/plugin-registry/tsconfig.build.json" }
   ]
 }
