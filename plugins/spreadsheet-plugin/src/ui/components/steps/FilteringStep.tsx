@@ -19,10 +19,11 @@ import {
 } from '@mui/material';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { useTranslation } from 'react-i18next';
-import { createSpreadsheetCSVApi } from '../../../ui/index.js';
+import { createSpreadsheetCSVApi } from '../../../services/SpreadsheetCSVApiAdapter.js';
 import type { ColumnFilter, FilterConfig, RowFilter } from '../../../common/extension/types.js';
 import { PLUGIN_METADATA } from '../../../common/extension/constants.js';
 import { StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import type { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/tabular-store';
 
 interface SpreadsheetFilteringData {
   spreadsheetMetadataId?: string;
@@ -113,13 +114,13 @@ export const FilteringStep: FC<StepComponentProps> = ({ data, onChange, setValid
     setLoadError(null);
 
     api.getTableMetadata(metadataId)
-      .then((metadata) => {
+      .then((metadata: CSVTableMetadata | null) => {
         if (cancelled) return;
-        const columnNames = metadata?.columns?.map((column) => column.name).filter(Boolean) ?? [];
+        const columnNames = metadata?.columns?.map((column: CSVColumnInfo) => column.name).filter(Boolean) ?? [];
         const existing = ensureFilterConfig(dialogData.filters).columns;
         setColumns(ensureColumnFilters(columnNames, existing));
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (cancelled) return;
         console.warn('[FilteringStep] Failed to load metadata columns', error);
         setColumns(ensureColumnFilters([], ensureFilterConfig(dialogData.filters).columns));

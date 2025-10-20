@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
@@ -25,5 +24,10 @@
     "src/**/*.spec.*",
     "src/**/*.stories.*",
     "src/examples/**"
+  ],
+  "references": [
+    { "path": "../../common/types/tsconfig.build.json" },
+    { "path": "../../common/api/tsconfig.build.json" },
+    { "path": "../../plugin-ui-sdk/tsconfig.build.json" }
   ]
 }

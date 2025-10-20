@@ -22,9 +22,15 @@
     "prebuild:bundle": "pnpm run build:types"
   },
   "peerDependencies": {
-    "@hierarchidb/compute": "workspace:*"
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@types/react": "^18.3.5",
+    "react": ">=18.0.0",
     "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3"
   }

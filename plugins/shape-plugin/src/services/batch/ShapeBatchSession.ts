@@ -1,4 +1,4 @@
-import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
+import { AbstractBatchSession } from '@hierarchidb/batch';
 import type { BaseBatchConfig, BatchProgressEvent } from '@hierarchidb/common-api';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import type { ProgressInfo } from '../common/types.js';
@@ -14,7 +14,7 @@ export interface ShapeBatchTask {
   stage: string;
 }
 
-export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, ShapeBatchTask, void> {
+export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig> {
   constructor(sessionId: string, nodeId: NodeId, config: ShapeBatchConfig, private controller: SessionController, private sink?: (e: ProgressEvent) => void) {
     super(sessionId, nodeId, config);
   }
@@ -25,7 +25,8 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
   protected async onStart(): Promise<void> {
   }
 
-  protected async processBatch(): Promise<void> {
+  protected async processBatch(signal: AbortSignal): Promise<void> {
+    if (signal.aborted) throw abortError();
     // Bridge controller progress into shared session progress
     this.controller.setProgressCallback((p: ProgressInfo) => {
       this.updateProgress({
@@ -83,4 +84,13 @@ export class ShapeBatchSession extends AbstractBatchSession<ShapeBatchConfig, Sh
   resumeAllStages(): void {
     this.controller.resumeAllStages();
   }
+}
+
+function abortError(): Error {
+  if (typeof DOMException === 'function') {
+    return new DOMException('Shape batch aborted', 'AbortError');
+  }
+  const error = new Error('Shape batch aborted');
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
 }

@@ -1,4 +1,4 @@
-import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
+import { AbstractBatchSession, BatchService } from '@hierarchidb/batch';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from './database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
@@ -52,7 +52,7 @@ export interface RouteBatchTask {
   error?: string;
 }
 
-export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, RouteBatchTask, void> {
+export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
   private db: RouteDatabase;
   private tasks: RouteBatchTask[] = [];
   private laneSemaphores = new Map<string, Semaphore>();
@@ -107,11 +107,14 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     }
   }
 
-  protected async processBatch(): Promise<void> {
+  protected async processBatch(signal: AbortSignal): Promise<void> {
     const maxConcurrent = this.config.routeGeneration.maxConcurrent;
     const batch = new BatchService();
     let completed = 0;
-    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number) => {
+    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number, workerSignal: AbortSignal) => {
+      if (signal.aborted || workerSignal.aborted) {
+        throw abortError();
+      }
       if (task.taskType === 'route_generation') {
         const method = (task.routeData?.method || this.config.routeGeneration.method) as string;
         const sem = this.getLaneSemaphore(method);
@@ -143,7 +146,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
         if (!cur?.paused) break;
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
       }
-    }, { concurrency: maxConcurrent });
+    }, { concurrency: maxConcurrent, signal });
   }
 
   private async processTask(task: RouteBatchTask): Promise<void> {
@@ -217,6 +220,15 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig, Ro
     }
     return sem;
   }
+}
+
+function abortError(): Error {
+  if (typeof DOMException === 'function') {
+    return new DOMException('Route batch cancelled', 'AbortError');
+  }
+  const error = new Error('Route batch cancelled');
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
 }
 
 class Semaphore {

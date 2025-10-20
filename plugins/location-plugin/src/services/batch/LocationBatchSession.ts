@@ -1,4 +1,4 @@
-import { AbstractBatchSession } from '@hierarchidb/batch-runtime-services';
+import { AbstractBatchSession } from '@hierarchidb/batch';
 import type { BaseBatchConfig, BatchProgressEvent, BatchProgressPayload } from '@hierarchidb/common-api';
 import type { NodeId, ProgressEvent, ProgressEvent as LocationProgress } from '@hierarchidb/common-types';
 import type { LocationSessionController } from './LocationSessionController.js';
@@ -7,7 +7,7 @@ export interface LocationBatchConfig extends BaseBatchConfig {
   concurrency?: number;
 }
 
-export class LocationBatchSession extends AbstractBatchSession<LocationBatchConfig, any, void> {
+export class LocationBatchSession extends AbstractBatchSession<LocationBatchConfig> {
   constructor(sessionId: string, nodeId: NodeId, config: LocationBatchConfig, private controller: LocationSessionController, private sink?: (e: ProgressEvent) => void) {
     super(sessionId, nodeId, config);
   }
@@ -18,7 +18,8 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
   protected async onStart(): Promise<void> {
   }
 
-  protected async processBatch(): Promise<void> {
+  protected async processBatch(signal: AbortSignal): Promise<void> {
+    if (signal.aborted) throw abortError();
     this.controller.setProgressCallback((ev: LocationProgress) => {
       this.updateProgress({
         total: ev.total,
@@ -63,4 +64,13 @@ export class LocationBatchSession extends AbstractBatchSession<LocationBatchConf
     };
     this.sink?.(legacyEvent);
   }
+}
+
+function abortError(): Error {
+  if (typeof DOMException === 'function') {
+    return new DOMException('Location batch aborted', 'AbortError');
+  }
+  const error = new Error('Location batch aborted');
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
 }

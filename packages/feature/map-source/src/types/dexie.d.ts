@@ -9,4 +9,3 @@ declare module 'dexie' {
     version(v: number): { stores(schema: Record<string, string>): void };
   }
 }
-

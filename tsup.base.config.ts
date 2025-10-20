@@ -4,6 +4,46 @@ import { defineConfig, Options } from 'tsup';
  * Base tsup configuration for all packages
  */
 export const createTsupConfig = (options: Partial<Options> = {}): Options => {
+  const { dts: userDts, ...rest } = options;
+
+  const defaultDts: Exclude<Options['dts'], undefined> = {
+    outDir: 'dist',
+    resolve: false,
+    compilerOptions: {
+      module: 'Node16',
+      composite: false,
+      incremental: false,
+      tsBuildInfoFile: undefined,
+      moduleResolution: 'Node16',
+      resolveJsonModule: true,
+      jsx: 'react-jsx',
+      skipLibCheck: true,
+      esModuleInterop: true,
+      allowSyntheticDefaultImports: true,
+      noUnusedLocals: false,
+      noUnusedParameters: false,
+      types: ['react', 'node', 'vite/client'],
+    },
+  };
+
+  let dtsOption: Options['dts'];
+  if (userDts === undefined) {
+    dtsOption = defaultDts;
+  } else if (userDts === true) {
+    dtsOption = defaultDts;
+  } else if (userDts === false) {
+    dtsOption = false;
+  } else {
+    dtsOption = {
+      ...defaultDts,
+      ...userDts,
+      compilerOptions: {
+        ...defaultDts.compilerOptions,
+        ...(userDts.compilerOptions ?? {}),
+      },
+    };
+  }
+
   const defaultExternal = [
     'react',
     'react-dom',
@@ -40,31 +80,7 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     target: 'es2022',
 
     // Generate .d.ts files with optimized settings
-    dts: {
-      // Avoid inlining external .d.ts (react, mui, workspace peers)
-      // This prevents API Extractor from pulling in TS5-specific paths like
-      // '@types/react/ts5.0/jsx-runtime' into the bundled output.
-      resolve: false,
-      compilerOptions: {
-        module: 'Node16',
-        composite: false,
-        incremental: false,
-        tsBuildInfoFile: undefined,
-        // Align with package Node16 resolution during DTS bundling
-        moduleResolution: 'Node16',
-        resolveJsonModule: true,
-        // Keep JSX types external to avoid leaking jsx-runtime symbols
-        jsx: 'react-jsx',
-        skipLibCheck: true,
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        // Do not fail DTS bundling on local unuseds; keep tsc typecheck strict
-        noUnusedLocals: false,
-        noUnusedParameters: false,
-        // Include Vite's ambient definitions so packages using import.meta.env compile during DTS bundling.
-        types: ['react', 'node', 'vite/client'],
-      },
-    },
+    dts: dtsOption,
 
     // Build settings
     splitting: false,
@@ -75,6 +91,6 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     external: mergedExternal,
 
     // Merge with package-specific options
-    ...options,
+    ...rest,
   }) as Options;
 };

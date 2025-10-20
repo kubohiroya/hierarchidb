@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeType } from '@hierarchidb/common-types';
 import { getWorkerBridge, type WorkerBridge } from '@hierarchidb/runtime-plugin-dialog';
 import type { BatchProgressEvent, BatchSessionStatus, ProgressPhase, UnifiedProgressInfo } from '@hierarchidb/common-api';
-import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch-runtime-services';
+import { useBatchProgress, createAdapterFromProgressSubscribe } from '@hierarchidb/batch';
 
 const ROUTE_NODE_TYPE = 'route' as NodeType;
 

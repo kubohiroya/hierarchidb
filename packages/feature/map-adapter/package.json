@@ -16,7 +16,7 @@
     "build": "pnpm run build:bundle",
     "clean": "rm -rf dist",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:types": "tsc -p tsconfig.build.json",
+    "build:types": "tsc -b tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "build:tsc": "pnpm run build:types",
     "prebuild:bundle": "pnpm run build:types"

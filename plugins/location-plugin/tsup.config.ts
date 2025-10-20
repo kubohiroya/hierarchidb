@@ -18,7 +18,6 @@ export default createTsupConfig({
   external: [
     '@hierarchidb/components',
     '@hierarchidb/batch',
-    '@hierarchidb/batch-runtime-services',
     '@hierarchidb/download',
     '@hierarchidb/util',
     '@hierarchidb/common-types',

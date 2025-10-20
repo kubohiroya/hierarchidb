@@ -16,10 +16,6 @@ declare module '@hierarchidb/plugin-ui-sdk' {
   export * from '../../../../packages/plugin-ui-sdk/src/index';
 }
 
-declare module '@hierarchidb/batch-runtime-services' {
-  export * from '../../../../packages/batch-runtime-services/src/index';
-}
-
 declare module '@hierarchidb/compute' {
   export * from '../../../../packages/feature/compute/src/index';
 }

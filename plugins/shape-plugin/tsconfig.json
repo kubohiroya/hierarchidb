@@ -20,9 +20,6 @@
       "@hierarchidb/plugin-ui-sdk": [
         "./src/types/module-stubs.d.ts"
       ],
-      "@hierarchidb/batch-runtime-services": [
-        "./src/types/module-stubs.d.ts"
-      ],
       "@hierarchidb/compute": [
         "./src/types/module-stubs.d.ts"
       ]

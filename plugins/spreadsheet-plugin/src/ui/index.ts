@@ -1,2 +1,2 @@
 export * from './components/steps-provider.js';
-export * from './facade/index.js';
+export { DataSourceStep, FilteringStep, type SpreadsheetDialogData } from './components/steps/index.js';

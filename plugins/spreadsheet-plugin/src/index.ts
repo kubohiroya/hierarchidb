@@ -14,6 +14,7 @@ export type { SpreadsheetEntity, SpreadsheetWorkingCopy } from './common/extensi
 export * from './common/extension/constants.js';
 export { PLUGIN_MANIFEST as SpreadsheetPluginManifest } from './plugin-manifest.js';
 export * from './services/index.js';
+export * from './ui/index.js';
 
 // Folder dialog extension initializer (optional)
 export { initializeSpreadsheetDialogExtension, spreadsheetDialogExtension } from './common/extensions/index.js';

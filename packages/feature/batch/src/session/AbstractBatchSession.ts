@@ -1,0 +1,243 @@
+import type { NodeId } from '@hierarchidb/common-types';
+import {
+  BaseBatchConfig,
+  BatchProgress,
+  BatchProgressEvent,
+  BatchProgressPayload,
+  BatchSessionState,
+  ProgressPhase,
+  ResourceUsage,
+} from '@hierarchidb/common-api';
+
+/**
+ * Shared lifecycle base for batch-oriented workflows.
+ */
+export abstract class AbstractBatchSession<TConfig extends BaseBatchConfig = BaseBatchConfig> {
+  protected readonly config: TConfig;
+  protected readonly nodeId: NodeId;
+  protected readonly sessionId: string;
+
+  protected resourceUsage?: ResourceUsage;
+  protected abortController: AbortController | null = null;
+
+  private readonly progressListeners = new Set<(event: BatchProgressEvent) => void>();
+  private readonly state: BatchSessionState;
+  private progress: BatchProgress;
+
+  constructor(sessionId: string, nodeId: NodeId, config: TConfig) {
+    this.sessionId = sessionId;
+    this.nodeId = nodeId;
+    this.config = config;
+
+    this.state = {
+      sessionId,
+      nodeId,
+      status: 'idle',
+    };
+
+    this.progress = {
+      total: 0,
+      completed: 0,
+      failed: 0,
+      percentage: 0,
+    };
+  }
+
+  getState(): BatchSessionState {
+    return { ...this.state };
+  }
+
+  getProgress(): BatchProgress {
+    return { ...this.progress };
+  }
+
+  protected getAbortSignal(): AbortSignal {
+    if (!this.abortController) {
+      this.abortController = new AbortController();
+    }
+    return this.abortController.signal;
+  }
+
+  async initialize(): Promise<void> {
+    this.state.status = 'idle';
+    this.state.startedAt = undefined;
+    this.state.completedAt = undefined;
+    this.state.error = undefined;
+    this.state.lastActivity = Date.now();
+    await this.onInitialize();
+  }
+
+  async start(): Promise<void> {
+    if (this.state.status !== 'idle' && this.state.status !== 'paused') {
+      throw new Error(`Cannot start session from state ${this.state.status}`);
+    }
+    const controller = this.ensureAbortController();
+    if (controller.signal.aborted) {
+      throw abortError('Session aborted before start');
+    }
+
+    this.state.status = 'running';
+    this.state.startedAt = this.state.startedAt ?? Date.now();
+    this.state.lastActivity = Date.now();
+
+    try {
+      await this.onStart();
+      await this.processBatch(controller.signal);
+      this.state.status = 'completed';
+      this.state.completedAt = Date.now();
+      this.state.lastActivity = this.state.completedAt;
+      this.emitProgress({
+        phase: 'completed',
+        stage: this.progress.currentStage ?? 'completed',
+        payload: this.toProgressPayload(),
+      });
+      await this.onComplete();
+    } catch (error) {
+      if (controller.signal.aborted) {
+        this.state.status = 'cancelled';
+        this.state.error = undefined;
+        this.emitProgress({
+          phase: 'cancelled',
+          stage: this.progress.currentStage ?? 'cancelled',
+          payload: this.toProgressPayload(),
+        });
+        throw abortError('Session cancelled');
+      }
+      this.state.status = 'failed';
+      this.state.error = error instanceof Error ? error.message : String(error);
+      this.state.completedAt = Date.now();
+      this.emitProgress({
+        phase: 'failed',
+        stage: this.progress.currentStage ?? 'failed',
+        error: formatProgressError(error),
+        payload: this.toProgressPayload(),
+      });
+      throw error;
+    }
+  }
+
+  async pause(): Promise<void> {
+    if (this.state.status !== 'running') {
+      throw new Error(`Cannot pause session from state ${this.state.status}`);
+    }
+    this.state.status = 'paused';
+    this.state.lastActivity = Date.now();
+    await this.onPause();
+    this.emitProgress({ phase: 'paused', stage: this.progress.currentStage ?? 'paused', payload: this.toProgressPayload() });
+  }
+
+  async resume(): Promise<void> {
+    if (this.state.status !== 'paused') {
+      throw new Error(`Cannot resume session from state ${this.state.status}`);
+    }
+    this.state.status = 'running';
+    this.state.lastActivity = Date.now();
+    await this.onResume();
+    this.emitProgress({ phase: 'running', stage: this.progress.currentStage ?? 'running', payload: this.toProgressPayload() });
+  }
+
+  async cancel(): Promise<void> {
+    if (this.state.status === 'completed' || this.state.status === 'failed' || this.state.status === 'cancelled') {
+      return;
+    }
+    this.state.status = 'cancelled';
+    this.state.lastActivity = Date.now();
+    this.ensureAbortController().abort();
+    await this.onCancel();
+    this.emitProgress({ phase: 'cancelled', stage: this.progress.currentStage ?? 'cancelled', payload: this.toProgressPayload() });
+  }
+
+  addBatchProgressListener(listener: (event: BatchProgressEvent) => void): () => void {
+    this.progressListeners.add(listener);
+    return () => {
+      this.progressListeners.delete(listener);
+    };
+  }
+
+  protected updateProgress(partial: Partial<BatchProgress>, stage?: string): void {
+    const merged: BatchProgress = {
+      ...this.progress,
+      ...partial,
+    };
+    const total = merged.total && merged.total > 0 ? merged.total : this.progress.total;
+    merged.total = total;
+    if (typeof merged.completed === 'number' && typeof total === 'number' && total > 0) {
+      merged.percentage = Math.min(100, Math.round((merged.completed / total) * 100));
+    }
+    if (stage) {
+      merged.currentStage = stage;
+    }
+    this.progress = merged;
+    this.state.lastActivity = Date.now();
+    this.emitProgress({
+      stage: merged.currentStage ?? stage ?? 'unknown',
+      phase: this.state.status === 'running' ? 'running' : (this.state.status as ProgressPhase),
+      payload: this.toProgressPayload(),
+    });
+  }
+
+  protected toProgressPayload(): BatchProgressPayload {
+    const { total, completed, failed, skipped, currentTask, estimatedTimeRemaining } = this.progress;
+    return { total, completed, failed, skipped, currentTask, estimatedTimeRemaining };
+  }
+
+  protected emitProgress(event: Partial<BatchProgressEvent>): void {
+    const full: BatchProgressEvent = {
+      sessionId: this.sessionId,
+      nodeId: this.nodeId,
+      stage: event.stage ?? this.progress.currentStage ?? 'unknown',
+      phase: event.phase ?? (this.state.status as ProgressPhase),
+      timestamp: Date.now(),
+      payload: event.payload,
+      message: event.message,
+      error: event.error,
+    };
+    for (const listener of this.progressListeners) {
+      listener(full);
+    }
+    this.onBatchProgressEvent(full);
+  }
+
+  protected setResourceUsage(usage: ResourceUsage | undefined): void {
+    this.resourceUsage = usage;
+  }
+
+  protected ensureAbortController(): AbortController {
+    if (!this.abortController) {
+      this.abortController = new AbortController();
+    }
+    return this.abortController;
+  }
+
+  protected abstract processBatch(signal: AbortSignal): Promise<void>;
+
+  // Hooks for subclasses to extend behaviour.
+  protected async onInitialize(): Promise<void> {}
+  protected async onStart(): Promise<void> {}
+  protected async onPause(): Promise<void> {}
+  protected async onResume(): Promise<void> {}
+  protected async onCancel(): Promise<void> {}
+  protected async onComplete(): Promise<void> {}
+  protected onBatchProgressEvent(_event: BatchProgressEvent): void {}
+}
+
+function abortError(message: string): Error {
+  if (typeof DOMException === 'function') {
+    return new DOMException(message, 'AbortError');
+  }
+  const error = new Error(message);
+  (error as Error & { name: string }).name = 'AbortError';
+  return error;
+}
+
+function formatProgressError(error: unknown): { code?: string; detail?: unknown } | undefined {
+  if (!error) return undefined;
+  if (typeof error === 'object' && error !== null) {
+    if ('code' in (error as any) || 'detail' in (error as any)) {
+      const existing = error as { code?: string; detail?: unknown };
+      return { code: existing.code, detail: existing.detail ?? error };
+    }
+    return { detail: error };
+  }
+  return { detail: error };
+}

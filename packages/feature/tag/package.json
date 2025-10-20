@@ -22,7 +22,6 @@
     "prebuild:bundle": "pnpm run build:types"
   },
   "peerDependencies": {
-    "uuid": "^9.0.1",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*"

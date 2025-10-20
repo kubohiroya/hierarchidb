@@ -152,13 +152,15 @@ export class RouteBatchManager {
     await this.db.routeCursors.put(createCursorRow(sessionId, 0, routeTasks.length));
     // Start processing using Shape's infrastructure
     const session = new RouteBatchSession(sessionId, nodeId, config, routeTasks);
-    const unsubscribe = session.addBatchProgressListener((event) => this.emitProgressEvent(event));
+    const unsubscribe = session.addBatchProgressListener((event: BatchProgressEvent) => this.emitProgressEvent(event));
     await session.initialize();
-    try {
-      await session.start();
-    } finally {
+    const runPromise = session.start();
+    void runPromise.catch((error: unknown) => {
+      logRouteBatchWarning('Route batch session failed', error);
+    });
+    void runPromise.finally(() => {
       unsubscribe();
-    }
+    });
 
     return sessionId;
   }

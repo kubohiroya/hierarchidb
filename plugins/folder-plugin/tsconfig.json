@@ -9,15 +9,6 @@
     "sourceMap": true,
     "jsx": "react-jsx",
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "~/*.js": [
-        "./src/*.ts"
-      ]
-    },
     "lib": [
       "ES2020",
       "DOM",

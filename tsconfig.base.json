@@ -31,12 +31,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@hierarchidb/batch-runtime-services": [
-        "packages/batch-runtime-services/src/index.ts"
-      ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "packages/batch-runtime-services/src/*"
-      ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"
       ],

@@ -22,7 +22,6 @@ export default createTsupConfig({
     '@hierarchidb/common-types',
     '@hierarchidb/download',
     '@hierarchidb/batch-types',
-    '@hierarchidb/batch-runtime-services',
     '@hierarchidb/plugin-types',
     '@hierarchidb/plugin-ui-sdk',
     '@hierarchidb/runtime-worker',

@@ -1,7 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import type { TagId, NodeId, NodeTagAssociation, NodeTagAssociationId, TagEntity, TagSuggestion, Timestamp } from '@hierarchidb/common-types';
 import type { CreateTagRequest, TagAPI, TagAssociationRequest, UpdateTagRequest } from '@hierarchidb/common-api';
-import { SingletonMixin } from '@hierarchidb/util';
+import { SingletonMixin, generateId } from '@hierarchidb/util';
 import type { TagDBPort } from './ports.js';
 
 /**
@@ -146,6 +145,6 @@ export class TagService implements TagAPI {
   }
 
   generateTagId(): TagId {
-    return `tag_${uuidv4()}` as unknown as TagId;
+    return `tag_${generateId()}` as unknown as TagId;
   }
 }

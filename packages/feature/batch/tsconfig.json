@@ -7,12 +7,6 @@
     "composite": false,
     "moduleResolution": "Node16",
     "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "module": "Node16"
   },
   "include": [

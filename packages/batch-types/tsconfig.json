@@ -13,14 +13,14 @@
     "skipLibCheck": true
   },
   "include": [
-    "../batch-runtime-services/dist/**/*.d.ts"
+    "../feature/batch/dist/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist"
   ],
   "references": [
-    { "path": "../batch-runtime-services/tsconfig.build.json" },
+    { "path": "../feature/batch/tsconfig.build.json" },
     { "path": "../common/types/tsconfig.build.json" },
     { "path": "../common/api/tsconfig.build.json" }
   ]
