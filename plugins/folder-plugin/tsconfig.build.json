@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "paths": {},
     "declarationDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "noEmit": false,
@@ -45,6 +44,15 @@
     },
     {
       "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/feature/download/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/feature/auth-recovery/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/client/tsconfig.build.json"
     },
     {
       "path": "../../packages/runtime/basic-info/tsconfig.build.json"

@@ -42,7 +42,7 @@ function makeCore(): CoreStub {
 describe('Undo/Redo finalize: create -> undo -> redo', () => {
   it('removes created node on undo and restores on redo with same id', async () => {
     const core = makeCore();
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
     const parentId = 'p1' as NodeId;

@@ -27,5 +27,19 @@
     "src/**/*.spec.*",
     "src/**/*.stories.*",
     "src/examples/**"
+  ],
+  "references": [
+    {
+      "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/basic-info/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/plugin-runtime-services/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/worker/tsconfig.build.json"
+    }
   ]
 }

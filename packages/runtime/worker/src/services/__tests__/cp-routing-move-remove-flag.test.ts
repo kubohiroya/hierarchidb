@@ -80,7 +80,7 @@ describe('TreeMutationService command processor routing flag', () => {
     const core = createCoreMock(nodes);
     const processor = createProcessorMock();
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
 
     const result = await svc.moveNodes({
@@ -108,7 +108,7 @@ describe('TreeMutationService command processor routing flag', () => {
     const core = createCoreMock(nodes);
     const processor = createProcessorMock();
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
 
     const outcome = await svc.moveNodes({
@@ -132,7 +132,7 @@ describe('TreeMutationService command processor routing flag', () => {
     const core = createCoreMock(nodes);
     const processor = createProcessorMock();
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
 
     const result = await svc.removeNodes([asNodeId('child-1')]);

@@ -84,6 +84,19 @@
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
 
+23) NodeNext 移行: 設定切替と import 整理（P0）
+- ブランチ: `chore/node-next/tsconfig`（sandbox 制約で `main` 上で作業）
+- 依存: 22) NodeNext 移行: 現状棚卸し
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の当該タスクと今日の運用ログへ、開始・進捗・完了の記録を残す（実行コマンドと結果を含む）
+  - [ ] NodeNext 化後に発生している TypeScript 参照エラーを AGENTS.md の指針（`src/` ベースの project reference 等）に沿って解消し、再発防止のポイントをメモ
+  - [ ] NodeNext 設定で `pnpm typecheck:graph` が 0 エラーで完了し、終了コードと要点ログを運用ログへ記録
+- チェックリスト:
+  - [ ] `tools/tsconfig-set-nodenext.mjs` や `pnpm codemod:esm-ext --write` など専用スクリプトの実行ログを確認し、手作業置換が混入していないことを確認
+  - [ ] dist 参照が残っている tsconfig paths を `src/` 指向へ整理し、必要なら `tsconfig.build.json` を更新
+  - [ ] `pnpm typecheck:graph` の実行で発生した修正内容を運用ログに要約
+- ロールバック手順：NodeNext 関連差分を revert し、Node16 設定へ戻したうえで `pnpm typecheck:graph` を再実行して従来結果を確認
+
 3) Shape plugin import path 修正（P0）
 - ブランチ: `fix/shape-plugin/import-paths`（sandbox 制約で `main` 上で作業）
 - 依存: `@hierarchidb/shape-plugin`, `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/runtime-worker`
@@ -339,6 +352,94 @@
 - ロールバック手順：
   - UI/フック変更を revert し、`pnpm --filter @hierarchidb/shape-plugin build:types` 成功を確認
 
+16) プラグイン共通契約の集約（P0）
+- ブランチ: `refactor/common-types/plugin-contracts`
+- 依存: 現行 `packages/runtime/worker/src/entity/store.ts`, 各プラグインの declare module スタブ
+- 受け入れ基準（DoD）:
+  - [ ] `PeerEntity` / `PeerStore` / `GroupStore` / `RelationStore` などプラグイン共通インターフェイスが `packages/common/types` に移設され、重複定義が解消
+  - [ ] 移設後に `pnpm --filter @hierarchidb/common-types build:types` と代表的プラグイン（timeline/location/shape）の `build:types` が成功
+  - [ ] 旧来の `declare module '@hierarchidb/runtime-worker'` が参照していた型は廃止または共通型に置き換え
+- チェックリスト:
+  - [ ] `packages/runtime/worker/src/entity/store.ts` の公開型を共通型への再エクスポートに切り替え
+  - [ ] timeline/location/shape plugin の `declare module` を撤去し import を共通型へ変更
+- ロールバック手順:
+  - `common/types` への追加と import 変更を revert し、`pnpm --filter @hierarchidb/timeline-plugin build:types` が従来どおり通ることを確認
+
+17) plugin-ui/worker API 新設（P0）
+- ブランチ: `refactor/plugin-host/api-layer`
+- 依存: 16) プラグイン共通契約の集約
+- 受け入れ基準（DoD）:
+  - [ ] `packages/plugin-ui-api` と `packages/plugin-worker-api` が新設され、ホスト側が提供すべき抽象インターフェイスを定義
+  - [ ] 既存 `plugin-ui-sdk` / `plugin-runtime-services` / `runtime-client` 等が API インターフェイスに依存する形へリファクタされた
+  - [ ] 新 API が `pnpm --filter @hierarchidb/plugin-ui-api build:types` / `plugin-worker-api build:types` を通過
+- チェックリスト:
+  - [ ] UI 側：ダイアログ操作や WorkingCopy 取得の抽象化を API として切り出し
+  - [ ] Worker 側：Dexie ストア登録・WorkingCopy ライフサイクル等のインターフェイスを定義
+- ロールバック手順:
+  - 新規パッケージを削除し、既存 import を元に戻したうえで `pnpm --filter @hierarchidb/plugin-ui-sdk build:types` が通ることを確認
+
+18) plugin-ui/worker SDK への実装統合（P1）
+- ブランチ: `refactor/plugin-host/sdk-integration`
+- 依存: 17) plugin-ui/worker API 新設
+- 受け入れ基準（DoD）:
+  - [ ] `plugin-ui-sdk` に `runtime-plugin-dialog` / `runtime-client` / `runtime-basic-info` 等の実装が統合され、API との乖離が無い
+  - [ ] `plugin-worker-sdk` に `runtime-worker` / `plugin-runtime-services` / `batch-runtime-services` が統合され、API 実装として機能
+  - [ ] `pnpm --filter @hierarchidb/plugin-ui-sdk build:types` / `plugin-worker-sdk build:types` が成功し、代表的なプラグインの型ビルドもグリーン
+- チェックリスト:
+  - [ ] 旧 `packages/runtime` から移行したファイルの参照先・テストを更新
+  - [ ] SDK 内で optional に提供する機能（WorkingCopy 等）のドキュメント・型注釈を整備
+- ロールバック手順:
+  - SDK への統合を revert し、`packages/runtime/*` を元に戻した状態で各ビルドが通ることを確認
+
+19) `packages/runtime` の解体（P1）
+- ブランチ: `refactor/runtime/remove-package`
+- 依存: 18) plugin-ui/worker SDK への実装統合
+- 受け入れ基準（DoD）:
+  - [ ] `packages/runtime` ディレクトリが削除され、関連 import がすべて新しい API/SDK へ置き換わっている
+  - [ ] ワークスペースの `pnpm lint && pnpm typecheck && pnpm test` が成功
+- チェックリスト:
+  - [ ] 旧 runtime への参照を全検索し、残存していないことを確認
+  - [ ] 変更点をドキュメント化（PLAN.md と関連 docs）
+- ロールバック手順:
+  - `packages/runtime` を復元し、置換前の import へ戻したうえで全体ビルドが通ることを確認
+
+20) プラグイン参照の更新（P1）
+- ブランチ: `refactor/plugins/use-new-contracts`
+- 依存: 16)～19) の完了
+- 受け入れ基準（DoD）:
+  - [ ] 全プラグインが `@hierarchidb/common-types` と新 API (`plugin-ui-api` / `plugin-worker-api`) を参照し、`declare module '@hierarchidb/runtime-worker'` スタブが撤去
+  - [ ] 代表的プラグイン（timeline/location/route/shape）が `pnpm --filter <plugin> build:types` を通過
+- チェックリスト:
+  - [ ] exports (`./ui`, `./worker`) を再確認し、tsconfig の paths を更新
+  - [ ] 影響プラグインの README / docs を更新
+- ロールバック手順:
+  - import 変更を revert し、旧構成に戻した状態でプラグインの型ビルドが成功することを確認
+
+21) worker-loader.ts 生成フローの再構築（P1）
+- ブランチ: `feat/plugin-registry/static-worker-loader`
+- 依存: 16)～20)
+- 受け入れ基準（DoD）:
+  - [ ] `plugin-registry` が `app/package.json` の依存を元に `worker-loader.ts` をビルド前に生成し、動的登録を廃止
+  - [ ] 生成物が `plugin-worker-api` / `plugin-worker-sdk` の初期化フックを呼び出す構造になっている
+  - [ ] `pnpm --filter @hierarchidb/app typecheck` および生成物に対するユニットテストが成功
+- チェックリスト:
+  - [ ] 生成スクリプトに対して snapshot / 単体テストを追加
+  - [ ] UI 側の dynamic import ポイントを更新し、新 loader で初期化されることを確認
+- ロールバック手順:
+  - 生成スクリプトと生成物を revert し、従来の動的登録に戻した上で `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
+
+22) batch-types 再配置（P1）
+- ブランチ: `refactor/batch-types/consolidation`
+- 依存: 16) プラグイン共通契約の集約, 17) plugin-worker API 新設
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/batch-types` にあった DTO が `common/types` へ、Worker 契約が `plugin-worker-api` へ移動し、`batch-types` が整理または廃止
+  - [ ] 影響するビルド（`pnpm --filter @hierarchidb/batch-types build:types`, `plugin-worker-sdk` 等）が成功
+- チェックリスト:
+  - [ ] 依存していたプラグイン／SDK の import を更新
+  - [ ] 既存ドキュメント（requirements / docs）を修正
+- ロールバック手順:
+  - DTO 移動を戻し、`pnpm --filter @hierarchidb/batch-types build:types` が通ることを確認
+
 16) Route Plugin LocationResolver 実装（P2）
 - ブランチ: `feat/route/location-resolver-integration`
 - 依存: Location Plugin 公開 API、Runtime Worker Bridge
@@ -457,20 +558,6 @@
   - [ ] 過去の NodeNext 移行トラブル（例: TS5110）を整理し、再発防止メモを運用ログへ追記
   - [ ] ESM 拡張子を確認するコマンドや codemod をリスト化
 - ロールバック手順：情報整理のみのため不要
-
-23) NodeNext 移行: 設定切替と import 整理（P0）
-- ブランチ: `chore/node-next/tsconfig`
-- 依存: 22) NodeNext 移行: 現状棚卸し
-- 受け入れ基準（DoD）:
-  - [x] ルートおよび全パッケージの `tsconfig*.json` で `module` / `moduleResolution` を `NodeNext`（もしくは `ESNext` + `NodeNext`）へ統一（`tools/tsconfig-set-nodenext.mjs` で一括更新）
-  - [x] `tsup.base.config.ts` の `dts.compilerOptions` を NodeNext に更新し、`pnpm codemod:esm-ext --write` 実行後に拡張子漏れがないことを確認
-  - [ ] NodeNext 設定で `pnpm typecheck:graph` がグリーンになり、結果を運用ログへ記録
-- チェックリスト:
-  - [x] `pnpm codemod:esm-ext --dry-run` → `--write` を実行し、差分をレビュー
-  - [x] `Node16` → `NodeNext` の置換は専用スクリプト（codemod もしくは repo 用ユーティリティ）で一括実行し、手作業の IDE 置換は禁止（スクリプトとログを運用ログへ記録）
-  - [ ] 代表パッケージで `pnpm exec tsc --noEmit` を手動実行（NodeNext 化後は既存 rootDir 問題で失敗するためフォローアップを要調査）
-  - [x] `tsconfig.esm-nodenext.json` 等の命名・参照を更新し、不要なファイルを整理（package.json/scripts、工具スクリプトを含む）
-- ロールバック手順：対象ファイルの差分を revert し、Node16 設定で `pnpm typecheck:graph` が再度成功することを確認
 
 24) NodeNext 移行: ローダー／依存更新（P0）
 - ブランチ: `chore/node-next/runtime`
@@ -5913,6 +6000,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 09:35 command: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build && pnpm --filter @hierarchidb/vite-plugin-node-type-registry typecheck — エイリアス専用化後もビルド/型検証が成功することを確認。
 - 2025-10-20 10:32 progress: refactor/batch-service-migration — Route/Location/Shape の batch 依存を `@hierarchidb/batch` へ統一し、tsconfig の paths を dist 優先に調整。`pnpm --filter @hierarchidb/route-plugin build:types` を実行し、新 API への切替後も型検証が通過することを確認。
 - 2025-10-20 10:36 progress: refactor/batch-service-migration — `plugins/location-plugin/src/common/types/batch.d.ts` の legacy スタブを削除し、`pnpm --filter @hierarchidb/location-plugin build:types` / `typecheck` を実行して成功ログを記録。
+- 2025-10-20 12:05 progress: refactor/runtime/remove-dynamic-wiring — `@hierarchidb/batch` の `build:types` を再生成し、`dist/index.d.ts` を復旧。続けて `pnpm --filter @hierarchidb/batch-types build:types`（API Extractor）と `pnpm --filter @hierarchidb/location-plugin build:types` を実行し、どちらもグリーンであることを確認。
+- 2025-10-20 12:18 progress: refactor/runtime/remove-dynamic-wiring — `tsconfig.base.json` から `@hierarchidb/runtime-worker` の dist paths を撤去し、`pnpm --filter @hierarchidb/runtime-worker build:types` を再実行。`pnpm --filter @hierarchidb/folder-plugin build:types` で発生していた `@hierarchidb/runtime-worker` 型未解決を解消。
 - 2025-10-20 14:45 progress: refactor/batch-service-migration — `packages/batch-runtime-services` を削除し、`tsconfig.base.json` / `pnpm-workspace.yaml` / `pnpm-lock.yaml` から旧パッケージ参照を除去。`scripts/rename-batch-packages.mjs` を現行スキーム（@hierarchidb/batch-types / @hierarchidb/batch）に合わせて更新。
 - 2025-10-20 14:52 command: pnpm --filter @hierarchidb/batch build:types && pnpm --filter @hierarchidb/batch-types build:types && pnpm --filter @hierarchidb/route-plugin build:types && pnpm --filter @hierarchidb/location-plugin build:types — 全て成功、shape-plugin は既存の WorkingCopy 未整備エラーで `typecheck` が失敗することを確認。
 - 2025-10-20 15:03 command: pnpm build:turbo — `@hierarchidb/app#build` で既知の `registerRuntimeWorkerClient` 未提供エラーが再現（今回の差分とは無関係）したため、現時点では保留。ログを turbo.log に記録済み。
@@ -5963,4 +6052,21 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 10:31 command: pnpm --filter @hierarchidb/{route-plugin,location-plugin,shape-plugin,resolver-plugin,spreadsheet-plugin,folder-plugin,runtime-plugin-dialog} typecheck （全て成功）
 - 2025-10-20 16:05 start: chore/node-next/audit — Node16 固定箇所の棚卸しを開始。`rg` で tsconfig / tsup.base / `NODE_OPTIONS="--loader ts-node/esm"` の出現箇所を一覧化し、`pnpm list @types/node` (=18.19.123) と `pnpm list ts-node` (=10.9.2) の現状を記録。
 - 2025-10-20 16:20 progress: chore/node-next/audit — ベースラインコマンドを実行し現状を確認。`pnpm typecheck:graph` は欠損 tsconfig 参照（common/core 等）と `packages/feature/auth-recovery` の rootDir ずれで失敗。`pnpm build:turbo` は `@hierarchidb/spreadsheet-plugin` 型未解決などで失敗。`pnpm lint` は成功。`pnpm test` は runtime-plugin-dialog / app / ui-auth 等のテスト失敗を確認。ログは NodeNext 移行タスクの背景資料として保持。
+- 2025-10-20 17:08 progress: fix/folder-plugin/type-refs — `tsconfig.build.json` の `paths={}` を削除し、`tsconfig.json` に dist 優先の paths（plugin-ui-sdk / download / auth-recovery / runtime-basic-info / runtime-plugin-dialog）を追加。依存パッケージの `build:types` を実行した上で `pnpm --filter @hierarchidb/folder-plugin build:types` を再実行し成功。
+- 2025-10-20 17:16 progress: fix/folder-plugin/type-refs — `tsconfig.json` へ `@hierarchidb/runtime-client` の paths を追加し、`tsconfig.build.json` に runtime-client を参照として追加。`@hierarchidb/runtime-client build:types` および `@hierarchidb/download build:bundle` / `@hierarchidb/plugin-ui-sdk build:bundle` を実行して dist の型定義を再生成。
+- 2025-10-20 17:20 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
+- 2025-10-20 17:26 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
+- 2025-10-20 17:32 progress: fix/styler-plugin/type-refs — styler plugin の tsconfig に runtime-plugin-dialog / runtime-worker の dist 優先 paths を追加し、tsconfig.build.json に両パッケージを参照として設定。依存側で `pnpm --filter @hierarchidb/{runtime-worker,runtime-plugin-dialog} build:bundle` を実行し、`pnpm --filter @hierarchidb/styler-plugin build:types` 成功を確認。
+- 2025-10-20 17:32 progress: fix/styler-plugin/type-refs — styler plugin の tsconfig に runtime-plugin-dialog / runtime-worker の dist 優先 paths を追加し、tsconfig.build.json に両パッケージを参照として設定。依存側で `pnpm --filter @hierarchidb/{runtime-worker,runtime-plugin-dialog} build:bundle` を実行し、`pnpm --filter @hierarchidb/styler-plugin build:types` 成功を確認。
+- 2025-10-20 17:44 progress: fix/plugin-runtime-services/typecheck — `@hierarchidb/plugin-runtime-services` で rootDir 不整合が発生しないよう `tsconfig.json` に最小限の paths（`@hierarchidb/common-types` のみ dist 優先）を追加。依存型を再生成 (`pnpm --filter @hierarchidb/common-types build:bundle`) の上、`pnpm --filter @hierarchidb/plugin-runtime-services build:types` が成功することを確認。
+- 2025-10-20 17:44 progress: fix/plugin-runtime-services/typecheck — `@hierarchidb/plugin-runtime-services` で rootDir 不整合が発生しないよう `tsconfig.json` に最小限の paths（`@hierarchidb/common-types` のみ dist 優先）を追加。依存型を再生成 (`pnpm --filter @hierarchidb/common-types build:bundle`) の上、`pnpm --filter @hierarchidb/plugin-runtime-services build:types` が成功することを確認。
+- 2025-10-20 17:52 progress: fix/spreadsheet-plugin/type-refs — spreadsheet plugin の tsconfig に plugin-ui-sdk / runtime-basic-info の dist 優先 paths を追加し、tsconfig.build.json に runtime-basic-info を参照として追加。依存型再生成 (`pnpm --filter @hierarchidb/runtime-basic-info build:bundle`, `pnpm --filter @hierarchidb/plugin-ui-sdk build:bundle`) 後、`pnpm --filter @hierarchidb/spreadsheet-plugin build:types` が成功することを確認。
+- 2025-10-20 17:52 progress: fix/spreadsheet-plugin/type-refs — spreadsheet plugin の tsconfig に plugin-ui-sdk / runtime-basic-info の dist 優先 paths を追加し、tsconfig.build.json に runtime-basic-info を参照として追加。依存型再生成 (`pnpm --filter @hierarchidb/runtime-basic-info build:bundle`, `pnpm --filter @hierarchidb/plugin-ui-sdk build:bundle`) 後、`pnpm --filter @hierarchidb/spreadsheet-plugin build:types` が成功することを確認。
+- 2025-10-20 18:05 progress: fix/resolver-plugin/type-refs — resolver/timeline plugins でも runtime-plugin-dialog・plugin-runtime-services・runtime-worker の dist 型を参照できるよう paths/references を追加。必要なパッケージで `pnpm --filter` build 系を再実行し、`pnpm --filter @hierarchidb/{resolver,timeline}-plugin build:types` および `@hierarchidb/resolver-plugin build:bundle` が成功することを確認。
+- 2025-10-20 18:20 progress: fix/spreadsheet-plugin/build-order — spreadsheet plugin の tsconfig に plugin-runtime-services / runtime-plugin-dialog / runtime-basic-info / plugin-ui-sdk の paths を追加し、tsconfig.build.json へ references を登録。`pnpm --filter @hierarchidb/{runtime-plugin-dialog,plugin-runtime-services,runtime-basic-info} build:bundle` 後に `pnpm --filter @hierarchidb/spreadsheet-plugin build:bundle` が成功することを確認。
 - 2025-10-20 16:55 progress: chore/node-next/tsconfig — `tools/tsconfig-set-nodenext.mjs` を追加して全 tsconfig の `module` / `moduleResolution` を NodeNext 化。`tsconfig.esm-node16.json` を `tsconfig.esm-nodenext.json` へリネームし、参照スクリプト・package.json を更新。`tsup.base.config.ts` を NodeNext 向けに変更し、`pnpm codemod:esm-ext --dry-run/--write` を実行。代表 `tsc --noEmit` は既存 rootDir 問題で失敗（後続タスクで追跡）。
+- 2025-10-20 17:25 progress: chore/node-next/tsconfig — runtime-worker のテストで使用していた `~/` エイリアスを相対 import に置換し、tsconfig からローカル paths を削除。`pnpm --filter @hierarchidb/runtime-worker typecheck && build:bundle` が成功することを確認。
+- 2025-10-20 17:35 progress: chore/node-next/tsconfig — `@hierarchidb/plugin-ui-sdk` を `tsc -b` でビルドし、フォルダプラグイン依存の型解決を修正。`plugins/folder-plugin` の `build:types` を `tsc -b` へ切り替え、`pnpm --filter @hierarchidb/folder-plugin build:types` 成功を確認。
+## 今日の着手（運用ログ） <a id="worklog-7"></a>
+
+- 2025-10-21 10:12 start: chore/node-next/tsconfig — Task 23 を Doing へ移動し、NodeNext 設定で残存する TypeScript 参照エラーの解消に着手（手動置換禁止・専用スクリプト利用方針を再確認）。

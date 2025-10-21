@@ -19,11 +19,12 @@
       "node"
     ],
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "baseUrl": "."
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
-    "reason": "UI transitive types (MUI/Emotion) — tracked to remove."
+    "reason": "UI transitive types (MUI/Emotion) \u2014 tracked to remove."
   },
   "include": [
     "src/**/*"

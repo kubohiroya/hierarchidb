@@ -11,7 +11,9 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "skipLibCheck": true,
-    "noEmit": false
+    "noEmit": false,
+    "composite": true,
+    "incremental": true
   },
   "files": [],
   "references": [

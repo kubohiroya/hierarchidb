@@ -14,4 +14,5 @@ export default createTsupConfig({
     '@hierarchidb/ui-core',
     '@hierarchidb/runtime-client',
   ],
+  clean: false,
 });

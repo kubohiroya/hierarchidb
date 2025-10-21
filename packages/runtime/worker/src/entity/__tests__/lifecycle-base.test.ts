@@ -13,7 +13,7 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
       updateNode: vi.fn(async () => undefined),
       createNode: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     } satisfies Pick<EntityLifecycleManager, 'handleCommand'>;
@@ -21,12 +21,12 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
 
-    const { commandRegistry } = await import('~/services/command/registry');
+    const { commandRegistry } = await import('../../services/command/registry.js');
     commandRegistry.register('commitWorkingCopy', {
       execute: async ({ nextSeq }) => ({ success: true, seq: nextSeq() }),
     });
 
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../../services/CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
     const wcId = 'wc1' as NodeId;
     const envelope = cp.createEnvelope('commitWorkingCopy', { workingCopyId: wcId });

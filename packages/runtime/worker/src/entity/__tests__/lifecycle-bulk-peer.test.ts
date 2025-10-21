@@ -45,7 +45,7 @@ describe('Lifecycle uses bulkUpsert when available', () => {
     const folderType = 'folder' as NodeType;
     storeRegistry.registerPeer(folderType, store);
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../../services/TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as CommandProcessor);
 
     const sourceNodeA: TreeNode = {

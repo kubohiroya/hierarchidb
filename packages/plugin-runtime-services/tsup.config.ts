@@ -5,4 +5,5 @@ export default createTsupConfig({
     'dexie',
     '@hierarchidb/download',
   ],
+  clean: false,
 });

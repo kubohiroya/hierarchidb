@@ -8,11 +8,6 @@
     "jsx": "react-jsx",
     "skipLibCheck": false,
     "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ]
-    },
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },

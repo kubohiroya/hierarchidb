@@ -1,196 +1,196 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "module": "NodeNext",
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
-    "moduleResolution": "NodeNext",
-    "baseUrl": ".",
-    "strict": true,
-    "noImplicitAny": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    "composite": false,
-    "incremental": false,
+    "noUnusedParameters": true,
     "noEmit": true,
-    "jsx": "react-jsx",
+    "noImplicitAny": true,
+    "isolatedModules": true,
+    "module": "NodeNext",
+    "incremental": false,
+    "allowUnusedLabels": false,
+    "moduleResolution": "NodeNext",
     "paths": {
+      "@hierarchidb/auth-recovery/*": [
+        "packages/feature/auth-recovery/src/*"
+      ],
+      "@hierarchidb/ui-csv-extract": [
+        "packages/ui/tabular-extract/src/index.ts"
+      ],
+      "@hierarchidb/ui-map": [
+        "packages/ui/map/src/index.ts"
+      ],
       "@hierarchidb/batch-types": [
         "packages/batch-types/dist/index.d.ts"
-      ],
-      "@hierarchidb/batch-types/*": [
-        "packages/batch-types/dist/*"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata": [
-        "packages/runtime-shared/fetch-metadata/src/index.ts"
-      ],
-      "@hierarchidb/runtime-shared-fetch-metadata/*": [
-        "packages/runtime-shared/fetch-metadata/src/*"
-      ],
-      "@hierarchidb/common-types": [
-        "packages/common/types/src/index.ts"
-      ],
-      "@hierarchidb/common-types/*": [
-        "packages/common/types/src/*"
-      ],
-      "@hierarchidb/download": [
-        "packages/feature/download/src/index.ts"
-      ],
-      "@hierarchidb/download/*": [
-        "packages/feature/download/src/*"
-      ],
-      "@hierarchidb/runtime-worker": [
-        "packages/runtime/worker/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-worker/*": [
-        "packages/runtime/worker/dist/*"
-      ],
-      "@hierarchidb/ui-file": [
-        "packages/ui/file/src/index.ts"
-      ],
-      "@hierarchidb/ui-file/*": [
-        "packages/ui/file/src/*"
-      ],
-      "@hierarchidb/ui-theme": [
-        "packages/ui/theme/src/index.ts"
-      ],
-      "@hierarchidb/ui-theme/*": [
-        "packages/ui/theme/src/*"
-      ],
-      "@hierarchidb/util": [
-        "packages/util/src/index.ts"
-      ],
-      "@hierarchidb/util/*": [
-        "packages/util/src/*"
-      ],
-      "@hierarchidb/*-plugin/worker": [
-        "packages/plugins/*-plugin/src/worker/factory/index.ts"
-      ],
-      "@hierarchidb/spreadsheet-plugin": [
-        "packages/plugins/spreadsheet-plugin/src/index.ts"
-      ],
-      "@hierarchidb/spreadsheet-plugin/*": [
-        "packages/plugins/spreadsheet-plugin/src/*"
-      ],
-      "@hierarchidb/components": [
-        "packages/components/src/index.ts"
-      ],
-      "@hierarchidb/components/*": [
-        "packages/components/src/*"
-      ],
-      "@hierarchidb/ui-data-grid": [
-        "packages/ui/data-grid/src/index.ts"
-      ],
-      "@hierarchidb/ui-data-grid/*": [
-        "packages/ui/data-grid/src/*"
-      ],
-      "@hierarchidb/common-api": [
-        "packages/common/api/src/index.ts"
-      ],
-      "@hierarchidb/common-api/*": [
-        "packages/common/api/src/*"
-      ],
-      "@hierarchidb/batch": [
-        "packages/feature/batch/src/index.ts"
       ],
       "@hierarchidb/batch/*": [
         "packages/feature/batch/src/*"
       ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "packages/runtime/plugin-dialog/dist/index.d.ts"
-      ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "packages/runtime/plugin-dialog/dist/*"
-      ],
-      "@hierarchidb/ui-core": [
-        "packages/ui/core/src/index.ts"
-      ],
-      "@hierarchidb/ui-core/*": [
-        "packages/ui/core/src/*"
+      "@hierarchidb/auth-recovery": [
+        "packages/feature/auth-recovery/src/index.ts"
       ],
       "@hierarchidb/ui-datasource": [
         "packages/ui/datasource/src/index.ts"
       ],
-      "@hierarchidb/ui-datasource/*": [
-        "packages/ui/datasource/src/*"
+      "@hierarchidb/util": [
+        "packages/util/src/index.ts"
       ],
-      "@hierarchidb/plugin-types": [
-        "packages/plugin-types/dist/index.d.ts"
+      "@hierarchidb/runtime-plugin-dialog/*": [
+        "packages/runtime/plugin-dialog/src/*"
+      ],
+      "@hierarchidb/download/*": [
+        "packages/feature/download/src/*"
+      ],
+      "@hierarchidb/ui-data-grid/*": [
+        "packages/ui/data-grid/src/*"
       ],
       "@hierarchidb/plugin-types/*": [
         "packages/plugin-types/dist/*"
       ],
-      "@hierarchidb/ui-license": [
-        "packages/ui/license/src/index.ts"
+      "@hierarchidb/ui-file": [
+        "packages/ui/file/src/index.ts"
       ],
-      "@hierarchidb/ui-license/*": [
-        "packages/ui/license/src/*"
+      "@hierarchidb/plugin-runtime-services/*": [
+        "packages/plugin-runtime-services/src/*"
       ],
-      "@hierarchidb/runtime-ui-license": [
-        "packages/runtime-ui/license/src/index.ts"
+      "@hierarchidb/ui-csv-extract/*": [
+        "packages/ui/tabular-extract/src/*"
+      ],
+      "@hierarchidb/table-metadata/*": [
+        "packages/feature/table-metadata/src/*"
+      ],
+      "@hierarchidb/ui-theme": [
+        "packages/ui/theme/src/index.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "packages/util/src/*"
+      ],
+      "@hierarchidb/ui-datasource/*": [
+        "packages/ui/datasource/src/*"
+      ],
+      "@hierarchidb/components/*": [
+        "packages/components/src/*"
+      ],
+      "@hierarchidb/runtime-worker/*": [
+        "packages/runtime/worker/src/*"
+      ],
+      "@hierarchidb/batch": [
+        "packages/feature/batch/src/index.ts"
+      ],
+      "@hierarchidb/batch-types/*": [
+        "packages/batch-types/dist/*"
+      ],
+      "@hierarchidb/common-api": [
+        "packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/ui-map/*": [
+        "packages/ui/map/src/*"
+      ],
+      "@hierarchidb/common-types": [
+        "packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/ui-theme/*": [
+        "packages/ui/theme/src/*"
+      ],
+      "@hierarchidb/*-plugin/worker": [
+        "plugins/*-plugin/src/worker/factory/index.ts"
+      ],
+      "@hierarchidb/ui-core": [
+        "packages/ui/core/src/index.ts"
       ],
       "@hierarchidb/runtime-ui-license/*": [
         "packages/runtime-ui/license/src/*"
       ],
       "@hierarchidb/plugin-ui-sdk": [
-        "packages/plugin-ui-sdk/dist/index.d.ts"
+        "packages/plugin-ui-sdk/src/index.ts"
       ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "packages/plugin-ui-sdk/dist/*"
+      "@hierarchidb/runtime-ui-license": [
+        "packages/runtime-ui/license/src/index.ts"
       ],
-      "@hierarchidb/plugin-runtime-services": [
-        "packages/plugin-runtime-services/dist/index.d.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "packages/plugin-runtime-services/dist/*"
-      ],
-      "@hierarchidb/ui-map": [
-        "packages/ui/map/src/index.ts"
-      ],
-      "@hierarchidb/ui-map/*": [
-        "packages/ui/map/src/*"
-      ],
-      "@hierarchidb/ui-csv-extract": [
-        "packages/ui/tabular-extract/src/index.ts"
-      ],
-      "@hierarchidb/ui-csv-extract/*": [
-        "packages/ui/tabular-extract/src/*"
-      ],
-      "@hierarchidb/auth-recovery": [
-        "packages/feature/auth-recovery/src/index.ts"
-      ],
-      "@hierarchidb/auth-recovery/*": [
-        "packages/feature/auth-recovery/src/*"
-      ],
-      "@hierarchidb/tabular": [
-        "packages/feature/tabular/src/index.ts"
+      "@hierarchidb/ui-core/*": [
+        "packages/ui/core/src/*"
       ],
       "@hierarchidb/tabular/*": [
         "packages/feature/tabular/src/*"
       ],
+      "@hierarchidb/common-types/*": [
+        "packages/common/types/src/*"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "packages/runtime/worker/src/index.ts"
+      ],
       "@hierarchidb/table-metadata": [
         "packages/feature/table-metadata/src/index.ts"
       ],
-      "@hierarchidb/table-metadata/*": [
-        "packages/feature/table-metadata/src/*"
+      "@hierarchidb/runtime-plugin-dialog": [
+        "packages/runtime/plugin-dialog/src/index.ts"
+      ],
+      "@hierarchidb/ui-file/*": [
+        "packages/ui/file/src/*"
+      ],
+      "@hierarchidb/spreadsheet-plugin/*": [
+        "plugins/spreadsheet-plugin/src/*"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata/*": [
+        "packages/runtime-shared/fetch-metadata/src/*"
+      ],
+      "@hierarchidb/spreadsheet-plugin": [
+        "plugins/spreadsheet-plugin/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "packages/common/api/src/*"
+      ],
+      "@hierarchidb/tabular": [
+        "packages/feature/tabular/src/index.ts"
+      ],
+      "@hierarchidb/download": [
+        "packages/feature/download/src/index.ts"
+      ],
+      "@hierarchidb/ui-data-grid": [
+        "packages/ui/data-grid/src/index.ts"
+      ],
+      "@hierarchidb/plugin-types": [
+        "packages/plugin-types/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "packages/plugin-ui-sdk/src/*"
+      ],
+      "@hierarchidb/ui-license/*": [
+        "packages/ui/license/src/*"
+      ],
+      "@hierarchidb/components": [
+        "packages/components/src/index.ts"
+      ],
+      "@hierarchidb/plugin-runtime-services": [
+        "packages/plugin-runtime-services/src/index.ts"
+      ],
+      "@hierarchidb/runtime-shared-fetch-metadata": [
+        "packages/runtime-shared/fetch-metadata/src/index.ts"
+      ],
+      "@hierarchidb/ui-license": [
+        "packages/ui/license/src/index.ts"
       ]
-    }
+    },
+    "noUnusedLocals": true,
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "baseUrl": ".",
+    "strict": true,
+    "resolveJsonModule": true,
+    "noImplicitReturns": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "jsx": "react-jsx",
+    "noUncheckedIndexedAccess": true,
+    "target": "es2022",
+    "noFallthroughCasesInSwitch": true,
+    "composite": false,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowUnreachableCode": false,
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "node_modules",

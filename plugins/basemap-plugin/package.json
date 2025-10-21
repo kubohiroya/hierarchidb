@@ -50,10 +50,10 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "build:tsc": "pnpm run build:types",
     "dev:tsc": "tsc --watch",
-    "prebuild:types": "pnpm --filter @hierarchidb/plugin-runtime-services build:types",
+    "prebuild:types": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:types && pnpm --filter @hierarchidb/plugin-runtime-services build:types",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild:bundle": "pnpm run build:types"
+    "prebuild:bundle": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:bundle && pnpm run build:types"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -154,6 +154,19 @@
             "required": false
           }
         ]
+      }
+    }
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build"]
+      },
+      "build:types": {
+        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build:types"]
+      },
+      "build:bundle": {
+        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build:bundle"]
       }
     }
   },

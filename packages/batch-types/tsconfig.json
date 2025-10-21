@@ -9,6 +9,7 @@
     "declaration": true,
     "noEmit": false,
     "emitDeclarationOnly": true,
+    "incremental": true,
     "declarationMap": true,
     "skipLibCheck": true
   },

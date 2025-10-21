@@ -14,7 +14,7 @@ describe('ImportExportService importNodes bulk path', () => {
       listChildren: vi.fn(async () => []),
       getNode: vi.fn(async () => undefined),
     };
-    const { ImportExportService } = await import('~/services/ImportExportService');
+    const { ImportExportService } = await import('../ImportExportService.js');
     const svc = await ImportExportService.getSingleton(port);
     const r = await svc.importNodes({
       data: {

@@ -5,33 +5,7 @@
     "jsx": "react-jsx",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
-    "paths": {
-      "@hierarchidb/batch": [
-        "../../packages/feature/batch/dist/index.d.ts",
-        "../../packages/feature/batch/src/index.ts"
-      ],
-      "@hierarchidb/batch/*": [
-        "../../packages/feature/batch/dist/*",
-        "../../packages/feature/batch/src/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts",
-        "../../packages/plugin-ui-sdk/src/index.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*",
-        "../../packages/plugin-ui-sdk/src/*"
-      ],
-      "@hierarchidb/runtime-basic-info": [
-        "../../packages/runtime/basic-info/dist/index.d.ts",
-        "../../packages/runtime/basic-info/src/index.ts"
-      ],
-      "@hierarchidb/runtime-basic-info/*": [
-        "../../packages/runtime/basic-info/dist/*",
-        "../../packages/runtime/basic-info/src/*"
-      ]
-    }
+    "baseUrl": "."
   },
   "include": [
     "src/**/*"

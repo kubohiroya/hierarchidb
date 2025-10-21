@@ -164,6 +164,19 @@
       }
     }
   },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build"]
+      },
+      "build:types": {
+        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build:types"]
+      },
+      "build:bundle": {
+        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build:bundle"]
+      }
+    }
+  },
   "tsup": {
     "external": [
       "@mui/icons-material",

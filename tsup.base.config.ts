@@ -9,6 +9,7 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
   const defaultDts: Exclude<Options['dts'], undefined> = {
     outDir: 'dist',
     resolve: false,
+    tsconfig: './tsconfig.build.json',
     compilerOptions: {
       module: 'NodeNext',
       composite: false,

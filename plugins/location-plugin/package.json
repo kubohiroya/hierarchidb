@@ -72,7 +72,6 @@
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
-    "@hierarchidb/batch": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@mui/material": "^7.3.2",

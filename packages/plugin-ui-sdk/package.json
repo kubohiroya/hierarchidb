@@ -23,7 +23,7 @@
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "build:types": "tsc -p tsconfig.build.json",
+    "build:types": "tsc -b tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild": "pnpm run clean",
     "build:tsc": "pnpm run build:types",

@@ -46,7 +46,11 @@
   "scripts": {
     "typecheck:worker": "tsc -p tsconfig.worker.json --noEmit",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "prebuild:types": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:types && pnpm --filter @hierarchidb/plugin-runtime-services build:types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "prebuild:bundle": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:bundle && pnpm run build:types",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run build:bundle",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
@@ -202,5 +206,27 @@
       "react",
       "react-dom"
     ]
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/plugin-runtime-services#build"
+        ]
+      },
+      "build:types": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:types",
+          "@hierarchidb/plugin-runtime-services#build:types"
+        ]
+      },
+      "build:bundle": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:bundle",
+          "@hierarchidb/plugin-runtime-services#build:types"
+        ]
+      }
+    }
   }
 }

@@ -40,7 +40,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
-    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
@@ -49,7 +49,7 @@ describe('Entity lifecycle notifications from services', () => {
       processCommand: vi.fn(),
     };
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../../services/TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
     const result = await svc.duplicateNodes({ nodeIds: [sourceId], toParentId: parentId });
     expect(result.success).toBe(true);
@@ -69,7 +69,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
-    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
@@ -78,7 +78,7 @@ describe('Entity lifecycle notifications from services', () => {
       processCommand: vi.fn(),
     };
 
-    const { TreeMutationService } = await import('~/services/TreeMutationService');
+    const { TreeMutationService } = await import('../../services/TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
     const payload: PasteNodesPayload = {
       nodes: {
@@ -131,12 +131,12 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
-    const { EntityLifecycleManager } = await import('~/entity/EntityLifecycleManager');
+    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
 
-    const { ImportExportService } = await import('~/services/ImportExportService');
+    const { ImportExportService } = await import('../../services/ImportExportService.js');
     const svc = await ImportExportService.getSingleton(core as unknown as CoreDB);
     const result = await svc.importNodes({
       data: { nodes: [{ name: 'A' }, { name: 'B' }] },

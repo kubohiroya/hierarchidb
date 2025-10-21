@@ -65,7 +65,7 @@ describe('CommandProcessor bulk operations', () => {
       }),
     };
 
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
     const env = cp.createEnvelope('moveNodes', {
       nodeIds: ['a' as NodeId, 'b' as NodeId],
@@ -107,7 +107,7 @@ describe('CommandProcessor bulk operations', () => {
       }),
     };
 
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
     const env = cp.createEnvelope('remove', { nodeIds: ['a' as NodeId, 'b' as NodeId] });
     const result = await cp.processCommand(env);
@@ -169,7 +169,7 @@ describe('CommandProcessor bulk operations', () => {
       }),
     };
 
-    const { CommandProcessor } = await import('~/services/CommandProcessor');
+    const { CommandProcessor } = await import('../CommandProcessor.js');
     const cp = new CommandProcessor(core as unknown as CoreDB);
     const env = cp.createEnvelope('restoreFromTrash', {
       nodeIds: ['t1' as NodeId, 't2' as NodeId],

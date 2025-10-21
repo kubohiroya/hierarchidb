@@ -45,6 +45,9 @@
     },
     {
       "path": "../../packages/plugin-runtime-services/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/worker/tsconfig.build.json"
     }
   ]
 }

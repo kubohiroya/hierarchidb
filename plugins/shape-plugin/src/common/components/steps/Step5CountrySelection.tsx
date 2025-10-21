@@ -57,7 +57,7 @@ export const Step5CountrySelection: React.FC<StepProps> = ({
   // Initialize checkbox matrix
   const checkboxMatrix = useMemo<boolean[][]>(() => {
     if (Array.isArray(workingCopy.checkboxState)) {
-      return workingCopy.checkboxState.map((row) => {
+      return workingCopy.checkboxState.map((row): boolean[] => {
         if (!Array.isArray(row)) {
           return Array.from({ length: maxAdminLevel + 1 }, () => false);
         }

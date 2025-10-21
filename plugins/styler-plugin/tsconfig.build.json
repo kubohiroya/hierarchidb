@@ -30,5 +30,19 @@
     "src/examples/**",
     "**/*.test.*",
     "**/*.spec.*"
+  ],
+  "references": [
+    {
+      "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/worker/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/plugin-runtime-services/tsconfig.build.json"
+    },
+    {
+      "path": "../spreadsheet-plugin/tsconfig.build.json"
+    }
   ]
 }

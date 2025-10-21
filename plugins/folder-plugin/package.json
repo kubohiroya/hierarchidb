@@ -44,7 +44,7 @@
   },
   "scripts": {
     "build": "pnpm run build:bundle",
-    "build:types": "tsc -p tsconfig.build.json",
+    "build:types": "tsc -b tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "clean": "rm -rf dist",

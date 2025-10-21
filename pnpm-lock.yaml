@@ -539,10 +539,11 @@ importers:
         version: 5.9.3
 
   packages/batch-types:
-    devDependencies:
+    dependencies:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../feature/batch
+    devDependencies:
       '@microsoft/api-extractor':
         specifier: ^7.49.3
         version: 7.53.1(@types/node@18.19.123)

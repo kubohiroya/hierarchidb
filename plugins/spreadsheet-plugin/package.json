@@ -53,15 +53,38 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "prebuild:types": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:types && pnpm --filter @hierarchidb/plugin-runtime-services build:types",
     "build:types": "tsc -p tsconfig.build.json",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "build:tsc": "pnpm run build:types",
-    "prebuild:bundle": "pnpm run build:types"
+    "prebuild:bundle": "pnpm --filter @hierarchidb/runtime-plugin-dialog build:bundle && pnpm run build:types"
   },
   "dependencies": {
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@types/pako": "^2.0.3",
     "pako": "^2.1.0"
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/plugin-runtime-services#build"
+        ]
+      },
+      "build:types": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:types",
+          "@hierarchidb/plugin-runtime-services#build:types"
+        ]
+      },
+      "build:bundle": {
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:bundle",
+          "@hierarchidb/plugin-runtime-services#build:types"
+        ]
+      }
+    }
   },
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",

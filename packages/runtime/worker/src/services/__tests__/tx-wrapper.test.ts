@@ -49,7 +49,7 @@ function makeCore({ throwOnUpdate = false }: { throwOnUpdate?: boolean } = {}): 
 
 async function loadCommandProcessor() {
   vi.resetModules();
-  const { CommandProcessor } = await import('~/services/CommandProcessor');
+  const { CommandProcessor } = await import('../CommandProcessor.js');
   return { CommandProcessor };
 }
 

@@ -29,5 +29,16 @@
     "src/examples/**",
     "**/*.test.ts",
     "**/*.spec.ts"
+  ],
+  "references": [
+    {
+      "path": "../feature/download/tsconfig.build.json"
+    },
+    {
+      "path": "../common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../common/api/tsconfig.build.json"
+    }
   ]
 }

@@ -21,14 +21,6 @@
     "jsxImportSource": "react",
     "skipLibCheck": true,
     "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./src/*"
-      ],
-      "~/*.js": [
-        "./src/*.ts"
-      ]
-    },
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },
