@@ -11,7 +11,9 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"
@@ -32,16 +34,38 @@
     "src/vite-env.d.ts"
   ],
   "references": [
-    { "path": "../../packages/plugin-ui-sdk/tsconfig.build.json" },
-    { "path": "../../packages/common/types/tsconfig.build.json" },
-    { "path": "../../packages/common/api/tsconfig.build.json" },
-    { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
-    { "path": "../../packages/runtime/basic-info/tsconfig.build.json" },
-    { "path": "../../packages/runtime/worker/tsconfig.build.json" },
-    { "path": "../../packages/runtime/client/tsconfig.build.json" },
-    { "path": "../../packages/util/tsconfig.build.json" },
-    { "path": "../../packages/components/tsconfig.build.json" },
-    { "path": "../../packages/ui/dialog/tsconfig.build.json" },
-    { "path": "../../packages/feature/tag/tsconfig.build.json" }
+    {
+      "path": "../../packages/plugin-ui-sdk/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/basic-info/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/worker/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/client/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/util/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/components/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/ui/dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/feature/tag/tsconfig.build.json"
+    }
   ]
 }

@@ -10,7 +10,7 @@ let changed = 0
 
 for (const file of files) {
   const base = path.basename(file)
-  if (base === 'tsconfig.base.json' || base === 'tsconfig.esm-node16.json') continue
+  if (base === 'tsconfig.base.json' || base === 'tsconfig.esm-nodenext.json') continue
   const raw = fs.readFileSync(file, 'utf8')
   let stripped = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   stripped = stripped.replace(/,\s*(?=[}\]])/g, '')
@@ -32,4 +32,3 @@ for (const file of files) {
   }
 }
 console.log(`Reset ${changed} tsconfig files to module=ESNext, moduleResolution=node`)
-

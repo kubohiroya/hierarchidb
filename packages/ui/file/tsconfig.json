@@ -11,8 +11,8 @@
       "ES2020",
       "DOM"
     ],
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "baseUrl": ".",
     "types": [
       "vite/client"

@@ -5,9 +5,9 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
-    "module": "Node16"
+    "module": "NodeNext"
   },
   "include": [
     "src/**/*"

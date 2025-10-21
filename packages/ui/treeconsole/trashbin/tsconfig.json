@@ -19,7 +19,9 @@
     "composite": true,
     "incremental": true,
     "noEmit": false,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src"

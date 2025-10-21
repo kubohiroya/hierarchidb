@@ -8,7 +8,9 @@
       "react-dom",
       "react-i18next",
       "vite/client"
-    ]
+    ],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/steps/**/*.ts",

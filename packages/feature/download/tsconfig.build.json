@@ -11,14 +11,20 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"
   ],
   "references": [
-    { "path": "../auth-recovery/tsconfig.build.json" },
-    { "path": "../../util/tsconfig.build.json" }
+    {
+      "path": "../auth-recovery/tsconfig.build.json"
+    },
+    {
+      "path": "../../util/tsconfig.build.json"
+    }
   ],
   "exclude": [
     "dist",

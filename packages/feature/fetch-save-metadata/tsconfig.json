@@ -12,8 +12,8 @@
       "ES2022"
     ],
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
         "./src/*"

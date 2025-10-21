@@ -2,7 +2,7 @@
 
 /**
  * Renames batch packages from the legacy @hierarchidb/batch-{api,sdk}
- * naming to the new @hierarchidb/batch-{types,runtime-services} scheme
+ * naming to the new @hierarchidb/batch-types and @hierarchidb/batch scheme
  * and updates textual references across the repository.
  *
  * Usage:
@@ -24,20 +24,20 @@ const dryRun = args.includes('--dry-run');
 const stringReplacements = [
   // Scoped package names (longest/specific first)
   { from: '@hierarchidb/batch-api', to: '@hierarchidb/batch-types' },
-  { from: '@hierarchidb/batch-sdk', to: '@hierarchidb/batch-runtime-services' },
+  { from: '@hierarchidb/batch-sdk', to: '@hierarchidb/batch' },
 
   // Workspace directory references
   { from: 'packages/batch-api', to: 'packages/batch-types' },
-  { from: 'packages/batch-sdk', to: 'packages/batch-runtime-services' },
+  { from: 'packages/batch-sdk', to: 'packages/feature/batch' },
 
   // Unscoped identifiers
   { from: 'batch-api', to: 'batch-types' },
-  { from: 'batch-sdk', to: 'batch-runtime-services' },
+  { from: 'batch-sdk', to: 'batch' },
 ];
 
 const directoryRenames = [
   { from: 'packages/batch-api', to: 'packages/batch-types' },
-  { from: 'packages/batch-sdk', to: 'packages/batch-runtime-services' },
+  { from: 'packages/batch-sdk', to: 'packages/feature/batch' },
 ];
 
 function getGitFiles() {

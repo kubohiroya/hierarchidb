@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "Node16",
+    "module": "NodeNext",
     "lib": [
       "ES2022",
       "dom"
     ],
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "baseUrl": ".",
     "strict": true,
     "noImplicitAny": true,
@@ -31,14 +31,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@hierarchidb/batch-runtime-services": [
-        "packages/batch-runtime-services/src/index.ts"
-      ],
-      "@hierarchidb/batch-runtime-services/*": [
-        "packages/batch-runtime-services/src/*"
-      ],
       "@hierarchidb/batch-types": [
-        "packages/batch-runtime-services/src/types.ts"
+        "packages/batch-types/dist/index.d.ts"
+      ],
+      "@hierarchidb/batch-types/*": [
+        "packages/batch-types/dist/*"
       ],
       "@hierarchidb/runtime-shared-fetch-metadata": [
         "packages/runtime-shared/fetch-metadata/src/index.ts"

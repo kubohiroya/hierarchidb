@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "lib": [
       "ES2022",
       "DOM",
@@ -31,7 +31,8 @@
     ],
     "esModuleInterop": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "module": "NodeNext"
   },
   "include": [
     "src/**/*.ts",

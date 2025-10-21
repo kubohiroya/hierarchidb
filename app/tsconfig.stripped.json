@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "lib": [
       "ES2022",
       "DOM",
@@ -51,7 +51,8 @@
       "@hierarchidb/runtime-ui-tour/*": [
         "../packages/runtime-ui/tour/src/*"
       ]
-    }
+    },
+    "module": "NodeNext"
   },
   "exclude": [
     "node_modules",

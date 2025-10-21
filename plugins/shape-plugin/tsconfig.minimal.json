@@ -3,11 +3,11 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "allowImportingTsExtensions": false,
     "noEmit": true,
     "jsx": "react-jsx",
-    "module": "Node16"
+    "module": "NodeNext"
   },
   "include": [
     "src/shared*",

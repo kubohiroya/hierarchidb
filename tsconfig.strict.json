@@ -11,7 +11,9 @@
     "noFallthroughCasesInSwitch": true,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "packages/*/src/**/*.ts",

@@ -5,7 +5,8 @@
     "types": [
       "vitest/globals"
     ],
-    "module": "ESNext"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src*.test.ts",

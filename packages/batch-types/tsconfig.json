@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "baseUrl": ".",
     "composite": true,
     "declaration": true,
@@ -20,8 +20,14 @@
     "dist"
   ],
   "references": [
-    { "path": "../feature/batch/tsconfig.build.json" },
-    { "path": "../common/types/tsconfig.build.json" },
-    { "path": "../common/api/tsconfig.build.json" }
+    {
+      "path": "../feature/batch/tsconfig.build.json"
+    },
+    {
+      "path": "../common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../common/api/tsconfig.build.json"
+    }
   ]
 }

@@ -5,7 +5,7 @@
       "ES2020",
       "DOM"
     ],
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "noEmit": true,
     "composite": false,
     "outDir": "./dist",
@@ -20,12 +20,12 @@
     "noFallthroughCasesInSwitch": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "module": "Node16"
+    "module": "NodeNext"
   },
-"include": [
-"src/**/*.ts",
-"src/**/*.tsx"
-],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "exclude": [
     "dist",
     "node_modules"

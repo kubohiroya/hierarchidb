@@ -6,7 +6,7 @@
     "noEmit": true,
     "incremental": false,
     "composite": false,
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
@@ -19,7 +19,8 @@
       "@hierarchidb/ui-treeconsole-base/*": [
         "../packages/ui/treeconsole/base/src/*"
       ]
-    }
+    },
+    "module": "NodeNext"
   },
   "include": [
     "src/**/*.ts",

@@ -10,7 +10,9 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"
@@ -26,8 +28,14 @@
     "src/examples/**"
   ],
   "references": [
-    { "path": "../../common/types/tsconfig.build.json" },
-    { "path": "../../common/api/tsconfig.build.json" },
-    { "path": "../../plugin-ui-sdk/tsconfig.build.json" }
+    {
+      "path": "../../common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../../common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../../plugin-ui-sdk/tsconfig.build.json"
+    }
   ]
 }

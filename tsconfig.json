@@ -11,8 +11,9 @@
   "compilerOptions": {
     "downlevelIteration": false,
     "target": "es2022",
-    "module": "Node16",
-    "jsx": "react-jsx"
+    "module": "NodeNext",
+    "jsx": "react-jsx",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "global.d.ts",

@@ -12,11 +12,14 @@
     "rootDir": "./",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": [
+        "./src/*"
+      ]
     },
     "incremental": true,
     "jsx": "react-jsx",
-    "module": "Node16"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"

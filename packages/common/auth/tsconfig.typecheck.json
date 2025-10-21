@@ -4,6 +4,7 @@
     "composite": true,
     "noEmit": true,
     "incremental": true,
-    "module": "ESNext"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   }
 }

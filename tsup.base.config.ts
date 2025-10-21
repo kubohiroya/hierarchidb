@@ -10,11 +10,11 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     outDir: 'dist',
     resolve: false,
     compilerOptions: {
-      module: 'Node16',
+      module: 'NodeNext',
       composite: false,
       incremental: false,
       tsBuildInfoFile: undefined,
-      moduleResolution: 'Node16',
+      moduleResolution: 'NodeNext',
       resolveJsonModule: true,
       jsx: 'react-jsx',
       skipLibCheck: true,

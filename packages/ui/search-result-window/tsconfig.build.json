@@ -11,7 +11,9 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*.ts",
@@ -29,6 +31,8 @@
     "src/stories/**"
   ],
   "references": [
-    { "path": "../../ui/floating-window/tsconfig.build.json" }
+    {
+      "path": "../../ui/floating-window/tsconfig.build.json"
+    }
   ]
 }

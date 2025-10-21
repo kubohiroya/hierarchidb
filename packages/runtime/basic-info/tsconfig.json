@@ -8,7 +8,10 @@
     "composite": false,
     "jsx": "react-jsx",
     "esModuleInterop": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }
-

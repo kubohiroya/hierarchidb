@@ -9,6 +9,12 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "allowImportingTsExtensions": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.css"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.css"
+  ]
 }

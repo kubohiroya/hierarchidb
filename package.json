@@ -90,7 +90,7 @@
     "vk:sync:worker": "node scripts/vk-sync.mjs --dir packages/runtime/worker/docs",
     "treeconsole:shims:remove": "find packages/ui/treeconsole -type f -name comlink.d.ts -delete",
     "codemod:esm-ext": "node tools/esm-ext-codemod.mjs",
-    "typecheck:esm": "tsc -b tsconfig.esm-node16.json",
+    "typecheck:esm": "tsc -b tsconfig.esm-nodenext.json",
     "wt:start": "bash scripts/wt.sh start",
     "wt:remove": "bash scripts/wt.sh remove",
     "wt:list": "bash scripts/wt.sh list",

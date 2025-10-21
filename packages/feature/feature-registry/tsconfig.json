@@ -5,7 +5,7 @@
     "outDir": "dist",
     "declaration": true,
     "composite": false,
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "baseUrl": ".",
@@ -14,7 +14,7 @@
         "./src/*"
       ]
     },
-    "module": "Node16"
+    "module": "NodeNext"
   },
   "include": [
     "src/**/*"

@@ -18,7 +18,8 @@
       "vite/client",
       "node"
     ],
-    "module": "Node16"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

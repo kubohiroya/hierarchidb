@@ -19,7 +19,9 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

@@ -19,7 +19,9 @@
         "./src/*"
       ]
     },
-    "jsxImportSource": "react"
+    "jsxImportSource": "react",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"

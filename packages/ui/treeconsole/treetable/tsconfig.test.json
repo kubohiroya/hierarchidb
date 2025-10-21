@@ -6,7 +6,8 @@
       "@testing-library/jest-dom"
     ],
     "jsx": "react-jsx",
-    "module": "ESNext"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src*.test.ts",

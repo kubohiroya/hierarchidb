@@ -13,7 +13,7 @@ let changed = 0
 for (const file of files) {
   // skip base and custom
   const base = path.basename(file)
-  if (base === 'tsconfig.esm-node16.json' || base === 'tsconfig.base.json') continue
+  if (base === 'tsconfig.esm-nodenext.json' || base === 'tsconfig.base.json') continue
   const raw = fs.readFileSync(file, 'utf8')
   let stripped = raw
     .replace(/\/\*[\s\S]*?\*\//g, '') // block comments

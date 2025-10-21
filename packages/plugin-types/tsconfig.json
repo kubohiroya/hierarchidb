@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "baseUrl": ".",
     "rootDir": ".",
@@ -15,9 +15,17 @@
   },
   "files": [],
   "references": [
-    { "path": "../plugin-ui-sdk/tsconfig.build.json" },
-    { "path": "../common/types/tsconfig.build.json" },
-    { "path": "../common/api/tsconfig.build.json" },
-    { "path": "../runtime/worker/tsconfig.build.json" }
+    {
+      "path": "../plugin-ui-sdk/tsconfig.build.json"
+    },
+    {
+      "path": "../common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../runtime/worker/tsconfig.build.json"
+    }
   ]
 }

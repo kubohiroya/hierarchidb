@@ -18,7 +18,9 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"

@@ -8,7 +8,7 @@
     "rootDir": "./src",
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
-    "moduleResolution": "Node16",
+    "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
         "./src/*"
@@ -19,7 +19,8 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "baseUrl": "."
+    "baseUrl": ".",
+    "module": "NodeNext"
   },
   "include": [
     "src/**/*"

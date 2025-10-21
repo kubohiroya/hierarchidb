@@ -9,8 +9,8 @@
     ],
     "outDir": "./dist",
     "jsx": "react-jsx",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "paths": {
       "@hierarchidb/batch": [
         "../../packages/feature/batch/dist/index.d.ts",

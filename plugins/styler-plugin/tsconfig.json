@@ -29,7 +29,8 @@
         "./src/*.ts"
       ]
     },
-    "module": "Node16"
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*.ts",

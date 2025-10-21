@@ -17,7 +17,7 @@ pnpm --filter @hierarchidb/plugin-loader-resolver-plugin typecheck
 ## コーディング規約
 - ts-morph API を利用し、文字列置換ではなく AST ベースで変換してください。
 - 変換ロジックには dry-run オプションを用意し、差分確認を前提とします。
-- 変換の前後で `tsconfig.esm-node16.json` 等の共通設定が適用されることを想定し、ESM import/export を崩さないように注意してください。
+- 変換の前後で `tsconfig.esm-nodenext.json` 等の共通設定が適用されることを想定し、ESM import/export を崩さないように注意してください。
 
 ## ファイル構成
 - `runner.ts`: 共通 CLI。対象ファイル収集やフォーマッタ呼び出しを司ります。

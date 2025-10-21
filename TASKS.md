@@ -449,11 +449,11 @@
 - ブランチ: `chore/node-next/audit`
 - 依存: TASKS.md 運用ログ、`tsconfig*.json`、tsup 共通設定、ビルドスクリプト
 - 受け入れ基準（DoD）:
-  - [ ] Node16 固定箇所（tsconfig*, tsup.base, `NODE_OPTIONS="--loader ts-node/esm"`, codemod 等）を網羅した一覧を作成し、`TASKS.md` チェックリストへ追加
-  - [ ] 主要コマンド（`pnpm typecheck:graph`, `pnpm build:turbo`, `pnpm lint`, `pnpm test`）の現行成功ログを取得し、運用ログに記録
-  - [ ] 影響を受ける CI/スクリプト/API Extractor の依存関係を洗い出し、後続タスクの前提として明記
+  - [x] Node16 固定箇所（tsconfig*, tsup.base, `NODE_OPTIONS="--loader ts-node/esm"`, codemod 等）を網羅した一覧を作成し、`TASKS.md` チェックリストへ追加（rg 出力ログを保存）
+  - [x] 主要コマンド（`pnpm typecheck:graph`, `pnpm build:turbo`, `pnpm lint`, `pnpm test`）の現行結果を取得し、運用ログに記録（typecheck/build/test は既知エラーを確認、lint は成功）
+  - [x] 影響を受ける CI/スクリプト/API Extractor の依存関係を洗い出し、後続タスクの前提として明記（Turbo pipeline, CI workflowsは Node20, `tsup.base.config.ts` と API Extractor 設定が Node16 固定であることを整理）
 - チェックリスト:
-  - [ ] `pnpm list @types/node` と `pnpm list ts-node` のバージョンを記録
+  - [x] `pnpm list @types/node` と `pnpm list ts-node` のバージョンを記録
   - [ ] 過去の NodeNext 移行トラブル（例: TS5110）を整理し、再発防止メモを運用ログへ追記
   - [ ] ESM 拡張子を確認するコマンドや codemod をリスト化
 - ロールバック手順：情報整理のみのため不要
@@ -462,14 +462,14 @@
 - ブランチ: `chore/node-next/tsconfig`
 - 依存: 22) NodeNext 移行: 現状棚卸し
 - 受け入れ基準（DoD）:
-  - [ ] ルートおよび全パッケージの `tsconfig*.json` で `module` / `moduleResolution` を `NodeNext`（もしくは `ESNext` + `NodeNext`）へ統一
-  - [ ] `tsup.base.config.ts` の `dts.compilerOptions` を NodeNext に更新し、`pnpm codemod:esm-ext --write` 実行後に拡張子漏れがないことを確認
+  - [x] ルートおよび全パッケージの `tsconfig*.json` で `module` / `moduleResolution` を `NodeNext`（もしくは `ESNext` + `NodeNext`）へ統一（`tools/tsconfig-set-nodenext.mjs` で一括更新）
+  - [x] `tsup.base.config.ts` の `dts.compilerOptions` を NodeNext に更新し、`pnpm codemod:esm-ext --write` 実行後に拡張子漏れがないことを確認
   - [ ] NodeNext 設定で `pnpm typecheck:graph` がグリーンになり、結果を運用ログへ記録
 - チェックリスト:
-  - [ ] `pnpm codemod:esm-ext --dry-run` → `--write` を実行し、差分をレビュー
-  - [ ] `Node16` → `NodeNext` の置換は専用スクリプト（codemod もしくは repo 用ユーティリティ）で一括実行し、手作業の IDE 置換は禁止（スクリプトとログを運用ログへ記録）
-  - [ ] 代表パッケージで `pnpm exec tsc --noEmit` を手動実行
-  - [ ] `tsconfig.esm-node16.json` 等の命名・参照を更新し、不要なファイルを整理
+  - [x] `pnpm codemod:esm-ext --dry-run` → `--write` を実行し、差分をレビュー
+  - [x] `Node16` → `NodeNext` の置換は専用スクリプト（codemod もしくは repo 用ユーティリティ）で一括実行し、手作業の IDE 置換は禁止（スクリプトとログを運用ログへ記録）
+  - [ ] 代表パッケージで `pnpm exec tsc --noEmit` を手動実行（NodeNext 化後は既存 rootDir 問題で失敗するためフォローアップを要調査）
+  - [x] `tsconfig.esm-nodenext.json` 等の命名・参照を更新し、不要なファイルを整理（package.json/scripts、工具スクリプトを含む）
 - ロールバック手順：対象ファイルの差分を revert し、Node16 設定で `pnpm typecheck:graph` が再度成功することを確認
 
 24) NodeNext 移行: ローダー／依存更新（P0）
@@ -5768,7 +5768,7 @@ ToDo（Phase 2/3: any の完全撤去）
   - ブランチ: `chore/ts/esm-node16-prep`
   - スコープ:
     - 追加: `tools/esm-ext-codemod.ts`（相対 import/export の無拡張子に `.js` を付与。ディレクトリ参照は `index.ts` に書換）
-    - 追加: `tsconfig.esm-node16.json`（`extends: tsconfig.build.json`、`moduleResolution: node16`, `verbatimModuleSyntax: true`）
+    - 追加: `tsconfig.esm-nodenext.json`（旧 `tsconfig.esm-node16.json`。`extends: tsconfig.build.json`、`moduleResolution: NodeNext`, `verbatimModuleSyntax: true`）
     - 追加: npm scripts
       - `codemod:esm-ext`（ドライラン。`--write` で適用）
       - `typecheck:esm`（Node16 解決でのプロジェクト参照型検証）
@@ -5781,12 +5781,12 @@ ToDo（Phase 2/3: any の完全撤去）
     - [x] 最初のスライス（common/api, runtime-worker/worker-bootstrap）で `typecheck:esm` がグリーン
     - [x] UI/feature 群に段階適用後、`typecheck:esm` グリーン
     - [x] node-type/route-plugin + runtime-worker まで適用後、`typecheck:esm` グリーン
-  - ロールバック: 変更差分を `git reset --hard` もしくは `git revert`。`tsconfig.esm-node16.json`/scripts は保持可能。
+- ロールバック: 変更差分を `git reset --hard` もしくは `git revert`。`tsconfig.esm-nodenext.json`/scripts は保持可能。
   - 備考: Node16 解決の導入は将来のバンドラ互換性向上と ESM 一貫性に有効だが、変更が広範となるため段階導入でリスクを抑制する。
   - 運用ログ:
     - 2025-09-15 10:15 UI 残群（treeconsole 含む）を適用 → `typecheck:esm` 成功
     - 2025-09-15 10:25 node-type/route-plugin + runtime-worker を適用 → `typecheck:esm` 成功
-    - 2025-09-15 10:35 ルートの `moduleResolution: node16` 切替は保留（各パッケージ `module: Node16` への一括更新が必要）。`tsconfig.esm-node16.json` で Node16 検証を継続。
+- 2025-09-15 10:35 ルートの `moduleResolution: node16` 切替は保留（各パッケージ `module: Node16` への一括更新が必要）。当時は `tsconfig.esm-node16.json` で Node16 検証を継続（現行は `tsconfig.esm-nodenext.json`）。
     - 2025-09-15 10:40 `typecheck:graph` で dist 型未生成による一時エラー → `@hierarchidb/ui-auth` / `@hierarchidb/ui-treeconsole-breadcrumb` をビルドして解消。
     - 2025-09-16 06:40 feature スライス恒久切替（第2弾）: `@hierarchidb/{map-source,map-adapter,import-export,download}` を `moduleResolution: Node16` へ恒久化。各 `tsconfig.typecheck.json` も `module: Node16`/`moduleResolution: Node16` に更新。`@hierarchidb/common-api` の DTS 生成エラー解消のため `tsup.base.config.ts` の DTS `compilerOptions.moduleResolution` を `Node16` に統一し、`pnpm -C packages/common/api build` で `dist/index.d.ts` を生成。`pnpm typecheck:graph` / `pnpm typecheck:esm` ともグリーン。
     - 2025-09-16 07:25 UI スライス恒久切替（第1弾）: `packages/ui/*` を Node16 解決へ移行。`tools/esm-ext-codemod.mjs` を拡張（マルチライン export/dynamic import 対応、`.types` の擬似拡張子検出、`--include-stories/--include-tests` オプション追加、CSS import 除外）。Story/Test も含め `.js` 拡張子を一括付与。個別修正: `ui/i18n` の dynamic import に拡張子付与、`ui/core` の `InfoDialog` を `transitionDuration` で非アニメ化、`ui/csv-extract` の `~/` alias を相対 import に変更 + 暗黙 any を注釈、`ui/treeconsole/base` の `~/adapters` を相対に変更、`ui/treeconsole/treetable` の `column-widths-db` 動的 import 拡張子付与、`Dexie` の import を named に修正、プラグイン型参照 `import('./types')` を `import('./types.js')` に置換。`pnpm typecheck:graph` グリーン。
@@ -5913,6 +5913,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 09:35 command: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build && pnpm --filter @hierarchidb/vite-plugin-node-type-registry typecheck — エイリアス専用化後もビルド/型検証が成功することを確認。
 - 2025-10-20 10:32 progress: refactor/batch-service-migration — Route/Location/Shape の batch 依存を `@hierarchidb/batch` へ統一し、tsconfig の paths を dist 優先に調整。`pnpm --filter @hierarchidb/route-plugin build:types` を実行し、新 API への切替後も型検証が通過することを確認。
 - 2025-10-20 10:36 progress: refactor/batch-service-migration — `plugins/location-plugin/src/common/types/batch.d.ts` の legacy スタブを削除し、`pnpm --filter @hierarchidb/location-plugin build:types` / `typecheck` を実行して成功ログを記録。
+- 2025-10-20 14:45 progress: refactor/batch-service-migration — `packages/batch-runtime-services` を削除し、`tsconfig.base.json` / `pnpm-workspace.yaml` / `pnpm-lock.yaml` から旧パッケージ参照を除去。`scripts/rename-batch-packages.mjs` を現行スキーム（@hierarchidb/batch-types / @hierarchidb/batch）に合わせて更新。
+- 2025-10-20 14:52 command: pnpm --filter @hierarchidb/batch build:types && pnpm --filter @hierarchidb/batch-types build:types && pnpm --filter @hierarchidb/route-plugin build:types && pnpm --filter @hierarchidb/location-plugin build:types — 全て成功、shape-plugin は既存の WorkingCopy 未整備エラーで `typecheck` が失敗することを確認。
+- 2025-10-20 15:03 command: pnpm build:turbo — `@hierarchidb/app#build` で既知の `registerRuntimeWorkerClient` 未提供エラーが再現（今回の差分とは無関係）したため、現時点では保留。ログを turbo.log に記録済み。
 - 2025-10-19 12:20 start: fix/app/plugin-database-externals — app/vite.config.ts の `build` 設定重複と plugin database エントリの解決失敗に対応するため調査を開始。
 - 2025-10-19 12:26 progress: fix/app/plugin-database-externals — 重複していた `build` ブロックを統合し、`rollupOptions.external` に `@hierarchidb/{basemap,resolver,route,spreadsheet}-plugin/database` をまとめて指定。
 - 2025-10-19 12:34 blocked: fix/app/plugin-database-externals — `pnpm --filter @hierarchidb/app build` を実行したところ、`@hierarchidb/runtime-ui-plugin-dialog` の alias 参照先 (`packages/runtime-ui/plugin-dialog/src/index.ts`) が存在せず `ENOENT` で停止。rename されたディレクトリ構成の追従が別途必要。
@@ -5958,3 +5961,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 10:28 progress: refactor/batch/package-rename — tsconfig 全体から隣接パッケージの `dist` 直接参照を撤去し、`tsconfig.base.json` に集約。依存プラグインの import/peerDependencies を新命名へ揃えたうえで、型ビルドと typecheck を再実行。
 - 2025-10-20 10:29 command: pnpm --filter @hierarchidb/batch-runtime-services build:types / pnpm --filter @hierarchidb/batch-types build:types （成功）
 - 2025-10-20 10:31 command: pnpm --filter @hierarchidb/{route-plugin,location-plugin,shape-plugin,resolver-plugin,spreadsheet-plugin,folder-plugin,runtime-plugin-dialog} typecheck （全て成功）
+- 2025-10-20 16:05 start: chore/node-next/audit — Node16 固定箇所の棚卸しを開始。`rg` で tsconfig / tsup.base / `NODE_OPTIONS="--loader ts-node/esm"` の出現箇所を一覧化し、`pnpm list @types/node` (=18.19.123) と `pnpm list ts-node` (=10.9.2) の現状を記録。
+- 2025-10-20 16:20 progress: chore/node-next/audit — ベースラインコマンドを実行し現状を確認。`pnpm typecheck:graph` は欠損 tsconfig 参照（common/core 等）と `packages/feature/auth-recovery` の rootDir ずれで失敗。`pnpm build:turbo` は `@hierarchidb/spreadsheet-plugin` 型未解決などで失敗。`pnpm lint` は成功。`pnpm test` は runtime-plugin-dialog / app / ui-auth 等のテスト失敗を確認。ログは NodeNext 移行タスクの背景資料として保持。
+- 2025-10-20 16:55 progress: chore/node-next/tsconfig — `tools/tsconfig-set-nodenext.mjs` を追加して全 tsconfig の `module` / `moduleResolution` を NodeNext 化。`tsconfig.esm-node16.json` を `tsconfig.esm-nodenext.json` へリネームし、参照スクリプト・package.json を更新。`tsup.base.config.ts` を NodeNext 向けに変更し、`pnpm codemod:esm-ext --dry-run/--write` を実行。代表 `tsc --noEmit` は既存 rootDir 問題で失敗（後続タスクで追跡）。

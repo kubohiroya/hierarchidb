@@ -11,7 +11,9 @@
     "declaration": true,
     "declarationMap": true,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"
@@ -29,10 +31,20 @@
     "**/*.test.tsx"
   ],
   "references": [
-    { "path": "../../packages/common/types/tsconfig.build.json" },
-    { "path": "../../packages/common/api/tsconfig.build.json" },
-    { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
-    { "path": "../../packages/runtime/basic-info/tsconfig.build.json" },
-    { "path": "../../packages/plugin-runtime-services/tsconfig.build.json" }
+    {
+      "path": "../../packages/common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/runtime/basic-info/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/plugin-runtime-services/tsconfig.build.json"
+    }
   ]
 }

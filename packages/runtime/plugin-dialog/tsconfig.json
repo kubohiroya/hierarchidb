@@ -19,7 +19,9 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"
