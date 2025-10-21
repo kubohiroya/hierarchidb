@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-import path from 'path';
-
-const require = createRequire(import.meta.url);
+import * as path from 'path';
 
 type LicenseCheckerInit = (
   opts: Record<string, any>,
@@ -21,7 +18,8 @@ async function main() {
   // license-checker is CJS; load via createRequire
   let checker: { init: LicenseCheckerInit };
   try {
-    checker = require('license-checker');
+    const mod = await import('license-checker');
+    checker = (mod.default ?? mod) as { init: LicenseCheckerInit };
   } catch (err) {
     console.error('[licenses] Failed to load license-checker. Ensure it is installed.');
     console.error(String(err));

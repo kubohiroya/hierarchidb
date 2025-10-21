@@ -49,7 +49,10 @@
   "tsup": {
     "external": [
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
+      "comlink",
       "react",
       "react-dom"
     ]

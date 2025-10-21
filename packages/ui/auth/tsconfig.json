@@ -13,7 +13,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/ui/auth/src/*"
+        "./src/*"
       ]
     },
     "types": [

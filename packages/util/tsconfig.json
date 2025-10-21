@@ -11,9 +11,12 @@
     "isolatedModules": true,
     "rootDir": "src",
     "outDir": "dist",
+    "types": [
+      "node"
+    ],
     "paths": {
       "~/*": [
-        "packages/util/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

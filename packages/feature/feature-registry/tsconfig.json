@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "paths": {
       "~/*": [
-        "packages/feature/feature-registry/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext"

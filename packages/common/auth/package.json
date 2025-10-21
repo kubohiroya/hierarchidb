@@ -39,12 +39,14 @@
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "prebuild:bundle": "pnpm run build:types"
   },
-  "dependencies": {
+  "dependencies": {},
+  "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/common-types": "workspace:*"
   },
   "keywords": [
     "hierarchidb",
@@ -60,5 +62,11 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*"
+    ]
   }
 }

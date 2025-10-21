@@ -70,12 +70,30 @@
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
       "@emotion/styled",
+      "@emotion/styled/*",
+      "@hierarchidb/common-auth",
+      "@hierarchidb/common-auth/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
+      "@react-oauth/google",
+      "@react-oauth/google/*",
       "@tanstack/react-router",
+      "@tanstack/react-router/*",
+      "@types/react-gravatar",
+      "@types/react-gravatar/*",
+      "@vitejs/plugin-react",
+      "@vitejs/plugin-react/*",
+      "i18next",
+      "oidc-client-ts",
       "react",
-      "react-dom"
+      "react-dom",
+      "react-gravatar",
+      "react-i18next",
+      "react-oidc-context"
     ]
   }
 }

@@ -48,9 +48,18 @@
   "license": "MIT",
   "tsup": {
     "external": [
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/runtime-client",
+      "@hierarchidb/runtime-client/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
-      "react"
+      "@mui/material/*",
+      "react",
+      "react-virtuoso"
     ]
   }
 }

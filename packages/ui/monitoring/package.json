@@ -42,9 +42,15 @@
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
-      "react"
+      "@mui/material/*",
+      "react",
+      "recharts"
     ]
   }
 }

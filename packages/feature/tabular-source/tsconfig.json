@@ -9,7 +9,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/feature/tabular-source/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext"

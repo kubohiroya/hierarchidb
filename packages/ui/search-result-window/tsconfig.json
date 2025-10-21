@@ -8,10 +8,7 @@
     ],
     "paths": {
       "~/*": [
-        "packages/ui/search-result-window/src/*"
-      ],
-      "~/*.js": [
-        "packages/ui/search-result-window/src/*.ts"
+        "./src/*"
       ]
     },
     "composite": false,

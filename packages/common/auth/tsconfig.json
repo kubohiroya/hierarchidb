@@ -14,13 +14,16 @@
     "rootDir": "src",
     "isolatedModules": false,
     "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/common/auth/src/*"
+        "./src/*"
       ]
     }
   },

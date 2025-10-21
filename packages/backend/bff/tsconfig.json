@@ -6,7 +6,7 @@
     "noImplicitAny": false,
     "paths": {
       "~/*": [
-        "packages/backend/bff/src/*"
+        "./src/*"
       ]
     },
     "skipLibCheck": true,

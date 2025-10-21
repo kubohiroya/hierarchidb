@@ -13,13 +13,14 @@
     ],
     "paths": {
       "~/*": [
-        "packages/tools/analyze-licenses/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

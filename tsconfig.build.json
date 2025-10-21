@@ -11,19 +11,10 @@
       "path": "./packages/common/api"
     },
     {
-      "path": "./packages/common/core/tsconfig.typecheck.json"
-    },
-    {
       "path": "./packages/common/auth/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/feature/feature-registry/tsconfig.typecheck.json"
-    },
-    {
-      "path": "./packages/runtime-shared/batch-processor/tsconfig.typecheck.json"
-    },
-    {
-      "path": "./packages/feature/table-metadata/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/feature/download/tsconfig.typecheck.json"
@@ -53,16 +44,10 @@
       "path": "./packages/feature/route-resolver/tsconfig.typecheck.json"
     },
     {
-      "path": "./packages/plugins/route-plugin/tsconfig.typecheck.json"
-    },
-    {
       "path": "./packages/runtime/worker/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/runtime/client/tsconfig.typecheck.json"
-    },
-    {
-      "path": "./packages/ui/core/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/ui/dialog/tsconfig.typecheck.json"
@@ -72,9 +57,6 @@
     },
     {
       "path": "./packages/ui/icon/tsconfig.typecheck.json"
-    },
-    {
-      "path": "./packages/ui/date/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/ui/theme/tsconfig.typecheck.json"
@@ -111,9 +93,6 @@
     },
     {
       "path": "./packages/ui/map/tsconfig.typecheck.json"
-    },
-    {
-      "path": "./packages/ui/import-export/tsconfig.typecheck.json"
     },
     {
       "path": "./packages/ui/tabular-extract/tsconfig.typecheck.json"

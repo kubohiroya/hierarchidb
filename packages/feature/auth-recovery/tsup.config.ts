@@ -1,9 +1,11 @@
-import { defineConfig } from 'tsup';
+import { createTsupConfig } from '../../../tsup.base.config.js';
 
-export default defineConfig({
+export default createTsupConfig({
   entry: ['src/index.ts'],
-  format: ['esm'],
-  sourcemap: true,
-  dts: true,
-  clean: true,
+  external: [
+    '@hierarchidb/common-auth',
+    '@hierarchidb/common-auth/*',
+    '@hierarchidb/util',
+    '@hierarchidb/util/*',
+  ],
 });

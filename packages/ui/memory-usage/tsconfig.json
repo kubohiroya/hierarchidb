@@ -8,7 +8,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/ui/memory-usage/src/*"
+        "./src/*"
       ]
     },
     "lib": [

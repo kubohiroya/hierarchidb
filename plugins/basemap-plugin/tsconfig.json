@@ -16,7 +16,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "plugins/basemap-plugin/src/*"
+        "./src/*"
       ]
     }
   },

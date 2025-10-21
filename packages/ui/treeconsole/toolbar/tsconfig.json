@@ -12,7 +12,7 @@
     ],
     "paths": {
       "~/*": [
-        "packages/ui/treeconsole/toolbar/src/*"
+        "./src/*"
       ]
     },
     "lib": [

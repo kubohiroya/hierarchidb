@@ -38,6 +38,7 @@
   "tsup": {
     "external": [
       "@mui/material",
+      "@mui/material/*",
       "react"
     ]
   }

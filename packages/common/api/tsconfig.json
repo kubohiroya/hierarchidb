@@ -20,7 +20,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/common/api/src/*"
+        "./src/*"
       ]
     }
   },

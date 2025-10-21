@@ -2,20 +2,20 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
   external: [
-    'provider',
-    'provider-dom',
-    // peer libs
-    'comlink',
-    'dexie',
-    // UI peers
-    'react',
-    'react-dom',
-    '@mui/material',
-    '@mui/icons-material',
     '@emotion/provider',
     '@emotion/styled',
-    "@hierarchidb/common-types",
-    "@hierarchidb/common-api",
-    "@hierarchidb/runtime-worker"
-  ],
-});
+    '@hierarchidb/common-api',
+    '@hierarchidb/common-api/*',
+    '@hierarchidb/common-types',
+    '@hierarchidb/common-types/*',
+    '@hierarchidb/runtime-worker',
+    '@hierarchidb/runtime-worker/*',
+    '@mui/icons-material',
+    '@mui/material',
+    'comlink',
+    'dexie',
+    'provider',
+    'provider-dom',
+    'react',
+    'react-dom',
+  ],});

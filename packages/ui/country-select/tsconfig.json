@@ -8,7 +8,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/ui/country-select/src/*"
+        "./src/*"
       ]
     },
     "lib": [

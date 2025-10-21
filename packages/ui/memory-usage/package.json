@@ -43,5 +43,16 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "@hierarchidb/util": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
+      "@mui/icons-material",
+      "@mui/icons-material/*",
+      "@mui/material",
+      "@mui/material/*",
+      "react"
+    ]
   }
 }

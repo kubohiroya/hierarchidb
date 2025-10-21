@@ -34,6 +34,10 @@
     "dexie": "^4.2.0"
   },
   "tsup": {
-    "external": []
+    "external": [
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
+      "dexie"
+    ]
   }
 }

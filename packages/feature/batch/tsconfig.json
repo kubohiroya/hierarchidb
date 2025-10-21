@@ -6,6 +6,9 @@
     "declaration": true,
     "composite": false,
     "moduleResolution": "NodeNext",
+    "types": [
+      "node"
+    ],
     "jsx": "react-jsx",
     "module": "NodeNext"
   },

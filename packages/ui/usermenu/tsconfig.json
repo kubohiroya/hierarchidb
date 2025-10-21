@@ -6,7 +6,7 @@
     "skipLibCheck": true,
     "paths": {
       "~/*": [
-        "packages/ui/usermenu/src/*"
+        "./src/*"
       ]
     },
     "types": [

@@ -10,7 +10,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/ui/dialog/src/*"
+        "./src/*"
       ]
     },
     "lib": [

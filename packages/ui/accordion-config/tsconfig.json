@@ -10,7 +10,7 @@
     "declarationMap": true,
     "paths": {
       "~/*": [
-        "packages/ui/accordion-config/src/*"
+        "./src/*"
       ]
     },
     "lib": [

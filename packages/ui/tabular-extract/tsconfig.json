@@ -4,7 +4,7 @@
     "outDir": "./dist",
     "paths": {
       "~/*": [
-        "packages/ui/tabular-extract/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx",

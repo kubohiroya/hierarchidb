@@ -9,7 +9,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/feature/route-searoute/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext"

@@ -53,7 +53,9 @@
   "tsup": {
     "external": [
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
       "react"
     ]
   }

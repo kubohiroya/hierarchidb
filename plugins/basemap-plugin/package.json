@@ -160,22 +160,54 @@
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build"]
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build"
+        ]
       },
       "build:types": {
-        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build:types"]
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:types"
+        ]
       },
       "build:bundle": {
-        "dependsOn": ["@hierarchidb/runtime-plugin-dialog#build:bundle"]
+        "dependsOn": [
+          "@hierarchidb/runtime-plugin-dialog#build:bundle"
+        ]
       }
     }
   },
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
       "@emotion/styled",
+      "@emotion/styled/*",
+      "@hierarchidb/common-api",
+      "@hierarchidb/common-api/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/folder-plugin",
+      "@hierarchidb/folder-plugin/*",
+      "@hierarchidb/plugin-runtime-services",
+      "@hierarchidb/plugin-runtime-services/*",
+      "@hierarchidb/plugin-types",
+      "@hierarchidb/plugin-types/*",
+      "@hierarchidb/plugin-ui-sdk",
+      "@hierarchidb/plugin-ui-sdk/*",
+      "@hierarchidb/runtime-plugin-dialog",
+      "@hierarchidb/runtime-plugin-dialog/*",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-worker/*",
+      "@hierarchidb/ui-data-grid",
+      "@hierarchidb/ui-data-grid/*",
+      "@hierarchidb/ui-map",
+      "@hierarchidb/ui-map/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
       "dexie",
       "react"
     ]

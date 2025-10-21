@@ -17,7 +17,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "plugins/spreadsheet-plugin/src/*"
+        "./src/*"
       ]
     }
   },

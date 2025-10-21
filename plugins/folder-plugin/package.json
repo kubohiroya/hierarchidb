@@ -155,11 +155,41 @@
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
       "@emotion/styled",
+      "@emotion/styled/*",
+      "@hierarchidb/common-api",
+      "@hierarchidb/common-api/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/components",
+      "@hierarchidb/components/*",
+      "@hierarchidb/plugin-types",
+      "@hierarchidb/plugin-types/*",
+      "@hierarchidb/plugin-ui-sdk",
+      "@hierarchidb/plugin-ui-sdk/*",
+      "@hierarchidb/runtime-basic-info",
+      "@hierarchidb/runtime-basic-info/*",
+      "@hierarchidb/runtime-client",
+      "@hierarchidb/runtime-client/*",
+      "@hierarchidb/runtime-plugin-dialog",
+      "@hierarchidb/runtime-plugin-dialog/*",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-worker/*",
+      "@hierarchidb/tag",
+      "@hierarchidb/tag/*",
+      "@hierarchidb/ui-dialog",
+      "@hierarchidb/ui-dialog/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
       "dexie",
-      "react"
+      "i18next",
+      "react",
+      "react-i18next"
     ]
   }
 }

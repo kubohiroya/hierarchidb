@@ -15,7 +15,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/ui/i18n/src/*"
+        "./src/*"
       ]
     },
     "tsBuildInfoFile": "./dist/.tsbuildinfo",

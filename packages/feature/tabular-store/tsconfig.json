@@ -8,7 +8,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/feature/tabular-store/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext",

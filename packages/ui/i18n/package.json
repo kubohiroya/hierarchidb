@@ -59,13 +59,21 @@
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
       "@emotion/styled",
+      "@emotion/styled/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
-      "react",
+      "@mui/material/*",
+      "@mui/x-date-pickers",
+      "@mui/x-date-pickers/*",
+      "date-fns",
+      "i18next",
       "i18next-browser-languagedetector",
       "i18next-http-backend",
-      "date-fns"
+      "react",
+      "react-i18next"
     ]
   }
 }

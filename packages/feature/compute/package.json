@@ -27,5 +27,11 @@
   "devDependencies": {
     "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/util",
+      "@hierarchidb/util/*"
+    ]
   }
 }

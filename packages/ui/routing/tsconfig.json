@@ -20,7 +20,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/ui/routing/src/*"
+        "./src/*"
       ]
     }
   },

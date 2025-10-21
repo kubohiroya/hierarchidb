@@ -9,7 +9,7 @@
     "skipLibCheck": false,
     "paths": {
       "~/*": [
-        "packages/plugin-ui-sdk/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext",

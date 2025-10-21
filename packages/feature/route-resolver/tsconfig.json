@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "paths": {
       "~/*": [
-        "packages/feature/route-resolver/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext"

@@ -75,6 +75,12 @@
   },
   "tsup": {
     "external": [
+      "@hierarchidb/common-api",
+      "@hierarchidb/common-api/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-worker/*",
       "comlink",
       "react",
       "react-dom"

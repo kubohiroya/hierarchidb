@@ -9,5 +9,5 @@ export default createTsupConfig({
   },
   external: [
     '@hierarchidb/common-types',
-  ],
-});
+    '@hierarchidb/common-types/*',
+  ],});

@@ -8,7 +8,7 @@
     "skipLibCheck": false,
     "paths": {
       "~/*": [
-        "packages/plugin-runtime-services/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext",

@@ -8,7 +8,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/feature/tag/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx",

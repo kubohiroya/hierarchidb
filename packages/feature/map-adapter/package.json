@@ -35,6 +35,10 @@
   },
   "tsup": {
     "external": [
+      "@hierarchidb/map-source",
+      "@hierarchidb/map-source/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "deck.gl",
       "maplibre-gl"
     ]

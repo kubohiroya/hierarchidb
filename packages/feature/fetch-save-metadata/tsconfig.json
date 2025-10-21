@@ -9,14 +9,15 @@
     ],
     "skipLibCheck": true,
     "lib": [
-      "ES2022"
+      "ES2022",
+      "DOM"
     ],
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/feature/fetch-save-metadata/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

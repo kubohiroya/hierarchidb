@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "paths": {
       "~/*": [
-        "packages/feature/map-source/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx",

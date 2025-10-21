@@ -8,7 +8,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/feature/tabular-source-xlsx/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx",

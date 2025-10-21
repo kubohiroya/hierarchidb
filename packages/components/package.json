@@ -52,9 +52,21 @@
   },
   "tsup": {
     "external": [
+      "@emotion/react",
+      "@emotion/react/*",
+      "@emotion/styled",
+      "@emotion/styled/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
-      "react"
+      "@mui/material/*",
+      "@tanstack/react-router",
+      "@tanstack/react-router/*",
+      "react",
+      "react-dom",
+      "react-virtuoso"
     ]
   }
 }

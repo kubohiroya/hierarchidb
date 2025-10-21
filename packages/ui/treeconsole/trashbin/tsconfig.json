@@ -9,7 +9,7 @@
     ],
     "paths": {
       "~/*": [
-        "packages/ui/treeconsole/trashbin/src/*"
+        "./src/*"
       ]
     },
     "lib": [

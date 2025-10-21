@@ -52,12 +52,16 @@
   },
   "tsup": {
     "external": [
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
-      "react-draggable",
-      "react-resizable",
+      "@mui/material/*",
       "react",
-      "react-dom"
+      "react-dom",
+      "react-draggable",
+      "react-resizable"
     ]
   }
 }

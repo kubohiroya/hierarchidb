@@ -16,7 +16,7 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "paths": {
       "~/*": [
-        "packages/ui/treeconsole/breadcrumb/src/*"
+        "./src/*"
       ]
     }
   },

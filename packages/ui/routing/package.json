@@ -60,9 +60,15 @@
   "tsup": {
     "external": [
       "@emotion/react",
+      "@emotion/react/*",
       "@emotion/styled",
+      "@emotion/styled/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
+      "@tanstack/react-router",
+      "@tanstack/react-router/*",
       "react",
       "react-dom"
     ]

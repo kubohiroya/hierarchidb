@@ -42,5 +42,17 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/auth-recovery",
+      "@hierarchidb/auth-recovery/*",
+      "@hierarchidb/common-api",
+      "@hierarchidb/common-api/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/download",
+      "@hierarchidb/download/*"
+    ]
   }
 }

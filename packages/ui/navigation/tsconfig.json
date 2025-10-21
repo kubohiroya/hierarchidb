@@ -15,7 +15,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/ui/navigation/src/*"
+        "./src/*"
       ]
     }
   },

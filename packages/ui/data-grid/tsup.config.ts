@@ -2,12 +2,17 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 export default createTsupConfig({
   external: [
-    'react',
-    '@mui/material',
-    '@mui/icons-material',
-    '@tanstack/react-virtual',
     '@hierarchidb/common-types',
-    '@hierarchidb/util',
+    '@hierarchidb/common-types/*',
     '@hierarchidb/tabular-store',
-  ],
-});
+    '@hierarchidb/tabular-store/*',
+    '@hierarchidb/util',
+    '@hierarchidb/util/*',
+    '@mui/icons-material',
+    '@mui/icons-material/*',
+    '@mui/material',
+    '@mui/material/*',
+    '@tanstack/react-virtual',
+    '@tanstack/react-virtual/*',
+    'react',
+  ],});

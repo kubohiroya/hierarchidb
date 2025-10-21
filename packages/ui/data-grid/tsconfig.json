@@ -5,7 +5,7 @@
     "rootDir": "./src",
     "paths": {
       "~/*": [
-        "packages/ui/data-grid/src/*"
+        "./src/*"
       ]
     },
     "composite": true,

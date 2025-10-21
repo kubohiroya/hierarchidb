@@ -15,4 +15,10 @@ export default createTsupConfig({
     ports: 'src/ports.ts',
     registry: 'src/registry.ts',
   },
+  external: [
+    '@hierarchidb/common-types',
+    '@hierarchidb/common-types/*',
+    '@hierarchidb/util',
+    '@hierarchidb/util/*'
+  ],
 });

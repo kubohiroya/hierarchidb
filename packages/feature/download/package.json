@@ -32,5 +32,16 @@
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/auth-recovery",
+      "@hierarchidb/auth-recovery/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
+      "@noble/hashes",
+      "@noble/hashes/*",
+      "dexie"
+    ]
   }
 }

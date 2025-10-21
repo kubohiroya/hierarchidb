@@ -2,12 +2,14 @@ import { createTsupConfig } from '../../tsup.base.config.js';
 
 // Align with monorepo defaults and emit .d.ts files
 export default createTsupConfig({
-  // Base plugin is framework-only; keep peer deps external to avoid bundling duplicates
-  external: [
-    'dexie', 'react',
-  "@hierarchidb/common-types",
-  "@hierarchidb/common-api",
-  "@hierarchidb/batch-types",
-  "@hierarchidb/runtime-worker"
-],
-});
+  // Base plugin is framework-only; keep peer deps external: [
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/batch-types',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/batch-types/*',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/common-api',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/common-api/*',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/common-types',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/common-types/*',
+  // Base plugin is framework-only; keep peer deps   '@hierarchidb/runtime-worker',
+  // Base plugin is framework-only; keep peer deps   'dexie',
+  // Base plugin is framework-only; keep peer deps   'react',
+  // Base plugin is framework-only; keep peer deps ],});

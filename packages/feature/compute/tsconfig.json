@@ -9,7 +9,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "packages/feature/compute/src/*"
+        "./src/*"
       ]
     },
     "module": "NodeNext"

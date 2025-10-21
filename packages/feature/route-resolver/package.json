@@ -30,7 +30,8 @@
   },
   "tsup": {
     "external": [
-      "@webgpu/types"
+      "@webgpu/types",
+      "@webgpu/types/*"
     ]
   }
 }

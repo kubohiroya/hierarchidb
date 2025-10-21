@@ -51,6 +51,12 @@
   },
   "tsup": {
     "external": [
+      "@hierarchidb/batch-types",
+      "@hierarchidb/batch-types/*",
+      "@hierarchidb/common-api",
+      "@hierarchidb/common-api/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
       "dexie",
       "react"
     ]

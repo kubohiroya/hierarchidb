@@ -15,17 +15,24 @@
     "clean": "rm -rf dist",
     "dev": "tsup --watch"
   },
-  "dependencies": {
-    "@hierarchidb/download": "workspace:*"
-  },
+  "dependencies": {},
   "peerDependencies": {
-    "dexie": ">=4.0.0"
+    "dexie": ">=4.0.0",
+    "@hierarchidb/download": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*",
     "dexie": "^4.2.0",
     "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/download",
+      "@hierarchidb/download/*",
+      "dexie"
+    ]
   }
 }

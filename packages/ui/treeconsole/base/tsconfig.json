@@ -15,7 +15,7 @@
     ],
     "paths": {
       "~/*": [
-        "packages/ui/treeconsole/base/src/*"
+        "./src/*"
       ]
     },
     "jsxImportSource": "react",

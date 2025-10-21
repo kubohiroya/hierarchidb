@@ -167,27 +167,56 @@
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build"]
+        "dependsOn": [
+          "@hierarchidb/spreadsheet-plugin#build"
+        ]
       },
       "build:types": {
-        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build:types"]
+        "dependsOn": [
+          "@hierarchidb/spreadsheet-plugin#build:types"
+        ]
       },
       "build:bundle": {
-        "dependsOn": ["@hierarchidb/spreadsheet-plugin#build:bundle"]
+        "dependsOn": [
+          "@hierarchidb/spreadsheet-plugin#build:bundle"
+        ]
       }
     }
   },
   "tsup": {
     "external": [
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/components",
+      "@hierarchidb/components/*",
+      "@hierarchidb/folder-plugin",
+      "@hierarchidb/folder-plugin/*",
+      "@hierarchidb/plugin-ui-sdk",
+      "@hierarchidb/plugin-ui-sdk/*",
+      "@hierarchidb/runtime-basic-info",
+      "@hierarchidb/runtime-basic-info/*",
+      "@hierarchidb/runtime-plugin-dialog",
+      "@hierarchidb/runtime-plugin-dialog/*",
+      "@hierarchidb/runtime-ui-plugin-dialog",
+      "@hierarchidb/runtime-worker",
+      "@hierarchidb/runtime-worker/*",
+      "@hierarchidb/spreadsheet-plugin",
+      "@hierarchidb/spreadsheet-plugin/*",
+      "@hierarchidb/tabular-store",
+      "@hierarchidb/tabular-store/*",
+      "@hierarchidb/ui-tabular-extract",
+      "@hierarchidb/ui-tabular-extract/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*",
       "@mui/icons-material",
+      "@mui/icons-material/*",
       "@mui/material",
+      "@mui/material/*",
       "dexie",
       "i18next",
       "react",
       "react-dom",
-      "react-i18next",
-      "@hierarchidb/runtime-ui-plugin-dialog",
-      "@hierarchidb/spreadsheet-plugin"
+      "react-i18next"
     ]
   }
 }

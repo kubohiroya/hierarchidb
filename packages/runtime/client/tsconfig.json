@@ -9,7 +9,7 @@
     "declarationDir": "./dist",
     "paths": {
       "~/*": [
-        "packages/runtime/client/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx"

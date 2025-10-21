@@ -24,5 +24,13 @@
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/util": "workspace:*"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/common-auth",
+      "@hierarchidb/common-auth/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*"
+    ]
   }
 }

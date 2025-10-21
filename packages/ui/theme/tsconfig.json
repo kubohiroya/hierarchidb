@@ -11,7 +11,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "packages/ui/theme/src/*"
+        "./src/*"
       ]
     },
     "lib": [

@@ -1,4 +1,6 @@
 import { defineConfig, Options } from 'tsup';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 /**
  * Base tsup configuration for all packages
@@ -45,6 +47,28 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
     };
   }
 
+  let peerDeps: string[] = [];
+  try {
+    const pkgJsonPath = path.resolve(process.cwd(), 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as {
+      peerDependencies?: Record<string, unknown>;
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+    };
+    if (pkg.peerDependencies) {
+      peerDeps = Object.entries(pkg.peerDependencies)
+        .filter(([name]) => {
+          const meta = pkg.peerDependenciesMeta?.[name];
+          return meta?.optional !== true;
+        })
+        .map(([name]) => name);
+    }
+  } catch (error) {
+    // Fallback to no peer-derived externals when package.json is unavailable.
+    if (process.env.DEP_FENCE_DEBUG) {
+      console.warn('[tsup.base.config] failed to read peerDependencies:', error);
+    }
+  }
+
   const defaultExternal = [
     'react',
     'react-dom',
@@ -64,7 +88,11 @@ export const createTsupConfig = (options: Partial<Options> = {}): Options => {
   ];
 
   const mergedExternal = Array.from(
-    new Set([...(defaultExternal as string[]), ...((options.external as string[] | undefined) ?? [])])
+    new Set([
+      ...(defaultExternal as string[]),
+      ...peerDeps,
+      ...((options.external as string[] | undefined) ?? []),
+    ])
   );
 
   return defineConfig({

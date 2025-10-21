@@ -7,7 +7,7 @@
     "incremental": true,
     "paths": {
       "~/*": [
-        "packages/ui/tour/src/*"
+        "./src/*"
       ]
     },
     "jsx": "react-jsx",

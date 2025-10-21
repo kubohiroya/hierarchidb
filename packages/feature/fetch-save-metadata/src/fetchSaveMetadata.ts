@@ -1,7 +1,7 @@
-import * as fs from 'fs/promises';
+import { promises as fs } from 'fs';
 import * as path from 'path';
-import {DataSourceFetcher} from './utils/dataSourceFetcher.js';
-import {fetchWithRetry} from '~/utils/fetchWithRetry.js';
+import { DataSourceFetcher } from './utils/dataSourceFetcher.js';
+import { fetchWithRetry } from './utils/fetchWithRetry.js';
 
 /**
  * Save metadata to JSON file
@@ -35,4 +35,3 @@ export async function fetchAndSaveMetadata(
     throw error;
   }
 }
-

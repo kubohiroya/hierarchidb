@@ -58,5 +58,13 @@
     "@hierarchidb/util": "workspace:*",
     "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3"
+  },
+  "tsup": {
+    "external": [
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/util",
+      "@hierarchidb/util/*"
+    ]
   }
 }
