@@ -13,10 +13,9 @@
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/treeconsole/speeddial/src/*"
       ]
     },
     "tsBuildInfoFile": "./dist/.tsbuildinfo"

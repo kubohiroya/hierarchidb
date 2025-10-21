@@ -8,10 +8,9 @@
     "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/route-resolver/src/*"
       ]
     },
     "module": "NodeNext"

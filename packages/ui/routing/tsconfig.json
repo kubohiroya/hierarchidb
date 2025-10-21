@@ -18,10 +18,9 @@
     ],
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/routing/src/*"
       ]
     }
   },

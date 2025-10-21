@@ -2,10 +2,9 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/tabular-extract/src/*"
       ]
     },
     "jsx": "react-jsx",

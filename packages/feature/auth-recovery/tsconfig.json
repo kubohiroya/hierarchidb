@@ -7,10 +7,9 @@
     "outDir": "dist",
     "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/auth-recovery/src/*"
       ]
     },
     "module": "NodeNext"

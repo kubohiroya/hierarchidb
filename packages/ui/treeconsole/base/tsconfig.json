@@ -13,10 +13,9 @@
     "types": [
       "react"
     ],
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/treeconsole/base/src/*"
       ]
     },
     "jsxImportSource": "react",

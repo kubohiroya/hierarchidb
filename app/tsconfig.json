@@ -7,16 +7,9 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-base": [
-        "../packages/ui/treeconsole/base/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-base/*": [
-        "../packages/ui/treeconsole/base/src/*"
+        "app/src/*"
       ]
     },
     "composite": false,

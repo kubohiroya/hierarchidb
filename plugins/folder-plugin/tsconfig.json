@@ -19,8 +19,7 @@
       "node"
     ],
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "baseUrl": "."
+    "moduleResolution": "NodeNext"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

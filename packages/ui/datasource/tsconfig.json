@@ -1,11 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/datasource/src/*"
       ]
     },
     "module": "NodeNext",

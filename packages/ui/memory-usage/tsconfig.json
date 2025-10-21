@@ -5,11 +5,10 @@
     "incremental": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/memory-usage/src/*"
       ]
     },
     "lib": [

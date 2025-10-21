@@ -9,7 +9,7 @@
     ],
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/treeconsole/treetable/src/*"
       ]
     },
     "lib": [
@@ -19,7 +19,6 @@
     "composite": true,
     "incremental": true,
     "noEmit": false,
-    "baseUrl": ".",
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },

@@ -7,10 +7,9 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationDir": "./dist",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/runtime/client/src/*"
       ]
     },
     "jsx": "react-jsx"

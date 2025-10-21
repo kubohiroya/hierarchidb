@@ -11,7 +11,7 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/theme/src/*"
       ]
     },
     "lib": [
@@ -19,7 +19,6 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "baseUrl": ".",
     "module": "NodeNext"
   },
   "include": [

@@ -11,10 +11,9 @@
     "noEmit": false,
     "emitDeclarationOnly": false,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/auth/src/*"
       ]
     },
     "types": [

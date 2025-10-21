@@ -13,10 +13,9 @@
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/i18n/src/*"
       ]
     },
     "tsBuildInfoFile": "./dist/.tsbuildinfo",

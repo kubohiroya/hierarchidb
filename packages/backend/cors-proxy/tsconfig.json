@@ -3,10 +3,9 @@
   "compilerOptions": {
     "composite": false,
     "incremental": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/backend/cors-proxy/src/*"
       ]
     },
     "skipLibCheck": true,

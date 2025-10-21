@@ -27,5 +27,10 @@
     "src/**/*.spec.*",
     "src/**/*.stories.*",
     "src/examples/**"
+  ],
+  "references": [
+    { "path": "../../common/types/tsconfig.build.json" },
+    { "path": "../../common/api/tsconfig.build.json" },
+    { "path": "../../util/tsconfig.build.json" }
   ]
 }

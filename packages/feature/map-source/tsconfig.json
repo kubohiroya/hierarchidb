@@ -8,10 +8,9 @@
     "moduleResolution": "NodeNext",
     "isolatedModules": false,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/map-source/src/*"
       ]
     },
     "jsx": "react-jsx",

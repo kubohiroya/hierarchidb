@@ -3,11 +3,10 @@
   "compilerOptions": {
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
-    "baseUrl": ".",
     "skipLibCheck": true,
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/usermenu/src/*"
       ]
     },
     "types": [

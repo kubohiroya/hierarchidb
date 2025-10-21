@@ -3,7 +3,12 @@
 ## Project Structure & Module Organization
 The workspace relies on `pnpm`. `app/` contains the main UI, with shared documentation in `app/docs/`. Core libraries live in `packages/` (runtime services, UI components, tooling), feature plugins in `plugins/`, and shared assets inside `docs/`, `reports/`, or package-level `dist/`. Tests are colocated: unit suites in `packages/*/src/__tests__/`, worker flows in `packages/runtime-worker/src/e2e/__tests__/`, and Playwright smoke tests in `e2e/`.
 
-- **TypeScript path & references policy (2025-10-20)**: Resolve workspace imports via `src/` wherever possible and keep declaration builds incremental. Do **not** mix `dist/` targets into `tsconfig.base.json`. Instead, rely on project references (`tsconfig.build.json`) to generate `.d.ts` when needed, and wire Turbo `dependsOn: ['^build:types']` for packages that require downstream declarations. Avoid injecting `clean` steps into shared build scripts—trigger them manually if a rebuild is required.
+- **TypeScript path & references policy (2025-10-21, NodeNext 対応版)**
+  - ルートの `tsconfig.base.json` に、ワークスペース alias（例: `@hierarchidb/foo`）を **必ず `src/` 指向で** 定義する。`dist/` 参照は登録しない。
+  - 各パッケージの `tsconfig.json` では、原則として追加の `paths` を持たず、`tsconfig.base.json` の alias をそのまま利用する。暫定対処でローカル `paths` を追加した場合は、依存の `.d.ts` 出力が整い次第速やかに撤去する。
+  - `tsconfig.build.json` では `paths` を空（もしくは最小限）に保ち、代わりに `references` で依存パッケージ（例: `../common/types/tsconfig.build.json`）を明示する。`tsc -b` で依存先の型出力を先に生成し、NodeNext の解決規約に従ってビルド順を保証する。
+  - NodeNext では未生成の `dist/*.d.ts` を `paths` で直接指すと TS7016/TS6305 が即座に発生するため、**build 依存は project references に一本化** する。どうしても暫定で相対パスを追加する場合は、TASKS 運用ログに理由と撤去予定を記録すること。
+  - Turbo 側は従来同様 `dependsOn: ['^build:types']` を設定しつつ、`pnpm typecheck:graph` が NodeNext モードでグリーンになることを DoD とする。必要に応じて `npx tsc -b` で依存チェーンの `.d.ts` を明示的に更新する。
 
 ## Build, Test, and Development Commands
 - `pnpm install --frozen-lockfile` – sync dependencies before editing.
@@ -33,4 +38,6 @@ Work in small, reviewable increments. Document sandbox blockers and attempted al
 - **検証の明示**: 作業完了と主張する際は、成功ログ（コマンド名・終了コード・出力要点）を提示し、未検証の項目があれば理由と今後の案を記載する。
 - **指示再確認**: 重要な指示（初期プロンプト、TASKS.md、個別依頼）は作業前に読み返し、回答直前にも遵守確認を行う。
 - **疑義エスカレーション**: 不明点や仮定を伴う判断が必要な場合は、独断で決定せずにユーザーへ必ず確認を取る。
+- **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。runtime/plugin など別パッケージの `.d.ts` に依存する場合は、明示的に `pipeline.build(:types|:bundle)` を設定し、`prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先行実行する。`tsup` は必要に応じて `clean: false` に設定し、生成済み dist を保持する。
 - **依存タスクの順序制御**: 他パッケージの `.d.ts` を参照するビルドでは、依存先の `build` / `build:types` / `build:bundle` を Turbo で明示し、必要に応じて `prebuild:*` で `pnpm --filter <pkg> build[:types|:bundle]` を実行してから自パッケージの `tsc`/`tsup` を呼び出す。`tsup` が `dist/` を clean しないようにする（`clean: false`）ことも忘れない。
+- **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。`@hierarchidb/*` の `.d.ts` を使うプラグインは、Turbo の `pipeline` や `prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先に呼び出し、さらに `tsup` は `clean: false` に設定して dist を消さないこと。

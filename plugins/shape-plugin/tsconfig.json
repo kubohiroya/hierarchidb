@@ -10,58 +10,9 @@
     "jsx": "react-jsx",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
-      ],
-      "@hierarchidb/plugin-runtime-services": [
-        "../../packages/plugin-runtime-services/dist/index.d.ts",
-        "../../packages/plugin-runtime-services/src/index.ts"
-      ],
-      "@hierarchidb/plugin-runtime-services/*": [
-        "../../packages/plugin-runtime-services/dist/*",
-        "../../packages/plugin-runtime-services/src/*"
-      ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "../../packages/runtime/plugin-dialog/dist/index.d.ts",
-        "../../packages/runtime/plugin-dialog/src/index.ts"
-      ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "../../packages/runtime/plugin-dialog/dist/*",
-        "../../packages/runtime/plugin-dialog/src/*"
-      ],
-      "@hierarchidb/plugin-ui-sdk": [
-        "../../packages/plugin-ui-sdk/dist/index.d.ts",
-        "../../packages/plugin-ui-sdk/src/index.ts"
-      ],
-      "@hierarchidb/plugin-ui-sdk/*": [
-        "../../packages/plugin-ui-sdk/dist/*",
-        "../../packages/plugin-ui-sdk/src/*"
-      ],
-      "@hierarchidb/runtime-worker": [
-        "../../packages/runtime/worker/dist/index.d.ts",
-        "../../packages/runtime/worker/src/index.ts"
-      ],
-      "@hierarchidb/runtime-worker/*": [
-        "../../packages/runtime/worker/dist/*",
-        "../../packages/runtime/worker/src/*"
-      ],
-      "@hierarchidb/runtime-basic-info": [
-        "../../packages/runtime/basic-info/dist/index.d.ts",
-        "../../packages/runtime/basic-info/src/index.ts"
-      ],
-      "@hierarchidb/runtime-basic-info/*": [
-        "../../packages/runtime/basic-info/dist/*",
-        "../../packages/runtime/basic-info/src/*"
-      ],
-      "@hierarchidb/download": [
-        "../../packages/feature/download/dist/index.d.ts",
-        "../../packages/feature/download/src/index.ts"
-      ],
-      "@hierarchidb/download/*": [
-        "../../packages/feature/download/dist/*",
-        "../../packages/feature/download/src/*"
+        "plugins/shape-plugin/src/*"
       ]
     }
   },

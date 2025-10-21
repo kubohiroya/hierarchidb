@@ -16,11 +16,10 @@
     "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/fetch-save-metadata/src/*"
       ]
     },
-    "jsx": "react-jsx",
-    "baseUrl": "."
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*"

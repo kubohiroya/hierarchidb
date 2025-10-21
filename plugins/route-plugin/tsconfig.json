@@ -4,8 +4,7 @@
     "outDir": "./dist",
     "jsx": "react-jsx",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "baseUrl": "."
+    "moduleResolution": "NodeNext"
   },
   "include": [
     "src/**/*"

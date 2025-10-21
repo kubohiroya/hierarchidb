@@ -6,10 +6,9 @@
     "declaration": true,
     "composite": false,
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/import-export/src/*"
       ]
     },
     "jsx": "react-jsx",

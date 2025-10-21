@@ -5,10 +5,9 @@
     "noEmit": true,
     "composite": true,
     "incremental": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/tour/src/*"
       ]
     },
     "jsx": "react-jsx",

@@ -13,7 +13,8 @@
     "composite": true,
     "incremental": true,
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "NodeNext",
+    "paths": {}
   },
   "include": [
     "src/**/*"
@@ -37,6 +38,18 @@
     },
     {
       "path": "../basic-info/tsconfig.build.json"
+    },
+    {
+      "path": "../../plugin-runtime-services/tsconfig.build.json"
+    },
+    {
+      "path": "../../common/api/tsconfig.build.json"
+    },
+    {
+      "path": "../../plugin-ui-sdk/tsconfig.build.json"
+    },
+    {
+      "path": "../../common/types/tsconfig.build.json"
     }
   ]
 }

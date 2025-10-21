@@ -13,13 +13,12 @@
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "types": [
       "vite/client"
     ],
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/monitoring/src/*"
       ]
     }
   },

@@ -14,10 +14,9 @@
       "react/jsx-runtime"
     ],
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/runtime/plugin-dialog/src/*"
       ]
     },
     "module": "NodeNext",

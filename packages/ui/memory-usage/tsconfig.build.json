@@ -36,5 +36,10 @@
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
     "src/vite-env.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../util/tsconfig.build.json"
+    }
   ]
 }

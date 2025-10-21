@@ -6,10 +6,9 @@
     "noEmit": false,
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/floating-window/src/*"
       ]
     },
     "jsx": "react-jsx",

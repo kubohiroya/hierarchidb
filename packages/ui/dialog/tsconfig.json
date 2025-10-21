@@ -10,7 +10,7 @@
     "jsx": "react-jsx",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/dialog/src/*"
       ]
     },
     "lib": [
@@ -19,7 +19,6 @@
       "DOM.Iterable"
     ],
     "skipLibCheck": true,
-    "baseUrl": ".",
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },

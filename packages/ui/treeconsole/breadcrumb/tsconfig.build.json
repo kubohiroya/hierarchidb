@@ -27,5 +27,16 @@
     "src/**/*.spec.*",
     "src/**/*.stories.*",
     "src/examples/**"
+  ],
+  "references": [
+    {
+      "path": "../../../../packages/common/types/tsconfig.build.json"
+    },
+    {
+      "path": "../../../../packages/ui/icon/tsconfig.build.json"
+    },
+    {
+      "path": "../../../../packages/ui/theme/tsconfig.build.json"
+    }
   ]
 }

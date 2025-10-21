@@ -6,13 +6,12 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/search-result-window/src/*"
       ],
       "~/*.js": [
-        "./src/*.ts"
+        "packages/ui/search-result-window/src/*.ts"
       ]
     },
     "composite": false,

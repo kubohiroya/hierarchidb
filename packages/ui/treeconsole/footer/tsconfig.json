@@ -12,7 +12,7 @@
     ],
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/ui/treeconsole/footer/src/*"
       ]
     },
     "lib": [
@@ -21,8 +21,7 @@
     ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "baseUrl": "."
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
     "src"

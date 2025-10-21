@@ -7,10 +7,9 @@
     "declarationMap": true,
     "jsx": "react-jsx",
     "skipLibCheck": false,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/plugin-ui-sdk/src/*"
       ]
     },
     "module": "NodeNext",

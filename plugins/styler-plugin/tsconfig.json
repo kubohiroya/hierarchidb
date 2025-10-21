@@ -20,7 +20,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "skipLibCheck": true,
-    "baseUrl": ".",
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   },

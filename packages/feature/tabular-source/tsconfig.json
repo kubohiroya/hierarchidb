@@ -7,10 +7,9 @@
     "composite": false,
     "moduleResolution": "NodeNext",
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/tabular-source/src/*"
       ]
     },
     "module": "NodeNext"

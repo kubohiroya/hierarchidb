@@ -18,10 +18,9 @@
     ],
     "esModuleInterop": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/common/api/src/*"
       ]
     }
   },

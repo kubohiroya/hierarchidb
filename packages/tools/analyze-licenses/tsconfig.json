@@ -11,10 +11,9 @@
     "types": [
       "node"
     ],
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/tools/analyze-licenses/src/*"
       ]
     },
     "jsx": "react-jsx"

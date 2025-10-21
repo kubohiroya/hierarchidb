@@ -4,7 +4,6 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "noEmit": false,

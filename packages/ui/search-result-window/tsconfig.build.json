@@ -33,6 +33,9 @@
   "references": [
     {
       "path": "../../ui/floating-window/tsconfig.build.json"
+    },
+    {
+      "path": "../../common/types/tsconfig.build.json"
     }
   ]
 }

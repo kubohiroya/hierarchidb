@@ -14,7 +14,11 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "baseUrl": "."
+    "paths": {
+      "~/*": [
+        "packages/ui/treeconsole/breadcrumb/src/*"
+      ]
+    }
   },
   "include": [
     "src"

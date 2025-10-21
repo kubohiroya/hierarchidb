@@ -6,10 +6,9 @@
       "DOM"
     ],
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/feature/tabular-store/src/*"
       ]
     },
     "module": "NodeNext",

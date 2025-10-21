@@ -15,10 +15,9 @@
       "node"
     ],
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./src/*"
+        "packages/common/types/src/*"
       ]
     },
     "module": "NodeNext",

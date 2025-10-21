@@ -4,10 +4,9 @@
     "composite": false,
     "incremental": true,
     "noImplicitAny": false,
-    "baseUrl": ".",
     "paths": {
       "~/*": [
-        "src/*"
+        "packages/backend/bff/src/*"
       ]
     },
     "skipLibCheck": true,
