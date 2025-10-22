@@ -131,6 +131,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/geojson-vt": "^3.2.5",
     "@types/jscodeshift": "^17.3.0",
+    "@types/license-checker": "^25.0.6",
     "@types/minimist": "^1.2.5",
     "@types/node": "^18.19.123",
     "@types/react": "^18.3.24",
@@ -142,6 +143,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "ajv": "^8.13.0",
     "change-case": "^5.4.4",
+    "comlink": "^4.4.2",
     "dep-fence": "^0.5.1",
     "dependency-cruiser": "^14.1.0",
     "eslint": "^9.34.0",
@@ -220,7 +222,8 @@
       "workerd"
     ],
     "patchedDependencies": {
-      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch",
+      "comlink@4.4.2": "patches/comlink@4.4.2.patch"
     }
   },
   "keywords": [

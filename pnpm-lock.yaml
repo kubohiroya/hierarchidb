@@ -28,8 +28,11 @@ overrides:
 
 patchedDependencies:
   ast-types@0.16.1:
-    hash: 3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142
+    hash: pofmgegqoa2wvq7pocrep5om3y
     path: patches/ast-types@0.16.1.patch
+  comlink@4.4.2:
+    hash: tuh7ghvjtkvb46svu7nxfojjnm
+    path: patches/comlink@4.4.2.patch
 
 importers:
 
@@ -96,6 +99,9 @@ importers:
       '@types/jscodeshift':
         specifier: ^17.3.0
         version: 17.3.0
+      '@types/license-checker':
+        specifier: ^25.0.6
+        version: 25.0.6
       '@types/minimist':
         specifier: ^1.2.5
         version: 1.2.5
@@ -122,13 +128,16 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0))
       ajv:
         specifier: ^8.13.0
         version: 8.17.1
       change-case:
         specifier: ^5.4.4
         version: 5.4.4
+      comlink:
+        specifier: ^4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       dep-fence:
         specifier: ^0.5.1
         version: 0.5.1
@@ -386,7 +395,7 @@ importers:
         version: 1.132.47(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -459,7 +468,7 @@ importers:
         version: 5.4.19(@types/node@18.19.123)
       vite-plugin-comlink:
         specifier: ^5.3.0
-        version: 5.3.0(comlink@4.4.2)(vite@5.4.19(@types/node@18.19.123))
+        version: 5.3.0(comlink@4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm))(vite@5.4.19(@types/node@18.19.123))
       vite-plugin-dts:
         specifier: ^4.5.4
         version: 4.5.4(@types/node@18.19.123)(rollup@4.52.4)(typescript@5.9.3)(vite@5.4.19(@types/node@18.19.123))
@@ -555,7 +564,7 @@ importers:
         version: link:../types
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
@@ -565,11 +574,10 @@ importers:
         version: 18.19.123
 
   packages/common/auth:
-    dependencies:
+    devDependencies:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../types
-    devDependencies:
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -888,14 +896,13 @@ importers:
         version: 5.9.3
 
   packages/plugin-runtime-services:
-    dependencies:
-      '@hierarchidb/download':
-        specifier: workspace:*
-        version: link:../feature/download
     devDependencies:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../feature/download
       '@hierarchidb/plugin-types':
         specifier: workspace:*
         version: link:../plugin-types
@@ -933,9 +940,27 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../common/types
+      '@types/geojson-vt':
+        specifier: ^3.2.5
+        version: 3.2.5
+      '@types/jscodeshift':
+        specifier: ^17.3.0
+        version: 17.3.0
+      '@types/minimist':
+        specifier: ^1.2.5
+        version: 1.2.5
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
+      '@types/react':
+        specifier: ^18.3.24
+        version: 18.3.26
+      '@types/react-dom':
+        specifier: ^18.3.7
+        version: 18.3.7(@types/react@18.3.26)
+      '@types/react-resizable':
+        specifier: ^3.0.8
+        version: 3.0.8
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -998,7 +1023,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       comlink:
         specifier: ^4.4.1
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       fake-indexeddb:
         specifier: ^5.0.2
         version: 5.0.2
@@ -1067,7 +1092,7 @@ importers:
         version: 18.3.26
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       jotai:
         specifier: ^2.11.2
         version: 2.15.0(@babel/core@7.28.4)(@babel/template@7.27.2)(@types/react@18.3.26)(react@18.3.1)
@@ -1097,7 +1122,7 @@ importers:
         version: 4.0.3
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -1116,6 +1141,10 @@ importers:
       zod:
         specifier: ^3.22.3
         version: 3.25.76
+    optionalDependencies:
+      '@hierarchidb/tabular-xlsx':
+        specifier: workspace:*
+        version: link:../../feature/tabular-source-xlsx
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.0
@@ -1180,10 +1209,6 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
-    optionalDependencies:
-      '@hierarchidb/tabular-xlsx':
-        specifier: workspace:*
-        version: link:../../feature/tabular-source-xlsx
 
   packages/tools/analyze-licenses:
     dependencies:
@@ -1193,6 +1218,10 @@ importers:
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@microsoft/api-extractor@7.53.1(@types/node@18.19.123))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
+    devDependencies:
+      '@types/license-checker':
+        specifier: ^25.0.6
+        version: 25.0.6
 
   packages/tools/vite-plugin-node-type-registry:
     devDependencies:
@@ -1653,7 +1682,7 @@ importers:
         version: 4.3.4(vite@5.4.19(@types/node@18.19.123))
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.4(vitest@3.2.4)
+        version: 3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0))
       '@vitest/ui':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1866,7 +1895,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       happy-dom:
         specifier: ^18.0.1
         version: 18.0.1
@@ -1926,7 +1955,7 @@ importers:
         version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.26))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       react:
         specifier: '>=18.0.0'
         version: 18.3.1
@@ -1938,7 +1967,7 @@ importers:
     dependencies:
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -1969,7 +1998,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2000,7 +2029,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2034,7 +2063,7 @@ importers:
         version: link:../breadcrumb
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
     devDependencies:
       '@mui/icons-material':
         specifier: ^7.3.2
@@ -2095,7 +2124,7 @@ importers:
         version: 3.13.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       jotai:
         specifier: ^2.13.1
         version: 2.15.0(@babel/core@7.28.4)(@babel/template@7.27.2)(@types/react@18.3.26)(react@18.3.1)
@@ -2325,7 +2354,7 @@ importers:
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
       comlink:
         specifier: ^4.3.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
     devDependencies:
       '@deck.gl/aggregation-layers':
         specifier: ^9.0.0
@@ -2553,7 +2582,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       comlink:
         specifier: ^4.4.1
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -2689,7 +2718,7 @@ importers:
         version: 1.20.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       comlink:
         specifier: ^4.4.2
-        version: 4.4.2
+        version: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
@@ -5742,6 +5771,9 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/license-checker@25.0.6':
+    resolution: {integrity: sha512-ju/75+YPkNE5vX1iPer+qtI1eI/LqJVYZgOsmSHI1iiEM1bQL5Gh1lEvyjR9T7ZXVE1FwJa2doWJEEmPNwbZkw==}
 
   '@types/mapbox__point-geometry@0.1.4':
     resolution: {integrity: sha512-mUWlSxAmYLfwnRBmgYV86tgYmMIICX4kza8YnE/eIlywGe2XoOxlpVnXWwir92xRLjwyarqwpu2EJKD2pk0IUA==}
@@ -10593,7 +10625,7 @@ snapshots:
       '@luma.gl/webgl': 9.2.2(@luma.gl/core@9.2.2)
       esri-loader: 3.7.0
 
-  '@deck.gl/carto@9.2.1(642bb876b8c1db27e9388d06e7a3a4d5)':
+  '@deck.gl/carto@9.2.1(drfb7ov6qpc64ompycq4emwfo4)':
     dependencies:
       '@carto/api-client': 0.5.20(@loaders.gl/core@4.3.4)
       '@deck.gl/aggregation-layers': 9.2.1(@deck.gl/core@9.2.1)(@deck.gl/layers@9.2.1(@deck.gl/core@9.2.1)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
@@ -13666,10 +13698,12 @@ snapshots:
 
   '@types/jscodeshift@17.3.0':
     dependencies:
-      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
+      ast-types: 0.16.1(patch_hash=pofmgegqoa2wvq7pocrep5om3y)
       recast: 0.23.11
 
   '@types/json-schema@7.0.15': {}
+
+  '@types/license-checker@25.0.6': {}
 
   '@types/mapbox__point-geometry@0.1.4': {}
 
@@ -14101,7 +14135,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/coverage-v8@3.2.4(vitest@3.2.4)':
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -14117,6 +14151,25 @@ snapshots:
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
       vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@vitest/coverage-v8@3.2.4(vitest@3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0))':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 1.0.2
+      ast-v8-to-istanbul: 0.3.5
+      debug: 4.4.3
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.19
+      magicast: 0.3.5
+      std-env: 3.9.0
+      test-exclude: 7.0.1
+      tinyrainbow: 2.0.0
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -14429,7 +14482,7 @@ snapshots:
 
   assign-symbols@1.0.0: {}
 
-  ast-types@0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142):
+  ast-types@0.16.1(patch_hash=pofmgegqoa2wvq7pocrep5om3y):
     dependencies:
       tslib: 2.8.1
 
@@ -14664,7 +14717,7 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
-  comlink@4.4.2: {}
+  comlink@4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm): {}
 
   commander@11.1.0: {}
 
@@ -14862,7 +14915,7 @@ snapshots:
     dependencies:
       '@deck.gl/aggregation-layers': 9.2.1(@deck.gl/core@9.2.1)(@deck.gl/layers@9.2.1(@deck.gl/core@9.2.1)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
       '@deck.gl/arcgis': 9.2.1(@arcgis/core@4.33.14)(@deck.gl/core@9.2.1)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/webgl@9.2.2(@luma.gl/core@9.2.2))
-      '@deck.gl/carto': 9.2.1(642bb876b8c1db27e9388d06e7a3a4d5)
+      '@deck.gl/carto': 9.2.1(drfb7ov6qpc64ompycq4emwfo4)
       '@deck.gl/core': 9.2.1
       '@deck.gl/extensions': 9.2.1(@deck.gl/core@9.2.1)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
       '@deck.gl/geo-layers': 9.2.1(@deck.gl/core@9.2.1)(@deck.gl/extensions@9.2.1(@deck.gl/core@9.2.1)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@deck.gl/layers@9.2.1(@deck.gl/core@9.2.1)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2))))(@deck.gl/mesh-layers@9.2.1(@deck.gl/core@9.2.1)(@loaders.gl/core@4.3.4)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/gltf@9.2.2(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))(@loaders.gl/core@4.3.4)(@luma.gl/constants@9.2.2)(@luma.gl/core@9.2.2)(@luma.gl/engine@9.2.2(@luma.gl/core@9.2.2)(@luma.gl/shadertools@9.2.2(@luma.gl/core@9.2.2)))
@@ -17303,7 +17356,7 @@ snapshots:
 
   recast@0.23.11:
     dependencies:
-      ast-types: 0.16.1(patch_hash=3124bdfe2be2291e984bf06ba8160ee3f5de54ba198ca8f9b8588ec54f01d142)
+      ast-types: 0.16.1(patch_hash=pofmgegqoa2wvq7pocrep5om3y)
       esprima: 4.0.1
       source-map: 0.6.1
       tiny-invariant: 1.3.3
@@ -18366,9 +18419,9 @@ snapshots:
       optionator: 0.9.4
       typescript: 5.9.3
 
-  vite-plugin-comlink@5.3.0(comlink@4.4.2)(vite@5.4.19(@types/node@18.19.123)):
+  vite-plugin-comlink@5.3.0(comlink@4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm))(vite@5.4.19(@types/node@18.19.123)):
     dependencies:
-      comlink: 4.4.2
+      comlink: 4.4.2(patch_hash=tuh7ghvjtkvb46svu7nxfojjnm)
       json5: 2.2.3
       magic-string: 0.30.17
       source-map: 0.7.6
