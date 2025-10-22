@@ -23,8 +23,11 @@ async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions =
     return options.storeRegistry;
   }
   try {
-    const runtime = await import('@hierarchidb/runtime-worker');
-    return (runtime.storeRegistry ?? null) as StoreRegistry | null;
+    type RuntimeWorkerModule = typeof import('@hierarchidb/runtime-worker') & {
+      storeRegistry?: StoreRegistry;
+    };
+    const runtime = (await import('@hierarchidb/runtime-worker')) as RuntimeWorkerModule;
+    return runtime.storeRegistry ?? null;
   } catch (error) {
     if (import.meta.env?.DEV) {
       console.warn('[folder-worker] failed to import runtime worker module', error);

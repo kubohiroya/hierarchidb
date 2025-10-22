@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
@@ -7,16 +6,22 @@ import { createRequire } from 'node:module';
 const repoRoot = path.dirname(path.dirname(url.fileURLToPath(import.meta.url)));
 const require = createRequire(import.meta.url);
 const manifestLoaderPath = url.pathToFileURL(path.join(repoRoot, 'tools', 'plugin-manifest-loader.js')).href;
-const { loadPluginManifestFromFile } = await import(manifestLoaderPath);
+let loadPluginManifestFromFile = () => undefined;
+try {
+  ({ loadPluginManifestFromFile } = await import(manifestLoaderPath));
+} catch (error) {
+  console.warn('[generate-plugin-loader] Failed to load manifest loader:', error?.message ?? error);
+  console.warn('[generate-plugin-loader] Continuing without manifest introspection.');
+}
 const appDir = path.join(repoRoot, 'app');
 const appPkgPath = path.join(appDir, 'package.json');
 const outDir = path.join(appDir, 'src', 'generated');
 const outWorkerFile = path.join(outDir, 'worker-loader.ts');
 const outUiFile = path.join(outDir, 'ui-loader.ts');
 const registrySrcDir = path.join(repoRoot, 'packages', 'plugin-registry', 'src');
-const registryGeneratedFile = path.join(registrySrcDir, 'generated.ts');
-const registryTypesDir = path.join(repoRoot, 'packages', 'plugin-registry', '.generated', 'types');
-const registryAmbientModuleFile = path.join(registryTypesDir, 'plugin-modules.d.ts');
+const registryGeneratedDir = path.join(registrySrcDir, 'generated');
+const registryIndexFile = path.join(registryGeneratedDir, 'index.ts');
+const registryAmbientModuleFile = path.join(registryGeneratedDir, 'plugin-modules.d.ts');
 
 /**
  * Derive nodeType from package name like @hierarchidb/plugin-loader-<nodeType>-plugin
@@ -34,6 +39,21 @@ function capitalize(word) {
 
 async function fileExists(p) {
   try { await fs.access(p); return true; } catch { return false; }
+}
+
+async function writeFileIfChanged(filePath, contents) {
+  const dir = path.dirname(filePath);
+  await fs.mkdir(dir, { recursive: true });
+  try {
+    const current = await fs.readFile(filePath, 'utf8');
+    if (current === contents) {
+      return false;
+    }
+  } catch {
+    // ignore read errors; we'll write the file below.
+  }
+  await fs.writeFile(filePath, contents, 'utf8');
+  return true;
 }
 
 async function readPluginPackageJSON(pkgName, nodeType) {
@@ -146,28 +166,39 @@ function sanitizeManifest(manifest) {
   return Object.keys(result).length > 0 ? result : null;
 }
 
-function resolveExportPath(exportsField, key) {
+function normalizeExportEntry(entry) {
+  if (!entry) return undefined;
+  if (typeof entry === 'string') {
+    return { import: entry };
+  }
+  if (typeof entry !== 'object') {
+    return undefined;
+  }
+
+  const info = {};
+  if (typeof entry.import === 'string') info.import = entry.import;
+  else if (typeof entry.default === 'string') info.import = entry.default;
+  else if (typeof entry.require === 'string') info.import = entry.require;
+  else if (typeof entry.module === 'string') info.import = entry.module;
+  else if (typeof entry.browser === 'string') info.import = entry.browser;
+
+  if (typeof entry.types === 'string') info.types = entry.types;
+  if (typeof entry.typings === 'string' && !info.types) info.types = entry.typings;
+
+  return Object.keys(info).length > 0 ? info : undefined;
+}
+
+function resolveExportInfo(exportsField, key) {
   if (!exportsField) return undefined;
   if (typeof exportsField === 'string') {
-    return key === '.' ? exportsField : undefined;
+    return key === '.' ? { import: exportsField } : undefined;
   }
   if (typeof exportsField !== 'object') {
     return undefined;
   }
-  const entry = exportsField[key];
-  if (!entry) return undefined;
-  if (typeof entry === 'string') return entry;
-  if (typeof entry === 'object') {
-    return (
-      (typeof entry.import === 'string' && entry.import) ||
-      (typeof entry.default === 'string' && entry.default) ||
-      (typeof entry.require === 'string' && entry.require) ||
-      (typeof entry.module === 'string' && entry.module) ||
-      (typeof entry.browser === 'string' && entry.browser) ||
-      undefined
-    );
-  }
-  return undefined;
+
+  const entry = key === '.' ? (exportsField['.'] ?? exportsField) : exportsField[key];
+  return normalizeExportEntry(entry);
 }
 
 async function resolveManifestPath(packageDir) {
@@ -186,6 +217,10 @@ async function resolveManifestPath(packageDir) {
 function toStringArray(value) {
   if (!Array.isArray(value)) return [];
   return value.map((item) => String(item)).filter((item) => item.length > 0);
+}
+
+function toPosixPath(p) {
+  return p.replace(/\\/g, '/');
 }
 function topoSort(nodes, edges) {
   const incoming = new Map();
@@ -230,15 +265,31 @@ export async function generatePluginRegistry() {
     if (!json || !dir) continue;
 
     const exportsField = json.exports;
-    const workerExportRel = resolveExportPath(exportsField, './worker');
-    const uiExportRel = resolveExportPath(exportsField, './ui');
-    const databaseExportRel = resolveExportPath(exportsField, './database');
-    const commonExportRel = resolveExportPath(exportsField, './common');
+    const exportInfo = new Map();
 
+    if (exportsField && typeof exportsField === 'object' && !Array.isArray(exportsField)) {
+      for (const key of Object.keys(exportsField)) {
+        const info = resolveExportInfo(exportsField, key);
+        if (info) exportInfo.set(key, info);
+      }
+    }
+
+    const rootExportInfo = resolveExportInfo(exportsField, '.');
+    if (rootExportInfo) exportInfo.set('.', rootExportInfo);
+    const workerExportInfo = resolveExportInfo(exportsField, './worker');
+    if (workerExportInfo) exportInfo.set('./worker', workerExportInfo);
+    const uiExportInfo = resolveExportInfo(exportsField, './ui');
+    if (uiExportInfo) exportInfo.set('./ui', uiExportInfo);
+    const databaseExportInfo = resolveExportInfo(exportsField, './database');
+    if (databaseExportInfo) exportInfo.set('./database', databaseExportInfo);
+    const commonExportInfo = resolveExportInfo(exportsField, './common');
+    if (commonExportInfo) exportInfo.set('./common', commonExportInfo);
+
+    const workerExportRel = workerExportInfo?.import;
     const hasWorker = !!workerExportRel;
-    const hasUi = !!uiExportRel;
-    const hasDatabase = !!databaseExportRel;
-    const hasCommon = !!commonExportRel;
+    const hasUi = !!uiExportInfo?.import;
+    const hasDatabase = !!databaseExportInfo?.import;
+    const hasCommon = !!commonExportInfo?.import;
 
     let hasEntitiesDbExport = false;
     let workerEntryPath;
@@ -313,6 +364,8 @@ export async function generatePluginRegistry() {
       hasCommon,
       hasEntitiesDbExport,
       manifest,
+      packageDir: dir,
+      exportInfo,
     });
   }
 
@@ -399,9 +452,7 @@ export function registerUIPersistenceOverrides(): void {
 `;
 
   const content = header + body;
-  await fs.mkdir(outDir, { recursive: true });
-  await fs.mkdir(registrySrcDir, { recursive: true });
-  await fs.writeFile(outWorkerFile, content, 'utf8');
+  const workerChanged = await writeFileIfChanged(outWorkerFile, content);
 
   // Build UI loader file with static imports in dependency order
   const uiPlugins = meta.filter(m => m.hasUi);
@@ -481,8 +532,7 @@ export function resetUiPluginLoadStateForTesting(): void {
   allLoaded = false;
 }
 `;
-
-  await fs.writeFile(outUiFile, uiHeader + '\n' + uiBody, 'utf8');
+  const uiChanged = await writeFileIfChanged(outUiFile, uiHeader + '\n' + uiBody);
 
   const pluginDefinitionsPayload = meta.map((entry) => ({
     nodeType: entry.nodeType,
@@ -524,7 +574,7 @@ ${registryWorkerEntries}
 
   const registryHeader = `// AUTO-GENERATED FILE. DO NOT EDIT.
 // Generated by scripts/generate-plugin-loader.mjs
-import type { PluginDefinition, PluginLoaderMap, PluginRegistryEntry } from './types.js';
+import type { PluginDefinition, PluginLoaderMap, PluginRegistryEntry } from '../types.js';
 
 `;
 
@@ -537,13 +587,14 @@ export const pluginMapUI: PluginLoaderMap = ${registryUiBlock};
 export const pluginMapWorker: PluginLoaderMap = ${registryWorkerBlock};
 `;
 
-  await fs.writeFile(registryGeneratedFile, registryHeader + registryBody, 'utf8');
+  const registryChanged = await writeFileIfChanged(registryIndexFile, registryHeader + registryBody);
 
   const moduleSpecifiers = new Set();
   for (const entry of meta) {
-    if (entry.hasUi) moduleSpecifiers.add(`${entry.packageName}/ui`);
-    if (entry.hasWorker) moduleSpecifiers.add(`${entry.packageName}/worker`);
-    if (entry.hasDatabase) moduleSpecifiers.add(`${entry.packageName}/database`);
+    for (const [key, info] of entry.exportInfo.entries()) {
+      const specifier = key === '.' ? entry.packageName : `${entry.packageName}${key.replace(/^[.]/, '')}`;
+      moduleSpecifiers.add(specifier);
+    }
   }
 
   const ambientHeader = '// AUTO-GENERATED FILE. DO NOT EDIT.\n// Generated by scripts/generate-plugin-loader.mjs\n';
@@ -552,12 +603,19 @@ export const pluginMapWorker: PluginLoaderMap = ${registryWorkerBlock};
     .map((specifier) => `declare module '${specifier}';`)
     .join('\n');
 
-  await fs.mkdir(registryTypesDir, { recursive: true });
-  await fs.writeFile(registryAmbientModuleFile, `${ambientHeader}${ambientBody}\n`, 'utf8');
+  const registryAmbientChanged = await writeFileIfChanged(registryAmbientModuleFile, `${ambientHeader}${ambientBody}\n`);
 
-  const withWorkerCount = meta.filter((m) => m.hasWorker).length;
-  const withUiCount = uiPlugins.length;
-  console.log(`[generate-plugin-loader] Generated ${path.relative(repoRoot, outWorkerFile)}, ${path.relative(repoRoot, outUiFile)} and ${path.relative(repoRoot, registryGeneratedFile)} with ${meta.length} plugins (worker loaders: ${withWorkerCount}, ui loaders: ${withUiCount}).`);
+  const changedFiles = [];
+  if (workerChanged) changedFiles.push(path.relative(repoRoot, outWorkerFile));
+  if (uiChanged) changedFiles.push(path.relative(repoRoot, outUiFile));
+  if (registryChanged) changedFiles.push(path.relative(repoRoot, registryIndexFile));
+  if (registryAmbientChanged) changedFiles.push(path.relative(repoRoot, registryAmbientModuleFile));
+
+  if (changedFiles.length > 0) {
+    console.log('[generate-plugin-loader] Updated files:\n - ' + changedFiles.join('\n - '));
+  } else {
+    console.log('[generate-plugin-loader] No changes detected.');
+  }
 }
 
 if (import.meta.url === url.pathToFileURL(process.argv[1] ?? '').href) {

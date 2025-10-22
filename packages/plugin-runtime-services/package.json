@@ -11,9 +11,9 @@
   ],
   "scripts": {
     "build": "tsup",
-    "build:types": "tsup --dts",
     "clean": "rm -rf dist",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "typecheck": "tsup --dts"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "dexie": "^4.2.0",
     "tsup": "^8.3.5",
@@ -32,6 +33,12 @@
     "external": [
       "@hierarchidb/download",
       "@hierarchidb/download/*",
+      "@hierarchidb/plugin-ui-sdk",
+      "@hierarchidb/plugin-ui-sdk/*",
+      "@hierarchidb/plugin-types",
+      "@hierarchidb/plugin-types/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
       "dexie"
     ]
   }

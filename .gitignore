@@ -191,8 +191,9 @@ vitest.config.ts.*.mjs
 /app/.generated/
 /app/src/generated/
 /app/.generated/
-/packages/plugin-registry/.generated/
+/packages/plugin-registry/src/generated/
 /packages/ui/dialog/storybook-static/
 /eria-cartograph/
 dist-types
 /.codex/
+/app/node_modules/

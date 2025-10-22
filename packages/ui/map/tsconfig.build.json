@@ -28,5 +28,13 @@
     "src/**/*.spec.*",
     "src/**/*.stories.*",
     "src/examples/**"
+  ],
+  "references": [
+    {
+      "path": "../data-grid/tsconfig.build.json"
+    },
+    {
+      "path": "../../common/types/tsconfig.build.json"
+    }
   ]
 }

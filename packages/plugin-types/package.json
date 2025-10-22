@@ -17,20 +17,50 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm -w --filter @hierarchidb/plugin-ui-sdk run build:types && pnpm run build:types",
-    "build:types": "api-extractor run --local"
+    "build": "api-extractor run --local",
+    "typecheck": "api-extractor run --local"
   },
   "peerDependencies": {
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.49.3",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/download": "workspace:*"
   },
   "tsup": {
     "external": [
       "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*"
+      "@hierarchidb/plugin-ui-sdk/*",
+      "@hierarchidb/common-types",
+      "@hierarchidb/common-types/*",
+      "@hierarchidb/download",
+      "@hierarchidb/download/*"
     ]
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": [
+          "@hierarchidb/plugin-ui-sdk#build",
+          "@hierarchidb/common-types#build",
+          "@hierarchidb/common-api#build",
+          "@hierarchidb/batch#build",
+          "@hierarchidb/download#build"
+        ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          "@hierarchidb/plugin-ui-sdk#build",
+          "@hierarchidb/common-types#build",
+          "@hierarchidb/common-api#build",
+          "@hierarchidb/batch#build",
+          "@hierarchidb/download#build"
+        ]
+      }
+    }
   }
 }

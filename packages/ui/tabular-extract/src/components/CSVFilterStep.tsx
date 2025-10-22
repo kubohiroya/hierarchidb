@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useCSVFilter } from '../hooks/useCSVFilter.js';
 import { CSVColumnInfo, CSVColumnType, CSVTableMetadata } from '@hierarchidb/tabular-store';
-import { CSVDataResult, CSVFilterOperator, CSVFilterRule } from '~/types/index.js';
+import { CSVDataResult, CSVFilterOperator, CSVFilterRule } from '../types/index.js';
 
 export interface CSVFilterStepProps {
   tableMetadata: CSVTableMetadata;
@@ -130,7 +130,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
       enabled: true,
     };
 
-    setFilters(prev => [...prev, filter]);
+    setFilters((prev: CSVFilterRule[]) => [...prev, filter]);
     setNewFilter({
       column: '',
       operator: 'equals',
@@ -140,11 +140,11 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
   };
 
   const handleRemoveFilter = (filterId: string) => {
-    setFilters(prev => prev.filter(f => f.id !== filterId));
+    setFilters((prev: CSVFilterRule[]) => prev.filter(f => f.id !== filterId));
   };
 
   const handleToggleFilter = (filterId: string) => {
-    setFilters(prev =>
+    setFilters((prev: CSVFilterRule[]) =>
       prev.map(f =>
         f.id === filterId ? { ...f, enabled: !f.enabled } : f,
       ),
@@ -152,7 +152,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
   };
 
   const handleUpdateFilterValue = (filterId: string, value: string) => {
-    setFilters(prev =>
+    setFilters((prev: CSVFilterRule[]) =>
       prev.map(f =>
         f.id === filterId ? { ...f, value } : f,
       ),
@@ -244,7 +244,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
             <Select
               value={newFilter.column || ''}
               label="Column"
-              onChange={(e) => setNewFilter(prev => ({ ...prev, column: e.target.value }))}
+              onChange={(e) => setNewFilter((prev: Partial<CSVFilterRule>) => ({ ...prev, column: e.target.value }))}
             >
               {(tableMetadata.columns ?? []).map((col: CSVColumnInfo) => (
                 <MenuItem key={col.name} value={col.name}>
@@ -259,7 +259,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
             <Select
               value={newFilter.operator || 'equals'}
               label="Operator"
-              onChange={(e) => setNewFilter(prev => ({ ...prev, operator: e.target.value as CSVFilterOperator }))}
+              onChange={(e) => setNewFilter((prev: Partial<CSVFilterRule>) => ({ ...prev, operator: e.target.value as CSVFilterOperator }))}
               disabled={!newFilter.column}
             >
               {getAvailableOperators(newFilter.column || '').map(op => (
@@ -274,7 +274,7 @@ export const CSVFilterStep: React.FC<CSVFilterStepProps> = ({
             size="small"
             label="Value"
             value={newFilter.value || ''}
-            onChange={(e) => setNewFilter(prev => ({ ...prev, value: e.target.value }))}
+            onChange={(e) => setNewFilter((prev: Partial<CSVFilterRule>) => ({ ...prev, value: e.target.value }))}
             disabled={!newFilter.column || newFilter.operator === 'is_null' || newFilter.operator === 'is_not_null'}
             placeholder="Enter filter value"
           />

@@ -12,7 +12,9 @@
     "skipLibCheck": false,
     "noEmit": false,
     "composite": true,
-    "incremental": true
+    "incremental": true,
+    "paths": {},
+    "disableSourceOfProjectReferenceRedirect": true
   },
   "files": [],
   "references": [

@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+/**
+ * Script: tools/tsconfig-set-nodenext.mjs
+ * Purpose: bulk-update tsconfig files so `module`/`moduleResolution` are
+ * switched to NodeNext during the repository-wide ESM migration.
+ * Invocation: run from repo root via
+ * `node tools/tsconfig-set-nodenext.mjs [roots...]` when aligning configs; used
+ * historically by the NodeNext migration tasks recorded in TASKS.md.
+ * Output: rewrites matching `tsconfig*.json` files in-place. No extra artefacts
+ * are created beyond the edited JSON files.
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { globby } from 'globby'

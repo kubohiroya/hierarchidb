@@ -13,11 +13,23 @@
       "~/*": [
         "src/*"
       ],
-      "@hierarchidb/ui-treeconsole-base": [
-        "../packages/ui/treeconsole/base/src/index.ts"
+      "@hierarchidb/ui-auth": [
+        "../packages/ui/auth/src/index.ts"
       ],
-      "@hierarchidb/ui-treeconsole-base/*": [
-        "../packages/ui/treeconsole/base/src/*"
+      "@hierarchidb/ui-auth/*": [
+        "../packages/ui/auth/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "../packages/ui/treeconsole/treetable/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable/*": [
+        "../packages/ui/treeconsole/treetable/src/*"
+      ],
+      "@hierarchidb/plugin-registry": [
+        "../packages/plugin-registry/src/index.ts"
+      ],
+      "@hierarchidb/plugin-registry/*": [
+        "../packages/plugin-registry/src/*"
       ]
     },
     "module": "NodeNext"

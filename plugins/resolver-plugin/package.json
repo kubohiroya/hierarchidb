@@ -43,19 +43,14 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run build:bundle",
-    "build:database": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --config tsup.database.config.ts",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "build:tsc": "pnpm run build:types",
-    "prebuild:bundle": "pnpm run build:types"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@hierarchidb/plugin-runtime-services": "workspace:*"
@@ -73,6 +68,7 @@
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
@@ -91,7 +87,6 @@
     "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3",
     "vitest": "^3.2.4",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "comlink": "^4.4.1",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
@@ -118,6 +113,8 @@
       "@hierarchidb/runtime-basic-info/*",
       "@hierarchidb/runtime-plugin-dialog",
       "@hierarchidb/runtime-plugin-dialog/*",
+      "@hierarchidb/plugin-ui-sdk",
+      "@hierarchidb/plugin-ui-sdk/*",
       "@hierarchidb/runtime-worker",
       "@hierarchidb/runtime-worker/*",
       "@hierarchidb/ui-dialog",

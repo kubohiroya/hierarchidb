@@ -1,6 +1,6 @@
 import React from 'react';
 import { Snackbar, Alert } from '@mui/material';
-import { i18n } from '@hierarchidb/ui-i18n';
+import { useTranslation } from 'react-i18next';
 
 type Detail = { source: 'worker' | 'ui'; at?: number; nodeTypes?: string[] };
 
@@ -18,14 +18,16 @@ export function ServicesReadySnackbar() {
   const [detail, setDetail] = React.useState<Detail | null>(null);
   const [, forceUpdate] = React.useReducer((c) => c + 1, 0);
 
+  const { i18n } = useTranslation();
+
   React.useEffect(() => {
-    if (!i18n || typeof i18n.on !== 'function') return;
     const handler = () => forceUpdate();
+    if (!i18n?.on) return;
     i18n.on('languageChanged', handler);
     return () => {
-      i18n.off('languageChanged', handler);
+      i18n?.off?.('languageChanged', handler);
     };
-  }, []);
+  }, [i18n]);
 
   React.useEffect(() => {
     const handler = (ev: Event) => {
@@ -38,39 +40,37 @@ export function ServicesReadySnackbar() {
   }, []);
 
   const message = React.useMemo(() => {
-    const locale = i18n?.language || 'en';
+    const locale = i18n?.language ?? 'en';
     const timeSuffix = detail?.at
       ? ` (${new Date(detail.at).toLocaleTimeString(locale)})`
       : '';
 
-    const translate = (key: string, params?: Record<string, unknown>) => {
-      if (i18n?.t) {
-        return i18n.t(key, params);
-      }
-      switch (key) {
-        case 'servicesReady.worker':
-          return `${FALLBACK_MESSAGES.worker}${params?.time ?? ''}`;
-        case 'servicesReady.prefetchList':
-          return FALLBACK_MESSAGES.prefetchList(String(params?.list ?? ''));
-        case 'servicesReady.prefetch':
-          return `${FALLBACK_MESSAGES.prefetch}${params?.time ?? ''}`;
-        default:
-          return `${FALLBACK_MESSAGES.default}${params?.time ?? ''}`;
-      }
-    };
+    const tr = (
+      key: 'servicesReady.default' | 'servicesReady.worker' | 'servicesReady.prefetch' | 'servicesReady.prefetchList',
+      fallback: string,
+      params?: Record<string, unknown>,
+    ): string => i18n?.t?.(key, { defaultValue: fallback, ...(params ?? {}) }) ?? fallback;
 
     if (!detail) {
-      return translate('servicesReady.default', { time: timeSuffix });
+      return tr('servicesReady.default', `${FALLBACK_MESSAGES.default}${timeSuffix}`, {
+        time: timeSuffix,
+      });
     }
     if (detail.source === 'worker') {
-      return translate('servicesReady.worker', { time: timeSuffix });
+      return tr('servicesReady.worker', `${FALLBACK_MESSAGES.worker}${timeSuffix}`, {
+        time: timeSuffix,
+      });
     }
     const list = (detail.nodeTypes || []).join(', ');
     if (list) {
-      return translate('servicesReady.prefetchList', { list });
+      return tr('servicesReady.prefetchList', FALLBACK_MESSAGES.prefetchList(list), {
+        list,
+      });
     }
-    return translate('servicesReady.prefetch', { time: timeSuffix });
-  }, [detail]);
+    return tr('servicesReady.prefetch', `${FALLBACK_MESSAGES.prefetch}${timeSuffix}`, {
+      time: timeSuffix,
+    });
+  }, [detail, i18n]);
 
   if (!hasDom) {
     return null;

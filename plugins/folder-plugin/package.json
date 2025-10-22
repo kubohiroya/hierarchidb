@@ -43,20 +43,15 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:bundle",
-    "build:types": "tsc -b tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+    "typecheck": "tsc -b tsconfig.build.json",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "build:tsc": "pnpm run build:types",
-    "dev:tsc": "tsc --watch",
-    "prebuild:bundle": "pnpm run build:types"
+    "dev:tsc": "tsc --watch"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -191,5 +186,16 @@
       "react",
       "react-i18next"
     ]
+  },
+  "turbo": {
+    "pipeline": {
+      "typecheck": {
+        "dependsOn": [
+          "@hierarchidb/runtime-worker#build",
+          "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/plugin-ui-sdk#build"
+        ]
+      }
+    }
   }
 }

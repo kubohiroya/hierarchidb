@@ -16,7 +16,8 @@
     "moduleResolution": "NodeNext"
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "vitest.*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -10,7 +10,9 @@
     "emitDeclarationOnly": true,
     "incremental": true,
     "declarationMap": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "baseUrl": ".",
+    "paths": {}
   },
   "include": [
     "../feature/batch/dist/**/*.d.ts"

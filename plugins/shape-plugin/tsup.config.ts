@@ -16,7 +16,7 @@ export default createTsupConfig({
     index: 'src/index.ts',
     'shared/index': 'src/common/shared/index.ts',
     'ui/index': 'src/ui/index.ts',
-    'worker/index': 'src/worker/factory/index.ts',
+    'worker/index': 'src/worker/index.ts',
     'services/index': 'src/services/index.ts',
   },
   external: [
@@ -37,6 +37,8 @@ export default createTsupConfig({
     '@hierarchidb/folder-plugin',
     '@hierarchidb/folder-plugin/*',
     '@hierarchidb/plugin-runtime-services',
+    '@hierarchidb/plugin-ui-sdk',
+    '@hierarchidb/plugin-ui-sdk/*',
     '@hierarchidb/plugin-types',
     '@hierarchidb/plugin-types/*',
     '@hierarchidb/runtime-client',

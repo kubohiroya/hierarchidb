@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-/*
-  HierarchiDB Dev: targeted fixes for staleness without full cache wipe
-
-  Actions (combine as needed):
-    --bump-fingerprint   Update app/src/version.ts BUILD_TIME to force HMR
-    --prune-cache        Delete only .vite entries related to @hierarchidb/* and app/*
-    --restart-dev        Kill process listening on --port (default 4200)
-
-  Usage:
-    node tools/hdb-fix-staleness.mjs --app packages/app --port 4200 --bump-fingerprint --prune-cache
-*/
+/**
+ * Script: tools/hdb-fix-staleness.mjs
+ * Purpose: apply targeted clean-up actions (bump app build fingerprint, prune
+ * Vite cache, restart dev server) after diagnosis flags stale bundles.
+ * Invocation: triggered by `tools/dev-diagnose-runner.mjs` when it receives
+ * suggestions from `hdb-diagnose-staleness`, or run manually with flags such as
+ * `--bump-fingerprint` / `--prune-cache`.
+ * Output: updates files in-place (`app/src/version.ts`) and removes cache
+ * directories under `.vite` depending on flags; no additional artefacts are
+ * written.
+ */
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';

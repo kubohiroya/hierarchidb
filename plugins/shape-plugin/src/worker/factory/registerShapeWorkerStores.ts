@@ -22,8 +22,12 @@ async function resolveStoreRegistry(options: RegisterShapeWorkerStoresOptions = 
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
-  const runtime = await import('@hierarchidb/runtime-worker');
-  return runtime.storeRegistry as StoreRegistry;
+  type RuntimeWorkerModule = typeof import('@hierarchidb/runtime-worker') & {
+    storeRegistry?: StoreRegistry;
+  };
+  const runtime = (await import('@hierarchidb/runtime-worker')) as RuntimeWorkerModule;
+  const storeRegistry = runtime.storeRegistry;
+  return storeRegistry ?? null;
 }
 
 async function ensureShapeStores(registry: StoreRegistry): Promise<void> {

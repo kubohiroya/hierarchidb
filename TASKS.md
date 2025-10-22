@@ -77,12 +77,25 @@
   - [x] `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm -C app typecheck` が成功
 - チェックリスト:
   - [x] DialogStateAPI の取得・購読フローで undefined を許容するガードを追加
-  - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
+ - [x] Worker API／テストを更新し、購読未対応環境でのフォールバックを確認
  - [ ] SpeedDial 経由のフォルダ作成シナリオを手動または自動テストで確認
 - ロールバック手順：
  - `usePluginDialogController` の購読変更を差し戻し、従来の購読ロジックへ戻す
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
+
+24) plugin-registry typecheck 依存制御（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b chore/turbo/plugin-registry-typecheck` が失敗したため）
+- 依存: `turbo.json`, `@hierarchidb/plugin-registry`, `@hierarchidb/plugin-worker-sdk`, `@hierarchidb/plugin-runtime-services`, `@hierarchidb/plugin-types`
+- 受け入れ基準（DoD）:
+  - [x] `pnpm --filter @hierarchidb/plugin-registry typecheck` / `pnpm turbo run typecheck --filter @hierarchidb/plugin-registry` が成功し、API Extractor の `mainEntryPointFilePath` エラーが再発しない
+  - [x] Turbo の pipeline / package scripts 上で `@hierarchidb/plugin-registry` に必要な dist 生成（`build:types` 等）が自動実行され、型定義が不足しない
+  - [x] 変更内容と検証ログを `TASKS.md`（当セクションおよび運用ログ）へ記録し、ロールバック手順を明記
+- チェックリスト:
+  - [x] `turbo.json` の依存グラフを更新し、`plugin-registry#typecheck` 実行前に必要な `build:types` が走るよう調整
+  - [x] `@hierarchidb/plugin-registry` / 関連パッケージの `package.json` スクリプトや `tsconfig` を確認し、dist 生成対象が漏れていないか点検
+  - [x] `pnpm --filter` コマンドで関係パッケージの `build:types` / `typecheck` を実行し、成功ログを運用ログへ追記
+- ロールバック手順：`turbo.json` および関係パッケージのスクリプト変更を差分前へ戻し、`pnpm --filter @hierarchidb/plugin-registry typecheck` で従来エラーが再現することを確認
 
 23) NodeNext 移行: 設定切替と import 整理（P0）
 - ブランチ: `chore/node-next/tsconfig`（sandbox 制約で `main` 上で作業）
@@ -189,6 +202,89 @@
 - ロールバック手順：
   - 変更前の tsconfig に戻し、`pnpm --filter @hierarchidb/batch-types build:types` でエラーが再現することを確認
 
+9) batch-runtime-services TS6059 解消（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b fix/batch-runtime/rootdir` が失敗したため）
+- 依存: `@hierarchidb/common-types`, `@hierarchidb/common-api`, NodeNext tsconfig 方針
+- 受け入れ基準（DoD）:
+  - [x] `pnpm --filter @hierarchidb/batch-runtime-services build` が TS6059 なしで完了し、必要に応じて `typecheck` も成功する
+  - [x] `tsconfig.json` / `tsconfig.build.json` の `rootDir`・`paths`・`references` を dist 指向 paths＋project references へ整理し、依存パッケージの src が rootDir 越境しないことを自己レビューで確認
+  - [x] `TASKS.md` の運用ログに start/progress/done と実行コマンド結果を記録する
+- チェックリスト:
+  - [x] `tsconfig.json` と `tsconfig.build.json` の `rootDir`/`paths`/`include` を見直し、`@hierarchidb/common-*` 参照で他パッケージの src を誤って取り込まない構成へ更新
+  - [x] `pnpm --filter @hierarchidb/batch-runtime-services build` と `pnpm --filter @hierarchidb/batch-runtime-services typecheck` を実行し、結果を運用ログへ記録
+  - [x] ロールバック手順を明記し、必要なら補助的な検証（`build:types` 等）も検討
+- ロールバック手順：
+  - 変更した tsconfig 設定を元に戻し、`pnpm --filter @hierarchidb/batch-runtime-services build` で TS6059 が再現することを確認
+
+10) ui-tabular-extract CSV filter ビルド修正（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b fix/ui-tabular-extract/csv-filter-build` が不可のため）
+- 依存: `@hierarchidb/ui-tabular-extract`, `@hierarchidb/tabular-store`, NodeNext import 方針
+- 受け入れ基準（DoD）:
+  - [x] `CSVFilterStep.tsx` の `~/types/index.js` 参照を NodeNext ガイドライン（src 指向 alias/相対 import）で解決し、typecheck/build がモジュール解決エラー無しで通る
+  - [x] 暗黙 any を発生させている setState コールバック（column/operator/value 更新）へ型注釈を追加し、TS7006 を解消
+  - [x] `pnpm --filter @hierarchidb/ui-tabular-extract build` が成功し、実行ログを運用ログへ記録
+- チェックリスト:
+  - [x] `CSVFilterStep.tsx` の import/型注釈を更新し、自己レビューで NodeNext/React 型整合を確認
+  - [x] `pnpm --filter @hierarchidb/ui-tabular-extract build` を実行し結果を運用ログに記録
+  - [x] ロールバック手順を明記
+- ロールバック手順：
+  - 修正前の import と型注釈を戻し、`pnpm --filter @hierarchidb/ui-tabular-extract build` で元の TS2307/TS7006 エラーが再現することを確認
+
+11) plugin-types typecheck dist 参照修正（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b fix/plugin-types/dist-paths` 不可）
+- 依存: `@hierarchidb/plugin-types`, `@hierarchidb/plugin-ui-sdk`, `@hierarchidb/common-types`, `@hierarchidb/common-api`
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/plugin-types` の `tsconfig.json` で base alias を打ち消し、API Extractor が `.d.ts` のみを解析する構成にする
+  - [x] `pnpm --filter @hierarchidb/plugin-types typecheck` を実行し、`ae-wrong-input-file-type` / TS6059 / TS6307 の警告が発生しない
+  - [x] TASKS 運用ログに start/progress/done とコマンド結果を記録
+- チェックリスト:
+  - [x] `packages/plugin-types/tsconfig.json` へ `paths: {}` を追加し、base alias を解除
+  - [x] 必要に応じて `api-extractor.json` / references を確認し、dist .d.ts 参照で整合が取れていることを自己レビュー
+  - [x] `pnpm --filter @hierarchidb/plugin-types typecheck` の結果を運用ログに反映
+- ロールバック手順：
+  - tsconfig 変更を戻し、`pnpm --filter @hierarchidb/plugin-types typecheck` で従来のエラーが再現することを確認
+
+12) runtime-plugin-dialog typecheck 依存参照修正（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b fix/runtime-plugin-dialog/typecheck-deps` 不可）
+- 依存: `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/plugin-runtime-services`, `@hierarchidb/plugin-types`, `@hierarchidb/plugin-ui-sdk`, `@hierarchidb/download`, `@hierarchidb/common-types`
+- 受け入れ基準（DoD）:
+  - [x] `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` が通り、`@hierarchidb/plugin-ui-sdk` / `@hierarchidb/common-types` / `@hierarchidb/download` の TS2307 が発生しない
+  - [x] 依存解決のために追加した package.json 差分とビルド順変更を `TASKS.md` へ記録し、ロールバック手順を明記
+- チェックリスト:
+  - [x] `packages/plugin-runtime-services/package.json` に `@hierarchidb/plugin-ui-sdk` 依存を追加
+  - [x] `packages/runtime/plugin-dialog/package.json` に `@hierarchidb/download` / `@hierarchidb/plugin-ui-sdk` を追加し、必要に応じて `pnpm install`（オフライン）でリンクを更新
+  - [x] `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` の成功ログを運用ログへ記録
+- ロールバック手順：
+  - 追加した依存を `package.json` から削除し、`pnpm install --lockfile-only` を実行のうえ同コマンドでエラー再現を確認
+
+13) shape-plugin runtime-worker 型解決＆checkbox 行型補強（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b fix/shape-plugin/runtime-worker-types` 不可）
+- 依存: `@hierarchidb/shape-plugin`, `@hierarchidb/plugin-ui-sdk`, `@hierarchidb/runtime-worker`
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/shape-plugin` の typecheck が `@hierarchidb/runtime-worker` / `@hierarchidb/plugin-ui-sdk` の TS2307 を発生させない
+  - [x] `Step5CountrySelection` の `map` コールバックで暗黙 any が解消されている
+- チェックリスト:
+  - [x] `plugins/shape-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external にも登録
+  - [x] `Step5CountrySelection.tsx` の `map` コールバックへ型注釈を追加
+  - [x] 必要に応じて `plugins/shape-plugin/node_modules/@hierarchidb/plugin-ui-sdk` をワークスペースへリンク
+  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` の結果を運用ログへ記録
+- ロールバック手順：
+  - 追加した依存・型注釈を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` で従来エラーが再発することを確認
+
+
+7) plugin-types typecheck Turbo 依存整備（P0）
+- ブランチ: `main`（sandbox 制約で `chore/turbo/plugin-types-typecheck-dep` ブランチ作成に失敗したため）
+- 依存: `@hierarchidb/plugin-types`, `@hierarchidb/plugin-ui-sdk`, `turbo.json`
+- 受け入れ基準（DoD）:
+  - [ ] Turbo パイプラインで `@hierarchidb/plugin-types#typecheck` 実行前に `@hierarchidb/plugin-ui-sdk#build`（または型出力生成コマンド）が完了する依存関係を構築
+  - [ ] `pnpm turbo run typecheck --filter @hierarchidb/plugin-types` を実行し、`plugin-ui-sdk` 側のビルドが先行し成功ログを取得
+  - [ ] 変更内容・検証結果・ロールバック手順を TASKS.md のチェックリストと運用ログへ反映
+- チェックリスト:
+  - [x] `turbo.json`（または関連スクリプト）へ `plugin-types#typecheck` → `plugin-ui-sdk#build` 依存を追加
+  - [ ] 検証コマンドの結果を収集し、運用ログに記録
+  - [x] ロールバック手順（設定を差分前に戻し検証コマンドを再実行）を記載
+- ロールバック手順：
+  - 追加した Turbo 設定を revert し、`pnpm turbo run typecheck --filter @hierarchidb/plugin-types` で `plugin-ui-sdk` ビルドが走らない従来挙動へ戻ることを確認
 
 9) Location/Route/Shape 通知レイヤー統一（P1）
 - ブランチ: `refactor/ui/notify-unify`（sandbox 制約でブランチ作成不可のため `main` 上で作業）
@@ -260,7 +356,7 @@
 - ロールバック手順：
   - 変更差分を revert し、再度 `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行してエラー再現を確認
 - 運用ログ：
-  - start: 2025-10-19 12:10 Shape shared types の `BatchTaskStage` 型エラー解消に着手
+ - start: 2025-10-19 12:10 Shape shared types の `BatchTaskStage` 型エラー解消に着手
   - progress: 2025-10-19 12:18 `pnpm --filter @hierarchidb/shape-plugin typecheck` を実行し、エラーなく完了（BatchTaskStage の型参照が解消されたことを確認）
   - done: 2025-10-19 12:19 `BatchTaskStage` の型 alias を復旧し、shape plugin の typecheck がグリーンであることを確認
 
@@ -279,6 +375,23 @@
   - [x] `rg "@hierarchidb/batch-(api|sdk)"` で旧命名残存を確認し、必要に応じて修正
 - ロールバック手順：
   - rename スクリプトで移動したディレクトリと差し替えた参照をすべて revert し、`@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の元構成へ戻したうえで関係パッケージの build/typecheck を再実行して整合を確認
+
+13) start-env.sh ensure_built 依存整理（P0）
+- ブランチ: `main`（sandbox 制約で `refactor/scripts/start-env-turbo` ブランチ作成不可のため暫定対応）
+- 依存: `scripts/start-env.sh`, `turbo.json`, `pnpm dev` / `pnpm build:turbo`
+- 受け入れ基準（DoD）:
+  - [x] `ensure_built` 群の役割と Turbo 依存関係で代替できる根拠を調査して記録（コードコメントまたは TASKS 運用ログ）
+  - [x] `scripts/start-env.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
+  - [ ] 変更が Turbo 設定へ波及した場合は該当ファイル（例: `turbo.json`）を更新し、`pnpm typecheck:graph` など検証コマンドの成功ログを残す（2025-10-22: `pnpm exec tsc -b tsconfig.build.json` が既存 download/tabular-store の TS6059/TS6307/TS7016 で失敗し検証待ち）
+  - [x] `TASKS.md` の運用ログに start/done とロールバック手順を追記する
+- チェックリスト:
+  - [x] `ensure_built` で列挙していたパッケージと app 依存グラフの整合性を確認し、必要な build タスクの最小集合を整理
+  - [ ] リファクタ後の `scripts/start-env.sh` を dist 未生成状態から実行して再現テストを行う（2025-10-22: Turbo 経由の build は `tsup` CLI 未解決と既存 TS エラーで停止、環境復旧後に再試行）
+  - [x] 影響範囲（dev server / build pipeline）を自己レビューし、副作用がないことを確認
+- ロールバック手順：
+  - `scripts/start-env.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
+- 運用ログ：
+  - start: 2025-10-22 13:33 sandbox でブランチ作成が拒否されたため `main` 上で start-env ensure_built 改修を開始（Turbo 依存置き換え検討）
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -1922,6 +2035,9 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 ## 今日の着手（運用ログ） <a id="worklog-1"></a>
 
+- 2025-10-22 14:05 start: fix/app/plugin-type-resolution — `app/src/types/plugin-shims.d.ts` 依存を廃し、プラグインの UI/worker/database をビルド成果物から直接参照できるよう解決経路を整理。`pnpm -C app typecheck` エラー再発を防ぐ構成を検証予定。
+- 2025-10-22 14:32 progress: fix/app/plugin-type-resolution — `scripts/generate-plugin-loader.mjs` にプラグイン exports 情報から `.d.ts` を再エクスポートする自動生成処理を追加し、`app/src/types/generated/plugin-modules.d.ts` を生成。モジュール解決では dist の型をそのまま再利用する方針に切り替え、`any` を排除。
+- 2025-10-22 14:48 done: fix/app/plugin-type-resolution — 生成処理を `node scripts/generate-plugin-loader.mjs` へ集約し、差分が無ければファイル書き換えをスキップする構成に更新。`packages/plugin-registry` の `prebuild` で同スクリプトを自動実行するようにし、CI/ローカルのビルドで手動実行が不要に。`pnpm --filter @hierarchidb/plugin-registry build` で TS5055 が再発しないことを確認。ロールバック: スクリプトと `package.json` 変更を戻し、旧 shim 方式に復帰。
 - 2025-10-18 09:45 start: refactor/plugins/download-service-lifecycle — 前回セッションが `400 Bad Request` で中断した shared DownloadService 配線見直しを再開。RuntimeWiring から共有登録を撤去し、各バッチが `get<Location|Route>DownloadService` でオンデマンド生成する構成への移行を進める。
 - 2025-10-18 10:10 progress: refactor/plugins/download-service-lifecycle — `pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` を実行し、新しい on-demand 構成で型検証が通過することを確認。追加の自動テストは未実施。
 - 2025-10-18 10:28 progress: refactor/plugins/download-service-lifecycle — Worker 環境で `localStorage` が利用できない点を反映し、per-host concurrency の上書きを `.env` と明示的なレジストリ設定経由に限定。関連ドキュメント（app/docs/11-settings.md・15-runtime-flags.md）とタスク DoD を更新。
@@ -6057,6 +6173,48 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 17:08 progress: fix/folder-plugin/type-refs — `tsconfig.build.json` の `paths={}` を削除し、`tsconfig.json` に dist 優先の paths（plugin-ui-sdk / download / auth-recovery / runtime-basic-info / runtime-plugin-dialog）を追加。依存パッケージの `build:types` を実行した上で `pnpm --filter @hierarchidb/folder-plugin build:types` を再実行し成功。
 - 2025-10-20 17:16 progress: fix/folder-plugin/type-refs — `tsconfig.json` へ `@hierarchidb/runtime-client` の paths を追加し、`tsconfig.build.json` に runtime-client を参照として追加。`@hierarchidb/runtime-client build:types` および `@hierarchidb/download build:bundle` / `@hierarchidb/plugin-ui-sdk build:bundle` を実行して dist の型定義を再生成。
 - 2025-10-20 17:20 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
+- 2025-10-22 13:33 start: start-env.sh ensure_built 依存整理 — sandbox で `refactor/scripts/start-env-turbo` ブランチ作成が拒否されたため `main` 上で作業開始。Turbo 依存でビルド前提を賄う方針を検証予定。
+- 2025-10-22 19:37 start: plugin-types typecheck Turbo 依存整備 — `git checkout -b chore/turbo/plugin-types-typecheck-dep` が sandbox 制約で失敗したため `main` 上で着手。`@hierarchidb/plugin-types#typecheck` を `@hierarchidb/plugin-ui-sdk#build` 依存に接続する Turbo 設定を調査開始。
+- 2025-10-22 19:56 progress: plugin-types typecheck Turbo 依存整備 — `packages/plugin-types/package.json` に `turbo.pipeline.build` 依存を追加し、`turbo.json` に `"@hierarchidb/plugin-types#typecheck"` エントリを定義して `@hierarchidb/plugin-ui-sdk#build` を明示的に dependsOn へ追加。
+- 2025-10-22 19:58 blocked: plugin-types typecheck Turbo 依存整備 — `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full` を実行したが、依存連鎖で走る `@hierarchidb/batch-types#build` が既知の API Extractor TS6307 エラーで失敗し完了できず。`--dry-run=json` の出力で `@hierarchidb/plugin-ui-sdk#build` 依存が追加されていることと、`packages/plugin-ui-sdk/.turbo/turbo-build.log` にビルド試行ログが記録されていることを確認。
+- 2025-10-22 20:00 progress: plugin-types typecheck Turbo 依存整備 — `pnpm --filter @hierarchidb/plugin-ui-sdk build` を手動実行し、dist/index.d.ts を再生成（成功）。
+- 2025-10-22 20:06 progress: plugin-types typecheck Turbo 依存整備 — `packages/batch-types/package.json` に Turbo 依存（batch/common-api/common-types ビルド連鎖）を追加し、`tsconfig.json` へ dist 指向の paths を暫定設定。`pnpm turbo run build --filter @hierarchidb/batch-types --output-logs=full` がグリーンを確認（API Extractor エラー解消）。
+- 2025-10-22 20:08 blocked: plugin-types typecheck Turbo 依存整備 — 続けて `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full` を実行したところ、`@hierarchidb/common-types` 等が src 指向 alias のままなため `ae-wrong-input-file-type`/TS6307 が再発。plugin-types 側 tsconfig へ dist paths を検討する別途対応が必要。
+- 2025-10-22 22:03 progress: plugin-types typecheck Turbo 依存整備 — dep-fence ポリシー（dist/.d.ts を paths 参照禁止）を尊重するため、batch-types の dist paths 上書きを撤去。代わりに `packages/feature/batch/tsup.config.ts` で `clean: false` に変更して typecheck 生成の .d.ts を保持し、Turbo の dependsOn で batch/common-* ビルドを保証。`pnpm turbo run build --filter @hierarchidb/batch-types --output-logs=full` が成功し、API Extractor 警告なしを確認。
+- 2025-10-22 22:15 progress: plugin-types typecheck Turbo 依存整備 — `packages/plugin-types/tsconfig.json` に `disableSourceOfProjectReferenceRedirect` を設定し、依存ビルド（plugin-ui-sdk/common-{types,api}/batch/download）を Turbo dependsOn へ追加。`pnpm --filter @hierarchidb/plugin-types typecheck` と `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full` が成功。
+- 2025-10-22 22:22 progress: styler-plugin typecheck 依存整備 — spreadsheet/runtime-worker の dist 型未生成で `TS7016` が発生していたため、Turbo の `@hierarchidb/styler-plugin#typecheck` に依存パッケージの build を追加。`pnpm --filter @hierarchidb/{spreadsheet-plugin,runtime-worker} build` を実行後、`pnpm turbo run typecheck --filter @hierarchidb/styler-plugin --output-logs=full` 成功。
+- 2025-10-22 22:30 progress: folder-plugin typecheck 依存整備 — runtime-worker の `.d.ts` が未生成のタイミングで `TS6305` が再発したため、Turbo の `@hierarchidb/folder-plugin#typecheck` に runtime-worker/runtime-plugin-dialog/plugin-ui-sdk の build 依存を追加。`pnpm --filter @hierarchidb/runtime-worker build` 実行後、`pnpm turbo run typecheck --filter @hierarchidb/folder-plugin --output-logs=full` 成功。
+- 2025-10-22 21:05 start: batch-runtime-services TS6059 解消 — `git checkout -b fix/batch-runtime/rootdir` が sandbox の権限不足で失敗したため `main` 上で作業を開始。目的は `pnpm --filter @hierarchidb/batch-runtime-services build` 実行時に発生する TS6059（rootDir 越境）を解消すること。開始時点では tsconfig が base の src 指向 paths を継承しており、common-* の src がビルド対象へ混入している。
+- 2025-10-22 21:16 progress: batch-runtime-services TS6059 解消 — `packages/batch-runtime-services/tsconfig{,.build}.json` に dist 指向の `paths` を追加し、common-{types,api} の `dist/*.d.ts` を参照するよう更新。`pnpm --filter @hierarchidb/batch-runtime-services typecheck`（tsc -b）を実行して exit code 0 を確認。
+- 2025-10-22 21:20 done: batch-runtime-services TS6059 解消 — `pnpm --filter @hierarchidb/batch-runtime-services build` を再実行し、tsup の DTS フェーズが TS6059 なく完了（`dist/index.d.ts` 出力を確認）。タスクの DoD を満たしたためチェックリスト更新予定。
+- 2025-10-22 21:44 progress: batch-runtime-services TS6059 解消 — `ban-tsconfig-paths-dist-dts` ポリシーの趣旨に合わせ、`packages/batch-runtime-services/tsconfig{,.build}.json` の `paths` を空マップ化し base alias を打ち消し。続けて `pnpm --filter @hierarchidb/batch-runtime-services {typecheck,build}` を再実行し、ともに成功（TS6059 再発なし）を確認。
+- 2025-10-22 21:48 done: batch-runtime-services TS6059 解消 — `packages/batch-types/tsconfig.json` の dist 参照 paths を撤去（空マップで上書き）し、`pnpm --filter @hierarchidb/batch-types {typecheck,build}` を実行して API Extractor 含め成功。最後に `pnpm run policy:ban-tsconfig-paths-dist-dts` を実行し、ポリシー違反が解消されたことを確認。
+- 2025-10-22 21:55 start: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build` が `~/types/index.js` 未解決（TS2307）と setState コールバックの暗黙 any（TS7006）で失敗しているため、DoD を定義して修正に着手。
+- 2025-10-22 22:02 progress: fix/ui-tabular-extract/csv-filter-build — `CSVFilterStep.tsx` の import を `../types/index.js` へ変更し、`setNewFilter`/`setFilters` のコールバックに型注釈を追加。tsserver でエラーが消えたことを確認。
+- 2025-10-22 22:05 done: fix/ui-tabular-extract/csv-filter-build — `pnpm --filter @hierarchidb/ui-tabular-extract build`（exit 0, tsup + DTS 成功）を実行し、TS2307/TS7006 が再発しないことを確認。DoD/チェックリスト完了。
+- 2025-10-22 22:08 start: fix/plugin-types/dist-paths — `pnpm --filter @hierarchidb/plugin-types typecheck` 実行時に `ae-wrong-input-file-type` および TS6059/TS6307 が発生するため、tsconfig paths を整理して API Extractor が dist `.d.ts` のみを参照できるようにする対応を開始。
+- 2025-10-22 22:10 progress: fix/plugin-types/dist-paths — `packages/plugin-types/tsconfig.json` に `compilerOptions.paths: {}` を追加し、`@hierarchidb/*` エイリアスを解除。`pnpm --filter @hierarchidb/plugin-types typecheck` を再実行して API Extractor のエラーが解消されたことを確認（exit 0）。
+- 2025-10-22 22:10 done: fix/plugin-types/dist-paths — DoD 達成のため TASKS チェックリストを更新し、ロールバック手順を記録予定。
+- 2025-10-22 22:18 progress: fix/runtime-plugin-dialog/typecheck-deps — `packages/plugin-runtime-services/package.json` / `packages/runtime/plugin-dialog/package.json` / `packages/plugin-types/package.json` に不足していた workspace 依存（plugin-ui-sdk/download/common-types）を追加し、該当パッケージの node_modules へワークスペースシンボリックリンクを作成。`@hierarchidb/runtime-basic-info` の `package.json` も dist 出力を指すよう `main`/`types` を更新し、`pnpm --filter @hierarchidb/runtime-basic-info build` を実行（成功）。
+- 2025-10-22 22:21 done: fix/runtime-plugin-dialog/typecheck-deps — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` が exit 0 となることを確認（TS2307/TS7016 解消）。TASKS チェックリストを更新。
+- 2025-10-22 22:26 follow-up: fix/runtime-plugin-dialog/typecheck-deps — `packages/plugin-types/tsconfig.build.json` を追加し、他パッケージからの project reference 解決で TS6053 が発生しないことを確認。
+- 2025-10-22 22:32 follow-up: fix/runtime-plugin-dialog/typecheck-deps — `pnpm --filter @hierarchidb/runtime-worker build` を再実行して最新の dist d.ts を生成し、`pnpm --filter @hierarchidb/{basemap-plugin,spreadsheet-plugin} typecheck` が成功することを確認。
+- 2025-10-22 22:34 start: fix/shape-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/shape-plugin typecheck` が `@hierarchidb/runtime-worker` 未解決と Step5 の暗黙 any で失敗しているため、依存追加と型補強に着手。
+- 2025-10-22 22:36 progress: fix/shape-plugin/runtime-worker-types — `plugins/shape-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external および node_modules シンボリックリンクを更新。
+- 2025-10-22 22:38 done: fix/shape-plugin/runtime-worker-types — `Step5CountrySelection.tsx` の checkbox 行に型注釈を追加し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が exit 0 で完了したことを確認。
+- 2025-10-22 22:40 progress: fix/resolver-plugin/runtime-worker-types — `plugins/resolver-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external へ登録。
+- 2025-10-22 22:42 done: fix/resolver-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/runtime-worker build` を実行して dist/index.d.ts を再出力し、続けて `pnpm --filter @hierarchidb/resolver-plugin typecheck` が成功することを確認。
+- 2025-10-22 22:45 audit: runtime-worker type consumers — `@hierarchidb/{basemap-plugin,spreadsheet-plugin}` 既に `plugin-ui-sdk` 依存と external が登録済みであることを確認（追加作業なし）。
+- 2025-10-22 22:48 fix: styler-plugin spreadsheet peer types — `pnpm --filter @hierarchidb/spreadsheet-plugin build` を実行して最新の dist/index.d.ts を生成し、`pnpm --filter @hierarchidb/styler-plugin typecheck` が成功することを確認。
+- 2025-10-22 13:40 progress: start-env.sh ensure_built 依存整理 — `scripts/start-env.sh` の ensure_built 群を削除し、`node_modules/turbo/bin/turbo` を用いた `@hierarchidb/app^...` 依存グラフ一括ビルドへ差し替え（コメントで AGENTS.md NodeNext 指針へ言及）。
+- 2025-10-22 13:41 blocked: start-env.sh ensure_built 依存整理 — `pnpm exec tsc -b tsconfig.build.json` を実行したところ、既存の download/tabular-store 系 rootDir・型定義欠如エラー（TS6059/TS6307/TS7016など）が再発。別タスクで対処予定のため本作業では結果を共有し保留。
+- 2025-10-22 15:10 start: plugin-registry typecheck 依存制御 — `git checkout -b chore/turbo/plugin-registry-typecheck` が sandbox 制約で失敗したため `main` 上で作業開始。Turbo pipeline と package scripts の依存関係を見直し、`@hierarchidb/plugin-registry typecheck` 前に必要な `build:types` が揃う構成を調査。
+- 2025-10-22 15:16 blocked: plugin-registry typecheck 依存制御 — `pnpm --filter @hierarchidb/plugin-registry typecheck` 初回実行で TS5055 (dist/index.d.ts overwrite) が発生し、typecheck 前に dist を生成・クリーンするフロー不足を確認。
+- 2025-10-22 15:22 blocked: plugin-registry typecheck 依存制御 — dist 生成を `tsc -b tsconfig.build.json` で補う案を試したが、deck.gl 系依存の NodeNext 型エラーが多数発生したため採用を断念。
+- 2025-10-22 15:30 progress: plugin-registry typecheck 依存制御 — `packages/plugin-registry/package.json` に `generate`・`build:types`・`pretypecheck` を追加し、`build:types` で tsup (dts-only) を起動するよう調整。併せて `turbo.json` に `build:types` タスク定義と `@hierarchidb/plugin-registry#typecheck` → `#build:types` 依存を追加。
+- 2025-10-22 15:40 progress: plugin-registry typecheck 依存制御 — `pnpm --filter @hierarchidb/plugin-registry typecheck` を再実行し exit 0。pretypecheck で dist を再生成後、API Extractor が成功し `mainEntryPointFilePath` エラーが解消されたことを確認。
+- 2025-10-22 15:46 verify: plugin-registry typecheck 依存制御 — `pnpm turbo run typecheck --filter @hierarchidb/plugin-registry --output-logs=full` が exit 0。Turbo 上で `build:types` → `typecheck` の順に実行され、キャッシュ miss でも dist が自動生成されることを確認。
+- 2025-10-22 15:52 done: plugin-registry typecheck 依存制御 — `packages/plugin-registry/package.json` と `turbo.json` の依存制御更新を自己レビューし、ロールバック手順（両ファイル差分の revert ＋ dist 再生成）を確認。
 - 2025-10-20 17:26 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
 - 2025-10-20 17:32 progress: fix/styler-plugin/type-refs — styler plugin の tsconfig に runtime-plugin-dialog / runtime-worker の dist 優先 paths を追加し、tsconfig.build.json に両パッケージを参照として設定。依存側で `pnpm --filter @hierarchidb/{runtime-worker,runtime-plugin-dialog} build:bundle` を実行し、`pnpm --filter @hierarchidb/styler-plugin build:types` 成功を確認。
 - 2025-10-20 17:32 progress: fix/styler-plugin/type-refs — styler plugin の tsconfig に runtime-plugin-dialog / runtime-worker の dist 優先 paths を追加し、tsconfig.build.json に両パッケージを参照として設定。依存側で `pnpm --filter @hierarchidb/{runtime-worker,runtime-plugin-dialog} build:bundle` を実行し、`pnpm --filter @hierarchidb/styler-plugin build:types` 成功を確認。
@@ -6082,3 +6240,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-21 11:34 progress: chore/node-next/tsconfig — common-types/common-api を `pnpm --filter ... build` で再生成し、plugin-ui-sdk → plugin-runtime-services の d.ts 依存チェーンを `tsup --dts` で再構築。blocked 項目を解消。
 - 2025-10-21 11:18 progress: chore/node-next/tsconfig — `packages/feature/import-export/tsconfig.build.json` に `../../common/{types,api}/tsconfig.build.json` と `../../util/tsconfig.build.json` を project references として追加。`pnpm --filter @hierarchidb/common-types build:types` / `pnpm --filter @hierarchidb/common-api build:types` を実行し、それぞれ exit code 0 で dist/index.d.ts を再生成。
 - 2025-10-21 11:24 done: chore/node-next/tsconfig — `pnpm --filter @hierarchidb/import-export build:bundle` が成功し、@hierarchidb/import-export の NodeNext ビルドで `@hierarchidb/common-{types,api}` の TS7016 が解消されたことを確認（dist/index.d.ts 再出力済み）。
+- 2025-10-22 09:58 progress: chore/node-next/tsconfig — `comlink@4.4.2` に不足していた `dist/umd/comlink.d.ts` をパッチ追加し、`tsconfig.base.json` から誤った `comlink` alias を撤去。`pnpm --filter @hierarchidb/runtime-client build:types` が exit code 0 で完了することを確認。
+- 2025-10-22 10:06 verify: chore/node-next/tsconfig — `pnpm run check:deps:extra` を再実行し、Lockfile と node_modules の乖離警告が `pnpm install` 未実行のため継続する点を確認（ネットワーク制限中のため手動 sync は未完了）。
+- 2025-10-22 12:15 done: chore/node-next/tsconfig — `package.json` から `comlink@4.4.2` の patchedDependencies を撤去し、冗長な `patches/comlink@4.4.2.patch` を削除。次回 `pnpm install` 時に再適用されないことを確認する。
+- 2025-10-22 12:34 done: chore/node-next/tsconfig — `packages/feature/route-resolver/tsup.config.ts` を再作成し、`pnpm --filter @hierarchidb/route-resolver build:bundle` が成功することを確認（`@webgpu/types` 系のみ external 指定）。
+- 2025-10-22 12:52 done: chore/node-next/tsconfig — `packages/ui/map/tsconfig.build.json` に `../data-grid/tsconfig.build.json` 等の references を追加し、`pnpm --filter @hierarchidb/ui-map typecheck` が依存パッケージの d.ts 生成なしで失敗しないことを確認。
+- 2025-10-22 12:58 done: chore/node-next/tsconfig — `plugins/linker-plugin/tsconfig.build.json` へ project references（common/api, runtime-plugin-dialog 等）を追加。`pnpm --filter @hierarchidb/linker-plugin typecheck` 成功を確認し、`@hierarchidb/runtime-plugin-dialog` 解決エラーを解消。

@@ -10,7 +10,7 @@
   },
   "include": [
     "src/**/*",
-    ".generated/types/**/*.d.ts"
+    "src/generated/**/*.d.ts"
   ],
   "exclude": [
     "dist",

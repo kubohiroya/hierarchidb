@@ -15,8 +15,12 @@
   },
   "typesVersions": {
     "*": {
-      "": ["src/index.ts"],
-      "*": ["src/*"]
+      "": [
+        "src/index.ts"
+      ],
+      "*": [
+        "src/*"
+      ]
     }
   },
   "files": [
@@ -24,10 +28,12 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm run build:bundle",
-    "build:types": "tsc -p tsconfig.build.json && api-extractor run --local",
-    "build:bundle": "pnpm run build:types && tsup",
-    "typecheck": "tsc --noEmit",
+    "generate": "node ../../scripts/generate-plugin-loader.mjs",
+    "prebuild": "pnpm run clean && pnpm run generate",
+    "build": "tsup",
+    "build:types": "pnpm run clean && tsup --dts-only",
+    "pretypecheck": "pnpm run clean && pnpm run generate && pnpm run build:types",
+    "typecheck": "api-extractor run --local",
     "lint": "eslint src"
   },
   "dependencies": {},

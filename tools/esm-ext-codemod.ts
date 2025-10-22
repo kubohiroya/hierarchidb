@@ -1,5 +1,14 @@
 #!/usr/bin/env tsx
-import { Project, SyntaxKind } from 'ts-morph'
+/**
+ * Script: tools/esm-ext-codemod.ts
+ * Purpose: TypeScript implementation of the `.mjs` codemod that appends ESM
+ * extensions to imports/exports, used when migrating packages to NodeNext.
+ * Invocation: run directly with `tsx tools/esm-ext-codemod.ts --write --roots …`
+ * or via ad-hoc scripting when we need AST-aware transformations.
+ * Output: rewrites targeted source files if `--write` is supplied. No extra
+ * files are generated.
+ */
+import { Project } from 'ts-morph'
 import path from 'node:path'
 import fs from 'node:fs'
 import globby from 'globby'
@@ -22,7 +31,7 @@ function parseArgs(): Args {
   return out
 }
 
-const EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs', '.cjs'])
+// const EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs', '.cjs'])
 
 const logCodemodWarning = (message: string, error: unknown): void => {
   if (error && typeof (error as NodeJS.ErrnoException).code === 'string' && (error as NodeJS.ErrnoException).code === 'ENOENT') {

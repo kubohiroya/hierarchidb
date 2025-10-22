@@ -5,7 +5,7 @@ import {
   type PluginIconConfig,
   type PluginCategoryConfig,
 } from '@hierarchidb/plugin-registry';
-import appPackage from '../../package.json';
+import appPackageJson from '../../package.json' with { type: 'json' };
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;
@@ -82,7 +82,7 @@ function createSignature(entries: PluginRegistryEntry[]): string {
 
 function computeInstalledPlugins(): InstalledPlugin[] {
   const rawEntries = pluginRegistry as PluginRegistryEntry[];
-  const allowedPackages = collectPluginDependencyNames(appPackage as PackageJsonShape);
+  const allowedPackages = collectPluginDependencyNames(appPackageJson as PackageJsonShape);
   const filtered = allowedPackages.size > 0
     ? rawEntries.filter((entry) => allowedPackages.has(entry.packageName))
     : rawEntries;

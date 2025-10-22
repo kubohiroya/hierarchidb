@@ -41,13 +41,9 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:bundle",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "clean": "rm -rf dist",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "build:tsc": "pnpm run build:types",
-    "prebuild:bundle": "pnpm run build:types"
+    "typecheck": "tsc -b tsconfig.build.json"
   },
   "peerDependencies": {
     "@hierarchidb/common-types": "workspace:*",

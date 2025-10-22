@@ -30,5 +30,16 @@
     "src/examples/**",
     "**/*.test.ts",
     "**/*.test.tsx"
+  ],
+  "references": [
+    { "path": "../../packages/common/api/tsconfig.build.json" },
+    { "path": "../../packages/common/types/tsconfig.build.json" },
+    { "path": "../../packages/plugin-types/tsconfig.build.json" },
+    { "path": "../../packages/runtime/plugin-dialog/tsconfig.build.json" },
+    { "path": "../../packages/runtime/client/tsconfig.build.json" },
+    { "path": "../../packages/runtime/worker/tsconfig.build.json" },
+    { "path": "../../packages/ui/map/tsconfig.build.json" },
+    { "path": "../../packages/ui/treeconsole/base/tsconfig.build.json" },
+    { "path": "../../packages/util/tsconfig.build.json" }
   ]
 }

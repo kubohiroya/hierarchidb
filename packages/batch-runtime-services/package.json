@@ -18,14 +18,10 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "prebuild": "pnpm run clean",
-    "build": "pnpm run build:bundle",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "typecheck": "tsc --noEmit",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "typecheck": "tsc -b tsconfig.build.json",
     "lint": "eslint src",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "prebuild:bundle": "pnpm run build:types"
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch"
   },
   "dependencies": {},
   "peerDependencies": {

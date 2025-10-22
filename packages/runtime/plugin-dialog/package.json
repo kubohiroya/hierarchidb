@@ -16,18 +16,14 @@
   },
   "scripts": {
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run build:bundle",
-    "build:tsc": "pnpm run build:types",
-    "typecheck": "tsc --noEmit",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "typecheck": "tsc -b tsconfig.build.json",
     "lint": "eslint src",
     "format": "prettier --write src",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild:bundle": "pnpm run build:types"
+    "test:watch": "vitest"
   },
   "dependencies": {},
   "devDependencies": {
@@ -42,12 +38,14 @@
     "jotai": "^2.11.2",
     "comlink": "^4.4.2",
     "@tanstack/react-router": "^1.132.33",
+    "@hierarchidb/download": "workspace:*",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-basic-info": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"

@@ -1,4 +1,5 @@
-import * as path from 'path';
+import path from 'path';
+import process from 'process';
 
 type LicenseCheckerInit = (
   opts: Record<string, any>,

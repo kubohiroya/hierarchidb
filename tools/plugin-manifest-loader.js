@@ -1,3 +1,12 @@
+/**
+ * Module: tools/plugin-manifest-loader.js
+ * Purpose: utility used by generator scripts (e.g., `scripts/generate-plugin-loader.mjs`)
+ * to load and evaluate TypeScript plugin manifest modules without spinning up a
+ * build. It transpires the manifest on the fly and returns the exported
+ * metadata object.
+ * Invocation: imported from Node scripts; not executed directly from the CLI.
+ * Output: no files written. Consumers receive manifest JSON objects.
+ */
 import fs from 'fs';
 import path from 'path';
 import ts from 'typescript';
@@ -68,4 +77,3 @@ export function resolvePluginManifestPath(pkg) {
   }
   return path.join(path.dirname(pkgPath), 'src', 'extension', 'plugin-manifest.ts');
 }
-

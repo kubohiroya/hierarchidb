@@ -2,8 +2,16 @@ import { createTsupConfig } from '../../../tsup.base.config.js';
 
 const cfg = createTsupConfig({
   // Build main entry (index) and worker entry
-  entry: ['src/index.ts', 'src/index.ts', 'src/stageWorker.entry.ts'],
-  dts: true,
+  entry: {
+    index: 'src/index.ts',
+    'stageWorker.entry': 'src/stageWorker.entry.ts',
+  },
+  dts: {
+    entry: {
+      index: 'src/index.ts',
+      'stageWorker.entry': 'src/stageWorker.entry.ts',
+    },
+  },
   external: [
     '@hierarchidb/auth-recovery',
     '@hierarchidb/auth-recovery/*',

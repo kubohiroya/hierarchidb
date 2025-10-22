@@ -2,27 +2,73 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "build:bundle"],
-      "outputs": ["dist/**", "build/**", "storybook-static/**"]
+      "dependsOn": [
+        "typecheck",
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**",
+        "storybook-static/**"
+      ]
     },
     "build:types": {
-      "dependsOn": ["^build:types"],
-      "outputs": ["dist/**/*.d.ts", "dist-types/**"]
+      "dependsOn": [
+        "^build:types"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
     },
-    "build:bundle": {
-      "dependsOn": ["build:types"],
-      "outputs": ["dist/**", "storybook-static/**"],
-      "env": ["NODE_OPTIONS"]
+    "typecheck": {
+      "dependsOn": [
+        "^typecheck"
+      ]
     },
-    "typecheck": { "dependsOn": ["^typecheck", "^build"] },
-    "test": { "dependsOn": ["^build"], "outputs": ["coverage/**", "reports/**"] },
+    "@hierarchidb/plugin-types#typecheck": {
+      "dependsOn": [
+        "^typecheck",
+        "@hierarchidb/plugin-ui-sdk#build"
+      ]
+    },
+    "@hierarchidb/plugin-registry#typecheck": {
+      "dependsOn": [
+        "^typecheck",
+        "@hierarchidb/plugin-registry#build:types"
+      ]
+    },
+    "test": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "coverage/**",
+        "reports/**"
+      ]
+    },
     "lint": {},
-    "dev": { "cache": false, "persistent": true },
-    "preview": { "cache": false, "persistent": true },
-    "e2e": { "dependsOn": ["build"], "cache": false, "persistent": false },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "preview": {
+      "cache": false,
+      "persistent": true
+    },
+    "e2e": {
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false,
+      "persistent": false
+    },
     "wfl": {
-      "dependsOn": ["^build"],
-      "outputs": ["reports/runtime-worker/*.xml"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "reports/runtime-worker/*.xml"
+      ],
       "cache": false
     }
   }

@@ -296,6 +296,14 @@ export type {
   RelationStore,
 } from './entity/store.js';
 export { storeRegistry } from './entity/store-registry.js';
+export {
+  registerRuntimeWorkerClient,
+  unregisterRuntimeWorkerClient,
+  hasRuntimeWorkerClient,
+  getRuntimeWorkerClient,
+  type RuntimeWorkerClientProvider,
+  type RuntimeWorkerStageClient,
+} from './services/RuntimeWorkerService.js';
 export { entityRegistry } from './entity/EntityRegistry.js';
 export type {WorkerAPI} from './WorkerAPI.js';
 export * from './services/downloadAdapter.js';

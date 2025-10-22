@@ -24,5 +24,8 @@
   "dependencies": {
     "license-checker": "^25.0.1",
     "tsup": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/license-checker": "^25.0.6"
   }
 }

@@ -1,16 +1,14 @@
 #!/usr/bin/env node
-/*
-  HierarchiDB Dev: diagnose partial staleness without full cache wipes
-
-  What it does:
-  - Detect recent source changes (git + mtimes)
-  - Check Vite dev server status on a given port
-  - Compare change times vs dev-server start and .vite cache mtimes
-  - Print targeted suggestions (and machine-readable JSON if --json)
-
-  Usage:
-    node tools/hdb-diagnose-staleness.mjs --port 4200 --app packages/app [--json]
-*/
+/**
+ * Script: tools/hdb-diagnose-staleness.mjs
+ * Purpose: inspect dev-server / IndexedDB state to recommend targeted clean-up
+ * steps instead of wiping caches indiscriminately.
+ * Invocation: called directly by `tools/dev-diagnose-runner.mjs` (via
+ * `pnpm dev:diagnose`), or manually with
+ * `node tools/hdb-diagnose-staleness.mjs --port 4200 --app app --json`.
+ * Output: writes a diagnosis report to stdout (optionally JSON). It does not
+ * create files; consumers parse stdout to decide follow-up actions.
+ */
 import fs from 'fs';
 import path from 'path';
 import os from 'os';

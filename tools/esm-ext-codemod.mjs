@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+/**
+ * Script: tools/esm-ext-codemod.mjs
+ * Purpose: rewrite import/export statements to append explicit `.js`
+ * extensions when migrating packages to NodeNext / ESM resolution.
+ * Invocation: run manually via `pnpm codemod:esm-ext --write` or with custom
+ * `--roots` / `--include-*` flags while performing module migration tasks.
+ * Output: rewrites source files in place when `--write` is passed; otherwise
+ * performs a dry run (stdout diff preview only). No auxiliary artefacts are
+ * generated.
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { globby } from 'globby'

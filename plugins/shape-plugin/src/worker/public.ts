@@ -70,3 +70,5 @@ export interface ShapeWorkerAPI {
   cleanupProcessingData(nodeId: NodeId): Promise<void>;
 }
 
+export { registerShapeWorkerStores, loadShapeEntitiesDbModule } from './factory/registerShapeWorkerStores.js';
+export type { RegisterShapeWorkerStoresOptions } from './factory/registerShapeWorkerStores.js';

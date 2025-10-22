@@ -1,5 +1,15 @@
 #!/usr/bin/env node
-/* Orchestrates diagnose -> conditional fix -> start dev */
+/**
+ * Script: tools/dev-diagnose-runner.mjs
+ * Purpose: orchestrates the "diagnose staleness" → optional auto-fix → dev
+ * server boot flow used by `pnpm dev:diagnose` when local IndexedDB/cache
+ * issues surface.
+ * Invocation: executed via the root script `pnpm dev:diagnose`, which runs
+ * `node tools/dev-diagnose-runner.mjs` from the workspace root.
+ * Output: consumes the JSON emitted by `tools/hdb-diagnose-staleness.mjs`. It
+ * does not emit persistent files; it only starts the dev server or prints logs
+ * to stdout/stderr.
+ */
 import { spawnSync, spawn } from 'child_process';
 import path from 'path';
 import process from 'process';

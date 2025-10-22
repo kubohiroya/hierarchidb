@@ -13,15 +13,11 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:bundle",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b tsconfig.build.json",
     "test": "vitest --passWithNoTests",
-    "test:run": "vitest run --passWithNoTests",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "build:tsc": "pnpm run build:types",
-    "prebuild:bundle": "pnpm run build:types"
+    "test:run": "vitest run --passWithNoTests"
   },
   "dependencies": {},
   "peerDependencies": {

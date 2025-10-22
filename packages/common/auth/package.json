@@ -27,17 +27,13 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:bundle",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
-    "build:tsc": "pnpm run build:types",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "prebuild:bundle": "pnpm run build:types"
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {},
   "peerDependencies": {

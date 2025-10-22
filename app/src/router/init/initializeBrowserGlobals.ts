@@ -110,8 +110,9 @@ export function initializeBrowserGlobals(): void {
     });
 
   void import('virtual:mui-icon-map')
-    .then((mod: { default?: Record<string, ComponentType<any>>; iconMap?: Record<string, ComponentType<any>> }) => {
-      const map = (mod.default || mod.iconMap || {}) as Record<string, ComponentType<any>>;
+    .then((mod) => {
+      const candidate = (mod as any)?.default ?? (mod as any)?.iconMap ?? {};
+      const map = candidate as Record<string, ComponentType<any>>;
       setGlobalMuiIconMap(map);
     })
     .catch((error) => {

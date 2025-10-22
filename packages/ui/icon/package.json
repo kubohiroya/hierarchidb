@@ -10,14 +10,10 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "pnpm run build:bundle",
+    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "tsc -p tsconfig.build.json",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
-    "build:tsc": "pnpm run build:types",
-    "prebuild:bundle": "pnpm run build:types"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "files": [
     "dist",
