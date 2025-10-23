@@ -9,9 +9,9 @@
  * files are generated.
  */
 import { Project } from 'ts-morph'
-import path from 'node:path'
-import fs from 'node:fs'
-import globby from 'globby'
+import * as path from 'node:path'
+import * as fs from 'node:fs'
+import * as globby from 'globby'
 
 type Args = { write: boolean; roots: string[] }
 
@@ -66,7 +66,7 @@ function resolveIndexIfDir(absFrom: string, rel: string): string | null {
 async function main() {
   const { write, roots } = parseArgs()
   const patterns = roots.map((r) => `${r}/**/*.{ts,tsx}`)
-  const files = await globby(patterns, {
+  const files = await globby.globby(patterns, {
     ignore: ['**/*.d.ts', '**/*.test.*', '**/*.spec.*', '**/*.stories.*', '**/node_modules/**', '**/dist/**'],
   })
 
