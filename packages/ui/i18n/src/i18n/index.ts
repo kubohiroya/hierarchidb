@@ -4,8 +4,13 @@
  * This file contains the i18next configuration for the Eria Cartograph application.
  */
 
-import i18n, { type InitOptions, type InterpolationOptions } from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18next, {
+  type InitOptions,
+  type InterpolationOptions,
+  type ThirdPartyModule,
+  type i18n as I18nInstance,
+} from 'i18next';
+import * as ReactI18NextModule from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
 import type { HttpBackendOptions } from 'i18next-http-backend';
@@ -19,6 +24,13 @@ const logI18nWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[ui-i18n]', message, error);
 };
+
+const initReactI18nextModule = (
+  ReactI18NextModule as { initReactI18next?: ThirdPartyModule }
+).initReactI18next;
+
+const i18n: I18nInstance =
+  (i18next as unknown as { default?: I18nInstance }).default ?? (i18next as unknown as I18nInstance);
 
 const isDevelopment = isDevEnv();
 
@@ -237,13 +249,23 @@ const initializeI18n = () => {
     backend: backendOptions,
   };
 
-  i18n
+  const instance = i18n
     // Load translation using http -> see /public/locales
     .use(HttpBackend)
     // Detect user language
-    .use(LanguageDetector)
-    // Pass the i18n instance to provider-i18next
-    .use(initReactI18next)
+    .use(LanguageDetector);
+
+  if (initReactI18nextModule) {
+    try {
+      instance.use(initReactI18nextModule);
+    } catch (error) {
+      logI18nWarning('Failed to attach initReactI18next', error);
+    }
+  } else {
+    logI18nWarning('initReactI18next is unavailable; skipping React binding', 'mocked');
+  }
+
+  instance
     // Initialize i18next
     .init(browserInitOptions)
     .then(registerFormatters)
@@ -255,17 +277,36 @@ const initializeI18n = () => {
 // Initialize i18n on client side
 if (typeof window !== 'undefined') {
   initializeI18n();
+  try {
+    (window as typeof window & { i18next?: typeof i18n }).i18next = i18n;
+  } catch (error) {
+    logI18nWarning('Failed to expose i18next on window', error);
+  }
 } else {
   const ssrInitOptions: InitOptions = {
     ...baseInitOptions,
   };
-  i18n
-    .use(initReactI18next)
+  const instance = i18n;
+  if (initReactI18nextModule) {
+    try {
+      instance.use(initReactI18nextModule);
+    } catch (error) {
+      logI18nWarning('Failed to attach initReactI18next (SSR)', error);
+    }
+  }
+
+  instance
     .init(ssrInitOptions)
     .then(registerFormatters)
     .catch((error) => {
       logI18nWarning('Failed to initialize i18n (SSR)', error);
     });
+}
+
+try {
+  (globalThis as typeof globalThis & { i18next?: typeof i18n }).i18next = i18n;
+} catch (error) {
+  logI18nWarning('Failed to expose i18next on globalThis', error);
 }
 
 export { i18n };

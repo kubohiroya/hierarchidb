@@ -12,10 +12,21 @@ const iconModule = vi.hoisted(() => ({
 
 vi.mock('@hierarchidb/ui-icon', () => iconModule);
 
+vi.mock('@hierarchidb/ui-i18n', () => ({
+  useGlobalI18nTranslator: () => ({
+    t: (_key: string, fallback?: string) => fallback ?? _key,
+    language: 'en',
+  }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
   }),
+  initReactI18next: {
+    type: '3rdParty',
+    init: vi.fn(),
+  },
 }));
 
 const menuItemsModule = vi.hoisted(() => ({

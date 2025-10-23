@@ -8,42 +8,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
 import type { TreeContext, PluginMenuItem } from '~/plugin-loader/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeId } from '@hierarchidb/common-types';
-
-function useGlobalTranslation(): { t: (key: string, fallback: string) => string; language: string } {
-  const [language, setLanguage] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'default';
-    const i18n = (window as any)?.i18next;
-    return i18n?.language || i18n?.resolvedLanguage || 'default';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const i18n = (window as any)?.i18next;
-    if (!i18n?.on) return undefined;
-    const handler = (lng: string) => setLanguage(lng || 'default');
-    i18n.on('languageChanged', handler);
-    return () => {
-      i18n.off?.('languageChanged', handler);
-    };
-  }, []);
-
-  const translator = useCallback((key: string, fallback: string) => {
-    if (typeof window !== 'undefined') {
-      const i18n = (window as any)?.i18next;
-      if (i18n?.t) {
-        const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
-        if (typeof value === 'string') return value;
-      }
-    }
-    return fallback;
-  }, [language]);
-
-  return { t: translator, language };
-}
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
@@ -89,7 +58,19 @@ export function DynamicSpeedDial({
   const vmItems = usePluginMenuItems(treeId);
   // Use VM path only when we actually have menu items
   const useVM = vmItems.length > 0;
-  const { t, language } = useGlobalTranslation();
+  const { t, language } = useGlobalI18nTranslator();
+
+  const translateWithFallback = useCallback(
+    (key: string, fallback: string) => {
+      const safeFallback = fallback?.trim?.() ?? '';
+      const translated = t(key, safeFallback);
+      if (translated === key) {
+        return safeFallback || key;
+      }
+      return translated;
+    },
+    [t],
+  );
 
   const handleClose = () => setOpen(false);
   // const handleToggle = () => setOpen((v) => !v);
@@ -257,8 +238,11 @@ export function DynamicSpeedDial({
         >
           {useVM
             ? vmItems.map((item: PluginMenuItem) => {
-              const localizedLabel = t(`plugins.${item.nodeType}.name`, item.label);
-              const localizedDescription = t(
+              const localizedLabel = translateWithFallback(
+                `plugins.${item.nodeType}.name`,
+                item.label,
+              );
+              const localizedDescription = translateWithFallback(
                 `plugins.${item.nodeType}.description`,
                 (item.description ?? '').trim(),
               ).trim();

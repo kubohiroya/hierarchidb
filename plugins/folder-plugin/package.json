@@ -193,6 +193,7 @@
         "dependsOn": [
           "@hierarchidb/runtime-worker#build",
           "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/runtime-basic-info#build",
           "@hierarchidb/plugin-ui-sdk#build"
         ]
       }

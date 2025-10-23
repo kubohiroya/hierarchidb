@@ -100,5 +100,14 @@
       "react",
       "react-dom"
     ]
+  },
+  "turbo": {
+    "pipeline": {
+      "typecheck": {
+        "dependsOn": [
+          "@hierarchidb/runtime-basic-info#build"
+        ]
+      }
+    }
   }
 }

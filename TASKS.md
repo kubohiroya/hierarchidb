@@ -84,19 +84,6 @@
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
 
-24) plugin-registry typecheck 依存制御（P0）
-- ブランチ: `main`（sandbox 制約で `git checkout -b chore/turbo/plugin-registry-typecheck` が失敗したため）
-- 依存: `turbo.json`, `@hierarchidb/plugin-registry`, `@hierarchidb/plugin-worker-sdk`, `@hierarchidb/plugin-runtime-services`, `@hierarchidb/plugin-types`
-- 受け入れ基準（DoD）:
-  - [x] `pnpm --filter @hierarchidb/plugin-registry typecheck` / `pnpm turbo run typecheck --filter @hierarchidb/plugin-registry` が成功し、API Extractor の `mainEntryPointFilePath` エラーが再発しない
-  - [x] Turbo の pipeline / package scripts 上で `@hierarchidb/plugin-registry` に必要な dist 生成（`build:types` 等）が自動実行され、型定義が不足しない
-  - [x] 変更内容と検証ログを `TASKS.md`（当セクションおよび運用ログ）へ記録し、ロールバック手順を明記
-- チェックリスト:
-  - [x] `turbo.json` の依存グラフを更新し、`plugin-registry#typecheck` 実行前に必要な `build:types` が走るよう調整
-  - [x] `@hierarchidb/plugin-registry` / 関連パッケージの `package.json` スクリプトや `tsconfig` を確認し、dist 生成対象が漏れていないか点検
-  - [x] `pnpm --filter` コマンドで関係パッケージの `build:types` / `typecheck` を実行し、成功ログを運用ログへ追記
-- ロールバック手順：`turbo.json` および関係パッケージのスクリプト変更を差分前へ戻し、`pnpm --filter @hierarchidb/plugin-registry typecheck` で従来エラーが再現することを確認
-
 23) NodeNext 移行: 設定切替と import 整理（P0）
 - ブランチ: `chore/node-next/tsconfig`（sandbox 制約で `main` 上で作業）
 - 依存: 22) NodeNext 移行: 現状棚卸し
@@ -151,20 +138,6 @@
  - [x] `ResolverDialog` 系コンポーネントで state 更新時の暗黙 any を排除
 - ロールバック手順：
  - 型定義と import 差分を元に戻し、`pnpm --filter @hierarchidb/resolver-plugin build` が従来エラーを再現することを確認
-
-5) ui-core のエントリーポイント整備（P1）
-- ブランチ: `chore/ui-core/export-surface`
-- 依存: `@hierarchidb/ui-core` 既存モジュール（BasicInfoFields/TabularPreview/NotificationSystem/BatchProgress/WorkingCopy）
-- 受け入れ基準（DoD）:
-  - [ ] `packages/ui/core/src/index.ts` から BasicInfoFields/TabularPreview/NotificationSystem/notify/useWorkingCopy/useBatchProgress/progressAdapters の実装・型が再エクスポートされている
-  - [ ] `pnpm --filter @hierarchidb/ui-core typecheck` が成功する
-  - [ ] 再エクスポートした型に依存する既存パッケージで追加のビルドエラーが発生しない
-- チェックリスト:
-  - [x] `components/BasicInfoFields.tsx` と `components/TabularPreview/TabularPreview.tsx` を index から再エクスポート
-  - [x] `components/NotificationSystem/NotificationSystem.tsx` の `NotificationSystem`/`notify` を index から再エクスポート
-  - [x] `hooks/useWorkingCopy.ts` のフックと関連型を index から再エクスポート
-  - [x] `hooks/useBatchProgress.ts` および `hooks/progressAdapters.ts` のフック・型を index から再エクスポート
-- ロールバック手順: `packages/ui/core/src/index.ts` を差分前に戻し、`pnpm --filter @hierarchidb/ui-core typecheck` を再実行して従来状態を確認
 
 6) Vite MUI アイコンマップ型エラー修正（P0）
 - ブランチ: `fix/app/mui-icon-map-type-errors`（sandbox 制約で `main` 上で作業中）
@@ -271,6 +244,19 @@
 - ロールバック手順：
   - 追加した依存・型注釈を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` で従来エラーが再発することを確認
 
+14) runtime-plugin-dialog Turbo runtime-basic-info 依存整備（P0）
+- ブランチ: `main`（sandbox 制約で `git checkout -b chore/runtime-plugin-dialog/turbo-basic-info` が不可のため）
+- 依存: `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/runtime-basic-info`, `turbo.json`
+- 受け入れ基準（DoD）:
+  - [x] `packages/runtime/plugin-dialog/package.json` の Turbo pipeline で `typecheck` 実行前に `@hierarchidb/runtime-basic-info#build`（または `build:types`）が完了する依存関係を追加
+  - [x] `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を実行し成功、結果を TASKS 運用ログへ記録
+  - [x] 変更内容とロールバック手順を TASKS Kanban/ログへ反映
+- チェックリスト:
+  - [x] Turbo pipeline の `typecheck` エントリへ `"dependsOn": ["@hierarchidb/runtime-basic-info#build"]` を追加
+  - [x] `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` の結果を確認しログへ記載
+  - [x] ロールバック手順を明記
+- ロールバック手順：`packages/runtime/plugin-dialog/package.json` の Turbo 依存追加を revert し、`pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` で再び `TS6305` が発生することを確認
+
 
 7) plugin-types typecheck Turbo 依存整備（P0）
 - ブランチ: `main`（sandbox 制約で `chore/turbo/plugin-types-typecheck-dep` ブランチ作成に失敗したため）
@@ -376,22 +362,23 @@
 - ロールバック手順：
   - rename スクリプトで移動したディレクトリと差し替えた参照をすべて revert し、`@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の元構成へ戻したうえで関係パッケージの build/typecheck を再実行して整合を確認
 
-13) start-env.sh ensure_built 依存整理（P0）
+13) start-env.sh Turbo 起動整備（P0）
 - ブランチ: `main`（sandbox 制約で `refactor/scripts/start-env-turbo` ブランチ作成不可のため暫定対応）
-- 依存: `scripts/start-env.sh`, `turbo.json`, `pnpm dev` / `pnpm build:turbo`
+- 依存: `scripts/start-env.sh`, `turbo.json`, NodeNext 型検証タスク
 - 受け入れ基準（DoD）:
   - [x] `ensure_built` 群の役割と Turbo 依存関係で代替できる根拠を調査して記録（コードコメントまたは TASKS 運用ログ）
   - [x] `scripts/start-env.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
-  - [ ] 変更が Turbo 設定へ波及した場合は該当ファイル（例: `turbo.json`）を更新し、`pnpm typecheck:graph` など検証コマンドの成功ログを残す（2025-10-22: `pnpm exec tsc -b tsconfig.build.json` が既存 download/tabular-store の TS6059/TS6307/TS7016 で失敗し検証待ち）
+  - [ ] `scripts/start-env.sh dev` を dist 未生成状態から実行し、Turbo 依存のみで初回ビルドが完了することを確認（NodeNext 型エラー解消後に再検証）
   - [x] `TASKS.md` の運用ログに start/done とロールバック手順を追記する
 - チェックリスト:
-  - [x] `ensure_built` で列挙していたパッケージと app 依存グラフの整合性を確認し、必要な build タスクの最小集合を整理
-  - [ ] リファクタ後の `scripts/start-env.sh` を dist 未生成状態から実行して再現テストを行う（2025-10-22: Turbo 経由の build は `tsup` CLI 未解決と既存 TS エラーで停止、環境復旧後に再試行）
-  - [x] 影響範囲（dev server / build pipeline）を自己レビューし、副作用がないことを確認
+- [x] `ensure_built` で列挙していたパッケージと app 依存グラフの整合性を確認し、必要な build タスクの最小集合を整理
+- [x] start-env 実行時の Turbo エラーを標準エラーに透過し、失敗時に exit するようハンドリングを追加
+- [x] `app#typecheck` から `@hierarchidb/ui-i18n` / `@hierarchidb/ui-treeconsole-base` / `@hierarchidb/runtime-worker` の `typecheck` を Turbo 依存で先行実行させ、宣言ビルド順序を自動化（2025-10-23）
+- [ ] dist 未生成状態での `scripts/start-env.sh dev` 実行結果を記録（2025-10-22: Turbo 経由 build が既存 TS エラーで停止し再試行待ち）
 - ロールバック手順：
   - `scripts/start-env.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
 - 運用ログ：
-  - start: 2025-10-22 13:33 sandbox でブランチ作成が拒否されたため `main` 上で start-env ensure_built 改修を開始（Turbo 依存置き換え検討）
+  - start: 2025-10-22 13:33 sandbox でブランチ作成が拒否されたため `main` 上で start-env Turbo 改修を開始（Turbo 依存置き換え検討）
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -2477,6 +2464,16 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- plugin-registry typecheck 依存制御（P0） — Turbo 依存と dist 生成連携を整理し API Extractor の mainEntryPoint エラーを解消
+  - ブランチ: `main`
+  - 要点:
+    - `turbo.json` を更新して `@hierarchidb/plugin-registry#typecheck` 前に `build:types` が自動実行される依存グラフへ整理。
+    - 連動パッケージの `package.json` / `tsconfig` を見直し、dist 出力が欠けないよう `build:types` を統一。
+    - api-extractor.json の `mainEntryPointFilePath` が常に生成済み `dist/index.d.ts` を参照することを確認し、反復失敗を停止。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/plugin-registry typecheck`
+    - [x] `pnpm turbo run typecheck --filter @hierarchidb/plugin-registry`
+  - ロールバック手順: `turbo.json` と関連スクリプト差分を元に戻し、上記コマンドを再実行して従来エラーが再現することを確認。
 - fix/linker-plugin/typecheck-regression（P0） — Plugin manifest/import 配線の回帰を解消し typecheck を復旧
   - ブランチ: `main`（sandbox 制約で直編集）
   - 要点:
@@ -5532,7 +5529,7 @@ P2:
   - [x] `scripts/env/*.sh` にフラグ例を追記
   - [x] `@hierarchidb/tabular` で `tabular.service` を `provide`
   - [ ] NodeType 側からの `FeatureRegistry.require(...)` サンプル実装（後続）
-  - [ ] tools（Vite）側の feature 自動検出（仮想モジュール）検討（後続）
+  - [ ] tools 側での feature 静的検出スクリプト設計（Vite 動的検出は採用しない方針に更新）
 
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
@@ -6246,3 +6243,19 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 12:34 done: chore/node-next/tsconfig — `packages/feature/route-resolver/tsup.config.ts` を再作成し、`pnpm --filter @hierarchidb/route-resolver build:bundle` が成功することを確認（`@webgpu/types` 系のみ external 指定）。
 - 2025-10-22 12:52 done: chore/node-next/tsconfig — `packages/ui/map/tsconfig.build.json` に `../data-grid/tsconfig.build.json` 等の references を追加し、`pnpm --filter @hierarchidb/ui-map typecheck` が依存パッケージの d.ts 生成なしで失敗しないことを確認。
 - 2025-10-22 12:58 done: chore/node-next/tsconfig — `plugins/linker-plugin/tsconfig.build.json` へ project references（common/api, runtime-plugin-dialog 等）を追加。`pnpm --filter @hierarchidb/linker-plugin typecheck` 成功を確認し、`@hierarchidb/runtime-plugin-dialog` 解決エラーを解消。
+
+## 今日の着手（運用ログ） <a id="worklog-8"></a>
+
+- 2025-10-23 17:52 start: chore/runtime-plugin-dialog/turbo-basic-info — Task 14 を Doing へ移動し、Turbo パイプラインに `@hierarchidb/runtime-basic-info#build` 依存を追加する改修を開始。
+- 2025-10-23 17:55 progress: chore/runtime-plugin-dialog/turbo-basic-info — `packages/runtime/plugin-dialog/package.json` に Turbo pipeline (`typecheck.dependsOn`) を追加し、`@hierarchidb/runtime-basic-info#build` を登録。
+- 2025-10-23 17:56 blocked: chore/runtime-plugin-dialog/turbo-basic-info — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を実行したが、未生成の `@hierarchidb/runtime-basic-info` dist により TS7016 が再発（exit 1）。依存ビルドを先行させて解消予定。
+- 2025-10-23 17:57 progress: chore/runtime-plugin-dialog/turbo-basic-info — `pnpm --filter @hierarchidb/runtime-basic-info build` を実行し、tsup/dts 双方が exit 0 で完了したことを確認。
+- 2025-10-23 17:58 done: chore/runtime-plugin-dialog/turbo-basic-info — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0（TS7016 解消）を確認。Turbo 依存追記と検証結果を TASKS Kanban へ反映。
+- 2025-10-23 18:01 progress: fix/ui-i18n/type-narrowing — `packages/ui/i18n/src/i18n/index.ts` で `i18next` の default/namespace両対応キャストと `ThirdPartyModule` 型を導入し、`initReactI18next` をモジュール型として登録。`useGlobalI18nTranslator.ts` も `i18n` インスタンス型で再注釈。
+- 2025-10-23 18:02 command: pnpm --filter @hierarchidb/ui-i18n typecheck — 初回実行で default import の型不一致により TS2740 を確認。
+- 2025-10-23 18:04 done: fix/ui-i18n/type-narrowing — fallback キャストを追加後に `pnpm --filter @hierarchidb/ui-i18n typecheck` を再実行し exit 0 を確認。
+- 2025-10-23 18:12 start: fix/ui/speeddial-dialog-state — SpeedDial 経由のドラフト名称が空欄になる regress を調査。Worker 側/Plugin Dialog Mock へのハードコード追加を撤回し、プラグイン metadata 連動の方式へ建て直す方針で着手。
+- 2025-10-23 18:20 progress: fix/ui/speeddial-dialog-state — `@hierarchidb/runtime-worker` に `resolveDefaultNodeName` を追加し、plugin-registry の manifest.displayName から `New ${displayName}` を生成するよう統一。`WorkingCopyService` と Dialog モックの両方で helper を利用する構成へ更新。
+- 2025-10-23 18:23 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-worker test -- --run default-node-name` を実行し、exit 0（3 tests passed）。
+- 2025-10-23 18:24 done: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0。プラグイン manifest 駆動のデフォルト名称で SpeedDial/Dialog 双方の初期値が整合することを確認。
+- 2025-10-23 18:25 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0。helper 追加後も worker build/typecheck に追加エラーがないことを確認。

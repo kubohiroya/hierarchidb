@@ -1,4 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
+import { resolveDefaultNodeName } from '@hierarchidb/runtime-worker';
 
 type WorkingCopy = {
   id: NodeId;
@@ -67,6 +68,7 @@ export class WorkerAPIImpl {
           data: {},
           metadata: { currentStep: 0 },
         };
+        wc.data.name = resolveDefaultNodeName(nodeType);
         self.store.set(id, wc);
         return id;
       },

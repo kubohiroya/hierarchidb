@@ -14,7 +14,8 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
   version: PLUGIN_VERSION,
   description: PLUGIN_DESCRIPTION,
   icon: {
-    mui: 'Timeline',
+    mui: 'AccessTime',
+    muiIconName: 'AccessTime',
     emoji: '🕒',
     color: '#8a7cbf',
   },

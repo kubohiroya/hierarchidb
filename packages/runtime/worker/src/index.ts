@@ -27,6 +27,7 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 import { WorkingCopyService } from './services/WorkingCopyService.js';
 import { DialogStateService } from './services/DialogStateService.js';
 import type { PluginDefinition } from '@hierarchidb/plugin-types';
+export { resolveDefaultNodeName } from './utils/default-node-name.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;

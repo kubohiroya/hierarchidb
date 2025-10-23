@@ -8,6 +8,7 @@ import { type MouseEvent, type ReactElement, type ReactNode, useEffect, useMemo,
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, ContentCut as ContentCutIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
@@ -16,42 +17,6 @@ const logNodeContextMenuWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
   console.warn('[NodeContextMenu]', message, error);
 };
-
-function useGlobalTranslator(): { t: (key: string, fallback: string) => string; language: string } {
-  const [language, setLanguage] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'default';
-    const i18n = (window as any)?.i18next;
-    return i18n?.language || i18n?.resolvedLanguage || 'default';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const i18n = (window as any)?.i18next;
-    if (!i18n?.on) return undefined;
-    const handler = (lng: string) => setLanguage(lng || 'default');
-    i18n.on('languageChanged', handler);
-    return () => {
-      i18n.off?.('languageChanged', handler);
-    };
-  }, []);
-
-  const translator = useMemo(() => {
-    return (key: string, fallback: string) => {
-      if (typeof window !== 'undefined') {
-        const i18n = (window as any)?.i18next;
-        if (i18n?.t) {
-          const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
-          if (typeof value === 'string') {
-            return value;
-          }
-        }
-      }
-      return fallback;
-    };
-  }, [language]);
-
-  return { t: translator, language };
-}
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -119,7 +84,18 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
-  const { t, language } = useGlobalTranslator();
+  const { t, language } = useGlobalI18nTranslator();
+
+  const translateWithFallback = useMemo(() => {
+    return (key: string, fallback: string) => {
+      const safeFallback = fallback?.trim?.() ?? '';
+      const translated = t(key, safeFallback);
+      if (translated === key) {
+        return safeFallback || key;
+      }
+      return translated;
+    };
+  }, [t]);
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -439,8 +415,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       >
         {builtCreateItems.map((ci) => {
           const IconEl: ReactNode = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color);
-          const localizedLabel = t(`plugins.${ci.type}.name`, ci.label);
-          const localizedDescription = t(`plugins.${ci.type}.description`, ci.description ?? '').trim();
+          const localizedLabel = translateWithFallback(`plugins.${ci.type}.name`, ci.label);
+          const localizedDescription = translateWithFallback(`plugins.${ci.type}.description`, ci.description ?? '').trim();
 
           if (localizedDescription.length === 0) {
             return (

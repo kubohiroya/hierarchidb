@@ -3,6 +3,7 @@ import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hi
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-i18n';
 
 // Defer resolving ui-core to runtime to avoid build-time type resolution issues
 
@@ -34,47 +35,21 @@ export interface RowContextMenuProps {
   readonly treeId?: string;
 }
 
-function useGlobalTranslator(): { t: (key: string, fallback: string) => string; language: string } {
-  const [language, setLanguage] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'default';
-    const i18n = (window as any)?.i18next;
-    return i18n?.language || i18n?.resolvedLanguage || 'default';
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const i18n = (window as any)?.i18next;
-    if (!i18n?.on) return undefined;
-    const handler = (lng: string) => setLanguage(lng || 'default');
-    i18n.on('languageChanged', handler);
-    return () => {
-      i18n.off?.('languageChanged', handler);
-    };
-  }, []);
-
-  const translator = useMemo(() => {
-    return (key: string, fallback: string) => {
-      if (typeof window !== 'undefined') {
-        const i18n = (window as any)?.i18next;
-        if (i18n?.t) {
-          const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
-          if (typeof value === 'string') {
-            return value;
-          }
-        }
-      }
-      return fallback;
-    };
-  }, [language]);
-
-  return { t: translator, language };
-}
-
 export const RowContextMenu = memo(
   function RowContextMenu(props: RowContextMenuProps) {
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
-    const { t, language } = useGlobalTranslator();
+    const { t, language } = useGlobalI18nTranslator();
+    const translateWithFallback = useMemo(() => {
+      return (key: string, fallback: string) => {
+        const safeFallback = fallback?.trim?.() ?? '';
+        const translated = t(key, safeFallback);
+        if (translated === key) {
+          return safeFallback || key;
+        }
+        return translated;
+      };
+    }, [t]);
 
     // Use refs to store the latest props to avoid stale closures
     const propsRef = useRef(props);
@@ -360,8 +335,8 @@ export const RowContextMenu = memo(
               const items = builder(props.treeId) as CreateMenuEntry[];
               return (items || []).map((i) => {
                 const IconEl: ReactNode = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color);
-                const localizedLabel = t(`plugins.${i.nodeType}.name`, i.label);
-                const localizedDescription = t(`plugins.${i.nodeType}.description`, i.description ?? '').trim();
+                const localizedLabel = translateWithFallback(`plugins.${i.nodeType}.name`, i.label);
+                const localizedDescription = translateWithFallback(`plugins.${i.nodeType}.description`, i.description ?? '').trim();
 
                 if (localizedDescription.length === 0) {
                   return (

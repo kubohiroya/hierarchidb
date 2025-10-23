@@ -10,3 +10,4 @@ export { useTranslation, Trans, Translation, I18nextProvider } from 'react-i18ne
 export * from './utils/i18nLogger.js';
 export * from './i18n/index.js';
 export * from './provider/LanguageProvider.js';
+export * from './hooks/useGlobalI18nTranslator.js';

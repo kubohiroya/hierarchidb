@@ -112,7 +112,10 @@
       "typecheck": {
         "dependsOn": [
           "@hierarchidb/resolver-plugin#typecheck",
-          "@hierarchidb/linker-plugin#typecheck"
+          "@hierarchidb/linker-plugin#typecheck",
+          "@hierarchidb/ui-i18n#typecheck",
+          "@hierarchidb/ui-treeconsole-base#typecheck",
+          "@hierarchidb/runtime-worker#typecheck"
         ]
       }
     }

@@ -19,6 +19,7 @@ import {
 } from './WorkingCopyTreeNodeOperations.js';
 import type { CommitResultV2 } from './WorkingCopyTreeNodeOperations.js';
 import type { CommandProcessor } from './CommandProcessor.js';
+import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -40,7 +41,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
       treeId,
       parentId,
       nodeType,
-      initialData?.name ?? `New ${nodeType}`,
+      (initialData?.name && initialData.name.trim()) || resolveDefaultNodeName(nodeType),
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
