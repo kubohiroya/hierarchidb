@@ -1,4 +1,4 @@
-import type { LoadWorkerAPIClientReturn } from '~/loader.js';
+import type { LoadWorkerAPIClientReturn } from '../loader.ts';
 import { useWorkerClient } from '../contexts/WorkerProvider.js';
 
 export function useWorkerAPIClient(): LoadWorkerAPIClientReturn {

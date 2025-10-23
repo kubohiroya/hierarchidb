@@ -1,5 +1,5 @@
-import { useAppConfig } from '~/contexts/AppConfigContext.js';
-import { resolveAssetHref } from '~/loadAppConfig.js';
+import { useAppConfig } from '../contexts/AppConfigContext.js';
+import { resolveAssetHref } from '../loadAppConfig.js';
 
 /**
  * Common head tags for all pages

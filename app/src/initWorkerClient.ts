@@ -1,6 +1,6 @@
 // Deprecated compatibility shim for legacy imports.
 // Provides lazy wrappers around the dynamic client module to avoid static bundling.
-type ClientModule = typeof import('./client.js');
+type ClientModule = typeof import('./client.ts');
 type InitializeWorkerFn = ClientModule['initializeWorker'];
 type GetWorkerClientFn = ClientModule['getWorkerClient'];
 type GetRawWorkerInstanceFn = ClientModule['getRawWorkerInstance'];
@@ -12,7 +12,7 @@ let modulePromise: Promise<ClientModule> | null = null;
 async function loadClientModule(): Promise<ClientModule> {
   if (cachedModule) return cachedModule;
   if (!modulePromise) {
-    modulePromise = import('./client.js')
+    modulePromise = import('./client.ts')
       .then((module) => {
         cachedModule = module;
         return module;

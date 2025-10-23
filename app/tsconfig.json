@@ -25,7 +25,9 @@
     "esModuleInterop": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "module": "NodeNext"
+    "allowImportingTsExtensions": true,
+    "module": "NodeNext",
+    "noEmit": true,
   },
   "include": [
     "src/**/*.ts",

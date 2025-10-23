@@ -35,8 +35,8 @@ export const InitInspector: React.FC = () => {
     const update = async () => {
       try {
         const [{ WorkerAPIClient }, { isWorkerInitCompleted }] = await Promise.all([
-          import('../WorkerAPIClient.js'),
-          import('../client.js'),
+          import('../WorkerAPIClient.ts'),
+          import('../client.ts'),
         ]);
         const clientReady = WorkerAPIClient.isReady();
         const hasInstance = WorkerAPIClient.getRawWorkerInstance() != null;
@@ -96,7 +96,7 @@ export const InitInspector: React.FC = () => {
   };
 
   const ping = async () => {
-    const { WorkerAPIClient } = await import('../WorkerAPIClient.js');
+    const { WorkerAPIClient } = await import('../WorkerAPIClient.ts');
     try {
       await WorkerAPIClient.initialize();
       const client = WorkerAPIClient.getSingleton();

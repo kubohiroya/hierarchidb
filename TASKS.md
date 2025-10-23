@@ -110,47 +110,6 @@
   - [ ] 実行コマンドと結果を TASKS 運用ログに記録
 - ロールバック手順：形プラグインで行った import/path 変更を差分前へ戻し、`pnpm --filter @hierarchidb/shape-plugin build` を再実行して従来挙動を確認
 
-3) dep-fence WARN cleanup（ui-datasource/ui-license/ui-i18n）（P2）
-- ブランチ: `chore/ui/dep-fence-warn-cleanup`（sandbox 制約で `main` 上で作業）
-- 依存: dep-fence 基盤, `@hierarchidb/ui-datasource`, `@hierarchidb/ui-license`, `@hierarchidb/ui-i18n`
-- 受け入れ基準（DoD）：
-  - [x] `pnpm exec dep-fence --strict` で該当 WARN が消失し、他 WARN/ERROR を追加しない
-  - [x] `pnpm exec tsc -p packages/ui/datasource/tsconfig.json --pretty false` を実行し成功
-  - [x] `pnpm exec tsc -p packages/ui/license/tsconfig.json --pretty false` を実行し成功
-  - [x] `pnpm --filter @hierarchidb/ui-i18n build` が成功
-- チェックリスト：
-  - [x] `@hierarchidb/ui-datasource` に `tsconfig.json` を追加し、`jsx: react-jsx` を明示
-  - [x] `@hierarchidb/ui-license` に `tsconfig.json` を追加し、`jsx: react-jsx` を明示
- - [x] `@hierarchidb/ui-i18n` の external 指定ライブラリ（detector/backend/date-fns）を peerDependencies 化し、devDependencies を補完
-- ロールバック手順：
-  - 追加した `tsconfig.json` と `package.json` の差分を戻し、上記コマンドを再実行して WARN 再現を確認
-
-4) Resolver WorkingCopy 型整備（P1）
-- ブランチ: `fix/plugins/resolver-workingcopy-types`（sandbox 制約で `main` 上で作業）
-- 依存: `@hierarchidb/base-plugin`, `@hierarchidb/resolver-plugin`
-- 受け入れ基準（DoD）：
-  - [x] `@hierarchidb/resolver-plugin` の build/typecheck が成功
-  - [x] `ResolverWorkingCopyEntity` の型定義が WorkingCopyDraft ベースで一元化され、重複エイリアスが存在しない
-  - [x] ハンドラー・UI で `ResolverDraftPayload` / `ResolverWorkingCopy` が正しく import され、暗黙の any が発生しない
-- チェックリスト：
-  - [x] `src/types/RuntimeWorkerService.ts` で `ResolverWorkingCopyEntity` を定義し、関連エイリアスを整理
- - [x] `ResolverEntityHandler` に `ResolverDraftPayload` を import し draftPayload の型エラーを解消
- - [x] `ResolverDialog` 系コンポーネントで state 更新時の暗黙 any を排除
-- ロールバック手順：
- - 型定義と import 差分を元に戻し、`pnpm --filter @hierarchidb/resolver-plugin build` が従来エラーを再現することを確認
-
-6) Vite MUI アイコンマップ型エラー修正（P0）
-- ブランチ: `fix/app/mui-icon-map-type-errors`（sandbox 制約で `main` 上で作業中）
-- 依存: `@hierarchidb/app`
-- 受け入れ基準（DoD）:
-  - [x] `pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node` が成功し、修正による新規エラーが発生しない
-  - [x] Node ESM 互換のパス解決へ置き換え、`__dirname` に依存しない実装となる
-- チェックリスト:
-  - [x] TASKS 運用ログに start/done を記録
-  - [x] 変更差分を自己レビューし、不要な副作用がないことを確認
-- ロールバック手順：
-  - 当該ファイルの変更を revert し、`pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node` を再実行して現状復帰を確認
-
 7) Vite Plugin Node-Type Registry lint 修正（P0）
 - ブランチ: `fix/tools/vite-plugin-node-type-registry-lint`（sandbox 制約で `main` 上で作業中）
 - 依存: `@hierarchidb/vite-plugin-node-type-registry`
@@ -231,18 +190,12 @@
   - 追加した依存を `package.json` から削除し、`pnpm install --lockfile-only` を実行のうえ同コマンドでエラー再現を確認
 
 13) shape-plugin runtime-worker 型解決＆checkbox 行型補強（P0）
-- ブランチ: `main`（sandbox 制約で `git checkout -b fix/shape-plugin/runtime-worker-types` 不可）
-- 依存: `@hierarchidb/shape-plugin`, `@hierarchidb/plugin-ui-sdk`, `@hierarchidb/runtime-worker`
-- 受け入れ基準（DoD）:
-  - [x] `@hierarchidb/shape-plugin` の typecheck が `@hierarchidb/runtime-worker` / `@hierarchidb/plugin-ui-sdk` の TS2307 を発生させない
-  - [x] `Step5CountrySelection` の `map` コールバックで暗黙 any が解消されている
-- チェックリスト:
-  - [x] `plugins/shape-plugin/package.json` に `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として追加し、tsup external にも登録
-  - [x] `Step5CountrySelection.tsx` の `map` コールバックへ型注釈を追加
-  - [x] 必要に応じて `plugins/shape-plugin/node_modules/@hierarchidb/plugin-ui-sdk` をワークスペースへリンク
-  - [x] `pnpm --filter @hierarchidb/shape-plugin typecheck` の結果を運用ログへ記録
-- ロールバック手順：
-  - 追加した依存・型注釈を revert し、`pnpm --filter @hierarchidb/shape-plugin typecheck` で従来エラーが再発することを確認
+- ブランチ: `main`
+- 要点:
+  - `@hierarchidb/plugin-ui-sdk` を peer/dev 依存として shape plugin に追加し、tsup external へ登録。
+  - checkbox 行更新ロジックへ型注釈を付与し、暗黙 any を排除。
+- 検証: `pnpm --filter @hierarchidb/shape-plugin typecheck`。
+- ロールバック手順：依存と型注釈の差分を戻し、`pnpm --filter @hierarchidb/shape-plugin typecheck` で旧エラーが再現することを確認。
 
 14) runtime-plugin-dialog Turbo runtime-basic-info 依存整備（P0）
 - ブランチ: `main`（sandbox 制約で `git checkout -b chore/runtime-plugin-dialog/turbo-basic-info` が不可のため）
@@ -259,18 +212,12 @@
 
 
 7) plugin-types typecheck Turbo 依存整備（P0）
-- ブランチ: `main`（sandbox 制約で `chore/turbo/plugin-types-typecheck-dep` ブランチ作成に失敗したため）
-- 依存: `@hierarchidb/plugin-types`, `@hierarchidb/plugin-ui-sdk`, `turbo.json`
-- 受け入れ基準（DoD）:
-  - [ ] Turbo パイプラインで `@hierarchidb/plugin-types#typecheck` 実行前に `@hierarchidb/plugin-ui-sdk#build`（または型出力生成コマンド）が完了する依存関係を構築
-  - [ ] `pnpm turbo run typecheck --filter @hierarchidb/plugin-types` を実行し、`plugin-ui-sdk` 側のビルドが先行し成功ログを取得
-  - [ ] 変更内容・検証結果・ロールバック手順を TASKS.md のチェックリストと運用ログへ反映
-- チェックリスト:
-  - [x] `turbo.json`（または関連スクリプト）へ `plugin-types#typecheck` → `plugin-ui-sdk#build` 依存を追加
-  - [ ] 検証コマンドの結果を収集し、運用ログに記録
-  - [x] ロールバック手順（設定を差分前に戻し検証コマンドを再実行）を記載
-- ロールバック手順：
-  - 追加した Turbo 設定を revert し、`pnpm turbo run typecheck --filter @hierarchidb/plugin-types` で `plugin-ui-sdk` ビルドが走らない従来挙動へ戻ることを確認
+- ブランチ: `main`
+- 要点:
+  - Turbo pipeline に `plugin-types#typecheck` → `plugin-ui-sdk#build` 依存を追加し、typecheck 前にビルドが走るよう統合。
+  - `packages/plugin-types/tsconfig.json` に `disableSourceOfProjectReferenceRedirect` を追加し、依存ビルドで dist が生成されるまで参照しないよう調整。
+- 検証: `pnpm --filter @hierarchidb/plugin-types typecheck`, `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full`。
+- ロールバック手順：Turbo 設定・tsconfig 差分を revert し、上記コマンドが従来の型エラーに戻ることを確認。
 
 9) Location/Route/Shape 通知レイヤー統一（P1）
 - ブランチ: `refactor/ui/notify-unify`（sandbox 制約でブランチ作成不可のため `main` 上で作業）
@@ -383,6 +330,29 @@
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
+
+0) tools predeploy gh-pages スクリプト整備（P1）
+- ブランチ: `main`（sandbox 制約でローカルブランチ作成不可）
+- 依存: `@hierarchidb/tools`, `@hierarchidb/app`
+- 受け入れ基準（DoD）:
+  - [ ] `tools/src/scripts/fix-spa-build.ts` を `prepare-gh-pages-build.ts` へリネームし、処理内容をコメントに明記
+  - [ ] `app/package.json` の `predeploy` で `pnpm run tools:prepare-gh-pages-build` を実行する
+  - [ ] 旧名称を参照しているドキュメント・スクリプトを `tools:prepare-gh-pages-build` へ更新
+- チェックリスト:
+  - [ ] `tools/package.json` に新スクリプト名を反映し、`pnpm run tools:prepare-gh-pages-build` が成功することを確認
+  - [ ] `docs/tanstack-router-migration-plan.md` などの記載を最新化
+- ロールバック手順：リネームと npm スクリプト差分を revert し、`pnpm -C app run predeploy` が旧 `fix-spa-build` に戻ることを確認
+
+0b) Vite 環境シェルスクリプト名称整理（P1）
+- ブランチ: `main`
+- 依存: `pnpm` ワークスペーススクリプト
+- 受け入れ基準（DoD）:
+  - [ ] `scripts/start-env.sh` を `scripts/env_vite.sh` にリネーム
+  - [ ] ルート `package.json` の `dev` / `build` など、該当シェルを参照するスクリプトをすべて新名称に更新
+  - [ ] 関連ドキュメント（README/TASKS 等）を最新名称へ差し替え
+- チェックリスト:
+  - [ ] `pnpm run dev` / `pnpm run build` が成功することを確認
+- ロールバック手順：シェルと `package.json` の差分を戻し、旧名称で `pnpm run dev` が動作することを確認
 
 11) Runtime Plugin Metadata 整備（P1）
 - ブランチ: `refactor/runtime/plugin-metadata-contract`
@@ -2024,7 +1994,7 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 
 - 2025-10-22 14:05 start: fix/app/plugin-type-resolution — `app/src/types/plugin-shims.d.ts` 依存を廃し、プラグインの UI/worker/database をビルド成果物から直接参照できるよう解決経路を整理。`pnpm -C app typecheck` エラー再発を防ぐ構成を検証予定。
 - 2025-10-22 14:32 progress: fix/app/plugin-type-resolution — `scripts/generate-plugin-loader.mjs` にプラグイン exports 情報から `.d.ts` を再エクスポートする自動生成処理を追加し、`app/src/types/generated/plugin-modules.d.ts` を生成。モジュール解決では dist の型をそのまま再利用する方針に切り替え、`any` を排除。
-- 2025-10-22 14:48 done: fix/app/plugin-type-resolution — 生成処理を `node scripts/generate-plugin-loader.mjs` へ集約し、差分が無ければファイル書き換えをスキップする構成に更新。`packages/plugin-registry` の `prebuild` で同スクリプトを自動実行するようにし、CI/ローカルのビルドで手動実行が不要に。`pnpm --filter @hierarchidb/plugin-registry build` で TS5055 が再発しないことを確認。ロールバック: スクリプトと `package.json` 変更を戻し、旧 shim 方式に復帰。
+- 2025-10-22 14:48 done: fix/app/plugin-type-resolution — 生成処理を `pnpm run tools:generate-plugin-loader` へ集約し、差分が無ければファイル書き換えをスキップする構成に更新。`packages/plugin-registry` の `prebuild` で同スクリプトを自動実行するようにし、CI/ローカルのビルドで手動実行が不要に。`pnpm --filter @hierarchidb/plugin-registry build` で TS5055 が再発しないことを確認。ロールバック: スクリプトと `package.json` 変更を戻し、旧 shim 方式に復帰。
 - 2025-10-18 09:45 start: refactor/plugins/download-service-lifecycle — 前回セッションが `400 Bad Request` で中断した shared DownloadService 配線見直しを再開。RuntimeWiring から共有登録を撤去し、各バッチが `get<Location|Route>DownloadService` でオンデマンド生成する構成への移行を進める。
 - 2025-10-18 10:10 progress: refactor/plugins/download-service-lifecycle — `pnpm --filter @hierarchidb/location-plugin typecheck` / `pnpm --filter @hierarchidb/route-plugin typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` を実行し、新しい on-demand 構成で型検証が通過することを確認。追加の自動テストは未実施。
 - 2025-10-18 10:28 progress: refactor/plugins/download-service-lifecycle — Worker 環境で `localStorage` が利用できない点を反映し、per-host concurrency の上書きを `.env` と明示的なレジストリ設定経由に限定。関連ドキュメント（app/docs/11-settings.md・15-runtime-flags.md）とタスク DoD を更新。
@@ -2520,6 +2490,26 @@ P2:
     - 各パッケージで削除した `react-router(-dom)` 依存とモックを戻し、tsup/Storybook 設定を復元してから上記コマンド群を再実行。
   - 影響範囲: UI コンポーネント／runtime-ui plugin／Storybook ドキュメント環境。HashRouter 依存の暫定コードがない状態で `tanstack-router` ベースに統一済み。
 - Preview 環境 React hydration エラー修正（P1） — SSR スプラッシュの除去と Worker バンドル URL 調整で preview 時の hydrate エラーを抑止
+
+- dep-fence WARN cleanup（ui-datasource/ui-license/ui-i18n）（P2） — dep-fence の警告を解消し UI パッケージの tsconfig/依存を整理
+  - ブランチ: `main`
+  - 要点:
+    - `@hierarchidb/ui-datasource` と `@hierarchidb/ui-license` に `tsconfig.json` を追加し、`jsx: react-jsx` を明示。
+    - `@hierarchidb/ui-i18n` の detector/backend/date-fns 依存を peer + dev に揃え、ビルド後 external として扱う。
+    - dep-fence を再実行し、対象 WARN が消えていることを確認。
+  - 検証: `pnpm exec dep-fence --strict`、`pnpm exec tsc -p packages/ui/{datasource,license}/tsconfig.json --pretty false`、`pnpm --filter @hierarchidb/ui-i18n build`。
+- Resolver WorkingCopy 型整備（P1） — Resolver プラグインの WorkingCopy 型を統一し暗黙 any を排除
+  - ブランチ: `main`
+  - 要点:
+    - `ResolverWorkingCopyEntity` を共有型として再定義し、Draft/Handler 周辺の import を整列。
+    - UI/Worker 双方で暗黙 any が発生していた箇所を型注釈で補強。
+  - 検証: `pnpm --filter @hierarchidb/resolver-plugin build`, `pnpm --filter @hierarchidb/resolver-plugin typecheck`。
+- Vite MUI アイコンマップ型エラー修正（P0） — Vite 用 MUI アイコンマッププラグインを NodeNext 互換に更新
+  - ブランチ: `main`
+  - 要点:
+    - `vite-plugin-mui-icon-map.ts` のパス解決を `import.meta.url` ベースに切り替え、`__dirname` 依存を排除。
+    - NodeNext 設定で `tsc --noEmit` が通ることを確認。
+  - 検証: `pnpm exec tsc --noEmit vite-plugin-mui-icon-map.ts --module Node16 --target ES2022 --moduleResolution Node16 --lib ES2022,DOM --types node`。
   - ブランチ: `fix/app/preview-hydration`
   - 要点: HydrateFallback DOM に ID を付与しクライアント初期化時に除去、`worker.ts?worker&url` を採用して `pnpm preview` でも Worker が適切な MIME で配信されるよう修正。`pnpm --filter @hierarchidb/app typecheck` はグリーン（build/preview 実行は sandbox 制約で未実施）。
 - fix/ui/i18n-browser-detector-missing（i18next 言語検出モジュール解決, P0） — ランタイム依存の再整理で検出モジュールの解決エラーを解消
@@ -6034,7 +6024,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。
 - 2025-10-04 23:30 progress: refactor/worker/error-model-unify — エラー分類ユーティリティ追加と CommandProcessor 差し替えを中心とした改修計画を策定。
 - 2025-10-18 14:05 start: refactor/app/remove-ui-fallback — Worker 向け UI フォールバック撤去タスクに着手（virtual/stubs 参照の洗い出し開始）。
-- 2025-10-18 14:18 progress: refactor/app/remove-ui-fallback — `node scripts/generate-plugin-loader.mjs` を実行し、スタブ無しの UI ローダーを生成（`app/src/generated/ui-loader.ts` を手動検証）。
+- 2025-10-18 14:18 progress: refactor/app/remove-ui-fallback — `pnpm run tools:generate-plugin-loader` を実行し、スタブ無しの UI ローダーを生成（`app/src/generated/ui-loader.ts` を手動検証）。
 - 2025-10-18 14:40 blocked: refactor/app/remove-ui-fallback — `pnpm install --filter @hierarchidb/app --lockfile-only` を実行したが、network access 制約で registry への接続が断続的に失敗（ENOTFOUND）が続きタイムアウト。依存追加による lockfile 更新は未完了。
 - 2025-10-18 14:48 blocked: refactor/app/remove-ui-fallback — `pnpm -C app typecheck` を実行したところ、既存の tour/UI モジュール未整備や `@hierarchidb/common-api` の API 不一致による型エラー多数で失敗（従来課題を再確認）。
 - 2025-10-18 15:05 progress: refactor/app/remove-ui-fallback — `app/package.json` に各 UI プラグインを workspace 依存として追加し、`scripts/generate-plugin-loader.mjs` の fallback 解決パスを `plugins/*` へ修正後に再実行。`app/src/generated/ui-loader.ts` が実プラグイン import のみを含む形で再生成されたことを確認。
@@ -6101,7 +6091,7 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-6"></a>
 
-- 2025-10-20 09:05 progress: refactor/runtime/static-plugin-loader — `node scripts/generate-plugin-loader.mjs` を実行し、`app/src/generated/{worker-loader.ts,ui-loader.ts}` と `packages/plugin-registry/src/generated.ts` を再生成。
+- 2025-10-20 09:05 progress: refactor/runtime/static-plugin-loader — `pnpm run tools:generate-plugin-loader` を実行し、`app/src/generated/{worker-loader.ts,ui-loader.ts}` と `packages/plugin-registry/src/generated.ts` を再生成。
 - 2025-10-20 09:09 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/plugin-registry build:types` を実行し、tsc/API Extractor がグリーンであることを確認。
 - 2025-10-20 09:14 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/app typecheck` を実行し、新レジストリ経路で型エラーが発生しないことを確認。
 - 2025-10-20 09:18 progress: refactor/runtime/static-plugin-loader — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し、worker 側でも plugin registry 参照が通ることを確認。
@@ -6259,3 +6249,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-23 18:23 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-worker test -- --run default-node-name` を実行し、exit 0（3 tests passed）。
 - 2025-10-23 18:24 done: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0。プラグイン manifest 駆動のデフォルト名称で SpeedDial/Dialog 双方の初期値が整合することを確認。
 - 2025-10-23 18:25 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0。helper 追加後も worker build/typecheck に追加エラーがないことを確認。
+- 2025-10-23 18:33 progress: fix/ui/speeddial-dialog-state — Dialog モックの `WorkerAPIImpl` を `@hierarchidb/common-api` の `WorkingCopyData` / `MultiStepDialogAPI` 型へ合わせて再実装し、`batchValidate` / `saveWorkingCopy` など不足 API を補完。
+- 2025-10-23 18:34 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0（mock 型整備後も問題なし）。
+- 2025-10-23 21:29 progress: fix/ui/speeddial-dialog-state — `vitest.config.ts` 向けにモジュール宣言 (`vitest.config.d.ts`) を追加し、`collectAliasEntries` import の型解決エラー (TS7016) を解消。

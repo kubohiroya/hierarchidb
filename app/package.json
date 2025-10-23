@@ -8,7 +8,7 @@
     "predev": "node ../scripts/generate-plugin-loader.mjs && pnpm -w run check:deps:extra",
     "dev": "vite dev",
     "test": "vitest run",
-    "build": "touch dist/assets/.nojekyll",
+    "build": "mkdir -p dist/assets && touch dist/assets/.nojekyll",
     "generate:favicon": "node scripts/generate-favicon.js",
     "preview": "vite preview --config vite.preview.config.ts",
     "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",

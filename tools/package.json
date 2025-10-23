@@ -1,0 +1,15 @@
+{
+  "name": "@hierarchidb/tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "generate-plugin-loader": "pnpm run build --silent && node dist/scripts/generate-plugin-loader.js",
+    "sync-peer-dependencies": "pnpm run build --silent && node dist/scripts/sync-peer-dependencies.js",
+    "fix-spa-build": "pnpm run build --silent && node dist/scripts/fix-spa-build.js"
+  },
+  "devDependencies": {
+    "typescript": "workspace:^5.9.3"
+  }
+}

@@ -17,6 +17,7 @@
   },
   "include": [
     "global.d.ts",
+    "vitest.config.d.ts",
     "scripts/**/*.ts",
     "packages/components/src/**/*.tsx",
     "packages/components/src/**/*.ts",

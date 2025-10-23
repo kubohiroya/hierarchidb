@@ -8,9 +8,9 @@ import type {
 } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
-import type { LoadAppConfigReturn } from '~/loadAppConfig.js';
-import { loadAppConfig } from '~/loadAppConfig.js';
-import { normalizeNodeType } from '~/utils/nodeTypeNormalize.js';
+import type { LoadAppConfigReturn } from './loadAppConfig.ts';
+import { loadAppConfig } from './loadAppConfig.ts';
+import { normalizeNodeType } from './utils/nodeTypeNormalize.ts';
 
 export type { LoadAppConfigReturn };
 
@@ -122,7 +122,7 @@ async function retryComlinkCall<T>(
 
       // Avoid recreating the Worker while it is still booting to prevent races
       const bootWindow = getBootWindow();
-      const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
+      const { WorkerAPIClient } = await import('./WorkerAPIClient.ts');
       const initComplete = Boolean(bootWindow?.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
       if (!initComplete) {
@@ -159,7 +159,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
   try {
     //  WorkerAPIClient
-    const { WorkerAPIClient } = await import('./WorkerAPIClient.js');
+    const { WorkerAPIClient } = await import('./WorkerAPIClient.ts');
 
     // Fast path: if global INIT_COMPLETE already observed, return immediately
       const initWindow = getBootWindow();

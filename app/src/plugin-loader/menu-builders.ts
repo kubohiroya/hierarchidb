@@ -4,9 +4,9 @@
  */
 
 import type { TreeId } from '@hierarchidb/common-types';
-import { getPresentation, prefetchAllIcons } from '~/services/plugin-presentation.js';
-import { getMenuSpec } from '~/plugin-loader/menu-spec.js';
-import { getInstalledPlugins, type InstalledPlugin } from '~/services/plugin-registry.js';
+import { getPresentation, prefetchAllIcons } from '../services/plugin-presentation.ts';
+import { getMenuSpec } from '../plugin-loader/menu-spec.ts';
+import { getInstalledPlugins, type InstalledPlugin } from '../services/plugin-registry.ts';
 
 export type TreeContext = 'resources' | 'projects';
 

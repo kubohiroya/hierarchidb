@@ -3,7 +3,7 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
 import type { TreeId } from '@hierarchidb/common-types';
-import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
+import type { PluginMenuItem } from '../../hooks/usePluginMenuItems.ts';
 import "@testing-library/jest-dom";
 
 const iconModule = vi.hoisted(() => ({

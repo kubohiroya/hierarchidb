@@ -8,8 +8,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import { useImportExport } from '~/hooks/useImportExport.js';
-import { useTreeConsoleSSOT } from '~/state/treeconsole.atoms.js';
+import { useImportExport } from '../hooks/useImportExport.ts';
+import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
 import { useTreeConsoleBreadcrumbs } from './treeconsole/useTreeConsoleBreadcrumbs.js';
 import { useTreeConsoleLoader } from './treeconsole/useTreeConsoleLoader.js';
@@ -22,7 +22,7 @@ import type {
   TreeConsoleState,
   UseTreeConsoleIntegrationParams,
   ViewMode,
-} from './treeconsole/types.js';
+} from './treeconsole/types.ts';
 
 export function useTreeConsoleIntegration({
   client,

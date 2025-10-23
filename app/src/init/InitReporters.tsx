@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useBootProgress } from '~/contexts/BootProgressProvider.js';
+import { useBootProgress } from '../contexts/BootProgressProvider.ts';
 import { useTranslation } from 'react-i18next';
 import { useSimpleBFFAuth } from '@hierarchidb/ui-auth';
-import { useWorker } from '~/contexts/WorkerProvider.js';
+import { useWorker } from '../contexts/WorkerProvider.ts';
 
 const logInitReporterWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -96,7 +96,7 @@ export const WorkerProgressReporter: React.FC = () => {
     }
     const t = window.setInterval(() => {
       // Late import to avoid circular
-      import('../WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
+      import('../WorkerAPIClient.ts').then(({ WorkerAPIClient }) => {
         if (WorkerAPIClient.isReady()) {
           markStepDone('Worker', 'Worker ready');
           window.clearInterval(t);

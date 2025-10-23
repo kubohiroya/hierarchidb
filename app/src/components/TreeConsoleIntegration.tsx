@@ -7,19 +7,19 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
-import { Subscriptions } from '~/subscriptions/controller.js';
+import { Subscriptions } from '../subscriptions/controller.ts';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
-import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.js';
-import { useWorkerClient } from '~/contexts/WorkerProvider.js';
+import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
+import { useWorkerClient } from '../contexts/WorkerProvider.ts';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { Remote } from 'comlink';
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
-import type { SubscriptionCallback } from '~/subscriptions/controller.js';
+import type { SubscriptionCallback } from '../subscriptions/controller.ts';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 
 const logIntegrationWarning = (message: string, error: unknown): void => {

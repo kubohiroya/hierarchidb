@@ -1,8 +1,8 @@
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { useNavigate } from '@tanstack/react-router';
-import type { LoadAppConfigReturn } from '~/loader.js';
-import { LicenseInfo } from '~/components/LicenseInfo.js';
+import type { LoadAppConfigReturn } from '../../loader.ts';
+import { LicenseInfo } from '../../components/LicenseInfo.ts';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
 
 // LicenseInfo temporarily commented out until component is available

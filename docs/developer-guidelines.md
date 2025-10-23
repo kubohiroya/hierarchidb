@@ -56,6 +56,16 @@ strict, packages interoperable, and builds reproducible.
 - SHOULD: If UI/Worker parts are not type-stable, export only the stable
   shared layer in the package entry and re-expose UI/Worker later.
 
+### Vite 開発サーバの復旧手順
+
+- 基本的には `pnpm dev` の再起動だけで HMR 不調は解消される。補助スクリプト (`dev:diagnose` など) は廃止済み。
+- それでも更新が取り込まれない場合は以下の順で対応する。
+  1. 既存の Vite dev サーバを終了する。
+  2. `rm -rf app/node_modules/.vite node_modules/.vite` などで `.vite` キャッシュを手動削除する。
+  3. 必要であれば `app/src/version.ts` にコメントを 1 行追加して HMR を強制する。
+  4. 再度 `pnpm dev` を起動する。
+- Turbo キャッシュを疑う必要はほぼ無いが、どうしても復旧しない場合のみ `pnpm run clean` を検討する。
+
 ## Public API Design
 
 - MUST: Export only stable, documented types from the root entry.

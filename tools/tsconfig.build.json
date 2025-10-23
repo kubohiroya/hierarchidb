@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": false,
+    "incremental": false
+  },
+  "include": ["src/scripts/*.ts"]
+}
