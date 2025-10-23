@@ -222,7 +222,8 @@
       "workerd"
     ],
     "patchedDependencies": {
-      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch"
+      "ast-types@0.16.1": "patches/ast-types@0.16.1.patch",
+      "comlink@4.4.2": "patches/comlink@4.4.2.patch"
     }
   },
   "keywords": [

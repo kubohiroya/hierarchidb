@@ -25,6 +25,12 @@
       "@hierarchidb/common-api": [
         "packages/common/api/src/index.ts"
       ],
+      "@hierarchidb/common-auth": [
+        "packages/common/auth/src/index.ts"
+      ],
+      "@hierarchidb/common-auth/*": [
+        "packages/common/auth/src/*"
+      ],
       "@hierarchidb/common-api/*": [
         "packages/common/api/src/*"
       ],
