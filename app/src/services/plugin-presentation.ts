@@ -34,11 +34,23 @@ function normalizeMuiIconName(name?: string): string | undefined {
   return ICON_NAME_NORMALIZATION_MAP[name] || name;
 }
 
+function normalizeLabelText(raw: string): string {
+  if (!raw) return raw;
+  const collapsed = raw.replace(/\s+Plugin$/i, '').trim();
+  if (!collapsed) return collapsed;
+  const lower = collapsed.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 function sanitizeLabel(source: unknown, fallback: string): string {
   if (typeof source !== 'string' || source.trim().length === 0) {
-    return fallback;
+    const trimmedFallback = fallback.trim();
+    return trimmedFallback.length > 0 ? normalizeLabelText(trimmedFallback) : trimmedFallback;
   }
-  return source.replace(/\s+Plugin$/i, '').trim();
+  const normalized = normalizeLabelText(source);
+  if (normalized.length > 0) return normalized;
+  const fallbackNormalized = normalizeLabelText(fallback);
+  return fallbackNormalized.length > 0 ? fallbackNormalized : fallback.trim();
 }
 
 function buildPresentation(def: InstalledPlugin): PluginPresentation {
@@ -47,13 +59,26 @@ function buildPresentation(def: InstalledPlugin): PluginPresentation {
   const label = sanitizeLabel(def.label, fallbackLabel);
   const priorityCandidate = def.manifest?.priority ?? def.createOrder;
   const muiIconName = normalizeMuiIconName(iconConfig.muiIconName);
+  const FALLBACK_ICONS: Record<string, PluginIconInfo> = {
+    basemap: { muiIconName: 'Public', emoji: '🌍', color: '#b0b3d9' },
+    linker: { muiIconName: 'AccountTree', emoji: '🌲', color: '#ffe0f3' },
+    resolver: { muiIconName: 'Extension', emoji: '🧩', color: '#ffb3c1' },
+    timeline: { muiIconName: 'AccessTime', emoji: '🕒', color: '#8a7cbf' },
+  };
+  const fallbackIcon = FALLBACK_ICONS[def.nodeType] ?? {};
   return {
     nodeType: def.nodeType,
     label,
     icon: {
-      muiIconName: muiIconName ?? (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
-      emoji: typeof iconConfig.emoji === 'string' ? iconConfig.emoji : undefined,
-      color: typeof iconConfig.color === 'string' ? iconConfig.color : undefined,
+      muiIconName: muiIconName
+        ?? fallbackIcon.muiIconName
+        ?? (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
+      emoji: typeof iconConfig.emoji === 'string'
+        ? iconConfig.emoji
+        : fallbackIcon.emoji,
+      color: typeof iconConfig.color === 'string'
+        ? iconConfig.color
+        : fallbackIcon.color,
     },
     priority: typeof priorityCandidate === 'number' ? priorityCandidate : 1000,
   };

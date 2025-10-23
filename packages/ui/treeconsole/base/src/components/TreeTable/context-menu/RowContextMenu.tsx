@@ -1,6 +1,6 @@
-import { memo, type MouseEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import { memo, type MouseEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import type { CreateMenuBuilder, GlobalMenuBuilders, CreateMenuEntry } from '@hierarchidb/common-types';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn, ChevronRight, Clear as ClearIcon, ContentCopy as ContentCopyIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
 
@@ -34,10 +34,47 @@ export interface RowContextMenuProps {
   readonly treeId?: string;
 }
 
+function useGlobalTranslator(): { t: (key: string, fallback: string) => string; language: string } {
+  const [language, setLanguage] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'default';
+    const i18n = (window as any)?.i18next;
+    return i18n?.language || i18n?.resolvedLanguage || 'default';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const i18n = (window as any)?.i18next;
+    if (!i18n?.on) return undefined;
+    const handler = (lng: string) => setLanguage(lng || 'default');
+    i18n.on('languageChanged', handler);
+    return () => {
+      i18n.off?.('languageChanged', handler);
+    };
+  }, []);
+
+  const translator = useMemo(() => {
+    return (key: string, fallback: string) => {
+      if (typeof window !== 'undefined') {
+        const i18n = (window as any)?.i18next;
+        if (i18n?.t) {
+          const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
+          if (typeof value === 'string') {
+            return value;
+          }
+        }
+      }
+      return fallback;
+    };
+  }, [language]);
+
+  return { t: translator, language };
+}
+
 export const RowContextMenu = memo(
   function RowContextMenu(props: RowContextMenuProps) {
     const [addMenuOpen, setAddMenuOpen] = useState(false);
     const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+    const { t, language } = useGlobalTranslator();
 
     // Use refs to store the latest props to avoid stale closures
     const propsRef = useRef(props);
@@ -323,11 +360,31 @@ export const RowContextMenu = memo(
               const items = builder(props.treeId) as CreateMenuEntry[];
               return (items || []).map((i) => {
                 const IconEl: ReactNode = getMuiIconWithColor(i.icon?.muiIconName, i.icon?.emoji, i.icon?.color);
+                const localizedLabel = t(`plugins.${i.nodeType}.name`, i.label);
+                const localizedDescription = t(`plugins.${i.nodeType}.description`, i.description ?? '').trim();
+
+                if (localizedDescription.length === 0) {
+                  return (
+                    <MenuItem
+                      key={`${i.key}-${language}`}
+                      onClick={() => handleCreateClick(i.nodeType)}
+                      aria-label={localizedLabel}
+                    >
+                      <ListItemIcon>{IconEl}</ListItemIcon>
+                      <ListItemText primary={localizedLabel} />
+                    </MenuItem>
+                  );
+                }
+
                 return (
-                  <MenuItem key={i.key} onClick={() => handleCreateClick(i.nodeType)} aria-label={i.nodeType}>
-                    <ListItemIcon>{IconEl}</ListItemIcon>
-                    <ListItemText primary={i.label} />
-                  </MenuItem>
+                  <Tooltip key={`${i.key}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
+                    <span style={{ display: 'block' }}>
+                      <MenuItem onClick={() => handleCreateClick(i.nodeType)} aria-label={localizedLabel}>
+                        <ListItemIcon>{IconEl}</ListItemIcon>
+                        <ListItemText primary={localizedLabel} />
+                      </MenuItem>
+                    </span>
+                  </Tooltip>
                 );
               });
             } catch {
@@ -335,7 +392,7 @@ export const RowContextMenu = memo(
                 <MenuItem disabled>
                   <ListItemText>Create menu unavailable</ListItemText>
                 </MenuItem>
-              );
+             );
             }
           })()}
         </Menu>

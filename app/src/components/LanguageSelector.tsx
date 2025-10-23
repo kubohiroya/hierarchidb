@@ -81,9 +81,8 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
       const languageWindow = window as LanguageWindow;
       if (languageWindow.i18next?.changeLanguage) {
         languageWindow.i18next.changeLanguage(next);
-      } else {
-        window.location.reload();
       }
+      window.location.reload();
     }
   };
 

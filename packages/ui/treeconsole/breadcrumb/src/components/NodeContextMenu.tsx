@@ -4,11 +4,11 @@
   * eria-cartographRowContextMenuMUI
   */
 
-import { type MouseEvent, useEffect, useRef, useState } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { type MouseEvent, type ReactElement, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import { Add as AddIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, ChevronRight as ChevronRightIcon, Clear as ClearIcon, ContentCopy as ContentCopyIcon, ContentCut as ContentCutIcon, Edit as EditIcon, Folder as FolderIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { getMuiIconWithColor } from '@hierarchidb/ui-icon';
-type CreateMenuEntry = { key: string; nodeType: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
+type CreateMenuEntry = { key: string; nodeType: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
 type CreateMenuBuilder = (treeId?: string) => CreateMenuEntry[];
 type GlobalMenuBuilders = { buildMenuItemsForTreeId?: CreateMenuBuilder; buildMenuItemsForContext?: CreateMenuBuilder };
 
@@ -17,6 +17,41 @@ const logNodeContextMenuWarning = (message: string, error: unknown): void => {
   console.warn('[NodeContextMenu]', message, error);
 };
 
+function useGlobalTranslator(): { t: (key: string, fallback: string) => string; language: string } {
+  const [language, setLanguage] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'default';
+    const i18n = (window as any)?.i18next;
+    return i18n?.language || i18n?.resolvedLanguage || 'default';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const i18n = (window as any)?.i18next;
+    if (!i18n?.on) return undefined;
+    const handler = (lng: string) => setLanguage(lng || 'default');
+    i18n.on('languageChanged', handler);
+    return () => {
+      i18n.off?.('languageChanged', handler);
+    };
+  }, []);
+
+  const translator = useMemo(() => {
+    return (key: string, fallback: string) => {
+      if (typeof window !== 'undefined') {
+        const i18n = (window as any)?.i18next;
+        if (i18n?.t) {
+          const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
+          if (typeof value === 'string') {
+            return value;
+          }
+        }
+      }
+      return fallback;
+    };
+  }, [language]);
+
+  return { t: translator, language };
+}
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -48,14 +83,13 @@ export interface NodeContextMenuProps {
   onRestoreToOriginal?: () => void;
   onRestoreToCurrent?: () => void;
   /** Optional explicit create items list; if omitted, tries to build from global builders */
-  createItems?: Array<{ type: string; label: string }>;
+  createItems?: Array<{ type: string; label: string; description?: string }>;
 }
 
 /**
   * NodeContextMenu
  * eria-cartographRowContextMenuMUI
   */
-import type { ReactElement, ReactNode } from 'react';
 export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
@@ -85,6 +119,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const { t, language } = useGlobalTranslator();
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -221,7 +256,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     nodeType === 'folder' || nodeType === 'folder-plugin' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
 
   // Build Create submenu items
-  type BuiltItem = { type: string; label: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
+  type BuiltItem = { type: string; label: string; description?: string; icon?: { muiIconName?: string; emoji?: string; color?: string } };
   const builtCreateItems: Array<BuiltItem> = (() => {
     if (props.createItems && props.createItems.length) return props.createItems;
     try {
@@ -229,15 +264,15 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       const builder: CreateMenuBuilder | undefined = g?.buildMenuItemsForTreeId || g?.buildMenuItemsForContext;
       if (typeof builder === 'function') {
         const items = builder(treeId) as CreateMenuEntry[];
-        return (items || []).map((i) => ({ type: i.nodeType, label: i.label, icon: i.icon }));
+        return (items || []).map((i) => ({ type: i.nodeType, label: i.label, description: i.description, icon: i.icon }));
       }
     } catch (error) {
       logNodeContextMenuWarning('Failed to build dynamic create menu items', error);
     }
     // Fallback minimal entries
     return [
-      { type: 'folder', label: 'Folder', icon: { muiIconName: 'Folder' } },
-      { type: 'note', label: 'Note', icon: { muiIconName: 'Extension' } },
+      { type: 'folder', label: 'Folder', description: undefined, icon: { muiIconName: 'Folder' } },
+      { type: 'note', label: 'Note', description: undefined, icon: { muiIconName: 'Extension' } },
     ];
   })();
 
@@ -404,11 +439,31 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       >
         {builtCreateItems.map((ci) => {
           const IconEl: ReactNode = getMuiIconWithColor(ci.icon?.muiIconName, ci.icon?.emoji, ci.icon?.color);
+          const localizedLabel = t(`plugins.${ci.type}.name`, ci.label);
+          const localizedDescription = t(`plugins.${ci.type}.description`, ci.description ?? '').trim();
+
+          if (localizedDescription.length === 0) {
+            return (
+              <MenuItem
+                key={`${ci.type}-${language}`}
+                onClick={() => handleCreateClick(ci.type)}
+                aria-label={localizedLabel}
+              >
+                <ListItemIcon>{IconEl}</ListItemIcon>
+                <ListItemText>{localizedLabel}</ListItemText>
+              </MenuItem>
+            );
+          }
+
           return (
-            <MenuItem key={ci.type} onClick={() => handleCreateClick(ci.type)} aria-label={ci.label}>
-              <ListItemIcon>{IconEl}</ListItemIcon>
-              <ListItemText>{ci.label}</ListItemText>
-            </MenuItem>
+            <Tooltip key={`${ci.type}-${language}`} title={localizedDescription} placement="right" enterDelay={300} arrow>
+              <span style={{ display: 'block' }}>
+                <MenuItem onClick={() => handleCreateClick(ci.type)} aria-label={localizedLabel}>
+                  <ListItemIcon>{IconEl}</ListItemIcon>
+                  <ListItemText>{localizedLabel}</ListItemText>
+                </MenuItem>
+              </span>
+            </Tooltip>
           );
         })}
       </Menu>

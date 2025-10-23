@@ -5,14 +5,45 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
-import type { TreeContext } from '~/plugin-loader/menu-builders.js';
+import type { TreeContext, PluginMenuItem } from '~/plugin-loader/menu-builders.js';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeId } from '@hierarchidb/common-types';
-import { useTranslation } from 'react-i18next';
+
+function useGlobalTranslation(): { t: (key: string, fallback: string) => string; language: string } {
+  const [language, setLanguage] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'default';
+    const i18n = (window as any)?.i18next;
+    return i18n?.language || i18n?.resolvedLanguage || 'default';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const i18n = (window as any)?.i18next;
+    if (!i18n?.on) return undefined;
+    const handler = (lng: string) => setLanguage(lng || 'default');
+    i18n.on('languageChanged', handler);
+    return () => {
+      i18n.off?.('languageChanged', handler);
+    };
+  }, []);
+
+  const translator = useCallback((key: string, fallback: string) => {
+    if (typeof window !== 'undefined') {
+      const i18n = (window as any)?.i18next;
+      if (i18n?.t) {
+        const value = i18n.t(key, { defaultValue: fallback, ns: ['common', 'translation'] });
+        if (typeof value === 'string') return value;
+      }
+    }
+    return fallback;
+  }, [language]);
+
+  return { t: translator, language };
+}
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
@@ -58,7 +89,7 @@ export function DynamicSpeedDial({
   const vmItems = usePluginMenuItems(treeId);
   // Use VM path only when we actually have menu items
   const useVM = vmItems.length > 0;
-  const { t } = useTranslation('common');
+  const { t, language } = useGlobalTranslation();
 
   const handleClose = () => setOpen(false);
   // const handleToggle = () => setOpen((v) => !v);
@@ -225,24 +256,32 @@ export function DynamicSpeedDial({
           }}
         >
           {useVM
-            ? vmItems.map((item) => (
-              <SpeedDialAction
-                key={item.key}
-                icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji, item.icon?.color)}
-                tooltipTitle={t(`plugins.${item.nodeType}.description`, {
-                  defaultValue: item.description || item.label,
-                })}
-                onClick={() => handleVMActionClick(item.nodeType)}
-                sx={{
-                  '& .MuiTooltip-tooltip': {
-                    maxWidth: 300,
-                    fontSize: '0.875rem',
-                  },
-                }}
-                FabProps={{
-                  size: 'medium',
-                  color: 'default',
-                  sx: {
+            ? vmItems.map((item: PluginMenuItem) => {
+              const localizedLabel = t(`plugins.${item.nodeType}.name`, item.label);
+              const localizedDescription = t(
+                `plugins.${item.nodeType}.description`,
+                (item.description ?? '').trim(),
+              ).trim();
+              const tooltipLabel = localizedDescription.length > 0
+                ? `${localizedLabel} : ${localizedDescription}`
+                : localizedLabel;
+
+              return (
+                <SpeedDialAction
+                  key={`${item.key}-${language}`}
+                  icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji, item.icon?.color)}
+                  tooltipTitle={tooltipLabel}
+                  onClick={() => handleVMActionClick(item.nodeType)}
+                  sx={{
+                    '& .MuiTooltip-tooltip': {
+                      maxWidth: 300,
+                      fontSize: '0.875rem',
+                    },
+                  }}
+                  FabProps={{
+                    size: 'medium',
+                    color: 'default',
+                    sx: {
                     pointerEvents: 'auto',
                     touchAction: 'manipulation',
                     transform: 'translate3d(0,0,0)',
@@ -252,10 +291,11 @@ export function DynamicSpeedDial({
                     },
                   },
                 }}
-                tooltipPlacement="left"
-                data-testid={`create-${item.nodeType}-action`}
-              />
-            ))
+                  tooltipPlacement="left"
+                  data-testid={`create-${item.nodeType}-action`}
+                />
+              );
+            })
             : null}
         </SpeedDial>
 

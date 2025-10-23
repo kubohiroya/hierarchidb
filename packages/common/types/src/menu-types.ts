@@ -48,6 +48,7 @@ export interface CreateMenuEntry {
   key: string;
   nodeType: string;
   label: string;
+  description?: string;
   icon?: PluginMenuIconSpec;
 }
 

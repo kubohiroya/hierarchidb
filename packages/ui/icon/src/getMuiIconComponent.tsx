@@ -20,6 +20,7 @@ import {
   Palette as PaletteIcon,
   Extension as ExtensionIcon,
   AccountTree as AccountTreeIcon,
+  AccessTime as AccessTimeIcon,
 } from '@mui/icons-material';
 
 export function toPascalCase(name?: string): string {
@@ -61,6 +62,7 @@ const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> =
   Palette: PaletteIcon,
   Extension: ExtensionIcon,
   AccountTree: AccountTreeIcon,
+  Timeline: AccessTimeIcon,
 };
 
 // Removed dynamic import path: we now rely on a build-time generated global icon map
