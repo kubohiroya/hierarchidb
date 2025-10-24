@@ -4,6 +4,8 @@
     "build": {
       "dependsOn": [
         "typecheck",
+        "build:types",
+        "build:bundle",
         "^build"
       ],
       "outputs": [
@@ -18,6 +20,16 @@
       ],
       "outputs": [
         "dist/**"
+      ]
+    },
+    "build:bundle": {
+      "dependsOn": [
+        "build:types",
+        "^build:bundle"
+      ],
+      "outputs": [
+        "dist/**",
+        "build/**"
       ]
     },
     "typecheck": {

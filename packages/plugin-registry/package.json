@@ -28,11 +28,11 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "generate": "node ../../scripts/generate-plugin-loader.mjs",
+    "generate": "pnpm --filter @hierarchidb/tools run gen-plugin-loaders",
     "prebuild": "pnpm run clean && pnpm run generate",
-    "build": "tsup",
-    "build:types": "pnpm run clean && tsup --dts-only",
-    "pretypecheck": "pnpm run clean && pnpm run generate && pnpm run build:types",
+    "build": "pnpm run clean && pnpm run generate && tsup",
+    "build:types": "pnpm run clean && pnpm run generate && tsup --dts-only",
+    "pretypecheck": "pnpm run clean && pnpm run generate",
     "typecheck": "api-extractor run --local",
     "lint": "eslint src"
   },
@@ -41,5 +41,15 @@
     "@microsoft/api-extractor": "^7.53.1",
     "tsup": "^8.5.0",
     "typescript": "workspace:^5.9.3"
+  },
+  "turbo": {
+    "pipeline": {
+      "build:types": {
+        "dependsOn": [
+          "@hierarchidb/tools#gen-plugin-loaders",
+          "^build:types"
+        ]
+      }
+    }
   }
 }

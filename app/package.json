@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/entry.client.tsx",
   "scripts": {
-    "predev": "node ../scripts/generate-plugin-loader.mjs && pnpm -w run check:deps:extra",
+    "predev": "pnpm -w run tools:gen-plugin-loaders && pnpm -w run check:deps:extra",
     "dev": "vite dev",
     "test": "vitest run",
     "build": "mkdir -p dist/assets && touch dist/assets/.nojekyll",
@@ -111,6 +111,7 @@
     "pipeline": {
       "typecheck": {
         "dependsOn": [
+          "@hierarchidb/tools#gen-plugin-loaders",
           "@hierarchidb/resolver-plugin#typecheck",
           "@hierarchidb/linker-plugin#typecheck",
           "@hierarchidb/ui-i18n#typecheck",

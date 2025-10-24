@@ -13,9 +13,11 @@
     }
   },
   "scripts": {
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
     "clean": "rm -rf dist",
-    "typecheck": "tsc -b tsconfig.build.json"
+    "typecheck": "tsc -b tsconfig.build.json",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
   "peerDependencies": {
     "@hierarchidb/common-api": "workspace:*",

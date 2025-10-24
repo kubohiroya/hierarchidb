@@ -8,7 +8,6 @@ import { readFileSync } from 'node:fs';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { muiIconMapPlugin } from './vite-plugin-mui-icon-map.js';
 import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-node-type-registry';
 import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
 
@@ -150,8 +149,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
 
   //  main thread
   const plugins = [
-    // muiIconsVirtualModule(),
-    muiIconMapPlugin({ rootDir: path.resolve(__dirname, '..') }),
     pluginRegistryGeneratorPlugin({
       rootDir: path.resolve(__dirname, '..'),
     }),

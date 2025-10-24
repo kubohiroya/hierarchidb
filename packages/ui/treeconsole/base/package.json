@@ -16,13 +16,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc -b tsconfig.build.json",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
   "dependencies": {},
   "peerDependencies": {

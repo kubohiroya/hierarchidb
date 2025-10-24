@@ -42,7 +42,9 @@
     }
   },
   "scripts": {
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc -b tsconfig.build.json",
     "test": "vitest",

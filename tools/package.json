@@ -5,11 +5,25 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "generate-plugin-loader": "pnpm run build --silent && node dist/scripts/generate-plugin-loader.js",
-    "sync-peer-dependencies": "pnpm run build --silent && node dist/scripts/sync-peer-dependencies.js",
-    "fix-spa-build": "pnpm run build --silent && node dist/scripts/fix-spa-build.js"
+    "gen-plugin-loaders": "pnpm run --silent build && node dist/scripts/gen-plugin-loaders.js",
+    "sync-peer-dependencies": "pnpm run --silent build && node dist/scripts/sync-peer-dependencies.js",
+    "prepare-gh-pages-build": "pnpm run --silent build && node dist/scripts/prepare-gh-pages-build.js"
   },
   "devDependencies": {
     "typescript": "workspace:^5.9.3"
+  },
+  "turbo": {
+    "pipeline": {
+      "gen-plugin-loaders": {
+        "dependsOn": [
+          "build"
+        ],
+        "cache": false,
+        "outputs": [
+          "../app/src/generated/**",
+          "../packages/plugin-registry/src/generated/**"
+        ]
+      }
+    }
   }
 }

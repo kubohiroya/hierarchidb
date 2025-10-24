@@ -10,7 +10,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
+    "build:bundle": "tsup --dts=false --no-clean",
+    "build:types": "tsup --dts-only",
     "clean": "rm -rf dist",
     "dev": "tsup --watch",
     "typecheck": "tsup --dts"

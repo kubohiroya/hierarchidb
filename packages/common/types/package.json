@@ -16,7 +16,7 @@
     }
   },
   "scripts": {
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
@@ -25,7 +25,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

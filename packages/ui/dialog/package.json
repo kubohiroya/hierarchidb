@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "dev": "tsc --watch",
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "typecheck": "tsc -b tsconfig.build.json",
@@ -29,7 +29,9 @@
     "storybook": "storybook dev -c ./.storybook --port 6307 --disable-telemetry",
     "storybook:build": "storybook build -c ./.storybook",
     "pretest:playwright": "pnpm storybook:build",
-    "test:playwright": "playwright test -c playwright.config.ts"
+    "test:playwright": "playwright test -c playwright.config.ts",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
   "dependencies": {
     "notistack": "^3.0.2"

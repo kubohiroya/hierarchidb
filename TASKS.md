@@ -84,6 +84,31 @@
  - Worker 側の API 変更があれば revert し、テスト追加分を削除
  - ※ SpeedDial 経路の自動テスト整備は ToDo「test/runtime-ui/speeddial-dialog-state-regression」にてレッド／グリーンで対応予定。
 
+5) Turbo build ターゲット命名揺れ調査（P0）
+- ブランチ: `chore/turbo/build-target-audit`（sandbox 制約で `main` 上で作業）
+- 依存: `turbo.json`, 各パッケージの `package.json`, `TASKS.md` 運用ログ
+- 受け入れ基準（DoD）:
+  - [x] `packages/**/package.json` の `build*` 系スクリプト一覧（ターゲット名、実コマンド、依存）を表形式で整理し、揺れの種類と件数を記録
+  - [x] Turbo 設定（`turbo.json` と各 `package.json` の `turbo.pipeline`）で参照しているビルド系ターゲットを洗い出し、上記一覧と突き合わせる
+  - [x] 揺れが Turbo 一括実行に与える影響と現状の課題をまとめ、命名統一／移行ステップ案（段階的アプローチ含む）を提案
+  - [x] 調査結果と提案を `TASKS.md` または別ドキュメント（例: `docs/` 配下）で共有し、DoD 達成を明記
+  - [x] TASKS 運用ログに start/progress/done と主要なコマンド／調査手順を記録
+- チェックリスト:
+  - [x] `packages/**/package.json` から `build` プレフィックスを持つスクリプトを抽出（自動化コマンド含む）
+  - [x] Turbo 側の `pipeline` 設定を確認し、対象ターゲットと依存関係を一覧化
+  - [x] 命名統一に向けた推奨案（例: `build`, `build:types`, `build:bundle`）と段階的実施方針をまとめる
+- ロールバック手順：特になし（調査ドキュメントを削除する場合はコミットを revert）
+ - 調査メモ（2025-10-24）:
+   - ワークスペース 77 件中 76 件が `build` スクリプトを保有。追加の `build:*` は `@hierarchidb/plugin-registry` の `build:types` のみで、その他は `build` 単独。
+   - スクリプト実装は 67 件が `NODE_OPTIONS="--loader ts-node/esm" tsup`、7 件が `tsc`/`api-extractor`/カスタム Node コマンドなど別系統。命名は揃っていても実際の処理内容がバラバラで、Turbo 側で一律にキャッシュ条件を設計しづらい。
+   - 各 `package.json` の `turbo.pipeline` では `build:bundle` / `build:types` を参照するプラグイン（basemap/shape/spreadsheet/styler）があるが、scripts に該当コマンドが未定義のため Turbo がターゲット生成できず、`pnpm --filter <pkg> run build:bundle` が存在しない状態。
+   - `turbo.json` グローバル定義では `build` / `build:types` ターゲットのみ扱っており、`build:bundle` 系は未定義。`@hierarchidb/plugin-registry#build:types` など特定パッケージ専用の dependsOn は記載されているが、参照先ターゲット不在のケース（プラグイン系）がエラーの温床。
+ - 提案（暫定案）:
+   - Step1: `plugins/{basemap,shape,spreadsheet,styler}` など `turbo.pipeline` が要求する `build:bundle`/`build:types` scripts を追加（tsup `--dts-only` と bundler 実装を分離）するか、実装が未定なら pipeline から該当ターゲットを一旦除去して Turbo エラーを解消。
+   - Step2: 既存 `build` スクリプトの実際の役割を 3 区分（`build`=tsup bundle、`build:types`=tsc/api-extractor、`build:bundle`=tsup with runtime deps）に整理し、共通 helper（例: `scripts/build-package.ts`）で共通オプションを提供。今後追加するパッケージはこの命名セットを必須化。
+   - Step3: Turbo 側では `build`, `build:types`, `build:bundle` の3種を正式サポートし、`build` → `typecheck`→`^build` の依存設計を維持しつつ、`build:bundle` は `build:types` に依存するよう設定。段階移行として既存ターゲットの alias（`build:bundle` → `build:app` 等）を lint/CI で検知し移行完了後に禁止する。
+   - Step4: `pnpm run build` から `tools:gen-plugin-loaders` 等のプリフックが走ることを踏まえ、root script naming との整合（例: `build:types` を root に alias 化）を検討し、Turbo の失敗ログにタスク番号を出す仕組みを導入する。
+
 23) NodeNext 移行: 設定切替と import 整理（P0）
 - ブランチ: `chore/node-next/tsconfig`（sandbox 制約で `main` 上で作業）
 - 依存: 22) NodeNext 移行: 現状棚卸し
@@ -6252,3 +6277,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-23 18:33 progress: fix/ui/speeddial-dialog-state — Dialog モックの `WorkerAPIImpl` を `@hierarchidb/common-api` の `WorkingCopyData` / `MultiStepDialogAPI` 型へ合わせて再実装し、`batchValidate` / `saveWorkingCopy` など不足 API を補完。
 - 2025-10-23 18:34 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0（mock 型整備後も問題なし）。
 - 2025-10-23 21:29 progress: fix/ui/speeddial-dialog-state — `vitest.config.ts` 向けにモジュール宣言 (`vitest.config.d.ts`) を追加し、`collectAliasEntries` import の型解決エラー (TS7016) を解消。
+- 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
+- 2025-10-24 09:26 progress: chore/turbo/build-target-audit — `packages/**/package.json` / `plugins/**/package.json` の `build*` スクリプトと Turbo pipeline 設定を Node/Python スクリプトで抽出し、命名揺れと欠落（例: Turbo が `build:bundle` 参照だが scripts 無し）を洗い出し。
+- 2025-10-24 09:44 done: chore/turbo/build-target-audit — build 系ターゲットの集計・Turbo 参照状況・統一案（Step1〜Step4）を TASKS.md に反映し、DoD/チェックリストをクローズ。
+- 2025-10-24 10:06 progress: chore/turbo/build-target-audit — basemap/shape/spreadsheet/styler プラグインと runtime-plugin-dialog / plugin-runtime-services へ `build:types` / `build:bundle` スクリプトを追加し、`build` を両タスク呼び出しに統一。
+- 2025-10-24 10:18 progress: chore/turbo/build-target-audit — `docs/build-target-naming.md` を追加し、標準ターゲットと実装ルールを明文化。`turbo.json` に `build:bundle` タスクを登録し、ルート `package.json` へワークスペース実行用スクリプトを追加。
+- 2025-10-24 10:22 done: chore/turbo/build-target-audit — 4 プラグイン＆依存パッケージのスクリプト改修、Turbo 設定整備、ドキュメント整備、ルートスクリプトの整合を完了。今後は段階的に他パッケージも同規約へ移行する方針で記録。
+- 2025-10-24 10:48 progress: chore/turbo/build-target-audit — `@hierarchidb/tools` に Turbo タスク `gen-plugin-loaders` を追加し、generator 実行をワークスペース依存で管理。`packages/plugin-registry` / `app` から同タスクへ依存させ、`scripts/generate-plugin-loader.mjs` を pnpm 経由のラッパーとして再整備。

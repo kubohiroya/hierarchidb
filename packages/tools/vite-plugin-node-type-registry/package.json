@@ -11,9 +11,11 @@
     "src"
   ],
   "scripts": {
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run build:types && pnpm run build:bundle",
     "typecheck": "tsc --project tsconfig.json",
-    "lint": "eslint 'src/**/*.ts'"
+    "lint": "eslint 'src/**/*.ts'",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
   "dependencies": {},
   "peerDependencies": {

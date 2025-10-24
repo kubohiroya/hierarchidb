@@ -1,4 +1,3 @@
-import type { ComponentType } from 'react';
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
 import { pluginDefinitions } from '@hierarchidb/plugin-registry';
@@ -7,6 +6,7 @@ import { APP_VERSION, BUILD_TIME } from '../../version.js';
 import { loadAllUIPlugins } from '../../generated/ui-loader.js';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { autoLoadPlugins } from '~/plugin-loader/auto-load.js';
+import muiIconMap from '~/generated/mui-icon-loader.js';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -109,15 +109,7 @@ export function initializeBrowserGlobals(): void {
       logWarning('Failed to load TreeConsolePanel for global exposure', error);
     });
 
-  void import('virtual:mui-icon-map')
-    .then((mod) => {
-      const candidate = (mod as any)?.default ?? (mod as any)?.iconMap ?? {};
-      const map = candidate as Record<string, ComponentType<any>>;
-      setGlobalMuiIconMap(map);
-    })
-    .catch((error) => {
-      logWarning('Failed to load virtual:mui-icon-map', error);
-    });
+  setGlobalMuiIconMap(muiIconMap);
 
   if (import.meta.env.VITE_PREWARM_SERVICES === '1') {
     void import('~/services/databases.js')

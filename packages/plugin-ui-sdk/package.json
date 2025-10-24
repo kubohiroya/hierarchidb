@@ -19,13 +19,14 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup",
+    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
     "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
     "typecheck": "tsc -b tsconfig.build.json",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
