@@ -1,12 +1,14 @@
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
-import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
+import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-icon';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import type React from 'react';
 import { pluginDefinitions } from '~/plugin-registry/index.js';
 import { bootLog } from '../../utils/bootLog.js';
 import { APP_VERSION, BUILD_TIME } from '../../version.js';
 import { loadAllUIPlugins } from '../../services/ui-plugin-loader.js';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { autoLoadPlugins } from '~/plugin-loader/auto-load.js';
-import muiIconMap from '~/generated/mui-icon-loader.js';
+import { muiIconLoaders } from '~/generated/mui-icon-loader.js';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -109,7 +111,29 @@ export function initializeBrowserGlobals(): void {
       logWarning('Failed to load TreeConsolePanel for global exposure', error);
     });
 
-  setGlobalMuiIconMap(muiIconMap);
+  void (async () => {
+    const iconMap: Record<string, React.ComponentType<SvgIconProps>> = {};
+    try {
+      await Promise.all(
+        Object.entries(muiIconLoaders).map(async ([name, loader]) => {
+          try {
+            const mod = await loader();
+            const Component = (mod as { default?: React.ComponentType<SvgIconProps> }).default
+              ?? (mod as React.ComponentType<SvgIconProps>);
+            if (Component) {
+              const pascal = toPascalCase(name);
+              iconMap[pascal] = Component;
+            }
+          } catch (error) {
+            logWarning(`Failed to load MUI icon module for "${name}"`, error);
+          }
+        }),
+      );
+      setGlobalMuiIconMap(iconMap);
+    } catch (error) {
+      logWarning('Failed to initialize MUI icon map', error);
+    }
+  })();
 
   if (import.meta.env.VITE_PREWARM_SERVICES === '1') {
     void import('~/services/databases.js')

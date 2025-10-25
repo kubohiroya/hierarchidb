@@ -25,5 +25,8 @@
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/tabular-source": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*"
+  },
+  "tsdown": {
+    "platform": "neutral"
   }
 }

@@ -11,9 +11,6 @@ import { performance } from 'node:perf_hooks';
 import minimist from 'minimist';
 import { globby } from 'globby';
 import {
-  ExportDeclaration,
-  ImportDeclaration,
-  Node,
   Project,
   SourceFile,
 } from 'ts-morph';

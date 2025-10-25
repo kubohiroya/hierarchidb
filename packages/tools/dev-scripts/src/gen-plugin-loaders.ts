@@ -148,6 +148,7 @@ async function readPluginPackageJSON(pkgName: string, nodeType: string) {
   return { json: undefined, path: undefined, dir: undefined };
 }
 
+/*
 function normalizeDependency(spec: unknown): string | null {
   if (typeof spec !== 'string') return null;
   const trimmed = spec.trim();
@@ -158,6 +159,7 @@ function normalizeDependency(spec: unknown): string | null {
   }
   return trimmed;
 }
+ */
 
 function filterValidDependencies(values: Array<string | null>): string[] {
   return values.filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
@@ -175,7 +177,7 @@ interface ManifestSummary {
   hasCommon: boolean;
   exportPaths: string[];
 }
-
+/*
 function indentMultiline(value: string, indent: number, skipFirst = false): string {
   if (typeof value !== 'string' || value.length === 0) {
     return value;
@@ -189,6 +191,7 @@ function indentMultiline(value: string, indent: number, skipFirst = false): stri
     .map((line, index) => (skipFirst && index === 0 ? line : `${indentation}${line}`))
     .join('\n');
 }
+ */
 
 function toArrayLiteral(values: string[]): string {
   if (!values || values.length === 0) {
@@ -367,7 +370,7 @@ async function collectManifests(): Promise<ManifestSummary[]> {
       continue;
     }
 
-    const manifest = loadPluginManifestFromFile(manifestPath, { silent: true });
+    const manifest = loadPluginManifestFromFile(manifestPath);
     const sanitizedManifest = sanitizeManifest(manifest, { packageDescription: pluginPkg.description });
     if (!sanitizedManifest) continue;
 

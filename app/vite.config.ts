@@ -41,6 +41,7 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', { exclude: true });
+    addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/src/index.ts', { exclude: true });
 
     const pluginRoot = path.resolve(rootDir, '../packages/plugin-loader');
     if (fs.existsSync(pluginRoot)) {
@@ -78,6 +79,7 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js');
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.ts', { exclude: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.ts', { exclude: true });
+    addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true });
   }
 
   return {

@@ -11,7 +11,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --clean --target es2020",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --clean --target es2020",
     "lint": "eslint 'src/**/*.ts'"
   },
   "dependencies": {},

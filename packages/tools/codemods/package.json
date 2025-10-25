@@ -12,10 +12,10 @@
     "codemod:esm-ext": "pnpm run build && node dist/esm-ext-codemod-basic.js"
   },
   "dependencies": {
-    "globby": "workspace:^14.1.0",
-    "ts-morph": "workspace:^26.0.0"
+    "globby": "^14.1.0",
+    "ts-morph": "^26.0.0"
   },
   "devDependencies": {
-    "typescript": "workspace:^5.9.3"
+    "typescript": "^5.9.3"
   }
 }

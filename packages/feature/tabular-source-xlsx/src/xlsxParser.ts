@@ -22,22 +22,48 @@ export const xlsxParser: TabularParserPort = {
     return { format: 'xlsx', confidence };
   },
   async parse(input: FileLike, options?: ParseOptions): Promise<TabularParseResult> {
-    const XLSX = require('xlsx');
+    const xlsxModule = await import('xlsx/xlsx.mjs');
+    const XLSX = ((xlsxModule as unknown as { default?: typeof import('xlsx/xlsx.mjs') }).default ?? xlsxModule) as typeof import('xlsx/xlsx.mjs');
+
+    // Ensure Node-specific helpers are disabled when running in the browser.
+    if (typeof (XLSX as { set_fs?: (fs: unknown) => void }).set_fs === 'function' && (XLSX.utils as { fs_stub?: unknown }).fs_stub) {
+      (XLSX as { set_fs: (fs: unknown) => void }).set_fs((XLSX.utils as { fs_stub: unknown }).fs_stub);
+    }
+
+    const decodeBase64ToArrayBuffer = (base64: string): ArrayBuffer => {
+      if (typeof globalThis.atob === 'function') {
+        const binary = globalThis.atob(base64);
+        const length = binary.length;
+        const bytes = new Uint8Array(length);
+        for (let idx = 0; idx < length; idx += 1) {
+          bytes[idx] = binary.charCodeAt(idx);
+        }
+        return bytes.buffer;
+      }
+      const globalBuffer = (globalThis as { Buffer?: { from(data: string, encoding: string): Uint8Array & { buffer: ArrayBuffer; byteOffset: number; byteLength: number } } }).Buffer;
+      if (typeof globalBuffer === 'function') {
+        const nodeBuffer = globalBuffer.from(base64, 'base64');
+        return nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
+      }
+      throw new Error('Base64 decoding is not supported in this environment.');
+    };
 
     async function toArrayBuffer(i: FileLike): Promise<ArrayBuffer> {
       if (typeof Blob !== 'undefined' && i instanceof Blob) return await i.arrayBuffer();
       if (i instanceof ArrayBuffer) return i;
-      if (i instanceof Uint8Array) return i.buffer as ArrayBuffer; // normalize ArrayBufferLike for TS 4.9
+      if (ArrayBuffer.isView(i)) {
+        return i.buffer.slice(i.byteOffset, i.byteOffset + i.byteLength);
+      }
       if (typeof i === 'string') {
         if (/^data:/.test(i) || /;base64,/.test(i)) {
           const b64 = i.split(',').pop() as string;
-          const bin = Buffer.from(b64, 'base64');
-          return bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength);
+          return decodeBase64ToArrayBuffer(b64);
         }
         const enc = new TextEncoder();
         return enc.encode(i).buffer;
       }
-      return Buffer.from(String(i)).buffer;
+      const enc = new TextEncoder();
+      return enc.encode(String(i)).buffer;
     }
 
     const buf = await toArrayBuffer(input);

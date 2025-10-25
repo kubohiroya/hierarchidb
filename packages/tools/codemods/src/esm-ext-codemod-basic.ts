@@ -7,10 +7,10 @@
  *             or with custom `--roots` / `--include-*` flags while performing module migration tasks.
  * Output: rewrites source files in place when `--write` is passed; otherwise performs a dry run.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { globby } from 'globby';
-import process from 'node:process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as globby from 'globby';
+import * as process from 'node:process';
 
 const args = process.argv.slice(2);
 let write = false;

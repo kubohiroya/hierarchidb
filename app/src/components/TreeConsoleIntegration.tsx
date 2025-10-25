@@ -13,7 +13,7 @@ import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDyna
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
-import { useWorkerClient } from '../contexts/WorkerProvider.ts';
+import { useWorkerClient } from '../contexts/WorkerProvider.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';

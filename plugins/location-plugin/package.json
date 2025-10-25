@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/locationEntitiesDB.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",

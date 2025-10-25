@@ -415,6 +415,24 @@
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
+15) runtime-worker plugin bootstrap decoupling（P0）
+- ブランチ: `refactor/runtime-worker/plugin-bootstrap`（sandbox 制約で `main` 上で進める場合は明記）
+- 依存: `packages/tools/dev-scripts`（gen-plugin-loaders）, `@hierarchidb/runtime-worker`, 各 `@hierarchidb/*-plugin`
+- 受け入れ基準（DoD）:
+  - [ ] `packages/runtime/worker` から各プラグインの Worker 実装（例: `@hierarchidb/basemap-plugin/worker`）への直接的な `import()` 呼び出しが無くなる
+  - [ ] 生成スクリプト（`packages/tools/dev-scripts/src/gen-plugin-loaders.ts` 等）が runtime-worker 用に出力する情報からプラグインの import 式を除去し、ランタイムではトークン（モジュール識別子や factory 名など）だけを持つ
+  - [ ] プラグイン側の Worker エントリをロードする責務を新たなプラグイン・レジストリ層（例: runtime plugin registry / DI コンテナ）に移し、runtime-worker は DI された resolver を通じて Worker 実装を取得する
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker build` 実行時に `UNRESOLVED_IMPORT` 警告が発生しない（tsdown の外部モジュール扱いを含む）
+  - [ ] `pnpm --filter @hierarchidb/*-plugin build` が引き続き成功し、旧来の runtime-worker 依存（型／API）が壊れていないことを確認
+  - [ ] 既存の生成物やドキュメント（`docs/turbo-tsdown-migration-plan.md` 等）に変更が必要な場合は更新する
+- チェックリスト:
+  - [ ] 現行の `packages/runtime/worker/src/generated/plugin-metadata.ts` と生成スクリプトの構造を調査し、改修方針と影響範囲をまとめる
+  - [ ] プラグイン読み込み用の新しいインターフェース／DI経路を設計し、ユニットテストまたは smoke テストで動作確認する
+  - [ ] 生成スクリプトの更新と runtime-worker のコード改修を並行し、リグレッションが無いよう段階的に適用する
+  - [ ] `pnpm turbo run build --filter "@hierarchidb/app^..."` を通し、アプリ全体のビルドに回帰が無いことを確認
+  - [ ] 必要に応じて `pnpm --filter @hierarchidb/runtime-worker test` やプラグイン関連テストを実行し、新構成で成功することを記録
+- ロールバック手順：生成スクリプト／runtime-worker 変更を revert し、旧来の `import('@hierarchidb/*-plugin/worker')` 方式に戻した上で `pnpm --filter @hierarchidb/runtime-worker build` と代表プラグインの `build` を実行し、元の状態へ復旧する
+
 0) tools predeploy gh-pages スクリプト整備（P1）
 - ブランチ: `main`（sandbox 制約でローカルブランチ作成不可）
 - 依存: `@hierarchidb/tools`, `@hierarchidb/app`
@@ -2518,6 +2536,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- chore/tools-dev-scripts-turbo-dependency（P0） — tools manifest loader build precedes dev scripts build via Turbo
+  - ブランチ: `main`（sandbox 制約のため直編集）
+  - 要点:
+    - `packages/tools/dev-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`@hierarchidb/tools-plugin-manifest-loader#build` を明示的に先行実行するよう設定。
+    - 既存の `^build` 依存も明記し、ワークスペース依存チェーンと Turbo 宣言の双方で順序を保証。
+  - 検証:
+    - [x] `npx turbo run build --filter @hierarchidb/tools-dev-scripts`（@hierarchidb/tools-plugin-manifest-loader → @hierarchidb/tools-dev-scripts の順で実行、既知の codemods workspace 警告のみ）
+  - ロールバック手順: `git checkout -- packages/tools/dev-scripts/package.json` を実行し Turbo 依存設定を戻した上で、再度 `npx turbo run build --filter @hierarchidb/tools-dev-scripts` を実行して旧挙動を確認する。
 - chore/scripts/remove-temp-codemods（P0） — 一時 codemod スクリプトを撤去し、関連ドキュメントを最新化
   - ブランチ: `main`（sandbox 制約で `git checkout -b chore/scripts/remove-temp-codemods` が失敗したため直編集）
   - 要点:
@@ -6376,6 +6402,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 16:05 start: chore/scripts/remove-temp-codemods — 一時 codemod (`migrate-plugin-worker`, `remove-default-exports`) 削除タスクを Doing へ移動。`git checkout -b chore/scripts/remove-temp-codemods` は sandbox 制約で失敗したため `main` 上で実施。
 - 2025-10-25 16:08 progress: chore/scripts/remove-temp-codemods — `rm scripts/codemods/mods/{migrate-plugin-worker.ts,remove-default-exports.ts}` を実行し、`rg "migrate-plugin-worker"` / `rg "remove-default-exports"` で残存参照が無いことを確認。関連ドキュメント（codemod README / dynamic-import メモ）を撤去済み状況へ更新。
 - 2025-10-25 16:12 done: chore/scripts/remove-temp-codemods — DoD チェックリストを完了し、削除のみのため追加ビルド/テストは未実施（差分なしを確認）。
+- 2025-10-25 16:20 start: chore/tools-dev-scripts-turbo-dependency — Turbo 依存で `@hierarchidb/tools-plugin-manifest-loader` → `@hierarchidb/tools-dev-scripts` の build 順序を固定化する対応を開始。sandbox 制約により `main` 上で直接編集。
+- 2025-10-25 16:23 progress: chore/tools-dev-scripts-turbo-dependency — `packages/tools/dev-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`npx turbo run build --filter @hierarchidb/tools-dev-scripts` を実行（exit 0、既知の codemods workspace 警告のみ）。
+- 2025-10-25 16:25 done: chore/tools-dev-scripts-turbo-dependency — Turbo 実行ログを確認して DoD 満たす。追加テストは不要（build のみ実施）。
+- 2025-10-25 16:40 start: fix/app/vite-production-build — GitHub Pages 用デプロイに向けて `pnpm -C app exec vite build` の失敗要因を調査開始。
+- 2025-10-25 16:46 progress: fix/app/vite-production-build — `@hierarchidb/ui-treeconsole-base` に `@hierarchidb/ui-i18n` 依存を追加し、Vite config の alias/optimizeDeps を更新。`pnpm --filter @hierarchidb/ui-{i18n,treeconsole-base} build` → `pnpm turbo run build --filter "@hierarchidb/app^..."` → `pnpm -C app exec vite build` を実行し、初期の `@hierarchidb/ui-i18n` 解決エラーは解消を確認。
+- 2025-10-25 16:52 blocked: fix/app/vite-production-build — その後に `LicenseInfo` の拡張子不一致、`locationEntitiesDB.js` の動的 import 解決不能が連続発生。`app/src/pages/Info/InfoPage.tsx` の import 拡張子を修正したが、location plugin の dist 参照 (`../locationEntitiesDB.js`) が未解決でビルド継続不可。引き続き対応が必要。
+- 2025-10-25 17:02 progress: fix/app/vite-production-build — tabular-source-xlsx の `require('xlsx')` を動的 `import('xlsx')` + base64 デコード実装に置き換え、`pnpm --filter @hierarchidb/tabular-source-xlsx build` で `createRequire` 依存を排除。
+- 2025-10-25 17:05 progress: fix/app/vite-production-build — location plugin の Worker ローダーを `new URL('./locationEntitiesDB.js', import.meta.url)` + フォールバックエクスポートに更新し、`pnpm --filter @hierarchidb/location-plugin build` → `pnpm turbo run build --filter "@hierarchidb/app^..."` を確認。
+- 2025-10-25 17:09 progress: fix/app/vite-production-build — app 側の `.ts` import をビルド後の `.js` 参照に揃え、MUI アイコンマップを動的ロードして `setGlobalMuiIconMap` に適用する非同期処理を追加。
+- 2025-10-25 17:16 done: fix/app/vite-production-build — `pnpm -C app exec vite build` が exit 0（警告のみ）で完了。続けて `node packages/tools/dev-scripts/dist/prepare-gh-pages-build.js` を実行し、`.nojekyll` と hash-routing snippet を注入。
 - 2025-10-25 16:34 progress: chore/config/remove-feature-flags — `app/src/config/feature-flags.ts` / `worker-flag-overrides.ts` を削除し、UI/Worker のブートストラップを `~/plugin-registry` ベースに統一。`app/src/services/ui-plugin-loader.ts` を新設して生成ファイルへの依存を整理し、`scripts/env_vite.sh` と関連ドキュメントから FEATURE_FLAGS 参照を除去。
 - 2025-10-25 16:36 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を `tools-dev-scripts` / `tools-plugin-manifest-loader` 連携で再実行するよう更新し、`app/src/generated/ui-loader.ts` を新仕様へ再生成。ドキュメント（app/docs/16-plugin-dev-with-registry.md 等）を `~/plugin-registry` 前提へ改訂し、旧 `@hierarchidb/plugin-registry` 依存を排除。
 - 2025-10-25 16:40 command: pnpm lint — exit 0（turbo run lint）。`packages/ui/plugin-dialog` 未登録の lockfile 警告あり、後続で lockfile 再生成が必要。
