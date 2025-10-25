@@ -4,11 +4,14 @@
     "outDir": "dist",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "target": "ES2022",
+    "target": "ESNext",
     "noEmit": false,
-    "declaration": false,
+    "declaration": true,
     "sourceMap": false,
-    "incremental": false
+    "incremental": false,
+    "declarationMap": false
   },
-  "include": ["src/scripts/*.ts"]
+  "include": [
+    "src/scripts/*.ts"
+  ]
 }

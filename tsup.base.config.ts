@@ -1,6 +1,6 @@
 import { defineConfig, Options } from 'tsup';
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
+import * as path from 'node:path';
 
 /**
  * Base tsup configuration for all packages

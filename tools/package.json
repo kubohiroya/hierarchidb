@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "gen-plugin-loaders": "pnpm run --silent build && node dist/scripts/gen-plugin-loaders.js",
-    "sync-peer-dependencies": "pnpm run --silent build && node dist/scripts/sync-peer-dependencies.js",
-    "prepare-gh-pages-build": "pnpm run --silent build && node dist/scripts/prepare-gh-pages-build.js"
+    "gen-plugin-loaders": "pnpm run build && node dist/gen-plugin-loaders.js",
+    "prepare-gh-pages-build": "pnpm run build && mkdir -p ../app/dist && node dist/prepare-gh-pages-build.js"
+  },
+  "dependencies": {
+    "vite": "workspace:^6.3.5"
   },
   "devDependencies": {
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@types/node": "workspace:^18.19.123"
   },
   "turbo": {
     "pipeline": {

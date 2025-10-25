@@ -29,7 +29,7 @@
     "generate-openstreetmap-metadata": "tsx scripts/data-generation/generate-openstreetmap-metadata.ts",
     "generate-metadata-index": "tsx scripts/data-generation/generate-metadata-index.ts",
     "generate-gadm-iso-mapping": "tsx scripts/data-generation/generate-gadm-iso-mapping.ts",
-    "check:licenses": "npx license-checker --production --json ",
+    "check:licenses:json": "npx license-checker --production --json ",
     "prebuild": "pnpm -C app run generate:favicon && pnpm run tools:gen-plugin-loaders && pnpm run check:deps && pnpm run check:deps:extra && npm run check:licenses && pnpm policy:ban-tsconfig-paths-dist-dts && pnpm shims:check && pnpm as-any:check && pnpm lint",
     "build": "./scripts/start-env.sh production build",
     "build:turbo": "turbo run build",

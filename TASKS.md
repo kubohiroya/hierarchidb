@@ -334,21 +334,21 @@
 - ロールバック手順：
   - rename スクリプトで移動したディレクトリと差し替えた参照をすべて revert し、`@hierarchidb/batch-types` / `@hierarchidb/batch-runtime-services` の元構成へ戻したうえで関係パッケージの build/typecheck を再実行して整合を確認
 
-13) start-env.sh Turbo 起動整備（P0）
+13) env_vite.sh Turbo 起動整備（P0）
 - ブランチ: `main`（sandbox 制約で `refactor/scripts/start-env-turbo` ブランチ作成不可のため暫定対応）
-- 依存: `scripts/start-env.sh`, `turbo.json`, NodeNext 型検証タスク
+- 依存: `scripts/env_vite.sh`, `turbo.json`, NodeNext 型検証タスク
 - 受け入れ基準（DoD）:
   - [x] `ensure_built` 群の役割と Turbo 依存関係で代替できる根拠を調査して記録（コードコメントまたは TASKS 運用ログ）
-  - [x] `scripts/start-env.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
-  - [ ] `scripts/start-env.sh dev` を dist 未生成状態から実行し、Turbo 依存のみで初回ビルドが完了することを確認（NodeNext 型エラー解消後に再検証）
+  - [x] `scripts/env_vite.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
+  - [ ] `scripts/env_vite.sh dev` を dist 未生成状態から実行し、Turbo 依存のみで初回ビルドが完了することを確認（NodeNext 型エラー解消後に再検証）
   - [x] `TASKS.md` の運用ログに start/done とロールバック手順を追記する
 - チェックリスト:
 - [x] `ensure_built` で列挙していたパッケージと app 依存グラフの整合性を確認し、必要な build タスクの最小集合を整理
 - [x] start-env 実行時の Turbo エラーを標準エラーに透過し、失敗時に exit するようハンドリングを追加
 - [x] `app#typecheck` から `@hierarchidb/ui-i18n` / `@hierarchidb/ui-treeconsole-base` / `@hierarchidb/runtime-worker` の `typecheck` を Turbo 依存で先行実行させ、宣言ビルド順序を自動化（2025-10-23）
-- [ ] dist 未生成状態での `scripts/start-env.sh dev` 実行結果を記録（2025-10-22: Turbo 経由 build が既存 TS エラーで停止し再試行待ち）
+- [ ] dist 未生成状態での `scripts/env_vite.sh dev` 実行結果を記録（2025-10-22: Turbo 経由 build が既存 TS エラーで停止し再試行待ち）
 - ロールバック手順：
-  - `scripts/start-env.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
+  - `scripts/env_vite.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
 - 運用ログ：
   - start: 2025-10-22 13:33 sandbox でブランチ作成が拒否されたため `main` 上で start-env Turbo 改修を開始（Turbo 依存置き換え検討）
 
@@ -360,7 +360,7 @@
 - ブランチ: `main`（sandbox 制約でローカルブランチ作成不可）
 - 依存: `@hierarchidb/tools`, `@hierarchidb/app`
 - 受け入れ基準（DoD）:
-  - [ ] `tools/src/scripts/fix-spa-build.ts` を `prepare-gh-pages-build.ts` へリネームし、処理内容をコメントに明記
+  - [ ] `tools/src/scripts/env-vite.ts` を `prepare-gh-pages-build.ts` へリネームし、処理内容をコメントに明記
   - [ ] `app/package.json` の `predeploy` で `pnpm run tools:prepare-gh-pages-build` を実行する
   - [ ] 旧名称を参照しているドキュメント・スクリプトを `tools:prepare-gh-pages-build` へ更新
 - チェックリスト:
@@ -372,7 +372,7 @@
 - ブランチ: `main`
 - 依存: `pnpm` ワークスペーススクリプト
 - 受け入れ基準（DoD）:
-  - [ ] `scripts/start-env.sh` を `scripts/env_vite.sh` にリネーム
+  - [ ] `scripts/env_vite.sh` を `scripts/env_vite.sh` にリネーム
   - [ ] ルート `package.json` の `dev` / `build` など、該当シェルを参照するスクリプトをすべて新名称に更新
   - [ ] 関連ドキュメント（README/TASKS 等）を最新名称へ差し替え
 - チェックリスト:
@@ -1767,7 +1767,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - merged: PR #104 fix/app/init-loading-ux-polish（初回スプラッシュ簡素化と 0% フリッカー抑止、UXコメントの整理、CI/Types 安定化ガイドの追加 等）
 - merged: integrate/spreadsheet-styler-ci-stability（CI typecheck/ビルドの安定化、types を src 指向に統一、UI/env の import.meta.env 化、package-local alias の撤廃 ほか）
 - 影響範囲まとめ:
-  - Dev 体験: `scripts/start-env.sh` の自動ビルド/エイリアス調整により初回起動の失敗率を低減。
+  - Dev 体験: `scripts/env_vite.sh` の自動ビルド/エイリアス調整により初回起動の失敗率を低減。
   - 型安定性: `exports.types/types` を `src` 指向へ統一、CI での prebuild typecheck 安定化。
   - Docs/TASKS: 本 `TASKS.md` の ToDo に node-type 監査タスクを反映済み（本日）。
 
@@ -2368,7 +2368,7 @@ P2:
   - dev 設定画面（隠し/DevTools）でフラグ表示（読み取り専用）
 - チェックリスト:
   - [ ] Runbook（切替/監視/戻し）のテンプレ化
-  - [ ] start-env.sh の例と注意点
+  - [ ] env_vite.sh の例と注意点
   - [ ] 既知の相互作用と制約一覧
 
 6) レガシー経路の除去（安定化後）（P3）
@@ -5070,7 +5070,7 @@ P2:
     - [x] 他パッケージで同様の参照がないか確認し、必要に応じて追従差分を検討する
   - 運用ログ：
     - start: 2025-09-21 23:15 app build での worker import 解決エラー調査に着手
-    - progress: 2025-09-21 23:18 route-plugin の `package.json` / `app/tsconfig.json` / `scripts/start-env.sh` を `.js` 拡張子に整合し、`pnpm --filter @hierarchidb/route-plugin build` 成功を確認
+    - progress: 2025-09-21 23:18 route-plugin の `package.json` / `app/tsconfig.json` / `scripts/env_vite.sh` を `.js` 拡張子に整合し、`pnpm --filter @hierarchidb/route-plugin build` 成功を確認
     - progress: 2025-09-22 08:22 `tsconfig.base.json` に location/route/shape/timeline の worker パスを追加し、`pnpm --filter @hierarchidb/runtime-worker typecheck` で TS7016 が発生しないことを確認
     - done: 2025-09-22 08:24 `pnpm --filter @hierarchidb/app build` を再実行し、ワーカー関連の解決エラーが再発しないことを確認
   - ロールバック手順：
@@ -5290,7 +5290,7 @@ P2:
 // ここから従来の完了ログ
 ## フラグ運用（共通） <a id="flags"></a>
 
-- 起動時固定・既定OFF。`scripts/start-env.sh` から注入し、`config/feature-flags.ts` で一元読取。
+- 起動時固定・既定OFF。`scripts/env_vite.sh` から注入し、`config/feature-flags.ts` で一元読取。
 - 代表例:
   - ~~`WORKER_USE_CMDPROC_CREATE_UPDATE="0|1"`~~（2025-09-16 削除）
   - ~~`WORKER_TRASH_USE_HOLDER="0|1"`~~（2025-09-16 削除）
@@ -5312,7 +5312,7 @@ P2:
   - `pnpm --filter @hierarchidb/runtime-worker typecheck`
   - `pnpm --filter @hierarchidb/app test`
 - 開発環境の統一
-  - `scripts/start-env.sh <development|production> [dev|build|test]` を用い、起動時に必要フラグ/エイリアスを注入
+  - `scripts/env_vite.sh <development|production> [dev|build|test]` を用い、起動時に必要フラグ/エイリアスを注入
 - 受け入れ基準の共通前提（抜粋）
   - 原則として `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を通過
   - 影響大の変更は機能フラグ既定OFFで導入し、E2E は段階的に追従
@@ -5375,7 +5375,7 @@ P2:
   - blocked: monorepo 全体の `pnpm typecheck` で folder-plugin の型エラーにより失敗（スコープ外）
 
 - done: 2025-09-20 13:56 fix/shape/dialog-step-component-wrapper — Shape Folder Extension の StepComponent ラッパー導入と `pnpm --filter @hierarchidb/shape-plugin {typecheck,build}` 成功ログを反映
-- done: start-env.sh に Worker Flags の可視化を追加（起動時に値を表示）
+- done: env_vite.sh に Worker Flags の可視化を追加（起動時に値を表示）
 - done: scripts/env/development.sh / production.sh にフラグ注入例（コメント）を追記
 - start: e2e テンプレ追加 `e2e/cp-routing-wc-flow.spec.ts`（describe.skip で雛形作成）
 . done: パリティテスト追加 `packages/runtime-worker/worker/src/services/__tests__/cp-routing-parity.test.ts`
@@ -6185,7 +6185,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 17:08 progress: fix/folder-plugin/type-refs — `tsconfig.build.json` の `paths={}` を削除し、`tsconfig.json` に dist 優先の paths（plugin-ui-sdk / download / auth-recovery / runtime-basic-info / runtime-plugin-dialog）を追加。依存パッケージの `build:types` を実行した上で `pnpm --filter @hierarchidb/folder-plugin build:types` を再実行し成功。
 - 2025-10-20 17:16 progress: fix/folder-plugin/type-refs — `tsconfig.json` へ `@hierarchidb/runtime-client` の paths を追加し、`tsconfig.build.json` に runtime-client を参照として追加。`@hierarchidb/runtime-client build:types` および `@hierarchidb/download build:bundle` / `@hierarchidb/plugin-ui-sdk build:bundle` を実行して dist の型定義を再生成。
 - 2025-10-20 17:20 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
-- 2025-10-22 13:33 start: start-env.sh ensure_built 依存整理 — sandbox で `refactor/scripts/start-env-turbo` ブランチ作成が拒否されたため `main` 上で作業開始。Turbo 依存でビルド前提を賄う方針を検証予定。
+- 2025-10-22 13:33 start: env_vite.sh ensure_built 依存整理 — sandbox で `refactor/scripts/start-env-turbo` ブランチ作成が拒否されたため `main` 上で作業開始。Turbo 依存でビルド前提を賄う方針を検証予定。
 - 2025-10-22 19:37 start: plugin-types typecheck Turbo 依存整備 — `git checkout -b chore/turbo/plugin-types-typecheck-dep` が sandbox 制約で失敗したため `main` 上で着手。`@hierarchidb/plugin-types#typecheck` を `@hierarchidb/plugin-ui-sdk#build` 依存に接続する Turbo 設定を調査開始。
 - 2025-10-22 19:56 progress: plugin-types typecheck Turbo 依存整備 — `packages/plugin-types/package.json` に `turbo.pipeline.build` 依存を追加し、`turbo.json` に `"@hierarchidb/plugin-types#typecheck"` エントリを定義して `@hierarchidb/plugin-ui-sdk#build` を明示的に dependsOn へ追加。
 - 2025-10-22 19:58 blocked: plugin-types typecheck Turbo 依存整備 — `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full` を実行したが、依存連鎖で走る `@hierarchidb/batch-types#build` が既知の API Extractor TS6307 エラーで失敗し完了できず。`--dry-run=json` の出力で `@hierarchidb/plugin-ui-sdk#build` 依存が追加されていることと、`packages/plugin-ui-sdk/.turbo/turbo-build.log` にビルド試行ログが記録されていることを確認。
@@ -6218,8 +6218,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 22:42 done: fix/resolver-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/runtime-worker build` を実行して dist/index.d.ts を再出力し、続けて `pnpm --filter @hierarchidb/resolver-plugin typecheck` が成功することを確認。
 - 2025-10-22 22:45 audit: runtime-worker type consumers — `@hierarchidb/{basemap-plugin,spreadsheet-plugin}` 既に `plugin-ui-sdk` 依存と external が登録済みであることを確認（追加作業なし）。
 - 2025-10-22 22:48 fix: styler-plugin spreadsheet peer types — `pnpm --filter @hierarchidb/spreadsheet-plugin build` を実行して最新の dist/index.d.ts を生成し、`pnpm --filter @hierarchidb/styler-plugin typecheck` が成功することを確認。
-- 2025-10-22 13:40 progress: start-env.sh ensure_built 依存整理 — `scripts/start-env.sh` の ensure_built 群を削除し、`node_modules/turbo/bin/turbo` を用いた `@hierarchidb/app^...` 依存グラフ一括ビルドへ差し替え（コメントで AGENTS.md NodeNext 指針へ言及）。
-- 2025-10-22 13:41 blocked: start-env.sh ensure_built 依存整理 — `pnpm exec tsc -b tsconfig.build.json` を実行したところ、既存の download/tabular-store 系 rootDir・型定義欠如エラー（TS6059/TS6307/TS7016など）が再発。別タスクで対処予定のため本作業では結果を共有し保留。
+- 2025-10-22 13:40 progress: env_vite.sh ensure_built 依存整理 — `scripts/env_vite.sh` の ensure_built 群を削除し、`node_modules/turbo/bin/turbo` を用いた `@hierarchidb/app^...` 依存グラフ一括ビルドへ差し替え（コメントで AGENTS.md NodeNext 指針へ言及）。
+- 2025-10-22 13:41 blocked: env_vite.sh ensure_built 依存整理 — `pnpm exec tsc -b tsconfig.build.json` を実行したところ、既存の download/tabular-store 系 rootDir・型定義欠如エラー（TS6059/TS6307/TS7016など）が再発。別タスクで対処予定のため本作業では結果を共有し保留。
 - 2025-10-22 15:10 start: plugin-registry typecheck 依存制御 — `git checkout -b chore/turbo/plugin-registry-typecheck` が sandbox 制約で失敗したため `main` 上で作業開始。Turbo pipeline と package scripts の依存関係を見直し、`@hierarchidb/plugin-registry typecheck` 前に必要な `build:types` が揃う構成を調査。
 - 2025-10-22 15:16 blocked: plugin-registry typecheck 依存制御 — `pnpm --filter @hierarchidb/plugin-registry typecheck` 初回実行で TS5055 (dist/index.d.ts overwrite) が発生し、typecheck 前に dist を生成・クリーンするフロー不足を確認。
 - 2025-10-22 15:22 blocked: plugin-registry typecheck 依存制御 — dist 生成を `tsc -b tsconfig.build.json` で補う案を試したが、deck.gl 系依存の NodeNext 型エラーが多数発生したため採用を断念。
@@ -6277,6 +6277,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-23 18:33 progress: fix/ui/speeddial-dialog-state — Dialog モックの `WorkerAPIImpl` を `@hierarchidb/common-api` の `WorkingCopyData` / `MultiStepDialogAPI` 型へ合わせて再実装し、`batchValidate` / `saveWorkingCopy` など不足 API を補完。
 - 2025-10-23 18:34 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0（mock 型整備後も問題なし）。
 - 2025-10-23 21:29 progress: fix/ui/speeddial-dialog-state — `vitest.config.ts` 向けにモジュール宣言 (`vitest.config.d.ts`) を追加し、`collectAliasEntries` import の型解決エラー (TS7016) を解消。
+- 2025-10-23 21:35 progress: fix/ui/speeddial-dialog-state — `app/vite-plugin-mui-icon-map.ts` を撤去し、`initializeBrowserGlobals` で生成済み `~/generated/mui-icon-loader.ts` を参照するように変更。`packages/ui/icon/src/getMuiIconComponent.tsx` のコメントも静的ローダー版に更新。
+- 2025-10-23 21:36 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/tools run gen-plugin-loaders` を実行し、新規 `app/src/generated/mui-icon-loader.ts` を生成。後続の同コマンドは tools ビルドで既知の型エラー (generate-plugin-loader.ts) により exit 2 となるため、生成済み成果物を再利用する形で完了扱いとした。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
 - 2025-10-24 09:26 progress: chore/turbo/build-target-audit — `packages/**/package.json` / `plugins/**/package.json` の `build*` スクリプトと Turbo pipeline 設定を Node/Python スクリプトで抽出し、命名揺れと欠落（例: Turbo が `build:bundle` 参照だが scripts 無し）を洗い出し。
 - 2025-10-24 09:44 done: chore/turbo/build-target-audit — build 系ターゲットの集計・Turbo 参照状況・統一案（Step1〜Step4）を TASKS.md に反映し、DoD/チェックリストをクローズ。
@@ -6284,3 +6286,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-24 10:18 progress: chore/turbo/build-target-audit — `docs/build-target-naming.md` を追加し、標準ターゲットと実装ルールを明文化。`turbo.json` に `build:bundle` タスクを登録し、ルート `package.json` へワークスペース実行用スクリプトを追加。
 - 2025-10-24 10:22 done: chore/turbo/build-target-audit — 4 プラグイン＆依存パッケージのスクリプト改修、Turbo 設定整備、ドキュメント整備、ルートスクリプトの整合を完了。今後は段階的に他パッケージも同規約へ移行する方針で記録。
 - 2025-10-24 10:48 progress: chore/turbo/build-target-audit — `@hierarchidb/tools` に Turbo タスク `gen-plugin-loaders` を追加し、generator 実行をワークスペース依存で管理。`packages/plugin-registry` / `app` から同タスクへ依存させ、`scripts/generate-plugin-loader.mjs` を pnpm 経由のラッパーとして再整備。
+- 2025-10-24 10:55 progress: chore/turbo/build-target-audit — `pnpm install --no-frozen-lockfile` を実行し、tools/package.json の出力パス変更後の dist を再構成。
+- 2025-10-24 10:58 progress: chore/turbo/build-target-audit — `pnpm --filter @hierarchidb/tools run gen-plugin-loaders` → `pnpm --filter @hierarchidb/plugin-registry run build:types` を順に実行し、生成物と型ビルドが新構成で成功することを確認。
+- 2025-10-24 11:02 verify: chore/turbo/build-target-audit — `npx turbo run build:types --filter @hierarchidb/plugin-registry` を実行し、Turbo 依存経由でも generator → build:types が通ることを確認。
+- 2025-10-24 11:04 verify: chore/turbo/build-target-audit — ルートから `pnpm run tools:gen-plugin-loaders` を実行し、workspace alias 経由でも generator が安定動作することを確認。

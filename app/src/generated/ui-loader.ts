@@ -4,20 +4,20 @@
 
 
 const uiLoaders: Record<string, () => Promise<unknown>> = {
-  'timeline': () => import('@hierarchidb/timeline-plugin/ui'),
-  'resolver': () => import('@hierarchidb/resolver-plugin/ui'),
+  'basemap': () => import('@hierarchidb/basemap-plugin/ui'),
+  'folder': () => import('@hierarchidb/folder-plugin/ui'),
   'location': () => import('@hierarchidb/location-plugin/ui'),
   'linker': () => import('@hierarchidb/linker-plugin/ui'),
-  'folder': () => import('@hierarchidb/folder-plugin/ui'),
+  'route': () => import('@hierarchidb/route-plugin/ui'),
+  'shape': () => import('@hierarchidb/shape-plugin/ui'),
+  'resolver': () => import('@hierarchidb/resolver-plugin/ui'),
   'spreadsheet': () => import('@hierarchidb/spreadsheet-plugin/ui'),
   'styler': () => import('@hierarchidb/styler-plugin/ui'),
-  'shape': () => import('@hierarchidb/shape-plugin/ui'),
-  'route': () => import('@hierarchidb/route-plugin/ui'),
-  'basemap': () => import('@hierarchidb/basemap-plugin/ui'),
+  'timeline': () => import('@hierarchidb/timeline-plugin/ui'),
 };
 
 export const uiPlugins = ["basemap","folder","linker","location","resolver","route","shape","spreadsheet","styler","timeline"] as const;
-export const uiLoadOrder = ["timeline","resolver","location","linker","folder","spreadsheet","styler","shape","route","basemap"] as const;
+export const uiLoadOrder = ["basemap","folder","location","linker","route","shape","resolver","spreadsheet","styler","timeline"] as const;
 
 const loadedPlugins = new Set<string>();
 let allLoaded = false;

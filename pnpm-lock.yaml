@@ -1225,17 +1225,16 @@ importers:
         version: link:../../feature/tabular-source-xlsx
 
   packages/tools/analyze-licenses:
-    dependencies:
+    devDependencies:
+      '@types/license-checker':
+        specifier: ^25.0.6
+        version: 25.0.6
       license-checker:
         specifier: ^25.0.1
         version: 25.0.1
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@microsoft/api-extractor@7.53.1(@types/node@18.19.123))(jiti@2.6.1)(postcss@8.5.6)(tsx@4.20.6)(typescript@5.9.3)(yaml@2.8.1)
-    devDependencies:
-      '@types/license-checker':
-        specifier: ^25.0.6
-        version: 25.0.6
 
   packages/tools/vite-plugin-node-type-registry:
     devDependencies:
@@ -3096,7 +3095,14 @@ importers:
         version: 5.9.3
 
   tools:
+    dependencies:
+      vite:
+        specifier: 5.4.19
+        version: 5.4.19(@types/node@18.19.123)
     devDependencies:
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
       typescript:
         specifier: 5.9.3
         version: 5.9.3

@@ -23,11 +23,9 @@
     "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
     "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
   },
-  "dependencies": {
-    "license-checker": "^25.0.1",
-    "tsup": "^8.5.0"
-  },
   "devDependencies": {
+    "license-checker": "^25.0.1",
+    "tsup": "^8.5.0",
     "@types/license-checker": "^25.0.6"
   }
 }

@@ -166,7 +166,7 @@ await wirePluginsFromModules(modules.filter(Boolean) as Array<{ nodeType: string
 
 ## アイコンマップ
 - プラグインは `plugin-manifest.ts` の `icon.mui`（または `muiIconName`）/`emoji` を設定してください。
-- `app/vite-plugin-mui-icon-map.ts` が `virtual:mui-icon-map` を生成し、`setGlobalMuiIconMap()` へ渡すことで MUI Icon コンポーネントを解決します。こちらのみ仮想モジュール継続利用です。
+- `pnpm run tools:gen-plugin-loaders` 実行時に `app/src/generated/mui-icon-loader.ts` が再生成され、`setGlobalMuiIconMap()` へ渡す MUI Icon マップを静的に用意します。
 
 ## 手動メンテが必要なケース
 - 新しいプラグインを追加したのにレジストリへ反映されない → `pnpm dev` などで `scripts/generate-plugin-loader.mjs` が走っているか確認し、`app/package.json` の dependencies に対象プラグインを追加してください。
@@ -184,6 +184,6 @@ await wirePluginsFromModules(modules.filter(Boolean) as Array<{ nodeType: string
 - **Q. プラグインから `@hierarchidb/app` のコードを直接 import できますか？**  
   **A.** できません。プラグインはホストとは独立したパッケージとして設計されているため、`packages/<scope>` や `plugins/<node>-plugin` の依存関係に限定してください。
 - **Q. 仮想モジュールは完全に無くなりましたか？**  
-  **A.** プラグインローダー/メタデータはすべて静的レジストリへ移行済みです。`virtual:mui-icon-map` のみが残っています（アイコン生成のため）。
+  **A.** プラグインローダー/メタデータに加え、MUI アイコンマップも静的生成へ移行済みです。現在はアプリ固有の仮想モジュールを使用していません。
 - **Q. `tsconfig` の paths をどう管理しますか？**  
   **A.** 共通の `tsconfig.base.json` に `@hierarchidb/*` の `src/` を集約しました。個別の tsconfig で dist を参照しないでください。

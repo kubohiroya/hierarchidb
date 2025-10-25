@@ -66,7 +66,7 @@ const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> =
 };
 
 // Removed dynamic import path: we now rely on a build-time generated global icon map
-// (set via setGlobalMuiIconMap from virtual:mui-icon-map) and a small static map.
+// (set via setGlobalMuiIconMap from app/src/generated/mui-icon-loader.ts) and a small static map.
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {
   const normalized = normalizeMuiName(muiIconName);

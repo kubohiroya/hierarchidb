@@ -6,7 +6,7 @@
  */
 import { access, readFile, unlink, writeFile } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
-import path from 'node:path';
+import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from 'vite';
 
