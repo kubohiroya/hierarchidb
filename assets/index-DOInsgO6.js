@@ -1,1 +1,0 @@
-var t=()=>import("./index-mWUVsfDK.js"),o={mapAdapter:()=>import("./index-BPhjnaX8.js"),tabularXlsx:()=>import("./index-CmMQJbnp.js")};function e(){return t()}function p(r){return o[r]()}export{p as importOptionalFeature,e as importRuntimeWorker};

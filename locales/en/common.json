@@ -23,6 +23,63 @@
       }
     }
   },
+  "plugins": {
+    "noDependencies": "No dependencies",
+    "details": "Plugin Details",
+    "fields": {
+      "package": "Package",
+      "description": "Description",
+      "dependencies": "Dependencies",
+      "menuGroup": "Menu Group"
+    },
+    "actions": {
+      "reset": "Reset Plugin",
+      "delete": "Delete Plugin",
+      "deleteDisabled": "Delete (Disabled for Core Plugin)"
+    },
+    "corePlugin": "Core Plugin",
+    "corePluginMessage": "This plugin cannot be deleted as it provides the foundation for all other plugins.",
+    "folder": {
+      "name": "Folder",
+      "description": "Create folders to organize nodes and manage workspace structure."
+    },
+    "basemap": {
+      "name": "Basemap",
+      "description": "Manage base map layers and geographic context."
+    },
+    "shape": {
+      "name": "Shape",
+      "description": "Process and visualize geographic shape datasets."
+    },
+    "location": {
+      "name": "Location",
+      "description": "Capture and manage location information with shape integration."
+    },
+    "route": {
+      "name": "Route",
+      "description": "Generate and monitor routes between geographic points."
+    },
+    "spreadsheet": {
+      "name": "Spreadsheet",
+      "description": "Import tabular data sources for later processing."
+    },
+    "styler": {
+      "name": "Styler",
+      "description": "Define styling rules and color ramps for visualizations."
+    },
+    "resolver": {
+      "name": "Resolver",
+      "description": "Resolve data conflicts and map properties across sources."
+    },
+    "linker": {
+      "name": "Linker",
+      "description": "Link compiled resources into projects and map contexts."
+    },
+    "timeline": {
+      "name": "Timeline",
+      "description": "Manage timeline-based projects and track progress."
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "Select all",
