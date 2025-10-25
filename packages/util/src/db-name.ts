@@ -3,9 +3,6 @@ interface EnvRecord {
 }
 
 interface HierarchidbGlobal {
-  FEATURE_FLAGS?: {
-    WORKER_DB_PREFIX?: unknown;
-  };
   APP_PREFIX?: unknown;
 }
 
@@ -22,10 +19,6 @@ const readVitePrefix = (): string => {
 
 const readGlobalPrefix = (): string => {
   const candidate = globalThis as HierarchidbGlobal;
-  const fromFlags = candidate.FEATURE_FLAGS?.WORKER_DB_PREFIX;
-  if (typeof fromFlags === 'string' && fromFlags.trim()) {
-    return fromFlags;
-  }
   const fromAppPrefix = candidate.APP_PREFIX;
   return typeof fromAppPrefix === 'string' ? fromAppPrefix : '';
 };

@@ -2,8 +2,6 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "composite": true,
-    "incremental": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
   }

@@ -1,14 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
     "lib": [
       "ES2020",
       "DOM",
@@ -18,24 +10,26 @@
       "vite/client",
       "node"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "UI transitive types (MUI/Emotion) \u2014 tracked to remove."
   },
   "include": [
-    "src/**/*"
+    "src*"
   ],
   "exclude": [
     "dist",
     "node_modules",
-    "src/__tests__/**",
-    "src/**/*.stories.ts",
-    "src/**/*.stories.tsx",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
+    "src/__tests__*.stories.ts",
+    "src*.stories.tsx",
+    "src*.test.ts",
+    "src*.test.tsx",
     "src/vite-env.d.ts"
   ]
 }

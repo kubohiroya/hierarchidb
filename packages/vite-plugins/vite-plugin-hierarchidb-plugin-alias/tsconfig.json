@@ -1,0 +1,15 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es2020",
+    "skipLibCheck": false,
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
+  }
+}

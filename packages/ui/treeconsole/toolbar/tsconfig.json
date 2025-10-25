@@ -1,12 +1,6 @@
 {
   "extends": "../../../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": false,
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
     "types": [
       "react"
     ],
@@ -18,16 +12,6 @@
     "lib": [
       "ES2020",
       "DOM"
-    ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
-  },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "./node_modules",
-    "./dist"
-  ]
+    ]
+  }
 }

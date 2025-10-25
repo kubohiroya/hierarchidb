@@ -26,22 +26,7 @@ const logSubscriptionWarning = (message: string, error: unknown): void => {
   console.warn('[SubscriptionOrchestrator]', message, error);
 };
 
-interface FeatureFlagRecord {
-  [key: string]: unknown;
-}
-
-const readFeatureFlagNumber = (key: string, fallback: number): number => {
-  const flags = (globalThis as { FEATURE_FLAGS?: FeatureFlagRecord }).FEATURE_FLAGS;
-  const value = flags?.[key];
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (!Number.isNaN(parsed)) {
-      return parsed;
-    }
-  }
-  return fallback;
-};
+const BATCH_DELAY_MS = 100;
 
 /**
   * SubTree
@@ -160,17 +145,9 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
     if (updateBatchTimerRef.current) {
       clearTimeout(updateBatchTimerRef.current);
     }
-    const batchDelay = (() => {
-      try {
-        return readFeatureFlagNumber('SUBSCRIPTION_BATCH_MS', 100);
-      } catch (error) {
-        logSubscriptionWarning('Failed to read SUBSCRIPTION_BATCH_MS flag', error);
-        return 100;
-      }
-    })();
     updateBatchTimerRef.current = setTimeout(() => {
       processPendingUpdates();
-    }, batchDelay);
+    }, BATCH_DELAY_MS);
   }, [processPendingUpdates]);
 
   const handleSubTreeUpdate = useCallback(

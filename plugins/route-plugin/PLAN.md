@@ -266,7 +266,7 @@ M2: Pipelines (3–5 days)
   - Overrides:
     - Config: `RouteBatchConfig.laneCaps` (e.g. `{ osm_route: 1, searoute: 4 }`).
     - Env: `ROUTE_LANE_CAPS` as JSON string (e.g. `{"osm_route":1,"searoute":4}`).
-    - Global flag: `globalThis.FEATURE_FLAGS.ROUTE_LANE_CAPS` (object with numeric caps).
+    - Global flag: `globalThis.FEATURE_FLAGS.ROUTE_LANE_CAPS` (object with numeric caps)。※ 2025-10-25 時点で FEATURE_FLAGS は撤廃済み。必要なら環境変数ベースの設定に置き換えること。
   - Placement: enforced in `RouteBatchSession` around `RouteGenerator.generate()`.
   - Tests: session-level gating test ensures `osm_route` max concurrency stays 1 even with high `maxConcurrent`.
   - Note: Fair queue + shared throttler remain optional; can be promoted from shared download `RateLimiter` later.

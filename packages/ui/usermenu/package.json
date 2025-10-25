@@ -13,14 +13,11 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {},
   "devDependencies": {
@@ -51,29 +48,5 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
-  "license": "MIT",
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-auth",
-      "@hierarchidb/common-auth/*",
-      "@hierarchidb/ui-auth",
-      "@hierarchidb/ui-auth/*",
-      "@hierarchidb/ui-i18n",
-      "@hierarchidb/ui-i18n/*",
-      "@hierarchidb/ui-monitoring",
-      "@hierarchidb/ui-monitoring/*",
-      "@hierarchidb/ui-theme",
-      "@hierarchidb/ui-theme/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "react",
-      "react-dom"
-    ]
-  }
+  "license": "MIT"
 }

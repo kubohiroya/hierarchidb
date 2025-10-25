@@ -42,11 +42,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -69,7 +65,7 @@
     "dexie": "^4.2.0",
     "react-i18next": "12.3.1",
     "i18next": "22.5.0",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
@@ -77,7 +73,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*"
   },
@@ -92,7 +88,7 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "dexie": "^4.2.0",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
@@ -100,7 +96,7 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*"
   },
@@ -128,7 +124,7 @@
       "name": "Styler Plugin",
       "icon": {
         "mui": "Palette",
-        "emoji": "🎨",
+        "emoji": "\ud83c\udfa8",
         "color": "#dcbc50"
       },
       "priority": 700,
@@ -168,61 +164,7 @@
         "dependsOn": [
           "@hierarchidb/spreadsheet-plugin#build"
         ]
-      },
-      "build:types": {
-        "dependsOn": [
-          "@hierarchidb/spreadsheet-plugin#build:types"
-        ]
-      },
-      "build:bundle": {
-        "dependsOn": [
-          "@hierarchidb/spreadsheet-plugin#build:bundle"
-        ]
-      },
-      "typecheck": {
-        "dependsOn": [
-          "@hierarchidb/spreadsheet-plugin#build",
-          "@hierarchidb/runtime-worker#build",
-          "@hierarchidb/runtime-plugin-dialog#build",
-          "@hierarchidb/plugin-ui-sdk#build"
-        ]
       }
     }
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/components",
-      "@hierarchidb/components/*",
-      "@hierarchidb/folder-plugin",
-      "@hierarchidb/folder-plugin/*",
-      "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*",
-      "@hierarchidb/runtime-basic-info",
-      "@hierarchidb/runtime-basic-info/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-ui-plugin-dialog",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/spreadsheet-plugin",
-      "@hierarchidb/spreadsheet-plugin/*",
-      "@hierarchidb/tabular-store",
-      "@hierarchidb/tabular-store/*",
-      "@hierarchidb/ui-tabular-extract",
-      "@hierarchidb/ui-tabular-extract/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "dexie",
-      "i18next",
-      "react",
-      "react-dom",
-      "react-i18next"
-    ]
   }
 }

@@ -35,20 +35,16 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
   },
@@ -61,7 +57,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
@@ -70,12 +66,11 @@
     "@types/react-transition-group": "^4.4.12",
     "@types/node": "^20.10.5",
     "react": ">=18.0.0",
-    "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*"
@@ -86,36 +81,9 @@
       "name": "Timeline Plugin",
       "icon": {
         "mui": "Timeline",
-        "emoji": "🕒",
+        "emoji": "\ud83d\udd52",
         "color": "#8a7cbf"
       }
     }
-  },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/ui-dialog",
-      "@hierarchidb/ui-dialog/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "react"
-    ]
   }
 }

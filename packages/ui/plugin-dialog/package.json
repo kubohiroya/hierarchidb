@@ -1,0 +1,71 @@
+{
+  "name": "@hierarchidb/ui-plugin-dialog",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Runtime plugin dialog components for HierarchiDB",
+  "author": "HierarchiDB Contributors",
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "clean": "rm -rf dist",
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "^3.2.4",
+    "typescript": "workspace:^5.9.3",
+    "@types/react": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "jotai": "^2.11.2",
+    "comlink": "^4.4.2",
+    "@tanstack/react-router": "^1.132.33",
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/batch-types": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@mui/material": "^7.3.2",
+    "@mui/icons-material": "^7.3.2",
+    "jotai": "^2.11.2",
+    "comlink": "^4.4.2",
+    "@tanstack/react-router": "^1.132.33",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/batch-types": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*"
+  },
+  "turbo": {
+    "pipeline": {}
+  }
+}

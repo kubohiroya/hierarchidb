@@ -5,16 +5,10 @@
       "ES2022",
       "DOM"
     ],
-    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
       ]
-    },
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
-  },
-  "include": [
-    "src/**/*"
-  ]
+    }
+  }
 }

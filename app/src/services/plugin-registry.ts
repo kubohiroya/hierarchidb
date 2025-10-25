@@ -4,7 +4,7 @@ import {
   type PluginRegistryEntry,
   type PluginIconConfig,
   type PluginCategoryConfig,
-} from '@hierarchidb/plugin-registry';
+} from '~/plugin-registry/index.js';
 import appPackageJson from '../../package.json' with { type: 'json' };
 
 interface PackageJsonShape {

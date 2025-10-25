@@ -13,7 +13,7 @@ import { RouteSelectionStep } from './RouteSelectionStep.js';
 import { RouteProcessingStep } from './RouteProcessingStep.js';
 import { readRuntimeMode } from '@hierarchidb/util';
 import { notify } from '@hierarchidb/components';
-import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
+import { useWorkingCopy } from '@hierarchidb/ui-plugin-dialog';
 import {
   HeadlessMultiStepDialog,
   FRAME_CONSTANTS,

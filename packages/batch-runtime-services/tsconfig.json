@@ -1,23 +1,19 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "paths": {},
-    "declaration": true,
-    "declarationMap": true,
-    "jsx": "react-jsx",
-    "skipLibCheck": false,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "skipLibCheck": false
   },
   "include": [
-    "src/**/*"
+    "src*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
+    "***.spec.ts"
   ]
 }

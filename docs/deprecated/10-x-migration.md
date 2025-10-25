@@ -199,7 +199,7 @@ export const TreeNode2Definition: UnifiedPluginDefinition<
 
 ### Phase 2: 実験的導入（2-3週間）
 
-1. **フィーチャーフラグの導入**
+1. **フィーチャーフラグの導入**（※2025-10-25 時点では `FEATURE_FLAGS` ベースの切り替えは撤廃済み。実際に導入する場合は環境変数もしくは専用設定モジュールで再設計すること）
    ```typescript
    const FEATURE_FLAGS = {
      USE_PLUGIN_FOLDERS: process.env.USE_PLUGIN_FOLDERS === 'true',
@@ -209,12 +209,15 @@ export const TreeNode2Definition: UnifiedPluginDefinition<
 
 2. **切り替え可能な実装**
    ```typescript
-   function getFolderHandler() {
-     if (FEATURE_FLAGS.USE_PLUGIN_FOLDERS) {
-       return new Folder2Handler();
-     }
-     return new LegacyFolderHandler();
-   }
+function getFolderHandler() {
+  if (FEATURE_FLAGS.USE_PLUGIN_FOLDERS) {
+    return new Folder2Handler();
+  }
+  return new LegacyFolderHandler();
+}
+
+> ⚠️ **Legacy 設計メモ**  
+> 上記コードは 10.x 系導入当時の例であり、現在は `FEATURE_FLAGS` を利用した分岐を禁止しています。必要に応じて設定モジュールや環境変数ベースのトグルを個別に設計してください。
    ```
 
 3. **A/Bテスト環境**

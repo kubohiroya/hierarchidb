@@ -25,12 +25,6 @@
       "@hierarchidb/ui-treeconsole-treetable/*": [
         "../packages/ui/treeconsole/treetable/src/*"
       ],
-      "@hierarchidb/plugin-registry": [
-        "../packages/plugin-registry/src/index.ts"
-      ],
-      "@hierarchidb/plugin-registry/*": [
-        "../packages/plugin-registry/src/*"
-      ]
     },
     "module": "NodeNext"
   },

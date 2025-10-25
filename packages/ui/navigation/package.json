@@ -10,14 +10,11 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc -b tsconfig.build.json",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {},
   "devDependencies": {
@@ -38,20 +35,5 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0"
-  },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-router",
-      "@tanstack/react-router/*",
-      "react"
-    ]
   }
 }

@@ -12,15 +12,4 @@ export default defineConfig({
     include: ['scripts/__tests__/**/*.test.ts'],
     passWithNoTests: false,
   },
-  resolve: {
-    alias: {
-      '@hierarchidb/plugin-registry': path.resolve(
-        repoRoot,
-        'packages',
-        'plugin-registry',
-        'src',
-        'index.ts',
-      ),
-    },
-  },
 });

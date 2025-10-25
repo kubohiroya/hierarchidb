@@ -4,12 +4,12 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 
 ## Build-time plugin discovery
 
-* `scripts/generate-plugin-loader.mjs` parses `app/package.json` to locate dependencies that match `@hierarchidb/*-plugin`, resolves each package’s `exports`, and builds the static artefacts used everywhere else: `app/src/generated/worker-loader.ts`, `app/src/generated/ui-loader.ts`, and `packages/plugin-registry/src/generated.ts` (consumed via the published `@hierarchidb/plugin-registry`).【F:scripts/generate-plugin-loader.mjs†L1-L400】
-* Vite 側は `@hierarchidb/vite-plugin-node-type-registry` の alias プラグインでプラグインパッケージを `src/` へ解決するだけに留め、仮想モジュールは生成しない。ビルド/開発の依存関係監視は `scripts/generate-plugin-loader.mjs` を呼び出すアプリ固有のプラグインで担保する。【F:app/vite.config.ts†L1-L160】【F:packages/tools/vite-plugin-node-type-registry/src/alias.ts†L1-L134】
+* `scripts/generate-plugin-loader.mjs` parses `app/package.json` to locate dependencies that match `@hierarchidb/*-plugin`, resolves each package’s `exports`, and builds the static artefacts used everywhere else: `app/src/generated/worker-loader.ts`, `app/src/generated/ui-loader.ts`, and `app/src/plugin-registry/generated/index.ts` (consumed via `~/plugin-registry`).【F:scripts/generate-plugin-loader.mjs†L1-L400】
+* Vite 側は `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` の alias プラグインでプラグインパッケージを `src/` へ解決するだけに留め、仮想モジュールは生成しない。ビルド/開発の依存関係監視は `scripts/generate-plugin-loader.mjs` を呼び出すアプリ固有のプラグインで担保する。【F:app/vite.config.ts†L1-L160】【F:packages/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias.ts†L1-L134】
 
 ## Runtime metadata wiring in the app shell
 
-* At startup, `root.tsx` registers `useWorkerClient` as the shared worker hook, runs `registerAllUIPlugins()` (leveraging the generated UI loader), prefetches menu builders, and reads `pluginDefinitions` from `@hierarchidb/plugin-registry` to populate the global cache consumed by the dialog runtime.【F:app/src/root.tsx†L1-L162】【F:app/src/plugin-loader/auto-load.ts†L1-L72】
+* At startup, `root.tsx` registers `useWorkerClient` as the shared worker hook, runs `registerAllUIPlugins()` (leveraging the generated UI loader), prefetches menu builders, and reads `pluginDefinitions` from `~/plugin-registry` to populate the global cache consumed by the dialog runtime.【F:app/src/root.tsx†L1-L162】【F:app/src/plugin-loader/auto-load.ts†L1-L72】
 * `app/src/services/plugin-presentation.ts` consumes the static registry to normalize labels, MUI icons, emoji, and priorities; `menu-builders.ts` then uses that presentation data when constructing speed-dial menus while still retaining a fallback for missing definitions.【F:app/src/services/plugin-presentation.ts†L1-L158】【F:app/src/plugin-loader/menu-builders.ts†L1-L119】
 * `app/src/services/plugin-services.ts` lazily imports各プラグインのルートエントリを動的に解決し、必要なヘルパー（例: ShapeDB や getEphemeralLocationDB）を取得します。【F:app/src/services/plugin-services.ts†L1-L74】
 

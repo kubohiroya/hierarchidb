@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declarationMap": true,
     "noUnusedParameters": true,
-    "noEmit": true,
+    "noEmit": false,
     "noImplicitAny": true,
     "isolatedModules": true,
     "module": "NodeNext",
@@ -64,17 +64,17 @@
       "@hierarchidb/plugin-ui-sdk/*": [
         "packages/plugin-ui-sdk/src/*"
       ],
-      "@hierarchidb/runtime-basic-info": [
-        "packages/runtime/basic-info/src/index.ts"
+      "@hierarchidb/ui-plugin-basic-info": [
+        "packages/ui/plugin-basic-info/src/index.ts"
       ],
-      "@hierarchidb/runtime-basic-info/*": [
-        "packages/runtime/basic-info/src/*"
+      "@hierarchidb/ui-plugin-basic-info/*": [
+        "packages/ui/plugin-basic-info/src/*"
       ],
-      "@hierarchidb/runtime-plugin-dialog": [
-        "packages/runtime/plugin-dialog/src/index.ts"
+      "@hierarchidb/ui-plugin-dialog": [
+        "packages/ui/plugin-dialog/src/index.ts"
       ],
-      "@hierarchidb/runtime-plugin-dialog/*": [
-        "packages/runtime/plugin-dialog/src/*"
+      "@hierarchidb/ui-plugin-dialog/*": [
+        "packages/ui/plugin-dialog/src/*"
       ],
       "@hierarchidb/runtime-client": [
         "packages/runtime/client/src/index.ts"
@@ -188,7 +188,8 @@
     "noUnusedLocals": true,
     "lib": [
       "ES2022",
-      "dom"
+      "DOM",
+      "DOM.Iterable"
     ],
     "baseUrl": ".",
     "strict": true,

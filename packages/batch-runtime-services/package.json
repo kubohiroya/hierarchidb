@@ -18,12 +18,8 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "lint": "eslint src",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "lint": "eslint src"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -34,23 +30,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/auth-recovery",
-      "@hierarchidb/auth-recovery/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/download",
-      "@hierarchidb/download/*"
-    ]
   }
 }

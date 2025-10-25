@@ -1,9 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "NodeNext",
-    "module": "NodeNext",
-    "skipLibCheck": true,
     "paths": {
       "~/*": [
         "./src/*"
@@ -12,21 +9,12 @@
     "types": [
       "node",
       "vite/client"
-    ],
-    "jsx": "react-jsx",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
     ]
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "UI transitive types; reduce when upstream types stabilize."
   },
-  "include": [
-    "src/**/*"
-  ],
   "exclude": [
     "node_modules",
     "dist",

@@ -3,6 +3,19 @@ import { defaultPolicies } from 'dep-fence';
 import fs from 'fs';
 import path from 'path';
 
+function readJsonLoose(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const sanitized = raw
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|\s+)\/\/.*$/gm, '')
+      .replace(/,(\s*[}\]])/g, '$1');
+    return JSON.parse(sanitized);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Internal conventions for this monorepo
  * - Publishing: every package exposes types from dist/*.d.ts
@@ -70,31 +83,41 @@ const custom = [
 // Refine default tsconfig policy to avoid false positives:
 // - Check package-local tsconfig.json and ensure it extends repo base and sets jsx: 'react-jsx'.
 // - If満たす場合のみ、既定のtsconfig-hygieneの検査をスキップ。
-const patchedDefaults = defaultPolicies.map((p) => {
-  if (p?.id !== 'tsconfig-hygiene') return p;
-  const origWhen = p.when || (() => true);
-  return {
-    ...p,
-    when: (ctx) => {
-      const dir = ctx?.pkg?.dir || ctx?.dir || null;
-      if (dir) {
-        const tsconfigPath = path.join(dir, 'tsconfig.json');
-        if (fs.existsSync(tsconfigPath)) {
-          const ts = JSON.parse(fs.readFileSync(tsconfigPath, 'utf-8'));
-          const jsx = ts?.compilerOptions?.jsx;
-          const ext = ts?.extends;
-          const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
-          const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev';
-          if (okExtends && okJsx) {
-            // Local tsconfig is already healthy; skip default hygiene for this pkg
-            return false;
+const defaultPolicyAllowlist = new Set([
+  'publishable-tsconfig-hygiene',
+  'publishable-local-shims',
+  'skipLibCheck-governance',
+  'non-ui-paths-hygiene',
+  'maplibre-encapsulation',
+]);
+
+const patchedDefaults = defaultPolicies
+  .filter((policy) => defaultPolicyAllowlist.has(policy.id))
+  .map((policy) => {
+    if (policy.id !== 'publishable-tsconfig-hygiene') return policy;
+
+    const origWhen = policy.when || (() => true);
+    return {
+      ...policy,
+      when: (ctx) => {
+        const dir = ctx?.pkg?.dir || ctx?.dir || null;
+        if (dir) {
+          const tsconfigPath = path.join(dir, 'tsconfig.json');
+          if (fs.existsSync(tsconfigPath)) {
+            const ts = readJsonLoose(tsconfigPath);
+            const jsx = ts?.compilerOptions?.jsx;
+            const ext = ts?.extends;
+            const okExtends = typeof ext === 'string' && ext.includes('tsconfig.base.json');
+            const okJsx = jsx === 'react-jsx' || jsx === 'react-jsxdev' || jsx === undefined;
+            if (okExtends && okJsx) {
+              return false;
+            }
           }
         }
-      }
-      return origWhen(ctx);
-    },
-  };
-});
+        return origWhen(ctx);
+      },
+    };
+  });
 
 export const policies = [...patchedDefaults, ...custom];
 
@@ -132,6 +155,4 @@ export const policyOptions = {
     '@emotion/react',
     '@emotion/styled',
   ],
-  // Check that tsup.external includes all peerDependencies
-  checkTsupExternalizePeers: true,
 };

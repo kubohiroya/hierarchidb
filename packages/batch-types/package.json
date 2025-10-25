@@ -24,22 +24,9 @@
     "@hierarchidb/batch": "workspace:*",
     "@microsoft/api-extractor": "^7.49.3"
   },
-  "tsup": {
-    "external": [
-      "@hierarchidb/batch",
-      "@hierarchidb/batch/*"
-    ]
-  },
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": [
-          "@hierarchidb/batch#build",
-          "@hierarchidb/common-api#build",
-          "@hierarchidb/common-types#build"
-        ]
-      },
-      "typecheck": {
         "dependsOn": [
           "@hierarchidb/batch#build",
           "@hierarchidb/common-api#build",

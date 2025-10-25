@@ -5,31 +5,25 @@
       "ES2022",
       "WebWorker"
     ],
-    "outDir": "./dist",
-    "module": "NodeNext",
-    "target": "es2022",
-    "moduleResolution": "NodeNext",
-    "composite": false,
-    "incremental": false,
-    "noEmit": true,
     "emitDeclarationOnly": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "strictNullChecks": false,
-    "strict": true,
     "noImplicitAny": false,
-    "jsx": "react-jsx"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.d.ts"
+    "src*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "src/e2e/**",
-    "src/__tests__/**",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts"
+    "src/e2e*.test.ts",
+    "src*.spec.ts"
   ]
 }

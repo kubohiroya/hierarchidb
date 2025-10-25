@@ -13,17 +13,14 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
@@ -64,34 +61,5 @@
     "react-oidc-context": "^3.3.0"
   },
   "license": "MIT",
-  "module": "dist/index.js",
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-auth",
-      "@hierarchidb/common-auth/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@react-oauth/google",
-      "@react-oauth/google/*",
-      "@tanstack/react-router",
-      "@tanstack/react-router/*",
-      "@types/react-gravatar",
-      "@types/react-gravatar/*",
-      "@vitejs/plugin-react",
-      "@vitejs/plugin-react/*",
-      "i18next",
-      "oidc-client-ts",
-      "react",
-      "react-dom",
-      "react-gravatar",
-      "react-i18next",
-      "react-oidc-context"
-    ]
-  }
+  "module": "dist/index.js"
 }

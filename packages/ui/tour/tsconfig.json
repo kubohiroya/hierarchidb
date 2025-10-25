@@ -1,26 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "skipLibCheck": true,
-    "noEmit": true,
-    "composite": true,
-    "incremental": true,
     "paths": {
       "~/*": [
         "./src/*"
       ]
-    },
-    "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "react-joyride/@gilbarbara/types/type-fest generics require TS>=5; isolate here only"
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "references": []
+  }
 }

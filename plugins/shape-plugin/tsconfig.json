@@ -6,10 +6,6 @@
       "DOM",
       "WebWorker"
     ],
-    "outDir": "./dist",
-    "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
         "./src/*"

@@ -14,18 +14,13 @@
     }
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {},
   "devDependencies": {
     "@types/react": "19.0.8",
-    "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3",
     "react": "^18.3.1",
     "@mui/material": "^7.3.2",
@@ -43,22 +38,5 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/tabular-store": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/tabular-store",
-      "@hierarchidb/tabular-store/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-virtual",
-      "@tanstack/react-virtual/*",
-      "react"
-    ]
   }
 }

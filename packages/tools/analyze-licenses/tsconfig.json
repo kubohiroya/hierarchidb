@@ -1,9 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "target": "ES2022",
     "lib": [
       "ES2022"
@@ -15,15 +12,10 @@
       "~/*": [
         "./src/*"
       ]
-    },
-    "jsx": "react-jsx"
+    }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }

@@ -11,8 +11,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "test:watch": "vitest --watch",
@@ -21,9 +20,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {},
   "devDependencies": {
@@ -54,21 +51,5 @@
     "@emotion/styled": "^11.14.0"
   },
   "license": "MIT",
-  "module": "dist/index.js",
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-router",
-      "@tanstack/react-router/*",
-      "react",
-      "react-dom"
-    ]
-  }
+  "module": "dist/index.js"
 }

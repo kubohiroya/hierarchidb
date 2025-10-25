@@ -16,7 +16,6 @@
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
-    "noEmit": false,
     "jsx": "react-jsx",
     "types": [
       "vite/client",

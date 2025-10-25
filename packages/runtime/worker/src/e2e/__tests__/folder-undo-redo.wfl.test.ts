@@ -1,9 +1,8 @@
 import 'fake-indexeddb/auto';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
-import { createWorkerFlagOverrideLifecycle } from '../utils/worker-flag-helpers.js';
 
 const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
   const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
@@ -39,25 +38,14 @@ type WorkerTestAPI = {
   getCommandProcessor(): Promise<import('../../services/CommandProcessor.js').CommandProcessor>;
 };
 
-const WORKER_FLAG = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
-
-const workerFlagLifecycle = createWorkerFlagOverrideLifecycle();
-
-beforeEach(() => {
-  workerFlagLifecycle.resetEnv();
-});
-
 type WorkerSetup = {
   client: Comlink.Remote<WorkerTestAPI>;
   port1: MessagePort;
   port2: MessagePort;
   terminateAll: () => void;
-  restoreEnv: () => void;
 };
-
-const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
+const setupWorker = async (): Promise<WorkerSetup> => {
   vi.resetModules();
-  const restoreEnv = workerFlagLifecycle.applyEnvOverrides({ [WORKER_FLAG]: flagValue });
   const [{ SingletonMixin }, { exposeTestAPI }] = await Promise.all([
     import('@hierarchidb/util'),
     import('../test-worker.entry.js'),
@@ -71,7 +59,6 @@ const setupWorker = async (flagValue: '0' | '1'): Promise<WorkerSetup> => {
     port1,
     port2,
     terminateAll: () => SingletonMixin.terminateAll(),
-    restoreEnv,
   };
 };
 
@@ -90,8 +77,8 @@ async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: nu
   }
 }
 
-const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
-  const { client, port1, port2, terminateAll, restoreEnv } = await setupWorker(flagValue);
+const runFolderUndoRedoFlow = async () => {
+  const { client, port1, port2, terminateAll } = await setupWorker();
 
   const cleanup = async () => {
     const release = (client as unknown as { [Comlink.releaseProxy]?: () => Promise<void> })[Comlink.releaseProxy];
@@ -101,13 +88,11 @@ const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
     port1.close();
     port2.close();
     terminateAll();
-    restoreEnv();
   };
 
   try {
     const queryAPI = await client.getQueryAPI();
     const commandProcessor = await client.getCommandProcessor();
-    const mutationAPI = await client.getMutationAPI();
 
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
@@ -117,44 +102,31 @@ const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
       const rootId = tree.rootId as NodeId;
       const trashRootId = tree.trashRootId as NodeId;
 
-    const useCommandProcessor = flagValue === '1';
-
-    const createResult = useCommandProcessor
-      ? await commandProcessor.processCommand(
-          await commandProcessor.createEnvelope('createNode', {
-            nodeType: 'folder' as NodeType,
-            treeId,
-            parentId: rootId,
-            name: 'UndoRedo WFL Original',
-          }),
-        )
-      : await mutationAPI.createNode({
-          nodeType: 'folder' as NodeType,
-          treeId,
-          parentId: rootId,
-          name: 'UndoRedo WFL Original',
-        });
+    const createResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('createNode', {
+        nodeType: 'folder' as NodeType,
+        treeId,
+        parentId: rootId,
+        name: 'UndoRedo WFL Original',
+      }),
+    );
     expect(createResult?.success).toBe(true);
     const nodeId = (createResult as { nodeId?: NodeId }).nodeId as NodeId | undefined;
       expect(nodeId).toBeDefined();
       await waitFor(async () => (await queryAPI.getNode(nodeId!))?.id === nodeId);
 
-    const renameResult = useCommandProcessor
-      ? await commandProcessor.processCommand(
-          await commandProcessor.createEnvelope('updateNode', {
-            nodeId: nodeId!,
-            name: 'UndoRedo WFL Renamed',
-          }),
-        )
-      : await mutationAPI.updateNode({ nodeId: nodeId!, name: 'UndoRedo WFL Renamed' });
+    const renameResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('updateNode', {
+        nodeId: nodeId!,
+        name: 'UndoRedo WFL Renamed',
+      }),
+    );
       expect(renameResult.success).toBe(true);
       await waitFor(async () => (await queryAPI.getNode(nodeId!))?.name === 'UndoRedo WFL Renamed');
 
-    const trashResult = useCommandProcessor
-      ? await commandProcessor.processCommand(
-          await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId!] }),
-        )
-      : await mutationAPI.moveNodesToTrash([nodeId!]);
+    const trashResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId!] }),
+    );
       expect(trashResult.success).toBe(true);
       await waitFor(async () => {
         const node = await queryAPI.getNode(nodeId!);
@@ -165,19 +137,13 @@ const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
         return trashChildren.some((child) => child.id === nodeId);
       });
 
-    const restoreResult = useCommandProcessor
-      ? await commandProcessor.processCommand(
-          await commandProcessor.createEnvelope('restoreFromTrash', {
-            nodeIds: [nodeId!],
-            toParentId: rootId,
-            onNameConflict: 'auto-rename',
-          }),
-        )
-      : await mutationAPI.restoreNodesFromTrash({
-          nodeIds: [nodeId!],
-          toParentId: rootId,
-          onNameConflict: 'auto-rename',
-        });
+    const restoreResult = await commandProcessor.processCommand(
+      await commandProcessor.createEnvelope('restoreFromTrash', {
+        nodeIds: [nodeId!],
+        toParentId: rootId,
+        onNameConflict: 'auto-rename',
+      }),
+    );
       expect(restoreResult.success).toBe(true);
       await waitFor(async () => {
         const node = await queryAPI.getNode(nodeId!);
@@ -257,15 +223,8 @@ const runFolderUndoRedoFlow = async (flagValue: '0' | '1') => {
   }
 };
 
-// Legacy path is on track for removal; keep the scenario documented but skipped.
-describe.skip('Comlink + fake-indexeddb integration: folder undo/redo flow (legacy mutations)', () => {
-  it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
-    await runFolderUndoRedoFlow('0');
-  }, 35_000);
-});
-
 describe('Comlink + fake-indexeddb integration: folder undo/redo flow (CommandProcessor mutations)', () => {
   it('create → rename → trash → restore sequence round-trips via undo/redo', async () => {
-    await runFolderUndoRedoFlow('1');
+    await runFolderUndoRedoFlow();
   }, 35_000);
 });

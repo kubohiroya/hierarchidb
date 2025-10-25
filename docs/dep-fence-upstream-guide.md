@@ -107,7 +107,7 @@
 
 非対象（本家に入れないもの）
 - 実行時の環境状態チェック（lockfile と node_modules の時刻差など）は dep-fence の領域外。
-  - 本リポでは pre-dev（`scripts/start-env.sh`）や開発用プラグイン（dev-health）で扱っています。
+  - 本リポでは pre-dev（`scripts/env_vite.sh`）や開発用プラグイン（dev-health）で扱っています。
 
 ライセンス/帰属
 - ここで提供した 2 ルールは、dep-fence 本家へ寄贈する前提の PR 素材です。必要に応じて TS 化・命名・コメント文言等を調整ください。

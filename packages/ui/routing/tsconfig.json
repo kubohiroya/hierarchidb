@@ -6,38 +6,21 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "NodeNext",
-    "composite": true,
-    "incremental": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "moduleResolution": "NodeNext",
-    "noEmit": false,
     "types": [
       "vite/client"
     ],
-    "skipLibCheck": true,
-    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
       ]
     }
   },
-  "include": [
-    "src"
-  ],
   "exclude": [
     "**/*.stories.*",
     "**/*.test.*",
     "**/*.spec.*",
     "src/__tests__/**",
     "src/test-setup.ts"
-  ],
-  "references": [
-    {
-      "path": "../core/tsconfig.build.json"
-    }
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

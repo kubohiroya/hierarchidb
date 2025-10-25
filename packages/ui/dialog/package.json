@@ -18,20 +18,16 @@
     "README.md"
   ],
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -b tsconfig.build.json",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
     "coverage": "vitest run --coverage",
     "storybook": "storybook dev -c ./.storybook --port 6307 --disable-telemetry",
     "storybook:build": "storybook build -c ./.storybook",
     "pretest:playwright": "pnpm storybook:build",
-    "test:playwright": "playwright test -c playwright.config.ts",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "test:playwright": "playwright test -c playwright.config.ts"
   },
   "dependencies": {
     "notistack": "^3.0.2"
@@ -47,19 +43,5 @@
     "@mui/icons-material": "^7.3.2",
     "react-resizable": "^3.0.5",
     "@hierarchidb/common-types": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "react",
-      "react-dom",
-      "react-draggable",
-      "react-resizable"
-    ]
   }
 }

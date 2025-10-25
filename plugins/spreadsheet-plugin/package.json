@@ -44,14 +44,10 @@
     }
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
@@ -64,20 +60,8 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/ui-plugin-dialog#build",
           "@hierarchidb/plugin-runtime-services#build"
-        ]
-      },
-      "build:types": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:types",
-          "@hierarchidb/plugin-runtime-services#build:types"
-        ]
-      },
-      "build:bundle": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:bundle",
-          "@hierarchidb/plugin-runtime-services#build:types"
         ]
       }
     }
@@ -95,8 +79,8 @@
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
@@ -117,8 +101,8 @@
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
@@ -128,7 +112,6 @@
     "react": "^18.3.1",
     "fake-indexeddb": "^6.1.0",
     "react-i18next": "12.3.1",
-    "tsup": "^8.5.0",
     "typescript": "workspace:^5.9.3",
     "vitest": "^3.2.4"
   },
@@ -138,7 +121,7 @@
       "name": "Spreadsheet Plugin",
       "icon": {
         "mui": "Assessment",
-        "emoji": "📈",
+        "emoji": "\ud83d\udcc8",
         "color": "#dcbc50"
       },
       "priority": 600,
@@ -171,48 +154,5 @@
         ]
       }
     }
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/auth-recovery",
-      "@hierarchidb/auth-recovery/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/folder-plugin",
-      "@hierarchidb/folder-plugin/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*",
-      "@hierarchidb/runtime-basic-info",
-      "@hierarchidb/runtime-basic-info/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-ui-plugin-dialog",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/tabular-source",
-      "@hierarchidb/tabular-source/*",
-      "@hierarchidb/tabular-store",
-      "@hierarchidb/tabular-store/*",
-      "@hierarchidb/ui-datasource",
-      "@hierarchidb/ui-datasource/*",
-      "@hierarchidb/ui-file",
-      "@hierarchidb/ui-file/*",
-      "@hierarchidb/ui-tabular-extract",
-      "@hierarchidb/ui-tabular-extract/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "dexie",
-      "i18next",
-      "react",
-      "react-i18next"
-    ]
   }
 }

@@ -19,7 +19,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 - `pnpm e2e` – execute Playwright smoke tests; capture failures in `TASKS.md`.
 
 ## Coding Style & Naming Conventions
-TypeScript is standard. Keep one primary export per file, match CamelCase filenames to exported symbols, and avoid deep `../src` imports. Use `import.meta.env` instead of `process.env`, keep browser code free of Node globals, and run `pnpm format` plus `pnpm lint` or `pnpm biome:check` before review. Register new feature toggles in `config/feature-flags.ts` with default OFF and note them in `TASKS.md`.
+TypeScript is standard. Keep one primary export per file, match CamelCase filenames to exported symbols, and avoid deep `../src` imports. Use `import.meta.env` instead of `process.env`, keep browser code free of Node globals, and run `pnpm format` plus `pnpm lint` or `pnpm biome:check` before review. Runtime feature flags backed by `FEATURE_FLAGS` have been retired—prefer explicit configuration modules or environment variables documented in `TASKS.md` when conditional behavior is unavoidable.
 
 ## Testing Guidelines
 Run Vitest globally (`pnpm test`) or per package (`pnpm --filter <pkg> test`) and extend Worker Flow Lab suites under `packages/runtime-worker`. Playwright specs live in `e2e/`; name files `*.spec.ts` and clear skip markers quickly. Log each command and outcome in the TASKS運用ログ, add regression coverage for new logic, and document any remaining gaps with timestamps and next steps.

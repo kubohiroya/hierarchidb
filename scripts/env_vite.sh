@@ -102,16 +102,16 @@ if [ "$COMMAND" = "dev" ]; then
 fi
 
 # 開発サーバ起動前に、必要なローカル Vite ツールのビルドを最低限チェック
-# app の vite.config.ts が参照する @hierarchidb/vite-plugin-node-type-registry（alias プラグイン）は
+# app の vite.config.ts が参照する @hierarchidb/vite-plugin-hierarchidb-plugin-alias（alias プラグイン）は
 # dist 出力が無いと Vite の externalize-deps 解決が失敗するため、未ビルドならビルドする
-if [ ! -f "packages/tools/vite-plugin-node-type-registry/dist/index.js" ]; then
-    echo "🔨 Building @hierarchidb/vite-plugin-node-type-registry (first-time or clean checkout) ..."
-    pnpm --filter @hierarchidb/vite-plugin-node-type-registry build || {
-        echo "❌ Failed to build @hierarchidb/vite-plugin-node-type-registry"
-        echo "   Try running: pnpm --filter @hierarchidb/vite-plugin-node-type-registry build"
+if [ ! -f "packages/vite-plugins/vite-plugin-hierarchidb-plugin-alias/dist/index.js" ]; then
+    echo "🔨 Building @hierarchidb/vite-plugin-hierarchidb-plugin-alias (first-time or clean checkout) ..."
+    pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias build || {
+        echo "❌ Failed to build @hierarchidb/vite-plugin-hierarchidb-plugin-alias"
+        echo "   Try running: pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias build"
         exit 1
     }
-    echo "✅ vite-plugin-node-type-registry built"
+    echo "✅ vite-plugin-hierarchidb-plugin-alias built"
     echo ""
 fi
 

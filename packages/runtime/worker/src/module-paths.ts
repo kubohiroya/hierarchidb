@@ -6,7 +6,7 @@
  * registry emitted by scripts/generate-plugin-loader.mjs.
  */
 
-import { pluginMapWorker } from '@hierarchidb/plugin-registry';
+import { pluginMapWorker } from './generated/plugin-metadata.js';
 
 export const RUNTIME_MODULE_IDS = {
   runtimeWorker: '@hierarchidb/runtime-worker',

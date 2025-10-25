@@ -32,14 +32,10 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "lint": "eslint src",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "lint": "eslint src"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -61,7 +57,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*"
@@ -84,64 +80,17 @@
     "dexie": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tsup": "^8.0.0",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "author": "",
   "license": "MIT",
-  "tsup": {
-    "external": [
-      "@deck.gl/aggregation-layers",
-      "@deck.gl/aggregation-layers/*",
-      "@deck.gl/core",
-      "@deck.gl/core/*",
-      "@deck.gl/extensions",
-      "@deck.gl/extensions/*",
-      "@deck.gl/geo-layers",
-      "@deck.gl/geo-layers/*",
-      "@deck.gl/layers",
-      "@deck.gl/layers/*",
-      "@deck.gl/mapbox",
-      "@deck.gl/mapbox/*",
-      "@deck.gl/mesh-layers",
-      "@deck.gl/mesh-layers/*",
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/runtime-client",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/ui-map",
-      "@hierarchidb/ui-map/*",
-      "@hierarchidb/ui-treeconsole-base",
-      "@hierarchidb/ui-treeconsole-base/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "comlink",
-      "dexie",
-      "react",
-      "react-dom"
-    ]
-  },
   "hierarchidb": {
     "plugin": {
       "nodeType": "linker",
@@ -150,7 +99,7 @@
       "description": "Link compiled resources to map for usage",
       "icon": {
         "mui": "AccountTree",
-        "emoji": "🌲",
+        "emoji": "\ud83c\udf32",
         "color": "#ffe0f3"
       },
       "category": {

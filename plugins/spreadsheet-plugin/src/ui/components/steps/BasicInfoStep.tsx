@@ -6,7 +6,7 @@
 
 import { Box, Divider, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { BasicInfoFields, TagChipsInput } from '@hierarchidb/runtime-basic-info';
+import { BasicInfoFields, TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 import type { FC } from 'react';
 
 export interface BasicInfoStepProps {

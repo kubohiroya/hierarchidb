@@ -9,7 +9,7 @@
 import { createRoute } from '@tanstack/react-router';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { loadNodeAction } from '../../loaders/treeLoaders.js';
-import { PluginDialogRoute } from '@hierarchidb/runtime-plugin-dialog';
+import { PluginDialogRoute } from '@hierarchidb/ui-plugin-dialog';
 import TrashDialog, {
   type TrashDialogData,
   type TrashDialogRouteParams,

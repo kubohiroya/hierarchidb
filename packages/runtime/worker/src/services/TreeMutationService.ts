@@ -21,8 +21,6 @@ import { createNewName } from './WorkingCopyTreeNodeOperations.js';
 import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
 import { SingletonMixin } from '@hierarchidb/util';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { FEATURE_FLAGS } from '../config/feature-flags.js';
-import { hasWorkingCopyInSubtree } from './utils/policy-c.js';
 import { sanitizeMessageText } from './utils/error-adapter.js';
 
 const getCommandError = (result: CoreCommandResult, fallback = 'Unknown error'): string => {
@@ -170,9 +168,6 @@ export class TreeMutationService implements TreeMutationAPI {
     toParentId: NodeId;
     onNameConflict?: 'error' | 'auto-rename';
   }): Promise<{ success: boolean; error?: string }> {
-    if (!FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
-      return this.moveNodesDirect(params);
-    }
     return this.moveNodesViaCommandProcessor(params);
   }
 
@@ -208,98 +203,6 @@ export class TreeMutationService implements TreeMutationAPI {
       this.logRecoverableWarning('moveNodes: recomputeDepthForSubtree failed', error);
     }
     return { success: true };
-  }
-
-  private async moveNodesDirect(params: {
-    nodeIds: NodeId[];
-    toParentId: NodeId;
-    onNameConflict?: 'error' | 'auto-rename';
-  }): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (FEATURE_FLAGS.WORKER_POLICY_C) {
-        for (const id of params.nodeIds) {
-          if (await hasWorkingCopyInSubtree(this.coreDB, id)) {
-            return { success: false, error: 'Blocked by Policy C: working copy exists in subtree' };
-          }
-        }
-      }
-
-      const siblings = (await this.coreDB.listChildren?.(params.toParentId)) || [];
-      const siblingNames = new Set<string>(siblings.map((sibling) => sibling.name));
-      const originalParents = new Set<NodeId>();
-      const updates: TreeNode[] = [];
-      const now = Date.now() as Timestamp;
-
-      for (const nodeId of params.nodeIds) {
-        const node = await this.coreDB.getNode?.(nodeId);
-        if (!node) {
-          return { success: false, error: `Node not found: ${String(nodeId)}` };
-        }
-
-        if (node.parentId) {
-          originalParents.add(node.parentId);
-        }
-
-        let nextName = node.name;
-        let originalNamePatch: string | undefined;
-        if (params.onNameConflict === 'auto-rename') {
-          if (siblingNames.has(nextName)) {
-            originalNamePatch = (node as { originalName?: string }).originalName ?? node.name;
-            nextName = createNewName(Array.from(siblingNames), nextName);
-          }
-          siblingNames.add(nextName);
-        }
-
-        const updatedNode: TreeNode = {
-          ...node,
-          parentId: params.toParentId,
-          name: nextName,
-          updatedAt: now,
-          version: (node.version ?? 1) + 1,
-        };
-
-        if (originalNamePatch) {
-          (updatedNode as { originalName?: string }).originalName = originalNamePatch;
-        }
-
-        updates.push(updatedNode);
-      }
-
-      if (updates.length === 0) {
-        return { success: true };
-      }
-
-      if (updates.length === 1 && typeof this.coreDB.updateNode === 'function') {
-        await this.coreDB.updateNode(updates[0]!);
-      } else if (typeof this.coreDB.bulkUpdateNodes === 'function') {
-        const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-        for (let i = 0; i < updates.length; i += size) {
-          const slice = updates.slice(i, i + size);
-          if (slice.length === 1 && typeof this.coreDB.updateNode === 'function') {
-            await this.coreDB.updateNode(slice[0]!);
-          } else {
-            await this.coreDB.bulkUpdateNodes(slice);
-          }
-        }
-      }
-
-      await this.recomputeAncestorsHasChildrenFromParent(params.toParentId);
-      for (const pid of Array.from(originalParents)) {
-        await this.recomputeAncestorsHasChildrenFromParent(pid);
-      }
-
-      try {
-        for (const rootId of params.nodeIds) {
-          await this.recomputeDepthForSubtree(params.toParentId, rootId);
-        }
-      } catch (error) {
-        this.logRecoverableWarning('moveNodes (direct): recomputeDepthForSubtree failed', error);
-      }
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: sanitizeMessageText(error) };
-    }
   }
 
   async duplicateNodes(params: {
@@ -348,9 +251,6 @@ export class TreeMutationService implements TreeMutationAPI {
   }
 
   async removeNodes(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
-    if (!FEATURE_FLAGS.WORKER_USE_CMDPROC_MOVE_REMOVE) {
-      return this.removeNodesDirect(nodeIds);
-    }
     return this.removeNodesViaCommandProcessor(nodeIds);
   }
 
@@ -370,63 +270,6 @@ export class TreeMutationService implements TreeMutationAPI {
       for (const pid of Array.from(parentIds)) {
         await this.recomputeAncestorsHasChildrenFromParent(pid);
       }
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: sanitizeMessageText(error) };
-    }
-  }
-
-  private async removeNodesDirect(nodeIds: NodeId[]): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (FEATURE_FLAGS.WORKER_POLICY_C) {
-        for (const id of nodeIds) {
-          if (await hasWorkingCopyInSubtree(this.coreDB, id)) {
-            return { success: false, error: 'Blocked by Policy C: working copy exists in subtree' };
-          }
-        }
-      }
-
-      const toDelete = new Set<NodeId>();
-      const parentIds = new Set<NodeId>();
-      const queue: NodeId[] = [...nodeIds];
-
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        if (toDelete.has(current)) {
-          continue;
-        }
-        toDelete.add(current);
-        const node = await this.coreDB.getNode?.(current);
-        if (node?.parentId) parentIds.add(node.parentId);
-        const children = (await this.coreDB.listChildren?.(current)) || [];
-        for (const child of children) {
-          queue.push(child.id);
-        }
-      }
-
-      if (toDelete.size === 0) {
-        return { success: true };
-      }
-
-      const ids = Array.from(toDelete.values());
-      const size = PERFORMANCE_CONFIG.BATCH_OPERATION_SIZE;
-      for (let i = 0; i < ids.length; i += size) {
-        const slice = ids.slice(i, i + size);
-        if (slice.length === 1 && typeof this.coreDB.deleteNode === 'function') {
-          await this.coreDB.deleteNode(slice[0]!);
-        } else if (typeof this.coreDB.bulkDeleteNodes === 'function') {
-          await this.coreDB.bulkDeleteNodes(slice);
-        } else if (typeof this.coreDB.deleteNode === 'function') {
-          for (const id of slice) {
-            await this.coreDB.deleteNode(id);
-          }
-        }
-      }
-
-      for (const pid of Array.from(parentIds)) {
-        await this.recomputeAncestorsHasChildrenFromParent(pid);
-      }
-
       return { success: true };
     } catch (error) {
       return { success: false, error: sanitizeMessageText(error) };

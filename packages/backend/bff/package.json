@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "dev:manual": "wrangler dev",
-    "typecheck": "tsc -b tsconfig.json --noEmit",
-    "build": "node -e \"const fs=require('fs');fs.mkdirSync('dist',{recursive:true});fs.writeFileSync('dist/.placeholder','');\"",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "clean": "rm -rf dist",

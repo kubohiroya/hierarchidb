@@ -1,25 +1,4 @@
 import { Page, Locator, expect } from '@playwright/test';
-import {
-  WORKER_FLAG_OVERRIDES_STORAGE_KEY,
-  WORKER_FLAG_ALLOWED_OVERRIDES,
-} from '../../app/src/config/worker-flag-overrides.js';
-import {
-  createWorkerFlagOverrideLifecycle,
-  type WorkerFlagOverrideMap,
-  type WorkerFlagOverrideSetting,
-} from '../../packages/runtime/worker/src/e2e/utils/worker-flag-helpers.js';
-
-export type WorkerFlagOverrideValue = WorkerFlagOverrideSetting;
-
-if (!WORKER_FLAG_ALLOWED_OVERRIDES.includes('WORKER_USE_CMDPROC_MOVE_REMOVE')) {
-  throw new Error('WORKER_USE_CMDPROC_MOVE_REMOVE flag must be included in WORKER_FLAG_ALLOWED_OVERRIDES');
-}
-
-export const WORKER_CMDPROC_FLAG_NAME = 'WORKER_USE_CMDPROC_MOVE_REMOVE';
-
-const workerFlagLifecycle = createWorkerFlagOverrideLifecycle();
-let activeOverrideCleanup: (() => void) | null = null;
-
 const normalizeBasePath = (value: string | undefined): string => {
   if (!value) return '';
   return value.replace(/^\/+|\/+$/g, '');
@@ -71,70 +50,6 @@ export const buildAppUrl = (path = ''): string => {
 
   return `${APP_BASE_URL_WITH_SLASH}${path}`;
 };
-
-export async function configureWorkerCmdprocOverride(
-  page: Page,
-  value: WorkerFlagOverrideValue,
-): Promise<void> {
-  if (activeOverrideCleanup) {
-    activeOverrideCleanup();
-    activeOverrideCleanup = null;
-  }
-
-  const overrides: WorkerFlagOverrideMap =
-    value === '0' || value === '1' ? { [WORKER_CMDPROC_FLAG_NAME]: value } : {};
-
-  if (value === '0' || value === '1') {
-    activeOverrideCleanup = workerFlagLifecycle.applyEnvOverrides(overrides);
-  } else {
-    workerFlagLifecycle.resetEnv();
-  }
-
-  const payload = workerFlagLifecycle.createPayload(overrides);
-  await page.addInitScript(
-    ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
-      try {
-        if (serialized) {
-          window.localStorage.setItem(storageKey, serialized);
-        } else {
-          window.localStorage.removeItem(storageKey);
-        }
-      } catch (error) {
-        console.warn('[e2e] failed to configure worker flag override', error);
-      }
-    },
-    { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
-  );
-  await page
-    .evaluate(
-      ({ storageKey, payload: serialized }: { storageKey: string; payload: string | null }) => {
-        if (serialized) {
-          window.localStorage.setItem(storageKey, serialized);
-        } else {
-          window.localStorage.removeItem(storageKey);
-        }
-      },
-      { storageKey: WORKER_FLAG_OVERRIDES_STORAGE_KEY, payload },
-    )
-    .catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      if (/Access is denied/i.test(message)) {
-        // about:blank or other restricted origins will apply the overrides after navigation via addInitScript
-        return;
-      }
-      throw error;
-    });
-}
-
-export async function resetWorkerFlagOverrides(page: Page): Promise<void> {
-  await configureWorkerCmdprocOverride(page, null);
-  if (activeOverrideCleanup) {
-    activeOverrideCleanup();
-    activeOverrideCleanup = null;
-  } else {
-    workerFlagLifecycle.resetEnv();
-  }
-}
 
 /**
  * E2E Test Helper Functions
@@ -478,7 +393,7 @@ export async function clickRedo(page: Page): Promise<void> {
 export async function clearTestData(page: Page): Promise<void> {
   // Try to clear test data, but ignore errors if running in restricted context
   try {
-    await page.evaluate(async (storageKey) => {
+    await page.evaluate(async () => {
       // Clear localStorage test data - with try/catch for security errors
       try {
         const keysToRemove = [];
@@ -489,7 +404,6 @@ export async function clearTestData(page: Page): Promise<void> {
           }
         }
         keysToRemove.forEach((key) => localStorage.removeItem(key));
-        localStorage.removeItem(storageKey);
       } catch (e) {
         // Ignore localStorage access errors in test environment
         console.warn('Could not access localStorage:', e);
@@ -515,7 +429,7 @@ export async function clearTestData(page: Page): Promise<void> {
         // Ignore IndexedDB access errors in test environment
         console.warn('Could not access IndexedDB:', e);
       }
-    }, WORKER_FLAG_OVERRIDES_STORAGE_KEY);
+    });
   } catch (e) {
     // Ignore all errors - test can proceed without clearing data
     console.warn('Could not clear test data:', e);

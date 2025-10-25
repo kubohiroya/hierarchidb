@@ -1,27 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "composite": true,
-    "incremental": true,
-    "noEmit": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
     "types": [
       "node"
     ],
-    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
       ]
-    },
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    }
   },
   "include": [
     "src/**/*.ts"

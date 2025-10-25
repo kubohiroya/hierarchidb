@@ -1,4 +1,4 @@
-import { pluginRegistry } from '@hierarchidb/plugin-registry';
+import { pluginRegistry } from '../generated/plugin-metadata.js';
 
 function titleCase(input: string): string {
   const words = input

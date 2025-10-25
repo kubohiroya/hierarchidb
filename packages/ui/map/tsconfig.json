@@ -2,26 +2,11 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "outDir": "dist",
-    "rootDir": "src",
     "paths": {
       "~/*": [
         "./src/*"
       ]
-    },
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "jsx": "react-jsx"
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
@@ -30,9 +15,5 @@
   "include": [
     "src/**/*",
     "**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ]
 }

@@ -1,10 +1,11 @@
 packages:
-  - tools
   - app
   - packages/components
   - packages/common/*
   - packages/util
+  - packages/tools
   - packages/tools/*
+  - packages/vite-plugins/*
   - packages/runtime-ui/*
   - packages/runtime/*
   - packages/runtime-shared/*
@@ -13,7 +14,6 @@ packages:
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services
-  - packages/plugin-registry
   - packages/plugin-ui-sdk
   - packages/plugin-types
   - packages/batch-runtime-services

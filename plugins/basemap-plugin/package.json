@@ -38,14 +38,10 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
@@ -66,7 +62,7 @@
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
@@ -87,7 +83,7 @@
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
@@ -115,7 +111,7 @@
       "name": "BaseMap Plugin",
       "icon": {
         "mui": "Public",
-        "emoji": "🌍",
+        "emoji": "\ud83c\udf0d",
         "color": "#b0b3d9"
       },
       "priority": 900,
@@ -158,55 +154,9 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build"
-        ]
-      },
-      "build:types": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:types"
-        ]
-      },
-      "build:bundle": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:bundle"
+          "@hierarchidb/ui-plugin-dialog#build"
         ]
       }
     }
-  },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/folder-plugin",
-      "@hierarchidb/folder-plugin/*",
-      "@hierarchidb/plugin-runtime-services",
-      "@hierarchidb/plugin-runtime-services/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/ui-data-grid",
-      "@hierarchidb/ui-data-grid/*",
-      "@hierarchidb/ui-map",
-      "@hierarchidb/ui-map/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "dexie",
-      "react"
-    ]
   }
 }

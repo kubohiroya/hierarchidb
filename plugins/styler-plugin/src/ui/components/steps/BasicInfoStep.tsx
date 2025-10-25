@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import {BasicInfoFields, TagInput} from '@hierarchidb/runtime-basic-info';
+import {BasicInfoFields, TagInput} from '@hierarchidb/ui-plugin-basic-info';
 
 type TagId = string;
 type TagEntity = { id: TagId; name?: string };

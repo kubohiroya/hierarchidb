@@ -13,11 +13,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts"
   },
   "dependencies": {},
   "devDependencies": {
@@ -43,16 +39,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module",
-  "tsup": {
-    "external": [
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "comlink",
-      "react",
-      "react-dom"
-    ]
-  }
+  "type": "module"
 }

@@ -41,7 +41,7 @@ import {
 } from '@hierarchidb/ui-dialog';
 import { notify } from '@hierarchidb/components';
 
-import { useWorkingCopy } from '@hierarchidb/runtime-basic-info';
+import { useWorkingCopy } from '@hierarchidb/ui-plugin-dialog';
 // import { useToastNotifications } from '@hierarchidb/components/toast/ToastProvider.js';
 
 const toIdString = (value?: LocationDialogProps['nodeId']): string | undefined =>

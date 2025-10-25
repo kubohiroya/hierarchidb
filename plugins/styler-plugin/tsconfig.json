@@ -5,37 +5,23 @@
       "ES2020",
       "DOM"
     ],
-    "noEmit": true,
-    "composite": false,
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "strict": true,
-    "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "skipLibCheck": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
   "exclude": [
     "dist",
     "node_modules",
-    "**/__tests__/**",
-    "**/*.test.*",
+    "**/__tests__*.test.*",
     "**/*.spec.*",
     "src/tests/**"
   ],
-  "references": [],
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Temporary: upstream/transitive types; scheduled to remove."

@@ -14,7 +14,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import { pluginDefinitions, pluginMapUI as pluginMap } from '@hierarchidb/plugin-registry';
+import { pluginDefinitions, pluginMapUI as pluginMap } from '~/plugin-registry/index.js';
 
 type PluginDefinitionVM = {
   nodeType: string;

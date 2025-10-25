@@ -8,34 +8,14 @@ import {
   moveToTrash,
   waitForSubTreeUpdate,
   waitForWorkingCopyUpdate,
-  configureWorkerCmdprocOverride,
-  WORKER_CMDPROC_FLAG_NAME,
-  WorkerFlagOverrideValue,
   performDragDrop,
-  resetWorkerFlagOverrides,
   buildAppUrl,
 } from './utils/test-helpers';
-import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../app/src/config/worker-flag-overrides.js';
-
-type Scenario = {
-  name: string;
-  flagValue: WorkerFlagOverrideValue;
-};
-
-const SCENARIOS: Scenario[] = [
-  { name: 'legacy command path (flag off)', flagValue: '0' },
-  { name: 'CommandProcessor path (flag on)', flagValue: '1' },
-];
 
 test.describe.serial('CP routing + Working Copy batch flow', () => {
-  test.beforeEach(async ({ page }) => {
-    await resetWorkerFlagOverrides(page);
-  });
-
-  async function runBatchFlow(page: Parameters<typeof test>[0]['page'], scenario: Scenario) {
+  async function runBatchFlow(page: Parameters<typeof test>[0]['page']) {
     setupConsoleErrorTracking(page);
 
-    await configureWorkerCmdprocOverride(page, scenario.flagValue);
     await clearTestData(page);
 
     await page.goto(buildAppUrl('t/r'));
@@ -114,20 +94,9 @@ test.describe.serial('CP routing + Working Copy batch flow', () => {
     }
 
     await waitForWorkingCopyUpdate(page);
-    const storedOverrides = await page.evaluate(
-      (storageKey) => window.localStorage.getItem(storageKey),
-      WORKER_FLAG_OVERRIDES_STORAGE_KEY,
-    );
-    expect(storedOverrides).toBeTruthy();
-    if (storedOverrides) {
-      const parsed = JSON.parse(storedOverrides) as Record<string, string>;
-      expect(parsed[WORKER_CMDPROC_FLAG_NAME]).toBe(scenario.flagValue);
-    }
   }
 
-  for (const scenario of SCENARIOS) {
-    test(`end-to-end operations succeed via ${scenario.name}`, async ({ page }) => {
-      await runBatchFlow(page, scenario);
-    });
-  }
+  test('end-to-end operations succeed with CommandProcessor routing enabled by default', async ({ page }) => {
+    await runBatchFlow(page);
+  });
 });

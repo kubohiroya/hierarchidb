@@ -7,10 +7,6 @@
 // Minimal worker-specific test setup for isolated unit tests.
 // Intentionally avoids importing monorepo-wide setup to prevent tsconfig resolution issues.
 
-// Bridge legacy tests that set process.env flags to FEATURE_FLAGS on globalThis.
-// This keeps production code free of `process` while preserving existing tests.
-type FeatureFlagRecord = Record<string, unknown>;
-
 type EntitiesDbTable = {
   delete(id: string): Promise<void> | void;
 };
@@ -26,22 +22,10 @@ type EntitiesOverrideFactory =
   | (() => Promise<EntitiesDbAdapter | undefined>);
 
 type TestGlobal = typeof globalThis & {
-  FEATURE_FLAGS?: FeatureFlagRecord;
   __HDB_PLUGIN_ENTITY_OVERRIDES__?: Record<string, EntitiesOverrideFactory>;
 };
 
 const globalWithOverrides = globalThis as TestGlobal;
-globalWithOverrides.FEATURE_FLAGS ??= {};
-const env = (typeof process !== 'undefined' ? process.env : undefined) ?? {};
-const keys = [
-  'WORKER_PROGRESS_COMMON_TYPES',
-];
-for (const key of keys) {
-  const value = env[key];
-  if (value != null) {
-    globalWithOverrides.FEATURE_FLAGS[key] = value;
-  }
-}
 
 // Provide lightweight EntitiesDB overrides so peer-entity cleanup code paths
 // do not attempt to import plugin-specific Dexie implementations during unit tests.

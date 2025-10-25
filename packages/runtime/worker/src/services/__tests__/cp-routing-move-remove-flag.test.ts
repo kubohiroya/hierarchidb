@@ -63,43 +63,12 @@ const createProcessorMock = () => ({
   processCommand: vi.fn(async () => ({ success: true, seq: 1 })),
 });
 
-describe('TreeMutationService command processor routing flag', () => {
+describe('TreeMutationService command processor routing', () => {
   beforeEach(() => {
     vi.resetModules();
-    delete process.env.WORKER_USE_CMDPROC_MOVE_REMOVE;
   });
 
-  it('uses direct CoreDB operations when the flag is disabled', async () => {
-    process.env.WORKER_USE_CMDPROC_MOVE_REMOVE = '0';
-
-    const nodes = new Map<NodeId, TreeNode>([
-      [asNodeId('parentA'), createNode('parentA', 'root', 0)],
-      [asNodeId('parentB'), createNode('parentB', 'root', 0)],
-      [asNodeId('child-1'), createNode('child-1', 'parentA', 1)],
-    ]);
-    const core = createCoreMock(nodes);
-    const processor = createProcessorMock();
-
-    const { TreeMutationService } = await import('../TreeMutationService.js');
-    const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
-
-    const result = await svc.moveNodes({
-      nodeIds: [asNodeId('child-1')],
-      toParentId: asNodeId('parentB'),
-      onNameConflict: 'error',
-    });
-
-    expect(result.success).toBe(true);
-    expect(processor.processCommand).not.toHaveBeenCalled();
-
-    const moved = nodes.get(asNodeId('child-1'));
-    expect(moved?.parentId).toBe(asNodeId('parentB'));
-    expect(core.updateNode).toHaveBeenCalled();
-  });
-
-  it('routes via CommandProcessor when the flag is enabled', async () => {
-    process.env.WORKER_USE_CMDPROC_MOVE_REMOVE = '1';
-
+  it('routes moveNodes via CommandProcessor regardless of env overrides', async () => {
     const nodes = new Map<NodeId, TreeNode>([
       [asNodeId('parentA'), createNode('parentA', 'root', 0)],
       [asNodeId('parentB'), createNode('parentB', 'root', 0)],
@@ -121,9 +90,7 @@ describe('TreeMutationService command processor routing flag', () => {
     expect(processor.processCommand).toHaveBeenCalledTimes(1);
   });
 
-  it('uses direct deletion path when the flag is disabled', async () => {
-    process.env.WORKER_USE_CMDPROC_MOVE_REMOVE = '0';
-
+  it('routes removeNodes via CommandProcessor regardless of env overrides', async () => {
     const nodes = new Map<NodeId, TreeNode>([
       [asNodeId('parentA'), createNode('parentA', 'root', 0)],
       [asNodeId('child-1'), createNode('child-1', 'parentA', 1)],
@@ -138,9 +105,7 @@ describe('TreeMutationService command processor routing flag', () => {
     const result = await svc.removeNodes([asNodeId('child-1')]);
 
     expect(result.success).toBe(true);
-    expect(processor.processCommand).not.toHaveBeenCalled();
-    expect(nodes.has(asNodeId('child-1'))).toBe(false);
-    expect(nodes.has(asNodeId('child-2'))).toBe(false);
-    expect(core.bulkDeleteNodes).toHaveBeenCalled();
+    expect(processor.processCommand).toHaveBeenCalledTimes(1);
+    expect(core.bulkDeleteNodes).not.toHaveBeenCalled();
   });
 });

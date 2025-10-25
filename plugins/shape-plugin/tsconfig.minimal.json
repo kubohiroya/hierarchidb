@@ -20,13 +20,5 @@
     "src/types*",
     "src/ui*",
     "**__tests__/**"
-  ],
-  "references": [
-    {
-      "path": "../../common/core"
-    },
-    {
-      "path": "../../common/api"
-    }
   ]
 }

@@ -1,28 +1,23 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
     "types": [
       "vite/client",
       "node"
     ],
-    "skipLibCheck": true,
-    "jsx": "react-jsx",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "Deck.gl/luma + date-fns v3 d.ts require TS5; isolate to this package"
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts",
-    "**/*.test.tsx"
+    "***.test.tsx"
   ]
 }

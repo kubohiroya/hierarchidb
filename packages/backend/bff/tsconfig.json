@@ -1,8 +1,6 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": false,
-    "incremental": true,
     "noImplicitAny": false,
     "paths": {
       "~/*": [
@@ -20,15 +18,10 @@
     "target": "es2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "jsx": "react-jsx",
-    "rootDir": "src"
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

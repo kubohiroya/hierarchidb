@@ -1,0 +1,17 @@
+{
+  "name": "@hierarchidb/tools",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "analyze-licenses",
+    "codemods",
+    "dev-scripts",
+    "plugin-manifest-loader",
+    "schemas"
+  ],
+  "scripts": {
+    "build": "pnpm -r --filter ./\\* --if-present run build",
+    "lint": "pnpm -r --filter ./\\* --if-present run lint"
+  }
+}

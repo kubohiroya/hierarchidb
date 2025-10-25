@@ -44,11 +44,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts --config ../../tsdown.config.ts --splitting false",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -86,7 +82,7 @@
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
@@ -131,7 +127,7 @@
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*"
@@ -143,7 +139,7 @@
       "name": "Shape Plugin",
       "icon": {
         "mui": "Hexagon",
-        "emoji": "♦️",
+        "emoji": "\u2666\ufe0f",
         "color": "#a3b030"
       },
       "priority": 800,
@@ -191,75 +187,12 @@
       }
     }
   },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/styled",
-      "@hierarchidb/auth-recovery",
-      "@hierarchidb/auth-recovery/*",
-      "@hierarchidb/batch",
-      "@hierarchidb/batch-types",
-      "@hierarchidb/batch-types/*",
-      "@hierarchidb/batch/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-auth",
-      "@hierarchidb/common-auth/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/download",
-      "@hierarchidb/download/*",
-      "@hierarchidb/folder-plugin",
-      "@hierarchidb/folder-plugin/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/runtime-client",
-      "@hierarchidb/runtime-client/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/tabular-store",
-      "@hierarchidb/tabular-store/*",
-      "@hierarchidb/ui-accordion-config",
-      "@hierarchidb/ui-accordion-config/*",
-      "@hierarchidb/ui-country-select",
-      "@hierarchidb/ui-country-select/*",
-      "@hierarchidb/ui-datasource",
-      "@hierarchidb/ui-datasource/*",
-      "@hierarchidb/ui-license",
-      "@hierarchidb/ui-license/*",
-      "@hierarchidb/ui-lru-splitview",
-      "@hierarchidb/ui-lru-splitview/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "dexie",
-      "react",
-      "react-dom"
-    ]
-  },
   "turbo": {
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build",
+          "@hierarchidb/ui-plugin-dialog#build",
           "@hierarchidb/plugin-runtime-services#build"
-        ]
-      },
-      "build:types": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:types",
-          "@hierarchidb/plugin-runtime-services#build:types"
-        ]
-      },
-      "build:bundle": {
-        "dependsOn": [
-          "@hierarchidb/runtime-plugin-dialog#build:bundle",
-          "@hierarchidb/plugin-runtime-services#build:types"
         ]
       }
     }

@@ -16,16 +16,11 @@
   ],
   "scripts": {
     "start": "node dist/cli.mjs",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --clean --splitting false --target node18 --out-extension .mjs --banner.js '#!/usr/bin/env node'",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "license-checker": "^25.0.1",
-    "tsup": "^8.5.0",
-    "@types/license-checker": "^25.0.6"
+    "@types/license-checker": "^25.0.6",
+    "license-checker": "^25.0.1"
   }
 }

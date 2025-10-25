@@ -1,18 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "noEmit": false,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "jsx": "react-jsx",
     "lib": [
       "ES2020",
       "DOM"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "types": [
       "vite/client"
     ],
@@ -22,14 +14,10 @@
       ]
     }
   },
-  "include": [
-    "src"
-  ],
   "exclude": [
     "src/vite-env.d.ts",
     "**/*.test.*",
     "**/*.spec.*",
     "src/__tests__/**"
-  ],
-  "references": []
+  ]
 }

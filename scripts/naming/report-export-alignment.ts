@@ -21,7 +21,6 @@ import {
 const DEFAULT_INCLUDE = [
   'app/**/*.{ts,tsx,mts}',
   'packages/**/*.{ts,tsx,mts}',
-  'tools/**/*.{ts,tsx,mts}',
   'scripts/**/*.{ts,tsx,mts}',
 ];
 
@@ -450,4 +449,3 @@ main().catch((error: unknown) => {
   /* eslint-enable no-console */
   process.exitCode = 1;
 });
-

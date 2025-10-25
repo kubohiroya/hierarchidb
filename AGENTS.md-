@@ -18,7 +18,7 @@
 
 ### 1.1 型チェック実行ポリシー
 - グローバルな型検証は **Turbo 経由** で実行する。原則として `pnpm turbo run typecheck` または対象パッケージの `pnpm -C <package> typecheck` を利用すること。
-- ルートで直接 `pnpm exec tsc --noEmit` を実行すると、検証対象外のスクリプト（例: `scripts/plugin-dependency-resolver.ts`）で型エラーが発生し、不要な失敗となるため **禁止**。
+- ルートで直接 `pnpm exec tsc --noEmit` を実行すると、検証対象外のスクリプトで型エラーが発生し、不要な失敗となるため **禁止**。
 - プロジェクトリファレンスは `composite: true` / `noEmit: true` を維持し、出力が必要なビルドは Turbo の `build` パイプラインに任せる。
 - 例外的にローカルで `tsc --noEmit` を使う場合は、対象パッケージを絞ったコマンド（例: `pnpm --filter @hierarchidb/common-type typecheck`）を用いること。
 

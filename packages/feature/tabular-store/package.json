@@ -14,28 +14,16 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "clean": "rm -rf dist",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "clean": "rm -rf dist"
   },
   "peerDependencies": {
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0"
   },
   "devDependencies": {
-    "tsup": "^8.5.0",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/util": "workspace:*",
     "dexie": "^4.2.0"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "dexie"
-    ]
   }
 }

@@ -10,18 +10,31 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 
 const pluginRegistryFile = path.join(
   repoRoot,
-  'packages',
-  'plugin-registry',
+  'app',
   'src',
-  'generated.ts',
+  'plugin-registry',
+  'generated',
+  'index.ts',
 );
 const pluginAmbientFile = path.join(
   repoRoot,
-  'packages',
-  'plugin-registry',
-  '.generated',
   'types',
+  'generated',
   'plugin-modules.d.ts',
+);
+const runtimeWorkerMetadataFile = path.join(
+  repoRoot,
+  'packages',
+  'runtime/worker',
+  'src',
+  'generated',
+  'plugin-metadata.ts',
+);
+const runtimeWorkerAmbientFile = path.join(
+  repoRoot,
+  'types',
+  'generated',
+  'runtime-worker.d.ts',
 );
 const uiLoaderFile = path.join(repoRoot, 'app', 'src', 'generated', 'ui-loader.ts');
 const workerLoaderFile = path.join(repoRoot, 'app', 'src', 'generated', 'worker-loader.ts');
@@ -93,9 +106,20 @@ describe('generate-plugin-loader.mjs', () => {
     expect(ambientSource).toContain(`declare module '@hierarchidb/folder-plugin/worker';`);
   });
 
+  it('generates runtime worker ambient declarations', async () => {
+    const ambientSource = await readGeneratedFile(runtimeWorkerAmbientFile);
+    expect(ambientSource).toContain(`export * from '@hierarchidb/folder-plugin/worker';`);
+  });
+
   it('produces worker loader entries for plugins with EntitiesDB exports', async () => {
     const workerLoaderSource = await readGeneratedFile(workerLoaderFile);
     expect(workerLoaderSource).toMatch(/'folder': async \(\) =>/);
     expect(workerLoaderSource).toContain(`loadFolderEntitiesDbModule`);
+  });
+
+  it('emits runtime worker metadata with loader map', async () => {
+    const metadataSource = await readGeneratedFile(runtimeWorkerMetadataFile);
+    expect(metadataSource).toContain(`export const pluginRegistry`);
+    expect(metadataSource).toContain(`'folder': () => import('@hierarchidb/folder-plugin/worker')`);
   });
 });

@@ -49,11 +49,11 @@
 | `packages/plugins/feature/map-source/src/types/dexie.d.ts` など | 外部ライブラリ | 公式型未提供 | ライブラリの型確認／導入 or コメント付き維持 |
 | `packages/common/types/src/ambient-ui.d.ts` | `@hierarchidb/ui-icon`, `@hierarchidb/ui-core` など | UI 全体共通シム | 各 UI パッケージで dist 型を公開して縮退（`ui-theme` 分は削除済み） |
 | `packages/ui/treeconsole/*/ambient-breadcrumb.d.ts` | `@hierarchidb/ui-treeconsole-breadcrumb` | dist 型未検証 | treeconsole-breadcrumb で型を公開し削除 |
-| `app/src/types/shims.d.ts` | runtime-client, common-type, util | FeatureFlags の ambient 定義のみ残存。追加宣言は禁止（virtual モジュールは `.generated/types`） |
+| ~~`app/src/types/shims.d.ts`~~ | runtime-client, common-type, util | **削除済 (2025-10-25)**。FeatureFlags ambient 定義を廃止し、UI/Worker の FEATURE_FLAGS 依存を撤去済み |
 | （削除済み）`app/src/types/shims-ui-treeconsole-treetable.d.ts` | - | - | `@hierarchidb/ui-treeconsole-treetable` の公式 d.ts 参照へ移行（2025-09-18） |
 
 ### 現在残っている shim と理由
-- `app/src/types/shims.d.ts`: グローバル FeatureFlags の ambient 定義（virtual モジュールは `.generated/types` にて自動生成）
+- ~~`app/src/types/shims.d.ts`~~: **2025-10-25 削除**。グローバル FeatureFlags 依存を撤去済み。
 
 ## `as any` ホットスポット（概算）
 
@@ -1059,7 +1059,7 @@ total occurrences: 0
     - `pnpm --filter @hierarchidb/compute typecheck`
     - `pnpm --filter @hierarchidb/util typecheck`
     - `pnpm --filter @hierarchidb/runtime-client typecheck`
-    - `pnpm --filter @hierarchidb/tools-vite-plugin-package-reader typecheck`
+    - `pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias run build`（旧 `@hierarchidb/tools-vite-plugin-package-reader` の typecheck 相当）
     - `pnpm --filter @hierarchidb/auth-recovery typecheck`
     - `pnpm --filter @hierarchidb/tabular-xlsx typecheck`
     - `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck`

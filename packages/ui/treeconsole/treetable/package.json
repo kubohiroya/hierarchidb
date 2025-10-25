@@ -13,13 +13,9 @@
     }
   },
   "scripts": {
-    "build": "pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts",
     "test": "vitest --passWithNoTests",
-    "test:run": "vitest run --passWithNoTests",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "test:run": "vitest run --passWithNoTests"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -66,37 +62,5 @@
     "@mui/icons-material": "^7.3.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0"
-  },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/components",
-      "@hierarchidb/components/*",
-      "@hierarchidb/ui-i18n",
-      "@hierarchidb/ui-i18n/*",
-      "@hierarchidb/ui-theme",
-      "@hierarchidb/ui-theme/*",
-      "@hierarchidb/ui-treeconsole-breadcrumb",
-      "@hierarchidb/ui-treeconsole-breadcrumb/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-router",
-      "@tanstack/react-router/*",
-      "@tanstack/react-table",
-      "@tanstack/react-table/*",
-      "@tanstack/react-virtual",
-      "@tanstack/react-virtual/*",
-      "comlink",
-      "jotai",
-      "react",
-      "react-dom"
-    ]
   }
 }

@@ -51,7 +51,7 @@
   - テスト: Provider/Proxy のユニットテスト、初期化ステートマシンの状態遷移テスト。
 - **Phase 2: プラグイン移行テンプレート**
   - 代表プラグイン（folder/resolver 等）でファクトリ API 化、ts-morph codemod 検証。
-  - Tools: `scripts/codemods/migrate-plugin-worker.ts`（仮）で import 置換。
+  - Tools: ts-morph codemod（現在は未配備）で import 置換を自動化予定。
 - **Phase 3: 全プラグイン展開**
   - codemod 適用、ドキュメント更新、`pnpm -r typecheck`/`pnpm -r test` で網羅確認。
   - 旧 API の deprecation アナウンス → 削除。

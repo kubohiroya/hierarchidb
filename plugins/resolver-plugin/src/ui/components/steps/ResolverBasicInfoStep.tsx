@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Box, FormHelperText, Typography } from '@mui/material';
-import { BasicInfoFields } from '@hierarchidb/runtime-basic-info';
+import { BasicInfoFields } from '@hierarchidb/ui-plugin-basic-info';
 import type { ResolverWorkingCopyEntity } from '../../../common/types/index.js';
 
 interface ResolverBasicInfoStepProps {

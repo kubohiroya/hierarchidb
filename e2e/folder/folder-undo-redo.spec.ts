@@ -11,13 +11,8 @@ import {
   waitForWorkingCopyUpdate,
   clickUndo,
   clickRedo,
-  configureWorkerCmdprocOverride,
-  WORKER_CMDPROC_FLAG_NAME,
-  WorkerFlagOverrideValue,
-  resetWorkerFlagOverrides,
   buildAppUrl,
 } from '../utils/test-helpers';
-import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../../app/src/config/worker-flag-overrides.js';
 
 /**
  * Folder Undo/Redo E2E Test
@@ -26,31 +21,10 @@ import { WORKER_FLAG_OVERRIDES_STORAGE_KEY } from '../../app/src/config/worker-f
  * operations in the expected order and that UI state reflects each transition.
  */
 
-type Scenario = {
-  name: string;
-  flagValue: WorkerFlagOverrideValue;
-  skip?: boolean;
-};
-
-const SCENARIOS: Scenario[] = [
-  {
-    name: 'legacy command path (flag off)',
-    flagValue: '0',
-    // Legacy経路はサンセット対象。最新実装（flag on）が安定運用に入ったため自動テストはスキップ。
-    skip: true,
-  },
-  { name: 'CommandProcessor path (flag on)', flagValue: '1' },
-];
-
 test.describe.serial('Folder Undo/Redo Flow', () => {
-  test.beforeEach(async ({ page }) => {
-    await resetWorkerFlagOverrides(page);
-  });
-
-  async function runUndoRedoCycle(page: Parameters<typeof test>[0]['page'], scenario: Scenario) {
+  async function runUndoRedoCycle(page: Parameters<typeof test>[0]['page']) {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    await configureWorkerCmdprocOverride(page, scenario.flagValue);
 
     await page.goto(buildAppUrl('t/r'));
 
@@ -139,22 +113,9 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await clickRedo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInTrash(renamedName);
-
-    const storedOverrides = await page.evaluate(
-      (storageKey) => window.localStorage.getItem(storageKey),
-      WORKER_FLAG_OVERRIDES_STORAGE_KEY,
-    );
-    expect(storedOverrides).toBeTruthy();
-    if (storedOverrides) {
-      const parsed = JSON.parse(storedOverrides) as Record<string, string>;
-      expect(parsed[WORKER_CMDPROC_FLAG_NAME]).toBe(scenario.flagValue);
-    }
   }
 
-  for (const scenario of SCENARIOS) {
-    const runner = scenario.skip ? test.skip : test;
-    runner(`create → rename → trash → restore supports undo/redo cycle via ${scenario.name}`, async ({ page }) => {
-      await runUndoRedoCycle(page, scenario);
-    });
-  }
+  test('create → rename → trash → restore supports undo/redo cycle with CommandProcessor routing', async ({ page }) => {
+    await runUndoRedoCycle(page);
+  });
 });

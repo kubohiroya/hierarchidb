@@ -11,74 +11,80 @@
 
 | Package | Config Files |
 | --- | --- |
-| `packages/batch-runtime-services` | tsconfig.build.json, tsconfig.json |
-| `packages/common/api` | tsconfig.build.json, tsconfig.json |
-| `packages/common/auth` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/common/types` | tsconfig.build.json, tsconfig.json |
-| `packages/components` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/auth-recovery` | tsconfig.build.json, tsconfig.json |
-| `packages/feature/batch` | tsconfig.build.json, tsconfig.json |
-| `packages/feature/compute` | tsconfig.build.json, tsconfig.json |
-| `packages/feature/download` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/feature-registry` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/fetch-save-metadata` | tsconfig.build.json, tsconfig.json |
-| `packages/feature/import-export` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/map-adapter` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/map-source` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/route-resolver` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/route-searoute` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tabular-source` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tabular-source-xlsx` | tsconfig.build.json, tsconfig.json |
-| `packages/feature/tabular-store` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tag` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/plugin-registry` | tsconfig.build.json, tsconfig.json |
-| `packages/plugin-runtime-services` | tsconfig.build.json, tsconfig.json |
-| `packages/plugin-ui-sdk` | tsconfig.build.json, tsconfig.json |
-| `packages/runtime/basic-info` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/runtime/client` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/runtime/plugin-dialog` | tsconfig.build.json, tsconfig.json |
-| `packages/runtime/worker` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
+| `packages/backend/bff` | tsconfig.json |
+| `packages/backend/cors-proxy` | tsconfig.json |
+| `packages/batch-runtime-services` | tsconfig.json |
+| `packages/batch-types` | tsconfig.json |
+| `packages/common/api` | tsconfig.json |
+| `packages/common/auth` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/common/types` | tsconfig.json |
+| `packages/components` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/auth-recovery` | tsconfig.json |
+| `packages/feature/batch` | tsconfig.json |
+| `packages/feature/compute` | tsconfig.json |
+| `packages/feature/download` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/feature-registry` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/fetch-save-metadata` | tsconfig.json |
+| `packages/feature/import-export` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/map-adapter` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/map-source` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/route-resolver` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/route-searoute` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/tabular-source` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/tabular-source-xlsx` | tsconfig.json |
+| `packages/feature/tabular-store` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/feature/tag` | tsconfig.json, tsconfig.typecheck.json |
+| `app/src/plugin-registry` | — |
+| `packages/plugin-runtime-services` | tsconfig.json |
+| `packages/plugin-types` | tsconfig.json |
+| `packages/plugin-ui-sdk` | tsconfig.json |
+| `packages/runtime/basic-info` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/runtime/client` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/runtime/plugin-dialog` | tsconfig.json |
+| `packages/runtime/worker` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/tools/analyze-licenses` | tsconfig.json |
-| `packages/tools/vite-plugin-node-type-registry` | tsconfig.json |
-| `packages/ui/accordion-config` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/auth` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/country-select` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/data-grid` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/dialog` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/file` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/floating-window` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/i18n` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/icon` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/layout` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/lru-splitview` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/map` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/memory-usage` | tsconfig.build.json, tsconfig.json |
-| `packages/ui/monitoring` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/navigation` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/routing` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/search-result-window` | tsconfig.build.json, tsconfig.json |
-| `packages/ui/tabular-extract` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/theme` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/tour` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/base` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/breadcrumb` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/footer` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/speeddial` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/toolbar` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/trashbin` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/ui/treeconsole/treetable` | tsconfig.build.json, tsconfig.json, tsconfig.test.json, tsconfig.typecheck.json |
-| `packages/ui/usermenu` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `packages/util` | tsconfig.build.json, tsconfig.json |
-| `plugins/basemap-plugin` | tsconfig.build.json, tsconfig.json |
-| `plugins/folder-plugin` | tsconfig.build.json, tsconfig.json, tsconfig.test.json |
-| `plugins/linker-plugin` | tsconfig.build.json, tsconfig.json |
-| `plugins/location-plugin` | tsconfig.build.json, tsconfig.json |
-| `plugins/resolver-plugin` | tsconfig.build.json, tsconfig.json |
-| `plugins/route-plugin` | tsconfig.build.json, tsconfig.json, tsconfig.typecheck.json |
-| `plugins/shape-plugin` | tsconfig.build.json, tsconfig.json, tsconfig.minimal.json, tsconfig.worker.json |
-| `plugins/spreadsheet-plugin` | tsconfig.build.json, tsconfig.json, tsconfig.ui.json |
-| `plugins/styler-plugin` | tsconfig.build.json, tsconfig.json |
-| `plugins/timeline-plugin` | tsconfig.build.json, tsconfig.json |
+| `packages/vite-plugins/vite-plugin-hierarchidb-plugin-alias` | tsconfig.json |
+| `packages/ui/accordion-config` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/auth` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/country-select` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/data-grid` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/datasource` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/dialog` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/file` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/floating-window` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/i18n` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/icon` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/layout` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/license` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/lru-splitview` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/map` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/memory-usage` | tsconfig.json |
+| `packages/ui/monitoring` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/navigation` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/routing` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/search-result-window` | tsconfig.json |
+| `packages/ui/tabular-extract` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/theme` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/tour` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/base` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/breadcrumb` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/footer` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/speeddial` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/toolbar` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/trashbin` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/ui/treeconsole/treetable` | tsconfig.json, tsconfig.test.json, tsconfig.typecheck.json |
+| `packages/ui/usermenu` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/util` | tsconfig.json |
+| `plugins/basemap-plugin` | tsconfig.json |
+| `plugins/folder-plugin` | tsconfig.json, tsconfig.test.json |
+| `plugins/linker-plugin` | tsconfig.json |
+| `plugins/location-plugin` | tsconfig.json |
+| `plugins/resolver-plugin` | tsconfig.json |
+| `plugins/route-plugin` | tsconfig.json, tsconfig.typecheck.json |
+| `plugins/shape-plugin` | tsconfig.json, tsconfig.minimal.json, tsconfig.worker.json |
+| `plugins/spreadsheet-plugin` | tsconfig.json, tsconfig.ui.json |
+| `plugins/styler-plugin` | tsconfig.json |
+| `plugins/timeline-plugin` | tsconfig.json |
 
 **共通で更新すべきルートファイル**
 - `package.json`: `build`/`build:types`/`typecheck` スクリプト、依存関係から `tsup` を除去し `tsdown` を追加。
@@ -93,8 +99,9 @@
    - `tsdown` を導入し、`tsup` スクリプトを差し替えた上で Turbo 経由の `build` が成功するか検証。
    - PoC 結果を TASKS 運用ログへ記録。
 2. **共通設定の整備**
-   - `tsup.base.config.ts` を撤廃し、`tsdown.base.config.ts`（仮称）を新設。
-   - `tsdown` 共通設定でエントリ・外部依存・d.ts 出力を一元管理。
+   - ルートに単一の `tsdown.config.ts` を配置し、各パッケージは CLI の `--config ../../tsdown.config.ts` で参照する。
+   - 共通 config では `peerDependencies` と標準 UI 依存を external 扱いにし、`platform: 'node'`, `sourcemap: true`, `clean: false` を既定とする。
+   - 複数エントリが必要なパッケージは、`package.json` の `build` スクリプトで `tsdown <entries...>` を列挙しオプションを指定する（例: CLI ツールで `--out-extension .mjs`）。
    - ルート `package.json` の scripts を `tsdown` ベースに更新し、Turbo パイプラインを再定義。
 3. **パッケージ単位の移行（バッチ処理）**
    - カテゴリ単位（feature/ui/plugins/runtime/common/tools）で移行順を決定。
@@ -111,7 +118,7 @@
    - Turbo キャッシュや `.tsbuildinfo` を初期化し、最終確認の `turbo run build` を実行。
 
 ## DoD（Definition of Done）
-- すべての対象パッケージで `package.json` の `build` 系スクリプトが `tsdown` を利用し、`tsup` 依存が除去されている。
+- すべての対象パッケージで `package.json` の `build` スクリプトが `tsdown` を利用し、`tsup` 依存が除去されている（`dev` スクリプトはルートおよび `app/` を除き削除）。
 - Turbo パイプラインにおいて `build`/`build:types`/`typecheck` が `tsdown` 基準で成功する（`turbo run build` のワークスペース実行ログ取得済み）。
 - ルートおよび各パッケージの `tsconfig.*` が `tsdown` 前提に整理され、不要な `tsconfig.build.json` 等が削除済み。
 - `tsdown.base.config.ts`（新規ファイル）により、共通ビルド設定が一本化されている。

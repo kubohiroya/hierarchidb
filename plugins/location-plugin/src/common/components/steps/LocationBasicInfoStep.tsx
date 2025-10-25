@@ -5,7 +5,7 @@
 import type React from 'react';
 import { useMemo } from 'react';
 import { Box, TextField, Typography } from '@mui/material';
-import { BasicInfoFields } from '@hierarchidb/runtime-basic-info';
+import { BasicInfoFields } from '@hierarchidb/ui-plugin-basic-info';
 import type { LocationWorkingCopy } from '../../types/index.js';
 import { useTranslation } from '../../i18n/index.js';
 

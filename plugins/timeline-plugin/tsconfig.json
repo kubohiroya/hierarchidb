@@ -5,29 +5,14 @@
       "ES2020",
       "DOM"
     ],
-    "moduleResolution": "NodeNext",
-    "noEmit": true,
-    "composite": false,
-    "outDir": "./dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "strict": true,
-    "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "module": "NodeNext"
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
+  }
 }

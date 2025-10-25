@@ -243,24 +243,6 @@ for (const dir of workspaces) {
   }
 }
 
-// Rule G: tsup.external should include peerDependencies
-const checkTsupExternal = Boolean(config.checkTsupExternalizePeers);
-if (checkTsupExternal) {
-  for (const dir of workspaces) {
-    const pkgPath = path.join(dir, 'package.json');
-    const pkg = readJSON(pkgPath);
-    if (!pkg) continue;
-    const peers = Object.keys(pkg.peerDependencies || {});
-    if (peers.length === 0) continue;
-    const tsup = pkg.tsup || {};
-    const external = Array.isArray(tsup.external) ? tsup.external : [];
-    const missing = peers.filter((p)=>!external.includes(p));
-    if (missing.length) {
-      warn(`${pkg.name}: tsup.external missing peers: ${missing.join(', ')}`);
-    }
-  }
-}
-
 // Rule H: Guard tsconfig overrides — allow only safe local alias ("~/*" -> "./src/*") and baseUrl "."
 // Rationale: We centralize cross-package resolution in the root tsconfig. Per-package aliases are
 // permitted only for local imports quality-of-life ("~/*"). Anything else risks mask/mis-resolution.

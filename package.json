@@ -20,10 +20,10 @@
     "check:deps:policies": "pnpm exec dep-fence",
     "preinstall": "npx only-allow pnpm",
     "predev": "pnpm run tools:gen-plugin-loaders",
-    "dev": "./scripts/start-env.sh development",
+    "dev": "./scripts/env_vite.sh development",
     "dev:with-watch": "node ./scripts/run-dev-with-turbo-watch.mjs",
     "predev:production": "pnpm run tools:gen-plugin-loaders",
-    "dev:production": "./scripts/start-env.sh production dev",
+    "dev:production": "./scripts/env_vite.sh production dev",
     "generate-gadm-metadata": "tsx scripts/data-generation/generate-gadm-metadata.ts",
     "generate-naturalearth-metadata": "tsx scripts/data-generation/generate-naturalearth-metadata.ts",
     "generate-openstreetmap-metadata": "tsx scripts/data-generation/generate-openstreetmap-metadata.ts",
@@ -31,18 +31,16 @@
     "generate-gadm-iso-mapping": "tsx scripts/data-generation/generate-gadm-iso-mapping.ts",
     "check:licenses:json": "npx license-checker --production --json ",
     "prebuild": "pnpm -C app run generate:favicon && pnpm run tools:gen-plugin-loaders && pnpm run check:deps && pnpm run check:deps:extra && npm run check:licenses && pnpm policy:ban-tsconfig-paths-dist-dts && pnpm shims:check && pnpm as-any:check && pnpm lint",
-    "build": "./scripts/start-env.sh production build",
+    "build": "./scripts/env_vite.sh production build",
     "build:turbo": "turbo run build",
-    "build:types": "turbo run build:types",
-    "build:bundle": "turbo run build:bundle",
-    "build:watch": "turbo run build --parallel -- --watch",
+    "build:watch": "turbo run build --watch",
     "turbo:watch": "pnpm run turbo:watch:internal",
     "turbo:watch:internal": "turbo run build --filter @hierarchidb/app^... --watch",
     "preview": "turbo run preview",
     "prepreview": "pnpm run tools:gen-plugin-loaders",
-    "typecheck": "turbo run typecheck",
-    "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" pnpm -r --workspace-concurrency 1 --reporter append-only typecheck",
-    "typecheck:watch": "turbo run typecheck --parallel -- --watch",
+    "typecheck": "turbo run build",
+    "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" turbo run build",
+    "typecheck:watch": "turbo run build --watch",
     "test": "turbo run test --parallel",
     "test:run": "turbo run test:run",
     "coverage": "turbo run coverage --parallel",
@@ -68,9 +66,9 @@
     "generate:pdf:ja": "node scripts/generate-pdf-with-translation.js --japanese",
     "generate:pdf:en": "node scripts/generate-pdf-with-translation.js --english",
     "tools:build": "pnpm --filter @hierarchidb/tools run build",
-    "tools:gen-plugin-loaders": "pnpm --filter @hierarchidb/tools run gen-plugin-loaders",
-    "tools:sync-peer-dependencies": "pnpm --filter @hierarchidb/tools run sync-peer-dependencies",
-    "tools:fix-spa-build": "pnpm --filter @hierarchidb/tools run fix-spa-build",
+    "tools:gen-plugin-loaders": "pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias run build && pnpm --filter @hierarchidb/tools-plugin-manifest-loader run build && pnpm --filter @hierarchidb/tools-dev-scripts run gen-plugin-loaders",
+    "tools:sync-peer-dependencies": "pnpm --filter @hierarchidb/tools-dev-scripts run sync-peer-dependencies",
+    "tools:fix-spa-build": "pnpm --filter @hierarchidb/tools-dev-scripts run fix-spa-build",
     "count:lines": "tsx scripts/count-lines.ts",
     "policy:ban-tsconfig-paths-dist-dts": "node scripts/policy/ban-tsconfig-paths-dist-dts.mjs",
     "policy:all": "pnpm policy:ban-tsconfig-paths-dist-dts",
@@ -89,7 +87,7 @@
     "ci:unit:treeconsole": "pnpm -r --filter @hierarchidb/ui-treeconsole-base --filter @hierarchidb/ui-treeconsole-treetable run test:run",
     "deps:cycles": "npx dependency-cruiser -c .dependency-cruiser.cjs packages app",
     "deps:cycles:graph": "npx dependency-cruiser -c .dependency-cruiser.cjs --output-type dot --output-to reports/dependency-graph.dot packages app",
-    "codemod:esm-ext": "node tools/esm-ext-codemod.mjs",
+    "codemod:esm-ext": "pnpm --filter @hierarchidb/tools-codemods run codemod:esm-ext",
     "codemod:run": "node --loader ts-node/esm scripts/codemods/runner.ts"
   },
   "devDependencies": {
@@ -156,7 +154,7 @@
     "ts-morph": "^26.0.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.14.2",
     "tsx": "^4.20.5",
     "turbo": "^2.5.8",
     "typescript": "5.9.3",
@@ -200,8 +198,7 @@
       "sharp",
       "workerd"
     ],
-    "patchedDependencies": {
-    }
+    "patchedDependencies": {}
   },
   "keywords": [
     "hierarchical-data",
@@ -218,13 +215,6 @@
     "@mui/material": "^7.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
-  },
-  "tsup": {
-    "external": [
-      "@mui/material",
-      "react",
-      "react-dom"
-    ]
   },
   "dependencies": {
     "@mui/icons-material": "^7.3.2",

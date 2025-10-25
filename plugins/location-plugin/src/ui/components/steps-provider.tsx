@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/runtime-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
 import { LocationSelectionStep } from '../../common/components/steps/LocationSelectionStep.js';
 import type { LocationWorkingCopy } from '../../common/types/index.js';
 import { translations as locationTranslations } from '../../common/i18n/index.js';

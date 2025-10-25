@@ -12,15 +12,11 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "devDependencies": {
     "@types/node": "^20.19.11",
@@ -28,7 +24,6 @@
     "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^9.34.0",
     "prettier": "^3.2.5",
-    "tsup": "^8.0.2",
     "typescript": "workspace:^5.9.3",
     "undici-types": "^7.15.0"
   },

@@ -4,7 +4,7 @@
 
 1. `app/src/generated/worker-loader.ts` – Worker 側の EntitiesDB ローダーを nodeType 単位で束ねる。
 2. `app/src/generated/ui-loader.ts` – UI の副作用 import を依存順序で列挙し、先にロードすべきプラグインを制御する。
-3. `@hierarchidb/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginMapUI` / `pluginMapWorker` を公開するワークスペース内パッケージ。
+3. `~/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginMapUI` / `pluginMapWorker` を公開するアプリ内モジュール。
 
 これらは `scripts/generate-plugin-loader.mjs` が再生成します。アプリはレジストリの JSON スナップショットを直接読み、`import()` はすべて文字列リテラルなので Vite/Rollup が確実に解決します。
 
@@ -12,8 +12,8 @@
 
 ## 仕組みの概要
 - **生成スクリプト**: `scripts/generate-plugin-loader.mjs` が `app/package.json` の `@hierarchidb/*-plugin` 依存を列挙し、各プラグインの `exports` と `src/plugin-manifest.ts` を解析して前述の 3 成果物を出力します。
-- **Vite 設定**: `@hierarchidb/vite-plugin-node-type-registry` から提供される alias プラグインのみを使用し、`@hierarchidb/<node>-plugin/<kind>` を `/@fs/.../src` に解決します。仮想モジュールは生成しません。
-- **実行時**: UI/Worker は `@hierarchidb/plugin-registry` のローダーを呼び出し、Dexie などの EntitiesDB は `worker-loader.ts` が自動的にインスタンス化します。
+- **Vite 設定**: `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` から提供される alias プラグインのみを使用し、`@hierarchidb/<node>-plugin/<kind>` を `/@fs/.../src` に解決します。仮想モジュールは生成しません。
+- **実行時**: UI/Worker は `~/plugin-registry` のローダーを呼び出し、Dexie などの EntitiesDB は `worker-loader.ts` が自動的にインスタンス化します。
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
@@ -69,13 +69,13 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
 ## アプリへの接続（自動化フロー）
 1. `pnpm dev` / `pnpm build` は事前に `scripts/generate-plugin-loader.mjs` を実行し、最新のレジストリを生成します。
 2. Vite の alias プラグインが `@hierarchidb/foo-plugin/ui` → `/@fs/.../packages/plugins/foo-plugin/src/ui/index.ts` のようにマッピング。
-3. UI 起動時は `@hierarchidb/plugin-registry` からメタデータとローダーを読み、順次 import。
+3. UI 起動時は `~/plugin-registry` からメタデータとローダーを読み、順次 import。
 4. Worker bootstrap でも同じレジストリを参照するため、UI/Worker の整合性が保証されます。
 
 ## UI 実装の取り込み例
 ```ts
 // app/src/plugin-loader/auto-load.ts
-import { pluginDefinitions, pluginMapUI } from '@hierarchidb/plugin-registry';
+import { pluginDefinitions, pluginMapUI } from '~/plugin-registry';
 
 const loadOrder = pluginDefinitions
   .map((d) => ({ nodeType: d.nodeType, priority: d.priority ?? 1000 }))
@@ -144,7 +144,7 @@ PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
 
 ## Worker 側の取り込み例
 ```ts
-import { pluginDefinitions, pluginMapWorker } from '@hierarchidb/plugin-registry';
+import { pluginDefinitions, pluginMapWorker } from '~/plugin-registry';
 import { wirePluginsFromModules } from '@hierarchidb/runtime-client';
 
 const modules = await Promise.all(
@@ -170,7 +170,7 @@ await wirePluginsFromModules(modules.filter(Boolean) as Array<{ nodeType: string
 
 ## 手動メンテが必要なケース
 - 新しいプラグインを追加したのにレジストリへ反映されない → `pnpm dev` などで `scripts/generate-plugin-loader.mjs` が走っているか確認し、`app/package.json` の dependencies に対象プラグインを追加してください。
-- エイリアス解決が古いまま → `pnpm --filter @hierarchidb/vite-plugin-node-type-registry build` で dist を再生成するか、Vite dev server を再起動する。
+- エイリアス解決が古いまま → `pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias build` で dist を再生成するか、Vite dev server を再起動する。
 
 ## チェックリスト（プラグイン追加時）
 1. `packages/plugins/<node>-plugin` を作成し、`package.json` で `@hierarchidb/<node>-plugin` を宣言。

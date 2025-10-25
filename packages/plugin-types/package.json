@@ -31,28 +31,9 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
   },
-  "tsup": {
-    "external": [
-      "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/download",
-      "@hierarchidb/download/*"
-    ]
-  },
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": [
-          "@hierarchidb/plugin-ui-sdk#build",
-          "@hierarchidb/common-types#build",
-          "@hierarchidb/common-api#build",
-          "@hierarchidb/batch#build",
-          "@hierarchidb/download#build"
-        ]
-      },
-      "typecheck": {
         "dependsOn": [
           "@hierarchidb/plugin-ui-sdk#build",
           "@hierarchidb/common-types#build",

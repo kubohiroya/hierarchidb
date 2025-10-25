@@ -1,16 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "declaration": true,
-    "composite": false,
-    "moduleResolution": "NodeNext",
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
-    "module": "NodeNext"
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
-    "src/**/*"
+    "src*"
   ],
   "checkDeps": {
     "allowSkipLibCheck": true,

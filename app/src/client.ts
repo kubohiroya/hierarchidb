@@ -4,11 +4,6 @@
 import type { Remote } from 'comlink';
 import workerScriptUrl from './worker.ts?worker&url';
 import { bootLog } from './utils/bootLog.js';
-import {
-  WORKER_FLAG_OVERRIDES_STORAGE_KEY,
-  WORKER_FLAG_PARAM_PREFIX,
-  isAllowedWorkerFlag,
-} from './config/worker-flag-overrides.js';
 import { APP_VERSION } from './version.js';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
@@ -62,9 +57,6 @@ const COMLINK_NOISE_TYPES = new Set([
   'HANDLER',
 ]);
 
-const TRUE_FLAG_VALUES = new Set(['1', 'true', 'on', 'enabled']);
-const FALSE_FLAG_VALUES = new Set(['0', 'false', 'off', 'disabled']);
-
 function resolveWorkerUrl(): URL {
   if (typeof workerScriptUrl === 'string') {
     if (typeof window !== 'undefined') {
@@ -84,40 +76,6 @@ function resolveWorkerUrl(): URL {
   const fallbackUrl = new URL(/* @vite-ignore */ './worker.js', import.meta.url);
   fallbackUrl.searchParams.set('appVersion', APP_VERSION);
   return fallbackUrl;
-}
-
-function normalizeWorkerFlagValue(value: unknown): string | null {
-  if (typeof value === 'boolean') return value ? '1' : '0';
-  if (typeof value === 'number') {
-    if (Number.isNaN(value)) return null;
-    return value === 0 ? '0' : value === 1 ? '1' : null;
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim().toLowerCase();
-    if (TRUE_FLAG_VALUES.has(trimmed)) return '1';
-    if (FALSE_FLAG_VALUES.has(trimmed)) return '0';
-    return null;
-  }
-  return null;
-}
-
-function applyWorkerFlagOverrides(workerUrl: URL): void {
-  if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return;
-  try {
-    const raw = window.localStorage.getItem(WORKER_FLAG_OVERRIDES_STORAGE_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') return;
-    const entries = Object.entries(parsed as Record<string, unknown>);
-    for (const [key, value] of entries) {
-      if (!isAllowedWorkerFlag(key)) continue;
-      const normalized = normalizeWorkerFlagValue(value);
-      if (normalized == null) continue;
-      workerUrl.searchParams.set(`${WORKER_FLAG_PARAM_PREFIX}${key}`, normalized);
-    }
-  } catch (error) {
-    logInitWorkerWarning('Failed to apply worker flag overrides', error);
-  }
 }
 
 function getBootWindow(): BootWindow | null {
@@ -151,7 +109,6 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
 
       const workerUrl = resolveWorkerUrl();
       workerUrl.searchParams.set('retry', String(attempt));
-      applyWorkerFlagOverrides(workerUrl);
       rawWorkerInstance = new Worker(workerUrl, { type: 'module' });
 
       const Comlink = await import('comlink');

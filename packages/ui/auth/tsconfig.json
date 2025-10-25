@@ -6,11 +6,7 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "noEmit": false,
     "emitDeclarationOnly": false,
-    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
@@ -18,12 +14,8 @@
     },
     "types": [
       "vite/client"
-    ],
-    "skipLibCheck": true
+    ]
   },
-  "include": [
-    "src/**/*"
-  ],
   "exclude": [
     "node_modules",
     "dist",

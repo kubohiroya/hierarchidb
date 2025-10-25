@@ -9,9 +9,10 @@
 
 ## サンプルコマンド
 ```bash
-pnpm codemod:run --codemod migrate-plugin-worker --plugin resolver
+pnpm codemod:run --list
+# pnpm codemod:run --codemod <name> --dry-run --target <glob>
 pnpm lint --fix
-pnpm --filter @hierarchidb/plugin-loader-resolver-plugin typecheck
+pnpm --filter <affected package> typecheck
 ```
 
 ## コーディング規約

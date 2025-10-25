@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-node-type-registry';
+import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-hierarchidb-plugin-alias';
 import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
 
 type AliasEntry = { find: string; replacement: string };
@@ -419,7 +419,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,
         // make it resolvable to its built output to avoid dev server crashes.
         { find: '@hierarchidb/base-plugin', replacement: path.resolve(__dirname, '../packages/plugin-loader/base-plugin/dist/index.ts') },
-        // Virtual modules are provided by tools-vite-plugin-package-reader.
+        // Virtual modules are provided by @hierarchidb/vite-plugin-hierarchidb-plugin-alias.
         { find: 'crypto', replacement: path.resolve(__dirname, './src/virtual/crypto-shim.ts') },
         // Some transitive libs (e.g., loaders.gl worker-utils) reference Node's child_process.
         // Stub it for browser builds to avoid __vite-browser-external resolution errors.

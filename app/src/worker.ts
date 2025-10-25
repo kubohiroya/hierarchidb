@@ -5,15 +5,11 @@
 
 import './worker-react-refresh-shim.js';
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-client';
-import type { PluginDefinition } from '@hierarchidb/plugin-registry';
-import {
-  WORKER_FLAG_ALLOWED_OVERRIDES,
-  WORKER_FLAG_PARAM_PREFIX,
-} from './config/worker-flag-overrides.js';
+import type { PluginDefinition } from '~/plugin-registry/types.js';
 import {
   pluginDefinitions as staticPluginDefinitions,
   pluginMapWorker as staticPluginMapWorker,
-} from '@hierarchidb/plugin-registry';
+} from '~/plugin-registry/index.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -68,22 +64,6 @@ if (!globalShim.process) {
 }
 if (!globalShim.process.env) {
   globalShim.process.env = {};
-}
-
-const workerEnv = globalShim.process.env;
-
-try {
-  if (typeof self !== 'undefined' && typeof self.location?.href === 'string') {
-    const params = new URL(self.location.href).searchParams;
-    for (const flag of WORKER_FLAG_ALLOWED_OVERRIDES) {
-      const value = params.get(`${WORKER_FLAG_PARAM_PREFIX}${flag}`);
-      if (value != null) {
-        workerEnv[flag] = value;
-      }
-    }
-  }
-} catch (error) {
-  console.warn('[worker bootstrap] failed to apply flag overrides', error);
 }
 
 const reporter = new WorkerInitializationReporter(

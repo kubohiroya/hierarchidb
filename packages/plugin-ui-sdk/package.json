@@ -19,12 +19,8 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "lint": "eslint src",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "lint": "eslint src"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -43,7 +39,6 @@
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
     "@types/react-resizable": "^3.0.8",
-    "tsup": "^8.3.5",
     "typescript": "workspace:^5.9.3",
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
@@ -51,19 +46,5 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/batch-types",
-      "@hierarchidb/batch-types/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/download",
-      "@hierarchidb/download/*",
-      "dexie",
-      "react"
-    ]
   }
 }

@@ -23,7 +23,6 @@
     "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/plugin-registry": "workspace:*",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hierarchidb/basemap-plugin": "workspace:*",
@@ -40,7 +39,7 @@
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-tour": "workspace:*",
@@ -83,7 +82,7 @@
     "@deck.gl/geo-layers": "^9.1.14",
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
-    "@hierarchidb/vite-plugin-node-type-registry": "workspace:*",
+    "@hierarchidb/vite-plugin-hierarchidb-plugin-alias": "workspace:*",
     "@types/node": "^18.0.0",
     "@vis.gl/react-maplibre": "^8.0.4",
     "@vitejs/plugin-react": "^5.0.1",
@@ -99,24 +98,21 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "license": "MIT",
-  "tsup": {
-    "external": [
-      "@mui/icons-material",
-      "@mui/material",
-      "react",
-      "react-dom"
-    ]
-  },
   "turbo": {
     "pipeline": {
+      "build": {
+        "dependsOn": [
+          "^build",
+          "@hierarchidb/tools-dev-scripts#build",
+          "@hierarchidb/tools-plugin-manifest-loader#build",
+          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
+        ]
+      },
       "typecheck": {
         "dependsOn": [
-          "@hierarchidb/tools#gen-plugin-loaders",
-          "@hierarchidb/resolver-plugin#typecheck",
-          "@hierarchidb/linker-plugin#typecheck",
-          "@hierarchidb/ui-i18n#typecheck",
-          "@hierarchidb/ui-treeconsole-base#typecheck",
-          "@hierarchidb/runtime-worker#typecheck"
+          "@hierarchidb/tools-dev-scripts#build",
+          "@hierarchidb/tools-plugin-manifest-loader#build",
+          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
         ]
       }
     }

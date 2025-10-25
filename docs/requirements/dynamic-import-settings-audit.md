@@ -5,12 +5,12 @@
 ## .github/workflows
 - `unit-ci.yml`
   - 複数ジョブで `pnpm --filter @hierarchidb/*-plugin` を直接指定している。プラグイン再構成後も動作させるため、プラグイン名→ワーカー/ファクトリ名の対応リストをメンテする仕組みが必要。
-  - Codemod 実装後は `pnpm codemod:run --codemod migrate-plugin-worker --dry-run --plugin <name>` のようなチェックを CI に追加し、静的再エクスポートが残っていないことを自動検証する案を検討する。
+  - 旧 `migrate-plugin-worker` codemod（現在は撤去済み）を利用していたため、後継 codemod を再導入する際は `pnpm codemod:run --codemod <name> --dry-run --plugin <target>` 相当のチェックを CI に追加し、静的再エクスポートが残っていないことを自動検証する案を再検討する。
 - `dts-check.yml`
   - `@hierarchidb/shape-plugin` のみ直接指定されている。プラグインを段階的に factory 化する際に対象を追加する必要がある。
 
 ## Scripts
-- `scripts/start-env.sh`, `scripts/generate-plugin-loader.mjs`
+- `scripts/env_vite.sh`, `scripts/generate-plugin-loader.mjs`
   - プラグインの手動列挙があるため、動的 import 版のレジストリへ置き換える必要があるか調査中。
 - `scripts/check-shims.mjs`
   - dist 参照など、factory 化後にパスが変わる箇所を検出する必要有り。

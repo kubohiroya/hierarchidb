@@ -17,18 +17,14 @@
     }
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "typecheck": "tsc -b tsconfig.build.json",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
     "lint": "eslint src",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "clean": "rm -rf dist",
-    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "keywords": [
     "worker",
@@ -50,7 +46,6 @@
     "prettier": "^3.2.4",
     "react": "^18.3.1",
     "react-dom": "^18.2.0",
-    "tsup": "^8.0.1",
     "typescript": "workspace:^5.9.3",
     "vite": "^5.0.11",
     "vitest": "^3.2.4",
@@ -70,18 +65,5 @@
     "comlink": {
       "optional": true
     }
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "comlink",
-      "react",
-      "react-dom"
-    ]
   }
 }

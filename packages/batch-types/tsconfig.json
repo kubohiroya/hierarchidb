@@ -2,34 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "composite": true,
-    "declaration": true,
-    "noEmit": false,
     "emitDeclarationOnly": true,
-    "incremental": true,
-    "declarationMap": true,
     "skipLibCheck": false,
-    "baseUrl": ".",
     "paths": {}
   },
   "include": [
     "../feature/batch/dist/**/*.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "references": [
-    {
-      "path": "../feature/batch/tsconfig.build.json"
-    },
-    {
-      "path": "../common/types/tsconfig.build.json"
-    },
-    {
-      "path": "../common/api/tsconfig.build.json"
-    }
-  ]
+  "exclude": []
 }

@@ -1,18 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
     "noEmit": true,
-    "incremental": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext"
-  },
-  "references": [
-    {
-      "path": "../auth-recovery/tsconfig.build.json"
-    },
-    {
-      "path": "../../util/tsconfig.build.json"
-    }
-  ]
+  }
 }

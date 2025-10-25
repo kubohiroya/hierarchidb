@@ -1,36 +1,14 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "composite": true,
-    "incremental": true,
-    "isolatedModules": true,
-    "outDir": "dist",
-    "declarationDir": "dist",
-    "jsx": "react-jsx",
     "paths": {
       "~/*": [
         "./src/*"
       ]
-    },
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "skipLibCheck": true,
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    }
   },
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "storybook@9 type defs are not TS4.9 clean; leaf-only allowance"
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  }
 }

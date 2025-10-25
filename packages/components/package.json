@@ -15,12 +15,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "clean": "rm -rf dist",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "clean": "rm -rf dist"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -47,24 +43,5 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "11.14.0",
     "@hierarchidb/common-types": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-router",
-      "@tanstack/react-router/*",
-      "react",
-      "react-dom",
-      "react-virtuoso"
-    ]
   }
 }

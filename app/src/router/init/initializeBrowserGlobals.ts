@@ -1,9 +1,9 @@
 import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
 import { setGlobalMuiIconMap } from '@hierarchidb/ui-icon';
-import { pluginDefinitions } from '@hierarchidb/plugin-registry';
+import { pluginDefinitions } from '~/plugin-registry/index.js';
 import { bootLog } from '../../utils/bootLog.js';
 import { APP_VERSION, BUILD_TIME } from '../../version.js';
-import { loadAllUIPlugins } from '../../generated/ui-loader.js';
+import { loadAllUIPlugins } from '../../services/ui-plugin-loader.js';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { autoLoadPlugins } from '~/plugin-loader/auto-load.js';
 import muiIconMap from '~/generated/mui-icon-loader.js';

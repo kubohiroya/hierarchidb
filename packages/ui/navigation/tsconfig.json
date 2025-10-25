@@ -1,18 +1,10 @@
 {
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "incremental": true,
-    "noEmit": false,
-    "outDir": "./dist",
-    "jsx": "react-jsx",
-    "skipLibCheck": true,
     "lib": [
       "ES2020",
       "DOM"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "paths": {
       "~/*": [
         "./src/*"
@@ -22,9 +14,5 @@
   "checkDeps": {
     "allowSkipLibCheck": true,
     "reason": "TanStack Router\u3068MUI\u306e\u578b\u4f9d\u5b58\u3092 leaf \u30d1\u30c3\u30b1\u30fc\u30b8\u5185\u3067\u5b8c\u7d50\u3055\u305b\u308b\u305f\u3081"
-  },
-  "include": [
-    "src"
-  ],
-  "references": []
+  }
 }

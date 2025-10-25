@@ -2,33 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "outDir": "./dist",
     "rootDir": ".",
-    "declaration": true,
-    "declarationMap": true,
     "emitDeclarationOnly": true,
     "skipLibCheck": false,
-    "noEmit": false,
-    "composite": true,
-    "incremental": true,
-    "paths": {},
-    "disableSourceOfProjectReferenceRedirect": true
+    "paths": {}
   },
-  "files": [],
-  "references": [
-    {
-      "path": "../plugin-ui-sdk/tsconfig.build.json"
-    },
-    {
-      "path": "../common/types/tsconfig.build.json"
-    },
-    {
-      "path": "../common/api/tsconfig.build.json"
-    },
-    {
-      "path": "../runtime/worker/tsconfig.build.json"
-    }
-  ]
+  "files": []
 }

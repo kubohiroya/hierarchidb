@@ -6,25 +6,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 
-const pnpmArgs = ['--filter', '@hierarchidb/tools', 'run', 'gen-plugin-loaders'];
+const commands = [
+  ['--filter', '@hierarchidb/tools-plugin-manifest-loader', 'run', 'build'],
+  ['--filter', '@hierarchidb/tools-dev-scripts', 'run', 'gen-plugin-loaders'],
+];
 
 export async function generatePluginRegistry() {
-  await new Promise((resolve, reject) => {
-    const child = spawn('pnpm', pnpmArgs, {
-      cwd: repoRoot,
-      stdio: 'inherit',
-      env: process.env,
-    });
+  for (const args of commands) {
+    await new Promise((resolve, reject) => {
+      const child = spawn('pnpm', args, {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        env: process.env,
+      });
 
-    child.on('error', reject);
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve(undefined);
-      } else {
-        reject(new Error(`gen-plugin-loaders exited with code ${code ?? 'unknown'}`));
-      }
+      child.on('error', reject);
+      child.on('exit', (code) => {
+        if (code === 0) {
+          resolve(undefined);
+        } else {
+          reject(new Error(`pnpm ${args.join(' ')} exited with code ${code ?? 'unknown'}`));
+        }
+      });
     });
-  });
+  }
 }
 
 const invokedDirectly = (() => {

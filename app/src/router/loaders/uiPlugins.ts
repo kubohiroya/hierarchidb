@@ -5,7 +5,7 @@
  * for use with TanStack Router's beforeLoad lifecycle.
  */
 
-import { loadAllUIPlugins } from '../../generated/ui-loader.js';
+import { loadAllUIPlugins } from '../../services/ui-plugin-loader.js';
 
 export interface UIPluginSetupResult {
   registry: Record<string, unknown>;

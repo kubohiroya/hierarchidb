@@ -1,0 +1,18 @@
+{
+  "name": "@hierarchidb/tools-plugin-manifest-loader",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --clean --target es2020"
+  },
+  "dependencies": {
+    "typescript": "workspace:^5.9.3"
+  }
+}

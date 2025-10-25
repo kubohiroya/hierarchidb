@@ -23,7 +23,7 @@
   - やること: Vitest `EMFILE` 回避策、CI での実行確立
 
 ## Phase 2: プラグイン移行テンプレート
-- [x] codemod `scripts/codemods/migrate-plugin-worker.ts` を作成
+- [x] codemod `scripts/codemods/migrate-plugin-worker.ts` を作成（2025-10-25 時点で撤去済み、後継ツール検討中）
   - import 再エクスポート → `load<Plugin>WorkerPeer` へ変換
   - `import type` を追加し、型安全にする
 - [ ] folder/resolver プラグインで codemod を試験適用（resolver 完了、folder 未着手）
@@ -38,11 +38,11 @@
   - やること: Dexie 利用有無の判断、必要なら loader 追加・ModuleLoader 更新
 
 ## Phase 3: 全プラグイン展開
-- [ ] `scripts/` 配下のユーティリティ (start-env.sh, dep-fence, codemod runner など) を新しい import/プラグイン構成に合わせて更新
+- [ ] `scripts/` 配下のユーティリティ (env_vite.sh, dep-fence, codemod runner など) を新しい import/プラグイン構成に合わせて更新
 - [ ] `knip.json` / `knip.*` の未使用判定設定を調整し、新構成のエントリを検出対象に追加
 - [ ] 共通ビルド/設定ファイル (`tsup.*`, `vitest.config.ts`, `eslint.config`, `dep-fence.config` 等) を見直し、runtime/プラグイン構成変化に追随
 - [ ] プラグイン全体へ codemod を適用（basemap / styler / spreadsheet / route / timeline 等）
-  - 参考資料: `packages/plugins/dialog-impl-status.md`、`scripts/codemods/migrate-plugin-worker.ts`
+  - 参考資料: `packages/plugins/dialog-impl-status.md`（codemod の後継は未決定）
   - やること: 未適用プラグインの洗い出し、dry-run 記録、適用順序の策定
 - [ ] 旧再エクスポートの削除と型エクスポート (`worker-public-plugin-definition.ts`) の整備
 - [ ] `pnpm -r typecheck` と主要テストスイートを実行

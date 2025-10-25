@@ -16,15 +16,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
     "coverage": "vitest run --coverage",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "clean": "rm -rf dist",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "clean": "rm -rf dist"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -106,52 +102,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "type": "module",
-  "tsup": {
-    "external": [
-      "@dnd-kit/core",
-      "@dnd-kit/core/*",
-      "@dnd-kit/modifiers",
-      "@dnd-kit/modifiers/*",
-      "@dnd-kit/sortable",
-      "@dnd-kit/sortable/*",
-      "@dnd-kit/utilities",
-      "@dnd-kit/utilities/*",
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/ui-icon",
-      "@hierarchidb/ui-icon/*",
-      "@hierarchidb/ui-theme",
-      "@hierarchidb/ui-theme/*",
-      "@hierarchidb/ui-treeconsole-breadcrumb",
-      "@hierarchidb/ui-treeconsole-breadcrumb/*",
-      "@hierarchidb/ui-treeconsole-footer",
-      "@hierarchidb/ui-treeconsole-footer/*",
-      "@hierarchidb/ui-treeconsole-toolbar",
-      "@hierarchidb/ui-treeconsole-toolbar/*",
-      "@hierarchidb/ui-treeconsole-trashbin",
-      "@hierarchidb/ui-treeconsole-trashbin/*",
-      "@hierarchidb/ui-treeconsole-treetable",
-      "@hierarchidb/ui-treeconsole-treetable/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "@tanstack/react-table",
-      "@tanstack/react-table/*",
-      "@tanstack/react-virtual",
-      "@tanstack/react-virtual/*",
-      "comlink",
-      "jotai",
-      "react",
-      "react-dom",
-      "rxjs"
-    ]
-  }
+  "type": "module"
 }

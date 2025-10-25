@@ -43,17 +43,13 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --watch",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts --splitting false",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
-    "typecheck": "tsc -b tsconfig.build.json",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "dev:tsc": "tsc --watch",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "dev:tsc": "tsc --watch"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -68,10 +64,10 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
@@ -93,10 +89,10 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/runtime-plugin-dialog": "workspace:*",
+    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/runtime-basic-info": "workspace:*",
+    "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
@@ -119,7 +115,7 @@
       "name": "Folder Plugin",
       "icon": {
         "mui": "Folder",
-        "emoji": "📁",
+        "emoji": "\ud83d\udcc1",
         "color": "#c0eeff"
       },
       "priority": 1000,
@@ -149,56 +145,7 @@
       }
     }
   },
-  "tsup": {
-    "external": [
-      "@emotion/react",
-      "@emotion/react/*",
-      "@emotion/styled",
-      "@emotion/styled/*",
-      "@hierarchidb/common-api",
-      "@hierarchidb/common-api/*",
-      "@hierarchidb/common-types",
-      "@hierarchidb/common-types/*",
-      "@hierarchidb/components",
-      "@hierarchidb/components/*",
-      "@hierarchidb/plugin-types",
-      "@hierarchidb/plugin-types/*",
-      "@hierarchidb/plugin-ui-sdk",
-      "@hierarchidb/plugin-ui-sdk/*",
-      "@hierarchidb/runtime-basic-info",
-      "@hierarchidb/runtime-basic-info/*",
-      "@hierarchidb/runtime-client",
-      "@hierarchidb/runtime-client/*",
-      "@hierarchidb/runtime-plugin-dialog",
-      "@hierarchidb/runtime-plugin-dialog/*",
-      "@hierarchidb/runtime-worker",
-      "@hierarchidb/runtime-worker/*",
-      "@hierarchidb/tag",
-      "@hierarchidb/tag/*",
-      "@hierarchidb/ui-dialog",
-      "@hierarchidb/ui-dialog/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*",
-      "@mui/icons-material",
-      "@mui/icons-material/*",
-      "@mui/material",
-      "@mui/material/*",
-      "dexie",
-      "i18next",
-      "react",
-      "react-i18next"
-    ]
-  },
   "turbo": {
-    "pipeline": {
-      "typecheck": {
-        "dependsOn": [
-          "@hierarchidb/runtime-worker#build",
-          "@hierarchidb/runtime-plugin-dialog#build",
-          "@hierarchidb/runtime-basic-info#build",
-          "@hierarchidb/plugin-ui-sdk#build"
-        ]
-      }
-    }
+    "pipeline": {}
   }
 }

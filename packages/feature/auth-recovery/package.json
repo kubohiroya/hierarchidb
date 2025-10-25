@@ -7,28 +7,16 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "pnpm run clean && pnpm run build:types && pnpm run build:bundle",
-    "clean": "rm -rf dist",
-    "typecheck": "tsc -b tsconfig.build.json",
-    "build:types": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts-only",
-    "build:bundle": "NODE_OPTIONS=\"--loader ts-node/esm\" tsup --dts=false --no-clean"
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "clean": "rm -rf dist"
   },
   "peerDependencies": {
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/util": "workspace:*"
   },
   "devDependencies": {
-    "tsup": "^8.5.0",
     "typescript": "workspace:^5.9.3",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/util": "workspace:*"
-  },
-  "tsup": {
-    "external": [
-      "@hierarchidb/common-auth",
-      "@hierarchidb/common-auth/*",
-      "@hierarchidb/util",
-      "@hierarchidb/util/*"
-    ]
   }
 }

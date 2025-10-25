@@ -70,7 +70,11 @@ graph LR
   end
   subgraph tools
     N40["@hierarchidb/analyze-licenses"]
-    N41["@hierarchidb/tools-vite-plugin-package-reader"]
+    N41["@hierarchidb/tools-codemods"]
+    N72["@hierarchidb/tools-dev-scripts"]
+    N73["@hierarchidb/tools-plugin-manifest-loader"]
+    N74["@hierarchidb/tools-schemas"]
+    N75["@hierarchidb/vite-plugin-hierarchidb-plugin-alias"]
   end
   subgraph ui
     N42["@hierarchidb/ui-accordion-config"]
@@ -316,6 +320,7 @@ graph LR
   N71 --> N66
   N71 --> N69
   N71 --> N49
+  N71 --> N75
   class N71 app;
   class N20 plugin;
   class N21 plugin;

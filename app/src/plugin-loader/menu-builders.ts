@@ -1,6 +1,6 @@
 /**
  * Build MenuItem arrays for TreeConsole SpeedDial/Menu based on plugin definitions.
- * Sources: @hierarchidb/plugin-registry (generated at build time)
+ * Sources: ~/plugin-registry (generated at build time)
  */
 
 import type { TreeId } from '@hierarchidb/common-types';

@@ -19,7 +19,7 @@ cp-routing フローの UI E2E テスト（`e2e/cp-routing-wc-flow.spec.ts`）�
    - `playwright.config.ts` の設定により、テスト実行時に `@hierarchidb/app` のビルドと `preview` サーバー起動が自動的に行われます（初回は数分かかることがあります）。
    - 既に `pnpm --filter @hierarchidb/app preview` などでプレビューサーバーを起動済みの場合は、別ターミナルでプレビューを維持したまま `PLAYWRIGHT_SKIP_WEBSERVER=1 pnpm exec playwright test ...` とするとビルドを省略できます。
    - 進捗を細かく確認したいときは `DEBUG=pw:webserver` を付けて実行すると、Playwright が webServer のライフサイクルをログ出力します。
-   - 長時間静止しているように見える場合は、ビルド状況の進行ログが `scripts/prebuild-app.mjs` から数十秒ごとに出力されます。追加の可視化が必要であれば `PLAYWRIGHT_SKIP_WEBSERVER=1` + 既存サーバー流用を検討してください。
+  - 長時間静止しているように見える場合は、Turborepo が依存ビルドの進行ログを数十秒ごとに出力します。追加の可視化が必要であれば `PLAYWRIGHT_SKIP_WEBSERVER=1` + 既存サーバー流用を検討してください。
 
 2. デバッグ目的でブラウザを表示したい場合は `--headed` オプションを付与してください。
 
@@ -30,18 +30,17 @@ cp-routing フローの UI E2E テスト（`e2e/cp-routing-wc-flow.spec.ts`）�
 ## DOM 安定化とフラグ初期化について
 
 - テストは `e2e/utils/test-helpers.ts` の `waitForTreeTableLoad` / `waitForSubTreeUpdate` / `waitForWorkingCopyUpdate` を利用しており、TreeTable の描画や Working Copy 同期が完了するまで待機します。必要に応じて `waitForSubTreeUpdate(page, timeout)` のタイムアウト値をシナリオ側で拡張できます。
-- Worker フラグの override は `resetWorkerFlagOverrides` で初期化され、`configureWorkerCmdprocOverride` を通じてローカルストレージと Node.js 側の環境変数へ揃えて適用されます。cp-routing フローの spec には `beforeEach` での初期化が組み込まれているため追加の作業は不要です。
+- runtime-worker の CommandProcessor ルーティングは既定で常時有効になっているため、事前のフラグ設定や localStorage 初期化は不要です。
 
 ## よくあるトラブル
 
 - **ブラウザが見つからないエラー**: Playwright ブラウザを再インストールしてください（`pnpm exec playwright install --with-deps chromium`）。
 - **ポート競合**: 既に `http://localhost:4173` が使用されている場合は手動で停止するか、`PLAYWRIGHT_SKIP_WEBSERVER=1` を指定して既存サーバーを流用してください。
-- **データ汚染**: TreeTable の状態が想定と異なる場合は `resetWorkerFlagOverrides(page)` が呼ばれていることを確認し、必要に応じてテスト冒頭で `clearTestData(page)` を追加してください。
+- **データ汚染**: TreeTable の状態が想定と異なる場合は `clearTestData(page)` を用いて初期化し、必要に応じて追加の待機ヘルパーを組み合わせてください。
 - **進行状況が見えない**: `DEBUG=pw:webserver` を付けて実行すると Playwright の webServer 管理ログが表示されます。さらに `pnpm --filter @hierarchidb/app preview` を別ターミナルで起動し、本コマンドでは `PLAYWRIGHT_SKIP_WEBSERVER=1` を指定すると無音時間を避けられます。
 
 ## 参考
 
 - `e2e/cp-routing-wc-flow.spec.ts`
 - `e2e/utils/test-helpers.ts`
-- `app/src/config/worker-flag-overrides.ts`
 - WFL（Worker Fake IndexedDB）連携: [runtime-worker WFL シナリオ実行ガイド](./runtime-worker-wfl.md)

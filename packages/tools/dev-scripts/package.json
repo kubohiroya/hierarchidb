@@ -1,0 +1,26 @@
+{
+  "name": "@hierarchidb/tools-dev-scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown src/env-vite.ts src/gen-plugin-loaders.ts src/prepare-gh-pages-build.ts src/sync-peer-dependencies.ts src/tsconfig-set-nodenext.ts --config ../../../tsdown.config.ts --clean --splitting false",
+    "gen-plugin-loaders": "pnpm run build && node dist/gen-plugin-loaders.js",
+    "sync-peer-dependencies": "pnpm run build && node dist/sync-peer-dependencies.js",
+    "fix-spa-build": "pnpm run build && node dist/env-vite.js",
+    "tsconfig:set-nodenext": "pnpm run build && node dist/tsconfig-set-nodenext.js"
+  },
+  "dependencies": {
+    "globby": "workspace:^14.1.0",
+    "typescript": "workspace:^5.9.3",
+    "vite": "workspace:^6.3.5",
+    "@hierarchidb/tools-plugin-manifest-loader": "workspace:^0.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "workspace:^18.19.123"
+  }
+}
