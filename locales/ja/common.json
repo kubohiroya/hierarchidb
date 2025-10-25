@@ -23,6 +23,63 @@
       }
     }
   },
+  "plugins": {
+    "noDependencies": "依存関係はありません",
+    "details": "プラグイン詳細",
+    "fields": {
+      "package": "パッケージ",
+      "description": "説明",
+      "dependencies": "依存関係",
+      "menuGroup": "メニューグループ"
+    },
+    "actions": {
+      "reset": "プラグインをリセット",
+      "delete": "プラグインを削除",
+      "deleteDisabled": "削除（コアプラグインのため無効）"
+    },
+    "corePlugin": "コアプラグイン",
+    "corePluginMessage": "このプラグインは他のすべてのプラグインの基盤となるため削除できません。",
+    "folder": {
+      "name": "フォルダー",
+      "description": "ノードを整理するフォルダーを作成します。"
+    },
+    "basemap": {
+      "name": "ベースマップ",
+      "description": "ベースマップレイヤーを管理し、地理のコンテキストを提供します。"
+    },
+    "shape": {
+      "name": "シェイプ",
+      "description": "地理形状データセットを処理して可視化します。"
+    },
+    "location": {
+      "name": "ロケーション",
+      "description": "場所情報を取得し、シェイプと統合して管理します。"
+    },
+    "route": {
+      "name": "ルート",
+      "description": "地点間のルートを生成し、進捗を監視します。"
+    },
+    "spreadsheet": {
+      "name": "スプレッドシート",
+      "description": "表形式データソースを取り込み、後続処理の基盤を作ります。"
+    },
+    "styler": {
+      "name": "スタイラー",
+      "description": "可視化用のスタイルルールとカラーパレットを定義します。"
+    },
+    "resolver": {
+      "name": "リゾルバー",
+      "description": "データの衝突を解決し、属性をマッピングします。"
+    },
+    "linker": {
+      "name": "リンカー",
+      "description": "コンパイル済みリソースをプロジェクトやマップに結び付けます。"
+    },
+    "timeline": {
+      "name": "タイムライン",
+      "description": "タイムライン型プロジェクトを管理し、進行状況を追跡します。"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "すべて選択",
