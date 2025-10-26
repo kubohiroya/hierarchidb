@@ -5,11 +5,10 @@ import dts from 'vite-plugin-dts';
 import * as fs from 'node:fs';
 import * as path from 'path';
 import { readFileSync } from 'node:fs';
-import { faviconPlugin } from './vite-plugin-favicon.js';
+import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-hierarchidb-plugin-alias';
-// import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
+import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
 
 type AliasEntry = { find: string; replacement: string };
 

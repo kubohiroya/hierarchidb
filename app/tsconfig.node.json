@@ -16,7 +16,8 @@
   },
   "include": [
     "vite.config.ts",
-    "vite-plugin-*.ts"
+    "vite-plugin-*.ts",
+    "vite-plugins/**/*.ts"
   ],
   "extends": "../tsconfig.base.json"
 }

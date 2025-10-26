@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
-import { collectAliasEntries } from './packages/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
+import { collectAliasEntries } from './app/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias';
 
 const nodeTypeAliasEntries = collectAliasEntries(__dirname, ['root', 'ui', 'worker', 'database', 'common']);
 

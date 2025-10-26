@@ -4,6 +4,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "noEmit": true,
+    "outDir": "dist",
     "incremental": false,
     "composite": false,
     "moduleResolution": "NodeNext",
