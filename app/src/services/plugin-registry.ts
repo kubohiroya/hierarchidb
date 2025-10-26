@@ -1,11 +1,8 @@
 import {
   pluginRegistry,
-  type PluginManifest,
-  type PluginRegistryEntry,
-  type PluginIconConfig,
-  type PluginCategoryConfig,
-} from '~/plugin-registry/index.js';
+} from '../plugin-registry/index.js';
 import appPackageJson from '../../package.json' with { type: 'json' };
+import { PluginCategoryConfig, PluginIconConfig, PluginManifest, PluginRegistryEntry } from '../plugin-registry/types.ts';
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;

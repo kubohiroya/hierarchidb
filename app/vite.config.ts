@@ -9,7 +9,7 @@ import { faviconPlugin } from './vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { createNodeTypeAliasPlugin } from '@hierarchidb/vite-plugin-hierarchidb-plugin-alias';
-import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
+// import { generatePluginRegistry } from '../scripts/generate-plugin-loader.mjs';
 
 type AliasEntry = { find: string; replacement: string };
 
@@ -43,12 +43,13 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/src/index.ts', { exclude: true });
 
-    const pluginRoot = path.resolve(rootDir, '../packages/plugin-loader');
-    if (fs.existsSync(pluginRoot)) {
-      const workerCandidates = ['src/worker/factory/index.ts', 'src/worker-factory/index.ts', 'src/worker-factory.ts'];
+    const pluginPkgRoot = path.resolve(rootDir, '../packages/plugins');
+    if (fs.existsSync(pluginPkgRoot)) {
+      const workerFactoryCandidates = ['src/worker/factory/index.ts', 'src/worker-factory/index.ts', 'src/worker-factory.ts'];
+      const workerEntryCandidates = ['src/worker/index.ts', 'src/worker.ts'];
       const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
 
-      for (const entry of fs.readdirSync(pluginRoot, { withFileTypes: true })) {
+      for (const entry of fs.readdirSync(pluginPkgRoot, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
         if (!entry.name.endsWith('-plugin')) continue;
 
@@ -63,9 +64,14 @@ function createRuntimeAliasConfig({
           return null;
         };
 
-        const workerRel = resolveCandidate(workerCandidates);
-        if (workerRel) {
-          addAlias(`${specBase}/worker-factory`, workerRel, { exclude: true });
+        const workerFactoryRel = resolveCandidate(workerFactoryCandidates);
+        if (workerFactoryRel) {
+          addAlias(`${specBase}/worker-factory`, workerFactoryRel, { exclude: true });
+        }
+
+        const workerEntryRel = resolveCandidate(workerEntryCandidates);
+        if (workerEntryRel) {
+          addAlias(`${specBase}/worker`, workerEntryRel, { exclude: true });
         }
 
         const uiRel = resolveCandidate(uiCandidates);
@@ -80,6 +86,27 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.ts', { exclude: true });
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.ts', { exclude: true });
     addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true });
+
+    const pluginPkgRoot = path.resolve(rootDir, '../packages/plugins');
+    if (fs.existsSync(pluginPkgRoot)) {
+      for (const entry of fs.readdirSync(pluginPkgRoot, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        if (!entry.name.endsWith('-plugin')) continue;
+
+        const pluginName = entry.name;
+        const specBase = `@hierarchidb/${pluginName}`;
+        const workerDistRel = `../packages/plugins/${pluginName}/dist/worker/index.js`;
+        const workerDistAbs = path.resolve(rootDir, workerDistRel);
+        if (fs.existsSync(workerDistAbs)) {
+          addAlias(`${specBase}/worker`, workerDistRel);
+        }
+        const uiDistRel = `../packages/plugins/${pluginName}/dist/ui/index.js`;
+        const uiDistAbs = path.resolve(rootDir, uiDistRel);
+        if (fs.existsSync(uiDistAbs)) {
+          addAlias(`${specBase}/ui`, uiDistRel);
+        }
+      }
+    }
   }
 
   return {
@@ -96,7 +123,7 @@ let pluginRegistryGenerationQueue: Promise<unknown> = Promise.resolve();
 
 function enqueuePluginRegistryGeneration() {
   pluginRegistryGenerationQueue = pluginRegistryGenerationQueue
-    .then(() => generatePluginRegistry())
+    //.then(() => generatePluginRegistry())
     .catch((error) => {
       console.error('[plugin-registry-generator] Failed to regenerate registry', error);
     });

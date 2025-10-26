@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
 import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
@@ -7,7 +7,6 @@ import { CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { AppThemeProvider } from '../../components/AppThemeProvider.js';
-import { registerTableStateCleanupEvents } from '../../shared/table-state.js';
 import { LanguageEventsBridge } from '../../components/LanguageEventsBridge.js';
 import { NotificationSystem } from '@hierarchidb/components';
 import { WorkerProvider } from '../../contexts/WorkerProvider.js';
@@ -25,9 +24,6 @@ import {
  * This component abstracts all the shared context providers needed by the application
  */
 export function AppProviders({ children }: { children: ReactNode }) {
-  useEffect(() => {
-    registerTableStateCleanupEvents();
-  }, []);
 
   return (
     <BootProgressProvider>

@@ -10,6 +10,8 @@
     "noUnusedParameters": false,
     "strictNullChecks": false,
     "noImplicitAny": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "~/*": [
         "./src/*"

@@ -24,7 +24,8 @@ for (let i = 0; i < args.length; i++) {
   else if (a === '--include-tests') includeTests = true;
   else if (a === '--roots') {
     i++;
-    for (; i < args.length && !args[i].startsWith('--'); i++) roots.push(args[i]);
+    for (; i < args.length && !args[i]?.startsWith('--'); i++) roots.push(args[i] as string);
+    i--;
     i--;
   }
 }
@@ -36,7 +37,7 @@ if (!includeStories) IGNORE.push('**/*.stories.*');
 const EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.json', '.mjs', '.cjs']);
 
 const patterns = roots.map((r) => `${r}/**/*.{ts,tsx}`);
-const files = await globby(patterns, { ignore: IGNORE });
+const files = await globby.globby(patterns, { ignore: IGNORE });
 
 let changedFiles = 0;
 let changedImports = 0;

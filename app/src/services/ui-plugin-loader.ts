@@ -1,9 +1,16 @@
-import type { PluginDefinition, PluginLoaderMap, PluginRegistryEntry } from '~/plugin-registry/index.js';
-import { pluginDefinitions, pluginMapUI } from '~/plugin-registry/index.js';
+import { getPluginRegistryContainer } from '../plugin-registry/di/container.js';
+import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.js';
+import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.js';
+import { PluginDefinition } from '../plugin-registry/types.ts';
 
 type DefinitionWithDeps = PluginDefinition & {
   dependencies?: string[];
 };
+
+const container = getPluginRegistryContainer();
+
+const getModuleLoader = (): PluginUiModuleLoader =>
+  container.get<PluginUiModuleLoader>(UIPluginRegistryTokens.PluginUiModuleLoader);
 
 const loadedPlugins = new Set<string>();
 let allLoaded = false;
@@ -17,7 +24,7 @@ const logWarning = (message: string, error?: unknown) => {
   }
 };
 
-const asDefinitions = (defs: PluginDefinition[] | PluginRegistryEntry[]): DefinitionWithDeps[] => {
+const asDefinitions = (defs: PluginDefinition[]): DefinitionWithDeps[] => {
   return defs.map((def) => ({
     ...def,
     dependencies: Array.isArray(def.dependencies) ? def.dependencies : [],
@@ -56,10 +63,11 @@ const topoSortByDependencies = (defs: DefinitionWithDeps[]): string[] => {
 };
 
 const getDefinitions = (): DefinitionWithDeps[] => {
-  if (Array.isArray(pluginDefinitions) && pluginDefinitions.length > 0) {
-    return asDefinitions(pluginDefinitions);
+  const defs = container.get<PluginDefinition[]>(UIPluginRegistryTokens.PluginDefinitions);
+  if (!Array.isArray(defs) || defs.length === 0) {
+    return [];
   }
-  return [];
+  return asDefinitions(defs);
 };
 
 const getLoadOrder = (): string[] => {
@@ -67,14 +75,9 @@ const getLoadOrder = (): string[] => {
   return topoSortByDependencies(defs);
 };
 
-const getLoaderMap = (): PluginLoaderMap => {
-  return (pluginMapUI ?? {}) as PluginLoaderMap;
-};
-
 export async function loadUIPlugin(nodeType: string): Promise<boolean> {
-  const loaders = getLoaderMap();
-  const loader = loaders[nodeType];
-  if (typeof loader !== 'function') {
+  const moduleLoader = getModuleLoader();
+  if (!moduleLoader.has(nodeType)) {
     logWarning(`No UI loader found for nodeType ${nodeType}`);
     return false;
   }
@@ -82,7 +85,7 @@ export async function loadUIPlugin(nodeType: string): Promise<boolean> {
     return true;
   }
   try {
-    await loader();
+    await moduleLoader.loadModule(nodeType);
     loadedPlugins.add(nodeType);
     return true;
   } catch (error) {

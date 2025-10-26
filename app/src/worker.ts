@@ -5,11 +5,13 @@
 
 import './worker-react-refresh-shim.js';
 import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-client';
-import type { PluginDefinition } from '~/plugin-registry/types.js';
 import {
-  pluginDefinitions as staticPluginDefinitions,
-  pluginMapWorker as staticPluginMapWorker,
-} from '~/plugin-registry/index.js';
+  getWorkerContainer,
+  WorkerDiTokens,
+  type PluginWorkerModuleLoader,
+} from '@hierarchidb/runtime-worker';
+import type { PluginDefinition } from '~/plugin-registry/types.js';
+import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-registry/index.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -24,8 +26,6 @@ type ManualPluginSelf = typeof self & {
 type WorkerMessagePort = typeof self & {
   postMessage?: (msg: unknown) => void;
 };
-
-type PluginLoaderMap = Record<string, () => Promise<unknown>>;
 
 type RuntimeWorkerServices = {
   ping: () => unknown;
@@ -96,9 +96,7 @@ reporter.reportStepProgress('Load Comlink', 0);
       pluginDefinitions.push(...legacyDefs);
     }
 
-    const pluginMap: PluginLoaderMap = { ...staticPluginMapWorker };
-
-    // Note: Legacy workerModuleLoaders are no longer generated; pluginMapWorker now provides all loaders.
+    // Note: Legacy workerModuleLoaders are no longer generated; the DI-provided moduleLoader now resolves plugin bundles.
 
     const denyEnv = typeof import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY === 'string'
       ? import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY
@@ -111,17 +109,21 @@ reporter.reportStepProgress('Load Comlink', 0);
     );
 
     const moduleEntries: Array<{ nodeType: string; mod: unknown }> = [];
+    const workerContainer = getWorkerContainer();
+    const moduleLoader = workerContainer.get<PluginWorkerModuleLoader>(
+      WorkerDiTokens.PluginWorkerModuleLoader,
+    );
+
     for (const definition of pluginDefinitions) {
       const nodeType = definition?.nodeType;
       if (!nodeType || denyList.has(nodeType)) {
         continue;
       }
-      const loader = pluginMap[nodeType];
-      if (typeof loader !== 'function') {
+      if (!moduleLoader.has(nodeType)) {
         continue;
       }
       try {
-        const mod = await loader();
+        const mod = await moduleLoader.importModule(nodeType);
         moduleEntries.push({ nodeType, mod });
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);

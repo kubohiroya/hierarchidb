@@ -270,7 +270,7 @@ UI 側ユーティリティでは、`~/plugin-registry` の `pluginDefinitions` 
 
 ### プラグイン登録（ランタイム）
 
-ビルド後、UI/Worker は `pluginMapUI` / `pluginMapWorker`（いずれも `~/plugin-registry` で公開）を通じて動的 import を行い、
+ビルド後、UI/Worker は `pluginUiModuleMap` / `pluginWorkerModuleMap` を Inversify コンテナ経由で解決して動的 import を行い、
 必要なサービス/ハンドラを登録します（`WorkerService.getSingleton(defs)`）。
 
 #### サンプル（最小）

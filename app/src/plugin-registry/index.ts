@@ -1,9 +1,11 @@
 // AUTO-GENERATED entrypoint for HierarchiDB plugin registry.
 // The contents of ./generated/* are written by scripts/generate-plugin-loader.mjs.
 
+/*
 export type {
   PluginDefinition,
-  PluginLoaderMap,
+  PluginModuleSpecifierMap,
+  PluginLoaderFactoryMap,
   PluginRegistryEntry,
   PluginRegistrySnapshot,
   PluginManifest,
@@ -13,4 +15,11 @@ export type {
   PluginManifestSchema,
   PluginCapabilities,
 } from './types';
-export { pluginDefinitions, pluginRegistry, pluginMapUI, pluginMapWorker } from './generated/index.js';
+ */
+export {
+  pluginDefinitions,
+  pluginRegistry,
+  pluginUiModuleMap,
+  pluginUiLoaders,
+  pluginWorkerModuleMap,
+} from './generated/index.js';

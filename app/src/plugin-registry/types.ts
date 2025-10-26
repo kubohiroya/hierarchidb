@@ -77,11 +77,13 @@ export interface PluginRegistryEntry {
   manifest: PluginManifest | null;
 }
 
-export type PluginLoaderMap = Record<string, () => Promise<unknown>>;
+export type PluginModuleSpecifierMap = Record<string, string>;
+export type PluginLoaderFactoryMap = Record<string, () => Promise<unknown>>;
 
 export interface PluginRegistrySnapshot {
   pluginDefinitions: PluginDefinition[];
   pluginRegistry: PluginRegistryEntry[];
-  pluginMapUI: PluginLoaderMap;
-  pluginMapWorker: PluginLoaderMap;
+  pluginUiModuleMap: PluginModuleSpecifierMap;
+  pluginUiLoaders: PluginLoaderFactoryMap;
+  pluginWorkerModuleMap: PluginModuleSpecifierMap;
 }

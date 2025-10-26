@@ -14,7 +14,10 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import { pluginDefinitions, pluginMapUI as pluginMap } from '~/plugin-registry/index.js';
+import { getPluginRegistryContainer } from '../plugin-registry/di/container.js';
+import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.js';
+import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.js';
+import { PluginDefinition } from '../plugin-registry/types.ts';
 
 type PluginDefinitionVM = {
   nodeType: string;
@@ -25,6 +28,17 @@ type PluginDefinitionVM = {
   priority: number;
   dependencies: string[];
 };
+
+const container = getPluginRegistryContainer();
+
+const getDefinitions = (): PluginDefinitionVM[] => {
+  const defs = container.get<PluginDefinition[]>(UIPluginRegistryTokens.PluginDefinitions);
+  if (!Array.isArray(defs)) return [];
+  return defs as PluginDefinitionVM[];
+};
+
+const getModuleLoader = (): PluginUiModuleLoader =>
+  container.get<PluginUiModuleLoader>(UIPluginRegistryTokens.PluginUiModuleLoader);
 
 /**
  * @deprecated
@@ -74,17 +88,17 @@ function topoSortByDependencies(defs: PluginDefinitionVM[]): string[] {
 export async function autoLoadPlugins(): Promise<PluginLoadResult> {
   console.log('🔍 Auto-discovering plugin-loader via plugin registry...');
 
-  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const defs = getDefinitions();
   const loadOrder = topoSortByDependencies(defs);
+  const moduleLoader = getModuleLoader();
 
   // Dynamically import in dependency order to ensure side effects register correctly
   for (const nodeType of loadOrder) {
-    const loader = (pluginMap as Record<string, () => Promise<unknown>>)[nodeType];
-    if (typeof loader === 'function') {
-      await loader();
-    } else {
+    if (!moduleLoader.has(nodeType)) {
       console.warn(`⚠️ No loader found for plugin: ${nodeType}`);
+      continue;
     }
+    await moduleLoader.loadModule(nodeType);
   }
 
   console.log('✨ All plugin-loader loaded successfully!');
@@ -99,7 +113,7 @@ export async function autoLoadPlugins(): Promise<PluginLoadResult> {
  * @deprecated
  */
 export function getDiscoveredPlugins(): NodeType[] {
-  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const defs = getDefinitions();
   return defs.map((d) => d.nodeType as NodeType);
 }
 
@@ -108,7 +122,7 @@ export function getDiscoveredPlugins(): NodeType[] {
  * @deprecated
  */
 export async function getPluginLoadPlan(): Promise<PluginLoadResult> {
-  const defs = (pluginDefinitions as PluginDefinitionVM[]) || [];
+  const defs = getDefinitions();
   const loadOrder = topoSortByDependencies(defs);
   return {
     plugins: defs.map((d) => d.nodeType),

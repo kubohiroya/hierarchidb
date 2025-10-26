@@ -107,7 +107,7 @@ export function TreeTableRows({
             onClick={(e) => e.stopPropagation()}
           />
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px` }}>
+        <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px, paddingLeft: '4px'` }}>
           <NameCell>
             <IndentSpace depth={Math.max(0, ((node.depth || 0) + depthOffset) - 1)} />
             <Box
@@ -119,7 +119,7 @@ export function TreeTableRows({
             </Box>
           </NameCell>
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px` }}>
+        <TableCell sx={{ width: `${columnWidths.description}px`, minWidth: `${columnWidths.description}px`, maxWidth: `${columnWidths.description}px`, paddingLeft: '4px' }}>
           {node.description || '-'}
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.createdAt}px`, minWidth: `${columnWidths.createdAt}px`, maxWidth: `${columnWidths.createdAt}px` }}>
@@ -134,7 +134,7 @@ export function TreeTableRows({
             );
           })()}
         </TableCell>
-        <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px` }}>
+        <TableCell sx={{ width: `${columnWidths.updatedAt}px`, minWidth: `${columnWidths.updatedAt}px`, maxWidth: `${columnWidths.updatedAt}px`, paddingLeft: '4px' }}>
           {(() => {
             const v = node.updatedAt;
             if (!v) return '-';

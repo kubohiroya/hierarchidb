@@ -205,7 +205,20 @@ export const pluginRegistry = [
   },
 ];
 
-export const pluginMapUI = {
+export const pluginUiModuleMap: Record<string, string> = {
+  "basemap": "@hierarchidb/basemap-plugin/ui",
+  "folder": "@hierarchidb/folder-plugin/ui",
+  "location": "@hierarchidb/location-plugin/ui",
+  "linker": "@hierarchidb/linker-plugin/ui",
+  "route": "@hierarchidb/route-plugin/ui",
+  "shape": "@hierarchidb/shape-plugin/ui",
+  "resolver": "@hierarchidb/resolver-plugin/ui",
+  "spreadsheet": "@hierarchidb/spreadsheet-plugin/ui",
+  "styler": "@hierarchidb/styler-plugin/ui",
+  "timeline": "@hierarchidb/timeline-plugin/ui",
+};
+
+export const pluginUiLoaders: Record<string, () => Promise<unknown>> = {
   "basemap": () => import('@hierarchidb/basemap-plugin/ui'),
   "folder": () => import('@hierarchidb/folder-plugin/ui'),
   "location": () => import('@hierarchidb/location-plugin/ui'),
@@ -218,15 +231,28 @@ export const pluginMapUI = {
   "timeline": () => import('@hierarchidb/timeline-plugin/ui'),
 };
 
-export const pluginMapWorker = {
-  "basemap": () => import('@hierarchidb/basemap-plugin/worker') as Promise<typeof import('@hierarchidb/basemap-plugin/worker')>,
-  "folder": () => import('@hierarchidb/folder-plugin/worker') as Promise<typeof import('@hierarchidb/folder-plugin/worker')>,
-  "location": () => import('@hierarchidb/location-plugin/worker') as Promise<typeof import('@hierarchidb/location-plugin/worker')>,
-  "linker": () => import('@hierarchidb/linker-plugin/worker') as Promise<typeof import('@hierarchidb/linker-plugin/worker')>,
-  "route": () => import('@hierarchidb/route-plugin/worker') as Promise<typeof import('@hierarchidb/route-plugin/worker')>,
-  "shape": () => import('@hierarchidb/shape-plugin/worker') as Promise<typeof import('@hierarchidb/shape-plugin/worker')>,
-  "resolver": () => import('@hierarchidb/resolver-plugin/worker') as Promise<typeof import('@hierarchidb/resolver-plugin/worker')>,
-  "spreadsheet": () => import('@hierarchidb/spreadsheet-plugin/worker') as Promise<typeof import('@hierarchidb/spreadsheet-plugin/worker')>,
-  "styler": () => import('@hierarchidb/styler-plugin/worker') as Promise<typeof import('@hierarchidb/styler-plugin/worker')>,
-  "timeline": () => import('@hierarchidb/timeline-plugin/worker') as Promise<typeof import('@hierarchidb/timeline-plugin/worker')>,
+export const pluginWorkerModuleMap: Record<string, string> = {
+  "basemap": "@hierarchidb/basemap-plugin/worker",
+  "folder": "@hierarchidb/folder-plugin/worker",
+  "location": "@hierarchidb/location-plugin/worker",
+  "linker": "@hierarchidb/linker-plugin/worker",
+  "route": "@hierarchidb/route-plugin/worker",
+  "shape": "@hierarchidb/shape-plugin/worker",
+  "resolver": "@hierarchidb/resolver-plugin/worker",
+  "spreadsheet": "@hierarchidb/spreadsheet-plugin/worker",
+  "styler": "@hierarchidb/styler-plugin/worker",
+  "timeline": "@hierarchidb/timeline-plugin/worker",
+};
+
+export const pluginWorkerSourceMap: Record<string, string> = {
+  "basemap": "plugins/basemap-plugin/src/worker/index.ts",
+  "folder": "plugins/folder-plugin/src/worker/index.ts",
+  "location": "plugins/location-plugin/src/worker/index.ts",
+  "linker": "plugins/linker-plugin/src/worker/index.ts",
+  "route": "plugins/route-plugin/src/worker/index.ts",
+  "shape": "plugins/shape-plugin/src/worker/index.ts",
+  "resolver": "plugins/resolver-plugin/src/worker/index.ts",
+  "spreadsheet": "plugins/spreadsheet-plugin/src/worker/index.ts",
+  "styler": "plugins/styler-plugin/src/worker/index.ts",
+  "timeline": "plugins/timeline-plugin/src/worker/index.ts",
 };

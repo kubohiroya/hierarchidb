@@ -2,9 +2,9 @@
 
 2025-10 時点で HierarchiDB のプラグインは **静的に生成されたレジストリ** を唯一の情報源とします。従来の Vite 仮想モジュール（`virtual:plugin-*`）は廃止され、以下の 3 つの成果物がビルド／実行時の両方で利用されます。
 
-1. `app/src/generated/worker-loader.ts` – Worker 側の EntitiesDB ローダーを nodeType 単位で束ねる。
-2. `app/src/generated/ui-loader.ts` – UI の副作用 import を依存順序で列挙し、先にロードすべきプラグインを制御する。
-3. `~/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginMapUI` / `pluginMapWorker` を公開するアプリ内モジュール。
+1. `app/src/generated/worker-loader.ts` – Worker 側で使用するプラグイン module specifier（`@hierarchidb/<plugin>/worker` など）を nodeType ごとに保持する。
+2. `app/src/generated/ui-loader.ts` – UI 向け module specifier を依存順序付きで列挙し、遅延ロードの計画を組み立てる。
+3. `~/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginUiModuleMap` / `pluginWorkerModuleMap` を公開し、InversifyJS コンテナから参照できるようにするアプリ内モジュール。
 
 これらは `scripts/generate-plugin-loader.mjs` が再生成します。アプリはレジストリの JSON スナップショットを直接読み、`import()` はすべて文字列リテラルなので Vite/Rollup が確実に解決します。
 
@@ -75,7 +75,12 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
 ## UI 実装の取り込み例
 ```ts
 // app/src/plugin-loader/auto-load.ts
-import { pluginDefinitions, pluginMapUI } from '~/plugin-registry';
+import { getPluginRegistryContainer } from '~/plugin-registry/di/container';
+import { UIPluginRegistryTokens } from '~/plugin-registry/di/tokens';
+
+const container = getPluginRegistryContainer();
+const pluginDefinitions = container.get(UIPluginRegistryTokens.PluginDefinitions);
+const moduleLoader = container.get(UIPluginRegistryTokens.PluginUiModuleLoader);
 
 const loadOrder = pluginDefinitions
   .map((d) => ({ nodeType: d.nodeType, priority: d.priority ?? 1000 }))
@@ -84,10 +89,8 @@ const loadOrder = pluginDefinitions
 
 export async function autoLoadPlugins(): Promise<void> {
   for (const nodeType of loadOrder) {
-    const loader = pluginMapUI[nodeType];
-    if (typeof loader === 'function') {
-      await loader();
-    }
+    if (!moduleLoader.has(nodeType)) continue;
+    await moduleLoader.loadModule(nodeType);
   }
 }
 ```
@@ -144,15 +147,18 @@ PluginStepRegistry.getInstance().registerConfigProvider<RouteData>({
 
 ## Worker 側の取り込み例
 ```ts
-import { pluginDefinitions, pluginMapWorker } from '~/plugin-registry';
+import { getWorkerContainer, WorkerDiTokens } from '@hierarchidb/runtime-worker';
+import { pluginDefinitions } from '~/plugin-registry';
 import { wirePluginsFromModules } from '@hierarchidb/runtime-client';
+
+const workerContainer = getWorkerContainer();
+const moduleLoader = workerContainer.get(WorkerDiTokens.PluginWorkerModuleLoader);
 
 const modules = await Promise.all(
   pluginDefinitions.map(async (definition) => {
-    const loader = pluginMapWorker[definition.nodeType];
-    if (typeof loader !== 'function') return null;
+    if (!moduleLoader.has(definition.nodeType)) return null;
     try {
-      const mod = await loader();
+      const mod = await moduleLoader.importModule(definition.nodeType);
       return { nodeType: definition.nodeType, mod };
     } catch (error) {
       console.warn('[worker] failed to load plugin worker', definition.nodeType, error);
@@ -161,7 +167,7 @@ const modules = await Promise.all(
   }),
 );
 
-await wirePluginsFromModules(modules.filter(Boolean) as Array<{ nodeType: string; mod: unknown }>);
+await wirePluginsFromModules(modules.filter((entry): entry is { nodeType: string; mod: unknown } => Boolean(entry)));
 ```
 
 ## アイコンマップ

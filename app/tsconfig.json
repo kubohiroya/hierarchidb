@@ -27,6 +27,8 @@
     "allowImportingTsExtensions": true,
     "module": "NodeNext",
     "noEmit": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
   },
   "include": [
     "src/**/*.ts",

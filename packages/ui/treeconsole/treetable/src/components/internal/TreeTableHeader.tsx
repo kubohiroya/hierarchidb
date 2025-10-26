@@ -36,6 +36,7 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
                   width: `${columnWidths[header.column.id]}px`,
                   minWidth: `${columnWidths[header.column.id]}px`,
                   maxWidth: `${columnWidths[header.column.id]}px`,
+                  paddingLeft: '4px',
                 }}
               >
                 {header.isPlaceholder ? null : (

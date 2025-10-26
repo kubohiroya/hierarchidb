@@ -24,7 +24,7 @@ function parseArgs(): Args {
     if (a === '--write' || a === '-w') out.write = true;
     else if (a === '--roots') {
       i++;
-      for (; i < args.length && !args[i].startsWith('--'); i++) out.roots.push(args[i]);
+      for (; i < args.length && !args[i]?.startsWith('--'); i++) out.roots.push(args[i] as string);
       i--;
     }
   }

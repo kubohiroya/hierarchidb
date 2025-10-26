@@ -6,7 +6,10 @@
  * registry emitted by scripts/generate-plugin-loader.mjs.
  */
 
-import { pluginMapWorker } from './generated/plugin-metadata.js';
+import { pluginWorkerModuleMap } from './generated/plugin-metadata.js';
+import { getWorkerContainer } from './di/container.js';
+import { WorkerDiTokens } from './di/tokens.js';
+import type { PluginWorkerModuleLoader } from './di/interfaces.js';
 
 export const RUNTIME_MODULE_IDS = {
   runtimeWorker: '@hierarchidb/runtime-worker',
@@ -22,7 +25,7 @@ export const OPTIONAL_FEATURE_MODULE_IDS = {
 // Keys are nodeType (e.g., 'basemap', 'folder', ...), and values echo the key.
 
 export const PLUGIN_WORKER_MODULE_IDS = Object.freeze(
-  Object.fromEntries(Object.keys(pluginMapWorker).map((k) => [k, k])) as Record<string, string>
+  Object.fromEntries(Object.keys(pluginWorkerModuleMap).map((k) => [k, k])) as Record<string, string>
 );
 
 export type OptionalFeatureId = keyof typeof OPTIONAL_FEATURE_MODULE_IDS;
@@ -81,9 +84,7 @@ export function getPluginWorkerModuleId(id: PluginWorkerId): string {
  */
 
 export function importPluginWorker<T extends PluginWorkerId>(id: T) {
-  const loader = (pluginMapWorker as Record<string, () => Promise<unknown>>)[id as string];
-  if (!loader) {
-    return Promise.reject(new Error(`[module-paths] Unknown plugin worker id: ${String(id)}`));
-  }
-  return loader() as Promise<PluginWorkerModule>;
+  const container = getWorkerContainer();
+  const loader = container.get<PluginWorkerModuleLoader>(WorkerDiTokens.PluginWorkerModuleLoader);
+  return loader.importModule<PluginWorkerModule>(id as string);
 }

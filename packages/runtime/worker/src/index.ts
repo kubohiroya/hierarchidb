@@ -28,6 +28,13 @@ import { WorkingCopyService } from './services/WorkingCopyService.js';
 import { DialogStateService } from './services/DialogStateService.js';
 import type { PluginDefinition } from '@hierarchidb/plugin-types';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
+export {
+  getWorkerContainer,
+  configureWorkerContainer,
+  resetWorkerContainerForTesting,
+} from './di/container.js';
+export { WorkerDiTokens } from './di/tokens.js';
+export type { PluginWorkerModuleLoader } from './di/interfaces.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;

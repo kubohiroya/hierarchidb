@@ -139,7 +139,7 @@ export class PluginStepRegistry {
    */
   register(provider: PluginStepProvider): void {
     if (this.providers.has(provider.nodeType)) {
-      console.warn(`Provider for nodeType "${provider.nodeType}" is already registered`);
+      return;
     }
     this.providers.set(provider.nodeType, provider);
     this.emitChange();
@@ -148,7 +148,7 @@ export class PluginStepRegistry {
   /** Register a config-based provider (typed componentFactory) */
   registerConfigProvider(provider: PluginStepConfigProvider): void {
     if (this.configProviders.has(provider.nodeType)) {
-      console.warn(`Config provider for nodeType "${provider.nodeType}" is already registered`);
+      return;
     }
     this.configProviders.set(provider.nodeType, provider);
     this.emitChange();

@@ -5,13 +5,12 @@
  * extracted dependencies from the integration hook.
  */
 
-import { showCommandError } from '~/shared/command-errors.js';
 import { convertTreeNodeToTreeNodeData } from '../../utils/treeNodeConverter.js';
-import { preconnectPluginServices } from '~/services/preconnect.js';
-import { buildVisibleRows, rebuildAdjacency } from '~/state/treeconsole.derive.js';
+import { preconnectPluginServices } from '../../services/preconnect.js';
+import { buildVisibleRows, rebuildAdjacency } from '../../state/treeconsole.derive.js';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
+import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleActionDeps, TreeConsoleActions, ContextAction } from './types.js';
 
 type ClipboardPayload = { nodeIds: NodeId[]; cut?: boolean };
@@ -35,6 +34,8 @@ function getSortContext(ssot: TreeConsoleSSOTEntry) {
   const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map<string, Set<string>>());
   return { nodesById, childrenByParent };
 }
+
+const showCommandError = console.error.bind(console, '[HDB] Command Error:');
 
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {
   const {
@@ -388,7 +389,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = node.name.trim();
-          const current = ssot.rawNodes.find((n) => n.id === node.id)?.name ?? '';
+          const current = ssot.rawNodes.find((n: TreeNode) => n.id === node.id)?.name ?? '';
           if (next === current) return;
           if (!next) { showCommandError('VALIDATION_ERROR', 'Name is required'); return; }
           if (next.length > 255) { showCommandError('VALIDATION_ERROR', 'Name is too long (max 255)'); return; }
@@ -412,7 +413,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = String(node.description ?? '').trim();
-          const current = ssot.rawNodes.find((n) => n.id === node.id)?.description ?? '';
+          const current = ssot.rawNodes.find((n: TreeNode) => n.id === node.id)?.description ?? '';
           if (next === current) return;
           if (next.length > 1000) { showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)'); return; }
           const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, description: next });

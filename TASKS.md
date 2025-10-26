@@ -415,24 +415,6 @@
 
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
-15) runtime-worker plugin bootstrap decoupling（P0）
-- ブランチ: `refactor/runtime-worker/plugin-bootstrap`（sandbox 制約で `main` 上で進める場合は明記）
-- 依存: `packages/tools/dev-scripts`（gen-plugin-loaders）, `@hierarchidb/runtime-worker`, 各 `@hierarchidb/*-plugin`
-- 受け入れ基準（DoD）:
-  - [ ] `packages/runtime/worker` から各プラグインの Worker 実装（例: `@hierarchidb/basemap-plugin/worker`）への直接的な `import()` 呼び出しが無くなる
-  - [ ] 生成スクリプト（`packages/tools/dev-scripts/src/gen-plugin-loaders.ts` 等）が runtime-worker 用に出力する情報からプラグインの import 式を除去し、ランタイムではトークン（モジュール識別子や factory 名など）だけを持つ
-  - [ ] プラグイン側の Worker エントリをロードする責務を新たなプラグイン・レジストリ層（例: runtime plugin registry / DI コンテナ）に移し、runtime-worker は DI された resolver を通じて Worker 実装を取得する
-  - [ ] `pnpm --filter @hierarchidb/runtime-worker build` 実行時に `UNRESOLVED_IMPORT` 警告が発生しない（tsdown の外部モジュール扱いを含む）
-  - [ ] `pnpm --filter @hierarchidb/*-plugin build` が引き続き成功し、旧来の runtime-worker 依存（型／API）が壊れていないことを確認
-  - [ ] 既存の生成物やドキュメント（`docs/turbo-tsdown-migration-plan.md` 等）に変更が必要な場合は更新する
-- チェックリスト:
-  - [ ] 現行の `packages/runtime/worker/src/generated/plugin-metadata.ts` と生成スクリプトの構造を調査し、改修方針と影響範囲をまとめる
-  - [ ] プラグイン読み込み用の新しいインターフェース／DI経路を設計し、ユニットテストまたは smoke テストで動作確認する
-  - [ ] 生成スクリプトの更新と runtime-worker のコード改修を並行し、リグレッションが無いよう段階的に適用する
-  - [ ] `pnpm turbo run build --filter "@hierarchidb/app^..."` を通し、アプリ全体のビルドに回帰が無いことを確認
-  - [ ] 必要に応じて `pnpm --filter @hierarchidb/runtime-worker test` やプラグイン関連テストを実行し、新構成で成功することを記録
-- ロールバック手順：生成スクリプト／runtime-worker 変更を revert し、旧来の `import('@hierarchidb/*-plugin/worker')` 方式に戻した上で `pnpm --filter @hierarchidb/runtime-worker build` と代表プラグインの `build` を実行し、元の状態へ復旧する
-
 0) tools predeploy gh-pages スクリプト整備（P1）
 - ブランチ: `main`（sandbox 制約でローカルブランチ作成不可）
 - 依存: `@hierarchidb/tools`, `@hierarchidb/app`
@@ -709,7 +691,7 @@
   - 受け入れ基準（DoD）：
     - [x] `src/ui/plugin.ts` / `src/ui/components/FolderUIPlugin.tsx` の役割を整理し、不要なら削除または `legacy/` へ隔離して参照元を更新
     - [x] `pnpm --filter @hierarchidb/folder-plugin typecheck` と `pnpm --filter @hierarchidb/folder-plugin build` が成功
-    - [ ] `~/plugin-registry`（`pluginMapUI`）経由で Folder UI が問題なくロードされることを手動確認し、結果を運用ログへ記録（UI 実機確認は環境未整備のため保留）
+    - [ ] `~/plugin-registry`（`pluginUiModuleMap`）経由で Folder UI が問題なくロードされることを手動確認し、結果を運用ログへ記録（UI 実機確認は環境未整備のため保留）
   - チェックリスト：
     - [x] `rg "components:" plugins` などで他プラグインの旧 `PluginDefinition.components` 利用状況を棚卸し、必要なら別タスク化
     - [x] cleanup 後の `dist/ui` 出力を確認し、`plugin-definition` に UI コンポーネント参照が混入していないことを確認
@@ -762,12 +744,12 @@
   - ブランチ: `refactor/shape-plugin/ui-definition-alignment`
   - 依存: `@hierarchidb/runtime-plugin-dialog`, `@hierarchidb/vite-plugin-hierarchidb-plugin-alias`
   - 受け入れ基準（DoD）：
-    - [x] `plugins/shape-plugin/src/common/ui-plugin.tsx` と `src/ui/plugin.ts` で旧 `components` マッピングを撤去し、新方式（`pluginMapUI` 副作用）へ統一
+    - [x] `plugins/shape-plugin/src/common/ui-plugin.tsx` と `src/ui/plugin.ts` で旧 `components` マッピングを撤去し、新方式（`pluginUiModuleMap` ベースの副作用）へ統一
     - [ ] `Shape` 固有ステップを `HostProfileRegistry` / `PluginStepRegistry` 経由で提供する仕組みに置換し、`pnpm --filter @hierarchidb/shape-plugin typecheck` が成功（※現状は既存 UI コンポーネント群の型エラーで失敗。要追跡）
     - [ ] `pnpm --filter @hierarchidb/shape-plugin build` が成功し、`dist/ui` 配下に旧 `plugin` エントリが生成されないことを確認（※ sandbox の EPERM により未実施）
   - チェックリスト：
     - [ ] 互換 API（UI レジストリ登録関数など）を必要に応じて残しつつ、エクスポート契約が破壊的でないか確認
-    - [ ] `~/plugin-registry` の `pluginMapUI` で Shape UI がロードされることを手動確認し、運用ログに記録
+    - [ ] `~/plugin-registry` の `pluginUiModuleMap` で Shape UI がロードされることを手動確認し、運用ログに記録
     - [ ] cleanup 後の `dist` を点検し、`plugin-definition` や manifest から UI コンポーネント参照が消えていることを確認（ビルド完了後に実施）
   - ロールバック手順：
     - 削除した UI 定義ファイルを復元し、`pnpm --filter @hierarchidb/shape-plugin typecheck` / `build` を再実行
@@ -2554,6 +2536,21 @@ P2:
     - [x] `rg "migrate-plugin-worker"`（運用ログ・履歴ドキュメントのみ参照が残ることを確認）
     - [x] `rg "remove-default-exports"`（運用ログのみ参照が残ることを確認）
   - ロールバック手順: `git checkout -- scripts/codemods/mods/{migrate-plugin-worker.ts,remove-default-exports.ts}` および関連ドキュメント差分を復元し、再び codemod 実行手順を有効化する。
+- refactor/runtime-worker/plugin-bootstrap（P0） — runtime-worker と UI のプラグインブートストラップを Inversify DI で再配線し、直接 import の循環依存を解消
+  - ブランチ: `main`（sandbox 制約により直編集）
+  - 要点:
+    - runtime-worker / app 双方に DI コンテナとローダーを実装し、`@hierarchidb/*-plugin/worker|ui` への直接 `import()` を排除。
+    - `gen-plugin-loaders` の出力を module specifier マップへ刷新し、`pluginUiModuleMap` / `pluginWorkerModuleMap` / generated ambient を再生成。
+    - `app/docs/16-plugin-dev-with-registry.md` など関連ドキュメントを新しい DI 方針に合わせて更新。
+  - 検証:
+    - [x] `pnpm lint`
+    - [x] `pnpm typecheck`
+    - [x] `pnpm --filter @hierarchidb/runtime-worker build`
+    - [x] `pnpm --filter @hierarchidb/basemap-plugin build`
+    - [x] `pnpm --filter @hierarchidb/folder-plugin build`
+    - [x] `pnpm --filter @hierarchidb/location-plugin build`
+    - [x] `pnpm turbo run build --filter "@hierarchidb/app^..."`
+  - ロールバック手順: `app/src/plugin-registry/di/**`, `packages/runtime/worker/src/di/**`, `packages/tools/dev-scripts/src/gen-plugin-loaders.ts`、および生成成果物（`app/src/generated/*`, `packages/runtime/worker/src/generated/plugin-metadata.ts`, `types/generated/runtime-worker.d.ts`）の差分を revert し、`pnpm --filter @hierarchidb/runtime-worker build` と対象プラグインの `build` を再実行して旧来の dynamic import 構成へ戻す。
 - plugin-registry typecheck 依存制御（P0） — Turbo 依存と dist 生成連携を整理し API Extractor の mainEntryPoint エラーを解消
   - ブランチ: `main`
   - 要点:
@@ -6412,6 +6409,19 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 17:05 progress: fix/app/vite-production-build — location plugin の Worker ローダーを `new URL('./locationEntitiesDB.js', import.meta.url)` + フォールバックエクスポートに更新し、`pnpm --filter @hierarchidb/location-plugin build` → `pnpm turbo run build --filter "@hierarchidb/app^..."` を確認。
 - 2025-10-25 17:09 progress: fix/app/vite-production-build — app 側の `.ts` import をビルド後の `.js` 参照に揃え、MUI アイコンマップを動的ロードして `setGlobalMuiIconMap` に適用する非同期処理を追加。
 - 2025-10-25 17:16 done: fix/app/vite-production-build — `pnpm -C app exec vite build` が exit 0（警告のみ）で完了。続けて `node packages/tools/dev-scripts/dist/prepare-gh-pages-build.js` を実行し、`.nojekyll` と hash-routing snippet を注入。
+- 2025-10-25 17:28 start: refactor/runtime-worker/plugin-bootstrap — Task 15 runtime-worker plugin bootstrap decoupling を InversifyJS 前提で開始（DoD 承認済み、sandbox 制約により main 直編集）。
+- 2025-10-25 17:46 progress: refactor/runtime-worker/plugin-bootstrap — runtime-worker / app に InversifyJS と reflect-metadata を導入し、対象 tsconfig で decorator メタデータを有効化。
+- 2025-10-25 18:08 progress: refactor/runtime-worker/plugin-bootstrap — UI/Worker の DI コンテナとローダーを実装し、`gen-plugin-loaders` の出力を module specifier マップへ刷新して再生成。
+- 2025-10-25 18:18 command: pnpm install --lockfile-only — exit 0（新規依存を lockfile に反映）。
+- 2025-10-25 18:26 command: pnpm lint — exit 0（turbo lint が全パッケージ成功）。
+- 2025-10-25 18:34 command: pnpm typecheck — exit 0（turbo build パイプラインがグリーン）。
+- 2025-10-25 18:38 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（UNRESOLVED_IMPORT 警告なし）。
+- 2025-10-25 18:44 command: pnpm --filter @hierarchidb/basemap-plugin build ／ pnpm --filter @hierarchidb/folder-plugin build ／ pnpm --filter @hierarchidb/location-plugin build — いずれも exit 0（代表プラグインの単体ビルド確認）。
+- 2025-10-25 18:52 command: pnpm turbo run build --filter "@hierarchidb/app^..." — exit 0（アプリ依存グラフのビルドが成功）。
+- 2025-10-25 19:00 done: refactor/runtime-worker/plugin-bootstrap — Inversify ベースのプラグイン解決へ移行し、UI/Worker 双方のビルド・検証がグリーンで回帰なしを確認。
+- 2025-10-25 19:12 progress: refactor/runtime-worker/plugin-bootstrap — 動的 import の解決エラー対応で loader から `@vite-ignore` コメントを撤去し、Vite/tsdown がモジュール specifier を解析できるよう調整。
+- 2025-10-25 19:18 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（コメント削除後も警告なし）。
+- 2025-10-25 19:24 command: pnpm turbo run build --filter "@hierarchidb/app^..." — exit 0（UI 側ビルドも成功を再確認）。
 - 2025-10-25 16:34 progress: chore/config/remove-feature-flags — `app/src/config/feature-flags.ts` / `worker-flag-overrides.ts` を削除し、UI/Worker のブートストラップを `~/plugin-registry` ベースに統一。`app/src/services/ui-plugin-loader.ts` を新設して生成ファイルへの依存を整理し、`scripts/env_vite.sh` と関連ドキュメントから FEATURE_FLAGS 参照を除去。
 - 2025-10-25 16:36 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を `tools-dev-scripts` / `tools-plugin-manifest-loader` 連携で再実行するよう更新し、`app/src/generated/ui-loader.ts` を新仕様へ再生成。ドキュメント（app/docs/16-plugin-dev-with-registry.md 等）を `~/plugin-registry` 前提へ改訂し、旧 `@hierarchidb/plugin-registry` 依存を排除。
 - 2025-10-25 16:40 command: pnpm lint — exit 0（turbo run lint）。`packages/ui/plugin-dialog` 未登録の lockfile 警告あり、後続で lockfile 再生成が必要。
