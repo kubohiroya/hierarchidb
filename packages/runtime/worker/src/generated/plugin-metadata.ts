@@ -157,16 +157,16 @@ export const pluginRegistry: PluginRegistryEntry[] = [
 ];
 
 export const pluginWorkerModuleMap: Record<string, string> = {
-  "basemap": "@hierarchidb/basemap-plugin/worker",
-  "folder": "@hierarchidb/folder-plugin/worker",
-  "location": "@hierarchidb/location-plugin/worker",
-  "linker": "@hierarchidb/linker-plugin/worker",
-  "route": "@hierarchidb/route-plugin/worker",
-  "shape": "@hierarchidb/shape-plugin/worker",
-  "resolver": "@hierarchidb/resolver-plugin/worker",
-  "spreadsheet": "@hierarchidb/spreadsheet-plugin/worker",
-  "styler": "@hierarchidb/styler-plugin/worker",
-  "timeline": "@hierarchidb/timeline-plugin/worker",
+  "basemap": "../../../../../plugins/basemap-plugin/src/worker/index.ts",
+  "folder": "../../../../../plugins/folder-plugin/src/worker/index.ts",
+  "location": "../../../../../plugins/location-plugin/src/worker/index.ts",
+  "linker": "../../../../../plugins/linker-plugin/src/worker/index.ts",
+  "route": "../../../../../plugins/route-plugin/src/worker/index.ts",
+  "shape": "../../../../../plugins/shape-plugin/src/worker/index.ts",
+  "resolver": "../../../../../plugins/resolver-plugin/src/worker/index.ts",
+  "spreadsheet": "../../../../../plugins/spreadsheet-plugin/src/worker/index.ts",
+  "styler": "../../../../../plugins/styler-plugin/src/worker/index.ts",
+  "timeline": "../../../../../plugins/timeline-plugin/src/worker/index.ts",
 };
 
 export const pluginWorkerSourceMap: Record<string, string> = {
@@ -183,14 +183,14 @@ export const pluginWorkerSourceMap: Record<string, string> = {
 };
 
 export const pluginUiModuleMap: Record<string, string> = {
-  "basemap": "@hierarchidb/basemap-plugin/ui",
-  "folder": "@hierarchidb/folder-plugin/ui",
-  "location": "@hierarchidb/location-plugin/ui",
-  "linker": "@hierarchidb/linker-plugin/ui",
-  "route": "@hierarchidb/route-plugin/ui",
-  "shape": "@hierarchidb/shape-plugin/ui",
-  "resolver": "@hierarchidb/resolver-plugin/ui",
-  "spreadsheet": "@hierarchidb/spreadsheet-plugin/ui",
-  "styler": "@hierarchidb/styler-plugin/ui",
-  "timeline": "@hierarchidb/timeline-plugin/ui",
+  "basemap": "../../../../../plugins/basemap-plugin/src/ui/index.ts",
+  "folder": "../../../../../plugins/folder-plugin/src/ui/index.ts",
+  "location": "../../../../../plugins/location-plugin/src/ui/index.ts",
+  "linker": "../../../../../plugins/linker-plugin/src/ui/index.ts",
+  "route": "../../../../../plugins/route-plugin/src/ui/index.ts",
+  "shape": "../../../../../plugins/shape-plugin/src/ui/index.ts",
+  "resolver": "../../../../../plugins/resolver-plugin/src/ui/index.ts",
+  "spreadsheet": "../../../../../plugins/spreadsheet-plugin/src/ui/index.ts",
+  "styler": "../../../../../plugins/styler-plugin/src/ui/index.ts",
+  "timeline": "../../../../../plugins/timeline-plugin/src/ui/index.ts",
 };

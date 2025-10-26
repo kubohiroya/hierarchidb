@@ -13,6 +13,7 @@
         "./src/*"
       ]
     },
+    "baseUrl": ".",
     "composite": false,
     "incremental": false,
     "declaration": false,
@@ -29,21 +30,16 @@
     "module": "NodeNext",
     "noEmit": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
-    ".generated/types/**/*.d.ts",
+    ".generated/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
     "dist"
   ],
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+  "files": []
 }

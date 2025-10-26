@@ -6428,3 +6428,4 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 16:46 command: pnpm typecheck — 初回は生成ファイルの相対 import で失敗。`pnpm run tools:gen-plugin-loaders` で再生成後に再実行し exit 0。lockfile 警告（packages/tools/codemods 未登録）が継続。
 - 2025-10-25 16:52 blocked: pnpm test — 複数パッケージが vitest セットアップ欠如やメッセージ差分で失敗（例: location-plugin が `/Users/hiroya/WebstormProjects/vitest.setup.ts` を参照、spreadsheet-plugin の文言比較）。lockfile 未登録警告も継続。次ステップで setup パスと期待値の更新、lockfile sync を検討。
 - 2025-10-25 16:58 progress: chore/config/remove-feature-flags — `pnpm install --lockfile-only` を実行し、新設パッケージ（ui/plugin-dialog 等）を lockfile に反映。次回 `pnpm lint`/`typecheck` 実行時の transitive closure 警告が解消されるか要確認。
+- 2025-10-25 17:12 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を再調整し、plugin registry / worker ローダーの module specifier をプラグインソースへの相対パスへ統一。`pnpm run tools:gen-plugin-loaders` → `pnpm typecheck` を実行し、`worker.ts` からの `@hierarchidb/*-plugin/worker` 解決失敗が再現しないことを確認（`pnpm typecheck` exit 0）。

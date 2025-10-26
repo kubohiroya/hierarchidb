@@ -4,42 +4,7 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "noEmit": true,
-    "outDir": "dist",
     "incremental": false,
-    "composite": false,
-    "moduleResolution": "NodeNext",
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "src/*"
-      ],
-      "@hierarchidb/ui-auth": [
-        "../packages/ui/auth/src/index.ts"
-      ],
-      "@hierarchidb/ui-auth/*": [
-        "../packages/ui/auth/src/*"
-      ],
-      "@hierarchidb/ui-treeconsole-treetable": [
-        "../packages/ui/treeconsole/treetable/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-treetable/*": [
-        "../packages/ui/treeconsole/treetable/src/*"
-      ],
-    },
-    "module": "NodeNext"
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "**/__tests__/**",
-    "**/*.test.*",
-    "**/*.spec.*"
-  ]
+    "composite": false
+  }
 }
