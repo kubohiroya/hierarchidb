@@ -14,6 +14,11 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
@@ -24,6 +29,9 @@
       "ui": [
         "dist/ui/index.d.ts"
       ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ],
@@ -33,7 +41,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/locationEntitiesDB.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
@@ -98,9 +106,13 @@
       "displayName": "Location",
       "description": "Geographic location nodes with Shape integration",
       "icon": {
-        "mui": "LocationPin",
+        "mui": "LocationOn",
         "emoji": "\ud83d\udccd",
-        "color": "#a3b030"
+        "color": "#a3b030",
+        "component": {
+          "specifier": "@hierarchidb/location-plugin/icon",
+          "exportName": "LocationPluginIcon"
+        }
       },
       "category": {
         "treeId": "*",

@@ -8,7 +8,7 @@ const workerClientMock = vi.hoisted(() => ({
   getSingleton: vi.fn<() => Remote<WorkerAPI>>(),
 }));
 
-vi.mock('../WorkerAPIClient.js', () => ({
+vi.mock('../WorkerAPIClient.ts', () => ({
   WorkerAPIClient: workerClientMock,
   NotInitializedError: class NotInitializedError extends Error {},
 }));

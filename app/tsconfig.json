@@ -18,6 +18,9 @@
       "@hierarchidb/plugin-registry/*": [
         "../packages/plugin-registry/src/*",
         "../packages/plugin-registry/generated/*"
+      ],
+      "@hierarchidb/*-plugin": [
+        "../plugins/*-plugin/src/index.ts"
       ]
     },
     "baseUrl": ".",

@@ -2,6 +2,7 @@ import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
+import { pluginWorkerPreloads } from '~/plugin-registry/index.ts';
 
 // NOTE: Worker runtime and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the
@@ -12,31 +13,8 @@ import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 type ModulePathsModule = typeof import('@hierarchidb/runtime-worker');
 
-const PLUGINS_TO_PRELOAD: PluginWorkerId[] = [
-  'basemap',
-  'folder',
-  'resolver',
-  'route',
-  'spreadsheet',
-  'styler',
-  'shape',
-  'location',
-  'linker',
-  'timeline',
-];
-
-const PLUGIN_LOADER_EXPORTS: Partial<Record<PluginWorkerId, string[]>> = {
-  basemap: ['registerBasemapWorkerStores', 'loadBasemapEntitiesDbModule'],
-  folder: ['registerFolderWorkerStores', 'loadFolderEntitiesDbModule'],
-  resolver: ['registerResolverWorkerStores', 'loadResolverEntitiesDbModule'],
-  route: ['registerRouteWorkerStores', 'loadRouteEntitiesDbModule'],
-  spreadsheet: ['registerSpreadsheetWorkerStores', 'loadSpreadsheetEntitiesDbModule'],
-  styler: ['registerStylerWorkerStores', 'loadStylerEntitiesDbModule'],
-  shape: ['registerShapeWorkerStores', 'loadShapeEntitiesDbModule'],
-  location: ['registerLocationWorkerStores', 'loadLocationEntitiesDbModule'],
-  linker: ['registerLinkerWorkerStores', 'loadLinkerEntitiesDbModule'],
-  timeline: ['registerTimelineWorkerStores', 'loadTimelineEntitiesDbModule'],
-};
+const pluginWorkerPreloadMap = pluginWorkerPreloads as Record<string, string[]>;
+const PLUGINS_TO_PRELOAD = Object.keys(pluginWorkerPreloadMap) as PluginWorkerId[];
 
 let runtimePromise: Promise<Remote<WorkerAPI>> | null = null;
 let pluginLoadPromise: Promise<void> | null = null;
@@ -67,12 +45,15 @@ async function loadPluginWorkers(): Promise<void> {
   const modulePaths = await loadModulePaths();
 
   const loadTasks = PLUGINS_TO_PRELOAD.map(async (pluginId) => {
+    const preloadExports = pluginWorkerPreloadMap[pluginId] ?? [];
     try {
       const mod = await modulePaths.importPluginWorker(pluginId);
-      const loaderExports = PLUGIN_LOADER_EXPORTS[pluginId] ?? [];
+      if (preloadExports.length === 0) {
+        return;
+      }
       const storeRegistry = modulePaths.storeRegistry ?? null;
       const loaderOptions = storeRegistry ? { storeRegistry } : undefined;
-      for (const exportName of loaderExports) {
+      for (const exportName of preloadExports) {
         const loader = (mod as Record<string, unknown>)[exportName];
         if (typeof loader === 'function') {
           try {

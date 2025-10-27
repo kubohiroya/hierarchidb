@@ -19,6 +19,10 @@ export interface PluginPresentation {
 
 let cache: Map<string, PluginPresentation> | null = null;
 
+export function resetPluginPresentationCache(): void {
+  cache = null;
+}
+
 function normalizeMuiIconName(name?: string): string | undefined {
   if (!name) return undefined;
   const map: Record<string, string> = {

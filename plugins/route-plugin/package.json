@@ -16,9 +16,15 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
     "./database": {
-      "types": "./dist/database/index.d.ts",
-      "import": "./dist/database/index.js"
+      "types": "./dist/services/database/index.d.ts",
+      "import": "./dist/services/database/index.js",
+      "default": "./dist/services/database/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -31,7 +37,10 @@
         "dist/ui/index.d.ts"
       ],
       "database": [
-        "dist/database/index.d.ts"
+        "dist/services/database/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"
@@ -42,7 +51,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
@@ -110,7 +119,11 @@
       "icon": {
         "mui": "Route",
         "emoji": "\u3030\ufe0f",
-        "color": "#a3b030"
+        "color": "#a3b030",
+        "component": {
+          "specifier": "@hierarchidb/route-plugin/icon",
+          "exportName": "RoutePluginIcon"
+        }
       }
     }
   }

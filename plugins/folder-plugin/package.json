@@ -11,6 +11,9 @@
       "shared": [
         "dist/shared/index.d.ts"
       ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ],
@@ -36,6 +39,11 @@
       "import": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js",
@@ -43,7 +51,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest",
@@ -116,7 +124,11 @@
       "icon": {
         "mui": "Folder",
         "emoji": "\ud83d\udcc1",
-        "color": "#c0eeff"
+        "color": "#c0eeff",
+        "component": {
+          "specifier": "@hierarchidb/folder-plugin/icon",
+          "exportName": "FolderPluginIcon"
+        }
       },
       "priority": 1000,
       "category": "core",

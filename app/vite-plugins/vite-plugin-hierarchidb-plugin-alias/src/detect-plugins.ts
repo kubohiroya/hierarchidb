@@ -22,7 +22,14 @@ const SUBPATH_DEFINITIONS: readonly SubpathDefinition[] = [
     kind: 'database',
     exportKey: './database',
     requireExport: true,
-    candidateBases: ['src/services/database/index', 'src/database/index', 'src/services/database', 'src/database'],
+    candidateBases: [
+      'src/services/database/index',
+      'src/database/index',
+      'src/services/database',
+      'src/database',
+      'src/worker/database/index',
+      'src/worker/database',
+    ],
   },
   {
     kind: 'common',
@@ -41,6 +48,12 @@ const SUBPATH_DEFINITIONS: readonly SubpathDefinition[] = [
     exportKey: './worker',
     requireExport: true,
     candidateBases: ['src/worker/index', 'src/worker'],
+  },
+  {
+    kind: 'icon',
+    exportKey: './icon',
+    requireExport: true,
+    candidateBases: ['src/icon/index', 'src/icon'],
   },
   {
     kind: 'root',

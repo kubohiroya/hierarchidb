@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { StrictMode } from 'react';
 import { AppProviders } from './router/context/AppProviders.js';
-import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.js';
+import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 
 initializeBrowserGlobals();
 

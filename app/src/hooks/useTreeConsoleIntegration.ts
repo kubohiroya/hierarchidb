@@ -16,6 +16,7 @@ import { useTreeConsoleLoader } from './treeconsole/useTreeConsoleLoader.js';
 import { useTreeConsoleSubscription } from './treeconsole/useTreeConsoleSubscription.js';
 import { useCommandProcessorTracker } from './treeconsole/useCommandProcessorTracker.js';
 import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
+import { getMenuSpec } from '../plugin-loader/menu-spec.ts';
 import type {
   ImportExportAdapter,
   TreeConsoleActions,
@@ -38,6 +39,7 @@ export function useTreeConsoleIntegration({
   const expandedIds = (ssot.expandedIds as NodeId[]) || [];
   const searchTerm = ssot.searchTerm || '';
   const viewMode = (ssot.viewMode as ViewMode) || 'list';
+  const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
 
   const [state, setState] = useState<TreeConsoleState>({
     loading: ssot.loading,
@@ -45,7 +47,7 @@ export function useTreeConsoleIntegration({
     sortBy: ssot.sortBy || 'name',
     sortDirection: ssot.sortDirection || 'asc',
     filterBy: ssot.filterBy || '',
-    availableFilters: ['folder', 'basemap', '_shapes_buggy'],
+    availableFilters: defaultFilters,
     canGoBack: false,
     canGoForward: false,
     canUndo: ssot.canUndo,

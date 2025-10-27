@@ -18,6 +18,18 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     muiIconName: 'AccessTime',
     emoji: '🕒',
     color: '#8a7cbf',
+    component: {
+      specifier: '@hierarchidb/timeline-plugin/icon',
+      exportName: 'TimelinePluginIcon',
+    },
+  },
+  category: {
+    id: 'project',
+    menuGroup: 'project',
+    createOrder: 20,
+  },
+  worker: {
+    preload: ['registerTimelineWorkerStores', 'loadTimelineEntitiesDbModule'],
   },
 };
 

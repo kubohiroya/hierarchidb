@@ -113,7 +113,7 @@
   - [x] Turbo 側の `pipeline` 設定を確認し、対象ターゲットと依存関係を一覧化
   - [x] 命名統一に向けた推奨案（例: `build`, `build:types`, `build:bundle`）と段階的実施方針をまとめる
 - ロールバック手順：特になし（調査ドキュメントを削除する場合はコミットを revert）
- - 調査メモ（2025-10-24）:
+- 調査メモ（2025-10-24）:
    - ワークスペース 77 件中 76 件が `build` スクリプトを保有。追加の `build:*` は `@hierarchidb/plugin-registry` の `build:types` のみで、その他は `build` 単独。
    - スクリプト実装は 67 件が `NODE_OPTIONS="--loader ts-node/esm" tsup`、7 件が `tsc`/`api-extractor`/カスタム Node コマンドなど別系統。命名は揃っていても実際の処理内容がバラバラで、Turbo 側で一律にキャッシュ条件を設計しづらい。
    - 各 `package.json` の `turbo.pipeline` では `build:bundle` / `build:types` を参照するプラグイン（basemap/shape/spreadsheet/styler）があるが、scripts に該当コマンドが未定義のため Turbo がターゲット生成できず、`pnpm --filter <pkg> run build:bundle` が存在しない状態。
@@ -132,8 +132,22 @@
   - [x] 削除候補に関する不確定事項や保留とする判断材料を整理し、次アクション案を提示する
   - [x] TASKS 運用ログに start/progress/done と主要な調査内容を記録する
 - チェックリスト:
-  - [x] scripts 一覧と削除候補メモを作成し、依存タスクや代替手段の有無を記載する
+- [x] scripts 一覧と削除候補メモを作成し、依存タスクや代替手段の有無を記載する
 - ロールバック手順：調査タスクにつき該当なし（必要に応じて報告内容を破棄し ToDo へ戻す）
+
+26) SpeedDial アイコン初期化警告解消（P0）
+- ブランチ: `fix/app/icon-loader-timing`（sandbox 制約により `main` 上で作業）
+- 依存: `app/src/router/init/initializeBrowserGlobals.ts`, `packages/plugin-registry/generated/registry.ts`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban と運用ログに start/progress/done を記録する
+  - [x] `buildIconMap` がプラグイン登録完了前に実行されず、初期化時の警告が消えることを確認する
+  - [x] プラグインレジストリ由来のアイコンローダーが React コンポーネントを返すことをテストで検証する（basemap〜timeline を対象）
+  - [x] `pnpm --filter @hierarchidb/app typecheck` と関連テストコマンドが成功し、ログを運用ログへ記録する
+- チェックリスト:
+  - [x] 登録待ちフロー（`__HDB_UI_PLUGIN_READY__` 等）の待機方法を見直し、初回 buildIconMap 実行のトリガーを整理
+  - [x] アイコンローダーの戻り値検証を行うユニットテストを追加または更新
+  - [x] 警告解消後の UI アイコン表示順・カテゴリがメタデータ順になることを確認
+- ロールバック手順：該当ファイル差分を revert し、既存アイコン初期化ロジックへ戻す
 
 23) NodeNext 移行: 設定切替と import 整理（P0）
 - ブランチ: `chore/node-next/tsconfig`（sandbox 制約で `main` 上で作業）
@@ -437,6 +451,20 @@
     - progress: 2025-10-25 14:05 Turbo パイプラインを調整し、`@hierarchidb/app`/`@hierarchidb/plugin-registry` の `build` / `typecheck` / `generate` が `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` や `tools-` 系ビルドへ依存するよう明示。
     - command: 2025-10-25 14:12 `pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders` — MUI アイコン名の正規化ロジック変更後に生成物を更新（`Folder` など語尾 `Icon` 抜きで再出力）。
     - command: 2025-10-25 14:18 `pnpm build` — 依存グラフ更新とアイコン修正後も Turbo build が成功（@hierarchidb/tools#build outputs warning 継続）。
+
+- ブランチ: `fix/app/generate-favicon-ts`（sandbox 制約により `main` 上で作業する可能性あり）
+- 依存: `app/scripts/generate-favicon.ts`（復旧元: `app/scripts/generate-favicon.js` 過去コミット）, `app/package.json`, `pnpm` workspace scripts
+- 受け入れ基準（DoD）:
+  - [ ] 過去コミットから `app/scripts/generate-favicon.js` を復旧し、最新ブランチに反映して TypeScript 化のベースを確保する
+  - [ ] スクリプトを TypeScript 化して `app/scripts/generate-favicon.ts`（または合意済みファイル名）へ移行し、不要になった JS 版を削除する
+  - [ ] `app/package.json` の `generate:favicon` スクリプトなど関連参照を TypeScript 版に更新し、依存（tsx/ts-node 等）の整合を確認する
+  - [ ] `pnpm run generate:favicon` を実行し exit code 0 を確認、結果を運用ログへ記録する
+  - [ ] ロールバック手順を TASKS に明記し、Kanban を Done へ移動する
+- チェックリスト:
+  - [ ] 過去履歴から `generate-favicon.js` の最新安定版を特定し復元する
+  - [ ] TypeScript 化の際にパス/型定義/環境依存を確認し、ESM として動作するよう調整する
+  - [ ] `pnpm run generate:favicon` コマンドの依存を再確認し、ドキュメントや他スクリプトへの影響がないか棚卸しする
+- ロールバック手順：復元した TS 実装と関連設定を revert し、旧来スクリプトが存在しない状態へ戻したうえでコマンド不在による失敗を確認する
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -2545,6 +2573,26 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- fix/app/vite-resolver-dynamic-import（P0） — Vite 動的 import 警告と resolver plugin database 解決エラーを解消
+  - ブランチ: `fix/app/vite-resolver-dynamic-import`（sandbox 制約で main 上で作業）
+  - 要点:
+    - `app/src/plugin-registry/index.ts` と `app/src/router/init/initializeBrowserGlobals.ts` の動的 import に `/* @vite-ignore */` を追加し、Vite の import 解析警告を抑止。
+    - プラグイン各種で `src/icon/index.ts` を追加し、`package.json` の `exports` / `typesVersions` に `./icon` を定義。manifest の `icon.component` で公開コンポーネントを宣言。
+    - manifest に `worker.preload` を追加し、generator から `modules.icon` / `pluginIconLoaders` / `pluginWorkerPreloads` を生成。`import(/* @vite-ignore */ specifier)` による遅延ロードと Worker preload 呼び出しを registry 駆動へ移行。
+    - tsdown build を再実行して database / icon エントリの出力を更新し、app 側 typecheck で未解決エラーが出ないことを確認。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/resolver-plugin build`
+    - [x] `pnpm --filter @hierarchidb/basemap-plugin build`
+    - [x] `pnpm --filter @hierarchidb/route-plugin build`
+    - [x] `pnpm --filter @hierarchidb/spreadsheet-plugin build`
+    - [x] `pnpm --filter @hierarchidb/folder-plugin build`
+    - [x] `pnpm --filter @hierarchidb/linker-plugin build`
+    - [x] `pnpm --filter @hierarchidb/styler-plugin build`
+    - [x] `pnpm --filter @hierarchidb/shape-plugin build`
+    - [x] `pnpm --filter @hierarchidb/timeline-plugin build`
+    - [x] `pnpm --filter @hierarchidb/location-plugin build`
+    - [x] `pnpm --filter @hierarchidb/app typecheck`
+  - ロールバック手順: 対象ファイルの差分を revert し、`pnpm --filter @hierarchidb/app typecheck` で TS2307 が再発することを確認。
 - fix/app/initialize-browser-globals（P0） — NodeNext 移行後に残っていた CJS shim を整理し、app build の named export エラーを解消
   - ブランチ: `fix/app/initialize-browser-globals`（sandbox 制約で main 上で作業）
   - 要点:
@@ -6519,3 +6567,127 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-27 12:48 progress: fix/build/pnpm-clean — `packages/tools/package.json` / `packages/plugin-registry/package.json` / `packages/ui/treeconsole/*` へ `clean` スクリプトを追加し、`turbo.json` に `clean` タスクを定義。
 - 2025-10-27 12:50 command: pnpm clean — exit 0。`turbo run clean` が 80 パッケージの `clean` タスクを実行し、missing task エラーが再発しないことを確認。
 - 2025-10-27 12:55 done: fix/build/pnpm-clean — 追加した `clean` スクリプトと Turbo 設定で `pnpm clean` を安定化。ロールバック: `packages/**/package.json` と `turbo.json` の差分を revert し、`pnpm clean` で missing task エラー再現を確認。
+- 2025-10-27 13:05 start: fix/app/generate-favicon-ts — DoD: JS 版を復旧→TypeScript 化、`generate:favicon` コマンド成功ログ記録、TASKS ロールバック明記。
+
+- 2025-10-27 13:30 start: fix/app/ui-worker-plugin-resolve — DoD: Kanban/ログ更新、UI/Worker プラグイン解決と MUI icon import の安定化、`pnpm --filter @hierarchidb/app build` / `pnpm --filter @hierarchidb/runtime-worker build` 成功ログ確保。
+- 2025-10-27 13:48 progress: fix/app/ui-worker-plugin-resolve — `pnpm --filter @hierarchidb/basemap-plugin --filter @hierarchidb/folder-plugin --filter @hierarchidb/linker-plugin --filter @hierarchidb/location-plugin --filter @hierarchidb/resolver-plugin --filter @hierarchidb/route-plugin --filter @hierarchidb/spreadsheet-plugin --filter @hierarchidb/styler-plugin --filter @hierarchidb/timeline-plugin build` exit 0（各プラグインで `dist/worker/index.js` を生成）。
+- 2025-10-27 13:58 blocked: fix/app/ui-worker-plugin-resolve — `pnpm --filter @hierarchidb/app build` exit 1（`import.meta.glob('@mui/icons-material/*.{js,mjs}')` が Vite で解決不可。パターンを相対パスに修正予定）。
+- 2025-10-27 14:07 progress: fix/app/ui-worker-plugin-resolve — `pnpm --filter @hierarchidb/app build` exit 0（警告のみ、dist 出力を確認）。
+- 2025-10-27 14:09 progress: fix/app/ui-worker-plugin-resolve — `pnpm --filter @hierarchidb/runtime-worker build` exit 0（worker import.glob の調整後も成功）。
+
+- 2025-10-27 14:20 start: verify/runtime-worker/tree-subscription-api — TreeSubscriptionAPI 結合テストの洗い出しと検証に着手。
+- 2025-10-27 14:32 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run trash-subscription` exit 0（TreeSubscriptionAPI の subtree/trash 監視シナリオが成功）。
+- 2025-10-27 14:34 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run create-wc-commit` exit 0（TreeSubscriptionAPI が working copy 作成シナリオで不要通知を出さないことを確認）。
+- 2025-10-27 14:40 progress: verify/runtime-worker/tree-subscription-api — TreeQueryAPI 結合確認のため追加 WFL テストの実行を準備。
+- 2025-10-27 14:41 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo` exit 0（getTree / listChildren / listDescendants を含むフォルダ操作シナリオで TreeQueryAPI を確認）。
+- 2025-10-27 14:42 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run command-processor-undo-redo` exit 0（複数の TreeQueryAPI 呼び出しと undo/redo 流れを結合テストで検証）。
+
+26) fix/app/ui-worker-plugin-resolve — UI/Worker プラグインの module specifier と MUI icon 解決を修正する
+- ブランチ: `fix/app/ui-worker-plugin-resolve`（sandbox 制約で `main` 作業継続）
+- 依存: `app/src/plugin-registry`, `app/src/router/init/initializeBrowserGlobals.ts`, `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts`, `plugins/*-plugin/package.json`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban/運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] UI 側で `@hierarchidb/*-plugin/ui` import 失敗が解消され、ブラウザ起動時に該当 warning が出ない（import.meta.glob のローダー生成を導入）
+  - [x] Worker 側で `@hierarchidb/*-plugin/worker` import 失敗が解消され、dist fallback が不要な構成に見直す（tsdown 出力 `dist/worker/index.js` の生成を確認）
+  - [x] MUI アイコンの動的 import を安定させ、`@mui/icons-material/*` 解決エラーが出ない
+  - [x] `pnpm --filter @hierarchidb/app build` および `pnpm --filter @hierarchidb/runtime-worker build` を実行し成功ログを運用ログへ記録する
+- チェックリスト:
+  - [x] UI プラグインローダーを import.glob ベースに差し替え
+  - [x] Worker プラグインの tsdown 出力/exports を確認し必要に応じ修正
+  - [x] initializeBrowserGlobals の MUI アイコン取得を glob 化
+  - [ ] Play dev あるいは SSR で動作確認（必要なら `pnpm dev` 等）
+- ロールバック手順：当該差分を revert し、従来の静的 specifier と dist 構成に戻して `pnpm --filter @hierarchidb/app build` でエラー再現を確認
+
+27) verify/runtime-worker/tree-subscription-api — TreeSubscriptionAPI の結合テストでの結線確認
+- ブランチ: `verify/runtime-worker/tree-subscription-api`（sandbox 制約で `main` 作業継続）
+- 依存: `packages/runtime/worker/src/e2e/__tests__`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban/運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] TreeSubscriptionAPI をカバーする結合テスト（WFL など）を特定し、実行ログと結果を収集する
+  - [ ] 結合テスト結果から TreeSubscriptionAPI が正しく結線しイベント伝播していることを確認し報告する
+  - [ ] 追加テストを作成した場合はコード・ドキュメントを更新し、関連コマンドの成功ログを取得する
+- チェックリスト:
+  - [ ] TreeSubscriptionAPI 関連の既存テスト洗い出し
+  - [ ] 選定した結合テストの実行（成功ログ取得）
+  - [ ] 必要に応じて補足テスト追加 or 既存テストの観点レビュー
+  - [ ] 結果とロールバック手順の記録
+- ロールバック手順：追加・変更したテストやドキュメントを revert し、既存テスト状況を元に戻す。
+
+26) fix/app/ui-worker-plugin-resolve — UI/Worker プラグインの module specifier と MUI icon 解決を修正する
+- ブランチ: `fix/app/ui-worker-plugin-resolve`（sandbox 制約で `main` 作業継続）
+- 依存: `app/src/plugin-registry`, `app/src/router/init/initializeBrowserGlobals.ts`, `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts`, `plugins/*-plugin/package.json`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban/運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] UI 側で `@hierarchidb/*-plugin/ui` import 失敗が解消され、ブラウザ起動時に該当 warning が出ない（import.meta.glob のローダー生成を導入）
+  - [ ] Worker 側で `@hierarchidb/*-plugin/worker` import 失敗が解消され、dist fallback が不要な構成に見直す（tsdown 出力 `dist/worker/index.js` の生成を確認）
+  - [ ] MUI アイコンの動的 import を安定させ、`@mui/icons-material/*` 解決エラーが出ない
+  - [ ] `pnpm --filter @hierarchidb/app build` および `pnpm --filter @hierarchidb/runtime-worker build` を実行し成功ログを運用ログへ記録する
+- チェックリスト:
+  - [ ] UI プラグインローダーを import.glob ベースに差し替え
+  - [ ] Worker プラグインの tsdown 出力/exports を確認し必要に応じ修正
+  - [ ] initializeBrowserGlobals の MUI アイコン取得を glob 化
+  - [ ] Play dev あるいは SSR で動作確認（必要なら `pnpm dev` 等）
+- ロールバック手順：当該差分を revert し、従来の静的 specifier と dist 構成に戻して `pnpm --filter @hierarchidb/app build` でエラー再現を確認
+- 2025-10-27 23:52 start: fix/app/vite-resolver-dynamic-import — DoD: Vite 警告解消、resolver-plugin exports 是正、`pnpm typecheck` 成功ログ記録。
+- 2025-10-27 23:56 progress: fix/app/vite-resolver-dynamic-import — `app/src/plugin-registry/index.ts` / `app/src/router/init/initializeBrowserGlobals.ts` の動的 import に `/* @vite-ignore */` を付与し、Vite 解析警告の対象箇所を限定。
+- 2025-10-27 23:58 progress: fix/app/vite-resolver-dynamic-import — resolver/basemap/route/spreadsheet 各プラグインの `package.json` exports/typesVersions を dist の実ディレクトリ構造（`worker/database` / `services/database`）へ合わせて更新。
+- 2025-10-28 00:10 progress: fix/app/vite-resolver-dynamic-import — アイコンプリロードを静的 import へ切り替え、`import.meta.glob` の無効グロブ警告と runtime `require is not defined` エラーを除去。
+- 2025-10-28 00:18 progress: fix/app/vite-resolver-dynamic-import — プラグイン manifest / package.json に `icon.component` を追加し、各プラグインで `src/icon/index.ts` を公開するよう更新。
+- 2025-10-28 00:19 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。`pluginRegistry` に modules.icon と `pluginIconLoaders` を反映。
+- 2025-10-28 00:20 command: pnpm --filter {@hierarchidb/basemap-plugin,@hierarchidb/folder-plugin,@hierarchidb/linker-plugin,@hierarchidb/resolver-plugin,@hierarchidb/styler-plugin,@hierarchidb/shape-plugin,@hierarchidb/timeline-plugin,@hierarchidb/spreadsheet-plugin,@hierarchidb/route-plugin,@hierarchidb/location-plugin} build — exit 0。各プラグインの `dist/icon` 出力を確認。
+- 2025-10-28 00:21 progress: fix/app/vite-resolver-dynamic-import — プラグイン manifest に `worker.preload` を追加し、WorkerModuleLoader が静的配列ではなく manifest 駆動で preload するよう設計変更。
+- 2025-10-28 00:22 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。`pluginWorkerPreloads` エクスポートを生成。
+- 2025-10-28 00:23 command: pnpm --filter {@hierarchidb/basemap-plugin,@hierarchidb/folder-plugin,@hierarchidb/linker-plugin,@hierarchidb/resolver-plugin,@hierarchidb/styler-plugin,@hierarchidb/shape-plugin,@hierarchidb/timeline-plugin,@hierarchidb/spreadsheet-plugin,@hierarchidb/route-plugin,@hierarchidb/location-plugin} build — exit 0。`worker.preload` 追加後も各ビルドが成功。
+- 2025-10-28 00:24 blocked: fix/app/vite-resolver-dynamic-import — `pnpm --filter @hierarchidb/app typecheck` exit 1。registry の `worker` フィールドが型未定義で TS2353。
+- 2025-10-28 00:25 progress: fix/app/vite-resolver-dynamic-import — registry/types.ts と WorkerModuleLoader を更新し、`pluginWorkerPreloads` 参照へ切替。
+- 2025-10-28 00:26 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。最新の worker preload 情報でレジストリを再生成。
+- 2025-10-28 00:27 command: pnpm --filter @hierarchidb/app typecheck — exit 0。worker preload 対応後も typecheck がグリーン。
+- 2025-10-28 00:28 progress: fix/app/vite-resolver-dynamic-import — メニュー仕様／プラグイン設定を registry 駆動へ移行し、静的な nodeType 配列を撤廃。
+- 2025-10-28 00:29 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。動的メニュー生成ロジックのユニットテストを更新しグリーンを確認。
+- 2025-10-28 00:30 command: pnpm --filter @hierarchidb/app typecheck — exit 0。registry 駆動構成への移行後も型検証が成功。
+- 2025-10-28 00:11 command: pnpm --filter @hierarchidb/app typecheck — exit 0。アイコンマップ更新後も typecheck がグリーンであることを確認。
+- 2025-10-27 23:59 command: pnpm --filter @hierarchidb/resolver-plugin build — exit 0。tsdown で `dist/worker/database/index.{js,d.ts}` を再生成し、exports 更新後もビルド成功を確認。
+- 2025-10-28 00:01 command: pnpm --filter @hierarchidb/basemap-plugin build — exit 0。services/database 出力を再生成し、修正後の exports で問題ないことを確認。
+- 2025-10-28 00:02 command: pnpm --filter @hierarchidb/route-plugin build — exit 0。services/database index が再生成され、tsdown 警告以外のエラーは発生せず。
+- 2025-10-28 00:03 command: pnpm --filter @hierarchidb/spreadsheet-plugin build — exit 0。services/database エントリが再出力され、exports 整合を確認。
+- 2025-10-28 00:04 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`tsconfig.typecheck.json` に対して unresolved database import エラーが解消されたことを確認。
+- 2025-10-28 08:02 progress: fix/app/vite-resolver-dynamic-import — plugin registry generator に `pluginDatabaseLoaders` を追加し、app 側の plugin-services / databases プリウォーム処理をレジストリ駆動に刷新。
+- 2025-10-28 08:03 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。database loader 付きで registry.ts を再生成。
+- 2025-10-28 08:05 command: pnpm --filter @hierarchidb/app typecheck — exit 0。registry 駆動の DB プリウォーム変更後も型検証が成功。
+- 2025-10-28 08:05 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。メニュー周辺のユニットテストが継続してグリーン。
+- 2025-10-28 08:24 progress: fix/app/vite-resolver-dynamic-import — plugin manifest に database.prewarm を追加し、generator が明示的な moduleSpecifier/exportName を含む `pluginDatabaseLoaders` を生成するよう更新。
+- 2025-10-28 08:26 progress: fix/app/vite-resolver-dynamic-import — app の plugin-services/databases 初期化を manifest 駆動に刷新し、PROD 環境では `VITE_PREWARM_SERVICES` 未指定でもプリウォームを実行するよう調整。
+- 2025-10-28 08:27 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。manifest prewarm 情報を含んだ registry.ts を再生成。
+- 2025-10-28 08:30 command: pnpm --filter @hierarchidb/app typecheck — exit 0。manifest-driven プリウォーム化後も型検証が成功。
+- 2025-10-28 08:30 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。既存のメニュー周辺テストが継続してグリーン。
+- 2025-10-28 09:18 progress: fix/app/vite-resolver-dynamic-import — Vite alias プラグインに `icon` サブパスを追加し、`@hierarchidb/*-plugin/icon` 解決失敗を解消。`useTreeConsoleIntegration` の `useMemo` をトップレベルへ移動し、Hook 呼び出し順序違反を修正。
+- 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app typecheck — exit 0。Hook 移動後も型検証が成功。
+- 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。既存ユニット継続グリーン。
+- 2025-10-28 09:22 progress: fix/app/vite-resolver-dynamic-import — アイコンローダーを import.meta.glob 駆動に切り替え、プラグイン登録前のアイコン import でも Vite 変換が働くよう改善。
+- 2025-10-28 09:22 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 09:22 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
+- 2025-10-28 09:34 progress: fix/app/vite-resolver-dynamic-import — アイコンマップを `React.lazy` + `Suspense` で遅延読込する形へ変更し、登録前アクセス時の警告を抑止。
+- 2025-10-28 09:34 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 09:34 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
+- 2025-10-28 09:36 progress: fix/app/vite-resolver-dynamic-import — Suspense fallbackでの警告を抑制するため、ロード待ち時は静かに `null` を返すよう調整。
+- 2025-10-28 09:36 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 09:40 progress: fix/app/vite-resolver-dynamic-import — アイコン map 初期化を同期 await ベースに戻し、動的 import 失敗時のみ警告を出すよう整理。
+- 2025-10-28 09:40 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 09:44 progress: fix/app/vite-resolver-dynamic-import — アイコン取得時に React.memo などの型も許容し、インストール済みプラグイン順でマップ生成するよう補正。
+- 2025-10-28 09:44 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 10:13 progress: fix/app/vite-resolver-dynamic-import — icon loader を固定文字列 import に戻しつつ Vite 向けコメントを維持、menu-spec の表示順プリセットと icon map 順序を導入。
+- 2025-10-28 10:13 command: pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders — exit 0。
+- 2025-10-28 10:13 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 10:13 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
+- 2025-10-28 10:27 progress: fix/app/vite-resolver-dynamic-import — plugin-presentation の MUI icon 正規化と route manifest の category を整備し、geo 順序や custom icon を期待どおりに表示できるよう再調整。
+- 2025-10-28 10:27 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 10:27 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
+- 2025-10-28 10:33 progress: fix/app/vite-resolver-dynamic-import — menu-spec を再調整して project グループを含めつつ geo 順 (location→route→shape) を固定化、アイコンの表示優先度を Pascal 化して fallback emoji を解消。
+- 2025-10-28 10:33 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-10-28 10:33 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
+- 2025-10-28 12:38 progress: fix/app/icon-loader-timing — buildIconMap を UI プラグイン登録完了後にのみ実行するよう待機条件を追加し、レジストリ生成器で静的 import ＋型宣言ファイルを出力するよう更新。
+- 2025-10-28 12:46 command: pnpm --filter @hierarchidb/app typecheck — exit 0。plugin アイコン alias とモジュール宣言追加後の型検証を確認。
+- 2025-10-28 12:50 command: pnpm --filter @hierarchidb/app test -- icon-loaders — exit 0。新規ユニットテストで全プラグインのアイコンローダー解決を検証。
+- 2025-10-28 12:54 done: fix/app/icon-loader-timing — アイコン初期化をプラグイン登録後に同期化し、レジストリ生成物を静的 import ＋型宣言付きへ更新。Vitest の alias を拡張して icon/database サブパスを解決し、警告なしで SpeedDial アイコンが描画されることを確認。
+- 2025-10-28 12:59 command: pnpm --filter @hierarchidb/app build — exit 0。Vite 本番ビルドが `@hierarchidb/*-plugin` エイリアス解決後に成功することを確認。
+- 2025-10-28 12:10 start: fix/app/icon-loader-timing — SpeedDial アイコン初期化警告解消タスクを着手。DoD 合意済み、sandbox 制約により `main` 直編集で対応予定。

@@ -18,10 +18,15 @@ export const PLUGIN_MANIFEST = {
     mui: 'LocationOn',
     emoji: '📍',
     color: '#a3b030',
+    component: {
+      specifier: '@hierarchidb/location-plugin/icon',
+      exportName: 'LocationPluginIcon',
+    },
   },
   category: {
+    id: 'geographic',
     treeId: '*',
-    menuGroup: 'document',
+    menuGroup: 'geo',
     createOrder: 40,
   },
   tags: ['geographic', 'location'],
@@ -29,6 +34,17 @@ export const PLUGIN_MANIFEST = {
     workingCopy: true,
     batch: true,
     visualization: true,
+  },
+  database: {
+    prewarm: [
+      {
+        specifier: '@hierarchidb/location-plugin',
+        export: 'getEphemeralLocationDB',
+      },
+    ],
+  },
+  worker: {
+    preload: ['registerLocationWorkerStores', 'loadLocationEntitiesDbModule'],
   },
 };
 

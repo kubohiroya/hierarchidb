@@ -19,8 +19,16 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'Folder',
     emoji: '📁',
     color: '#c0eeff',
+    component: {
+      specifier: '@hierarchidb/folder-plugin/icon',
+      exportName: 'FolderPluginIcon',
+    },
   },
-  category: 'core',
+  category: {
+    id: 'core',
+    menuGroup: 'core',
+    createOrder: 1000,
+  },
   capabilities: {
     canHaveChildren: true,
     canBeRoot: true,
@@ -42,6 +50,9 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
         required: false,
       },
     ],
+  },
+  worker: {
+    preload: ['registerFolderWorkerStores', 'loadFolderEntitiesDbModule'],
   },
 };
 

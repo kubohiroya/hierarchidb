@@ -20,8 +20,16 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'Public',
     emoji: '🌍',
     color: '#b0b3d9',
+    component: {
+      specifier: '@hierarchidb/basemap-plugin/icon',
+      exportName: 'BasemapPluginIcon',
+    },
   },
-  category: 'geographic',
+  category: {
+    id: 'geographic',
+    menuGroup: 'base',
+    createOrder: 900,
+  },
   capabilities: {
     canHaveChildren: true,
     canBeRoot: false,
@@ -49,6 +57,17 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
         required: false,
       },
     ],
+  },
+  database: {
+    prewarm: [
+      {
+        specifier: '@hierarchidb/basemap-plugin/database',
+        export: 'BaseMapDatabase',
+      },
+    ],
+  },
+  worker: {
+    preload: ['registerBasemapWorkerStores', 'loadBasemapEntitiesDbModule'],
   },
 };
 

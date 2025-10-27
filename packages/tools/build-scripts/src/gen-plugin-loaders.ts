@@ -50,6 +50,7 @@ const appPkgPath = path.join(appDir, 'package.json');
 const pluginRegistryPackageDir = path.join(repoRoot, 'packages', 'plugin-registry');
 const registryGeneratedDir = path.join(pluginRegistryPackageDir, 'generated');
 const registryOutputFile = path.join(registryGeneratedDir, 'registry.ts');
+const registryDeclarationsFile = path.join(registryGeneratedDir, 'registry.modules.d.ts');
 const WORKER_ENTRY_BASENAMES = [
   'src/worker/index.ts',
   'src/worker/index.tsx',
@@ -91,6 +92,17 @@ const DATABASE_ENTRY_BASENAMES = [
   'src/services/database/index.mjs',
   'src/services/database/index.js',
   'src/services/database/index.cjs',
+  'src/worker/database/index.ts',
+  'src/worker/database/index.tsx',
+  'src/worker/database/index.mts',
+  'src/worker/database/index.mjs',
+  'src/worker/database/index.js',
+  'src/worker/database/index.cjs',
+  'src/worker/database.ts',
+  'src/worker/database.mts',
+  'src/worker/database.mjs',
+  'src/worker/database.js',
+  'src/worker/database.cjs',
   'src/database.ts',
   'src/database.mts',
   'src/database.mjs',
@@ -120,6 +132,21 @@ const COMMON_ENTRY_BASENAMES = [
   'src/shared.mjs',
   'src/shared.js',
   'src/shared.cjs',
+];
+
+const ICON_ENTRY_BASENAMES = [
+  'src/icon/index.ts',
+  'src/icon/index.tsx',
+  'src/icon/index.mts',
+  'src/icon/index.mjs',
+  'src/icon/index.js',
+  'src/icon/index.cjs',
+  'src/icon.ts',
+  'src/icon.tsx',
+  'src/icon.mts',
+  'src/icon.mjs',
+  'src/icon.js',
+  'src/icon.cjs',
 ];
 
 function deriveNodeType(pkgName: string): string | undefined {
@@ -176,6 +203,100 @@ function normalizeMuiIconName(raw?: string): string | undefined {
     return trimmed.length > 0 ? trimmed : pascal;
   }
   return pascal;
+}
+
+interface NormalizedDatabasePrewarmEntry {
+  export: string;
+  specifier?: string;
+}
+
+interface DatabasePrewarmTarget {
+  exportName: string;
+  specifier: string;
+}
+
+function normalizeDatabasePrewarmValue(raw: unknown): NormalizedDatabasePrewarmEntry[] {
+  const entries: NormalizedDatabasePrewarmEntry[] = [];
+  const visit = (value: unknown): void => {
+    if (value == null) return;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        visit(item);
+      }
+      return;
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        entries.push({ export: trimmed });
+      }
+      return;
+    }
+    if (typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      const exportRaw = typeof record.export === 'string'
+        ? record.export
+        : typeof record.exportName === 'string'
+          ? record.exportName
+          : typeof record.name === 'string'
+            ? record.name
+            : null;
+      const trimmedExport = exportRaw?.trim();
+      if (!trimmedExport) return;
+      const specifierRaw = typeof record.specifier === 'string'
+        ? record.specifier
+        : typeof record.module === 'string'
+          ? record.module
+          : undefined;
+      const trimmedSpecifier = specifierRaw?.trim();
+      const entry: NormalizedDatabasePrewarmEntry = { export: trimmedExport };
+      if (trimmedSpecifier && trimmedSpecifier.length > 0) {
+        entry.specifier = trimmedSpecifier;
+      }
+      entries.push(entry);
+    }
+  };
+  visit(raw);
+  return entries;
+}
+
+function buildDatabasePrewarmTargets(
+  raw: unknown,
+  fallbackSpecifier: string,
+): DatabasePrewarmTarget[] {
+  const result: DatabasePrewarmTarget[] = [];
+  if (!raw) return result;
+  const items = Array.isArray(raw) ? raw : [raw];
+  for (const item of items) {
+    if (!item) continue;
+    if (typeof item === 'string') {
+      const exportName = item.trim();
+      if (!exportName) continue;
+      result.push({ exportName, specifier: fallbackSpecifier });
+      continue;
+    }
+    if (typeof item === 'object') {
+      const record = item as Record<string, unknown>;
+      const exportRaw = typeof record.export === 'string'
+        ? record.export
+        : typeof record.exportName === 'string'
+          ? record.exportName
+          : typeof record.name === 'string'
+            ? record.name
+            : null;
+      const exportName = exportRaw?.trim();
+      if (!exportName) continue;
+      const specifierRaw = typeof record.specifier === 'string'
+        ? record.specifier
+        : typeof record.module === 'string'
+          ? record.module
+          : null;
+      const specifier = specifierRaw?.trim() || fallbackSpecifier;
+      if (!specifier) continue;
+      result.push({ exportName, specifier });
+    }
+  }
+  return result;
 }
 
 async function fileExists(p: string): Promise<boolean> {
@@ -242,13 +363,21 @@ interface ManifestSummary {
   dependencies: string[];
   hasUI: boolean;
   hasWorker: boolean;
-  hasDatabase: boolean;
+  hasDatabaseModule: boolean;
   hasCommon: boolean;
   exportPaths: string[];
   uiSourceEntry: string | null;
   workerSourceEntry: string | null;
   databaseSourceEntry: string | null;
   commonSourceEntry: string | null;
+  iconComponent?: {
+    specifier: string;
+    exportName?: string;
+    sourceEntry?: string | null;
+  };
+  workerPreloadExports: string[];
+  databaseModuleSpecifier: string | null;
+  databasePrewarmTargets: DatabasePrewarmTarget[];
 }
 /*
 function indentMultiline(value: string, indent: number, skipFirst = false): string {
@@ -305,9 +434,30 @@ function sanitizeManifest(
     addString(icon, 'mui', manifest.icon.mui);
     addString(icon, 'emoji', manifest.icon.emoji);
     addString(icon, 'color', manifest.icon.color);
+
     if (!icon.muiIconName && icon.mui) {
       icon.muiIconName = icon.mui;
     }
+
+    const componentConfig = manifest.icon.component;
+    if (componentConfig && typeof componentConfig === 'object') {
+      const specifier = typeof componentConfig.specifier === 'string'
+        ? componentConfig.specifier.trim()
+        : undefined;
+      const exportName = typeof componentConfig.exportName === 'string'
+        ? componentConfig.exportName.trim()
+        : typeof componentConfig.export === 'string'
+          ? componentConfig.export.trim()
+          : undefined;
+      if (specifier) {
+        const component: Record<string, string> = { specifier };
+        if (exportName) {
+          component.exportName = exportName;
+        }
+        icon.component = component;
+      }
+    }
+
     if (Object.keys(icon).length > 0) {
       result.icon = icon;
     }
@@ -344,6 +494,46 @@ function sanitizeManifest(
     }
   }
 
+  if (manifest.worker && typeof manifest.worker === 'object') {
+    const worker: Record<string, any> = {};
+    if (Array.isArray(manifest.worker.preload)) {
+      const preload = manifest.worker.preload
+        .map((value: unknown) => (typeof value === 'string' && value.trim().length > 0 ? value.trim() : null))
+        .filter((value: string | null): value is string => value !== null);
+      if (preload.length > 0) {
+        worker.preload = preload;
+      }
+    }
+    if (Object.keys(worker).length > 0) {
+      result.worker = worker;
+    }
+  }
+
+  if (manifest.database && typeof manifest.database === 'object') {
+    const database: Record<string, any> = {};
+    addString(database, 'dbName', manifest.database.dbName);
+    addString(database, 'tableName', manifest.database.tableName);
+    if (typeof manifest.database.version === 'number' && Number.isFinite(manifest.database.version)) {
+      database.version = manifest.database.version;
+    }
+    if (manifest.database.schema && typeof manifest.database.schema === 'object') {
+      database.schema = manifest.database.schema;
+    }
+    const prewarmEntries = normalizeDatabasePrewarmValue(manifest.database.prewarm);
+    if (prewarmEntries.length > 0) {
+      database.prewarm = prewarmEntries.map((entry) => {
+        const normalized: Record<string, string> = { export: entry.export };
+        if (entry.specifier) {
+          normalized.specifier = entry.specifier;
+        }
+        return normalized;
+      });
+    }
+    if (Object.keys(database).length > 0) {
+      result.database = database;
+    }
+  }
+
   return result;
 }
 
@@ -365,7 +555,7 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
   const entries = summaries
     .map((summary) => {
       const version = summary.manifest.version ?? summary.packageVersion;
-      const modules: Record<string, { specifier: string; source?: string }> = {
+      const modules: Record<string, { specifier: string; source?: string; exportName?: string }> = {
         root: { specifier: summary.packageName },
       };
 
@@ -397,6 +587,18 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
         };
       }
 
+      if (summary.iconComponent) {
+        modules.icon = {
+          specifier: summary.iconComponent.specifier,
+        };
+        if (summary.iconComponent.sourceEntry) {
+          modules.icon.source = summary.iconComponent.sourceEntry;
+        }
+        if (summary.iconComponent.exportName) {
+          modules.icon.exportName = summary.iconComponent.exportName;
+        }
+      }
+
       const dependenciesJSON = indentJSON(summary.dependencies, 6);
       const manifestJSON = indentJSON(summary.manifest ?? null, 6);
       const modulesJSON = indentJSON(modules, 6);
@@ -412,13 +614,142 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
     })
     .join('\n');
 
+  const iconLoaderEntries = summaries
+    .map((summary) => {
+      const component = summary.iconComponent;
+      if (!component) return null;
+      const lines: string[] = [];
+      lines.push(`  ${JSON.stringify(summary.nodeType)}: async () => {`);
+      lines.push(`    const mod = await import('${component.specifier}');`);
+      if (component.exportName) {
+        lines.push(`    const componentExport = (mod as Record<string, unknown>)[${JSON.stringify(component.exportName)}];`);
+        lines.push(`    if (!componentExport) { throw new Error('Plugin icon component export not found for ${summary.nodeType}'); }`);
+        lines.push('    return componentExport;');
+      } else {
+        lines.push('    const resolved = (mod as { default?: unknown }).default ?? mod;');
+        lines.push(`    if (!resolved) { throw new Error('Plugin icon component default export not found for ${summary.nodeType}'); }`);
+        lines.push('    return resolved;');
+      }
+      lines.push('  },');
+      return lines.join('\n');
+    })
+    .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    .join('\n');
+
+  const iconLoadersSource = iconLoaderEntries.length > 0
+    ? `export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {\n${iconLoaderEntries}\n};\n`
+    : 'export const pluginIconLoaders: Record<string, () => Promise<unknown>> = {};\n';
+
+  const workerPreloadEntries = summaries
+    .map((summary) => {
+      if (!summary.workerPreloadExports || summary.workerPreloadExports.length === 0) {
+        return null;
+      }
+      const exportsJSON = JSON.stringify(summary.workerPreloadExports);
+      return `  ${JSON.stringify(summary.nodeType)}: ${exportsJSON},`;
+    })
+    .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    .join('\n');
+
+  const workerPreloadsSource = workerPreloadEntries.length > 0
+    ? `export const pluginWorkerPreloads: Record<string, string[]> = {\n${workerPreloadEntries}\n};\n`
+    : 'export const pluginWorkerPreloads: Record<string, string[]> = {};\n';
+
+  const databaseLoaderEntries = summaries
+    .map((summary) => {
+      const moduleSpecifier = summary.databaseModuleSpecifier;
+      const hasLoader = typeof moduleSpecifier === 'string' && moduleSpecifier.length > 0;
+      const hasPrewarm = summary.databasePrewarmTargets.length > 0;
+      if (!hasLoader && !hasPrewarm) {
+        return null;
+      }
+      const lines: string[] = [];
+      lines.push(`  ${JSON.stringify(summary.nodeType)}: {`);
+      if (hasLoader) {
+        lines.push(`    moduleSpecifier: '${moduleSpecifier}',`);
+        lines.push('    async loader() {');
+        lines.push(`      const mod = await import('${moduleSpecifier}');`);
+        lines.push('      return mod;');
+        lines.push('    },');
+      }
+      if (hasPrewarm) {
+        lines.push('    prewarm: [');
+        for (const target of summary.databasePrewarmTargets) {
+          lines.push(`      { specifier: '${target.specifier}', exportName: '${target.exportName}' },`);
+        }
+        lines.push('    ],');
+      }
+      lines.push('  },');
+      return lines.join('\n');
+    })
+    .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    .join('\n');
+
+  const databaseLoadersSource = databaseLoaderEntries.length > 0
+    ? `export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier: string; exportName: string }[] }> = {\n${databaseLoaderEntries}\n};\n`
+    : 'export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier: string; exportName: string }[] }> = {};\n';
+
   return `/* auto-generated by tools-build-scripts */
+/// <reference path="./registry.modules.d.ts" />
 import type { PluginRegistryEntry } from '../src/types.ts';
 
 export const pluginRegistry: PluginRegistryEntry[] = [
 ${entries}
 ];
+
+${iconLoadersSource}
+${workerPreloadsSource}
+${databaseLoadersSource}
 `;
+}
+
+function generateModuleDeclarationSource(summaries: ManifestSummary[]): string {
+  const seen = new Set<string>();
+  const lines: string[] = ['/* auto-generated by tools-build-scripts */', ''];
+
+  const isValidIdentifier = (value: string): boolean => /^[$A-Z_][0-9A-Z_$]*$/i.test(value);
+
+  for (const summary of summaries) {
+    const icon = summary.iconComponent;
+    if (icon && !seen.has(icon.specifier)) {
+      seen.add(icon.specifier);
+      lines.push(`declare module '${icon.specifier}' {`);
+      if (icon.exportName && isValidIdentifier(icon.exportName)) {
+        lines.push(`  export const ${icon.exportName}: unknown;`);
+        lines.push(`  export default ${icon.exportName};`);
+      } else {
+        lines.push('  const PluginIconComponent: unknown;');
+        lines.push('  export default PluginIconComponent;');
+      }
+      lines.push('}');
+      lines.push('');
+    }
+
+    const databaseSpecifier = summary.databaseModuleSpecifier;
+    if (databaseSpecifier) {
+      const scopeTrimmed = databaseSpecifier.replace(/^@[^/]+\//, '');
+      const hasSubpath = scopeTrimmed.includes('/');
+      if (hasSubpath && !seen.has(databaseSpecifier)) {
+        seen.add(databaseSpecifier);
+        lines.push(`declare module '${databaseSpecifier}' {`);
+        for (const target of summary.databasePrewarmTargets) {
+          if (target.exportName && isValidIdentifier(target.exportName)) {
+            lines.push(`  export const ${target.exportName}: unknown;`);
+          }
+        }
+        lines.push('  const mod: Record<string, unknown>;');
+        lines.push('  export default mod;');
+        lines.push('}');
+        lines.push('');
+      }
+    }
+  }
+
+  if (lines.length <= 2) {
+    return '';
+  }
+
+  return `${lines.join('\n')}`.trimEnd() + '\n';
 }
 
 async function loadAppPackage() {
@@ -508,11 +839,39 @@ async function collectManifests(): Promise<ManifestSummary[]> {
     const uiSourceEntry = await findEntryFile(pkgDir, UI_ENTRY_BASENAMES);
     const databaseSourceEntry = await findEntryFile(pkgDir, DATABASE_ENTRY_BASENAMES);
     const commonSourceEntry = await findEntryFile(pkgDir, COMMON_ENTRY_BASENAMES);
+    const iconSourceEntry = await findEntryFile(pkgDir, ICON_ENTRY_BASENAMES);
 
     const hasWorker = !!workerSourceEntry;
     const hasUI = !!uiSourceEntry;
-    const hasDatabase = !!databaseSourceEntry;
+    const hasDatabaseModule = !!databaseSourceEntry;
     const hasCommon = !!commonSourceEntry;
+
+    const iconComponentConfig = sanitizedManifest.icon?.component;
+    const iconComponent = iconComponentConfig && typeof iconComponentConfig === 'object'
+      && typeof iconComponentConfig.specifier === 'string'
+        ? {
+            specifier: iconComponentConfig.specifier,
+            exportName: typeof iconComponentConfig.exportName === 'string'
+              ? iconComponentConfig.exportName
+              : undefined,
+            sourceEntry: iconSourceEntry,
+          }
+        : undefined;
+
+    const workerPreloadExports = Array.isArray(sanitizedManifest.worker?.preload)
+      ? sanitizedManifest.worker.preload.filter((value: unknown): value is string => typeof value === 'string' && value.trim().length > 0)
+      : [];
+
+    const defaultDatabaseSpecifier = databaseSourceEntry
+      ? `${pkgName}/database`
+      : pkgName;
+
+    const databasePrewarmTargets = buildDatabasePrewarmTargets(
+      sanitizedManifest.database?.prewarm,
+      defaultDatabaseSpecifier,
+    );
+
+    const databaseModuleSpecifier = defaultDatabaseSpecifier;
 
     sanitizedManifest.dependencies = dependencies;
     sanitizedManifest.packageName = pkgName;
@@ -538,13 +897,17 @@ async function collectManifests(): Promise<ManifestSummary[]> {
       dependencies,
       hasUI,
       hasWorker,
-      hasDatabase,
+      hasDatabaseModule,
       hasCommon,
       exportPaths: Array.from(exportPathSet),
       uiSourceEntry,
       workerSourceEntry,
       databaseSourceEntry,
       commonSourceEntry,
+      iconComponent,
+      workerPreloadExports,
+      databaseModuleSpecifier,
+      databasePrewarmTargets,
     });
 
   }
@@ -555,12 +918,15 @@ async function collectManifests(): Promise<ManifestSummary[]> {
 async function writeRegistrations(): Promise<void> {
   const summaries = await collectManifests();
   const registrySource = generateRegistrySource(summaries);
+  const declarationSource = generateModuleDeclarationSource(summaries);
   await fs.mkdir(registryGeneratedDir, { recursive: true });
   const registryChanged = await writeFileIfChanged(registryOutputFile, registrySource);
+  const declarationsChanged = await writeFileIfChanged(registryDeclarationsFile, declarationSource);
   await removeLegacyArtifacts();
 
   console.log('[generate-plugin-loader] updated files', {
     registry: registryChanged,
+    declarations: declarationsChanged,
   });
 }
 

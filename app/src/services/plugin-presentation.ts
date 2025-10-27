@@ -34,6 +34,18 @@ function normalizeMuiIconName(name?: string): string | undefined {
   return ICON_NAME_NORMALIZATION_MAP[name] || name;
 }
 
+function toPascalCase(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const parts = value
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean);
+  if (parts.length === 0) return undefined;
+  return parts
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
+}
+
 function normalizeLabelText(raw: string): string {
   if (!raw) return raw;
   const collapsed = raw.replace(/\s+Plugin$/i, '').trim();
@@ -58,7 +70,11 @@ function buildPresentation(def: InstalledPlugin): PluginPresentation {
   const fallbackLabel = def.label || def.nodeType;
   const label = sanitizeLabel(def.label, fallbackLabel);
   const priorityCandidate = def.manifest?.priority ?? def.createOrder;
-  const muiIconName = normalizeMuiIconName(iconConfig.muiIconName);
+  const manifestIcon = def.manifest?.icon ?? null;
+  const hasComponent = Boolean(manifestIcon?.component?.specifier);
+  const rawIconName = iconConfig.muiIconName ?? manifestIcon?.muiIconName ?? manifestIcon?.mui;
+  const normalizedIconName = normalizeMuiIconName(rawIconName);
+  const componentIconName = hasComponent ? toPascalCase(String(def.nodeType)) : undefined;
   const FALLBACK_ICONS: Record<string, PluginIconInfo> = {
     basemap: { muiIconName: 'Public', emoji: '🌍', color: '#b0b3d9' },
     linker: { muiIconName: 'AccountTree', emoji: '🌲', color: '#ffe0f3' },
@@ -70,15 +86,16 @@ function buildPresentation(def: InstalledPlugin): PluginPresentation {
     nodeType: def.nodeType,
     label,
     icon: {
-      muiIconName: muiIconName
+      muiIconName: normalizedIconName
+        ?? componentIconName
         ?? fallbackIcon.muiIconName
         ?? (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
       emoji: typeof iconConfig.emoji === 'string'
         ? iconConfig.emoji
-        : fallbackIcon.emoji,
+        : manifestIcon?.emoji ?? fallbackIcon.emoji,
       color: typeof iconConfig.color === 'string'
         ? iconConfig.color
-        : fallbackIcon.color,
+        : manifestIcon?.color ?? fallbackIcon.color,
     },
     priority: typeof priorityCandidate === 'number' ? priorityCandidate : 1000,
   };

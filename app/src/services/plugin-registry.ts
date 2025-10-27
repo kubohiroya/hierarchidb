@@ -1,4 +1,4 @@
-import { pluginRegistry } from '../plugin-registry/index.js';
+import { pluginRegistry } from '../plugin-registry/index.ts';
 import appPackageJson from '../../package.json' with { type: 'json' };
 import type {
   PluginCategoryConfig,
@@ -6,6 +6,7 @@ import type {
   PluginManifest,
   PluginRegistryEntry,
 } from '@hierarchidb/plugin-registry/types.ts';
+import type { NodeType } from '@hierarchidb/common-types';
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;
@@ -14,7 +15,7 @@ interface PackageJsonShape {
 }
 
 export interface InstalledPlugin {
-  nodeType: string;
+  nodeType: NodeType;
   packageName: string;
   version: string | null;
   manifest: PluginManifest | null;
@@ -35,6 +36,7 @@ export interface InstalledPlugin {
   menuGroup: string;
   createOrder: number;
   treeContext: string;
+  categoryId?: string;
 }
 
 let installedPluginsCache: InstalledPlugin[] | null = null;
@@ -119,7 +121,7 @@ function computeInstalledPlugins(): InstalledPlugin[] {
     const hasDatabase = Boolean(entry.modules.database?.specifier);
 
     return {
-      nodeType: entry.nodeType,
+      nodeType: entry.nodeType as NodeType,
       packageName: entry.packageName,
       version: entry.version,
       manifest,
@@ -140,6 +142,7 @@ function computeInstalledPlugins(): InstalledPlugin[] {
       menuGroup,
       createOrder,
       treeContext,
+      categoryId: categoryObject?.id ?? (typeof category === 'string' ? category : undefined),
     } satisfies InstalledPlugin;
   });
 
@@ -174,4 +177,41 @@ export function getInstalledPluginMap(): Map<string, InstalledPlugin> {
 export function findInstalledPlugin(nodeType: string): InstalledPlugin | undefined {
   const map = getInstalledPluginMap();
   return map.get(nodeType);
+}
+
+export function getNodeTypesByMenuGroup(menuGroup: string): NodeType[] {
+  return getInstalledPlugins()
+    .filter((plugin) => plugin.menuGroup === menuGroup)
+    .map((plugin) => plugin.nodeType);
+}
+
+export function getNodeTypesByCategoryId(categoryId: string): NodeType[] {
+  return getInstalledPlugins()
+    .filter((plugin) => plugin.categoryId === categoryId)
+    .map((plugin) => plugin.nodeType);
+}
+
+export function getAllPluginNodeTypes(): NodeType[] {
+  return getInstalledPlugins().map((plugin) => plugin.nodeType);
+}
+
+export function orderNodeTypes(nodeTypes: Iterable<string>): NodeType[] {
+  const pluginMap = getInstalledPluginMap();
+  const seen = new Set<string>();
+  const list: Array<{ nodeType: NodeType; order: number; label: string }> = [];
+  for (const nodeType of nodeTypes) {
+    if (typeof nodeType !== 'string') continue;
+    if (seen.has(nodeType)) continue;
+    seen.add(nodeType);
+    const plugin = pluginMap.get(nodeType);
+    if (!plugin) continue;
+    list.push({ nodeType: plugin.nodeType, order: plugin.createOrder, label: plugin.label });
+  }
+  list.sort((a, b) => {
+    if (a.order !== b.order) {
+      return a.order - b.order;
+    }
+    return a.label.localeCompare(b.label);
+  });
+  return list.map((item) => item.nodeType);
 }

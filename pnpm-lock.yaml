@@ -467,6 +467,9 @@ importers:
       rollup-plugin-visualizer:
         specifier: 5.12.0
         version: 5.12.0(rollup@4.52.4)
+      tsx:
+        specifier: ^4.20.5
+        version: 4.20.6
       vite:
         specifier: 5.4.19
         version: 5.4.19(@types/node@18.19.123)

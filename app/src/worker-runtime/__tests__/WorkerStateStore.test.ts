@@ -12,7 +12,7 @@ const ensureWorkerRuntimeMock = vi.hoisted(() => vi.fn<() => Promise<Remote<Work
 
 class MockNotInitializedError extends Error {}
 
-vi.mock('../WorkerAPIClient.js', () => ({
+vi.mock('../WorkerAPIClient.ts', () => ({
   WorkerAPIClient: workerClientMock,
   NotInitializedError: MockNotInitializedError,
 }));

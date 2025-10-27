@@ -9,7 +9,10 @@
   "typesVersions": {
     "*": {
       "database": [
-        "dist/database/index.d.ts"
+        "dist/worker/database/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
       ],
       "*": [
         "dist/index.d.ts"
@@ -31,8 +34,14 @@
       "default": "./dist/worker/index.js"
     },
     "./database": {
-      "types": "./dist/database/index.d.ts",
-      "import": "./dist/database/index.js"
+      "types": "./dist/worker/database/index.d.ts",
+      "import": "./dist/worker/database/index.js",
+      "default": "./dist/worker/database/index.js"
+    },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -43,7 +52,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts src/ui/index.ts src/worker/database/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/ui/index.ts src/worker/index.ts src/worker/database/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -103,7 +112,11 @@
       "icon": {
         "mui": "Extension",
         "emoji": "\ud83e\udde9",
-        "color": "#ffb3c1"
+        "color": "#ffb3c1",
+        "component": {
+          "specifier": "@hierarchidb/resolver-plugin/icon",
+          "exportName": "ResolverPluginIcon"
+        }
       },
       "category": {
         "treeId": "*",

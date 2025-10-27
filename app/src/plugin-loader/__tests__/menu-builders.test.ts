@@ -1,6 +1,7 @@
 import type { TreeId } from '@hierarchidb/common-types';
 import { describe, it, expect } from 'vitest';
 import { buildMenuItemsForContext, buildMenuItemsForTreeId, type PluginMenuItem } from '../menu-builders.js';
+import { getMenuSpec } from '../menu-spec.ts';
 
 describe('menu-builders', () => {
   it('maps treeId to context implicitly in buildMenuItemsForTreeId', () => {
@@ -14,37 +15,23 @@ describe('menu-builders', () => {
 
   it('builds resources (r) menu in specified order and groups', () => {
     const items = buildMenuItemsForTreeId('r' as TreeId);
+    const spec = getMenuSpec('resources');
     const nodeTypes = items.map((i: PluginMenuItem) => i.nodeType);
-    expect(nodeTypes).toEqual([
-      'folder',
-      'basemap',
-      'shape',
-      'location',
-      'route',
-      'spreadsheet',
-      'styler',
-      'resolver',
-    ]);
+    expect(nodeTypes).toEqual(spec.order);
 
     const groups = items.map((i) => i.group);
-    expect(groups).toEqual([
-      'core', // folder
-      'base', // basemap
-      'geo', // shape
-      'geo', // location
-      'geo', // route
-      'tabular-source', // spreadsheet
-      'tabular-source', // styler
-      'tabular-source', // resolver
-    ]);
+    const expectedGroups = items.map((item) => spec.groupOf[item.nodeType]);
+    expect(groups).toEqual(expectedGroups);
   });
 
   it('builds projects (t) menu in specified order and groups', () => {
     const items = buildMenuItemsForTreeId('t' as TreeId);
+    const spec = getMenuSpec('projects');
     const nodeTypes = items.map((i) => i.nodeType);
-    expect(nodeTypes).toEqual(['folder', 'linker', 'timeline']);
+    expect(nodeTypes).toEqual(spec.order);
     const groups = items.map((i) => i.group);
-    expect(groups).toEqual(['core', 'project', 'project']);
+    const expectedGroups = items.map((item) => spec.groupOf[item.nodeType]);
+    expect(groups).toEqual(expectedGroups);
   });
 
   it('builds by context explicitly and matches treeId mapping', () => {

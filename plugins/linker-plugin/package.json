@@ -16,6 +16,11 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
@@ -28,11 +33,14 @@
       ],
       "worker": [
         "dist/worker/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "lint": "eslint src"
@@ -100,7 +108,11 @@
       "icon": {
         "mui": "AccountTree",
         "emoji": "\ud83c\udf32",
-        "color": "#ffe0f3"
+        "color": "#ffe0f3",
+        "component": {
+          "specifier": "@hierarchidb/linker-plugin/icon",
+          "exportName": "LinkerPluginIcon"
+        }
       },
       "category": {
         "treeId": "*",

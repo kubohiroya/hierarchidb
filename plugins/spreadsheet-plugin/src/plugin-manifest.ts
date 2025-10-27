@@ -20,8 +20,27 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'Assessment',
     emoji: '📈',
     color: '#dcbc50',
+    component: {
+      specifier: '@hierarchidb/spreadsheet-plugin/icon',
+      exportName: 'SpreadsheetPluginIcon',
+    },
   },
-  category: 'data',
+  database: {
+    prewarm: [
+      {
+        specifier: '@hierarchidb/spreadsheet-plugin/database',
+        export: 'SpreadsheetDatabase',
+      },
+    ],
+  },
+  worker: {
+    preload: ['registerSpreadsheetWorkerStores', 'loadSpreadsheetEntitiesDbModule'],
+  },
+  category: {
+    id: 'data',
+    menuGroup: 'tabular',
+    createOrder: 600,
+  },
   capabilities: {
     canHaveChildren: false,
     canBeRoot: false,

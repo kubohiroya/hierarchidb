@@ -9,11 +9,24 @@ export interface PluginManifestDatabaseSchema {
   fields?: ReadonlyArray<PluginManifestDatabaseField>;
 }
 
+export interface PluginManifestDatabasePrewarmEntry {
+  export?: string;
+  exportName?: string;
+  specifier?: string;
+  module?: string;
+}
+
+export type PluginManifestDatabasePrewarmConfig =
+  | string
+  | PluginManifestDatabasePrewarmEntry
+  | Array<string | PluginManifestDatabasePrewarmEntry>;
+
 export interface PluginManifestDatabaseConfig {
   dbName?: string;
   tableName?: string;
   version?: number;
   schema?: PluginManifestDatabaseSchema;
+  prewarm?: PluginManifestDatabasePrewarmConfig;
 }
 
 export interface PluginManifestUIConfig {
@@ -73,6 +86,10 @@ export interface PluginMetadata {
     color?: string;
     svg?: string;
     description?: string;
+    component?: {
+      specifier: string;
+      exportName?: string;
+    } | null;
   };
 
   /** Category hint used by menus/catalogs */
@@ -95,6 +112,12 @@ export interface PluginMetadata {
 
   /** Validation hints */
   validation?: PluginManifestValidationConfig;
+
+  /** Worker execution hints */
+  worker?: {
+    /** Export names to invoke eagerly after worker module loads */
+    preload?: string[];
+  };
 
   /** Arbitrary additional metadata */
   extra?: Record<string, unknown>;

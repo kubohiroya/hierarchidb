@@ -8,9 +8,9 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import { getPluginRegistryContainer } from '../plugin-registry/di/container.js';
-import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.js';
-import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.js';
+import { getPluginRegistryContainer } from '../plugin-registry/di/container.ts';
+import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.ts';
+import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.ts';
 import type { PluginDefinition } from '@hierarchidb/plugin-registry/types.ts';
 
 type PluginDefinitionVM = {

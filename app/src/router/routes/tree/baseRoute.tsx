@@ -40,7 +40,7 @@ export const treeBaseRoute = createRoute({
         bootWindow.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
         const poll = bootWindow.setInterval(() => {
           // Defer to WorkerAPIClient if available
-          import('~/WorkerAPIClient.js').then(({ WorkerAPIClient }) => {
+          import('~/WorkerAPIClient.ts').then(({ WorkerAPIClient }) => {
             if (WorkerAPIClient.isReady()) {
               bootWindow.clearInterval(poll);
               finish();

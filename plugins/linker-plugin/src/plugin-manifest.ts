@@ -19,15 +19,23 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'AccountTree',
     emoji: '🌲',
     color: '#ffe0f3',
+    component: {
+      specifier: '@hierarchidb/linker-plugin/icon',
+      exportName: 'LinkerPluginIcon',
+    },
   },
   category: {
+    id: 'project',
     treeId: '*',
-    menuGroup: 'document',
+    menuGroup: 'project',
     createOrder: 10,
   },
   tags: ['linker', 'container'],
   capabilities: {
     workingCopy: true,
+  },
+  worker: {
+    preload: ['registerLinkerWorkerStores', 'loadLinkerEntitiesDbModule'],
   },
 };
 

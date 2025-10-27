@@ -3,6 +3,7 @@ import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportProgress as APIImportProgress } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import { getInstalledPlugins } from '../services/plugin-registry.ts';
 
 // Import/Export Types
 export interface ImportFileOptions {
@@ -261,13 +262,14 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
     }
 
     // Validate each node
-    const validNodeTypes = ['folder', 'file', 'project', 'shape', 'basemap', 'styler'];
+    const pluginNodeTypes = new Set(getInstalledPlugins().map((plugin) => plugin.nodeType));
+    const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
 
     data.nodes.forEach((node: any, index: number) => {
       if (!node.name) {
         errors.push(`Node ${index}: missing required field 'name'`);
       }
-      if (node.nodeType && !validNodeTypes.includes(node.nodeType)) {
+      if (node.nodeType && !validNodeTypes.has(node.nodeType)) {
         errors.push(`Node ${index}: invalid node type '${node.nodeType}'`);
       }
     });

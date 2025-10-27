@@ -35,6 +35,16 @@ function createRuntimeAliasConfig({
     if (exclude) optimizeExclude.add(specifier);
   };
 
+  const resolvePluginCandidate = (candidates: string[], pluginName: string): string | null => {
+    for (const candidate of candidates) {
+      const resolved = path.resolve(rootDir, `../plugins/${pluginName}/${candidate}`);
+      if (fs.existsSync(resolved)) {
+        return `../plugins/${pluginName}/${candidate}`;
+      }
+    }
+    return null;
+  };
+
   if (isDev) {
     addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', { exclude: true });
@@ -42,11 +52,12 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', { exclude: true });
     addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/src/index.ts', { exclude: true });
 
-    const pluginPkgRoot = path.resolve(rootDir, '../packages/plugins');
+    const pluginPkgRoot = path.resolve(rootDir, '../plugins');
     if (fs.existsSync(pluginPkgRoot)) {
       const workerFactoryCandidates = ['src/worker/factory/index.ts', 'src/worker-factory/index.ts', 'src/worker-factory.ts'];
       const workerEntryCandidates = ['src/worker/index.ts', 'src/worker.ts'];
       const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
+      const rootCandidates = ['src/index.ts', 'src/index.tsx', 'src/index.mts', 'src/index.mjs', 'src/index.js', 'src/index.cjs'];
 
       for (const entry of fs.readdirSync(pluginPkgRoot, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
@@ -55,25 +66,22 @@ function createRuntimeAliasConfig({
         const pluginName = entry.name;
         const specBase = `@hierarchidb/${pluginName}`;
 
-        const resolveCandidate = (candidates: string[]) => {
-          for (const candidate of candidates) {
-            const resolved = path.resolve(rootDir, `../packages/plugins/${pluginName}/${candidate}`);
-            if (fs.existsSync(resolved)) return `../packages/plugins/${pluginName}/${candidate}`;
-          }
-          return null;
-        };
+        const rootRel = resolvePluginCandidate(rootCandidates, pluginName);
+        if (rootRel) {
+          addAlias(specBase, rootRel, { exclude: true });
+        }
 
-        const workerFactoryRel = resolveCandidate(workerFactoryCandidates);
+        const workerFactoryRel = resolvePluginCandidate(workerFactoryCandidates, pluginName);
         if (workerFactoryRel) {
           addAlias(`${specBase}/worker-factory`, workerFactoryRel, { exclude: true });
         }
 
-        const workerEntryRel = resolveCandidate(workerEntryCandidates);
+        const workerEntryRel = resolvePluginCandidate(workerEntryCandidates, pluginName);
         if (workerEntryRel) {
           addAlias(`${specBase}/worker`, workerEntryRel, { exclude: true });
         }
 
-        const uiRel = resolveCandidate(uiCandidates);
+        const uiRel = resolvePluginCandidate(uiCandidates, pluginName);
         if (uiRel) {
           addAlias(`${specBase}/ui`, uiRel, { exclude: true });
         }
@@ -86,23 +94,47 @@ function createRuntimeAliasConfig({
     addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.ts', { exclude: true });
     addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true });
 
-    const pluginPkgRoot = path.resolve(rootDir, '../packages/plugins');
+    const pluginPkgRoot = path.resolve(rootDir, '../plugins');
     if (fs.existsSync(pluginPkgRoot)) {
+      const workerEntryCandidates = ['src/worker/index.ts', 'src/worker.ts'];
+      const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
+      const rootCandidates = ['src/index.ts', 'src/index.tsx', 'src/index.mts', 'src/index.mjs', 'src/index.js', 'src/index.cjs'];
       for (const entry of fs.readdirSync(pluginPkgRoot, { withFileTypes: true })) {
         if (!entry.isDirectory()) continue;
         if (!entry.name.endsWith('-plugin')) continue;
 
         const pluginName = entry.name;
         const specBase = `@hierarchidb/${pluginName}`;
-        const workerDistRel = `../packages/plugins/${pluginName}/dist/worker/index.js`;
+        const rootDistRel = `../plugins/${pluginName}/dist/index.js`;
+        const rootDistAbs = path.resolve(rootDir, rootDistRel);
+        if (fs.existsSync(rootDistAbs)) {
+          addAlias(specBase, rootDistRel);
+        } else {
+          const rootSrcRel = resolvePluginCandidate(rootCandidates, pluginName);
+          if (rootSrcRel) {
+            addAlias(specBase, rootSrcRel);
+          }
+        }
+
+        const workerDistRel = `../plugins/${pluginName}/dist/worker/index.js`;
         const workerDistAbs = path.resolve(rootDir, workerDistRel);
         if (fs.existsSync(workerDistAbs)) {
           addAlias(`${specBase}/worker`, workerDistRel);
+        } else {
+          const workerSrcRel = resolvePluginCandidate(workerEntryCandidates, pluginName);
+          if (workerSrcRel) {
+            addAlias(`${specBase}/worker`, workerSrcRel, { exclude: true });
+          }
         }
-        const uiDistRel = `../packages/plugins/${pluginName}/dist/ui/index.js`;
+        const uiDistRel = `../plugins/${pluginName}/dist/ui/index.js`;
         const uiDistAbs = path.resolve(rootDir, uiDistRel);
         if (fs.existsSync(uiDistAbs)) {
           addAlias(`${specBase}/ui`, uiDistRel);
+        } else {
+          const uiSrcRel = resolvePluginCandidate(uiCandidates, pluginName);
+          if (uiSrcRel) {
+            addAlias(`${specBase}/ui`, uiSrcRel, { exclude: true });
+          }
         }
       }
     }

@@ -43,7 +43,7 @@ import {
 import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
-import { WorkerAPIClient } from '../../WorkerAPIClient.js';
+import { WorkerAPIClient } from '../../WorkerAPIClient.ts';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';

@@ -1,71 +1,209 @@
-type PrewarmDatabase = {
-  open: () => Promise<unknown>;
+import { pluginDatabaseLoaders } from '~/plugin-registry/index.ts';
+
+type DatabaseLoaderEntry = (typeof pluginDatabaseLoaders)[string];
+type PrewarmDescriptor = NonNullable<DatabaseLoaderEntry['prewarm']>[number];
+
+type PrewarmHandle = {
+  open?: () => Promise<unknown>;
+  close?: () => Promise<unknown>;
 };
+
+const MAX_DEPTH = 3;
+
+const prewarmNodeTypesCache: string[] = computePrewarmNodeTypes();
 
 const isBrowserEnvironment = (): boolean => typeof window !== 'undefined';
 
-const logDatabaseWarning = (label: string, error: unknown): void => {
+const logDatabaseWarning = (nodeType: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
-  console.warn(`[services/databases] Failed to load ${label} database`, error);
+  console.warn(`[services/databases] Failed to prewarm ${nodeType} database`, error);
 };
 
-async function loadDatabase<T extends PrewarmDatabase>(
-  label: string,
-  loader: () => Promise<T>,
-): Promise<T | undefined> {
-  if (!isBrowserEnvironment()) return undefined;
+function computePrewarmNodeTypes(): string[] {
+  return Object.entries(pluginDatabaseLoaders)
+    .filter(([, entry]) => Array.isArray(entry?.prewarm) && entry.prewarm.length > 0)
+    .map(([nodeType]) => nodeType)
+    .sort();
+}
+
+function isPrewarmHandle(value: unknown): value is PrewarmHandle {
+  if (!value || typeof value !== 'object') return false;
+  return typeof (value as Record<string, unknown>).open === 'function';
+}
+
+function isConstructable(fn: unknown): fn is new () => unknown {
+  if (typeof fn !== 'function') return false;
+  const descriptor = Object.getOwnPropertyDescriptor(fn, 'prototype');
+  if (!descriptor || !descriptor.value) return false;
+  const prototype = descriptor.value as Record<string, unknown>;
+  const keys = Object.getOwnPropertyNames(prototype).filter((key) => key !== 'constructor');
+  if (keys.length > 0) return true;
+  const source = Function.prototype.toString.call(fn);
+  return /^class\s/.test(source);
+}
+
+function scoreKey(key: string): number {
+  if (key === 'default') return 5;
+  if (/^(get|create|build|make)[A-Z].*(Database|DB)$/.test(key)) return 100;
+  if (/(Database|DB)$/.test(key)) return 90;
+  return 10;
+}
+
+function resolvePrewarmHandle(value: unknown, depth: number, visited: WeakSet<object>): PrewarmHandle | null {
+  if (depth > MAX_DEPTH) return null;
+
+  if (isPrewarmHandle(value)) {
+    return value;
+  }
+
+  if (typeof value === 'function') {
+    if (isConstructable(value)) {
+      try {
+        const instance = new (value as new () => unknown)();
+        const constructed = resolvePrewarmHandle(instance, depth + 1, visited);
+        if (constructed) return constructed;
+      } catch {
+        // ignore constructor errors
+      }
+    }
+
+    try {
+      const result = (value as () => unknown)();
+      const invoked = resolvePrewarmHandle(result, depth + 1, visited);
+      if (invoked) return invoked;
+    } catch {
+      // ignore invocation errors
+    }
+  }
+
+  if (value && typeof value === 'object') {
+    const objectValue = value as object;
+    if (visited.has(objectValue)) {
+      return null;
+    }
+    visited.add(objectValue);
+
+    const record = value as Record<string, unknown>;
+    const keys = Object.keys(record).sort((a, b) => scoreKey(b) - scoreKey(a));
+
+    for (const key of keys) {
+      const resolved = resolvePrewarmHandle(record[key], depth + 1, visited);
+      if (resolved) {
+        return resolved;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getPrewarmDescriptors(entry: DatabaseLoaderEntry | undefined): PrewarmDescriptor[] {
+  if (!entry?.prewarm) return [];
+  return entry.prewarm.filter((descriptor) =>
+    Boolean(descriptor && descriptor.exportName && descriptor.specifier),
+  ) as PrewarmDescriptor[];
+}
+
+async function loadModuleForDescriptor(
+  descriptor: PrewarmDescriptor,
+  entry: DatabaseLoaderEntry | undefined,
+  cache: Map<string, Promise<unknown>>,
+): Promise<unknown | null> {
+  const specifier = descriptor.specifier;
+  if (!specifier) return null;
+
+  if (cache.has(specifier)) {
+    return await cache.get(specifier)!;
+  }
+
+  const load = async () => {
+    if (entry?.moduleSpecifier === specifier && typeof entry.loader === 'function') {
+      try {
+        return await entry.loader();
+      } catch {
+        // fall back to direct import below
+      }
+    }
+    return await import(/* @vite-ignore */ specifier);
+  };
+
+  const promise = load();
+  cache.set(specifier, promise);
   try {
-    return await loader();
+    return await promise;
   } catch (error) {
-    logDatabaseWarning(label, error);
-    return undefined;
+    cache.delete(specifier);
+    throw error;
   }
 }
 
-export async function getBaseMapDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('basemap', async () => {
-    const mod = await import('@hierarchidb/basemap-plugin/database');
-    const { BaseMapDatabase } = mod as typeof import('@hierarchidb/basemap-plugin/database');
-    return new BaseMapDatabase() as unknown as PrewarmDatabase;
-  });
+function logPrewarmDescriptorWarning(
+  nodeType: string,
+  descriptor: PrewarmDescriptor,
+  message: string,
+  error?: unknown,
+): void {
+  if (typeof console === 'undefined') return;
+  const detail = `${message} for ${nodeType} (export ${descriptor.exportName} from ${descriptor.specifier})`;
+  if (error) {
+    console.warn(`[services/databases] ${detail}`, error);
+  } else {
+    console.warn(`[services/databases] ${detail}`);
+  }
 }
 
-export async function getResolverDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('resolver', async () => {
-    const mod = await import('@hierarchidb/resolver-plugin/database');
-    const { resolverDB } = mod as typeof import('@hierarchidb/resolver-plugin/database');
-    return resolverDB as unknown as PrewarmDatabase;
-  });
+export function getDatabaseNodeTypes(): string[] {
+  return prewarmNodeTypesCache;
 }
 
-export async function getSpreadsheetDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('spreadsheet', async () => {
-    const mod = await import('@hierarchidb/spreadsheet-plugin/database');
-    const { SpreadsheetDatabase } = mod as typeof import('@hierarchidb/spreadsheet-plugin/database');
-    return new SpreadsheetDatabase() as unknown as PrewarmDatabase;
-  });
-}
+export async function prewarmPluginDatabases(inputNodeTypes?: string[]): Promise<string[]> {
+  if (!isBrowserEnvironment()) return [];
 
-export async function getRouteDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('route', async () => {
-    const mod = await import('@hierarchidb/route-plugin/database');
-    const { RouteDatabase } = mod as typeof import('@hierarchidb/route-plugin/database');
-    return new RouteDatabase() as unknown as PrewarmDatabase;
-  });
-}
+  const successful = new Set<string>();
+  const moduleCache = new Map<string, Promise<unknown>>();
+  const targetNodeTypes = (inputNodeTypes ?? prewarmNodeTypesCache).filter((nodeType) =>
+    getPrewarmDescriptors(pluginDatabaseLoaders[nodeType]).length > 0,
+  );
 
-export async function getShapeDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('shape', async () => {
-    const mod = await import('@hierarchidb/shape-plugin');
-    const { ShapeDB } = mod as typeof import('@hierarchidb/shape-plugin');
-    return new ShapeDB() as unknown as PrewarmDatabase;
-  });
-}
+  for (const nodeType of targetNodeTypes) {
+    const entry = pluginDatabaseLoaders[nodeType];
+    const descriptors = getPrewarmDescriptors(entry);
+    if (descriptors.length === 0) continue;
 
-export async function getLocationDatabase(): Promise<PrewarmDatabase | undefined> {
-  return await loadDatabase('location', async () => {
-    const mod = await import('@hierarchidb/location-plugin');
-    const { getEphemeralLocationDB: getEphemeralLocationDatabase } = mod as typeof import('@hierarchidb/location-plugin');
-    return getEphemeralLocationDatabase() as unknown as PrewarmDatabase;
-  });
+    for (const descriptor of descriptors) {
+      let moduleValue: unknown;
+      try {
+        moduleValue = await loadModuleForDescriptor(descriptor, entry, moduleCache);
+      } catch (error) {
+        logPrewarmDescriptorWarning(nodeType, descriptor, 'Failed to load module', error);
+        continue;
+      }
+
+      if (!moduleValue) {
+        logPrewarmDescriptorWarning(nodeType, descriptor, 'Module import returned no value');
+        continue;
+      }
+
+      const exportValue = (moduleValue as Record<string, unknown>)[descriptor.exportName];
+      if (typeof exportValue === 'undefined') {
+        logPrewarmDescriptorWarning(nodeType, descriptor, 'Prewarm export not found');
+        continue;
+      }
+
+      const handle = resolvePrewarmHandle(exportValue, 0, new WeakSet<object>());
+      if (!handle) {
+        logPrewarmDescriptorWarning(nodeType, descriptor, 'Prewarm handle could not be resolved');
+        continue;
+      }
+
+      try {
+        await handle.open?.();
+        successful.add(nodeType);
+      } catch (error) {
+        logDatabaseWarning(nodeType, error);
+      }
+    }
+  }
+
+  return Array.from(successful);
 }

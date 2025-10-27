@@ -6,7 +6,7 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "generate:nojekyll": "mkdir -p dist/assets && touch dist/assets/.nojekyll",
-    "generate:favicon": "node scripts/generate-favicon.js",
+    "generate:favicon": "tsx scripts/generate-favicon.ts",
     "dev": "vite dev",
     "test": "vitest run",
     "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",
@@ -95,6 +95,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rollup-plugin-visualizer": "5.12.0",
+    "tsx": "^4.20.5",
     "vite": "^4.0.0",
     "vite-plugin-comlink": "^5.3.0",
     "vite-plugin-dts": "^4.5.4",

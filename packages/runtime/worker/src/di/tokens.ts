@@ -1,6 +1,7 @@
 export const WorkerDiTokens = {
   PluginWorkerSpecifierMap: Symbol.for('runtime-worker.PluginWorkerSpecifierMap'),
   PluginWorkerSourceMap: Symbol.for('runtime-worker.PluginWorkerSourceMap'),
+  PluginWorkerLoaderMap: Symbol.for('runtime-worker.PluginWorkerLoaderMap'),
   PluginWorkerModuleLoader: Symbol.for('runtime-worker.PluginWorkerModuleLoader'),
   PluginRegistry: Symbol.for('runtime-worker.PluginRegistry'),
 } as const;

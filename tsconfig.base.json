@@ -185,6 +185,9 @@
       "@hierarchidb/ui-treeconsole-base/*": [
         "packages/ui/treeconsole/base/src/*"
       ],
+      "@hierarchidb/*-plugin": [
+        "plugins/*-plugin/src/index.ts"
+      ],
       "@hierarchidb/util": [
         "packages/util/src/index.ts"
       ],

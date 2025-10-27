@@ -13,6 +13,9 @@
       "shared": [
         "dist/shared/index.d.ts"
       ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ],
@@ -31,6 +34,11 @@
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
     },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
+    },
     "./shared": {
       "types": "./dist/shared/index.d.ts",
       "import": "./dist/shared/index.js"
@@ -44,7 +52,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/public.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -140,7 +148,11 @@
       "icon": {
         "mui": "Hexagon",
         "emoji": "\u2666\ufe0f",
-        "color": "#a3b030"
+        "color": "#a3b030",
+        "component": {
+          "specifier": "@hierarchidb/shape-plugin/icon",
+          "exportName": "ShapePluginIcon"
+        }
       },
       "priority": 800,
       "category": "geographic",

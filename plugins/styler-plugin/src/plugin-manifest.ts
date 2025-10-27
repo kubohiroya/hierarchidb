@@ -20,8 +20,16 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'Palette',
     emoji: '🎨',
     color: '#dcbc50',
+    component: {
+      specifier: '@hierarchidb/styler-plugin/icon',
+      exportName: 'StylerPluginIcon',
+    },
   },
-  category: 'visualization',
+  category: {
+    id: 'visualization',
+    menuGroup: 'tabular',
+    createOrder: 700,
+  },
   capabilities: {
     canHaveChildren: false,
     canBeRoot: false,
@@ -44,6 +52,9 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
         required: true,
       },
     ],
+  },
+  worker: {
+    preload: ['registerStylerWorkerStores', 'loadStylerEntitiesDbModule'],
   },
 };
 

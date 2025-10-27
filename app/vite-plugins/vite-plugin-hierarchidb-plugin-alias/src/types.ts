@@ -1,4 +1,4 @@
-export type PluginEntryKind = 'ui' | 'worker' | 'database' | 'common' | 'root';
+export type PluginEntryKind = 'ui' | 'worker' | 'database' | 'common' | 'root' | 'icon';
 
 export interface PluginSubpathInfo {
   readonly kind: PluginEntryKind;

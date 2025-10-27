@@ -22,7 +22,7 @@ class UIStateDB extends Dexie {
   treetable_properties!: Table<TreeTableProperties, string>;
 
   constructor() {
-    super('hdb_ui_state');
+    super(`hierarchidb-ui-state`);
     // v2: current store (also handles migrating and removing legacy table)
     this.version(3)
       .stores({ treetable_properties: '&pageNodeId' });

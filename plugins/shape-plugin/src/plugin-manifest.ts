@@ -19,8 +19,16 @@ export const PLUGIN_MANIFEST = {
     mui: 'Hexagon',
     emoji: '♦️',
     color: '#a3b030',
+    component: {
+      specifier: '@hierarchidb/shape-plugin/icon',
+      exportName: 'ShapePluginIcon',
+    },
   },
-  category: 'geographic',
+  category: {
+    id: 'geographic',
+    menuGroup: 'geo',
+    createOrder: 800,
+  },
   capabilities: {
     canHaveChildren: false,
     canBeRoot: false,
@@ -54,6 +62,17 @@ export const PLUGIN_MANIFEST = {
         required: true,
       },
     ],
+  },
+  database: {
+    prewarm: [
+      {
+        specifier: '@hierarchidb/shape-plugin',
+        export: 'ShapeDB',
+      },
+    ],
+  },
+  worker: {
+    preload: ['registerShapeWorkerStores', 'loadShapeEntitiesDbModule'],
   },
 };
 

@@ -95,7 +95,7 @@ export class WorkerAPIClient {
           WorkerAPIClient.verified = true;
         }
         
-      } catch (pingError) {
+      } catch {
         
         // Leave this.verified as false; Provider will wait on channel/event.
       }
@@ -196,14 +196,14 @@ export const getWorkerAPIClient = () => WorkerAPIClient.getSingleton();
 type WorkerStatusWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
-type ClientModule = typeof import('./client.js');
+type ClientModule = typeof import('./client.ts');
 
 let clientModule: ClientModule | null = null;
 let clientModulePromise: Promise<ClientModule> | null = null;
 
 async function loadClientModule(): Promise<ClientModule> {
   if (!clientModulePromise) {
-    clientModulePromise = import('./client.js').then((module) => {
+    clientModulePromise = import('./client.ts').then((module) => {
       clientModule = module;
       return module;
     }).catch((error) => {

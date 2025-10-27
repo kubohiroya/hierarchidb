@@ -1,14 +1,21 @@
+export interface PluginIconComponentConfig {
+  specifier: string;
+  exportName?: string;
+}
+
 export interface PluginIconConfig {
   muiIconName?: string;
   mui?: string;
   emoji?: string;
   color?: string;
+  component?: PluginIconComponentConfig | null;
 }
 
 export type PluginCategoryConfig =
   | string
   | null
   | {
+      id?: string;
       menuGroup?: string;
       createOrder?: number;
       treeId?: string;
@@ -39,6 +46,18 @@ export interface PluginCapabilities {
   [key: string]: boolean | undefined;
 }
 
+export interface PluginDatabasePrewarmEntry {
+  export?: string;
+  exportName?: string;
+  specifier?: string;
+  module?: string;
+}
+
+export type PluginDatabasePrewarmConfig =
+  | string
+  | PluginDatabasePrewarmEntry
+  | Array<string | PluginDatabasePrewarmEntry>;
+
 export interface PluginManifest {
   id?: string;
   name?: string;
@@ -54,11 +73,18 @@ export interface PluginManifest {
   schema?: PluginManifestSchema;
   capabilities?: PluginCapabilities;
   packageName?: string;
+  worker?: {
+    preload?: string[];
+  } | null;
+  database?: {
+    prewarm?: PluginDatabasePrewarmConfig;
+  } | null;
 }
 
 export interface PluginModuleInfo {
   specifier: string;
   source?: string;
+  exportName?: string;
 }
 
 export interface PluginModuleSet {
@@ -67,6 +93,7 @@ export interface PluginModuleSet {
   worker?: PluginModuleInfo;
   database?: PluginModuleInfo;
   common?: PluginModuleInfo;
+  icon?: PluginModuleInfo;
 }
 
 export interface PluginRegistryEntry {

@@ -7,8 +7,26 @@
 
 import type { NodeType } from '@hierarchidb/common-types';
 import { readRuntimeMode } from '@hierarchidb/util';
+import {
+  getAllPluginNodeTypes,
+  getNodeTypesByCategoryId,
+  getNodeTypesByMenuGroup,
+  orderNodeTypes,
+} from '../services/plugin-registry.ts';
 
-const NT = (s: string) => s as NodeType;
+const CORE_PLUGINS = orderNodeTypes(getNodeTypesByMenuGroup('core'));
+const GEOGRAPHIC_PLUGINS = orderNodeTypes(getNodeTypesByCategoryId('geographic'));
+const DATA_PLUGINS = orderNodeTypes(getNodeTypesByCategoryId('data'));
+const VISUALIZATION_PLUGINS = orderNodeTypes(getNodeTypesByCategoryId('visualization'));
+
+const DEFAULT_REQUESTED_PLUGINS = orderNodeTypes([
+  ...CORE_PLUGINS,
+  ...GEOGRAPHIC_PLUGINS,
+  ...DATA_PLUGINS,
+  ...VISUALIZATION_PLUGINS,
+]);
+
+const PRIMARY_CORE_PLUGIN: NodeType | undefined = CORE_PLUGINS[0];
 
 /**
  * Plugin selection configuration
@@ -47,13 +65,7 @@ export interface PluginConfig {
  */
 export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
   // Application explicitly requests these plugin-loader
-  requested: [
-    NT('folder'),      // Basic folder-plugin functionality
-    NT('basemap'),     // Map layers
-    NT('shape'),       // Geographic shapes
-    NT('styler'),      // Styling
-    NT('spreadsheet'), // Tabular data
-  ],
+  requested: DEFAULT_REQUESTED_PLUGINS,
 
   // No exclusions by default
   excluded: [],
@@ -101,7 +113,7 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
 
   // Testing: Minimal set for tests
   test: {
-    requested: [NT('folder')],  // Only the base plugin
+    requested: PRIMARY_CORE_PLUGIN ? [PRIMARY_CORE_PLUGIN] : DEFAULT_REQUESTED_PLUGINS.slice(0, 1),
     autoDiscovery: false,
     options: {
       verbose: false,
@@ -145,19 +157,24 @@ export const PLUGIN_FEATURES = {
  */
 export function getRequestedPlugins(): NodeType[] {
   const config = getPluginConfig();
-  let requested = [...config.requested];
+  let requested = config.loadAll
+    ? orderNodeTypes(getAllPluginNodeTypes())
+    : orderNodeTypes(config.requested);
 
   // Filter based on feature flags
   if (!PLUGIN_FEATURES.enableGeographic) {
-    requested = requested.filter(p => ![NT('basemap'), NT('shape')].includes(p));
+    const exclude = new Set(GEOGRAPHIC_PLUGINS);
+    requested = requested.filter((p) => !exclude.has(p));
   }
 
   if (!PLUGIN_FEATURES.enableDataProcessing) {
-    requested = requested.filter(p => p !== NT('spreadsheet'));
+    const exclude = new Set(DATA_PLUGINS);
+    requested = requested.filter((p) => !exclude.has(p));
   }
 
   if (!PLUGIN_FEATURES.enableStyling) {
-    requested = requested.filter(p => p !== NT('styler'));
+    const exclude = new Set(VISUALIZATION_PLUGINS);
+    requested = requested.filter((p) => !exclude.has(p));
   }
 
   // Remove excluded plugin-loader

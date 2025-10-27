@@ -27,7 +27,7 @@ function normalizeError(error: unknown): Error {
 }
 import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
 import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
-import { bootLog } from '../utils/bootLog.js';
+import { bootLog } from '../utils/bootLog.ts';
 import { useBootProgress } from './BootProgressProvider.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from '../worker-runtime/workerApiClientLoader.js';
 import { ensureDialogStateAPI } from '../loader.js';

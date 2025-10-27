@@ -7,7 +7,7 @@ import {
   getRouterMode,
   getBasePath,
 } from './router/index.js';
-import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.js';
+import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 
 /**
  * Initialize and mount the application with TanStack Router

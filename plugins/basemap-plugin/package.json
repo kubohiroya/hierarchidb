@@ -11,6 +11,12 @@
       "ui": [
         "dist/ui/index.d.ts"
       ],
+      "database": [
+        "dist/services/database/index.d.ts"
+      ],
+      "icon": [
+        "dist/icon/index.d.ts"
+      ],
       "*": [
         "dist/index.d.ts"
       ],
@@ -29,8 +35,14 @@
       "import": "./dist/worker/index.js"
     },
     "./database": {
-      "types": "./dist/database/index.d.ts",
-      "import": "./dist/database/index.js"
+      "types": "./dist/services/database/index.d.ts",
+      "import": "./dist/services/database/index.js",
+      "default": "./dist/services/database/index.js"
+    },
+    "./icon": {
+      "types": "./dist/icon/index.d.ts",
+      "import": "./dist/icon/index.js",
+      "default": "./dist/icon/index.js"
     },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
@@ -38,7 +50,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/factory/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -112,7 +124,11 @@
       "icon": {
         "mui": "Public",
         "emoji": "\ud83c\udf0d",
-        "color": "#b0b3d9"
+        "color": "#b0b3d9",
+        "component": {
+          "specifier": "@hierarchidb/basemap-plugin/icon",
+          "exportName": "BasemapPluginIcon"
+        }
       },
       "priority": 900,
       "category": "geographic",

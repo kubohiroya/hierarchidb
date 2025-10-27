@@ -4,6 +4,7 @@ import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } fro
 
 type PluginWorkerModuleMap = Record<string, string>;
 type PluginWorkerSourceMap = Record<string, string | undefined>;
+type PluginWorkerLoaderMap = Record<string, () => Promise<unknown>>;
 
 @injectable()
 export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContract {
@@ -12,6 +13,9 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
   constructor(
     @inject(WorkerDiTokens.PluginWorkerSpecifierMap)
     private readonly specMap: PluginWorkerModuleMap,
+    @inject(WorkerDiTokens.PluginWorkerLoaderMap)
+    @optional()
+    private readonly loaderMap?: PluginWorkerLoaderMap,
     @inject(WorkerDiTokens.PluginWorkerSourceMap)
     @optional()
     private readonly sourceMap?: PluginWorkerSourceMap,
@@ -21,6 +25,9 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
   ) {}
 
   has(nodeType: string): boolean {
+    if (this.loaderMap && Object.prototype.hasOwnProperty.call(this.loaderMap, nodeType)) {
+      return true;
+    }
     if (this.registry) {
       return this.registry.some((entry) => entry.nodeType === nodeType);
     }
@@ -28,29 +35,56 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
   }
 
   listNodeTypes(): string[] {
+    const nodes = new Set<string>();
     if (this.registry) {
-      return this.registry.map((entry) => entry.nodeType);
+      for (const entry of this.registry) {
+        nodes.add(entry.nodeType);
+      }
+    } else {
+      for (const key of Object.keys(this.specMap)) {
+        nodes.add(key);
+      }
     }
-    return Object.keys(this.specMap);
+    if (this.loaderMap) {
+      for (const key of Object.keys(this.loaderMap)) {
+        nodes.add(key);
+      }
+    }
+    return Array.from(nodes);
   }
 
   importModule<T = unknown>(nodeType: string): Promise<T> {
-    const spec = this.specMap[nodeType];
-    if (!spec) {
-      return Promise.reject(
-        new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`),
-      );
-    }
-
     if (!this.cache.has(nodeType)) {
-      const loaderPromise = this.loadModule<T>(nodeType, spec);
-      this.cache.set(nodeType, loaderPromise as Promise<unknown>);
+      const directLoader = this.loaderMap?.[nodeType];
+      if (directLoader) {
+        const spec = this.specMap[nodeType];
+        const loaderPromise = (async () => {
+          try {
+            return await directLoader();
+          } catch (loaderError) {
+            if (spec) {
+              return this.loadFromSpecifier<T>(nodeType, spec);
+            }
+            throw loaderError;
+          }
+        })();
+        this.cache.set(nodeType, loaderPromise as Promise<unknown>);
+      } else {
+        const spec = this.specMap[nodeType];
+        if (!spec) {
+          return Promise.reject(
+            new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`),
+          );
+        }
+        const loaderPromise = this.loadFromSpecifier<T>(nodeType, spec);
+        this.cache.set(nodeType, loaderPromise as Promise<unknown>);
+      }
     }
 
     return this.cache.get(nodeType)! as Promise<T>;
   }
 
-  private async loadModule<T>(nodeType: string, spec: string): Promise<T> {
+  private async loadFromSpecifier<T>(nodeType: string, spec: string): Promise<T> {
     try {
       const result = await import(/* @vite-ignore */ spec);
       return result as T;

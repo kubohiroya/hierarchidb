@@ -5,7 +5,7 @@
 
 import type { TreeId } from '@hierarchidb/common-types';
 import { getPresentation, prefetchAllIcons } from '../services/plugin-presentation.ts';
-import { getMenuSpec } from '../plugin-loader/menu-spec.ts';
+import { getMenuSpec, type MenuGroup } from '../plugin-loader/menu-spec.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../services/plugin-registry.ts';
 
 export type TreeContext = 'resources' | 'projects';
@@ -19,7 +19,7 @@ export interface PluginMenuItem {
     emoji?: string;
     color?: string;
   };
-  group?: 'core' | 'base' | 'geo' | 'tabular-source' | 'project' | string;
+  group?: MenuGroup | string;
   priority: number;
   description: string;
   backgroundColor: string;
@@ -69,7 +69,12 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
   });
 
   // Append remaining plugins, sorted by createOrder then label
-  const remaining = installed.filter((plugin) => !used.has(plugin.nodeType));
+  const allowedGroups = new Set(spec.groups);
+  const remaining = installed.filter((plugin) => {
+    if (used.has(plugin.nodeType)) return false;
+    const group = (spec.groupOf[plugin.nodeType] ?? plugin.menuGroup) as MenuGroup | undefined;
+    return group ? allowedGroups.has(group) : false;
+  });
   remaining.sort((a, b) => {
     if (a.createOrder !== b.createOrder) {
       return a.createOrder - b.createOrder;

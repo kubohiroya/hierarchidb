@@ -19,15 +19,31 @@ export const PLUGIN_MANIFEST: PluginMetadata = {
     mui: 'Extension',
     emoji: '🧩',
     color: '#ffb3c1',
+    component: {
+      specifier: '@hierarchidb/resolver-plugin/icon',
+      exportName: 'ResolverPluginIcon',
+    },
   },
   category: {
+    id: 'data',
     treeId: '*',
-    menuGroup: 'document',
+    menuGroup: 'tabular',
     createOrder: 60,
   },
   tags: ['mapping', 'schema'],
   capabilities: {
     relationalData: true,
+  },
+  database: {
+    prewarm: [
+      {
+        specifier: '@hierarchidb/resolver-plugin/database',
+        export: 'resolverDB',
+      },
+    ],
+  },
+  worker: {
+    preload: ['registerResolverWorkerStores', 'loadResolverEntitiesDbModule'],
   },
 };
 
