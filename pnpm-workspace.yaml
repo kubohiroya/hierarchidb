@@ -6,11 +6,13 @@ packages:
   - packages/tools
   - packages/tools/*
   - packages/vite-plugins/*
+  - app/vite-plugins/*
   - packages/runtime-ui/*
   - packages/runtime/*
   - packages/runtime-shared/*
   - packages/ui/*
   - packages/ui/treeconsole/*
+  - packages/plugin-registry
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services

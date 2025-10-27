@@ -6,12 +6,13 @@
   "workspaces": [
     "analyze-licenses",
     "codemods",
-    "dev-scripts",
+    "build-scripts",
     "plugin-manifest-loader",
     "schemas"
   ],
   "scripts": {
     "build": "pnpm -r --filter ./\\* --if-present run build",
-    "lint": "pnpm -r --filter ./\\* --if-present run lint"
+    "lint": "pnpm -r --filter ./\\* --if-present run lint",
+    "clean": "pnpm -r --filter ./\\* --if-present run clean"
   }
 }

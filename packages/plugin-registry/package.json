@@ -1,0 +1,31 @@
+{
+  "name": "@hierarchidb/plugin-registry",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "generated",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "import": "./generated/registry.ts",
+      "default": "./generated/registry.ts"
+    },
+    "./types": {
+      "import": "./src/types.ts",
+      "default": "./src/types.ts"
+    },
+    "./derivations": {
+      "import": "./src/derivations.ts",
+      "default": "./src/derivations.ts"
+    },
+    "./generated/registry": {
+      "import": "./generated/registry.ts",
+      "default": "./generated/registry.ts"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist"
+  }
+}

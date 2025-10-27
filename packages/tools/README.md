@@ -8,7 +8,7 @@
 |--------------|------|----------|------|
 | `analyze-licenses` | pnpm パッケージ | OSS ライセンス情報の集計 CLI。`pnpm --filter @hierarchidb/analyze-licenses run build` で `dist/cli.mjs` を生成し、`pnpm analyze:licenses` から呼び出します。 | `tsdown` で Node 向けバンドルを作成。 |
 | `codemods` | pnpm パッケージ | 既存コードの一括変換ユーティリティ（例: ESM import 拡張子調整）。`pnpm --filter @hierarchidb/tools-codemods run codemod:esm-ext` で実行。 | 生成物は `dist/` に保存。 |
-| `dev-scripts` | pnpm パッケージ | `gen-plugin-loaders` や `sync-peer-dependencies` など、CI／開発時の Node スクリプト群。`pnpm --filter @hierarchidb/tools-dev-scripts run <script>` で呼び出し。 | `@hierarchidb/tools-plugin-manifest-loader` を依存に持つ。 |
+| `build-scripts` | pnpm パッケージ | `gen-plugin-loaders` や `sync-peer-dependencies` など、ビルド前後の自動化スクリプト群。`pnpm --filter @hierarchidb/tools-build-scripts run <script>` で呼び出し。 | `@hierarchidb/tools-plugin-manifest-loader` を依存に持つ。 |
 | `plugin-manifest-loader` | pnpm パッケージ | プラグインメタ情報（`plugin.manifest.json`）の読み込みラッパー。`@hierarchidb/tools-plugin-manifest-loader` として公開され、他ツールから `loadPluginManifestFromFile` を提供。 | `dist/index.js` に CommonJS/ESM 出力を生成。 |
 | `schemas` | pnpm パッケージ | JSON Schema 群（現状はプラグイン manifest 用）。パッケージとして切り出し、各ツールから相対参照しない運用に統一。 | 型生成やバリデーション時に `@hierarchidb/tools-schemas` を参照。 |
 | `ticketing/` | Python スクリプト群 | Excel とのタスク連携など、CLI ではなく Python で実装された運用スクリプト。 | pnpm 管理外。必要に応じて仮想環境で実行。 |
@@ -18,7 +18,7 @@
 
 - まとめてビルドする場合: `pnpm --filter @hierarchidb/tools run build`
 - 個別に再生成する場合: 各サブパッケージの `scripts` を `pnpm --filter <name> run <script>` で呼び出します。
-- プラグインローダーの再生成: `pnpm tools:gen-plugin-loaders`（ルート `package.json` 経由）。内部では `@hierarchidb/tools-plugin-manifest-loader` → `@hierarchidb/tools-dev-scripts` の順に `build` / `gen-plugin-loaders` を実行します。
+- プラグインローダーの再生成: `pnpm tools:gen-plugin-loaders`（ルート `package.json` 経由）。内部では `@hierarchidb/tools-plugin-manifest-loader` → `@hierarchidb/tools-build-scripts` の順に `build` / `gen-plugin-loaders` を実行します。
 
 ## 開発メモ
 

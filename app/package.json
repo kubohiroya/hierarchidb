@@ -38,6 +38,7 @@
     "@hierarchidb/linker-plugin": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",
     "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -105,14 +106,14 @@
       "build": {
         "dependsOn": [
           "^build",
-          "@hierarchidb/tools-dev-scripts#build",
+          "@hierarchidb/tools-build-scripts#build",
           "@hierarchidb/tools-plugin-manifest-loader#build",
           "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
         ]
       },
       "typecheck": {
         "dependsOn": [
-          "@hierarchidb/tools-dev-scripts#build",
+          "@hierarchidb/tools-build-scripts#build",
           "@hierarchidb/tools-plugin-manifest-loader#build",
           "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
         ]

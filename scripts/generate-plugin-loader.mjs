@@ -8,7 +8,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 const commands = [
   ['--filter', '@hierarchidb/tools-plugin-manifest-loader', 'run', 'build'],
-  ['--filter', '@hierarchidb/tools-dev-scripts', 'run', 'gen-plugin-loaders'],
+  ['--filter', '@hierarchidb/tools-build-scripts', 'run', 'gen-plugin-loaders'],
 ];
 
 export async function generatePluginRegistry() {

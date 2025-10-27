@@ -1,25 +1,24 @@
-// AUTO-GENERATED entrypoint for HierarchiDB plugin registry.
-// The contents of ./generated/* are written by scripts/generate-plugin-loader.mjs.
+import { pluginRegistry as canonicalRegistry } from '@hierarchidb/plugin-registry';
+import { derivePluginDefinitions, derivePluginModuleSpecifiers } from '@hierarchidb/plugin-registry/derivations';
+import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-registry/types.ts';
 
-/*
-export type {
-  PluginDefinition,
-  PluginModuleSpecifierMap,
-  PluginLoaderFactoryMap,
-  PluginRegistryEntry,
-  PluginRegistrySnapshot,
-  PluginManifest,
-  PluginIconConfig,
-  PluginCategoryConfig,
-  PluginManifestField,
-  PluginManifestSchema,
-  PluginCapabilities,
-} from './types';
- */
-export {
-  pluginDefinitions,
+export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
+
+export const pluginDefinitions: PluginDefinition[] = derivePluginDefinitions(pluginRegistry);
+
+export const pluginUiModuleMap: Record<string, string> = derivePluginModuleSpecifiers(
   pluginRegistry,
-  pluginUiModuleMap,
-  pluginUiLoaders,
-  pluginWorkerModuleMap,
-} from './generated/index.js';
+  'ui',
+);
+
+export const pluginUiLoaders: Record<string, () => Promise<unknown>> = Object.fromEntries(
+  Object.entries(pluginUiModuleMap).map(([nodeType, specifier]) => [
+    nodeType,
+    () => import(specifier),
+  ]),
+);
+
+export const pluginWorkerModuleMap: Record<string, string> = derivePluginModuleSpecifiers(
+  pluginRegistry,
+  'worker',
+);

@@ -5,7 +5,7 @@ import {
   pluginRegistry,
   pluginUiModuleMap,
   pluginUiLoaders,
-} from '../generated/index.js';
+} from '../index.js';
 import { UIPluginRegistryTokens } from './tokens.js';
 import type { PluginUiModuleLoader as PluginUiModuleLoaderContract } from './interfaces.js';
 import { PluginUiModuleLoader } from './PluginUiModuleLoader.js';

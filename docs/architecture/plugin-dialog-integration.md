@@ -4,7 +4,7 @@ This memo captures the current implementation that discovers HierarchiDB plugins
 
 ## Build-time plugin discovery
 
-* `scripts/generate-plugin-loader.mjs` parses `app/package.json` to locate dependencies that match `@hierarchidb/*-plugin`, resolves each package’s `exports`, and builds the static artefacts used everywhere else: `app/src/generated/worker-loader.ts`, `app/src/generated/ui-loader.ts`, and `app/src/plugin-registry/generated/index.ts` (consumed via `~/plugin-registry`).【F:scripts/generate-plugin-loader.mjs†L1-L400】
+* `scripts/generate-plugin-loader.mjs` parses `app/package.json` to locate dependencies that match `@hierarchidb/*-plugin`, resolves each package’s `exports`, and emits a single canonical artefact: `packages/plugin-registry/generated/registry.ts`. UI/Worker/Gateway code derive their runtime maps fromこのファイルの内容を Inversify コンテナ経由で参照します。【F:scripts/generate-plugin-loader.mjs†L1-L400】
 * Vite 側は `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` の alias プラグインでプラグインパッケージを `src/` へ解決するだけに留め、仮想モジュールは生成しない。ビルド/開発の依存関係監視は `scripts/generate-plugin-loader.mjs` を呼び出すアプリ固有のプラグインで担保する。【F:app/vite.config.ts†L1-L160】【F:packages/vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/alias.ts†L1-L134】
 
 ## Runtime metadata wiring in the app shell

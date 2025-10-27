@@ -58,6 +58,13 @@
       "@hierarchidb/plugin-runtime-services/*": [
         "packages/plugin-runtime-services/src/*"
       ],
+      "@hierarchidb/plugin-registry": [
+        "packages/plugin-registry/generated/registry.ts"
+      ],
+      "@hierarchidb/plugin-registry/*": [
+        "packages/plugin-registry/src/*",
+        "packages/plugin-registry/generated/*"
+      ],
       "@hierarchidb/plugin-ui-sdk": [
         "packages/plugin-ui-sdk/src/index.ts"
       ],

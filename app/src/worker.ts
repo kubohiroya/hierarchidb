@@ -10,7 +10,7 @@ import {
   WorkerDiTokens,
   type PluginWorkerModuleLoader,
 } from '@hierarchidb/runtime-worker';
-import type { PluginDefinition } from '~/plugin-registry/types.js';
+import type { PluginDefinition } from '@hierarchidb/plugin-registry/types.ts';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-registry/index.js';
 
 /** Runtime export metadata (subset consumed during bootstrap). */

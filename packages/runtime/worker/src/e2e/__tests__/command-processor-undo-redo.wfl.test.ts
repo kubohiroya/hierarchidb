@@ -4,34 +4,8 @@ import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
-
-const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
-  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
-  return {
-    postMessage(value, transfer) {
-      if (transfer && transfer.length > 0) {
-        port.postMessage(value, transfer);
-      } else {
-        port.postMessage(value);
-      }
-    },
-    addEventListener(_type, handler) {
-      const wrapped = (data: unknown) => handler({ data } as MessageEvent);
-      listeners.set(handler, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener(_type, handler) {
-      const wrapped = listeners.get(handler);
-      if (wrapped) {
-        port.off('message', wrapped);
-        listeners.delete(handler);
-      }
-    },
-    start() {
-      port.start?.();
-    },
-  };
-};
+import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { assertCommandSuccess, CommandResultSuccess } from '../../test-utils/assertions.js';
 
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -53,8 +27,8 @@ const UNDOABLE_COMMANDS = new Set([
 describe('WFL command processor undo/redo flow', () => {
   it('executes core commands, undoes them, and redoes them', async () => {
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<WorkerTestAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<WorkerTestAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const workingCopyAPI = await client.getWorkingCopyAPI();
@@ -66,10 +40,10 @@ describe('WFL command processor undo/redo flow', () => {
     const rootId = tree.rootId as NodeId;
 
     const executedUndoables: string[] = [];
-    const runCommand = async <K extends string, P>(kind: K, payload: P) => {
+    const runCommand = async <K extends string, P>(kind: K, payload: P): Promise<CommandResultSuccess> => {
       const envelope = await commandProcessor.createEnvelope(kind, payload);
       const result = await commandProcessor.processCommand(envelope);
-      expect(result.success).toBe(true);
+      assertCommandSuccess(result, kind);
       if (UNDOABLE_COMMANDS.has(kind)) {
         executedUndoables.push(kind);
       }
@@ -117,7 +91,7 @@ describe('WFL command processor undo/redo flow', () => {
     await runCommand('remove', { nodeIds: [removeTargetId] });
 
     const rootChildrenBeforeCommit = new Set((await queryAPI.listChildren(rootId)).map((node) => node.id));
-    const workingCopy = await workingCopyAPI.createDraftWorkingCopy('folder', rootId, { name: 'UndoRedo Draft' });
+    const workingCopy = await workingCopyAPI.createDraftWorkingCopy('folder' as NodeType, rootId, { name: 'UndoRedo Draft' });
     await runCommand('commitWorkingCopy', { workingCopyId: workingCopy.id, onNameConflict: 'auto-rename' });
     const rootChildrenAfterCommit = await queryAPI.listChildren(rootId);
     const committedNode = rootChildrenAfterCommit.find((node) => !rootChildrenBeforeCommit.has(node.id));
@@ -189,8 +163,8 @@ describe('WFL command processor undo/redo flow', () => {
   it('create -> rename -> trash -> restore sequence can be undone and redone step-by-step', async () => {
     const treeId = 'r' as TreeId;
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<WorkerTestAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<WorkerTestAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const commandProcessor = await client.getCommandProcessor();
@@ -208,18 +182,18 @@ describe('WFL command processor undo/redo flow', () => {
         name: 'UndoRedo Headless Original',
       }),
     );
-    expect(createResult.success).toBe(true);
+    assertCommandSuccess(createResult, 'createNode');
     const nodeId = createResult.nodeId as NodeId;
 
     const renameResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('updateNode', { nodeId, name: 'UndoRedo Headless Renamed' }),
     );
-    expect(renameResult.success).toBe(true);
+    assertCommandSuccess(renameResult, 'updateNode');
 
     const moveToTrashResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId] }),
     );
-    expect(moveToTrashResult.success).toBe(true);
+    assertCommandSuccess(moveToTrashResult, 'moveToTrash');
 
     const restoreResult = await commandProcessor.processCommand(
       await commandProcessor.createEnvelope('restoreFromTrash', {

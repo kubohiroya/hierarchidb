@@ -120,6 +120,7 @@ const ResizableTableHeader: React.FC<{
         '&:hover': {
           backgroundColor: 'action.hover',
         },
+        paddingLeft: '3px',
       }}
     >
       <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -128,8 +129,10 @@ const ResizableTableHeader: React.FC<{
           direction={sortDirection === 'desc' ? 'desc' : 'asc'}
           onClick={onSort}
         >
-          <Typography variant="subtitle2" noWrap>
-            {column}
+          <Typography variant="subtitle2" noWrap
+                      sx={{padding: '0 3px 0 3px'}}
+          >
+            **{column}
           </Typography>
         </TableSortLabel>
 

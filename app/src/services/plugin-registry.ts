@@ -1,8 +1,11 @@
-import {
-  pluginRegistry,
-} from '../plugin-registry/index.js';
+import { pluginRegistry } from '../plugin-registry/index.js';
 import appPackageJson from '../../package.json' with { type: 'json' };
-import { PluginCategoryConfig, PluginIconConfig, PluginManifest, PluginRegistryEntry } from '../plugin-registry/types.ts';
+import type {
+  PluginCategoryConfig,
+  PluginIconConfig,
+  PluginManifest,
+  PluginRegistryEntry,
+} from '@hierarchidb/plugin-registry/types.ts';
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;
@@ -18,6 +21,7 @@ export interface InstalledPlugin {
   hasUI: boolean;
   hasWorker: boolean;
   hasCommon: boolean;
+  hasDatabase: boolean;
   label: string;
   icon: {
     muiIconName?: string;
@@ -109,14 +113,20 @@ function computeInstalledPlugins(): InstalledPlugin[] {
         : 1000;
     const treeContext = categoryObject?.treeId ?? '*';
 
+    const hasUI = Boolean(entry.modules.ui?.specifier);
+    const hasWorker = Boolean(entry.modules.worker?.specifier);
+    const hasCommon = Boolean(entry.modules.common?.specifier);
+    const hasDatabase = Boolean(entry.modules.database?.specifier);
+
     return {
       nodeType: entry.nodeType,
       packageName: entry.packageName,
       version: entry.version,
       manifest,
-      hasUI: entry.hasUI,
-      hasWorker: entry.hasWorker,
-      hasCommon: entry.hasCommon,
+      hasUI,
+      hasWorker,
+      hasCommon,
+      hasDatabase,
       label,
       icon: {
         muiIconName: iconConfig?.muiIconName ?? iconConfig?.mui ?? undefined,

@@ -6,7 +6,7 @@
  * registry emitted by scripts/generate-plugin-loader.mjs.
  */
 
-import { pluginWorkerModuleMap } from './generated/plugin-metadata.js';
+import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 import { getWorkerContainer } from './di/container.js';
 import { WorkerDiTokens } from './di/tokens.js';
 import type { PluginWorkerModuleLoader } from './di/interfaces.js';

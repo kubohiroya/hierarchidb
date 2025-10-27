@@ -5,6 +5,13 @@ import { CommandProcessor } from '../CommandProcessor.js';
 import { WorkingCopyService } from '../WorkingCopyService.js';
 import { WorkerErrorCode } from '../command-types.js';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import {
+  assertCommandFailure,
+  assertCommandSuccess,
+  assertCommitConflict,
+  assertCommitNameConflict,
+  assertCommitOk,
+} from '../../test-utils/assertions.js';
 
 describe('WorkingCopy commit E2E (flags fixed ON)', () => {
   let core: CoreDB;
@@ -32,7 +39,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
     const expectedNodeId = holder?.holderTargetId;
     
     const res = await wc.commitWorkingCopy(draft.id);
-    expect(res.status).toBe('ok');
+    assertCommitOk(res, 'commitWorkingCopy');
 
     // Assert: committed node exists under canonical node id
     if (!expectedNodeId) throw new Error('Expected holderTargetId to be set');
@@ -58,8 +65,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
 
     const env = cp.createEnvelope('commitWorkingCopy', { workingCopyId: draft.id, onNameConflict: 'auto-rename' });
     const result = await cp.processCommand(env);
-
-    expect(result.success).toBe(true);
+    assertCommandSuccess(result, 'commitWorkingCopy');
     expect(result.status).toBe('ok');
     expect(result.nodeId).toBe(expectedNodeId);
 
@@ -77,7 +83,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
     expect(typeof firstExpected).toBe('string');
     if (!firstExpected) throw new Error('Expected holder target for first commit');
     const firstRes = await wc.commitWorkingCopy(first.id);
-    expect(firstRes.status).toBe('ok');
+    assertCommitOk(firstRes, 'first commit');
 
     const committedFirst = await core.nodes.get(firstExpected);
     expect(committedFirst?.name).toBe(baseName);
@@ -89,7 +95,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
 
     if (!secondExpected) throw new Error('Expected holder target for second commit');
     const res = await wc.commitWorkingCopy(second.id);
-    expect(res.status).toBe('ok');
+    assertCommitOk(res, 'second commit');
     expect(res.node).toBeTruthy();
     expect(res.node?.id).toBe(secondExpected);
     expect(res.node?.name).not.toBe(baseName);
@@ -110,7 +116,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
 
     const second = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, { name: baseName });
     const conflict = await wc.commitWorkingCopy(second.id, { onNameConflict: 'error' });
-    expect(conflict.status).toBe('NAME_CONFLICT');
+    assertCommitNameConflict(conflict, 'name conflict policy error');
     expect(conflict.suggestedName).toMatch(new RegExp(`^${baseName}`));
 
     const workingCopyStillExists = await core.nodes.get(second.id);
@@ -133,7 +139,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
     await core.updateNode({ id: canonicalId, version: (canonicalNode.version ?? 1) + 1 });
 
     const conflict = await wc.commitWorkingCopy(editWc.id as NodeId, { onNameConflict: 'auto-rename' });
-    expect(conflict.status).toBe('COMMIT_CONFLICT');
+    assertCommitConflict(conflict, 'worker commit conflict');
     expect(conflict.originalVersion).toBeGreaterThan(conflict.wcVersion ?? 0);
   });
 
@@ -153,8 +159,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
       onNameConflict: 'error',
     });
     const result = await cp.processCommand(envelope);
-
-    expect(result.success).toBe(false);
+    assertCommandFailure(result, 'cp NAME_CONFLICT');
     expect(result.code).toBe(WorkerErrorCode.VALIDATION_ERROR);
     expect(result.status).toBe('NAME_CONFLICT');
     expect(result.suggestedName).toBeTruthy();
@@ -180,8 +185,7 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
       onNameConflict: 'auto-rename',
     });
     const result = await cp.processCommand(envelope);
-
-    expect(result.success).toBe(false);
+    assertCommandFailure(result, 'cp COMMIT_CONFLICT');
     expect(result.code).toBe(WorkerErrorCode.COMMIT_CONFLICT);
     expect(result.status).toBe('COMMIT_CONFLICT');
     expect(result.originalVersion).toBeGreaterThan(result.wcVersion ?? 0);

@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts",
     "test": "vitest --passWithNoTests",
-    "test:run": "vitest run --passWithNoTests"
+    "test:run": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
   },
   "dependencies": {},
   "peerDependencies": {

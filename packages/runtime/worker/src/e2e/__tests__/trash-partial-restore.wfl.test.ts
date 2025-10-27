@@ -5,34 +5,7 @@ import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
-
-const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
-  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
-  return {
-    postMessage(value, transfer) {
-      if (transfer && transfer.length > 0) {
-        port.postMessage(value, transfer);
-      } else {
-        port.postMessage(value);
-      }
-    },
-    addEventListener(_type, handler) {
-      const wrapped = (data: unknown) => handler({ data } as MessageEvent);
-      listeners.set(handler, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener(_type, handler) {
-      const wrapped = listeners.get(handler);
-      if (wrapped) {
-        port.off('message', wrapped);
-        listeners.delete(handler);
-      }
-    },
-    start() {
-      port.start?.();
-    },
-  };
-};
+import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -56,8 +29,8 @@ async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: nu
 describe('Comlink + fake-indexeddb integration: partial trash restore flow', () => {
   it('restores a subset of trashed nodes while keeping the remaining nodes under trash holders', async () => {
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();

@@ -51,7 +51,7 @@ const StyledTableHead = styled(TableHead)`
   & .MuiTableCell-root {
     font-weight: 600;
     border-bottom: 2px solid ${({ theme }) => theme.palette.divider};
-    padding: 8px 12px;
+    padding: 0 4px 0 4px;
     user-select: none;
   }
 `;
@@ -67,7 +67,7 @@ const StyledTableRow = styled(TableRow)<{ selected?: boolean }>`
     background-color: rgba(25, 118, 210, 0.08) !important;
   `}
   & .MuiTableCell-root {
-    padding: 8px 12px;
+    padding: 0 4px 0 4px;
     border-bottom: 1px solid ${({ theme }) => theme.palette.divider};
   }
 `;
@@ -188,7 +188,7 @@ export function TrashbinTable({
                 />
               </TableCell>
             )}
-            <TableCell sx={{ width: 300 }}>Name</TableCell>
+            <TableCell sx={{ width: 300}}>Name</TableCell>
             <TableCell sx={{ width: 120 }}>Type</TableCell>
             {showMetadata && (
               <>

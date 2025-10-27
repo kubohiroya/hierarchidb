@@ -3,12 +3,12 @@ import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-icon';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type React from 'react';
 import { pluginDefinitions } from '~/plugin-registry/index.js';
+import { pluginRegistry } from '@hierarchidb/plugin-registry';
 import { bootLog } from '../../utils/bootLog.js';
 import { APP_VERSION, BUILD_TIME } from '../../version.js';
 import { loadAllUIPlugins } from '../../services/ui-plugin-loader.js';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { autoLoadPlugins } from '~/plugin-loader/auto-load.js';
-import { muiIconLoaders } from '~/generated/mui-icon-loader.js';
 
 type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
@@ -114,21 +114,31 @@ export function initializeBrowserGlobals(): void {
   void (async () => {
     const iconMap: Record<string, React.ComponentType<SvgIconProps>> = {};
     try {
+      const iconSpecs = pluginRegistry
+        .map<{ nodeType: string; iconName: string } | null>((entry) => {
+          const iconConfig = entry.manifest?.icon;
+          const iconName = iconConfig?.muiIconName ?? iconConfig?.mui;
+          if (!iconName) return null;
+          return { nodeType: entry.nodeType, iconName };
+        })
+        .filter((value): value is { nodeType: string; iconName: string } => Boolean(value));
+
       await Promise.all(
-        Object.entries(muiIconLoaders).map(async ([name, loader]) => {
+        iconSpecs.map(async ({ nodeType, iconName }) => {
           try {
-            const mod = await loader();
+            const mod = await import(`@mui/icons-material/${iconName}`);
             const Component = (mod as { default?: React.ComponentType<SvgIconProps> }).default
               ?? (mod as React.ComponentType<SvgIconProps>);
             if (Component) {
-              const pascal = toPascalCase(name);
+              const pascal = toPascalCase(nodeType);
               iconMap[pascal] = Component;
             }
           } catch (error) {
-            logWarning(`Failed to load MUI icon module for "${name}"`, error);
+            logWarning(`Failed to load MUI icon module for "${nodeType}" (${iconName})`, error);
           }
         }),
       );
+
       setGlobalMuiIconMap(iconMap);
     } catch (error) {
       logWarning('Failed to initialize MUI icon map', error);
@@ -152,11 +162,11 @@ export function initializeBrowserGlobals(): void {
 
         const results = await Promise.allSettled([
           db.getBaseMapDatabase().then(async (d) => safeOpen('basemap', d)),
-          db.getResolverDB().then(async (d) => safeOpen('resolver', d)),
+          db.getResolverDatabase().then(async (d) => safeOpen('resolver', d)),
           db.getSpreadsheetDatabase().then(async (d) => safeOpen('spreadsheet', d)),
           db.getRouteDatabase().then(async (d) => safeOpen('route', d)),
           db.getShapeDatabase().then(async (d) => safeOpen('shape', d)),
-          db.getLocationEphemeralDB().then(async (d) => safeOpen('location', d)),
+          db.getLocationDatabase().then(async (d) => safeOpen('location', d)),
         ]);
         const ok = results
           .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')

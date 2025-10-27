@@ -1,4 +1,4 @@
-import { pluginRegistry } from '../generated/plugin-metadata.js';
+import { pluginRegistry } from '../plugin-registry/index.js';
 
 function titleCase(input: string): string {
   const words = input

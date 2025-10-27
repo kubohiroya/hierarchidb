@@ -1,19 +1,17 @@
 # プラグイン開発とアプリ接続ガイド（静的レジストリ版）
 
-2025-10 時点で HierarchiDB のプラグインは **静的に生成されたレジストリ** を唯一の情報源とします。従来の Vite 仮想モジュール（`virtual:plugin-*`）は廃止され、以下の 3 つの成果物がビルド／実行時の両方で利用されます。
+2025-10 時点で HierarchiDB のプラグインは **単一の静的レジストリ** を唯一の情報源とします。従来の Vite 仮想モジュール（`virtual:plugin-*`）や複数の自動生成ファイルは廃止され、生成物は次の 1 ファイルのみです。
 
-1. `app/src/generated/worker-loader.ts` – Worker 側で使用するプラグイン module specifier（`@hierarchidb/<plugin>/worker` など）を nodeType ごとに保持する。
-2. `app/src/generated/ui-loader.ts` – UI 向け module specifier を依存順序付きで列挙し、遅延ロードの計画を組み立てる。
-3. `~/plugin-registry` – `pluginDefinitions` / `pluginRegistry` / `pluginUiModuleMap` / `pluginWorkerModuleMap` を公開し、InversifyJS コンテナから参照できるようにするアプリ内モジュール。
+1. `packages/plugin-registry/generated/registry.ts` – すべてのプラグインに関するメタデータとモジュール specifier（root/ui/worker/database/common）を保持する正典ファイル。
 
-これらは `scripts/generate-plugin-loader.mjs` が再生成します。アプリはレジストリの JSON スナップショットを直接読み、`import()` はすべて文字列リテラルなので Vite/Rollup が確実に解決します。
+アプリケーション側ではこのレジストリを `@hierarchidb/plugin-registry` として読み込み、UI/Worker それぞれの DI コンテナが必要な派生データ（`pluginUiModuleMap` や `pluginWorkerModuleMap` など）を実行時に計算します。`import()` で使用するパスはすべてレジストリから取得した文字列リテラルのため、Vite/Rollup が確実に解決可能です。
 
 > 重要: ダイアログ拡張は「ステップ提供型」が既定です。プラグインは `PluginStepRegistry` にステップを登録し、ホスト `PluginDialog` が合成します。スタンドアロン型は例外用途に限定してください。
 
 ## 仕組みの概要
-- **生成スクリプト**: `scripts/generate-plugin-loader.mjs` が `app/package.json` の `@hierarchidb/*-plugin` 依存を列挙し、各プラグインの `exports` と `src/plugin-manifest.ts` を解析して前述の 3 成果物を出力します。
+- **生成スクリプト**: `scripts/generate-plugin-loader.mjs` が `app/package.json` の `@hierarchidb/*-plugin` 依存を列挙し、各プラグインの `exports` と `src/plugin-manifest.ts` を解析して正典レジストリを生成します。旧来の `app/src/generated/*` や `types/generated/*` は再生成時に自動削除されます。
 - **Vite 設定**: `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` から提供される alias プラグインのみを使用し、`@hierarchidb/<node>-plugin/<kind>` を `/@fs/.../src` に解決します。仮想モジュールは生成しません。
-- **実行時**: UI/Worker は `~/plugin-registry` のローダーを呼び出し、Dexie などの EntitiesDB は `worker-loader.ts` が自動的にインスタンス化します。
+- **実行時**: UI/Worker はレジストリを InversifyJS コンテナに読み込み、そこから module loader を取得して `import()` を実行します。Dexie などの追加初期化も各プラグインが自律的に行います。
 
 ## プラグイン側の要件
 ### 1) package.json（最低限）
@@ -172,7 +170,7 @@ await wirePluginsFromModules(modules.filter((entry): entry is { nodeType: string
 
 ## アイコンマップ
 - プラグインは `plugin-manifest.ts` の `icon.mui`（または `muiIconName`）/`emoji` を設定してください。
-- `pnpm run tools:gen-plugin-loaders` 実行時に `app/src/generated/mui-icon-loader.ts` が再生成され、`setGlobalMuiIconMap()` へ渡す MUI Icon マップを静的に用意します。
+- `pnpm run tools:gen-plugin-loaders` 実行時に `packages/plugin-registry/generated/registry.ts` が更新され、UI 側ではレジストリを走査して必要な MUI Icon を動的に import します（`setGlobalMuiIconMap()` 経由）。
 
 ## 手動メンテが必要なケース
 - 新しいプラグインを追加したのにレジストリへ反映されない → `pnpm dev` などで `scripts/generate-plugin-loader.mjs` が走っているか確認し、`app/package.json` の dependencies に対象プラグインを追加してください。

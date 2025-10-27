@@ -5,5 +5,8 @@
   "type": "module",
   "files": [
     "plugin-manifest.schema.json"
-  ]
+  ],
+  "scripts": {
+    "clean": "rm -rf dist"
+  }
 }

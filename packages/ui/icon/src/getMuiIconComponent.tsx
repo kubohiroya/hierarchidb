@@ -62,11 +62,12 @@ const staticMap: Record<string, React.ComponentType<SvgIconProps> | undefined> =
   Palette: PaletteIcon,
   Extension: ExtensionIcon,
   AccountTree: AccountTreeIcon,
+  AccessTime: AccessTimeIcon,
   Timeline: AccessTimeIcon,
 };
 
-// Removed dynamic import path: we now rely on a build-time generated global icon map
-// (set via setGlobalMuiIconMap from app/src/generated/mui-icon-loader.ts) and a small static map.
+// Dynamic icon resolution now relies on the global map populated at runtime
+// (set via setGlobalMuiIconMap from app startup) plus a small static fallback map.
 
 export function getMuiIconComponent(muiIconName?: string, emoji?: string): ReactNode {
   const normalized = normalizeMuiName(muiIconName);

@@ -15,6 +15,13 @@
     "paths": {
       "~/*": [
         "./src/*"
+      ],
+      "@hierarchidb/plugin-registry": [
+        "../../plugin-registry/generated/registry.ts"
+      ],
+      "@hierarchidb/plugin-registry/*": [
+        "../../plugin-registry/src/*",
+        "../../plugin-registry/generated/*"
       ]
     }
   },

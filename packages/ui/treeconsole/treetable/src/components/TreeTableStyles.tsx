@@ -131,7 +131,7 @@ export const StyledTableRow = ({ sx, selected, ...props }: StyledRowProps) => (
             }
           : {}),
         '& .MuiTableCell-root': {
-          padding: '4px 0',
+          padding: '4px 4px 4px 4px',
           borderRight: (theme) => `1px solid ${theme.palette.divider}`,
           borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
           transition: 'outline-color 120ms ease, background-color 120ms ease',

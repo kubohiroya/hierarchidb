@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts src/stageWorker.entry.ts --config ../../../tsdown.config.ts",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
@@ -24,6 +25,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\""
   },
   "dependencies": {
+    "@hierarchidb/plugin-registry": "workspace:*",
     "comlink": "^4.4.2",
     "dexie": "^4.2.0",
     "geojson-vt": "^3.2.1",

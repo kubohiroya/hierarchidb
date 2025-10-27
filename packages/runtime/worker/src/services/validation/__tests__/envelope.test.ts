@@ -43,7 +43,10 @@ describe('Envelope validation (ZE-2)', () => {
     };
     const r = validateAndNormalizeEnvelope(input);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toContain('kind');
+    if (r.ok) {
+      throw new Error('Expected validation failure');
+    }
+    expect(r.error).toContain('kind');
   });
 
   it('enforces commandId length upper bound', () => {

@@ -1,23 +1,17 @@
 /**
   * Auto-load HierarchiDB UI plugin-loader using virtual modules generated at build time.
   *
-  * Relationship to app/src/generated/worker-loader.ts:
-  * - worker-loader.ts is generated at prebuild time to wire EntitiesDB/persistence (worker-side DBs)
-  *   and to register UI persistence overrides. It does NOT load UI plugin modules.
-  * - This file (auto-load.ts) is responsible for discovering and importing UI plugin entry points
-  *   so that components, menus, and registrations are initialized in the browser.
-  *
-  * If, in the future, the generator is extended to create static UI imports as well,
-  * this module can be deprecated. For now, it remains required.
-  *
- * - plugin definitions and UI loader map are generated statically during build
+ * This module is responsible for discovering and importing UI plugin entry points so
+ * that components, menus, and registrations are initialized in the browser. The module
+ * loader is provided by the plugin registry DI container at runtime; no pre-generated
+ * UI loader exists anymore.
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
 import { getPluginRegistryContainer } from '../plugin-registry/di/container.js';
 import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.js';
 import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.js';
-import { PluginDefinition } from '../plugin-registry/types.ts';
+import type { PluginDefinition } from '@hierarchidb/plugin-registry/types.ts';
 
 type PluginDefinitionVM = {
   nodeType: string;

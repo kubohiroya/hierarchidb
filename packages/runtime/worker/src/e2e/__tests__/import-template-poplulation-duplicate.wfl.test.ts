@@ -6,40 +6,7 @@ import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
-
-const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
-  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
-  return {
-    postMessage(value, transfer) {
-      if (transfer && transfer.length > 0) {
-        port.postMessage(value, transfer);
-      } else {
-        port.postMessage(value);
-      }
-    },
-    addEventListener(_type, handler) {
-      const wrapped = (data: unknown) => {
-        if (typeof handler === 'function') {
-          handler({ data } as MessageEvent);
-        } else if (handler && typeof (handler as { handleEvent?: (event: MessageEvent) => void }).handleEvent === 'function') {
-          handler.handleEvent({ data } as MessageEvent);
-        }
-      };
-      listeners.set(handler, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener(_type, handler) {
-      const wrapped = listeners.get(handler);
-      if (wrapped) {
-        port.off('message', wrapped);
-        listeners.delete(handler);
-      }
-    },
-    start() {
-      port.start?.();
-    },
-  };
-};
+import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -93,8 +60,8 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
 describe('WFL duplicate behavior for imported template', () => {
   it('duplicates template folder and enforces invalid destinations', async () => {
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();

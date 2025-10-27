@@ -2,11 +2,12 @@
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
 import {proxy, expose, Remote} from 'comlink';
+import type { Endpoint as ComlinkEndpoint } from 'comlink';
 import { WorkerService } from '../index.js';
 import { DialogStateAPI, ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
 import { CommandProcessor } from '../services/CommandProcessor.js';
 
-type Endpoint = MessagePort | Worker;
+type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
 async function main(endpoint?: Endpoint): Promise<void> {
   const svc = await WorkerService.getSingleton([]);

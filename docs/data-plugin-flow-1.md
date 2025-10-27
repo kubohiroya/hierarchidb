@@ -2,9 +2,9 @@
 
 ```mermaid
 sequenceDiagram
-    participant Build as scripts/generate-plugin-loader.mjs
+    participant Build as tools:gen-plugin-loaders
     participant AppPkg as app/package.json
-    participant LoaderFile as app/src/generated/ui-loader.ts
+    participant RegistryFile as packages/plugin-registry/generated/registry.ts
     participant Host as App Bootstrap (runtime)
     participant Registry as PluginRegistry
     participant PluginPkg as plugins/*-plugin/src/index.ts
@@ -13,12 +13,12 @@ sequenceDiagram
     participant WorkerFactory as worker-factory/register*WorkerStores (optional)
 
     Build->>AppPkg: read dependencies matching "@hierarchidb/*-plugin"
-    Build->>LoaderFile: emit import stubs (ui-loadOrder, worker loaders)
-    Note over LoaderFile: generated at build time
+    Build->>RegistryFile: emit canonical registry (metadata + module specifiers)
+    Note over RegistryFile: auto-generated and committed
 
-    Host->>Registry: createPluginRegistry()
-    loop each plugin nodeType in uiLoadOrder
-        Registry->>PluginPkg: dynamic import("plugins/<name>-plugin/src/index.ts")
+    Host->>Registry: import pluginRegistry + derivations
+    loop each plugin nodeType in derived UI order
+        Registry->>PluginPkg: dynamic import(entry.modules.ui.specifier)
         PluginPkg->>Manifest: re-export PLUGIN_MANIFEST
         Manifest-->>Registry: plugin metadata (id, nodeType, capabilities, dependencies)
         alt Runtime wiring exported
@@ -33,7 +33,7 @@ sequenceDiagram
 ```
 
 **Key Notes**
-- どのプラグインを対象とするかは `scripts/generate-plugin-loader.mjs` が `app/package.json` の依存（`@hierarchidb/*-plugin`）から収集し、`app/src/generated/ui-loader.ts` や `app/src/generated/worker-loader.ts` といったローダーファイルに書き出します。
-- アプリ起動時はそのローダーとプラグインの `index.ts` / `plugin-manifest.ts` を import し、マニフェスト情報を `PluginRegistry` に登録します。
+- 対象プラグインは `pnpm run tools:gen-plugin-loaders`（`scripts/generate-plugin-loader.mjs` 経由）で `app/package.json` の `@hierarchidb/*-plugin` 依存から収集し、結果を **単一の正典ファイル** `packages/plugin-registry/generated/registry.ts` に書き出します。旧 `app/src/generated/*` 系ファイルは廃止済みです。
+- アプリ起動時は `@hierarchidb/plugin-registry` を import し、派生ユーティリティ（`derivePluginModuleSpecifiers` など）で UI / Worker 向けのモジュール解決マップを構築します。これにより Vite/Rollup は常に静的な module specifier を扱えます。
 - プラグインが提供するランタイム初期化処理（`RuntimeWiring` 等）や Worker ストア登録（`register*WorkerStores`）は、この登録時に呼び出されます。
 ```

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Container, interfaces } from 'inversify';
-import { pluginRegistry, pluginWorkerModuleMap, pluginWorkerSourceMap } from '../generated/plugin-metadata.js';
+import { pluginRegistry, pluginWorkerModuleMap, pluginWorkerSourceMap } from '../plugin-registry/index.js';
 import { WorkerDiTokens } from './tokens.js';
 import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } from './interfaces.js';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';

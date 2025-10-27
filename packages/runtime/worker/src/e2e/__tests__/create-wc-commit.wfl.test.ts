@@ -2,36 +2,10 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
-
-const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
-  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
-  return {
-    postMessage(value, transfer) {
-      if (transfer && transfer.length > 0) {
-        port.postMessage(value, transfer);
-      } else {
-        port.postMessage(value);
-      }
-    },
-    addEventListener(_type, handler) {
-      const wrapped = (data: unknown) => handler({ data } as MessageEvent);
-      listeners.set(handler, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener(_type, handler) {
-      const wrapped = listeners.get(handler);
-      if (wrapped) {
-        port.off('message', wrapped);
-        listeners.delete(handler);
-      }
-    },
-    start() {
-      port.start?.();
-    },
-  };
-};
+import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { assertCommandSuccess } from '../../test-utils/assertions.js';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
@@ -40,13 +14,13 @@ type TestWorkerAPI = {
   getSubscriptionAPI(): Promise<import('@hierarchidb/common-api').TreeSubscriptionAPI>;
 };
 
-type SubscriptionEvent = Record<string, unknown> & { nodeId?: NodeId; type?: string };
+type SubscriptionEvent = TreeNodeEvent;
 
 describe('Comlink + fake-indexeddb integration: create flow uses workingCopy before commit', () => {
   it('createNode returns a workingCopy nodeId under workingCopy root; canonical parent remains unchanged until commit', async () => {
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();
@@ -61,14 +35,14 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     const subtreeEvents: SubscriptionEvent[] = [];
     const sid = await subscriptionAPI.subscribeSubtree(
       parentId,
-      Comlink.proxy((event: SubscriptionEvent) => {
+      Comlink.proxy((event: TreeNodeEvent) => {
         subtreeEvents.push(event);
-      }),
+      }) as (event: TreeNodeEvent) => void,
     );
 
-    const res = await mutationAPI.createNode({ nodeType: 'folder', treeId, parentId, name: 'Created From Test' });
-    expect(res?.success).toBe(true);
-    if (!res?.nodeId) throw new Error('createNode did not provide nodeId');
+    const res = await mutationAPI.createNode({ nodeType: 'folder' as NodeType, treeId, parentId, name: 'Created From Test' });
+    assertCommandSuccess(res, 'createNode');
+    if (!res.nodeId) throw new Error('createNode did not provide nodeId');
     const newId = res.nodeId as NodeId;
 
     const created = await queryAPI.getNode(newId);

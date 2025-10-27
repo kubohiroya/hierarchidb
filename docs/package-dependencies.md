@@ -71,7 +71,7 @@ graph LR
   subgraph tools
     N40["@hierarchidb/analyze-licenses"]
     N41["@hierarchidb/tools-codemods"]
-    N72["@hierarchidb/tools-dev-scripts"]
+    N72["@hierarchidb/tools-build-scripts"]
     N73["@hierarchidb/tools-plugin-manifest-loader"]
     N74["@hierarchidb/tools-schemas"]
     N75["@hierarchidb/vite-plugin-hierarchidb-plugin-alias"]

@@ -8,7 +8,8 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown src/esm-ext-codemod-basic.ts src/esm-ext-codemod.ts --config ../../../tsdown.config.ts --clean --splitting false",
+    "build": "tsdown src/esm-ext-codemod-basic.ts src/esm-ext-codemod.ts --config ../../../tsdown.config.ts --splitting false",
+    "clean": "rm -rf dist",
     "codemod:esm-ext": "pnpm run build && node dist/esm-ext-codemod-basic.js"
   },
   "dependencies": {

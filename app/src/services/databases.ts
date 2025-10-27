@@ -30,7 +30,7 @@ export async function getBaseMapDatabase(): Promise<PrewarmDatabase | undefined>
   });
 }
 
-export async function getResolverDB(): Promise<PrewarmDatabase | undefined> {
+export async function getResolverDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('resolver', async () => {
     const mod = await import('@hierarchidb/resolver-plugin/database');
     const { resolverDB } = mod as typeof import('@hierarchidb/resolver-plugin/database');
@@ -62,10 +62,10 @@ export async function getShapeDatabase(): Promise<PrewarmDatabase | undefined> {
   });
 }
 
-export async function getLocationEphemeralDB(): Promise<PrewarmDatabase | undefined> {
+export async function getLocationDatabase(): Promise<PrewarmDatabase | undefined> {
   return await loadDatabase('location', async () => {
     const mod = await import('@hierarchidb/location-plugin');
-    const { getEphemeralLocationDB } = mod as typeof import('@hierarchidb/location-plugin');
-    return getEphemeralLocationDB() as unknown as PrewarmDatabase;
+    const { getEphemeralLocationDB: getEphemeralLocationDatabase } = mod as typeof import('@hierarchidb/location-plugin');
+    return getEphemeralLocationDatabase() as unknown as PrewarmDatabase;
   });
 }

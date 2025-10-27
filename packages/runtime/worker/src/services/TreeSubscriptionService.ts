@@ -246,9 +246,12 @@ export class TreeSubscriptionService {
 
     // Create observable that filters global changes for subtree
     const subtreeObservable = this.globalChangeSubject.pipe(
-      rxFilter((event) =>
-        this.isEventRelevantForSubtreeObservation(event, rootId, maxDepth, filter),
+      mergeMap(async (event) =>
+        (await this.isEventRelevantForSubtreeObservation(event, rootId, maxDepth, filter))
+          ? event
+          : null,
       ),
+      rxFilter((event): event is TreeChangeEvent => event !== null),
       // Progressive batching: on bursts, recompute current BFS snapshot and emit per-parent chunks
       bufferTime(30),
       rxFilter((batch) => batch.length > 0),
@@ -428,12 +431,12 @@ export class TreeSubscriptionService {
     return true;
   }
 
-  private isEventRelevantForSubtreeObservation(
+  private async isEventRelevantForSubtreeObservation(
     event: TreeChangeEvent,
     rootNodeId: NodeId,
     maxDepthOrOptions?: number | SubscriptionOptions,
     filter?: SubscriptionFilter,
-  ): boolean {
+  ): Promise<boolean> {
     // Handle overloaded parameters
     let maxDepth: number | undefined;
     let options: SubscriptionOptions | undefined;
@@ -448,24 +451,33 @@ export class TreeSubscriptionService {
       options = maxDepthOrOptions;
     }
 
-    // Basic subtree check
-    let isInSubtree: boolean;
+    const currentNode = event.node ?? event.previousNode;
+    const targetNodeId = currentNode?.id ?? event.nodeId;
 
-    if (event.node && maxDepth !== undefined) {
-      // Legacy path with node data and maxDepth
-      isInSubtree = this.isDescendantNodeByNode(event.node, rootNodeId, maxDepth);
-    } else {
-      // New path or fallback
-      isInSubtree = this.isDescendantNode(event.nodeId, rootNodeId);
+    // Basic subtree check
+    let isInSubtree = false;
+
+    if (currentNode && maxDepth !== undefined) {
+      isInSubtree = await this.isDescendantNodeByNode(currentNode, rootNodeId, maxDepth);
+    } else if (currentNode) {
+      isInSubtree = await this.isDescendantNode(currentNode.id, rootNodeId, options?.maxDepth, currentNode);
+    } else if (targetNodeId) {
+      isInSubtree = await this.isDescendantNode(targetNodeId, rootNodeId, options?.maxDepth);
     }
 
     // Fast-path: if we have the node payload and its direct parent is the root, accept
-    if (!isInSubtree && event.node && event.node.parentId === rootNodeId) {
+    if (!isInSubtree && currentNode && currentNode.parentId === rootNodeId) {
       isInSubtree = true;
     }
 
-    if (!isInSubtree && event.nodeId !== rootNodeId) {
-      return false;
+    if (!isInSubtree && targetNodeId !== rootNodeId) {
+      const candidateParent = event.parentId ?? event.previousParentId ?? currentNode?.parentId;
+      if (candidateParent) {
+        isInSubtree = await this.isDescendantNode(candidateParent, rootNodeId, options?.maxDepth);
+      }
+      if (!isInSubtree) {
+        return false;
+      }
     }
 
     // Apply legacy filter
@@ -591,31 +603,13 @@ export class TreeSubscriptionService {
     yield* this.createInitialChildNodesEvents(rootId, filter, chunkSize, depthLimit);
   }
 
-  private getNodeFromDB(nodeId: NodeId): TreeNode | undefined {
-    // For testing with Dexie in Node environment, we need to synchronously access the data
-    // This is a simplified approach for testing - in real implementation this should be async
+  private async getNodeFromDB(nodeId: NodeId): Promise<TreeNode | undefined> {
     try {
-      // Access the underlying Dexie table data structure
-      const table = this.coreDB.nodes;
-      if (table && '_Items' in table) {
-        // In fake-indexeddb, the data is stored in _Items
-        const items = (table)._Items;
-        if (items instanceof Map) {
-          return items.get(nodeId);
-        }
-        // Try alternative access patterns for fake-indexeddb
-        for (const item of Object.values(items || {})) {
-          if ((item)?.id === nodeId) {
-            return item as TreeNode;
-          }
-        }
-      }
+      return await this.coreDB.nodes.get(nodeId);
     } catch (error) {
-      // If we can't access the data synchronously, return undefined
-      console.warn('Could not access node data synchronously:', error);
+      console.warn('Failed to fetch node from CoreDB:', error);
+      return undefined;
     }
-
-    return undefined;
   }
 
   // getChildNodesFromDB omitted in this baseline (kept for legacy mock testing only)
@@ -630,11 +624,11 @@ export class TreeSubscriptionService {
     );
   }
 
-  private isDescendantNodeByNode(
+  private async isDescendantNodeByNode(
     node: TreeNode,
     ancestorNodeId: NodeId,
     maxDepth?: number,
-  ): boolean {
+  ): Promise<boolean> {
     // Handle the case where node is the ancestor itself
     if (node.id === ancestorNodeId) {
       return true;
@@ -647,17 +641,22 @@ export class TreeSubscriptionService {
 
     // For deeper hierarchy, we would need to traverse up the tree
     // For now, we'll use the database lookup method as fallback
-    return this.isDescendantNode(node.id, ancestorNodeId, maxDepth);
+    return this.isDescendantNode(node.id, ancestorNodeId, maxDepth, node);
   }
 
-  private isDescendantNode(nodeId: NodeId, ancestorNodeId: NodeId, maxDepth?: number): boolean {
+  private async isDescendantNode(
+    nodeId: NodeId,
+    ancestorNodeId: NodeId,
+    maxDepth?: number,
+    fallbackNode?: TreeNode,
+  ): Promise<boolean> {
     // Handle the case where nodeId is the ancestor itself
     if (nodeId === ancestorNodeId) {
       return true;
     }
 
     // Calculate the actual depth from ancestor to node
-    const depthFromAncestor = this.calculateDepth(nodeId, ancestorNodeId);
+    const depthFromAncestor = await this.calculateDepth(nodeId, ancestorNodeId, fallbackNode);
 
     if (depthFromAncestor === -1) {
       return false; // Not a descendant
@@ -706,13 +705,16 @@ export class TreeSubscriptionService {
     return this.searchService.searchByNameWithMatchMode(rootNodeId, query, opts);
   }
 
-  private calculateDepth(nodeId: NodeId, ancestorId: NodeId): number {
+  private async calculateDepth(nodeId: NodeId, ancestorId: NodeId, fallbackNode?: TreeNode): Promise<number> {
     // Self is depth 0
     if (nodeId === ancestorId) {
       return 0;
     }
 
-    const node = this.getNodeFromDB(nodeId);
+    let node = await this.getNodeFromDB(nodeId);
+    if (!node && fallbackNode && fallbackNode.id === nodeId) {
+      node = fallbackNode;
+    }
     if (!node) {
       return -1;
     }
@@ -740,7 +742,10 @@ export class TreeSubscriptionService {
         return depth;
       }
 
-      const currentNode = this.getNodeFromDB(currentNodeId);
+      let currentNode = await this.getNodeFromDB(currentNodeId);
+      if (!currentNode && fallbackNode && fallbackNode.id === currentNodeId) {
+        currentNode = fallbackNode;
+      }
       if (!currentNode || !currentNode.parentId) {
         break;
       }
@@ -846,8 +851,12 @@ export class TreeSubscriptionService {
 
     // Set up the observable stream
     const stream = this.globalChangeSubject.pipe(
-      rxFilter((event) => this.isEventRelevantForSubtreeObservation(event, rootNodeId, options)),
-      map((event) => this.convertToTreeNodeEvent(event)),
+      mergeMap(async (event) =>
+        (await this.isEventRelevantForSubtreeObservation(event, rootNodeId, options))
+          ? this.convertToTreeNodeEvent(event)
+          : null,
+      ),
+      rxFilter((event): event is TreeNodeEvent => event !== null),
     ) as Observable<TreeNodeEvent>;
 
     const subscription = stream.subscribe(callback);

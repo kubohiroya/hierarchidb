@@ -7,34 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
-
-const endpointFromPort = (port: MessagePort): Comlink.Endpoint => {
-  const listeners = new Map<(event: MessageEvent) => void, (value: unknown) => void>();
-  return {
-    postMessage(value, transfer) {
-      if (transfer && transfer.length > 0) {
-        port.postMessage(value, transfer);
-      } else {
-        port.postMessage(value);
-      }
-    },
-    addEventListener(_type, handler) {
-      const wrapped = (data: unknown) => handler({ data } as MessageEvent);
-      listeners.set(handler, wrapped);
-      port.on('message', wrapped);
-    },
-    removeEventListener(_type, handler) {
-      const wrapped = listeners.get(handler);
-      if (wrapped) {
-        port.off('message', wrapped);
-        listeners.delete(handler);
-      }
-    },
-    start() {
-      port.start?.();
-    },
-  };
-};
+import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -123,8 +96,8 @@ const createPasteEnvelope = (payload: {
 describe('WFL paste rename behavior for imported template', () => {
   it('pastes with unique name, allows rename, and blocks conflicting rename', async () => {
     const { port1, port2 } = new MessageChannel();
-    await exposeTestAPI(endpointFromPort(port1));
-    const client = Comlink.wrap<TestWorkerAPI>(endpointFromPort(port2));
+    await exposeTestAPI(createEndpointFromMessagePort(port1));
+    const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
 
     const queryAPI = await client.getQueryAPI();
     const mutationAPI = await client.getMutationAPI();

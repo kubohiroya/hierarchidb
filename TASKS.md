@@ -199,6 +199,33 @@
 - ロールバック手順：
   - 変更した tsconfig 設定を元に戻し、`pnpm --filter @hierarchidb/batch-runtime-services build` で TS6059 が再現することを確認
 
+26) runtime-worker 型整備 & legacy WFL/E2E 更新（P0）
+- ブランチ: `main`（sandbox 制約で直編集）
+- 依存: `packages/runtime/worker/src/**`, `packages/runtime/worker/src/e2e/__tests__`, `packages/common/api|types`
+- 受け入れ基準（DoD）:
+  - [ ] CommandResult/CommitResult/TreeChangeEvent など基幹型を最新仕様に統一し、参照先のサービス/ユーティリティからの不整合を解消
+  - [ ] legacy WFL/E2E（command-processor-undo-redo / wc-commit / 他該当）を新型定義に合わせて修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0
+  - [ ] 代表的シナリオで `pnpm --filter @hierarchidb/runtime-worker test -- <target tests>` を実行しグリーン（ログを運用ログへ記録）
+  - [ ] TASKS Kanban/運用ログに start/progress/done と検証ログ、ロールバック手順を明記
+- チェックリスト:
+  - [ ] runtime-worker 内の型定義・補助型を棚卸しし、CommandResult/CommitResult の union を関数戻り値・テストで安全に扱えるよう整備
+  - [ ] WFL/E2E/サービス系テストの `MessagePort` 等ブラウザ API ラッパーを型互換に修正
+  - [ ] typecheck/test コマンドを実行し exit code を運用ログへ記録
+- ロールバック手順：型定義とテストの差分を revert し、従来のテスト挙動（typecheck 失敗）を再現する
+
+27) Workspace typecheck コマンド修正（P0）
+- ブランチ: `fix/tooling/workspace-typecheck`
+- 依存: ルート `package.json`, `turbo.json`, 各パッケージの `typecheck` スクリプト
+- 受け入れ基準（DoD）:
+  - [x] `pnpm typecheck` が `turbo run typecheck`（型検証のみ）を呼び出し、ビルド系スクリプトを起動しない
+  - [x] 本タスクの差分と検証ログを TASKS Kanban と運用ログに反映する
+  - [ ] `pnpm typecheck` 実行結果を取得し、型検証成功とビルド未実行であることを確認したログを残す（@hierarchidb/batch-types の `ast-types` 依存が TS2865 を出力するため保留）
+- チェックリスト:
+  - [x] ルート `package.json` の `typecheck` / `typecheck:ci` / `typecheck:watch` を型検証専用実行に更新
+  - [x] `turbo.json` に `typecheck` タスクの依存（`^typecheck`）とキャッシュ出力なし設定を追加
+  - [x] 影響範囲を自己レビューし、必要に応じて関連スクリプトの動作を確認
+- ロールバック手順：`package.json` / `turbo.json` の差分を revert し、従来通り `turbo run build` を介して typecheck を実行する構成へ戻す
+
 10) ui-tabular-extract CSV filter ビルド修正（P0）
 - ブランチ: `main`（sandbox 制約で `git checkout -b fix/ui-tabular-extract/csv-filter-build` が不可のため）
 - 依存: `@hierarchidb/ui-tabular-extract`, `@hierarchidb/tabular-store`, NodeNext import 方針
@@ -401,14 +428,14 @@
     - command: 2025-10-25 11:32 `pnpm install --frozen-lockfile` — 81 ワークスペースいずれも lock 差分なし（プロンプト `true` 応答後ノーチェンジ）。
     - command: 2025-10-25 11:40 `pnpm --filter @hierarchidb/tools run build` — tsdown v0.14.2 で analyze-licenses / codemods / plugin-manifest-loader / vite-plugin-hierarchidb-plugin-alias を再ビルド（define/inject の deprecation warning のみ）。
     - command: 2025-10-25 12:18 `pnpm build` — Turbo 全体 build 完了（@hierarchidb/tools#build outputs warning、その他 exit 0）。
-    - progress: 2025-10-25 12:25 tools-dev-scripts `gen-plugin-loaders` を再実装し、manifest loader フォールバックと plugin-registry の pluginDefinitions/pluginMap* を生成できることを確認。
+    - progress: 2025-10-25 12:25 tools-build-scripts `gen-plugin-loaders` を再実装し、manifest loader フォールバックと plugin-registry の pluginDefinitions/pluginMap* を生成できることを確認。
     - progress: 2025-10-25 13:05 `@hierarchidb/vite-plugin-node-type-registry` を `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` へ改名し、ワークスペースを `packages/vite-plugins/` 配下に再配置。関連ドキュメント／scripts の依存文字列を一括更新。
     - command: 2025-10-25 13:12 `pnpm install --no-frozen-lockfile && pnpm install --frozen-lockfile` — 新しいワークスペース構成で lockfile を再生成・整合性確認。
     - command: 2025-10-25 13:23 `pnpm --filter @hierarchidb/vite-plugin-hierarchidb-plugin-alias run build` — rename 後の単体ビルドが成功することを確認（tsdown v0.14.2、deprecation warning のみ）。
     - command: 2025-10-25 13:33 `pnpm build` — rename と環境スクリプト刷新後も Turbo build がグリーン（@hierarchidb/tools#build outputs warning のみ）。
     - progress: 2025-10-25 13:42 `scripts/start-env.sh` を `scripts/env_vite.sh` に完全移行し、`package.json` / `scripts/run-dev-with-turbo-watch.mjs` / 各種ドキュメントの実行例を `env_vite.sh` へ置換。
     - progress: 2025-10-25 14:05 Turbo パイプラインを調整し、`@hierarchidb/app`/`@hierarchidb/plugin-registry` の `build` / `typecheck` / `generate` が `@hierarchidb/vite-plugin-hierarchidb-plugin-alias` や `tools-` 系ビルドへ依存するよう明示。
-    - command: 2025-10-25 14:12 `pnpm --filter @hierarchidb/tools-dev-scripts run gen-plugin-loaders` — MUI アイコン名の正規化ロジック変更後に生成物を更新（`Folder` など語尾 `Icon` 抜きで再出力）。
+    - command: 2025-10-25 14:12 `pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders` — MUI アイコン名の正規化ロジック変更後に生成物を更新（`Folder` など語尾 `Icon` 抜きで再出力）。
     - command: 2025-10-25 14:18 `pnpm build` — 依存グラフ更新とアイコン修正後も Turbo build が成功（@hierarchidb/tools#build outputs warning 継続）。
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
@@ -2518,14 +2545,42 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
-- chore/tools-dev-scripts-turbo-dependency（P0） — tools manifest loader build precedes dev scripts build via Turbo
+- fix/app/initialize-browser-globals（P0） — NodeNext 移行後に残っていた CJS shim を整理し、app build の named export エラーを解消
+  - ブランチ: `fix/app/initialize-browser-globals`（sandbox 制約で main 上で作業）
+  - 要点:
+    - `initializeBrowserGlobals.js` / `bootLog.js` / plugin registry DI など 10 ファイルを TypeScript 実装への ESM リエクスポートに差し替え、NodeNext 解決時に named import が失敗しないよう調整。
+    - `client.js` と `WorkerAPIClient.js` のリエクスポートを現行 API に合わせて整理し、app クライアント初期化が正しくバンドルされることを確認。
+    - `pnpm --filter @hierarchidb/app... build` で依存パッケージの dist を再生成したうえで、`pnpm --filter @hierarchidb/app build` を実行しグリーン確認。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/app build`
+  - ロールバック手順: 更新した `.js` shim を削除して旧 CJS 出力を復元し、`pnpm --filter @hierarchidb/app build` で named export 解決エラーが再発することを確認する。
+- fix/build/pnpm-clean（P0） — Turbo の `clean` タスクを全ワークスペースへ整備し、`pnpm clean` コマンドを復旧
+  - ブランチ: `fix/build/pnpm-clean`
+  - 要点:
+    - `packages/tools` や `packages/plugin-registry`、`packages/ui/treeconsole/*` など `clean` 未定義パッケージへスクリプトを追加し、Turbo の missing task エラーを解消。
+    - `turbo.json` に `clean` タスク（キャッシュ無効・出力なし）を定義し、`pnpm clean` で 80 パッケージのアーティファクトを安全に削除できるようにした。
+  - 検証:
+    - [x] `pnpm clean`
+  - ロールバック手順: 追加した `package.json` と `turbo.json` の差分を revert し、`pnpm clean` 実行時に missing task エラーが再現することを確認する。
+- test/runtime-worker/tree-subscription-integration（P0） — TreeSubscriptionService を非同期化し CoreDB イベントを補強、結合テストで購読経路を検証
+  - ブランチ: `main`（sandbox 制約で直編集）
+  - 要点:
+    - `CoreDB` の changeSubject へ流すイベントに `parentId` / `previousParentId` / `previousNode` を付加し、削除・移動時でもメタデータが欠落しないよう統一。
+    - `TreeSubscriptionService` の subtree 判定を async 化し、Dexie を通じた祖先探索・削除イベントの previousNode 利用を実装。RxJS パイプラインも Promise 対応へ更新。
+    - ユニットテストに subtree/deletion ケースを追加し、`trash-subscription` / `create-wc-commit` WFL テストを通じてイベント伝搬を再確認。
+    - `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加し実行ログを記録（既存 e2e テストの型エラーは別途フォローアップ）。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts`
+    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck`（legacy テストの型エラーを把握しログ化）
+  - ロールバック手順: `packages/runtime/worker/src/services/{CoreDB,TreeSubscriptionService}.ts` と追加テスト差分を revert し、上記テストを再実行して旧来のイベント欠落と未通知挙動を再現する。
+- chore/tools-build-scripts-turbo-dependency（P0） — tools manifest loader build precedes build scripts via Turbo
   - ブランチ: `main`（sandbox 制約のため直編集）
   - 要点:
-    - `packages/tools/dev-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`@hierarchidb/tools-plugin-manifest-loader#build` を明示的に先行実行するよう設定。
+    - `packages/tools/build-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`@hierarchidb/tools-plugin-manifest-loader#build` を明示的に先行実行するよう設定。
     - 既存の `^build` 依存も明記し、ワークスペース依存チェーンと Turbo 宣言の双方で順序を保証。
   - 検証:
-    - [x] `npx turbo run build --filter @hierarchidb/tools-dev-scripts`（@hierarchidb/tools-plugin-manifest-loader → @hierarchidb/tools-dev-scripts の順で実行、既知の codemods workspace 警告のみ）
-  - ロールバック手順: `git checkout -- packages/tools/dev-scripts/package.json` を実行し Turbo 依存設定を戻した上で、再度 `npx turbo run build --filter @hierarchidb/tools-dev-scripts` を実行して旧挙動を確認する。
+    - [x] `npx turbo run build --filter @hierarchidb/tools-build-scripts`（@hierarchidb/tools-plugin-manifest-loader → @hierarchidb/tools-build-scripts の順で実行、既知の codemods workspace 警告のみ）
+  - ロールバック手順: `git checkout -- packages/tools/build-scripts/package.json` を実行し Turbo 依存設定を戻した上で、再度 `npx turbo run build --filter @hierarchidb/tools-build-scripts` を実行して旧挙動を確認する。
 - chore/scripts/remove-temp-codemods（P0） — 一時 codemod スクリプトを撤去し、関連ドキュメントを最新化
   - ブランチ: `main`（sandbox 制約で `git checkout -b chore/scripts/remove-temp-codemods` が失敗したため直編集）
   - 要点:
@@ -2550,7 +2605,7 @@ P2:
     - [x] `pnpm --filter @hierarchidb/folder-plugin build`
     - [x] `pnpm --filter @hierarchidb/location-plugin build`
     - [x] `pnpm turbo run build --filter "@hierarchidb/app^..."`
-  - ロールバック手順: `app/src/plugin-registry/di/**`, `packages/runtime/worker/src/di/**`, `packages/tools/dev-scripts/src/gen-plugin-loaders.ts`、および生成成果物（`app/src/generated/*`, `packages/runtime/worker/src/generated/plugin-metadata.ts`, `types/generated/runtime-worker.d.ts`）の差分を revert し、`pnpm --filter @hierarchidb/runtime-worker build` と対象プラグインの `build` を再実行して旧来の dynamic import 構成へ戻す。
+  - ロールバック手順: `app/src/plugin-registry/di/**`, `packages/runtime/worker/src/di/**`, `packages/tools/build-scripts/src/gen-plugin-loaders.ts`、および `packages/plugin-registry/generated/registry.ts` の差分を revert し、`pnpm --filter @hierarchidb/runtime-worker build` と対象プラグインの `build` を再実行して旧来の dynamic import 構成へ戻す。
 - plugin-registry typecheck 依存制御（P0） — Turbo 依存と dist 生成連携を整理し API Extractor の mainEntryPoint エラーを解消
   - ブランチ: `main`
   - 要点:
@@ -3799,7 +3854,7 @@ P2:
   - 運用ログ：
     - start: 2025-09-20 22:05 TreeTableCore 行数削減と選択派生ロジック整理に着手
     - progress: 2025-09-20 22:24 TreeTableCore をフック/コンポーネント分割し、行数を 247 行まで削減
-    - progress: 2025-09-20 22:26 選択派生フック `useTreeTableSelectionOverlay` を新設し `Set<NodeId>` へ統一
+    - progress: 2025-09-20 22:26 選択派生フック `useTreeTableSelectionOverlay` を新設Hし `Set<NodeId>` へ統一
     - progress: 2025-09-20 22:28 TreeTable utils の ancestor/descendant 判定を NodeId 専用 API へ更新
     - progress: 2025-09-20 22:33 StyledTableContainer を forwardRef 化し、ref 警告を解消
     - progress: 2025-09-20 22:42 TreeConsole loader/subscription で SSOT Map 参照を ref 化し、無限再レンダーを抑止
@@ -6370,7 +6425,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-23 18:34 verify: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-plugin-dialog typecheck` を再実行し exit 0（mock 型整備後も問題なし）。
 - 2025-10-23 21:29 progress: fix/ui/speeddial-dialog-state — `vitest.config.ts` 向けにモジュール宣言 (`vitest.config.d.ts`) を追加し、`collectAliasEntries` import の型解決エラー (TS7016) を解消。
 - 2025-10-23 21:35 progress: fix/ui/speeddial-dialog-state — `app/vite-plugin-mui-icon-map.ts` を撤去し、`initializeBrowserGlobals` で生成済み `~/generated/mui-icon-loader.ts` を参照するように変更。`packages/ui/icon/src/getMuiIconComponent.tsx` のコメントも静的ローダー版に更新。
-- 2025-10-23 21:36 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/tools-dev-scripts run gen-plugin-loaders` を実行し、新規 `app/src/generated/mui-icon-loader.ts` を生成。後続の同コマンドは tools ビルドで既知の型エラー (generate-plugin-loader.ts) により exit 2 となるため、生成済み成果物を再利用する形で完了扱いとした。
+- 2025-10-23 21:36 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders` を実行し、新規 `app/src/generated/mui-icon-loader.ts` を生成。後続の同コマンドは tools ビルドで既知の型エラー (generate-plugin-loader.ts) により exit 2 となるため、生成済み成果物を再利用する形で完了扱いとした。
+- 2025-10-26 17:05 start: test/runtime-worker/tree-subscription-integration — Task 25 を Doing へ追加し、CoreDB/TreeSubscriptionService のイベント整備と結合テスト拡張に着手。Sandbox 制約のため `main` 上で直接作業。
+- 2025-10-26 18:04 progress: test/runtime-worker/tree-subscription-integration — CoreDB の changeSubject 発火イベントに `parentId` / `previousParentId` / `previousNode` を補完し、TreeSubscriptionService を async 判定へ改修。ユニットテストに subtree/deletion ケースを追加。
+- 2025-10-26 18:10 progress: test/runtime-worker/tree-subscription-integration — `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加（`tsc -p tsconfig.typecheck.json`）。
+- 2025-10-26 18:18 blocked: test/runtime-worker/tree-subscription-integration — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行したが、既存 e2e/サービス系テストの型未整備により多数の TS エラーが発生（MessagePort API typing や CommandResult 判定など）。本タスク範囲では未解決、後続タスクで対処予定。
+- 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
+- 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
 - 2025-10-24 09:26 progress: chore/turbo/build-target-audit — `packages/**/package.json` / `plugins/**/package.json` の `build*` スクリプトと Turbo pipeline 設定を Node/Python スクリプトで抽出し、命名揺れと欠落（例: Turbo が `build:bundle` 参照だが scripts 無し）を洗い出し。
 - 2025-10-24 09:44 done: chore/turbo/build-target-audit — build 系ターゲットの集計・Turbo 参照状況・統一案（Step1〜Step4）を TASKS.md に反映し、DoD/チェックリストをクローズ。
@@ -6379,7 +6440,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-24 10:22 done: chore/turbo/build-target-audit — 4 プラグイン＆依存パッケージのスクリプト改修、Turbo 設定整備、ドキュメント整備、ルートスクリプトの整合を完了。今後は段階的に他パッケージも同規約へ移行する方針で記録。
 - 2025-10-24 10:48 progress: chore/turbo/build-target-audit — `@hierarchidb/tools` に Turbo タスク `gen-plugin-loaders` を追加し、generator 実行をワークスペース依存で管理。`packages/plugin-registry` / `app` から同タスクへ依存させ、`scripts/generate-plugin-loader.mjs` を pnpm 経由のラッパーとして再整備。
 - 2025-10-24 10:55 progress: chore/turbo/build-target-audit — `pnpm install --no-frozen-lockfile` を実行し、tools/package.json の出力パス変更後の dist を再構成。
-- 2025-10-24 10:58 progress: chore/turbo/build-target-audit — `pnpm --filter @hierarchidb/tools-dev-scripts run gen-plugin-loaders` → `pnpm --filter @hierarchidb/plugin-registry run build:types` を順に実行し、生成物と型ビルドが新構成で成功することを確認。
+- 2025-10-24 10:58 progress: chore/turbo/build-target-audit — `pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-loaders` → `pnpm --filter @hierarchidb/plugin-registry run build:types` を順に実行し、生成物と型ビルドが新構成で成功することを確認。
 - 2025-10-24 11:02 verify: chore/turbo/build-target-audit — `npx turbo run build:types --filter @hierarchidb/plugin-registry` を実行し、Turbo 依存経由でも generator → build:types が通ることを確認。
 - 2025-10-24 11:04 verify: chore/turbo/build-target-audit — ルートから `pnpm run tools:gen-plugin-loaders` を実行し、workspace alias 経由でも generator が安定動作することを確認。
 - 2025-10-25 10:22 progress: turbo+tsdown migration PoC 拡張 — `pnpm install`（lock 更新）および `pnpm turbo run build` を実行し、全 76 パッケージの `tsdown` ビルドが成功することを確認。
@@ -6399,16 +6460,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 16:05 start: chore/scripts/remove-temp-codemods — 一時 codemod (`migrate-plugin-worker`, `remove-default-exports`) 削除タスクを Doing へ移動。`git checkout -b chore/scripts/remove-temp-codemods` は sandbox 制約で失敗したため `main` 上で実施。
 - 2025-10-25 16:08 progress: chore/scripts/remove-temp-codemods — `rm scripts/codemods/mods/{migrate-plugin-worker.ts,remove-default-exports.ts}` を実行し、`rg "migrate-plugin-worker"` / `rg "remove-default-exports"` で残存参照が無いことを確認。関連ドキュメント（codemod README / dynamic-import メモ）を撤去済み状況へ更新。
 - 2025-10-25 16:12 done: chore/scripts/remove-temp-codemods — DoD チェックリストを完了し、削除のみのため追加ビルド/テストは未実施（差分なしを確認）。
-- 2025-10-25 16:20 start: chore/tools-dev-scripts-turbo-dependency — Turbo 依存で `@hierarchidb/tools-plugin-manifest-loader` → `@hierarchidb/tools-dev-scripts` の build 順序を固定化する対応を開始。sandbox 制約により `main` 上で直接編集。
-- 2025-10-25 16:23 progress: chore/tools-dev-scripts-turbo-dependency — `packages/tools/dev-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`npx turbo run build --filter @hierarchidb/tools-dev-scripts` を実行（exit 0、既知の codemods workspace 警告のみ）。
-- 2025-10-25 16:25 done: chore/tools-dev-scripts-turbo-dependency — Turbo 実行ログを確認して DoD 満たす。追加テストは不要（build のみ実施）。
+- 2025-10-25 16:20 start: chore/tools-build-scripts-turbo-dependency — Turbo 依存で `@hierarchidb/tools-plugin-manifest-loader` → `@hierarchidb/tools-build-scripts` の build 順序を固定化する対応を開始。sandbox 制約により `main` 上で直接編集。
+- 2025-10-25 16:23 progress: chore/tools-build-scripts-turbo-dependency — `packages/tools/build-scripts/package.json` に `turbo.pipeline.build.dependsOn` を追加し、`npx turbo run build --filter @hierarchidb/tools-build-scripts` を実行（exit 0、既知の codemods workspace 警告のみ）。
+- 2025-10-25 16:25 done: chore/tools-build-scripts-turbo-dependency — Turbo 実行ログを確認して DoD 満たす。追加テストは不要（build のみ実施）。
 - 2025-10-25 16:40 start: fix/app/vite-production-build — GitHub Pages 用デプロイに向けて `pnpm -C app exec vite build` の失敗要因を調査開始。
 - 2025-10-25 16:46 progress: fix/app/vite-production-build — `@hierarchidb/ui-treeconsole-base` に `@hierarchidb/ui-i18n` 依存を追加し、Vite config の alias/optimizeDeps を更新。`pnpm --filter @hierarchidb/ui-{i18n,treeconsole-base} build` → `pnpm turbo run build --filter "@hierarchidb/app^..."` → `pnpm -C app exec vite build` を実行し、初期の `@hierarchidb/ui-i18n` 解決エラーは解消を確認。
 - 2025-10-25 16:52 blocked: fix/app/vite-production-build — その後に `LicenseInfo` の拡張子不一致、`locationEntitiesDB.js` の動的 import 解決不能が連続発生。`app/src/pages/Info/InfoPage.tsx` の import 拡張子を修正したが、location plugin の dist 参照 (`../locationEntitiesDB.js`) が未解決でビルド継続不可。引き続き対応が必要。
 - 2025-10-25 17:02 progress: fix/app/vite-production-build — tabular-source-xlsx の `require('xlsx')` を動的 `import('xlsx')` + base64 デコード実装に置き換え、`pnpm --filter @hierarchidb/tabular-source-xlsx build` で `createRequire` 依存を排除。
 - 2025-10-25 17:05 progress: fix/app/vite-production-build — location plugin の Worker ローダーを `new URL('./locationEntitiesDB.js', import.meta.url)` + フォールバックエクスポートに更新し、`pnpm --filter @hierarchidb/location-plugin build` → `pnpm turbo run build --filter "@hierarchidb/app^..."` を確認。
 - 2025-10-25 17:09 progress: fix/app/vite-production-build — app 側の `.ts` import をビルド後の `.js` 参照に揃え、MUI アイコンマップを動的ロードして `setGlobalMuiIconMap` に適用する非同期処理を追加。
-- 2025-10-25 17:16 done: fix/app/vite-production-build — `pnpm -C app exec vite build` が exit 0（警告のみ）で完了。続けて `node packages/tools/dev-scripts/dist/prepare-gh-pages-build.js` を実行し、`.nojekyll` と hash-routing snippet を注入。
+- 2025-10-25 17:16 done: fix/app/vite-production-build — `pnpm -C app exec vite build` が exit 0（警告のみ）で完了。続けて `node packages/tools/build-scripts/dist/prepare-gh-pages-build.js` を実行し、`.nojekyll` と hash-routing snippet を注入。
 - 2025-10-25 17:28 start: refactor/runtime-worker/plugin-bootstrap — Task 15 runtime-worker plugin bootstrap decoupling を InversifyJS 前提で開始（DoD 承認済み、sandbox 制約により main 直編集）。
 - 2025-10-25 17:46 progress: refactor/runtime-worker/plugin-bootstrap — runtime-worker / app に InversifyJS と reflect-metadata を導入し、対象 tsconfig で decorator メタデータを有効化。
 - 2025-10-25 18:08 progress: refactor/runtime-worker/plugin-bootstrap — UI/Worker の DI コンテナとローダーを実装し、`gen-plugin-loaders` の出力を module specifier マップへ刷新して再生成。
@@ -6423,9 +6484,38 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 19:18 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（コメント削除後も警告なし）。
 - 2025-10-25 19:24 command: pnpm turbo run build --filter "@hierarchidb/app^..." — exit 0（UI 側ビルドも成功を再確認）。
 - 2025-10-25 16:34 progress: chore/config/remove-feature-flags — `app/src/config/feature-flags.ts` / `worker-flag-overrides.ts` を削除し、UI/Worker のブートストラップを `~/plugin-registry` ベースに統一。`app/src/services/ui-plugin-loader.ts` を新設して生成ファイルへの依存を整理し、`scripts/env_vite.sh` と関連ドキュメントから FEATURE_FLAGS 参照を除去。
-- 2025-10-25 16:36 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を `tools-dev-scripts` / `tools-plugin-manifest-loader` 連携で再実行するよう更新し、`app/src/generated/ui-loader.ts` を新仕様へ再生成。ドキュメント（app/docs/16-plugin-dev-with-registry.md 等）を `~/plugin-registry` 前提へ改訂し、旧 `@hierarchidb/plugin-registry` 依存を排除。
+- 2025-10-25 16:36 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を `tools-build-scripts` / `tools-plugin-manifest-loader` 連携で再実行するよう更新し、`app/src/generated/ui-loader.ts` を新仕様へ再生成。ドキュメント（app/docs/16-plugin-dev-with-registry.md 等）を `~/plugin-registry` 前提へ改訂し、旧 `@hierarchidb/plugin-registry` 依存を排除。
 - 2025-10-25 16:40 command: pnpm lint — exit 0（turbo run lint）。`packages/ui/plugin-dialog` 未登録の lockfile 警告あり、後続で lockfile 再生成が必要。
 - 2025-10-25 16:46 command: pnpm typecheck — 初回は生成ファイルの相対 import で失敗。`pnpm run tools:gen-plugin-loaders` で再生成後に再実行し exit 0。lockfile 警告（packages/tools/codemods 未登録）が継続。
 - 2025-10-25 16:52 blocked: pnpm test — 複数パッケージが vitest セットアップ欠如やメッセージ差分で失敗（例: location-plugin が `/Users/hiroya/WebstormProjects/vitest.setup.ts` を参照、spreadsheet-plugin の文言比較）。lockfile 未登録警告も継続。次ステップで setup パスと期待値の更新、lockfile sync を検討。
 - 2025-10-25 16:58 progress: chore/config/remove-feature-flags — `pnpm install --lockfile-only` を実行し、新設パッケージ（ui/plugin-dialog 等）を lockfile に反映。次回 `pnpm lint`/`typecheck` 実行時の transitive closure 警告が解消されるか要確認。
 - 2025-10-25 17:12 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を再調整し、plugin registry / worker ローダーの module specifier をプラグインソースへの相対パスへ統一。`pnpm run tools:gen-plugin-loaders` → `pnpm typecheck` を実行し、`worker.ts` からの `@hierarchidb/*-plugin/worker` 解決失敗が再現しないことを確認（`pnpm typecheck` exit 0）。
+- 2025-10-25 17:24 progress: fix/ui-icon/timeline-mui — `packages/ui/icon/src/getMuiIconComponent.tsx` の static map に `AccessTime` を追加し、Timeline プラグインで絵文字ではなく MUI アイコンが確実に表示されるように調整。`pnpm --filter @hierarchidb/ui-icon build` を実行し exit 0 を確認。
+## 今日の着手（運用ログ） <a id="worklog-9"></a>
+
+- 2025-10-27 09:42 start: chore/plugin-registry/derive-shared-maps — 正典 `packages/plugin-registry/generated/registry.ts` から UI/Worker の派生データを共通化するタスクを開始。DoD（一本化・検証）を TASKS へ記載済み。
+- 2025-10-27 10:05 progress: chore/plugin-registry/derive-shared-maps — `packages/plugin-registry/src/derivations.ts` を追加し、`derivePluginDefinitions`/`derivePluginModuleSpecifiers`/`derivePluginModuleSources` を実装。`app/src/plugin-registry/index.ts` と `packages/runtime/worker/src/plugin-registry/index.ts` を新ユーティリティ経由の派生に差し替え、旧 generated ファイルへの参照を撤去。関連ドキュメント（`docs/data-plugin-flow-1.md` / `docs/UNIFIED_BATCH_CONTROL_API.md` / `plugins/README.md`）を正典レジストリ前提へ更新。
+- 2025-10-27 10:28 progress: chore/plugin-registry/derive-shared-maps — `pnpm run tools:gen-plugin-loaders` 実行（exit 0、manifest loader → build → registry 再生成）で生成物が期待通り維持されることを確認。続けて `pnpm lint` を実行し exit 0。
+- 2025-10-27 10:57 progress: chore/plugin-registry/derive-shared-maps — 依存追加に伴い `pnpm install`（exit 0, lockfile 更新）後、`pnpm typecheck` を実行し exit 0。Turbo 経由で app build まで完走し、`@hierarchidb/plugin-registry` 参照が解決されることを確認。
+- 2025-10-27 11:05 done: chore/plugin-registry/derive-shared-maps — DoD（派生一本化・lint/typecheck グリーン）を満たしたため完了。ロールバックは `packages/plugin-registry/generated/registry.ts` と関連差分を revert し旧構成へ戻す。
+- 2025-10-27 11:32 start: fix/app/initialize-browser-globals — DoD: TASKS/ログ更新、initializeBrowserGlobals export 修正、app build 成功を確認。
+- 2025-10-27 11:36 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（bootLog.js に ESM エクスポートが存在せず、WorkerProvider からの import で失敗）。
+- 2025-10-27 11:41 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（plugin-registry/di/container.js が ESM 化されておらず、getPluginRegistryContainer の import が解決できず）。
+- 2025-10-27 11:45 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（WorkerAPIClient.ts 側へ存在しない関数を re-export しており、Rollup が `createWorkerAPIClient` を解決できず）。
+- 2025-10-27 11:46 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（`@hierarchidb/util` パッケージの dist 不足で Vite がエントリ解決に失敗）。
+- 2025-10-27 11:47 progress: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/util build` exit 0（dist/index.js を生成し、util パッケージを再整備）。
+- 2025-10-27 11:49 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（`@hierarchidb/folder-plugin` の dist 未生成で解決不可）。
+- 2025-10-27 11:51 progress: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/folder-plugin build` exit 0（UI/worker 向け dist を生成）。
+- 2025-10-27 11:52 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 1（`@hierarchidb/common-api` の dist が存在せず解決できず）。
+- 2025-10-27 11:53 progress: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/common-api build` exit 0（common-api の dist/index.js を生成）。
+- 2025-10-27 11:56 blocked: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app... build` を実行し依存 64 パッケージをビルドしたが、app フェーズで `client.ts` に存在しない `createAppClient` を re-export していたため失敗。
+- 2025-10-27 12:01 progress: fix/app/initialize-browser-globals — `pnpm --filter @hierarchidb/app build` exit 0（initializeBrowserGlobals.js, bootLog.js などの ESM shim 化と依存 dist 再生成後に成功）。
+- 2025-10-27 12:02 done: fix/app/initialize-browser-globals — DoD 達成。shim 化した .js を維持しつつ app build 成功を確認。ロールバックは該当 shim を削除して旧 CJS を再生成し、`pnpm --filter @hierarchidb/app build` で再現する。
+- 2025-10-27 12:10 start: fix/tooling/workspace-typecheck — TASKS Doing へ移動し、`pnpm typecheck` が build instead of typecheck になる問題の解消（scripts/turbo 更新）に着手。DoD: ルートスクリプト修正・log反映・`pnpm typecheck` 成功ログ取得。
+- 2025-10-27 12:10 note: git checkout -b fix/tooling/workspace-typecheck — sandbox で refs ディレクトリ作成に失敗したため、実作業は `main` 上で継続。
+- 2025-10-27 12:12 command: pnpm typecheck — exit 1。`turbo run typecheck` が呼び出され、@hierarchidb/batch-types の型検証で `ast-types` 依存が `isolatedModules` による TS2865 を出力（build タスクの実行なし）。
+- 2025-10-27 12:12 blocked: fix/tooling/workspace-typecheck — ワークスペース typecheck が `@hierarchidb/batch-types` 依存の型エラーで停止。`ast-types` の type-only import 修正（または `skipLibCheck` 緩和）検討が必要。
+- 2025-10-27 12:45 start: fix/build/pnpm-clean — DoD: Kanban/ログ更新、すべてのワークスペースに `clean` スクリプトを整備し、`pnpm clean` 成功ログとロールバック手順を記録する。
+- 2025-10-27 12:48 progress: fix/build/pnpm-clean — `packages/tools/package.json` / `packages/plugin-registry/package.json` / `packages/ui/treeconsole/*` へ `clean` スクリプトを追加し、`turbo.json` に `clean` タスクを定義。
+- 2025-10-27 12:50 command: pnpm clean — exit 0。`turbo run clean` が 80 パッケージの `clean` タスクを実行し、missing task エラーが再発しないことを確認。
+- 2025-10-27 12:55 done: fix/build/pnpm-clean — 追加した `clean` スクリプトと Turbo 設定で `pnpm clean` を安定化。ロールバック: `packages/**/package.json` と `turbo.json` の差分を revert し、`pnpm clean` で missing task エラー再現を確認。

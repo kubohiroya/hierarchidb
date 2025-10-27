@@ -241,7 +241,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
           </TableCell>
         )}
         {columns.map((column) => (
-          <TableCell key={column.id}>
+          <TableCell key={column.id} sx={{padding: '0px 3px 0px 3px'}}>
             <Skeleton variant="text" width="80%" />
           </TableCell>
         ))}
@@ -292,7 +292,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                     borderTop: '1px solid rgba(224, 224, 224, 1)',
                     borderRight: index < columns.length - 1 ? '1px solid rgba(224, 224, 224, 1)' : 'none',
                     borderBottom: '2px solid rgba(224, 224, 224, 1)',
-                    padding: '8px 12px',
+                    padding: '0px 3px 0px 3px',
                   }}
                 >
                   {column.sortable && onSort ? (

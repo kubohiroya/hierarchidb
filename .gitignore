@@ -197,3 +197,5 @@ vitest.config.ts.*.mjs
 dist-types
 /.codex/
 /app/node_modules/
+/.pnpm-home/
+/app/.debug/

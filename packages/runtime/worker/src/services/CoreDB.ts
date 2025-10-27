@@ -286,6 +286,7 @@ export class CoreDB extends Dexie {
       type: 'node-created' as const,
       nodeId: node.id,
       node: node,
+      parentId: node.parentId,
       timestamp: Date.now(),
     });
 
@@ -323,6 +324,8 @@ export class CoreDB extends Dexie {
         nodeId: node.id,
         node: next ?? ({ ...oldNode, ...node } as TreeNode),
         previousNode: oldNode, // Include the previous node
+        parentId: next?.parentId,
+        previousParentId: oldNode.parentId,
         timestamp: Date.now(),
       };
 
@@ -331,11 +334,15 @@ export class CoreDB extends Dexie {
   }
 
   async deleteNode(nodeId: NodeId): Promise<void> {
+    const existing = await this.nodes.get(nodeId);
     await this.nodes.delete(nodeId);
 
     this.changeSubject.next({
       type: 'node-deleted' as const,
       nodeId: nodeId,
+      parentId: existing?.parentId,
+      previousParentId: existing?.parentId,
+      previousNode: existing || undefined,
       timestamp: Date.now(),
     });
   }
@@ -449,8 +456,15 @@ export class CoreDB extends Dexie {
       if (toDelete.length === 0) return;
       const ids = toDelete.map((n) => n.id);
       await this.nodes.bulkDelete(ids);
-      ids.forEach((nodeId) => {
-        this.changeSubject.next({ type: 'node-deleted', nodeId, timestamp: Date.now() });
+      toDelete.forEach((node) => {
+        this.changeSubject.next({
+          type: 'node-deleted',
+          nodeId: node.id,
+          parentId: node.parentId,
+          previousParentId: node.parentId,
+          previousNode: node,
+          timestamp: Date.now(),
+        });
       });
       deletedIds.push(...ids);
     });
@@ -477,6 +491,7 @@ export class CoreDB extends Dexie {
         type: 'node-created' as const,
         nodeId: node.id,
         node: node,
+        parentId: node.parentId,
         timestamp: Date.now(),
       });
     }
@@ -519,6 +534,8 @@ export class CoreDB extends Dexie {
           nodeId: node.id,
           node: node,
           previousNode: oldNode,
+          parentId: node.parentId,
+          previousParentId: oldNode.parentId,
           timestamp: Date.now(),
         });
       }
@@ -526,12 +543,17 @@ export class CoreDB extends Dexie {
   }
 
   async bulkDeleteNodes(nodeIds: NodeId[]): Promise<void> {
+    const existingNodes = await this.nodes.bulkGet(nodeIds);
     await this.nodes.bulkDelete(nodeIds);
 
-    nodeIds.forEach((nodeId) => {
+    existingNodes.forEach((node) => {
+      if (!node) return;
       this.changeSubject.next({
         type: 'node-deleted' as const,
-        nodeId: nodeId,
+        nodeId: node.id,
+        parentId: node.parentId,
+        previousParentId: node.parentId,
+        previousNode: node,
         timestamp: Date.now(),
       });
     });
