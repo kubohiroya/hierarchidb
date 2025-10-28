@@ -1,9 +1,11 @@
 import { getWorkerClientHook, WorkerClientRef } from '@hierarchidb/runtime-client';
 import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 
+type WorkingCopyRecord = Record<string, unknown> & { id?: string };
+
 type WorkingCopyAPI = {
-  createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: unknown) => Promise<string>;
-  getWorkingCopy: (nodeId: string) => Promise<unknown>;
+  createDraftWorkingCopy: (nodeType: string, parentId: string, initial?: unknown) => Promise<WorkingCopyRecord>;
+  getWorkingCopy: (nodeId: string) => Promise<WorkingCopyRecord | undefined | null>;
   commitWorkingCopy: (nodeId: string) => Promise<unknown>;
   discardWorkingCopy: (nodeId: string) => Promise<void>;
 };
@@ -59,7 +61,7 @@ export function useWorkingCopy<TWorkingCopy>(
   );
 
   const getWorkingCopyAPI = useCallback(async (): Promise<WorkingCopyAPI> => {
-    const workerHook = getWorkerClientHook<() => WorkerClientRef | null>();
+    const workerHook = getWorkerClientHook<WorkerClientRef | null>();
     if (!workerHook) {
       throw new Error('Worker client hook is not registered.');
     }
@@ -96,10 +98,23 @@ export function useWorkingCopy<TWorkingCopy>(
         if (!parentId) {
           throw new Error('Create mode requires parentId.');
         }
-        const createdId = await wc.createDraftWorkingCopy(nodeType, parentId, {});
-        const raw = await wc.getWorkingCopy(createdId);
-        setWorkingCopy(mapWorkingCopy(raw));
-        setWcId(extractWorkingCopyId(raw, createdId) ?? createdId);
+
+        if (nodeId) {
+          const existing = await wc.getWorkingCopy(nodeId);
+          if (existing) {
+            setWorkingCopy(mapWorkingCopy(existing));
+            setWcId(extractWorkingCopyId(existing, nodeId));
+            return;
+          }
+        }
+
+        const draft = await wc.createDraftWorkingCopy(nodeType, parentId, {});
+        const draftId = extractWorkingCopyId(draft, draft.id as string | undefined);
+        const resolvedId = draftId ?? (draft.id as string | null);
+        const raw = resolvedId ? await wc.getWorkingCopy(resolvedId) : null;
+        const normalized = raw ?? draft;
+        setWorkingCopy(mapWorkingCopy(normalized));
+        setWcId(extractWorkingCopyId(normalized, resolvedId) ?? resolvedId);
         return;
       }
 

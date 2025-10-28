@@ -84,6 +84,8 @@ export function TreeTableRows({
     const forcedSelectAll = selectAll;
     const visuallyChecked = forcedSelectAll || visualSelectionSet.has(node.id as NodeId);
     const disableCheckbox = forcedSelectAll || inheritedSelection || (!!pageNodeId && !selectAllHydrated);
+    const baseDepth = Math.max(0, ((node.depth ?? 1) + depthOffset) - 1);
+    const indentDepth = useTrashColumns ? Math.max(0, baseDepth - 1) : baseDepth;
 
     return (
       <StyledTableRow
@@ -109,7 +111,7 @@ export function TreeTableRows({
         </TableCell>
         <TableCell sx={{ width: `${columnWidths.name}px`, minWidth: `${columnWidths.name}px`, maxWidth: `${columnWidths.name}px, paddingLeft: '4px'` }}>
           <NameCell>
-            <IndentSpace depth={Math.max(0, ((node.depth || 0) + depthOffset) - 1)} />
+            <IndentSpace depth={indentDepth} />
             <Box
               component={RouterLink}
               to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}` as any}

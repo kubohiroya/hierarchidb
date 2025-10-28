@@ -17,15 +17,6 @@ export type {
 } from './common/types/index.js';
 
 export {
-  ResolverEntityService,
-  ResolverEntityHandler,
-  type ResolverSearchCriteria,
-  type CreateResolverData,
-} from './worker/ResolverEntityService.js';
-
-export { resolverDB } from './worker/database/ResolverDatabase.js';
-
-export {
   ResolverDialog,
   ResolverPanel,
 } from './ui/components/index.js';

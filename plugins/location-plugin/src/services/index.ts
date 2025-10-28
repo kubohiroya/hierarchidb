@@ -16,5 +16,3 @@ export {
 
 // Batch Session manager and unified adapters
 export { LocationBatchSessionManager } from './batch/BatchSessionManager.js';
-export { registerLocationRuntimeWorkerAdapters } from './batch/adapters/registerRuntimeWorker.js';
-export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults } from './download/registry.js';

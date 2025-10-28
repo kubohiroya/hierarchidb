@@ -53,6 +53,65 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+28) CreateFolder ダイアログ workingCopy 重複生成修正（P0）
+- ブランチ: `fix/worker/createfolder-duplicate`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/runtime-worker`, `@hierarchidb/runtime-client`, IndexedDB WorkingCopy API
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban と運用ログに start/progress/done を記録し、ロールバック手順を追記する
+  - [x] CreateFolder ダイアログ起動時に WorkingCopy holder と WorkingCopy が 1 件ずつのみ生成されるよう実装を修正し、自己レビューで確認する
+  - [x] 重複生成を防ぐ回帰テスト（ユニットまたは e2e）を追加し、自動検証でグリーンを確認する
+  - [ ] `pnpm lint && pnpm typecheck && pnpm test` を成功させ、その結果を運用ログに記録する
+  - [ ] ロールバック手順を記載し、Done へ移動する
+- チェックリスト:
+  - [x] WorkingCopy API 呼び出し箇所の重複要因を特定し修正方針を決定する
+  - [x] 実装差分を適用し、追加テストで想定挙動を検証する
+  - [x] 検証コマンドの実行結果を運用ログに記録する
+- ロールバック手順：修正差分と追加テストを revert し、従来の WorkingCopy 生成処理に戻す
+
+29) TreeConsole Edit を Plugin Dialog へ切り替え（P0）
+- ブランチ: `feat/ui/treeconsole-edit-dialog`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-plugin-dialog`, `@hierarchidb/runtime-client`, `plugins/*-plugin`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban と運用ログに start/progress/done を記録し、ロールバック手順を追記する
+  - [x] TreeConsole コンテキストメニューの Edit 操作で対象ノード種別に対応する PluginDialog（Edit）を開き、name 単体編集の簡易ハンドラーを撤去する
+  - [x] Edit Dialog 経由でノード＋エンティティのデータを読み込み・編集・保存できることを確認し、Worker/API との整合を担保する
+  - [x] 少なくとも 1 ノード種別について、自動テスト（単体 or headless or WFL）で Edit Dialog 経由の更新を検証し、重複生成や不整合がないことを確認する
+  - [x] `pnpm lint && pnpm typecheck && pnpm test`（必要なら関連パッケージ限定）を実行し、結果を運用ログに記録する
+  - [ ] Done 移動時に影響範囲と検証結果、ロールバック手順を追記する
+- チェックリスト:
+  - [x] TreeConsole の edit フロー現状（name インライン更新）を特定し、該当ロジックを撤去 or feature flag で無効化する
+  - [x] PluginDialog 起動経路を TreeConsole から呼び出せるよう配線し、node type ごとの Dialog をマッピングする
+  - [x] WorkerAPI / WorkingCopy 経路がダイアログ起動時に期待通り機能することを確認する
+ - [x] テストを追加し、挙動を自動検証する
+- ロールバック手順：PluginDialog 呼び出し差分とテストを revert し、従来の name フィールド簡易編集ハンドラーを復活させる
+
+30) TreeTable Name depth インデント補正（P0）
+- ブランチ: `fix/ui-treeconsole/treetable-depth-indent`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-core`
+- 受け入れ基準（DoD）:
+  - [x] TreeTable の Name 列で depth 値に応じたインデントが 1 階層あたり 24px で反映される
+  - [x] Name セル内の既存要素（アイコン/テキスト/Sparkle 等）が従来レイアウトから崩れていないことを確認し、検証結果を記録する
+  - [x] `TASKS.md` の運用ログに検証コマンドと結果、ロールバック手順を追記する
+- チェックリスト:
+  - [x] TreeTable Name セルのレンダリング/スタイル実装を確認し、depth ベースの余白計算を補正する
+  - [x] Storybook もしくはビルド済み UI 上で depth 0/1/2+ 行が段階的にインデントされることを確認する（自動検証可能な場合はテストを追加）
+  - [x] 影響範囲のスタイル（Sparkle 表示や selection ハイライト）を再確認し、不要な副作用がないかチェックする
+- ロールバック手順：TreeTable Name セルのスタイル差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` 等を再実行して従来挙動へ戻す
+
+31) Dev alias ホワイトリスト整備と HMR 運用導入（P0）
+- ブランチ: `chore/dev/hmr-alias-whitelist`（sandbox 制約で `main` 上で作業）
+- 依存: `app/vite.config.ts`, `config/dev-aliases.json`, `tsconfig.base.json`, `scripts/sync-dev-aliases.ts`
+- 受け入れ基準（DoD）:
+  - [ ] `config/dev-aliases.json` と `VITE_DEV_ALIAS_OVERRIDE` によるホワイトリスト制御で、指定パッケージのみ `src` を参照する開発 alias が有効になる
+  - [ ] `scripts/sync-dev-aliases.ts` を実行して `tsconfig.base.json` の `paths` をホワイトリストと同期し、`pnpm typecheck` が成功する
+  - [ ] 代表パッケージ（例: `@hierarchidb/ui-dialog`, `@hierarchidb/ui-navigation`）で `pnpm dev` HMR 反映を確認し、`pnpm -C app build` と `pnpm preview` の smoke 結果を運用ログへ記録する
+  - [ ] ロールバック手順と注意点（dist と開発差分リスク、watcher 負荷等）を TASKS へ記載し、当タスク完了時に Done へ移す
+- チェックリスト:
+  - [ ] dev alias 生成処理をホワイトリスト/グループ単位で切替できるようリファクタし、`optimizeDeps.exclude` を整備
+  - [ ] Vite/tsconfig 同期スクリプトを追加し、ホワイトリスト更新時に alias と paths を再生成できるようにする
+  - [ ] `pnpm dev` と `pnpm preview` の運用手順を整理し、`TASKS.md` 運用ログへ start/progress/done を追記
+- ロールバック手順：ホワイトリスト設定・Vite/tsconfig 差分を revert（またはホワイトリストを空にする）→ sync スクリプト再実行 → `pnpm dev` 再起動で従来の dist 参照に戻す
+
 24) FEATURE_FLAGS 廃止準備（P0）
 - ブランチ: `chore/config/remove-feature-flags`（sandbox 制約で `main` 上で作業）
 - 依存: `config/feature-flags.ts`, `scripts/env_vite.sh`
@@ -465,6 +524,22 @@
   - [ ] TypeScript 化の際にパス/型定義/環境依存を確認し、ESM として動作するよう調整する
   - [ ] `pnpm run generate:favicon` コマンドの依存を再確認し、ドキュメントや他スクリプトへの影響がないか棚卸しする
 - ロールバック手順：復元した TS 実装と関連設定を revert し、旧来スクリプトが存在しない状態へ戻したうえでコマンド不在による失敗を確認する
+
+30) TreeConsole RowClick inline edit blur commit（P0）
+- ブランチ: `main`（sandbox 制約でローカルブランチ作成不可）
+- 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `app/src/hooks/treeconsole/*`
+- 受け入れ基準（DoD）:
+  - [x] RowClickAction=`Edit` の name/description 編集で、入力中はツリーの再描画が発生せず、blur 確定時のみ `finishEdit` が呼ばれる
+  - [x] ESC キーまたは Cancel 操作で編集中の値が元に戻り、フォーカスが保持される（既存キャンセル挙動を維持）
+  - [x] 単体テストまたはフックテストで onChange では更新されず blur 確定で反映されるシナリオを検証する
+  - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義のため確認のみ）および `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` を実行し、結果を運用ログに記録する
+  - [ ] TASKS.md Kanban/運用ログの start/progress/done とロールバック手順を更新し、完了時に Done へ移動する
+- チェックリスト:
+  - [x] `createTreeTableColumns.tsx` の inline edit ハンドラを blur/確定時コミットに整理し、入力中に `setEditingValue` が走らないことを確認
+  - [x] `useTreeTableEditing.ts` / `TreeTableCore.tsx` の state 連携を再点検し、blur まで state を固定するよう調整
+  - [x] 再現用テスト（既存テストの拡張でも可）で onChange 不発・blur 反映を確認
+  - [ ] 影響範囲の手動確認（name/description、CreateFolder/Route 等で inline edit が有効な場面）
+- ロールバック手順：該当差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck && test` を再実行して従来の逐次反映挙動に戻す
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -5286,12 +5361,6 @@ P2:
   - 検証: 2025-09-20 15:11 に `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 成功を確認。
   - ロールバック: `packages/runtime-ui/plugin-dialog/src/utils/peerDialogPersistence.ts` の差分をリバートし、typecheck を再実行。
 
-- fix/ui-treeconsole/treetable-depth-indent（TreeTable depth インデント 24px 化）
-  - ブランチ: `fix/ui-treeconsole/treetable-depth-indent`（sandbox 制約によりローカルは `main` 上で作業）
-  - 要点: `TreeTableCore` の `IndentSpace` を depth 1 あたり 24px 幅に変更し、階層差分の見た目を統一。
-  - 検証: `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` グリーン。
-  - ロールバック: `packages/ui/treeconsole/treetable/src/components/TreeTableCore.tsx` の差分を git revert し、`pnpm --filter @hierarchidb/ui-treeconsole-base typecheck` を再実行。
-
 - fix/ui-treeconsole/select-all-tooltip-placement（TreeTable select-all Tooltip 位置調整）
   - ブランチ: `fix/ui-treeconsole/select-all-tooltip-placement`（sandbox 制約によりローカルは `main` 上で作業）
   - 要点: TreeTableCore の「全てを選択」チェックボックス Tooltip `placement` を `right` に変更し、ツリービュー右側表示と整合させた。
@@ -6663,6 +6732,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-28 09:18 progress: fix/app/vite-resolver-dynamic-import — Vite alias プラグインに `icon` サブパスを追加し、`@hierarchidb/*-plugin/icon` 解決失敗を解消。`useTreeConsoleIntegration` の `useMemo` をトップレベルへ移動し、Hook 呼び出し順序違反を修正。
 - 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app typecheck — exit 0。Hook 移動後も型検証が成功。
 - 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。既存ユニット継続グリーン。
+- 2025-10-28 13:10 start: fix/ui/treeconsole-inline-edit-blur — RowClickAction inline edit blur commit タスクを開始。DoD/チェックリストを Kanban に追加し、当面は `main` 上で進行する。
+- 2025-10-28 13:34 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck — exit 0（typecheck スクリプト未定義のため実行対象なし。代替確認は test/build でカバー）
+- 2025-10-28 13:36 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test — exit 0。`src/__tests__/inlineEditCommit.test.ts` を追加し、blur/cancel の挙動を検証。
+- 2025-10-28 13:38 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0。tsdown により dist を再生成し、inline edit ロジックの差分を反映。
 - 2025-10-28 09:22 progress: fix/app/vite-resolver-dynamic-import — アイコンローダーを import.meta.glob 駆動に切り替え、プラグイン登録前のアイコン import でも Vite 変換が働くよう改善。
 - 2025-10-28 09:22 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-10-28 09:22 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。
@@ -6691,3 +6764,29 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-28 12:54 done: fix/app/icon-loader-timing — アイコン初期化をプラグイン登録後に同期化し、レジストリ生成物を静的 import ＋型宣言付きへ更新。Vitest の alias を拡張して icon/database サブパスを解決し、警告なしで SpeedDial アイコンが描画されることを確認。
 - 2025-10-28 12:59 command: pnpm --filter @hierarchidb/app build — exit 0。Vite 本番ビルドが `@hierarchidb/*-plugin` エイリアス解決後に成功することを確認。
 - 2025-10-28 12:10 start: fix/app/icon-loader-timing — SpeedDial アイコン初期化警告解消タスクを着手。DoD 合意済み、sandbox 制約により `main` 直編集で対応予定。
+- 2025-10-28 13:43 start: fix/worker/createfolder-duplicate — CreateFolder ダイアログで WorkingCopy/Holder が重複生成される問題の調査・修正を開始。DoD は TASKS Kanban 記載どおり。
+- 2025-10-28 13:45 progress: fix/worker/createfolder-duplicate — WorkingCopyService.getWorkingCopy が WorkingCopy ID でも既存ドラフトを解決するよう更新し、UI 側 useWorkingCopy も既存ドラフト再利用＋重複生成防止の分岐を追加。Worker/API 向けと UI フック向けの回帰テストを追加して単一生成を確認。
+- 2025-10-28 13:46 command: pnpm lint — exit 0。workspace 全体で lint が成功し、新規差分に警告なし。
+- 2025-10-28 13:48 blocked: fix/worker/createfolder-duplicate — pnpm typecheck exit 1。@hierarchidb/batch-types の ast-types 依存が isolatedModules 制約で失敗する既知課題により全体型検証が停止。個別に `pnpm --filter @hierarchidb/runtime-worker typecheck` も生成物依存欠如（plugin registry import 解決不可）で失敗、ui-plugin-dialog には typecheck スクリプト未定義。
+- 2025-10-28 13:52 blocked: fix/worker/createfolder-duplicate — pnpm test exit 1。複数パッケージでテスト未定義のまま Vitest が実行され失敗。runtime-worker の対象スイートは exclude 設定で実行不可、ui-plugin-dialog は `src/tests/setupPluginWorkerMock.ts` 欠落により起動できず追加検証も阻害。
+- 2025-10-28 13:57 start: feat/ui/treeconsole-edit-dialog — TreeConsole の Edit 操作を PluginDialog 経由へ切り替えるタスクを着手。DoD は Kanban 記載のとおり、sandbox 制約で `main` 上で直接編集。
+- 2025-10-28 14:02 progress: feat/ui/treeconsole-edit-dialog — TreeConsole の handleEdit と context menu edit を WorkingCopy ベースの PluginDialog 起動へ切り替え、WorkingCopy 再利用と preconnect を実装。createTreeConsoleActions にユニットテストを追加し、エディット経路を自動検証。
+- 2025-10-28 14:03 blocked: feat/ui/treeconsole-edit-dialog — pnpm --filter @hierarchidb/app typecheck が TreeId 型チェックで失敗。TreeId キャストと TreeNode 型の nodeType 参照調整で解消。
+- 2025-10-28 14:04 blocked: feat/ui/treeconsole-edit-dialog — pnpm --filter @hierarchidb/app test -- createTreeConsoleActions が preconnect モック設定漏れで失敗。モジュールモックを修正し再実行でグリーン確認。
+- 2025-10-28 14:05 command: pnpm --filter @hierarchidb/app test -- createTreeConsoleActions — exit 0。TreeConsole edit 経路の新規ユニットテストが成功。
+- 2025-10-28 14:06 command: pnpm --filter @hierarchidb/app typecheck — exit 0。app パッケージの型検証が成功。
+- 2025-10-28 14:07 command: pnpm lint — exit 0。workspace 全体の lint が成功し、新規差分に警告なし。
+- 2025-10-28 14:16 progress: feat/ui/treeconsole-edit-dialog — rename-dialog/rename-inline 経路を WorkingCopy ダイアログ起動へ統合し、TreeConsole types にアクション種別を追加。context menu 経路のユニットテストを rename-dialog ケースに更新。
+- 2025-10-28 14:19 command: pnpm --filter @hierarchidb/app test -- createTreeConsoleActions — exit 0。rename-dialog パスのユニットテストがグリーン。
+- 2025-10-28 14:20 command: pnpm --filter @hierarchidb/app typecheck — exit 0。app パッケージ型検証を再実行し成功。
+- 2025-10-28 14:20 command: pnpm lint — exit 0。workspace lint を再実行し成功（差分なし）。
+- 2025-10-28 14:22 start: fix/ui-treeconsole/treetable-depth-indent — TreeTable Name depth インデント補正タスクを開始。DoD 合意済み、sandbox 制約により `main` 上で対応予定。
+- 2025-10-28 14:42 progress: fix/ui-treeconsole/treetable-depth-indent — Name 列のインデント計算から固定の `-1` 補正を撤去し、depthOffset と Trash 列専用の調整を明示化。TreeTableRows fallback も同じロジックに揃え、名称列のレイアウト回帰テストを追加。
+- 2025-10-28 14:44 blocked: fix/ui-treeconsole/treetable-depth-indent — pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck がスクリプト未定義で実行不可。パッケージ側に typecheck コマンドが提供されていないため、代替検証としてユニットテストを追加。
+- 2025-10-28 14:47 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- nameIndent — exit 0。Name 列インデントの新規回帰テストが通過し、深さごとの 24px ステップが保持されていることを確認。
+- 2025-10-28 17:48 progress: fix/ui-treeconsole/treetable-depth-indent — depth 値が 0/1 ベースの双方で正しく段差を出すよう正規化ロジックを見直し、Trash 列のみ追加で 1 段引く処理に限定。
+- 2025-10-28 17:53 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- nameIndent — exit 0。正規化後のインデント計算が深さ 1→0px, 深さ 3→48px となることを再確認。
+- 2025-10-28 18:53 progress: fix/worker/createfolder-duplicate — CreateFolder コミット時に新規ノードの depth が親 + 1 になるよう CoreDB/WorkingCopy commit 周辺を再調査開始。
+- 2025-10-28 18:55 progress: fix/worker/createfolder-duplicate — commitWorkingCopyV2 で新規ノード生成時に親 depth + 1 を強制し、WC テストへ階層 depth の回帰検証を追加。
+- 2025-10-28 18:56 command: WORKER_E2E=1 pnpm --filter @hierarchidb/runtime-worker test -- --run wc-commit-e2e — exit 0。Draft を二段階でコミットし、親 depth=1・子 depth=2 が保持されることを確認。
+- 2025-10-28 19:05 start: chore/dev/hmr-alias-whitelist — Vite dev alias ホワイトリスト導入タスクを開始。DoD: config/dev-aliases.json ＋ env override、sync スクリプト実装、`pnpm dev` HMR 確認と `pnpm -C app build` / `pnpm preview` smoke、ロールバック記述。

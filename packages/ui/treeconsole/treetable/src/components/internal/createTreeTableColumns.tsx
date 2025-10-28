@@ -53,7 +53,6 @@ export interface ColumnBuilderParams {
   handleStartEdit: (node: TreeNode, field?: 'name' | 'description') => void;
   editingField: 'name' | 'description' | null;
   editingValue: string;
-  setEditingValue: (value: string) => void;
   editingError: string | null;
   setEditingError: (value: string | null) => void;
   setEditingNodeId: (value: string | null) => void;
@@ -131,7 +130,6 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     handleStartEdit,
     editingField,
     editingValue,
-    setEditingValue,
     editingError,
     setEditingError,
     setEditingNodeId,
@@ -190,7 +188,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     cell: ({ row }) => {
       const node = row.original;
       const reportedDepth = typeof node.depth === 'number' ? node.depth : undefined;
-      const depth = Math.max(0, ((reportedDepth ?? 1) + depthOffset) - 1);
+      const baseDepth = Math.max(0, ((reportedDepth ?? 1) + depthOffset) - 1);
+      const depth = useTrashColumns ? Math.max(0, baseDepth - 1) : baseDepth;
       const nodeMetrics = node as TreeNode & {
         children?: readonly string[];
         childCount?: number;
@@ -211,20 +210,21 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         (typeof derivedChildCount === 'number' && derivedChildCount > 0);
       const isExpanded = expandedRowIds.has(node.id);
       const isEditing = editingNodeId === node.id && editingField === 'name';
-      const iconDepth = typeof reportedDepth === 'number' ? reportedDepth : depth + depthOffset;
+      const iconDepth = typeof reportedDepth === 'number' ? Math.max(0, reportedDepth + depthOffset) : baseDepth;
       const iconColor = rainbowColors[Math.max(0, iconDepth) % rainbowColors.length];
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
       const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
 
       return (
         <NameCell>
-          <IndentSpace depth={trashAction ? depth - 1 : depth} />
 
           {!hideDragHandler && !disableDragAndDrop && (
             <IconButton size="small" sx={{ padding: 0, cursor: 'grab' }} onClick={(e) => e.stopPropagation()}>
               <DragIndicatorIcon fontSize="small" />
             </IconButton>
           )}
+
+          <IndentSpace depth={depth} />
 
           <Box sx={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {hasChildren ? (
@@ -318,13 +318,12 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
             <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
               <TextField
                 size="small"
-                value={editingValue}
-                onChange={(e) => {
-                  setEditingValue(e.target.value);
+                defaultValue={editingValue}
+                onChange={() => {
                   if (editingError) setEditingError(null);
                 }}
-                onBlur={() => {
-                  const nextValue = editingValue.trim();
+                onBlur={(event) => {
+                  const nextValue = event.target.value.trim();
                   if (nextValue === node.name) {
                     setEditingNodeId(null);
                     setEditingField(null);
@@ -344,7 +343,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
                   if (event.key === 'Enter') {
                     event.stopPropagation();
-                    const nextValue = editingValue.trim();
+                    const nextValue = event.currentTarget.value.trim();
                     if (nextValue === node.name) {
                       setEditingNodeId(null);
                       setEditingField(null);
@@ -459,13 +458,12 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               fullWidth
               multiline
               minRows={2}
-              value={editingValue}
-              onChange={(event) => {
-                setEditingValue(event.target.value);
+              defaultValue={editingValue}
+              onChange={() => {
                 if (editingError) setEditingError(null);
               }}
-              onBlur={() => {
-                const nextValue = editingValue.trim();
+              onBlur={(event) => {
+                const nextValue = event.target.value.trim();
                 if ((node.description || '') === nextValue) {
                   setEditingNodeId(null);
                   setEditingField(null);
@@ -484,7 +482,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-                  const nextValue = editingValue.trim();
+                  const nextValue = (event.currentTarget as HTMLInputElement).value.trim();
                   const validation = validateInline('description', nextValue);
                   if (!validation.ok) {
                     setEditingError(validation.message || 'Invalid description');

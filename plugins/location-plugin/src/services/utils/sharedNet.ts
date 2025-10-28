@@ -1,11 +1,23 @@
 import { type DownloadServiceOptions, type DownloadServiceBundle, createDownloadService } from '@hierarchidb/download';
-import { getLocationDownloadService, notifyLocationAuthRequired } from '../download/registry.js';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
 
-let cached: Promise<Awaited<ReturnType<typeof getLocationDownloadService>>> | undefined;
+type DownloadRegistryModule = typeof import('../download/registry.js');
+
+let registryModule: Promise<DownloadRegistryModule> | null = null;
+function ensureDownloadRegistry(): Promise<DownloadRegistryModule> {
+  if (!registryModule) {
+    registryModule = import('../download/registry.js');
+  }
+  return registryModule;
+}
+
+let cached: Promise<Awaited<ReturnType<DownloadRegistryModule['getLocationDownloadService']>>> | undefined;
 
 async function ensure() {
-  if (!cached) cached = getLocationDownloadService();
+  if (!cached) {
+    const { getLocationDownloadService } = await ensureDownloadRegistry();
+    cached = getLocationDownloadService();
+  }
   return cached;
 }
 
@@ -13,6 +25,7 @@ export async function getJson(url: string, init?: RequestInit): Promise<any> {
   const { net } = await ensure();
   const res = await net.get(url, init);
   if (res.status === 401 || res.status === 403) {
+    const { notifyLocationAuthRequired } = await ensureDownloadRegistry();
     notifyLocationAuthRequired({ resource: url, provider: 'location', hint: 'Authentication required', status: res.status });
     throw new Error(`Auth required: ${res.status}`);
   }

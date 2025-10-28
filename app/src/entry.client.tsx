@@ -1,7 +1,6 @@
 import { startTransition } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
-import { initializeDefaultNodeDialogExtensions } from '@hierarchidb/folder-plugin';
 import {
   createHierarchiRouter,
   getRouterMode,
@@ -15,6 +14,7 @@ import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals
  */
 async function initializeApp() {
   initializeBrowserGlobals();
+  const { initializeDefaultNodeDialogExtensions } = await import('@hierarchidb/folder-plugin');
   await initializeDefaultNodeDialogExtensions();
   const mode = getRouterMode();
   const basename = getBasePath();

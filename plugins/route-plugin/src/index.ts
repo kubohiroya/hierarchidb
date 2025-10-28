@@ -4,11 +4,6 @@
 
 // Plugin components are exported via re-exports below
 
-import {
-  registerRouteDownloadServiceFactory,
-  registerRouteAuthNotifier,
-  resolveAuthRegistry,
-} from './services/download/registry.js';
 export { PLUGIN_MANIFEST as RoutePluginManifest } from './plugin-manifest.js';
 import type { RouteAuthNotification as DownloadAuthNotification } from './services/download/registry.js';
 type RouteAuthNotification = DownloadAuthNotification;
@@ -37,9 +32,50 @@ export { TabularQueryService as RouteTableQueryService } from '@hierarchidb/tabu
 // Unified Batch Control API (API v2)
 export * from './services/RouteBatchSessionOrchestrator.js';
 export { RouteBatchManager } from './services/RouteBatchManager.js';
-export { registerRouteRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
-export { registerRouteDownloadServiceFactory, registerRouteAuthNotifier, resolveAuthRegistry };
 export type { RouteAuthNotification } from './services/download/registry.js';
+
+type DownloadRegistryModule = typeof import('./services/download/registry.js');
+type WorkerAdapterModule = typeof import('./services/batch/adapters/registerRuntimeWorker.js');
+
+let downloadRegistryModule: Promise<DownloadRegistryModule> | null = null;
+function ensureDownloadRegistry() {
+  if (!downloadRegistryModule) {
+    downloadRegistryModule = import('./services/download/registry.js');
+  }
+  return downloadRegistryModule;
+}
+
+let workerAdaptersModule: Promise<WorkerAdapterModule> | null = null;
+function ensureWorkerAdapterModule() {
+  if (!workerAdaptersModule) {
+    workerAdaptersModule = import('./services/batch/adapters/registerRuntimeWorker.js');
+  }
+  return workerAdaptersModule;
+}
+
+export async function registerRouteDownloadServiceFactory(
+  factory: Parameters<DownloadRegistryModule['registerRouteDownloadServiceFactory']>[0],
+) {
+  const mod = await ensureDownloadRegistry();
+  return mod.registerRouteDownloadServiceFactory(factory);
+}
+
+export async function registerRouteAuthNotifier(
+  handler: Parameters<DownloadRegistryModule['registerRouteAuthNotifier']>[0],
+) {
+  const mod = await ensureDownloadRegistry();
+  return mod.registerRouteAuthNotifier(handler);
+}
+
+export async function resolveAuthRegistry() {
+  const mod = await ensureDownloadRegistry();
+  return mod.resolveAuthRegistry();
+}
+
+export async function registerRouteRuntimeWorkerAdapters() {
+  const mod = await ensureWorkerAdapterModule();
+  return mod.registerRouteRuntimeWorkerAdapters();
+}
 
 // UI exports are available via subpath export "@hierarchidb/route-plugin/ui"
 
@@ -50,10 +86,10 @@ export type { RouteAuthNotification } from './services/download/registry.js';
 
 export class RuntimeWiring {
   static registerAuthNotifier(): void {
-    void import('./services/download/registry.js')
-      .then(({ registerRouteAuthNotifier: setNotifier }) =>
+    void ensureDownloadRegistry()
+      .then(({ registerRouteAuthNotifier: setNotifier, resolveAuthRegistry: resolveRegistry }) =>
         setNotifier((info: RouteAuthNotification) => {
-          const registry = resolveAuthRegistry();
+          const registry = resolveRegistry();
           registry?.onAuthRequired?.(info);
         })
       )
@@ -64,7 +100,7 @@ export class RuntimeWiring {
 
   static async registerRuntimeWorkerAdapters(): Promise<void> {
     try {
-      const mod = await import('./services/batch/adapters/registerRuntimeWorker.js');
+      const mod = await ensureWorkerAdapterModule();
       await mod.registerRouteRuntimeWorkerAdapters();
     } catch (error) {
       console.warn('[route-plugin] registerRuntimeWorkerAdapters failed:', error);

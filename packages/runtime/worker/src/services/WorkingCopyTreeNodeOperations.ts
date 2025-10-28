@@ -295,6 +295,8 @@ export async function commitWorkingCopyV2(
       finalName = createNewName(siblingNames, finalName);
     }
 
+    const computedDepth = (typeof parentNode.depth === 'number' ? parentNode.depth : 0) + 1;
+
     const newNode: TreeNode = {
       ...wcNode,
       id: targetNodeId,
@@ -302,6 +304,7 @@ export async function commitWorkingCopyV2(
       name: finalName,
       updatedAt: now,
       version: (wcNode.version || 1) + 1,
+      depth: computedDepth,
     };
     await coreDB.createNode(newNode);
 
@@ -488,11 +491,32 @@ export async function discardWorkingCopy(
  */
 export async function getWorkingCopy(
   coreDB: CoreDB,
-  originalNodeId: NodeId,
+  nodeId: NodeId,
 ): Promise<NodeBase | undefined> {
+  // First, treat the provided id as a direct working copy node id.
+  const direct = await coreDB.nodes.get(nodeId);
+  if (direct) {
+    // If the record itself is a holder, resolve its child working copy.
+    if ((direct as any).holderType === 'workingCopy') {
+      const child = await coreDB.nodes.where('parentId').equals(direct.id).first();
+      if (child) {
+        return child;
+      }
+    }
+
+    // If the record is a child of a working copy holder, return it directly.
+    if (direct.parentId) {
+      const parent = await coreDB.nodes.get(direct.parentId);
+      if ((parent as any)?.holderType === 'workingCopy') {
+        return direct;
+      }
+    }
+  }
+
+  // Fallback: treat the id as a canonical node id and locate its working copy holder.
   const holder = await coreDB.nodes
     .where('[holderType+holderTargetId]')
-    .equals(['workingCopy', originalNodeId])
+    .equals(['workingCopy', nodeId])
     .first();
   if (!holder) return undefined;
   const child = await coreDB.nodes.where('parentId').equals(holder.id).first();

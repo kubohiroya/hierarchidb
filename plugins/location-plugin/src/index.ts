@@ -22,8 +22,6 @@ export * from './services/index.js';
 // Unified Batch Control API (API v2)
 export * from './services/batch/UnifiedLocationBatchManager.js';
 export { LocationBatchSessionManager } from './services/batch/BatchSessionManager.js';
-export { registerLocationRuntimeWorkerAdapters } from './services/batch/adapters/registerRuntimeWorker.js';
-export { registerLocationDownloadServiceFactory, configureLocationDownloadDefaults, registerLocationAuthNotifier } from './services/download/registry.js';
 
 // Import and re-export the plugin definition
 // Plugin definition exports removed: metadata is provided via src/plugin-manifest.ts

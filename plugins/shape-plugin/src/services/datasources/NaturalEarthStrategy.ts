@@ -5,7 +5,6 @@
 
 import { BaseDataSourceStrategy, type DataSourceConfig, type FetchOptions, type ProcessOptions } from './DataSourceStrategy.js';
 import type { NodeId, ShapeEntity } from '../../common/shared/types.js';
-import JSZip from 'jszip';
 import type { Feature as GeoJSONFeature } from 'geojson';
 
 //  Natural Earth
@@ -113,6 +112,7 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
       const zipBuffer = await response.arrayBuffer();
 
       //  ZIP
+      const { default: JSZip } = await ensureJsZip();
       const zip = new JSZip();
       const zipData = await zip.loadAsync(zipBuffer);
 
@@ -323,4 +323,12 @@ export class NaturalEarthStrategy extends BaseDataSourceStrategy<NaturalEarthRaw
     if (endpoint.includes('cities')) return 2;
     return undefined;
   }
+}
+type JSZipModule = typeof import('jszip');
+let jszipModule: Promise<JSZipModule> | null = null;
+function ensureJsZip(): Promise<JSZipModule> {
+  if (!jszipModule) {
+    jszipModule = import('jszip');
+  }
+  return jszipModule;
 }

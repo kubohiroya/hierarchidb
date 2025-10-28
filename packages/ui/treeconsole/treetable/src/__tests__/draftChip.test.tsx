@@ -50,7 +50,6 @@ describe('TreeTable Draft chip', () => {
     handleStartEdit: () => {},
     editingField: null,
     editingValue: '',
-    setEditingValue: () => {},
     editingError: null,
     setEditingError: () => {},
     setEditingNodeId: () => {},

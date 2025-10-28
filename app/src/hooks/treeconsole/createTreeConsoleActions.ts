@@ -81,6 +81,50 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     }
   };
 
+  const openEditDialog = async (targetNodeId: NodeId) => {
+    if (!client || !pushPath || !treeId) {
+      return;
+    }
+
+    const nodesById = ssot.nodesById ?? new Map<string, TreeNode>();
+    const nodeRecord = nodesById.get(String(targetNodeId));
+    const recordType = (nodeRecord as { nodeType?: string; type?: string } | undefined)?.nodeType
+      ?? (nodeRecord as { type?: string } | undefined)?.type;
+    const nodeType = String(recordType ?? 'folder');
+
+    await preconnectPluginServices(nodeType).catch(() => {});
+
+    try {
+      const wcApi = await client.getWorkingCopyAPI();
+
+      const ensureWorkingCopy = async () => {
+        const existing = await wcApi.getWorkingCopy(targetNodeId);
+        if (existing) return existing;
+        await wcApi.createWorkingCopyFromNode(targetNodeId);
+        return await wcApi.getWorkingCopy(targetNodeId);
+      };
+
+      const workingCopy = await ensureWorkingCopy();
+      if (!workingCopy) {
+        showCommandError('UNKNOWN_ERROR', 'Unable to prepare working copy for edit dialog');
+        return;
+      }
+
+      const workingCopyId = (workingCopy.id as NodeId) ?? targetNodeId;
+
+      const parentForRoute: NodeId = (() => {
+        if (pageNodeId) return pageNodeId as NodeId;
+        if (nodeRecord?.parentId) return nodeRecord.parentId as NodeId;
+        return targetNodeId;
+      })();
+
+      pushPath(`/t/${treeId}/${parentForRoute}/${workingCopyId}/${nodeType}/edit`);
+    } catch (error) {
+      console.error('Failed to launch edit dialog:', error);
+      showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));
+    }
+  };
+
   return {
     handleNodeClick: (node: TreeNodeData) => {
       const targetId = node.id as NodeId;
@@ -213,24 +257,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     },
 
     handleEdit: async () => {
-      if (!client || selectedIds.length !== 1) return;
-      const nodeId = selectedIds[0] as NodeId;
-      const newName = prompt('Enter new name')?.trim();
-      if (!newName) return;
-      try {
-        const mutationAPI = await client.getMutationAPI();
-        const res = await mutationAPI.updateNode({ nodeId, name: newName });
-        if (!res.success) {
-          showCommandError('INVALID_OPERATION', res.error || 'Update failed');
-          return;
-        }
-        const parent = pageNodeId as NodeId;
-        await loadChildrenOf(parent);
-        fireCmdEvent();
-      } catch (error) {
-        console.error('Update failed:', error);
-        showCommandError('UNKNOWN_ERROR');
-      }
+      if (selectedIds.length !== 1) return;
+      await openEditDialog(selectedIds[0] as NodeId);
     },
 
     handleDelete: async () => {
@@ -324,6 +352,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         if (!id) return;
         await loadChildrenOf(id);
       };
+
+      if (actionStr === 'edit' || actionStr === 'rename-dialog') {
+        setSSOT({ selectedIds: [targetNodeId] });
+        await openEditDialog(targetNodeId);
+        return;
+      }
 
       if (actionStr.startsWith('create:')) {
         if (!client || !treeId) return;

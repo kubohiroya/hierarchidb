@@ -28,6 +28,26 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
     return `${base}-${Math.random().toString(36).slice(2, 8)}`;
   }
 
+  it('getWorkingCopy resolves drafts by working copy id and canonical id', async () => {
+    const parentId = 'r:root' as NodeId;
+    const draft = await wc.createDraftWorkingCopy('folder' as NodeType, parentId, { name: uniqueName('Draft Lookup') });
+
+    const byWorkingCopyId = await wc.getWorkingCopy(draft.id as NodeId);
+    expect(byWorkingCopyId).toBeTruthy();
+    expect(byWorkingCopyId?.id).toBe(draft.id);
+
+    const holder = await core.nodes.get(draft.parentId);
+    expect(holder?.holderTargetId).toBeTypeOf('string');
+
+    if (!holder?.holderTargetId) {
+      throw new Error('Expected holderTargetId to be defined for working copy');
+    }
+
+    const byCanonicalId = await wc.getWorkingCopy(holder.holderTargetId as NodeId);
+    expect(byCanonicalId).toBeTruthy();
+    expect(byCanonicalId?.id).toBe(draft.id);
+  });
+
   it('create draft and commit via CommandProcessor V2', async () => {
     // Arrange: create a draft under Resources root
     const parentId = 'r:root' as NodeId;
@@ -51,6 +71,34 @@ describe('WorkingCopy commit E2E (flags fixed ON)', () => {
     if (!committed) throw new Error('Committed node not found');
     const parent = await core.nodes.get(committed.parentId);
     expect(parent?.nodeType).not.toBe('workingCopy');
+  });
+
+  it('assigns depth relative to the parent when committing nested drafts', async () => {
+    const rootId = 'r:root' as NodeId;
+    const level1Draft = await wc.createDraftWorkingCopy('folder' as NodeType, rootId, { name: uniqueName('Depth L1') });
+    const level1Result = await wc.commitWorkingCopy(level1Draft.id, { onNameConflict: 'auto-rename' });
+    assertCommitOk(level1Result, 'level1 commit');
+
+    const level1Id = (level1Result.node?.id as NodeId | undefined) ?? (level1Result.nodeId as NodeId | undefined);
+    expect(level1Id).toBeTruthy();
+    if (!level1Id) throw new Error('Level 1 node id missing');
+
+    const level1Node = await core.nodes.get(level1Id);
+    expect(level1Node?.depth).toBe(1);
+
+    const level2Draft = await wc.createDraftWorkingCopy('folder' as NodeType, level1Id, { name: uniqueName('Depth L2') });
+    const level2Result = await wc.commitWorkingCopy(level2Draft.id, { onNameConflict: 'auto-rename' });
+    assertCommitOk(level2Result, 'level2 commit');
+
+    const level2Id = (level2Result.node?.id as NodeId | undefined) ?? (level2Result.nodeId as NodeId | undefined);
+    expect(level2Id).toBeTruthy();
+    if (!level2Id) throw new Error('Level 2 node id missing');
+
+    const level2Node = await core.nodes.get(level2Id);
+    expect(level2Node?.depth).toBe((level1Node?.depth ?? 0) + 1);
+
+    const reloadedParent = await core.nodes.get(level1Id);
+    expect(reloadedParent?.depth).toBe(level1Node?.depth);
   });
 
   it('returns canonical nodeId when committing a draft working copy', async () => {
