@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "tsdown src/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "lint": "eslint src"
   },
   "dependencies": {},

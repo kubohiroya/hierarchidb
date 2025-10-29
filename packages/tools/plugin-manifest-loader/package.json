@@ -10,7 +10,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --target es2020",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist --target es2020",
     "clean": "rm -rf dist"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { generatePluginRegistry } from '../generate-plugin-loader.mjs';
-import type { PluginRegistryEntry } from '@hierarchidb/plugin-registry/types.ts';
+import type { PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
 
 let registrySnapshot: PluginRegistryEntry[];
 

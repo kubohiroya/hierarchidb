@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
     "test": "vitest --passWithNoTests",
     "test:run": "vitest run --passWithNoTests",
     "clean": "rm -rf dist"

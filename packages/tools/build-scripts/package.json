@@ -8,7 +8,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown src/env-vite.ts src/gen-plugin-loaders.ts src/prepare-gh-pages-build.ts src/sync-peer-dependencies.ts src/tsconfig-set-nodenext.ts --config ../../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/env-vite.ts src/gen-plugin-loaders.ts src/prepare-gh-pages-build.ts src/sync-peer-dependencies.ts src/tsconfig-set-nodenext.ts --config ../../../tsdown.config.ts --outDir dist --splitting false",
     "clean": "rm -rf dist",
     "gen-plugin-loaders": "pnpm run build && node dist/gen-plugin-loaders.js",
     "sync-peer-dependencies": "pnpm run build && node dist/sync-peer-dependencies.js",

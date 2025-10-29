@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev:manual": "wrangler dev",
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "deploy": "wrangler deploy",
     "deploy:production": "wrangler deploy --env production",
     "clean": "rm -rf dist",

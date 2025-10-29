@@ -41,7 +41,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/ports.ts src/registry.ts src/types.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/ports.ts src/registry.ts src/types.ts --config ../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist"
   },
   "peerDependencies": {

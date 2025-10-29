@@ -107,10 +107,29 @@
   - [ ] 代表パッケージ（例: `@hierarchidb/ui-dialog`, `@hierarchidb/ui-navigation`）で `pnpm dev` HMR 反映を確認し、`pnpm -C app build` と `pnpm preview` の smoke 結果を運用ログへ記録する
   - [ ] ロールバック手順と注意点（dist と開発差分リスク、watcher 負荷等）を TASKS へ記載し、当タスク完了時に Done へ移す
 - チェックリスト:
-  - [ ] dev alias 生成処理をホワイトリスト/グループ単位で切替できるようリファクタし、`optimizeDeps.exclude` を整備
-  - [ ] Vite/tsconfig 同期スクリプトを追加し、ホワイトリスト更新時に alias と paths を再生成できるようにする
-  - [ ] `pnpm dev` と `pnpm preview` の運用手順を整理し、`TASKS.md` 運用ログへ start/progress/done を追記
+  - [x] dev alias 生成処理をホワイトリスト/グループ単位で切替できるようリファクタし、`optimizeDeps.exclude` を整備
+  - [x] Vite/tsconfig 同期スクリプトを追加し、ホワイトリスト更新時に alias と paths を再生成できるようにする
+  - [x] `pnpm dev` と `pnpm preview` の運用手順を整理し、`TASKS.md` 運用ログへ start/progress/done を追記
 - ロールバック手順：ホワイトリスト設定・Vite/tsconfig 差分を revert（またはホワイトリストを空にする）→ sync スクリプト再実行 → `pnpm dev` 再起動で従来の dist 参照に戻す
+- 運用メモ:
+  - `config/dev-aliases.json` で `groups` / `packages` / `plugins` を列挙する。`plugins` に `"*"` を指定すると全プラグインを src 参照にできる。
+  - 一時的な上書きは `VITE_DEV_ALIAS_OVERRIDE="packages=@hierarchidb/ui-dialog,@hierarchidb/ui-navigation;groups=ui;plugins=*" pnpm dev` のように渡す（セミコロン区切りでカテゴリ指定、カンマ区切りで値を列挙）。
+  - `pnpm dev-alias:sync` を実行すると `tsconfig.base.json` の該当 paths がホワイトリストに合わせて更新される。dist 型が未整備のパッケージは WARNING とともに src fallback になる。
+  - ロールバックは `config/dev-aliases.json` を空にするか対象を削除 → `pnpm dev-alias:sync` → dev server 再起動。必要であれば `git checkout -- config/dev-aliases.json tsconfig.base.json` でも復旧可能。
+
+
+32) PluginDialogRoute を app へ移設（P0）
+- ブランチ: `main`（sandbox 制約でローカルブランチ不可）
+- 依存: `@hierarchidb/ui-plugin-dialog`, `app/src/router/routes/tree/dialogRoute.tsx`
+- 受け入れ基準（DoD）:
+  - [x] `PluginDialogRoute` 実装が `@hierarchidb/app` 側に移動し、`@hierarchidb/ui-plugin-dialog` からはエクスポートされていない
+  - [x] app のルーティングが新しいファイルを参照し、ビルド/型検証で未解決シンボルが発生しない
+  - [x] `TASKS.md` の運用ログに作業内容・検証結果・ロールバック手順を記録する
+- チェックリスト:
+  - [x] `app/src/router/routes/tree/PluginDialogRoute.tsx` を作成し、既存コンポーネントの挙動を維持したまま移設する
+  - [x] `packages/ui/plugin-dialog` から該当ソースとエクスポートを撤去し、依存パッケージを確認する
+  - [ ] ドキュメント等の参照があれば更新を検討する
+- ロールバック手順：新設ファイルを削除し `packages/ui/plugin-dialog/src/components/PluginDialogRoute.tsx` を復元、`index.ts` のエクスポートと app の import を元に戻す
 
 24) FEATURE_FLAGS 廃止準備（P0）
 - ブランチ: `chore/config/remove-feature-flags`（sandbox 制約で `main` 上で作業）
@@ -6789,4 +6808,36 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-28 18:53 progress: fix/worker/createfolder-duplicate — CreateFolder コミット時に新規ノードの depth が親 + 1 になるよう CoreDB/WorkingCopy commit 周辺を再調査開始。
 - 2025-10-28 18:55 progress: fix/worker/createfolder-duplicate — commitWorkingCopyV2 で新規ノード生成時に親 depth + 1 を強制し、WC テストへ階層 depth の回帰検証を追加。
 - 2025-10-28 18:56 command: WORKER_E2E=1 pnpm --filter @hierarchidb/runtime-worker test -- --run wc-commit-e2e — exit 0。Draft を二段階でコミットし、親 depth=1・子 depth=2 が保持されることを確認。
+- 2025-10-28 22:51 start: PluginDialogRoute を app へ移設 — `@hierarchidb/ui-plugin-dialog` からルート結線を分離し、app 直下で管理する移行タスクを着手。
+- 2025-10-28 22:53 progress: PluginDialogRoute を app へ移設 — 新規ファイル `app/src/router/routes/tree/PluginDialogRoute.tsx` を追加し、`dialogRoute.tsx` の参照を切替。パッケージ側のソースとエクスポートを撤去。
+- 2025-10-28 22:54 command: pnpm --filter @hierarchidb/ui-plugin-dialog build — exit 0。パッケージからルートエクスポートを除去後もビルドが成功することを確認。
+- 2025-10-28 22:55 command: pnpm --filter @hierarchidb/app typecheck — exit 0。新しいルートコンポーネント構成で型検証が通過することを確認。
+- 2025-10-29 08:30 start: fix/app/dev-loading-spinner — pnpm dev 起動直後に白画面が続く問題の調査とローディング表示の改善、source map 読み込みエラー解消に着手。
+- 2025-10-29 08:42 progress: fix/app/dev-loading-spinner — WorkerProvider にカスタム fallback を渡せるよう拡張し、AppProviders から CircularProgress ベースの全画面ローダーを提供するよう更新。
+- 2025-10-29 08:45 progress: fix/app/dev-loading-spinner — Vite 開発サーバーに欠落 sourcemap リクエストへ 204 を返す中間層を追加し、連続する `.map` 404 エラーを抑止。
+- 2025-10-29 08:46 command: pnpm --filter @hierarchidb/app typecheck — exit 0。新規ローダーと dev プラグイン追加後の型検証を実施。
+- 2025-10-29 09:05 progress: fix/app/dev-loading-spinner — plugin-registry の generated フォルダへ types/derivations 再エクスポートを追加し、runtime-worker tsconfig から `../src` 参照を撤去。
 - 2025-10-28 19:05 start: chore/dev/hmr-alias-whitelist — Vite dev alias ホワイトリスト導入タスクを開始。DoD: config/dev-aliases.json ＋ env override、sync スクリプト実装、`pnpm dev` HMR 確認と `pnpm -C app build` / `pnpm preview` smoke、ロールバック記述。
+- 2025-10-28 19:34 command: pnpm dev-alias:sync — exit 0。`scripts/sync-dev-aliases.ts` で `tsconfig.base.json` の paths をホワイトリストに合わせて更新（警告: components/bff/cors-proxy は dist 型不足のため src fallback、plugin-registry wildcard fallback）。
+- 2025-10-28 19:40 command: pnpm typecheck — exit 1。`@hierarchidb/batch-types` が `ast-types` の isolatedModules 制約で既知の TS2865 エラー再発（対策は別タスク参照）。
+- 2025-10-28 19:46 command: pnpm -C app build — exit 1。Vite production build が `Unexpected token 'this'` で停止（rollup import 時の TypeScript 解決問題。現時点では原因調査中につき未解消、後続対応を検討）。
+- 2025-10-29 14:55 progress: chore/dev/hmr-alias-whitelist — Vite 本番ビルド失敗の調査を継続。`@hierarchidb/{map-adapter,tabular-source-xlsx}` の dist alias を JS エントリに戻し、Vite 設定へ一時的なトレースを追加して原因モジュールの特定を試行中（未特定）。
+- 2025-10-29 15:05 progress: chore/dev/hmr-alias-whitelist — 全 tsdown ビルドスクリプトへ `--outDir dist` を付与し、packages/plugins 配下で src に吐き出されていた生成物（.js/.d.ts/.map 630 件）をスクリプトで削除。src 直下は手書き TypeScript のみに整理。（ロールバック: 対象 package.json を revert し、`git checkout --` で削除した生成物を復元）
+- 2025-10-29 15:07 command: pnpm --filter @hierarchidb/ui-dialog build — exit 0。dist 配下のみ生成物が出力されることを確認。
+- 2025-10-29 15:08 command: pnpm --filter @hierarchidb/runtime-client build — exit 0。
+- 2025-10-29 15:10 command: pnpm --filter @hierarchidb/plugin-registry build — exit 0（外部依存警告のみ、従来通り）。
+- 2025-10-29 15:24 command: node --loader ts-node/esm app/scripts/generate-favicon.ts — exit 0。favicon PNG/ICO を再生成し、build 前提資材を更新。
+- 2025-10-29 15:25 command: pnpm -C app run generate:nojekyll — exit 0。`dist/assets/.nojekyll` を再作成。
+- 2025-10-29 15:26 command: pnpm --filter @hierarchidb/basemap-plugin build — exit 0。worker/database エントリを含む dist 出力を確認。
+- 2025-10-29 15:27 command: pnpm --filter @hierarchidb/folder-plugin build — exit 0。
+- 2025-10-29 15:28 command: pnpm --filter @hierarchidb/location-plugin build — exit 0。
+- 2025-10-29 15:29 command: pnpm --filter @hierarchidb/route-plugin build — exit 0。
+- 2025-10-29 15:30 command: pnpm --filter @hierarchidb/resolver-plugin build — exit 0。
+- 2025-10-29 15:31 command: pnpm --filter @hierarchidb/spreadsheet-plugin build — exit 0。
+- 2025-10-29 15:32 command: pnpm --filter @hierarchidb/timeline-plugin build — exit 0。
+- 2025-10-29 15:33 command: pnpm --filter @hierarchidb/shape-plugin build — exit 0。
+- 2025-10-29 15:34 command: pnpm --filter @hierarchidb/styler-plugin build — exit 0。
+- 2025-10-29 15:36 command: pnpm --filter @hierarchidb/plugin-registry build — exit 0（警告は従前どおり external 通知のみ）。
+- 2025-10-29 15:39 command: pnpm -C app exec vite build --config vite.config.ts --logLevel info — exit 0。production build が通過し、`Unexpected token 'this'` 事象を解消。
+- 2025-10-29 15:58 command: pnpm -C app exec vite build --config vite.preview.config.ts --logLevel info — exit 0。preview 用 `build/client` アセットを生成。
+- 2025-10-29 16:04 blocked: pnpm -C app preview -- --host 127.0.0.1 --port 4173 — exit 1（EPERM: sandbox でポート 4173 の listen が拒否され、プレビューサーバー起動不可。ローカル権限許可後に再試行が必要）。

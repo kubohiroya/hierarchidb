@@ -51,7 +51,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/common/shared/index.ts src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
+    "build": "tsdown src/common/shared/index.ts src/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/folderEntitiesDB.ts src/worker/folderPeerStore.dexie.ts src/worker/folderGroupStore.dexie.ts src/worker/folderRelationStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts --splitting false",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "test": "vitest",

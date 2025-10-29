@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "lint": "eslint src",
     "format": "prettier --write src",
     "clean": "rm -rf dist",

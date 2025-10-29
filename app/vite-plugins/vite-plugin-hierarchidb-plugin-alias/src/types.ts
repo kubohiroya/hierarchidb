@@ -36,6 +36,7 @@ export interface CreateAliasPluginOptions {
   readonly tsconfigPath?: string;
   readonly kinds?: PluginEntryKind[];
   readonly tsconfigKinds?: PluginEntryKind[];
+  readonly shouldAlias?: (entry: AliasEntry) => boolean;
 }
 
 // Registry plugin has been removed; related option/entry types are no longer exported.

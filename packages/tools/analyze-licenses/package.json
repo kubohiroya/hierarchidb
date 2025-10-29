@@ -16,8 +16,7 @@
   ],
   "scripts": {
     "start": "node dist/cli.mjs",
-    "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --splitting false --target node18 --out-extension .mjs --banner.js '#!/usr/bin/env node'",
-    "clean": "rm -rf dist",
+    "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --out-extension .mjs --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

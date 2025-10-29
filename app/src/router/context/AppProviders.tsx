@@ -3,7 +3,7 @@ import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
 import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-i18n';
-import { CssBaseline } from '@mui/material';
+import { Box, CssBaseline, CircularProgress } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
 import { AppThemeProvider } from '../../components/AppThemeProvider.js';
@@ -25,6 +25,22 @@ import {
  */
 export function AppProviders({ children }: { children: ReactNode }) {
 
+  const workerFallback = (
+    <Box
+      sx={{
+        position: 'fixed',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: (theme) => theme.palette.background.default,
+        zIndex: 1400,
+      }}
+    >
+      <CircularProgress size={32} thickness={5} />
+    </Box>
+  );
+
   return (
     <BootProgressProvider>
       <AppConfigProvider>
@@ -41,7 +57,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
                   <UIReadyReporter />
                   <I18nReadyReporter />
                   <AuthReadyReporter />
-                  <WorkerProvider renderOverlay={false}>
+                  <WorkerProvider renderOverlay={false} fallback={workerFallback}>
                     <WorkerProgressReporter />
                     {children}
                   </WorkerProvider>

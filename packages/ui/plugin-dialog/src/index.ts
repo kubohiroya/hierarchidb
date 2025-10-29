@@ -34,9 +34,6 @@ export type {
   PluginDialogFooterPrimaryButtonOptions,
 } from './headless/components/PluginDialogFooter.js';
 
-// Legacy exports retained temporarily (will be removed after migration)
-export { PluginDialogRoute, createPluginDialogRoutes } from './components/PluginDialogRoute.js';
-
 export { BasicInfoStep } from './components/steps/BasicInfoStep.js';
 export type { BasicInfoStepProps, BasicInfoData } from './components/steps/BasicInfoStep.js';
 

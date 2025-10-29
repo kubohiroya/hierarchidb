@@ -74,6 +74,7 @@ type WorkerProviderProps = {
   timeout?: number;
   debug?: boolean;
   renderOverlay?: boolean;
+  fallback?: ReactNode | null;
 };
 
 const WorkerContext = createContext<WorkerContextValue | null>(null);
@@ -289,6 +290,7 @@ function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void })
 export const WorkerProvider = ({
   children,
   renderOverlay = true,
+  fallback = null,
 }: WorkerProviderProps) => {
   const bootProgress = useBootProgressSafe();
   const { proxy, state: proxyState, error: proxyError } = useWorkerRuntimeProxy();
@@ -562,9 +564,11 @@ export const WorkerProvider = ({
   }, [contextValue]);
 
   const suspenseFallback = useMemo(() => {
-    if (!renderOverlay || status.error) return null;
+    if (status.error) return null;
+    if (fallback) return fallback;
+    if (!renderOverlay) return null;
     return <InitializingOverlay progress={status.initProgress} message={status.initMessage} />;
-  }, [renderOverlay, status.error, status.initMessage, status.initProgress]);
+  }, [fallback, renderOverlay, status.error, status.initMessage, status.initProgress]);
 
   return (
     <WorkerContext.Provider value={contextValue}>

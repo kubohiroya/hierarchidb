@@ -37,7 +37,6 @@ export async function loadResolverPanelModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverPanel.js');
 }
 
-// Standard entry for PluginDialogRoute to discover dialog component
 export async function getDialogComponent(): Promise<ComponentType<ResolverDialogProps>> {
   const mod = await import('./ui/components/ResolverDialog.js');
   return mod.ResolverDialog;

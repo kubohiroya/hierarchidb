@@ -10,7 +10,7 @@ import { lazy, Suspense } from 'react';
 import { createRoute } from '@tanstack/react-router';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { loadNodeAction } from '../../loaders/treeLoaders.js';
-import { PluginDialogRoute } from '@hierarchidb/ui-plugin-dialog';
+import { PluginDialogRoute } from './PluginDialogRoute.js';
 import type {
   TrashDialogData,
   TrashDialogRouteParams,

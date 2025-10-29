@@ -3,29 +3,52 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "module": "dist/registry.js",
+  "types": "dist/registry.d.ts",
   "files": [
+    "dist",
     "generated",
     "src"
   ],
   "exports": {
     ".": {
-      "import": "./generated/registry.ts",
-      "default": "./generated/registry.ts"
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js",
+      "default": "./dist/registry.js"
     },
     "./types": {
-      "import": "./src/types.ts",
-      "default": "./src/types.ts"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
     },
     "./derivations": {
-      "import": "./src/derivations.ts",
-      "default": "./src/derivations.ts"
+      "types": "./dist/derivations.d.ts",
+      "import": "./dist/derivations.js",
+      "default": "./dist/derivations.js"
     },
     "./generated/registry": {
-      "import": "./generated/registry.ts",
-      "default": "./generated/registry.ts"
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js",
+      "default": "./dist/registry.js"
     }
   },
   "scripts": {
+    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist"
+  },
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "outputs": [
+          "dist/**"
+        ]
+      }
+    }
+  },
+  "tsdown": {
+    "splitting": false,
+    "external": [
+      "@hierarchidb/*"
+    ]
   }
 }

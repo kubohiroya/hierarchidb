@@ -10,7 +10,7 @@
     "dev": "vite dev",
     "test": "vitest run",
     "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",
-    "build": "pnpm run generate:favicon && pnpm run generate:nojekyll && vite build --config vite.config.ts",
+    "build": "pnpm run generate:favicon && pnpm run generate:nojekyll && pnpm --filter @hierarchidb/plugin-registry build && vite build --config vite.config.ts",
     "preview": "vite preview --config vite.preview.config.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\" \"*.{ts,js,json}\"",
@@ -86,7 +86,7 @@
     "@deck.gl/layers": "^9.1.14",
     "@deck.gl/mapbox": "^9.1.14",
     "@hierarchidb/vite-plugin-hierarchidb-plugin-alias": "workspace:*",
-    "@types/node": "^18.0.0",
+    "@types/node": "^24.9.2",
     "@vis.gl/react-maplibre": "^8.0.4",
     "@vitejs/plugin-react": "^5.0.1",
     "gh-pages": "^6.3.0",
@@ -105,20 +105,22 @@
   "turbo": {
     "pipeline": {
       "build": {
-        "dependsOn": [
-          "^build",
-          "@hierarchidb/tools-build-scripts#build",
-          "@hierarchidb/tools-plugin-manifest-loader#build",
-          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
-        ]
-      },
-      "typecheck": {
-        "dependsOn": [
-          "@hierarchidb/tools-build-scripts#build",
-          "@hierarchidb/tools-plugin-manifest-loader#build",
-          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build"
-        ]
-      }
+      "dependsOn": [
+        "^build",
+        "@hierarchidb/tools-build-scripts#build",
+        "@hierarchidb/tools-plugin-manifest-loader#build",
+        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+        "@hierarchidb/plugin-registry#build"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "@hierarchidb/tools-build-scripts#build",
+        "@hierarchidb/tools-plugin-manifest-loader#build",
+        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+        "@hierarchidb/plugin-registry#build"
+      ]
     }
   }
+}
 }

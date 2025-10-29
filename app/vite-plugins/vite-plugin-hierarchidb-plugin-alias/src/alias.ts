@@ -107,14 +107,15 @@ export function createNodeTypeAliasPlugin(options: CreateAliasPluginOptions = {}
     enforce: 'pre' as const,
     config(config: any) {
       const entries = collectAliasEntries(rootDir, allowedKinds);
-      if (entries.length === 0) return;
+      const filteredEntries = options.shouldAlias ? entries.filter((entry) => options.shouldAlias?.(entry) ?? false) : entries;
+      if (filteredEntries.length === 0) return;
 
-      const viteAliases: Alias[] = entries.map(({ find, replacement }) => ({ find, replacement }));
+      const viteAliases: Alias[] = filteredEntries.map(({ find, replacement }) => ({ find, replacement }));
       const merged = mergeAliasOptions(config?.resolve?.alias, viteAliases);
 
       if (options.tsconfigPath) {
         const tsconfigKinds = options.tsconfigKinds ? filterKinds(options.tsconfigKinds) : allowedKinds;
-        ensureTsconfigPaths(path.resolve(rootDir, options.tsconfigPath), entries, tsconfigKinds);
+        ensureTsconfigPaths(path.resolve(rootDir, options.tsconfigPath), filteredEntries, tsconfigKinds);
       }
 
       return {

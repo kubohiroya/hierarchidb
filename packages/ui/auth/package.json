@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "clean": "rm -rf dist",

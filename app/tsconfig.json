@@ -13,11 +13,11 @@
         "./src/*"
       ],
       "@hierarchidb/plugin-registry": [
-        "../packages/plugin-registry/generated/registry.ts"
+        "../packages/plugin-registry/dist/registry.js"
       ],
       "@hierarchidb/plugin-registry/*": [
-        "../packages/plugin-registry/src/*",
-        "../packages/plugin-registry/generated/*"
+        "../packages/plugin-registry/dist/*",
+        "../packages/plugin-registry/src/*"
       ],
       "@hierarchidb/*-plugin": [
         "../plugins/*-plugin/src/index.ts"

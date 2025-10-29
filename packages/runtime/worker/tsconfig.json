@@ -17,11 +17,10 @@
         "./src/*"
       ],
       "@hierarchidb/plugin-registry": [
-        "../../plugin-registry/generated/registry.ts"
+        "../../plugin-registry/dist/registry.js"
       ],
       "@hierarchidb/plugin-registry/*": [
-        "../../plugin-registry/src/*",
-        "../../plugin-registry/generated/*"
+        "../../plugin-registry/dist/*"
       ]
     }
   },

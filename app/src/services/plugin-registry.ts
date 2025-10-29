@@ -5,7 +5,7 @@ import type {
   PluginIconConfig,
   PluginManifest,
   PluginRegistryEntry,
-} from '@hierarchidb/plugin-registry/types.ts';
+} from '@hierarchidb/plugin-registry/types';
 import type { NodeType } from '@hierarchidb/common-types';
 
 interface PackageJsonShape {

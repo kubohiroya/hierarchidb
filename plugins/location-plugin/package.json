@@ -41,7 +41,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationPeerStore.dexie.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",

@@ -9,7 +9,7 @@ import {
   derivePluginModuleSources,
   derivePluginModuleSpecifiers,
 } from '@hierarchidb/plugin-registry/derivations';
-import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-registry/types.ts';
+import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
 
 export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
 

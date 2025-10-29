@@ -17,7 +17,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

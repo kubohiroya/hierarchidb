@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/stageWorker.entry.ts --config ../../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/stageWorker.entry.ts --config ../../../tsdown.config.ts --outDir dist",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:run": "vitest run",
@@ -55,7 +55,7 @@
     "jotai": "^2.13.1"
   },
   "optionalDependencies": {
-    "@hierarchidb/tabular-xlsx": "workspace:*"
+    "@hierarchidb/tabular-source-xlsx": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
@@ -80,5 +80,17 @@
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/feature-registry": "workspace:*"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "turbo": {
+    "pipeline": {
+      "build": {
+        "dependsOn": [
+          "@hierarchidb/plugin-registry#build"
+        ],
+        "outputs": [
+          "dist/**"
+        ]
+      }
+    }
+  }
 }
