@@ -47,7 +47,9 @@
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/plugin-base": "workspace:*"
+  },
   "devDependencies": {
     "@types/react": "^18.2.45",
     "typescript": "workspace:^5.9.3",
@@ -64,12 +66,12 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
@@ -92,12 +94,12 @@
     "@hierarchidb/tabular-store": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-auth": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*"
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -107,7 +109,7 @@
       "description": "Geographic location nodes with Shape integration",
       "icon": {
         "mui": "LocationOn",
-        "emoji": "\ud83d\udccd",
+        "emoji": "📍",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/location-plugin/icon",

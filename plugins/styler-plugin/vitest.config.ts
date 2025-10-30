@@ -2,6 +2,7 @@
 import { defineConfig } from 'vitest/config';
 import * as path from 'path';
 
+const workspaceRoot = path.resolve(__dirname, '../..');
 const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
 
 export default defineConfig({
@@ -18,8 +19,8 @@ export default defineConfig({
       '@hierarchidb/spreadsheet-plugin': path.resolve(__dirname, './src/__tests__/mocks/spreadsheet-plugin.ts'),
       '@hierarchidb/plugin-sdk': basePluginEntry,
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/ui-csv-extract': path.resolve(__dirname, '../../ui/tabular-extract/src/index.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      '@hierarchidb/ui-csv-extract': path.resolve(workspaceRoot, 'packages/ui/tabular-extract/src/index.ts'),
+      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
     },
   },
 });

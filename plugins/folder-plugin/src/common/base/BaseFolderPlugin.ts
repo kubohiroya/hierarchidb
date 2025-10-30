@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
-import type { FolderEntity } from '../types/FolderEntity.js';
-import type { NodeDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.js';
-import { createFolderExtension, folderExtensionRegistry } from '../api/DialogExtensionAPI.js';
+import type { FolderEntity } from '../types/FolderEntity.ts';
+import type { NodeDialogExtension, FolderEntityExtension, FolderExtension } from '../api/DialogExtensionAPI.ts';
+import { createFolderExtension, folderExtensionRegistry } from '../api/DialogExtensionAPI.ts';
 import type {
   NodeId,
   NodeType,

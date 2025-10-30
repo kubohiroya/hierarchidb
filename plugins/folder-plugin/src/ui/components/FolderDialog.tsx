@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useEffect } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
-import { ExtensibleFolderDialog } from './ExtensibleFolderDialog.js';
-import { useWorkingCopy } from '@hierarchidb/ui-plugin-dialog';
+import { ExtensibleFolderDialog } from './ExtensibleFolderDialog.tsx';
+import { useWorkingCopy } from '@hierarchidb/plugin-ui-sdk';
 import { notify } from '@hierarchidb/components';
 
 export interface FolderDialogProps {

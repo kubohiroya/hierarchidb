@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { RelationBase, RelationStore } from '@hierarchidb/runtime-worker';
-import type { FolderEntitiesDB, FolderRelationRow } from './folderEntitiesDB.js';
+import type { FolderEntitiesDB, FolderRelationRow } from './folderEntitiesDB.ts';
 
 type Rel = RelationBase<{ weight?: number }>;
 

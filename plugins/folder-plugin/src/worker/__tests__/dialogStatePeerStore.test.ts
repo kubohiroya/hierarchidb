@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { toNodeId, type MultiStepDialogState } from '@hierarchidb/common-types';
-import { FolderEntitiesDB } from '../folderEntitiesDB.js';
-import { createFolderPeerStoreDexie } from '../folderPeerStore.dexie.js';
+import { FolderEntitiesDB } from '../folderEntitiesDB.ts';
+import { createFolderPeerStoreDexie } from '../folderPeerStore.dexie.ts';
 
 describe('folder peer store dialogState persistence (Dexie)', () => {
   it('persists and retrieves dialogState snapshots', async () => {

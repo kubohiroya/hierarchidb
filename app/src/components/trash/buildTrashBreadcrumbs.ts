@@ -1,5 +1,5 @@
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashBreadcrumbsParams {

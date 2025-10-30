@@ -2,7 +2,7 @@ import { defineConfig, loadEnv } from 'vite';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-type AliasEntry = { find: string; replacement: string };
+type AliasEntry = { find: string | RegExp; replacement: string };
 
 function addAliasIfExists(rootDir: string, relativePath: string, find: string, target: AliasEntry[]) {
   const absolutePath = path.resolve(rootDir, relativePath);
@@ -33,17 +33,59 @@ export default defineConfig(({ mode }) => {
 
   const aliases: AliasEntry[] = [];
 
-  const repoRoot = path.resolve(rootDir, '..');
-  addAliasIfExists(rootDir, '../packages/runtime/worker/dist/index.ts', '@hierarchidb/runtime-worker', aliases);
-  addAliasIfExists(rootDir, '../packages/runtime/client/dist/index.ts', '@hierarchidb/runtime-client', aliases);
-  addAliasIfExists(rootDir, '../packages/feature/map-adapter/dist/index.ts', '@hierarchidb/map-adapter', aliases);
-  addAliasIfExists(rootDir, '../packages/feature/tabular-source-xlsx/dist/index.ts', '@hierarchidb/tabular-source-xlsx', aliases);
-  addAliasIfExists(rootDir, '../packages/util/dist/index.ts', '@hierarchidb/util', aliases);
-  addAliasIfExists(rootDir, '../packages/ui/core/dist/index.ts', '@hierarchidb/ui-core', aliases);
-  addAliasIfExists(rootDir, '../packages/ui/i18n/dist/index.js', '@hierarchidb/ui-i18n', aliases);
-  addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-icon', aliases);
+    const legacyMappings: Array<[string, string]> = [
+    ['@hierarchidb/components', '../packages/components/dist/index.js'],
+    ['@hierarchidb/plugin-ui-host', '../packages/plugin-ui-host/dist/index.js'],
+    ['@hierarchidb/ui-auth', '../packages/ui/auth/dist/index.js'],
+    ['@hierarchidb/ui-dialog', '../packages/ui/dialog/dist/index.js'],
+    ['@hierarchidb/ui-icon', '../packages/ui/icon/dist/index.js'],
+    ['@hierarchidb/ui-i18n', '../packages/ui/i18n/dist/index.js'],
+    ['@hierarchidb/ui-layout', '../packages/ui/layout/dist/index.js'],
+    ['@hierarchidb/ui-map', '../packages/ui/map/dist/index.js'],
+    ['@hierarchidb/ui-navigation', '../packages/ui/navigation/dist/index.js'],
+    ['@hierarchidb/ui-routing', '../packages/ui/routing/dist/index.js'],
+    ['@hierarchidb/ui-theme', '../packages/ui/theme/dist/index.js'],
+    ['@hierarchidb/ui-tour', '../packages/ui/tour/dist/index.js'],
+    ['@hierarchidb/ui-treeconsole-base', '../packages/ui/treeconsole/base/dist/index.js'],
+    ['@hierarchidb/ui-treeconsole-breadcrumb', '../packages/ui/treeconsole/breadcrumb/dist/index.js'],
+    ['@hierarchidb/ui-treeconsole-toolbar', '../packages/ui/treeconsole/toolbar/dist/index.js'],
+    ['@hierarchidb/ui-treeconsole-treetable', '../packages/ui/treeconsole/treetable/dist/index.js'],
+    ['@hierarchidb/ui-usermenu', '../packages/ui/usermenu/dist/index.js'],
+    ['@hierarchidb/common-api', '../packages/common/api/dist/index.js'],
+    ['@hierarchidb/common-auth', '../packages/common/auth/dist/index.js'],
+    ['@hierarchidb/common-types', '../packages/common/types/dist/index.js'],
+    ['@hierarchidb/util', '../packages/util/dist/index.js'],
+    ['@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js'],
+    ['@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js'],
+    ['@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js'],
+    ['@hierarchidb/plugin-presentation', '../packages/plugin-presentation/dist/index.js'],
+    ['@hierarchidb/plugin-registry', '../packages/plugin-registry/dist/registry.js'],
+    ['@hierarchidb/plugin-registry/derivations', '../packages/plugin-registry/dist/derivations.js'],
+    ['@hierarchidb/plugin-registry/types', '../packages/plugin-registry/dist/types.d.ts'],
+    ['@hierarchidb/plugin-ui-sdk', '../packages/plugin-ui-sdk/dist/index.js'],
+    ['@hierarchidb/folder-plugin', '../plugins/folder-plugin/dist/index.js'],
+    ['@hierarchidb/location-plugin', '../plugins/location-plugin/dist/index.js'],
+    ['@hierarchidb/linker-plugin', '../plugins/linker-plugin/dist/index.js'],
+    ['@hierarchidb/resolver-plugin', '../plugins/resolver-plugin/dist/index.js'],
+    ['@hierarchidb/route-plugin', '../plugins/route-plugin/dist/index.js'],
+    ['@hierarchidb/shape-plugin', '../plugins/shape-plugin/dist/index.js'],
+    ['@hierarchidb/spreadsheet-plugin', '../plugins/spreadsheet-plugin/dist/index.js'],
+    ['@hierarchidb/styler-plugin', '../plugins/styler-plugin/dist/index.js'],
+    ['@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js'],
+    ['@hierarchidb/timeline-plugin', '../plugins/timeline-plugin/dist/index.js'],
+  ];
+  addAliasIfExists(rootDir, '../packages/runtime/worker/dist/index.ts', '@hierarchidb/feature-core/runtime-worker', aliases);
+  addAliasIfExists(rootDir, '../packages/runtime/client/dist/index.ts', '@hierarchidb/feature-core/runtime-client', aliases);
+  addAliasIfExists(rootDir, '../packages/feature/map-adapter/dist/index.ts', '@hierarchidb/feature-core/map-adapter', aliases);
+  addAliasIfExists(rootDir, '../packages/feature/tabular-source-xlsx/dist/index.ts', '@hierarchidb/feature-core/tabular-source-xlsx', aliases);
+  addAliasIfExists(rootDir, '../packages/util/dist/index.ts', '@hierarchidb/feature-core/util', aliases);
+  addAliasIfExists(rootDir, '../packages/ui/i18n/dist/index.js', '@hierarchidb/ui-shell/ui-i18n', aliases);
+  addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-shell/ui-icon', aliases);
   addAliasIfExists(rootDir, '../packages/runtime-ui/plugin-dialog/src/index.ts', '@hierarchidb/runtime-ui-plugin-dialog', aliases);
   addAliasIfExists(rootDir, '../packages/plugin-loader/base-plugin/dist/index.ts', '@hierarchidb/base-plugin', aliases);
+  for (const [spec, rel] of legacyMappings) {
+    addAliasIfExists(rootDir, rel, spec, aliases);
+  }
   aliases.push({ find: '~', replacement: path.resolve(rootDir, './src') });
 
   const pluginPkgRoot = path.resolve(rootDir, '../plugins');
@@ -131,10 +173,10 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       exclude: [
-        '@hierarchidb/runtime-worker',
-        '@hierarchidb/runtime-client',
-        '@hierarchidb/map-adapter',
-        '@hierarchidb/tabular-source-xlsx',
+        '@hierarchidb/feature-core/runtime-worker',
+        '@hierarchidb/feature-core/runtime-client',
+        '@hierarchidb/feature-core/map-adapter',
+        '@hierarchidb/feature-core/tabular-source-xlsx',
         '@hierarchidb/runtime-ui-plugin-dialog',
       ],
     },

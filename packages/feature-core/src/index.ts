@@ -1,0 +1,25 @@
+export const FeatureCorePackages = [
+  'basemap-plugin',
+  'common-api',
+  'common-auth',
+  'common-types',
+  'folder-plugin',
+  'linker-plugin',
+  'location-plugin',
+  'map-adapter',
+  'plugin-presentation',
+  'plugin-registry',
+  'plugin-ui-sdk',
+  'resolver-plugin',
+  'route-plugin',
+  'runtime-client',
+  'runtime-worker',
+  'shape-plugin',
+  'spreadsheet-plugin',
+  'styler-plugin',
+  'tabular-source-xlsx',
+  'timeline-plugin',
+  'util',
+] as const;
+
+export type FeatureCorePackageId = typeof FeatureCorePackages[number];

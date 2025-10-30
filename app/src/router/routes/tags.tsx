@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 // import { useWorkerClient } from '../contexts/WorkerProvider.js';
-import type { TagEntity } from '@hierarchidb/common-types';
+import type { TagEntity } from '@hierarchidb/feature-core/common-types';
 import { useNavigate } from '@tanstack/react-router';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 
@@ -106,11 +106,13 @@ export default function TagsPage() {
   };
 
   // Handle tag edit
+  /*
   const handleTagEdit = (tag: TagEntity, event: React.MouseEvent) => {
     event.stopPropagation();
     // TODO: Open tag edit base-dialog
     console.log('Edit tag:', tag);
   };
+     */
 
   // Note: Tags with zero usage are automatically deleted by PersistentRelationalEntity lifecycle management
   // Manual deletion is not needed and could interfere with the lifecycle system

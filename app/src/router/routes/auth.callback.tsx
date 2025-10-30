@@ -3,7 +3,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, CircularProgress, Typography } from '@mui/material';
-import { BFFAuthService } from '@hierarchidb/ui-auth';
+import { BFFAuthService } from '@hierarchidb/ui-shell/ui-auth';
 import { useNavigate, useLocation } from '@tanstack/react-router';
 
 export default function AuthCallbackRoute() {

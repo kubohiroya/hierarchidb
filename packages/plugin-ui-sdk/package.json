@@ -20,17 +20,23 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hierarchidb/plugin-service-sdk": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*"
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "comlink": "^4.4.1"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*"
@@ -50,6 +56,10 @@
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/download": "workspace:*"
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "vitest": "^3.2.4",
+    "@testing-library/react": "^16.1.0"
   }
 }

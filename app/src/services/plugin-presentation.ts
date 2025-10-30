@@ -1,159 +1,93 @@
-/**
- * Where: app/src/services/plugin-presentation.ts
- * What: Resolve presentation metadata (label/icon/color) for plugin-loader exposed in the UI.
- * Why: SpeedDial and other menus must render icons straight from package metadata instead of placeholders.
- */
-
-import { prefetchMuiIcons } from '@hierarchidb/ui-icon';
+import {
+  setPluginPresentationDefinitions,
+  getPresentation as coreGetPresentation,
+  getPresentations as coreGetPresentations,
+  prefetchAllIcons as corePrefetchAllIcons,
+  resetPluginPresentationCacheForTests as coreResetForTests,
+  type PluginPresentation,
+  type PluginPresentationDefinition,
+  type PluginPresentationManifest,
+} from '@hierarchidb/feature-core/plugin-presentation';
 import { getInstalledPlugins, type InstalledPlugin } from './plugin-registry.js';
+import type { PluginManifest, PluginIconConfig } from '@hierarchidb/feature-core/plugin-registry/types';
 
-export interface PluginIconInfo {
-  muiIconName?: string;
-  emoji?: string;
-  color?: string;
-}
+let currentSignature: string | null = null;
 
-export interface PluginPresentation {
-  nodeType: string;
-  label: string;
-  icon: PluginIconInfo;
-  priority: number;
-}
-
-const ICON_NAME_NORMALIZATION_MAP: Record<string, string> = {
-  LocationPin: 'LocationOn',
-  Location: 'LocationOn',
-  MapMarker: 'Place',
-};
-
-let presentationCache: Map<string, PluginPresentation> | null = null;
-let presentationSignature: string | null = null;
-
-function normalizeMuiIconName(name?: string): string | undefined {
-  if (!name) return undefined;
-  return ICON_NAME_NORMALIZATION_MAP[name] || name;
-}
-
-function toPascalCase(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  const parts = value
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean);
-  if (parts.length === 0) return undefined;
-  return parts
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join('');
-}
-
-function normalizeLabelText(raw: string): string {
-  if (!raw) return raw;
-  const collapsed = raw.replace(/\s+Plugin$/i, '').trim();
-  if (!collapsed) return collapsed;
-  const lower = collapsed.toLowerCase();
-  return lower.charAt(0).toUpperCase() + lower.slice(1);
-}
-
-function sanitizeLabel(source: unknown, fallback: string): string {
-  if (typeof source !== 'string' || source.trim().length === 0) {
-    const trimmedFallback = fallback.trim();
-    return trimmedFallback.length > 0 ? normalizeLabelText(trimmedFallback) : trimmedFallback;
-  }
-  const normalized = normalizeLabelText(source);
-  if (normalized.length > 0) return normalized;
-  const fallbackNormalized = normalizeLabelText(fallback);
-  return fallbackNormalized.length > 0 ? fallbackNormalized : fallback.trim();
-}
-
-function buildPresentation(def: InstalledPlugin): PluginPresentation {
-  const iconConfig = def.icon ?? {};
-  const fallbackLabel = def.label || def.nodeType;
-  const label = sanitizeLabel(def.label, fallbackLabel);
-  const priorityCandidate = def.manifest?.priority ?? def.createOrder;
-  const manifestIcon = def.manifest?.icon ?? null;
-  const hasComponent = Boolean(manifestIcon?.component?.specifier);
-  const rawIconName = iconConfig.muiIconName ?? manifestIcon?.muiIconName ?? manifestIcon?.mui;
-  const normalizedIconName = normalizeMuiIconName(rawIconName);
-  const componentIconName = hasComponent ? toPascalCase(String(def.nodeType)) : undefined;
-  const FALLBACK_ICONS: Record<string, PluginIconInfo> = {
-    basemap: { muiIconName: 'Public', emoji: '🌍', color: '#b0b3d9' },
-    linker: { muiIconName: 'AccountTree', emoji: '🌲', color: '#ffe0f3' },
-    resolver: { muiIconName: 'Extension', emoji: '🧩', color: '#ffb3c1' },
-    timeline: { muiIconName: 'AccessTime', emoji: '🕒', color: '#8a7cbf' },
-  };
-  const fallbackIcon = FALLBACK_ICONS[def.nodeType] ?? {};
+function normalizeManifestIcon(icon: PluginIconConfig | undefined | null) {
+  if (!icon) return undefined;
+  const component = icon.component ? { specifier: icon.component.specifier ?? null } : null;
   return {
-    nodeType: def.nodeType,
-    label,
-    icon: {
-      muiIconName: normalizedIconName
-        ?? componentIconName
-        ?? fallbackIcon.muiIconName
-        ?? (def.nodeType === 'folder' ? 'Folder' : 'Extension'),
-      emoji: typeof iconConfig.emoji === 'string'
-        ? iconConfig.emoji
-        : manifestIcon?.emoji ?? fallbackIcon.emoji,
-      color: typeof iconConfig.color === 'string'
-        ? iconConfig.color
-        : manifestIcon?.color ?? fallbackIcon.color,
-    },
-    priority: typeof priorityCandidate === 'number' ? priorityCandidate : 1000,
+    mui: icon.mui,
+    muiIconName: icon.muiIconName,
+    emoji: icon.emoji,
+    color: icon.color,
+    component,
+  } satisfies PluginPresentationManifest['icon'];
+}
+
+function toPresentationManifest(manifest: PluginManifest | null): PluginPresentationManifest | undefined {
+  if (!manifest) return undefined;
+  return {
+    displayName: manifest.displayName ?? undefined,
+    name: manifest.name ?? undefined,
+    description: manifest.description ?? undefined,
+    priority: manifest.priority ?? undefined,
+    icon: normalizeManifestIcon(manifest.icon ?? undefined),
+  } satisfies PluginPresentationManifest;
+}
+
+function mapToDefinition(plugin: InstalledPlugin): PluginPresentationDefinition {
+  return {
+    nodeType: plugin.nodeType,
+    label: plugin.label,
+    icon: plugin.icon ?? undefined,
+    manifest: toPresentationManifest(plugin.manifest),
+    createOrder: plugin.createOrder,
   };
 }
 
 function createSignature(defs: InstalledPlugin[]): string {
   try {
-    const parts = defs.map((def) => {
-      return [
-        def.nodeType,
-        def.label ?? '',
-        def.icon?.muiIconName ?? '',
-        def.icon?.color ?? '',
-        def.manifest?.priority ?? '',
-        def.createOrder ?? '',
-      ];
-    });
+    const parts = defs.map((plugin) => [
+      plugin.nodeType,
+      plugin.label ?? '',
+      plugin.icon?.muiIconName ?? '',
+      plugin.icon?.color ?? '',
+      plugin.manifest?.priority ?? '',
+      plugin.createOrder ?? '',
+    ]);
     return JSON.stringify(parts);
   } catch {
     return '';
   }
 }
 
-function ensureCache(): Map<string, PluginPresentation> {
-  const defs = getInstalledPlugins();
-  const signature = createSignature(defs);
-  if (!presentationCache || presentationSignature !== signature) {
-    const map = new Map<string, PluginPresentation>();
-    for (const def of defs) {
-      const presentation = buildPresentation(def);
-      map.set(presentation.nodeType, presentation);
-    }
-    presentationCache = map;
-    presentationSignature = signature;
-  }
-  return presentationCache;
+function ensureDefinitions(): void {
+  const installed = getInstalledPlugins();
+  const signature = createSignature(installed);
+  if (signature === currentSignature) return;
+  setPluginPresentationDefinitions(installed.map(mapToDefinition));
+  currentSignature = signature;
 }
 
 export function getPresentation(nodeType: string): PluginPresentation | undefined {
-  const cache = ensureCache();
-  if (cache.size === 0) {
-    return undefined;
-  }
-  const normalized = typeof nodeType === 'string' ? nodeType : '';
-  return cache.get(normalized);
+  ensureDefinitions();
+  return coreGetPresentation(nodeType);
+}
+
+export function getPresentations(): PluginPresentation[] {
+  ensureDefinitions();
+  return coreGetPresentations();
 }
 
 export async function prefetchAllIcons(): Promise<void> {
-  const cache = ensureCache();
-  if (cache.size === 0) return;
-  const iconNames = Array.from(cache.values())
-    .map((item) => item.icon.muiIconName)
-    .filter((name, index, self): name is string => typeof name === 'string' && name.trim().length > 0 && self.indexOf(name) === index);
-  if (iconNames.length === 0) return;
-  await prefetchMuiIcons(iconNames);
+  ensureDefinitions();
+  await corePrefetchAllIcons();
 }
 
 export function resetPluginPresentationCacheForTests(): void {
-  presentationCache = null;
-  presentationSignature = null;
+  currentSignature = null;
+  coreResetForTests();
 }
+
+export type { PluginPresentation } from '@hierarchidb/feature-core/plugin-presentation';

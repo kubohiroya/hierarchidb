@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeType } from '@hierarchidb/feature-core/common-types';
 
 export function normalizeNodeType(input: string | undefined | null): NodeType | undefined {
   if (!input) return undefined;

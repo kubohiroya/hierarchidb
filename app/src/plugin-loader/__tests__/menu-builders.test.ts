@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import { describe, it, expect } from 'vitest';
 import { buildMenuItemsForContext, buildMenuItemsForTreeId, type PluginMenuItem } from '../menu-builders.js';
 import { getMenuSpec } from '../menu-spec.ts';

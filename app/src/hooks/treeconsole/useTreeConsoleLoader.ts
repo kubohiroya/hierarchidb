@@ -7,9 +7,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import { rebuildAdjacency, buildVisibleRows } from '~/state/treeconsole.derive.js';
 import { preconnectForNodeTypes } from '~/services/preconnect.js';

@@ -5,8 +5,8 @@ import type {
   PluginIconConfig,
   PluginManifest,
   PluginRegistryEntry,
-} from '@hierarchidb/plugin-registry/types';
-import type { NodeType } from '@hierarchidb/common-types';
+} from '@hierarchidb/feature-core/plugin-registry/types';
+import type { NodeType } from '@hierarchidb/feature-core/common-types';
 
 interface PackageJsonShape {
   dependencies?: Record<string, unknown>;

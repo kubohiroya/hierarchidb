@@ -87,7 +87,7 @@ echo ""
 if [ "$COMMAND" = "dev" ]; then
   echo "🔎 Running dependency guards (pre-dev) ..."
   # 追加ガード（速い）: workspace: プロトコル/未解決依存/lockfile差分 など
-  pnpm -w run check:deps:extra || {
+  pnpm -w run guard:deps:extra || {
     echo "❌ Dependency guard failed. Please fix the above issues.";
     exit 1;
   }

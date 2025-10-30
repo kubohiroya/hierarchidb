@@ -5,9 +5,9 @@ import type { Remote } from 'comlink';
 import workerScriptUrl from './worker.ts?worker&url';
 import { bootLog } from './utils/bootLog.ts';
 import { APP_VERSION } from './version.ts';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
-// Mirrors WorkerInitMessageType defined in @hierarchidb/runtime-client to avoid `any` fallbacks
+// Mirrors WorkerInitMessageType defined in @hierarchidb/feature-core/runtime-client to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.
 type WorkerInitMessageType =
   | 'INIT_REQUEST'
@@ -17,7 +17,7 @@ type WorkerInitMessageType =
   | 'PING'
   | 'PING_RESPONSE';
 
-// Mirrors WorkerInitMessage from @hierarchidb/runtime-client. Keep in sync with the upstream type.
+// Mirrors WorkerInitMessage from @hierarchidb/feature-core/runtime-client. Keep in sync with the upstream type.
 type WorkerInitMessage = {
   type: WorkerInitMessageType;
   payload?: {

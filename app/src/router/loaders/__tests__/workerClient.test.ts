@@ -7,7 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 // Mock the WorkerStateStore module
 vi.mock('../../../worker-runtime/WorkerStateStore.js', () => ({

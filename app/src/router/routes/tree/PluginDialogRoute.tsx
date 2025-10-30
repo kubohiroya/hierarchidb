@@ -5,9 +5,9 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
-import { NodeId, TreeId } from '@hierarchidb/common-types';
-import { getWorkerClientHook } from '@hierarchidb/runtime-client';
-import { PluginDialogShell } from '@hierarchidb/ui-plugin-dialog';
+import { NodeId, TreeId } from '@hierarchidb/feature-core/common-types';
+import { getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
+import { PluginDialogHost } from '@hierarchidb/ui-shell/plugin-ui-host';
 
 interface PluginDialogLoaderData {
   tree: { id: TreeId };
@@ -103,7 +103,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
   // Unified host: headless plugin dialog shell
   return (
-    <PluginDialogShell
+    <PluginDialogHost
       mode={mode}
       nodeType={nodeType}
       nodeId={workingCopyId}

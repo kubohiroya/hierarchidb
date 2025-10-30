@@ -1,5 +1,5 @@
-import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/runtime-client';
-import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-icon';
+import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
+import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-shell/ui-icon';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType } from 'react';
 import { pluginIconLoaders, pluginRegistry } from '~/plugin-registry/index.ts';
@@ -9,7 +9,7 @@ import { loadAllUIPlugins } from '../../services/ui-plugin-loader.ts';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { getInstalledPlugins } from '../../services/plugin-registry.ts';
 
-type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
+type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-shell/ui-treeconsole-base')['TreeConsolePanel'];
 
 type BrowserGlobals = Window & {
   __uiPluginsRegistered?: boolean;
@@ -118,7 +118,7 @@ export function initializeBrowserGlobals(): void {
     logWarning('Failed to initialize plugin definitions from registry', error);
   }
 
-  void import('@hierarchidb/ui-treeconsole-base')
+  void import('@hierarchidb/ui-shell/ui-treeconsole-base')
     .then((mod) => {
       const panel = mod?.TreeConsolePanel as TreeConsolePanelGlobal | undefined;
       if (panel) {

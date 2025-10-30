@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import { SchemaSelectionStep } from './steps/SchemaSelectionStep.js';
 import { PropertyMappingStep } from './steps/PropertyMappingStep.js';
 import { ValidationConfigStep } from './steps/ValidationConfigStep.js';

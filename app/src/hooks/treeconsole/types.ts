@@ -6,11 +6,11 @@
  */
 
 import type { Dispatch, SetStateAction } from 'react';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 
 export type ViewMode = 'list' | 'grid';

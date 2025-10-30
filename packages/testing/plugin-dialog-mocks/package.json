@@ -1,0 +1,45 @@
+{
+  "name": "@hierarchidb/testing-plugin-dialog-mocks",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Shared Vitest mocks and stubs for plugin dialog integration tests",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./setupPluginWorkerMock": {
+      "types": "./dist/setupPluginWorkerMock.d.ts",
+      "import": "./dist/setupPluginWorkerMock.js",
+      "default": "./dist/setupPluginWorkerMock.js"
+    },
+    "./mocks": {
+      "types": "./dist/mocks/index.d.ts",
+      "import": "./dist/mocks/index.js",
+      "default": "./dist/mocks/index.js"
+    },
+    "./stubs": {
+      "types": "./dist/stubs/index.d.ts",
+      "import": "./dist/stubs/index.js",
+      "default": "./dist/stubs/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../../tsdown.config.ts --outDir dist",
+    "lint": "eslint src",
+    "clean": "rm -rf dist",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

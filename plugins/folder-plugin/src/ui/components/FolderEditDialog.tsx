@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography } from '@mui/material';
-import { FolderIcon } from './FolderIcon.js';
-import type { FolderDisplayData, FolderEditData } from '../../common/types/index.js';
+import { FolderIcon } from './FolderIcon.tsx';
+import type { FolderDisplayData, FolderEditData } from '../../common/types/index.ts';
 import type { NodeId } from '@hierarchidb/common-types';
 
 export interface FolderEditDialogProps {

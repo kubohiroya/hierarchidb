@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
-const basePluginEntry = path.resolve(__dirname, '../base-plugin/src/index.ts');
+const workspaceRoot = path.resolve(__dirname, '../..');
+const basePluginEntry = path.resolve(workspaceRoot, 'packages/plugin-ui-sdk/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -24,9 +25,9 @@ export default defineConfig({
     alias: {
       '~': path.resolve(__dirname, './src'),
       // Use source during tests to avoid requiring a prebuild
-      '@hierarchidb/ui-dialog': path.resolve(__dirname, '../../ui/dialog/src/index.ts'),
-      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/__tests__/__mocks__/store-registry.ts'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      '@hierarchidb/ui-dialog': path.resolve(workspaceRoot, 'packages/ui/dialog/src/index.ts'),
+      '@hierarchidb/runtime-worker': path.resolve(__dirname, './src/common/__tests__/__mocks__/store-registry.ts'),
+      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': basePluginEntry,
     },
   },

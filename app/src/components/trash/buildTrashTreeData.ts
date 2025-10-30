@@ -1,5 +1,5 @@
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashTreeDataParams {

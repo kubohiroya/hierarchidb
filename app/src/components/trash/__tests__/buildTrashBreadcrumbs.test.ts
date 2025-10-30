@@ -5,7 +5,7 @@
  * Purpose: validate that breadcrumbs prefer preserved names and remain stable when metadata is missing.
  */
 import { describe, expect, it } from 'vitest';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import { buildTrashBreadcrumbs } from '../buildTrashBreadcrumbs.js';
 
 function createNode(

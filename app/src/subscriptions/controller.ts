@@ -1,6 +1,6 @@
-import type { NodeId, SubscriptionId } from '@hierarchidb/common-types';
+import type { NodeId, SubscriptionId } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 type SubscriptionKind = 'trash' | 'page';
 export type SubscriptionCallback = (event: unknown) => void;

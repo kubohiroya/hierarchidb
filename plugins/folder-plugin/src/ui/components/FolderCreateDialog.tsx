@@ -10,8 +10,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { FolderIcon } from './FolderIcon.js';
-import type { FolderEditData } from '../../common/types/index.js';
+import { FolderIcon } from './FolderIcon.tsx';
+import type { FolderEditData } from '../../common/types/index.ts';
 import type { NodeId } from '@hierarchidb/common-types';
 
 export interface FolderCreateDialogProps {

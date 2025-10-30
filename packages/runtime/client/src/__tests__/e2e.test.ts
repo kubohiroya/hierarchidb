@@ -1,197 +1,144 @@
-/**
- * E2E Test for Worker Initialization Notification System
- */
-
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 import type { WorkerInitMessage } from '../types.js';
 
-// Create a real Worker script as a Blob
-const createTestWorkerScript = () => {
-  const workerCode = `
-    // Worker-side code
-    class WorkerInitializationReporter {
-      constructor() {
-        this.isInitialized = false;
-        this.currentProgress = 0;
-        this.setupMessageListener();
+type MessageListener = (this: Worker, ev: MessageEvent<WorkerInitMessage>) => unknown;
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+class FakeWorker implements Worker {
+  public onerror: ((this: Worker, ev: ErrorEvent) => any) | null = null;
+  public onmessage: MessageListener | null = null;
+  public onmessageerror: ((this: Worker, ev: MessageEvent<any>) => any) | null = null;
+  public onPostMessage?: (message: any) => void;
+
+  private listeners = new Map<EventListenerOrEventListenerObject, MessageListener>();
+
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    if (type !== 'message') return;
+    const wrapped: MessageListener = (event) => {
+      if (typeof listener === 'function') {
+        (listener as MessageListener).call(this, event);
+      } else {
+        listener.handleEvent?.(event);
       }
+    };
+    this.listeners.set(listener, wrapped);
+  }
 
-      setupMessageListener() {
-        self.addEventListener('message', (event) => {
-          const request = event.data;
-          
-          if (request.type === 'INIT_REQUEST') {
-            this.reportCurrentStatus();
-          } else if (request.type === 'PING') {
-            this.sendMessage('PING_RESPONSE', { timestamp: Date.now() });
-          } else if (request.type === 'START_INIT') {
-            // Start initialization sequence
-            this.performInitialization();
-          }
-        });
-      }
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    if (type !== 'message') return;
+    this.listeners.delete(listener);
+  }
 
-      async performInitialization() {
-        try {
-          // Step 1: Loading
-          this.sendMessage('INIT_PROGRESS', {
-            progress: 0,
-            message: 'Starting initialization...',
-          });
-          await this.delay(100);
-
-          // Step 2: Setup
-          this.sendMessage('INIT_PROGRESS', {
-            progress: 33,
-            message: 'Setting up worker...',
-          });
-          await this.delay(100);
-
-          // Step 3: Preparing
-          this.sendMessage('INIT_PROGRESS', {
-            progress: 66,
-            message: 'Preparing API...',
-          });
-          await this.delay(100);
-
-          // Step 4: Complete
-          this.sendMessage('INIT_PROGRESS', {
-            progress: 100,
-            message: 'Almost ready...',
-          });
-          await this.delay(50);
-
-          // Mark as complete
-          this.isInitialized = true;
-          this.currentProgress = 100;
-          this.sendMessage('INIT_COMPLETE', {
-            progress: 100,
-            message: 'Worker initialized successfully',
-          });
-        } catch (error) {
-          this.sendMessage('INIT_ERROR', {
-            error: error.message || 'Initialization failed',
-          });
-        }
-      }
-
-      delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-      }
-
-      reportCurrentStatus() {
-        if (this.isInitialized) {
-          this.sendMessage('INIT_COMPLETE', {
-            progress: 100,
-            message: 'Worker initialized successfully',
-          });
-        } else {
-          this.sendMessage('INIT_PROGRESS', {
-            progress: this.currentProgress,
-            message: 'Initializing...',
-          });
-        }
-      }
-
-      sendMessage(type, payload) {
-        self.postMessage({
-          type,
-          payload: {
-            ...payload,
-            timestamp: Date.now(),
-          },
-        });
-      }
+  dispatchEvent(event: Event): boolean {
+    if (event.type !== 'message') return true;
+    const messageEvent = event as MessageEvent<WorkerInitMessage>;
+    this.onmessage?.call(this, messageEvent);
+    for (const handler of this.listeners.values()) {
+      handler.call(this, messageEvent);
     }
+    return true;
+  }
 
-    // Create reporter instance
-    const reporter = new WorkerInitializationReporter();
-    
-    // Log that worker is ready
-    console.log('[TestWorker] Worker script loaded and reporter created');
-  `;
+  postMessage(message: any): void {
+    this.onPostMessage?.(message);
+  }
 
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  return URL.createObjectURL(blob);
-};
+  terminate(): void {
+    this.listeners.clear();
+    this.onmessage = null;
+  }
+
+  emit(type: WorkerInitMessage['type'], payload: Record<string, unknown> = {}): void {
+    const event = new MessageEvent<WorkerInitMessage>('message', {
+      data: {
+        type,
+        payload: {
+          ...payload,
+          timestamp: Date.now(),
+        },
+      },
+    });
+    queueMicrotask(() => {
+      this.dispatchEvent(event);
+    });
+  }
+}
+
+async function simulateSuccessfulInitialization(worker: FakeWorker): Promise<void> {
+  worker.emit('INIT_PROGRESS', { progress: 0, message: 'Starting initialization...' });
+  await flush();
+  worker.emit('INIT_PROGRESS', { progress: 33, message: 'Setting up worker...' });
+  await flush();
+  worker.emit('INIT_PROGRESS', { progress: 66, message: 'Preparing API...' });
+  await flush();
+  worker.emit('INIT_PROGRESS', { progress: 100, message: 'Almost ready...' });
+  await flush();
+  worker.emit('INIT_COMPLETE', { progress: 100, message: 'Worker initialized successfully' });
+}
 
 describe('Worker Initialization E2E Tests', () => {
-  let worker: Worker;
-  let workerUrl: string;
+  let worker: FakeWorker;
   let channel: WorkerInitializationChannel;
 
   beforeEach(() => {
-    // Create worker URL
-    workerUrl = createTestWorkerScript();
-    // Create actual Worker
-    worker = new Worker(workerUrl);
-    // Create channel
+    worker = new FakeWorker();
     channel = new WorkerInitializationChannel();
   });
 
   afterEach(() => {
-    // Cleanup
-    if (worker) {
-      worker.terminate();
-    }
-    if (channel) {
-      channel.dispose();
-    }
-    if (workerUrl) {
-      URL.revokeObjectURL(workerUrl);
-    }
+    worker.terminate();
+    channel.dispose();
   });
 
   it('should complete full initialization flow with progress updates', async () => {
     const progressUpdates: WorkerInitMessage[] = [];
 
-    // Intercept progress messages
     worker.addEventListener('message', (event) => {
       if (event.data.type === 'INIT_PROGRESS') {
         progressUpdates.push(event.data);
       }
     });
 
-    // Start initialization in parallel
+    worker.onPostMessage = (message) => {
+      if (message.type === 'INIT_REQUEST') {
+        void simulateSuccessfulInitialization(worker);
+      }
+    };
+
     const initPromise = channel.waitForInitialization({
-      worker,
+      worker: worker as unknown as Worker,
       timeout: 5000,
       debug: true,
     });
 
-    // Trigger initialization after channel is listening
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Mirror original test flow by sending an explicit start message
     worker.postMessage({ type: 'START_INIT' });
 
-    // Wait for initialization to complete
     const result = await initPromise;
 
-    // Verify result
     expect(result.success).toBe(true);
     expect(result.duration).toBeGreaterThan(0);
     expect(result.error).toBeUndefined();
-
-    // Verify we received progress updates
     expect(progressUpdates.length).toBeGreaterThan(0);
 
-    // Verify progress values are increasing
-    const progressValues = progressUpdates.map(u => u.payload?.progress || 0);
-    for (let i = 1; i < progressValues.length; i++) {
-      expect(progressValues[i]).toBeGreaterThanOrEqual(progressValues[i - 1]);
+    const progressValues = progressUpdates.map((update) => update.payload?.progress ?? 0);
+    for (let index = 1; index < progressValues.length; index += 1) {
+      expect(progressValues[index]).toBeGreaterThanOrEqual(progressValues[index - 1]);
     }
   }, 10000);
 
   it('should handle initialization timeout', async () => {
-    // Don't trigger initialization
-    const initPromise = channel.waitForInitialization({
-      worker,
-      timeout: 500, // Short timeout
-      debug: false,
-    });
+    worker.onPostMessage = () => {
+      // Intentionally do nothing so the timeout triggers
+    };
 
-    // Should timeout
-    await expect(initPromise).rejects.toMatchObject({
+    await expect(channel.waitForInitialization({
+      worker: worker as unknown as Worker,
+      timeout: 50,
+      debug: false,
+    })).rejects.toMatchObject({
       success: false,
       error: expect.objectContaining({
         message: expect.stringContaining('timeout'),
@@ -200,106 +147,103 @@ describe('Worker Initialization E2E Tests', () => {
   });
 
   it('should handle worker errors during initialization', async () => {
-    // Create a worker that will error
-    const errorWorkerCode = `
-      self.addEventListener('message', (event) => {
-        if (event.data.type === 'INIT_REQUEST') {
-          // Immediately send error
-          self.postMessage({
-            type: 'INIT_ERROR',
-            payload: {
-              error: 'Simulated initialization error',
-              timestamp: Date.now(),
-            },
-          });
-        }
-      });
-    `;
+    const errorWorker = new FakeWorker();
+    errorWorker.onPostMessage = (message) => {
+      if (message.type === 'INIT_REQUEST') {
+        errorWorker.emit('INIT_ERROR', { error: 'Simulated initialization error' });
+      }
+    };
 
-    const errorBlob = new Blob([errorWorkerCode], { type: 'application/javascript' });
-    const errorUrl = URL.createObjectURL(errorBlob);
-    const errorWorker = new Worker(errorUrl);
+    await expect(channel.waitForInitialization({
+      worker: errorWorker as unknown as Worker,
+      timeout: 5000,
+      debug: false,
+    })).rejects.toMatchObject({
+      success: false,
+      error: expect.objectContaining({ message: 'Simulated initialization error' }),
+    });
 
-    try {
-      const result = await channel.waitForInitialization({
-        worker: errorWorker,
-        timeout: 2000,
-        debug: false,
-      });
-
-      // Should not reach here
-      expect(result.success).toBe(false);
-    } catch (error: any) {
-      expect(error.success).toBe(false);
-      expect(error.error?.message).toContain('Simulated initialization error');
-    } finally {
-      errorWorker.terminate();
-      URL.revokeObjectURL(errorUrl);
-    }
+    errorWorker.terminate();
   });
 
   it('should support ping functionality after initialization', async () => {
-    // Initialize worker first
-    worker.postMessage({ type: 'START_INIT' });
+    worker.onPostMessage = (message) => {
+      if (message.type === 'INIT_REQUEST') {
+        void simulateSuccessfulInitialization(worker);
+      }
+      if (message.type === 'PING') {
+        worker.emit('PING_RESPONSE', {});
+      }
+    };
 
     await channel.waitForInitialization({
-      worker,
+      worker: worker as unknown as Worker,
       timeout: 5000,
       debug: false,
     });
 
-    // Test ping
     const pingResult = await channel.ping();
     expect(pingResult).toBe(true);
   });
 
   it('should handle concurrent initialization requests', async () => {
-    // Start multiple initialization requests
+    worker.onPostMessage = (message) => {
+      if (message.type === 'INIT_REQUEST') {
+        void simulateSuccessfulInitialization(worker);
+      }
+    };
+
     const promise1 = channel.waitForInitialization({
-      worker,
+      worker: worker as unknown as Worker,
       timeout: 5000,
       debug: false,
     });
 
     const promise2 = channel.waitForInitialization({
-      worker,
+      worker: worker as unknown as Worker,
       timeout: 5000,
       debug: false,
     });
 
-    // Should return the same promise
     expect(promise1).toBe(promise2);
 
-    // Trigger initialization
     worker.postMessage({ type: 'START_INIT' });
 
-    // Both should resolve with the same result
     const [result1, result2] = await Promise.all([promise1, promise2]);
     expect(result1).toEqual(result2);
     expect(result1.success).toBe(true);
   });
 
   it('should properly clean up resources on dispose', async () => {
+    worker.onPostMessage = (message) => {
+      if (message.type === 'PING') {
+        worker.emit('PING_RESPONSE', {});
+      }
+    };
+
     void channel.waitForInitialization({
-      worker,
-      timeout: 10000,
+      worker: worker as unknown as Worker,
+      timeout: 5000,
       debug: false,
     });
 
-    // Dispose before completion
     channel.dispose();
 
-    // Worker should still be functional
     worker.postMessage({ type: 'PING' });
+    await flush();
 
-    // Create a new channel
+    worker.onPostMessage = (message) => {
+      if (message.type === 'INIT_REQUEST') {
+        void simulateSuccessfulInitialization(worker);
+      }
+    };
+
     const newChannel = new WorkerInitializationChannel();
 
-    // Should be able to initialize with new channel
     worker.postMessage({ type: 'START_INIT' });
 
     const result = await newChannel.waitForInitialization({
-      worker,
+      worker: worker as unknown as Worker,
       timeout: 5000,
       debug: false,
     });

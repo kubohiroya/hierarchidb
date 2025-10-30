@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { storeRegistry } from '@hierarchidb/runtime-worker';
-import { __clearFolderGroupStore, folderGroupStore } from '../worker/folderGroupStore.js';
-import { __clearFolderRelationStore, folderRelationStore } from '../worker/folderRelationStore.js';
+import { __clearFolderGroupStore, folderGroupStore } from '../../worker/folderGroupStore.ts';
+import { __clearFolderRelationStore, folderRelationStore } from '../../worker/folderRelationStore.ts';
 
 describe('folder-plugin: group/relations store registration', () => {
   beforeEach(() => {

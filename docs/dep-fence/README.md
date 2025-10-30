@@ -48,6 +48,10 @@ Why this tool? (Positioning and differences)
 - In CI
   - Add: dep-fence --strict to your test/lint job
 
+📌 リポジトリ運用メモ（2025-10-30 更新）
+- 追加ガードは `pnpm run guard:deps:extra` で実行してください。`scripts/run-dependency-guard.mjs` が `verify-deps-before-run` / `_jsr-registry` など npm 固有の環境設定を事前に除去し、`Dependency guard passed with 0 warning(s).` 以外の警告が出ないようにしています。
+- `npm run …` から直接呼び出すと npm CLI が未知の設定として警告を出すため、必ず pnpm 経由のラッパー（もしくは `node scripts/run-dependency-guard.mjs`）を利用してください。
+
 🧩 Representative Policy Examples (Purpose → Snippet → Outcome)
 
 - Public API only (ban deep imports across packages)
@@ -176,4 +180,3 @@ export default config;
 
 🎯 Mental model
 - Treat Dep‑Fence as your “import firewall.” Write a few high‑signal rules that capture your architecture, run it on every PR, and let developers focus on features without accidentally dissolving your boundaries.
-

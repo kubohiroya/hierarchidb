@@ -1,4 +1,5 @@
-import { BasicInfoStep, HostProfileRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { BasicInfoStep } from '@hierarchidb/plugin-ui-host';
+import { HostProfileRegistry, type PluginStepConfig, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { TagId } from '@hierarchidb/common-types';
 
 type FolderData = { name?: string; description?: string; tags?: TagId[] };

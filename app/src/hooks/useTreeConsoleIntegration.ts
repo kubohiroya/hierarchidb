@@ -6,8 +6,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { useImportExport } from '../hooks/useImportExport.ts';
 import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';

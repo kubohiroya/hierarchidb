@@ -3,7 +3,7 @@
  */
 
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 // Create a type that matches the shared contract
 type WorkerInterface = Remote<WorkerAPI>;

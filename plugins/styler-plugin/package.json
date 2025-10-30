@@ -63,7 +63,8 @@
   "dependencies": {
     "jszip": "^3.10.1",
     "react-window": "^1.8.10",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -81,9 +82,9 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/components": "workspace:*"
+    "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -104,9 +105,9 @@
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/spreadsheet-plugin": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/components": "workspace:*"
+    "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "keywords": [
     "hierarchidb",
@@ -132,7 +133,7 @@
       "name": "Styler Plugin",
       "icon": {
         "mui": "Palette",
-        "emoji": "\ud83c\udfa8",
+        "emoji": "🎨",
         "color": "#dcbc50",
         "component": {
           "specifier": "@hierarchidb/styler-plugin/icon",

@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { NodeId } from '@hierarchidb/common-types';
 import { ResourcePicker, type ResourceSummary } from '../steps/ResourcePicker.js';
 import { AggregatedList } from '../steps/AggregatedList.js';

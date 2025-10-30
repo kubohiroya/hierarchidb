@@ -6,9 +6,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import type { TreeId } from '@hierarchidb/common-types';
-import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/plugin-ui-sdk';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/feature-core/plugin-ui-sdk';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
 
 export interface UsePluginsForTreeResult {

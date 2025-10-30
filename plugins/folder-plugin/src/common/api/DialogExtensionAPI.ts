@@ -4,7 +4,7 @@ import {
   NodeDialogStepDefinition,
   ValidationExtension,
 } from '@hierarchidb/plugin-service-api';
-import type { FolderEntity } from '../types/FolderEntity.js';
+import type { FolderEntity } from '../types/FolderEntity.ts';
 import { TreeNode } from '@hierarchidb/common-types';
 
 /**

@@ -14,6 +14,13 @@ export {
 } from './working-copy/helpers.js';
 export type { EntityWorkingCopyAdapter } from './working-copy/adapter.js';
 export { createEntityWorkingCopyAdapter } from './working-copy/adapter.js';
+export {
+  WorkingCopyService,
+} from './working-copy/service.js';
+export type {
+  WorkingCopyState,
+  StepCapabilitiesState,
+} from './working-copy/service.js';
 
 // Peer store helpers
 export { createPeerStoreNormalizer } from './peer-store/normalizer.js';
@@ -43,3 +50,23 @@ export type {
 
 // Plugin registry API types
 export { PluginExtensionRegistry } from './extensions/PluginExtensionRegistry.js';
+
+// Worker bridge utilities
+export {
+  getWorkerBridge,
+  __setWorkerBridgeClientRef,
+  __getWorkerBridgeClientRef,
+  ensureWorkerAPI,
+} from './worker/bridge.js';
+export type { WorkerBridge } from './worker/bridge.js';
+export {
+  createComlinkEventBridge,
+} from './worker/comlinkEventBridge.js';
+export type {
+  ComlinkEventBridge,
+  ComlinkEventBridgeOptions,
+  EventListener,
+  RemoteEventListener,
+  PhaseEvent,
+  PhaseEventMap,
+} from './worker/comlinkEventBridge.js';

@@ -4,13 +4,13 @@
  */
 
 import './worker-react-refresh-shim.js';
-import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/runtime-client';
+import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/feature-core/runtime-client';
 import {
   getWorkerContainer,
   WorkerDiTokens,
   type PluginWorkerModuleLoader,
-} from '@hierarchidb/runtime-worker';
-import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
+} from '@hierarchidb/feature-core/runtime-worker';
+import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-registry/index.ts';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
@@ -148,7 +148,7 @@ reporter.reportStepProgress('Load Comlink', 0);
     });
 
     try {
-      const runtimeModule = await import('@hierarchidb/runtime-worker') as unknown as RuntimeWorkerModule;
+      const runtimeModule = await import('@hierarchidb/feature-core/runtime-worker') as unknown as RuntimeWorkerModule;
       const entityRegistry = runtimeModule.entityRegistry;
       if (entityRegistry) {
         for (const [nodeType, entry] of Object.entries(exportsByType)) {

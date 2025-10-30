@@ -5,8 +5,8 @@
 
 import { useEffect, useState } from 'react';
 import { useWorker } from '../contexts/WorkerProvider.js';
-import type { PluginInfo } from '@hierarchidb/plugin-ui-sdk';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { PluginInfo } from '@hierarchidb/feature-core/plugin-ui-sdk';
+import type { NodeType } from '@hierarchidb/feature-core/common-types';
 
 /**
  * Hook for accessing plugin registry information

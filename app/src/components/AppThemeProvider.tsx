@@ -1,6 +1,6 @@
 import React, { type PropsWithChildren, useEffect, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { createAppTheme, useThemeMode, type ThemeMode, getStoredThemeMode } from '@hierarchidb/ui-theme';
+import { createAppTheme, useThemeMode, type ThemeMode, getStoredThemeMode } from '@hierarchidb/ui-shell/ui-theme';
 
 export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
   const { actualTheme, setMode } = useThemeMode();

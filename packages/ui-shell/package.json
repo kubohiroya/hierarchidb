@@ -1,0 +1,133 @@
+{
+  "name": "@hierarchidb/ui-shell",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Aggregated UI facade for HierarchiDB app shell",
+  "author": "HierarchiDB Contributors",
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./components": {
+      "types": "./dist/components.d.ts",
+      "import": "./dist/components.js",
+      "default": "./dist/components.js"
+    },
+    "./plugin-ui-host": {
+      "types": "./dist/plugin-ui-host.d.ts",
+      "import": "./dist/plugin-ui-host.js",
+      "default": "./dist/plugin-ui-host.js"
+    },
+    "./ui-auth": {
+      "types": "./dist/ui-auth.d.ts",
+      "import": "./dist/ui-auth.js",
+      "default": "./dist/ui-auth.js"
+    },
+    "./ui-dialog": {
+      "types": "./dist/ui-dialog.d.ts",
+      "import": "./dist/ui-dialog.js",
+      "default": "./dist/ui-dialog.js"
+    },
+    "./ui-icon": {
+      "types": "./dist/ui-icon.d.ts",
+      "import": "./dist/ui-icon.js",
+      "default": "./dist/ui-icon.js"
+    },
+    "./ui-i18n": {
+      "types": "./dist/ui-i18n.d.ts",
+      "import": "./dist/ui-i18n.js",
+      "default": "./dist/ui-i18n.js"
+    },
+    "./ui-layout": {
+      "types": "./dist/ui-layout.d.ts",
+      "import": "./dist/ui-layout.js",
+      "default": "./dist/ui-layout.js"
+    },
+    "./ui-map": {
+      "types": "./dist/ui-map.d.ts",
+      "import": "./dist/ui-map.js",
+      "default": "./dist/ui-map.js"
+    },
+    "./ui-navigation": {
+      "types": "./dist/ui-navigation.d.ts",
+      "import": "./dist/ui-navigation.js",
+      "default": "./dist/ui-navigation.js"
+    },
+    "./ui-routing": {
+      "types": "./dist/ui-routing.d.ts",
+      "import": "./dist/ui-routing.js",
+      "default": "./dist/ui-routing.js"
+    },
+    "./ui-theme": {
+      "types": "./dist/ui-theme.d.ts",
+      "import": "./dist/ui-theme.js",
+      "default": "./dist/ui-theme.js"
+    },
+    "./ui-tour": {
+      "types": "./dist/ui-tour.d.ts",
+      "import": "./dist/ui-tour.js",
+      "default": "./dist/ui-tour.js"
+    },
+    "./ui-treeconsole-base": {
+      "types": "./dist/ui-treeconsole-base.d.ts",
+      "import": "./dist/ui-treeconsole-base.js",
+      "default": "./dist/ui-treeconsole-base.js"
+    },
+    "./ui-treeconsole-breadcrumb": {
+      "types": "./dist/ui-treeconsole-breadcrumb.d.ts",
+      "import": "./dist/ui-treeconsole-breadcrumb.js",
+      "default": "./dist/ui-treeconsole-breadcrumb.js"
+    },
+    "./ui-treeconsole-toolbar": {
+      "types": "./dist/ui-treeconsole-toolbar.d.ts",
+      "import": "./dist/ui-treeconsole-toolbar.js",
+      "default": "./dist/ui-treeconsole-toolbar.js"
+    },
+    "./ui-treeconsole-treetable": {
+      "types": "./dist/ui-treeconsole-treetable.d.ts",
+      "import": "./dist/ui-treeconsole-treetable.js",
+      "default": "./dist/ui-treeconsole-treetable.js"
+    },
+    "./ui-usermenu": {
+      "types": "./dist/ui-usermenu.d.ts",
+      "import": "./dist/ui-usermenu.js",
+      "default": "./dist/ui-usermenu.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown src/index.ts src/components.ts src/plugin-ui-host.ts src/ui-auth.ts src/ui-dialog.ts src/ui-icon.ts src/ui-i18n.ts src/ui-layout.ts src/ui-map.ts src/ui-navigation.ts src/ui-routing.ts src/ui-theme.ts src/ui-tour.ts src/ui-treeconsole-base.ts src/ui-treeconsole-breadcrumb.ts src/ui-treeconsole-toolbar.ts src/ui-treeconsole-treetable.ts src/ui-usermenu.ts --config ../../tsdown.config.ts --outDir dist",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@hierarchidb/components": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*",
+    "@hierarchidb/ui-auth": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
+    "@hierarchidb/ui-layout": "workspace:*",
+    "@hierarchidb/ui-map": "workspace:*",
+    "@hierarchidb/ui-navigation": "workspace:*",
+    "@hierarchidb/ui-routing": "workspace:*",
+    "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/ui-tour": "workspace:*",
+    "@hierarchidb/ui-treeconsole-base": "workspace:*",
+    "@hierarchidb/ui-treeconsole-breadcrumb": "workspace:*",
+    "@hierarchidb/ui-treeconsole-toolbar": "workspace:*",
+    "@hierarchidb/ui-treeconsole-treetable": "workspace:*",
+    "@hierarchidb/ui-usermenu": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "workspace:^5.9.3"
+  }
+}

@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import { Box, Container, Paper } from '@mui/material';
-import { LoginForm, useAuth } from '@hierarchidb/ui-auth';
+import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
 import { useLocation, } from '@tanstack/react-router';
 
 export default function LoginRoute() {
@@ -15,7 +15,7 @@ export default function LoginRoute() {
   // Get the return URL from state or default to home
   const from = location.pathname || '/';
 
-  const handleLogin = async (provider: string, turnstileToken: string) => {
+  const handleLogin = async (provider: string, _turnstileToken: string) => {
     try {
       setError(null);
 

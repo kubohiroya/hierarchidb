@@ -1,8 +1,8 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { FolderEntitiesDB, FolderPeerRow } from './folderEntitiesDB.js';
-import { normalizeFolderPeerData } from './folderPeerStore.js';
-import { FolderPeerData } from '../common/types/types.js';
+import type { FolderEntitiesDB, FolderPeerRow } from './folderEntitiesDB.ts';
+import { normalizeFolderPeerData } from './folderPeerStore.ts';
+import { FolderPeerData } from '../common/types/types.ts';
 
 export function createFolderPeerStoreDexie(db: FolderEntitiesDB): PeerStore<FolderPeerData> {
   return {

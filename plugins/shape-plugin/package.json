@@ -71,7 +71,8 @@
     "pako": "^2.1.0",
     "pbf": "^4.0.1",
     "topojson-client": "^3.1.0",
-    "topojson-server": "^3.0.1"
+    "topojson-server": "^3.0.1",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "@hierarchidb/plugin-service-api": "workspace:*",
@@ -88,7 +89,6 @@
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/download": "workspace:*",
@@ -96,7 +96,8 @@
     "@mui/material": "^7.3.2",
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react-dom": ">=18.0.0",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
@@ -132,10 +133,10 @@
     "@hierarchidb/ui-license": "workspace:*",
     "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
-    "@hierarchidb/download": "workspace:*"
+    "@hierarchidb/download": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "type": "module",
   "hierarchidb": {
@@ -144,7 +145,7 @@
       "name": "Shape Plugin",
       "icon": {
         "mui": "Hexagon",
-        "emoji": "\u2666\ufe0f",
+        "emoji": "♦️",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/shape-plugin/icon",
@@ -200,7 +201,7 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/ui-plugin-dialog#build",
+          "@hierarchidb/plugin-base#build",
           "@hierarchidb/plugin-runtime-services#build"
         ]
       }

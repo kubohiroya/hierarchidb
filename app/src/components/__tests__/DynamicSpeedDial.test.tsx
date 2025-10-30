@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
-import type { TreeId } from '@hierarchidb/common-types';
+import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import type { PluginMenuItem } from '../../hooks/usePluginMenuItems.ts';
 import "@testing-library/jest-dom";
 
@@ -10,9 +10,9 @@ const iconModule = vi.hoisted(() => ({
   getMuiIconWithColor: vi.fn(() => <div data-testid="speed-dial-icon" />),
 }));
 
-vi.mock('@hierarchidb/ui-icon', () => iconModule);
+vi.mock('@hierarchidb/ui-shell/ui-icon', () => iconModule);
 
-vi.mock('@hierarchidb/ui-i18n', () => ({
+vi.mock('@hierarchidb/ui-shell/ui-i18n', () => ({
   useGlobalI18nTranslator: () => ({
     t: (_key: string, fallback?: string) => fallback ?? _key,
     language: 'en',

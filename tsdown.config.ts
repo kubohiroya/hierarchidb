@@ -2,6 +2,17 @@ import { defineConfig } from 'tsdown';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string') {
+    const msg = args[0];
+    if (msg.includes('top-level "define" option is deprecated') || msg.includes('top-level "inject" option is deprecated')) {
+      return;
+    }
+  }
+  originalWarn(...args as Parameters<typeof console.warn>);
+};
+
 type PackageJson = {
   name?: string;
   type?: string;
@@ -109,4 +120,21 @@ if ('inject' in finalConfig) {
 if (Object.keys(transformConfig).length > 0) {
   finalConfig.transform = transformConfig;
 }
-export default defineConfig(finalConfig as any);
+
+const proxiedConfig = new Proxy(finalConfig, {
+  set(target, prop, value) {
+    if (prop === 'define' || prop === 'inject') {
+      const transform = (target.transform ??= {});
+      (transform as Record<string, unknown>)[prop as string] = value;
+      return true;
+    }
+    (target as Record<string, unknown>)[prop as string] = value;
+    return true;
+  },
+});
+
+if (process.env.TSDOWN_DEBUG === '1') {
+  console.log('[tsdown-config]', JSON.stringify(proxiedConfig, null, 2));
+}
+
+export default defineConfig(proxiedConfig as any);

@@ -8,8 +8,8 @@
 import { convertTreeNodeToTreeNodeData } from '../../utils/treeNodeConverter.js';
 import { preconnectPluginServices } from '../../services/preconnect.js';
 import { buildVisibleRows, rebuildAdjacency } from '../../state/treeconsole.derive.js';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleActionDeps, TreeConsoleActions, ContextAction } from './types.js';
 

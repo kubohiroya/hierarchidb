@@ -1,5 +1,5 @@
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import { ensureWorkerRuntime } from './WorkerModuleLoader.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
@@ -44,10 +44,12 @@ const getSingletonIfAvailable = (): Remote<WorkerAPI> | null => {
   }
 };
 
+/*
 const isWorkerReady = (): boolean => {
   const Client = getWorkerClientClass();
   return Client ? Client.isReady() : false;
 };
+ */
 
 const DEFAULT_PROGRESS: WorkerInitializationProgress = {
   progress: 0,

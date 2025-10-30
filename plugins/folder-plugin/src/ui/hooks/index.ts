@@ -2,4 +2,4 @@
  * UI hooks exports
  */
 
-export * from './useFormValidation.js';
+export * from './useFormValidation.ts';

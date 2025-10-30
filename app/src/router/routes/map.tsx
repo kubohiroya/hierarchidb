@@ -16,8 +16,8 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
 import useGeolocation from 'react-hook-geolocation';
-import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-map';
-import { loadMapLibreMap } from '@hierarchidb/ui-map';
+import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-shell/ui-map';
+import { loadMapLibreMap } from '@hierarchidb/ui-shell/ui-map';
 import { Box } from '@mui/material';
 import {
   DEFAULT_VIEW_STATE as LOADER_DEFAULT_VIEW_STATE,
@@ -35,7 +35,7 @@ const LazyMapLibreMap = lazy(async () => {
   return { default: mod.MapLibreMap };
 });
 
-const DEFAULT_VIEW_STATE: MapViewState = LOADER_DEFAULT_VIEW_STATE as MapViewState;
+// const DEFAULT_VIEW_STATE: MapViewState = LOADER_DEFAULT_VIEW_STATE as MapViewState;
 
 export default function MapPage() {
   const navigate = useNavigate();

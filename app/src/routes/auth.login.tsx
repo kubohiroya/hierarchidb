@@ -4,10 +4,9 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import { Box, Container, Paper } from '@mui/material';
-import { LoginForm, useAuth } from '@hierarchidb/ui-auth';
+import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
 
 export default function LoginRoute() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { signIn } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +15,7 @@ export default function LoginRoute() {
   const locationState = (location?.state as { from?: { pathname?: string } } | undefined) ?? undefined;
   const from = locationState?.from?.pathname ?? '/';
 
-  const handleLogin = async (provider: string, turnstileToken: string) => {
+  const handleLogin = async (provider: string, _turnstileToken: string) => {
     try {
       setError(null);
 

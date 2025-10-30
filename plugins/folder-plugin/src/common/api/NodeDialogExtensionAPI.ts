@@ -16,7 +16,7 @@ import type {
   TreeNode,
   NodeId,
 } from '@hierarchidb/common-types';
-import type { FolderEntity } from '../types/FolderEntity.js';
+import type { FolderEntity } from '../types/FolderEntity.ts';
 
 export type FolderDialogHooks<TDialog extends PeerEntity = PeerEntity> = NodeDialogHooks<TDialog>;
 export type NodeDialogStepEvaluator<TDialog extends PeerEntity = PeerEntity> = StepArrayEvaluator<TDialog>;

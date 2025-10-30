@@ -170,7 +170,7 @@ await wirePluginsFromModules(modules.filter((entry): entry is { nodeType: string
 
 ## アイコンマップ
 - プラグインは `plugin-manifest.ts` の `icon.mui`（または `muiIconName`）/`emoji` を設定してください。
-- `pnpm run tools:gen-plugin-loaders` 実行時に `packages/plugin-registry/generated/registry.ts` が更新され、UI 側ではレジストリを走査して必要な MUI Icon を動的に import します（`setGlobalMuiIconMap()` 経由）。
+- `pnpm run tools:gen-plugin-registry` 実行時に `packages/plugin-registry/generated/registry.ts` が更新され、UI 側ではレジストリを走査して必要な MUI Icon を動的に import します（`setGlobalMuiIconMap()` 経由）。
 
 ## 手動メンテが必要なケース
 - 新しいプラグインを追加したのにレジストリへ反映されない → `pnpm dev` などで `scripts/generate-plugin-loader.mjs` が走っているか確認し、`app/package.json` の dependencies に対象プラグインを追加してください。

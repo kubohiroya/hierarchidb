@@ -1,4 +1,4 @@
-import { GenericGuidedTour } from '@hierarchidb/ui-tour';
+import { GenericGuidedTour } from '@hierarchidb/ui-shell/ui-tour';
 import type { Step } from 'react-joyride';
 import type React from 'react';
 

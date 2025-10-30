@@ -3,7 +3,7 @@ import { Box, Button, Typography, TextField, Stack } from '@mui/material';
 import { getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
 import { Folder as FolderIcon } from '@mui/icons-material';
 import type { NodeId } from '@hierarchidb/common-types';
-import type { FolderEditData, FolderDisplayData } from '../../common/types/index.js';
+import type { FolderEditData, FolderDisplayData } from '../../common/types/index.ts';
 import type { NodeDialogStepDefinition } from '@hierarchidb/plugin-ui-sdk';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 

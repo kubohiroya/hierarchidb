@@ -18,10 +18,10 @@ import {
 } from '@mui/material';
 import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
 import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
-import { UserLoginButton } from '@hierarchidb/ui-usermenu';
+import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { Tree } from '@hierarchidb/common-types';
+import type { Tree } from '@hierarchidb/feature-core/common-types';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { Outlet, useNavigate, useLoaderData } from '@tanstack/react-router';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';

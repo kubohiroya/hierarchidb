@@ -6,6 +6,7 @@
       "DOM",
       "DOM.Iterable"
     ],
+    "allowImportingTsExtensions": true,
     "types": [
       "vite/client",
       "node"
@@ -21,15 +22,16 @@
     "reason": "UI transitive types (MUI/Emotion) \u2014 tracked to remove."
   },
   "include": [
-    "src*"
+    "src"
   ],
   "exclude": [
     "dist",
     "node_modules",
-    "src/__tests__*.stories.ts",
-    "src*.stories.tsx",
-    "src*.test.ts",
-    "src*.test.tsx",
+    "src/**/__tests__/**",
+    "src/**/*.stories.ts",
+    "src/**/*.stories.tsx",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
     "src/vite-env.d.ts"
   ]
 }

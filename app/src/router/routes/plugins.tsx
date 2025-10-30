@@ -48,14 +48,14 @@ import {
 } from '@mui/icons-material';
 // import { WorkerAPIClient } from '../WorkerAPIClient.ts';
 // import type { Remote } from 'comlink';
-// import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeType } from '@hierarchidb/common-types';
+// import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeType } from '@hierarchidb/feature-core/common-types';
 // UIPluginRegistry is legacy; this page now reads vite-generated metadata
-// import { getUIPluginRegistry } from '@hierarchidb/ui-core';
-import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-dialog';
+// import { getUIPluginRegistry } from '@hierarchidb/ui-shell/ui-core';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
 import { useNavigate } from '@tanstack/react-router';
 import { getInstalledPlugins } from '~/services/plugin-registry.js';
-import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-icon';
+import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
 import { useTranslation } from 'react-i18next';
 
 // Meta function for React Router v7

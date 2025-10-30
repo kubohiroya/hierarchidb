@@ -2,7 +2,7 @@
    * IFrame
   */
 import { useEffect } from 'react';
-import { useAuth } from '@hierarchidb/ui-auth';
+import { useAuth } from '@hierarchidb/ui-shell/ui-auth';
 
 export default function SilentRenewRoute() {
   const { resumeAfterSignIn } = useAuth();

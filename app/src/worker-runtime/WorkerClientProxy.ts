@@ -1,5 +1,5 @@
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { WorkerRuntimeState, WorkerInitializationProgress } from './WorkerStateStore.js';
 export type { WorkerRuntimeState, WorkerInitializationProgress } from './WorkerStateStore.js';
 import {

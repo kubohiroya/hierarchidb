@@ -1,4 +1,4 @@
-i/**
+/**
  * Base Vitest Setup Configuration
  * 
  * Common test environment setup for all packages.
@@ -160,6 +160,11 @@ if (!globalThis.CompressionStream) {
 if (!globalThis.URL?.createObjectURL) {
   (globalThis.URL as any) = globalThis.URL || {};
   (globalThis.URL as any).createObjectURL = vi.fn(() => 'blob:mock');
+}
+
+if (!globalThis.URL?.revokeObjectURL) {
+  (globalThis.URL as any) = globalThis.URL || {};
+  (globalThis.URL as any).revokeObjectURL = vi.fn();
 }
 
 // Make window.location configurable/writable for tests that override it

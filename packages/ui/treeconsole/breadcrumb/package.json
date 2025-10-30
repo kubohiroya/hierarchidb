@@ -16,11 +16,14 @@
     "build": "tsdown src/index.ts --config ../../../../tsdown.config.ts --outDir dist",
     "clean": "rm -rf dist"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/ui-i18n": "workspace:*"
+  },
   "devDependencies": {
     "comlink": "^4.4.2",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@tanstack/react-router": "^1.132.33",
     "@emotion/react": "^11.14.0",
@@ -36,6 +39,7 @@
     "comlink": "^4.4.2",
     "@hierarchidb/ui-icon": "workspace:*",
     "@hierarchidb/ui-theme": "workspace:*",
+    "@hierarchidb/ui-i18n": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@tanstack/react-router": "^1.132.33",
     "@emotion/react": "^11.14.0",

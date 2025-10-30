@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useBootProgress } from '../contexts/BootProgressProvider.js';
 import { useTranslation } from 'react-i18next';
-import { useSimpleBFFAuth } from '@hierarchidb/ui-auth';
+import { useSimpleBFFAuth } from '@hierarchidb/ui-shell/ui-auth';
 import { useWorker } from '../contexts/WorkerProvider.js';
 
 const logInitReporterWarning = (message: string, error: unknown): void => {

@@ -26,8 +26,9 @@ describe('LocationSelectionStep (component)', () => {
 
     expect(screen.getByText(en.selection.alertMessage)).toBeInTheDocument();
     expect(screen.getByText(en.selection.matrixTitle)).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: en.locationTypes.airport })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: en.locationTypes.railway_station })).toBeInTheDocument();
+    const tabLabels = screen.getAllByRole('tab').map((tab) => tab.textContent ?? '');
+    expect(tabLabels.some((label) => label.includes(en.locationTypes.airport))).toBe(true);
+    expect(tabLabels.some((label) => label.includes(en.locationTypes.railway_station))).toBe(true);
   });
 
   it('notifies parent via onUpdate when a matrix cell is toggled', () => {

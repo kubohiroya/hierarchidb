@@ -1,7 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
-const pluginSdkEntry = path.resolve(__dirname, '../../plugin-ui-sdk/src/index.ts');
+const workspaceRoot = path.resolve(__dirname, '../..');
+const pluginSdkEntry = path.resolve(workspaceRoot, 'packages/plugin-ui-sdk/src/index.ts');
 
 export default defineConfig({
   test: {
@@ -28,7 +29,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '~': path.resolve(__dirname, 'src'),
-      '@hierarchidb/util': path.resolve(__dirname, '../../util/src/index.ts'),
+      '@hierarchidb/util': path.resolve(workspaceRoot, 'packages/util/src/index.ts'),
       '@hierarchidb/plugin-ui-sdk': pluginSdkEntry,
       '@hierarchidb/folder-plugin': path.resolve(__dirname, '../folder-plugin/src/index.ts'),
     },

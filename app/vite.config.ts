@@ -62,7 +62,52 @@ function createRuntimeAliasConfig({
   workspacePackages: WorkspacePackageMeta[];
 }): RuntimeAliasConfig {
   const aliasMap = new Map<string, AliasEntry>();
-  const optimizeExclude = new Set<string>(['@hierarchidb/runtime-client']);
+  const optimizeExclude = new Set<string>(['@hierarchidb/feature-core/runtime-client']);
+
+  const legacyUiMappings = [
+    { spec: '@hierarchidb/components', src: '../packages/components/src/index.ts', dist: '../packages/components/dist/index.js' },
+    { spec: '@hierarchidb/plugin-ui-host', src: '../packages/plugin-ui-host/src/index.ts', dist: '../packages/plugin-ui-host/dist/index.js' },
+    { spec: '@hierarchidb/ui-auth', src: '../packages/ui/auth/src/index.ts', dist: '../packages/ui/auth/dist/index.js' },
+    { spec: '@hierarchidb/ui-dialog', src: '../packages/ui/dialog/src/index.ts', dist: '../packages/ui/dialog/dist/index.js' },
+    { spec: '@hierarchidb/ui-icon', src: '../packages/ui/icon/src/index.ts', dist: '../packages/ui/icon/dist/index.js' },
+    { spec: '@hierarchidb/ui-i18n', src: '../packages/ui/i18n/src/index.ts', dist: '../packages/ui/i18n/dist/index.js' },
+    { spec: '@hierarchidb/ui-layout', src: '../packages/ui/layout/src/index.ts', dist: '../packages/ui/layout/dist/index.js' },
+    { spec: '@hierarchidb/ui-map', src: '../packages/ui/map/src/index.ts', dist: '../packages/ui/map/dist/index.js' },
+    { spec: '@hierarchidb/ui-navigation', src: '../packages/ui/navigation/src/index.ts', dist: '../packages/ui/navigation/dist/index.js' },
+    { spec: '@hierarchidb/ui-routing', src: '../packages/ui/routing/src/index.ts', dist: '../packages/ui/routing/dist/index.js' },
+    { spec: '@hierarchidb/ui-theme', src: '../packages/ui/theme/src/index.ts', dist: '../packages/ui/theme/dist/index.js' },
+    { spec: '@hierarchidb/ui-tour', src: '../packages/ui/tour/src/index.ts', dist: '../packages/ui/tour/dist/index.js' },
+    { spec: '@hierarchidb/ui-treeconsole-base', src: '../packages/ui/treeconsole/base/src/index.ts', dist: '../packages/ui/treeconsole/base/dist/index.js' },
+    { spec: '@hierarchidb/ui-treeconsole-breadcrumb', src: '../packages/ui/treeconsole/breadcrumb/src/index.ts', dist: '../packages/ui/treeconsole/breadcrumb/dist/index.js' },
+    { spec: '@hierarchidb/ui-treeconsole-toolbar', src: '../packages/ui/treeconsole/toolbar/src/index.ts', dist: '../packages/ui/treeconsole/toolbar/dist/index.js' },
+    { spec: '@hierarchidb/ui-treeconsole-treetable', src: '../packages/ui/treeconsole/treetable/src/index.ts', dist: '../packages/ui/treeconsole/treetable/dist/index.js' },
+    { spec: '@hierarchidb/ui-usermenu', src: '../packages/ui/usermenu/src/index.ts', dist: '../packages/ui/usermenu/dist/index.js' },
+  ] as const;
+
+  const legacyFeatureMappings = [
+    { spec: '@hierarchidb/common-api', src: '../packages/common/api/src/index.ts', dist: '../packages/common/api/dist/index.js' },
+    { spec: '@hierarchidb/common-auth', src: '../packages/common/auth/src/index.ts', dist: '../packages/common/auth/dist/index.js' },
+    { spec: '@hierarchidb/common-types', src: '../packages/common/types/src/index.ts', dist: '../packages/common/types/dist/index.js' },
+    { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
+    { spec: '@hierarchidb/runtime-client', src: '../packages/runtime/client/src/index.ts', dist: '../packages/runtime/client/dist/index.js' },
+    { spec: '@hierarchidb/runtime-worker', src: '../packages/runtime/worker/src/index.ts', dist: '../packages/runtime/worker/dist/index.js' },
+    { spec: '@hierarchidb/map-adapter', src: '../packages/feature/map-adapter/src/index.ts', dist: '../packages/feature/map-adapter/dist/index.js' },
+    { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
+    { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/src/index.ts', dist: '../packages/plugin-registry/dist/registry.js' },
+    { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
+    { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
+    { spec: '@hierarchidb/plugin-ui-sdk', src: '../packages/plugin-ui-sdk/src/index.ts', dist: '../packages/plugin-ui-sdk/dist/index.js' },
+    { spec: '@hierarchidb/folder-plugin', src: '../plugins/folder-plugin/src/index.ts', dist: '../plugins/folder-plugin/dist/index.js' },
+    { spec: '@hierarchidb/location-plugin', src: '../plugins/location-plugin/src/index.ts', dist: '../plugins/location-plugin/dist/index.js' },
+    { spec: '@hierarchidb/linker-plugin', src: '../plugins/linker-plugin/src/index.ts', dist: '../plugins/linker-plugin/dist/index.js' },
+    { spec: '@hierarchidb/resolver-plugin', src: '../plugins/resolver-plugin/src/index.ts', dist: '../plugins/resolver-plugin/dist/index.js' },
+    { spec: '@hierarchidb/route-plugin', src: '../plugins/route-plugin/src/index.ts', dist: '../plugins/route-plugin/dist/index.js' },
+    { spec: '@hierarchidb/shape-plugin', src: '../plugins/shape-plugin/src/index.ts', dist: '../plugins/shape-plugin/dist/index.js' },
+    { spec: '@hierarchidb/spreadsheet-plugin', src: '../plugins/spreadsheet-plugin/src/index.ts', dist: '../plugins/spreadsheet-plugin/dist/index.js' },
+    { spec: '@hierarchidb/styler-plugin', src: '../plugins/styler-plugin/src/index.ts', dist: '../plugins/styler-plugin/dist/index.js' },
+    { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/feature/tabular-source-xlsx/src/index.ts', dist: '../packages/feature/tabular-source-xlsx/dist/index.js' },
+    { spec: '@hierarchidb/timeline-plugin', src: '../plugins/timeline-plugin/src/index.ts', dist: '../plugins/timeline-plugin/dist/index.js' },
+  ] as const;
 
   const escapeForRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -107,30 +152,34 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
-    registerDevPackage('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', {
+    registerDevPackage('@hierarchidb/feature-core/runtime-worker', '../packages/runtime/worker/src/index.ts', {
       group: 'runtime',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', {
+    registerDevPackage('@hierarchidb/feature-core/runtime-client', '../packages/runtime/client/src/index.ts', {
       group: 'runtime',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/map-adapter', '../packages/feature/map-adapter/src/index.ts', {
+    registerDevPackage('@hierarchidb/feature-core/map-adapter', '../packages/feature/map-adapter/src/index.ts', {
       group: 'feature',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', {
+    registerDevPackage('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', {
       group: 'feature',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/ui-i18n', '../packages/ui/i18n/src/index.ts', {
+    registerDevPackage('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', {
       group: 'ui',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/ui-icon', '../packages/ui/icon/src/index.ts', {
+    registerDevPackage('@hierarchidb/ui-shell/ui-icon', '../packages/ui/icon/src/index.ts', {
       group: 'ui',
       exclude: true,
     });
+
+    for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
+      addAlias(mapping.spec, mapping.src, { exclude: true, exact: true });
+    }
 
     if (workspacePackages.length > 0) {
       for (const meta of workspacePackages) {
@@ -172,11 +221,15 @@ function createRuntimeAliasConfig({
       }
     }
   } else {
-    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/feature-core/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/feature-core/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/feature-core/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
+
+    for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
+      addAlias(mapping.spec, mapping.dist, { exclude: true, exact: true });
+    }
 
     const pluginPkgRoot = path.resolve(rootDir, '../plugins');
     if (fs.existsSync(pluginPkgRoot)) {
@@ -731,11 +784,9 @@ export default defineConfig(({ mode, isSsrBuild }) => {
         // Active dev packages: resolve to src for instant HMR
         //...devAliases,
         ...runtimeAliasConfig.aliases,
-        // Ensure runtime-ui-plugin-dialog can resolve peer @hierarchidb/ui-core during app build
-        { find: '@hierarchidb/ui-core', replacement: path.resolve(__dirname, '../packages/ui/core/dist/index.ts') },
         // Icons utility (always point to src for now)
         {
-          find: '@hierarchidb/ui-icon',
+          find: '@hierarchidb/ui-shell/ui-icon',
           replacement: path.resolve(
             __dirname,
             isDev ? '../packages/ui/icon/src/index.ts' : '../packages/ui/icon/dist/index.js',
@@ -799,10 +850,10 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           'react-resizable',
           'react-draggable',
           // Prevent bundling plugin database entry points; they stay lazy-loaded via plugin loader
-          '@hierarchidb/basemap-plugin/database',
-          '@hierarchidb/resolver-plugin/database',
-          '@hierarchidb/route-plugin/database',
-          '@hierarchidb/spreadsheet-plugin/database',
+          '@hierarchidb/feature-core/basemap-plugin/database',
+          '@hierarchidb/feature-core/resolver-plugin/database',
+          '@hierarchidb/feature-core/route-plugin/database',
+          '@hierarchidb/feature-core/spreadsheet-plugin/database',
 
         ],
         output: {

@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { proxy, type Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/common-types';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/feature-core/common-types';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleState } from './types.js';
 

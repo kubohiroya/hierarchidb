@@ -1,12 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { NodeId } from '@hierarchidb/common-types';
-import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { NodeId } from '@hierarchidb/feature-core/common-types';
+import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 
 describe('TrashDialog link wiring', () => {
   const treeId = 'r';
   const pageNodeId = 'r:root' as NodeId;
-  const placeholderId = 'holder-1' as NodeId;
-  const grandchildId = 'grandchild-1' as NodeId;
+    const grandchildId = 'grandchild-1' as NodeId;
 
   it('generates trash-specific URLs with page node id segment', () => {
     const href = buildTreeConsoleLinkHref({

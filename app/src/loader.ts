@@ -5,9 +5,9 @@ import type {
   Tree,
   TreeId,
   TreeNode,
-} from '@hierarchidb/common-types';
+} from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
+import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { LoadAppConfigReturn } from './loadAppConfig.ts';
 import { loadAppConfig } from './loadAppConfig.ts';
 import { normalizeNodeType } from './utils/nodeTypeNormalize.ts';

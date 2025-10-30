@@ -14,7 +14,7 @@ import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals
  */
 async function initializeApp() {
   initializeBrowserGlobals();
-  const { initializeDefaultNodeDialogExtensions } = await import('@hierarchidb/folder-plugin');
+  const { initializeDefaultNodeDialogExtensions } = await import('@hierarchidb/feature-core/folder-plugin');
   await initializeDefaultNodeDialogExtensions();
   const mode = getRouterMode();
   const basename = getBasePath();

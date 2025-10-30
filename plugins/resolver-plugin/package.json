@@ -60,7 +60,8 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs"
   },
   "dependencies": {
-    "@hierarchidb/plugin-runtime-services": "workspace:*"
+    "@hierarchidb/plugin-runtime-services": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -74,12 +75,12 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -97,11 +98,11 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/runtime-worker": "workspace:*"
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -111,7 +112,7 @@
       "description": "Property mapping and schema resolution",
       "icon": {
         "mui": "Extension",
-        "emoji": "\ud83e\udde9",
+        "emoji": "🧩",
         "color": "#ffb3c1",
         "component": {
           "specifier": "@hierarchidb/resolver-plugin/icon",

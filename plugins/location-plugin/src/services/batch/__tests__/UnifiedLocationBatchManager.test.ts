@@ -3,18 +3,6 @@ import { waitFor } from '@testing-library/react';
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, SessionSummary } from '../LocationSessionController.js';
 
-vi.mock('@hierarchidb/batch', () => ({
-  BatchService: class {
-    async mapChunks<T, R>(items: T[], mapper: (item: T) => Promise<R>): Promise<R[]> {
-      const results: R[] = [];
-      for (const item of items) {
-        results.push(await mapper(item));
-      }
-      return results;
-    }
-  },
-}));
-
 vi.mock('@hierarchidb/tabular-source-store', () => ({
   TabularWriter: class {
     async begin() {}
@@ -208,18 +196,12 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
   });
 
   it('hydrates session from pendingSessions and records summary', async () => {
-    mockState.pending.set(sampleNode, {
-      nodeId: sampleNode,
-      points: samplePoints,
-      settings: sampleSettings,
-      config: { concurrency: 2 },
-      storedAt: Date.now(),
-    });
-
     const mgr = new UnifiedLocationBatchManager();
     const stub = new StubSessionManager();
     mgr.setDbProvider(() => mockDb);
     mgr.setInternalManager(stub);
+
+    await mgr.prepareSession(sampleNode, { concurrency: 2 }, { points: samplePoints, settings: sampleSettings });
 
     const sessionId = await mgr.startBatchSession(sampleNode);
     expect(sessionId).toBe('session-stub');
@@ -236,18 +218,12 @@ describe('UnifiedLocationBatchManager persistence contract', () => {
   });
 
   it('updates Dexie session progress on progress events', async () => {
-    mockState.pending.set(sampleNode, {
-      nodeId: sampleNode,
-      points: samplePoints,
-      settings: sampleSettings,
-      config: {},
-      storedAt: Date.now(),
-    });
-
     const mgr = new UnifiedLocationBatchManager();
     const stub = new StubSessionManager();
     mgr.setDbProvider(() => mockDb);
     mgr.setInternalManager(stub);
+
+    await mgr.prepareSession(sampleNode, {}, { points: samplePoints, settings: sampleSettings });
 
     const sessionId = await mgr.startBatchSession(sampleNode);
 

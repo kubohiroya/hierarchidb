@@ -7,7 +7,7 @@
     "analyze-licenses",
     "codemods",
     "build-scripts",
-    "plugin-manifest-loader",
+    "load-plugin-manifest",
     "schemas"
   ],
   "scripts": {

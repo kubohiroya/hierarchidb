@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TreeConsoleActionDeps } from '../types.js';
 import { createTreeConsoleActions } from '../createTreeConsoleActions.js';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
-import type { TreeId, TreeNode, NodeId } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { TreeId, TreeNode, NodeId } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
 import { preconnectPluginServices } from '../../../services/preconnect.js';
 

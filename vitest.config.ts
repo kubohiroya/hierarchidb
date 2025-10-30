@@ -17,6 +17,32 @@ const nodeTypeSrcAliases = Object.fromEntries(
 
 // Root Vitest config orchestrates per-package projects so each package's
 // own aliases (e.g. "~") are honored. We also exclude Playwright e2e.
+const projectRoots = [
+  'packages/backend/bff',
+  'packages/common/api',
+  'packages/common/types',
+  'packages/runtime/client',
+  'packages/runtime/worker',
+  'packages/plugin-ui-host',
+  'packages/plugin-ui-sdk',
+  'packages/plugin-presentation',
+  'packages/testing/plugin-dialog-mocks',
+  'packages/ui/auth',
+  'packages/ui/dialog',
+  'packages/ui/treeconsole/base',
+  'packages/ui/treeconsole/treetable',
+  'plugins/basemap-plugin',
+  'plugins/folder-plugin',
+  'plugins/location-plugin',
+  'plugins/resolver-plugin',
+  'plugins/route-plugin',
+  'plugins/shape-plugin',
+  'plugins/spreadsheet-plugin',
+  'plugins/styler-plugin',
+];
+
+const resolvedProjects = projectRoots.map((projectPath) => path.resolve(__dirname, projectPath));
+
 export default defineConfig({
   test: {
     environment: 'jsdom',
@@ -54,27 +80,7 @@ export default defineConfig({
       thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 },
     },
     // Delegate to package-level configs
-    projects: [
-      './packages/backend/bff',
-      './packages/common/api',
-      './packages/common/types',
-      './packages/plugin-loader/base-plugin',
-      './packages/plugin-loader/basemap-plugin',
-      './packages/plugin-loader/folder-plugin',
-      './packages/plugin-loader/location-plugin',
-      './packages/plugin-loader/resolver-plugin',
-      './packages/plugin-loader/route-plugin',
-      './packages/plugin-loader/shape-plugin',
-      './packages/plugin-loader/spreadsheet-plugin',
-      './packages/plugin-loader/styler-plugin',
-      './packages/runtime-ui/plugin-dialog',
-      './packages/runtime/client',
-      './packages/runtime/worker',
-      './packages/tools/vite-plugin-package-reader',
-      './packages/ui/auth',
-      './packages/ui/core',
-      './packages/ui/dialog',
-    ],
+    projects: resolvedProjects,
   },
   resolve: {
     alias: {

@@ -1,14 +1,14 @@
 import { type ReactNode } from 'react';
 import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
 import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
-import { SimpleBFFAuthProvider } from '@hierarchidb/ui-auth';
-import { LanguageProvider } from '@hierarchidb/ui-i18n';
+import { SimpleBFFAuthProvider } from '@hierarchidb/ui-shell/ui-auth';
+import { LanguageProvider } from '@hierarchidb/ui-shell/ui-i18n';
 import { Box, CssBaseline, CircularProgress } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
-import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-theme';
+import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-shell/ui-theme';
 import { AppThemeProvider } from '../../components/AppThemeProvider.js';
 import { LanguageEventsBridge } from '../../components/LanguageEventsBridge.js';
-import { NotificationSystem } from '@hierarchidb/components';
+import { NotificationSystem } from '@hierarchidb/ui-shell/components';
 import { WorkerProvider } from '../../contexts/WorkerProvider.js';
 import {
   WorkerProgressReporter,

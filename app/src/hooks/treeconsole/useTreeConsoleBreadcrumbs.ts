@@ -6,10 +6,10 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;

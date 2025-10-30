@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { createSpreadsheetCSVApi } from '../../../services/SpreadsheetCSVApiAdapter.js';
 import type { ColumnFilter, FilterConfig, RowFilter } from '../../../common/extension/types.js';
 import { PLUGIN_METADATA } from '../../../common/extension/constants.js';
-import { StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { StepComponentProps } from '@hierarchidb/plugin-base';
 import type { CSVColumnInfo, CSVTableMetadata } from '@hierarchidb/tabular-store';
 
 interface SpreadsheetFilteringData {

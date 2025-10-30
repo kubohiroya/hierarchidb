@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import { FramesPreviewStep } from '../steps/FramesPreviewStep.js';
 import { MapPreviewStep } from '../steps/MapPreviewStep.js';
 import { AnimationViewerStep } from '../steps/AnimationViewerStep.js';

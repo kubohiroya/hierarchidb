@@ -18,7 +18,7 @@ import {
 import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import { useQuery } from '~/hooks/useQuery.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { NodeTagAssociation, TagEntity, TreeId, TreeNode, TagId } from '@hierarchidb/common-types';
+import type { NodeTagAssociation, TagEntity, TreeId, TreeNode, TagId } from '@hierarchidb/feature-core/common-types';
 import { Link as RouterLink } from '@tanstack/react-router';
 
 interface TaggedNode {

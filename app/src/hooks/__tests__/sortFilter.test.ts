@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { applySortFilterSearch } from '../treeconsole/sortFilter.js';
 
 const sampleNodes: TreeNodeData[] = [

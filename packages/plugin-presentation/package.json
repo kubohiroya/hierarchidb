@@ -1,0 +1,33 @@
+{
+  "name": "@hierarchidb/plugin-presentation",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Shared presentation metadata helpers for HierarchiDB plugins",
+  "author": "HierarchiDB Contributors",
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+  },
+  "peerDependencies": {
+    "@hierarchidb/ui-icon": "workspace:*"
+  },
+  "devDependencies": {
+    "@hierarchidb/ui-icon": "workspace:*",
+    "typescript": "workspace:^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

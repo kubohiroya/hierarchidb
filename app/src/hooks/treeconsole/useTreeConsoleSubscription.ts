@@ -8,11 +8,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { proxy as comlinkProxy } from 'comlink';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { Subscriptions } from '~/subscriptions/controller.js';
-import { buildVisibleRows, rebuildAdjacency } from '~/state/treeconsole.derive.js';
+import { buildVisibleRows } from '~/state/treeconsole.derive.js';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 
 interface Params {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 const workerClientMock = vi.hoisted(() => ({
   getOrInit: vi.fn<() => Promise<Remote<WorkerAPI>>>(),
@@ -22,7 +22,7 @@ const mockStoreRegistry = {
   registerPeer: vi.fn(),
 };
 
-vi.mock('@hierarchidb/runtime-worker', () => ({
+vi.mock('@hierarchidb/feature-core/runtime-worker', () => ({
   importPluginWorker: importPluginWorkerMock,
   storeRegistry: mockStoreRegistry,
 }));

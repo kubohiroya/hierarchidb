@@ -77,6 +77,81 @@ const custom = [
     rules: [
       { rule: 'import-path-ban', options: { forbid: ['^packages/.+/(src|dist)/'], exceptSamePackage: true }, severity: 'ERROR' },
     ],
+  },
+
+  // App must rely on the dialog host facade to interact with plugins
+  {
+    id: 'app-plugin-dialog-layering',
+    when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
+    because: 'App must interact with plugin dialogs via @hierarchidb/plugin-ui-host facade.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: [
+            '^@hierarchidb/plugin-base(?:/|$)',
+            '^@hierarchidb/plugin-service-(?:api|sdk)(?:/|$)',
+          ],
+          message: 'Use @hierarchidb/plugin-ui-host/PluginDialogHost instead of {importPath}.',
+        },
+        severity: 'ERROR',
+      },
+    ],
+  },
+  {
+    id: 'app-ui-shell-bundle',
+    when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
+    because: 'App UI imports should go through @hierarchidb/ui-shell facades.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: [
+            '^@hierarchidb/(components|plugin-ui-host|ui-auth|ui-core|ui-dialog|ui-icon|ui-i18n|ui-layout|ui-map|ui-navigation|ui-routing|ui-theme|ui-tour|ui-treeconsole-(?:base|breadcrumb|toolbar|treetable)|ui-usermenu)(?:/|$)',
+          ],
+          message: 'Use @hierarchidb/ui-shell/{module} instead of {importPath}.',
+        },
+        severity: 'ERROR',
+      },
+    ],
+  },
+  {
+    id: 'app-feature-core-bundle',
+    when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
+    because: 'App feature/data imports should go through @hierarchidb/feature-core facades.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: [
+            '^@hierarchidb/(common-(?:api|auth|types)|util|runtime-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
+          ],
+          message: 'Use @hierarchidb/feature-core/{module} instead of {importPath}.',
+        },
+        severity: 'ERROR',
+      },
+    ],
+  },
+
+  // plugin-base must stay UI-headless (no worker/service SDK dependencies)
+  {
+    id: 'plugin-base-headless-guard',
+    when: (ctx) => ctx.pkg?.name === '@hierarchidb/plugin-base',
+    because: 'plugin-base is the headless UI layer; worker/service integrations belong in plugin-service-sdk or host packages.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: [
+            '^@hierarchidb/runtime-client(?:/|$)',
+            '^@hierarchidb/plugin-service-(?:api|sdk)(?:/|$)',
+            '^@hierarchidb/common-api(?:/|$)',
+            '^comlink(?:/|$)',
+          ],
+        },
+        severity: 'ERROR',
+      },
+    ],
   }
 ];
 

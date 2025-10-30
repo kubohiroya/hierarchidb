@@ -3,13 +3,13 @@ import {
   pluginIconLoaders as registryIconLoaders,
   pluginWorkerPreloads,
   pluginDatabaseLoaders,
-} from '@hierarchidb/plugin-registry';
+} from '@hierarchidb/feature-core/plugin-registry';
 import {
   derivePluginDefinitions,
   derivePluginModuleSources,
   derivePluginModuleSpecifiers,
-} from '@hierarchidb/plugin-registry/derivations';
-import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
+} from '@hierarchidb/feature-core/plugin-registry/derivations';
+import type { PluginDefinition, PluginRegistryEntry } from '@hierarchidb/feature-core/plugin-registry/types';
 
 export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
 

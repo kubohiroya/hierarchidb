@@ -2,7 +2,7 @@
 
 ```mermaid
 sequenceDiagram
-    participant Build as tools:gen-plugin-loaders
+    participant Build as tools:gen-plugin-registry
     participant AppPkg as app/package.json
     participant RegistryFile as packages/plugin-registry/generated/registry.ts
     participant Host as App Bootstrap (runtime)
@@ -33,7 +33,7 @@ sequenceDiagram
 ```
 
 **Key Notes**
-- 対象プラグインは `pnpm run tools:gen-plugin-loaders`（`scripts/generate-plugin-loader.mjs` 経由）で `app/package.json` の `@hierarchidb/*-plugin` 依存から収集し、結果を **単一の正典ファイル** `packages/plugin-registry/generated/registry.ts` に書き出します。旧 `app/src/generated/*` 系ファイルは廃止済みです。
+- 対象プラグインは `pnpm run tools:gen-plugin-registry`（`scripts/generate-plugin-loader.mjs` 経由）で `app/package.json` の `@hierarchidb/*-plugin` 依存から収集し、結果を **単一の正典ファイル** `packages/plugin-registry/generated/registry.ts` に書き出します。旧 `app/src/generated/*` 系ファイルは廃止済みです。
 - アプリ起動時は `@hierarchidb/plugin-registry` を import し、派生ユーティリティ（`derivePluginModuleSpecifiers` など）で UI / Worker 向けのモジュール解決マップを構築します。これにより Vite/Rollup は常に静的な module specifier を扱えます。
 - プラグインが提供するランタイム初期化処理（`RuntimeWiring` 等）や Worker ストア登録（`register*WorkerStores`）は、この登録時に呼び出されます。
 ```

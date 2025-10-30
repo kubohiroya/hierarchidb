@@ -145,6 +145,12 @@
       "@hierarchidb/plugin-registry/*": [
         "packages/plugin-registry/dist/*"
       ],
+      "@hierarchidb/plugin-presentation": [
+        "packages/plugin-presentation/src/index.ts"
+      ],
+      "@hierarchidb/plugin-presentation/*": [
+        "packages/plugin-presentation/src/*"
+      ],
       "@hierarchidb/plugin-runtime-services": [
         "packages/plugin-runtime-services/dist/index.js"
       ],
@@ -234,6 +240,12 @@
       ],
       "@hierarchidb/styler-plugin/*": [
         "plugins/styler-plugin/src/*"
+      ],
+      "@hierarchidb/feature-core": [
+        "packages/feature-core/src/index.ts"
+      ],
+      "@hierarchidb/feature-core/*": [
+        "packages/feature-core/src/*"
       ],
       "@hierarchidb/table-metadata": [
         "packages/feature/table-metadata/src/index.ts"
@@ -391,17 +403,29 @@
       "@hierarchidb/ui-plugin-basic-info/*": [
         "packages/ui/plugin-basic-info/src/*"
       ],
-      "@hierarchidb/ui-plugin-dialog": [
-        "packages/ui/plugin-dialog/src/index.ts"
+      "@hierarchidb/plugin-ui-host": [
+        "packages/plugin-ui-host/src/index.ts"
       ],
-      "@hierarchidb/ui-plugin-dialog/*": [
-        "packages/ui/plugin-dialog/src/*"
+      "@hierarchidb/plugin-ui-host/*": [
+        "packages/plugin-ui-host/src/*"
+      ],
+      "@hierarchidb/plugin-base": [
+        "packages/plugin-base/src/index.ts"
+      ],
+      "@hierarchidb/plugin-base/*": [
+        "packages/plugin-base/src/*"
       ],
       "@hierarchidb/ui-routing": [
         "packages/ui/routing/src/index.ts"
       ],
       "@hierarchidb/ui-routing/*": [
         "packages/ui/routing/src/*"
+      ],
+      "@hierarchidb/ui-shell": [
+        "packages/ui-shell/src/index.ts"
+      ],
+      "@hierarchidb/ui-shell/*": [
+        "packages/ui-shell/src/*"
       ],
       "@hierarchidb/ui-search-result-window": [
         "packages/ui/search-result-window/src/index.ts"

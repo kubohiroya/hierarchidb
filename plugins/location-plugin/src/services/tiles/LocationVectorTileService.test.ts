@@ -1,15 +1,60 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { toNodeId } from '@hierarchidb/common-types';
+import { toNodeId, type ProgressEvent } from '@hierarchidb/common-types';
 import type { LocationPointInput, LocationTileSettings, ProgressInfo } from './LocationVectorTileService.js';
 import { LocationVectorTileService } from './LocationVectorTileService.js';
 import { closeEphemeralLocationDB, getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { UnifiedLocationBatchManager } from '../batch/UnifiedLocationBatchManager.js';
+import { LocationBatchSessionManager } from '../batch/BatchSessionManager.js';
+import type { SessionSummary } from '../batch/LocationSessionController.js';
 import type { BatchProgressEvent } from '@hierarchidb/common-api';
 
 type BridgeLike = NonNullable<ConstructorParameters<typeof LocationVectorTileService>[0]>;
 
+class TestSessionManager extends LocationBatchSessionManager {
+  private summary: SessionSummary | undefined;
+  private progressCb?: (e: ProgressEvent) => void;
+
+  override async createSession(
+    nodeId: ReturnType<typeof toNodeId>,
+    points: LocationPointInput[],
+    settings: LocationTileSettings,
+    // options?: { concurrency?: number },
+  ): Promise<SessionSummary> {
+    this.summary = {
+      sessionId: `${String(nodeId)}-session`,
+      nodeId,
+      zoomMin: settings.zoomMinGenerate,
+      zoomMax: settings.zoomMaxGenerate,
+      zoomMaxServe: settings.zoomMaxServe,
+      bbox: [0, 0, 0, 0],
+      totalPoints: points.length,
+      layers: ['location_points'],
+    } satisfies SessionSummary;
+    return this.summary;
+  }
+
+  override getInitialSummary(): SessionSummary | undefined {
+    return this.summary;
+  }
+
+  override onProgress(_sessionId: string, cb: (e: ProgressEvent) => void): () => void {
+    this.progressCb = cb;
+    return () => {
+      this.progressCb = undefined;
+    };
+  }
+
+  emit(event: ProgressEvent): void {
+    this.progressCb?.(event);
+  }
+}
+
 function createLocalBridge(): BridgeLike {
   const manager = new UnifiedLocationBatchManager();
+  const sessionManager = new TestSessionManager();
+  manager.setInternalManager(sessionManager);
+  manager.setDbProvider(() => getEphemeralLocationDB());
+
   return {
     async initialize() {
       // no-op
@@ -39,18 +84,19 @@ function createLocalBridge(): BridgeLike {
         nodeId: toNodeId('stub-node'),
         stage: 'vectortile',
         phase: 'completed',
-        total: 1,
-        completed: 1,
-        failed: 0,
-        percentage: 100,
-        currentTask: 'stub',
         timestamp: Date.now(),
         payload: {
           completed: 1,
           total: 1,
         },
-      } as BatchProgressEvent;
+      } satisfies BatchProgressEvent;
       const timer = setTimeout(() => {
+        const db = getEphemeralLocationDB();
+        void db.sessions?.update?.(sessionId, {
+          status: 'completed',
+          progress: event.payload?.completed,
+          updatedAt: Date.now(),
+        });
         cb(event);
       }, 0);
       return () => {

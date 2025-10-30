@@ -30,18 +30,18 @@ import {
   type HeadlessFooterRenderProps,
   type MultiDialogPosition,
   type MultiDialogSize,
-} from '@hierarchidb/ui-dialog';
+} from '@hierarchidb/ui-shell/ui-dialog';
 import { alpha } from '@mui/material/styles';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import {
   TreeConsolePanel,
   type TreeConsolePanelBreadcrumbRendererProps,
   type TreeConsolePanelProps,
   type TreeNodeData,
   type TreeTableColumn,
-} from '@hierarchidb/ui-treeconsole-base';
-import type { BreadcrumbNode } from '@hierarchidb/ui-treeconsole-breadcrumb';
-import { TreeTableSearchInput } from '@hierarchidb/ui-treeconsole-base';
+} from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import { TreeTableSearchInput } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
 import { WorkerAPIClient } from '../../WorkerAPIClient.ts';
 import type { LoadTreeReturn } from '~/loader.js';

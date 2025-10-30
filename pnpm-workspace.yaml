@@ -7,14 +7,18 @@ packages:
   - packages/tools/*
   - packages/vite-plugins/*
   - app/vite-plugins/*
-  - packages/runtime-ui/*
+  - packages/testing/*
   - packages/runtime/*
-  - packages/runtime-shared/*
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/plugin-registry
   - packages/plugin-service-api
   - packages/plugin-service-sdk
+  - packages/plugin-ui-host
+  - packages/plugin-presentation
+  - packages/plugin-base
+  - packages/ui-shell
+  - packages/feature-core
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services

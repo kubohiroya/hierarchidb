@@ -12,13 +12,6 @@
       "~/*": [
         "./src/*"
       ],
-      "@hierarchidb/plugin-registry": [
-        "../packages/plugin-registry/dist/registry.js"
-      ],
-      "@hierarchidb/plugin-registry/*": [
-        "../packages/plugin-registry/dist/*",
-        "../packages/plugin-registry/src/*"
-      ],
       "@hierarchidb/*-plugin": [
         "../plugins/*-plugin/src/index.ts"
       ]
@@ -44,7 +37,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.tsx",
+    "../types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

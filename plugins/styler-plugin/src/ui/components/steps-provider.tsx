@@ -1,4 +1,4 @@
-import { PluginStepRegistry, StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, StepComponentProps } from '@hierarchidb/plugin-base';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
 // Reuse Spreadsheet steps as Step 2,3
