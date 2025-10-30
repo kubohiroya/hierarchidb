@@ -80,7 +80,7 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-types": "workspace:*"
+    "@hierarchidb/plugin-service-api": "workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -105,7 +105,7 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-types": "workspace:*"
+    "@hierarchidb/plugin-service-api": "workspace:*"
   },
   "keywords": [
     "hierarchidb",

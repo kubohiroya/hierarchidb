@@ -3,7 +3,7 @@
  */
 
 import { toNodeType } from '@hierarchidb/common-types';
-import type { PluginMetadata } from '@hierarchidb/plugin-types';
+import type { PluginMetadata } from '@hierarchidb/plugin-service-api';
 
 export const StylerMetadata: PluginMetadata = {
   id: 'com.hierarchidb.styler-plugin',

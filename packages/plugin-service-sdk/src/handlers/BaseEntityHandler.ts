@@ -198,7 +198,7 @@ export abstract class BaseEntityHandler<
         page,
         pageSize,
         totalPages: Math.ceil(total / pageSize),
-      };
+      } satisfies PaginatedResult<TEntity>;
     } catch (error) {
       console.error('Failed to get paginated entities:', error);
       throw error;
@@ -210,35 +210,8 @@ export abstract class BaseEntityHandler<
    */
   async searchEntities(criteria: TSearchCriteria): Promise<TEntity[]> {
     try {
-      let query = this.table.toCollection();
-
-      // Apply base search criteria
-      if (criteria.name) {
-        query = query.filter((entity: any) =>
-          entity.name?.toLowerCase().includes(criteria.name!.toLowerCase()),
-        );
-      }
-
-      if (criteria.createdAfter) {
-        query = query.filter((entity: any) => entity.createdAt >= criteria.createdAfter!);
-      }
-
-      if (criteria.createdBefore) {
-        query = query.filter((entity: any) => entity.createdAt <= criteria.createdBefore!);
-      }
-
-      if (criteria.updatedAfter) {
-        query = query.filter((entity: any) => entity.updatedAt >= criteria.updatedAfter!);
-      }
-
-      if (criteria.updatedBefore) {
-        query = query.filter((entity: any) => entity.updatedAt <= criteria.updatedBefore!);
-      }
-
-      // Apply additional criteria from derived classes
-      query = this.applyAdditionalSearchCriteria(query, criteria);
-
-      return await query.toArray();
+      const query = this.table.toCollection();
+      return await this.applyAdditionalSearchCriteria(query, criteria).toArray();
     } catch (error) {
       console.error('Failed to search entities:', error);
       throw error;
@@ -250,8 +223,8 @@ export abstract class BaseEntityHandler<
    */
   async entityExists(entityId: NodeId): Promise<boolean> {
     try {
-      const count = await this.table.where('id').equals(entityId).count();
-      return count > 0;
+      const entity = await this.table.get(entityId);
+      return !!entity;
     } catch (error) {
       console.error('Failed to check entity existence:', error);
       throw error;

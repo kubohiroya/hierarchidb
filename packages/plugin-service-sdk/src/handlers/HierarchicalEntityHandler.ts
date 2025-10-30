@@ -200,86 +200,6 @@ export abstract class HierarchicalEntityHandler<
       node.children.push(childNode);
       await this.populateSubtree(childNode, maxDepth, currentDepth + 1);
     }
-
-    node.children = this.sortTreeNodes(node.children);
-  }
-
-  /**
-   * Move a node to a new parent
-   */
-  async moveNode(nodeId: NodeId, newParentId: NodeId | null): Promise<TEntity> {
-    try {
-      // Validate move (prevent circular reference)
-      if (newParentId) {
-        await this.validateMove(nodeId, newParentId);
-      }
-
-      const entity = await this.getEntityByNodeId(nodeId);
-      if (!entity) {
-        throw new Error(`Node not found: ${nodeId}`);
-      }
-
-      // Update parent and recalculate depth/path
-      const updates = {
-        parentId: newParentId || undefined,
-        depth: await this.calculateDepth(newParentId),
-        path: await this.calculatePath(nodeId, newParentId),
-      } as Partial<TEntity>;
-
-      return await this.updateEntity(entity.id, updates);
-    } catch (error) {
-      console.error('Failed to move node:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Validate that moving a node won't create circular reference
-   */
-  private async validateMove(nodeId: NodeId, newParentId: NodeId): Promise<void> {
-    if (nodeId === newParentId) {
-      throw new Error('Cannot move node to itself');
-    }
-
-    const descendants = await this.getDescendants(nodeId);
-    const descendantIds = descendants.map((d) => d.nodeId);
-
-    if (descendantIds.includes(newParentId)) {
-      throw new Error('Cannot move node to its descendant');
-    }
-  }
-
-  /**
-   * Calculate depth of a node based on its parent
-   */
-  private async calculateDepth(parentId: NodeId | null): Promise<number> {
-    if (!parentId) {
-      return 0;
-    }
-
-    const parent = await this.getEntityByNodeId(parentId);
-    if (!parent) {
-      return 0;
-    }
-
-    return (parent.depth || 0) + 1;
-  }
-
-  /**
-   * Calculate path string for a node
-   */
-  private async calculatePath(nodeId: NodeId, parentId: NodeId | null): Promise<string> {
-    if (!parentId) {
-      return `/${nodeId}`;
-    }
-
-    const parent = await this.getEntityByNodeId(parentId);
-    if (!parent) {
-      return `/${nodeId}`;
-    }
-
-    const parentPath = parent.path || `/${parent.nodeId}`;
-    return `${parentPath}/${nodeId}`;
   }
 
   /**
@@ -338,6 +258,27 @@ export abstract class HierarchicalEntityHandler<
       return siblings;
     } catch (error) {
       console.error('Failed to get siblings:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Move node to new parent
+   */
+  async moveNode(nodeId: NodeId, newParentId: NodeId | null): Promise<void> {
+    try {
+      const entity = await this.getEntityByNodeId(nodeId);
+      if (!entity) {
+        throw new Error(`Node not found: ${nodeId}`);
+      }
+
+      const updates: Partial<TEntity> = {
+        parentId: newParentId ?? undefined,
+      };
+
+      await this.updateEntity(entity.id, updates);
+    } catch (error) {
+      console.error('Failed to move node:', error);
       throw error;
     }
   }

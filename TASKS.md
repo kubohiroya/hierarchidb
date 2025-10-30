@@ -2681,6 +2681,15 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- fix/plugin-ui-sdk/hierarchical-entity-handler-export（P0） — plugin-service SDK への依存整理で app build の HierarchicalEntityHandler エラーを解消
+  - ブランチ: `fix/plugin-ui-sdk/hierarchical-entity-handler-export`（sandbox 制約で main 上で作業）
+  - 要点:
+    - basemap/route/location/shape/resolver プラグインのハンドラー・WorkingCopy 型参照を `@hierarchidb/plugin-service-{sdk,api}` へ切り替え、`@hierarchidb/plugin-ui-sdk` が持たない export への依存を排除。
+    - import 更新後に各プラグインの dist を再生成し、app build が `HierarchicalEntityHandler` を正しく解決できることを確認。
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/basemap-plugin build && pnpm --filter @hierarchidb/route-plugin build && pnpm --filter @hierarchidb/location-plugin build && pnpm --filter @hierarchidb/shape-plugin build && pnpm --filter @hierarchidb/resolver-plugin build`
+    - [x] `pnpm --filter @hierarchidb/app build`
+  - ロールバック手順: 上記プラグインで `@hierarchidb/plugin-service-{sdk,api}` への import 差分を revert し、`pnpm --filter @hierarchidb/app build` を再実行して `HierarchicalEntityHandler` 未解決エラーが再発することを確認。
 - fix/app/vite-resolver-dynamic-import（P0） — Vite 動的 import 警告と resolver plugin database 解決エラーを解消
   - ブランチ: `fix/app/vite-resolver-dynamic-import`（sandbox 制約で main 上で作業）
   - 要点:
@@ -6875,3 +6884,24 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-30 18:05 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 2（大量のテスト型エラーが残存: pasteNodes payload・EntityLifecycleManager 型等。自明対応外の差分あり）。
 - 2025-10-30 18:31 progress: refactor/worker/test-type-fixes — EntityLifecycle/CommandProcessor/Comlink 周辺を含むテスト・補助ユーティリティ・tsconfig を更新し、既存 type エラーを整理して再実行対象を明確化。
 - 2025-10-30 18:31 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-10-30 19:05 progress: refactor/plugin-sdk/api-separation — `@hierarchidb/plugin-types` のエクスポートを棚卸しし、`plugin-service-api` との差分および残存参照ファイルを洗い出し中。
+- 2025-10-30 19:42 blocked: pnpm install --lockfile-only — exit 1（ENOTFOUND: registry.npmjs.org への解決に失敗。ロックファイル更新は後続タスクで再試行予定）。
+- 2025-10-30 19:48 progress: refactor/plugin-sdk/api-separation — `plugin-service-api` へ BaseEntityHandler / HierarchicalEntityHandler / working-copy & peer-store helpers を移設し、`plugin-service-sdk` は再エクスポート構成へ。依存パッケージの import と `package.json` を `@hierarchidb/plugin-service-api` 指向に更新。
+- 2025-10-30 19:50 command: pnpm --filter @hierarchidb/plugin-service-api build — exit 0。
+- 2025-10-30 19:55 command: pnpm --filter {@hierarchidb/basemap-plugin,@hierarchidb/folder-plugin,@hierarchidb/location-plugin,@hierarchidb/route-plugin,@hierarchidb/resolver-plugin,@hierarchidb/styler-plugin,@hierarchidb/spreadsheet-plugin,@hierarchidb/timeline-plugin,@hierarchidb/linker-plugin,@hierarchidb/shape-plugin} build — exit 0（各 dist を `plugin-service-api` 参照へ再生成）。
+- 2025-10-30 19:58 command: node scripts/generate-plugin-loader.mjs — exit 0（registry/types/derivations を更新）。
+- 2025-10-30 20:02 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0（`plugin-service-api` 参照での型検証通過を確認）。
+- 2025-10-30 20:24 progress: refactor/plugin-sdk/api-separation — headlessヘルパーを `@hierarchidb/plugin-service-sdk` へ差し戻し、`plugin-service-api` は契約定義のみに整理。該当プラグインの import / package.json を sdk 参照に更新。
+- 2025-10-30 20:26 command: pnpm --filter @hierarchidb/plugin-service-api build — exit 0。
+- 2025-10-30 20:27 command: pnpm --filter @hierarchidb/plugin-service-sdk build — exit 0。
+- 2025-10-30 20:30 command: pnpm --filter @hierarchidb/{basemap-plugin,location-plugin,route-plugin} build — exit 0。
+- 2025-10-30 20:31 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。
+- 2025-10-30 20:45 progress: refactor/plugin-sdk/api-separation — tsdown の `define`/`inject` デプリケーション警告を解消するため、tsdown runtime オプションを transform.define/inject へ集約するパッチを適用。runtime-worker の TS リファレンスも正規化。
+- 2025-10-30 20:46 command: pnpm --filter @hierarchidb/plugin-service-sdk build — exit 0（警告なし）。
+- 2025-10-30 20:46 command: pnpm --filter @hierarchidb/plugin-runtime-services build — exit 0。
+- 2025-10-30 20:47 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0。
+- 2025-10-30 21:05 start: fix/plugin-ui-sdk/hierarchical-entity-handler-export — @hierarchidb/app build で発生した `HierarchicalEntityHandler` import/export 不整合の調査と修正に着手。DoD: TASKS/Kanban 更新、export 整合性確保、app build 成功ログ取得。
+- 2025-10-30 21:16 progress: fix/plugin-ui-sdk/hierarchical-entity-handler-export — basemap/route/location/shape/resolver プラグインの `@hierarchidb/plugin-ui-sdk` 依存を整理し、`BaseEntityHandler`/`HierarchicalEntityHandler`/`WorkingCopyDraft` 系を `@hierarchidb/plugin-service-{sdk,api}` 参照へ更新。
+- 2025-10-30 21:18 command: pnpm --filter @hierarchidb/basemap-plugin build && pnpm --filter @hierarchidb/route-plugin build && pnpm --filter @hierarchidb/location-plugin build && pnpm --filter @hierarchidb/shape-plugin build && pnpm --filter @hierarchidb/resolver-plugin build — exit 0（import 更新後の dist 再生成）。
+- 2025-10-30 21:28 command: pnpm --filter @hierarchidb/app build — exit 0（HierarchicalEntityHandler import の解消を確認。plugin-registry の icon 参照は既知の external 警告として継続）。
+- 2025-10-30 21:30 done: fix/plugin-ui-sdk/hierarchical-entity-handler-export — DoD 達成。TASKS/ログ反映、service SDK への import 更新、`pnpm --filter @hierarchidb/app build` グリーンを確認。ロールバックは該当 import 差分を戻し再ビルドでエラー再現。

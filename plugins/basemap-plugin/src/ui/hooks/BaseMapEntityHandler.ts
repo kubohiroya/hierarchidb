@@ -5,7 +5,7 @@
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import type { Collection, IndexableType, Table } from 'dexie';
-import { HierarchicalEntityHandler } from '@hierarchidb/plugin-ui-sdk';
+import { HierarchicalEntityHandler } from '@hierarchidb/plugin-service-sdk';
 import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-runtime-services';
 import type {
   BaseMapEntity,

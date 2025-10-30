@@ -11,6 +11,7 @@ export * from './types/PluginExtensionAPI.js';
 export * from './types/PluginLifecycleAPI.js';
 export * from './types/PluginRegistryAPI.js';
 export * from './types/NodeTypeAPI.js';
+export * from './types/extensions.js';
 export * from './types/registry.js';
 export type { PeerDataBase, PeerEntityBase, PeerStore } from './peer-store/types.js';
 export type { WorkingCopyBase, WorkingCopyDraft } from './working-copy/types.js';

@@ -91,4 +91,22 @@ if (normalizedOutExtension !== undefined) {
   finalConfig.outExtension = normalizedOutExtension;
 }
 
+const transformConfig: Record<string, unknown> =
+  typeof finalConfig.transform === 'object' && finalConfig.transform !== null
+    ? { ...(finalConfig.transform as Record<string, unknown>) }
+    : {};
+
+if ('define' in finalConfig) {
+  transformConfig.define = finalConfig.define;
+  delete finalConfig.define;
+}
+
+if ('inject' in finalConfig) {
+  transformConfig.inject = finalConfig.inject;
+  delete finalConfig.inject;
+}
+
+if (Object.keys(transformConfig).length > 0) {
+  finalConfig.transform = transformConfig;
+}
 export default defineConfig(finalConfig as any);

@@ -293,9 +293,6 @@ importers:
       '@hierarchidb/plugin-registry':
         specifier: workspace:*
         version: link:../packages/plugin-registry
-      '@hierarchidb/plugin-types':
-        specifier: workspace:*
-        version: link:../packages/plugin-types
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../packages/plugin-ui-sdk
@@ -918,6 +915,9 @@ importers:
 
   packages/plugin-ui-sdk:
     dependencies:
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../plugin-service-api
       '@hierarchidb/plugin-service-sdk':
         specifier: workspace:*
         version: link:../plugin-service-sdk
@@ -1015,6 +1015,9 @@ importers:
       '@hierarchidb/plugin-registry':
         specifier: workspace:*
         version: link:../../plugin-registry
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../../plugin-service-api
       '@maplibre/vt-pbf':
         specifier: ^4.0.3
         version: 4.0.3
@@ -1076,9 +1079,6 @@ importers:
       '@hierarchidb/map-source':
         specifier: workspace:*
         version: link:../../feature/map-source
-      '@hierarchidb/plugin-types':
-        specifier: workspace:*
-        version: link:../../plugin-types
       '@hierarchidb/tabular-source':
         specifier: workspace:*
         version: link:../../feature/tabular-source
@@ -1592,9 +1592,9 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../feature/download
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../plugin-types
+        version: link:../../plugin-service-api
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../plugin-ui-sdk
@@ -2206,9 +2206,12 @@ importers:
       '@hierarchidb/plugin-runtime-services':
         specifier: workspace:*
         version: link:../../packages/plugin-runtime-services
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
+      '@hierarchidb/plugin-service-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-service-sdk
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -2276,9 +2279,9 @@ importers:
       '@hierarchidb/components':
         specifier: workspace:*
         version: link:../../packages/components
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -2376,9 +2379,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime/client
@@ -2470,9 +2473,12 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../packages/feature/download
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
+      '@hierarchidb/plugin-service-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-service-sdk
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -2531,9 +2537,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker
@@ -2619,9 +2625,12 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../../packages/feature/download
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
+      '@hierarchidb/plugin-service-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-service-sdk
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -2737,9 +2746,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-client':
         specifier: workspace:*
         version: link:../../packages/runtime/client
@@ -2852,9 +2861,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -2943,9 +2952,9 @@ importers:
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/plugin-ui-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-ui-sdk
@@ -3012,9 +3021,9 @@ importers:
       '@hierarchidb/common-types':
         specifier: workspace:*
         version: link:../../packages/common/types
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../../packages/plugin-types
+        version: link:../../packages/plugin-service-api
       '@hierarchidb/runtime-worker':
         specifier: workspace:*
         version: link:../../packages/runtime/worker

@@ -19,7 +19,7 @@ export interface PeerEntity {
   disabled?: boolean;
 }
 
-import type { WorkingCopyDraft } from '@hierarchidb/plugin-ui-sdk';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
 import type { BBox, Geometry } from 'geojson';
 
 // ================================
@@ -186,7 +186,7 @@ export const BatchTaskStage = {
   CANCEL: 'cancel',
 } as const;
 
-export type BatchTaskStage = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
+export type BatchTaskStageType = (typeof BatchTaskStage)[keyof typeof BatchTaskStage];
 
 export type TaskStatus = 'waiting' | 'running' | 'completed' | 'failed' | 'cancelled';
 
@@ -197,7 +197,7 @@ export interface BatchTaskBase {
   taskId: string;
   taskType: BatchTaskType;
   sessionId?: NodeId;
-  stage?: BatchTaskStage;
+  stage?: BatchTaskStageType;
   status?: TaskStatus;
   type?: string; // legacy compatibility for Dexie records
   index?: number;

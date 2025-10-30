@@ -78,7 +78,7 @@
   "peerDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
@@ -100,7 +100,7 @@
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",

@@ -1,0 +1,58 @@
+diff --git a/dist/src-BhIGOkxO.mjs b/dist/src-BhIGOkxO.mjs
+index 992ef18a5a8aa2d6d9fcbe8dfd0db12c213b4a7f..bc58c21b23d0bc6d8c7c3d5ed565a55f6fcb6151 100644
+--- a/dist/src-BhIGOkxO.mjs
++++ b/dist/src-BhIGOkxO.mjs
+@@
+-	const inputOptions = await mergeUserOptions({
++	const transformOptions = typeof config.transform === "object" && config.transform !== null ? { ...config.transform } : {};
++	if (target !== void 0) transformOptions.target = target;
++	const envDefinitions = Object.keys(env).reduce((acc, key) => {
++		const value = JSON.stringify(env[key]);
++		acc[`process.env.${key}`] = value;
++		acc[`import.meta.env.${key}`] = value;
++		return acc;
++	}, Object.create(null));
++	const mergedDefine = {
++		...(define || {}),
++		...envDefinitions
++	};
++	if (Object.keys(mergedDefine).length > 0) {
++		const existingDefine = typeof transformOptions.define === "object" && transformOptions.define !== null ? transformOptions.define : {};
++		transformOptions.define = {
++			...existingDefine,
++			...mergedDefine
++		};
++	}
++	const shimsInject = shims && !cjsDts ? getShimsInject(format, platform) : null;
++	if (shimsInject && Object.keys(shimsInject).length > 0) {
++		const existingInject = typeof transformOptions.inject === "object" && transformOptions.inject !== null ? transformOptions.inject : {};
++		transformOptions.inject = {
++			...existingInject,
++			...shimsInject
++		};
++	}
++	const inputOptions = await mergeUserOptions({
+ 		input: entry,
+ 		cwd,
+ 		external,
+ 		resolve: { alias },
+ 		tsconfig: tsconfig || void 0,
+ 		treeshake,
+ 		platform: cjsDts || format === "cjs" ? "node" : platform,
+-		define: {
+-			...define,
+-			...Object.keys(env).reduce((acc, key) => {
+-				const value = JSON.stringify(env[key]);
+-				acc[`process.env.${key}`] = value;
+-				acc[`import.meta.env.${key}`] = value;
+-				return acc;
+-			}, Object.create(null))
+-		},
+-		transform: { target },
++		transform: transformOptions,
+ 		plugins,
+-		inject: { ...shims && !cjsDts && getShimsInject(format, platform) },
+ 		moduleTypes: loader,
+ 		onLog: cjsDefault ? (level, log, defaultHandler) => {
+ 			if (log.code === "MIXED_EXPORT") return;
+*** End Patch

@@ -4,12 +4,11 @@
  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+import type { PeerDataBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
 import type {
   HierarchicalEntity,
   HierarchicalSearchCriteria,
-  PeerDataBase,
-  WorkingCopyDraft,
-} from '@hierarchidb/plugin-types';
+} from '@hierarchidb/plugin-service-sdk';
 
 /**
  * Map style configuration

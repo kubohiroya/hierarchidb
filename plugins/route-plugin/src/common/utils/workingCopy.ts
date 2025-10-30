@@ -1,5 +1,5 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import { createEntityWorkingCopyAdapter } from '@hierarchidb/plugin-ui-sdk';
+import { createEntityWorkingCopyAdapter } from '@hierarchidb/plugin-service-sdk';
 import type { RouteDraftPayload, RouteEntity, RouteWorkingCopy } from '../types/index.js';
 import { RouteType, TransportMode } from '../types/index.js';
 

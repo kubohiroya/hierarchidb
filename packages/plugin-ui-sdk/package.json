@@ -23,12 +23,14 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@hierarchidb/plugin-service-sdk": "workspace:*"
+    "@hierarchidb/plugin-service-sdk": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*"
   },
   "peerDependencies": {
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*"
@@ -45,6 +47,7 @@
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
     "@hierarchidb/plugin-service-sdk": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/download": "workspace:*"

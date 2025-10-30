@@ -70,7 +70,10 @@ export function createEntityWorkingCopyAdapter<TEntity, TWorkingCopy extends Wor
   return {
     fromEntity(entity: TEntity): TWorkingCopy {
       const draft = options.draftFromEntity(entity);
-      const nodeId = (draft as { nodeId?: NodeId }).nodeId ?? (entity as { nodeId?: NodeId }).nodeId ?? (entity as any).id;
+      const nodeId =
+        (draft as { nodeId?: NodeId }).nodeId ??
+        (entity as { nodeId?: NodeId }).nodeId ??
+        (entity as any).id;
       let workingCopy = buildWorkingCopy(nodeId, draft, {
         createdAt: (entity as any).createdAt,
         updatedAt: (entity as any).updatedAt,
@@ -95,7 +98,11 @@ export function createEntityWorkingCopyAdapter<TEntity, TWorkingCopy extends Wor
       return workingCopy;
     },
 
-    merge(workingCopy: TWorkingCopy, updates: Partial<TEntity>, timestamp: Timestamp = Date.now() as Timestamp): TWorkingCopy {
+    merge(
+      workingCopy: TWorkingCopy,
+      updates: Partial<TEntity>,
+      timestamp: Timestamp = Date.now() as Timestamp,
+    ): TWorkingCopy {
       const base = markWorkingCopyUpdated<TEntity>(workingCopy, updates, timestamp);
       const mergedDraft = {
         ...workingCopy,

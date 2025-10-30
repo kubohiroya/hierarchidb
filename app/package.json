@@ -34,7 +34,6 @@
     "@hierarchidb/map-adapter": "workspace:*",
     "@hierarchidb/location-plugin": "workspace:*",
     "@hierarchidb/linker-plugin": "workspace:*",
-    "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",

@@ -26,7 +26,7 @@ import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExpor
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
 import { DialogStateService } from './services/DialogStateService.js';
-import type { PluginDefinition } from '@hierarchidb/plugin-types';
+import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
 export { resolveDefaultNodeName } from './utils/default-node-name.js';
 export {
   getWorkerContainer,
@@ -211,7 +211,7 @@ export class WorkerService {
   }
 
   // Minimal stub to satisfy interface; not yet wired.
-  getPluginLifecycleAPI(): import('@hierarchidb/plugin-types').PluginLifecycleAPI {
+  getPluginLifecycleAPI(): import('@hierarchidb/plugin-service-api').PluginLifecycleAPI {
     return {
       async register() {
         return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Not implemented' } };

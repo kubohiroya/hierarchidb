@@ -1,4 +1,4 @@
-import type { PeerEntityBase, PeerStore } from '@hierarchidb/plugin-types';
+import type { PeerEntityBase, PeerStore } from '@hierarchidb/plugin-service-sdk';
 import type { RouteEntitiesDB, RoutePeerRow } from './routeEntitiesDB.js';
 import type { RoutePeerData } from '../common/types/index.js';
 import { NodeId } from '@hierarchidb/common-types';

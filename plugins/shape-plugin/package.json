@@ -74,7 +74,7 @@
     "topojson-server": "^3.0.1"
   },
   "peerDependencies": {
-    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
@@ -118,7 +118,7 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4",
-    "@hierarchidb/plugin-types": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
