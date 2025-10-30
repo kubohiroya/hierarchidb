@@ -21,13 +21,13 @@
     "typecheck": "api-extractor run --local"
   },
   "peerDependencies": {
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.49.3",
-    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/plugin-service-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
   },
@@ -35,7 +35,7 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/plugin-ui-sdk#build",
+          "@hierarchidb/plugin-service-api#build",
           "@hierarchidb/common-types#build",
           "@hierarchidb/common-api#build",
           "@hierarchidb/batch#build",

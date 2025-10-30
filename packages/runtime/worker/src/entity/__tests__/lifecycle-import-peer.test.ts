@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-types';
+import type {
+  CommandEnvelope,
+  ImportNodesPayload,
+  NodeId,
+  NodeType,
+  TreeNode,
+  Timestamp,
+} from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
-import type { CommandEnvelope, ImportNodesPayload } from '../../services/command-types.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
 import type { PeerEntity, PeerStore } from '../store.js';
@@ -29,7 +36,7 @@ describe('EntityLifecycleManager.onImportNodes (Peer via idMap)', () => {
         peerMap.delete(id);
       },
     };
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     storeRegistry.registerPeer(folderType, store);
 
     const sourceId = 'imp-src' as NodeId;
@@ -61,7 +68,6 @@ describe('EntityLifecycleManager.onImportNodes (Peer via idMap)', () => {
       kind: 'importNodes',
       payload,
       issuedAt: Date.now() as Timestamp,
-      type: 'importNodes',
     };
 
     await mgr.onImportNodes(envelope);

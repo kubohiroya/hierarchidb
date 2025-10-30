@@ -21,11 +21,18 @@
       ],
       "@hierarchidb/plugin-registry/*": [
         "../../plugin-registry/dist/*"
+      ],
+      "@hierarchidb/plugin-service-api": [
+        "../../plugin-service-api/dist/index.js"
+      ],
+      "@hierarchidb/plugin-service-api/*": [
+        "../../plugin-service-api/dist/*"
       ]
     }
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.d.ts",
     "src*.d.ts"
   ],
   "exclude": [

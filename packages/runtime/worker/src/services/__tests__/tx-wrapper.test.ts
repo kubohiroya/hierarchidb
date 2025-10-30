@@ -84,8 +84,7 @@ describe('transaction wrapper', () => {
     const core = makeCore();
     core.state.set('a' as NodeId, makeNode('a', 'root', 'A'));
     // Simulate minimal CoreDB stub without transactional support
-    // @ts-expect-error - delete to emulate legacy mocks
-    delete core.runInTx;
+    (core as { runInTx?: CoreStub['runInTx'] }).runInTx = undefined;
 
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);
@@ -128,7 +127,7 @@ describe('transaction wrapper', () => {
       } finally {
         inTx = false;
       }
-    });
+    }) as typeof core.runInTx;
 
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);

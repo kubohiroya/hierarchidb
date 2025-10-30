@@ -1,6 +1,6 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from './helpers.js';
-import type { WorkingCopyDraft } from './types.js';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
 
 export interface EntityWorkingCopyAdapter<TEntity, TWorkingCopy extends WorkingCopyDraft<TEntity>> {
   fromEntity(entity: TEntity): TWorkingCopy;

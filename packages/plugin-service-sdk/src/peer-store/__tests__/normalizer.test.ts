@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createPeerStoreNormalizer } from '../normalizer.js';
-import type { PeerDataBase } from '../types.js';
+import type { PeerDataBase } from '@hierarchidb/plugin-service-api/peer-store/types.js';
 
 interface ExamplePeerData extends PeerDataBase {
   schemaVersion: 1;

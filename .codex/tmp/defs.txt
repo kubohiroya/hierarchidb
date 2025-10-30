@@ -4,8 +4,8 @@ interface|AutoLifecycleConfig|packages/common/types/src/entity-plugin-definition
 interface|BaseDataSourceConfig|packages/common/types/src/datasource.ts
 interface|BaseDialogProps|packages/common/types/src/stepper-dialog-plugin-definition.ts
 interface|BaseEntity|packages/common/types/src/entity-plugin-definition.ts
-interface|BaseEntityExtension|packages/common/types/src/plugin-pointcuts.ts
-interface|BaseNodeDefinition|packages/common/types/src/plugin-pointcuts.ts
+interface|BaseEntityExtension|packages/common/types/src/types.ts
+interface|BaseNodeDefinition|packages/common/types/src/types.ts
 interface|BaseUrlMetadata|packages/common/types/src/datasource.ts
 interface|BinaryPropertyConfig|packages/common/types/src/plugin-serialization.ts
 interface|CategoryDefinition|packages/common/types/src/plugin-definition.ts
@@ -25,7 +25,7 @@ interface|DependencyError|packages/common/types/src/plugin-resolution.ts
 interface|DependencyGraph|packages/common/types/src/plugin-resolution.ts
 interface|DescendantProperties|packages/common/types/src/tree-node-plugin-definition.ts
 interface|DeserializationInput|packages/common/types/src/plugin-serialization.ts
-interface|DialogStepDefinition|packages/common/types/src/plugin-pointcuts.ts
+interface|DialogStepDefinition|packages/common/types/src/types.ts
 interface|DiscardWorkingCopyPayload|packages/common/types/src/command-plugin-definition.ts
 interface|DraftProperties|packages/common/types/src/tree-node-plugin-definition.ts
 interface|DuplicateNodesPayload|packages/common/types/src/command-plugin-definition.ts
@@ -47,10 +47,10 @@ interface|ExportNodesPayload|packages/common/types/src/command-plugin-definition
 interface|ExportOptions|packages/common/types/src/import-export-plugin-definition.ts
 interface|ExportProgress|packages/common/types/src/import-export-plugin-definition.ts
 interface|ExportResult|packages/common/types/src/import-export-plugin-definition.ts
-interface|ExtendedFieldDefinition|packages/common/types/src/plugin-pointcuts.ts
+interface|ExtendedFieldDefinition|packages/common/types/src/types.ts
 interface|ExtendedPluginDefinition|packages/common/types/src/plugin-definition.ts
-interface|ExtendingNodeTypeDefinition|packages/common/types/src/plugin-pointcuts.ts
-interface|ExtensionMetadata|packages/common/types/src/plugin-pointcuts.ts
+interface|ExtendingNodeTypeDefinition|packages/common/types/src/types.ts
+interface|ExtensionMetadata|packages/common/types/src/types.ts
 interface|FileImportOptions|packages/common/types/src/import-export-plugin-definition.ts
 interface|GetAncestorsPayload|packages/common/types/src/command-plugin-definition.ts
 interface|GetChildrenPayload|packages/common/types/src/command-plugin-definition.ts
@@ -90,7 +90,7 @@ interface|PeerEntity|packages/common/types/src/entity-plugin-definition.ts
 interface|PluginAPIConfig|packages/common/types/src/plugin-definition.ts
 interface|PluginDatabaseConfig|packages/common/types/src/plugin-definition.ts
 interface|PluginDefinition|packages/common/types/src/plugin-definition.ts
-interface|PluginExtensionConfig|packages/common/types/src/plugin-pointcuts.ts
+interface|PluginExtensionConfig|packages/common/types/src/types.ts
 interface|PluginI18nConfig|packages/common/types/src/plugin-definition.ts
 interface|PluginIntegrated|packages/common/types/src/plugin-definition.ts
 interface|PluginRegistrationConfig|packages/common/types/src/plugin-resolution.ts
@@ -120,7 +120,7 @@ interface|ShapeCountryMetadata|packages/common/types/src/datasource.ts
 interface|ShapeDataSourceConfig|packages/common/types/src/datasource.ts
 interface|ShapeSelectionRowData|packages/common/types/src/datasource.ts
 interface|ShapeUrlMetadata|packages/common/types/src/datasource.ts
-interface|StepComponent|packages/common/types/src/plugin-pointcuts.ts
+interface|StepComponent|packages/common/types/src/types.ts
 interface|StepComponentProps|packages/common/types/src/stepper-dialog-plugin-definition.ts
 interface|StepValidation|packages/common/types/src/validation-plugin-definition.ts
 interface|SubscribeChildrenPayload|packages/common/types/src/command-plugin-definition.ts
@@ -143,7 +143,7 @@ interface|TreeViewState|packages/common/types/src/tree-view-plugin-definition.ts
 interface|TypedClientAPIExtensions|packages/common/types/src/api-plugin-definition.ts
 interface|TypedWorkerAPIExtensions|packages/common/types/src/api-plugin-definition.ts
 interface|UndoPayload|packages/common/types/src/command-plugin-definition.ts
-interface|ValidationExtension|packages/common/types/src/plugin-pointcuts.ts
+interface|ValidationExtension|packages/common/types/src/types.ts
 interface|ValidationRule|packages/common/types/src/validation-plugin-definition.ts
 interface|WorkerAPIExtensions|packages/common/types/src/api-plugin-definition.ts
 interface|WorkerPluginRouterAction|packages/common/types/src/plugin-definition.ts

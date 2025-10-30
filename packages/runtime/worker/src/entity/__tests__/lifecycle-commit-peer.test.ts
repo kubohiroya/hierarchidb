@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
@@ -32,7 +33,7 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
         storeMap.delete(id);
       },
     };
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     storeRegistry.registerPeer(folderType, store);
 
     // Seed nodes (wc child and its holder)
@@ -77,9 +78,8 @@ describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
       commandId: 'c1',
       groupId: 'g1',
       kind: 'commitWorkingCopy',
-      payload: { workingCopyId: wcId },
+      payload: { workingCopyId: wcId, expectedUpdatedAt: Date.now() as Timestamp },
       issuedAt: Date.now(),
-      type: 'commitWorkingCopy',
     });
 
     // Target received upserted peer

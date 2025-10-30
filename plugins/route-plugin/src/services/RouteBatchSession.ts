@@ -1,4 +1,4 @@
-import { AbstractBatchSession, BatchService } from '@hierarchidb/batch';
+import { AbstractBatchSession, BatchService } from '@hierarchidb/batch-runtime-services';
 import { RouteDatabase, type RouteCursorRow, type RouteResultRow } from './database/RouteDatabase.js';
 import type { RouteGenerationConfig } from '../common/entities/RouteEntity.js';
 import { RouteGenerator } from './RouteGenerator.js';
@@ -111,8 +111,8 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
     const maxConcurrent = this.config.routeGeneration.maxConcurrent;
     const batch = new BatchService();
     let completed = 0;
-    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number, workerSignal: AbortSignal) => {
-      if (signal.aborted || workerSignal.aborted) {
+    await batch.mapChunks<RouteBatchTask, void>(this.tasks, async (task: RouteBatchTask, index: number) => {
+      if (signal.aborted) {
         throw abortError();
       }
       if (task.taskType === 'route_generation') {
@@ -146,7 +146,7 @@ export class RouteBatchSession extends AbstractBatchSession<RouteBatchConfig> {
         if (!cur?.paused) break;
         this.updateProgress({ currentTask: `paused:${task.taskType}` });
       }
-    }, { concurrency: maxConcurrent, signal });
+    }, { concurrency: maxConcurrent });
   }
 
   private async processTask(task: RouteBatchTask): Promise<void> {

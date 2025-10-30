@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 import { createDraftWorkingCopyBase, markWorkingCopyUpdated } from '../helpers.js';
-import type { WorkingCopyDraft } from '../types.js';
+import type { WorkingCopyDraft } from '@hierarchidb/plugin-service-api/working-copy/types.js';
 
 interface Entity {
   title: string;

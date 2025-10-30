@@ -88,7 +88,7 @@
 ### 必須実装項目
 
 1. **型定義ファイル作成**
-   - `packages/common/core/src/types/plugin-pointcuts.ts`
+   - `packages/common/core/src/types/types.ts`
 
 2. **基本型定義**
    - ExtendableNodeTypeDefinition<TBase, TExtended, TWorkingCopy>

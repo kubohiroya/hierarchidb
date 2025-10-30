@@ -22,13 +22,15 @@
     "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
     "lint": "eslint src"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/plugin-service-sdk": "workspace:*"
+  },
   "peerDependencies": {
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
+    "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
   },
   "devDependencies": {
@@ -42,9 +44,9 @@
     "typescript": "workspace:^5.9.3",
     "dexie": "^4.2.0",
     "react": ">=18.0.0",
+    "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/common-api": "workspace:*",
-    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/download": "workspace:*"
   }
 }

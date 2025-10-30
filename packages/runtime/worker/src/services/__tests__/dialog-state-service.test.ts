@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
+import { toNodeId } from '@hierarchidb/common-types';
 import { DialogStateService } from '../DialogStateService.js';
 import { storeRegistry } from '../../entity/store-registry.js';
 import type { PeerEntity, PeerStore } from '../../entity/store.js';
@@ -35,7 +36,7 @@ describe('DialogStateService', () => {
 
   it('persists published state and retrieves it via getState', async () => {
     const snapshot: MultiStepDialogState = {
-      nodeId: 'node-1',
+      nodeId: toNodeId('node-1'),
       activeStepIndex: 0,
       steps: [
         { id: 'basic', title: 'Basic', enabled: true, completed: false, error: null },
@@ -49,9 +50,9 @@ describe('DialogStateService', () => {
       metadata: { title: 'Create Folder', subtitle: 'Draft', committableStepIndices: [0] },
     };
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: 'node-1', state: snapshot });
+    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-1'), state: snapshot });
 
-    const stored = await service.getState({ nodeType: TEST_NODE_TYPE, nodeId: 'node-1' });
+    const stored = await service.getState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-1') });
     expect(stored).toMatchObject({ ...snapshot, updatedAt: expect.any(Number) });
   });
 
@@ -59,7 +60,7 @@ describe('DialogStateService', () => {
     const callback = vi.fn();
 
     const subscriptionId = await service.subscribeState(
-      { nodeType: TEST_NODE_TYPE, nodeId: 'node-2' },
+      { nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2') },
       callback,
     );
 
@@ -69,7 +70,7 @@ describe('DialogStateService', () => {
     expect(callback).toHaveBeenLastCalledWith(null);
 
     const nextState: MultiStepDialogState = {
-      nodeId: 'node-2',
+      nodeId: toNodeId('node-2'),
       activeStepIndex: 1,
       steps: [
         { id: 'basic', title: 'Basic', enabled: true, completed: true, error: null },
@@ -84,16 +85,16 @@ describe('DialogStateService', () => {
       metadata: { title: 'Create', subtitle: 'Details', committableStepIndices: [1] },
     };
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: 'node-2', state: nextState });
+    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2'), state: nextState });
     expect(callback).toHaveBeenCalledTimes(2);
     expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({
-      nodeId: 'node-2',
+      nodeId: toNodeId('node-2'),
       activeStepIndex: 1,
     }));
 
     await service.unsubscribeState(subscriptionId);
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: 'node-2', state: null });
+    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2'), state: null });
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
@@ -101,7 +102,7 @@ describe('DialogStateService', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(
-      service.publishState({ nodeType: 'unknown-node-type', nodeId: 'missing', state: null }),
+      service.publishState({ nodeType: 'unknown-node-type', nodeId: toNodeId('missing'), state: null }),
     ).resolves.toBeUndefined();
 
     expect(warnSpy).toHaveBeenCalledWith(

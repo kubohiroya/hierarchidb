@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
@@ -28,7 +29,7 @@ describe('EntityLifecycleManager.onDuplicateNodes (Peer via idMap)', () => {
         peerMap.delete(id);
       },
     };
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     storeRegistry.registerPeer(folderType, store);
 
     const s1 = 's1' as NodeId;
@@ -62,9 +63,8 @@ describe('EntityLifecycleManager.onDuplicateNodes (Peer via idMap)', () => {
       commandId: 'cmd-dup',
       groupId: 'g1',
       kind: 'duplicateNodes',
-      payload: { nodeIds: [] },
-      issuedAt: Date.now(),
-      type: 'duplicateNodes',
+      payload: { nodeIds: [], toParentId: 'p' as NodeId },
+      issuedAt: Date.now() as Timestamp,
     });
 
     expect((await store.get(d1))?.data?.v).toBe(1);

@@ -151,6 +151,18 @@
       "@hierarchidb/plugin-runtime-services/*": [
         "packages/plugin-runtime-services/dist/*"
       ],
+      "@hierarchidb/plugin-service-api": [
+        "packages/plugin-service-api/dist/index.js"
+      ],
+      "@hierarchidb/plugin-service-api/*": [
+        "packages/plugin-service-api/dist/*"
+      ],
+      "@hierarchidb/plugin-service-sdk": [
+        "packages/plugin-service-sdk/dist/index.js"
+      ],
+      "@hierarchidb/plugin-service-sdk/*": [
+        "packages/plugin-service-sdk/dist/*"
+      ],
       "@hierarchidb/plugin-ui-sdk": [
         "packages/plugin-ui-sdk/dist/index.js"
       ],

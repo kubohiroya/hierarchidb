@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
@@ -36,7 +37,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     const mutationAPI = await client.getMutationAPI();
     const workingCopyAPI = await client.getWorkingCopyAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     expect(tree?.trashRootId).toBeDefined();
@@ -49,17 +50,17 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
 
     const createAndCommit = async (name: string, parentId: NodeId): Promise<NodeId> => {
       const createResult = await mutationAPI.createNode({
-        nodeType: 'folder',
+        nodeType: toNodeType('folder'),
         treeId,
         parentId,
         name,
       });
-      expect(createResult?.success).toBe(true);
-      if (!createResult?.nodeId) {
-        throw new Error(`createNode did not return nodeId for ${name}`);
+      if (!createResult.success) {
+        const message = 'error' in createResult ? createResult.error : 'unknown error';
+        throw new Error(`createNode failed for ${name}: ${message}`);
       }
 
-      const workingCopy = await queryAPI.getNode(createResult.nodeId as NodeId);
+      const workingCopy = await queryAPI.getNode(createResult.nodeId);
       if (!workingCopy) {
         throw new Error(`working copy missing for ${name}`);
       }
@@ -72,7 +73,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
       const { targetNodeId } = decodeWorkingCopyHolderName(holder.name);
       const canonicalId = targetNodeId as NodeId;
 
-      const commitResult = await workingCopyAPI.commitWorkingCopy(createResult.nodeId as NodeId);
+      const commitResult = await workingCopyAPI.commitWorkingCopy(createResult.nodeId);
       expect(commitResult.status).toBe('ok');
       await waitFor(async () => {
         const committed = await queryAPI.getNode(canonicalId);

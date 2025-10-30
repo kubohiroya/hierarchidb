@@ -1,0 +1,44 @@
+{
+  "name": "@hierarchidb/plugin-service-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./types/*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/types/*.js",
+      "default": "./dist/types/*.js"
+    },
+    "./peer-store/*": {
+      "types": "./dist/peer-store/*.d.ts",
+      "import": "./dist/peer-store/*.js",
+      "default": "./dist/peer-store/*.js"
+    },
+    "./working-copy/*": {
+      "types": "./dist/working-copy/*.d.ts",
+      "import": "./dist/working-copy/*.js",
+      "default": "./dist/working-copy/*.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist"
+  },
+  "dependencies": {
+    "@hierarchidb/common-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "workspace:^5.9.3"
+  }
+}

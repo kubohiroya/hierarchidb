@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type { CommandResult, NodeId, NodeType, PasteNodesPayload, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
-import type { CommandEnvelope, PasteNodesPayload } from '../../services/command-types.js';
+import type { CommandEnvelope } from '../../services/command-types.js';
 import type { CommandProcessor } from '../../services/CommandProcessor.js';
 import type { PeerEntity, PeerStore } from '../store.js';
 import { storeRegistry } from '../store-registry.js';
@@ -26,7 +27,7 @@ describe('Lifecycle uses bulkUpsert when available', () => {
     };
 
     const processor: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(async () => ({ success: true, seq: 1 })),
+      processCommand: vi.fn(async () => ({ success: true, seq: 1 } as CommandResult)),
     };
 
     const collected: PeerEntity[] = [];
@@ -42,7 +43,7 @@ describe('Lifecycle uses bulkUpsert when available', () => {
         collected.push(...entities);
       },
     };
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     storeRegistry.registerPeer(folderType, store);
 
     const { TreeMutationService } = await import('../../services/TreeMutationService.js');
@@ -82,7 +83,6 @@ describe('Lifecycle uses bulkUpsert when available', () => {
       kind: 'pasteNodes',
       payload,
       issuedAt: Date.now() as Timestamp,
-      type: 'pasteNodes',
     };
 
     const r = await svc.pasteNodes(env);

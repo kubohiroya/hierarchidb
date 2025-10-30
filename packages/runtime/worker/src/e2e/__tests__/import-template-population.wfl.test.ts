@@ -5,6 +5,7 @@ import { MessageChannel } from 'worker_threads';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
@@ -65,7 +66,7 @@ describe('WFL import template: Total Population by Country', () => {
     const queryAPI = await client.getQueryAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');
@@ -90,8 +91,8 @@ describe('WFL import template: Total Population by Country', () => {
 
     const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
     const byType = new Map(templateChildren.map((child) => [child.nodeType, child.name]));
-    expect(byType.get('shape')).toBe('Country Boundaries');
-    expect(byType.get('styler')).toBe('Population Color Map');
-    expect(byType.get('spreadsheet')).toBe('Population Data Table');
+    expect(byType.get(toNodeType('shape'))).toBe('Country Boundaries');
+    expect(byType.get(toNodeType('styler'))).toBe('Population Color Map');
+    expect(byType.get(toNodeType('spreadsheet'))).toBe('Population Data Table');
   }, 25_000);
 });

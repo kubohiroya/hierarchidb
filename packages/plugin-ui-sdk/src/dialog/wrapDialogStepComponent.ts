@@ -1,5 +1,5 @@
 import { createElement, type ComponentType } from 'react';
-import { StepComponent } from '../types/plugin-pointcuts.js';
+import type { StepComponent } from '../types.js';
 
 export const wrapDialogStepComponent = <TProps extends object>(
   Component: ComponentType<TProps>,

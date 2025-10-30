@@ -266,12 +266,6 @@ importers:
       '@hierarchidb/basemap-plugin':
         specifier: workspace:*
         version: link:../plugins/basemap-plugin
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../packages/feature/batch
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../packages/common/api
@@ -564,15 +558,6 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/batch-types:
-    devDependencies:
-      '@hierarchidb/batch':
-        specifier: workspace:*
-        version: link:../feature/batch
-      '@microsoft/api-extractor':
-        specifier: ^7.49.3
-        version: 7.53.1(@types/node@18.19.123)
-
   packages/common/api:
     dependencies:
       '@hierarchidb/common-types':
@@ -860,6 +845,10 @@ importers:
   packages/plugin-registry: {}
 
   packages/plugin-runtime-services:
+    dependencies:
+      '@hierarchidb/runtime-worker':
+        specifier: workspace:*
+        version: link:../runtime/worker
     devDependencies:
       '@hierarchidb/common-types':
         specifier: workspace:*
@@ -867,12 +856,44 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../feature/download
-      '@hierarchidb/plugin-types':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../plugin-types
-      '@hierarchidb/plugin-ui-sdk':
+        version: link:../plugin-service-api
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/plugin-service-api:
+    dependencies:
+      '@hierarchidb/common-types':
         specifier: workspace:*
-        version: link:../plugin-ui-sdk
+        version: link:../common/types
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
+  packages/plugin-service-sdk:
+    dependencies:
+      '@hierarchidb/plugin-service-api':
+        specifier: workspace:*
+        version: link:../plugin-service-api
+    devDependencies:
+      '@hierarchidb/common-api':
+        specifier: workspace:*
+        version: link:../common/api
+      '@hierarchidb/common-types':
+        specifier: workspace:*
+        version: link:../common/types
+      '@hierarchidb/download':
+        specifier: workspace:*
+        version: link:../feature/download
+      '@types/node':
+        specifier: 18.19.123
+        version: 18.19.123
       dexie:
         specifier: 4.2.0
         version: 4.2.0
@@ -888,18 +909,19 @@ importers:
       '@hierarchidb/download':
         specifier: workspace:*
         version: link:../feature/download
-      '@hierarchidb/plugin-ui-sdk':
+      '@hierarchidb/plugin-service-api':
         specifier: workspace:*
-        version: link:../plugin-ui-sdk
+        version: link:../plugin-service-api
       '@microsoft/api-extractor':
         specifier: ^7.49.3
         version: 7.53.1(@types/node@18.19.123)
 
   packages/plugin-ui-sdk:
-    devDependencies:
-      '@hierarchidb/batch-types':
+    dependencies:
+      '@hierarchidb/plugin-service-sdk':
         specifier: workspace:*
-        version: link:../batch-types
+        version: link:../plugin-service-sdk
+    devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../common/api
@@ -1561,9 +1583,6 @@ importers:
 
   packages/ui/plugin-dialog:
     devDependencies:
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -2436,9 +2455,6 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/feature/batch
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2588,12 +2604,9 @@ importers:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
         version: link:../../packages/feature/auth-recovery
-      '@hierarchidb/batch':
+      '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
-        version: link:../../packages/feature/batch
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../packages/batch-types
+        version: link:../../packages/batch-runtime-services
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2709,9 +2722,6 @@ importers:
       '@hierarchidb/batch':
         specifier: workspace:*
         version: link:../../packages/feature/batch
-      '@hierarchidb/batch-types':
-        specifier: workspace:*
-        version: link:../../packages/batch-types
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -14301,7 +14311,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:

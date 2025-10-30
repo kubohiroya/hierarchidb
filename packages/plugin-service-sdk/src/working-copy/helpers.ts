@@ -1,5 +1,5 @@
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { WorkingCopyBase, WorkingCopyDraft } from './types.js';
+import type { WorkingCopyBase, WorkingCopyDraft } from '@hierarchidb/plugin-service-api';
 
 export interface CreateDraftWorkingCopyParams<TEntity> {
   draft: Partial<TEntity>;

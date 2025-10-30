@@ -2,7 +2,8 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
@@ -15,7 +16,7 @@ type TestWorkerAPI = {
   getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
 };
 
-type SubscriptionEvent = Record<string, unknown> & { nodeId?: NodeId; type?: string };
+type SubscriptionEvent = TreeNodeEvent;
 
 async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: number; interval?: number }) {
   const timeout = opts?.timeout ?? 10000;
@@ -41,7 +42,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     const subscriptionAPI = await client.getSubscriptionAPI();
     const wcAPI = await client.getWorkingCopyAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     expect(tree?.trashRootId).toBeDefined();
@@ -69,10 +70,12 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
       Comlink.proxy((event: SubscriptionEvent) => { trashNodeEvents.push(event); }),
     );
 
-    const createRes = await mutationAPI.createNode({ nodeType: 'folder', treeId, parentId: rootId, name: 'tmp' });
-    expect(createRes?.success).toBe(true);
-    if (!createRes?.nodeId) throw new Error('createNode did not return nodeId');
-    const wcNodeId = createRes.nodeId as NodeId;
+    const createRes = await mutationAPI.createNode({ nodeType: toNodeType('folder'), treeId, parentId: rootId, name: 'tmp' });
+    if (!createRes.success) {
+      const message = 'error' in createRes ? createRes.error : 'unknown error';
+      throw new Error(`createNode failed: ${message}`);
+    }
+    const wcNodeId = createRes.nodeId;
 
     const wcNode = await queryAPI.getNode(wcNodeId);
     expect(wcNode).toBeTruthy();

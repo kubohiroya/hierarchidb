@@ -5,7 +5,7 @@ import type {
   EntityLifecycleHooks,
   OperationResult,
   PaginatedResult,
-} from '@hierarchidb/plugin-types';
+} from '@hierarchidb/plugin-service-api';
 
 /**
  * Lightweight runtime replacement for the legacy plugin-ui-sdk BaseEntityHandler.

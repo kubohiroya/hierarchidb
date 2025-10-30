@@ -74,7 +74,6 @@
     "topojson-server": "^3.0.1"
   },
   "peerDependencies": {
-    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -88,7 +87,6 @@
     "@hierarchidb/ui-accordion-config": "workspace:*",
     "@hierarchidb/ui-datasource": "workspace:*",
     "@hierarchidb/ui-license": "workspace:*",
-    "@hierarchidb/batch": "workspace:*",
     "@hierarchidb/ui-country-select": "workspace:*",
     "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-lru-splitview": "workspace:*",
@@ -120,7 +118,6 @@
     "@mui/material": "^7.3.2",
     "@mui/icons-material": "^7.3.2",
     "vitest": "^3.2.4",
-    "@hierarchidb/batch-types": "workspace:*",
     "@hierarchidb/plugin-types": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/auth-recovery": "workspace:*",

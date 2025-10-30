@@ -13,6 +13,8 @@ packages:
   - packages/ui/*
   - packages/ui/treeconsole/*
   - packages/plugin-registry
+  - packages/plugin-service-api
+  - packages/plugin-service-sdk
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services

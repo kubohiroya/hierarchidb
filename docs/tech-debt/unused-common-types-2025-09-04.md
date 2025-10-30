@@ -42,7 +42,7 @@ awk -F'|' '$4==0 {print $1 "|" $2 "|" $3}' .codex/tmp/usage_raw.txt > .codex/tmp
 <!-- BEGIN GENERATED CANDIDATES -->
 interface | AutoLifecycleConfig — packages/common/types/src/entity-plugin-definition.ts
 interface | BaseDataSourceConfig — packages/common/types/src/datasource.ts
-interface | BaseNodeDefinition — packages/common/types/src/plugin-pointcuts.ts
+interface | BaseNodeDefinition — packages/common/types/src/types.ts
 interface | BaseUrlMetadata — packages/common/types/src/datasource.ts
 interface | BinaryPropertyConfig — packages/common/types/src/plugin-serialization.ts
 interface | DependencyError — packages/common/types/src/plugin-resolution.ts
@@ -52,8 +52,8 @@ interface | EntityRelationship — packages/common/types/src/entity-plugin-defin
 interface | ExpandedStateChanges — packages/common/types/src/tree-root-state-plugin-definition.ts
 interface | ExportManifest — packages/common/types/src/import-export-plugin-definition.ts
 interface | ExportOptions — packages/common/types/src/import-export-plugin-definition.ts
-interface | ExtendedFieldDefinition — packages/common/types/src/plugin-pointcuts.ts
-interface | ExtensionMetadata — packages/common/types/src/plugin-pointcuts.ts
+interface | ExtendedFieldDefinition — packages/common/types/src/types.ts
+interface | ExtensionMetadata — packages/common/types/src/types.ts
 interface | FileImportOptions — packages/common/types/src/import-export-plugin-definition.ts
 interface | GetNodePayload — packages/common/types/src/command-plugin-definition.ts
 interface | GetTreePayload — packages/common/types/src/command-plugin-definition.ts

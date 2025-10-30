@@ -1,4 +1,4 @@
-/**
+i/**
  * Base Vitest Setup Configuration
  * 
  * Common test environment setup for all packages.

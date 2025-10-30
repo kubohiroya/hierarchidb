@@ -6,14 +6,17 @@ export type CommandResultFailure = Extract<CommandResult, { success: false }>;
 export function assertCommandSuccess(result: CommandResult, context?: string): asserts result is CommandResultSuccess {
   if (!result.success) {
     const prefix = context ? `${context}: ` : '';
-    throw new Error(`${prefix}Expected success but received ${result.code} (${result.error})`);
+    const code = 'code' in result ? result.code : 'UNKNOWN_ERROR';
+    const error = 'error' in result ? result.error : 'unknown error';
+    throw new Error(`${prefix}Expected success but received ${code} (${error})`);
   }
 }
 
 export function assertCommandFailure(result: CommandResult, context?: string): asserts result is CommandResultFailure {
   if (result.success) {
     const prefix = context ? `${context}: ` : '';
-    throw new Error(`${prefix}Expected failure but received success (seq=${result.seq})`);
+    const seq = 'seq' in result ? result.seq : 'n/a';
+    throw new Error(`${prefix}Expected failure but received success (seq=${seq})`);
   }
 }
 

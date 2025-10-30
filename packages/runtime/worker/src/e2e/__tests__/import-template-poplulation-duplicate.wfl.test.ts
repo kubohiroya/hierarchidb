@@ -5,6 +5,7 @@ import { MessageChannel } from 'worker_threads';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
@@ -67,7 +68,7 @@ describe('WFL duplicate behavior for imported template', () => {
     const mutationAPI = await client.getMutationAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId) throw new Error('rootId missing');
     const rootId = tree.rootId as NodeId;
@@ -93,8 +94,11 @@ describe('WFL duplicate behavior for imported template', () => {
       nodeIds: [populationFolder.id as NodeId],
       toParentId: rootId,
     });
-    expect(duplicateRes?.success).toBe(true);
-    const duplicateId = duplicateRes?.nodeIds?.[0] as NodeId | undefined;
+    if (!duplicateRes.success) {
+      const message = 'error' in duplicateRes ? duplicateRes.error : 'unknown error';
+      throw new Error(`duplicateNodes failed: ${message}`);
+    }
+    const duplicateId = duplicateRes.nodeIds[0];
     expect(duplicateId).toBeDefined();
 
     const rootChildrenAfterDup = await queryAPI.listChildren(rootId);
@@ -110,18 +114,24 @@ describe('WFL duplicate behavior for imported template', () => {
       nodeIds: [populationFolder.id as NodeId],
       toParentId: populationFolder.id as NodeId,
     });
-    expect(duplicateSelf?.success).toBe(false);
-    expect(duplicateSelf?.error).toContain('Cannot duplicate node into itself');
+    expect(duplicateSelf.success).toBe(false);
+    if (!duplicateSelf.success) {
+      const message = 'error' in duplicateSelf ? duplicateSelf.error : '';
+      expect(message).toContain('Cannot duplicate node into itself');
+    }
 
     const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
-    const shapeNode = templateChildren.find((node) => node.nodeType === 'shape');
+    const shapeNode = templateChildren.find((node) => node.nodeType === toNodeType('shape'));
     if (!shapeNode) throw new Error('Shape child not found');
 
     const duplicateToDescendant = await mutationAPI.duplicateNodes({
       nodeIds: [populationFolder.id as NodeId],
       toParentId: shapeNode.id as NodeId,
     });
-    expect(duplicateToDescendant?.success).toBe(false);
-    expect(duplicateToDescendant?.error).toContain('descendant');
+    expect(duplicateToDescendant.success).toBe(false);
+    if (!duplicateToDescendant.success) {
+      const message = 'error' in duplicateToDescendant ? duplicateToDescendant.error : '';
+      expect(message).toContain('descendant');
+    }
   }, 30_000);
 });

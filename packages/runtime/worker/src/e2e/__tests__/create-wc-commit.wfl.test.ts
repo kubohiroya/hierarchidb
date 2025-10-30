@@ -2,10 +2,10 @@ import 'fake-indexeddb/auto';
 import { describe, it, expect } from 'vitest';
 import * as Comlink from 'comlink';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, NodeType, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
-import { assertCommandSuccess } from '../../test-utils/assertions.js';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
@@ -26,7 +26,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');
@@ -40,10 +40,12 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
       }) as (event: TreeNodeEvent) => void,
     );
 
-    const res = await mutationAPI.createNode({ nodeType: 'folder' as NodeType, treeId, parentId, name: 'Created From Test' });
-    assertCommandSuccess(res, 'createNode');
-    if (!res.nodeId) throw new Error('createNode did not provide nodeId');
-    const newId = res.nodeId as NodeId;
+    const res = await mutationAPI.createNode({ nodeType: toNodeType('folder'), treeId, parentId, name: 'Created From Test' });
+    if (!res.success) {
+      const message = 'error' in res ? res.error : 'unknown error';
+      throw new Error(`createNode failed: ${message}`);
+    }
+    const newId = res.nodeId;
 
     const created = await queryAPI.getNode(newId);
     expect(created).toBeTruthy();

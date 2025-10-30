@@ -1,4 +1,4 @@
-import type { PeerDataBase } from './types.js';
+import type { PeerDataBase } from '@hierarchidb/plugin-service-api/peer-store/types.js';
 
 /**
  * Factory for creating peer-data normalizers that merge plugin specific defaults

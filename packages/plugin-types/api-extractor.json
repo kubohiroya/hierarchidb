@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
-  "mainEntryPointFilePath": "../plugin-ui-sdk/dist/index.d.ts",
+  "mainEntryPointFilePath": "../plugin-service-sdk/dist/index.d.ts",
   "apiReport": { "enabled": false },
   "docModel": { "enabled": false },
   "dtsRollup": {

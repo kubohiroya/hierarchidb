@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CommandEnvelope } from '../../services/command-types.js';
 import type {
-  CommandEnvelope,
   CommitWorkingCopyPayload,
   DuplicateNodesPayload,
   ImportNodesPayload,
+  NodeId,
   PasteNodesPayload,
-} from '../../services/command-types.js';
-import type { NodeId, Timestamp } from '@hierarchidb/common-types';
+  Timestamp,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 
@@ -22,9 +24,8 @@ describe('EntityLifecycleManager dispatch', () => {
       commandId: 'cmd-commit',
       groupId: 'grp',
       kind: 'commitWorkingCopy',
-      payload: { workingCopyId },
+      payload: { workingCopyId, expectedUpdatedAt: Date.now() as Timestamp },
       issuedAt: Date.now() as Timestamp,
-      type: 'commitWorkingCopy',
     };
   }
 
@@ -35,37 +36,36 @@ describe('EntityLifecycleManager dispatch', () => {
       kind: 'duplicateNodes',
       payload: { nodeIds: ['a' as NodeId], toParentId: 'p' as NodeId },
       issuedAt: Date.now() as Timestamp,
-      type: 'duplicateNodes',
     };
   }
 
   function makePasteEnvelope(): CommandEnvelope<'pasteNodes', PasteNodesPayload> {
+    const nodes = {} as Record<NodeId, TreeNode>;
     return {
       commandId: 'cmd-paste',
       groupId: 'grp',
       kind: 'pasteNodes',
       payload: {
-        nodes: {},
+        nodes,
         nodeIds: [],
         toParentId: 'p' as NodeId,
       },
       issuedAt: Date.now() as Timestamp,
-      type: 'pasteNodes',
     };
   }
 
   function makeImportEnvelope(): CommandEnvelope<'importNodes', ImportNodesPayload> {
+    const nodes = {} as Record<NodeId, TreeNode>;
     return {
       commandId: 'cmd-import',
       groupId: 'grp',
       kind: 'importNodes',
       payload: {
-        nodes: {},
+        nodes,
         nodeIds: [],
         toParentId: 'p' as NodeId,
       },
       issuedAt: Date.now() as Timestamp,
-      type: 'importNodes',
     };
   }
 

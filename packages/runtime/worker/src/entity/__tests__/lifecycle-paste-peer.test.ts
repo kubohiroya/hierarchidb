@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-types';
+import type {
+  CommandEnvelope,
+  NodeId,
+  NodeType,
+  PasteNodesPayload,
+  Timestamp,
+  TreeNode,
+} from '@hierarchidb/common-types';
+import { toNodeId, toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
-import type { CommandEnvelope, PasteNodesPayload } from '../../services/command-types.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
 import type { PeerEntity, PeerStore } from '../store.js';
@@ -29,14 +36,14 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
         peerMap.delete(id);
       },
     };
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     storeRegistry.registerPeer(folderType, store);
 
-    const sourceId = 'src-a' as NodeId;
-    const targetId = 'dst-a' as NodeId;
+    const sourceId = toNodeId('src-a');
+    const targetId = toNodeId('dst-a');
     const sourceNode: TreeNode = {
       id: sourceId,
-      parentId: 'parent' as NodeId,
+      parentId: toNodeId('parent'),
       nodeType: folderType,
       name: 'Source',
       depth: 1,
@@ -53,7 +60,7 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
     const payload: PasteNodesPayload = {
       nodes: { [sourceId]: sourceNode },
       nodeIds: [sourceId],
-      toParentId: 'target-parent' as NodeId,
+      toParentId: toNodeId('target-parent'),
     };
     const envelope: CommandEnvelope<'pasteNodes', PasteNodesPayload> = {
       commandId: 'cmd-paste',
@@ -61,7 +68,6 @@ describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
       kind: 'pasteNodes',
       payload,
       issuedAt: Date.now() as Timestamp,
-      type: 'pasteNodes',
     };
 
     await mgr.onPasteNodes(envelope);

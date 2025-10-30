@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type {
+  CommandEnvelope,
+  DuplicateNodesPayload,
+  ImportNodesPayload,
+  NodeId,
+  NodeType,
+  PasteNodesPayload,
+  Timestamp,
+  TreeNode,
+} from '@hierarchidb/common-types';
+import { toNodeId, toNodeType, toTreeId } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
-import type { CommandEnvelope, PasteNodesPayload } from '../../services/command-types.js';
 import type { CommandProcessor } from '../../services/CommandProcessor.js';
 
 describe('Entity lifecycle notifications from services', () => {
@@ -10,7 +19,7 @@ describe('Entity lifecycle notifications from services', () => {
   });
 
   it('duplicateNodes notifies lifecycle when flag ON', async () => {
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     const nodeMap = new Map<NodeId, TreeNode>();
     const sourceId = 'a' as NodeId;
     const parentId = 'p' as NodeId;
@@ -39,11 +48,11 @@ describe('Entity lifecycle notifications from services', () => {
 
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
-    } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
+    };
     const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
+      .mockReturnValue(lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>);
 
     const commandStub: Pick<CommandProcessor, 'processCommand'> = {
       processCommand: vi.fn(),
@@ -51,7 +60,8 @@ describe('Entity lifecycle notifications from services', () => {
 
     const { TreeMutationService } = await import('../../services/TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
-    const result = await svc.duplicateNodes({ nodeIds: [sourceId], toParentId: parentId });
+    const duplicatePayload: DuplicateNodesPayload = { nodeIds: [sourceId], toParentId: parentId };
+    const result = await svc.duplicateNodes(duplicatePayload);
     expect(result.success).toBe(true);
     expect(lifecycleMock.handleCommand).toHaveBeenCalled();
 
@@ -59,7 +69,7 @@ describe('Entity lifecycle notifications from services', () => {
   });
 
   it('pasteNodes notifies lifecycle when flag ON', async () => {
-    const folderType = 'folder' as NodeType;
+    const folderType = toNodeType('folder');
     const core: Pick<CoreDB, 'listChildren' | 'createNode' | 'bulkCreateNodes' | 'getNode'> = {
       listChildren: vi.fn(async () => []),
       createNode: vi.fn(async (node: TreeNode) => node.id),
@@ -68,11 +78,11 @@ describe('Entity lifecycle notifications from services', () => {
     };
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
-    } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
+    };
     const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
+      .mockReturnValue(lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>);
 
     const commandStub: Pick<CommandProcessor, 'processCommand'> = {
       processCommand: vi.fn(),
@@ -82,8 +92,8 @@ describe('Entity lifecycle notifications from services', () => {
     const svc = new TreeMutationService(core as unknown as CoreDB, commandStub as CommandProcessor);
     const payload: PasteNodesPayload = {
       nodes: {
-        a: {
-          id: 'a' as NodeId,
+        [toNodeId('a')]: {
+          id: toNodeId('a'),
           parentId: 'src-parent' as NodeId,
           nodeType: folderType,
           name: 'A',
@@ -92,8 +102,8 @@ describe('Entity lifecycle notifications from services', () => {
           updatedAt: Date.now(),
           version: 1,
         },
-        b: {
-          id: 'b' as NodeId,
+        [toNodeId('b')]: {
+          id: toNodeId('b'),
           parentId: 'src-parent' as NodeId,
           nodeType: folderType,
           name: 'B',
@@ -103,7 +113,7 @@ describe('Entity lifecycle notifications from services', () => {
           version: 1,
         },
       },
-      nodeIds: ['a' as NodeId, 'b' as NodeId],
+      nodeIds: [toNodeId('a'), toNodeId('b')],
       toParentId: 'p' as NodeId,
     };
     const envelope: CommandEnvelope<'pasteNodes', PasteNodesPayload> = {
@@ -112,10 +122,8 @@ describe('Entity lifecycle notifications from services', () => {
       kind: 'pasteNodes',
       payload,
       issuedAt: Date.now() as Timestamp,
-      type: 'pasteNodes',
     };
     const result = await svc.pasteNodes(envelope);
-    expect(r.success).toBe(true);
     expect(result.success).toBe(true);
     expect(lifecycleMock.handleCommand).toHaveBeenCalled();
 
@@ -130,19 +138,24 @@ describe('Entity lifecycle notifications from services', () => {
     };
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
-    } satisfies Pick<InstanceType<typeof EntityLifecycleManager>, 'handleCommand'>;
+    };
     const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
-      .mockReturnValue(lifecycleMock as unknown as EntityLifecycleManager);
+      .mockReturnValue(lifecycleMock as unknown as ReturnType<typeof EntityLifecycleManager.getSingleton>);
 
     const { ImportExportService } = await import('../../services/ImportExportService.js');
     const svc = await ImportExportService.getSingleton(core as unknown as CoreDB);
+    const importPayload: ImportNodesPayload = {
+      nodes: {},
+      nodeIds: [],
+      toParentId: 'p' as NodeId,
+    };
     const result = await svc.importNodes({
       data: { nodes: [{ name: 'A' }, { name: 'B' }] },
       format: 'json',
-      treeId: 'r' as NodeId,
-      targetParentId: 'p' as NodeId,
+      treeId: toTreeId('r'),
+      targetParentId: importPayload.toParentId,
       validateFirst: false,
     });
     expect(result.success).toBe(true);

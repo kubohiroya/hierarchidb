@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 import { storeRegistry } from '../store-registry.js';
 import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '../store.js';
 
 describe('Lifecycle: Group/Relations duplication via idMap', () => {
-  const folderType = 'folder' as NodeType;
+  const folderType = toNodeType('folder');
 
   beforeEach(() => {
     vi.resetModules();
@@ -52,9 +53,8 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
       commandId: 'cmd-g',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: {},
-      issuedAt: Date.now(),
-      type: 'duplicateNodes',
+      payload: { nodeIds: [], toParentId: 'root' as NodeId },
+      issuedAt: Date.now() as Timestamp,
     });
 
     expect(upserts.length).toBe(1);
@@ -109,9 +109,8 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
       commandId: 'cmd-r',
       groupId: 'g',
       kind: 'duplicateNodes',
-      payload: {},
-      issuedAt: Date.now(),
-      type: 'duplicateNodes',
+      payload: { nodeIds: [], toParentId: 'root' as NodeId },
+      issuedAt: Date.now() as Timestamp,
     });
 
     expect(bulk.length).toBe(1);

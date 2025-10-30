@@ -9,7 +9,10 @@ describe('ZE-4: logging and event sanitization', () => {
     const invalid: any = { commandId: 'c', groupId: 'g', payload: {}, issuedAt: Date.now() };
     const result = await cp.processCommand(invalid);
     expect(result.success).toBe(false);
-    if (!result.success) expect(result.code).toBe('VALIDATION_ERROR');
+    if (!result.success) {
+      const code = 'code' in result ? result.code : undefined;
+      expect(code).toBe('VALIDATION_ERROR');
+    }
     expect(cp.getLastEvent()).toBeUndefined();
   });
 

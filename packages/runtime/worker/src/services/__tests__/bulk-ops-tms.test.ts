@@ -8,13 +8,14 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 import type { CommandProcessor } from '../CommandProcessor.js';
 
 const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
-  id: id as NodeId,
-  parentId: parentId as NodeId,
-  nodeType: 'folder' as NodeType,
+  id: toNodeId(id),
+  parentId: toNodeId(parentId),
+  nodeType: toNodeType('folder'),
   name,
   depth: 1,
   createdAt: Date.now(),
@@ -32,18 +33,18 @@ describe('TreeMutationService bulk paths', () => {
       bulkCreateNodes: vi.fn(async () => undefined),
     };
     const processor: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(async () => ({ success: true, seq: 1 } satisfies CommandResult)),
+      processCommand: vi.fn(async () => ({ success: true, seq: 1 } as CommandResult)),
     };
     const { TreeMutationService } = await import('../TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as CommandProcessor);
 
     const payload: PasteNodesPayload = {
       nodes: {
-        ['a' as NodeId]: makeNode('a', 'x', 'A'),
-        ['b' as NodeId]: makeNode('b', 'x', 'B'),
-      } satisfies Record<NodeId, TreeNode>,
-      nodeIds: ['a' as NodeId, 'b' as NodeId],
-      toParentId: 'p' as NodeId,
+        [toNodeId('a')]: makeNode('a', 'x', 'A'),
+        [toNodeId('b')]: makeNode('b', 'x', 'B'),
+      },
+      nodeIds: [toNodeId('a'), toNodeId('b')],
+      toParentId: toNodeId('p'),
       onNameConflict: 'error',
     };
     const env: CommandEnvelope<'pasteNodes', PasteNodesPayload> = {
@@ -52,7 +53,6 @@ describe('TreeMutationService bulk paths', () => {
       kind: 'pasteNodes',
       payload,
       issuedAt: Date.now() as Timestamp,
-      type: 'pasteNodes',
     };
     const r = await svc.pasteNodes(env);
     expect(r.success).toBe(true);

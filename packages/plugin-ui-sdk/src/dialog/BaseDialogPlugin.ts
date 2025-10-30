@@ -6,7 +6,7 @@ import type {
 } from '@hierarchidb/common-types';
 import { NodeDialogPlugin } from './NodeDialogPlugin.js';
 import { wrapDialogStepComponent } from './wrapDialogStepComponent.js';
-import { NodeDialogStepDefinition } from '../types/plugin-pointcuts.js';
+import { NodeDialogStepDefinition } from '../types.js';
 
 export interface DialogStepConfig<TProps extends object> {
   id: string;

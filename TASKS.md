@@ -131,6 +131,20 @@
   - [ ] ドキュメント等の参照があれば更新を検討する
 - ロールバック手順：新設ファイルを削除し `packages/ui/plugin-dialog/src/components/PluginDialogRoute.tsx` を復元、`index.ts` のエクスポートと app の import を元に戻す
 
+33) runtime-worker test type fixes（P0）
+- ブランチ: `refactor/worker/test-type-fixes`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/runtime-worker`, `vitest`, `packages/runtime-worker/src/__tests__`, `packages/runtime-worker/src/e2e/__tests__`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban と運用ログに start/progress/done を記録し、ブランチ作業状況とロールバック手順を明記する
+  - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` で発生するテストコード由来の型エラーのうち修正方針が自明なものをテスト側（必要に応じてテスト補助ユーティリティ）で解消し、曖昧なケースは TODO として記録する
+  - [x] 修正後に `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0 を確認、結果を運用ログに追記する
+  - [ ] 差分がテストコードと最小限の補助設定（例: tsconfig, テスト用ユーティリティ）に収まっていることを確認し、外れる場合は理由を記録する
+- チェックリスト:
+  - [x] 既存の typecheck エラーログを一覧化し、テスト起因の自明な修正対象を特定する
+  - [x] テストコードへ必要な型注釈・モック更新・ユーティリティ調整を適用し、暫定対応は TODO で可視化する
+  - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` の再実行結果を運用ログに記録する
+- ロールバック手順：テストコードへの変更を revert（または TODO を残した状態に戻し）、typecheck で再びエラーが確認できることをもって復旧とする
+
 24) FEATURE_FLAGS 廃止準備（P0）
 - ブランチ: `chore/config/remove-feature-flags`（sandbox 制約で `main` 上で作業）
 - 依存: `config/feature-flags.ts`, `scripts/env_vite.sh`
@@ -6826,6 +6840,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-29 15:07 command: pnpm --filter @hierarchidb/ui-dialog build — exit 0。dist 配下のみ生成物が出力されることを確認。
 - 2025-10-29 15:08 command: pnpm --filter @hierarchidb/runtime-client build — exit 0。
 - 2025-10-29 15:10 command: pnpm --filter @hierarchidb/plugin-registry build — exit 0（外部依存警告のみ、従来通り）。
+- 2025-10-29 15:40 progress: chore/dev/hmr-alias-whitelist — `packages/plugin-service-sdk` を新設し、plugin-ui-sdk から handlers/peer-store/types/working-copy/dialog/download を移設。`tsconfig.base.json` の paths と workspace 設定を更新。
+- 2025-10-29 15:46 progress: chore/dev/hmr-alias-whitelist — plugin-ui-sdk を plugin-service-sdk 再エクスポートに縮約し、plugin-types の API Extractor 参照先・依存を plugin-service-sdk へ差し替え。plugin-runtime-services ほかの型参照も新 SDK に更新。
+- 2025-10-29 15:50 command: pnpm --filter @hierarchidb/plugin-service-sdk build — exit 0。
+- 2025-10-29 15:50 command: pnpm --filter @hierarchidb/plugin-ui-sdk build — exit 0。
+- 2025-10-29 15:51 command: pnpm --filter @hierarchidb/plugin-types build — exit 0（API Extractor 警告は既知の ast-types/依存未生成のもの）。
+- 2025-10-29 15:52 command: pnpm --filter @hierarchidb/plugin-runtime-services build — exit 0。
+- 2025-10-29 15:58 blocked: pnpm install --lockfile-only — exit 124。サンドボックス環境が npm registry へ到達できず ENOTFOUND 多発でタイムアウト。workspace 依存のみ変更のため lock 更新は後続で実行予定。
+- 2025-10-29 16:12 progress: chore/dev/hmr-alias-whitelist — plugin-runtime-services が plugin-types ではなく plugin-service-sdk から headless 型を参照するよう置き換え。BaseEntityService の import を更新し、package.json から plugin-types 依存を除去。
+- 2025-10-29 16:13 command: pnpm --filter @hierarchidb/plugin-runtime-services build — exit 0。
 - 2025-10-29 15:24 command: node --loader ts-node/esm app/scripts/generate-favicon.ts — exit 0。favicon PNG/ICO を再生成し、build 前提資材を更新。
 - 2025-10-29 15:25 command: pnpm -C app run generate:nojekyll — exit 0。`dist/assets/.nojekyll` を再作成。
 - 2025-10-29 15:26 command: pnpm --filter @hierarchidb/basemap-plugin build — exit 0。worker/database エントリを含む dist 出力を確認。
@@ -6841,3 +6864,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-29 15:39 command: pnpm -C app exec vite build --config vite.config.ts --logLevel info — exit 0。production build が通過し、`Unexpected token 'this'` 事象を解消。
 - 2025-10-29 15:58 command: pnpm -C app exec vite build --config vite.preview.config.ts --logLevel info — exit 0。preview 用 `build/client` アセットを生成。
 - 2025-10-29 16:04 blocked: pnpm -C app preview -- --host 127.0.0.1 --port 4173 — exit 1（EPERM: sandbox でポート 4173 の listen が拒否され、プレビューサーバー起動不可。ローカル権限許可後に再試行が必要）。
+- 2025-10-30 13:45 start: refactor/plugin-sdk/api-separation — plugin-* SDK から型/インターフェイスを抽出し、専用 *-api パッケージへ移設するタスクに着手。DoD: 新パッケージ追加・依存関係更新・`pnpm --filter @hierarchidb/*-api build` 成功・ログ更新。
+- 2025-10-30 14:32 progress: refactor/plugin-sdk/api-separation — `packages/plugin-service-api` を作成し、`plugin-service-sdk/src/types` および `peer-store`/`working-copy` の型定義を移動。`tsconfig.base.json` と `pnpm-workspace.yaml` にエイリアス/ワークスペース登録を追加。
+- 2025-10-30 14:41 progress: refactor/plugin-sdk/api-separation — `plugin-service-sdk` の実装を API 参照に差し替え、`PluginExtensionRegistry` クラスを SDK 側へ分離。`plugin-runtime-services` / `plugin-types` などの import・依存を `@hierarchidb/plugin-service-api` へ更新。
+- 2025-10-30 14:58 blocked: pnpm install --no-frozen-lockfile — exit 1（registry.npmjs.org への DNS 解決が ENOTFOUND で失敗し、node_modules 再生成が中断）。後続でネットワーク許可後に再実行が必要。
+- 2025-10-30 15:04 blocked: pnpm --filter @hierarchidb/plugin-service-api build — exit 1（tsdown 未解決。前段の install 失敗で node_modules が空になっているため、依存復旧後に再試行）。
+- 2025-10-30 15:18 progress: refactor/plugin-sdk/api-separation — React 依存のダイアログ基底クラスとラッパーを `@hierarchidb/plugin-ui-sdk` へ移設し、`plugin-service-sdk` はヘッドレス実装のみとした。エクスポート/依存関係を整理。
+- 2025-10-30 17:40 start: refactor/worker/test-type-fixes — runtime-worker のテスト型不整合（自明な修正）対応に着手。DoD: TASKS/Kanban & 運用ログ更新、テストコード内の自明な型修正、`pnpm --filter @hierarchidb/runtime-worker typecheck` exit 0、差分をテストファイルに限定、ロールバック記載。
+- 2025-10-30 17:40 note: git checkout -b refactor/worker/test-type-fixes — sandbox が `.git/refs/heads/refactor/worker` ディレクトリ作成を拒否しブランチ生成失敗。`main` 上で作業継続。
+- 2025-10-30 18:05 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 2（大量のテスト型エラーが残存: pasteNodes payload・EntityLifecycleManager 型等。自明対応外の差分あり）。
+- 2025-10-30 18:31 progress: refactor/worker/test-type-fixes — EntityLifecycle/CommandProcessor/Comlink 周辺を含むテスト・補助ユーティリティ・tsconfig を更新し、既存 type エラーを整理して再実行対象を明確化。
+- 2025-10-30 18:31 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。

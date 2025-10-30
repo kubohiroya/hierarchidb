@@ -5,13 +5,25 @@ import { MessageChannel } from 'worker_threads';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import type { ImportData } from '@hierarchidb/common-api';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
+import type {
+  CommandEnvelope,
+  CommandResult,
+  NodeId,
+  PasteNodesPayload,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
 
+type ExtendedTreeMutationAPI = import('@hierarchidb/common-api').TreeMutationAPI & {
+  pasteNodes(command: CommandEnvelope<'pasteNodes', PasteNodesPayload>): Promise<CommandResult>;
+};
+
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
-  getMutationAPI(): Promise<import('@hierarchidb/common-api').TreeMutationAPI>;
+  getMutationAPI(): Promise<ExtendedTreeMutationAPI>;
   getImportExportAPI(): Promise<import('@hierarchidb/common-api').ImportExportAPI>;
 };
 
@@ -61,37 +73,36 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
 async function buildClipboard(
   queryAPI: import('@hierarchidb/common-api').TreeQueryAPI,
   rootId: NodeId,
-): Promise<{ nodes: Record<string, any>; nodeIds: NodeId[] }> {
+): Promise<{ nodes: Record<NodeId, TreeNode>; nodeIds: NodeId[] }> {
   const rootNode = await queryAPI.getNode(rootId);
   if (!rootNode) throw new Error(`Node ${rootId} not found`);
-  const result: Record<string, any> = { [rootNode.id]: { ...rootNode } };
-  const order: NodeId[] = [rootNode.id as NodeId];
-  const stack: NodeId[] = [rootNode.id as NodeId];
+  const result = {} as Record<NodeId, TreeNode>;
+  const rootNodeId = rootNode.id as NodeId;
+  result[rootNodeId] = { ...rootNode };
+  const order: NodeId[] = [rootNodeId];
+  const stack: NodeId[] = [rootNodeId];
   while (stack.length > 0) {
     const current = stack.pop()!;
     const children = await queryAPI.listChildren(current);
     for (const child of children) {
-      result[child.id] = { ...child };
-      order.push(child.id as NodeId);
-      stack.push(child.id as NodeId);
+      const childId = child.id as NodeId;
+      result[childId] = { ...child };
+      order.push(childId);
+      stack.push(childId);
     }
   }
   return { nodes: result, nodeIds: order };
 }
 
-function createPasteEnvelope(payload: {
-  nodes: Record<string, any>;
-  nodeIds: NodeId[];
-  toParentId: NodeId;
-  onNameConflict?: 'error' | 'auto-rename';
-}) {
+function createPasteEnvelope(
+  payload: CommandEnvelope<'pasteNodes', PasteNodesPayload>['payload'],
+): CommandEnvelope<'pasteNodes', PasteNodesPayload> {
   return {
     commandId: randomUUID(),
     groupId: randomUUID(),
-    kind: 'pasteNodes' as const,
+    kind: 'pasteNodes',
     payload,
     issuedAt: Date.now(),
-    type: 'pasteNodes' as const,
   };
 }
 
@@ -105,7 +116,7 @@ describe('WFL paste behavior for imported template', () => {
     const mutationAPI = await client.getMutationAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = 'r' as TreeId;
+    const treeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId) throw new Error('rootId missing');
     const rootId = tree.rootId as NodeId;
@@ -135,11 +146,14 @@ describe('WFL paste behavior for imported template', () => {
         onNameConflict: 'auto-rename',
       }),
     );
-    expect(pasteSelf?.success).toBe(true);
-    expect(pasteSelf?.newNodeIds?.length).toBe(clipboard.nodeIds.length);
+    if (!pasteSelf.success) {
+      const message = 'error' in pasteSelf ? pasteSelf.error : 'unknown error';
+      throw new Error(`pasteNodes self failed: ${message}`);
+    }
+    expect(pasteSelf.newNodeIds?.length).toBe(clipboard.nodeIds.length);
 
     const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
-    const shapeNode = templateChildren.find((node) => node.nodeType === 'shape');
+    const shapeNode = templateChildren.find((node) => node.nodeType === toNodeType('shape'));
     if (!shapeNode) throw new Error('Shape child not found');
 
     const pasteToDescendant = await mutationAPI.pasteNodes(
@@ -150,7 +164,7 @@ describe('WFL paste behavior for imported template', () => {
         onNameConflict: 'auto-rename',
       }),
     );
-    expect(pasteToDescendant?.success).toBe(true);
+    expect(pasteToDescendant.success).toBe(true);
 
     const pasteRoot = await mutationAPI.pasteNodes(
       createPasteEnvelope({
@@ -160,8 +174,11 @@ describe('WFL paste behavior for imported template', () => {
         onNameConflict: 'auto-rename',
       }),
     );
-    expect(pasteRoot?.success).toBe(true);
-    const pastedRootId = pasteRoot?.newNodeIds?.[0];
+    if (!pasteRoot.success) {
+      const message = 'error' in pasteRoot ? pasteRoot.error : 'unknown error';
+      throw new Error(`pasteNodes to root failed: ${message}`);
+    }
+    const pastedRootId = pasteRoot.newNodeIds?.[0];
     expect(pastedRootId).toBeDefined();
 
     const rootChildrenAfterPaste = await queryAPI.listChildren(rootId);
