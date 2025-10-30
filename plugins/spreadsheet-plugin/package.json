@@ -63,13 +63,14 @@
   "dependencies": {
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@types/pako": "^2.0.3",
-    "pako": "^2.1.0"
+    "pako": "^2.1.0",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "turbo": {
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/ui-plugin-dialog#build",
+          "@hierarchidb/plugin-base#build",
           "@hierarchidb/plugin-runtime-services#build"
         ]
       }
@@ -88,14 +89,14 @@
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "i18next": "22.5.0",
     "react": "^18.3.1",
-    "react-i18next": "12.3.1"
+    "react-i18next": "12.3.1",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -110,7 +111,6 @@
     "@hierarchidb/ui-tabular-extract": "workspace:*",
     "@hierarchidb/ui-file": "workspace:*",
     "@hierarchidb/util": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@mui/icons-material": "^7.3.2",
@@ -122,7 +122,8 @@
     "fake-indexeddb": "^6.1.0",
     "react-i18next": "12.3.1",
     "typescript": "workspace:^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -130,7 +131,7 @@
       "name": "Spreadsheet Plugin",
       "icon": {
         "mui": "Assessment",
-        "emoji": "\ud83d\udcc8",
+        "emoji": "📈",
         "color": "#dcbc50",
         "component": {
           "specifier": "@hierarchidb/spreadsheet-plugin/icon",

@@ -1,6 +1,6 @@
-# @hierarchidb/runtime-dialog
+# @hierarchidb/plugin-ui-host
 
-Common dialog components and utilities for HierarchiDB plugin system.
+Host-side UI components and utilities for the HierarchiDB plugin dialog system.
 
 ## Overview
 

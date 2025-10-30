@@ -1,0 +1,48 @@
+{
+  "name": "@hierarchidb/plugin-base",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Headless orchestration utilities for HierarchiDB plugin dialogs",
+  "author": "HierarchiDB Contributors",
+  "license": "MIT",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --config ../../tsdown.config.ts --outDir dist",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "clean": "rm -rf dist",
+    "clean:force": "rm -rf dist node_modules tsconfig.tsbuildinfo",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "comlink": "^4.4.2",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/ui-dialog": "workspace:*",
+    "@hierarchidb/ui-icon": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "jotai": "^2.11.2"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4",
+    "typescript": "workspace:^5.9.3",
+    "@types/react": "^18.3.1",
+    "@testing-library/react": "^16.1.0",
+    "jotai": "^2.11.2"
+  },
+  "turbo": {
+    "pipeline": {}
+  }
+}

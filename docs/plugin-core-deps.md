@@ -1,10 +1,11 @@
 ```mermaid
 graph LR
   %% Core SDK layer
-  PTS["@hierarchidb/plugin-types"]
+  PSA["@hierarchidb/plugin-service-api"]
   PSS["@hierarchidb/plugin-service-sdk"]
   PUI["@hierarchidb/plugin-ui-sdk"]
   PRS["@hierarchidb/plugin-runtime-services"]
+  PTS["@hierarchidb/plugin-types"]
   PR["@hierarchidb/plugin-registry"]
 
   %% Runtime consumers
@@ -29,28 +30,25 @@ graph LR
   AUTH["@hierarchidb/auth-recovery"]
 
   %% Edges from core SDK packages
-  PTS --> PSS
-  PTS --> CT
-  PTS --> DL
+  PSA --> CT
 
+  PSS --> PSA
   PSS --> CT
-  PSS --> CA
-  PSS --> BT
   PSS --> DL
 
   PUI --> PSS
+  PUI --> PSA
   PUI --> CT
-  PUI --> CA
-  PUI --> BT
-  PUI --> DL
 
-  PRS --> PSS
+  PRS --> PSA
   PRS --> CT
   PRS --> DL
 
+  PTS --> PSA
+
   %% Runtime dependencies
   RW --> PR
-  RW --> PTS
+  RW --> PSA
   RW --> CA
   RW --> CT
   RW --> FR
@@ -69,4 +67,7 @@ graph LR
   RC --> RW
   RC --> CA
   RC --> CT
+
+  PR --> PSA
+  PR --> PRS
 ```

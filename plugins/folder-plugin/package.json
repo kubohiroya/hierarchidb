@@ -59,7 +59,10 @@
     "coverage": "vitest run --coverage",
     "dev:tsc": "tsc --watch"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/plugin-base": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*"
+  },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -72,7 +75,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -80,7 +83,8 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*"
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@mui/icons-material": "^7.3.2",
@@ -97,7 +101,7 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/components": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
@@ -105,7 +109,8 @@
     "@hierarchidb/ui-dialog": "workspace:*",
     "@hierarchidb/util": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
-    "@hierarchidb/plugin-service-api": "workspace:*"
+    "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "keywords": [
     "hierarchidb",
@@ -123,7 +128,7 @@
       "name": "Folder Plugin",
       "icon": {
         "mui": "Folder",
-        "emoji": "\ud83d\udcc1",
+        "emoji": "📁",
         "color": "#c0eeff",
         "component": {
           "specifier": "@hierarchidb/folder-plugin/icon",

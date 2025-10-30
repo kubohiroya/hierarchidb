@@ -1,6 +1,6 @@
 # Package Dependency Graph
 
-Generated on: 2025-10-30T12:48:20.355Z
+Generated on: 2025-10-30T16:23:35.294Z
 
 - Scope: workspace internal dependencies only
 - Arrows point from depender → dependency
@@ -46,58 +46,60 @@ graph LR
     N22["@hierarchidb/tabular-store"]
     N23["@hierarchidb/tag"]
   end
+  subgraph G_packages_plugin_base["packages/plugin-base"]
+    N24["@hierarchidb/plugin-base"]
+  end
   subgraph G_packages_plugin_registry["packages/plugin-registry"]
-    N24["@hierarchidb/plugin-registry"]
+    N25["@hierarchidb/plugin-registry"]
   end
   subgraph G_packages_plugin_runtime_services["packages/plugin-runtime-services"]
-    N25["@hierarchidb/plugin-runtime-services"]
+    N26["@hierarchidb/plugin-runtime-services"]
   end
   subgraph G_packages_plugin_service_api["packages/plugin-service-api"]
-    N26["@hierarchidb/plugin-service-api"]
+    N27["@hierarchidb/plugin-service-api"]
   end
   subgraph G_packages_plugin_service_sdk["packages/plugin-service-sdk"]
-    N27["@hierarchidb/plugin-service-sdk"]
+    N28["@hierarchidb/plugin-service-sdk"]
   end
-  subgraph G_packages_plugin_types["packages/plugin-types"]
-    N28["@hierarchidb/plugin-types"]
+  subgraph G_packages_plugin_ui_host["packages/plugin-ui-host"]
+    N29["@hierarchidb/plugin-ui-host"]
   end
   subgraph G_packages_plugin_ui_sdk["packages/plugin-ui-sdk"]
-    N29["@hierarchidb/plugin-ui-sdk"]
+    N30["@hierarchidb/plugin-ui-sdk"]
   end
   subgraph G_packages_runtime["packages/runtime"]
-    N30["@hierarchidb/runtime-worker"]
+    N31["@hierarchidb/runtime-worker"]
   end
   subgraph G_packages_runtime_client["packages/runtime/client"]
-    N31["@hierarchidb/runtime-client"]
+    N32["@hierarchidb/runtime-client"]
   end
   subgraph G_packages_tools["packages/tools"]
-    N32["@hierarchidb/analyze-licenses"]
-    N33["@hierarchidb/tools"]
-    N34["@hierarchidb/tools-build-scripts"]
-    N35["@hierarchidb/tools-codemods"]
-    N36["@hierarchidb/tools-plugin-manifest-loader"]
-    N37["@hierarchidb/tools-schemas"]
+    N33["@hierarchidb/analyze-licenses"]
+    N34["@hierarchidb/tools"]
+    N35["@hierarchidb/tools-build-scripts"]
+    N36["@hierarchidb/tools-codemods"]
+    N37["@hierarchidb/tools-plugin-manifest-loader"]
+    N38["@hierarchidb/tools-schemas"]
   end
   subgraph G_packages_ui["packages/ui"]
-    N38["@hierarchidb/memory-usage"]
-    N39["@hierarchidb/ui-accordion-config"]
-    N40["@hierarchidb/ui-auth"]
-    N41["@hierarchidb/ui-country-select"]
-    N42["@hierarchidb/ui-data-grid"]
-    N43["@hierarchidb/ui-datasource"]
-    N44["@hierarchidb/ui-dialog"]
-    N45["@hierarchidb/ui-file"]
-    N46["@hierarchidb/ui-floating-window"]
-    N47["@hierarchidb/ui-i18n"]
-    N48["@hierarchidb/ui-icon"]
-    N49["@hierarchidb/ui-layout"]
-    N50["@hierarchidb/ui-license"]
-    N51["@hierarchidb/ui-lru-splitview"]
-    N52["@hierarchidb/ui-map"]
-    N53["@hierarchidb/ui-monitoring"]
-    N54["@hierarchidb/ui-navigation"]
-    N55["@hierarchidb/ui-plugin-basic-info"]
-    N56["@hierarchidb/ui-plugin-dialog"]
+    N39["@hierarchidb/memory-usage"]
+    N40["@hierarchidb/ui-accordion-config"]
+    N41["@hierarchidb/ui-auth"]
+    N42["@hierarchidb/ui-country-select"]
+    N43["@hierarchidb/ui-data-grid"]
+    N44["@hierarchidb/ui-datasource"]
+    N45["@hierarchidb/ui-dialog"]
+    N46["@hierarchidb/ui-file"]
+    N47["@hierarchidb/ui-floating-window"]
+    N48["@hierarchidb/ui-i18n"]
+    N49["@hierarchidb/ui-icon"]
+    N50["@hierarchidb/ui-layout"]
+    N51["@hierarchidb/ui-license"]
+    N52["@hierarchidb/ui-lru-splitview"]
+    N53["@hierarchidb/ui-map"]
+    N54["@hierarchidb/ui-monitoring"]
+    N55["@hierarchidb/ui-navigation"]
+    N56["@hierarchidb/ui-plugin-basic-info"]
     N57["@hierarchidb/ui-routing"]
     N58["@hierarchidb/ui-search-result-window"]
     N59["@hierarchidb/ui-tabular-extract"]
@@ -132,20 +134,19 @@ graph LR
   N0 --> N1
   N0 --> N16
   N0 --> N21
-  N0 --> N24
-  N0 --> N28
+  N0 --> N25
   N0 --> N29
   N0 --> N30
   N0 --> N31
-  N0 --> N40
-  N0 --> N44
-  N0 --> N47
+  N0 --> N32
+  N0 --> N41
+  N0 --> N45
   N0 --> N48
   N0 --> N49
   N0 --> N5
-  N0 --> N52
-  N0 --> N54
-  N0 --> N56
+  N0 --> N50
+  N0 --> N53
+  N0 --> N55
   N0 --> N57
   N0 --> N6
   N0 --> N60
@@ -189,83 +190,84 @@ graph LR
   N23 --> N5
   N23 --> N7
   N23 --> N70
-  N25 --> N12
-  N25 --> N26
-  N25 --> N30
-  N25 --> N7
+  N24 --> N32
+  N24 --> N45
+  N24 --> N49
+  N24 --> N5
+  N24 --> N7
+  N26 --> N12
+  N26 --> N27
+  N26 --> N31
   N26 --> N7
-  N27 --> N12
-  N27 --> N26
-  N27 --> N5
   N27 --> N7
   N28 --> N12
-  N28 --> N26
+  N28 --> N27
+  N28 --> N5
   N28 --> N7
-  N29 --> N12
-  N29 --> N27
+  N29 --> N24
+  N29 --> N31
+  N29 --> N32
+  N29 --> N45
+  N29 --> N49
   N29 --> N5
+  N29 --> N56
   N29 --> N7
-  N30 --> N11
   N30 --> N12
-  N30 --> N13
-  N30 --> N15
-  N30 --> N16
-  N30 --> N17
-  N30 --> N20
-  N30 --> N21
-  N30 --> N22
-  N30 --> N23
-  N30 --> N24
+  N30 --> N27
   N30 --> N28
   N30 --> N5
   N30 --> N7
-  N30 --> N70
-  N30 --> N9
-  N31 --> N30
+  N31 --> N11
+  N31 --> N12
+  N31 --> N13
+  N31 --> N15
+  N31 --> N16
+  N31 --> N17
+  N31 --> N20
+  N31 --> N21
+  N31 --> N22
+  N31 --> N23
+  N31 --> N25
+  N31 --> N27
   N31 --> N5
   N31 --> N7
-  N34 --> N36
-  N38 --> N70
+  N31 --> N70
+  N31 --> N9
+  N32 --> N31
+  N32 --> N5
+  N32 --> N7
+  N35 --> N37
+  N39 --> N70
   N4 --> N12
   N4 --> N5
   N4 --> N7
   N4 --> N9
-  N40 --> N6
-  N42 --> N22
-  N42 --> N7
-  N42 --> N70
-  N44 --> N7
-  N45 --> N70
-  N49 --> N60
+  N41 --> N6
+  N43 --> N22
+  N43 --> N7
+  N43 --> N70
+  N45 --> N7
+  N46 --> N70
   N5 --> N7
-  N52 --> N42
-  N52 --> N7
-  N53 --> N70
-  N54 --> N7
-  N56 --> N12
-  N56 --> N28
-  N56 --> N29
-  N56 --> N30
-  N56 --> N31
-  N56 --> N44
-  N56 --> N48
-  N56 --> N5
-  N56 --> N55
-  N56 --> N7
-  N58 --> N46
+  N50 --> N60
+  N53 --> N43
+  N53 --> N7
+  N54 --> N70
+  N55 --> N7
+  N58 --> N47
   N58 --> N5
   N58 --> N7
   N59 --> N20
   N59 --> N22
-  N59 --> N45
+  N59 --> N46
   N6 --> N7
-  N62 --> N40
-  N62 --> N47
-  N62 --> N53
+  N62 --> N41
+  N62 --> N48
+  N62 --> N54
   N62 --> N6
   N62 --> N60
-  N63 --> N47
   N63 --> N48
+  N63 --> N49
   N63 --> N5
   N63 --> N60
   N63 --> N64
@@ -274,86 +276,90 @@ graph LR
   N63 --> N68
   N63 --> N69
   N63 --> N7
-  N64 --> N48
+  N64 --> N49
   N64 --> N60
   N64 --> N7
   N68 --> N64
-  N69 --> N47
+  N69 --> N48
   N69 --> N60
   N69 --> N64
   N69 --> N7
   N69 --> N8
-  N71 --> N25
+  N71 --> N24
+  N71 --> N26
+  N71 --> N27
   N71 --> N28
-  N71 --> N29
   N71 --> N30
-  N71 --> N42
+  N71 --> N31
+  N71 --> N43
   N71 --> N5
-  N71 --> N52
-  N71 --> N56
+  N71 --> N53
   N71 --> N7
   N71 --> N70
   N71 --> N72
   N72 --> N23
-  N72 --> N28
+  N72 --> N24
+  N72 --> N27
   N72 --> N29
   N72 --> N30
   N72 --> N31
-  N72 --> N44
+  N72 --> N32
+  N72 --> N45
   N72 --> N5
-  N72 --> N55
   N72 --> N56
   N72 --> N7
   N72 --> N70
   N72 --> N8
-  N73 --> N28
-  N73 --> N30
+  N73 --> N24
+  N73 --> N27
   N73 --> N31
+  N73 --> N32
   N73 --> N5
-  N73 --> N52
-  N73 --> N56
+  N73 --> N53
   N73 --> N63
   N73 --> N7
   N73 --> N70
   N74 --> N10
   N74 --> N12
   N74 --> N22
+  N74 --> N24
+  N74 --> N27
   N74 --> N28
-  N74 --> N29
   N74 --> N30
-  N74 --> N42
+  N74 --> N31
   N74 --> N43
   N74 --> N44
+  N74 --> N45
   N74 --> N5
-  N74 --> N50
-  N74 --> N55
+  N74 --> N51
   N74 --> N56
   N74 --> N6
   N74 --> N7
   N74 --> N70
   N74 --> N8
   N74 --> N9
-  N75 --> N25
-  N75 --> N28
-  N75 --> N29
+  N75 --> N24
+  N75 --> N26
+  N75 --> N27
   N75 --> N30
-  N75 --> N44
+  N75 --> N31
+  N75 --> N45
   N75 --> N5
-  N75 --> N55
   N75 --> N56
   N75 --> N7
   N75 --> N70
   N76 --> N12
   N76 --> N22
+  N76 --> N24
+  N76 --> N27
   N76 --> N28
-  N76 --> N29
   N76 --> N30
   N76 --> N31
+  N76 --> N32
   N76 --> N4
-  N76 --> N42
-  N76 --> N44
+  N76 --> N43
+  N76 --> N45
   N76 --> N5
-  N76 --> N55
   N76 --> N56
   N76 --> N7
   N76 --> N70
@@ -362,18 +368,18 @@ graph LR
   N77 --> N10
   N77 --> N12
   N77 --> N22
-  N77 --> N25
-  N77 --> N28
-  N77 --> N29
+  N77 --> N24
+  N77 --> N26
+  N77 --> N27
   N77 --> N30
   N77 --> N31
-  N77 --> N39
-  N77 --> N41
-  N77 --> N43
+  N77 --> N32
+  N77 --> N40
+  N77 --> N42
+  N77 --> N44
   N77 --> N5
-  N77 --> N50
   N77 --> N51
-  N77 --> N56
+  N77 --> N52
   N77 --> N6
   N77 --> N7
   N77 --> N70
@@ -381,14 +387,14 @@ graph LR
   N77 --> N9
   N78 --> N20
   N78 --> N22
-  N78 --> N25
-  N78 --> N28
-  N78 --> N29
+  N78 --> N24
+  N78 --> N26
+  N78 --> N27
   N78 --> N30
-  N78 --> N43
-  N78 --> N45
+  N78 --> N31
+  N78 --> N44
+  N78 --> N46
   N78 --> N5
-  N78 --> N55
   N78 --> N56
   N78 --> N59
   N78 --> N7
@@ -396,10 +402,10 @@ graph LR
   N78 --> N72
   N78 --> N9
   N79 --> N22
-  N79 --> N28
-  N79 --> N29
+  N79 --> N24
+  N79 --> N27
   N79 --> N30
-  N79 --> N55
+  N79 --> N31
   N79 --> N56
   N79 --> N59
   N79 --> N7
@@ -408,11 +414,11 @@ graph LR
   N79 --> N78
   N79 --> N8
   N8 --> N7
-  N80 --> N28
-  N80 --> N30
-  N80 --> N44
+  N80 --> N24
+  N80 --> N27
+  N80 --> N31
+  N80 --> N45
   N80 --> N5
-  N80 --> N56
   N80 --> N7
   N80 --> N70
   N9 --> N6

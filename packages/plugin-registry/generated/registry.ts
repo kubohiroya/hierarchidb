@@ -8,6 +8,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/basemap-plugin",
     version: "1.0.0",
     dependencies: [
+        "@hierarchidb/plugin-base",
         "dexie",
         "@emotion/react",
         "@emotion/styled",
@@ -21,11 +22,11 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-runtime-services",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/folder-plugin",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-map",
         "@hierarchidb/ui-data-grid",
-        "@hierarchidb/util"
+        "@hierarchidb/util",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/basemap-plugin",
@@ -37,6 +38,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "extends": "folder",
         "priority": 900,
         "dependencies": [
+          "@hierarchidb/plugin-base",
           "dexie",
           "@emotion/react",
           "@emotion/styled",
@@ -50,11 +52,11 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-runtime-services",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/folder-plugin",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-map",
           "@hierarchidb/ui-data-grid",
-          "@hierarchidb/util"
+          "@hierarchidb/util",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Public",
@@ -134,6 +136,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/folder-plugin",
     version: "1.0.0",
     dependencies: [
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/plugin-ui-host",
         "@emotion/react",
         "@emotion/styled",
         "@mui/icons-material",
@@ -145,7 +149,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-api",
         "@hierarchidb/common-types",
         "@hierarchidb/components",
-        "@hierarchidb/ui-plugin-dialog",
+        "@hierarchidb/plugin-ui-host",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/runtime-client",
         "@hierarchidb/ui-plugin-basic-info",
@@ -153,7 +157,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-dialog",
         "@hierarchidb/util",
         "@hierarchidb/plugin-ui-sdk",
-        "@hierarchidb/plugin-service-api"
+        "@hierarchidb/plugin-service-api",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/folder-plugin",
@@ -164,6 +169,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "description": "Basic folder plugin for HierarchiDB UI layer",
         "priority": 1000,
         "dependencies": [
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/plugin-ui-host",
           "@emotion/react",
           "@emotion/styled",
           "@mui/icons-material",
@@ -175,7 +182,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-api",
           "@hierarchidb/common-types",
           "@hierarchidb/components",
-          "@hierarchidb/ui-plugin-dialog",
+          "@hierarchidb/plugin-ui-host",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/runtime-client",
           "@hierarchidb/ui-plugin-basic-info",
@@ -183,7 +190,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-dialog",
           "@hierarchidb/util",
           "@hierarchidb/plugin-ui-sdk",
-          "@hierarchidb/plugin-service-api"
+          "@hierarchidb/plugin-service-api",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Folder",
@@ -245,6 +253,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/location-plugin",
     version: "0.1.0",
     dependencies: [
+        "@hierarchidb/plugin-base",
         "dexie",
         "react",
         "react-dom",
@@ -265,12 +274,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/tabular-store",
         "@hierarchidb/ui-data-grid",
         "@hierarchidb/ui-plugin-basic-info",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/auth-recovery",
         "@hierarchidb/common-auth",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-dialog",
-        "@hierarchidb/plugin-ui-sdk"
+        "@hierarchidb/plugin-ui-sdk",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/location-plugin",
@@ -281,6 +290,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "description": "Geographic location nodes with Shape integration",
         "priority": 40,
         "dependencies": [
+          "@hierarchidb/plugin-base",
           "dexie",
           "react",
           "react-dom",
@@ -301,12 +311,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/tabular-store",
           "@hierarchidb/ui-data-grid",
           "@hierarchidb/ui-plugin-basic-info",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/auth-recovery",
           "@hierarchidb/common-auth",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-dialog",
-          "@hierarchidb/plugin-ui-sdk"
+          "@hierarchidb/plugin-ui-sdk",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "LocationOn",
@@ -363,6 +373,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     packageName: "@hierarchidb/linker-plugin",
     version: "0.0.1",
     dependencies: [
+        "@hierarchidb/plugin-base",
         "@deck.gl/aggregation-layers",
         "@deck.gl/core",
         "@deck.gl/extensions",
@@ -381,10 +392,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-api",
         "@hierarchidb/common-types",
         "@hierarchidb/plugin-service-api",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/ui-map",
         "@hierarchidb/ui-treeconsole-base",
-        "@hierarchidb/util"
+        "@hierarchidb/util",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/linker-plugin",
@@ -395,6 +406,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "description": "Linker plugin for HierarchiDB: link compiled resources into maps",
         "priority": 10,
         "dependencies": [
+          "@hierarchidb/plugin-base",
           "@deck.gl/aggregation-layers",
           "@deck.gl/core",
           "@deck.gl/extensions",
@@ -413,10 +425,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-api",
           "@hierarchidb/common-types",
           "@hierarchidb/plugin-service-api",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/ui-map",
           "@hierarchidb/ui-treeconsole-base",
-          "@hierarchidb/util"
+          "@hierarchidb/util",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "AccountTree",
@@ -471,6 +483,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     dependencies: [
         "dexie",
         "searoute-js",
+        "@hierarchidb/plugin-base",
         "@emotion/react",
         "@emotion/styled",
         "@hierarchidb/auth-recovery",
@@ -482,7 +495,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-service-sdk",
         "@hierarchidb/runtime-client",
         "@hierarchidb/runtime-worker",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/ui-data-grid",
         "@hierarchidb/components",
@@ -493,7 +505,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@mui/icons-material",
         "@mui/material",
         "react",
-        "react-dom"
+        "react-dom",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/route-plugin",
@@ -506,6 +519,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "dependencies": [
           "dexie",
           "searoute-js",
+          "@hierarchidb/plugin-base",
           "@emotion/react",
           "@emotion/styled",
           "@hierarchidb/auth-recovery",
@@ -517,7 +531,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-service-sdk",
           "@hierarchidb/runtime-client",
           "@hierarchidb/runtime-worker",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/ui-data-grid",
           "@hierarchidb/components",
@@ -528,7 +541,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@mui/icons-material",
           "@mui/material",
           "react",
-          "react-dom"
+          "react-dom",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Route",
@@ -600,6 +614,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "pbf",
         "topojson-client",
         "topojson-server",
+        "@hierarchidb/plugin-base",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/util",
         "@hierarchidb/auth-recovery",
@@ -614,7 +629,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-datasource",
         "@hierarchidb/ui-license",
         "@hierarchidb/ui-country-select",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/ui-lru-splitview",
         "@hierarchidb/runtime-client",
         "@hierarchidb/download",
@@ -622,7 +636,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@mui/material",
         "dexie",
         "react",
-        "react-dom"
+        "react-dom",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/shape-plugin",
@@ -646,6 +661,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "pbf",
           "topojson-client",
           "topojson-server",
+          "@hierarchidb/plugin-base",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/util",
           "@hierarchidb/auth-recovery",
@@ -660,7 +676,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-datasource",
           "@hierarchidb/ui-license",
           "@hierarchidb/ui-country-select",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/ui-lru-splitview",
           "@hierarchidb/runtime-client",
           "@hierarchidb/download",
@@ -668,7 +683,8 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@mui/material",
           "dexie",
           "react",
-          "react-dom"
+          "react-dom",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Hexagon",
@@ -750,6 +766,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     version: "1.0.0",
     dependencies: [
         "@hierarchidb/plugin-runtime-services",
+        "@hierarchidb/plugin-base",
         "@emotion/react",
         "@emotion/styled",
         "@mui/icons-material",
@@ -761,12 +778,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-api",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/common-types",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/ui-dialog",
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/util",
-        "@hierarchidb/runtime-worker"
+        "@hierarchidb/runtime-worker",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/resolver-plugin",
@@ -778,6 +795,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "priority": 60,
         "dependencies": [
           "@hierarchidb/plugin-runtime-services",
+          "@hierarchidb/plugin-base",
           "@emotion/react",
           "@emotion/styled",
           "@mui/icons-material",
@@ -789,12 +807,12 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-api",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/common-types",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/ui-dialog",
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/util",
-          "@hierarchidb/runtime-worker"
+          "@hierarchidb/runtime-worker",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Extension",
@@ -858,6 +876,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-runtime-services",
         "@types/pako",
         "pako",
+        "@hierarchidb/plugin-base",
         "@hierarchidb/auth-recovery",
         "@hierarchidb/common-api",
         "@hierarchidb/plugin-service-api",
@@ -870,14 +889,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/ui-tabular-extract",
         "@hierarchidb/ui-file",
         "@hierarchidb/util",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/ui-plugin-basic-info",
         "@hierarchidb/plugin-ui-sdk",
         "@mui/icons-material",
         "@mui/material",
         "i18next",
         "react",
-        "react-i18next"
+        "react-i18next",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/spreadsheet-plugin",
@@ -892,6 +911,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-runtime-services",
           "@types/pako",
           "pako",
+          "@hierarchidb/plugin-base",
           "@hierarchidb/auth-recovery",
           "@hierarchidb/common-api",
           "@hierarchidb/plugin-service-api",
@@ -904,14 +924,14 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/ui-tabular-extract",
           "@hierarchidb/ui-file",
           "@hierarchidb/util",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/ui-plugin-basic-info",
           "@hierarchidb/plugin-ui-sdk",
           "@mui/icons-material",
           "@mui/material",
           "i18next",
           "react",
-          "react-i18next"
+          "react-i18next",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Assessment",
@@ -989,6 +1009,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "jszip",
         "react-window",
         "xlsx",
+        "@hierarchidb/plugin-base",
         "@mui/icons-material",
         "@mui/material",
         "react",
@@ -1004,9 +1025,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-types",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/spreadsheet-plugin",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/plugin-ui-sdk",
-        "@hierarchidb/components"
+        "@hierarchidb/components",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/styler-plugin",
@@ -1021,6 +1042,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "jszip",
           "react-window",
           "xlsx",
+          "@hierarchidb/plugin-base",
           "@mui/icons-material",
           "@mui/material",
           "react",
@@ -1036,9 +1058,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-types",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/spreadsheet-plugin",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/plugin-ui-sdk",
-          "@hierarchidb/components"
+          "@hierarchidb/components",
+          "@hierarchidb/plugin-base"
         ],
         "icon": {
           "mui": "Palette",
@@ -1105,9 +1127,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-api",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/util",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/runtime-worker",
         "@hierarchidb/ui-dialog",
+        "@hierarchidb/plugin-base",
         "@emotion/react",
         "@emotion/styled",
         "@mui/icons-material",
@@ -1116,10 +1138,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/common-api",
         "@hierarchidb/common-types",
         "@hierarchidb/util",
-        "@hierarchidb/ui-plugin-dialog",
         "@hierarchidb/plugin-service-api",
         "@hierarchidb/runtime-worker",
-        "@hierarchidb/ui-dialog"
+        "@hierarchidb/ui-dialog",
+        "@hierarchidb/plugin-base"
       ],
     manifest: {
         "id": "@hierarchidb/timeline-plugin",
@@ -1153,9 +1175,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-api",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/util",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/runtime-worker",
           "@hierarchidb/ui-dialog",
+          "@hierarchidb/plugin-base",
           "@emotion/react",
           "@emotion/styled",
           "@mui/icons-material",
@@ -1164,10 +1186,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/common-api",
           "@hierarchidb/common-types",
           "@hierarchidb/util",
-          "@hierarchidb/ui-plugin-dialog",
           "@hierarchidb/plugin-service-api",
           "@hierarchidb/runtime-worker",
-          "@hierarchidb/ui-dialog"
+          "@hierarchidb/ui-dialog",
+          "@hierarchidb/plugin-base"
         ],
         "packageName": "@hierarchidb/timeline-plugin"
       },

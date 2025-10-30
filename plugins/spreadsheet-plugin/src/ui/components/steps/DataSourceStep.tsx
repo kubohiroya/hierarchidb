@@ -24,7 +24,7 @@ import { createSpreadsheetCSVApi } from '../../../services/SpreadsheetCSVApiAdap
 // import { DataSourceConfig } from '@hierarchidb/common-types';
 import { DataSourceConfig, FileInfo } from '../../../common/extension/types.js';
 import { CSVTableMetadata } from '@hierarchidb/tabular-store';
-import { StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { StepComponentProps } from '@hierarchidb/plugin-base';
 
 const DATA_SOURCE_TAB_FILE = 'file';
 const DATA_SOURCE_TAB_MANUAL = 'manual';

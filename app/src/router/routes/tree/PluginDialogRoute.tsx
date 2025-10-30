@@ -7,7 +7,7 @@ import React from 'react';
 import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
 import { NodeId, TreeId } from '@hierarchidb/common-types';
 import { getWorkerClientHook } from '@hierarchidb/runtime-client';
-import { PluginDialogShell } from '@hierarchidb/ui-plugin-dialog';
+import { PluginDialogShell } from '@hierarchidb/plugin-ui-host';
 
 interface PluginDialogLoaderData {
   tree: { id: TreeId };

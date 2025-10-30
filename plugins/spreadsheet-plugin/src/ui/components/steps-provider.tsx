@@ -1,4 +1,4 @@
-import { PluginStepConfig, PluginStepRegistry, StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepConfig, PluginStepRegistry, StepComponentProps } from '@hierarchidb/plugin-base';
 import { DataSourceStep, isDataSourceComplete, SpreadsheetDialogData } from './steps/DataSourceStep.js';
 import { STEP_CONFIG } from '../../common/extension/constants.js';
 import { FilteringStep } from './steps/FilteringStep.js';

@@ -48,7 +48,7 @@ export default defineConfig({
       '@hierarchidb/common-api': path.resolve(__dirname, '../../packages/common/api/src/index.ts'),
       '@hierarchidb/runtime-client': path.resolve(__dirname, '../../packages/runtime/client/src/index.ts'),
       '@hierarchidb/runtime-worker': path.resolve(__dirname, '../../packages/runtime/worker/src/index.ts'),
-      '@hierarchidb/ui-plugin-dialog': path.resolve(__dirname, '../../packages/ui/plugin-dialog/src/index.ts'),
+      '@hierarchidb/plugin-ui-host': path.resolve(__dirname, '../../packages/plugin-ui-host/src/index.ts'),
       '@hierarchidb/runtime-ui-datasource': path.resolve(__dirname, '../../packages/runtime-ui/datasource/src/index.ts'),
       '@hierarchidb/ui-lru-splitview': path.resolve(__dirname, '../../packages/ui/lru-splitview/src/index.ts'),
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,

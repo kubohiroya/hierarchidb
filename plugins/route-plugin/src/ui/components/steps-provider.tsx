@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import { RouteSelectionStep } from '../../common/components/RouteSelectionStep.js';
 import { RouteProcessingStep } from '../../common/components/RouteProcessingStep.js';
 import type { RouteWorkingCopy } from '../../common/types/index.js';

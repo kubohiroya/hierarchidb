@@ -15,6 +15,8 @@ packages:
   - packages/plugin-registry
   - packages/plugin-service-api
   - packages/plugin-service-sdk
+  - packages/plugin-ui-host
+  - packages/plugin-base
   - packages/backend/*
   - packages/feature/*
   - packages/plugin-runtime-services

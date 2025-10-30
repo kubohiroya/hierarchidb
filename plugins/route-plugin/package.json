@@ -58,7 +58,8 @@
   },
   "dependencies": {
     "dexie": "^4.2.0",
-    "searoute-js": "^0.1.0"
+    "searoute-js": "^0.1.0",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "peerDependencies": {
     "@emotion/react": "^11.14.0",
@@ -72,7 +73,6 @@
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/components": "workspace:*",
@@ -83,7 +83,8 @@
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@hierarchidb/auth-recovery": "workspace:*",
@@ -95,7 +96,6 @@
     "@hierarchidb/plugin-service-sdk": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-plugin-basic-info": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
     "@hierarchidb/components": "workspace:*",
@@ -110,7 +110,8 @@
     "@types/react-dom": "^18.3.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "workspace:^5.9.3"
+    "typescript": "workspace:^5.9.3",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "hierarchidb": {
     "plugin": {
@@ -118,7 +119,7 @@
       "name": "Route Plugin",
       "icon": {
         "mui": "Route",
-        "emoji": "\u3030\ufe0f",
+        "emoji": "〰️",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/route-plugin/icon",

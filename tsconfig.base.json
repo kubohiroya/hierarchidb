@@ -391,11 +391,17 @@
       "@hierarchidb/ui-plugin-basic-info/*": [
         "packages/ui/plugin-basic-info/src/*"
       ],
-      "@hierarchidb/ui-plugin-dialog": [
-        "packages/ui/plugin-dialog/src/index.ts"
+      "@hierarchidb/plugin-ui-host": [
+        "packages/plugin-ui-host/src/index.ts"
       ],
-      "@hierarchidb/ui-plugin-dialog/*": [
-        "packages/ui/plugin-dialog/src/*"
+      "@hierarchidb/plugin-ui-host/*": [
+        "packages/plugin-ui-host/src/*"
+      ],
+      "@hierarchidb/plugin-base": [
+        "packages/plugin-base/src/index.ts"
+      ],
+      "@hierarchidb/plugin-base/*": [
+        "packages/plugin-base/src/*"
       ],
       "@hierarchidb/ui-routing": [
         "packages/ui/routing/src/index.ts"

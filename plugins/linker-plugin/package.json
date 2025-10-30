@@ -45,7 +45,9 @@
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "lint": "eslint src"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/plugin-base": "workspace:*"
+  },
   "peerDependencies": {
     "@deck.gl/aggregation-layers": "^9.0.0",
     "@deck.gl/core": "^9.0.0",
@@ -65,10 +67,10 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "@deck.gl/aggregation-layers": "^9.0.0",
@@ -92,10 +94,10 @@
     "@hierarchidb/common-api": "workspace:*",
     "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-treeconsole-base": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "author": "",
   "license": "MIT",
@@ -107,7 +109,7 @@
       "description": "Link compiled resources to map for usage",
       "icon": {
         "mui": "AccountTree",
-        "emoji": "\ud83c\udf32",
+        "emoji": "🌲",
         "color": "#ffe0f3",
         "component": {
           "specifier": "@hierarchidb/linker-plugin/icon",

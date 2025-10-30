@@ -1,4 +1,4 @@
-import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/ui-plugin-dialog';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
 import type { MapStyle, MapViewport, DisplayOptions } from '../../common/types/BaseMapEntity.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';

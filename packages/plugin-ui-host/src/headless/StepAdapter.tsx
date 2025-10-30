@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
-import type { PluginStepConfig } from '../registry/PluginStepRegistry.js';
+import type { PluginStepConfig } from '@hierarchidb/plugin-base';
 
 interface StepAdapterProps {
   cfg: PluginStepConfig;

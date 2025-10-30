@@ -60,7 +60,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss}\"",
     "dev:tsc": "tsc --watch"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hierarchidb/plugin-base": "workspace:*"
+  },
   "peerDependencies": {
     "dexie": "^4.2.0",
     "@emotion/react": "^11.14.0",
@@ -75,11 +77,11 @@
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "devDependencies": {
     "dexie": "^4.2.0",
@@ -97,11 +99,11 @@
     "@hierarchidb/plugin-runtime-services": "workspace:*",
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/folder-plugin": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*",
     "@hierarchidb/ui-data-grid": "workspace:*",
-    "@hierarchidb/util": "workspace:*"
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/plugin-base": "workspace:*"
   },
   "keywords": [
     "hierarchidb",
@@ -125,7 +127,7 @@
       "name": "BaseMap Plugin",
       "icon": {
         "mui": "Public",
-        "emoji": "\ud83c\udf0d",
+        "emoji": "🌍",
         "color": "#b0b3d9",
         "component": {
           "specifier": "@hierarchidb/basemap-plugin/icon",
@@ -172,7 +174,7 @@
     "pipeline": {
       "build": {
         "dependsOn": [
-          "@hierarchidb/ui-plugin-dialog#build"
+          "@hierarchidb/plugin-base#build"
         ]
       }
     }

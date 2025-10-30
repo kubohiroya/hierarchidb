@@ -15,18 +15,6 @@
     "paths": {
       "~/*": [
         "./src/*"
-      ],
-      "@hierarchidb/plugin-registry": [
-        "../../plugin-registry/dist/registry.js"
-      ],
-      "@hierarchidb/plugin-registry/*": [
-        "../../plugin-registry/dist/*"
-      ],
-      "@hierarchidb/plugin-service-api": [
-        "../../plugin-service-api/dist/index.js"
-      ],
-      "@hierarchidb/plugin-service-api/*": [
-        "../../plugin-service-api/dist/*"
       ]
     }
   },

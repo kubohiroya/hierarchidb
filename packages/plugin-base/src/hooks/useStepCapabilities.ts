@@ -16,7 +16,7 @@ interface UseStepCapabilitiesOptions {
   data: any;
 }
 
-interface UseStepCapabilitiesResult {
+export interface UseStepCapabilitiesResult {
   capabilities: StepCapabilitiesState;
   isEvaluating: boolean;
   refreshCapabilities: () => Promise<void>;

@@ -37,7 +37,7 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/route-plugin": "workspace:*",
-    "@hierarchidb/ui-plugin-dialog": "workspace:*",
+    "@hierarchidb/plugin-ui-host": "workspace:*",
     "@hierarchidb/runtime-worker": "workspace:*",
     "@hierarchidb/runtime-client": "workspace:*",
     "@hierarchidb/ui-tour": "workspace:*",

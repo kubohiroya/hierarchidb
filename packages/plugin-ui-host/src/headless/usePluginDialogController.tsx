@@ -35,23 +35,26 @@ import type {
   TagEntity,
   TreeId,
 } from '@hierarchidb/common-types';
-import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
-import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
-import { composeStepConfigs } from '../services/StepComposer.js';
-import { useDialogWorkingCopy, type WorkingCopyData } from '../hooks/useDialogWorkingCopy.js';
-import { getIconComponent, getPresentation } from '../utils/pluginPresentation.js';
-import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
-import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 import {
+  PluginStepRegistry,
+  type PluginStepConfig,
+  HostProfileRegistry,
+  composeStepConfigs,
+  useDialogWorkingCopy,
+  type WorkingCopyData,
+  getIconComponent,
+  getPresentation,
   getPeerDisplayMode,
   setPeerDisplayMode,
   getPeerDialogPosition,
   setPeerDialogPosition,
   getPeerDialogSize,
   setPeerDialogSize,
+  useDialogUrlSync,
   type PeerDisplayMode,
-} from '../utils/peerDialogPersistence.js';
-import { useDialogUrlSync } from '../hooks/useDialogUrlSync.js';
+} from '@hierarchidb/plugin-base';
+import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
+import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
 import { Remote, proxy, releaseProxy } from 'comlink';
