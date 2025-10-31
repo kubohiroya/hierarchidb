@@ -1,0 +1,1396 @@
+{
+  "findings": [
+    {
+      "packageName": "@hierarchidb/bff",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/backend/bff",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/cors-proxy",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/backend/cors-proxy",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/common-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/common/auth",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/download",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/download",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/feature-registry",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/feature-registry",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/map-source",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/map-source",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/route-resolver",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @webgpu/types",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/route-resolver",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/table-metadata",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/table-metadata",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/tabular-store",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/tabular-store",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/tabular-xlsx",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/tabular-xlsx",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- xlsx",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/base-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/base-plugin",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/basemap-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/basemap-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/basemap-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/basemap-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- dexie",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @hierarchidb/util",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- uuid-shim.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/folder-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/location-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/location-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @emotion/react\n- @emotion/styled\n- @deck.gl/core\n- @deck.gl/layers\n- @deck.gl/aggregation-layers\n- @deck.gl/geo-layers\n- @deck.gl/mesh-layers\n- @deck.gl/extensions\n- @deck.gl/mapbox",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims-ui-date.d.ts\n- ui-map-augment.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/project-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- dexie\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- dexie\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/resolver-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../feature/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../feature/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/route-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../feature/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../feature/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/shape-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/shape-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/shape-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/shape-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/shape-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/shape-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- geohash.d.ts\n- runtime-worker-shim.d.ts\n- shims-common-type-augment.d.ts\n- shims-common-type.d.ts\n- shims-core.d.ts\n- shims-download.d.ts\n- shims-ui.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @hierarchidb/tabular\n- @hierarchidb/auth-recovery",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- i18next-shim.d.ts\n- shims.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/spreadsheet-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- react-i18next\n- i18next",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- react-i18next\n- i18next",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @hierarchidb/ui-core",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- mui-grid2-shim.d.ts\n- provider-i18next.d.ts\n- ui-core-shims.d.ts\n- ui-csv-extract-shims.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/styler-plugin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/styler-plugin",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-shared-batch-processor",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-shared/batch-processor",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @hierarchidb/download\n- @hierarchidb/auth-recovery",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-shared-fetch-metadata",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-shared/fetch-metadata",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-appbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/appbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react\n- react-router-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-appbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/appbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react\n- react-router-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-appbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/appbar",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-datasource",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/datasource",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-datasource",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/datasource",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-landingpage",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/landingpage",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @mui/icons-material\n- @mui/material\n- react\n- react-router",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-landingpage",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/landingpage",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @mui/icons-material\n- @mui/material\n- react\n- react-router",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims-env.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-plugin-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/plugin-dialog",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-search-result-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/search-result-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-ui/tour",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- dexie",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../feature/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../feature/tabular/src/*",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
+      "rule": "paths-direct-src",
+      "severity": "WARN",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../feature/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../feature/tabular/src/*",
+      "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker-bootstrap",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker-bootstrap",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- comlink\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/runtime-worker-bootstrap",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker-bootstrap",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- comlink\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/tools-vite-plugin-package-reader",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/tools/vite-plugin-package-reader",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-accordion-config",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/accordion-config",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-accordion-config",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/accordion-config",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @mui/icons-material\n- @mui/material\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/auth",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/auth",
+      "rule": "external-in-deps",
+      "severity": "WARN",
+      "message": "external also in dependencies (consider peer):\n- @hierarchidb/common-auth",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-auth",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/auth",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- react-router-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/icons-material\n- @mui/material\n- react\n- react-router-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- cssmodule.d.ts\n- react-router-dom-shim.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-core",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/core",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-country-select",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/country-select",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-country-select",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/country-select",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-csv-extract",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/csv-extract",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-data-grid",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/data-grid",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-date",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/date",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-date",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/date",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-dialog",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/dialog",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-file",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/file",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims-env.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-floating-window",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/floating-window",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-i18n",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/i18n",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-i18n",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/i18n",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-import-export",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/import-export",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- comlink",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-import-export",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/import-export",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- comlink",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-layout",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/layout",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-lru-splitview",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/lru-splitview",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-lru-splitview",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/lru-splitview",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/material\n- react\n- @deck.gl/mapbox",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @emotion/react\n- @emotion/styled\n- @mui/material\n- react\n- @deck.gl/mapbox",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "tsconfig-no-base",
+      "severity": "WARN",
+      "message": "tsconfig does not extend repo base (tsconfig.base.json): (missing) ",
+      "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-map",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/map",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- style-modules.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-monitoring",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/monitoring",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims-env.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-navigation",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/navigation",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- react-router-dom-shim.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-routing",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/routing",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-routing",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/routing",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-theme",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/theme",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-tour",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/tour",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @dnd-kit/core\n- @dnd-kit/sortable\n- @dnd-kit/utilities\n- @mui/icons-material\n- @mui/material\n- @tanstack/react-table\n- @tanstack/react-virtual\n- react\n- react-dom",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- @dnd-kit/core\n- @dnd-kit/sortable\n- @dnd-kit/utilities\n- @mui/icons-material\n- @mui/material\n- @tanstack/react-table\n- @tanstack/react-virtual\n- react\n- react-dom",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "local-shims",
+      "severity": "WARN",
+      "message": "local type shims present (document policy):\n- shims-env.d.ts",
+      "because": "配布物の型安全性と将来の保守性のため、ローカル型シムの恒常化を避けるため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-base",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/base",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-breadcrumb",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/breadcrumb",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-footer",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/footer",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-footer",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/footer",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-speeddial",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/speeddial",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-toolbar",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/toolbar",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-trashbin",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/trashbin",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "ui-in-deps",
+      "severity": "ERROR",
+      "message": "UI libs should be peerDependencies (not dependencies):\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "ui-missing-peer",
+      "severity": "WARN",
+      "message": "UI libs installed but missing in peerDependencies:\n- @emotion/react\n- @emotion/styled",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "UIパッケージはReact/MUI等をバンドルせず、ホスト側の単一インスタンス（peer）に依存すべきため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-treeconsole-treetable",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/treeconsole/treetable",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-usermenu",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/usermenu",
+      "rule": "peer-in-external",
+      "severity": "WARN",
+      "message": "peer not in tsup.external:\n- react\n- react-dom\n- @mui/material\n- @mui/icons-material",
+      "because": "tsupでバンドルするパッケージはpeer依存を必ずexternalにして多重バンドルを防ぐため。"
+    },
+    {
+      "packageName": "@hierarchidb/ui-usermenu",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/ui/usermenu",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    },
+    {
+      "packageName": "@hierarchidb/util",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/util",
+      "rule": "skipLibCheck-not-allowed",
+      "severity": "ERROR",
+      "message": "skipLibCheck is enabled but not allowed.",
+      "because": "skipLibCheckは型の負債トグルであり、恒常化を防ぐために理由の明示 or 例外登録が必要なため。"
+    }
+  ]
+}
