@@ -88,6 +88,35 @@
   - [ ] 未修正または未対応のケースが残る場合は TODO として記録する
 - ロールバック手順：変更したテストファイルと関連ユーティリティを revert し、`pnpm test` で従来の失敗が再現することを確認する
 
+94) folder-plugin uuid shim 方針調査（P0）
+- ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
+- 依存: `scripts/check-shims.mjs`, `packages/node-type/folder-plugin`, `packages/plugins/folder-plugin`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] `scripts/check-shims.mjs` の uuid シム禁止方針と検出ルールを整理し、本タスクに記録する
+  - [x] `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` の必要性と代替策を評価し、対応方針（削除・移設・正式型利用など）を提案する
+  - [x] 後続で実装が必要な場合は別タスク化や関係者相談の要否を明示する（本タスクでは追加実装不要と結論）
+- チェックリスト:
+  - [x] shim-check の対象パスと運用ルールを確認する
+  - [x] uuid シムの参照元と利用目的を洗い出す
+  - [x] 対応案を比較検討し、DoD を満たす結論をまとめる
+- ロールバック手順：調査結果のみ記録のため差分はなし。実装変更が必要になった場合は新規タスクを作成し revert 手順を定義する。
+
+95) ui-shell 再エクスポート構成整理（P0）
+- ブランチ: `refactor/ui-shell/reexport-structure`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui-shell`, `packages/components`, `packages/ui-*`, `tsconfig.base.json`, Turbo pipeline
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] `ui-shell` の再エクスポートで `TS6059` が発生する原因（`rootDir` や include/pattern）を特定し、本節に整理する
+  - [x] `ui-shell` で外部パッケージを再エクスポートする正規の手段（dist 宣言を参照する typecheck 専用 tsconfig）を決定し、関連設定/ファイルを更新する
+  - [x] `pnpm --filter @hierarchidb/ui-shell typecheck` が成功し、エラー再発がないことを確認してログへ記録する
+  - [x] ロールバック手順と影響範囲を記載する
+- チェックリスト:
+  - [x] `packages/ui-shell` の `tsconfig.json` と `package.json` を確認し、`rootDir`/`include`/`paths` の現状を把握する
+  - [x] 再エクスポート対象ファイル（`packages/components` など）の参照方法を洗い出す
+  - [x] 解決策を適用し、typecheck コマンドの結果を記録する
+- ロールバック手順：`packages/ui-shell/tsconfig.typecheck.json` と `package.json` の `typecheck` スクリプト追加を削除し、必要に応じて dist 参照のために実行した依存ビルドをスキップすれば従来構成へ戻る。再度 `pnpm --filter @hierarchidb/ui-shell typecheck`（tsconfig.json を直接指定）で現行の TS6059 を再現可能。
+
 92) Thailand MICS6 SPSS→CSV 変換（P0）
 - ブランチ: `main`（データ変換のためブランチ作成なし）
 - 依存: `python3`, `pyreadstat`, `pandas`, `/Users/hiroya/Downloads/MICS_Datasets/Thailand MICS6 and Thailand Selected 17 Provinces MICS6 Datasets/Thailand MICS6 Datasets/Thailand MICS6 SPSS Datasets/*.sav`
@@ -6331,6 +6360,13 @@ ToDo（Phase 2/3: any の完全撤去）
 
 ## 今日の着手（運用ログ） <a id="worklog-5"></a>
 
+- 2025-11-01 10:06 start: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` で uuid シムが検出される経緯と folder-plugin 側の対応方針を調査開始。
+- 2025-11-01 10:10 progress: fix/folder-plugin/uuid-shim-policy — `scripts/check-shims.mjs` の allow list と検出条件を確認し、対象シムが唯一 `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` であること、レポ内で `uuid` import が未使用であることを洗い出し。
+- 2025-11-01 10:11 done: fix/folder-plugin/uuid-shim-policy — uuid シムファイルを削除し、`pnpm shims:check` が `[shim-check] ok` で成功することを確認。
+- 2025-11-01 10:19 start: refactor/ui-shell/reexport-structure — `ui-shell` の再エクスポート構成で発生している `TS6059` の原因調査と解消方針の整理を開始。
+- 2025-11-01 10:35 progress: refactor/ui-shell/reexport-structure — `pnpm exec tsc -p packages/ui-shell/tsconfig.json --noEmit` で `@hierarchidb/*` alias が `packages/*/src` を指すため TypeScript が依存パッケージの未ビルドソースを取り込み、`rootDir` 外判定（TS6059）が多発することを確認。`paths` を dist 指向に切り替えるとビルド済み宣言が必要になるため、ワークスペース全体の build/typecheck 順序整理が不可欠だと判明。
+- 2025-11-01 12:01 progress: refactor/ui-shell/reexport-structure — 依存パッケージを順次 `pnpm --filter <pkg> build` でビルドし `.d.ts` を生成。`packages/ui-shell/tsconfig.typecheck.json` を追加して dist 宣言を参照する経路を用意し、`pnpm --filter @hierarchidb/ui-shell typecheck` が成功（終了コード 0, 出力なし）であることを確認。
+- 2025-11-01 12:13 progress: refactor/ui-shell/reexport-structure — IDE 側の TS6059 対策として `packages/ui-shell/tsconfig.json` の `rootDir` を `../..` に拡張。`pnpm --filter @hierarchidb/ui-shell typecheck` を再実行し、変更後も成功（終了コード 0）することを確認。
 - 2025-10-04 23:10 start: refactor/worker/error-model-unify — CommandProcessor のエラー分類ユーティリティ実装方針を再確認し、既存の例外捕捉箇所を調査開始。
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — Doing へ移動し、TASKS チェックリストの初期状態を整備。
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。

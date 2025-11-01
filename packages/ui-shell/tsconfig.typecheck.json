@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@hierarchidb/components": [
+        "packages/components/dist/index.d.ts"
+      ],
+      "@hierarchidb/components/*": [
+        "packages/components/dist/*"
+      ],
+      "@hierarchidb/plugin-ui-host": [
+        "packages/plugin-ui-host/dist/index.d.ts"
+      ],
+      "@hierarchidb/plugin-ui-host/*": [
+        "packages/plugin-ui-host/dist/*"
+      ],
+      "@hierarchidb/ui-auth": [
+        "packages/ui/auth/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-auth/*": [
+        "packages/ui/auth/dist/*"
+      ],
+      "@hierarchidb/ui-dialog": [
+        "packages/ui/dialog/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-dialog/*": [
+        "packages/ui/dialog/dist/*"
+      ],
+      "@hierarchidb/ui-icon": [
+        "packages/ui/icon/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-icon/*": [
+        "packages/ui/icon/dist/*"
+      ],
+      "@hierarchidb/ui-i18n": [
+        "packages/ui/i18n/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-i18n/*": [
+        "packages/ui/i18n/dist/*"
+      ],
+      "@hierarchidb/ui-layout": [
+        "packages/ui/layout/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-layout/*": [
+        "packages/ui/layout/dist/*"
+      ],
+      "@hierarchidb/ui-map": [
+        "packages/ui/map/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-map/*": [
+        "packages/ui/map/dist/*"
+      ],
+      "@hierarchidb/ui-navigation": [
+        "packages/ui/navigation/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-navigation/*": [
+        "packages/ui/navigation/dist/*"
+      ],
+      "@hierarchidb/ui-routing": [
+        "packages/ui/routing/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-routing/*": [
+        "packages/ui/routing/dist/*"
+      ],
+      "@hierarchidb/ui-theme": [
+        "packages/ui/theme/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-theme/*": [
+        "packages/ui/theme/dist/*"
+      ],
+      "@hierarchidb/ui-tour": [
+        "packages/ui/tour/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-tour/*": [
+        "packages/ui/tour/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-base": [
+        "packages/ui/treeconsole/base/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-base/*": [
+        "packages/ui/treeconsole/base/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb": [
+        "packages/ui/treeconsole/breadcrumb/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-breadcrumb/*": [
+        "packages/ui/treeconsole/breadcrumb/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar": [
+        "packages/ui/treeconsole/toolbar/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar/*": [
+        "packages/ui/treeconsole/toolbar/dist/*"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable": [
+        "packages/ui/treeconsole/treetable/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-treetable/*": [
+        "packages/ui/treeconsole/treetable/dist/*"
+      ],
+      "@hierarchidb/ui-usermenu": [
+        "packages/ui/usermenu/dist/index.d.ts"
+      ],
+      "@hierarchidb/ui-usermenu/*": [
+        "packages/ui/usermenu/dist/*"
+      ]
+    }
+  }
+}
