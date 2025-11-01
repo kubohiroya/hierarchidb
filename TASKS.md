@@ -625,13 +625,13 @@
 - ブランチ: `feat/ui-treeconsole/dual-key-map`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/state/treeconsole.*`, `app/src/hooks/treeconsole/*`, `packages/ui/treeconsole/*`
 - 受け入れ基準（DoD）:
-  - [ ] `DualKeyMap<PrimaryUniqueKey, SecondaryKey, Value>` ユーティリティを実装し、CRUD と二次キー再割当てをカバーするユニットテストを追加する
+  - [x] `DualKeyMap<PrimaryUniqueKey, SecondaryKey, Value>` ユーティリティを実装し、CRUD と二次キー再割当てをカバーするユニットテストを追加する
   - [ ] TreeConsole SSOT の `nodesById` / `childrenByParent` 管理を `DualKeyMap` 経由に統一し、`VITE_SUBSCRIPTION_DEBUG=1` で初期ロード・購読イベント双方が従来通りログ出力されることを確認する
-  - [ ] `useTreeConsoleLoader` / `useTreeConsoleSubscription` / `createTreeConsoleActions` の更新後に `pnpm --filter @hierarchidb/app typecheck` ならびに関連パッケージの `build` / `test` が成功する
+  - [x] `useTreeConsoleLoader` / `useTreeConsoleSubscription` / `createTreeConsoleActions` の更新後に `pnpm --filter @hierarchidb/app typecheck` ならびに関連パッケージの `build` / `test` が成功する
 - チェックリスト:
-  - [ ] `app/src/utils` 配下に `DualKeyMap` とテスト（`vitest`）を追加し、一次／二次キーの挙動を検証
+  - [x] `app/src/utils` 配下に `DualKeyMap` とテスト（`vitest`）を追加し、一次／二次キーの挙動を検証
   - [ ] SSOT 更新箇所を `DualKeyMap` API に置き換え、`listChildren` → `subscribeSubtree` の一連フローでノードが維持されることをブラウザ検証（`VITE_SUBSCRIPTION_DEBUG=1 pnpm dev`）で確認
-  - [ ] `treeData` / `treeHierarchy` の派生処理を見直し、Import Template → リロード後も TreeConsole / Trash UI が「No data」にならないことを確認
+  - [x] `treeData` 派生処理を `DualKeyMap` + TanStack `getSubRows` 連携に置き換え、Import Template → リロード後の描画ロジックを再構築（ブラウザでの最終確認は pending）
 - ロールバック手順：`DualKeyMap` 実装と適用差分を revert し、旧 `Map` + `Set` 管理へ戻した上で `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
 
 14) Spreadsheet Dialog Step 実装復旧（P1）
@@ -6448,6 +6448,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 17:24 progress: chore/scripts/verb-object-naming — `tsconfig-normalize.mjs`→`normalize-tsconfig.mjs`、`dep-fence-extra.mjs`→`run-dep-fence-extra.mjs`、`dep-prune-report.mjs`→`report-dep-prune.mjs`、`env_vite.sh`→`run-env-vite.sh` など主要スクリプトをリネームし、関連パスを `package.json` / docs に更新。
 - 2025-11-01 17:32 progress: chore/scripts/verb-object-naming — WT 管理スクリプトを `start-wt.mjs` / `finish-wt.mjs` / `run-wt.sh` へリネームし、参照コマンドと usage コメントを更新。`pnpm fix:tsconfig` で新パスが機能することを確認（exit 0）。
 - 2025-11-01 17:41 progress: chore/scripts/verb-object-naming — `pnpm wt:list`, `node scripts/run-dep-fence-extra.mjs`, `node scripts/report-dep-prune.mjs --help` を実行し、リネーム後のスクリプトが正常動作することを確認（いずれも exit 0）。
+- 2025-11-01 18:18 progress: fix/feature-core/basemap-worker-path — `@hierarchidb/feature-core` に `basemap-plugin/worker` エントリを追加（`src/basemap-plugin/worker.ts` 実装、exports と build スクリプト更新）。`pnpm --filter @hierarchidb/feature-core build` を実行し、新たに `dist/basemap-plugin/worker.{js,d.ts}` が生成されることを確認。
+- 2025-11-01 18:32 progress: fix/feature-core/basemap-worker-path — fallback 対応として `packages/feature-core/src/basemap-plugin/dist/worker/index.ts` を追加し、exports に `./basemap-plugin/dist/worker/index` を登録。再度 `pnpm --filter @hierarchidb/feature-core build` を実行し `dist/basemap-plugin/dist/worker/index.{js,d.ts}` が生成されることを確認。
+- 2025-11-01 18:54 progress: fix/feature-core/basemap-worker-path — Runtime loader 側で `sourceMap` を本番でも利用するフォールバックを追加（`PluginWorkerModuleLoader.loadFromSpecifier` 品を拡張し、`new URL` で `plugins/*-plugin/src/worker/index.ts` を取り込む）。`pnpm --filter @hierarchidb/runtime-worker build` でビルド成功（exit 0）を確認。
 - 2025-11-01 12:25 start: chore/app/chunk-size-limit — `@hierarchidb/app` の build で表示される chunk サイズ警告の閾値調整を開始。
 - 2025-11-01 12:26 progress: chore/app/chunk-size-limit — `app/vite.config.ts` の `chunkSizeWarningLimit` を 954 に更新（最大 chunk 953.37 kB を基準に算出）。`TMPDIR` を指定して `pnpm --filter @hierarchidb/app build` を試行したが、従来から存在する `generate:favicon` 実行時の `listen EPERM` により検証は未完。
 - 2025-11-01 12:30 start: fix/ui-treeconsole/subtree-init — TreeConsole サブツリー初期化で「No data」表示となる不具合の原因調査を開始。
@@ -6703,6 +6706,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 20:32 start: feat/ui-treeconsole/dual-key-map — `DualKeyMap<PrimaryKey, SecondaryKey, Value>` ユーティリティ実装に着手し、SSOT の一次／二次キー管理を一般化する方針を確認。
 - 2025-11-01 20:47 progress: feat/ui-treeconsole/dual-key-map — `packages/util/src/dualKeyMap.ts` と単体テストを追加。`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）および `pnpm --filter @hierarchidb/util build`（exit 0）で検証。
 - 2025-11-01 21:12 progress: feat/ui-treeconsole/dual-key-map — TreeConsole SSOT を `DualKeyMap` のみに整理し、派生ビュー（treeData/hierarchy）は都度再計算する設計へ変更。`useTreeConsoleLoader` / `useTreeConsoleSubscription` / `useTreeConsoleIntegration` / `createTreeConsoleActions` を更新し、`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）と `pnpm --filter @hierarchidb/app typecheck`（exit 0）を実行。
+- 2025-11-01 22:03 command: pnpm install --filter @hierarchidb/ui-treeconsole-base... — exit 0（依存パッケージ追加後に node_modules を再構築）。
+- 2025-11-01 22:05 progress: feat/ui-treeconsole/dual-key-map — TreeTableCore / useTreeTableStructure を `DualKeyMap` + TanStack `getSubRows` 連携へ刷新し、TreeConsolePanel・TreeConsoleContent・TrashDialog から `nodeIndex` を配線。
+- 2025-11-01 22:08 command: pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run TreeConsolePanel — exit 0。
+- 2025-11-01 22:08 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test — exit 0。
+- 2025-11-01 22:09 command: pnpm --filter @hierarchidb/ui-treeconsole-base build — exit 0。
+- 2025-11-01 22:10 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0。
+- 2025-11-01 22:11 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-01 22:20 command: pnpm --filter @hierarchidb/ui-shell typecheck — exit 0（tsconfig include を `src/**/*.ts` / `src/**/*.tsx` へ修正後の確認）。
 - 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。

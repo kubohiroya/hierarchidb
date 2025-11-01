@@ -19,6 +19,16 @@
       "import": "./dist/basemap-plugin.js",
       "default": "./dist/basemap-plugin.js"
     },
+    "./basemap-plugin/worker": {
+      "types": "./dist/basemap-plugin/worker.d.ts",
+      "import": "./dist/basemap-plugin/worker.js",
+      "default": "./dist/basemap-plugin/worker.js"
+    },
+    "./basemap-plugin/dist/worker/index": {
+      "types": "./dist/basemap-plugin/dist/worker/index.d.ts",
+      "import": "./dist/basemap-plugin/dist/worker/index.js",
+      "default": "./dist/basemap-plugin/dist/worker/index.js"
+    },
     "./common-api": {
       "types": "./dist/common-api.d.ts",
       "import": "./dist/common-api.js",
@@ -134,7 +144,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsdown src/index.ts src/basemap-plugin.ts src/common-api.ts src/common-auth.ts src/common-types.ts src/folder-plugin.ts src/linker-plugin.ts src/location-plugin.ts src/map-adapter.ts src/plugin-presentation.ts src/plugin-registry.ts src/plugin-registry/derivations.ts src/plugin-registry/types.ts src/plugin-ui-sdk.ts src/resolver-plugin.ts src/route-plugin.ts src/runtime-client.ts src/runtime-worker.ts src/shape-plugin.ts src/spreadsheet-plugin.ts src/styler-plugin.ts src/tabular-source-xlsx.ts src/timeline-plugin.ts src/util.ts --config ../../tsdown.config.ts --outDir dist",
+    "build": "tsdown src/index.ts src/basemap-plugin.ts src/basemap-plugin/worker.ts src/basemap-plugin/dist/worker/index.ts src/common-api.ts src/common-auth.ts src/common-types.ts src/folder-plugin.ts src/linker-plugin.ts src/location-plugin.ts src/map-adapter.ts src/plugin-presentation.ts src/plugin-registry.ts src/plugin-registry/derivations.ts src/plugin-registry/types.ts src/plugin-ui-sdk.ts src/resolver-plugin.ts src/route-plugin.ts src/runtime-client.ts src/runtime-worker.ts src/shape-plugin.ts src/spreadsheet-plugin.ts src/styler-plugin.ts src/tabular-source-xlsx.ts src/timeline-plugin.ts src/util.ts --config ../../tsdown.config.ts --outDir dist",
     "lint": "eslint src",
     "clean": "rm -rf dist"
   },

@@ -106,6 +106,27 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
         }
       }
 
+      if (this.sourceMap) {
+        const relativeSource = this.sourceMap[nodeType];
+        if (relativeSource) {
+          try {
+            const runtimeSrcUrl = new URL('../', import.meta.url);
+            const normalizedSource = relativeSource.startsWith('.')
+              ? relativeSource
+              : `../../../../../${relativeSource}`;
+            const prodUrl = new URL(normalizedSource, runtimeSrcUrl).href;
+            attempted.push(prodUrl);
+            const result = await import(/* @vite-ignore */ prodUrl);
+            return result as T;
+          } catch (sourceError) {
+            console.warn(
+              `[PluginWorkerModuleLoader] source import fallback failed for ${nodeType}`,
+              sourceError,
+            );
+          }
+        }
+      }
+
       // Attempt to load explicit dist path as a final fallback
       const distSpec = spec.replace(/\/worker$/, '/dist/worker/index.js');
       if (distSpec !== spec && !attempted.includes(distSpec)) {

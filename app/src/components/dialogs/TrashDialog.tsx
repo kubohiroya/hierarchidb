@@ -438,6 +438,7 @@ interface TrashDialogContentProps {
   onRestore: () => void;
   expandedIds: string[];
   onToggleExpand: (nodeId: string, expanded: boolean) => void;
+  nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
 }
 
 function TrashDialogContent({
@@ -454,6 +455,7 @@ function TrashDialogContent({
   mode,
   expandedIds,
   onToggleExpand,
+  nodeIndex,
 }: TrashDialogContentProps) {
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -728,6 +730,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         onRestore={handleRestore}
         expandedIds={expandedIds}
         onToggleExpand={onToggleExpand}
+        nodeIndex={nodeIndex}
       />
     ),
     renderFooter: (props: HeadlessFooterRenderProps<TrashStepData>) => (
@@ -741,7 +744,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         onEmptyAll={handleEmptyAll}
       />
     ),
-  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
+  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
 
   const frameSx = useMemo(() => ({
     borderRadius: frameState.displayMode === 'full-screen' ? 0 : 4,
