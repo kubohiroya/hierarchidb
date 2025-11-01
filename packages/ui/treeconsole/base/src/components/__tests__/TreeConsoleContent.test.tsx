@@ -7,6 +7,16 @@ import type React from 'react';
 import { render, screen } from '@testing-library/react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { vi } from 'vitest';
+
+vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
+  TreeConsoleBreadcrumb: () => null,
+  NodeTypeIcon: () => null,
+  NodeContextMenu: () => null,
+  buildTreeConsoleLinkHref: () => '#',
+  getPluginIconColor: () => undefined,
+  isFolderNodeType: () => true,
+}));
+
 import { TreeConsoleContent } from '../TreeConsoleContent.js';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
 import type { NodeId } from '@hierarchidb/common-types';

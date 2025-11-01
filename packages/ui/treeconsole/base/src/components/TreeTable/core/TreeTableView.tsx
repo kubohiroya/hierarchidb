@@ -23,6 +23,7 @@ import {
   Folder as FolderIcon,
   InsertDriveFile as FileIcon,
 } from '@mui/icons-material';
+import { getPluginIconColor, isFolderNodeType } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { TreeNodeData } from '../../../types/index.js';
 
 export interface TreeTableColumn {
@@ -146,7 +147,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     const hasChildren = Boolean(node.children?.length) || Boolean((node as TreeNode).hasChildren);
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
-    const absoluteDepth = typeof node.depth === 'number' ? node.depth : 0;
+    const nodeWithAbsolute = node as TreeNodeData & { absoluteDepth?: number };
+    const absoluteDepth = typeof nodeWithAbsolute.absoluteDepth === 'number'
+      ? nodeWithAbsolute.absoluteDepth
+      : typeof node.depth === 'number'
+        ? node.depth
+        : 0;
     const level = Math.max(0, absoluteDepth - baseDepth);
 
     const handleRowClick = (event: React.MouseEvent) => {
@@ -234,7 +240,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                   {showIcons && (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       {(() => {
-                        const iconColor = rainbowColors[Math.max(0, level) % rainbowColors.length];
+                        const baseIconColor = rainbowColors[Math.max(0, Math.round(absoluteDepth)) % rainbowColors.length];
+                        const nodeType = node.nodeType ?? (hasChildren ? 'folder' : 'file');
+                        const manifestIconColor = getPluginIconColor(nodeType);
+                        const iconColor = isFolderNodeType(nodeType)
+                          ? baseIconColor
+                          : (manifestIconColor ?? baseIconColor);
                         return hasChildren ? (
                           <FolderIcon fontSize="small" color="inherit" htmlColor={iconColor} />
                         ) : (

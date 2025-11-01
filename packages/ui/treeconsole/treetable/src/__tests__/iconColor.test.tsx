@@ -6,8 +6,8 @@ import type { ColumnBuilderParams } from '../components/internal/createTreeTable
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
 import type { NodeId, TreeNode, NodeType, Timestamp } from '@hierarchidb/common-types';
 
-const mockGetPluginIconColor = vi.fn(() => undefined);
-const mockIsFolderNodeType = vi.fn((nodeType: string) => nodeType === 'folder');
+const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
+const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, ...props }: any) => React.createElement('a', props, children),

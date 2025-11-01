@@ -5,12 +5,17 @@ import type { ColumnBuilderParams } from '../components/internal/createTreeTable
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
 import type { NodeId, TreeNode, NodeType, Timestamp } from '@hierarchidb/common-types';
 
+const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
+const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, ...props }: any) => React.createElement('a', props, children),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   buildTreeConsoleLinkHref: () => '#',
+  getPluginIconColor: mockGetPluginIconColor,
+  isFolderNodeType: mockIsFolderNodeType,
 }));
 
 vi.mock('../components/TreeTableStyles.js', async () => {
@@ -23,6 +28,12 @@ vi.mock('../components/TreeTableStyles.js', async () => {
 });
 
 describe('TreeTable Name column indentation', () => {
+  beforeEach(() => {
+    mockGetPluginIconColor.mockReset();
+    mockGetPluginIconColor.mockReturnValue(undefined);
+    mockIsFolderNodeType.mockReset();
+    mockIsFolderNodeType.mockImplementation((nodeType: string) => nodeType === 'folder');
+  });
   const defaultParams: ColumnBuilderParams = {
     columnWidths: {
       selection: 48,

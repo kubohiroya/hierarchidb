@@ -14,6 +14,8 @@ vi.mock('@tanstack/react-router', () => ({
 
 const breadcrumbModule = vi.hoisted(() => ({
   TreeConsoleBreadcrumb: vi.fn(() => React.createElement('div', { 'data-testid': 'default-breadcrumb' })),
+  getPluginIconColor: vi.fn(() => undefined),
+  isFolderNodeType: vi.fn((nodeType: string) => nodeType === 'folder'),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => breadcrumbModule);

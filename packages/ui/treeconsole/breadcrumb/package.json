@@ -17,6 +17,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@hierarchidb/plugin-registry": "workspace:*",
     "@hierarchidb/ui-i18n": "workspace:*"
   },
   "devDependencies": {

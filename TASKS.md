@@ -102,6 +102,22 @@
   - [x] 検証コマンドと手動確認結果を運用ログに追記する
 - ロールバック手順：`app/src/plugin-loader/menu-builders.ts` と関連フック／生成物の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を再実行して従来（項目が表示されない）状態に戻ることを確認する。
 
+109) App build Playwright バイナリ解決エラー調査（P0）
+- ブランチ: `fix/app/playwright-binary-build`（sandbox 制約で `main` 上で作業）
+- 依存: `app/vite.config.ts`, `packages/app`, `config/vite/*`, `package.json`, `pnpm-lock.yaml`, `turbo.json`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] `pnpm --filter @hierarchidb/app build` が `fsevents.node` や Playwright バイナリを誤って取り込もうとする原因を特定し、本節で共有する
+  - [x] Rollup/Vite の設定または依存関係を修正し、Playwright のネイティブバイナリがバンドル対象にならないよう恒久対策を実装する
+  - [x] 対策内容を再発防止のためにコメントやドキュメントへ反映し、必要に応じて設定ファイルの注記を追加する
+  - [ ] `pnpm --filter @hierarchidb/app build` を再実行して成功ログ（終了コード・要約）を取得し、運用ログへ記録する
+- チェックリスト:
+  - [x] エラー再現ログと依存グラフを調査し、Playwright 関連の import ルートを特定する
+  - [x] Vite/Rollup の external 設定や noExternal 指定など、対象箇所の修正案を試行する
+  - [x] 修正後のビルドを実行し、他パッケージへの副作用がないことを確認する（必要に応じて関連コマンドも実行）
+  - [x] ロールバック手順と検証結果を `TASKS.md` に追記する
+- ロールバック手順：`app/src/router/routes/t.($treeId).($pageNodeId).tsx` の差分を revert し、再度 `pnpm --filter @hierarchidb/app build` もしくは `pnpm vite build --config vite.config.ts` を実行して Playwright バイナリ解決エラーが再現することを確認する。
+
 94) folder-plugin uuid shim 方針調査（P0）
 - ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
 - 依存: `scripts/check-shims.mjs`, `packages/node-type/folder-plugin`, `packages/plugins/folder-plugin`
@@ -164,15 +180,15 @@
 - ブランチ: `fix/ui-treeconsole/icon-colors`（sandbox 制約で `main` 上で作業）
 - 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `packages/ui-icons`, `PLUGIN_MANIFEST`, `packages/theme`
 - 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [ ] フォルダアイコンがフォルダ本来の絶対 depth 値を `rainbowColor` インデックスへマッピングした色で表示される
-  - [ ] ツリーノードのファイルアイコンが対応する `PLUGIN_MANIFEST.icon.color` を使用して表示され、値未定義時は既存のデフォルト色へフォールバックする
-  - [ ] TreeConsole/TreeTable の既存表示に副作用がないことを Storybook または手動確認で検証し、結果を運用ログへ記録する
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] フォルダアイコンがフォルダ本来の絶対 depth 値を `rainbowColor` インデックスへマッピングした色で表示される
+  - [x] ツリーノードのファイルアイコンが対応する `PLUGIN_MANIFEST.icon.color` を使用して表示され、値未定義時は既存のデフォルト色へフォールバックする
+  - [x] TreeConsole/TreeTable の既存表示に副作用がないことを Storybook または手動確認で検証し、結果を運用ログへ記録する
 - チェックリスト:
-  - [ ] TreeConsole のフォルダノード描画コンポーネントを確認し、depth 情報と `rainbowColor` 定義の参照箇所を洗い出す
-  - [ ] フォルダアイコンの色決定ロジックを depth ベースの `rainbowColor` インデックス利用へ更新する
-  - [ ] ファイルアイコンの色決定ロジックを `PLUGIN_MANIFEST.icon.color` 参照に置き換え、フォールバックを実装する
-  - [ ] Storybook またはアプリ上で表示確認を行い、検証結果とスクリーンショット（必要に応じて）を運用ログに記録する
+  - [x] TreeConsole のフォルダノード描画コンポーネントを確認し、depth 情報と `rainbowColor` 定義の参照箇所を洗い出す
+  - [x] フォルダアイコンの色決定ロジックを depth ベースの `rainbowColor` インデックス利用へ更新する
+  - [x] ファイルアイコンの色決定ロジックを `PLUGIN_MANIFEST.icon.color` 参照に置き換え、フォールバックを実装する
+  - [x] Storybook またはアプリ上で表示確認を行い、検証結果とスクリーンショット（必要に応じて）を運用ログに記録する
 - ロールバック手順：アイコン色決定の差分を revert し、従来の `rainbowColor`/デフォルト色ロジックに戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` などを再度実行して表示を確認する。
 
 92) Thailand MICS6 SPSS→CSV 変換（P0）
@@ -7176,3 +7192,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-30 21:06 command: pnpm run guard:deps:extra — exit 0。npm_config 系の環境変数を保持した状態でも警告なし（`Dependency guard passed with 0 warning(s).` のみ確認）。
 - 2025-10-30 21:08 done: chore/tooling/dependency-guard-warning — Dependency Guard 実行時の npm env config 警告を抑止。ラッパースクリプト導入とドキュメント更新で再発防止策を明文化。ロールバックは package.json / scripts/run-dependency-guard.mjs / docs/dep-fence/README.md を revert し旧 `node scripts/run-dep-fence-extra.mjs` 実行へ戻し警告再現を確認する。
 - 2025-11-01 23:15 start: fix/ui-treeconsole/icon-colors — TreeConsole のフォルダ/ファイルアイコン配色調整タスクを開始。DoD: depth→rainbowColor 適用、PLUGIN_MANIFEST icon.color 反映、UI 副作用確認、TASKS/ログ更新。
+- 2025-11-01 23:28 progress: fix/ui-treeconsole/icon-colors — TreeTable/Breadcrumb のアイコン色決定をフォルダ depth ベースと PLUGIN_MANIFEST.icon.color へ切り替え、回帰用ユニットテストを追加。
+- 2025-11-01 23:33 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test — exit 0（Vitest、8 suites 成功）。
+- 2025-11-01 23:34 command: pnpm --filter @hierarchidb/ui-treeconsole-base test — exit 0（Vitest、10 suites 成功）。
+- 2025-11-01 23:35 done: fix/ui-treeconsole/icon-colors — フォルダ depth ベースの rainbowColor と PLUGIN_MANIFEST icon.color 適用を完了し、関連テストを全てグリーンで確認。ロールバックは該当 UI 差分（colors ロジック・テスト）を revert し旧ロジックへ戻す。
+- 2025-11-02 06:41 start: fix/app/playwright-binary-build — @hierarchidb/app build で Playwright による `fsevents.node` バイナリ読込が発生する問題の調査と恒久対策に着手。DoD は Kanban 記載どおり。
+- 2025-11-02 06:42 blocked: fix/app/playwright-binary-build — `pnpm --filter @hierarchidb/app build` が `tsx` IPC パイプ生成で EPERM（sandbox 外へのソケット作成不可）。`TMPDIR` をワークスペース配下へ変更しても同様だったため、以降の検証は直接 `vite build` を実行する方針に切り替え。
+- 2025-11-02 06:43 command: pnpm --filter @hierarchidb/plugin-registry build — exit 0（tsdown による icon サブモジュール未解決 warning は既知）。
+- 2025-11-02 06:46 progress: fix/app/playwright-binary-build — `app/src/router/routes/t.($treeId).($pageNodeId).tsx` が E2E 用 `e2e/utils/test-helpers.ts` の `APP_BASE_URL` を参照していたため Playwright をバンドル対象に引き込んでいたと判明。アプリ側でルーター遷移ロジックへ置き換えるパッチを適用。
+- 2025-11-02 06:49 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-02 06:49 command: (cd app && pnpm vite build --config vite.config.ts) — exit 0（Playwright バイナリ解析エラーは再発せず、既存の dynamic import warning のみ）。

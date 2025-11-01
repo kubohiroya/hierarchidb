@@ -5,12 +5,17 @@ import type { ColumnBuilderParams } from '../components/internal/createTreeTable
 import { createTreeTableColumns } from '../components/internal/createTreeTableColumns.js';
 import type { NodeId, NodeType, TreeNode, Timestamp } from '@hierarchidb/common-types';
 
+const mockGetPluginIconColor = vi.hoisted(() => vi.fn(() => undefined));
+const mockIsFolderNodeType = vi.hoisted(() => vi.fn((nodeType: string) => nodeType === 'folder'));
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children, ...props }: any) => React.createElement('a', props, children),
 }));
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   buildTreeConsoleLinkHref: () => '#',
+  getPluginIconColor: mockGetPluginIconColor,
+  isFolderNodeType: mockIsFolderNodeType,
 }));
 
 const baseNode: TreeNode = {
@@ -94,6 +99,12 @@ function renderCell(params: ColumnBuilderParams, node: TreeNode, columnId: 'name
 }
 
 describe('TreeTable inline edit commits', () => {
+  beforeEach(() => {
+    mockGetPluginIconColor.mockReset();
+    mockGetPluginIconColor.mockReturnValue(undefined);
+    mockIsFolderNodeType.mockReset();
+    mockIsFolderNodeType.mockImplementation((nodeType: string) => nodeType === 'folder');
+  });
   it('does not call finishEdit during typing and commits on blur', () => {
     const finishEdit = vi.fn();
     const params = makeParams({

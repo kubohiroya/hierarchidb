@@ -17,6 +17,8 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => ({
   TreeConsoleBreadcrumb: () => null,
+  getPluginIconColor: () => undefined,
+  isFolderNodeType: (nodeType: string) => nodeType === 'folder',
 }));
 
 const capturedControllers = vi.hoisted(() => [] as TreeTableController[]);

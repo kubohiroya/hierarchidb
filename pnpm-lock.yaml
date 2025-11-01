@@ -2003,6 +2003,9 @@ importers:
 
   packages/ui/treeconsole/breadcrumb:
     dependencies:
+      '@hierarchidb/plugin-registry':
+        specifier: workspace:*
+        version: link:../../../plugin-registry
       '@hierarchidb/ui-i18n':
         specifier: workspace:*
         version: link:../../i18n

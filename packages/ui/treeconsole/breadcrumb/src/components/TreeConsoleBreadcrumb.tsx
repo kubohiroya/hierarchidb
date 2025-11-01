@@ -25,6 +25,7 @@ import { NodeContextMenu } from './NodeContextMenu.js';
 import { NodeTypeIcon } from './NodeTypeIcon.js';
 import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
 import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
+import { getPluginIconColor, isFolderNodeType } from '../utils/nodeTypeIconColor.js';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
@@ -300,8 +301,17 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const nodeIdString = nodeId != null ? String(nodeId) : '';
               const nodeName = node.name || 'Unknown';
               const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
-              const depth = explicitDepth ?? Math.max(0, index + _depthOffset);
-              const iconColor = rainbowColors[depth % rainbowColors.length];
+              const nodeWithAbsolute = node as BreadcrumbNode & { absoluteDepth?: number };
+              const absoluteDepth = typeof nodeWithAbsolute.absoluteDepth === 'number'
+                ? nodeWithAbsolute.absoluteDepth
+                : explicitDepth;
+              const fallbackDepth = typeof absoluteDepth === 'number'
+                ? Math.max(0, Math.round(absoluteDepth))
+                : Math.max(0, index + _depthOffset);
+              const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
+              const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
+              const manifestIconColor = getPluginIconColor(nodeType);
+              const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
               const treeId = props.treeId;
               const hasTreeId = Boolean(treeId);
               const isRootLike =
@@ -331,7 +341,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const linkContent = (
                 <>
                   <IconComponent
-                    nodeType={node.nodeType || node.type || 'folder-plugin'}
+                    nodeType={nodeType}
                     size="small"
                     color="inherit"
                     htmlColor={iconColor}

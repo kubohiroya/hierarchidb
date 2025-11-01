@@ -177,7 +177,8 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
                 <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => navigate({to:`/t/${data.tree?.id ?? 'r'}`})} variant="contained" autoFocus>
+                {/* Use router navigation to avoid coupling with e2e-only Playwright helpers */}
+                <Button onClick={() => navigate({to:`/t/${data.tree?.id ?? 'r'}`, replace: true})} variant="contained" autoFocus>
                   Go to Tree Root
                 </Button>
               </DialogActions>

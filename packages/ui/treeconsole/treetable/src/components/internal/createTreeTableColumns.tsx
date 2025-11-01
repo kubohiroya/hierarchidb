@@ -10,7 +10,11 @@ import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
 import type { TreeNodeInUI } from '../../types.js';
-import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
+import {
+  buildTreeConsoleLinkHref,
+  getPluginIconColor,
+  isFolderNodeType,
+} from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import type { ComponentType, KeyboardEvent as ReactKeyboardEvent } from 'react';
@@ -215,7 +219,10 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         ? ((node as TreeNodeInUI).absoluteDepth as number)
         : reportedDepth;
       const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
-      const iconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
+      const nodeType = node.nodeType || 'folder';
+      const baseIconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
+      const manifestIconColor = getPluginIconColor(nodeType);
+      const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
       const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
 
@@ -309,7 +316,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               }}
             >
               <IconComponent
-                nodeType={node.nodeType || 'folder'}
+                nodeType={nodeType}
                 size="small"
                 clickable={iconInteractive}
                 color="inherit"
