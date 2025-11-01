@@ -1,12 +1,12 @@
 import { toNodeType } from '@hierarchidb/common-types';
-import type { PluginMetadata } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-service-api';
 
 export const PLUGIN_ID = '@hierarchidb/linker-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;
 export const PLUGIN_DESCRIPTION = 'Linker plugin for HierarchiDB: link compiled resources into maps' as const;
 export const PLUGIN_NODE_TYPE = toNodeType('linker');
 
-export const PLUGIN_MANIFEST: PluginMetadata = {
+export const PLUGIN_MANIFEST: PluginManifest = {
   id: PLUGIN_ID,
   name: 'Linker Plugin',
   displayName: 'Linker',

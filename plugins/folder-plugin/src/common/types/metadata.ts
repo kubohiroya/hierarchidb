@@ -27,7 +27,7 @@ export const FolderMetadata = {
   tags: ['organization', 'hierarchy', 'core'],
 };
 
-// Additional metadata not part of PluginMetadata type
+// Additional metadata not part of PluginManifest type
 export const FolderValidation = {
   namePattern: '^[^<>:"/\\\\|?*]+$', // Exclude filesystem-unsafe characters
   maxChildren: 1000,

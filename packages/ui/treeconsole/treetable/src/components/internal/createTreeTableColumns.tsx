@@ -9,6 +9,7 @@ import type { TreeNode, NodeId } from '@hierarchidb/common-types';
 import { rainbowColors } from '@hierarchidb/ui-theme';
 import { IndentSpace, NameCell } from '../TreeTableStyles.js';
 import { extractTags, normalizeNodeKey } from '../../utils/treeTableHelpers.js';
+import type { TreeNodeInUI } from '../../types.js';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { Link as RouterLink } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
@@ -210,8 +211,11 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
         (typeof derivedChildCount === 'number' && derivedChildCount > 0);
       const isExpanded = expandedRowIds.has(node.id);
       const isEditing = editingNodeId === node.id && editingField === 'name';
-      const iconDepth = typeof reportedDepth === 'number' ? Math.max(0, reportedDepth + depthOffset) : baseDepth;
-      const iconColor = rainbowColors[Math.max(0, iconDepth) % rainbowColors.length];
+      const absoluteDepth = typeof (node as TreeNodeInUI).absoluteDepth === 'number'
+        ? ((node as TreeNodeInUI).absoluteDepth as number)
+        : reportedDepth;
+      const iconDepth = typeof absoluteDepth === 'number' ? Math.max(0, absoluteDepth) : baseDepth;
+      const iconColor = rainbowColors[Math.max(0, Math.round(iconDepth)) % rainbowColors.length];
       const updatedAtValue = typeof node.updatedAt === 'number' ? node.updatedAt : undefined;
       const showSparkle = typeof updatedAtValue === 'number' ? Date.now() - updatedAtValue <= 5000 : false;
 

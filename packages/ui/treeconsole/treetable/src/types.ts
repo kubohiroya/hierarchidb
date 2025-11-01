@@ -15,6 +15,7 @@ export interface TreeNodeInUI extends TreeNode {
   hasChildren?: boolean;
   isExpanded?: boolean;
   depth: number;
+  absoluteDepth?: number;
   // [key: string]: any;
 }
 
@@ -31,6 +32,7 @@ export interface TreeTableController {
   rowSelection?: RowSelectionState;
   expandedRowIds?: Set<string>;
   rootNodeId?: NodeId;
+  depthOffset?: number;
 
   // Actions
   handleSearchTextChange?: (value: string) => void;

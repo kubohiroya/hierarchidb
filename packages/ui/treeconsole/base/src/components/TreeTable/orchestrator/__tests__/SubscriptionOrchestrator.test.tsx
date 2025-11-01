@@ -33,9 +33,8 @@ const Initializer: FC<{ initialData: TreeNode[] } & PropsWithChildren> = ({ init
 
 describe('useSubscriptionOrchestrator', () => {
   const createWorkerApiMock = () => {
-    const unsubscribe = vi.fn<[], Promise<void>>().mockResolvedValue();
-    const subscribeSubtree = vi.fn<[string, (event: unknown) => void, unknown?], Promise<string>>()
-      .mockResolvedValue('sub-1');
+    const unsubscribe = vi.fn().mockResolvedValue('sub-1');
+    const subscribeSubtree = vi.fn().mockResolvedValue('sub-1');
 
     const subscriptionApi = {
       subscribeSubtree,

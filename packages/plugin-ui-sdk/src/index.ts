@@ -29,7 +29,7 @@ export type {
   PluginDefinition,
   TreePluginInfo,
   PluginInfo,
-  PluginMetadata,
+  PluginManifest,
   PluginManifestDatabaseConfig,
   PluginManifestDatabasePrewarmConfig,
   ExtendingNodeTypeDefinition,

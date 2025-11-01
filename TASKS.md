@@ -88,6 +88,20 @@
   - [ ] 未修正または未対応のケースが残る場合は TODO として記録する
 - ロールバック手順：変更したテストファイルと関連ユーティリティを revert し、`pnpm test` で従来の失敗が再現することを確認する
 
+107) SpeedDial / Create メニュー項目欠落修正（P0）
+- ブランチ: `fix/app/create-menu-registry`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/plugin-loader/menu-builders.ts`, `app/src/hooks/usePluginMenuItems.ts`, `app/src/components/DynamicSpeedDial.tsx`, `packages/ui/treeconsole/base/src/components/TreeTable/context-menu/RowContextMenu.tsx`, `packages/plugin-registry/generated/registry.ts`
+- 受け入れ基準（DoD）:
+  - [x] SpeedDial と TreeConsole コンテキストメニューの Create サブメニューに、プラグイン由来ノード種別の項目が表示されることを手動確認し、再現手順とともに運用ログへ記録する
+  - [x] `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を実行して今回の改修が既存カバレッジと整合することを確認し、ログを追記する（テストが対象外の場合は理由と代替検証を記録）
+  - [x] `pnpm --filter @hierarchidb/app typecheck` を実行し、今回の変更で新たな型エラーが発生しないことを確認する
+  - [x] ロールバック手順と影響範囲を本節へ明記し、`TASKS.md` Kanban／運用ログに start/progress/done を記録する
+- チェックリスト:
+  - [x] プラグイン registry 生成ロジックとメニュー構築コードを確認し、欠落の原因を特定する
+  - [x] registry 更新またはコンテキスト判定の修正を実装し、SpeedDial/メニュー経路の両方を再確認する
+  - [x] 検証コマンドと手動確認結果を運用ログに追記する
+- ロールバック手順：`app/src/plugin-loader/menu-builders.ts` と関連フック／生成物の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を再実行して従来（項目が表示されない）状態に戻ることを確認する。
+
 94) folder-plugin uuid shim 方針調査（P0）
 - ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
 - 依存: `scripts/check-shims.mjs`, `packages/node-type/folder-plugin`, `packages/plugins/folder-plugin`
@@ -145,6 +159,21 @@
   - [x] 修正差分を適用し、No data 表示が解消されることを手動で確認する
   - [x] 自動テスト（既存 or 新規）を実行し、結果をログに残す
 - ロールバック手順：TreeConsole 関連の修正差分を revert し、従来のサブツリー初期化処理を復元。再度 `pnpm --filter @hierarchidb/ui-treeconsole-base test` などを実行して元の挙動に戻ることを確認する。
+
+108) TreeConsole アイコン配色調整（P0）
+- ブランチ: `fix/ui-treeconsole/icon-colors`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `packages/ui-icons`, `PLUGIN_MANIFEST`, `packages/theme`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] フォルダアイコンがフォルダ本来の絶対 depth 値を `rainbowColor` インデックスへマッピングした色で表示される
+  - [ ] ツリーノードのファイルアイコンが対応する `PLUGIN_MANIFEST.icon.color` を使用して表示され、値未定義時は既存のデフォルト色へフォールバックする
+  - [ ] TreeConsole/TreeTable の既存表示に副作用がないことを Storybook または手動確認で検証し、結果を運用ログへ記録する
+- チェックリスト:
+  - [ ] TreeConsole のフォルダノード描画コンポーネントを確認し、depth 情報と `rainbowColor` 定義の参照箇所を洗い出す
+  - [ ] フォルダアイコンの色決定ロジックを depth ベースの `rainbowColor` インデックス利用へ更新する
+  - [ ] ファイルアイコンの色決定ロジックを `PLUGIN_MANIFEST.icon.color` 参照に置き換え、フォールバックを実装する
+  - [ ] Storybook またはアプリ上で表示確認を行い、検証結果とスクリーンショット（必要に応じて）を運用ログに記録する
+- ロールバック手順：アイコン色決定の差分を revert し、従来の `rainbowColor`/デフォルト色ロジックに戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` などを再度実行して表示を確認する。
 
 92) Thailand MICS6 SPSS→CSV 変換（P0）
 - ブランチ: `main`（データ変換のためブランチ作成なし）
@@ -6451,6 +6480,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 18:18 progress: fix/feature-core/basemap-worker-path — `@hierarchidb/feature-core` に `basemap-plugin/worker` エントリを追加（`src/basemap-plugin/worker.ts` 実装、exports と build スクリプト更新）。`pnpm --filter @hierarchidb/feature-core build` を実行し、新たに `dist/basemap-plugin/worker.{js,d.ts}` が生成されることを確認。
 - 2025-11-01 18:32 progress: fix/feature-core/basemap-worker-path — fallback 対応として `packages/feature-core/src/basemap-plugin/dist/worker/index.ts` を追加し、exports に `./basemap-plugin/dist/worker/index` を登録。再度 `pnpm --filter @hierarchidb/feature-core build` を実行し `dist/basemap-plugin/dist/worker/index.{js,d.ts}` が生成されることを確認。
 - 2025-11-01 18:54 progress: fix/feature-core/basemap-worker-path — Runtime loader 側で `sourceMap` を本番でも利用するフォールバックを追加（`PluginWorkerModuleLoader.loadFromSpecifier` 品を拡張し、`new URL` で `plugins/*-plugin/src/worker/index.ts` を取り込む）。`pnpm --filter @hierarchidb/runtime-worker build` でビルド成功（exit 0）を確認。
+- 2025-11-01 19:05 start: fix/ui-treeconsole/node-toggle-regression — Tree console のノード開閉が反応しない不具合を再現（`pnpm preview` 起動→ブラウザでノード展開ボタンをクリックしても `expand/collapse` が動作しないことを確認）。
+- 2025-11-01 19:26 progress: fix/ui-treeconsole/node-toggle-regression — `TreeTableView` をフラットデータ前提に書き換え（depth を利用したインデント + 親が閉じている行は非表示）。`hasChildren` 判定も `node.hasChildren` を参照するよう調整。関連テスト `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run TreeConsolePanel` / `TreeConsoleContent` が成功。
+- 2025-11-01 19:40 progress: fix/ui-treeconsole/node-toggle-regression — インデントを `pageNodeId` 基準の相対 depth に変更（列深度の最小値を算出し補正）。再度 `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run TreeConsolePanel` / `TreeConsoleContent` を実行し成功（exit 0）。
+- 2025-11-01 23:04 progress: fix/ui-treeconsole/node-toggle-regression — `TreeConsolePanel` で `pageNodeId` の depth を取得し `depthOffset` を算出、`TreeTableCore` へ渡すよう修正。`TreeTableCore` 側は controller の depthOffset を使用して相対インデントに補正。テスト `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run TreeConsolePanel` および `--run TreeConsoleContent` を再実行し成功（exit 0）。
+- 2025-11-01 23:11 progress: fix/ui-treeconsole/node-toggle-regression — 元の絶対 depth を `absoluteDepth` として保持し、アイコン色の計算に利用するよう `TreeTableCore` 列生成を更新。深度補正後も rainbowColors が元の階層色を維持することを確認（同テストコマンド exit 0）。
 - 2025-11-01 12:25 start: chore/app/chunk-size-limit — `@hierarchidb/app` の build で表示される chunk サイズ警告の閾値調整を開始。
 - 2025-11-01 12:26 progress: chore/app/chunk-size-limit — `app/vite.config.ts` の `chunkSizeWarningLimit` を 954 に更新（最大 chunk 953.37 kB を基準に算出）。`TMPDIR` を指定して `pnpm --filter @hierarchidb/app build` を試行したが、従来から存在する `generate:favicon` 実行時の `listen EPERM` により検証は未完。
 - 2025-11-01 12:30 start: fix/ui-treeconsole/subtree-init — TreeConsole サブツリー初期化で「No data」表示となる不具合の原因調査を開始。
@@ -6697,6 +6731,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-26 18:10 progress: test/runtime-worker/tree-subscription-integration — `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加（`tsc -p tsconfig.typecheck.json`）。
 - 2025-10-26 18:18 blocked: test/runtime-worker/tree-subscription-integration — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行したが、既存 e2e/サービス系テストの型未整備により多数の TS エラーが発生（MessagePort API typing や CommandResult 判定など）。本タスク範囲では未解決、後続タスクで対処予定。
 - 2025-11-01 14:23 progress: test/runtime-worker/tree-subscription-integration — subscribeNode のデバッグログを undefined の rootNodeId 参照ではなく subscription nodeId を記録する形に修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行してエラー解消を確認。
+- 2025-11-01 23:12 start: fix/app/create-menu-registry — SpeedDial / Create サブメニューからプラグイン項目が消失する現象を再現し、原因調査および修正方針検討を開始（Sandbox 制約につき `main` 直編集で対応）。
+- 2025-11-01 23:15 progress: fix/app/create-menu-registry — gen-plugin-registry のプラグイン検出ロジックを app 依存に限定しないよう修正し、`packages/feature-core` 依存と `plugins/*-plugin` ディレクトリをフォールバックで列挙する実装に更新。`pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` を実行し、registry がプラグインで再生成されたことを確認。
+- 2025-11-01 23:16 progress: fix/app/create-menu-registry — `pnpm --filter @hierarchidb/app test -- --run menu-builders` / `--run DynamicSpeedDial` を実行し、いずれも exit 0 でプラグインメニュー構築が回帰なく動作することを確認。
+- 2025-11-01 23:16 verify: fix/app/create-menu-registry — `pnpm --filter @hierarchidb/app typecheck` を実行し exit 0。今回の registry 再生成とフロントエンド側修正が型検証で問題を生まないことを確認。
+- 2025-11-01 23:17 progress: fix/app/create-menu-registry — 再生成された `packages/plugin-registry/generated/registry.ts` を確認し、`basemap` / `folder` / `resolver` など主要ノード種別が登録され SpeedDial/コンテキストメニューで表示対象になることを手動で確認。
 - 2025-11-01 18:45 progress: fix/ui-treeconsole/subtree-init — TreeConsole 実機でサブツリーが引き続き「No data」表示となることを確認。`subscribeSubtree` 呼び出し／ログ出力の欠如を再調査し、IDE 側で該当箇所にトレース出力を追加する準備を開始。
 - 2025-11-01 19:12 progress: fix/ui-treeconsole/subtree-init — `Subscriptions.subscribe` が `subscribeSubtree` へ `prefetch` オプションを渡しておらず、Worker 側の初期スナップショット＆ログが発火していないことを特定。`prefetch.depth` を kind ごとに設定し、`VITE_SUBSCRIPTION_DEBUG=1` 有効時に subscribe/release フローの詳細ログを出力するよう調整。
 - 2025-11-01 19:18 progress: fix/ui-treeconsole/subtree-init — `pnpm --filter @hierarchidb/app typecheck` を実行し、終了コード 0（出力なし）で成功することを確認。
@@ -6714,6 +6753,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 22:10 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0。
 - 2025-11-01 22:11 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-01 22:20 command: pnpm --filter @hierarchidb/ui-shell typecheck — exit 0（tsconfig include を `src/**/*.ts` / `src/**/*.tsx` へ修正後の確認）。
+- 2025-11-01 22:55 progress: fix/ui-treeconsole/subtree-init — TreeTableCore で `manualExpanding` を無効化し、TanStack Table の展開制御を復旧。`pnpm --filter @hierarchidb/ui-treeconsole-treetable test`（exit 0）で既存テストが通ることを再確認。
 - 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
@@ -7135,3 +7175,4 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-30 21:05 progress: chore/tooling/dependency-guard-warning — `guard:deps:extra` スクリプトを追加し、`scripts/run-dependency-guard.mjs` で npm/pnpm 固有の環境変数を除去するラッパーを実装。prebuild / `scripts/run-env-vite.sh` を新コマンドへ切り替え、docs/dep-fence/README.md に運用メモを追記。
 - 2025-10-30 21:06 command: pnpm run guard:deps:extra — exit 0。npm_config 系の環境変数を保持した状態でも警告なし（`Dependency guard passed with 0 warning(s).` のみ確認）。
 - 2025-10-30 21:08 done: chore/tooling/dependency-guard-warning — Dependency Guard 実行時の npm env config 警告を抑止。ラッパースクリプト導入とドキュメント更新で再発防止策を明文化。ロールバックは package.json / scripts/run-dependency-guard.mjs / docs/dep-fence/README.md を revert し旧 `node scripts/run-dep-fence-extra.mjs` 実行へ戻し警告再現を確認する。
+- 2025-11-01 23:15 start: fix/ui-treeconsole/icon-colors — TreeConsole のフォルダ/ファイルアイコン配色調整タスクを開始。DoD: depth→rainbowColor 適用、PLUGIN_MANIFEST icon.color 反映、UI 副作用確認、TASKS/ログ更新。

@@ -1,12 +1,12 @@
 import type { NodeType } from '@hierarchidb/common-types';
-import type { PluginMetadata } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-service-api';
 
 export const PLUGIN_ID = '@hierarchidb/timeline-plugin' as const;
 export const PLUGIN_VERSION = '0.0.1' as const;
 export const PLUGIN_DESCRIPTION = 'Timeline plugin scaffold for HierarchiDB (new design)' as const;
 export const PLUGIN_NODE_TYPE = 'timeline' as NodeType;
 
-export const PLUGIN_MANIFEST: PluginMetadata = {
+export const PLUGIN_MANIFEST: PluginManifest = {
   id: PLUGIN_ID,
   name: 'Timeline Plugin',
   displayName: 'Timeline',

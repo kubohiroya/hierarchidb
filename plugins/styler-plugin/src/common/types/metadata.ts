@@ -3,9 +3,9 @@
  */
 
 import { toNodeType } from '@hierarchidb/common-types';
-import type { PluginMetadata } from '@hierarchidb/plugin-service-api';
+import type { PluginManifest } from '@hierarchidb/plugin-service-api';
 
-export const StylerMetadata: PluginMetadata = {
+export const StylerMetadata: PluginManifest = {
   id: 'com.hierarchidb.styler-plugin',
   name: 'Style Map',
   nodeType: toNodeType('styler'),

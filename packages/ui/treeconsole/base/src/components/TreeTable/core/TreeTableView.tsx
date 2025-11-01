@@ -1,5 +1,5 @@
 import type React from 'react';
-import { memo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import type { TreeNode } from '@hierarchidb/common-types';
 import {
   Box,
@@ -79,32 +79,77 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
     stickyHeader = true,
   } = props;
 
-  const isSelected = (nodeId: string) => selectedIds.includes(nodeId);
-  const isExpanded = (nodeId: string) => expandedIds.includes(nodeId);
+  const expandedSet = useMemo(() => new Set(expandedIds.map(String)), [expandedIds]);
+  const parentMap = useMemo(() => {
+    const map = new Map<string, string | undefined>();
+    data.forEach((node) => {
+      const parent = (node as TreeNode).parentId;
+      if (parent !== null && parent !== undefined) {
+        map.set(node.id, String(parent));
+      } else {
+        map.set(node.id, undefined);
+      }
+    });
+    return map;
+  }, [data]);
+
+  const baseDepth = useMemo(() => {
+    const depths = data
+      .map((node) => (typeof node.depth === 'number' ? node.depth : undefined))
+      .filter((value): value is number => typeof value === 'number');
+    if (depths.length === 0) {
+      return 0;
+    }
+    return Math.min(...depths);
+  }, [data]);
+
+  const isSelected = useCallback((nodeId: string) => selectedIds.includes(nodeId), [selectedIds]);
+  const isExpanded = useCallback((nodeId: string) => expandedSet.has(String(nodeId)), [expandedSet]);
+
+  const isVisible = useCallback(
+    (nodeId: string): boolean => {
+      let current = parentMap.get(nodeId);
+      const seen = new Set<string>();
+      while (current) {
+        if (seen.has(current)) break;
+        seen.add(current);
+        if (!expandedSet.has(current)) {
+          // Parent collapsed (and present in map) => hide
+          if (parentMap.has(current)) {
+            return false;
+          }
+        }
+        current = parentMap.get(current);
+      }
+      return true;
+    },
+    [parentMap, expandedSet],
+  );
 
   const handleSelectAll = (checked: boolean) => {
     if (!onNodeSelect) return;
     const targets = data
-      .filter((node) => isSelected(node.id) !== checked)
+      .filter((node) => isVisible(node.id) && isSelected(node.id) !== checked)
       .map((node) => node.id);
     if (targets.length) {
       onNodeSelect(targets, checked);
     }
   };
 
-  const allSelected = data.length > 0 && data.every((node) => isSelected(node.id));
-  const someSelected = data.some((node) => isSelected(node.id));
+  const visibleNodes = useMemo(() => data.filter((node) => isVisible(node.id)), [data, isVisible]);
 
-  const renderNode = (node: TreeNodeData, level: number = 0, ancestorSelected: boolean = false) => {
-    const hasChildren = node.children && node.children.length > 0;
+  const allSelected =
+    visibleNodes.length > 0 && visibleNodes.every((node) => isSelected(node.id));
+  const someSelected = visibleNodes.some((node) => isSelected(node.id));
+
+  const renderRow = (node: TreeNodeData): React.ReactNode => {
+    const hasChildren = Boolean(node.children?.length) || Boolean((node as TreeNode).hasChildren);
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
-    const inheritedSelected = ancestorSelected;
-    const visuallyChecked = inheritedSelected || selected;
-    const checkboxDisabled = inheritedSelected;
+    const absoluteDepth = typeof node.depth === 'number' ? node.depth : 0;
+    const level = Math.max(0, absoluteDepth - baseDepth);
 
     const handleRowClick = (event: React.MouseEvent) => {
-      // Don't trigger row click if clicking on expand/checkbox
       const target = event.target as HTMLElement;
       if (target.closest('[data-no-row-click]')) {
         return;
@@ -112,18 +157,12 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
       onNodeClick?.(node);
     };
 
-    // No right-click handler
-
-    const rows: React.ReactNode[] = [];
-
-    // Main row
-    rows.push(
+    return (
       <TableRow
         key={node.id}
         hover
         selected={selected}
         onClick={handleRowClick}
-        // Right-click disabled by policy
         sx={{
           cursor: 'pointer',
           '&.Mui-selected': {
@@ -139,10 +178,8 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             style={{ padding: '4px 6px', width: 49, minWidth: 49, maxWidth: 49 }}
           >
             <Checkbox
-              checked={visuallyChecked}
-              disabled={checkboxDisabled}
+              checked={selected}
               onChange={(e) => {
-                if (checkboxDisabled) return;
                 onNodeSelect?.([node.id], e.target.checked);
               }}
               size={dense ? 'small' : 'medium'}
@@ -219,17 +256,8 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
             </TableCell>
           );
         })}
-      </TableRow>,
+      </TableRow>
     );
-
-    // Child rows (if expanded)
-    if (expanded && hasChildren && node.children) {
-      node.children.forEach((child: any) => {
-        rows.push(...renderNode(child, level + 1, inheritedSelected || selected));
-      });
-    }
-
-    return rows;
   };
 
   const renderLoadingSkeleton = () => {
@@ -331,7 +359,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
                 </TableCell>
               </TableRow>
             ) : (
-              data.flatMap((node) => renderNode(node, 0, false))
+              visibleNodes.map((node) => renderRow(node as TreeNodeData))
             )}
           </TableBody>
         </Table>

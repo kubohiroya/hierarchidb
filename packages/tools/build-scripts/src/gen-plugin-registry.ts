@@ -757,6 +757,35 @@ async function loadAppPackage() {
   return JSON.parse(raw);
 }
 
+function extractPluginDeps(pkg: Record<string, any> | null | undefined): string[] {
+  if (!pkg || typeof pkg !== 'object') return [];
+  const sections: Array<'dependencies' | 'devDependencies' | 'optionalDependencies'> = [
+    'dependencies',
+    'devDependencies',
+    'optionalDependencies',
+  ];
+  const names = new Set<string>();
+  for (const section of sections) {
+    const record = pkg[section];
+    if (!record || typeof record !== 'object') continue;
+    for (const name of Object.keys(record)) {
+      if (/-plugin$/.test(name)) {
+        names.add(name);
+      }
+    }
+  }
+  return Array.from(names);
+}
+
+async function loadJsonIfExists(filePath: string): Promise<Record<string, any> | null> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 async function removeLegacyArtifacts(): Promise<void> {
   const legacyPaths = [
     path.join(appDir, 'src', 'generated'),
@@ -778,9 +807,39 @@ async function removeLegacyArtifacts(): Promise<void> {
 }
 
 async function collectPluginPackages() {
-  const pkg = await loadAppPackage();
-  const pluginDeps = Object.keys(pkg.dependencies ?? {}).filter((name) => /-plugin$/.test(name));
-  return pluginDeps;
+  const appPkg = await loadAppPackage();
+  const pluginNames = new Set<string>(extractPluginDeps(appPkg));
+
+  if (pluginNames.size === 0) {
+    const featureCorePkgPath = path.join(repoRoot, 'packages', 'feature-core', 'package.json');
+    const featureCorePkg = await loadJsonIfExists(featureCorePkgPath);
+    for (const name of extractPluginDeps(featureCorePkg)) {
+      pluginNames.add(name);
+    }
+  }
+
+  if (pluginNames.size === 0) {
+    const pluginsDir = path.join(repoRoot, 'plugins');
+    try {
+      const entries = await fs.readdir(pluginsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (!/-plugin$/.test(entry.name)) continue;
+        const pkgPath = path.join(pluginsDir, entry.name, 'package.json');
+        const pluginPkg = await loadJsonIfExists(pkgPath);
+        if (pluginPkg && typeof pluginPkg.name === 'string' && /-plugin$/.test(pluginPkg.name)) {
+          pluginNames.add(pluginPkg.name);
+        } else {
+          pluginNames.add(`@hierarchidb/${entry.name}`);
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('[generate-plugin-registry] Failed to enumerate plugins directory:', message);
+    }
+  }
+
+  return Array.from(pluginNames).sort();
 }
 
 async function collectManifests(): Promise<ManifestSummary[]> {

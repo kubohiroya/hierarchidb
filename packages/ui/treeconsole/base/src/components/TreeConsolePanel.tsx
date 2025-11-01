@@ -104,19 +104,41 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
   // Create TreeTableController from props
   const controller: TreeTableController = useMemo((): TreeTableController => {
+    const rootNodeId = props.pageNodeId ? String(props.pageNodeId) : undefined;
+
+    const baseDepth = (() => {
+      if (rootNodeId && props.nodeIndex instanceof DualKeyMap) {
+        const node = props.nodeIndex.get(rootNodeId as NodeId);
+        if (node && typeof node.depth === 'number' && Number.isFinite(node.depth)) {
+          return node.depth as number;
+        }
+      }
+      const depths = props.data
+        .map((node) => (typeof node.depth === 'number' ? (node.depth as number) : undefined))
+        .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+      if (depths.length > 0) {
+        return Math.min(...depths);
+      }
+      return 1;
+    })();
+
+    const depthOffset = 1 - (Number.isFinite(baseDepth) ? baseDepth : 1);
+
     const toTreeNodeInUI = (node: TreeNodeData, fallbackDepth: number): TreeNodeInUI => {
       const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
+      const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
       const base: TreeNodeInUI = {
         ...node,
         nodeType: (node.nodeType || node.type || 'folder') as string,
         type: (node.type || node.nodeType || 'folder') as string,
         name: node.name || '',
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
-        depth: resolvedDepth > 0 ? resolvedDepth : fallbackDepth,
+        depth: normalizedDepth,
+        absoluteDepth: resolvedDepth,
       };
 
       if (Array.isArray(node.children) && node.children.length > 0) {
-        base.children = node.children.map((child) => toTreeNodeInUI(child, base.depth + 1));
+        base.children = node.children.map((child) => toTreeNodeInUI(child, resolvedDepth + 1));
       }
 
       return base;
@@ -138,7 +160,8 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       nodeIndex: props.nodeIndex,
       rowSelection,
       expandedRowIds,
-      rootNodeId: props.pageNodeId as NodeId | undefined,
+      rootNodeId: rootNodeId as NodeId | undefined,
+      depthOffset,
       startEdit: async (_nodeId: string) => {},
       finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
         // delegate to parent handler via context-menu action channel
@@ -259,7 +282,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         pageNodeId={props.pageNodeId}
         useTrashColumns={props.useTrashColumns ?? false}
         trashAction={props.trashAction}
-        depthOffset={0}
+        depthOffset={controller.depthOffset ?? 0}
         disableDragAndDrop={false}
         hideDragHandler={props.hideDragHandler ?? false}
         rowClickAction={props.rowClickAction ?? 'Select/Navigate'}

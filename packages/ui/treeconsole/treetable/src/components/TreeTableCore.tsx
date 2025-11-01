@@ -160,6 +160,14 @@ export function TreeTableCore({
     trashAction,
   }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, languageKey, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
 
+  const expandedState = useMemo(() => {
+    const record: Record<string, boolean> = {};
+    structure.expandedRowIds.forEach((id) => {
+      record[String(id)] = true;
+    });
+    return record;
+  }, [structure.expandedRowIds]);
+
   const table = useReactTable({
     data: structure.tableData,
     columns,
@@ -174,6 +182,7 @@ export function TreeTableCore({
     state: {
       rowSelection: structure.rowSelection,
       sorting,
+      expanded: expandedState,
     },
     onSortingChange: setSorting,
     onRowSelectionChange: (updater) => {

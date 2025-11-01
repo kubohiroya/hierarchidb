@@ -53,7 +53,7 @@ export interface PluginManifestValidationConfig {
  * Keep this independent from runtime handler wiring so UI/registry can read it
  * without importing heavy worker-side code.
  */
-export interface PluginMetadata {
+export interface PluginManifest {
   /** Unique plugin ID (reverse‑DNS or npm style is fine) */
   id: string;
   /** Human‑readable package name */

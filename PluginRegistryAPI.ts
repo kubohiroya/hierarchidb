@@ -92,7 +92,7 @@ export interface PluginRegistryAPI {
    * @param pluginId - Plugin identifier
    * @returns Plugin metadata including capabilities and status
    */
-  getPluginMetadata(pluginId: string): Promise<PluginDefinition | undefined>;
+  getPluginManifest(pluginId: string): Promise<PluginDefinition | undefined>;
 
   /**
    * Get capabilities of a specific plugin
