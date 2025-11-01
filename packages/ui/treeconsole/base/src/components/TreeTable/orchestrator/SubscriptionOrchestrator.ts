@@ -70,6 +70,12 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       let mergedData = [...tableData];
 
       updates.forEach((update) => {
+        console.log('[TreeConsole][Subscription] merge update', {
+          added: update.added?.length ?? 0,
+          updated: update.updated?.length ?? 0,
+          removed: update.removed?.length ?? 0,
+          moved: update.moved?.length ?? 0,
+        });
         const idxMap = new Map(mergedData.map((n, i) => [n.id, i] as const));
 
         if (update.removed && update.removed.length) {
@@ -120,6 +126,10 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       const batch = coalesceBatches(pending);
       const mergedData = mergeUpdates([batch]);
       setTableData(mergedData);
+      console.log('[TreeConsole][Subscription] processed batch', {
+        pendingCount: pending.length,
+        mergedLength: mergedData.length,
+      });
 
       const dt = (performance.now?.() ?? Date.now()) - t0;
       if (pending.length > 200 || dt > 200) {
@@ -152,6 +162,12 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
 
   const handleSubTreeUpdate = useCallback(
     (changes: SubTreeChanges) => {
+      console.log('[TreeConsole][Subscription] enqueue batch', {
+        added: changes.added?.length ?? 0,
+        updated: changes.updated?.length ?? 0,
+        removed: changes.removed?.length ?? 0,
+        moved: changes.moved?.length ?? 0,
+      });
       setLastUpdateTimestamp(Date.now());
       setPendingUpdates((prev) => [...prev, changes]);
       scheduleProcess();
@@ -166,22 +182,43 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
       * SubTree
       */
   const subscribe = useCallback(
-    async (rootNodeId: string, _depth: number = 2) => {
+    async (rootNodeId: string, depth: number = 2) => {
       if (subscriptionRef.current) {
         await unsubscribe();
       }
 
       try {
+        // Reset table data and pending queue before new subscription
+        setTableData([]);
+        setPendingUpdates([]);
+        console.log('[TreeConsole][Subscription] subscribing', { rootNodeId, depth });
         //  WorkerAPI
         const subscriptionAPI = await workerAPI.getSubscriptionAPI();
         const proxied = (await import('comlink')).proxy((event: TreeNodeEvent) => {
+          console.log('[TreeConsole][Subscription] event received', {
+            type: event.type,
+            nodeId: event.nodeId,
+            hasNode: Boolean(event.node),
+            keys: event.node ? Object.keys(event.node) : [],
+          });
           // Map a single node event to our local SubTreeChanges batch form
           const batch: SubTreeChanges = (() => {
             switch (event.type) {
               case 'created':
                 return { added: [Object.assign({ id: event.nodeId }, event.node || {})] };
-              case 'updated':
-                return { updated: [{ nodeId: event.nodeId as string, changes: (event.node || {}) as Record<string, unknown> }] };
+              case 'updated': {
+                const payload = (event.node || {}) as Record<string, unknown>;
+                const base = { nodeId: event.nodeId as string, changes: payload };
+                // Treat prefetch snapshot events (delivered as "updated" with node payload)
+                // as additions when we have no existing row.
+                const added = Object.keys(payload).length > 0
+                  ? [Object.assign({ id: event.nodeId }, payload)]
+                  : undefined;
+                return {
+                  updated: [base],
+                  ...(added ? { added } : {}),
+                };
+              }
               case 'deleted':
                 return { removed: [event.nodeId as string] };
               case 'moved':
@@ -197,7 +234,13 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
         const subscriptionId = await subscriptionAPI.subscribeSubtree(
           rootNodeId as NodeId,
           proxied,
+          depth != null && depth > 0
+            ? {
+                prefetch: { depth },
+              }
+            : undefined,
         );
+        console.log('[TreeConsole][Subscription] subscribed', { rootNodeId, subscriptionId, depth });
         subscriptionRef.current = () => { void subscriptionAPI.unsubscribe(subscriptionId); };
         setSubscriptionId(rootNodeId); //  rootNodeId
         setSubscribedRootNodeId(rootNodeId);
@@ -205,7 +248,7 @@ export function useSubscriptionOrchestrator(workerAPI: WorkerAPI): SubscriptionO
         console.error('Failed to subscribe to subtree:', error);
       }
     },
-    [workerAPI, handleSubTreeUpdate, setSubscriptionId, setSubscribedRootNodeId],
+    [workerAPI, handleSubTreeUpdate, setSubscriptionId, setSubscribedRootNodeId, setTableData, setPendingUpdates],
   );
 
   /**

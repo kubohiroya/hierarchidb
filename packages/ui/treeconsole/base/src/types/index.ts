@@ -357,6 +357,7 @@ export interface AdapterContext {
   groupId?: string;
   viewId?: string;
   onNameConflict?: (name: string) => string;
+  prefetchDepth?: number;
 }
 
 export type LegacyCallback<T = unknown> = (data: T) => void;

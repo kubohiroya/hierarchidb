@@ -5,7 +5,9 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "exclude": [
     "../../../node_modules",

@@ -9,7 +9,9 @@
     "types": [
       "node",
       "vite/client"
-    ]
+    ],
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

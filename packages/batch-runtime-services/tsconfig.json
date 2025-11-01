@@ -6,7 +6,9 @@
         "./src/*"
       ]
     },
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "include": [
     "src*"

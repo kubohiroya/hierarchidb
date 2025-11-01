@@ -8,10 +8,10 @@ set -euo pipefail
 # - open:   print path to worktree by branch
 #
 # Usage:
-#   scripts/wt.sh start <repo-dir> <branch> [--base <origin/main>] [--wt-base <../wt-<repo>>]
-#   scripts/wt.sh remove <branch|path> [--force]
-#   scripts/wt.sh list
-#   scripts/wt.sh open <branch>
+#   scripts/run-wt.sh start <repo-dir> <branch> [--base <origin/main>] [--wt-base <../wt-<repo>>]
+#   scripts/run-wt.sh remove <branch|path> [--force]
+#   scripts/run-wt.sh list
+#   scripts/run-wt.sh open <branch>
 #
 # Notes:
 # - <repo-dir> is a directory inside this repo (e.g. packages/runtime-worker)
@@ -180,4 +180,3 @@ main() {
 }
 
 main "$@"
-

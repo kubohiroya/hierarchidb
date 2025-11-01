@@ -9,7 +9,9 @@
       "~/*": [
         "./src/*"
       ]
-    }
+    },
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

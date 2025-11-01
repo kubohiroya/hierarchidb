@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+
+vi.mock('comlink', () => ({
+  proxy: <T,>(value: T) => value,
+}));
 
 // Mock dependencies
 vi.mock('@hierarchidb/provider', () => ({
@@ -1123,6 +1128,111 @@ describe('useTreeViewController', () => {
         expect(undoResult.success).toBe(true);
         expect(undoResult.undoneCommand?.type).toBe('$1');
         // expect(undoResult.undoneCommand.toParent).toBe('original-parent'); // Property doesn't exist on UndoRedoCommand
+      });
+    });
+  });
+
+  describe('worker integration', () => {
+    it('loads initial subtree and applies updates from subscription events', async () => {
+      const rootNodeId = 'root-node' as NodeId;
+      const rootNode: TreeNode = {
+        id: rootNodeId,
+        name: 'Root Folder',
+        nodeType: 'folder',
+        parentId: null,
+      };
+      const childNode: TreeNode = {
+        id: 'child-1',
+        name: 'Child Node',
+        nodeType: 'folder',
+        parentId: rootNodeId,
+      };
+
+      let subscriptionCallback: ((event: TreeNodeEvent) => void) | null = null;
+
+      const mockSubscriptionAPI = {
+        subscribeSubtree: vi.fn(async (_nodeId: NodeId, cb: (event: TreeNodeEvent) => void) => {
+          subscriptionCallback = cb;
+          return 'sub-1';
+        }),
+        unsubscribe: vi.fn(async () => {}),
+      };
+
+      const mockQueryAPI = {
+        getNode: vi.fn(async (id: NodeId) => (String(id) === String(rootNodeId) ? rootNode : childNode)),
+        listDescendants: vi.fn(async () => [childNode]),
+      };
+
+      const mockWorkerAPI = {
+        getQueryAPI: vi.fn(async () => mockQueryAPI),
+        getSubscriptionAPI: vi.fn(async () => mockSubscriptionAPI),
+        getMutationAPI: vi.fn(),
+        getWorkingCopyAPI: vi.fn(),
+        getPluginLifecycleAPI: vi.fn(),
+        getDialogStateAPI: vi.fn(),
+        getImportExportAPI: vi.fn(),
+        getTagAPI: vi.fn(),
+        startBatchSession: vi.fn(),
+        getBatchSessionStatus: vi.fn(),
+        pauseBatchSession: vi.fn(),
+        resumeBatchSession: vi.fn(),
+        cancelBatchSession: vi.fn(),
+        subscribeBatchProgress: vi.fn(),
+        ping: vi.fn(() => ({ response: 'pong' as const, timestamp: Date.now() })),
+        initialize: vi.fn(async () => {}),
+        shutdown: vi.fn(async () => {}),
+        getSystemHealth: vi.fn(async () => ({
+          databases: { coreDB: true, ephemeralDB: true },
+          services: { query: true, mutation: true, subscription: true, plugin: true, workingCopy: true },
+          memory: { used: 0, limit: 0 },
+          uptime: 0,
+        })),
+      } as unknown as WorkerAPI;
+
+      const mockWorkerClient = {
+        getAPI: vi.fn(() => mockWorkerAPI),
+      };
+
+      const { result } = renderHook(() =>
+        useTreeViewController({
+          treeId: 'test-tree-id',
+          rootNodeId,
+          workerClient: mockWorkerClient,
+        }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: rootNodeId }),
+            expect.objectContaining({ id: childNode.id }),
+          ]),
+        );
+      });
+
+      expect(mockSubscriptionAPI.subscribeSubtree).toHaveBeenCalledWith(
+        rootNodeId,
+        expect.any(Function),
+        expect.objectContaining({ prefetch: { depth: 3 } }),
+      );
+      expect(subscriptionCallback).toBeTruthy();
+
+      await act(async () => {
+        subscriptionCallback?.({
+          type: 'updated',
+          nodeId: childNode.id as NodeId,
+          node: { ...childNode, name: 'Updated Child Node' },
+          parentId: rootNodeId,
+          timestamp: Date.now(),
+        });
+      });
+
+      await waitFor(() => {
+        expect(result.current.data).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ id: childNode.id, name: 'Updated Child Node' }),
+          ]),
+        );
       });
     });
   });

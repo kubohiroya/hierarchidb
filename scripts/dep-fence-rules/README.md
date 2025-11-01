@@ -1,7 +1,7 @@
 # Proposed dep-fence Custom Rules (PR Materials)
 
 This folder contains self-contained, upstream-ready rule implementations for dep-fence.
-They mirror the checks we already run in `scripts/dep-fence-extra.mjs`, but are structured
+They mirror the checks we already run in `scripts/run-dep-fence-extra.mjs`, but are structured
 as reusable rules that dep-fence can load.
 
 Rules included

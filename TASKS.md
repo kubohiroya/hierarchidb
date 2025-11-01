@@ -117,6 +117,35 @@
   - [x] 解決策を適用し、typecheck コマンドの結果を記録する
 - ロールバック手順：`packages/ui-shell/tsconfig.typecheck.json` と `package.json` の `typecheck` スクリプト追加を削除し、必要に応じて dist 参照のために実行した依存ビルドをスキップすれば従来構成へ戻る。再度 `pnpm --filter @hierarchidb/ui-shell typecheck`（tsconfig.json を直接指定）で現行の TS6059 を再現可能。
 
+96) app chunk size warning 調整（P0）
+- ブランチ: `chore/app/chunk-size-limit`（sandbox 制約で `main` 上で作業）
+- 依存: `app/vite.config.ts`, `@hierarchidb/app`, Rollup/Vite build 設定
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm --filter @hierarchidb/app build` で発生する chunk size warning の閾値を調整し、警告が出ないギリギリの値（実測値に基づく）を設定する
+  - [ ] 調整後に `pnpm --filter @hierarchidb/app build` を再実行し、警告が出ないことを確認してログに記録する
+  - [ ] 設定変更の影響範囲とロールバック手順を記載する
+- チェックリスト:
+  - [ ] 現在の最大 chunk サイズを確認し、必要な閾値を算出する
+  - [ ] `vite.config.ts` など関連設定に `build.chunkSizeWarningLimit` を追記・更新する
+  - [ ] ビルド結果を確認し、警告非発生を検証する
+- ロールバック手順：`vite.config.ts` の `chunkSizeWarningLimit` 変更を revert し、以前の警告表示に戻す。
+
+97) TreeConsole サブツリー初期化不具合修正（P0）
+- ブランチ: `fix/ui-treeconsole/subtree-init`（sandbox 制約で `main` 上で作業）
+- 依存: `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/runtime-client`, `@hierarchidb/runtime-worker`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] 指定ノード配下のサブツリー初期データを取得する処理の不具合原因を特定し、本節に整理する
+  - [x] 修正を実装し、TreeConsole で対象ノード選択時にサブツリーが正しく表示されることを確認する（UI または headless テストで検証）
+  - [x] 関連する自動テストを更新／追加し、`pnpm --filter @hierarchidb/ui-treeconsole-base test` など必要なコマンドがグリーンであることを運用ログに記録する
+  - [x] ロールバック手順と影響範囲を記載する
+- チェックリスト:
+  - [x] 再現手順をまとめ、問題が発生する API コール／状態管理の箇所を特定する
+  - [x] 修正差分を適用し、No data 表示が解消されることを手動で確認する
+  - [x] 自動テスト（既存 or 新規）を実行し、結果をログに残す
+- ロールバック手順：TreeConsole 関連の修正差分を revert し、従来のサブツリー初期化処理を復元。再度 `pnpm --filter @hierarchidb/ui-treeconsole-base test` などを実行して元の挙動に戻ることを確認する。
+
 92) Thailand MICS6 SPSS→CSV 変換（P0）
 - ブランチ: `main`（データ変換のためブランチ作成なし）
 - 依存: `python3`, `pyreadstat`, `pandas`, `/Users/hiroya/Downloads/MICS_Datasets/Thailand MICS6 and Thailand Selected 17 Provinces MICS6 Datasets/Thailand MICS6 Datasets/Thailand MICS6 SPSS Datasets/*.sav`
@@ -190,7 +219,7 @@
 
 93) Dependency Guard npm 警告抑制（P0）
 - ブランチ: `chore/tooling/dependency-guard-warning`（sandbox 制約で main 上で作業）
-- 依存: `package.json`, `scripts/dep-fence-extra.mjs`, `scripts/env_vite.sh`, `docs/package-dependencies.md`
+- 依存: `package.json`, `scripts/run-dep-fence-extra.mjs`, `scripts/run-env-vite.sh`, `docs/package-dependencies.md`
 - 受け入れ基準（DoD）:
   - [ ] Dependency Guard 実行時に出力されていた `npm warn Unknown env config "verify-deps-before-run"` / `_jsr-registry` が解消される
   - [ ] 変更したスクリプト/設定が他パッケージの build/lint/guard へ副作用を与えないことを確認し、影響範囲を記録する
@@ -200,7 +229,7 @@
   - [ ] npm/env 経由で発生する警告の再現条件を調査し、ガード実行時に無効化するラッパ/フローを設計する
   - [ ] package.json scripts や補助スクリプトを更新し、Dependency Guard を警告なしで実行できるようにする
   - [ ] ドキュメント更新と回帰コマンド（guard + 影響範囲の build/lint）を実行し、成功ログを取得する
-- ロールバック手順：追加・変更したラッパスクリプトと package.json の差分、関連ドキュメント更新を revert し、従来の `node scripts/dep-fence-extra.mjs` 実行へ戻した上で Dependency Guard を再実行し警告解消前の状態に戻す
+- ロールバック手順：追加・変更したラッパスクリプトと package.json の差分、関連ドキュメント更新を revert し、従来の `node scripts/run-dep-fence-extra.mjs` 実行へ戻した上で Dependency Guard を再実行し警告解消前の状態に戻す
 - 運用メモ:
   - `config/dev-aliases.json` で `groups` / `packages` / `plugins` を列挙する。`plugins` に `"*"` を指定すると全プラグインを src 参照にできる。
   - 一時的な上書きは `VITE_DEV_ALIAS_OVERRIDE="packages=@hierarchidb/ui-dialog,@hierarchidb/ui-navigation;groups=ui;plugins=*" pnpm dev` のように渡す（セミコロン区切りでカテゴリ指定、カンマ区切りで値を列挙）。
@@ -315,7 +344,7 @@
 
 24) FEATURE_FLAGS 廃止準備（P0）
 - ブランチ: `chore/config/remove-feature-flags`（sandbox 制約で `main` 上で作業）
-- 依存: `config/feature-flags.ts`, `scripts/env_vite.sh`
+- 依存: `config/feature-flags.ts`, `scripts/run-env-vite.sh`
 - 受け入れ基準（DoD）:
   - [x] `TASKS.md` の Kanban と運用ログに start/progress/done を記録し、撤廃差分とロールバック手順を追記する
   - [x] UI/Worker/スクリプトでの `FEATURE_FLAGS.*` 参照を削除し、既定挙動へ統一（撤廃対象とロールバック方法を明記）
@@ -323,7 +352,7 @@
   - [ ] `pnpm lint && pnpm typecheck && pnpm test`（必要に応じて関連パッケージの build/typecheck/test）を実行し成功ログを残す
   - [ ] 完了時に当タスクを Done へ移し、影響範囲と検証結果を 1 行で追記する
 - チェックリスト:
-  - [x] FEATURE_FLAGS の定義箇所を棚卸し（例: `config/feature-flags.ts`, `scripts/env_vite.sh`, `packages/**/feature-flags.ts`）
+  - [x] FEATURE_FLAGS の定義箇所を棚卸し（例: `config/feature-flags.ts`, `scripts/run-env-vite.sh`, `packages/**/feature-flags.ts`）
   - [x] UI/Worker/スクリプトから FEATURE_FLAGS 参照を撤廃
   - [x] 運用ログに実行コマンドと結果を記録
 - ロールバック手順：FEATURE_FLAGS の定義ファイルと参照箇所の差分を revert し、既存フラグ構成へ戻す
@@ -474,21 +503,21 @@
 - ロールバック手順：
  - `scripts/generate-plugin-loader.mjs` と `app/src/generated/ui-loader.ts` の差分を元に戻し、再生成・typecheck を再実行する
 
-13) env_vite.sh Turbo 起動整備（P0）
+13) run-env-vite.sh Turbo 起動整備（P0）
 - ブランチ: `main`（sandbox 制約で `refactor/scripts/start-env-turbo` ブランチ作成不可のため暫定対応）
-- 依存: `scripts/env_vite.sh`, `turbo.json`, NodeNext 型検証タスク
+- 依存: `scripts/run-env-vite.sh`, `turbo.json`, NodeNext 型検証タスク
 - 受け入れ基準（DoD）:
   - [x] `ensure_built` 群の役割と Turbo 依存関係で代替できる根拠を調査して記録（コードコメントまたは TASKS 運用ログ）
-  - [x] `scripts/env_vite.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
-  - [ ] `scripts/env_vite.sh dev` を dist 未生成状態から実行し、Turbo 依存のみで初回ビルドが完了することを確認（NodeNext 型エラー解消後に再検証）
+  - [x] `scripts/run-env-vite.sh` をリファクタし、個別列挙ではなく Turbo 依存や汎用ロジックで初回ビルドを担保できるようにする
+  - [ ] `scripts/run-env-vite.sh dev` を dist 未生成状態から実行し、Turbo 依存のみで初回ビルドが完了することを確認（NodeNext 型エラー解消後に再検証）
   - [x] `TASKS.md` の運用ログに start/done とロールバック手順を追記する
 - チェックリスト:
 - [x] `ensure_built` で列挙していたパッケージと app 依存グラフの整合性を確認し、必要な build タスクの最小集合を整理
 - [x] start-env 実行時の Turbo エラーを標準エラーに透過し、失敗時に exit するようハンドリングを追加
 - [x] `app#typecheck` から `@hierarchidb/ui-i18n` / `@hierarchidb/ui-treeconsole-base` / `@hierarchidb/runtime-worker` の `typecheck` を Turbo 依存で先行実行させ、宣言ビルド順序を自動化（2025-10-23）
-- [ ] dist 未生成状態での `scripts/env_vite.sh dev` 実行結果を記録（2025-10-22: Turbo 経由 build が既存 TS エラーで停止し再試行待ち）
+- [ ] dist 未生成状態での `scripts/run-env-vite.sh dev` 実行結果を記録（2025-10-22: Turbo 経由 build が既存 TS エラーで停止し再試行待ち）
 - ロールバック手順：
- - `scripts/env_vite.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
+ - `scripts/run-env-vite.sh` と関連設定を差分前に戻し、`pnpm dev` が従来通り起動することを確認
 - 運用ログ：
   - start: 2025-10-22 13:33 sandbox でブランチ作成が拒否されたため `main` 上で start-env Turbo 改修を開始（Turbo 依存置き換え検討）
 
@@ -510,6 +539,32 @@
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
+
+- 101) ui-shell typecheck 依存ビルド効率化（P1）
+- ブランチ: `chore/ui-shell/typecheck-opt`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui-shell`, `packages/ui/*`, `turbo.json`, `package.json`
+- 受け入れ基準（DoD）:
+  - [ ] `@hierarchidb/ui-shell` の `pretypecheck` で実行するビルド対象を棚卸しし、最小構成へ整理した方針を文書化
+  - [ ] 新しい依存ビルド手段（例: Turbo パイプライン調整 or 専用スクリプト）を実装し、`pnpm --filter @hierarchidb/ui-shell typecheck` の実行時間が短縮されたことを確認
+  - [ ] 変更内容と検証ログを `TASKS.md` 運用ログに追記し、ロールバック手順を明記
+- チェックリスト:
+  - [ ] 現状の `pretypecheck` 実行ログから依存ビルド一覧を抽出
+  - [ ] Turbo/pnpm 設定を試行し、必要な dist の再生成が担保されるか検証
+  - [ ] 成果をドキュメントへ反映し、`pnpm typecheck` の成功ログを記録
+- ロールバック手順：`packages/ui-shell/package.json` の `pretypecheck` を従来コマンドへ戻し、`pnpm --filter @hierarchidb/ui-shell typecheck` を実行して現状構成へ復旧する
+
+- 102) UI バンドル project references 対応（P1）
+- ブランチ: `refactor/ui-shell/project-refs`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui-shell`, `packages/ui/*`, `packages/components`, `packages/plugin-ui-host`, `tsconfig.*`
+- 受け入れ基準（DoD）:
+  - [ ] 代表的 UI パッケージで `tsconfig.typecheck.json` を `composite: true` 化し、型エラーを解消
+  - [ ] `packages/ui-shell/tsconfig.typecheck.json` に project references を設定し、`tsc -b` ベースで依存解決できることを確認
+  - [ ] `pnpm --filter @hierarchidb/ui-shell typecheck` が dist 生成なしでも成功し、検証ログとロールバック手順を TASKS に記録
+- チェックリスト:
+  - [ ] 対象パッケージの `tsconfig` を洗い出し、`composite` 適用の影響を整理
+  - [ ] `vitest.setup.ts` などで露出した型エラーを修正し、型ビルドが通るか確認
+  - [ ] `tsc -b` での依存順序を Turbo/Pnpm の pipeline に組み込み、回帰がないかを検証
+- ロールバック手順：追加した references・`composite` 設定を revert し、`pnpm --filter @hierarchidb/ui-shell typecheck` を旧構成で再実行する
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
 0) tools predeploy gh-pages スクリプト整備（P1）
@@ -1912,7 +1967,7 @@ EPIC) i18nコア統一とロケール伝播（React非依存・言語追加を�
 - merged: PR #104 fix/app/init-loading-ux-polish（初回スプラッシュ簡素化と 0% フリッカー抑止、UXコメントの整理、CI/Types 安定化ガイドの追加 等）
 - merged: integrate/spreadsheet-styler-ci-stability（CI typecheck/ビルドの安定化、types を src 指向に統一、UI/env の import.meta.env 化、package-local alias の撤廃 ほか）
 - 影響範囲まとめ:
-  - Dev 体験: `scripts/env_vite.sh` の自動ビルド/エイリアス調整により初回起動の失敗率を低減。
+  - Dev 体験: `scripts/run-env-vite.sh` の自動ビルド/エイリアス調整により初回起動の失敗率を低減。
   - 型安定性: `exports.types/types` を `src` 指向へ統一、CI での prebuild typecheck 安定化。
   - Docs/TASKS: 本 `TASKS.md` の ToDo に node-type 監査タスクを反映済み（本日）。
 
@@ -2513,7 +2568,7 @@ P2:
   - dev 設定画面（隠し/DevTools）でフラグ表示（読み取り専用）
 - チェックリスト:
   - [ ] Runbook（切替/監視/戻し）のテンプレ化
-  - [ ] env_vite.sh の例と注意点
+  - [ ] run-env-vite.sh の例と注意点
   - [ ] 既知の相互作用と制約一覧
 
 6) レガシー経路の除去（安定化後）（P3）
@@ -3106,7 +3161,7 @@ P2:
   - ブランチ: `chore/dep-fence/paths-and-externals`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `dep-fence`, `@hierarchidb/ui-map`, `@hierarchidb/runtime-ui-plugin-dialog`, `@hierarchidb/ui-core`
   - 受け入れ基準（DoD）：
-    - [x] `node scripts/dep-fence-extra.mjs` を実行して WARN が表示されない
+    - [x] `node scripts/run-dep-fence-extra.mjs` を実行して WARN が表示されない
     - [x] 対象パッケージ（ui-map, runtime-ui/plugin-dialog, ui-core, common-api, plugins/location-plugin, plugins/runtime-worker-factory, plugins/shape-plugin, runtime-shared/module-paths）の `tsconfig` から禁止されている `paths` エントリが撤去されている
     - [x] `packages/ui/map/package.json` の `tsup.external` が peerDependencies と一致している
   - チェックリスト：
@@ -3114,23 +3169,23 @@ P2:
     - [x] 各対象 `tsconfig*.json` から `@hierarchidb/.../dist` などのローカル paths を削除し、型参照が通ることを確認
     - [x] 主要パッケージで `pnpm --filter <package> typecheck` を実行しグリーンを確認（sandbox 制約がある場合は理由を記録）
   - ロールバック手順：
-    - 更新した `package.json` および `tsconfig*.json` を差分前へ戻し、`node scripts/dep-fence-extra.mjs` を再実行して WARN の再現を確認
+    - 更新した `package.json` および `tsconfig*.json` を差分前へ戻し、`node scripts/run-dep-fence-extra.mjs` を再実行して WARN の再現を確認
   - 運用ログ：
     - start: 2025-09-30 11:20 dep-fence-extra WARN 解消タスクに着手（tsconfig paths と tsup external を整理）
     - progress: 2025-09-30 11:34 `packages/ui/map/package.json` の `tsup.external` を peer 依存に合わせて更新し、対象パッケージ（common-api / runtime-ui-plugin-dialog / ui-core / location-plugin / runtime-worker-factory / shape-plugin / runtime-shared-module-paths）の `tsconfig.json` から許可外の `paths` を削除
-    - progress: 2025-09-30 11:38 `node scripts/dep-fence-extra.mjs` を実行し WARN=0 を確認
+    - progress: 2025-09-30 11:38 `node scripts/run-dep-fence-extra.mjs` を実行し WARN=0 を確認
     - progress: 2025-09-30 11:40 `pnpm --filter @hierarchidb/ui-core typecheck`・`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck`・`pnpm --filter @hierarchidb/common-api typecheck` がいずれも成功
     - blocked: 2025-09-30 11:42 `pnpm --filter @hierarchidb/location-plugin typecheck` が既存エラー（LOCATION_TYPES 未定義・WorkerBridge 型欠如など）で失敗したため保留。dep-fence WARN 解消とは独立課題として記録
-    - blocked: 2025-09-30 13:05 `node scripts/dep-fence-extra.mjs` を再実行したところ WARN が再発（tsup.external / tsconfig paths）。Lockfile と node_modules の不整合警告も確認
+    - blocked: 2025-09-30 13:05 `node scripts/run-dep-fence-extra.mjs` を再実行したところ WARN が再発（tsup.external / tsconfig paths）。Lockfile と node_modules の不整合警告も確認
     - progress: 2025-09-30 12:28 WARN 再発を確認後、`packages/ui/map/package.json` の `tsup.external` を再調整し、対象 tsconfig から許可外 `paths` を再削除
-    - progress: 2025-09-30 12:30 `node scripts/dep-fence-extra.mjs` を再実行し WARN=0 を確認
+    - progress: 2025-09-30 12:30 `node scripts/run-dep-fence-extra.mjs` を再実行し WARN=0 を確認
     - blocked: 2025-09-30 12:32 `pnpm --filter @hierarchidb/ui-core typecheck` が既存エラー（DynamicCreateMenu.tsx の React import 不足）で失敗。前回同様に別課題として記録し、`@hierarchidb/runtime-ui-plugin-dialog` / `@hierarchidb/common-api` typecheck は成功
     - progress: 2025-09-30 13:08 tsconfig パス制約を再確認し、対象パッケージの設定から許可外 entries を除去
     - progress: 2025-09-30 13:09 `packages/ui/map/package.json` の `tsup.external` を peer 依存と完全同期
-    - done: 2025-09-30 13:10 `node scripts/dep-fence-extra.mjs` を再実行し WARN 0 件を確認（typecheck は既存既知エラーのため据え置き）
-    - reopen: 2025-10-01 09:35 `node scripts/dep-fence-extra.mjs` で WARN（tsup external／tsconfig paths）が再発したためタスクを再開
+    - done: 2025-09-30 13:10 `node scripts/run-dep-fence-extra.mjs` を再実行し WARN 0 件を確認（typecheck は既存既知エラーのため据え置き）
+    - reopen: 2025-10-01 09:35 `node scripts/run-dep-fence-extra.mjs` で WARN（tsup external／tsconfig paths）が再発したためタスクを再開
     - progress: 2025-10-01 09:50 `packages/plugins/{location,route,shape}-plugin` と `packages/runtime-ui/plugin-dialog` の `tsup.external`・`tsconfig` を調整し、禁止 `paths` を撤去
-    - progress: 2025-10-01 09:55 `node scripts/dep-fence-extra.mjs` を再実行し WARN=0 を確認
+    - progress: 2025-10-01 09:55 `node scripts/run-dep-fence-extra.mjs` を再実行し WARN=0 を確認
     - progress: 2025-10-01 10:00 `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck`・`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` がいずれも成功（`runtime-shared/module-paths` は事前ビルド）
     - done: 2025-10-01 10:05 dep-fence-extra WARN 再発分の是正完了（tsup external / tsconfig paths 調整と typecheck 実行）
 
@@ -3443,7 +3498,7 @@ P2:
     - progress: 2025-09-25 19:00 eslint/vitest/tsconfig/app-config/スクリプトの参照パスを新構成へ更新し、`pnpm-lock.yaml`・docs を `packages/runtime/worker-*` 参照に同期
     - progress: 2025-09-25 19:04 `pnpm --filter @hierarchidb/runtime-worker typecheck` / `pnpm --filter @hierarchidb/runtime-client typecheck` を実行し、移動後のパッケージでグリーンを確認
     - progress: 2025-09-25 19:06 `pnpm --filter @hierarchidb/app typecheck` を実行し、新パス設定で解決できることを確認
-    - progress: 2025-09-25 19:11 `scripts/dep-fence-extra.mjs` を更新し `reference/` ワークスペースを除外、再実行して WARN のみ（@hierarchidb/ui-map peers 未外部化, runtime-shared-module-paths tsconfig paths）で通過
+    - progress: 2025-09-25 19:11 `scripts/run-dep-fence-extra.mjs` を更新し `reference/` ワークスペースを除外、再実行して WARN のみ（@hierarchidb/ui-map peers 未外部化, runtime-shared-module-paths tsconfig paths）で通過
     - progress: 2025-09-25 19:16 `app/tsconfig*.json` の dist 参照をパッケージルートへ切替え、`node scripts/policy/ban-tsconfig-paths-dist-dts.mjs` / `pnpm --filter @hierarchidb/app typecheck` を確認
     - progress: 2025-09-25 19:19 shape-plugin の workspace 依存に `@hierarchidb/runtime-shared-module-paths` を追加し `pnpm --filter @hierarchidb/shape-plugin build` が成功
     - progress: 2025-09-25 19:27 spreadsheet-plugin の worker 型参照を Node16 方式へ修正し、`pnpm --filter @hierarchidb/spreadsheet-plugin build` が成功
@@ -3686,7 +3741,7 @@ P2:
   - 受け入れ基準（DoD）：
     - [ ] Location / Route / Shape の進捗 UI が英語表示になり、i18n 経由で文言を差し替え可能
     - [ ] 新しい `BatchProgressEvent` メタデータ（phase, payload.total など）が表示に反映されている
-    - [ ] `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck` が成功、`node scripts/dep-fence-extra.mjs` に WARN がない
+    - [ ] `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck` が成功、`node scripts/run-dep-fence-extra.mjs` に WARN がない
   - チェックリスト：
     - [ ] Location の `BatchProgressDialog` を i18n 化し、`useLocationProgress` の unified 進捗を利用
     - [ ] Route / Shape の tsup 設定に runtime-worker-factory を追加し、進捗 hook の整合を確認
@@ -3699,7 +3754,7 @@ P2:
     - progress: 2025-09-30 14:25 Location BatchProgressDialog を i18n 化し、`useLocationProgress` から unified progress を反映（tsconfig default locale を en に変更）
     - progress: 2025-09-30 14:32 Route/Shape の tsup external に runtime-worker-factory を追加
     - progress: 2025-09-30 14:38 `pnpm --filter @hierarchidb/{location,route,shape}-plugin typecheck` を実行し成功
-    - progress: 2025-09-30 14:40 `node scripts/dep-fence-extra.mjs` を実行し WARN 0 を確認
+    - progress: 2025-09-30 14:40 `node scripts/run-dep-fence-extra.mjs` を実行し WARN 0 を確認
 - fix/ui-toolbar/settings-menu-autoclose — TreeConsole ツールバー設定メニューの自動クローズ対応
   - ブランチ: `fix/ui-toolbar/settings-menu-autoclose`（サンドボックス制約によりローカルでは `main` 上で作業）
   - 依存: `@hierarchidb/ui-treeconsole-toolbar`, `@hierarchidb/app`
@@ -5392,7 +5447,7 @@ P2:
     - [x] 他パッケージで同様の参照がないか確認し、必要に応じて追従差分を検討する
   - 運用ログ：
     - start: 2025-09-21 23:15 app build での worker import 解決エラー調査に着手
-    - progress: 2025-09-21 23:18 route-plugin の `package.json` / `app/tsconfig.json` / `scripts/env_vite.sh` を `.js` 拡張子に整合し、`pnpm --filter @hierarchidb/route-plugin build` 成功を確認
+    - progress: 2025-09-21 23:18 route-plugin の `package.json` / `app/tsconfig.json` / `scripts/run-env-vite.sh` を `.js` 拡張子に整合し、`pnpm --filter @hierarchidb/route-plugin build` 成功を確認
     - progress: 2025-09-22 08:22 `tsconfig.base.json` に location/route/shape/timeline の worker パスを追加し、`pnpm --filter @hierarchidb/runtime-worker typecheck` で TS7016 が発生しないことを確認
     - done: 2025-09-22 08:24 `pnpm --filter @hierarchidb/app build` を再実行し、ワーカー関連の解決エラーが再発しないことを確認
   - ロールバック手順：
@@ -5606,7 +5661,7 @@ P2:
 // ここから従来の完了ログ
 ## フラグ運用（共通） <a id="flags"></a>
 
-- 起動時固定・既定OFF。`scripts/env_vite.sh` から注入し、`config/feature-flags.ts` で一元読取。
+- 起動時固定・既定OFF。`scripts/run-env-vite.sh` から注入し、`config/feature-flags.ts` で一元読取。
 - 代表例:
   - ~~`WORKER_USE_CMDPROC_CREATE_UPDATE="0|1"`~~（2025-09-16 削除）
   - ~~`WORKER_TRASH_USE_HOLDER="0|1"`~~（2025-09-16 削除）
@@ -5628,7 +5683,7 @@ P2:
   - `pnpm --filter @hierarchidb/runtime-worker typecheck`
   - `pnpm --filter @hierarchidb/app test`
 - 開発環境の統一
-  - `scripts/env_vite.sh <development|production> [dev|build|test]` を用い、起動時に必要フラグ/エイリアスを注入
+  - `scripts/run-env-vite.sh <development|production> [dev|build|test]` を用い、起動時に必要フラグ/エイリアスを注入
 - 受け入れ基準の共通前提（抜粋）
   - 原則として `pnpm lint && pnpm format && pnpm typecheck && pnpm test` を通過
   - 影響大の変更は機能フラグ既定OFFで導入し、E2E は段階的に追従
@@ -5691,7 +5746,7 @@ P2:
   - blocked: monorepo 全体の `pnpm typecheck` で folder-plugin の型エラーにより失敗（スコープ外）
 
 - done: 2025-09-20 13:56 fix/shape/dialog-step-component-wrapper — Shape Folder Extension の StepComponent ラッパー導入と `pnpm --filter @hierarchidb/shape-plugin {typecheck,build}` 成功ログを反映
-- done: env_vite.sh に Worker Flags の可視化を追加（起動時に値を表示）
+- done: run-env-vite.sh に Worker Flags の可視化を追加（起動時に値を表示）
 - done: scripts/env/development.sh / production.sh にフラグ注入例（コメント）を追記
 - start: e2e テンプレ追加 `e2e/cp-routing-wc-flow.spec.ts`（describe.skip で雛形作成）
 . done: パリティテスト追加 `packages/runtime-worker/worker/src/services/__tests__/cp-routing-parity.test.ts`
@@ -6344,7 +6399,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - note: `packages/common/types/scripts/emit-ambient.mjs` を拡張し、`src/@types` 配下の宣言を dist にコピー＆ `index.d.ts` へ参照追加することで、局所 shim に頼らず `react-transition-group/Transition` 型を解決できるようにした。
 - progress: `pnpm -w typecheck` / `pnpm -w lint` を実行し、ともに成功を確認（location-plugin/styler-plugin の型修正後）。
 - progress: location-plugin と styler-plugin の `getStepStateEvaluator` を新インターフェース（`getEnabledSteps`/`getValidatedSteps`）へ合わせ、app ローダーの型警告も `Record<string, unknown>` 経由で解消。
-- progress: `scripts/dep-fence-extra.mjs` で検知されていた各パッケージの `tsconfig` パス上書きを整理し、`~/*` のみ残す形に統一。再度 `node scripts/dep-fence-extra.mjs` を実行して警告ゼロを確認。
+- progress: `scripts/run-dep-fence-extra.mjs` で検知されていた各パッケージの `tsconfig` パス上書きを整理し、`~/*` のみ残す形に統一。再度 `node scripts/run-dep-fence-extra.mjs` を実行して警告ゼロを確認。
 
 2025-09-29
 - start: chore/build-scripts-prebuild-cleanup — `packages/{runtime-ui/plugin-dialog,plugins/{folder-plugin,shape-plugin},feature/auth-recovery,ui/{core,csv-extract},ui/treeconsole/breadcrumb}` の `build` スクリプトから冗長な `pnpm run prebuild` 呼び出しを除去する作業を main 直下で着手。
@@ -6367,6 +6422,25 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 10:35 progress: refactor/ui-shell/reexport-structure — `pnpm exec tsc -p packages/ui-shell/tsconfig.json --noEmit` で `@hierarchidb/*` alias が `packages/*/src` を指すため TypeScript が依存パッケージの未ビルドソースを取り込み、`rootDir` 外判定（TS6059）が多発することを確認。`paths` を dist 指向に切り替えるとビルド済み宣言が必要になるため、ワークスペース全体の build/typecheck 順序整理が不可欠だと判明。
 - 2025-11-01 12:01 progress: refactor/ui-shell/reexport-structure — 依存パッケージを順次 `pnpm --filter <pkg> build` でビルドし `.d.ts` を生成。`packages/ui-shell/tsconfig.typecheck.json` を追加して dist 宣言を参照する経路を用意し、`pnpm --filter @hierarchidb/ui-shell typecheck` が成功（終了コード 0, 出力なし）であることを確認。
 - 2025-11-01 12:13 progress: refactor/ui-shell/reexport-structure — IDE 側の TS6059 対策として `packages/ui-shell/tsconfig.json` の `rootDir` を `../..` に拡張。`pnpm --filter @hierarchidb/ui-shell typecheck` を再実行し、変更後も成功（終了コード 0）することを確認。
+- 2025-11-01 14:45 progress: refactor/ui-shell/reexport-structure — dist/*.d.ts 参照を撤去する恒久策として typecheck 用 tsconfig の再設計に着手。NodeNext パッケージ exports を利用する解決案と Turbo での依存ビルド順整理を検証開始。
+- 2025-11-01 15:05 progress: refactor/ui-shell/reexport-structure — `packages/ui-shell/tsconfig.typecheck.json` から `paths` による dist 参照を削除し、パッケージ exports 解決での typecheck が成功することを確認（`pnpm --filter @hierarchidb/ui-shell typecheck` → exit 0, ログ出力なし）。併せて `pnpm policy:ban-tsconfig-paths-dist-dts` も再実行し、`[policy] OK` を確認。
+- 2025-11-01 15:42 progress: refactor/ui-shell/reexport-structure — `@hierarchidb/ui-shell` の `pretypecheck` で依存バンドルの `build` を一括実行するよう調整（`pnpm --dir ../.. --filter '@hierarchidb/ui-shell...' --filter '!@hierarchidb/ui-shell' build`）。dist 欠損状態から実行し、依存ビルド→typecheck が成功することを確認。
+- 2025-11-01 16:05 start: chore/ui-shell/typecheck-opt — `pretypecheck` の実行範囲を最小化する方針検討とログ解析を開始。
+- 2025-11-01 16:22 progress: chore/ui-shell/typecheck-opt — 依存 dist の存在を確認し不足分のみ `pnpm --filter <pkg> build` を呼び出すヘルパー（`scripts/build/ui-shell-pretypecheck.mjs`）を実装。`packages/ui-shell/package.json` の `pretypecheck` を当該スクリプト呼び出しへ更新。
+- 2025-11-01 16:27 progress: chore/ui-shell/typecheck-opt — `pnpm --filter @hierarchidb/ui-shell typecheck`（dist 完全整備時）実行でスキップ判定が働くことを確認。続けて `packages/ui/auth/dist` を退避後に同コマンドを再実行し、必要なパッケージのみビルドが走ってから typecheck が成功することを確認（両方 exit 0）。
+- 2025-11-01 16:40 start: refactor/ui-shell/project-refs — project references 化に向けて依存 UI パッケージの tsconfig 現状調査を開始。
+- 2025-11-01 16:52 progress: refactor/ui-shell/project-refs — 代表パッケージ（@hierarchidb/ui-auth）の `tsconfig.json` を `composite: true` 化し、Vitest セットアップ内のグローバルスタブを TypeScript 正規シグネチャへ合わせて修正。`pnpm --filter @hierarchidb/ui-auth build` および `pnpm --filter @hierarchidb/ui-shell typecheck` が成功。
+- 2025-11-01 16:58 progress: refactor/ui-shell/project-refs — ヘルパースクリプトを `scripts/pretypecheck-ui-shell.mjs` として verb-object 形にリネームし、`packages/ui-shell/package.json` の `pretypecheck` を更新。`pnpm --filter @hierarchidb/ui-shell typecheck` 再実行で成功を確認。
+- 2025-11-01 17:10 start: chore/scripts/verb-object-naming — `scripts/` 配下のスクリプト命名を動詞-目的語形式へ統一するための棚卸しを開始。
+- 2025-11-01 17:24 progress: chore/scripts/verb-object-naming — `tsconfig-normalize.mjs`→`normalize-tsconfig.mjs`、`dep-fence-extra.mjs`→`run-dep-fence-extra.mjs`、`dep-prune-report.mjs`→`report-dep-prune.mjs`、`env_vite.sh`→`run-env-vite.sh` など主要スクリプトをリネームし、関連パスを `package.json` / docs に更新。
+- 2025-11-01 17:32 progress: chore/scripts/verb-object-naming — WT 管理スクリプトを `start-wt.mjs` / `finish-wt.mjs` / `run-wt.sh` へリネームし、参照コマンドと usage コメントを更新。`pnpm fix:tsconfig` で新パスが機能することを確認（exit 0）。
+- 2025-11-01 17:41 progress: chore/scripts/verb-object-naming — `pnpm wt:list`, `node scripts/run-dep-fence-extra.mjs`, `node scripts/report-dep-prune.mjs --help` を実行し、リネーム後のスクリプトが正常動作することを確認（いずれも exit 0）。
+- 2025-11-01 12:25 start: chore/app/chunk-size-limit — `@hierarchidb/app` の build で表示される chunk サイズ警告の閾値調整を開始。
+- 2025-11-01 12:26 progress: chore/app/chunk-size-limit — `app/vite.config.ts` の `chunkSizeWarningLimit` を 954 に更新（最大 chunk 953.37 kB を基準に算出）。`TMPDIR` を指定して `pnpm --filter @hierarchidb/app build` を試行したが、従来から存在する `generate:favicon` 実行時の `listen EPERM` により検証は未完。
+- 2025-11-01 12:30 start: fix/ui-treeconsole/subtree-init — TreeConsole サブツリー初期化で「No data」表示となる不具合の原因調査を開始。
+- 2025-11-01 12:36 progress: fix/ui-treeconsole/subtree-init — サブツリー購読開始時に `prefetch` オプションが未指定なため初期スナップショットが届かず `No data` となっていたことを特定。`subscribe` 実行時に `tableData`/`pendingUpdates` をリセットしつつ `prefetch.depth` を指定するよう修正し、`pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run SubscriptionOrchestrator` が成功（pass 2）。
+- 2025-11-01 12:55 progress: fix/ui-treeconsole/subtree-init — Adapter 層が引き続き `subscribeSubtree` をオプション無しで呼び出していたため Worker 側で prefetch が走っていなかったことを確認。`TreeObservableAdapter` からも `prefetch.depth=2` を渡すよう修正し、ログを仕込んでイベント伝播の有無を追跡できるようにした。再度 `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run SubscriptionOrchestrator` を実行し、UI ログでイベント処理が行われることを確認。
+- 2025-11-01 13:17 progress: fix/ui-treeconsole/subtree-init — `useTreeViewController` で WorkerAPI 経由の初期サブツリー取得（`getQueryAPI.listDescendants`）と差分購読（`subscribeSubtree`）を実装。`prefetch.depth=3` で初期ノードをロードし、イベントを受けて `controller.data` を更新する経路を追加。`pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run useTreeViewController` / `SubscriptionOrchestrator` を実行し、初期データ取り込みと更新処理が通ることを確認（pass 30 / 2）。
 - 2025-10-04 23:10 start: refactor/worker/error-model-unify — CommandProcessor のエラー分類ユーティリティ実装方針を再確認し、既存の例外捕捉箇所を調査開始。
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — Doing へ移動し、TASKS チェックリストの初期状態を整備。
 - 2025-10-04 23:25 progress: refactor/worker/error-model-unify — CommandProcessor / TreeMutationService / WorkingCopyService の `throw`/`createErrorResult` 利用箇所を洗い出すため `rg` で調査。
@@ -6508,7 +6582,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-20 17:08 progress: fix/folder-plugin/type-refs — `tsconfig.build.json` の `paths={}` を削除し、`tsconfig.json` に dist 優先の paths（plugin-ui-sdk / download / auth-recovery / runtime-basic-info / runtime-plugin-dialog）を追加。依存パッケージの `build:types` を実行した上で `pnpm --filter @hierarchidb/folder-plugin build:types` を再実行し成功。
 - 2025-10-20 17:16 progress: fix/folder-plugin/type-refs — `tsconfig.json` へ `@hierarchidb/runtime-client` の paths を追加し、`tsconfig.build.json` に runtime-client を参照として追加。`@hierarchidb/runtime-client build:types` および `@hierarchidb/download build:bundle` / `@hierarchidb/plugin-ui-sdk build:bundle` を実行して dist の型定義を再生成。
 - 2025-10-20 17:20 done: fix/folder-plugin/type-refs — `pnpm --filter @hierarchidb/folder-plugin build:types` が成功し、Folder plugin の型ビルドで `@hierarchidb/{runtime-client,plugin-ui-sdk}` を解決できることを確認。
-- 2025-10-22 13:33 start: env_vite.sh ensure_built 依存整理 — sandbox で `refactor/scripts/start-env-turbo` ブランチ作成が拒否されたため `main` 上で作業開始。Turbo 依存でビルド前提を賄う方針を検証予定。
+- 2025-10-22 13:33 start: run-env-vite.sh ensure_built 依存整理 — sandbox で `refactor/scripts/start-env-turbo` ブランチ作成が拒否されたため `main` 上で作業開始。Turbo 依存でビルド前提を賄う方針を検証予定。
 - 2025-10-22 19:37 start: plugin-types typecheck Turbo 依存整備 — `git checkout -b chore/turbo/plugin-types-typecheck-dep` が sandbox 制約で失敗したため `main` 上で着手。`@hierarchidb/plugin-types#typecheck` を `@hierarchidb/plugin-ui-sdk#build` 依存に接続する Turbo 設定を調査開始。
 - 2025-10-22 19:56 progress: plugin-types typecheck Turbo 依存整備 — `packages/plugin-types/package.json` に `turbo.pipeline.build` 依存を追加し、`turbo.json` に `"@hierarchidb/plugin-types#typecheck"` エントリを定義して `@hierarchidb/plugin-ui-sdk#build` を明示的に dependsOn へ追加。
 - 2025-10-22 19:58 blocked: plugin-types typecheck Turbo 依存整備 — `pnpm turbo run typecheck --filter @hierarchidb/plugin-types --output-logs=full` を実行したが、依存連鎖で走る `@hierarchidb/batch-types#build` が既知の API Extractor TS6307 エラーで失敗し完了できず。`--dry-run=json` の出力で `@hierarchidb/plugin-ui-sdk#build` 依存が追加されていることと、`packages/plugin-ui-sdk/.turbo/turbo-build.log` にビルド試行ログが記録されていることを確認。
@@ -6541,8 +6615,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-22 22:42 done: fix/resolver-plugin/runtime-worker-types — `pnpm --filter @hierarchidb/runtime-worker build` を実行して dist/index.d.ts を再出力し、続けて `pnpm --filter @hierarchidb/resolver-plugin typecheck` が成功することを確認。
 - 2025-10-22 22:45 audit: runtime-worker type consumers — `@hierarchidb/{basemap-plugin,spreadsheet-plugin}` 既に `plugin-ui-sdk` 依存と external が登録済みであることを確認（追加作業なし）。
 - 2025-10-22 22:48 fix: styler-plugin spreadsheet peer types — `pnpm --filter @hierarchidb/spreadsheet-plugin build` を実行して最新の dist/index.d.ts を生成し、`pnpm --filter @hierarchidb/styler-plugin typecheck` が成功することを確認。
-- 2025-10-22 13:40 progress: env_vite.sh ensure_built 依存整理 — `scripts/env_vite.sh` の ensure_built 群を削除し、`node_modules/turbo/bin/turbo` を用いた `@hierarchidb/app^...` 依存グラフ一括ビルドへ差し替え（コメントで AGENTS.md NodeNext 指針へ言及）。
-- 2025-10-22 13:41 blocked: env_vite.sh ensure_built 依存整理 — `pnpm exec tsc -b tsconfig.build.json` を実行したところ、既存の download/tabular-store 系 rootDir・型定義欠如エラー（TS6059/TS6307/TS7016など）が再発。別タスクで対処予定のため本作業では結果を共有し保留。
+- 2025-10-22 13:40 progress: run-env-vite.sh ensure_built 依存整理 — `scripts/run-env-vite.sh` の ensure_built 群を削除し、`node_modules/turbo/bin/turbo` を用いた `@hierarchidb/app^...` 依存グラフ一括ビルドへ差し替え（コメントで AGENTS.md NodeNext 指針へ言及）。
+- 2025-10-22 13:41 blocked: run-env-vite.sh ensure_built 依存整理 — `pnpm exec tsc -b tsconfig.build.json` を実行したところ、既存の download/tabular-store 系 rootDir・型定義欠如エラー（TS6059/TS6307/TS7016など）が再発。別タスクで対処予定のため本作業では結果を共有し保留。
 - 2025-10-22 15:10 start: plugin-registry typecheck 依存制御 — `git checkout -b chore/turbo/plugin-registry-typecheck` が sandbox 制約で失敗したため `main` 上で作業開始。Turbo pipeline と package scripts の依存関係を見直し、`@hierarchidb/plugin-registry typecheck` 前に必要な `build:types` が揃う構成を調査。
 - 2025-10-22 15:16 blocked: plugin-registry typecheck 依存制御 — `pnpm --filter @hierarchidb/plugin-registry typecheck` 初回実行で TS5055 (dist/index.d.ts overwrite) が発生し、typecheck 前に dist を生成・クリーンするフロー不足を確認。
 - 2025-10-22 15:22 blocked: plugin-registry typecheck 依存制御 — dist 生成を `tsc -b tsconfig.build.json` で補う案を試したが、deck.gl 系依存の NodeNext 型エラーが多数発生したため採用を断念。
@@ -6606,6 +6680,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-26 18:04 progress: test/runtime-worker/tree-subscription-integration — CoreDB の changeSubject 発火イベントに `parentId` / `previousParentId` / `previousNode` を補完し、TreeSubscriptionService を async 判定へ改修。ユニットテストに subtree/deletion ケースを追加。
 - 2025-10-26 18:10 progress: test/runtime-worker/tree-subscription-integration — `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加（`tsc -p tsconfig.typecheck.json`）。
 - 2025-10-26 18:18 blocked: test/runtime-worker/tree-subscription-integration — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行したが、既存 e2e/サービス系テストの型未整備により多数の TS エラーが発生（MessagePort API typing や CommandResult 判定など）。本タスク範囲では未解決、後続タスクで対処予定。
+- 2025-11-01 14:23 progress: test/runtime-worker/tree-subscription-integration — subscribeNode のデバッグログを undefined の rootNodeId 参照ではなく subscription nodeId を記録する形に修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行してエラー解消を確認。
 - 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
@@ -6659,7 +6734,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 19:12 progress: refactor/runtime-worker/plugin-bootstrap — 動的 import の解決エラー対応で loader から `@vite-ignore` コメントを撤去し、Vite/tsdown がモジュール specifier を解析できるよう調整。
 - 2025-10-25 19:18 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（コメント削除後も警告なし）。
 - 2025-10-25 19:24 command: pnpm turbo run build --filter "@hierarchidb/app^..." — exit 0（UI 側ビルドも成功を再確認）。
-- 2025-10-25 16:34 progress: chore/config/remove-feature-flags — `app/src/config/feature-flags.ts` / `worker-flag-overrides.ts` を削除し、UI/Worker のブートストラップを `~/plugin-registry` ベースに統一。`app/src/services/ui-plugin-loader.ts` を新設して生成ファイルへの依存を整理し、`scripts/env_vite.sh` と関連ドキュメントから FEATURE_FLAGS 参照を除去。
+- 2025-10-25 16:34 progress: chore/config/remove-feature-flags — `app/src/config/feature-flags.ts` / `worker-flag-overrides.ts` を削除し、UI/Worker のブートストラップを `~/plugin-registry` ベースに統一。`app/src/services/ui-plugin-loader.ts` を新設して生成ファイルへの依存を整理し、`scripts/run-env-vite.sh` と関連ドキュメントから FEATURE_FLAGS 参照を除去。
 - 2025-10-25 16:36 progress: chore/config/remove-feature-flags — `scripts/generate-plugin-loader.mjs` を `tools-build-scripts` / `tools-plugin-manifest-loader` 連携で再実行するよう更新し、`app/src/generated/ui-loader.ts` を新仕様へ再生成。ドキュメント（app/docs/16-plugin-dev-with-registry.md 等）を `~/plugin-registry` 前提へ改訂し、旧 `@hierarchidb/plugin-registry` 依存を排除。
 - 2025-10-25 16:40 command: pnpm lint — exit 0（turbo run lint）。`packages/ui/plugin-dialog` 未登録の lockfile 警告あり、後続で lockfile 再生成が必要。
 - 2025-10-25 16:46 command: pnpm typecheck — 初回は生成ファイルの相対 import で失敗。`pnpm run tools:gen-plugin-loaders` で再生成後に再実行し exit 0。lockfile 警告（packages/tools/codemods 未登録）が継続。
@@ -7024,6 +7099,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-30 21:30 progress: chore/tests/legacy-suite-modernization — runtime-client の `setup.ts` を NodeNext 拡張付きに修正し、`vitest.setup.base.ts` へ Worker API/polyfill (`URL.revokeObjectURL`) を追加。E2E テストを Worker モック駆動の新実装に書き換え、`pnpm --filter @hierarchidb/runtime-client test` の timeout/エラーハンドリングを確認中（還元済み失敗は Worker シミュレーションへ移行）。
 - 2025-10-30 21:42 progress: chore/tests/legacy-suite-modernization — folder-plugin のパス再配線と vitest.config 刷新を実施し、ExtensibleFolderDialog 等の期待値を新挙動（description 空文字扱い）へ更新。`pnpm --filter @hierarchidb/folder-plugin test` が exit 0 を確認。
 - 2025-10-30 22:05 command: pnpm --filter @hierarchidb/location-plugin test -- --run --reporter=basic — exit 1（`@hierarchidb/batch` モック不足と UI 文言変化で失敗ログ取得、順次 rewrite 着手）。
-- 2025-10-30 21:05 progress: chore/tooling/dependency-guard-warning — `guard:deps:extra` スクリプトを追加し、`scripts/run-dependency-guard.mjs` で npm/pnpm 固有の環境変数を除去するラッパーを実装。prebuild / `scripts/env_vite.sh` を新コマンドへ切り替え、docs/dep-fence/README.md に運用メモを追記。
+- 2025-10-30 21:05 progress: chore/tooling/dependency-guard-warning — `guard:deps:extra` スクリプトを追加し、`scripts/run-dependency-guard.mjs` で npm/pnpm 固有の環境変数を除去するラッパーを実装。prebuild / `scripts/run-env-vite.sh` を新コマンドへ切り替え、docs/dep-fence/README.md に運用メモを追記。
 - 2025-10-30 21:06 command: pnpm run guard:deps:extra — exit 0。npm_config 系の環境変数を保持した状態でも警告なし（`Dependency guard passed with 0 warning(s).` のみ確認）。
-- 2025-10-30 21:08 done: chore/tooling/dependency-guard-warning — Dependency Guard 実行時の npm env config 警告を抑止。ラッパースクリプト導入とドキュメント更新で再発防止策を明文化。ロールバックは package.json / scripts/run-dependency-guard.mjs / docs/dep-fence/README.md を revert し旧 `node scripts/dep-fence-extra.mjs` 実行へ戻し警告再現を確認する。
+- 2025-10-30 21:08 done: chore/tooling/dependency-guard-warning — Dependency Guard 実行時の npm env config 警告を抑止。ラッパースクリプト導入とドキュメント更新で再発防止策を明文化。ロールバックは package.json / scripts/run-dependency-guard.mjs / docs/dep-fence/README.md を revert し旧 `node scripts/run-dep-fence-extra.mjs` 実行へ戻し警告再現を確認する。

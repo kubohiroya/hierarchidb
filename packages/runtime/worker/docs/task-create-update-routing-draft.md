@@ -34,7 +34,7 @@ vk:task id=phased-routing-create-update-draft status=planning priority=P1 labels
 
 ## フラグ設計（案）
 - 名称: `WORKER_USE_CMDPROC_CREATE_UPDATE`
-- 種別: 環境変数（`scripts/env_vite.sh` から注入）
+- 種別: 環境変数（`scripts/run-env-vite.sh` から注入）
 - 値: `"0" | "1"`（既定は `"0"`）
 - 影響範囲: `TreeMutationService.createNode` / `updateNode` のみ。その他は非対象。
 - 実装方針（後続PRで実施）:
@@ -79,7 +79,7 @@ payload（updateNode）
 
 ## 小粒 PR 分割案
 PR-1: フラグ受け皿のみ（実行経路無変更）
-- `config/feature-flags.md`（legacy ドキュメント）と `scripts/env_vite.sh` の利用例更新
+- `config/feature-flags.md`（legacy ドキュメント）と `scripts/run-env-vite.sh` の利用例更新
 - ランタイムコードにはインポート可能な定数を追加（未使用警告を避けるためコメントで抑止）
 
 PR-2: Envelope 型の最小整備（実行経路無変更）
@@ -103,7 +103,7 @@ PR-5: updateNode のハンドラ導入（Undo は後続）
 ---
 
 ## 次アクション（ここで一旦停止）
-- [ ] PR-1（ドキュメントのみ）: `docs/feature-flags.md` をベースに、モノレポ横断の記載整備と `env_vite.sh` 追補の草案作成。
+- [ ] PR-1（ドキュメントのみ）: `docs/feature-flags.md` をベースに、モノレポ横断の記載整備と `run-env-vite.sh` 追補の草案作成。
 - 本ドラフトはここで区切り。合意後、PR-1 から着手。
 
 ## テスト計画（ON/OFF 双方）

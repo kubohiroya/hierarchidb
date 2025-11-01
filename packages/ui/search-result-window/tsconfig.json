@@ -9,7 +9,9 @@
     "declaration": false,
     "declarationMap": false,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "exclude": [
     "dist",

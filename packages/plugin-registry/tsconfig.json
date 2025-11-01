@@ -1,10 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./src/*"
+      ]
+    },
+    "jsx": "react-jsx"
   },
   "include": [
-    "src/**/*.ts",
-    "generated/**/*.ts"
+    "src*.ts",
+    "generated*.ts"
   ]
 }

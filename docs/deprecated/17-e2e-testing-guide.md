@@ -21,7 +21,7 @@ scripts/
 │   ├── base.sh          # 共通設定
 │   ├── development.sh   # 開発環境設定
 │   └── production.sh    # 本番環境設定
-├── env_vite.sh         # 環境起動スクリプト
+├── run-env-vite.sh         # 環境起動スクリプト
 └── test-auth-environments.sh  # E2Eテスト実行スクリプト
 
 app/
@@ -81,7 +81,7 @@ chmod +x scripts/test-auth-environments.sh
 
 ```bash
 # ターミナル1: 開発サーバー起動
-pnpm dev  # または ./scripts/env_vite.sh development
+pnpm dev  # または ./scripts/run-env-vite.sh development
 
 # ターミナル2: E2Eテスト実行
 npx playwright test e2e/auth-flow.spec.ts --grep "development環境"
@@ -91,7 +91,7 @@ npx playwright test e2e/auth-flow.spec.ts --grep "development環境"
 
 ```bash
 # ビルド実行
-pnpm build  # または ./scripts/env_vite.sh production build
+pnpm build  # または ./scripts/run-env-vite.sh production build
 
 # ターミナル1: プレビューサーバー起動
 cd app && npx vite preview --port 5173

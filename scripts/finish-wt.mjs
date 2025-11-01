@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Finish worktree by task id (T-YYYY-NNN) or branch
 // Usage:
-//   node scripts/wt-finish.mjs <T-YYYY-NNN|branch> [--force]
+//   node scripts/finish-wt.mjs <T-YYYY-NNN|branch> [--force]
 
 import { spawnSync } from 'node:child_process';
 
@@ -43,7 +43,7 @@ function run(cmd, args, opts={}) {
 function main() {
   const args = parseArgs(process.argv);
   const key = args._[0];
-  if (!key) die('Usage: wt-finish.mjs <T-YYYY-NNN|branch> [--force]');
+  if (!key) die('Usage: finish-wt.mjs <T-YYYY-NNN|branch> [--force]');
   const force = args.force === 'true' || args.force === true || args.f === 'true';
 
   const items = listWorktrees();
@@ -57,4 +57,3 @@ function main() {
 }
 
 main();
-

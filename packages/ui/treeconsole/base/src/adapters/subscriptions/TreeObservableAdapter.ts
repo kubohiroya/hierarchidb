@@ -35,6 +35,10 @@ export class TreeObservableAdapter {
     context: AdapterContext,
   ): Promise<UnsubscribeFunction> {
     try {
+      console.log('[TreeObservableAdapter] subscribeToSubtree called', {
+        nodeId: String(nodeId),
+        viewId: context.viewId,
+      });
       // Prefer legacy observable-style API if present (for tests)
       const workerRecord = this.workerAPI as unknown as Record<string, unknown>;
       const observeCandidate = workerRecord.observeSubtree;
@@ -63,8 +67,27 @@ export class TreeObservableAdapter {
 
       // Fallback to current subscription API
       const subscriptionAPI = await this.workerAPI.getSubscriptionAPI();
-      const proxied = Comlink.proxy((e: TreeNodeEvent) => setTimeout(() => callback(e), 0));
-      const subscriptionId = await subscriptionAPI.subscribeSubtree(nodeId, proxied);
+      const proxied = Comlink.proxy((e: TreeNodeEvent) => {
+        console.log('[TreeObservableAdapter] event forwarded', {
+          type: e.type,
+          nodeId: String(e.nodeId),
+          hasNode: Boolean(e.node),
+        });
+        setTimeout(() => callback(e), 0);
+      });
+      const prefetchDepth = context.prefetchDepth ?? 2;
+      const subscriptionId = await subscriptionAPI.subscribeSubtree(
+        nodeId,
+        proxied,
+        {
+          prefetch: { depth: prefetchDepth },
+        },
+      );
+      console.log('[TreeObservableAdapter] subscribeSubtree success', {
+        nodeId: String(nodeId),
+        subscriptionId,
+        prefetchDepth,
+      });
       this.proxiedCallbacks.set(internalSubscriptionId, proxied);
 
       const wrappedUnsubscribe = async () => {

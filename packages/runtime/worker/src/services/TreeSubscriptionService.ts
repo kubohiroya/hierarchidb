@@ -793,7 +793,17 @@ export class TreeSubscriptionService {
     );
 
     // Subscribe to the stream and store the subscription for cleanup
-    const subscription = stream.subscribe(callback);
+    const instrumentedCallback = (event: TreeNodeEvent) => {
+      console.log('[TreeSubscriptionService][node] emit event', {
+        subscriptionNodeId: String(nodeId),
+        eventNodeId: String(event.nodeId),
+        type: event.type,
+        hasNode: Boolean(event.node),
+      });
+      callback(event);
+    };
+
+    const subscription = stream.subscribe(instrumentedCallback);
 
     const subscriptionInfo: SubscriptionInfo = {
       id: subscriptionId,
@@ -866,6 +876,10 @@ export class TreeSubscriptionService {
 
     if (options?.prefetch?.depth && options.prefetch.depth > 0) {
       try {
+        console.log('[TreeSubscriptionService][subtree] prefetch start', {
+          rootNodeId: String(rootNodeId),
+          depth: options.prefetch.depth,
+        });
         const nodes = await this.coreDB.listChildren(rootNodeId, {
           prefetch: { depth: options.prefetch.depth },
         });
@@ -877,6 +891,10 @@ export class TreeSubscriptionService {
         });
         const timestamp = Date.now() as Timestamp;
         for (const node of nodes) {
+          console.log('[TreeSubscriptionService][subtree] prefetch node', {
+            nodeId: String(node.id),
+            parentId: String(node.parentId ?? ''),
+          });
           callback({
             type: 'updated',
             nodeId: node.id,

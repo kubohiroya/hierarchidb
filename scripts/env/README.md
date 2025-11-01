@@ -11,7 +11,7 @@ local.sh / staging.sh / production.sh (差分のみ)
     ↓
 .env.secrets (セキュアな値、オプション)
     ↓
-env_vite.sh (統一実行)
+run-env-vite.sh (統一実行)
 ```
 
 ## ファイル構成
@@ -23,7 +23,7 @@ scripts/
 │   ├── local.sh           # ローカル環境の差分
 │   ├── staging.sh         # ステージング環境の差分
 │   └── production.sh      # 本番環境の差分
-├── env_vite.sh            # 統一起動スクリプト
+├── run-env-vite.sh            # 統一起動スクリプト
 └── env/README.md          # このファイル
 
 app/
@@ -35,7 +35,7 @@ app/
 
 1. **コマンド実行**
    ```bash
-   pnpm dev:local  # = ./scripts/env_vite.sh local
+   pnpm dev:local  # = ./scripts/run-env-vite.sh local
    ```
 
 2. **設定の読み込み順序**
@@ -93,14 +93,14 @@ source scripts/env/local.sh
 env | grep VITE_
 
 # または起動時に表示される設定を確認
-./scripts/env_vite.sh local
+./scripts/run-env-vite.sh local
 ```
 
 ### トラブルシューティング
 
 ```bash
 # bashのデバッグモードで実行
-bash -x ./scripts/env_vite.sh local
+bash -x ./scripts/run-env-vite.sh local
 
 # 特定の変数を追跡
 echo "BFF URL: $VITE_BFF_BASE_URL"
@@ -116,7 +116,7 @@ echo "BFF URL: $VITE_BFF_BASE_URL"
 
 2. **package.jsonにスクリプトを追加**
    ```json
-   "dev:qa": "./scripts/env_vite.sh qa"
+   "dev:qa": "./scripts/run-env-vite.sh qa"
    ```
 
 3. **実行**
@@ -156,7 +156,7 @@ export VITE_BFF_BASE_URL="http://localhost:8787/api/auth"  # 差分のみ
     echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> app/.env.secrets
     
     # ビルド実行
-    ./scripts/env_vite.sh production build
+    ./scripts/run-env-vite.sh production build
 ```
 
 ## セキュリティ注意事項

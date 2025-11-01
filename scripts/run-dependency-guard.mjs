@@ -25,6 +25,6 @@ for (const key of sanitizedKeys) {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const target = path.join(__dirname, 'dep-fence-extra.mjs');
+const target = path.join(__dirname, 'run-dep-fence-extra.mjs');
 
 await import(pathToFileURL(target).href);

@@ -11,8 +11,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { WorkerAPIAdapter } from '../adapters/index.js';
 import type { SelectionMode, TreeViewController, UndoRedoCommand, UndoRedoResult } from '../types/index.js';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { Remote } from 'comlink';
+import type { WorkerAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { RowSelectionState } from '@tanstack/react-table';
 import {
   type ClipboardData,
@@ -178,6 +179,18 @@ export function useTreeViewController(
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const [data, _setData] = useState<TreeNode[]>([]);
+
+  const updateData = useCallback((updater: (prev: TreeNode[]) => TreeNode[]) => {
+    _setData((prev) => {
+      const next = updater(prev);
+      _setFilteredItemCount(next.length);
+      _setTotalItemCount(next.length);
+      return next;
+    });
+  }, []);
+
+  const queryAPIRef = useRef<Remote<TreeQueryAPI> | null>(null);
+  const subscriptionCleanupRef = useRef<(() => void) | null>(null);
 
   // Track if this is the initial render
   const isInitialMount = useRef(true);
@@ -365,8 +378,148 @@ export function useTreeViewController(
   useEffect(() => {
     return () => {
       workerAdapter?.cleanup();
+      subscriptionCleanupRef.current?.();
+      subscriptionCleanupRef.current = null;
     };
   }, [workerAdapter]);
+
+  useEffect(() => {
+    if (!workerAdapter || !_rootNodeId || !api || typeof api !== 'object') return undefined;
+
+    let cancelled = false;
+    const PREFETCH_DEPTH = 3;
+
+    const upsertNode = (prev: TreeNode[], node: TreeNode) => {
+      const map = new Map(prev.map((existing) => [String(existing.id), existing] as const));
+      const id = String(node.id);
+      const existing = map.get(id);
+      map.set(id, existing ? { ...existing, ...node } : node);
+      return Array.from(map.values());
+    };
+
+    const removeNode = (prev: TreeNode[], nodeId: NodeId) => {
+      return prev.filter((node) => String(node.id) !== String(nodeId));
+    };
+
+    const ensureQueryAPI = async (): Promise<Remote<TreeQueryAPI> | null> => {
+      if (queryAPIRef.current) return queryAPIRef.current;
+      try {
+        const queryAPI = await api.getQueryAPI();
+        queryAPIRef.current = queryAPI;
+        return queryAPI;
+      } catch (error) {
+        console.error('[TreeConsole] failed to acquire TreeQueryAPI', error);
+        return null;
+      }
+    };
+
+    const handleEvent = async (event: TreeNodeEvent) => {
+      if (cancelled) return;
+      try {
+        if (event.type === 'deleted') {
+          updateData((prev) => removeNode(prev, event.nodeId));
+          return;
+        }
+
+        const queryAPI = await ensureQueryAPI();
+        let payload = event.node;
+        if (!payload && queryAPI) {
+          try {
+            const fetched = await queryAPI.getNode(event.nodeId);
+            if (fetched) {
+              payload = fetched;
+            }
+          } catch (error) {
+            console.warn('[TreeConsole] failed to fetch node payload for event', event, error);
+          }
+        }
+
+        if (!payload) return;
+
+        const finalNode = (() => {
+          if (event.type === 'moved') {
+            return {
+              ...payload,
+              parentId: event.parentId ?? payload.parentId,
+            };
+          }
+          return payload;
+        })();
+
+        updateData((prev) => upsertNode(prev, finalNode as TreeNode));
+      } catch (error) {
+        console.error('[TreeConsole] failed to process subscription event', error);
+      }
+    };
+
+    const initialize = async () => {
+      setIsLoading(true);
+      try {
+        const queryAPI = await ensureQueryAPI();
+        if (!queryAPI) return;
+
+        const [rootNode, descendants] = await Promise.all([
+          queryAPI.getNode(_rootNodeId as NodeId),
+          queryAPI.listDescendants(_rootNodeId as NodeId, PREFETCH_DEPTH),
+        ]);
+
+        if (cancelled) return;
+
+        const initialNodes: TreeNode[] = [];
+        if (rootNode) {
+          initialNodes.push(rootNode);
+        }
+        if (Array.isArray(descendants) && descendants.length > 0) {
+          initialNodes.push(...descendants);
+        }
+
+        updateData(() => initialNodes);
+
+        setExpandedNodes((prev) => {
+          const normalizedRoot = normalizeToken(_rootNodeId as NodeId);
+          if (prev.includes(normalizedRoot)) return prev;
+          return [...prev, normalizedRoot];
+        });
+
+        const unsubscribe = await workerAdapter.subscribeToSubtree(
+          _rootNodeId as NodeId,
+          (event) => {
+            void handleEvent(event);
+          },
+          { viewId: 'treeconsole-view', prefetchDepth: PREFETCH_DEPTH },
+        );
+
+        if (cancelled) {
+          unsubscribe?.();
+        } else {
+          subscriptionCleanupRef.current = unsubscribe;
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('[TreeConsole] failed to initialize subtree subscription', error);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initialize();
+
+    return () => {
+      cancelled = true;
+      subscriptionCleanupRef.current?.();
+      subscriptionCleanupRef.current = null;
+    };
+  }, [
+    api,
+    normalizeToken,
+    workerAdapter,
+    _rootNodeId,
+    updateData,
+    setExpandedNodes,
+  ]);
 
   return {
     currentNode,

@@ -12,7 +12,9 @@
     },
     "types": [
       "node"
-    ]
+    ],
+    "baseUrl": ".",
+    "jsx": "react-jsx"
   },
   "checkDeps": {
     "allowSkipLibCheck": true,

@@ -842,8 +842,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       outDir: 'dist',
       //  production
       sourcemap: mode === 'development',
-      // MapLibre GL and Deck.gl ship together in map.js; allow a larger warning threshold.
-      chunkSizeWarningLimit: 900,
+      // MapLibre GL + deck.gl バンドル（~953 kB）に合わせて閾値を調整。
+      chunkSizeWarningLimit: 954,
       rollupOptions: {
         external: [
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app

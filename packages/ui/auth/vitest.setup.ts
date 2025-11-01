@@ -22,15 +22,16 @@ type MutableCrypto = Partial<Crypto> & Record<string, unknown>;
 
   const cryptoRef = (globalThis.crypto ?? {}) as MutableCrypto;
   if (typeof cryptoRef.getRandomValues !== 'function') {
-    cryptoRef.getRandomValues = (arr: Uint8Array) => {
-      for (let i = 0; i < arr.length; i += 1) {
-        arr[i] = Math.floor(Math.random() * 256);
+    cryptoRef.getRandomValues = <T extends ArrayBufferView>(array: T) => {
+      const view = new Uint8Array(array.buffer, array.byteOffset, array.byteLength);
+      for (let i = 0; i < view.length; i += 1) {
+        view[i] = Math.floor(Math.random() * 256);
       }
-      return arr;
+      return array;
     };
   }
   if (typeof cryptoRef.randomUUID !== 'function') {
-    cryptoRef.randomUUID = () => `test-uuid-${Math.random().toString(36).slice(2, 10)}`;
+    cryptoRef.randomUUID = () => '00000000-0000-4000-8000-000000000000';
   }
 })();
 

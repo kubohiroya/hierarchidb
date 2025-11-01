@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Auto worktree start: minimal human input
 // Usage:
-//   node scripts/wt-start.mjs <repo-dir> [--type feat|fix|refactor|chore|docs] [--base origin/main] [--wt-base ../wt-<repo>]
+//   node scripts/start-wt.mjs <repo-dir> [--type feat|fix|refactor|chore|docs] [--base origin/main] [--wt-base ../wt-<repo>]
 // Example:
-//   node scripts/wt-start.mjs packages/runtime-worker --type feat
+//   node scripts/start-wt.mjs packages/runtime-worker --type feat
 
 import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -105,7 +105,7 @@ function run(cmd, args, opts={}) {
 async function main() {
   const args = parseArgs(process.argv);
   const repoDir = args._[0];
-  if (!repoDir) die('Usage: wt-start.mjs <repo-dir> [--type feat] [--base origin/main] [--wt-base ../wt-<repo>]');
+  if (!repoDir) die('Usage: start-wt.mjs <repo-dir> [--type feat] [--base origin/main] [--wt-base ../wt-<repo>]');
 
   const type = (args.type || 'feat').toString();
   const base = (args.base || defaultBaseBranch()).toString();
@@ -121,12 +121,11 @@ async function main() {
   const branch = makeBranch(type, name ? name : scope, id);
 
   const wtBase = (args['wt-base'] || `../wt-${repoName(root)}`).toString();
-  // Delegate to wt.sh for actual add; it will place under <wt-base>/<repoDir>/<branch>
-  const sh = join(root, 'scripts', 'wt.sh');
+  // Delegate to run-wt.sh for actual add; it will place under <wt-base>/<repoDir>/<branch>
+  const sh = join(root, 'scripts', 'run-wt.sh');
   run('bash', [sh, 'start', repoDir, branch, '--base', base, '--wt-base', wtBase], { cwd: root });
   console.log(`[wt] id: ${id}`);
   console.log(`[wt] branch: ${branch}`);
 }
 
 main();
-

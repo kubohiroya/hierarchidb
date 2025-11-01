@@ -196,7 +196,7 @@ const patchedDefaults = defaultPolicies
 
 export const policies = [...patchedDefaults, ...custom];
 
-// Optional configuration for scripts/dep-prune-report.mjs
+// Optional configuration for scripts/report-dep-prune.mjs
 // - Global ignore list for pruning report (dependencies to skip when checking usage)
 export const pruneIgnore = [
   // Example: 'vite', 'vite-plugin-dts'
@@ -206,7 +206,7 @@ export const pruneIgnoreByPackage = {
   // Example: '@hierarchidb/app': ['vite']
 };
 
-// Shared policy options for extra dependency guards (scripts/dep-fence-extra.mjs)
+// Shared policy options for extra dependency guards (scripts/run-dep-fence-extra.mjs)
 export const policyOptions = {
   // Enforce workspace protocol for internal packages
   workspaceScopes: ['@hierarchidb'],

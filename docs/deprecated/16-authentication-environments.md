@@ -55,7 +55,7 @@ VITE_DEBUG_MODE="true"
 pnpm dev
 
 # または明示的に指定
-./scripts/env_vite.sh development
+./scripts/run-env-vite.sh development
 ```
 
 ### シーケンス図
@@ -271,7 +271,7 @@ scripts/
 │   ├── base.sh              # 共通設定（Single Source of Truth）
 │   ├── development.sh       # 開発環境の差分
 │   └── production.sh        # 本番環境の差分
-├── env_vite.sh             # 統一起動スクリプト
+├── run-env-vite.sh             # 統一起動スクリプト
 └── env/README.md            # 設定管理ドキュメント
 
 packages/backend/bff/
