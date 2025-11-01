@@ -1,91 +1,95 @@
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import { DualKeyMap } from '@hierarchidb/util';
+
 type TreeNodeLike = {
   id?: string | number;
   treeNodeId?: string | number;
+  parentId?: string | number | null;
 };
 
-function toId(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
+const EMPTY_NODE_ID = '' as NodeId;
+
+function toNodeId(value: unknown): NodeId {
+  if (value === null || value === undefined) return EMPTY_NODE_ID;
   const str = String(value).trim();
-  return str.length > 0 ? str : null;
+  return (str.length > 0 ? str : EMPTY_NODE_ID) as NodeId;
 }
 
-function getNodeId(node: TreeNodeLike | null | undefined): string | null {
+function getNodeId(node: TreeNodeLike | null | undefined): NodeId | null {
   if (!node) return null;
-  return toId(node.id ?? node.treeNodeId);
+  const id = toNodeId(node.id ?? node.treeNodeId);
+  return id === EMPTY_NODE_ID ? null : id;
 }
 
-function removeRecursively(
-  nodesById: Map<string, any>,
-  childrenByParent: Map<string, Set<string>>,
-  nodeId: string,
-) {
-  nodesById.delete(nodeId);
-  const children = childrenByParent.get(nodeId);
-  if (!children) return;
-  childrenByParent.delete(nodeId);
-  for (const childId of children) {
-    removeRecursively(nodesById, childrenByParent, childId);
-  }
-}
-
-export function rebuildAdjacency(
-  nodesById: Map<string, any>,
-  childrenByParent: Map<string, Set<string>>,
-  parentId: string,
-  children: any[],
+function removeSubtree(
+  index: DualKeyMap<NodeId, NodeId, TreeNode>,
+  nodeId: NodeId,
 ): void {
-  const key = toId(parentId) ?? '';
-  const nextIds = new Set<string>();
+  const childIds = index.getPrimaryKeysBySecondary(nodeId);
+  for (const childId of childIds) {
+    removeSubtree(index, childId as NodeId);
+  }
+  index.delete(nodeId);
+}
+
+export function removeNodeAndDescendants(
+  index: DualKeyMap<NodeId, NodeId, TreeNode>,
+  nodeId: NodeId,
+): void {
+  removeSubtree(index, nodeId);
+}
+
+export function syncNodeIndex(
+  index: DualKeyMap<NodeId, NodeId, TreeNode>,
+  parentId: NodeId,
+  children: readonly TreeNodeLike[],
+): void {
+  const parentKey = toNodeId(parentId);
+  const nextIds = new Set<NodeId>();
 
   for (const child of children ?? []) {
     const id = getNodeId(child);
     if (!id) continue;
-    nodesById.set(id, child);
+    const secondary = toNodeId(child.parentId ?? parentId);
+    index.set(id, child as TreeNode, secondary);
     nextIds.add(id);
   }
 
-  const prevIds = childrenByParent.get(key);
-  if (prevIds) {
-    for (const staleId of prevIds) {
-      if (!nextIds.has(staleId)) {
-        removeRecursively(nodesById, childrenByParent, staleId);
-      }
+  const previousIds = index.getPrimaryKeysBySecondary(parentKey);
+  previousIds.forEach((existingId) => {
+    const asNodeId = existingId as NodeId;
+    if (!nextIds.has(asNodeId)) {
+      removeSubtree(index, asNodeId);
     }
-  }
-
-  childrenByParent.set(key, nextIds);
+  });
 }
 
 export function buildVisibleRows(
-  rootId: string,
-  nodesById: Map<string, any>,
-  childrenByParent: Map<string, Set<string>>,
-  expandedIds: readonly (string | number | undefined)[],
-): any[] {
-  const expanded = new Set<string>(
-    (expandedIds ?? []).map((id) => toId(id) ?? '').filter((id) => id !== ''),
+  rootId: NodeId,
+  index: DualKeyMap<NodeId, NodeId, TreeNode>,
+  expandedIds: readonly (NodeId | string | number | undefined)[],
+): TreeNode[] {
+  const expanded = new Set<NodeId>(
+    (expandedIds ?? []).map((id) => toNodeId(id)).filter((id) => id !== EMPTY_NODE_ID),
   );
 
-  const result: any[] = [];
-
-  const visit = (parent: string, depth: number) => {
-    const children = childrenByParent.get(parent);
-    if (!children) return;
-    for (const childId of children) {
-      const node = nodesById.get(childId);
+  const result: TreeNode[] = [];
+  const visit = (parentKey: NodeId, depth: number) => {
+    const childIds = index.getPrimaryKeysBySecondary(parentKey);
+    for (const childId of childIds) {
+      const node = index.get(childId as NodeId);
       if (!node) continue;
-      const hasDepth = node && typeof node?.depth === 'number';
-      const enriched = hasDepth ? { ...node } : { ...node, depth };
-      if (typeof enriched.depth !== 'number') {
-        enriched.depth = depth;
-      }
-      result.push(enriched);
-      if (expanded.has(childId)) {
-        visit(childId, depth + 1);
+      const mapped: TreeNode = {
+        ...node,
+        depth: typeof node.depth === 'number' ? node.depth : depth,
+      };
+      result.push(mapped);
+      if (expanded.has(childId as NodeId)) {
+        visit(childId as NodeId, depth + 1);
       }
     }
   };
 
-  visit(toId(rootId) ?? '', 0);
+  visit(toNodeId(rootId), 1);
   return result;
 }

@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { TreeNode } from '@hierarchidb/feature-core/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import { DualKeyMap } from '@hierarchidb/util';
 
 export type ViewMode = 'list' | 'grid';
 
 export interface TreeConsoleSSOTEntry {
   pageNodeId: string;
-  rawNodes: TreeNode[];
-  treeData: TreeNodeData[];
-  nodesById?: Map<string, TreeNode>;
-  childrenByParent?: Map<string, Set<string>>;
-  selectedIds: string[];
-  expandedIds: string[];
+  nodeIndex?: DualKeyMap<NodeId, NodeId, TreeNode>;
+  selectedIds: NodeId[];
+  expandedIds: NodeId[];
   searchTerm: string;
   viewMode: ViewMode;
   sortBy?: string;
@@ -30,10 +27,7 @@ export type TreeConsoleSSOT = Record<string, TreeConsoleSSOTEntry>;
 function defaults(pageNodeId: string): TreeConsoleSSOTEntry {
   return {
     pageNodeId,
-    rawNodes: [],
-    treeData: [],
-    nodesById: new Map<string, TreeNode>(),
-    childrenByParent: new Map<string, Set<string>>(),
+    nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
     selectedIds: [],
     expandedIds: [],
     searchTerm: '',

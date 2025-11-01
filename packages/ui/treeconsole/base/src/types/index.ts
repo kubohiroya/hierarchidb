@@ -8,6 +8,7 @@ import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/c
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
+import { DualKeyMap } from '@hierarchidb/util';
 
 /**
     */
@@ -231,6 +232,7 @@ export interface TreeViewController {
 
   //  TanStack Table
   data?: TreeNode[];
+  nodeIndex?: DualKeyMap<NodeId, NodeId, TreeNode>;
   expandedRowIds?: Set<NodeId>;
   selectNode: (nodeId: NodeId) => void;
   selectMultipleNodes: (nodeIds: NodeId[]) => void;
@@ -373,6 +375,7 @@ export type SubTreeChange = unknown; // TODO: Define proper type
 
 //  Props
 export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
+  readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   /** Move nodes under a new parent (DnD) */
   onMoveNodes?: (nodeIds: NodeId[], targetParentId: NodeId) => void;
   onBreadcrumbContextAction?: (action: string, node: TreeNode, options?: { navigateToParent?: boolean }) => void;

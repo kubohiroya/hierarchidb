@@ -40,6 +40,7 @@ import {
   type TreeNodeData,
   type TreeTableColumn,
 } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import { DualKeyMap } from '@hierarchidb/util';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import { TreeTableSearchInput } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { useTranslation } from 'react-i18next';
@@ -506,6 +507,7 @@ function TrashDialogContent({
           treeId={treeId}
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           data={filteredTreeData}
+          nodeIndex={nodeIndex}
           columns={columns}
           breadcrumbItems={breadcrumbItems}
           loading={false}
@@ -595,6 +597,17 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     if (!data.trashRootNode) return [] as TreeNodeData[];
     return buildTrashTreeData({ treeId: treeId ?? '', rootNode: data.trashRootNode, nodeMap }).nodes;
   }, [data.trashRootNode, nodeMap, treeId]);
+
+  const nodeIndex = useMemo(() => {
+    const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+    const fallbackParent = (data.trashRootNode?.id ?? pageNodeId ?? 'trash-root') as NodeId;
+    treeData.forEach((node) => {
+      const primary = node.id as NodeId;
+      const parent = (node.parentId ?? fallbackParent) as NodeId;
+      index.set(primary, node as unknown as TreeNode, parent);
+    });
+    return index;
+  }, [data.trashRootNode?.id, pageNodeId, treeData]);
 
   const breadcrumbItems = useMemo(() => {
     if (!data.trashRootNode || !treeId) return [];

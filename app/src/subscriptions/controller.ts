@@ -42,15 +42,36 @@ export class Subscriptions {
       return { subId: existing.subId, created: false };
     }
     const subscriptionAPI = await client.getSubscriptionAPI();
+    const debugEnabled = (() => {
+      try {
+        const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+        return env?.VITE_SUBSCRIPTION_DEBUG === '1';
+      } catch {
+        return false;
+      }
+    })();
+
+    const options = (() => {
+      const prefetchDepth = kind === 'trash' ? 2 : 3;
+      return { prefetch: { depth: prefetchDepth } };
+    })();
+
+    if (debugEnabled) {
+      console.log('[Subscriptions] subscribe: start', {
+        kind,
+        nodeId: String(nodeId),
+        options,
+      });
+    }
 
     let subId: SubscriptionId;
     try {
       switch (kind) {
         case 'trash':
-          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void);
+          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void, options);
           break;
         case 'page':
-          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void);
+          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void, options);
           break;
         default:
           subId = await subscriptionAPI.subscribeNode(nodeId, callback as (event: any) => void);
@@ -59,6 +80,14 @@ export class Subscriptions {
     } catch (error) {
       console.warn('[Subscriptions] Failed to create subscription', { kind, nodeId, error });
       throw error;
+    }
+
+    if (debugEnabled) {
+      console.log('[Subscriptions] subscribe: success', {
+        kind,
+        nodeId: String(nodeId),
+        subId,
+      });
     }
 
     Subscriptions.registry.set(key, {
@@ -79,7 +108,29 @@ export class Subscriptions {
 
     try {
       const subscriptionAPI = await client.getSubscriptionAPI();
+      const debugEnabled = (() => {
+        try {
+          const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+          return env?.VITE_SUBSCRIPTION_DEBUG === '1';
+        } catch {
+          return false;
+        }
+      })();
+      if (debugEnabled) {
+        console.log('[Subscriptions] release: start', {
+          kind,
+          nodeId: String(nodeId),
+          subId: info.subId,
+        });
+      }
       await subscriptionAPI.unsubscribe(info.subId);
+      if (debugEnabled) {
+        console.log('[Subscriptions] release: success', {
+          kind,
+          nodeId: String(nodeId),
+          subId: info.subId,
+        });
+      }
     } catch (error) {
       console.warn('[Subscriptions] Failed to release subscription', { kind, nodeId, error });
     }

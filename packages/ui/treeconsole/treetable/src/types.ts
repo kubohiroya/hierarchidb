@@ -4,10 +4,9 @@
 
 import type { MouseEvent, ReactNode } from 'react';
 import type { RowSelectionState } from '@tanstack/react-table';
-import type { NodeId } from '@hierarchidb/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import { DualKeyMap } from '@hierarchidb/util';
 import type { TreeTablePlugin } from './plugin/types.js';
-import type { TreeNode } from '@hierarchidb/common-types';
-//import { TreeNode } from '@hierarchidb/common-types';
 
 // Base TreeNode interface (simplified from core)
 export interface TreeNodeInUI extends TreeNode {
@@ -23,6 +22,7 @@ export interface TreeNodeInUI extends TreeNode {
 export interface TreeTableController {
   // Data
   data?: TreeNodeInUI[];
+  nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   searchText?: string;
   filteredItemCount?: number;
   totalItemCount?: number;

@@ -618,8 +618,21 @@
   - [ ] `packages/runtime/client` から不要になった export を削除し、呼び出し側を更新
   - [ ] Feature flag を参照していた設定（localStorage override, worker URL param など）を撤去し、関連テストを修正
   - [ ] 新旧比較の WFL / Playwright シナリオを実行し、差分が目的通りであることを記録
- - ロールバック手順：
+- ロールバック手順：
   - 静的 loader への変更を revert し、`wirePluginsFromModules` と旧フックを復元後に `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
+
+14) TreeConsole SSOT DualKeyMap 導入（P0）
+- ブランチ: `feat/ui-treeconsole/dual-key-map`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/state/treeconsole.*`, `app/src/hooks/treeconsole/*`, `packages/ui/treeconsole/*`
+- 受け入れ基準（DoD）:
+  - [ ] `DualKeyMap<PrimaryUniqueKey, SecondaryKey, Value>` ユーティリティを実装し、CRUD と二次キー再割当てをカバーするユニットテストを追加する
+  - [ ] TreeConsole SSOT の `nodesById` / `childrenByParent` 管理を `DualKeyMap` 経由に統一し、`VITE_SUBSCRIPTION_DEBUG=1` で初期ロード・購読イベント双方が従来通りログ出力されることを確認する
+  - [ ] `useTreeConsoleLoader` / `useTreeConsoleSubscription` / `createTreeConsoleActions` の更新後に `pnpm --filter @hierarchidb/app typecheck` ならびに関連パッケージの `build` / `test` が成功する
+- チェックリスト:
+  - [ ] `app/src/utils` 配下に `DualKeyMap` とテスト（`vitest`）を追加し、一次／二次キーの挙動を検証
+  - [ ] SSOT 更新箇所を `DualKeyMap` API に置き換え、`listChildren` → `subscribeSubtree` の一連フローでノードが維持されることをブラウザ検証（`VITE_SUBSCRIPTION_DEBUG=1 pnpm dev`）で確認
+  - [ ] `treeData` / `treeHierarchy` の派生処理を見直し、Import Template → リロード後も TreeConsole / Trash UI が「No data」にならないことを確認
+- ロールバック手順：`DualKeyMap` 実装と適用差分を revert し、旧 `Map` + `Set` 管理へ戻した上で `pnpm --filter @hierarchidb/app typecheck` が通ることを確認
 
 14) Spreadsheet Dialog Step 実装復旧（P1）
 - ブランチ: `feat/spreadsheet/dialog-steps-wiring`
@@ -6681,6 +6694,15 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-26 18:10 progress: test/runtime-worker/tree-subscription-integration — `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加（`tsc -p tsconfig.typecheck.json`）。
 - 2025-10-26 18:18 blocked: test/runtime-worker/tree-subscription-integration — `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行したが、既存 e2e/サービス系テストの型未整備により多数の TS エラーが発生（MessagePort API typing や CommandResult 判定など）。本タスク範囲では未解決、後続タスクで対処予定。
 - 2025-11-01 14:23 progress: test/runtime-worker/tree-subscription-integration — subscribeNode のデバッグログを undefined の rootNodeId 参照ではなく subscription nodeId を記録する形に修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行してエラー解消を確認。
+- 2025-11-01 18:45 progress: fix/ui-treeconsole/subtree-init — TreeConsole 実機でサブツリーが引き続き「No data」表示となることを確認。`subscribeSubtree` 呼び出し／ログ出力の欠如を再調査し、IDE 側で該当箇所にトレース出力を追加する準備を開始。
+- 2025-11-01 19:12 progress: fix/ui-treeconsole/subtree-init — `Subscriptions.subscribe` が `subscribeSubtree` へ `prefetch` オプションを渡しておらず、Worker 側の初期スナップショット＆ログが発火していないことを特定。`prefetch.depth` を kind ごとに設定し、`VITE_SUBSCRIPTION_DEBUG=1` 有効時に subscribe/release フローの詳細ログを出力するよう調整。
+- 2025-11-01 19:18 progress: fix/ui-treeconsole/subtree-init — `pnpm --filter @hierarchidb/app typecheck` を実行し、終了コード 0（出力なし）で成功することを確認。
+- 2025-11-01 19:46 progress: fix/ui-treeconsole/subtree-init — `useTreeConsoleLoader` にデバッグログを追加し、`listChildren` の返却件数および可視行再構成の中間データを `VITE_SUBSCRIPTION_DEBUG` 有効時に確認できるよう調整。再度 `pnpm --filter @hierarchidb/app typecheck` を実行し、終了コード 0（出力なし）を確認。
+- 2025-11-01 20:05 progress: fix/ui-treeconsole/subtree-init — `TreeConsoleContent` の空判定が `selectedNodes.length` 依存だったため、データ件数が存在しても "No data" 表示になっていたことを特定。`controller.data` ベースの判定へ修正し、`pnpm --filter @hierarchidb/ui-treeconsole-base build` を実行（exit 0, tsdown 成功）。
+- 2025-11-01 20:18 progress: fix/ui-treeconsole/subtree-init — `useTreeConsoleIntegration` で SSOT 反映後の `treeData` 長さ／サンプルをデバッグ出力し、ロード完了時に行数が保持されているか追跡できるように調整。`pnpm --filter @hierarchidb/app typecheck` を再実行（exit 0）。
+- 2025-11-01 20:32 start: feat/ui-treeconsole/dual-key-map — `DualKeyMap<PrimaryKey, SecondaryKey, Value>` ユーティリティ実装に着手し、SSOT の一次／二次キー管理を一般化する方針を確認。
+- 2025-11-01 20:47 progress: feat/ui-treeconsole/dual-key-map — `packages/util/src/dualKeyMap.ts` と単体テストを追加。`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）および `pnpm --filter @hierarchidb/util build`（exit 0）で検証。
+- 2025-11-01 21:12 progress: feat/ui-treeconsole/dual-key-map — TreeConsole SSOT を `DualKeyMap` のみに整理し、派生ビュー（treeData/hierarchy）は都度再計算する設計へ変更。`useTreeConsoleLoader` / `useTreeConsoleSubscription` / `useTreeConsoleIntegration` / `createTreeConsoleActions` を更新し、`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）と `pnpm --filter @hierarchidb/app typecheck`（exit 0）を実行。
 - 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。

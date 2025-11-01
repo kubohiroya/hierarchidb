@@ -104,11 +104,9 @@ export interface TreeConsoleActionDeps {
   searchTerm: string;
   selectedIds: NodeId[];
   expandedIds: NodeId[];
-  treeData: TreeNodeData[];
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;
-  applySortFilterSearch: (nodes: TreeNodeData[], overrideTerm?: string) => TreeNodeData[];
   loadChildrenOf: (parentId: NodeId, optTerm?: string) => Promise<void>;
   refreshUndoRedo: () => Promise<void> | void;
   importExport: ImportExportAdapter;

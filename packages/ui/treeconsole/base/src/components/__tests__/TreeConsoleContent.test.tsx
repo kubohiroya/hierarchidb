@@ -10,6 +10,8 @@ import { vi } from 'vitest';
 import { TreeConsoleContent } from '../TreeConsoleContent.js';
 import type { TreeConsoleContentProps, TreeViewController } from '~/types';
 import type { NodeId } from '@hierarchidb/common-types';
+import { DualKeyMap } from '@hierarchidb/util';
+import type { TreeNode } from '@hierarchidb/common-types';
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const theme = createTheme();
@@ -23,6 +25,7 @@ const createMockController = (overrides?: Partial<TreeViewController>): TreeView
   isLoading: false,
   selectionMode: 'checkbox' as const,
   data: [],
+  nodeIndex: new DualKeyMap<NodeId, NodeId, TreeNode>(),
   expandedRowIds: new Set(),
   selectNode: vi.fn(),
   selectMultipleNodes: vi.fn(),

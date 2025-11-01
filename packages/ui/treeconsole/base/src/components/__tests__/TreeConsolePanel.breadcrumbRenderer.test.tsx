@@ -5,6 +5,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import React = require('react');
 import type { TreeNodeData } from '../../types/index.js';
 import type { TreeTableColumn } from '../TreeTable/index.js';
+import { DualKeyMap } from '@hierarchidb/util';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
@@ -30,11 +32,13 @@ const baseColumns: TreeTableColumn[] = [
 ];
 
 function buildProps(overrides: Partial<TreeConsolePanelProps> = {}): TreeConsolePanelProps {
+  const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
   return {
     treeId: 'r',
     title: 'Test',
     pageNodeId: 'root',
     data: [],
+    nodeIndex: index,
     columns: baseColumns,
     breadcrumbItems: [],
     loading: false,

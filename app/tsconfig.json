@@ -14,6 +14,12 @@
       ],
       "@hierarchidb/*-plugin": [
         "../plugins/*-plugin/src/index.ts"
+      ],
+      "@hierarchidb/util": [
+        "../packages/util/src/index.ts"
+      ],
+      "@hierarchidb/util/*": [
+        "../packages/util/src/*"
       ]
     },
     "baseUrl": ".",

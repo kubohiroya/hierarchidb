@@ -4,11 +4,12 @@ import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
 import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { NodeType } from '@hierarchidb/common-types';
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { TreeNodeData } from '../types/index.js';
+import { DualKeyMap } from '@hierarchidb/util';
 
 type PanelBreadcrumbNode = {
   treeNodeId?: string;
@@ -38,6 +39,7 @@ export interface TreeConsolePanelProps {
    */
   readonly pageNodeId?: string;
   readonly data: readonly TreeNodeData[];
+  readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   readonly columns: readonly TreeTableColumn[];
   readonly breadcrumbItems: readonly PanelBreadcrumbNode[];
   readonly loading?: boolean;
@@ -102,19 +104,26 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
   // Create TreeTableController from props
   const controller: TreeTableController = useMemo((): TreeTableController => {
-    // Convert data to TreeNodeInUI format
-    const data = props.data.map((node) => {
-      const d = (node as TreeNodeData).depth as number | undefined;
-      const depth = typeof d === 'number' && isFinite(d) ? d : 1; // default: root's direct child
-      return {
+    const toTreeNodeInUI = (node: TreeNodeData, fallbackDepth: number): TreeNodeInUI => {
+      const resolvedDepth = Number.isFinite(node.depth) ? Number(node.depth) : fallbackDepth;
+      const base: TreeNodeInUI = {
         ...node,
-        nodeType: node.nodeType || 'folder',
-        type: node.nodeType,
+        nodeType: (node.nodeType || node.type || 'folder') as string,
+        type: (node.type || node.nodeType || 'folder') as string,
         name: node.name || '',
-        hasChildren: Boolean((node as TreeNodeData).hasChildren),
-        depth,
-      } as TreeNodeInUI;
-    });
+        hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
+        depth: resolvedDepth > 0 ? resolvedDepth : fallbackDepth,
+      };
+
+      if (Array.isArray(node.children) && node.children.length > 0) {
+        base.children = node.children.map((child) => toTreeNodeInUI(child, base.depth + 1));
+      }
+
+      return base;
+    };
+
+    // Convert data to TreeNodeInUI format
+    const data = props.data.map((node) => toTreeNodeInUI(node, 1));
 
     // Convert selectedIds and expandedIds to the expected format
     const rowSelection: Record<string, boolean> = {};
@@ -126,8 +135,10 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
     return {
       data,
+      nodeIndex: props.nodeIndex,
       rowSelection,
       expandedRowIds,
+      rootNodeId: props.pageNodeId as NodeId | undefined,
       startEdit: async (_nodeId: string) => {},
       finishEdit: (nodeId: string, newValue: string, field: 'name' | 'description' = 'name') => {
         // delegate to parent handler via context-menu action channel

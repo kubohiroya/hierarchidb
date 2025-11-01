@@ -11,6 +11,9 @@ import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { useImportExport } from '../hooks/useImportExport.ts';
 import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
 import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
+import { buildVisibleRows, syncNodeIndex } from '../state/treeconsole.derive.js';
+import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
+import { DualKeyMap } from '@hierarchidb/util';
 import { useTreeConsoleBreadcrumbs } from './treeconsole/useTreeConsoleBreadcrumbs.js';
 import { useTreeConsoleLoader } from './treeconsole/useTreeConsoleLoader.js';
 import { useTreeConsoleSubscription } from './treeconsole/useTreeConsoleSubscription.js';
@@ -34,7 +37,14 @@ export function useTreeConsoleIntegration({
   locationSearch,
 }: UseTreeConsoleIntegrationParams) {
   const { state: ssot, set: setSSOT, incRef, decRef } = useTreeConsoleSSOT(pageNodeId as string | undefined);
-  const treeData = (ssot.treeData as TreeNodeData[]) || [];
+  const debugEnabled = (() => {
+    try {
+      const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+      return env?.VITE_SUBSCRIPTION_DEBUG === '1';
+    } catch {
+      return false;
+    }
+  })();
   const selectedIds = (ssot.selectedIds as NodeId[]) || [];
   const expandedIds = (ssot.expandedIds as NodeId[]) || [];
   const searchTerm = ssot.searchTerm || '';
@@ -59,7 +69,37 @@ export function useTreeConsoleIntegration({
   const breadcrumbItems = useTreeConsoleBreadcrumbs({ client, pageTreeNode });
   const importExport = useImportExport(client, !!client) as unknown as ImportExportAdapter;
 
-  const { applySortAndFilter, loadChildrenOf } = useTreeConsoleLoader({
+  const nodeIndex = ssot.nodeIndex;
+  const nodeIndexSnapshot = useMemo(() => (
+    nodeIndex ? nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>()
+  ), [nodeIndex]);
+  const sortConfig = useMemo(
+    () => deriveConfigFromState(state, searchTerm),
+    [state.sortBy, state.sortDirection, state.filterBy, searchTerm],
+  );
+  const treeData = useMemo<TreeNodeData[]>(() => {
+    if (!nodeIndex) return [];
+    const root = (pageNodeId || '') as NodeId;
+    const rows = buildVisibleRows(root, nodeIndex, expandedIds);
+    const mapped = rows.map((node) => convertTreeNodeToTreeNodeData(node as TreeNode));
+    return applySortFilterSearch(mapped, sortConfig, searchTerm);
+  }, [nodeIndex, pageNodeId, expandedIds, sortConfig, searchTerm]);
+
+  useEffect(() => {
+    if (!debugEnabled) return;
+    console.log('[TreeConsoleIntegration] treeData snapshot', {
+      length: treeData.length,
+      sample: treeData.slice(0, 10).map((node) => ({
+        id: String(node.id),
+        parentId: node.parentId ? String(node.parentId) : null,
+        name: node.name,
+        depth: node.depth,
+        nodeType: node.nodeType,
+      })),
+    });
+  }, [debugEnabled, treeData]);
+
+  const { loadChildrenOf } = useTreeConsoleLoader({
     client,
     pageNodeId,
     pageTreeNode,
@@ -76,7 +116,6 @@ export function useTreeConsoleIntegration({
     setSSOT,
     ssot,
     expandedIds,
-    applySortFilterSearch: applySortAndFilter,
     loadChildrenOf,
   });
 
@@ -114,8 +153,7 @@ export function useTreeConsoleIntegration({
     if (!client || !pageNodeId) return;
 
     setSSOT({
-      treeData: [],
-      rawNodes: [],
+      nodeIndex: undefined,
       selectedIds: [],
       expandedIds: [],
       searchTerm: '',
@@ -138,8 +176,9 @@ export function useTreeConsoleIntegration({
               mode: 'partial',
               maxResults: 200,
             })) as TreeNode[];
-            const rows = results.map(convertTreeNodeToTreeNodeData);
-            setSSOT({ rawNodes: results, treeData: applySortAndFilter(rows, q) });
+        const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+        syncNodeIndex(index, pageNodeId as NodeId, results);
+        setSSOT({ nodeIndex: index });
             setState((prev) => ({ ...prev, loading: false }));
             setSSOT({ loading: false, searchTerm: q });
             return;
@@ -160,7 +199,7 @@ export function useTreeConsoleIntegration({
     };
 
     void load();
-  }, [client, locationSearch, loadChildrenOf, pageNodeId, setSSOT, applySortAndFilter]);
+  }, [client, locationSearch, loadChildrenOf, pageNodeId, setSSOT]);
 
   useEffect(() => {
     if (!clientReady || !pageNodeId) return;
@@ -183,11 +222,9 @@ export function useTreeConsoleIntegration({
         searchTerm,
         selectedIds,
         expandedIds,
-        treeData,
         setState,
         setSSOT,
         ssot,
-        applySortFilterSearch: applySortAndFilter,
         loadChildrenOf,
         refreshUndoRedo,
         importExport,
@@ -195,7 +232,6 @@ export function useTreeConsoleIntegration({
         setupSubscription,
       }),
     [
-      applySortAndFilter,
       client,
       expandedIds,
       importExport,
@@ -211,7 +247,6 @@ export function useTreeConsoleIntegration({
       setupSubscription,
       ssot,
       teardownSubscription,
-      treeData,
       treeId,
     ],
   );
@@ -224,6 +259,7 @@ export function useTreeConsoleIntegration({
     loading: state.loading,
     error: state.error,
     treeData,
+    nodeIndex: nodeIndexSnapshot,
     columns,
     breadcrumbItems,
     selectedIds,

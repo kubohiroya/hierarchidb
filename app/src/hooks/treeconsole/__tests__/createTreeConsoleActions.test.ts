@@ -7,6 +7,7 @@ import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
 import { preconnectPluginServices } from '../../../services/preconnect.js';
+import { DualKeyMap } from '@hierarchidb/util';
 
 vi.mock('../../../services/preconnect.js', () => ({
   preconnectPluginServices: vi.fn(async () => {}),
@@ -56,17 +57,17 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     getQueryAPI: vi.fn(async () => queryApi),
   } as unknown as Remote<WorkerAPI>;
 
+  const nodeIndex = new DualKeyMap<NodeId, NodeId, TreeNode>();
+  nodeIndex.set(nodeId, {
+    id: nodeId,
+    parentId: pageNodeId,
+    nodeType: 'folder',
+    name: 'Existing',
+  } as unknown as TreeNode, pageNodeId);
+
   const baseSSOT: TreeConsoleSSOTEntry = {
     pageNodeId,
-    rawNodes: [],
-    treeData: [],
-    nodesById: new Map<string, TreeNode>([[String(nodeId), {
-      id: nodeId,
-      parentId: pageNodeId,
-      nodeType: 'folder',
-      name: 'Existing',
-    } as unknown as TreeNode]]),
-    childrenByParent: new Map(),
+    nodeIndex,
     selectedIds: [nodeId],
     expandedIds: [],
     searchTerm: '',
@@ -93,11 +94,9 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     searchTerm: '',
     selectedIds: [nodeId],
     expandedIds: [],
-    treeData: [],
     setState: vi.fn(),
     setSSOT: vi.fn(),
     ssot: baseSSOT,
-    applySortFilterSearch: (nodes) => nodes,
     loadChildrenOf: vi.fn(async () => {}),
     refreshUndoRedo: vi.fn(async () => {}),
     importExport: {

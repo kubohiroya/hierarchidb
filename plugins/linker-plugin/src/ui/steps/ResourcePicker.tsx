@@ -3,6 +3,7 @@ import { Box, IconButton, InputAdornment, Stack, TextField, Tooltip, Typography 
 import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
+import { DualKeyMap } from '@hierarchidb/util';
 import { ArrowBack as BackIcon, ArrowForward as ForwardIcon, ExpandMore as ExpandIcon, ExpandLess as CollapseIcon, Search as SearchIcon } from '@mui/icons-material';
 // Use TreeConsolePanel in readonly + multi-select mode (same基盤 as TrashBin)
 // Avoid static import to keep this plugin decoupled from host bundling; read from app global if provided
@@ -12,6 +13,8 @@ type TreeConsolePanelProps = {
   title: string;
   treeId: string;
   data: Row[];
+  pageNodeId?: string;
+  nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   columns: { id: string; label: string }[];
   breadcrumbItems: BreadcrumbItem[];
   loading: boolean;
@@ -151,6 +154,24 @@ export const ResourcePicker: React.FC<ResourcePickerProps> = ({ value, onChange,
     title: 'Resources',
     treeId: 'r',
     data: treeData,
+    pageNodeId: breadcrumb.length ? String(breadcrumb[breadcrumb.length - 1]?.id) : undefined,
+    nodeIndex: (() => {
+      const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+      const parentId = breadcrumb.length ? breadcrumb[breadcrumb.length - 1]?.id : 'root';
+      treeData.forEach((row) => {
+        const primary = row.id as NodeId;
+        const parent = (parentId || 'root') as NodeId;
+        index.set(primary, {
+          id: primary,
+          parentId: parent,
+          nodeType: row.nodeType as TreeNode['nodeType'],
+          name: row.name,
+          depth: row.depth,
+          hasChildren: row.hasChildren,
+        } as TreeNode, parent);
+      });
+      return index;
+    })(),
     columns: [{ id: 'name', label: 'Name' }],
     breadcrumbItems: breadcrumb,
     loading: false,

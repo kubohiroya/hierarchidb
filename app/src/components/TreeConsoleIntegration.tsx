@@ -76,6 +76,7 @@ const TreeConsoleIntegrationInner: React.FC<
     loading: workerLoading,
     error: workerError,
     treeData,
+    nodeIndex,
     columns,
     breadcrumbItems,
     selectedIds,
@@ -535,6 +536,7 @@ const TreeConsoleIntegrationInner: React.FC<
         pageNodeId={pageNodeId}
         pageTreeNode={pageTreeNode}
         data={[...treeData]}
+        nodeIndex={nodeIndex}
         columns={columns}
         breadcrumbItems={breadcrumbItems}
         loading={state.loading}

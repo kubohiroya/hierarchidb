@@ -161,12 +161,13 @@ export function TreeTableCore({
   }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, languageKey, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
 
   const table = useReactTable({
-    data: structure.visibleData,
+    data: structure.tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getSubRows: structure.getSubRows,
     getRowId: (row) => String(row.id ?? ''),
     enableRowSelection: selectionMode !== 'none',
     enableMultiRowSelection: selectionMode === 'multiple',

@@ -13,6 +13,7 @@ import type { NodeId } from '@hierarchidb/common-types';
 import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeNodeInUI } from '@hierarchidb/ui-treeconsole-treetable';
 import type { TreeNode } from '@hierarchidb/common-types';
+import { DualKeyMap } from '@hierarchidb/util';
 
 const StyledDialogContent = styled(Box)`
   padding: 0;
@@ -98,10 +99,10 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
     const isTestEnv = globalProcess?.env?.NODE_ENV === 'test';
     const isLoading = !controller || controller.isLoading || (!isTestEnv && isWebKit && !webKitInitialized);
 
-    const hasMinimumData =
-      controller && controller.selectedNodes && Array.isArray(controller.selectedNodes);
+    const dataCount = controller?.data ? controller.data.length : 0;
+    const hasMinimumData = controller && Array.isArray(controller.data);
 
-    const isEmpty = controller && !controller.isLoading && controller.selectedNodes.length === 0;
+    const isEmpty = controller && !controller.isLoading && dataCount === 0;
 
     const contentState = (() => {
       if (isLoading) return 'loading';
@@ -154,6 +155,7 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
               <TreeTableCore
                 controller={{
                   data: controller.data,
+                  nodeIndex: controller.nodeIndex ?? new DualKeyMap<NodeId, NodeId, TreeNode>(),
                   rowSelection: controller.rowSelection,
                   expandedRowIds: controller.expandedRowIds,
                   rootNodeId: controller.rootNodeId,

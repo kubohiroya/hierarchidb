@@ -5,13 +5,13 @@
  * extracted dependencies from the integration hook.
  */
 
-import { convertTreeNodeToTreeNodeData } from '../../utils/treeNodeConverter.js';
 import { preconnectPluginServices } from '../../services/preconnect.js';
-import { buildVisibleRows, rebuildAdjacency } from '../../state/treeconsole.derive.js';
+import { buildVisibleRows, syncNodeIndex } from '../../state/treeconsole.derive.js';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleActionDeps, TreeConsoleActions, ContextAction } from './types.js';
+import { DualKeyMap } from '@hierarchidb/util';
 
 type ClipboardPayload = { nodeIds: NodeId[]; cut?: boolean };
 
@@ -29,10 +29,18 @@ function ensureClipboard(): ClipboardPayload {
   return fresh;
 }
 
-function getSortContext(ssot: TreeConsoleSSOTEntry) {
-  const nodesById = new Map<string, TreeNode>(ssot.nodesById ?? new Map<string, TreeNode>());
-  const childrenByParent = new Map<string, Set<string>>(ssot.childrenByParent ?? new Map<string, Set<string>>());
-  return { nodesById, childrenByParent };
+function getOrCreateIndex(ssot: TreeConsoleSSOTEntry): DualKeyMap<NodeId, NodeId, TreeNode> {
+  return ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>();
+}
+
+function buildIndexFromNodes(nodes: readonly TreeNode[], fallbackParent: NodeId): DualKeyMap<NodeId, NodeId, TreeNode> {
+  const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+  for (const node of nodes) {
+    const key = String(node.id) as NodeId;
+    const parentKey = node.parentId ? String(node.parentId) as NodeId : fallbackParent;
+    index.set(key, node, parentKey);
+  }
+  return index;
 }
 
 const showCommandError = console.error.bind(console, '[HDB] Command Error:');
@@ -47,11 +55,9 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     searchTerm,
     selectedIds,
     expandedIds,
-    treeData,
     setState,
     setSSOT,
     ssot,
-    applySortFilterSearch,
     loadChildrenOf,
     refreshUndoRedo,
     importExport,
@@ -86,8 +92,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       return;
     }
 
-    const nodesById = ssot.nodesById ?? new Map<string, TreeNode>();
-    const nodeRecord = nodesById.get(String(targetNodeId));
+    const nodeIndex = ssot.nodeIndex ?? new DualKeyMap<NodeId, NodeId, TreeNode>();
+    const nodeRecord = nodeIndex.get(targetNodeId);
     const recordType = (nodeRecord as { nodeType?: string; type?: string } | undefined)?.nodeType
       ?? (nodeRecord as { type?: string } | undefined)?.type;
     const nodeType = String(recordType ?? 'folder');
@@ -164,22 +170,15 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
       if (expanded && client) {
         try {
-          const { nodesById, childrenByParent } = getSortContext(ssot);
-          let children: TreeNode[] | null = null;
-          const existing = childrenByParent.get(String(nodeId));
-          if (existing && existing.size) {
-            children = Array.from(existing)
-              .map((cid) => nodesById.get(String(cid)))
-              .filter((n): n is TreeNode => Boolean(n));
-          }
-          if (!children) {
+          const index = getOrCreateIndex(ssot);
+          const parentKey = nodeId as NodeId;
+          const existingChildIds = Array.from(index.getPrimaryKeysBySecondary(parentKey));
+          if (!existingChildIds.length) {
             const queryAPI = await client.getQueryAPI();
             const result = await queryAPI.listChildren(nodeId as NodeId);
-            rebuildAdjacency(nodesById, childrenByParent, String(nodeId), result);
+            syncNodeIndex(index, parentKey, result);
+            setSSOT({ nodeIndex: index });
           }
-          const rootId = String(pageNodeId || nodeId);
-          const flat = buildVisibleRows(rootId, nodesById, childrenByParent, [...expandedIds, String(nodeId)]);
-          setSSOT({ nodesById, childrenByParent, treeData: applySortFilterSearch(flat) });
         } catch (err) {
           console.error('Failed to load children for node:', nodeId, err);
         }
@@ -202,8 +201,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           mode: 'partial',
           maxResults: 200,
         })) as TreeNode[];
-        const rows = results.map(convertTreeNodeToTreeNodeData);
-        setSSOT({ rawNodes: results, treeData: applySortFilterSearch(rows, term) });
+        const index = buildIndexFromNodes(results, root);
+        setSSOT({ nodeIndex: index });
       } catch (error) {
         console.error('Search failed:', error);
       }
@@ -291,8 +290,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     },
 
     handleExpandAll: () => {
-      const allIds = treeData.map((node) => node.id as NodeId);
-      setSSOT({ expandedIds: allIds });
+      const index = getOrCreateIndex(ssot);
+      const rootId = (pageNodeId || '') as NodeId;
+      const flat = buildVisibleRows(rootId, index, expandedIds);
+      const allIds = flat.map((node) => node.id as NodeId);
+      setSSOT({ nodeIndex: index, expandedIds: allIds });
     },
 
     handleCollapseAll: () => {
@@ -305,18 +307,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         sortBy: columnId,
         sortDirection: prev.sortBy === columnId && prev.sortDirection === 'asc' ? 'desc' : 'asc',
       }));
-      const { nodesById, childrenByParent } = getSortContext(ssot);
-      const rootId = String(pageNodeId || '');
-      const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
-      setSSOT({ treeData: applySortFilterSearch(flat) });
+      // Sorting applied on derived view; index remains unchanged.
     },
 
     handleFilterChange: (filter: string) => {
       setState((prev) => ({ ...prev, filterBy: filter }));
-      const { nodesById, childrenByParent } = getSortContext(ssot);
-      const rootId = String(pageNodeId || '');
-      const flat = buildVisibleRows(rootId, nodesById, childrenByParent, expandedIds);
-      setSSOT({ treeData: applySortFilterSearch(flat) });
+      // Filtering applied on derived view; index remains unchanged.
     },
 
     handleViewModeChange: (mode) => {
@@ -423,7 +419,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = node.name.trim();
-          const current = ssot.rawNodes.find((n: TreeNode) => n.id === node.id)?.name ?? '';
+          const current = ssot.nodeIndex?.get(node.id as NodeId)?.name ?? '';
           if (next === current) return;
           if (!next) { showCommandError('VALIDATION_ERROR', 'Name is required'); return; }
           if (next.length > 255) { showCommandError('VALIDATION_ERROR', 'Name is too long (max 255)'); return; }
@@ -447,7 +443,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = String(node.description ?? '').trim();
-          const current = ssot.rawNodes.find((n: TreeNode) => n.id === node.id)?.description ?? '';
+          const current = ssot.nodeIndex?.get(node.id as NodeId)?.description ?? '';
           if (next === current) return;
           if (next.length > 1000) { showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)'); return; }
           const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, description: next });
