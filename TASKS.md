@@ -132,6 +132,21 @@
   - [x] 名称衝突を自動解決するロジック、または NAME_CONFLICT エラー返却を実装
   - [x] 追加テストで重複復元時に一意名へリネームされること、および NAME_NOT_UNIQUE が返るケースを検証
   - [x] 実行コマンドと結果を運用ログに追記
+- ロールバック手順：復元ロジックの差分と追加テストを revert し、`pnpm --filter @hierarchidb/runtime-worker test -- --run bulk-ops-cp` で ConstraintError を再現する
+
+111) TrashDialog Empty Trash 確認ダイアログ導入（P0）
+- ブランチ: `fix/ui-trash/empty-confirmation`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/dialogs/TrashDialog.tsx`, `@mui/material`, `packages/ui/treeconsole/*`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] Empty Trash ボタン押下時に中央モーダルで再確認できる UI を実装し、既存の z-index 問題を解消する
+  - [x] 新しい確認ダイアログの動作（確認で削除・キャンセルで中止）を手動確認し、必要に応じてテストを追加する
+  - [x] `pnpm --filter @hierarchidb/app typecheck` 等の関連コマンドを実行し、結果を運用ログへ記録する
+- チェックリスト:
+  - [x] 既存メニュー UI を撤去し、確認ダイアログを導入
+  - [x] 削除処理が重複実行されないようハンドラを整備
+  - [x] 検証コマンドと結果を運用ログに追記
+- ロールバック手順：TrashDialog の UI 差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行して旧構成へ戻る
 - ロールバック手順：今回追加する衝突解決ロジックとテスト差分を revert し、`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-restore-name-conflict`（新規テスト）で ConstraintError が再現することを確認する
 
 94) folder-plugin uuid shim 方針調査（P0）
@@ -7248,3 +7263,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-02 08:07 command: pnpm --filter @hierarchidb/runtime-worker test -- --run bulk-ops-cp — exit 0。Trash 復元重複時の自動リネーム／NAME_NOT_UNIQUE テストを含む 5 ケースが通過することを確認。
 - 2025-11-02 08:09 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。runtime-worker の型検証が成功し、新規ロジックによる型エラーがないことを確認。
 - 2025-11-02 08:10 done: fix/worker/trash-restore-name-conflict — 復元時の名称衝突で ConstraintError が発生しないことを確認。自動リネームと NAME_NOT_UNIQUE 応答のテストを追加し、ロールバックは該当差分 revert + 再テストで再現可能。
+- 2025-11-02 08:20 start: fix/ui-trash/empty-confirmation — Empty Trash の z-index 不具合を解消し、確認モーダルを導入するタスクに着手。DoD 合意済み、sandbox 制約により `main` 上で対応予定。
+- 2025-11-02 08:26 progress: fix/ui-trash/empty-confirmation — TrashDialogFooter のメニュー UI を撤去し、モーダル確認ダイアログを組み込み。確認ボタン経由で `onEmptyAll` を呼び出す導線へ更新。
+- 2025-11-02 08:28 command: pnpm --filter @hierarchidb/app typecheck — exit 0。新しい確認ダイアログ導入後も app の型検証が通過することを確認。
+- 2025-11-02 08:30 done: fix/ui-trash/empty-confirmation — Empty Trash 時に中央確認ダイアログが表示され、キャンセル/削除の双方を確認。ロールバックは TrashDialog.tsx 差分を revert し従来メニュー UI に戻して再度 typecheck を実行。

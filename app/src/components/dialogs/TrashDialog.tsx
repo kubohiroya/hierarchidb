@@ -4,8 +4,11 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  Menu,
-  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   Typography,
 } from '@mui/material';
 import {
@@ -360,69 +363,89 @@ function TrashDialogFooter({
   onEmptyAll,
   onRequestClose,
 }: TrashDialogFooterProps) {
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setMenuAnchor(event.currentTarget);
-  const handleMenuClose = () => setMenuAnchor(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const handleConfirmOpen = () => setConfirmOpen(true);
+  const handleConfirmClose = () => setConfirmOpen(false);
+  const handleConfirmDelete = () => {
+    setConfirmOpen(false);
+    onEmptyAll();
+  };
 
   const allDisabled = loading || (mode === 'restore' ? selectedCount === 0 : totalCount === 0);
+  const itemLabel = totalCount === 1 ? 'item' : 'items';
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 2,
-        py: 1.5,
-        borderTop: '1px solid',
-        borderColor: 'divider',
-        gap: 1.5,
-        minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
-      }}
-    >
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button variant="outlined" color="inherit" onClick={() => onRequestClose('close')}>
-          Close
-        </Button>
-        {mode === 'restore' ? (
-          <Button
-            variant="contained"
-            startIcon={<RestoreIcon />}
-            disabled={allDisabled}
-            onClick={onRestore}
-          >
-            Restore ({selectedCount})
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2,
+          py: 1.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          gap: 1.5,
+          minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" color="inherit" onClick={() => onRequestClose('close')}>
+            Close
           </Button>
-        ) : (
-          <>
+          {mode === 'restore' ? (
+            <Button
+              variant="contained"
+              startIcon={<RestoreIcon />}
+              disabled={allDisabled}
+              onClick={onRestore}
+            >
+              Restore ({selectedCount})
+            </Button>
+          ) : (
             <Button
               variant="contained"
               color="error"
               startIcon={<EmptyTrashIcon />}
-              onClick={handleMenuOpen}
+              onClick={handleConfirmOpen}
               disabled={allDisabled}
             >
               Empty Trash ({totalCount})
             </Button>
-            <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose();
-                  onEmptyAll();
-                }}
-              >
-                Permanently delete all items
-              </MenuItem>
-            </Menu>
-          </>
-        )}
+          )}
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          {mode === 'restore'
+            ? `${selectedCount} selected`
+            : `${totalCount} items in trash`}
+        </Typography>
       </Box>
-      <Typography variant="body2" color="text.secondary">
-        {mode === 'restore'
-          ? `${selectedCount} selected`
-          : `${totalCount} items in trash`}
-      </Typography>
-    </Box>
+      <Dialog
+        open={confirmOpen}
+        onClose={handleConfirmClose}
+        aria-labelledby="trash-empty-confirm-title"
+      >
+        <DialogTitle id="trash-empty-confirm-title">Delete all items?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`This will permanently delete ${totalCount} ${itemLabel} from the trash. This action cannot be undone.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={loading}
+          >
+            Permanently delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 
