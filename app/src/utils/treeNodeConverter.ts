@@ -20,6 +20,13 @@ export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
 
     // UI-specific properties can be added here
     children: undefined, // Will be populated when expanded
+    removedAt: (() => {
+      const source = (node as { removedAt?: number | string; deletedAt?: number | string }).removedAt
+        ?? (node as { deletedAt?: number | string }).deletedAt;
+      if (source == null) return undefined;
+      const numeric = typeof source === 'number' ? source : Number(source);
+      return Number.isFinite(numeric) ? numeric : undefined;
+    })(),
   };
 }
 
@@ -35,45 +42,95 @@ export function convertTreeNodesToTreeNodeData(
 /**
  * Create default columns configuration for TreeTable
  */
-export function createDefaultColumns(): TreeTableColumn[] {
-  return [
+type ColumnOptions = {
+  t?: (key: string, defaultValue?: string, options?: Record<string, unknown>) => string;
+  locale?: string;
+  includeRemovedAt?: boolean;
+};
+
+export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[] {
+  const t = options?.t ?? ((key: string, fallback?: string) => fallback ?? key);
+  const locale = options?.locale ?? 'en';
+  const includeRemovedAt = options?.includeRemovedAt ?? false;
+
+  const formatTimestamp = (value?: string | number | null): string => {
+    if (value == null) return '';
+    const numeric = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(numeric)) return '';
+    const target = new Date(numeric);
+    if (Number.isNaN(target.getTime())) return '';
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+    const diffMs = startOfToday.getTime() - startOfTarget.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const diffDays = Math.floor(diffMs / dayMs);
+
+    const timeFormatter = new Intl.DateTimeFormat(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: locale.startsWith('ja') ? false : undefined,
+    });
+    const time = timeFormatter.format(target);
+
+    if (diffDays === 0) return t('trash.timestamps.today', 'Today {{time}}', { time });
+    if (diffDays === 1) return t('trash.timestamps.yesterday', 'Yesterday {{time}}', { time });
+    if (diffDays === 2) return t('trash.timestamps.twoDaysAgo', 'Two days ago {{time}}', { time });
+
+    const dateFormatter = new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: locale.startsWith('ja') ? 'numeric' : 'long',
+      day: 'numeric',
+    });
+    const date = dateFormatter.format(target);
+    return t('trash.timestamps.dateTime', '{{date}} {{time}}', { date, time });
+  };
+
+  const columns: TreeTableColumn[] = [
     {
       id: 'name',
-      label: 'Name',
+      label: t('trash.columns.name', 'Name'),
       sortable: true,
       width: 300,
       render: (_value: unknown, node: TreeNodeData) => node.name,
     },
     {
       id: 'description',
-      label: 'Description',
+      label: t('trash.columns.description', 'Description'),
       sortable: true,
       width: 300,
       render: (_value: unknown, node: TreeNodeData) => node.description || '-',
     },
     {
       id: 'createdAt',
-      label: 'Created',
+      label: t('trash.columns.createdAt', 'Created'),
       sortable: true,
-      width: 160,
-      render: (_value: unknown, node: TreeNodeData) => {
-        return node.createdAt
-          ? new Date(node.createdAt).toLocaleDateString()
-          : '';
-      },
+      width: 180,
+      render: (_value: unknown, node: TreeNodeData) => formatTimestamp(node.createdAt as number | string | null),
     },
     {
       id: 'updatedAt',
-      label: 'Modified',
+      label: t('trash.columns.updatedAt', 'Modified'),
       sortable: true,
-      width: 160,
-      render: (_value: unknown, node: TreeNodeData) => {
-        return node.updatedAt
-          ? new Date(node.updatedAt).toLocaleDateString()
-          : '';
-      },
+      width: 180,
+      render: (_value: unknown, node: TreeNodeData) => formatTimestamp(node.updatedAt as number | string | null),
     },
   ];
+
+  if (includeRemovedAt) {
+    columns.push({
+      id: 'removedAt',
+      label: t('trash.columns.removedAt', 'Removed'),
+      sortable: true,
+      width: 200,
+      render: (_value: unknown, node: TreeNodeData & { removedAt?: number | string; deletedAt?: number | string }) => {
+        return formatTimestamp(node.removedAt ?? node.deletedAt ?? null);
+      },
+    });
+  }
+
+  return columns;
 }
 
 /**
@@ -142,6 +199,17 @@ export function sortTreeNodeData(
         aValue = a.updatedAt || 0;
         bValue = b.updatedAt || 0;
         break;
+      case 'removedAt': {
+        const aRemoved = (a as { removedAt?: number | string; deletedAt?: number | string }).removedAt
+          ?? (a as { deletedAt?: number | string }).deletedAt
+          ?? 0;
+        const bRemoved = (b as { removedAt?: number | string; deletedAt?: number | string }).removedAt
+          ?? (b as { deletedAt?: number | string }).deletedAt
+          ?? 0;
+        aValue = typeof aRemoved === 'number' ? aRemoved : Number(aRemoved);
+        bValue = typeof bRemoved === 'number' ? bRemoved : Number(bRemoved);
+        break;
+      }
       default:
         aValue = a.name;
         bValue = b.name;

@@ -115,8 +115,54 @@ export function TreeTableCore({
     handleStartEdit,
   });
 
-  const { t, i18n } = useTranslation('common', { keyPrefix: 'treeTable.selectAll' });
+  const { t: selectAllT } = useTranslation('common', { keyPrefix: 'treeTable.selectAll' });
+  const { t: commonT, i18n } = useTranslation('common');
   const languageKey = i18n?.resolvedLanguage ?? i18n?.language ?? 'en';
+
+  const formatTimestamp = useCallback(
+    (value?: number) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-';
+      }
+      const target = new Date(value);
+      if (Number.isNaN(target.getTime())) {
+        return '-';
+      }
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+      const diffMs = startOfToday.getTime() - startOfTarget.getTime();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const diffDays = Math.floor(diffMs / dayMs);
+
+      const timeFormatOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+      if (languageKey.startsWith('ja')) {
+        timeFormatOptions.hour12 = false;
+      }
+      const timeFormatter = new Intl.DateTimeFormat(languageKey, timeFormatOptions);
+      const time = timeFormatter.format(target);
+
+      if (diffDays === 0) {
+        return commonT('treeTable.timestamps.today', { time });
+      }
+      if (diffDays === 1) {
+        return commonT('treeTable.timestamps.yesterday', { time });
+      }
+      if (diffDays === 2) {
+        return commonT('treeTable.timestamps.twoDaysAgo', { time });
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(languageKey, {
+        year: 'numeric',
+        month: languageKey.startsWith('ja') ? 'numeric' : 'long',
+        day: 'numeric',
+      });
+      const date = dateFormatter.format(target);
+      return commonT('treeTable.timestamps.dateTime', { date, time });
+    },
+    [commonT, languageKey],
+  );
 
   const columns = useMemo(() => createTreeTableColumns({
     columnWidths,
@@ -127,8 +173,8 @@ export function TreeTableCore({
     pageNodeId,
     selectAllHydrated,
     selectAllLabels: {
-      select: t('select'),
-      clear: t('clear'),
+      select: selectAllT('select'),
+      clear: selectAllT('clear'),
     },
     hasSelectedAncestor: structure.hasSelectedAncestor,
     rowSelection: structure.rowSelection,
@@ -158,7 +204,9 @@ export function TreeTableCore({
     visualSelectionSet,
     useTrashColumns,
     trashAction,
-  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, languageKey, t, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, visualSelectionSet, trashAction]);
+    formatTimestamp,
+    trashRemovedHeader: (useTrashColumns ? commonT('treeTable.columns.removed') : undefined) ?? undefined,
+  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, commonT, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, setContextMenuState, visualSelectionSet, trashAction, formatTimestamp]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};

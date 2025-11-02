@@ -481,12 +481,6 @@
       "@hierarchidb/ui-treeconsole-toolbar/*": [
         "packages/ui/treeconsole/toolbar/src/*"
       ],
-      "@hierarchidb/ui-treeconsole-trashbin": [
-        "packages/ui/treeconsole/trashbin/src/index.ts"
-      ],
-      "@hierarchidb/ui-treeconsole-trashbin/*": [
-        "packages/ui/treeconsole/trashbin/src/*"
-      ],
       "@hierarchidb/ui-treeconsole-treetable": [
         "packages/ui/treeconsole/treetable/src/index.ts"
       ],

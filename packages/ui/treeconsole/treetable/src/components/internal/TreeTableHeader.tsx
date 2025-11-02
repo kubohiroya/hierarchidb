@@ -59,7 +59,7 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
                       ) : (
                         'Column'
                       )}
-                      {!isSelectionColumn && header.column.id !== 'updatedAt' && rightId && (
+                      {!isSelectionColumn && rightId && (
                         <ResizeHandle
                           className={resizingColumn === header.column.id ? 'resizing' : ''}
                           onMouseDown={(event) => {

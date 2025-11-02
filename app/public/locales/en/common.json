@@ -23,6 +23,22 @@
       }
     }
   },
+  "trash": {
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "description": "Description",
+      "createdAt": "Created",
+      "updatedAt": "Modified",
+      "removedAt": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    }
+  },
   "plugins": {
     "noDependencies": "No dependencies",
     "details": "Plugin Details",
@@ -84,6 +100,28 @@
     "selectAll": {
       "select": "Select all",
       "clear": "Clear all"
+    },
+    "columns": {
+      "removed": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    }
+  },
+  "trash": {
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "removedAt": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   }
 }

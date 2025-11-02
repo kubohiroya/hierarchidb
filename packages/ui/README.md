@@ -69,7 +69,6 @@ HierarchiDB のユーザーインターフェース層を構成するReactコン
 - **[@hierarchidb/ui-treeconsole-footer](./treeconsole/footer/)** - フッター情報表示
 - **[@hierarchidb/ui-treeconsole-speeddial](./treeconsole/speeddial/)** - フローティングアクションボタン
 - **[@hierarchidb/ui-treeconsole-toolbar](./treeconsole/toolbar/)** - ツールバー操作
-- **[@hierarchidb/ui-treeconsole-trashbin](./treeconsole/trashbin/)** - ごみ箱機能
 - **[@hierarchidb/ui-treeconsole-treetable](./treeconsole/treetable/)** - 階層テーブル表示
 
 ### 🧭 ナビゲーション・レイアウト

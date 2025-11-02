@@ -1,6 +1,6 @@
 # Package Dependency Graph
 
-Generated on: 2025-10-30T21:48:54.719Z
+Generated on: 2025-11-02T23:14:27.496Z
 
 - Scope: workspace internal dependencies only
 - Arrows point from depender → dependency
@@ -84,7 +84,7 @@ graph LR
     N36["@hierarchidb/tools"]
     N37["@hierarchidb/tools-build-scripts"]
     N38["@hierarchidb/tools-codemods"]
-    N39["@hierarchidb/tools-load-plugin-manifest"]
+    N39["@hierarchidb/tools-plugin-manifest-loader"]
     N40["@hierarchidb/tools-schemas"]
   end
   subgraph G_packages_ui["packages/ui"]

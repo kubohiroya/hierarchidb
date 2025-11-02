@@ -23,6 +23,22 @@
       }
     }
   },
+  "trash": {
+    "columns": {
+      "name": "名称",
+      "type": "種類",
+      "description": "説明",
+      "createdAt": "作成日時",
+      "updatedAt": "更新日時",
+      "removedAt": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    }
+  },
   "plugins": {
     "noDependencies": "依存関係はありません",
     "details": "プラグイン詳細",
@@ -84,6 +100,28 @@
     "selectAll": {
       "select": "すべて選択",
       "clear": "すべて解除"
+    },
+    "columns": {
+      "removed": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    }
+  },
+  "trash": {
+    "columns": {
+      "name": "名前",
+      "type": "種類",
+      "removedAt": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   }
 }

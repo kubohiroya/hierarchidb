@@ -1943,9 +1943,6 @@ importers:
       '@hierarchidb/ui-treeconsole-toolbar':
         specifier: workspace:*
         version: link:../toolbar
-      '@hierarchidb/ui-treeconsole-trashbin':
-        specifier: workspace:*
-        version: link:../trashbin
       '@hierarchidb/ui-treeconsole-treetable':
         specifier: workspace:*
         version: link:../treetable
@@ -2114,40 +2111,6 @@ importers:
       '@emotion/styled':
         specifier: 11.14.0
         version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      comlink:
-        specifier: ^4.4.2
-        version: 4.4.2
-    devDependencies:
-      '@mui/icons-material':
-        specifier: ^7.3.2
-        version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      '@mui/material':
-        specifier: ^7.3.2
-        version: 7.3.4(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@testing-library/jest-dom':
-        specifier: ^6.8.0
-        version: 6.9.1
-      '@testing-library/react':
-        specifier: ^16.3.0
-        version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.26))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react:
-        specifier: '>=18.0.0'
-        version: 18.3.1
-      react-dom:
-        specifier: '>=18.0.0'
-        version: 18.3.1(react@18.3.1)
-
-  packages/ui/treeconsole/trashbin:
-    dependencies:
-      '@emotion/react':
-        specifier: 11.14.0
-        version: 11.14.0(@types/react@18.3.26)(react@18.3.1)
-      '@emotion/styled':
-        specifier: 11.14.0
-        version: 11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
-      '@hierarchidb/ui-treeconsole-breadcrumb':
-        specifier: workspace:*
-        version: link:../breadcrumb
       comlink:
         specifier: ^4.4.2
         version: 4.4.2

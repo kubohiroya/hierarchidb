@@ -55,7 +55,6 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     return map;
   }, [dialogState?.steps]);
 
-
   const toggleMaximize = useCallback(() => {
     const next = ctx.displayMode === 'maximize' ? 'normal' : 'maximize';
     ctx.onDisplayModeChange?.(next);
@@ -81,13 +80,16 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
   }, [location.pathname, location.searchStr, location.hash]);
 
-  const handleStepClick = useCallback((event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
-    if (!canNavigate || index === ctx.activeStepIndex) {
-      event.preventDefault();
-      return;
-    }
-    ctx.onStepNavigate({ type: 'direct', targetIndex: index });
-  }, [ctx]);
+  const handleStepClick = useCallback(
+    (event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
+      if (!canNavigate || index === ctx.activeStepIndex) {
+        event.preventDefault();
+        return;
+      }
+      ctx.onStepNavigate({ type: 'direct', targetIndex: index });
+    },
+    [ctx],
+  );
 
   return (
     <Box
@@ -100,34 +102,45 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         userSelect: 'none',
       })}
     >
-      <Stack direction="column" spacing={1} sx={{
-        minWidth: 0, flex: 1, pr: 2,
-      }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={(theme)=>({
-          borderRadius: 8,
-          minWidth: 0,
-          cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
-          backgroundColor: getDialogSurfaceColor(theme),
-          transition: theme.transitions.create(['background-color'], { duration: theme.transitions.duration.shorter }),
-          '&:hover': {
-            backgroundColor:
-              theme.palette.mode === 'dark'
-                ? alpha(theme.palette.common.white, 0.08)
-                : theme.palette.action.hover,
-          },
-        })}
-               onPointerDown={dragHandlePointerDown}
-               data-dialog-drag-handle="true"
+      <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          sx={(theme) => ({
+            borderRadius: 8,
+            minWidth: 0,
+            cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
+            backgroundColor: getDialogSurfaceColor(theme),
+            transition: theme.transitions.create(['background-color'], {
+              duration: theme.transitions.duration.shorter,
+            }),
+            '&:hover': {
+              backgroundColor:
+                theme.palette.mode === 'dark'
+                  ? alpha(theme.palette.common.white, 0.08)
+                  : theme.palette.action.hover,
+            },
+          })}
+          onPointerDown={dragHandlePointerDown}
+          data-dialog-drag-handle="true"
         >
           {icon && (
-            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center',
-              marginLeft: '8px !important',
-            }}>
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                marginLeft: '8px !important',
+              }}
+            >
               {icon}
             </Box>
           )}
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h6" noWrap>{title}</Typography>
+            <Typography variant="h6" noWrap>
+              {title}
+            </Typography>
             {headerSubtitle && (
               <Typography variant="body2" color="text.secondary" noWrap>
                 {headerSubtitle}
@@ -139,8 +152,8 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           <Box
             sx={{
               cursor: 'default',
-              margin:0,
-              padding:0
+              margin: 0,
+              padding: 0,
             }}
             onPointerDown={stopPointerPropagation}
             onMouseEnter={stopPointerPropagation}
@@ -152,9 +165,11 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
             <Stepper nonLinear activeStep={ctx.activeStepIndex} alternativeLabel>
               {ctx.stepComponents.map((step, index) => {
                 const workerStep = workerStepMap?.get(step.id) ?? dialogState?.steps?.[index];
-                const fallbackCanNavigate = ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
+                const fallbackCanNavigate =
+                  ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
                 const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
-                const completed = workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
+                const completed =
+                  workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
                 const label = workerStep?.title ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
                 return (
@@ -164,10 +179,12 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       to={stepLink as any}
                       disabled={!canNavigate}
                       preload="intent"
-                      onClick={(event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) =>
-                        handleStepClick(event, index, canNavigate)
-                      }
-                      sx={{padding:0, margin: 0}}
+                      onClick={(
+                        event:
+                          | React.MouseEvent<HTMLButtonElement>
+                          | React.KeyboardEvent<HTMLButtonElement>
+                      ) => handleStepClick(event, index, canNavigate)}
+                      sx={{ padding: 0, margin: 0 }}
                     >
                       <StepLabel>
                         <Typography variant="caption" noWrap>
@@ -194,7 +211,11 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 onPointerDown={stopPointerPropagation}
                 disabled={!ctx.onDisplayModeChange}
               >
-                {ctx.displayMode === 'maximize' ? <FullscreenExitIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
+                {ctx.displayMode === 'maximize' ? (
+                  <FullscreenExitIcon fontSize="small" />
+                ) : (
+                  <OpenInFullIcon fontSize="small" />
+                )}
               </IconButton>
             </span>
           </Tooltip>
@@ -207,7 +228,11 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 onPointerDown={stopPointerPropagation}
                 disabled={!ctx.onDisplayModeChange}
               >
-                {ctx.displayMode === 'full-screen' ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+                {ctx.displayMode === 'full-screen' ? (
+                  <FullscreenExitIcon fontSize="small" />
+                ) : (
+                  <FullscreenIcon fontSize="small" />
+                )}
               </IconButton>
             </span>
           </Tooltip>

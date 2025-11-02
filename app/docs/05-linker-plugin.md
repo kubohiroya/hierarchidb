@@ -21,4 +21,4 @@
 
 - パッケージ名（import）: `@hierarchidb/linker-plugin/worker`
 - nodeType: `linker`
-- 参照しているマップ/ツリー UI は `@hierarchidb/ui-map` および `@hierarchidb/ui-treeconsole-trashbin`
+- 参照しているマップ/ツリー UI は `@hierarchidb/ui-map`

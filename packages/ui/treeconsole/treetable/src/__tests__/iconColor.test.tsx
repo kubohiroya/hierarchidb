@@ -80,6 +80,7 @@ const defaultParams: ColumnBuilderParams = {
   visualSelectionSet: new Set(),
   useTrashColumns: false,
   trashAction: 'restore',
+  formatTimestamp: () => '-',
 };
 
 function renderNameCell(node: TreeNode) {

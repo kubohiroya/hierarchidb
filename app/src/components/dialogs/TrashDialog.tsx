@@ -4,8 +4,11 @@ import {
   Button,
   CircularProgress,
   IconButton,
-  Menu,
-  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   Typography,
 } from '@mui/material';
 import {
@@ -360,69 +363,99 @@ function TrashDialogFooter({
   onEmptyAll,
   onRequestClose,
 }: TrashDialogFooterProps) {
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setMenuAnchor(event.currentTarget);
-  const handleMenuClose = () => setMenuAnchor(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const handleConfirmOpen = () => setConfirmOpen(true);
+  const handleConfirmClose = () => setConfirmOpen(false);
+  const handleConfirmDelete = () => {
+    setConfirmOpen(false);
+    onEmptyAll();
+  };
 
-  const allDisabled = loading || (mode === 'restore' ? selectedCount === 0 : totalCount === 0);
+  const isRestoreMode = mode === 'restore';
+  const restoreDisabled = loading || selectedCount === 0;
+  const emptyDisabled = loading || totalCount === 0;
+  const restoreItemsLabel = selectedCount === 1 ? 'item' : 'items';
+  const emptyItemsLabel = totalCount === 1 ? 'item' : 'items';
+  const restoreLabel = selectedCount === 0 ? 'Restore' : `Restore (${selectedCount})`;
+  const emptyLabel = totalCount === 0 ? 'Empty Trash' : `Empty Trash (${totalCount})`;
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 2,
-        py: 1.5,
-        borderTop: '1px solid',
-        borderColor: 'divider',
-        gap: 1.5,
-        minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
-      }}
-    >
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        <Button variant="outlined" color="inherit" onClick={() => onRequestClose('close')}>
-          Close
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          px: 2,
+          py: 1.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          gap: 1.5,
+          minHeight: TRASH_DIALOG_FOOTER_HEIGHT,
+        }}
+      >
+        <Button variant="contained" color="inherit" onClick={() => onRequestClose('close')}>
+          Cancel
         </Button>
-        {mode === 'restore' ? (
+        {isRestoreMode ? (
           <Button
             variant="contained"
             startIcon={<RestoreIcon />}
-            disabled={allDisabled}
+            disabled={restoreDisabled}
             onClick={onRestore}
+            aria-label={
+              selectedCount === 0
+                ? 'Restore'
+                : `Restore ${selectedCount} ${restoreItemsLabel}`
+            }
           >
-            Restore ({selectedCount})
+            {restoreLabel}
           </Button>
         ) : (
-          <>
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<EmptyTrashIcon />}
-              onClick={handleMenuOpen}
-              disabled={allDisabled}
-            >
-              Empty Trash ({totalCount})
-            </Button>
-            <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
-              <MenuItem
-                onClick={() => {
-                  handleMenuClose();
-                  onEmptyAll();
-                }}
-              >
-                Permanently delete all items
-              </MenuItem>
-            </Menu>
-          </>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<EmptyTrashIcon />}
+            onClick={handleConfirmOpen}
+            disabled={emptyDisabled}
+            aria-label={
+              totalCount === 0
+                ? 'Empty Trash'
+                : `Empty Trash ${totalCount} ${emptyItemsLabel}`
+            }
+          >
+            {emptyLabel}
+          </Button>
         )}
       </Box>
-      <Typography variant="body2" color="text.secondary">
-        {mode === 'restore'
-          ? `${selectedCount} selected`
-          : `${totalCount} items in trash`}
-      </Typography>
-    </Box>
+      <Dialog
+        open={confirmOpen}
+        onClose={handleConfirmClose}
+        aria-labelledby="trash-empty-confirm-title"
+      >
+        <DialogTitle id="trash-empty-confirm-title">Delete all items?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {totalCount === 0
+              ? 'There are no items in the trash.'
+              : `This will permanently delete ${totalCount} ${emptyItemsLabel} from the trash. This action cannot be undone.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={emptyDisabled}
+          >
+            Permanently delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 
@@ -587,7 +620,7 @@ export interface TrashDialogProps {
 }
 
 export function TrashDialog({ data, params }: TrashDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const treeId = data.tree?.id;
   const pageNodeIdParam = params.pageNodeId as NodeId | undefined;
@@ -671,6 +704,52 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     return buildTrashBreadcrumbs({ treeId, rootNode: breadcrumbRoot, targetNodeId: trashViewRootId, nodeMap });
   }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
 
+  const locale = useMemo(() => i18n.resolvedLanguage ?? i18n.language ?? 'en', [i18n.language, i18n.resolvedLanguage]);
+
+  const formatTrashTimestamp = useCallback((input?: unknown): string => {
+    const numeric = typeof input === 'number' ? input : typeof input === 'string' ? Number(input) : undefined;
+    if (!numeric || Number.isNaN(numeric)) {
+      return '-';
+    }
+
+    const target = new Date(numeric);
+    if (Number.isNaN(target.getTime())) {
+      return '-';
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfTarget = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+    const diffMs = startOfToday.getTime() - startOfTarget.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const diffDays = Math.floor(diffMs / dayMs);
+
+    const timeFormatter = new Intl.DateTimeFormat(locale, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: locale.startsWith('ja') ? false : undefined,
+    });
+    const time = timeFormatter.format(target);
+
+    if (diffDays === 0) {
+      return t('trash.timestamps.today', { time });
+    }
+    if (diffDays === 1) {
+      return t('trash.timestamps.yesterday', { time });
+    }
+    if (diffDays === 2) {
+      return t('trash.timestamps.twoDaysAgo', { time });
+    }
+
+    const dateFormatter = new Intl.DateTimeFormat(locale, {
+      year: 'numeric',
+      month: locale.startsWith('ja') ? 'numeric' : 'long',
+      day: 'numeric',
+    });
+    const date = dateFormatter.format(target);
+    return t('trash.timestamps.dateTime', { date, time });
+  }, [locale, t]);
+
   const columns: TreeTableColumn[] = useMemo(() => [
     {
       id: 'name',
@@ -683,10 +762,20 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
       id: 'nodeType',
       label: t('trash.columns.type', 'Type'),
       sortable: true,
-      width: 120,
+      width: 160,
       render: (_value: unknown, node: TreeNodeData) => node.nodeType,
     },
-  ], [t]);
+    {
+      id: 'removedAt',
+      label: t('trash.columns.removedAt', 'Removed'),
+      sortable: true,
+      width: 200,
+      render: (_value: unknown, node: TreeNodeData) => {
+        const typed = node as TreeNodeData & { removedAt?: number | string; deletedAt?: number | string };
+        return formatTrashTimestamp(typed.removedAt ?? typed.deletedAt);
+      },
+    },
+  ], [formatTrashTimestamp, t]);
 
   const handleClose = useCallback(() => {
     window.history.back();
@@ -715,8 +804,9 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   }, [selectedIds]);
 
   const handleEmptyAll = useCallback(async () => {
-    const confirmed = window.confirm('Permanently delete all items in the trash? This cannot be undone.');
-    if (!confirmed) return;
+    if (treeData.length === 0) {
+      return;
+    }
     setLoading(true);
     try {
       const client = WorkerAPIClient.getSingleton();

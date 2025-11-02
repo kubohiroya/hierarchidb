@@ -67,6 +67,17 @@
     "selectAll": {
       "select": "すべて選択",
       "clear": "すべて解除"
+    },
+    "columns": {
+      "created": "作成日",
+      "updated": "更新日",
+      "removed": "削除日"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   }
 }

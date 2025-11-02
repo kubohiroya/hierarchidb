@@ -286,6 +286,7 @@ export interface TreeNodeData extends TreeNode {
   // UI specific properties  
   hasChildren?: boolean;
   deletedAt?: string | number;
+  removedAt?: string | number;
   type?: string; // backward compatibility - UI uses string
 }
 

@@ -67,6 +67,8 @@ export interface ColumnBuilderParams {
   visualSelectionSet: Set<NodeId>;
   useTrashColumns: boolean;
   trashAction: 'restore' | 'empty';
+  formatTimestamp: (value?: number) => string;
+  trashRemovedHeader?: string;
 }
 
 const SparkleAnimation: React.FC<{ showSparkle: boolean; duration?: number }> = ({
@@ -144,6 +146,8 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     visualSelectionSet,
     useTrashColumns,
     trashAction,
+    formatTimestamp,
+    trashRemovedHeader,
   } = params;
 
   const selectionColumn: ColumnDef<TreeNode> = {
@@ -548,9 +552,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     enableSorting: true,
     cell: ({ row }) => {
       const value = row.original.createdAt as number | undefined;
-      if (!value) return '-';
-      const date = new Date(value);
-      return date.toLocaleDateString();
+      return formatTimestamp(value);
     },
   };
 
@@ -561,28 +563,28 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     size: columnWidths.updatedAt,
     enableSorting: true,
     cell: ({ row }) => {
-      const value = row.original.updatedAt;
-      if (!value) return '-';
-      const d = new Date(value);
-      const date = d.toLocaleDateString();
-      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      return <span title={time}>{date}</span>;
+      const value = row.original.updatedAt as number | undefined;
+      return formatTimestamp(value);
     },
   };
 
   const columns: ColumnDef<TreeNode>[] = [selectionColumn, nameColumn, descriptionColumn, createdColumn, updatedColumn];
 
   if (useTrashColumns) {
-    columns.push({
-      id: 'deletedAt',
-      header: 'Deleted At',
-      size: 150,
+    const removedColumn: ColumnDef<TreeNode> = {
+      id: 'removedAt',
+      accessorFn: (row) => (row as { removedAt?: number; deletedAt?: number }).removedAt ?? (row as { deletedAt?: number }).deletedAt,
+      header: trashRemovedHeader || 'Removed',
+      size: columnWidths.removedAt ?? 150,
+      enableSorting: true,
       cell: ({ row }) => {
-        const nodeWithDeletion = row.original as unknown as { deletedAt?: number };
-        const value = nodeWithDeletion.deletedAt;
-        return value ? new Date(value).toLocaleDateString() : '-';
+        const nodeWithDeletion = row.original as unknown as { removedAt?: number; deletedAt?: number };
+        const value = nodeWithDeletion.removedAt ?? nodeWithDeletion.deletedAt;
+        return formatTimestamp(value);
       },
-    });
+    };
+
+    columns.push(removedColumn);
   }
 
   return columns;

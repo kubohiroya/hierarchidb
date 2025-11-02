@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { useImportExport } from '../hooks/useImportExport.ts';
@@ -50,6 +51,8 @@ export function useTreeConsoleIntegration({
   const searchTerm = ssot.searchTerm || '';
   const viewMode = (ssot.viewMode as ViewMode) || 'list';
   const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
 
   const [state, setState] = useState<TreeConsoleState>({
     loading: ssot.loading,
@@ -65,7 +68,10 @@ export function useTreeConsoleIntegration({
     canPaste: ssot.canPaste,
   });
 
-  const columns = useMemo(() => createDefaultColumns(), []);
+  const columns = useMemo(
+    () => createDefaultColumns({ t, locale }),
+    [locale, t],
+  );
   const breadcrumbItems = useTreeConsoleBreadcrumbs({ client, pageTreeNode });
   const importExport = useImportExport(client, !!client) as unknown as ImportExportAdapter;
 

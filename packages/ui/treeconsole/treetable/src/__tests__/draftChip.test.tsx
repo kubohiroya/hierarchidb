@@ -55,11 +55,12 @@ describe('TreeTable Draft chip', () => {
     setEditingNodeId: () => {},
     setEditingField: () => {},
     treeId: 'tree',
-    setContextMenuState: () => {},
-    visualSelectionSet: new Set(),
-    useTrashColumns: false,
-    trashAction: 'restore',
-  };
+  setContextMenuState: () => {},
+  visualSelectionSet: new Set(),
+  useTrashColumns: false,
+  trashAction: 'restore',
+  formatTimestamp: () => '-',
+};
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({
     id: 'node-1' as NodeId,

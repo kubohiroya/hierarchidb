@@ -82,6 +82,17 @@
     "selectAll": {
       "select": "Select all",
       "clear": "Clear all"
+    },
+    "columns": {
+      "created": "Created",
+      "updated": "Updated",
+      "removed": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   }
 }

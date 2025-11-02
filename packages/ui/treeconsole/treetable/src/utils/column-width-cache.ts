@@ -10,6 +10,7 @@ export const DEFAULT_COLUMN_WIDTHS: ColumnWidthMap = Object.freeze({
   description: 400,
   createdAt: 150,
   updatedAt: 150,
+  removedAt: 150,
 });
 
 const memoryCache = new Map<string, ColumnWidthMap>();
