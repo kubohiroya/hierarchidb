@@ -23,6 +23,8 @@ export interface UseTreeTableStructureResult {
   expandedRowIds: ReadonlySet<string>;
   visibleData: TreeNode[];
   rootNodeId?: string;
+  nodes: Map<string, TreeNode>;
+  expandedFlatData: TreeNode[];
 }
 
 export function useTreeTableStructure({ controller }: UseTreeTableStructureOptions): UseTreeTableStructureResult {
@@ -204,11 +206,13 @@ export function useTreeTableStructure({ controller }: UseTreeTableStructureOptio
     getDescendants,
     collectDescendantIds,
     data,
-     tableData,
-     getSubRows,
+    tableData,
+    getSubRows,
     nodesWithChildren,
     expandedRowIds,
     visibleData,
     rootNodeId,
+    nodes: parentMap,
+    expandedFlatData: visibleData,
   };
 }

@@ -279,10 +279,13 @@ export class TreeMutationService implements TreeMutationAPI {
   async restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
+    onNameConflict?: 'error' | 'auto-rename';
   }): Promise<{ success: boolean; error?: string }> {
+    const conflictPolicy = params.onNameConflict ?? 'auto-rename';
     const cmd = this.commandProcessor.createEnvelope('restoreFromTrash', {
       nodeIds: params.nodeIds,
       toParentId: params.toParentId,
+      onNameConflict: conflictPolicy,
     });
 
     const result = await this.commandProcessor.processCommand(cmd);

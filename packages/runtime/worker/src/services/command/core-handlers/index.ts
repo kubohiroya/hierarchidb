@@ -511,6 +511,8 @@ async function handleRestoreFromTrash(
       nextName: string;
     }> = [];
     const toUpdate: TreeNode[] = [];
+    const siblingNameCache = new Map<NodeId, Set<string>>();
+    const conflictPolicy = payload.onNameConflict ?? 'auto-rename';
 
     for (const id of payload.nodeIds) {
       const node = await deps.coreDB.getNode?.(id);
@@ -533,15 +535,28 @@ async function handleRestoreFromTrash(
       }
 
       // Resolve next name with conflict handling
+      let siblingNames = siblingNameCache.get(targetParentId);
+      if (!siblingNames) {
+        const siblings = (await deps.coreDB.listChildren?.(targetParentId)) || [];
+        siblingNames = new Set(siblings.map((s) => s.name));
+        siblingNameCache.set(targetParentId, siblingNames);
+      }
+
       const baseName = (node as { originalName?: string }).originalName ?? node.name;
       let nextName = baseName;
-      if (payload.onNameConflict === 'auto-rename') {
-        const siblings = (await deps.coreDB.listChildren?.(targetParentId)) || [];
-        const siblingNames = siblings.map((s) => s.name);
-        if (siblingNames.includes(nextName)) {
-          nextName = createNewName(siblingNames, nextName);
+      if (conflictPolicy === 'auto-rename') {
+        if (siblingNames.has(nextName)) {
+          nextName = createNewName(Array.from(siblingNames), nextName);
         }
+      } else if (siblingNames.has(nextName)) {
+        const suggestedName = createNewName(Array.from(siblingNames), baseName);
+        return deps.createErrorResult(
+          `Name "${baseName}" already exists under the target parent`,
+          WorkerErrorCode.NAME_NOT_UNIQUE,
+          { status: 'NAME_CONFLICT', suggestedName },
+        );
       }
+      siblingNames.add(nextName);
 
       toUpdate.push({
         ...node,

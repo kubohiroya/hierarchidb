@@ -113,8 +113,9 @@ export function useTreeTableSelectionOverlay({
   const previousSelectAllRef = useRef(selectAll);
   useEffect(() => {
     const handler = selectHandlerRef.current;
-    previousSelectAllRef.current = selectAll;
+    const previousSelectAll = previousSelectAllRef.current;
     if (!handler || !selectAllHydrated) {
+      previousSelectAllRef.current = selectAll;
       return;
     }
 
@@ -131,7 +132,7 @@ export function useTreeTableSelectionOverlay({
       if (missing.length) {
         handler(missing, true);
       }
-    } else if (previousSelectAllRef.current) {
+    } else if (previousSelectAll) {
       const selectedVisible = visibleIds.filter((id) => rowSelection[id]);
       if (selectedVisible.length) {
         handler(selectedVisible, false);

@@ -88,12 +88,14 @@ export async function clientLoader({ params }: { params: TrashDialogRouteParams 
     throw new Response('Trash root not found.', { status: 404 });
   }
 
-  const trashRootNode = await queryAPI.getNode(activeTrashNodeId);
-  const targetDepth = fallbackTrashId && activeTrashNodeId === fallbackTrashId ? 2 : 1;
+  const trashRootNode = fallbackTrashId ? await queryAPI.getNode(fallbackTrashId) : undefined;
+  const activeTrashNode = await queryAPI.getNode(activeTrashNodeId);
+  const targetDepth = activeTrashNodeId === fallbackTrashId ? 2 : 1;
   const trashItems = (await queryAPI.listChildren(activeTrashNodeId, { prefetch: { depth: targetDepth } })) as TreeNode[];
 
   return {
     ...treeData,
+    activeTrashNode,
     trashRootNode,
     trashItems,
     activeTrashNodeId,
@@ -103,6 +105,7 @@ export async function clientLoader({ params }: { params: TrashDialogRouteParams 
 
 export type TrashDialogData = LoadTreeReturn & {
   trashRootNode?: TreeNode;
+  activeTrashNode?: TreeNode;
   trashItems?: TreeNode[];
   activeTrashNodeId: NodeId | null;
   params: TrashDialogRouteParams;
@@ -432,6 +435,7 @@ interface TrashDialogContentProps {
   setSelectedIds: (updater: (prev: NodeId[]) => NodeId[]) => void;
   treeId?: string;
   pageNodeId?: NodeId | null;
+  trashViewRootId?: NodeId | null;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   mode: 'restore' | 'empty';
@@ -450,6 +454,7 @@ function TrashDialogContent({
   setSelectedIds,
   treeId,
   pageNodeId,
+  trashViewRootId,
   searchTerm,
   onSearchTermChange,
   mode,
@@ -508,6 +513,7 @@ function TrashDialogContent({
           title="Trash"
           treeId={treeId}
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
+          subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
           data={filteredTreeData}
           nodeIndex={nodeIndex}
           columns={columns}
@@ -584,37 +590,86 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   const { t } = useTranslation();
 
   const treeId = data.tree?.id;
-  const pageNodeId = params.pageNodeId as NodeId | undefined;
+  const pageNodeIdParam = params.pageNodeId as NodeId | undefined;
+  const targetNodeId = params.targetNodeId as NodeId | undefined;
   const action = params.action;
   const mode: 'restore' | 'empty' = action === 'empty' ? 'empty' : 'restore';
-  const effectiveTrashNodeId = data.activeTrashNodeId ?? (data.tree?.trashRootId as NodeId | undefined) ?? null;
+  const pageNodeId = (pageNodeIdParam ?? (data.tree?.rootId as NodeId | undefined) ?? null) as NodeId | null;
+  const trashViewRootId = (data.activeTrashNodeId ?? targetNodeId ?? data.trashRootNode?.id ?? null) as NodeId | null;
 
   const [selectedIds, setSelectedIds] = useState<NodeId[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const nodeMap = useMemo(() => createTreeNodeMap(data.trashItems), [data.trashItems]);
+  const nodeMap = useMemo(() => {
+    const map = createTreeNodeMap(data.trashItems);
+    if (data.trashRootNode?.id) {
+      map.set(String(data.trashRootNode.id), data.trashRootNode);
+    }
+    if (data.activeTrashNode?.id) {
+      map.set(String(data.activeTrashNode.id), data.activeTrashNode);
+    }
+    return map;
+  }, [data.activeTrashNode, data.trashItems, data.trashRootNode]);
+
   const treeData = useMemo(() => {
-    if (!data.trashRootNode) return [] as TreeNodeData[];
-    return buildTrashTreeData({ treeId: treeId ?? '', rootNode: data.trashRootNode, nodeMap }).nodes;
-  }, [data.trashRootNode, nodeMap, treeId]);
+    const viewRoot = data.activeTrashNode ?? data.trashRootNode;
+    if (!viewRoot) return [] as TreeNodeData[];
+
+    const { nodes } = buildTrashTreeData({ treeId: treeId ?? '', rootNode: viewRoot, nodeMap });
+    if (trashViewRootId && !nodes.some((node) => node.id === trashViewRootId)) {
+      const source = nodeMap.get(String(trashViewRootId));
+      if (source) {
+        nodes.unshift({
+          id: source.id as NodeId,
+          parentId: (source.parentId ?? trashViewRootId) as NodeId,
+          nodeType: source.nodeType,
+          name: getTrashDisplayName(source),
+          depth: typeof source.depth === 'number' ? source.depth : 0,
+          originalName: (source as { originalName?: string }).originalName,
+          originalParentId: (source as { originalParentId?: NodeId }).originalParentId,
+          removedAt: (source as { removedAt?: number }).removedAt,
+          holderType: 'trash',
+          holderTargetId: source.id as NodeId,
+          holderMetaParentId: (source as { originalParentId?: NodeId }).originalParentId,
+          hasChildren: Boolean(source.hasChildren),
+          description: source.description,
+          createdAt: source.createdAt,
+          updatedAt: source.updatedAt,
+          version: source.version,
+        });
+      }
+    }
+    return nodes;
+  }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
 
   const nodeIndex = useMemo(() => {
     const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
-    const fallbackParent = (data.trashRootNode?.id ?? pageNodeId ?? 'trash-root') as NodeId;
+    const fallbackParent = (trashViewRootId ?? (data.trashRootNode?.id as NodeId | undefined) ?? 'trash-root') as NodeId;
+
+    if (trashViewRootId) {
+      const branchNode = nodeMap.get(String(trashViewRootId)) ?? data.trashRootNode;
+      if (branchNode) {
+        const parentForRoot = (branchNode.parentId ?? trashViewRootId) as NodeId;
+        index.set(trashViewRootId, branchNode, parentForRoot);
+      }
+    }
+
     treeData.forEach((node) => {
       const primary = node.id as NodeId;
+      const sourceNode = nodeMap.get(String(node.id)) ?? (node as unknown as TreeNode);
       const parent = (node.parentId ?? fallbackParent) as NodeId;
-      index.set(primary, node as unknown as TreeNode, parent);
+      index.set(primary, sourceNode, parent);
     });
     return index;
-  }, [data.trashRootNode?.id, pageNodeId, treeData]);
+  }, [data.trashRootNode, nodeMap, trashViewRootId, treeData]);
 
   const breadcrumbItems = useMemo(() => {
-    if (!data.trashRootNode || !treeId) return [];
-    return buildTrashBreadcrumbs({ treeId, rootNode: data.trashRootNode, targetNodeId: effectiveTrashNodeId, nodeMap });
-  }, [data.trashRootNode, effectiveTrashNodeId, nodeMap, treeId]);
+    const breadcrumbRoot = data.trashRootNode ?? data.activeTrashNode;
+    if (!breadcrumbRoot || !treeId) return [];
+    return buildTrashBreadcrumbs({ treeId, rootNode: breadcrumbRoot, targetNodeId: trashViewRootId, nodeMap });
+  }, [data.activeTrashNode, data.trashRootNode, nodeMap, trashViewRootId, treeId]);
 
   const columns: TreeTableColumn[] = useMemo(() => [
     {
@@ -724,6 +779,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         setSelectedIds={(updater) => setSelectedIds(updater)}
         treeId={treeId}
         pageNodeId={pageNodeId}
+        trashViewRootId={trashViewRootId}
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}
         mode={mode}
@@ -744,7 +800,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         onEmptyAll={handleEmptyAll}
       />
     ),
-  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, treeData, treeId]);
+  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, trashViewRootId, treeData, treeId]);
 
   const frameSx = useMemo(() => ({
     borderRadius: frameState.displayMode === 'full-screen' ? 0 : 4,

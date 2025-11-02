@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { CommandResult, NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 const FOLDER_TYPE = 'folder' as NodeType;
@@ -184,5 +184,128 @@ describe('CommandProcessor bulk operations', () => {
     expect(state.get('t1' as NodeId)?.holderType).toBeUndefined();
     expect(state.get('t2' as NodeId)?.holderType).toBeUndefined();
     expect(state.has('h1' as NodeId)).toBe(false);
+  });
+
+  it('restoreFromTrash auto-renames conflicting nodes when requested', async () => {
+    const parentId = 'root' as NodeId;
+    const existing = makeNode('existing', parentId, 'Folder');
+    const removedAt = Date.now();
+    const trashed1: TreeNode = {
+      ...makeNode('t1', 'trash', 'Folder'),
+      originalName: 'Folder',
+      originalParentId: parentId,
+      removedAt,
+    };
+    const trashed2: TreeNode = {
+      ...makeNode('t2', 'trash', 'Folder'),
+      originalName: 'Folder',
+      originalParentId: parentId,
+      removedAt,
+    };
+
+    const state: TreeNodeState = new Map([
+      [existing.id, existing],
+      [trashed1.id, trashed1],
+      [trashed2.id, trashed2],
+    ]);
+
+    const core: CoreStub = {
+      state,
+      async getNode(id) {
+        return state.get(id);
+      },
+      async createNode(node) {
+        state.set(node.id, { ...node });
+        return node.id;
+      },
+      async updateNode(node) {
+        state.set(node.id, { ...node });
+      },
+      async deleteNode(id) {
+        state.delete(id);
+      },
+      async listChildren(parent) {
+        return Array.from(state.values()).filter((node) => node.parentId === parent);
+      },
+      bulkUpdateNodes: vi.fn(async (nodes) => {
+        nodes.forEach((node) => state.set(node.id, { ...node }));
+      }),
+    };
+
+    const { CommandProcessor } = await import('../CommandProcessor.js');
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const env = cp.createEnvelope('restoreFromTrash', {
+      nodeIds: ['t1' as NodeId, 't2' as NodeId],
+      toParentId: parentId,
+      onNameConflict: 'auto-rename',
+    });
+    const result = await cp.processCommand(env);
+    expect(result.success).toBe(true);
+    expect(core.bulkUpdateNodes).toHaveBeenCalledTimes(1);
+
+    const restoredNames = [
+      state.get('t1' as NodeId)?.name,
+      state.get('t2' as NodeId)?.name,
+    ].filter((name): name is string => typeof name === 'string');
+
+    expect(restoredNames).toHaveLength(2);
+    expect(new Set(restoredNames).size).toBe(2);
+    expect(restoredNames.every((name) => name.startsWith('Folder'))).toBe(true);
+  });
+
+  it('restoreFromTrash returns NAME_NOT_UNIQUE when conflicts remain and policy is error', async () => {
+    const parentId = 'root' as NodeId;
+    const existing = makeNode('existing', parentId, 'Folder');
+    const removedAt = Date.now();
+    const trashed: TreeNode = {
+      ...makeNode('t1', 'trash', 'Folder'),
+      originalName: 'Folder',
+      originalParentId: parentId,
+      removedAt,
+    };
+
+    const state: TreeNodeState = new Map([
+      [existing.id, existing],
+      [trashed.id, trashed],
+    ]);
+
+    const core: CoreStub = {
+      state,
+      async getNode(id) {
+        return state.get(id);
+      },
+      async createNode(node) {
+        state.set(node.id, { ...node });
+        return node.id;
+      },
+      async updateNode(node) {
+        state.set(node.id, { ...node });
+      },
+      async deleteNode(id) {
+        state.delete(id);
+      },
+      async listChildren(parent) {
+        return Array.from(state.values()).filter((node) => node.parentId === parent);
+      },
+      bulkUpdateNodes: vi.fn(async (nodes) => {
+        nodes.forEach((node) => state.set(node.id, { ...node }));
+      }),
+    };
+
+    const { CommandProcessor } = await import('../CommandProcessor.js');
+    const cp = new CommandProcessor(core as unknown as CoreDB);
+    const env = cp.createEnvelope('restoreFromTrash', {
+      nodeIds: ['t1' as NodeId],
+      toParentId: parentId,
+      onNameConflict: 'error',
+    });
+    const result = await cp.processCommand(env);
+    if (result.success) {
+      throw new Error('Expected restoreFromTrash to fail with NAME_NOT_UNIQUE');
+    }
+    const failure = result as Extract<CommandResult, { success: false }>;
+    expect(failure.code).toBe('NAME_NOT_UNIQUE');
+    expect(core.bulkUpdateNodes).not.toHaveBeenCalled();
+    expect(state.get('t1' as NodeId)?.parentId).toBe('trash');
   });
 });

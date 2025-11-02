@@ -38,6 +38,11 @@ export interface TreeConsolePanelProps {
    * Keep naming aligned with app layer that uses `pageNodeId`.
    */
   readonly pageNodeId?: string;
+  /**
+   * Optional subtree root used for hierarchical rendering (e.g. trash dialog branch view).
+   * Defaults to `pageNodeId` when omitted.
+   */
+  readonly subtreeRootId?: string;
   readonly data: readonly TreeNodeData[];
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   readonly columns: readonly TreeTableColumn[];
@@ -104,7 +109,11 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
 
   // Create TreeTableController from props
   const controller: TreeTableController = useMemo((): TreeTableController => {
-    const rootNodeId = props.pageNodeId ? String(props.pageNodeId) : undefined;
+    const rootNodeId = props.subtreeRootId
+      ? String(props.subtreeRootId)
+      : props.pageNodeId
+        ? String(props.pageNodeId)
+        : undefined;
 
     const baseDepth = (() => {
       if (rootNodeId && props.nodeIndex instanceof DualKeyMap) {

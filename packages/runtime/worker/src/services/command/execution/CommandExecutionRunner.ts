@@ -13,6 +13,13 @@ export type CommandExecutionContext = {
 
 export class CommandExecutionRunner {
   private static readonly NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
+  private static readonly TRANSACTION_TABLES: Array<'nodes' | 'trees' | 'rootStates' | 'tags' | 'tagAssociations'> = [
+    'nodes',
+    'trees',
+    'rootStates',
+    'tags',
+    'tagAssociations',
+  ];
 
   constructor(private readonly coreDB: CoreDB) {}
 
@@ -31,7 +38,7 @@ export class CommandExecutionRunner {
     const runInTx = typeof this.coreDB.runInTx === 'function' ? this.coreDB.runInTx.bind(this.coreDB) : null;
     if (runInTx && !CommandExecutionRunner.NON_TRANSACTIONAL_COMMANDS.has(envelope.kind)) {
       try {
-        result = await runInTx('rw', ['nodes'], () => execute(context));
+        result = await runInTx('rw', CommandExecutionRunner.TRANSACTION_TABLES, () => execute(context));
       } catch (error) {
         if (this.isRetryableTransactionError(error)) {
           console.warn('[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.');

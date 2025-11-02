@@ -76,7 +76,7 @@
 - ブランチ: `main`（sandbox 制約で新規ブランチ作成不可）
 - 依存: `pnpm test`, `pnpm typecheck`, `vitest.config.ts`, 既存 failing テストファイル群
 - 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
   - [ ] 現行実装と乖離して失敗しているテストファイルの一覧と状況を整理し、本節に反映する
   - [ ] 各対象ファイルで `describe` / `it` 構造を維持したまま現行実装に対応する内容へ書き換え、必要なモック／ユーティリティも更新する
   - [ ] 更新後のテストが成功することを確認し、実行コマンド・終了コード・要約結果を運用ログに記録する
@@ -117,6 +117,22 @@
   - [x] 修正後のビルドを実行し、他パッケージへの副作用がないことを確認する（必要に応じて関連コマンドも実行）
   - [x] ロールバック手順と検証結果を `TASKS.md` に追記する
 - ロールバック手順：`app/src/router/routes/t.($treeId).($pageNodeId).tsx` の差分を revert し、再度 `pnpm --filter @hierarchidb/app build` もしくは `pnpm vite build --config vite.config.ts` を実行して Playwright バイナリ解決エラーが再現することを確認する。
+
+110) Trash 復元時の名称重複ハンドリング修正（P0）
+- ブランチ: `fix/worker/trash-restore-name-conflict`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/runtime-worker`, `packages/common/api`, `packages/ui/treeconsole/base`, `app/src/components/dialogs/TrashDialog.tsx`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] Trash からの復元で `[parentId+name]` インデックス制約を満たすよう衝突時に自動リネームまたは NAME_CONFLICT 応答を行う
+  - [x] 復元時の名称衝突をカバーするテスト（ユニット／結合いずれか）を追加し、ConstraintError が発生しないことを確認する
+  - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run trash` 等、対象シナリオのテストと `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し、結果を運用ログに記録する（既知エラーは blocked 記載）
+  - [x] ロールバック手順を追記し、旧挙動（ConstraintError 発生）へ戻す方法を明確にする
+- チェックリスト:
+  - [x] CommandProcessor / TreeMutationService の復元フローを調査し、名称決定と衝突検知ポイントを特定
+  - [x] 名称衝突を自動解決するロジック、または NAME_CONFLICT エラー返却を実装
+  - [x] 追加テストで重複復元時に一意名へリネームされること、および NAME_NOT_UNIQUE が返るケースを検証
+  - [x] 実行コマンドと結果を運用ログに追記
+- ロールバック手順：今回追加する衝突解決ロジックとテスト差分を revert し、`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-restore-name-conflict`（新規テスト）で ConstraintError が再現することを確認する
 
 94) folder-plugin uuid shim 方針調査（P0）
 - ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
@@ -323,9 +339,24 @@
   - [x] 役割分担と API 変更案を ADR で確定し、dep-fence/Turbo 設定を更新する
   - [x] `plugin-base` へヘッドレス実装を集約し、`plugin-ui-sdk` からは再エクスポートのみに整理する
   - [x] `plugin-ui-host` に `PluginDialogHost`（仮）を追加し、App はこのファサードのみを import する
-  - [x] プラグイン各種の依存とコードを新構成へ移行し、回帰テストを追加・更新する
+ - [x] プラグイン各種の依存とコードを新構成へ移行し、回帰テストを追加・更新する
   - [x] ドキュメント/依存グラフを更新し、旧エントリには deprecate ガイドを添える
 - ロールバック手順：`plugin-base` 導入差分と関連パッケージの変更を revert し、旧構成（`plugin-ui-sdk`/`ui/plugin-dialog` 直依存）へ戻した上で `pnpm --filter @hierarchidb/app build` などを再実行する
+
+52) TrashDialog Select All トグル不具合修正（P0）
+- ブランチ: `fix/ui-trash/select-all-toggle`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/trash/**/*`, `packages/ui-treeconsole-treetable`, `packages/ui/tree-console`, `packages/ui/trash-dialog`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] Trash ダイアログの「すべて選択」チェックボックスが初期状態で OFF となり、ユーザー操作で ON/OFF が正しく切り替わる実装修正を行う
+  - [x] 想定される選択状態と連動するテスト（単体または結合）を追加し、回帰防止を担保する
+  - [x] 関連 UI パッケージの `pnpm typecheck` および実行可能なテストを実施し、結果を運用ログに記録する
+  - [ ] ロールバック手順を TASKS に明記する
+- チェックリスト:
+  - [x] 初期状態およびトグル処理の原因調査（state/selector の確認）
+  - [x] トグル挙動の修正とカバレッジ（テスト）を追加
+  - [x] `pnpm --filter` を用いた対象パッケージの typecheck/test 実行ログを取得
+- ロールバック手順：Trash ダイアログおよび TreeTable 関連の差分を revert し、従前の挙動（初期 ON）へ戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` 等を再実行し再現を確認する
 
 38) Plugin UI Host テスト依存整理（P1）
 - ブランチ: `chore/plugin-ui-host/testing-utils`（sandbox 制約で main 上で作業）
@@ -6758,6 +6789,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 19:46 progress: fix/ui-treeconsole/subtree-init — `useTreeConsoleLoader` にデバッグログを追加し、`listChildren` の返却件数および可視行再構成の中間データを `VITE_SUBSCRIPTION_DEBUG` 有効時に確認できるよう調整。再度 `pnpm --filter @hierarchidb/app typecheck` を実行し、終了コード 0（出力なし）を確認。
 - 2025-11-01 20:05 progress: fix/ui-treeconsole/subtree-init — `TreeConsoleContent` の空判定が `selectedNodes.length` 依存だったため、データ件数が存在しても "No data" 表示になっていたことを特定。`controller.data` ベースの判定へ修正し、`pnpm --filter @hierarchidb/ui-treeconsole-base build` を実行（exit 0, tsdown 成功）。
 - 2025-11-01 20:18 progress: fix/ui-treeconsole/subtree-init — `useTreeConsoleIntegration` で SSOT 反映後の `treeData` 長さ／サンプルをデバッグ出力し、ロード完了時に行数が保持されているか追跡できるように調整。`pnpm --filter @hierarchidb/app typecheck` を再実行（exit 0）。
+- 2025-11-01 23:28 progress: fix/ui-treeconsole/subtree-init — TrashDialog で `targetNodeId` を `trashViewRootId` として扱い、TreeConsolePanel に `subtreeRootId` プロップを追加。DualKeyMap にビュー基準ノードを登録し、サブツリー展開とパンくず表示が一致することを手動確認。
+- 2025-11-01 23:32 progress: fix/ui-treeconsole/subtree-init — TrashDialog で `targetNodeId` がゴミ箱サブノードを指す場合に「No data」とならないよう、Loader で `activeTrashNode` を取得して `trashItems` マップへ追加し、ビュー基準ノードを treeData に挿入する処理を実装。
+- 2025-11-01 23:34 progress: fix/ui-treeconsole/subtree-init — `pnpm --filter @hierarchidb/ui-treeconsole-base build` / `pnpm --filter @hierarchidb/ui-shell build` / `pnpm --filter @hierarchidb/app typecheck` を実行し、すべて exit 0（詳細ログは各コマンド出力参照）。
 - 2025-11-01 20:32 start: feat/ui-treeconsole/dual-key-map — `DualKeyMap<PrimaryKey, SecondaryKey, Value>` ユーティリティ実装に着手し、SSOT の一次／二次キー管理を一般化する方針を確認。
 - 2025-11-01 20:47 progress: feat/ui-treeconsole/dual-key-map — `packages/util/src/dualKeyMap.ts` と単体テストを追加。`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）および `pnpm --filter @hierarchidb/util build`（exit 0）で検証。
 - 2025-11-01 21:12 progress: feat/ui-treeconsole/dual-key-map — TreeConsole SSOT を `DualKeyMap` のみに整理し、派生ビュー（treeData/hierarchy）は都度再計算する設計へ変更。`useTreeConsoleLoader` / `useTreeConsoleSubscription` / `useTreeConsoleIntegration` / `createTreeConsoleActions` を更新し、`pnpm exec vitest run --config packages/util/vitest.config.ts`（exit 0）と `pnpm --filter @hierarchidb/app typecheck`（exit 0）を実行。
@@ -6770,6 +6804,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 22:11 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-01 22:20 command: pnpm --filter @hierarchidb/ui-shell typecheck — exit 0（tsconfig include を `src/**/*.ts` / `src/**/*.tsx` へ修正後の確認）。
 - 2025-11-01 22:55 progress: fix/ui-treeconsole/subtree-init — TreeTableCore で `manualExpanding` を無効化し、TanStack Table の展開制御を復旧。`pnpm --filter @hierarchidb/ui-treeconsole-treetable test`（exit 0）で既存テストが通ることを再確認。
+- 2025-11-02 07:35 progress: fix/ui-treeconsole/subtree-init — `runInTx('rw', ['nodes'], ...)` 内で `coreDB.trees.toArray()` を呼ぶと `NotFoundError` になる再現テスト（`services/__tests__/coredb-runInTx.spec.ts`）を追加。
+- 2025-11-02 07:44 progress: fix/ui-treeconsole/subtree-init — CommandExecutionRunner のトランザクション対象テーブルを `nodes/trees/rootStates/tags/tagAssociations` に拡張し、ゴミ箱移動時の NotFoundError を解消。重名ノードをゴミ箱へ連続移動する e2e テスト（`trash-duplicate-names.wfl.test.ts`）を追加して検証。
 - 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/trash-subscription.wfl.test.ts src/e2e/__tests__/create-wc-commit.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
@@ -7202,3 +7238,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-02 06:46 progress: fix/app/playwright-binary-build — `app/src/router/routes/t.($treeId).($pageNodeId).tsx` が E2E 用 `e2e/utils/test-helpers.ts` の `APP_BASE_URL` を参照していたため Playwright をバンドル対象に引き込んでいたと判明。アプリ側でルーター遷移ロジックへ置き換えるパッチを適用。
 - 2025-11-02 06:49 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-02 06:49 command: (cd app && pnpm vite build --config vite.config.ts) — exit 0（Playwright バイナリ解析エラーは再発せず、既存の dynamic import warning のみ）。
+- 2025-11-02 07:05 start: fix/ui-trash/select-all-toggle — Trash ダイアログの「すべて選択」初期 ON 問題の調査と修正に着手。DoD 合意済み、sandbox 制約により `main` 上で作業。
+- 2025-11-02 07:22 progress: fix/ui-trash/select-all-toggle — `useTreeTableSelectionOverlay` の selectAll トグル効果が直前状態を上書きしていたため解除通知が発火しない不具合を特定。前回値を保持したうえで OFF 遷移時に `onNodeSelect([...], false)` を呼び出すよう補正。
+- 2025-11-02 07:27 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- selectAllToggle — exit 0。新規テストで Select All 解除時に可視ノードが controller へ false 通知されることを確認。
+- 2025-11-02 07:30 blocked: pnpm --filter @hierarchidb/ui-treeconsole-treetable exec tsc --noEmit — exit 2（既存の `useTreeTableStructure` Map 型整合性エラー TS2322 が再発。今回差分による悪化なしのため、別タスクでの解消待ち）。
+- 2025-11-02 07:35 done: fix/ui-trash/select-all-toggle — Select All 解除が controller に伝播するようフラグ効果を修正し、回帰テストを追加。typecheck は既知 TS2322 で失敗するため blocked 記録に留め、その他 DoD を満たして完了。
+- 2025-11-02 07:52 start: fix/worker/trash-restore-name-conflict — Trash 復元時の名称重複で Dexie ConstraintError が発生する問題の修正に着手。DoD 合意済み、sandbox 制約により `main` 上で対応予定。
+- 2025-11-02 08:05 progress: fix/worker/trash-restore-name-conflict — CommandProcessor の `restoreFromTrash` で親ごとの名称キャッシュを導入し、`onNameConflict` ポリシーに応じて `createNewName` で自動リネームするか NAME_NOT_UNIQUE を返す処理を追加。TreeMutationService から `onNameConflict` を伝播させるよう更新。
+- 2025-11-02 08:07 command: pnpm --filter @hierarchidb/runtime-worker test -- --run bulk-ops-cp — exit 0。Trash 復元重複時の自動リネーム／NAME_NOT_UNIQUE テストを含む 5 ケースが通過することを確認。
+- 2025-11-02 08:09 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 0。runtime-worker の型検証が成功し、新規ロジックによる型エラーがないことを確認。
+- 2025-11-02 08:10 done: fix/worker/trash-restore-name-conflict — 復元時の名称衝突で ConstraintError が発生しないことを確認。自動リネームと NAME_NOT_UNIQUE 応答のテストを追加し、ロールバックは該当差分 revert + 再テストで再現可能。

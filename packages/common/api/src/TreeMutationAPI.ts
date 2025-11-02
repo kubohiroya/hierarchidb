@@ -91,6 +91,7 @@ export interface TreeMutationAPI {
   restoreNodesFromTrash(params: {
     nodeIds: NodeId[];
     toParentId?: NodeId;
+    onNameConflict?: 'error' | 'auto-rename';
   }): Promise<{ success: boolean; error?: string }>;
 
   /**
