@@ -441,7 +441,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               >
                 <Box
                   component={RouterLink}
-                  to={linkHref as any}
+                  to={linkHref}
                   sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                 >
                   {node.name}

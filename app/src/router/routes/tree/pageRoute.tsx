@@ -21,8 +21,8 @@ export const treePageRoute = createRoute({
     if (!treeId) {
       throw new Error('Missing treeId parameter');
     }
-    const resolvedPageNodeId = (pageNodeId ?? `${treeId}:root`);
-    return await loadPageNode({ treeId, pageNodeId: resolvedPageNodeId as any });
+    const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
+    return await loadPageNode({ treeId, pageNodeId: resolvedPageNodeId });
   },
   component: TreePageLayout,
 });

@@ -8,6 +8,7 @@ import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
+import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { ReactNode } from 'react';
 
 /**
@@ -141,7 +142,7 @@ export interface TreeConsoleContentProps {
   rowClickAction?: 'Select/Navigate' | 'Edit';
   selectionMode?: 'none' | 'single' | 'multiple';
   NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
-  NodeContextMenu?: React.ComponentType<any>;
+  NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
   onRowClick?: (node: TreeNode, event: React.MouseEvent) => void;
   onRowDoubleClick?: (node: TreeNode, event: React.MouseEvent) => void;
   onRowContextMenu?: (node: TreeNode, event: React.MouseEvent) => void;

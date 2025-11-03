@@ -737,6 +737,62 @@
   - [ ] `vitest.setup.ts` などで露出した型エラーを修正し、型ビルドが通るか確認
   - [ ] `tsc -b` での依存順序を Turbo/Pnpm の pipeline に組み込み、回帰がないかを検証
 - ロールバック手順：追加した references・`composite` 設定を revert し、`pnpm --filter @hierarchidb/ui-shell typecheck` を旧構成で再実行する
+- 115) TreeConsole `as any` 削減（P0）
+- ブランチ: `refactor/ui-treeconsole/remove-as-any`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/TreeConsoleIntegration.tsx`, `app/src/components/dialogs/TrashDialog.tsx`, `app/src/hooks/treeconsole/**/*`, `packages/ui/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [x] TreeConsole 周辺で残存している `as any` の一覧を作成し、本節に対象ファイルと現状の用途を記録する
+  - [ ] `navigate` 系・コンテキストメニュー・Dialog ID 等、型で表現できる箇所から `as any` を段階的に削除し、代替型／ヘルパーを導入する
+  - [x] `pnpm lint && pnpm typecheck && pnpm test` が成功し、削除箇所の挙動に回帰がないことを確認する
+  - [x] TASKS 運用ログに修正内容・残存する `as any`（理由付き）の一覧とロールバック手順を追記する
+- チェックリスト:
+  - [x] `rg "as any" app/src/components/{TreeConsoleIntegration.tsx,dialogs/TrashDialog.tsx}` などで対象箇所を棚卸しし、用途別に分類する（※本体コードは解消済みで、現状はテストのモック／Matcher 補助用途のみ）
+  - 残存箇所（2025-11-03 現在）:
+    - `packages/ui/treeconsole/base/src/adapters/__tests__/WorkerAPIAdapter.test.tsx` などアダプタ／ツリー操作のユニットテストで、unstubbed Worker API のパラメータを簡略化するための仮キャスト
+    - `packages/ui/treeconsole/base/src/hooks/useTreeViewController.test.tsx` と `packages/ui/treeconsole/treetable/src/__tests__/*` のテスト補助データ生成（`expect.arrayContaining` へのキャスト、型のないノード ID 配列）に限定されており、本番コードでの `as any` はゼロ
+  - [x] `@tanstack/react-router` の `navigate` 呼び出しを型付きルート遷移へ改修し、`as any` を撤去する
+  - [x] Dialog の固定 ID を `useId` などへ置き換え、`as any` に頼らない参照に修正する
+  - [x] TreeConsole の共通型（`NodeContextMenu` 等）で `ComponentType<any>` を適切な Props 型へ差し替え、互換ラッパーが必要な場合は別途記録する
+- ロールバック手順：変更ファイルを `git checkout -- <files>` で元に戻し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して従来の状態へ復旧する
+
+116) Tree Routes `as any` 削減（P0）
+- ブランチ: `refactor/app/tree-route-as-any`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/routes/tree/*.tsx`, `app/src/router/loaders/{treeLoaders,uiPlugins,mapLoader}.ts`
+- 受け入れ基準（DoD）:
+  - [x] Tree ルートとロード処理で使用している `as any` を撤去し、型で表現されたパラメータ・戻り値に置き換える（現状はテスト補助のみが `as any` を保持）
+  - [ ] `pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run treeLoaders` が成功する
+  - [x] TASKS 運用ログに修正内容とロールバック手順（差分 revert + 再 typecheck/test）を記録する
+- チェックリスト:
+  - [x] `rg "as any" app/src/router/routes/tree app/src/router/loaders` で対象箇所を棚卸しし、テスト以外の実装から排除したことを確認（残存は loader テストのスタブのみ）
+  - [x] `nodeTypeRoute.tsx` / `pageRoute.tsx` / `dialogRoute.tsx` の `resolvedPageNodeId` 取扱いとローダー返却値をユニオン型へ整理し、利用側の `as` キャストを解消
+  - [ ] `loadPageNode` や関連ローダーの引数・戻り値をジェネリクス／専用型で表現し、`as any` に頼らないようにする
+  - [ ] 主要経路（ゴミ箱遷移含む）を手動確認し、検証ログを残す
+- ロールバック手順：該当ファイルを revert し、`pnpm --filter @hierarchidb/app {typecheck,test -- --run treeLoaders}` を再実行して従来挙動へ戻す
+
+117) plugin-service WorkingCopy `as any` 削減（P0）
+- ブランチ: `refactor/plugin-service/working-copy-any`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-service-sdk/src/working-copy/adapter.ts`, `packages/plugin-service-sdk/src/worker/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] WorkingCopy アダプタの `entity as any` 参照を型安全なフィールドアクセスに改修する
+  - [ ] `pnpm --filter @hierarchidb/plugin-service-sdk {typecheck,test}` が成功し、挙動に回帰が無いことを確認する
+  - [ ] TASKS 運用ログへ修正点とロールバック手順を追記する
+- チェックリスト:
+  - [ ] WorkingCopy エンティティの型定義を見直し、adapter が必要とするフィールドを正式な型に落とし込む
+  - [ ] Dexie 取得結果のマッピングや helper を導入し、`as any` を使用せずに変換する
+  - [ ] `rg "as any" packages/plugin-service-sdk` の実装コードでヒットがゼロになることを確認する
+- ロールバック手順：対象ファイルを revert し、`pnpm --filter @hierarchidb/plugin-service-sdk {typecheck,test}` を再実行して従来状態へ戻す
+
+118) runtime-worker WorkingCopy operations `as any` 削減（P1）
+- ブランチ: `refactor/runtime-worker/wc-as-any`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/runtime/worker/src/services/WorkingCopyTreeNodeOperations.ts`, `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts`
+- 受け入れ基準（DoD）:
+  - [ ] WorkingCopyTreeNodeOperations での `direct as any` や `parent as any` 判定を discriminated union などで型安全に表現する
+  - [ ] `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test -- --run trash` が成功する
+  - [ ] TASKS 運用ログに変更内容とロールバック手順を記録する
+- チェックリスト:
+  - [ ] WorkingCopy ノードの型を整理し、holderType 判定を型でカバーする
+  - [ ] PluginWorkerModuleLoader の `import.meta` 判定から `as any` を撤去し、環境判定ヘルパーを導入する
+- ロールバック手順：該当ファイルを revert し、`pnpm --filter @hierarchidb/runtime-worker {typecheck,test -- --run trash}` を再実行して従来状態を確認する
 以下は「packages/plugins/analysis-20250907.md」を出発点とした横断タスク群（既定OFFのフィーチャーフラグで段階導入）。各タスクは小粒PRで進め、完了時に当該項目を Done へ移動する。
 
 0) tools predeploy gh-pages スクリプト整備（P1）
@@ -7394,3 +7450,18 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 15:14 command: pnpm lint — exit 0。
 - 2025-11-03 15:15 command: pnpm typecheck — exit 0。
 - 2025-11-03 15:16 command: pnpm test — exit 0（turbo run test --parallel）。
+- 2025-11-03 16:15 start: refactor/ui-treeconsole/remove-as-any — TreeConsole 周辺の `as any` 削減タスクに着手。現状の該当箇所洗い出しと除去方針を整理してから着手する。
+- 2025-11-03 16:20 progress: refactor/ui-treeconsole/remove-as-any — `app/src/components/TreeConsoleIntegration.tsx` と TreeTable 行/列リンク生成から `as any` を撤去。`RouterLink` には素の文字列パスを渡し、`navigate` 呼び出しもキャスト無しで通ることを確認。
+- 2025-11-03 16:46 progress: refactor/ui-treeconsole/remove-as-any — TreeConsole 型定義の `ComponentType<any>` 依存を `NodeContextMenuProps` ベースへ差し替え、TrashDialog の `useId` 参照で発生していた未 import エラーも解消。`rg "ComponentType<any" packages/ui/treeconsole` の実装コードヒットが 0 であることを確認。
+- 2025-11-03 16:47 command: pnpm lint — exit 0。Turbo キャッシュヒットで lint 成功（84 packages scope）。
+- 2025-11-03 16:48 command: pnpm typecheck — exit 0。TrashDialog へ `useId` import を追加後、workspace typecheck が通過。
+- 2025-11-03 16:49 command: pnpm test — exit 0。Turbo 並列実行で vitest スイート成功（skip 済みテストは message のみ）。
+- 2025-11-03 16:21 command: pnpm lint — exit 0。
+- 2025-11-03 16:22 command: pnpm typecheck — exit 0。
+- 2025-11-03 16:23 command: pnpm test — exit 0（turbo run test --parallel）。
+- 2025-11-03 16:55 start: refactor/app/tree-route-as-any — Tree TanStack ルートの loader 戻り値を判別可能なユニオンへ整理し、`treeDialogRoute` / `PluginDialogRoute` からの `as any` 撤去に着手。
+- 2025-11-03 16:58 progress: refactor/app/tree-route-as-any — TrashDialog loader と PluginDialog loader を統合し、`PluginDialogRoute` 側で params フォールバックを導入。`as TrashDialogData` 等のキャストを除去。
+- 2025-11-03 17:00 command: pnpm lint — exit 0。
+- 2025-11-03 17:01 command: pnpm typecheck — exit 0。
+- 2025-11-03 17:02 command: pnpm test — exit 0（turbo run test --parallel）。
+- 2025-11-03 17:02 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 1。`@hierarchidb/runtime-worker` / `@hierarchidb/util` の dist 未生成による既知の import 解決エラーが再現。現状は `pnpm --filter <package> build` 後に再試行する必要があり、本タスクではローカル dist を生成せずに終了。

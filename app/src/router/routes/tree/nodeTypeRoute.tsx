@@ -22,10 +22,10 @@ export const treeNodeTypeRoute = createRoute({
     if (!treeId || !targetNodeId || !nodeType) {
       throw new Error('Missing required parameters');
     }
-    const resolvedPageNodeId = (pageNodeId ?? `${treeId}:root`);
+    const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
     return await loadNodeType({
       treeId,
-      pageNodeId: resolvedPageNodeId as any,
+      pageNodeId: resolvedPageNodeId,
       targetNodeId,
       nodeType,
     });

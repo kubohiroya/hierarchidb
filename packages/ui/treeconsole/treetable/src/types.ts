@@ -3,6 +3,7 @@
  */
 
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
 import type { MouseEvent, ReactNode } from 'react';
@@ -120,7 +121,7 @@ export interface TreeTableCoreProps {
    * Custom containers
    */
   NodeTypeIcon?: React.ComponentType<{ nodeType: string; size?: string }>;
-  NodeContextMenu?: React.ComponentType<any>;
+  NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
 
   /**
    * Row click behavior

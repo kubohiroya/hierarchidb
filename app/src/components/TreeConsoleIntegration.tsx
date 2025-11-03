@@ -105,11 +105,11 @@ const TreeConsoleIntegrationInner: React.FC<
       // Query-only navigation (e.g. '?foo=bar')
       if (to.startsWith('?')) {
         const nextHref = `${location.pathname}${to}`;
-        navigate({ to: nextHref as any, replace: false });
+        navigate({ to: nextHref, replace: false });
         return;
       }
 
-      navigate({ to: to as any, replace: false });
+      navigate({ to, replace: false });
     },
     locationSearch: location.searchStr,
   });
@@ -376,7 +376,7 @@ const TreeConsoleIntegrationInner: React.FC<
               ? params.trashNodeId
               : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore` as any,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore`,
           });
           break;
         }
@@ -387,7 +387,7 @@ const TreeConsoleIntegrationInner: React.FC<
               ? params.trashNodeId
               : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
-            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty` as any,
+            to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty`,
           });
           break;
         }

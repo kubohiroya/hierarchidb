@@ -45,7 +45,7 @@ import {
   Typography,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
@@ -436,6 +436,9 @@ function TrashDialogFooter({
       ? t('trash.dialog.aria.empty')
       : t('trash.dialog.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
 
+  const confirmTitleId = useId();
+  const confirmContentId = useId();
+
   return (
     <>
       <Box
@@ -480,11 +483,12 @@ function TrashDialogFooter({
       <Dialog
         open={confirmOpen}
         onClose={handleConfirmClose}
-        aria-labelledby="trash-empty-confirm-title"
+        aria-labelledby={confirmTitleId}
+        aria-describedby={confirmContentId}
       >
-        <DialogTitle id="trash-empty-confirm-title">{t('trash.dialog.confirm.title')}</DialogTitle>
+        <DialogTitle id={confirmTitleId}>{t('trash.dialog.confirm.title')}</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText id={confirmContentId}>
             {totalCount === 0
               ? t('trash.dialog.confirm.empty')
               : t('trash.dialog.confirm.description', { count: totalCount, unit: emptyUnit })}

@@ -5,17 +5,21 @@
 
 import React from 'react';
 import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
-import { NodeId, TreeId } from '@hierarchidb/feature-core/common-types';
+import { NodeAction, NodeId, TreeId } from '@hierarchidb/feature-core/common-types';
 import { getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
 import { PluginDialogHost } from '@hierarchidb/ui-shell/plugin-ui-host';
+import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
 
-interface PluginDialogLoaderData {
-  tree: { id: TreeId };
-  pageNodeId: NodeId;
-  targetNodeId: NodeId;
-  targetNode?: unknown;
+type TreeDialogRouteParams = {
+  treeId: string;
+  pageNodeId?: string;
+  targetNodeId: string;
   nodeType: string;
   action: string;
+};
+
+export interface PluginDialogLoaderData extends LoadNodeActionReturn {
+  params: TreeDialogRouteParams;
 }
 
 /**
@@ -28,13 +32,41 @@ export interface PluginDialogRouteProps {
 }
 
 const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ data }) => {
-  const { tree, pageNodeId, targetNodeId, nodeType, action } = data;
+  const {
+    tree,
+    pageNodeId,
+    targetNodeId,
+    nodeType,
+    action,
+    params,
+  } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
   const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
   const client = ref?.client ?? null;
+
+  const treeId: TreeId | undefined = tree?.id ?? (params.treeId as TreeId | undefined);
+  const effectiveTargetNodeId: NodeId | undefined =
+    targetNodeId ?? (params.targetNodeId as NodeId | undefined);
+  const effectivePageNodeId: NodeId | undefined =
+    pageNodeId ??
+    (params.pageNodeId as NodeId | undefined) ??
+    (treeId ? (`${treeId}:root` as NodeId) : undefined);
+  const effectiveNodeType: string | undefined = nodeType ?? params.nodeType;
+  const effectiveAction: NodeAction | undefined = action ?? toNodeAction(params.action);
+
+  if (!treeId || !effectiveTargetNodeId || !effectivePageNodeId || !effectiveNodeType || !effectiveAction) {
+    console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {
+      treeId,
+      effectiveTargetNodeId,
+      effectivePageNodeId,
+      effectiveNodeType,
+      effectiveAction,
+    });
+    return null;
+  }
 
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
@@ -43,10 +75,10 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
   // Determine mode based on action with guard:
   // If action=create but target node already exists (canonical), treat as edit.
-  const mode: 'create' | 'edit' = action === 'create' ? 'create' : 'edit';
+  const mode: 'create' | 'edit' = effectiveAction === NodeAction.CREATE ? 'create' : 'edit';
 
   // targetNodeId is the working copy ID (UUID) for both create and edit
-  const workingCopyId = targetNodeId;
+  const workingCopyId = effectiveTargetNodeId;
 
   // State
   const [isOpen, setIsOpen] = React.useState(true);
@@ -61,22 +93,22 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
         const query = await client.getQueryAPI();
         const wcApi = await client.getWorkingCopyAPI();
         // If current target is already a WC (its parent is a WC holder), do nothing
-        const node = await query.getNode(targetNodeId);
+        const node = await query.getNode(effectiveTargetNodeId);
         if (node) {
           const parent = node.parentId ? await query.getNode(node.parentId) : null;
           if (parent?.holderType === 'workingCopy') return;
         }
         // Treat targetNodeId as canonical id; find or create WC and redirect
-        const existing = await wcApi.getWorkingCopy(targetNodeId);
+        const existing = await wcApi.getWorkingCopy(effectiveTargetNodeId);
         const wc = existing ?? (await (async () => {
-          await wcApi.createWorkingCopyFromNode(targetNodeId);
-          return await wcApi.getWorkingCopy(targetNodeId);
+          await wcApi.createWorkingCopyFromNode(effectiveTargetNodeId);
+          return await wcApi.getWorkingCopy(effectiveTargetNodeId);
         })());
-        if (!disposed && wc?.id && wc.id !== targetNodeId) {
+        if (!disposed && wc?.id && wc.id !== effectiveTargetNodeId) {
           const search = location.searchStr || '';
           const hash = location.hash || '';
           void navigate({
-            to: `/t/${tree.id}/${pageNodeId}/${wc.id}/${nodeType}/${action}${search}${hash}`,
+            to: `/t/${treeId}/${effectivePageNodeId}/${wc.id}/${effectiveNodeType}/${effectiveAction}${search}${hash}`,
             replace: true,
           });
         }
@@ -84,31 +116,43 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
         console.warn('[PluginDialogRoute] ensure working copy for edit failed', e);
       }
     })();
-    return () => { disposed = true; };
-  }, [client, mode, targetNodeId, tree?.id, pageNodeId, nodeType, action, navigate, location.searchStr, location.hash]);
-
+    return () => {
+      disposed = true;
+    };
+  }, [
+    client,
+    mode,
+    effectiveTargetNodeId,
+    treeId,
+    effectivePageNodeId,
+    effectiveNodeType,
+    effectiveAction,
+    navigate,
+    location.searchStr,
+    location.hash,
+  ]);
 
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
-    const destination = pageNodeId ? `/t/${tree.id}/${pageNodeId}` : `/t/${tree.id}`;
+    const destination = effectivePageNodeId ? `/t/${treeId}/${effectivePageNodeId}` : `/t/${treeId}`;
     void navigate({ to: destination });
   };
 
   // Handle success
   const handleSuccess = (savedNodeId: NodeId) => {
     // Navigate to the saved node
-    void navigate({ to: `/t/${tree.id}/${pageNodeId}/${savedNodeId}` });
+    void navigate({ to: `/t/${treeId}/${effectivePageNodeId}/${savedNodeId}` });
   };
 
   // Unified host: headless plugin dialog shell
   return (
     <PluginDialogHost
       mode={mode}
-      nodeType={nodeType}
+      nodeType={effectiveNodeType}
       nodeId={workingCopyId}
-      pageNodeId={pageNodeId}
-      treeId={tree.id}
+      pageNodeId={effectivePageNodeId}
+      treeId={treeId}
       open={isOpen}
       onClose={handleClose}
       onSuccess={handleSuccess}
@@ -118,8 +162,16 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 };
 
 const PluginDialogRouteFromRouter: React.FC = () => {
-  const data = useLoaderData({ from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action' }) as PluginDialogLoaderData;
-  return <PluginDialogRouteBody data={data} />;
+  const candidate = useLoaderData({
+    from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
+  }) as PluginDialogLoaderData | { kind: 'trash'; data: unknown } | { kind: 'plugin'; data: PluginDialogLoaderData };
+  if (typeof candidate === 'object' && candidate !== null && 'kind' in candidate) {
+    if (candidate.kind === 'plugin') {
+      return <PluginDialogRouteBody data={candidate.data} />;
+    }
+    return null;
+  }
+  return <PluginDialogRouteBody data={candidate} />;
 };
 
 export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData }) => {
@@ -141,4 +193,21 @@ export function createPluginDialogRoutes() {
       element: <PluginDialogRoute />,
     },
   ];
+}
+
+function toNodeAction(value: string | undefined): NodeAction | undefined {
+  switch (value) {
+    case NodeAction.CREATE:
+    case NodeAction.UPDATE:
+    case NodeAction.DELETE:
+    case NodeAction.MOVE:
+    case NodeAction.DUPLICATE:
+    case NodeAction.IMPORT:
+    case NodeAction.EXPORT:
+    case NodeAction.RESTORE:
+    case NodeAction.DISCARD:
+      return value;
+    default:
+      return undefined;
+  }
 }

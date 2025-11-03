@@ -9,12 +9,23 @@
 import { lazy, Suspense } from 'react';
 import { createRoute } from '@tanstack/react-router';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
-import { loadNodeAction } from '../../loaders/treeLoaders.js';
-import { PluginDialogRoute } from './PluginDialogRoute.js';
+import { loadNodeAction, type LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
+import { PluginDialogRoute, type PluginDialogLoaderData } from './PluginDialogRoute.js';
 import type {
   TrashDialogData,
   TrashDialogRouteParams,
 } from '~/components/dialogs/TrashDialog.js';
+
+type TreeDialogLoaderResult =
+  | {
+      kind: 'trash';
+      data: TrashDialogData;
+      params: TrashDialogRouteParams;
+    }
+  | {
+      kind: 'plugin';
+      data: PluginDialogLoaderData;
+    };
 
 const TrashDialogLazy = lazy(() => import('~/components/dialogs/TrashDialog.js'));
 
@@ -26,41 +37,89 @@ export const treeDialogRoute = createRoute({
     if (!treeId || !targetNodeId || !nodeType || !action) {
       throw new Error('Missing required parameters');
     }
-    const resolvedPageNodeId = (pageNodeId ?? `${treeId}:root`);
-    
+    const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
+
+    const resolvedParams: TreeDialogResolvedParams = {
+      treeId,
+      pageNodeId: resolvedPageNodeId,
+      targetNodeId,
+      nodeType,
+      action,
+    };
+
     // Special handling for trash dialog
     if (nodeType === 'trash') {
       const trashDialogModule = await import('~/components/dialogs/TrashDialog.js');
       if (trashDialogModule.clientLoader) {
-        return await trashDialogModule.clientLoader({ params });
+        const trashParams = toTrashDialogParams(resolvedParams);
+        const data = await trashDialogModule.clientLoader({ params: trashParams });
+        return {
+          kind: 'trash',
+          data,
+          params: trashParams,
+        } satisfies TreeDialogLoaderResult;
       }
     }
-    
-    return await loadNodeAction({
+
+    const pluginData = await loadNodeAction({
       treeId,
-      pageNodeId: resolvedPageNodeId as any,
+      pageNodeId: resolvedPageNodeId,
       targetNodeId,
       nodeType,
       action,
     });
+
+    return {
+      kind: 'plugin',
+      data: toPluginDialogLoaderData(pluginData, resolvedParams),
+    } satisfies TreeDialogLoaderResult;
   },
   component: TreeDialogGuarded,
 });
 
 function TreeDialogGuarded() {
-  const params = treeDialogRoute.useParams() as TrashDialogRouteParams;
-  const { nodeType, action } = params;
+  const loaderResult = treeDialogRoute.useLoaderData() as TreeDialogLoaderResult;
 
-  if (nodeType === 'trash') {
-    if (!action) return null;
-    const data = treeDialogRoute.useLoaderData() as TrashDialogData;
+  if (loaderResult.kind === 'trash') {
+    const { data, params } = loaderResult;
     return (
       <Suspense fallback={null}>
         <TrashDialogLazy data={data} params={params} />
       </Suspense>
     );
   }
-  
-  if (!nodeType || !action) return null;
-  return <PluginDialogRoute />;
+
+  if (loaderResult.kind === 'plugin') {
+    return <PluginDialogRoute loaderData={loaderResult.data} />;
+  }
+
+  return null;
+}
+
+type TreeDialogResolvedParams = {
+  treeId: string;
+  pageNodeId: string;
+  targetNodeId: string;
+  nodeType: string;
+  action: string;
+};
+
+function toTrashDialogParams(params: TreeDialogResolvedParams): TrashDialogRouteParams {
+  return {
+    treeId: params.treeId,
+    pageNodeId: params.pageNodeId,
+    targetNodeId: params.targetNodeId,
+    nodeType: params.nodeType,
+    action: params.action,
+  };
+}
+
+function toPluginDialogLoaderData(
+  loaderData: LoadNodeActionReturn,
+  params: TreeDialogResolvedParams,
+): PluginDialogLoaderData {
+  return {
+    ...loaderData,
+    params,
+  };
 }

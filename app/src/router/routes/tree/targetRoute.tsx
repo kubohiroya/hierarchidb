@@ -17,10 +17,10 @@ export const treeTargetRoute = createRoute({
     if (!treeId || !targetNodeId) {
       throw new Error('Missing required parameters');
     }
-    const resolvedPageNodeId = (pageNodeId ?? `${treeId}:root`);
+    const resolvedPageNodeId = pageNodeId ?? `${treeId}:root`;
     return await loadTargetNode({
       treeId,
-      pageNodeId: resolvedPageNodeId as any,
+      pageNodeId: resolvedPageNodeId,
       targetNodeId,
     });
   },

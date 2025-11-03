@@ -114,7 +114,7 @@ export function TreeTableRows({
             <IndentSpace depth={indentDepth} />
             <Box
               component={RouterLink}
-              to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}` as any}
+              to={`/${['t', String(treeId || ''), String(node.id)].filter(Boolean).join('/')}`}
               sx={{ mr: 0.5, color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
               {node.name}

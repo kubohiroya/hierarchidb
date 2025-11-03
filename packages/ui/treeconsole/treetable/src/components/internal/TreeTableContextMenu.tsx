@@ -4,6 +4,7 @@
  */
 
 import type { TreeNode } from '@hierarchidb/common-types';
+import type { NodeContextMenuProps } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import type { ComponentType } from 'react';
 import type { TreeTableController } from '../../types.js';
 
@@ -17,7 +18,7 @@ interface TreeTableContextMenuProps {
   onClose: () => void;
   treeId?: string;
   controller: TreeTableController | null;
-  ContextMenuComponent: ComponentType<any>;
+  ContextMenuComponent: ComponentType<NodeContextMenuProps>;
 }
 
 export function TreeTableContextMenu({

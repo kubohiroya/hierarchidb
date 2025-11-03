@@ -2,6 +2,8 @@
  * Types for TreeConsoleBreadcrumb package
  */
 
+import type { NodeContextMenuProps } from './components/NodeContextMenu.js';
+
 export interface BreadcrumbNode {
   treeNodeId?: string;
   id?: string;
@@ -60,7 +62,7 @@ export interface TreeConsoleBreadcrumbProps {
   /**
    * Custom context menu component
    */
-  NodeContextMenu?: React.ComponentType<any>;
+  NodeContextMenu?: React.ComponentType<NodeContextMenuProps>;
 
   /**
    * Optional treeId for context-aware create menus ('r' | 't' | 'p').
