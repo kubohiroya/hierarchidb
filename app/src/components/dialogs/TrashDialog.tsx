@@ -553,7 +553,7 @@ function TrashDialogContent({
           viewMode="list"
           canCreate={false}
           canEdit={false}
-          canDelete={mode === 'empty'}
+          canTrash={mode === 'empty'}
           useTrashColumns
           trashAction={mode}
           hideDragHandler

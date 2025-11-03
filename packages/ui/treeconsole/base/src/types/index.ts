@@ -256,6 +256,8 @@ export interface TreeViewController {
   cancelEdit?: () => void;
   onCreate?: (parentId: NodeId, nodeType: string) => void;
   onDuplicate?: (nodeId: NodeId) => void;
+  onTrash?: (nodeIds: NodeId[]) => void;
+  /** @deprecated Use onTrash */
   onRemove?: (nodeIds: NodeId[]) => void;
   createNode?: (nodeType: string) => void;
 

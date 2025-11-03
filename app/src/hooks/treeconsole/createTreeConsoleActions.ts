@@ -131,6 +131,29 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     }
   };
 
+  const moveSelectionToTrash = async () => {
+    if (!client || selectedIds.length === 0) return;
+    const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
+    if (!ok) return;
+    try {
+      await teardownSubscription(pageNodeId as NodeId);
+      const mutationAPI = await client.getMutationAPI();
+      const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
+      if (!res.success) {
+        showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
+        return;
+      }
+      const parent = pageNodeId as NodeId;
+      await loadChildrenOf(parent);
+      setSSOT({ selectedIds: [] });
+      fireCmdEvent();
+      await setupSubscription(parent);
+    } catch (error) {
+      console.error('Trash failed:', error);
+      showCommandError('UNKNOWN_ERROR');
+    }
+  };
+
   return {
     handleNodeClick: (node: TreeNodeData) => {
       const targetId = node.id as NodeId;
@@ -260,28 +283,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       await openEditDialog(selectedIds[0] as NodeId);
     },
 
-    handleTrash: async () => {
-      if (!client || selectedIds.length === 0) return;
-      const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
-      if (!ok) return;
-      try {
-        await teardownSubscription(pageNodeId as NodeId);
-        const mutationAPI = await client.getMutationAPI();
-        const res = await mutationAPI.moveNodesToTrash(selectedIds as NodeId[]);
-        if (!res.success) {
-          showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
-          return;
-        }
-        const parent = pageNodeId as NodeId;
-        await loadChildrenOf(parent);
-        setSSOT({ selectedIds: [] });
-        fireCmdEvent();
-        await setupSubscription(parent);
-      } catch (error) {
-        console.error('Trash failed:', error);
-        showCommandError('UNKNOWN_ERROR');
-      }
-    },
+    handleTrash: () => { void moveSelectionToTrash(); },
+    handleRemove: () => { void moveSelectionToTrash(); },
 
     handleRefresh: async () => {
       const root = pageNodeId as NodeId;
@@ -338,8 +341,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     },
 
     handleContextMenuAction: async (action, node, options = {}) => {
-      const actionStr = action as ContextAction;
-      console.log('Context menu action:', actionStr, 'for node:', node);
+      const normalizedAction = (action === 'remove' ? 'trash' : action) as ContextAction;
+      console.log('Context menu action:', normalizedAction, 'for node:', node);
 
       const targetNodeId = node.id as NodeId;
       const parentId = (node.parentId as NodeId | undefined) ?? (pageNodeId as NodeId | undefined);
@@ -349,16 +352,38 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         await loadChildrenOf(id);
       };
 
-      if (actionStr === 'edit' || actionStr === 'rename-dialog') {
+      if (normalizedAction === 'edit') {
         setSSOT({ selectedIds: [targetNodeId] });
         await openEditDialog(targetNodeId);
         return;
       }
 
-      if (actionStr.startsWith('create:')) {
+      if (normalizedAction === 'rename-dialog') {
+        if (!client || !node?.id) return;
+        const currentName = node.name ?? '';
+        const nextName = prompt('Enter new name', currentName)?.trim();
+        if (!nextName || nextName === currentName) return;
+        try {
+          const mutationAPI = await client.getMutationAPI();
+          const res = await mutationAPI.updateNode({ nodeId: targetNodeId, name: nextName });
+          if (!res.success) {
+            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
+            return;
+          }
+          await refreshParent(parentId ?? pageNodeId as NodeId);
+          await refreshUndoRedo();
+          fireCmdEvent();
+        } catch (error) {
+          console.error('Rename dialog failed:', error);
+          showCommandError('UNKNOWN_ERROR');
+        }
+        return;
+      }
+
+      if (normalizedAction.startsWith('create:')) {
         if (!client || !treeId) return;
         const source = options.source ?? 'speedDial';
-        const newType = actionStr.replace('create:', '') as NodeType;
+        const newType = normalizedAction.replace('create:', '') as NodeType;
         try {
           const mutationAPI = await client.getMutationAPI();
           const displayName = newType.charAt(0).toUpperCase() + newType.slice(1);
@@ -415,7 +440,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'rename-inline' && node?.id && typeof node.name === 'string') {
+      if (normalizedAction === 'rename-inline' && node?.id && typeof node.name === 'string') {
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = node.name.trim();
@@ -439,7 +464,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'update-desc-inline' && node?.id && typeof node.description === 'string') {
+      if (normalizedAction === 'update-desc-inline' && node?.id && typeof node.description === 'string') {
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = String(node.description ?? '').trim();
@@ -461,34 +486,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'rename-dialog') {
-        if (!client || !node?.id) return;
-        const currentName = node.name ?? '';
-        const nextName = prompt('Enter new name', currentName)?.trim();
-        if (!nextName || nextName === currentName) return;
-        try {
-          const mutationAPI = await client.getMutationAPI();
-          const res = await mutationAPI.updateNode({ nodeId: targetNodeId, name: nextName });
-          if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
-            return;
-          }
-          await refreshParent(parentId ?? pageNodeId as NodeId);
-          await refreshUndoRedo();
-          fireCmdEvent();
-        } catch (error) {
-          console.error('Rename dialog failed:', error);
-          showCommandError('UNKNOWN_ERROR');
-        }
-        return;
-      }
-
-      if (action === 'copy') {
+      if (normalizedAction === 'copy') {
         applyClipboard([targetNodeId], false);
         return;
       }
 
-      if (action === 'cut') {
+      if (normalizedAction === 'cut') {
         applyClipboard([targetNodeId], true);
         if (options.navigateToParent) {
           navigateTo(parentId ?? null);
@@ -496,7 +499,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'duplicate') {
+      if (normalizedAction === 'duplicate') {
         if (!client) return;
         try {
           const mutationAPI = await client.getMutationAPI();
@@ -516,7 +519,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'trash') {
+      if (normalizedAction === 'trash') {
         if (!client) return;
         try {
           const scopeParent = parentId ?? pageNodeId;
@@ -543,12 +546,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'navigate') {
+      if (normalizedAction === 'navigate') {
         navigateTo(targetNodeId);
         return;
       }
 
-      if (action === 'export' && node?.id) {
+      if (normalizedAction === 'export' && node?.id) {
         return;
       }
     },

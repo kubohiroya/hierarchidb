@@ -11,6 +11,8 @@ export type TreeConsoleToolbarAction =
   | { action: 'copy' }
   | { action: 'paste' }
   | { action: 'duplicate' }
+  | { action: 'trash' }
+  /** @deprecated Use `action: 'trash'` instead. */
   | { action: 'remove' }
   | { action: 'restore' }
   | { action: 'empty' }
@@ -116,6 +118,13 @@ export interface TreeConsoleToolbarProps {
    * Selection-based actions availability
    */
   canDuplicate?: boolean;
+  /**
+   * Enables the "Move to Trash" toolbar action.
+   */
+  canTrash?: boolean;
+  /**
+   * @deprecated Use {@link TreeConsoleToolbarProps.canTrash} instead.
+   */
   canRemove?: boolean;
 
   /**

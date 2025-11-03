@@ -163,7 +163,7 @@ function TreeConsoleToolbarContent({
                                      canCopy = false,
                                      canPaste = false,
                                      canDuplicate = false,
-                                     canRemove = false,
+                                     canTrash = false,
                                      availableTemplates = [],
                                      searchPlaceholder,
                                      searchAriaLabel,
@@ -179,7 +179,7 @@ function TreeConsoleToolbarContent({
   canCopy?: boolean;
   canPaste?: boolean;
   canDuplicate?: boolean;
-  canRemove?: boolean;
+  canTrash?: boolean;
   availableTemplates?: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
   searchPlaceholder: string;
   searchAriaLabel: string;
@@ -209,6 +209,8 @@ function TreeConsoleToolbarContent({
   const pasteTooltip = t('tooltips.paste', { shortcut: '⌘+V' });
   const duplicateTooltip = t('tooltips.duplicate', { shortcut: '⌘+D' });
   const moveToTrashTooltip = t('tooltips.moveToTrash', { shortcut: '⌘+X' });
+
+  const allowTrash = canTrash;
 
   const trashButtonLabel = t('aria.trashMenuButton');
   const importExportButtonLabel = t('aria.importExportButton');
@@ -417,8 +419,8 @@ function TreeConsoleToolbarContent({
         <Button
           title={moveToTrashTooltip}
           aria-label={moveToTrashTooltip}
-          disabled={!canRemove}
-          onClick={() => handleAction('remove')}
+          disabled={!allowTrash}
+          onClick={() => handleAction('trash')}
           color="error"
         >
           <ClearIcon fontSize="small" />
@@ -645,9 +647,12 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     canCopy = false,
     canPaste = false,
     canDuplicate = false,
+    canTrash,
     canRemove = false,
     availableTemplates = [],
   } = props;
+
+  const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
 
   const theme = useTheme();
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
@@ -694,7 +699,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canCopy={canCopy}
         canPaste={canPaste}
         canDuplicate={canDuplicate}
-        canRemove={canRemove}
+        canTrash={resolvedCanTrash}
         availableTemplates={availableTemplates}
         searchPlaceholder={searchPlaceholder}
         searchAriaLabel={searchAriaLabel}

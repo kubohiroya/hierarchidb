@@ -12,13 +12,15 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-co
 import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
-interface TreeConsolePanelWithDynamicSpeedDialProps extends TreeConsolePanelProps {
+type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'onDelete'> & {
   treeId: TreeId | undefined;
   workerClient: Remote<WorkerAPI> | null;
   onStartTour?: () => void;
   pageTreeNode?: TreeNode;
   onBreadcrumbContextAction?: TreeConsolePanelProps['onBreadcrumbContextAction'];
-}
+  onTrash?: TreeConsolePanelProps['onDelete'];
+  onDelete?: TreeConsolePanelProps['onDelete'];
+};
 
 export function TreeConsolePanelWithDynamicSpeedDial({
                                                        treeId,
@@ -27,10 +29,13 @@ export function TreeConsolePanelWithDynamicSpeedDial({
                                                        pageTreeNode,
                                                        pageNodeId,
                                                        onBreadcrumbContextAction,
+                                                       onTrash,
+                                                       onDelete,
                                                        ...panelProps
                                                      }: TreeConsolePanelWithDynamicSpeedDialProps) {
   const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {
   });
+  const resolvedOnDelete = onDelete ?? onTrash ?? (() => {});
   const parentForSpeedDial = (pageTreeNode?.parentId ?? pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as string;
   const speedDialContextNode: TreeNodeData = {
     id: (pageNodeId ?? (treeId ? (`${treeId}:root`) : 'root')) as NodeId,
@@ -52,6 +57,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
         onMoveNodes={panelProps.onMoveNodes}
         treeIdForPersistence={treeId}
         onBreadcrumbContextAction={onBreadcrumbContextAction}
+        onDelete={resolvedOnDelete}
         renderBuiltInSpeedDial={false}
       />
       {/* Our dynamic SpeedDial that replaces the hardcoded one */}

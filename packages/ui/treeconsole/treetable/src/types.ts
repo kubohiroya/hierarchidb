@@ -53,6 +53,8 @@ export interface TreeTableController {
   // Context menu actions
   onCreate?: (parentId: string, type: string) => void;
   onDuplicate?: (nodeId: string) => void;
+  onTrash?: (nodeIds: string[]) => void;
+  /** @deprecated Use onTrash */
   onRemove?: (nodeIds: string[]) => void;
   // Move nodes to a new parent
   onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;

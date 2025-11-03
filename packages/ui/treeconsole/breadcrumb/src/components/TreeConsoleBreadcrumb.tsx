@@ -204,9 +204,9 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     [onContextAction, onNodeClick],
   );
 
-  const handleConfirmDelete = useCallback(async () => {
+  const handleConfirmTrash = useCallback(async () => {
     if (pendingDeleteNodeId && contextMenuNode && onContextAction) {
-      onContextAction('remove', contextMenuNode, { navigateToParent: true });
+      onContextAction('trash', contextMenuNode, { navigateToParent: true });
     }
     setConfirmDialogOpen(false);
     setPendingDeleteNodeId(null);
@@ -264,7 +264,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
     }
   };
 
-  const handleRemove = () => {
+  const handleTrash = () => {
     if (contextMenuNode) {
       setPendingDeleteNodeId(contextMenuNode.id || contextMenuNode.id || '');
       setConfirmDialogOpen(true);
@@ -426,6 +426,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         treeId={props.treeId}
         canCreate={true}
         canEdit={!isRootContext}
+        canTrash={!isRootContext}
         canRemove={!isRootContext}
         canDuplicate={!isRootContext}
         canCopy={!isRootContext}
@@ -435,7 +436,8 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         onCut={handleCut}
         onEdit={() => { if (!isRootContext) handleEdit(); else handleContextMenuClose(); }}
         onDuplicate={() => { if (!isRootContext) handleDuplicate(); else handleContextMenuClose(); }}
-        onRemove={() => { if (!isRootContext) handleRemove(); else handleContextMenuClose(); }}
+        onTrash={() => { if (!isRootContext) handleTrash(); else handleContextMenuClose(); }}
+        onRemove={() => { if (!isRootContext) handleTrash(); else handleContextMenuClose(); }}
         onOpen={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',
@@ -455,14 +457,14 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
       {/*
 */}
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle>Move to Trash</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this item and all its children?</Typography>
+          <Typography>Move this item and all its children to trash?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained">
-            Delete
+          <Button onClick={handleConfirmTrash} color="error" variant="contained">
+            Move to Trash
           </Button>
         </DialogActions>
       </Dialog>

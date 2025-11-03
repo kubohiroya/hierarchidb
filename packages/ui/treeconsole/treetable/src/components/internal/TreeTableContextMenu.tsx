@@ -76,12 +76,20 @@ export function TreeTableContextMenu({
         triggerContextAction('duplicate', { expandTarget: true, source: 'treetable' });
         handleClose();
       }}
+      onTrash={() => {
+        if (!node || isRoot) {
+          handleClose();
+          return;
+        }
+        triggerContextAction('trash', { navigateToParent: false, source: 'treetable' });
+        handleClose();
+      }}
       onRemove={() => {
         if (!node || isRoot) {
           handleClose();
           return;
         }
-        triggerContextAction('remove', { navigateToParent: false, source: 'treetable' });
+        triggerContextAction('trash', { navigateToParent: false, source: 'treetable' });
         handleClose();
       }}
       onCopy={() => {

@@ -31,6 +31,7 @@ export interface NodeContextMenuProps {
   canEdit?: boolean;
   canCreate?: boolean;
   canRemove?: boolean;
+  canTrash?: boolean;
   canDuplicate?: boolean;
   onOpen?: () => void;
   onOpenFolder?: () => void;
@@ -38,7 +39,9 @@ export interface NodeContextMenuProps {
   onEdit?: () => void;
   onCreate?: (type: string) => void;
   onDuplicate?: () => void;
+  /** @deprecated Use onTrash */
   onRemove?: () => void;
+  onTrash?: () => void;
   onCheckReference?: () => void;
   addMenuNodeTypes?: string[];
   isTrashRoot?: boolean;
@@ -60,7 +63,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canOpen: _canOpen = true,
     canEdit = true,
     canCreate = true,
-    canRemove = true,
+    canRemove,
+    canTrash,
     canDuplicate = true,
     onOpen: _onOpen,
     onOpenFolder: _onOpenFolder,
@@ -69,6 +73,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onCreate: _onCreate,
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
+    onTrash: _onTrash,
     onCheckReference: _onCheckReference,
     addMenuNodeTypes = [],
   } = props;
@@ -141,11 +146,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     });
   };
 
-  const handleRemoveClick = () => {
-    const onRemove = propsRef.current.onRemove;
+  const handleTrashClick = () => {
+    const current = propsRef.current;
+    const handler = current.onTrash ?? current.onRemove;
     handleMainMenuClose();
     requestAnimationFrame(() => {
-      onRemove?.();
+      handler?.();
     });
   };
 
@@ -175,6 +181,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const isFolder =
     nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
+  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
 
   return (
     <>
@@ -257,7 +264,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
           <ListItemText>Duplicate</ListItemText>
         </MenuItem>
 
-        <MenuItem onClick={handleRemoveClick} disabled={!canRemove} aria-label="Move to Trash">
+        <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label="Move to Trash">
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>

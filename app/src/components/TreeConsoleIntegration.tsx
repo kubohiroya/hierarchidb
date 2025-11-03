@@ -335,7 +335,9 @@ const TreeConsoleIntegrationInner: React.FC<
         }
       };
 
-      switch (action) {
+      const normalizedAction = action === 'remove' ? 'trash' : action;
+
+      switch (normalizedAction) {
         case 'setRowClickAction':
           if (typeof params === 'string') {
             setRowClickAction(params === 'Edit' ? 'Edit' : 'Select/Navigate');
@@ -396,7 +398,10 @@ const TreeConsoleIntegrationInner: React.FC<
           actions.handleExport?.();
           break;
         default:
-          logIntegrationWarning(`Unhandled toolbar action: ${action}`, new Error('Unhandled action'));
+          logIntegrationWarning(
+            `Unhandled toolbar action: ${normalizedAction} (raw: ${action})`,
+            new Error('Unhandled action'),
+          );
       }
     },
     [pageNodeId, workerClient, treeId, actions, navigate],
@@ -516,7 +521,6 @@ const TreeConsoleIntegrationInner: React.FC<
         canCopy={selectedIds.length > 0}
         canPaste={state.canPaste || false}
         canDuplicate={selectedIds.length > 0}
-        canTrash={canTrash && selectedIds.length > 0}
         availableTemplates={(() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
@@ -562,7 +566,7 @@ const TreeConsoleIntegrationInner: React.FC<
         onSearchClear={actions.handleSearchClear}
         onCreate={actions.handleCreate}
         onEdit={actions.handleEdit}
-        onTrash={actions.handleTrash}
+        onDelete={actions.handleTrash}
         onRefresh={actions.handleRefresh}
         onExpandAll={actions.handleExpandAll}
         onCollapseAll={actions.handleCollapseAll}

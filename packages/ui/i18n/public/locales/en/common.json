@@ -101,7 +101,7 @@
       },
       "trashMenu": {
         "restore": "Restore from Trash",
-        "empty": "Remove all from Trash"
+        "empty": "Empty Trash"
       },
       "importExportMenu": {
         "import": "Import from JSON file",

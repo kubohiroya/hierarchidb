@@ -54,6 +54,22 @@
 ### Doing（進行中） <a id="kanban-doing"></a>
 
 
+114) TreeConsole trash 操作命名移行 Phase1（P0）
+- ブランチ: `refactor/ui-treeconsole/trash-naming-phase1`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/components/tree-console/**/*`, `app/src/components/dialogs/**/*`, `packages/ui-treeconsole-*`, `packages/ui/treeconsole`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] TreeConsole フロント層（`createTreeConsoleActions`・ContextMenu・Panel・関連型定義）が `trash*` 系の命名へ移行し、既存 `remove*` 系 API は暫定互換ラッパーとして提供されている
+  - [ ] UI からの操作・型経路で `trashNodes` / `emptyTrash` / 互換 `removeNodes` が整合し、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` が成功したログを運用ログへ記録する
+  - [ ] 後続フェーズ（Worker API 層、Working Copy `discard` 化、文言統一）の計画メモを更新し、Step3 が `discard` 用語を採用することを明示する
+- チェックリスト:
+  - [ ] `createTreeConsoleActions` と関連型を `trash` 系命名へリネームし、`remove` ラッパーを残す
+  - [ ] TreeConsole / Trash 関連 ContextMenu・パネル・ヘッダーのプロップとハンドラを `trash` 系へ揃える
+  - [ ] UI 文言・翻訳キーのうち本段階で必要な最小セットを更新し、互換動作を手動確認する
+  - [ ] 必要な単体/結合テストを更新し、実行ログを取得する
+- ロールバック手順：当該差分（`trash` 命名移行と互換ラッパー追加）を revert し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して旧 `remove` 系動線が維持されることを確認する
+
+
 91) App 依存束ねパッケージ導入（P0）
 - ブランチ: `feat/app/dependency-bundles`（sandbox 制約で main 上で作業）
 - 依存: `packages/app`, `packages/ui/*`, `packages/feature/*`, `pnpm-workspace.yaml`, `turbo.json`, `docs/package-dependencies.md`
@@ -7364,4 +7380,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 10:38 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
 - 2025-11-03 10:39 command: pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build — exit 0。
 - 2025-11-03 10:40 command: pnpm --filter @hierarchidb/app typecheck — exit 1（`TreeConsoleIntegration.tsx:565` で `TreeConsolePanelWithDynamicSpeedDialProps` に `onTrash` が必須と判定される既存エラー。今回差分の直接要因ではなく、別途対応が必要）。
+- 2025-11-03 10:52 progress: fix/ui-trash/treetable-timestamps — TreeConsolePanelWithDynamicSpeedDial を `onDelete`/`onTrash` 両対応に調整し、Toolbar 側の `canTrash` 依存を dist へ反映。TreeConsole Actions の `ContextAction` 定義を更新し、`remove` → `trash` 正規化などの型警告を解消。
+- 2025-11-03 10:54 command: pnpm --filter @hierarchidb/ui-treeconsole-base build — exit 0。
+- 2025-11-03 10:55 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar clean && pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
+- 2025-11-03 10:56 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
+- 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。

@@ -24,6 +24,12 @@ export type ContextAction =
   | 'rename-inline'
   | 'update-desc-inline'
   | 'duplicate'
+  | 'copy'
+  | 'cut'
+  | 'remove'
+  | 'navigate'
+  | 'import'
+  | 'export'
   | 'trash'
   | 'checkReference'
   | `create:${string}`;
@@ -61,6 +67,8 @@ export interface TreeConsoleActions {
   handleCreate: () => void;
   handleEdit: () => void;
   handleTrash: () => void;
+  /** @deprecated Use handleTrash */
+  handleRemove?: () => void;
   handleRefresh: () => void;
   handleExpandAll: () => void;
   handleCollapseAll: () => void;
