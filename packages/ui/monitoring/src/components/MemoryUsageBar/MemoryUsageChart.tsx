@@ -1,9 +1,8 @@
+import { formatBytes } from '@hierarchidb/util';
+import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
+import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, IconButton, Paper, Tooltip, Typography, useTheme } from '@mui/material';
-import { Pause, PlayArrow, Refresh, ZoomIn, ZoomOut } from '@mui/icons-material';
-
-import { formatBytes } from '@hierarchidb/util';
 import { isDevEnv } from '../../utils/env.js';
 
 interface MemoryDataPoint {
@@ -18,22 +17,22 @@ interface MemoryDataPoint {
 
 interface MemoryUsageChartProps {
   /**
-      */
+   */
   width?: string | number;
   /**
-      */
+   */
   height?: number;
   /**
-      */
+   */
   updateInterval?: number;
   /**
-      */
+   */
   timeRange?: number;
   /**
-      */
+   */
   maxDataPoints?: number;
   /**
-      */
+   */
   categoryColors?: { [key: string]: string };
   /**
    * 0-1
@@ -44,37 +43,37 @@ interface MemoryUsageChartProps {
    */
   criticalThreshold?: number;
   /**
-      */
+   */
   showGrid?: boolean;
   /**
-      */
+   */
   showLegend?: boolean;
   /**
-      */
+   */
   maxMemory?: number;
 }
 
 /**
-    */
+ */
 export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
-                                                                    width = '100%',
-                                                                    height = 300,
-                                                                    updateInterval = 10000,
-                                                                    timeRange = 300, //  5
-                                                                    maxDataPoints = 100,
-                                                                    categoryColors = {
-                                                                      JavaScript: '#F7DF1E',
-                                                                      DOM: '#E34C26',
-                                                                      Images: '#00D8FF',
-                                                                      Styles: '#1572B6',
-                                                                      Other: '#9CA3AF',
-                                                                    },
-                                                                    warningThreshold = 0.7,
-                                                                    criticalThreshold = 0.9,
-                                                                    showGrid = true,
-                                                                    showLegend = true,
-                                                                    maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
-                                                                  }) => {
+  width = '100%',
+  height = 300,
+  updateInterval = 10000,
+  timeRange = 300, //  5
+  maxDataPoints = 100,
+  categoryColors = {
+    JavaScript: '#F7DF1E',
+    DOM: '#E34C26',
+    Images: '#00D8FF',
+    Styles: '#1572B6',
+    Other: '#9CA3AF',
+  },
+  warningThreshold = 0.7,
+  criticalThreshold = 0.9,
+  showGrid = true,
+  showLegend = true,
+  maxMemory = 4 * 1024 * 1024 * 1024, // 4GB
+}) => {
   const theme = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -92,7 +91,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
   const categorizeMemory = useCallback(
     (
-      breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>,
+      breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>
     ): { [key: string]: number } => {
       const categories: { [key: string]: number } = {
         JavaScript: 0,
@@ -126,7 +125,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
 
       return categories;
     },
-    [],
+    []
   );
 
   const collectMemoryData = useCallback(async () => {
@@ -145,7 +144,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         ).measureUserAgentSpecificMemory();
         const totalUsed = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0,
+          0
         );
 
         let totalMemory = maxMemory;
@@ -412,7 +411,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         setHoveredPoint(null);
       }
     },
-    [dataPoints, timeRange, zoomLevel],
+    [dataPoints, timeRange, zoomLevel]
   );
 
   useEffect(() => {
@@ -461,7 +460,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
   return (
     <Paper sx={{ width, height, p: 2, position: 'relative' }}>
       {/*
-*/}
+       */}
       <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'flex', gap: 1 }}>
         <Tooltip title={isPaused ? 'Resume' : 'Pause'}>
           <IconButton size="small" onClick={() => setIsPaused(!isPaused)}>
@@ -489,13 +488,13 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       </Box>
 
       {/*
-*/}
+       */}
       <Typography variant="subtitle2" sx={{ mb: 1 }}>
         Memory Usage Timeline
       </Typography>
 
       {/*
-*/}
+       */}
       <Box sx={{ position: 'relative', width: '100%', height: 'calc(100% - 80px)' }}>
         <canvas
           ref={canvasRef}
@@ -505,7 +504,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         />
 
         {/*
-*/}
+         */}
         {hoveredPoint && (
           <Paper
             elevation={3}
@@ -539,7 +538,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
       </Box>
 
       {/*
-*/}
+       */}
       {showLegend && (
         <Box sx={{ display: 'flex', gap: 2, mt: 1, justifyContent: 'center' }}>
           {Object.entries(categoryColors).map(([category, color]) => (

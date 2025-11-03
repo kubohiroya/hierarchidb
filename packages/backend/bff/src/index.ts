@@ -1,23 +1,23 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { type Context, Hono } from 'hono';
-import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
-import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
+import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
+import type { GitHubOAuth2Config } from './auth/github.js';
 import {
   exchangeCodeForTokens,
-  getGoogleUserInfo,
   type GoogleOAuth2Config,
+  getGoogleUserInfo,
 } from './auth/google.js';
-import type { GitHubOAuth2Config } from './auth/github.js';
 import type { MicrosoftOAuth2Config } from './auth/microsoft.js';
-import { exchangeCodeForToken, handleOAuth2Callback } from './auth/callback.js';
 import { refreshToken, revokeToken } from './auth/refresh.js';
 import { mapEnvironmentVariables } from './env-mapper.js';
+import { validateOrigin } from './middleware/origin-validator.js';
+import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
+import { type BffBindings, getEnv } from './utils/env.js';
+import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
 import { getDynamicRedirectUri } from './utils/redirect-uri.js';
 import { StateManager } from './utils/state-manager.js';
-import { validateOrigin } from './middleware/origin-validator.js';
 import { requireTurnstile } from './utils/turnstile.js';
-import { getEnv, type BffBindings } from './utils/env.js';
 
 export const app = new Hono<BffBindings>();
 
@@ -148,7 +148,9 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
         const stateManager = new StateManager(env.JWT_SECRET || 'default-secret');
         const state = await stateManager.createState(c);
 
-        const microsoftAuthUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+        const microsoftAuthUrl = new URL(
+          'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+        );
         microsoftAuthUrl.searchParams.set('client_id', config.clientId);
         microsoftAuthUrl.searchParams.set('redirect_uri', config.redirectUri);
         microsoftAuthUrl.searchParams.set('response_type', 'code');
@@ -156,7 +158,10 @@ app.get('/auth/authorize/:provider', requireTurnstile, async (c) => {
         microsoftAuthUrl.searchParams.set('state', client_state || state);
         if (code_challenge) {
           microsoftAuthUrl.searchParams.set('code_challenge', code_challenge);
-          microsoftAuthUrl.searchParams.set('code_challenge_method', code_challenge_method || 'S256');
+          microsoftAuthUrl.searchParams.set(
+            'code_challenge_method',
+            code_challenge_method || 'S256'
+          );
         }
         return c.redirect(microsoftAuthUrl.toString());
       }
@@ -226,7 +231,9 @@ app.post('/auth/authorize/:provider', async (c) => {
         const code_challenge = url.searchParams.get('code_challenge');
         const code_challenge_method = url.searchParams.get('code_challenge_method') || 'S256';
         const scope = url.searchParams.get('scope') || 'openid profile email User.Read';
-        const microsoftAuthUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+        const microsoftAuthUrl = new URL(
+          'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+        );
         microsoftAuthUrl.searchParams.set('client_id', env.MICROSOFT_CLIENT_ID);
         microsoftAuthUrl.searchParams.set('redirect_uri', redirectUri);
         microsoftAuthUrl.searchParams.set('response_type', 'code');
@@ -246,7 +253,6 @@ app.post('/auth/authorize/:provider', async (c) => {
     return c.json({ error: 'Failed to initiate authentication' }, 500);
   }
 });
-
 
 // Step 2: Handle OAuth2 callback from Google (GET request)
 app.get('/auth/callback', handleOAuth2Callback);
@@ -290,7 +296,7 @@ app.post('/auth/google/callback', async (c) => {
       },
       env.JWT_SECRET,
       sessionDuration,
-      env.JWT_ISSUER,
+      env.JWT_ISSUER
     );
 
     return c.json({
@@ -314,7 +320,6 @@ app.post('/auth/google/callback', async (c) => {
 // GitHub OAuth2 Flow
 // ============================================================================
 
-
 // Step 2: Handle OAuth2 callback from GitHub (GET request)
 app.get('/auth/github/callback', handleOAuth2Callback);
 
@@ -324,7 +329,6 @@ app.post('/auth/github/token', exchangeCodeForToken);
 // ============================================================================
 // Microsoft OAuth2 + PKCE Flow
 // ============================================================================
-
 
 // Step 2: Handle OAuth2 callback from Microsoft (GET request)
 app.get('/auth/microsoft/callback', handleOAuth2Callback);
@@ -408,7 +412,7 @@ app.post('/auth/logout', async (c) => {
       if (token) {
         const kvManager = new (await import('./utils/kv-storage.js')).KVStorageManager(
           env.AUTH_KV,
-          env.JWT_SECRET,
+          env.JWT_SECRET
         );
 
         const userData = await kvManager.getUserAuthBySession(token);

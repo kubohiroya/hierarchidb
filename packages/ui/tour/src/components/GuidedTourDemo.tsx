@@ -2,10 +2,10 @@
  * Demo component to test GuidedTour functionality
  */
 
-import { useState } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { GenericGuidedTour } from './GenericGuidedTour.js';
+import { useState } from 'react';
 import type { Step } from 'react-joyride';
+import { GenericGuidedTour } from './GenericGuidedTour.js';
 
 const demoSteps: Step[] = [
   {

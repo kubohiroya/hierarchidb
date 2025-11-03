@@ -3,7 +3,7 @@
  - Unified progress event types for batch processing
  */
 export type BatchStage =
-  'import'
+  | 'import'
   | 'normalize'
   | 'download'
   | 'simplify1'

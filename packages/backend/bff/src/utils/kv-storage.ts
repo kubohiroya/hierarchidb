@@ -45,9 +45,8 @@ export class KVStorageManager {
 
   constructor(
     private kv: KVNamespace,
-    private encryptionSecret: string,
-  ) {
-  }
+    private encryptionSecret: string
+  ) {}
 
   /**
    * Stores user authentication data with a single KV operation
@@ -65,7 +64,7 @@ export class KVStorageManager {
       sessionToken: string;
       sessionDuration: number; // in hours
       deviceInfo?: string;
-    },
+    }
   ): Promise<string> {
     const refreshTokenId = generateSecureToken(32);
     const key = await deriveKey(this.encryptionSecret);
@@ -118,7 +117,7 @@ export class KVStorageManager {
     oldSessionToken: string,
     newSessionToken: string,
     sessionDuration: number,
-    refreshTokenId?: string,
+    refreshTokenId?: string
   ): Promise<{ success: boolean; newRefreshTokenId?: string; error?: string }> {
     const userId = await this.kv.get(`${KVStorageManager.SESSION_INDEX_PREFIX}${oldSessionToken}`);
     if (!userId) {
@@ -171,7 +170,8 @@ export class KVStorageManager {
     userAuthData.refreshToken = {
       ...userAuthData.refreshToken,
       id: newRefreshTokenId,
-      previousTokenId: userAuthData.refreshToken.id, lastUsedAt: now,
+      previousTokenId: userAuthData.refreshToken.id,
+      lastUsedAt: now,
       rotationCount: (userAuthData.refreshToken.rotationCount || 0) + 1,
     };
 
@@ -241,7 +241,7 @@ export class KVStorageManager {
     // Delete all session indices
     await Promise.all([
       ...Object.keys(userAuthData.sessions).map((sessionToken) =>
-        this.kv.delete(`${KVStorageManager.SESSION_INDEX_PREFIX}${sessionToken}`),
+        this.kv.delete(`${KVStorageManager.SESSION_INDEX_PREFIX}${sessionToken}`)
       ),
       this.kv.delete(`${KVStorageManager.USER_AUTH_PREFIX}${userId}`),
     ]);

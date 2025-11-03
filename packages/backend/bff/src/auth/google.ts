@@ -38,12 +38,12 @@ export type ExchangeCodeForTokensReturn = {
   access_token: string;
   id_token?: string;
   refresh_token?: string;
-}
+};
 
 export async function exchangeCodeForTokens(
   code: string,
   config: GoogleOAuth2Config,
-  codeVerifier?: string,
+  codeVerifier?: string
 ): Promise<ExchangeCodeForTokensReturn> {
   const params: Record<string, string> = {
     code,

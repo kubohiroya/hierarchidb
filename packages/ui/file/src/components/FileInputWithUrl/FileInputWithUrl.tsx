@@ -1,13 +1,12 @@
+import { Login } from '@mui/icons-material';
+import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
 import type React from 'react';
 import { useState } from 'react';
-import { Alert, Box, Button, Chip, Divider, Typography } from '@mui/material';
-import { Login } from '@mui/icons-material';
-
-import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
-import { DragDropSection } from './DragDropSection.js';
-import { UrlDownloadSection } from './UrlDownloadSection.js';
-import { LoadingOverlay } from './LoadingOverlay.js';
 import { devError, devLog } from '../../utils/logger.js';
+import { DragDropSection } from './DragDropSection.js';
+import { useDragDrop, useFileInput, useUrlDownload } from './hooks/index.js';
+import { LoadingOverlay } from './LoadingOverlay.js';
+import { UrlDownloadSection } from './UrlDownloadSection.js';
 
 export interface FileInputWithUrlProps {
   /**
@@ -77,20 +76,20 @@ export interface FileInputWithUrlProps {
 }
 
 export const FileInputWithUrl: React.FC<FileInputWithUrlProps> = ({
-                                                                    onFileSelect,
-                                                                    accept = '*',
-                                                                    buttonLabel = 'Select File',
-                                                                    loading = false,
-                                                                    error = undefined,
-                                                                    showUrlDownload = true,
-                                                                    instructions: _instructions,
-                                                                    disabled = false,
-                                                                    sx,
-                                                                    onUrlDownload,
-                                                                    defaultDownloadUrl,
-                                                                    onDownloadProgress,
-                                                                    layout = 'vertical',
-                                                                  }) => {
+  onFileSelect,
+  accept = '*',
+  buttonLabel = 'Select File',
+  loading = false,
+  error = undefined,
+  showUrlDownload = true,
+  instructions: _instructions,
+  disabled = false,
+  sx,
+  onUrlDownload,
+  defaultDownloadUrl,
+  onDownloadProgress,
+  layout = 'vertical',
+}) => {
   const [hoveredSection, setHoveredSection] = useState<'drag' | 'url' | undefined>();
 
   // Use custom hooks for logic separation

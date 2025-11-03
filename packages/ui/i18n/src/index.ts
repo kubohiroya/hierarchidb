@@ -4,10 +4,9 @@
 // export { LanguageProvider, useLanguage } from './i18n/LanguageProvider.js';
 
 // Re-export commonly used i18next hooks so downstream packages share the configured instance
-export { useTranslation, Trans, Translation, I18nextProvider } from 'react-i18next';
-
-// Export i18n utilities
-export * from './utils/i18nLogger.js';
+export { I18nextProvider, Trans, Translation, useTranslation } from 'react-i18next';
+export * from './hooks/useGlobalI18nTranslator.js';
 export * from './i18n/index.js';
 export * from './provider/LanguageProvider.js';
-export * from './hooks/useGlobalI18nTranslator.js';
+// Export i18n utilities
+export * from './utils/i18nLogger.js';

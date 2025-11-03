@@ -73,7 +73,7 @@ export interface EntityMetadata {
 }
 
 /**
-    */
+ */
 export interface BaseEntity<ID = NodeId> {
   id: ID;
   createdAt: Timestamp;
@@ -82,11 +82,11 @@ export interface BaseEntity<ID = NodeId> {
 }
 
 /**
-  * PeerEntity - TreeNode11
-  * TreeNode
+ * PeerEntity - TreeNode11
+ * TreeNode
  * TreeNode1PeerEntity
-  * @example StylerEntity, BaseMapEntity
-  */
+ * @example StylerEntity, BaseMapEntity
+ */
 export type PeerEntity<TData extends object = {}, ID = NodeId> = BaseEntity<ID> &
   TData & {
     nodeId: NodeId;
@@ -102,22 +102,25 @@ export type PeerEntity<TData extends object = {}, ID = NodeId> = BaseEntity<ID> 
 
 export type SavedPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<TData, ID>;
 
-export type DraftPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<Partial<TData>, ID>;
+export type DraftPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<
+  Partial<TData>,
+  ID
+>;
 
 /**
-  * GroupEntity - TreeNode1N
-  * 1TreeNodeGroupEntity
-   * @example FeatureSubEntityGeoJSON
-  */
+ * GroupEntity - TreeNode1N
+ * 1TreeNodeGroupEntity
+ * @example FeatureSubEntityGeoJSON
+ */
 export interface GroupEntity<ID = NodeId> extends BaseEntity<ID> {
   nodeId: NodeId;
   type: string;
 }
 
 /**
-  * RelationalEntity - TreeNodeNN
-     * @example TableMetadataEntityStyler
-  */
+ * RelationalEntity - TreeNodeNN
+ * @example TableMetadataEntityStyler
+ */
 export interface RelationalEntity<ID = NodeId> extends BaseEntity<ID> {
   nodeIds: NodeId[];
   referenceCount: number;

@@ -1,19 +1,28 @@
-import { exchangeCodeForTokens, type ExchangeCodeForTokensReturn, getGoogleUserInfo, type GoogleOAuth2Config } from './google.js';
+import { type BffContext, getEnv } from '../utils/env.js';
+import { createSessionToken } from '../utils/jwt.js';
+import { KVStorageManager } from '../utils/kv-storage.js';
+import {
+  getAppCallbackUrlFromState,
+  getDynamicRedirectUri,
+  validateRedirectUri,
+} from '../utils/redirect-uri.js';
+import { StateManager } from '../utils/state-manager.js';
 import {
   exchangeCodeForTokens as exchangeGitHubCodeForTokens,
-  getGitHubUserInfo,
   type GitHubOAuth2Config,
+  getGitHubUserInfo,
 } from './github.js';
+import {
+  type ExchangeCodeForTokensReturn,
+  exchangeCodeForTokens,
+  type GoogleOAuth2Config,
+  getGoogleUserInfo,
+} from './google.js';
 import {
   exchangeCodeForTokens as exchangeMicrosoftCodeForTokens,
   getMicrosoftUserInfo,
   type MicrosoftOAuth2Config,
 } from './microsoft.js';
-import { createSessionToken } from '../utils/jwt.js';
-import { KVStorageManager } from '../utils/kv-storage.js';
-import { getAppCallbackUrlFromState, getDynamicRedirectUri, validateRedirectUri } from '../utils/redirect-uri.js';
-import { StateManager } from '../utils/state-manager.js';
-import { getEnv, type BffContext } from '../utils/env.js';
 
 /**
  * Handle OAuth2 callback from OAuth providers
@@ -88,41 +97,40 @@ export async function handleOAuth2Callback(c: BffContext) {
 }
 
 type UserInfo = {
-  id: string,
-  email: string,
-  name: string,
-  picture: string | undefined,
-}
+  id: string;
+  email: string;
+  name: string;
+  picture: string | undefined;
+};
 
 type GetAuthorizationCodeReturn = {
-  tokens: ExchangeCodeForTokensReturn,
+  tokens: ExchangeCodeForTokensReturn;
   userInfo: UserInfo;
-}
+};
 
 const getAuthorizationCode = async ({
-                                      provider,
-                                      env,
-                                      redirect_uri,
-                                      code,
-                                      c
-                                    }:{
-  provider : string
+  provider,
+  env,
+  redirect_uri,
+  code,
+  c,
+}: {
+  provider: string;
   env: {
-    GOOGLE_CLIENT_ID?: string,
-    GOOGLE_CLIENT_SECRET?: string,
-    GITHUB_CLIENT_ID?: string
-    GITHUB_CLIENT_SECRET?: string
-    MICROSOFT_CLIENT_ID?: string
-    MICROSOFT_CLIENT_SECRET?: string
-  },
-  redirect_uri: string,
-  code: string,
-  c: BffContext
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
+    GITHUB_CLIENT_ID?: string;
+    GITHUB_CLIENT_SECRET?: string;
+    MICROSOFT_CLIENT_ID?: string;
+    MICROSOFT_CLIENT_SECRET?: string;
+  };
+  redirect_uri: string;
+  code: string;
+  c: BffContext;
 }): Promise<GetAuthorizationCodeReturn> => {
-
   switch (provider) {
     case 'google': {
-      if(!env.GOOGLE_CLIENT_ID ||!env.GOOGLE_CLIENT_SECRET){
+      if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
         throw new Error('Google OAuth not configured');
       }
       const config: GoogleOAuth2Config = {
@@ -134,8 +142,9 @@ const getAuthorizationCode = async ({
       const tokens = await exchangeCodeForTokens(code, config);
       const userInfo = await getGoogleUserInfo(tokens.access_token);
       return {
-        tokens, userInfo
-      }
+        tokens,
+        userInfo,
+      };
     }
 
     case 'github': {
@@ -160,7 +169,7 @@ const getAuthorizationCode = async ({
           name: userInfo.name || userInfo.login,
           picture: userInfo.avatar_url,
         },
-      }
+      };
     }
 
     case 'microsoft': {
@@ -179,20 +188,21 @@ const getAuthorizationCode = async ({
 
       // Normalize Microsoft user info
       return {
-        tokens, userInfo: {
+        tokens,
+        userInfo: {
           id: userInfo.id,
           email: userInfo.mail ?? undefined,
           name: userInfo.displayName || userInfo.userPrincipalName,
-          picture: undefined
-        }
+          picture: undefined,
+        },
       };
     }
 
     default:
       throw new Error('Invalid provider');
-      //return c.json({ error:  }, 400);
+    //return c.json({ error:  }, 400);
   }
-}
+};
 
 /**
  * Exchange authorization code for tokens (called by the client)
@@ -215,7 +225,7 @@ export async function exchangeCodeForToken(c: BffContext) {
           error: 'invalid_request',
           error_description: 'Invalid redirect_uri parameter',
         },
-        400,
+        400
       );
     }
 
@@ -241,7 +251,7 @@ export async function exchangeCodeForToken(c: BffContext) {
       },
       env.JWT_SECRET,
       sessionDuration,
-      env.JWT_ISSUER,
+      env.JWT_ISSUER
     );
 
     // Store in KV if available
@@ -280,7 +290,7 @@ export async function exchangeCodeForToken(c: BffContext) {
         error: 'server_error',
         error_description: 'Failed to exchange token',
       },
-      500,
+      500
     );
   }
 }

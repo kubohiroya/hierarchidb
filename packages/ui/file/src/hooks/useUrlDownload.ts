@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
 import { validateExternalURL } from '@hierarchidb/util';
+import type { KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { UnifiedDownloadService } from '../services/UnifiedDownloadService.js';
 import { devError, devLog } from '../utils/logger.js';
 
@@ -39,13 +39,17 @@ export interface UseUrlDownloadResult {
 
 const getCorsProxyBaseURL = (): string | undefined => {
   const viteEnv = (import.meta as ImportMeta & { env?: { VITE_CORS_PROXY_BASE_URL?: string } }).env;
-  if (typeof viteEnv?.VITE_CORS_PROXY_BASE_URL === 'string' && viteEnv.VITE_CORS_PROXY_BASE_URL.length > 0) {
+  if (
+    typeof viteEnv?.VITE_CORS_PROXY_BASE_URL === 'string' &&
+    viteEnv.VITE_CORS_PROXY_BASE_URL.length > 0
+  ) {
     return viteEnv.VITE_CORS_PROXY_BASE_URL;
   }
 
-  const globalProcess = typeof globalThis === 'object' && globalThis !== null && 'process' in globalThis
-    ? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
-    : undefined;
+  const globalProcess =
+    typeof globalThis === 'object' && globalThis !== null && 'process' in globalThis
+      ? (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+      : undefined;
 
   const fromProcess = globalProcess?.env?.VITE_CORS_PROXY_BASE_URL;
   if (typeof fromProcess === 'string' && fromProcess.length > 0) {
@@ -122,30 +126,35 @@ export function useUrlDownload({
     return '';
   };
 
-  const validateFileType = useCallback((filename: string, contentType: string | undefined): string => {
-    if (accept === '*') return filename;
+  const validateFileType = useCallback(
+    (filename: string, contentType: string | undefined): string => {
+      if (accept === '*') return filename;
 
-    const acceptedExtensions = accept
-      .split(',')
-      .map((ext) => ext.trim().toLowerCase())
-      .filter((ext) => ext.startsWith('.'));
+      const acceptedExtensions = accept
+        .split(',')
+        .map((ext) => ext.trim().toLowerCase())
+        .filter((ext) => ext.startsWith('.'));
 
-    const hasValidExtension = acceptedExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
+      const hasValidExtension = acceptedExtensions.some((ext) =>
+        filename.toLowerCase().endsWith(ext)
+      );
 
-    if (!hasValidExtension) {
-      const guessedExtension = guessExtensionFromContentType(contentType);
+      if (!hasValidExtension) {
+        const guessedExtension = guessExtensionFromContentType(contentType);
 
-      if (guessedExtension && acceptedExtensions.includes(guessedExtension)) {
-        return filename + guessedExtension;
+        if (guessedExtension && acceptedExtensions.includes(guessedExtension)) {
+          return filename + guessedExtension;
+        }
+
+        throw new Error(
+          `Unable to determine file type or unsupported file type. Please ensure the URL points to one of: ${acceptedExtensions.join(', ')}`
+        );
       }
 
-      throw new Error(
-        `Unable to determine file type or unsupported file type. Please ensure the URL points to one of: ${acceptedExtensions.join(', ')}`,
-      );
-    }
-
-    return filename;
-  }, [accept]);
+      return filename;
+    },
+    [accept]
+  );
 
   const handleDownload = useCallback(async () => {
     if (!downloadUrl.trim() || isDownloading || loading || disabled) {
@@ -181,7 +190,9 @@ export function useUrlDownload({
 
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
-        throw new Error('Authentication required. Please sign in to download data from external sources.');
+        throw new Error(
+          'Authentication required. Please sign in to download data from external sources.'
+        );
       }
 
       abortControllerRef.current = new AbortController();
@@ -243,16 +254,22 @@ export function useUrlDownload({
     validateFileType,
   ]);
 
-  useEffect(() => () => {
-    abortControllerRef.current?.abort();
-  }, []);
+  useEffect(
+    () => () => {
+      abortControllerRef.current?.abort();
+    },
+    []
+  );
 
-  const handleKeyPress = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      void handleDownload();
-    }
-  }, [handleDownload]);
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        void handleDownload();
+      }
+    },
+    [handleDownload]
+  );
 
   return {
     downloadUrl,

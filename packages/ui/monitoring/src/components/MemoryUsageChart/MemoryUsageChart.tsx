@@ -1,8 +1,8 @@
-import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { formatBytes } from '@hierarchidb/util';
 import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { formatBytes } from '@hierarchidb/util';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isDevEnv } from '../../utils/env.js';
 
 interface MemoryUsageChartProps {
@@ -15,7 +15,7 @@ interface MemoryUsageChartProps {
    */
   height?: string | number;
   /**
-      */
+   */
   updateInterval?: number;
   /**
    * 0-1
@@ -26,7 +26,7 @@ interface MemoryUsageChartProps {
    */
   criticalThreshold?: number;
   /**
-      */
+   */
   maxDataPoints?: number;
   /**
    * -
@@ -56,16 +56,16 @@ const formatTime = (timestamp: number): string => {
 };
 
 /**
-    */
+ */
 export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
-                                                                    width = '100%',
-                                                                    height = 80,
-                                                                    updateInterval = 10000,
-                                                                    warningThreshold = 0.7,
-                                                                    criticalThreshold = 0.9,
-                                                                    maxDataPoints = 30,
-                                                                    maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
-                                                                  }) => {
+  width = '100%',
+  height = 80,
+  updateInterval = 10000,
+  warningThreshold = 0.7,
+  criticalThreshold = 0.9,
+  maxDataPoints = 30,
+  maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
+}) => {
   const theme = useTheme();
   const [dataPoints, setDataPoints] = useState<DataPoint[]>([]);
   const [currentMemory, setCurrentMemory] = useState({ used: 0, total: maxMemory, percentage: 0 });
@@ -86,7 +86,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         ).measureUserAgentSpecificMemory();
         used = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0,
+          0
         );
 
         if ('memory' in performance) {

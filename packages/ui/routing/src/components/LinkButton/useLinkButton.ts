@@ -3,9 +3,10 @@
  * @description Custom hook for LinkButton functionality
  */
 
-import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useRef, useState } from 'react';
 import type { LinkButtonProps, ToastConfig } from './LinkButton.js';
+
 // Mock toast hook
 const useToast = () => ({
   showToast: (config: any) => console.log('Toast:', config),
@@ -77,7 +78,7 @@ export function useLinkButton(props: LinkButtonProps): UseLinkButtonReturn {
       // Otherwise use the system toast
       systemShowToast(config);
     },
-    [onToast, systemShowToast],
+    [onToast, systemShowToast]
   );
 
   const executeAction = useCallback(async () => {

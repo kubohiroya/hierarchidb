@@ -13,21 +13,21 @@ export interface ValidationRule<TEntity extends PeerEntity = PeerEntity> {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
 export type ValidationFunction<T = unknown> = (
-  data: T,
+  data: T
 ) => Promise<ValidationResult> | ValidationResult;
 
 /**
-    */
+ */
 export interface StepValidation<T = unknown> {
   /**
-      */
+   */
   validate: ValidationFunction<T>;
   /**
-      */
+   */
   skipIf?: (data: T) => boolean;
 }

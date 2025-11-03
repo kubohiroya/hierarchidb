@@ -5,15 +5,15 @@
  */
 
 import i18next, {
+  type i18n as I18nInstance,
   type InitOptions,
   type InterpolationOptions,
   type ThirdPartyModule,
-  type i18n as I18nInstance,
 } from 'i18next';
-import * as ReactI18NextModule from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import HttpBackend from 'i18next-http-backend';
 import type { HttpBackendOptions } from 'i18next-http-backend';
+import HttpBackend from 'i18next-http-backend';
+import * as ReactI18NextModule from 'react-i18next';
 import { getEnvString, isDevEnv } from '../utils/env.js';
 
 interface AppWindow extends Window {
@@ -25,12 +25,12 @@ const logI18nWarning = (message: string, error: unknown): void => {
   console.warn('[ui-i18n]', message, error);
 };
 
-const initReactI18nextModule = (
-  ReactI18NextModule as { initReactI18next?: ThirdPartyModule }
-).initReactI18next;
+const initReactI18nextModule = (ReactI18NextModule as { initReactI18next?: ThirdPartyModule })
+  .initReactI18next;
 
 const i18n: I18nInstance =
-  (i18next as unknown as { default?: I18nInstance }).default ?? (i18next as unknown as I18nInstance);
+  (i18next as unknown as { default?: I18nInstance }).default ??
+  (i18next as unknown as I18nInstance);
 
 const isDevelopment = isDevEnv();
 
@@ -111,9 +111,9 @@ const formatterEntries: Array<[string, (value: unknown, lng?: string) => string]
     (value, lng) =>
       typeof value === 'number'
         ? new Intl.NumberFormat(lng, {
-          style: 'currency',
-          currency: 'USD',
-        }).format(value)
+            style: 'currency',
+            currency: 'USD',
+          }).format(value)
         : String(value),
   ],
 ];

@@ -5,14 +5,14 @@
  * with the Material-UI theme system for locale-aware formatting.
  */
 
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { I18nextProvider, useTranslation } from 'react-i18next';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { enUS, ja } from 'date-fns/locale';
-import { type i18n as I18nInstance } from 'i18next';
-import { isDevEnv } from '../utils/env.js';
+import type { i18n as I18nInstance } from 'i18next';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { I18nextProvider, useTranslation } from 'react-i18next';
 import { i18n as configuredI18n } from '../i18n/index.js';
+import { isDevEnv } from '../utils/env.js';
 
 const sharedI18n = configuredI18n as unknown as I18nInstance;
 // Avoid hard type dependency on date-fns types during DTS build

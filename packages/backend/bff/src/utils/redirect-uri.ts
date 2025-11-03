@@ -3,7 +3,7 @@
  */
 
 import { parseAllowedOrigins } from './cors.js';
-import { getEnv, type BffContext } from './env.js';
+import { type BffContext, getEnv } from './env.js';
 
 /**
  * Gets dynamic redirect URI based on request origin
@@ -133,10 +133,10 @@ export function getAppCallbackUrl(c: BffContext): string {
 }
 
 /**
-  * Validates redirect_uri parameter
+ * Validates redirect_uri parameter
  * : localhost
  * : ALLOWED_ORIGINSREDIRECT_URI
-  */
+ */
 export function validateRedirectUri(redirectUri: string, c: BffContext): boolean {
   const env = getEnv(c);
 

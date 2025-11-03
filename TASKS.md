@@ -7386,3 +7386,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 10:56 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
+- 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。
+- 2025-11-03 15:13 command: npx biome format --write app/src/components/TreeConsoleIntegration.tsx app/src/components/TreeConsolePanelWithDynamicSpeedDial.tsx app/src/components/dialogs/TrashDialog.tsx app/src/hooks/treeconsole/{createTreeConsoleActions.ts,types.ts} packages/ui/treeconsole/{base/src/components/common/NodeContextMenu.tsx,base/src/types/index.ts,breadcrumb/src/components/TreeConsoleBreadcrumb.tsx,toolbar/src/components/TreeConsoleToolbar.tsx,treetable/src/components/internal/TreeTableContextMenu.tsx,treetable/src/types.ts} — exit 0。
+- 2025-11-03 15:14 command: pnpm lint — exit 0。
+- 2025-11-03 15:15 command: pnpm typecheck — exit 0。
+- 2025-11-03 15:16 command: pnpm test — exit 0（turbo run test --parallel）。

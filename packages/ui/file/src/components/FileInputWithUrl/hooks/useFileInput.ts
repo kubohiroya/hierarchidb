@@ -32,7 +32,7 @@ export function useFileInput({ onFileSelect }: UseFileInputProps): UseFileInputR
         fileInputRef.current.value = '';
       }
     },
-    [onFileSelect],
+    [onFileSelect]
   );
 
   const setDownloadError = useCallback(() => {

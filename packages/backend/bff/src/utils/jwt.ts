@@ -14,7 +14,7 @@ export async function createSessionToken(
   payload: Omit<SessionPayload, 'iat' | 'exp'>,
   secret: string,
   durationHours: number = 24,
-  issuer?: string,
+  issuer?: string
 ): Promise<string> {
   const secretKey = new TextEncoder().encode(secret);
 
@@ -29,7 +29,7 @@ export async function createSessionToken(
 export async function verifySessionToken(
   token: string,
   secret: string,
-  issuer?: string,
+  issuer?: string
 ): Promise<SessionPayload> {
   const secretKey = new TextEncoder().encode(secret);
 

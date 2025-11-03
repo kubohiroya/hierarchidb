@@ -1,6 +1,6 @@
+import { type BffContext, getEnv } from '../utils/env.js';
 import { createSessionToken, extractBearerToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
-import { getEnv, type BffContext } from '../utils/env.js';
 
 /**
  * Refresh token endpoint handler
@@ -44,7 +44,7 @@ export async function refreshToken(c: BffContext) {
       },
       env.JWT_SECRET,
       sessionDuration,
-      env.JWT_ISSUER,
+      env.JWT_ISSUER
     );
 
     // Refresh with new token and rotation
@@ -52,7 +52,7 @@ export async function refreshToken(c: BffContext) {
       token,
       newSessionToken,
       sessionDuration,
-      refresh_token_id,
+      refresh_token_id
     );
 
     if (!result.success) {
@@ -62,7 +62,7 @@ export async function refreshToken(c: BffContext) {
             error: 'security_violation',
             error_description: result.error,
           },
-          403,
+          403
         );
       }
       return c.json(
@@ -70,7 +70,7 @@ export async function refreshToken(c: BffContext) {
           error: 'invalid_grant',
           error_description: result.error || 'Invalid or expired refresh token',
         },
-        401,
+        401
       );
     }
 
@@ -95,7 +95,7 @@ export async function refreshToken(c: BffContext) {
         error: 'server_error',
         error_description: 'Failed to refresh token',
       },
-      500,
+      500
     );
   }
 }
@@ -135,7 +135,7 @@ export async function revokeToken(c: BffContext) {
         error: 'server_error',
         error_description: 'Failed to revoke token',
       },
-      500,
+      500
     );
   }
 }

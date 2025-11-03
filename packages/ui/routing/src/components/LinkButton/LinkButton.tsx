@@ -1,6 +1,5 @@
 // containers/LinkButton.tsx
 
-import type React from 'react';
 import {
   Button,
   type ButtonProps,
@@ -11,6 +10,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import type React from 'react';
 import { useLinkButton } from './useLinkButton.js';
 
 // Toast configuration type (placeholder)

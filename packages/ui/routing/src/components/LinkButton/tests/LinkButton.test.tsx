@@ -3,10 +3,10 @@
  * @description Comprehensive tests for LinkButton component and useLinkButton hook
  */
 
+import { useNavigate } from '@tanstack/react-router';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
-import { useNavigate } from '@tanstack/react-router';
 import { LinkButton } from '../LinkButton.js';
 import { useLinkButton } from '../useLinkButton.js';
 
@@ -43,7 +43,7 @@ describe('LinkButton Component', () => {
           }}
         >
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -73,7 +73,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton to="/next" replace>
           Next
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -97,7 +97,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton validate={validate} onSave={onSave}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -116,7 +116,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton validate={validate} onSave={onSave}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -142,7 +142,7 @@ describe('LinkButton Component', () => {
           }}
         >
           Delete
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -152,7 +152,7 @@ describe('LinkButton Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
         expect(screen.getByText('Are you sure?')).toBeInTheDocument();
         expect(
-          screen.getByRole('button', { name: 'cancel-confirmation-base-dialog' }),
+          screen.getByRole('button', { name: 'cancel-confirmation-base-dialog' })
         ).toBeInTheDocument();
       });
     });
@@ -169,7 +169,7 @@ describe('LinkButton Component', () => {
           onSave={onSave}
         >
           Delete
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -197,7 +197,7 @@ describe('LinkButton Component', () => {
           onSave={onSave}
         >
           Delete
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button', { name: 'Delete' });
@@ -254,7 +254,7 @@ describe('LinkButton Component', () => {
           ]}
         >
           Execute
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -284,7 +284,7 @@ describe('LinkButton Component', () => {
           onError={globalOnError}
         >
           Execute
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -318,7 +318,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton onSave={onSave} onCleanup={onCleanup}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -346,7 +346,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton onBeforeAction={onBeforeAction} onSave={onSave}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -365,7 +365,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton onSave={onSave} onSuccess={onSuccess}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -385,7 +385,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton onSave={onSave} onError={onError}>
           Save
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -422,7 +422,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton to="/next" onBeforeNavigate={onBeforeNavigate}>
           Next
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -444,7 +444,7 @@ describe('LinkButton Component', () => {
       render(
         <LinkButton to="/next" onSuccessNavigate={onSuccessNavigate}>
           Next
-        </LinkButton>,
+        </LinkButton>
       );
 
       const button = screen.getByRole('button');
@@ -504,7 +504,7 @@ describe('useLinkButton Hook', () => {
         to: '/success',
         steps: [{ execute: step1 }, { execute: step2 }],
         onSuccess,
-      }),
+      })
     );
 
     await act(async () => {

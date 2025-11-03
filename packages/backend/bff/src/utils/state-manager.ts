@@ -1,7 +1,7 @@
 /**
-  * OAuth State Parameter Management for CSRF Protection
+ * OAuth State Parameter Management for CSRF Protection
  * HMACKVS
-  */
+ */
 
 import type { Context } from 'hono';
 
@@ -16,19 +16,18 @@ interface SignedState extends StateData {
 }
 
 /**
-  * HMACState
+ * HMACState
  * KVSCSRF
-  */
+ */
 export class StateManager {
   private static readonly STATE_TTL = 600000; //  10
   private key: CryptoKey | null = null;
 
-  constructor(private secret: string) {
-  }
+  constructor(private secret: string) {}
 
   /**
-      * HMAC
-      */
+   * HMAC
+   */
   private async getKey(): Promise<CryptoKey> {
     if (!this.key) {
       const encoder = new TextEncoder();
@@ -37,15 +36,15 @@ export class StateManager {
         encoder.encode(this.secret),
         { name: 'HMAC', hash: 'SHA-256' },
         false,
-        ['sign', 'verify'],
+        ['sign', 'verify']
       );
     }
     return this.key;
   }
 
   /**
-      * HMAC
-      */
+   * HMAC
+   */
   private async createSignature(data: StateData): Promise<string> {
     const key = await this.getKey();
     const encoder = new TextEncoder();
@@ -55,18 +54,14 @@ export class StateManager {
       n: data.nonce,
     });
 
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      key,
-      encoder.encode(dataString),
-    );
+    const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(dataString));
 
     //  Base64
     return btoa(String.fromCharCode(...new Uint8Array(signature)));
   }
 
   /**
-            */
+   */
   private async verifySignature(data: StateData, signature: string): Promise<boolean> {
     try {
       const key = await this.getKey();
@@ -78,14 +73,9 @@ export class StateManager {
       });
 
       //  Base64
-      const signatureBytes = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+      const signatureBytes = Uint8Array.from(atob(signature), (c) => c.charCodeAt(0));
 
-      return await crypto.subtle.verify(
-        'HMAC',
-        key,
-        signatureBytes,
-        encoder.encode(dataString),
-      );
+      return await crypto.subtle.verify('HMAC', key, signatureBytes, encoder.encode(dataString));
     } catch (error) {
       console.error('Signature verification error:', error);
       return false;
@@ -93,8 +83,8 @@ export class StateManager {
   }
 
   /**
-      * stateKVSHMAC
-      */
+   * stateKVSHMAC
+   */
   async createState(c: Context, origin?: string): Promise<string> {
     const stateData: StateData = {
       origin: origin || c.req.header('Origin'),
@@ -115,8 +105,8 @@ export class StateManager {
   }
 
   /**
-      * stateKVS
-      */
+   * stateKVS
+   */
   async validateState(state: string): Promise<StateData | null> {
     try {
       //  Base64
@@ -150,8 +140,8 @@ export class StateManager {
   }
 
   /**
-      * stateorigin
-      */
+   * stateorigin
+   */
   static extractOriginFromState(state: string): string | undefined {
     try {
       const signedState: SignedState = JSON.parse(atob(state));

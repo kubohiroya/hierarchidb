@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 // import { convertCorsProxyURL } from "@/domains/resources/_shapes_buggy/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
 import { devLog } from '../../../utils/logger';
 import { validateExternalURL } from '../../../utils/validation';
-import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
 export function useUrlDownload({
   accept,
   disabled,
@@ -117,7 +117,8 @@ export function useUrlDownload({
       try {
         // Vite-style env where available
         // eslint-disable-next-line no-undef
-        corsProxyBaseURL = (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
+        corsProxyBaseURL =
+          (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
       } catch {}
       if (!corsProxyBaseURL && typeof globalThis !== 'undefined') {
         corsProxyBaseURL = (globalThis.ENV && globalThis.ENV.VITE_CORS_PROXY_BASE_URL) || '';

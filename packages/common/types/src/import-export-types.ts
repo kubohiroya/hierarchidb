@@ -1,14 +1,14 @@
 /**
-  * Import/Export
+ * Import/Export
  * @module core/types/import-export
-  */
+ */
 
 import type { NodeId } from './id-types.js';
 import type { TreeNode } from './tree-node-types.js';
 
 /**
-   * ZIP
-  */
+ * ZIP
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -31,7 +31,7 @@ export interface ImportManifest {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -42,7 +42,7 @@ export interface ExportManifest extends ImportManifest {
 }
 
 /**
-    */
+ */
 export interface ImportProgress {
   phase: 'reading' | 'validating' | 'importing-nodes' | 'importing-resources' | 'finalizing';
   current: number;
@@ -51,7 +51,7 @@ export interface ImportProgress {
 }
 
 /**
-    */
+ */
 export interface ExportProgress {
   phase: 'collecting-nodes' | 'collecting-resources' | 'creating-archive' | 'finalizing';
   current: number;
@@ -60,7 +60,7 @@ export interface ExportProgress {
 }
 
 /**
-    */
+ */
 export interface ImportResult {
   success: boolean;
   importedNodeIds: NodeId[];
@@ -70,7 +70,7 @@ export interface ImportResult {
 }
 
 /**
-    */
+ */
 export interface ExportResult {
   success: boolean;
   blob?: Blob;
@@ -79,7 +79,7 @@ export interface ExportResult {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -90,7 +90,7 @@ export interface ImportOptions {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -99,7 +99,7 @@ export interface FileImportOptions extends ImportOptions {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -108,7 +108,7 @@ export interface TemplateImportOptions extends ImportOptions {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -121,7 +121,7 @@ export interface ExportOptions {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -138,7 +138,7 @@ export interface TemplateDefinition {
 }
 
 /**
-    */
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */
@@ -153,7 +153,7 @@ export interface TreeNodeExportData {
 }
 
 /**
-     */
+ */
 export interface ClipboardData {
   type: 'nodes-copy';
   timestamp: number;
@@ -165,8 +165,8 @@ export interface ClipboardData {
 // OnNameConflict is already exported from command-types, no need to re-export
 
 /**
-  * IDIDID
-  */
+ * IDIDID
+ */
 /**
  * @deprecated Unused across the repository; scheduled for removal.
  */

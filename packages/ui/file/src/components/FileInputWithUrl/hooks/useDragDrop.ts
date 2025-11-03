@@ -18,14 +18,14 @@ interface UseDragDropReturn {
 }
 
 export function useDragDrop({
-                              accept,
-                              disabled,
-                              loading,
-                              isDownloading,
-                              onFileSelect,
-                              setLocalError,
-                              setDownloadError,
-                            }: UseDragDropProps): UseDragDropReturn {
+  accept,
+  disabled,
+  loading,
+  isDownloading,
+  onFileSelect,
+  setLocalError,
+  setDownloadError,
+}: UseDragDropProps): UseDragDropReturn {
   const [isDragging, setIsDragging] = useState(false);
 
   const validateFileType = useCallback(
@@ -42,14 +42,14 @@ export function useDragDrop({
 
       if (!isAccepted) {
         setLocalError(
-          `Please drop a file with one of these extensions: ${acceptedExtensions.join(', ')}`,
+          `Please drop a file with one of these extensions: ${acceptedExtensions.join(', ')}`
         );
         return false;
       }
 
       return true;
     },
-    [accept, setLocalError],
+    [accept, setLocalError]
   );
 
   const handleDragOver = useCallback(
@@ -60,7 +60,7 @@ export function useDragDrop({
         setIsDragging(true);
       }
     },
-    [disabled, loading, isDownloading],
+    [disabled, loading, isDownloading]
   );
 
   const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -111,7 +111,7 @@ export function useDragDrop({
       setLocalError,
       setDownloadError,
       onFileSelect,
-    ],
+    ]
   );
 
   return {

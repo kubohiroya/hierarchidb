@@ -1,6 +1,16 @@
-import type React from 'react';
-import { Alert, Box, Button, CircularProgress, LinearProgress, Paper, TextField, Typography } from '@mui/material';
 import { CheckCircle, CloudDownload, Link as LinkIcon } from '@mui/icons-material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  LinearProgress,
+  Paper,
+  TextField,
+  Typography,
+} from '@mui/material';
+import type React from 'react';
+
 // import { AuthRequiredPrompt } from "@/shared/auth/containers/AuthProviderPrompt";
 // import { AuthProviderType } from "@/shared/auth/types/AuthProviderType.ts";
 
@@ -26,25 +36,25 @@ interface UrlDownloadSectionProps {
 }
 
 export const UrlDownloadSection: React.FC<UrlDownloadSectionProps> = ({
-                                                                        downloadUrl,
-                                                                        isDownloading,
-                                                                        disabled,
-                                                                        loading,
-                                                                        downloadError,
-                                                                        downloadProgress,
-                                                                        downloadSuccess,
-                                                                        isAuthError,
-                                                                        isAuthenticated,
-                                                                        // isLoadingAuth,
-                                                                        hoveredSection,
-                                                                        onUrlChange,
-                                                                        handleDownload,
-                                                                        onKeyPress,
-                                                                        // onSignIn,
-                                                                        onMouseEnter,
-                                                                        onMouseLeave,
-                                                                        compact = false,
-                                                                      }) => {
+  downloadUrl,
+  isDownloading,
+  disabled,
+  loading,
+  downloadError,
+  downloadProgress,
+  downloadSuccess,
+  isAuthError,
+  isAuthenticated,
+  // isLoadingAuth,
+  hoveredSection,
+  onUrlChange,
+  handleDownload,
+  onKeyPress,
+  // onSignIn,
+  onMouseEnter,
+  onMouseLeave,
+  compact = false,
+}) => {
   // Check if URL is populated but download hasn't been executed
   const hasUrlNotDownloaded =
     downloadUrl.trim() && !downloadSuccess && !isDownloading && !downloadError;

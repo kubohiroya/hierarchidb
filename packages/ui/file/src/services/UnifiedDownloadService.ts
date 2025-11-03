@@ -4,7 +4,7 @@ export class UnifiedDownloadService {
     options?: {
       onProgress?: (progress: number) => void;
       signal?: AbortSignal;
-    },
+    }
   ): Promise<Blob> {
     const { onProgress, signal } = options || {};
 

@@ -4,13 +4,13 @@
 
 import type { Next } from 'hono';
 import { parseAllowedOrigins } from '../utils/cors.js';
-import { getEnv, type BffContext } from '../utils/env.js';
+import { type BffContext, getEnv } from '../utils/env.js';
 
 /**
-  * Origin
+ * Origin
  * localhost
  * ALLOWED_ORIGINS
-  */
+ */
 export async function validateOrigin(c: BffContext, next: Next) {
   const origin = c.req.header('Origin');
   const env = getEnv(c);
@@ -30,7 +30,7 @@ export async function validateOrigin(c: BffContext, next: Next) {
           error: 'Forbidden',
           message: 'Origin not allowed',
         },
-        403,
+        403
       );
     }
   } else {
@@ -47,7 +47,7 @@ export async function validateOrigin(c: BffContext, next: Next) {
           error: 'Forbidden',
           message: 'Only localhost origins are allowed in development mode',
         },
-        403,
+        403
       );
     }
   }
@@ -56,8 +56,8 @@ export async function validateOrigin(c: BffContext, next: Next) {
 }
 
 /**
-  * Origin
-  */
+ * Origin
+ */
 export function requireValidOrigin(paths: string[]) {
   return async (c: BffContext, next: Next) => {
     const path = new URL(c.req.url).pathname;

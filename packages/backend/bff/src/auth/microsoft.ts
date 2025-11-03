@@ -37,7 +37,7 @@ export async function initiateMicrosoftAuth(config: MicrosoftOAuth2Config) {
 export async function exchangeCodeForTokens(
   code: string,
   config: MicrosoftOAuth2Config,
-  codeVerifier?: string,
+  codeVerifier?: string
 ): Promise<{ access_token: string; refresh_token?: string }> {
   const params: Record<string, string> = {
     code,

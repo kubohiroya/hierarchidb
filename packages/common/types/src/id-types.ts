@@ -5,7 +5,6 @@
 // Base branded type for Node IDs
 export type NodeId = string & { readonly __brand: 'NodeId' };
 
-
 // TreeTypes IDs
 export type TreeId = string & { readonly __brand: 'TreeId' };
 

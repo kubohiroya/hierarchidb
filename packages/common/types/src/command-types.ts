@@ -1,5 +1,5 @@
-import type { NodeId, NodeType, TreeId } from './id-types.js';
 import type { CommitStatus } from './commit-types.js';
+import type { NodeId, NodeType, TreeId } from './id-types.js';
 import type { Timestamp } from './primitive-types.js';
 import type { TreeNode } from './tree-node-types.js';
 
@@ -39,30 +39,30 @@ type CommitFailureStatus = Exclude<CommitStatus, 'ok'>;
 
 export type CommandResult =
   | {
-  success: true;
-  seq: Seq;
-  nodeId?: NodeId;
-  newNodeIds?: NodeId[];
-  clipboardData?: {
-    type: 'nodes-copy';
-    timestamp: number;
-    nodes: Record<string, TreeNode>;
-    rootIds: NodeId[];
-    nodeCount?: number;
-  };
-  status?: 'ok';
-  autoRenameTo?: string;
- }
+      success: true;
+      seq: Seq;
+      nodeId?: NodeId;
+      newNodeIds?: NodeId[];
+      clipboardData?: {
+        type: 'nodes-copy';
+        timestamp: number;
+        nodes: Record<string, TreeNode>;
+        rootIds: NodeId[];
+        nodeCount?: number;
+      };
+      status?: 'ok';
+      autoRenameTo?: string;
+    }
   | {
-  success: false;
-  error: string;
-  code: ErrorCode;
-  seq?: Seq; //  seq
-  status?: CommitFailureStatus;
-  suggestedName?: string;
-  originalVersion?: number;
-  wcVersion?: number;
- };
+      success: false;
+      error: string;
+      code: ErrorCode;
+      seq?: Seq; //  seq
+      status?: CommitFailureStatus;
+      suggestedName?: string;
+      originalVersion?: number;
+      wcVersion?: number;
+    };
 
 export interface CreateWorkingCopyForCreatePayload {
   workingCopyOf: NodeId;

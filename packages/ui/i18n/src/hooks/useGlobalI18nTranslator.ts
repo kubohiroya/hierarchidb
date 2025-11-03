@@ -1,5 +1,5 @@
+import type { i18n as I18nInstance, TFunction, TOptions } from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { TFunction, TOptions, i18n as I18nInstance } from 'i18next';
 import { i18n as configuredI18n } from '../i18n/index.js';
 
 interface TranslatorOptions {
@@ -52,7 +52,7 @@ export function useGlobalI18nTranslator(options: TranslatorOptions = {}) {
 
       return fallback;
     },
-    [i18n, baseOptions, language],
+    [i18n, baseOptions, language]
   );
 
   return useMemo(() => ({ t: translator, language }), [translator, language]);

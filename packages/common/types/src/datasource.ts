@@ -80,12 +80,15 @@ export type DataSourceConfig =
  * Location types for location plugin
  */
 export type LocationType =
-  | 'administrative_center' | 'airport' | 'port' | 'railway_station' | 'highway_interchange';
+  | 'administrative_center'
+  | 'airport'
+  | 'port'
+  | 'railway_station'
+  | 'highway_interchange';
 /**
  * Route types for route plugin
  */
-export type RouteType =
-  | 'airway' | 'seaway' | 'road' | 'railway' | 'high_speed_rail';
+export type RouteType = 'airway' | 'seaway' | 'road' | 'railway' | 'high_speed_rail';
 
 /**
  * Common country metadata

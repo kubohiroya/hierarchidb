@@ -81,14 +81,14 @@ export function useToast(onToast?: (config: ToastConfig) => void): UseToastRetur
         setTimeout(
           () => {
             setToastState((prev) =>
-              prev.config === config ? { open: false, config: null } : prev,
+              prev.config === config ? { open: false, config: null } : prev
             );
           },
-          config.duration || DEFAULT_TOAST_CONFIG.duration || 3000,
+          config.duration || DEFAULT_TOAST_CONFIG.duration || 3000
         );
       }
     },
-    [onToast],
+    [onToast]
   );
 
   const hideToast = useCallback(() => {
@@ -106,7 +106,7 @@ export function useToast(onToast?: (config: ToastConfig) => void): UseToastRetur
         message,
       } as ToastConfig);
     },
-    [showToast],
+    [showToast]
   );
 
   const showErrorToast = useCallback(
@@ -117,7 +117,7 @@ export function useToast(onToast?: (config: ToastConfig) => void): UseToastRetur
         message,
       } as ToastConfig);
     },
-    [showToast],
+    [showToast]
   );
 
   return {
@@ -134,7 +134,7 @@ export function useToast(onToast?: (config: ToastConfig) => void): UseToastRetur
  */
 export function mergeToastConfigs(
   base?: ToastConfig,
-  override?: ToastConfig,
+  override?: ToastConfig
 ): ToastConfig | undefined {
   if (!base && !override) return undefined;
 
@@ -158,7 +158,7 @@ export function mergeToastConfigs(
 export function createToastFromLegacy(
   showSuccessMessage?: boolean,
   successMessage?: string,
-  successToast?: ToastConfig,
+  successToast?: ToastConfig
 ): ToastConfig | undefined {
   // Prefer new toast config
   if (successToast) {

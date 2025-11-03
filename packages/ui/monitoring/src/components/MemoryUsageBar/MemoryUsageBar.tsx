@@ -1,8 +1,8 @@
-import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { formatBytes } from '@hierarchidb/util';
 import { Box, Paper, Tooltip, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { formatBytes } from '@hierarchidb/util';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { isDevEnv } from '../../utils/env.js';
 
 export interface MemoryUsageBarProps {
@@ -15,7 +15,7 @@ export interface MemoryUsageBarProps {
    */
   height?: string | number;
   /**
-      */
+   */
   updateInterval?: number;
   /**
    * 0-1
@@ -26,13 +26,13 @@ export interface MemoryUsageBarProps {
    */
   criticalThreshold?: number;
   /**
-      */
+   */
   showLabel?: boolean;
   /**
-      */
+   */
   showValues?: boolean;
   /**
-      */
+   */
   compact?: boolean;
   /**
    * -
@@ -72,25 +72,25 @@ const BarFill = styled(Box)<{ percentage: number; severity: 'normal' | 'warning'
         : severity === 'warning'
           ? theme.palette.warning.main
           : theme.palette.success.main,
-  }),
+  })
 );
 
 // formatBytes now imported from @hierarchidb/core
 
 /**
-    * performance.measureUserAgentSpecificMemory() API
-   */
+ * performance.measureUserAgentSpecificMemory() API
+ */
 export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
-                                                                width = '100%',
-                                                                height = 32,
-                                                                updateInterval = 10000, //  measureUserAgentSpecificMemory 10
-                                                                warningThreshold = 0.7,
-                                                                criticalThreshold = 0.9,
-                                                                showLabel = true,
-                                                                showValues = true,
-                                                                compact = false,
-                                                                maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
-                                                              }) => {
+  width = '100%',
+  height = 32,
+  updateInterval = 10000, //  measureUserAgentSpecificMemory 10
+  warningThreshold = 0.7,
+  criticalThreshold = 0.9,
+  showLabel = true,
+  showValues = true,
+  compact = false,
+  maxMemory = 4 * 1024 * 1024 * 1024, //  4GB
+}) => {
   const [memoryInfo, setMemoryInfo] = useState<MemoryInfo>({
     used: 0,
     total: maxMemory,
@@ -111,7 +111,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
 
         const totalUsed = result.breakdown.reduce(
           (sum: number, entry: { bytes?: number }) => sum + (entry.bytes || 0),
-          0,
+          0
         );
 
         //  performance.memory

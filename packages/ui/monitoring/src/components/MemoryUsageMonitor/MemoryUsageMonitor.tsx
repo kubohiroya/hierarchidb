@@ -1,9 +1,9 @@
+import { DragIndicator } from '@mui/icons-material';
 import { Box, Tooltip } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MemoryUsageBar } from '../MemoryUsageBar/MemoryUsageBar.js';
-import { DragIndicator } from '@mui/icons-material';
-import { MemoryUsageChart } from '../MemoryUsageBar/index.js';
 import { isProdEnv } from '../../utils/env.js';
+import { MemoryUsageChart } from '../MemoryUsageBar/index.js';
+import { MemoryUsageBar } from '../MemoryUsageBar/MemoryUsageBar.js';
 
 interface DevelopmentTimestampProps {
   className?: string;
@@ -17,7 +17,7 @@ interface ChartDimensions {
 }
 
 /**
-      */
+ */
 export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
   const [mounted, setMounted] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -109,7 +109,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
       setIsDragging(true);
       e.preventDefault();
     },
-    [chartDimensions],
+    [chartDimensions]
   );
 
   const handleMouseMove = useCallback(
@@ -139,7 +139,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
 
       setPosition({ x: clampedX, y: clampedY });
     },
-    [isDragging, isResizing],
+    [isDragging, isResizing]
   );
 
   const handleMouseUp = useCallback(() => {

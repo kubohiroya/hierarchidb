@@ -1,71 +1,102 @@
 import './ambient-ui-global';
+
 export * from './action-types.js';
 export type {
-  APIMethodArgs, APIMethodReturn, WorkerAPIMethod, WorkerAPIExtensions,
+  APIMethodArgs,
+  APIMethodReturn,
+  WorkerAPIExtensions,
+  WorkerAPIMethod,
 } from './api-types.js';
 export type {
-  CommandId,
-  Seq,
-  OnNameConflict,
   CommandEnvelope,
-  ErrorCode,
+  CommandId,
   CommandResult,
+  CommitWorkingCopyForCreatePayload,
+  CommitWorkingCopyPayload,
+  CopyNodesPayload,
   CreateWorkingCopyForCreatePayload,
   CreateWorkingCopyPayload,
   DiscardWorkingCopyPayload,
-  CommitWorkingCopyForCreatePayload,
-  CommitWorkingCopyPayload,
-  MoveNodesPayload,
   DuplicateNodesPayload,
-  PasteNodesPayload,
-  MoveToTrashPayload,
-  RemovePayload,
-  RestoreFromTrashPayload,
-  ImportNodesPayload,
-  CopyNodesPayload,
+  ErrorCode,
   ExportNodesPayload,
-  UndoPayload,
-  RedoPayload,
+  GetAncestorsPayload,
   GetChildrenPayload,
   GetDescendantsPayload,
-  GetAncestorsPayload,
+  ImportNodesPayload,
+  MoveNodesPayload,
+  MoveToTrashPayload,
   ObserveNodePayload,
-  SubscribeChildrenPayload,
   ObserveSubtreePayload,
   ObserveWorkingCopiesPayload,
+  OnNameConflict,
+  PasteNodesPayload,
+  RedoPayload,
+  RemovePayload,
+  RestoreFromTrashPayload,
+  Seq,
+  SubscribeChildrenPayload,
   SubscriptionFilter,
-  TreeChangeEventType,
   TreeChangeEvent,
+  TreeChangeEventType,
+  UndoPayload,
 } from './command-types.js';
-export type { DataSourceConfig, LocationType, RouteType, CountryMetadata, SelectionMatrix } from './datasource.js';
+export * from './commit-types.js';
+export type {
+  CountryMetadata,
+  DataSourceConfig,
+  LocationType,
+  RouteType,
+  SelectionMatrix,
+} from './datasource.js';
+export * from './dialog-state.js';
 export * from './entity-backup-types.js';
 export * from './entity-handler-types.js';
+export type { PeerEntity } from './entity-types.js';
 // entity-manager-types: no externally-used exports; stop re-exporting
 export * from './entity-types.js';
-export * from './dialog-state.js';
-export * from './id-types.js';
 // Ensure key branded IDs and core entity interfaces are explicitly exported for DTS bundling
-export type { NodeId, TreeId, TagId } from './id-types.js';
-export type { PeerEntity } from './entity-types.js';
-export type { ImportProgress, ExportProgress, ImportResult, ExportResult, ClipboardData } from './import-export-types.js';
+export type { NodeId, TagId, TreeId } from './id-types.js';
+export * from './id-types.js';
+export * from './id-util.js';
+export type {
+  ClipboardData,
+  ExportProgress,
+  ExportResult,
+  ImportProgress,
+  ImportResult,
+} from './import-export-types.js';
+export type {
+  CreateMenuBuilder,
+  CreateMenuEntry,
+  GlobalMenuBuilders,
+  PluginMenuIconSpec,
+} from './menu-types.js';
 export * from './menu-types.js';
-export type { PluginMenuIconSpec, CreateMenuEntry, CreateMenuBuilder, GlobalMenuBuilders } from './menu-types.js';
 export * from './primitive-types.js';
+export * from './primitive-types.js';
+export * from './progress-types.js';
 export * from './subscription-types.js';
+export type {
+  NodeTagAssociation,
+  NodeTagAssociationId,
+  TagEntity,
+  TagSuggestion,
+} from './tag-entity-types.js';
 export * from './tree-node-event-types.js';
-export * from './undo-state-events.js';
 export * from './tree-node-lifecycle-hooks.js';
-export { NODE_TYPES } from './tree-node-types.js';
 export type { NodeBase, TreeNode, TreeNodeWithChildren } from './tree-node-types.js';
+export { NODE_TYPES } from './tree-node-types.js';
 export * from './tree-root-node-types.js';
-export { SortOrder } from './tree-root-state-types.js';
 export type { TreeRootState } from './tree-root-state-types.js';
+export { SortOrder } from './tree-root-state-types.js';
 export * from './tree-types.js';
 export * from './tree-view-types.js';
-export type { ValidationErrors, ValidationResult, ValidationRule, StepValidation } from './validation-types.js';
-export * from './commit-types.js';
-export type { TagEntity, TagSuggestion, NodeTagAssociation, NodeTagAssociationId } from './tag-entity-types.js';
-export * from './id-util.js';
-export * from './progress-types.js';
-export * from './primitive-types.js';
+export * from './undo-state-events.js';
+export type {
+  StepValidation,
+  ValidationErrors,
+  ValidationResult,
+  ValidationRule,
+} from './validation-types.js';
 // plugin-resolution already covered above with selective exports

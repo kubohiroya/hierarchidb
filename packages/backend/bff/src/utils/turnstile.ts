@@ -1,5 +1,5 @@
 import type { Next } from 'hono';
-import { getEnv, type BffContext } from './env.js';
+import { type BffContext, getEnv } from './env.js';
 
 interface TurnstileVerifyResponse {
   success: boolean;
@@ -13,7 +13,7 @@ interface TurnstileVerifyResponse {
 export async function verifyTurnstileToken(
   token: string,
   secretKey: string,
-  remoteIp?: string,
+  remoteIp?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const formData = new FormData();
@@ -85,25 +85,28 @@ export async function requireTurnstile(c: BffContext, next: Next) {
   const token = extractTurnstileToken(c) || (await c.req.json().catch(() => ({}))).turnstileToken;
 
   if (!token) {
-    return c.json({
-      error: 'missing_turnstile',
-      message: 'Turnstile verification is required',
-    }, 400);
+    return c.json(
+      {
+        error: 'missing_turnstile',
+        message: 'Turnstile verification is required',
+      },
+      400
+    );
   }
 
-  const clientIp = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For')?.split(',')[0];
+  const clientIp =
+    c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For')?.split(',')[0];
 
-  const result = await verifyTurnstileToken(
-    token,
-    env.TURNSTILE_SECRET_KEY,
-    clientIp,
-  );
+  const result = await verifyTurnstileToken(token, env.TURNSTILE_SECRET_KEY, clientIp);
 
   if (!result.success) {
-    return c.json({
-      error: 'invalid_turnstile',
-      message: result.error || 'Turnstile verification failed',
-    }, 403);
+    return c.json(
+      {
+        error: 'invalid_turnstile',
+        message: result.error || 'Turnstile verification failed',
+      },
+      403
+    );
   }
 
   return next();

@@ -21,6 +21,12 @@
       ]
     },
     "lint": {},
+    "format": {
+      "dependsOn": [
+        "^format"
+      ],
+      "outputs": []
+    },
     "clean": {
       "cache": false,
       "outputs": []

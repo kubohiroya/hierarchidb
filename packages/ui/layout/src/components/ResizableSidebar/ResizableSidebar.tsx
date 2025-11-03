@@ -17,8 +17,8 @@
  * - React: hooks (useState, useRef, useLayoutEffect, useCallback)
  */
 
-import { Box, Drawer, Stack, styled } from '@mui/material';
 import { DragIndicator } from '@mui/icons-material';
+import { Box, Drawer, Stack, styled } from '@mui/material';
 import React, { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 const DragHandleBox = styled(Box)`
@@ -38,8 +38,8 @@ const DragHandleBox = styled(Box)`
 `;
 
 const DragHandle = ({
-                      onMouseDown,
-                    }: {
+  onMouseDown,
+}: {
   onMouseDown: (event: React.MouseEvent<HTMLDivElement>) => void;
 }) => (
   <DragHandleBox onMouseDown={onMouseDown}>
@@ -48,11 +48,11 @@ const DragHandle = ({
 );
 
 export const ResizableSidebar = ({
-                                   children,
-                                   sidebarOpen,
-                                   setSidebarOpen,
-                                   //sidebarInert,
-                                 }: {
+  children,
+  sidebarOpen,
+  setSidebarOpen,
+  //sidebarInert,
+}: {
   children: ReactNode;
   sidebarOpen: boolean;
   setSidebarOpen: (value: boolean) => void;
@@ -87,7 +87,7 @@ export const ResizableSidebar = ({
         setDrawerWidth(newWidth);
       }
     },
-    [minDrawerWidth, maxDrawerWidth],
+    [minDrawerWidth, maxDrawerWidth]
   );
 
   const onClose = useCallback(() => setSidebarOpen(false), [setSidebarOpen]);

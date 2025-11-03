@@ -16,7 +16,10 @@ export interface Env {
   JWT_EXPIRY_HOURS_DEV?: string;
 }
 
-export function validateOrigin(request: Request, env: Env): {
+export function validateOrigin(
+  request: Request,
+  env: Env
+): {
   isValid: boolean;
   origin: string | null;
   environment: 'production' | 'staging' | 'development' | 'unknown';
@@ -28,21 +31,20 @@ export function validateOrigin(request: Request, env: Env): {
   }
 
   //  Origin
-  const allowedOrigins = env.ALLOWED_ORIGINS
-    .split(',')
-    .map(o => o.trim())
-    .filter(o => o.length > 0);
+  const allowedOrigins = env.ALLOWED_ORIGINS.split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
 
   //  Origin
   const isValid = allowedOrigins.includes(origin);
 
   let environment: 'production' | 'staging' | 'development' | 'unknown' = 'unknown';
 
-  if (env.PRODUCTION_ORIGINS?.split(',').some(o => o.trim() === origin)) {
+  if (env.PRODUCTION_ORIGINS?.split(',').some((o) => o.trim() === origin)) {
     environment = 'production';
-  } else if (env.STAGING_ORIGINS?.split(',').some(o => o.trim() === origin)) {
+  } else if (env.STAGING_ORIGINS?.split(',').some((o) => o.trim() === origin)) {
     environment = 'staging';
-  } else if (env.DEVELOPMENT_ORIGINS?.split(',').some(o => o.trim() === origin)) {
+  } else if (env.DEVELOPMENT_ORIGINS?.split(',').some((o) => o.trim() === origin)) {
     environment = 'development';
   }
 
@@ -54,7 +56,10 @@ export function addCorsHeaders(response: Response, origin: string | null, env: E
 
   if (origin) {
     //  Origin
-    const { isValid } = validateOrigin(new Request('https://example.com', { headers: { Origin: origin } }), env);
+    const { isValid } = validateOrigin(
+      new Request('https://example.com', { headers: { Origin: origin } }),
+      env
+    );
     if (isValid) {
       headers.set('Access-Control-Allow-Origin', origin);
       headers.set('Access-Control-Allow-Credentials', 'true');
@@ -74,13 +79,14 @@ export function addCorsHeaders(response: Response, origin: string | null, env: E
 
 export async function checkRateLimit(
   request: Request,
-  env: Env,
+  env: Env
 ): Promise<{ allowed: boolean; remaining: number }> {
   if (env.ENABLE_RATE_LIMIT !== 'true' || !env.RATE_LIMIT_KV) {
     return { allowed: true, remaining: 999 };
   }
 
-  const ip = request.headers.get('CF-Connecting-IP') ||
+  const ip =
+    request.headers.get('CF-Connecting-IP') ||
     request.headers.get('X-Forwarded-For')?.split(',')[0] ||
     'unknown';
 
@@ -89,13 +95,20 @@ export async function checkRateLimit(
   const now = Date.now();
   const window = 60000; //  1
 
-  const data = await env.RATE_LIMIT_KV.get(key, 'json') as { count: number; resetAt: number } | null;
+  const data = (await env.RATE_LIMIT_KV.get(key, 'json')) as {
+    count: number;
+    resetAt: number;
+  } | null;
 
   if (!data || data.resetAt < now) {
-    await env.RATE_LIMIT_KV.put(key, JSON.stringify({
-      count: 1,
-      resetAt: now + window,
-    }), { expirationTtl: 60 });
+    await env.RATE_LIMIT_KV.put(
+      key,
+      JSON.stringify({
+        count: 1,
+        resetAt: now + window,
+      }),
+      { expirationTtl: 60 }
+    );
 
     return { allowed: true, remaining: limit - 1 };
   }
@@ -121,13 +134,13 @@ export function addSecurityHeaders(response: Response, env: Env): Response {
 
   // Content Security Policy
   const cspDirectives = [
-    'default-src \'self\'',
-    'script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'', //  React
-    'style-src \'self\' \'unsafe-inline\'',
-    'img-src \'self\' data: https:',
-    'font-src \'self\' data:',
-    'connect-src \'self\' https://hierarchidb-bff.kubohiroya.workers.dev',
-    'frame-ancestors \'none\'',
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", //  React
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https://hierarchidb-bff.kubohiroya.workers.dev",
+    "frame-ancestors 'none'",
   ];
 
   if (env.CSP_REPORT_URI) {
@@ -161,7 +174,7 @@ export async function logAuditEvent(
     userAgent: string | null;
     error?: string;
   },
-  env: Env,
+  env: Env
 ): Promise<void> {
   if (env.ENABLE_AUDIT_LOG !== 'true' || !env.AUDIT_LOG_KV) {
     console.log('[Audit]', JSON.stringify(event));
@@ -190,20 +203,27 @@ async function checkForSuspiciousActivity(ip: string, env: Env): Promise<void> {
   if (!env.AUDIT_LOG_KV) return;
 
   const key = `suspicious:${ip}`;
-  const data = await env.AUDIT_LOG_KV.get(key, 'json') as { count: number; firstSeen: number } | null;
+  const data = (await env.AUDIT_LOG_KV.get(key, 'json')) as {
+    count: number;
+    firstSeen: number;
+  } | null;
   const now = Date.now();
 
   if (!data) {
-    await env.AUDIT_LOG_KV.put(key, JSON.stringify({
-      count: 1,
-      firstSeen: now,
-    }), { expirationTtl: 3600 }); //  1
+    await env.AUDIT_LOG_KV.put(
+      key,
+      JSON.stringify({
+        count: 1,
+        firstSeen: now,
+      }),
+      { expirationTtl: 3600 }
+    ); //  1
     return;
   }
 
   data.count++;
 
-  if (data.count >= 5 && (now - data.firstSeen) < 3600000) {
+  if (data.count >= 5 && now - data.firstSeen < 3600000) {
     console.error(`[Security Alert] Suspicious activity from IP: ${ip}, failures: ${data.count}`);
   }
 
@@ -213,11 +233,12 @@ async function checkForSuspiciousActivity(ip: string, env: Env): Promise<void> {
 }
 
 export function getJwtExpiry(environment: string, env: Env): number {
-  const hours = environment === 'production'
-    ? parseInt(env.JWT_EXPIRY_HOURS_PROD || '2')
-    : environment === 'staging'
-      ? parseInt(env.JWT_EXPIRY_HOURS_STAGING || '8')
-      : parseInt(env.JWT_EXPIRY_HOURS_DEV || '24');
+  const hours =
+    environment === 'production'
+      ? parseInt(env.JWT_EXPIRY_HOURS_PROD || '2')
+      : environment === 'staging'
+        ? parseInt(env.JWT_EXPIRY_HOURS_STAGING || '8')
+        : parseInt(env.JWT_EXPIRY_HOURS_DEV || '24');
 
   return hours * 3600;
 }
@@ -225,20 +246,23 @@ export function getJwtExpiry(environment: string, env: Env): number {
 export async function handleSecurity(
   request: Request,
   env: Env,
-  handler: () => Promise<Response>,
+  handler: () => Promise<Response>
 ): Promise<Response> {
   //  1. Origin
   const { isValid, origin } = validateOrigin(request, env);
 
   if (!isValid && request.method !== 'OPTIONS') {
-    await logAuditEvent({
-      type: 'auth_failure',
-      origin,
-      environment: 'unknown',
-      ip: request.headers.get('CF-Connecting-IP') || 'unknown',
-      userAgent: request.headers.get('User-Agent'),
-      error: 'Invalid origin',
-    }, env);
+    await logAuditEvent(
+      {
+        type: 'auth_failure',
+        origin,
+        environment: 'unknown',
+        ip: request.headers.get('CF-Connecting-IP') || 'unknown',
+        userAgent: request.headers.get('User-Agent'),
+        error: 'Invalid origin',
+      },
+      env
+    );
 
     return new Response('Forbidden', { status: 403 });
   }

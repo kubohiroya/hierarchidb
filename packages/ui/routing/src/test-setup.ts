@@ -1,7 +1,7 @@
 /**
-  * Vitest Test Setup
+ * Vitest Test Setup
  * JestVitest
-  */
+ */
 
 //  @testing-library/jest-dom matchers (Vitest)
 import '@testing-library/jest-dom';
