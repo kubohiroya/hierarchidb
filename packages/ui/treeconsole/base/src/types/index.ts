@@ -1,22 +1,22 @@
 /**
-  * TreeConsole
-  * API
-  */
+ * TreeConsole
+ * API
+ */
 
+import type { WorkerAPI } from '@hierarchidb/common-api';
 // Observable/Subscription types
 import type { NodeId, NodeType, TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
-import type { WorkerAPI } from '@hierarchidb/common-api';
-import type { ReactNode } from 'react';
+import type { DualKeyMap } from '@hierarchidb/util';
 import type { RowSelectionState } from '@tanstack/react-table';
-import { DualKeyMap } from '@hierarchidb/util';
+import type { ReactNode } from 'react';
 
 /**
-    */
+ */
 export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
 
 /**
-  * TreeTableConsolePanel Props
-  */
+ * TreeTableConsolePanel Props
+ */
 export interface TreeTableConsolePanelProps {
   rootNodeId: NodeId;
   nodeId: NodeId;
@@ -39,8 +39,8 @@ export interface TreeTableConsolePanelProps {
 }
 
 /**
-  * TreeConsole Props
-  */
+ * TreeConsole Props
+ */
 export interface TreeConsoleHeaderProps {
   title: string;
   baseTitle: string;
@@ -60,8 +60,8 @@ export interface TreeConsoleHeaderProps {
 }
 
 /**
-  * TreeConsoleBreadcrumbProps -
-  */
+ * TreeConsoleBreadcrumbProps -
+ */
 export interface TreeConsoleBreadcrumbProps {
   /**
    * -
@@ -74,7 +74,7 @@ export interface TreeConsoleBreadcrumbProps {
   currentNodeId?: NodeId;
 
   /**
-      */
+   */
   depthOffset?: number;
 
   /**
@@ -88,11 +88,11 @@ export interface TreeConsoleBreadcrumbProps {
   };
 
   /**
-      */
+   */
   onNodeClick?: (nodeId: NodeId, node: TreeNodeWithChildren) => void;
 
   /**
-      */
+   */
   onNodeAction?: {
     onEdit?: (nodeId: NodeId) => void;
     onDelete?: (nodeId: NodeId) => void;
@@ -100,7 +100,7 @@ export interface TreeConsoleBreadcrumbProps {
   };
 
   /**
-      */
+   */
   variant?: 'default' | 'compact' | 'minimal';
   maxWidth?: number;
   showIcons?: boolean;
@@ -130,7 +130,7 @@ export interface TreeConsoleContentProps {
   currentNodeInfo?: NodeInfo | null;
   onDragStateChange?: (
     draggingNodeId: NodeId | undefined,
-    descendantIdSet: Set<NodeId> | undefined,
+    descendantIdSet: Set<NodeId> | undefined
   ) => void;
   canPreviewNode?: boolean;
   mode?: 'restore' | 'dispose';
@@ -170,7 +170,7 @@ export interface TreeConsoleActionsProps {
 }
 
 /**
-    */
+ */
 export interface NodeInfo {
   id: string;
   name: string;
@@ -179,21 +179,21 @@ export interface NodeInfo {
 }
 
 /**
-  * TreeNodeWithChildren - UI
+ * TreeNodeWithChildren - UI
  * NOTE: core TreeNodeWithChildren children
-  */
+ */
 export interface TreeNodeWithChildren extends TreeNode {
   children?: TreeNodeWithChildren[];
 }
 
 /**
-  * SpeedDial
-  */
+ * SpeedDial
+ */
 // Deprecated: SpeedDialActionType removed.
 
 /**
-  * Undo/Redo
-  */
+ * Undo/Redo
+ */
 export interface UndoRedoCommand {
   id: string;
   type: string;
@@ -213,8 +213,8 @@ export interface UndoRedoResult {
 }
 
 /**
-  * TreeViewController useTreeViewController
-  */
+ * TreeViewController useTreeViewController
+ */
 export interface TreeViewController {
   currentNode: TreeNode | null;
   selectedNodes: NodeId[];
@@ -285,7 +285,7 @@ export interface TreeNodeData extends TreeNode {
   // depth: number;
 
   children?: TreeNodeData[];
-  // UI specific properties  
+  // UI specific properties
   hasChildren?: boolean;
   deletedAt?: string | number;
   removedAt?: string | number;
@@ -349,7 +349,7 @@ export class TreeConsoleAdapterError extends Error {
   constructor(
     message: string,
     public code?: string,
-    public context?: unknown,
+    public context?: unknown
   ) {
     super(message);
     this.name = 'TreeConsoleAdapterError';
@@ -382,5 +382,9 @@ export interface TreeConsolePanelProps extends TreeTableConsolePanelProps {
   readonly nodeIndex: DualKeyMap<NodeId, NodeId, TreeNode>;
   /** Move nodes under a new parent (DnD) */
   onMoveNodes?: (nodeIds: NodeId[], targetParentId: NodeId) => void;
-  onBreadcrumbContextAction?: (action: string, node: TreeNode, options?: { navigateToParent?: boolean }) => void;
+  onBreadcrumbContextAction?: (
+    action: string,
+    node: TreeNode,
+    options?: { navigateToParent?: boolean }
+  ) => void;
 }

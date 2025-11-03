@@ -7384,6 +7384,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 10:54 command: pnpm --filter @hierarchidb/ui-treeconsole-base build — exit 0。
 - 2025-11-03 10:55 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar clean && pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
 - 2025-11-03 10:56 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-03 11:05 progress: fix/ui-trash/treetable-timestamps — Toolbar のテンプレート Import メニューを i18n 化し、翻訳が無い場合は既存ラベルをフォールバックするよう調整。
+- 2025-11-03 11:06 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
+- 2025-11-03 11:06 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
 - 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。

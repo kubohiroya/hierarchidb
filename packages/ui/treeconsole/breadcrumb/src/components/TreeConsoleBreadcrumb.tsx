@@ -1,9 +1,10 @@
 /**
-  * TreeConsoleBreadcrumb -
-  * eria-cartographTreeConsoleBreadcrumbUI
-   */
+ * TreeConsoleBreadcrumb -
+ * eria-cartographTreeConsoleBreadcrumbUI
+ */
 
-import { type MouseEvent, type DragEvent, useCallback, useState, type ReactElement, type KeyboardEvent } from 'react';
+import { rainbowColors } from '@hierarchidb/ui-theme';
+import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import {
   Box,
   Breadcrumbs,
@@ -15,17 +16,23 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { Link as RouterLink } from '@tanstack/react-router';
-import { styled } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import { Link as RouterLink } from '@tanstack/react-router';
+import {
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+  useCallback,
+  useState,
+} from 'react';
 import type { BreadcrumbNode, TreeConsoleBreadcrumbProps } from '../types.js';
-import { rainbowColors } from '@hierarchidb/ui-theme';
+import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
+import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
+import { getPluginIconColor, isFolderNodeType } from '../utils/nodeTypeIconColor.js';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { NodeTypeIcon } from './NodeTypeIcon.js';
-import { buildTreeConsoleLinkHref } from '../utils/linkFactory.js';
-import type { BuildTreeConsoleLinkOptions } from '../utils/linkFactory.js';
-import { getPluginIconColor, isFolderNodeType } from '../utils/nodeTypeIconColor.js';
 
 const DRAGGED_NODE_MIME = 'text/hdb-node';
 const DESCENDANT_MIME = 'application/hdb-node-descendants';
@@ -47,8 +54,8 @@ const readDraggedNodeId = (event: DragEvent<HTMLElement>): string | null => {
 };
 
 /**
-  * BreadcrumbContainer -
-  */
+ * BreadcrumbContainer -
+ */
 const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   width: 100%;
   opacity: 1;
@@ -61,7 +68,7 @@ const BreadcrumbContainer = styled(Box)<{ theme?: Theme }>`
   flex: 1;
   white-space: nowrap;
   /* Dark theme background */
-  background-color: ${props => (props.theme?.palette?.mode === 'dark' ? '#181818' : 'transparent')};
+  background-color: ${(props) => (props.theme?.palette?.mode === 'dark' ? '#181818' : 'transparent')};
 
   /* Custom scrollbar styling for horizontal scroll */
 
@@ -201,7 +208,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         onContextAction('navigate', node);
       }
     },
-    [onContextAction, onNodeClick],
+    [onContextAction, onNodeClick]
   );
 
   const handleConfirmTrash = useCallback(async () => {
@@ -220,7 +227,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
   const handleContextMenuOpen = (
     event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLElement>,
-    node: BreadcrumbNode,
+    node: BreadcrumbNode
   ) => {
     event.preventDefault();
     event.stopPropagation();
@@ -236,7 +243,10 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
   const handleCreate = (type: string) => {
     if (contextMenuNode && onContextAction) {
-      onContextAction(`create:${type}`, contextMenuNode, { navigateToParent: true, source: 'breadcrumb' });
+      onContextAction(`create:${type}`, contextMenuNode, {
+        navigateToParent: true,
+        source: 'breadcrumb',
+      });
     }
   };
 
@@ -274,7 +284,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
   const isRootContext = ((): boolean => {
     if (!contextMenuNode) return false;
     const first = pathToUse[0];
-    return !!first && (String(first.id) === String(contextMenuNode.id || contextMenuNode.id));
+    return !!first && String(first.id) === String(contextMenuNode.id || contextMenuNode.id);
   })();
 
   return (
@@ -285,7 +295,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
             display: 'flex',
             alignItems: 'center',
             height: '100%',
-            px: 2
+            px: 2,
           }}
         >
           {isNavigating && <CircularProgress size={20} sx={{ mr: 2 }} />}
@@ -302,16 +312,21 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
               const nodeName = node.name || 'Unknown';
               const explicitDepth = typeof node.depth === 'number' ? node.depth : undefined;
               const nodeWithAbsolute = node as BreadcrumbNode & { absoluteDepth?: number };
-              const absoluteDepth = typeof nodeWithAbsolute.absoluteDepth === 'number'
-                ? nodeWithAbsolute.absoluteDepth
-                : explicitDepth;
-              const fallbackDepth = typeof absoluteDepth === 'number'
-                ? Math.max(0, Math.round(absoluteDepth))
-                : Math.max(0, index + _depthOffset);
+              const absoluteDepth =
+                typeof nodeWithAbsolute.absoluteDepth === 'number'
+                  ? nodeWithAbsolute.absoluteDepth
+                  : explicitDepth;
+              const fallbackDepth =
+                typeof absoluteDepth === 'number'
+                  ? Math.max(0, Math.round(absoluteDepth))
+                  : Math.max(0, index + _depthOffset);
               const baseIconColor = rainbowColors[fallbackDepth % rainbowColors.length];
-              const nodeType = nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
+              const nodeType =
+                nodeWithAbsolute.nodeType || nodeWithAbsolute.type || 'folder-plugin';
               const manifestIconColor = getPluginIconColor(nodeType);
-              const iconColor = isFolderNodeType(nodeType) ? baseIconColor : (manifestIconColor ?? baseIconColor);
+              const iconColor = isFolderNodeType(nodeType)
+                ? baseIconColor
+                : (manifestIconColor ?? baseIconColor);
               const treeId = props.treeId;
               const hasTreeId = Boolean(treeId);
               const isRootLike =
@@ -320,7 +335,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                 treeId,
                 nodeId: nodeIdString,
                 pageNodeId,
-                holderType: node.holderType as ('workingCopy' | 'trash' | undefined),
+                holderType: node.holderType as 'workingCopy' | 'trash' | undefined,
                 holderMetaParentId: node.holderMetaParentId ?? undefined,
                 holderTargetId: node.holderTargetId ?? undefined,
                 useTrashColumns: useTrashColumnsFlag,
@@ -346,11 +361,15 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                     color="inherit"
                     htmlColor={iconColor}
                     clickable={iconInteractive}
-                    onClick={iconInteractive ? (event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openContextMenu(node, event.currentTarget as HTMLElement);
-                    } : undefined}
+                    onClick={
+                      iconInteractive
+                        ? (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openContextMenu(node, event.currentTarget as HTMLElement);
+                          }
+                        : undefined
+                    }
                   />
                   <Typography component="span" sx={{ fontWeight: isLast ? 700 : 500 }}>
                     {nodeName}
@@ -375,7 +394,11 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
                   $outlineColor={outlineColor}
                   $blocked={hoverId === nodeIdString && hoverBlocked}
                   aria-disabled={hoverId === nodeIdString && hoverBlocked ? true : undefined}
-                  title={hoverId === nodeIdString && hoverBlocked ? '子孫に移動することはできません' : undefined}
+                  title={
+                    hoverId === nodeIdString && hoverBlocked
+                      ? '子孫に移動することはできません'
+                      : undefined
+                  }
                   aria-haspopup="menu"
                   onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
                     if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
@@ -415,7 +438,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
       </BreadcrumbContainer>
 
       {/*
-*/}
+       */}
       <ContextMenuComponent
         anchorEl={contextMenuAnchor}
         open={Boolean(contextMenuAnchor)}
@@ -434,20 +457,32 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
         onCreate={handleCreate}
         onCopy={handleCopy}
         onCut={handleCut}
-        onEdit={() => { if (!isRootContext) handleEdit(); else handleContextMenuClose(); }}
-        onDuplicate={() => { if (!isRootContext) handleDuplicate(); else handleContextMenuClose(); }}
-        onTrash={() => { if (!isRootContext) handleTrash(); else handleContextMenuClose(); }}
-        onRemove={() => { if (!isRootContext) handleTrash(); else handleContextMenuClose(); }}
+        onEdit={() => {
+          if (!isRootContext) handleEdit();
+          else handleContextMenuClose();
+        }}
+        onDuplicate={() => {
+          if (!isRootContext) handleDuplicate();
+          else handleContextMenuClose();
+        }}
+        onTrash={() => {
+          if (!isRootContext) handleTrash();
+          else handleContextMenuClose();
+        }}
+        onRemove={() => {
+          if (!isRootContext) handleTrash();
+          else handleContextMenuClose();
+        }}
         onOpen={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined,
+            contextMenuNode || undefined
           )
         }
         onOpenFolder={() =>
           handleNodeClick(
             contextMenuNode?.id || contextMenuNode?.id || '',
-            contextMenuNode || undefined,
+            contextMenuNode || undefined
           )
         }
         onCheckReference={() => console.log('Check reference:', contextMenuNode?.id)}
@@ -455,7 +490,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
       />
 
       {/*
-*/}
+       */}
       <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
         <DialogTitle>Move to Trash</DialogTitle>
         <DialogContent>

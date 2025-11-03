@@ -3,8 +3,8 @@
  * Wraps the TreeTable node context menu interactions with controller actions.
  */
 
-import type { ComponentType } from 'react';
 import type { TreeNode } from '@hierarchidb/common-types';
+import type { ComponentType } from 'react';
 import type { TreeTableController } from '../../types.js';
 
 interface TreeTableContextMenuState {
@@ -34,7 +34,10 @@ export function TreeTableContextMenu({
     onClose();
   };
 
-  const triggerContextAction = (action: string, options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'treetable' }) => {
+  const triggerContextAction = (
+    action: string,
+    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'treetable' }
+  ) => {
     if (!node) return;
     controller?.onContextAction?.(action, node, options);
   };

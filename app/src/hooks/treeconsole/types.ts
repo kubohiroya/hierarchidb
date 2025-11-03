@@ -5,12 +5,12 @@
  * useTreeConsoleIntegration hook modules.
  */
 
-import type { Dispatch, SetStateAction } from 'react';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import type { Remote } from 'comlink';
+import type { Dispatch, SetStateAction } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 
 export type ViewMode = 'list' | 'grid';
@@ -81,7 +81,11 @@ export interface TreeConsoleActions {
   handleContextMenuAction: (
     action: string,
     node: TreeNodeData,
-    options?: { navigateToParent?: boolean; expandTarget?: boolean; source?: 'breadcrumb' | 'treetable' | 'speedDial' },
+    options?: {
+      navigateToParent?: boolean;
+      expandTarget?: boolean;
+      source?: 'breadcrumb' | 'treetable' | 'speedDial';
+    }
   ) => void;
   handleUndo: () => void;
   handleRedo: () => void;

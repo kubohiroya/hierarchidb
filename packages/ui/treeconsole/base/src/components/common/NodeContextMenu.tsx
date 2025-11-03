@@ -1,11 +1,9 @@
 /**
-  * NodeContextMenu -
-  * TreeTable
-  * eria-cartographRowContextMenuMUI
-  */
+ * NodeContextMenu -
+ * TreeTable
+ * eria-cartographRowContextMenuMUI
+ */
 
-import { type MouseEvent, useEffect, useRef, useState, type ReactElement } from 'react';
-import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import {
   Add as AddIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
@@ -14,11 +12,13 @@ import {
   ContentCopy as ContentCopyIcon,
   CreateNewFolder as CreateFolderIcon,
   Edit as EditIcon,
-  Folder as FolderIcon,
   InsertDriveFile as FileIcon,
+  Folder as FolderIcon,
   NoteAdd as NoteAddIcon,
   PlayArrow as PlayArrowIcon,
 } from '@mui/icons-material';
+import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import { type MouseEvent, type ReactElement, useEffect, useRef, useState } from 'react';
 
 export interface NodeContextMenuProps {
   anchorEl: HTMLElement | null;
@@ -51,9 +51,9 @@ export interface NodeContextMenuProps {
 }
 
 /**
-  * NodeContextMenu
+ * NodeContextMenu
  * eria-cartographRowContextMenuMUI
-  */
+ */
 export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | null {
   const {
     anchorEl,
@@ -181,12 +181,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
 
   const isFolder =
     nodeType === 'folder' || nodeType === 'ProjectFolder' || nodeType === 'ResourceFolder';
-  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
+  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
 
   return (
     <>
       {/*
-*/}
+       */}
       <Menu
         anchorEl={anchorEl}
         open={open}

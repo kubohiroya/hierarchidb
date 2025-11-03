@@ -1,11 +1,3 @@
-/**
-  * SubscriptionOrchestrator
-  * SubTree
- * - Worker
- * -
- * -
-  */
-
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
 import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';

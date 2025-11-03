@@ -5,22 +5,22 @@
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { proxy as comlinkProxy } from 'comlink';
-import { Subscriptions } from '../subscriptions/controller.ts';
-import { Alert, Box, CircularProgress } from '@mui/material';
-import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
-import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
-import { TreeConsoleToolbar } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
-import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
-import { useWorkerClient } from '../contexts/WorkerProvider.js';
-import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
+import type { ImportData, WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
-import type { Remote } from 'comlink';
-import type { ImportData, WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { SubscriptionCallback } from '../subscriptions/controller.ts';
+import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
+import { TreeConsoleToolbar } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
+import { Alert, Box, CircularProgress } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
+import type { Remote } from 'comlink';
+import { proxy as comlinkProxy } from 'comlink';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useWorkerClient } from '../contexts/WorkerProvider.js';
+import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
+import type { SubscriptionCallback } from '../subscriptions/controller.ts';
+import { Subscriptions } from '../subscriptions/controller.ts';
+import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
+import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
 
 const logIntegrationWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -29,7 +29,10 @@ const logIntegrationWarning = (message: string, error: unknown): void => {
 
 const isSubscriptionDebug = (): boolean => {
   try {
-    return ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_SUBSCRIPTION_DEBUG) === '1';
+    return (
+      (import.meta as ImportMeta & { env?: Record<string, string> }).env
+        ?.VITE_SUBSCRIPTION_DEBUG === '1'
+    );
   } catch (error) {
     logIntegrationWarning('Failed to read VITE_SUBSCRIPTION_DEBUG flag', error);
     return false;
@@ -112,26 +115,26 @@ const TreeConsoleIntegrationInner: React.FC<
   });
 
   // Row Click Action state (Select | Edit | Navigate)
-  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>('Select/Navigate');
+  const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(
+    'Select/Navigate'
+  );
 
   // Check for trash items when worker client is available
   useEffect(() => {
     const checkTrashItems = async () => {
       if (workerClient && treeId) {
-
-          // Use facade APIs instead of deprecated direct methods
-          const queryAPI = await workerClient.getQueryAPI();
-          const tree = await queryAPI.getTree(treeId as TreeId);
-          if (tree?.trashRootId) {
-            const trashNodeId = tree.trashRootId as NodeId;
-            setTrashRootId(trashNodeId);
-            const trashChildren = await queryAPI.listChildren(trashNodeId);
-            setHasTrashItems(trashChildren.length > 0);
-          } else {
-            setTrashRootId(null);
-            setHasTrashItems(false);
-          }
-
+        // Use facade APIs instead of deprecated direct methods
+        const queryAPI = await workerClient.getQueryAPI();
+        const tree = await queryAPI.getTree(treeId as TreeId);
+        if (tree?.trashRootId) {
+          const trashNodeId = tree.trashRootId as NodeId;
+          setTrashRootId(trashNodeId);
+          const trashChildren = await queryAPI.listChildren(trashNodeId);
+          setHasTrashItems(trashChildren.length > 0);
+        } else {
+          setTrashRootId(null);
+          setHasTrashItems(false);
+        }
       }
     };
     checkTrashItems();
@@ -158,10 +161,13 @@ const TreeConsoleIntegrationInner: React.FC<
         setTrashRootId(trashRootId as NodeId);
 
         // Avoid duplicate subscriptions to the same trash root
-        if (trashSubRef.current && (typeof trashRootId === 'string')) {
+        if (trashSubRef.current && typeof trashRootId === 'string') {
           // Already subscribed for this root; skip
           if (isSubscriptionDebug()) {
-            console.log('[Subscription][trash] already active', { trashRootId, subId: trashSubRef.current });
+            console.log('[Subscription][trash] already active', {
+              trashRootId,
+              subId: trashSubRef.current,
+            });
           }
         }
 
@@ -194,7 +200,12 @@ const TreeConsoleIntegrationInner: React.FC<
         // Skip if already subscribed
         const existing = Subscriptions.getActive('trash', trashRootId);
         if (existing) return;
-        const { subId: sid, created } = await Subscriptions.subscribe('trash', workerClient, trashRootId, cb);
+        const { subId: sid, created } = await Subscriptions.subscribe(
+          'trash',
+          workerClient,
+          trashRootId,
+          cb
+        );
         if (created && isSubscriptionDebug()) {
           console.log('[Subscription][trash] subscribed', { trashRootId, subId: sid });
         }
@@ -266,7 +277,11 @@ const TreeConsoleIntegrationInner: React.FC<
               if (text.trim().startsWith('<')) {
                 throw new Error('NOT_JSON');
               }
-              try { return JSON.parse(text); } catch { throw new Error('INVALID_JSON'); }
+              try {
+                return JSON.parse(text);
+              } catch {
+                throw new Error('INVALID_JSON');
+              }
             }
             return (await res.json()) as TemplateData;
           };
@@ -274,7 +289,7 @@ const TreeConsoleIntegrationInner: React.FC<
           let templateData: TemplateData | undefined;
           let lastErr: unknown;
           for (const b of candidateBases) {
-            const u = `${String(b).replace(/\/+$/, '/') }templates/${templateId}/tree-nodes.json`;
+            const u = `${String(b).replace(/\/+$/, '/')}templates/${templateId}/tree-nodes.json`;
             try {
               templateData = await tryFetch(u);
               break;
@@ -326,7 +341,8 @@ const TreeConsoleIntegrationInner: React.FC<
           await actions.handleRefresh?.();
         } catch (error) {
           logIntegrationWarning('Import template handler failed', error);
-          const hint = ' If this is a dev build under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
+          const hint =
+            ' If this is a dev build under a sub-path, set VITE_APP_NAME=hierarchidb and restart dev server.';
           try {
             alert(`Import Template failed: ${String(error)}${hint}`);
           } catch (alertError) {
@@ -344,16 +360,21 @@ const TreeConsoleIntegrationInner: React.FC<
           }
           break;
         case 'import-template':
-          if (params && typeof params === 'object' && 'templateId' in params && typeof params.templateId === 'string') {
+          if (
+            params &&
+            typeof params === 'object' &&
+            'templateId' in params &&
+            typeof params.templateId === 'string'
+          ) {
             void importTemplate(params.templateId);
           }
           break;
         case 'restore': {
           if (!treeId) break;
           const resolvedTrashNodeId =
-            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+            params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
               ? params.trashNodeId
-              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+              : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
             to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/restore` as any,
           });
@@ -362,9 +383,9 @@ const TreeConsoleIntegrationInner: React.FC<
         case 'empty': {
           if (!treeId) break;
           const resolvedTrashNodeId =
-            (params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId)
+            params && typeof params === 'object' && 'trashNodeId' in params && params.trashNodeId
               ? params.trashNodeId
-              : trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash');
+              : (trashRootIdRef.current ?? (treeId ? `${treeId}:trash` : 'trash'));
           navigate({
             to: `/t/${treeId}/${currentPageNodeId}/${resolvedTrashNodeId}/trash/empty` as any,
           });
@@ -400,25 +421,39 @@ const TreeConsoleIntegrationInner: React.FC<
         default:
           logIntegrationWarning(
             `Unhandled toolbar action: ${normalizedAction} (raw: ${action})`,
-            new Error('Unhandled action'),
+            new Error('Unhandled action')
           );
       }
     },
-    [pageNodeId, workerClient, treeId, actions, navigate],
+    [pageNodeId, workerClient, treeId, actions, navigate]
   );
 
   const handleContextMenuAction = useCallback(
     (action: string, node: TreeNodeData, options?: { navigateToParent?: boolean }) => {
       actions.handleContextMenuAction(action, node, options);
     },
-    [actions],
+    [actions]
   );
 
   const handleBreadcrumbContextAction = useCallback(
-    (action: string, breadcrumbNode: { id?: string; treeNodeId?: string; parentId?: string | null; nodeType?: string; type?: string; name?: string; depth?: number }, options?: { navigateToParent?: boolean }) => {
+    (
+      action: string,
+      breadcrumbNode: {
+        id?: string;
+        treeNodeId?: string;
+        parentId?: string | null;
+        nodeType?: string;
+        type?: string;
+        name?: string;
+        depth?: number;
+      },
+      options?: { navigateToParent?: boolean }
+    ) => {
       const rawId = breadcrumbNode.id ?? breadcrumbNode.treeNodeId;
       if (!rawId) return;
-      const parentFallback = breadcrumbNode.parentId ?? (pageNodeId ? String(pageNodeId) : treeId ? `${treeId}:root` : null);
+      const parentFallback =
+        breadcrumbNode.parentId ??
+        (pageNodeId ? String(pageNodeId) : treeId ? `${treeId}:root` : null);
       const nodeData: TreeNodeData = {
         id: rawId as NodeId,
         nodeType: (breadcrumbNode.nodeType ?? breadcrumbNode.type ?? 'folder') as NodeType,
@@ -429,7 +464,7 @@ const TreeConsoleIntegrationInner: React.FC<
 
       actions.handleContextMenuAction(action, nodeData, options);
     },
-    [actions, pageNodeId, treeId],
+    [actions, pageNodeId, treeId]
   );
 
   // Handler for starting guided tour
@@ -447,11 +482,8 @@ const TreeConsoleIntegrationInner: React.FC<
     lowerPageNodeId.endsWith(':trash') ||
     lowerPageNodeId === 'trash';
 
-  
-
   // Handle loading state
   if (workerLoading) {
-    
     return (
       <Box
         sx={{
@@ -469,7 +501,6 @@ const TreeConsoleIntegrationInner: React.FC<
 
   // Handle error state
   if (workerError) {
-    
     return (
       <Box sx={{ p: 2 }}>
         <Alert severity="error">Failed to initialize TreeConsole: {workerError}</Alert>
@@ -479,7 +510,6 @@ const TreeConsoleIntegrationInner: React.FC<
 
   // Handle no worker client
   if (!workerClient) {
-    
     return (
       <Box sx={{ p: 2 }}>
         <Alert severity="warning">Worker client not available</Alert>
@@ -491,8 +521,7 @@ const TreeConsoleIntegrationInner: React.FC<
   const renderGuidedTour = () => {
     if (treeId === 'p') {
       return <ProjectsGuidedTour run={tourRun} onFinish={handleTourFinish} />;
-    } else if (
-      treeId === 'r') {
+    } else if (treeId === 'r') {
       return <ResourcesGuidedTour run={tourRun} onFinish={handleTourFinish} />;
     } else {
       return <TopPageGuidedTour run={tourRun} onFinish={handleTourFinish} />;
@@ -524,7 +553,9 @@ const TreeConsoleIntegrationInner: React.FC<
         availableTemplates={(() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
-            return [{ id: 'population-2023', label: 'Import Template: Total Population by Country' }];
+            return [
+              { id: 'population-2023', label: 'Import Template: Total Population by Country' },
+            ];
           }
           return [];
         })()}
@@ -532,71 +563,68 @@ const TreeConsoleIntegrationInner: React.FC<
 
       {/* TreeConsole Panel */}
       <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
-      <TreeConsolePanelWithDynamicSpeedDial
-        treeId={treeId as TreeId}
-        workerClient={workerClient}
-        onStartTour={handleStartTour}
-        title={`Tree: ${pageTreeNode?.name || 'Root'}`}
-        pageNodeId={pageNodeId}
-        pageTreeNode={pageTreeNode}
-        data={[...treeData]}
-        nodeIndex={nodeIndex}
-        columns={columns}
-        breadcrumbItems={breadcrumbItems}
-        loading={state.loading}
-        error={state.error || undefined}
-        selectedIds={selectedIds}
-        expandedIds={expandedIds}
-        searchTerm={searchTerm}
-        sortBy={state.sortBy}
-        sortDirection={state.sortDirection}
-        filterBy={state.filterBy}
-        availableFilters={state.availableFilters}
-        viewMode={viewMode}
-        rowClickAction={rowClickAction}
-        canCreate={canCreate}
-        canEdit={canEdit}
-        canTrash={canTrash}
-        showNavigationButtons={true}
-        dense={false}
-        onNodeClick={actions.handleNodeClick}
-        onNodeSelect={actions.handleNodeSelect}
-        onNodeExpand={actions.handleNodeExpand}
-        onSearchChange={actions.handleSearchChange}
-        onSearchClear={actions.handleSearchClear}
-        onCreate={actions.handleCreate}
-        onEdit={actions.handleEdit}
-        onDelete={actions.handleTrash}
-        onRefresh={actions.handleRefresh}
-        onExpandAll={actions.handleExpandAll}
-        onCollapseAll={actions.handleCollapseAll}
-        onSort={actions.handleSort}
-        onFilterChange={actions.handleFilterChange}
-        onViewModeChange={actions.handleViewModeChange}
-        onBreadcrumbNavigate={actions.handleBreadcrumbNavigate}
-        onNavigateBack={actions.handleNavigateBack}
-        onNavigateForward={actions.handleNavigateForward}
-        canGoBack={state.canGoBack}
-        canGoForward={state.canGoForward}
-        onContextMenuAction={handleContextMenuAction}
-        onBreadcrumbContextAction={handleBreadcrumbContextAction}
-        onMoveNodes={actions.handleMoveNodes}
-        useTrashColumns={isTrashPage}
-      />
+        <TreeConsolePanelWithDynamicSpeedDial
+          treeId={treeId as TreeId}
+          workerClient={workerClient}
+          onStartTour={handleStartTour}
+          title={`Tree: ${pageTreeNode?.name || 'Root'}`}
+          pageNodeId={pageNodeId}
+          pageTreeNode={pageTreeNode}
+          data={[...treeData]}
+          nodeIndex={nodeIndex}
+          columns={columns}
+          breadcrumbItems={breadcrumbItems}
+          loading={state.loading}
+          error={state.error || undefined}
+          selectedIds={selectedIds}
+          expandedIds={expandedIds}
+          searchTerm={searchTerm}
+          sortBy={state.sortBy}
+          sortDirection={state.sortDirection}
+          filterBy={state.filterBy}
+          availableFilters={state.availableFilters}
+          viewMode={viewMode}
+          rowClickAction={rowClickAction}
+          canCreate={canCreate}
+          canEdit={canEdit}
+          canTrash={canTrash}
+          showNavigationButtons={true}
+          dense={false}
+          onNodeClick={actions.handleNodeClick}
+          onNodeSelect={actions.handleNodeSelect}
+          onNodeExpand={actions.handleNodeExpand}
+          onSearchChange={actions.handleSearchChange}
+          onSearchClear={actions.handleSearchClear}
+          onCreate={actions.handleCreate}
+          onEdit={actions.handleEdit}
+          onDelete={actions.handleTrash}
+          onRefresh={actions.handleRefresh}
+          onExpandAll={actions.handleExpandAll}
+          onCollapseAll={actions.handleCollapseAll}
+          onSort={actions.handleSort}
+          onFilterChange={actions.handleFilterChange}
+          onViewModeChange={actions.handleViewModeChange}
+          onBreadcrumbNavigate={actions.handleBreadcrumbNavigate}
+          onNavigateBack={actions.handleNavigateBack}
+          onNavigateForward={actions.handleNavigateForward}
+          canGoBack={state.canGoBack}
+          canGoForward={state.canGoForward}
+          onContextMenuAction={handleContextMenuAction}
+          onBreadcrumbContextAction={handleBreadcrumbContextAction}
+          onMoveNodes={actions.handleMoveNodes}
+          useTrashColumns={isTrashPage}
+        />
       </Box>
-
     </Box>
   );
 };
 
 // Outer component that handles client loading
 export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
-                                                                                treeId,
-                                                                                pageNodeId,
-                                                                                pageTreeNode,
-                                                                              }) => {
-  
-
+  treeId,
+  pageNodeId,
+  pageTreeNode,
+}) => {
   // Get the Worker API client from WorkerSingletonProvider
   const { client: workerClient, isConnected } = useWorkerClient();
 

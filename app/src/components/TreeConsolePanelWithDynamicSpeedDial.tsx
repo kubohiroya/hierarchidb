@@ -5,12 +5,16 @@
  * to replace hardcoded plugin actions with dynamic plugin loading.
  */
 
-import { Box } from '@mui/material';
-import { TreeConsolePanel, type TreeConsolePanelProps, type TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
-import { DynamicSpeedDial } from './DynamicSpeedDial.js';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import {
+  TreeConsolePanel,
+  type TreeConsolePanelProps,
+  type TreeNodeData,
+} from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import { Box } from '@mui/material';
+import type { Remote } from 'comlink';
+import { DynamicSpeedDial } from './DynamicSpeedDial.js';
 
 type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'onDelete'> & {
   treeId: TreeId | undefined;
@@ -23,26 +27,27 @@ type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'on
 };
 
 export function TreeConsolePanelWithDynamicSpeedDial({
-                                                       treeId,
-                                                       workerClient,
-                                                       onStartTour,
-                                                       pageTreeNode,
-                                                       pageNodeId,
-                                                       onBreadcrumbContextAction,
-                                                       onTrash,
-                                                       onDelete,
-                                                       ...panelProps
-                                                     }: TreeConsolePanelWithDynamicSpeedDialProps) {
-  const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {
-  });
+  treeId,
+  workerClient,
+  onStartTour,
+  pageTreeNode,
+  pageNodeId,
+  onBreadcrumbContextAction,
+  onTrash,
+  onDelete,
+  ...panelProps
+}: TreeConsolePanelWithDynamicSpeedDialProps) {
+  const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {});
   const resolvedOnDelete = onDelete ?? onTrash ?? (() => {});
-  const parentForSpeedDial = (pageTreeNode?.parentId ?? pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as string;
+  const parentForSpeedDial = (pageTreeNode?.parentId ??
+    pageNodeId ??
+    (treeId ? `${treeId}:root` : 'root')) as string;
   const speedDialContextNode: TreeNodeData = {
-    id: (pageNodeId ?? (treeId ? (`${treeId}:root`) : 'root')) as NodeId,
+    id: (pageNodeId ?? (treeId ? `${treeId}:root` : 'root')) as NodeId,
     nodeType: (pageTreeNode?.nodeType ?? 'folder') as NodeType,
     name: pageTreeNode?.name ?? '',
     parentId: parentForSpeedDial as NodeId,
-    depth: (pageTreeNode?.depth ?? 1),
+    depth: pageTreeNode?.depth ?? 1,
   } as TreeNodeData;
   return (
     <Box sx={{ position: 'relative', height: '100%', minHeight: 0 }}>

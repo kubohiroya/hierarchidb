@@ -5,13 +5,13 @@
  * extracted dependencies from the integration hook.
  */
 
-import { preconnectPluginServices } from '../../services/preconnect.js';
-import { buildVisibleRows, syncNodeIndex } from '../../state/treeconsole.derive.js';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
-import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
-import type { MaybeCP, TreeConsoleActionDeps, TreeConsoleActions, ContextAction } from './types.js';
 import { DualKeyMap } from '@hierarchidb/util';
+import { preconnectPluginServices } from '../../services/preconnect.js';
+import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
+import { buildVisibleRows, syncNodeIndex } from '../../state/treeconsole.derive.js';
+import type { ContextAction, MaybeCP, TreeConsoleActionDeps, TreeConsoleActions } from './types.js';
 
 type ClipboardPayload = { nodeIds: NodeId[]; cut?: boolean };
 
@@ -33,11 +33,14 @@ function getOrCreateIndex(ssot: TreeConsoleSSOTEntry): DualKeyMap<NodeId, NodeId
   return ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>();
 }
 
-function buildIndexFromNodes(nodes: readonly TreeNode[], fallbackParent: NodeId): DualKeyMap<NodeId, NodeId, TreeNode> {
+function buildIndexFromNodes(
+  nodes: readonly TreeNode[],
+  fallbackParent: NodeId
+): DualKeyMap<NodeId, NodeId, TreeNode> {
   const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
   for (const node of nodes) {
     const key = String(node.id) as NodeId;
-    const parentKey = node.parentId ? String(node.parentId) as NodeId : fallbackParent;
+    const parentKey = node.parentId ? (String(node.parentId) as NodeId) : fallbackParent;
     index.set(key, node, parentKey);
   }
   return index;
@@ -94,8 +97,9 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
     const nodeIndex = ssot.nodeIndex ?? new DualKeyMap<NodeId, NodeId, TreeNode>();
     const nodeRecord = nodeIndex.get(targetNodeId);
-    const recordType = (nodeRecord as { nodeType?: string; type?: string } | undefined)?.nodeType
-      ?? (nodeRecord as { type?: string } | undefined)?.type;
+    const recordType =
+      (nodeRecord as { nodeType?: string; type?: string } | undefined)?.nodeType ??
+      (nodeRecord as { type?: string } | undefined)?.type;
     const nodeType = String(recordType ?? 'folder');
 
     await preconnectPluginServices(nodeType).catch(() => {});
@@ -283,8 +287,12 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       await openEditDialog(selectedIds[0] as NodeId);
     },
 
-    handleTrash: () => { void moveSelectionToTrash(); },
-    handleRemove: () => { void moveSelectionToTrash(); },
+    handleTrash: () => {
+      void moveSelectionToTrash();
+    },
+    handleRemove: () => {
+      void moveSelectionToTrash();
+    },
 
     handleRefresh: async () => {
       const root = pageNodeId as NodeId;
@@ -370,7 +378,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
           }
-          await refreshParent(parentId ?? pageNodeId as NodeId);
+          await refreshParent(parentId ?? (pageNodeId as NodeId));
           await refreshUndoRedo();
           fireCmdEvent();
         } catch (error) {
@@ -446,15 +454,24 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           const next = node.name.trim();
           const current = ssot.nodeIndex?.get(node.id as NodeId)?.name ?? '';
           if (next === current) return;
-          if (!next) { showCommandError('VALIDATION_ERROR', 'Name is required'); return; }
-          if (next.length > 255) { showCommandError('VALIDATION_ERROR', 'Name is too long (max 255)'); return; }
-          if (!/^[^<>:"/\\|?*]+$/.test(next)) { showCommandError('VALIDATION_ERROR', 'Invalid characters in name'); return; }
+          if (!next) {
+            showCommandError('VALIDATION_ERROR', 'Name is required');
+            return;
+          }
+          if (next.length > 255) {
+            showCommandError('VALIDATION_ERROR', 'Name is too long (max 255)');
+            return;
+          }
+          if (!/^[^<>:"/\\|?*]+$/.test(next)) {
+            showCommandError('VALIDATION_ERROR', 'Invalid characters in name');
+            return;
+          }
           const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, name: next });
           if (!res.success) {
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
           }
-          await refreshParent(parentId ?? pageNodeId as NodeId);
+          await refreshParent(parentId ?? (pageNodeId as NodeId));
           await refreshUndoRedo();
           fireCmdEvent();
         } catch (error) {
@@ -464,19 +481,29 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (normalizedAction === 'update-desc-inline' && node?.id && typeof node.description === 'string') {
+      if (
+        normalizedAction === 'update-desc-inline' &&
+        node?.id &&
+        typeof node.description === 'string'
+      ) {
         try {
           const mutationAPI = await client.getMutationAPI();
           const next = String(node.description ?? '').trim();
           const current = ssot.nodeIndex?.get(node.id as NodeId)?.description ?? '';
           if (next === current) return;
-          if (next.length > 1000) { showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)'); return; }
-          const res = await mutationAPI.updateNode({ nodeId: node.id as NodeId, description: next });
+          if (next.length > 1000) {
+            showCommandError('VALIDATION_ERROR', 'Description is too long (max 1000)');
+            return;
+          }
+          const res = await mutationAPI.updateNode({
+            nodeId: node.id as NodeId,
+            description: next,
+          });
           if (!res.success) {
             showCommandError('INVALID_OPERATION', res.error || 'Update failed');
             return;
           }
-          await refreshParent(parentId ?? pageNodeId as NodeId);
+          await refreshParent(parentId ?? (pageNodeId as NodeId));
           await refreshUndoRedo();
           fireCmdEvent();
         } catch (error) {
@@ -504,7 +531,10 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         try {
           const mutationAPI = await client.getMutationAPI();
           const toParentId = parentId ?? pageNodeId;
-          const res = await mutationAPI.duplicateNodes({ nodeIds: [targetNodeId], toParentId: toParentId as NodeId });
+          const res = await mutationAPI.duplicateNodes({
+            nodeIds: [targetNodeId],
+            toParentId: toParentId as NodeId,
+          });
           if (!res.success) {
             showCommandError('INVALID_OPERATION', res.error || 'Duplicate failed');
             return;
@@ -633,7 +663,10 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       try {
         const mutationAPI = await client.getMutationAPI();
         const toParentId = pageNodeId as NodeId;
-        const res = await mutationAPI.duplicateNodes({ nodeIds: selectedIds as NodeId[], toParentId });
+        const res = await mutationAPI.duplicateNodes({
+          nodeIds: selectedIds as NodeId[],
+          toParentId,
+        });
         if (!res.success) {
           showCommandError('INVALID_OPERATION', res.error || 'Duplicate failed');
           return;
@@ -663,7 +696,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file && pageNodeId) {
           const detected = importExport.detectFileFormat(file) ?? null;
-          const isSupported = (v: string | null): v is 'json' | 'csv' => v === 'json' || v === 'csv';
+          const isSupported = (v: string | null): v is 'json' | 'csv' =>
+            v === 'json' || v === 'csv';
           const format: 'json' | 'csv' = isSupported(detected) ? detected : 'json';
           try {
             await importExport.importFile({
@@ -729,7 +763,10 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       if (!client || nodeIds.length === 0 || !targetParentId) return;
       try {
         const mutationAPI = await client.getMutationAPI();
-        const res = await mutationAPI.moveNodes({ nodeIds: nodeIds as NodeId[], toParentId: targetParentId as NodeId });
+        const res = await mutationAPI.moveNodes({
+          nodeIds: nodeIds as NodeId[],
+          toParentId: targetParentId as NodeId,
+        });
         if (!res.success) {
           showCommandError('INVALID_OPERATION', res.error || 'Move failed');
           return;

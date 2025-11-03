@@ -2,10 +2,10 @@
  * Types for TreeTable package
  */
 
-import type { MouseEvent, ReactNode } from 'react';
-import type { RowSelectionState } from '@tanstack/react-table';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { DualKeyMap } from '@hierarchidb/util';
+import type { DualKeyMap } from '@hierarchidb/util';
+import type { RowSelectionState } from '@tanstack/react-table';
+import type { MouseEvent, ReactNode } from 'react';
 import type { TreeTablePlugin } from './plugin/types.js';
 
 // Base TreeNode interface (simplified from core)
@@ -58,7 +58,11 @@ export interface TreeTableController {
   onRemove?: (nodeIds: string[]) => void;
   // Move nodes to a new parent
   onMoveNodes?: (nodeIds: string[], targetParentId: string) => void;
-  onContextAction?: (action: string, node: TreeNodeInUI, options?: { navigateToParent?: boolean }) => void;
+  onContextAction?: (
+    action: string,
+    node: TreeNodeInUI,
+    options?: { navigateToParent?: boolean }
+  ) => void;
 }
 
 // TreeTable core props
@@ -104,7 +108,7 @@ export interface TreeTableCoreProps {
   onDragStateChange?: (
     draggingNodeId: NodeId | undefined,
     descendantIdSet: Set<NodeId> | undefined,
-    dragPreviewElement: HTMLElement | null,
+    dragPreviewElement: HTMLElement | null
   ) => void;
 
   /**
