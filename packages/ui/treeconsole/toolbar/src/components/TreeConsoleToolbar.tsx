@@ -45,12 +45,10 @@ import {
   SnippetFolder as SnippetFolderIcon,
   Save as SaveIcon,
   Undo as UndoIcon,
-
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   Translate as TranslateIcon,
   SettingsBrightness as SystemThemeIcon,
-
 } from '@mui/icons-material';
 
 import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types.js';

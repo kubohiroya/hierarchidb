@@ -84,6 +84,8 @@
       "clear": "Clear all"
     },
     "columns": {
+      "name": "Name",
+      "description": "Description",
       "created": "Created",
       "updated": "Updated",
       "removed": "Removed"
@@ -93,6 +95,19 @@
       "yesterday": "Yesterday {{time}}",
       "twoDaysAgo": "Two days ago {{time}}",
       "dateTime": "{{date}} {{time}}"
-    }
+    },
+    "validation": {
+      "invalidName": "Invalid name",
+      "invalidDescription": "Invalid description"
+    },
+    "placeholders": {
+      "nameConfirm": "Press Enter to confirm / Esc to cancel",
+      "descriptionConfirm": "Press Ctrl+Enter to confirm / Esc to cancel"
+    },
+    "header": {
+      "default": "Column"
+    },
+    "emptyCell": "-"
   }
+}
 }

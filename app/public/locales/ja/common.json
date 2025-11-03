@@ -102,6 +102,10 @@
       "clear": "すべて解除"
     },
     "columns": {
+      "name": "名前",
+      "description": "説明",
+      "created": "作成日時",
+      "updated": "更新日時",
       "removed": "削除日時"
     },
     "timestamps": {
@@ -109,7 +113,19 @@
       "yesterday": "昨日 {{time}}",
       "twoDaysAgo": "一昨日 {{time}}",
       "dateTime": "{{date}} {{time}}"
-    }
+    },
+    "validation": {
+      "invalidName": "名前が正しくありません",
+      "invalidDescription": "説明が正しくありません"
+    },
+    "placeholders": {
+      "nameConfirm": "Enterキーで確定 / Escでキャンセル",
+      "descriptionConfirm": "Ctrl+Enterで確定 / Escでキャンセル"
+    },
+    "header": {
+      "default": "列"
+    },
+    "emptyCell": "-"
   },
   "trash": {
     "columns": {
@@ -122,6 +138,38 @@
       "yesterday": "昨日 {{time}}",
       "twoDaysAgo": "一昨日 {{time}}",
       "dateTime": "{{date}} {{time}}"
+    },
+    "dialog": {
+      "stepLabel": "ゴミ箱",
+      "panelTitle": "ゴミ箱",
+      "title": {
+        "restore": "ゴミ箱から復元",
+        "empty": "ゴミ箱を空にする"
+      },
+      "searchPlaceholder": "ゴミ箱内を検索",
+      "buttons": {
+        "cancel": "キャンセル",
+        "restore": "復元",
+        "restoreWithCount": "復元 ({{count}})",
+        "empty": "ゴミ箱を空にする",
+        "emptyWithCount": "ゴミ箱を空にする ({{count}})",
+        "confirmDelete": "完全に削除する"
+      },
+      "aria": {
+        "restore": "復元",
+        "restoreWithCount": "{{count}}件を復元",
+        "empty": "ゴミ箱を空にする",
+        "emptyWithCount": "ゴミ箱を空にする ({{count}}件)"
+      },
+      "confirm": {
+        "title": "すべての項目を削除しますか？",
+        "empty": "ゴミ箱に項目はありません。",
+        "description": "ゴミ箱から{{count}}件を完全に削除します。この操作は元に戻せません。"
+      },
+      "units": {
+        "item_one": "件",
+        "item_other": "件"
+      }
     }
   }
 }

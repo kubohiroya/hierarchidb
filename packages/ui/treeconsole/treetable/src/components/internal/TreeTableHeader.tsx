@@ -9,6 +9,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { TreeNode } from '@hierarchidb/common-types';
 import type { Header, Table as ReactTable } from '@tanstack/react-table';
 import { ResizeHandle, StyledTableHead } from '../TreeTableStyles.js';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 interface TreeTableHeaderProps {
   table: ReactTable<TreeNode>;
@@ -18,6 +19,7 @@ interface TreeTableHeaderProps {
 }
 
 export function TreeTableHeader({ table, columnWidths, resizingColumn, handleResizeStart }: TreeTableHeaderProps) {
+  const { t } = useTranslation('common');
   return (
     <StyledTableHead>
       {table.getHeaderGroups().map((headerGroup) => (
@@ -52,12 +54,12 @@ export function TreeTableHeader({ table, columnWidths, resizingColumn, handleRes
                         >
                           {typeof header.column.columnDef.header === 'string'
                             ? header.column.columnDef.header
-                            : 'Column'}
+                            : t('treeTable.header.default', 'Column')}
                         </TableSortLabel>
                       ) : typeof header.column.columnDef.header === 'string' ? (
                         header.column.columnDef.header
                       ) : (
-                        'Column'
+                        t('treeTable.header.default', 'Column')
                       )}
                       {!isSelectionColumn && rightId && (
                         <ResizeHandle

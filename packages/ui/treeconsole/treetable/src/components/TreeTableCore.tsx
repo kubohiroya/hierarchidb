@@ -205,8 +205,24 @@ export function TreeTableCore({
     useTrashColumns,
     trashAction,
     formatTimestamp,
-    trashRemovedHeader: (useTrashColumns ? commonT('treeTable.columns.removed') : undefined) ?? undefined,
-  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, commonT, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, setContextMenuState, visualSelectionSet, trashAction, formatTimestamp]);
+    trashRemovedHeader: (useTrashColumns ? commonT('treeTable.columns.removed', 'Removed') : undefined)?? undefined,
+    columnLabels: {
+      name: commonT('treeTable.columns.name', 'Name'),
+      description: commonT('treeTable.columns.description', 'Description'),
+      created: commonT('treeTable.columns.created', 'Created'),
+      updated: commonT('treeTable.columns.updated', 'Updated'),
+      removed: commonT('treeTable.columns.removed', 'Removed'),
+    },
+    validationMessages: {
+      invalidName: commonT('treeTable.validation.invalidName', 'Invalid name'),
+      invalidDescription: commonT('treeTable.validation.invalidDescription', 'Invalid description'),
+    },
+    placeholders: {
+      nameEdit: commonT('treeTable.placeholders.nameConfirm', 'Press Enter to confirm / Esc to cancel'),
+      descriptionEdit: commonT('treeTable.placeholders.descriptionConfirm', 'Press Ctrl+Enter to confirm / Esc to cancel'),
+    },
+    emptyValue: commonT('treeTable.emptyCell', '-'),
+  }), [columnWidths, selectAll, allRowsSelected, someSelected, handleSelectAll, pageNodeId, selectAllHydrated, selectAllT, commonT, formatTimestamp, structure.hasSelectedAncestor, structure.rowSelection, structure.collectDescendantIds, structure.nodesWithChildren, structure.expandedRowIds, batchSelect, depthOffset, editingNodeId, hideDragHandler, disableDragAndDrop, IconComponent, useTrashColumns, rowClickAction, selectionMode, controller, validateInline, handleStartEdit, editingField, editingValue, editingError, setEditingError, setEditingNodeId, setEditingField, treeId, setContextMenuState, visualSelectionSet, trashAction]);
 
   const expandedState = useMemo(() => {
     const record: Record<string, boolean> = {};

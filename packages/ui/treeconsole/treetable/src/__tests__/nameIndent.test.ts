@@ -78,11 +78,28 @@ describe('TreeTable Name column indentation', () => {
     setEditingNodeId: () => {},
     setEditingField: () => {},
     treeId: 'tree',
-    setContextMenuState: () => {},
-    visualSelectionSet: new Set(),
-    useTrashColumns: false,
-    trashAction: 'restore',
-  };
+  setContextMenuState: () => {},
+  visualSelectionSet: new Set(),
+  useTrashColumns: false,
+  trashAction: 'restore',
+  formatTimestamp: () => '-',
+  columnLabels: {
+    name: 'Name',
+    description: 'Description',
+    created: 'Created',
+    updated: 'Updated',
+    removed: 'Removed',
+  },
+  validationMessages: {
+    invalidName: 'Invalid name',
+    invalidDescription: 'Invalid description',
+  },
+  placeholders: {
+    nameEdit: 'Press Enter to confirm / Esc to cancel',
+    descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+  },
+  emptyValue: '-',
+};
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({
     id: 'node-1' as NodeId,

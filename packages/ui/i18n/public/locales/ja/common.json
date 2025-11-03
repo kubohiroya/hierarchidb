@@ -69,6 +69,8 @@
       "clear": "すべて解除"
     },
     "columns": {
+      "name": "名前",
+      "description": "説明",
       "created": "作成日",
       "updated": "更新日",
       "removed": "削除日"
@@ -78,6 +80,18 @@
       "yesterday": "昨日 {{time}}",
       "twoDaysAgo": "一昨日 {{time}}",
       "dateTime": "{{date}} {{time}}"
-    }
+    },
+    "validation": {
+      "invalidName": "名前が正しくありません",
+      "invalidDescription": "説明が正しくありません"
+    },
+    "placeholders": {
+      "nameConfirm": "Enterキーで確定 / Escでキャンセル",
+      "descriptionConfirm": "Ctrl+Enterで確定 / Escでキャンセル"
+    },
+    "header": {
+      "default": "列"
+    },
+    "emptyCell": "-"
   }
 }

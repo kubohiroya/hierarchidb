@@ -81,6 +81,22 @@ const defaultParams: ColumnBuilderParams = {
   useTrashColumns: false,
   trashAction: 'restore',
   formatTimestamp: () => '-',
+  columnLabels: {
+    name: 'Name',
+    description: 'Description',
+    created: 'Created',
+    updated: 'Updated',
+    removed: 'Removed',
+  },
+  validationMessages: {
+    invalidName: 'Invalid name',
+    invalidDescription: 'Invalid description',
+  },
+  placeholders: {
+    nameEdit: 'Press Enter to confirm / Esc to cancel',
+    descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+  },
+  emptyValue: '-',
 };
 
 function renderNameCell(node: TreeNode) {

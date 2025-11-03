@@ -102,6 +102,10 @@
       "clear": "Clear all"
     },
     "columns": {
+      "name": "Name",
+      "description": "Description",
+      "created": "Created",
+      "updated": "Updated",
       "removed": "Removed"
     },
     "timestamps": {
@@ -109,7 +113,19 @@
       "yesterday": "Yesterday {{time}}",
       "twoDaysAgo": "Two days ago {{time}}",
       "dateTime": "{{date}} {{time}}"
-    }
+    },
+    "validation": {
+      "invalidName": "Invalid name",
+      "invalidDescription": "Invalid description"
+    },
+    "placeholders": {
+      "nameConfirm": "Press Enter to confirm / Esc to cancel",
+      "descriptionConfirm": "Press Ctrl+Enter to confirm / Esc to cancel"
+    },
+    "header": {
+      "default": "Column"
+    },
+    "emptyCell": "-"
   },
   "trash": {
     "columns": {
@@ -122,6 +138,38 @@
       "yesterday": "Yesterday {{time}}",
       "twoDaysAgo": "Two days ago {{time}}",
       "dateTime": "{{date}} {{time}}"
+    },
+    "dialog": {
+      "stepLabel": "Trash",
+      "panelTitle": "Trash",
+      "title": {
+        "restore": "Restore from Trash",
+        "empty": "Empty Trash"
+      },
+      "searchPlaceholder": "Search trash items",
+      "buttons": {
+        "cancel": "Cancel",
+        "restore": "Restore",
+        "restoreWithCount": "Restore ({{count}})",
+        "empty": "Empty Trash",
+        "emptyWithCount": "Empty Trash ({{count}})",
+        "confirmDelete": "Permanently delete"
+      },
+      "aria": {
+        "restore": "Restore",
+        "restoreWithCount": "Restore {{count}} {{unit}}",
+        "empty": "Empty Trash",
+        "emptyWithCount": "Empty Trash {{count}} {{unit}}"
+      },
+      "confirm": {
+        "title": "Delete all items?",
+        "empty": "There are no items in the trash.",
+        "description": "This will permanently delete {{count}} {{unit}} from the trash. This action cannot be undone."
+      },
+      "units": {
+        "item_one": "item",
+        "item_other": "items"
+      }
     }
   }
 }

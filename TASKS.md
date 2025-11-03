@@ -169,6 +169,22 @@
   - [x] 修正差分に対する typecheck を実行し、結果を運用ログに残す
 - ロールバック手順：翻訳ファイルと `TreeTableHeader.tsx`、`TrashDialog.tsx` の差分を revert し、従来の日時表示（キー文字列表示／リサイズ不可）に戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再実行する
 - 原因整理：Trash ダイアログは `trash.timestamps.*` を参照し、TreeTable 側は `treeTable.timestamps.*` を参照していたが、いずれのキーも翻訳ファイルに未定義だったためキー文字列がそのまま表示されていた。また、TreeTableHeader が `updatedAt` 列だけリサイズハンドルを描画しない条件になっており、`removedAt` 列が追加されても境界ドラッグが無効化されていた。さらに Finder 形式の `formatTimestamp` を TreeTableCore へ渡す配線が抜けており、Trash 以外の TreeTable で runtime エラーが発生していた。
+- 原因整理：Trash ダイアログは `trash.timestamps.*` を参照し、TreeTable 側は `treeTable.timestamps.*` を参照していたが、いずれのキーも翻訳ファイルに未定義だったためキー文字列がそのまま表示されていた。また、TreeTableHeader が `updatedAt` 列だけリサイズハンドルを描画しない条件になっており、`removedAt` 列が追加されても境界ドラッグが無効化されていた。さらに Finder 形式の `formatTimestamp` を TreeTableCore へ渡す配線が抜けており、Trash 以外の TreeTable で runtime エラーが発生していた。
+
+- メモ（翻訳対応未完）：
+  - `app/src/components/dialogs/TrashDialog.tsx`
+    - 例外メッセージ（Missing treeId parameter, Trash root not found）
+    - ステップラベル・ダイアログタイトル・フッター/確認ダイアログ文言（Restore/Empty Trash/Cancel 等）
+    - 検索プレースホルダ、TreeConsolePanel の `title="Trash"`
+    - `t('trash.columns.*', 'Name' | 'Type' | 'Removed')` のフォールバック英語
+  - `packages/ui/treeconsole/treetable/src/components/internal/createTreeTableColumns.tsx`
+    - カラムヘッダ（Name/Description/Created/Updated/Removed）
+    - バリデーションエラーメッセージ（Invalid name/description）
+    - プレースホルダ（Press Enter to confirm / Esc to cancel、Ctrl+Enterで確定 / Escでキャンセル）
+    - `'-'` などの固定文字列（必要に応じてキー化検討）
+  - `packages/ui/treeconsole/treetable/src/components/internal/TreeTableHeader.tsx`
+    - デフォルトヘッダ文言（Column）
+  → 上記をキー化・翻訳ファイル整備するタスクを後続で設定する。
 
 94) folder-plugin uuid shim 方針調査（P0）
 - ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
@@ -7340,4 +7356,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 09:30 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck — exit 0（typecheck スクリプト未定義のため実行対象なし、既知仕様を確認）。
 - 2025-11-03 09:37 command: pnpm --filter @hierarchidb/app typecheck — exit 0（tsc -b tsconfig.typecheck.json --noEmit）。
 - 2025-11-03 09:59 command: pnpm --filter @hierarchidb/app typecheck — exit 0（フォーマッタ配線修正後の再確認）。
+- 2025-11-03 10:15 progress: fix/ui-trash/treetable-timestamps — TrashDialog のボタン/確認ダイアログ文言と TreeTable の列ラベル・検証メッセージを i18n 化し、共通 common.json へ集約。app/ui 双方で英語フォールバックを排除し、日本語訳を追加。
+- 2025-11-03 10:18 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0。
+- 2025-11-03 10:19 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。

@@ -80,6 +80,23 @@ function makeParams(overrides: Partial<ColumnBuilderParams>): ColumnBuilderParam
     visualSelectionSet: new Set(),
     useTrashColumns: false,
     trashAction: 'restore',
+    formatTimestamp: () => '-',
+    columnLabels: {
+      name: 'Name',
+      description: 'Description',
+      created: 'Created',
+      updated: 'Updated',
+      removed: 'Removed',
+    },
+    validationMessages: {
+      invalidName: 'Invalid name',
+      invalidDescription: 'Invalid description',
+    },
+    placeholders: {
+      nameEdit: 'Press Enter to confirm / Esc to cancel',
+      descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+    },
+    emptyValue: '-',
     ...overrides,
   };
 }

@@ -120,14 +120,6 @@ export type TrashDialogData = LoadTreeReturn & {
 
 type TrashStepData = Record<string, never>;
 
-const STEP_DESCRIPTOR = {
-  id: 'trash-root',
-  label: 'Trash',
-  component: () => null,
-};
-
-const STEP_ARRAY = [STEP_DESCRIPTOR] as const;
-
 const DEFAULT_SIZE: MultiDialogSize = { width: 960, height: 640 };
 
 function createTreeNodeMap(nodes: TreeNode[] | undefined): Map<string, TreeNode> {
@@ -363,6 +355,7 @@ function TrashDialogFooter({
   onEmptyAll,
   onRequestClose,
 }: TrashDialogFooterProps) {
+  const { t } = useTranslation();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const handleConfirmOpen = () => setConfirmOpen(true);
   const handleConfirmClose = () => setConfirmOpen(false);
@@ -374,10 +367,20 @@ function TrashDialogFooter({
   const isRestoreMode = mode === 'restore';
   const restoreDisabled = loading || selectedCount === 0;
   const emptyDisabled = loading || totalCount === 0;
-  const restoreItemsLabel = selectedCount === 1 ? 'item' : 'items';
-  const emptyItemsLabel = totalCount === 1 ? 'item' : 'items';
-  const restoreLabel = selectedCount === 0 ? 'Restore' : `Restore (${selectedCount})`;
-  const emptyLabel = totalCount === 0 ? 'Empty Trash' : `Empty Trash (${totalCount})`;
+  const restoreUnit = t('trash.dialog.units.item', { count: selectedCount });
+  const emptyUnit = t('trash.dialog.units.item', { count: totalCount });
+  const restoreLabel = selectedCount === 0
+    ? t('trash.dialog.buttons.restore')
+    : t('trash.dialog.buttons.restoreWithCount', { count: selectedCount });
+  const emptyLabel = totalCount === 0
+    ? t('trash.dialog.buttons.empty')
+    : t('trash.dialog.buttons.emptyWithCount', { count: totalCount });
+  const restoreAria = selectedCount === 0
+    ? t('trash.dialog.aria.restore')
+    : t('trash.dialog.aria.restoreWithCount', { count: selectedCount, unit: restoreUnit });
+  const emptyAria = totalCount === 0
+    ? t('trash.dialog.aria.empty')
+    : t('trash.dialog.aria.emptyWithCount', { count: totalCount, unit: emptyUnit });
 
   return (
     <>
@@ -395,7 +398,7 @@ function TrashDialogFooter({
         }}
       >
         <Button variant="contained" color="inherit" onClick={() => onRequestClose('close')}>
-          Cancel
+          {t('trash.dialog.buttons.cancel')}
         </Button>
         {isRestoreMode ? (
           <Button
@@ -403,11 +406,7 @@ function TrashDialogFooter({
             startIcon={<RestoreIcon />}
             disabled={restoreDisabled}
             onClick={onRestore}
-            aria-label={
-              selectedCount === 0
-                ? 'Restore'
-                : `Restore ${selectedCount} ${restoreItemsLabel}`
-            }
+            aria-label={restoreAria}
           >
             {restoreLabel}
           </Button>
@@ -418,11 +417,7 @@ function TrashDialogFooter({
             startIcon={<EmptyTrashIcon />}
             onClick={handleConfirmOpen}
             disabled={emptyDisabled}
-            aria-label={
-              totalCount === 0
-                ? 'Empty Trash'
-                : `Empty Trash ${totalCount} ${emptyItemsLabel}`
-            }
+            aria-label={emptyAria}
           >
             {emptyLabel}
           </Button>
@@ -433,17 +428,17 @@ function TrashDialogFooter({
         onClose={handleConfirmClose}
         aria-labelledby="trash-empty-confirm-title"
       >
-        <DialogTitle id="trash-empty-confirm-title">Delete all items?</DialogTitle>
+        <DialogTitle id="trash-empty-confirm-title">{t('trash.dialog.confirm.title')}</DialogTitle>
         <DialogContent>
           <DialogContentText>
             {totalCount === 0
-              ? 'There are no items in the trash.'
-              : `This will permanently delete ${totalCount} ${emptyItemsLabel} from the trash. This action cannot be undone.`}
+              ? t('trash.dialog.confirm.empty')
+              : t('trash.dialog.confirm.description', { count: totalCount, unit: emptyUnit })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleConfirmClose} color="inherit">
-            Cancel
+            {t('trash.dialog.buttons.cancel')}
           </Button>
           <Button
             onClick={handleConfirmDelete}
@@ -451,7 +446,7 @@ function TrashDialogFooter({
             variant="contained"
             disabled={emptyDisabled}
           >
-            Permanently delete
+            {t('trash.dialog.buttons.confirmDelete')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -495,6 +490,7 @@ function TrashDialogContent({
   onToggleExpand,
   nodeIndex,
 }: TrashDialogContentProps) {
+  const { t } = useTranslation();
   const filteredTreeData = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return treeData;
@@ -529,7 +525,7 @@ function TrashDialogContent({
           value={searchTerm}
           onChange={onSearchTermChange}
           onClear={() => onSearchTermChange('')}
-          placeholder="Search trash items"
+          placeholder={t('trash.dialog.searchPlaceholder') ?? ''}
           sx={{ width: 260 }}
         />
       </Box>
@@ -543,7 +539,7 @@ function TrashDialogContent({
         }}
       >
         <TreeConsolePanel
-          title="Trash"
+          title={t('trash.dialog.panelTitle') ?? ''}
           treeId={treeId}
           pageNodeId={pageNodeId ? String(pageNodeId) : undefined}
           subtreeRootId={trashViewRootId ? String(trashViewRootId) : undefined}
@@ -634,6 +630,12 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const stepComponents = useMemo(() => ([{
+    id: 'trash-root',
+    label: t('trash.dialog.stepLabel'),
+    component: () => null,
+  }] as const), [t]);
 
   const nodeMap = useMemo(() => {
     const map = createTreeNodeMap(data.trashItems);
@@ -753,21 +755,21 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
   const columns: TreeTableColumn[] = useMemo(() => [
     {
       id: 'name',
-      label: t('trash.columns.name', 'Name'),
+      label: t('trash.columns.name'),
       sortable: true,
       width: 300,
       render: (_value: unknown, node: TreeNodeData) => getTrashDisplayName(node),
     },
     {
       id: 'nodeType',
-      label: t('trash.columns.type', 'Type'),
+      label: t('trash.columns.type'),
       sortable: true,
       width: 160,
       render: (_value: unknown, node: TreeNodeData) => node.nodeType,
     },
     {
       id: 'removedAt',
-      label: t('trash.columns.removedAt', 'Removed'),
+      label: t('trash.columns.removedAt'),
       sortable: true,
       width: 200,
       render: (_value: unknown, node: TreeNodeData) => {
@@ -840,7 +842,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
 
   const headlessProps: HeadlessMultiStepDialogProps<TrashStepData> = useMemo(()=>({
     open: true,
-    stepComponents: STEP_ARRAY,
+    stepComponents,
     stepData: {},
     onStepDataChange: () => undefined,
     activeStepIndex: 0,
@@ -856,7 +858,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
     renderHeader: (props) => (
       <TrashDialogHeader
         {...props}
-        title={mode === 'restore' ? 'Restore from Trash' : 'Empty Trash'}
+        title={mode === 'restore' ? t('trash.dialog.title.restore') : t('trash.dialog.title.empty')}
       />
     ),
     renderContent: (_props: HeadlessContentRenderProps<TrashStepData>) => (
@@ -890,7 +892,7 @@ export function TrashDialog({ data, params }: TrashDialogProps) {
         onEmptyAll={handleEmptyAll}
       />
     ),
-  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, trashViewRootId, treeData, treeId]);
+  }), [breadcrumbItems, columns, expandedIds, frameState, handleClose, handleEmptyAll, handleRestore, loading, mode, nodeIndex, onToggleExpand, pageNodeId, searchTerm, selectedIds, stepComponents, t, trashViewRootId, treeData, treeId]);
 
   const frameSx = useMemo(() => ({
     borderRadius: frameState.displayMode === 'full-screen' ? 0 : 4,

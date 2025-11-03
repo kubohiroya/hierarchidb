@@ -60,6 +60,22 @@ describe('TreeTable Draft chip', () => {
   useTrashColumns: false,
   trashAction: 'restore',
   formatTimestamp: () => '-',
+  columnLabels: {
+    name: 'Name',
+    description: 'Description',
+    created: 'Created',
+    updated: 'Updated',
+    removed: 'Removed',
+  },
+  validationMessages: {
+    invalidName: 'Invalid name',
+    invalidDescription: 'Invalid description',
+  },
+  placeholders: {
+    nameEdit: 'Press Enter to confirm / Esc to cancel',
+    descriptionEdit: 'Press Ctrl+Enter to confirm / Esc to cancel',
+  },
+  emptyValue: '-',
 };
 
   const buildNode = (overrides: Partial<TreeNode> = {}): TreeNode => ({

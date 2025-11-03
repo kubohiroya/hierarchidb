@@ -69,6 +69,22 @@ export interface ColumnBuilderParams {
   trashAction: 'restore' | 'empty';
   formatTimestamp: (value?: number) => string;
   trashRemovedHeader?: string;
+  columnLabels: {
+    name: string;
+    description: string;
+    created: string;
+    updated: string;
+    removed: string;
+  };
+  validationMessages: {
+    invalidName: string;
+    invalidDescription: string;
+  };
+  placeholders: {
+    nameEdit: string;
+    descriptionEdit: string;
+  };
+  emptyValue: string;
 }
 
 const SparkleAnimation: React.FC<{ showSparkle: boolean; duration?: number }> = ({
@@ -148,6 +164,10 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     trashAction,
     formatTimestamp,
     trashRemovedHeader,
+    columnLabels,
+    validationMessages,
+    placeholders,
+    emptyValue,
   } = params;
 
   const selectionColumn: ColumnDef<TreeNode> = {
@@ -191,7 +211,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const nameColumn: ColumnDef<TreeNode> = {
     id: 'name',
     accessorKey: 'name',
-    header: 'Name',
+    header: columnLabels.name,
     size: columnWidths.name,
     enableSorting: true,
     cell: ({ row }) => {
@@ -347,7 +367,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   }
                   const validation = validateInline('name', nextValue);
                   if (!validation.ok) {
-                    setEditingError(validation.message || 'Invalid name');
+                    setEditingError(validation.message || validationMessages.invalidName);
                     return;
                   }
                   controller?.finishEdit?.(node.id, nextValue, 'name');
@@ -367,7 +387,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                     }
                     const validation = validateInline('name', nextValue);
                     if (!validation.ok) {
-                      setEditingError(validation.message || 'Invalid name');
+                      setEditingError(validation.message || validationMessages.invalidName);
                       return;
                     }
                     controller?.finishEdit?.(node.id, nextValue, 'name');
@@ -385,7 +405,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 autoFocus
                 error={!!editingError}
                 helperText={editingError || undefined}
-                placeholder={!editingValue ? 'Press Enter to confirm / Esc to cancel' : undefined}
+                placeholder={!editingValue ? placeholders.nameEdit : undefined}
                 sx={{ flex: 1 }}
               />
             </Box>
@@ -458,7 +478,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const descriptionColumn: ColumnDef<TreeNode> = {
     id: 'description',
     accessorKey: 'description',
-    header: 'Description',
+    header: columnLabels.description,
     size: columnWidths.description,
     enableSorting: true,
     cell: ({ row }) => {
@@ -487,7 +507,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 }
                 const validation = validateInline('description', nextValue);
                 if (!validation.ok) {
-                  setEditingError(validation.message || 'Invalid description');
+                  setEditingError(validation.message || validationMessages.invalidDescription);
                   return;
                 }
                 controller?.finishEdit?.(node.id, nextValue, 'description');
@@ -500,7 +520,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                   const nextValue = (event.currentTarget as HTMLInputElement).value.trim();
                   const validation = validateInline('description', nextValue);
                   if (!validation.ok) {
-                    setEditingError(validation.message || 'Invalid description');
+                    setEditingError(validation.message || validationMessages.invalidDescription);
                     return;
                   }
                   controller?.finishEdit?.(node.id, nextValue, 'description');
@@ -517,13 +537,13 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
               autoFocus
               error={!!editingError}
               helperText={editingError || undefined}
-              placeholder={!editingValue ? 'Ctrl+Enterで確定 / Escでキャンセル' : undefined}
+              placeholder={!editingValue ? placeholders.descriptionEdit : undefined}
             />
           </Box>
         );
       }
 
-      if (!node.description) return '-';
+      if (!node.description) return emptyValue;
       return (
         <Box
           sx={{
@@ -547,7 +567,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const createdColumn: ColumnDef<TreeNode> = {
     id: 'createdAt',
     accessorKey: 'createdAt',
-    header: 'Created',
+    header: columnLabels.created,
     size: columnWidths.createdAt,
     enableSorting: true,
     cell: ({ row }) => {
@@ -559,7 +579,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
   const updatedColumn: ColumnDef<TreeNode> = {
     id: 'updatedAt',
     accessorKey: 'updatedAt',
-    header: 'Updated',
+    header: columnLabels.updated,
     size: columnWidths.updatedAt,
     enableSorting: true,
     cell: ({ row }) => {
@@ -574,7 +594,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
     const removedColumn: ColumnDef<TreeNode> = {
       id: 'removedAt',
       accessorFn: (row) => (row as { removedAt?: number; deletedAt?: number }).removedAt ?? (row as { deletedAt?: number }).deletedAt,
-      header: trashRemovedHeader || 'Removed',
+      header: trashRemovedHeader || columnLabels.removed,
       size: columnWidths.removedAt ?? 150,
       enableSorting: true,
       cell: ({ row }) => {
