@@ -190,8 +190,8 @@ export const TreeConsoleContent: React.FC<TreeConsoleContentProps> = memo(
                     (nodeId: string) =>
                       controller.onDuplicate!(nodeId as NodeId) :
                     undefined,
-                  onRemove: controller.onRemove ?
-                    (nodeIds: string[]) => controller.onRemove!(nodeIds as NodeId[]) :
+                  onTrash: controller.onTrash ?
+                    (nodeIds: string[]) => controller.onTrash!(nodeIds as NodeId[]) :
                     undefined,
                 }}
                 viewHeight={viewHeight || 400}

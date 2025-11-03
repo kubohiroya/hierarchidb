@@ -260,7 +260,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       await openEditDialog(selectedIds[0] as NodeId);
     },
 
-    handleDelete: async () => {
+    handleTrash: async () => {
       if (!client || selectedIds.length === 0) return;
       const ok = confirm(`Move ${selectedIds.length} item(s) to trash?`);
       if (!ok) return;
@@ -278,7 +278,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         fireCmdEvent();
         await setupSubscription(parent);
       } catch (error) {
-        console.error('Remove failed:', error);
+        console.error('Trash failed:', error);
         showCommandError('UNKNOWN_ERROR');
       }
     },
@@ -516,7 +516,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (action === 'remove') {
+      if (action === 'trash') {
         if (!client) return;
         try {
           const scopeParent = parentId ?? pageNodeId;
@@ -524,7 +524,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           const mutationAPI = await client.getMutationAPI();
           const res = await mutationAPI.moveNodesToTrash([targetNodeId]);
           if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Remove failed');
+            showCommandError('INVALID_OPERATION', res.error || 'Trash failed');
             return;
           }
           if (scopeParent) {
@@ -537,7 +537,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
             navigateTo(scopeParent ?? null);
           }
         } catch (error) {
-          console.error('Remove failed:', error);
+          console.error('Trash failed:', error);
           showCommandError('UNKNOWN_ERROR');
         }
         return;

@@ -78,6 +78,76 @@
       }
     }
   },
+  "treeConsole": {
+    "toolbar": {
+      "search": {
+        "placeholder": "Search tree…",
+        "ariaLabel": "Tree search"
+      },
+      "aria": {
+        "toolbarLabel": "Tree console toolbar",
+        "trashMenuButton": "Open trash actions",
+        "importExportButton": "Import and export options",
+        "settingsButton": "Open toolbar settings"
+      },
+      "tooltips": {
+        "undo": "Undo ({{shortcut}})",
+        "redo": "Redo ({{shortcut}})",
+        "cut": "Cut ({{shortcut}})",
+        "copy": "Copy ({{shortcut}})",
+        "paste": "Paste ({{shortcut}})",
+        "duplicate": "Duplicate ({{shortcut}})",
+        "moveToTrash": "Move to Trash ({{shortcut}})"
+      },
+      "trashMenu": {
+        "restore": "Restore from Trash",
+        "empty": "Remove all from Trash"
+      },
+      "importExportMenu": {
+        "import": "Import from JSON file",
+        "export": "Export to JSON file",
+        "importTemplate": "Import template",
+        "importTemplateFallback": "Import template"
+      },
+      "rowClick": {
+        "title": "Row click action",
+        "options": {
+          "selectNavigate": "Select / Navigate",
+          "edit": "Edit"
+        }
+      },
+      "settings": {
+        "theme": {
+          "title": "Theme",
+          "modes": {
+            "system": "System",
+            "light": "Light",
+            "dark": "Dark"
+          }
+        },
+        "language": {
+          "title": "Language",
+          "modes": {
+            "system": "System default",
+            "en": "English",
+            "ja": "Japanese"
+          }
+        }
+      }
+    },
+    "contextMenu": {
+      "create": "Create",
+      "openFolder": "Open folder",
+      "open": "Open",
+      "edit": "Edit",
+      "copy": "Copy",
+      "cut": "Cut",
+      "duplicate": "Duplicate",
+      "moveToTrash": "Move to Trash",
+      "checkReference": "Check reference",
+      "preview": "Preview"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "Select all",
@@ -110,4 +180,3 @@
     "emptyCell": "-"
   }
 }
-

@@ -85,7 +85,7 @@ const TreeConsoleIntegrationInner: React.FC<
     viewMode,
     canCreate,
     canEdit,
-    canDelete,
+    canTrash,
     actions,
     state,
   } = useTreeConsoleIntegration({
@@ -386,8 +386,8 @@ const TreeConsoleIntegrationInner: React.FC<
         case 'duplicate':
           actions.handleDuplicate?.();
           break;
-        case 'remove':
-          actions.handleDelete?.();
+        case 'trash':
+          actions.handleTrash?.();
           break;
         case 'import':
           actions.handleImport?.();
@@ -516,7 +516,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canCopy={selectedIds.length > 0}
         canPaste={state.canPaste || false}
         canDuplicate={selectedIds.length > 0}
-        canRemove={canDelete && selectedIds.length > 0}
+        canTrash={canTrash && selectedIds.length > 0}
         availableTemplates={(() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
@@ -552,7 +552,7 @@ const TreeConsoleIntegrationInner: React.FC<
         rowClickAction={rowClickAction}
         canCreate={canCreate}
         canEdit={canEdit}
-        canDelete={canDelete}
+        canTrash={canTrash}
         showNavigationButtons={true}
         dense={false}
         onNodeClick={actions.handleNodeClick}
@@ -562,7 +562,7 @@ const TreeConsoleIntegrationInner: React.FC<
         onSearchClear={actions.handleSearchClear}
         onCreate={actions.handleCreate}
         onEdit={actions.handleEdit}
-        onDelete={actions.handleDelete}
+        onTrash={actions.handleTrash}
         onRefresh={actions.handleRefresh}
         onExpandAll={actions.handleExpandAll}
         onCollapseAll={actions.handleCollapseAll}

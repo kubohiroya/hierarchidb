@@ -190,6 +190,7 @@ function TreeConsoleToolbarContent({
   const [trashAnchorEl, setTrashAnchorEl] = useState<null | HTMLElement>(null);
   const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
   const [languageAnchorEl, setLanguageAnchorEl] = useState<null | HTMLElement>(null);
+  const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
   const [themeMode, setThemeMode] = useState<'system' | 'light' | 'dark'>(() =>
     (typeof localStorage !== 'undefined' && (localStorage.getItem('app.theme') as 'system' | 'light' | 'dark')) || 'system',
   );
@@ -200,6 +201,46 @@ function TreeConsoleToolbarContent({
   const settingsOpen = Boolean(settingsAnchorEl);
   const importExportOpen = Boolean(importExportAnchorEl);
   const trashOpen = Boolean(trashAnchorEl);
+
+  const undoTooltip = t('tooltips.undo', { shortcut: '⌘+Z' });
+  const redoTooltip = t('tooltips.redo', { shortcut: '⌘+Shift+Z' });
+  const cutTooltip = t('tooltips.cut', { shortcut: '⌘+X' });
+  const copyTooltip = t('tooltips.copy', { shortcut: '⌘+C' });
+  const pasteTooltip = t('tooltips.paste', { shortcut: '⌘+V' });
+  const duplicateTooltip = t('tooltips.duplicate', { shortcut: '⌘+D' });
+  const moveToTrashTooltip = t('tooltips.moveToTrash', { shortcut: '⌘+X' });
+
+  const trashButtonLabel = t('aria.trashMenuButton');
+  const importExportButtonLabel = t('aria.importExportButton');
+  const settingsButtonLabel = t('aria.settingsButton');
+
+  const trashRestoreLabel = t('trashMenu.restore');
+  const trashEmptyLabel = t('trashMenu.empty');
+
+  const importLabel = t('importExportMenu.import');
+  const exportLabel = t('importExportMenu.export');
+  const importTemplateLabel = t('importExportMenu.importTemplate');
+  const importTemplateFallback = t('importExportMenu.importTemplateFallback');
+
+  const rowClickTitle = t('rowClick.title');
+  const rowClickLabels = {
+    selectNavigate: t('rowClick.options.selectNavigate'),
+    edit: t('rowClick.options.edit'),
+  };
+
+  const themeTitle = t('settings.theme.title');
+  const themeLabels = {
+    system: t('settings.theme.modes.system'),
+    light: t('settings.theme.modes.light'),
+    dark: t('settings.theme.modes.dark'),
+  } as const;
+
+  const languageTitle = t('settings.language.title');
+  const languageLabels = {
+    system: t('settings.language.modes.system'),
+    en: t('settings.language.modes.en'),
+    ja: t('settings.language.modes.ja'),
+  } as const;
 
   const handleSettingsClick = (event: MouseEvent<HTMLElement>) => {
     // Close other menus before opening Settings
@@ -324,12 +365,15 @@ function TreeConsoleToolbarContent({
         searchText={controller?.searchText || ''}
         handleSearchTextChange={handleSearch}
         handleSearchCommit={controller?.handleSearchCommit}
+        placeholder={searchPlaceholder}
+        ariaLabel={searchAriaLabel}
       />
 
       {/* Undo/Redo Group */}
       <ButtonGroup size="small">
         <Button
-          title="Undo (⌘+Z)"
+          title={undoTooltip}
+          aria-label={undoTooltip}
           disabled={!canUndo}
           onClick={() => handleAction('undo')}
           data-testid="treeconsole-toolbar-undo-button"
@@ -337,7 +381,8 @@ function TreeConsoleToolbarContent({
           <UndoIcon fontSize="small" />
         </Button>
         <Button
-          title="Redo (⌘+Shift+Z)"
+          title={redoTooltip}
+          aria-label={redoTooltip}
           disabled={!canRedo}
           onClick={() => handleAction('redo')}
           data-testid="treeconsole-toolbar-redo-button"
@@ -348,13 +393,13 @@ function TreeConsoleToolbarContent({
 
       {/* Cut/Copy/Paste Group */}
       <ButtonGroup size="small">
-        <Button title="Cut (⌘+X)" disabled={!canCopy} onClick={() => handleAction('cut')}>
+        <Button title={cutTooltip} aria-label={cutTooltip} disabled={!canCopy} onClick={() => handleAction('cut')}>
           <ContentCutIcon fontSize="small" />
         </Button>
-        <Button title="Copy (⌘+C)" disabled={!canCopy} onClick={() => handleAction('copy')}>
+        <Button title={copyTooltip} aria-label={copyTooltip} disabled={!canCopy} onClick={() => handleAction('copy')}>
           <ContentCopyIcon fontSize="small" />
         </Button>
-        <Button title="Paste (⌘+V)" disabled={!canPaste} onClick={() => handleAction('paste')}>
+        <Button title={pasteTooltip} aria-label={pasteTooltip} disabled={!canPaste} onClick={() => handleAction('paste')}>
           <ContentPasteIcon fontSize="small" />
         </Button>
       </ButtonGroup>
@@ -362,14 +407,16 @@ function TreeConsoleToolbarContent({
       {/* Duplicate/Move to Trash Group */}
       <ButtonGroup size="small">
         <Button
-          title="Duplicate (⌘+D)"
+          title={duplicateTooltip}
+          aria-label={duplicateTooltip}
           disabled={!canDuplicate}
           onClick={() => handleAction('duplicate')}
         >
           <DuplicateIcon fontSize="small" />
         </Button>
         <Button
-          title="Move to Trash (⌘+X)"
+          title={moveToTrashTooltip}
+          aria-label={moveToTrashTooltip}
           disabled={!canRemove}
           onClick={() => handleAction('remove')}
           color="error"
@@ -385,6 +432,8 @@ function TreeConsoleToolbarContent({
           endIcon={<KeyboardArrowDownIcon />}
           onClick={handleTrashClick}
           color="error"
+          title={trashButtonLabel}
+          aria-label={trashButtonLabel}
         >
           <TrashIcon fontSize="small" />
         </Button>
@@ -395,22 +444,24 @@ function TreeConsoleToolbarContent({
             handleAction('restore', trashNodeId ? { trashNodeId } : undefined);
             handleTrashClose();
           }}
+          aria-label={trashRestoreLabel}
         >
           <ListItemIcon>
             <RecyclingIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Restore from Trash</ListItemText>
+          <ListItemText primary={trashRestoreLabel} />
         </MenuItem>
         <MenuItem
           onClick={() => {
             handleAction('empty', trashNodeId ? { trashNodeId } : undefined);
             handleTrashClose();
           }}
+          aria-label={trashEmptyLabel}
         >
           <ListItemIcon>
             <RemoveIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Remove All from Trash</ListItemText>
+          <ListItemText primary={trashEmptyLabel} />
         </MenuItem>
       </Menu>
 
@@ -421,7 +472,8 @@ function TreeConsoleToolbarContent({
             endIcon={<KeyboardArrowDownIcon />}
             onClick={handleImportExportClick}
             color="primary"
-            aria-label="Import and export options"
+            aria-label={importExportButtonLabel}
+            title={importExportButtonLabel}
           >
             <SaveIcon fontSize="small" />
           </Button>
@@ -437,22 +489,24 @@ function TreeConsoleToolbarContent({
               handleAction('import');
               handleImportExportClose();
             }}
+            aria-label={importLabel}
           >
             <ListItemIcon>
               <FileUploadIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Import from JSON File</ListItemText>
+            <ListItemText primary={importLabel} />
           </MenuItem>
           <MenuItem
             onClick={() => {
               handleAction('export');
               handleImportExportClose();
             }}
+            aria-label={exportLabel}
           >
             <ListItemIcon>
               <FileDownloadIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText>Export to JSON File</ListItemText>
+            <ListItemText primary={exportLabel} />
           </MenuItem>
           {availableTemplates && availableTemplates.length > 0 && ([
             <Divider key="tmpl-divider" />,
@@ -463,21 +517,22 @@ function TreeConsoleToolbarContent({
                 handleAction('import-template', { templateId: first.id });
                 handleImportExportClose();
               }}
+              aria-label={availableTemplates.length === 1 ? (availableTemplates[0]?.label ?? importTemplateFallback) : importTemplateLabel}
             >
               <ListItemIcon>
                 <SnippetFolderIcon fontSize="small" />
               </ListItemIcon>
               <ListItemText>
                 {availableTemplates.length === 1
-                  ? (availableTemplates[0]?.label || 'Import Template')
-                  : 'Import Template'}
+                  ? (availableTemplates[0]?.label || importTemplateFallback)
+                  : importTemplateLabel}
               </ListItemText>
             </MenuItem>
           ])}
         </Menu>
 
         {/* Settings Button */}
-        <IconButton size="small" onClick={handleSettingsClick} aria-label="Settings">
+        <IconButton size="small" onClick={handleSettingsClick} aria-label={settingsButtonLabel} title={settingsButtonLabel}>
           <SettingsIcon fontSize="small" />
         </IconButton>
         <Menu
@@ -489,14 +544,14 @@ function TreeConsoleToolbarContent({
             <MenuItem>
               <Paper sx={{ p: 2, minWidth: 250, zIndex: (theme) => Math.max(theme.zIndex.modal + 2, 2001) }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Row Click Action
+                  {rowClickTitle}
                 </Typography>
                 <RadioGroup
                   value={rowClickAction}
                   onChange={(e) => handleRowClickActionChange(e.target.value as 'Select/Navigate' | 'Edit')}
                 >
-                  <RadioItem icon={<CheckBox fontSize="small" />} label={'Select/Navigate'} value={'Select/Navigate'}/>
-                  <RadioItem icon={<Edit fontSize="small" />} label={'Edit'} value={'Edit'}/>
+                  <RadioItem icon={<CheckBox fontSize="small" />} label={rowClickLabels.selectNavigate} value={'Select/Navigate'}/>
+                  <RadioItem icon={<Edit fontSize="small" />} label={rowClickLabels.edit} value={'Edit'}/>
                 </RadioGroup>
               </Paper>
             </MenuItem>
@@ -504,7 +559,7 @@ function TreeConsoleToolbarContent({
             <Divider sx={{ my: 1 }} />
 
             {/* Theme selection opener */}
-            <MenuItem onClick={openThemeMenu} aria-haspopup="menu">
+            <MenuItem onClick={openThemeMenu} aria-haspopup="menu" aria-label={themeTitle}>
               <ListItemIcon>
                 {themeMode === 'dark' ? (
                   <DarkModeIcon fontSize="small" />
@@ -514,15 +569,15 @@ function TreeConsoleToolbarContent({
                   <SystemThemeIcon fontSize="small" />
                 )}
               </ListItemIcon>
-              <ListItemText primary="Theme" secondary={themeMode} />
+              <ListItemText primary={themeTitle} secondary={themeLabels[themeMode] ?? themeMode} />
             </MenuItem>
 
             {/* Language selection opener */}
-            <MenuItem onClick={openLanguageMenu} aria-haspopup="menu">
+            <MenuItem onClick={openLanguageMenu} aria-haspopup="menu" aria-label={languageTitle}>
               <ListItemIcon>
                 <TranslateIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Language" secondary={language} />
+              <ListItemText primary={languageTitle} secondary={languageLabels[language as keyof typeof languageLabels] ?? language} />
             </MenuItem>
         </Menu>
 
@@ -533,23 +588,23 @@ function TreeConsoleToolbarContent({
           onClose={closeThemeMenu}
           container={typeof window !== 'undefined' ? document.body : undefined}
         >
-          <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')}>
+          <MenuItem selected={themeMode === 'system'} onClick={() => selectTheme('system')} aria-label={themeLabels.system}>
             <ListItemIcon>
               <SystemThemeIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText primary="System" />
+            <ListItemText primary={themeLabels.system} />
           </MenuItem>
-          <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')}>
+          <MenuItem selected={themeMode === 'light'} onClick={() => selectTheme('light')} aria-label={themeLabels.light}>
             <ListItemIcon>
               <LightModeIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText primary="Light" />
+            <ListItemText primary={themeLabels.light} />
           </MenuItem>
-          <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')}>
+          <MenuItem selected={themeMode === 'dark'} onClick={() => selectTheme('dark')} aria-label={themeLabels.dark}>
             <ListItemIcon>
               <DarkModeIcon fontSize="small" />
             </ListItemIcon>
-            <ListItemText primary="Dark" />
+            <ListItemText primary={themeLabels.dark} />
           </MenuItem>
         </Menu>
 
@@ -560,14 +615,14 @@ function TreeConsoleToolbarContent({
           onClose={closeLanguageMenu}
           container={typeof window !== 'undefined' ? document.body : undefined}
         >
-          <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')}>
-            <ListItemText primary="System Default" />
+          <MenuItem selected={language === 'system'} onClick={() => selectLanguage('system')} aria-label={languageLabels.system}>
+            <ListItemText primary={languageLabels.system} />
           </MenuItem>
-          <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')}>
-            <ListItemText primary="English" />
+          <MenuItem selected={language === 'en'} onClick={() => selectLanguage('en')} aria-label={languageLabels.en}>
+            <ListItemText primary={languageLabels.en} />
           </MenuItem>
-          <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')}>
-            <ListItemText primary="日本語" />
+          <MenuItem selected={language === 'ja'} onClick={() => selectLanguage('ja')} aria-label={languageLabels.ja}>
+            <ListItemText primary={languageLabels.ja} />
           </MenuItem>
         </Menu>
       </Box>
@@ -595,6 +650,10 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   } = props;
 
   const theme = useTheme();
+  const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
+  const searchPlaceholder = t('search.placeholder');
+  const searchAriaLabel = t('search.ariaLabel');
+  const toolbarAriaLabel = t('aria.toolbarLabel');
 
   // Hide if console is hidden
   if (hideConsole) {
@@ -609,6 +668,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         handleSearchTextChange={controller?.handleSearchTextChange || (() => {
         })}
         handleSearchCommit={controller?.handleSearchCommit}
+        placeholder={searchPlaceholder}
+        ariaLabel={searchAriaLabel}
       />
     );
   }
@@ -618,7 +679,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
     <Box
       data-testid="tree-console-toolbar"
       className="tree-console-toolbar"
-      aria-label="TreeTypes console toolbar"
+      aria-label={toolbarAriaLabel}
       style={{ backgroundColor: theme.palette.background.paper }}
     >
       <TreeConsoleToolbarContent
@@ -635,6 +696,8 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canDuplicate={canDuplicate}
         canRemove={canRemove}
         availableTemplates={availableTemplates}
+        searchPlaceholder={searchPlaceholder}
+        searchAriaLabel={searchAriaLabel}
       />
     </Box>
   );

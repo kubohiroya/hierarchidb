@@ -162,6 +162,7 @@
   - [x] TreeTable ヘッダーの列リサイズが `updatedAt` ⇔ `removedAt` 間でも機能することを手動確認する
   - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` と `pnpm --filter @hierarchidb/app typecheck` を成功させ、ログを運用ログに記録する
   - [x] 今回の修正が従来反映されなかった原因（翻訳キー不足）を調査し、本節と運用ログに明記する
+  - [x] TreeConsole Toolbar／NodeContextMenu のメニュー表示を i18n 化し、UI 共通ロケールへキーを追加する
 - チェックリスト:
   - [x] Finder 形式フォーマットの適用対象列（TreeTable/TrashDialog）を棚卸しし、実装コードを確認する
   - [x] 翻訳ファイルに必要なキーを追加し、プレビューでキー文字列が表示されないことを確認する
@@ -7359,4 +7360,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 10:15 progress: fix/ui-trash/treetable-timestamps — TrashDialog のボタン/確認ダイアログ文言と TreeTable の列ラベル・検証メッセージを i18n 化し、共通 common.json へ集約。app/ui 双方で英語フォールバックを排除し、日本語訳を追加。
 - 2025-11-03 10:18 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable build — exit 0。
 - 2025-11-03 10:19 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-03 10:36 progress: fix/ui-trash/treetable-timestamps — TreeConsole Toolbar と NodeContextMenu のメニュー/ツールチップを i18n 化し、@hierarchidb/ui-i18n / app ロケールへキーを追加。
+- 2025-11-03 10:38 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
+- 2025-11-03 10:39 command: pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb build — exit 0。
+- 2025-11-03 10:40 command: pnpm --filter @hierarchidb/app typecheck — exit 1（`TreeConsoleIntegration.tsx:565` で `TreeConsolePanelWithDynamicSpeedDialProps` に `onTrash` が必須と判定される既存エラー。今回差分の直接要因ではなく、別途対応が必要）。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。

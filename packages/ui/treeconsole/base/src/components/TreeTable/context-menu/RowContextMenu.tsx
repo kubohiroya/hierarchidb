@@ -20,12 +20,14 @@ export interface RowContextMenuProps {
   readonly onEdit: () => void;
   readonly onCreate: (type: string) => void;
   readonly onDuplicate: () => void;
-  readonly onRemove: () => void;
+  readonly onRemove?: () => void;
+  readonly onTrash?: () => void;
   readonly onCheckReference: () => void;
   readonly canOpen: boolean;
   readonly canEdit: boolean;
   readonly canCreate: boolean;
-  readonly canRemove: boolean;
+  readonly canRemove?: boolean;
+  readonly canTrash?: boolean;
   readonly canDuplicate: boolean;
   readonly isTrashRoot?: boolean;
   readonly mode?: 'restore' | 'dispose';
@@ -122,11 +124,12 @@ export const RowContextMenu = memo(
       });
     };
 
-    const handleRemoveClick = () => {
-      const onRemove = propsRef.current.onRemove;
+    const handleTrashClick = () => {
+      const current = propsRef.current;
+      const handler = current.onTrash ?? current.onRemove;
       handleMainMenuClose();
       requestAnimationFrame(() => {
-        onRemove();
+        handler?.();
       });
     };
 
@@ -174,6 +177,8 @@ export const RowContextMenu = memo(
         requestAnimationFrame(() => propsRef.current.onClose());
       }
     }, [safeAnchorEl]);
+
+    const allowTrash = (props.canTrash ?? props.canRemove ?? true);
 
     return (
       <>
@@ -256,7 +261,7 @@ export const RowContextMenu = memo(
             <ListItemText>Duplicate</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={handleRemoveClick} disabled={!props.canRemove} aria-label="Move to Trash">
+          <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label="Move to Trash">
             <ListItemIcon>
               <ClearIcon color="error" />
             </ListItemIcon>
@@ -375,13 +380,14 @@ export const RowContextMenu = memo(
     );
   },
   (prevProps, nextProps) => {
-    // Compare only important properties
+    const prevTrash = prevProps.canTrash ?? prevProps.canRemove;
+    const nextTrash = nextProps.canTrash ?? nextProps.canRemove;
     return (
       prevProps.nodeType === nextProps.nodeType &&
       prevProps.canOpen === nextProps.canOpen &&
       prevProps.canEdit === nextProps.canEdit &&
       prevProps.canCreate === nextProps.canCreate &&
-      prevProps.canRemove === nextProps.canRemove &&
+      prevTrash === nextTrash &&
       prevProps.canDuplicate === nextProps.canDuplicate &&
       prevProps.parentElem === nextProps.parentElem &&
       prevProps.addMenuNodeTypes.length === nextProps.addMenuNodeTypes.length &&

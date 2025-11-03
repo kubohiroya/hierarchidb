@@ -36,10 +36,10 @@ export interface TreeTableToolbarProps {
   readonly totalCount: number;
   readonly canCreate: boolean;
   readonly canEdit: boolean;
-  readonly canDelete: boolean;
+  readonly canTrash: boolean;
   readonly onCreate: () => void;
   readonly onEdit: () => void;
-  readonly onDelete: () => void;
+  readonly onTrash: () => void;
   readonly onRefresh: () => void;
   readonly onExpandAll: () => void;
   readonly onCollapseAll: () => void;
@@ -212,11 +212,11 @@ export const TreeTableToolbar = memo(function TreeTableToolbar(props: TreeTableT
               variant="outlined"
               color="error"
               startIcon={<DeleteIcon />}
-              onClick={props.onDelete}
-              disabled={!props.canDelete}
+              onClick={props.onTrash}
+              disabled={!props.canTrash}
               sx={{ ml: 1 }}
             >
-              Delete
+              Trash
             </Button>
           </>
         )}

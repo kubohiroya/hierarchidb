@@ -259,7 +259,7 @@ export function useTreeConsoleIntegration({
 
   const canCreate = true;
   const canEdit = selectedIds.length === 1;
-  const canDelete = selectedIds.length > 0;
+  const canTrash = selectedIds.length > 0;
 
   return {
     loading: state.loading,
@@ -274,7 +274,7 @@ export function useTreeConsoleIntegration({
     viewMode,
     canCreate,
     canEdit,
-    canDelete,
+    canTrash,
     actions,
     state,
   };

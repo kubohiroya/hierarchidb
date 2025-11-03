@@ -96,6 +96,76 @@
       "description": "タイムライン型プロジェクトを管理し、進行状況を追跡します。"
     }
   },
+  "treeConsole": {
+    "toolbar": {
+      "search": {
+        "placeholder": "ツリーを検索…",
+        "ariaLabel": "ツリー検索"
+      },
+      "aria": {
+        "toolbarLabel": "ツリーコンソールツールバー",
+        "trashMenuButton": "ゴミ箱メニューを開く",
+        "importExportButton": "インポート／エクスポートメニューを開く",
+        "settingsButton": "ツールバー設定を開く"
+      },
+      "tooltips": {
+        "undo": "取り消し ({{shortcut}})",
+        "redo": "やり直し ({{shortcut}})",
+        "cut": "切り取り ({{shortcut}})",
+        "copy": "コピー ({{shortcut}})",
+        "paste": "貼り付け ({{shortcut}})",
+        "duplicate": "複製 ({{shortcut}})",
+        "moveToTrash": "ゴミ箱に移動 ({{shortcut}})"
+      },
+      "trashMenu": {
+        "restore": "ゴミ箱から復元",
+        "empty": "ゴミ箱を空にする"
+      },
+      "importExportMenu": {
+        "import": "JSONファイルからインポート",
+        "export": "JSONファイルへエクスポート",
+        "importTemplate": "テンプレートをインポート",
+        "importTemplateFallback": "テンプレートをインポート"
+      },
+      "rowClick": {
+        "title": "行クリック時の操作",
+        "options": {
+          "selectNavigate": "選択／移動",
+          "edit": "編集"
+        }
+      },
+      "settings": {
+        "theme": {
+          "title": "テーマ",
+          "modes": {
+            "system": "システム設定",
+            "light": "ライト",
+            "dark": "ダーク"
+          }
+        },
+        "language": {
+          "title": "言語",
+          "modes": {
+            "system": "システム既定",
+            "en": "英語",
+            "ja": "日本語"
+          }
+        }
+      }
+    },
+    "contextMenu": {
+      "create": "作成",
+      "openFolder": "フォルダーを開く",
+      "open": "開く",
+      "edit": "編集",
+      "copy": "コピー",
+      "cut": "切り取り",
+      "duplicate": "複製",
+      "moveToTrash": "ゴミ箱に移動",
+      "checkReference": "参照を確認",
+      "preview": "プレビュー"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "すべて選択",

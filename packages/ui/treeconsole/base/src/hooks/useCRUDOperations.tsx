@@ -105,7 +105,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     [workerAdapter, setIsLoading, onExpandedNodesChange],
   );
 
-  const deleteNode = useCallback(
+  const trashNode = useCallback(
     async (nodeId: NodeId) => {
       if (workerAdapter) {
         setIsLoading?.(true);
@@ -121,8 +121,8 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
           setIsLoading?.(false);
         }
       } else {
-        const canDelete = stateManager && typeof stateManager.deleteNode === 'function';
-        if (!canDelete) throw new Error('No adapter available for delete operation');
+        const canTrash = stateManager && typeof stateManager.deleteNode === 'function';
+        if (!canTrash) throw new Error('No adapter available for trash operation');
         setIsLoading?.(true);
         try {
           await stateManager.deleteNode!(nodeId);
@@ -137,11 +137,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     [workerAdapter, stateManager, setIsLoading, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
   );
 
-  const deleteNodes = useCallback(
+  const trashNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        const canDelete = stateManager && typeof stateManager.deleteNode === 'function';
-        if (!canDelete) throw new Error('WorkerAPIAdapter not available');
+        const canTrash = stateManager && typeof stateManager.deleteNode === 'function';
+        if (!canTrash) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
           for (const id of nodeIds) await stateManager.deleteNode!(id);
@@ -209,7 +209,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
         setIsLoading?.(false);
       }
     },
-    [workerAdapter, stateManager, setIsLoading],
+    [workerAdapter, setIsLoading, stateManager, onSelectedNodesChange, onExpandedNodesChange, onCurrentNodeChange],
   );
 
   const duplicateNodes = useCallback(
@@ -265,7 +265,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     moveNode,
     moveNodes,
     deleteNode,
-    deleteNodes,
+    trashNodes,
     duplicateNode,
     duplicateNodes,
 

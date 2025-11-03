@@ -29,7 +29,9 @@ export interface NodeContextMenuProps {
   canOpen?: boolean;
   canEdit?: boolean;
   canCreate?: boolean;
+  /** @deprecated Use canTrash */
   canRemove?: boolean;
+  canTrash?: boolean;
   canDuplicate?: boolean;
   canCopy?: boolean;
   canCut?: boolean;
@@ -39,7 +41,9 @@ export interface NodeContextMenuProps {
   onEdit?: () => void;
   onCreate?: (type: string) => void;
   onDuplicate?: () => void;
+  /** @deprecated Use onTrash */
   onRemove?: () => void;
+  onTrash?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
   onCheckReference?: () => void;
@@ -65,7 +69,8 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     canOpen: _canOpen = true,
     canEdit = true,
     canCreate = true,
-    canRemove = true,
+    canRemove,
+    canTrash = true,
     canDuplicate = true,
     canCopy = true,
     canCut = true,
@@ -76,6 +81,7 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     onCreate: _onCreate,
     onDuplicate: _onDuplicate,
     onRemove: _onRemove,
+    onTrash: _onTrash,
     onCopy: _onCopy,
     onCut: _onCut,
     onCheckReference: _onCheckReference,
@@ -96,6 +102,18 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
       return translated;
     };
   }, [t]);
+
+  const createLabel = translateWithFallback('treeConsole.contextMenu.create', 'Create');
+  const openFolderLabel = translateWithFallback('treeConsole.contextMenu.openFolder', 'Open Folder');
+  const openLabel = translateWithFallback('treeConsole.contextMenu.open', 'Open');
+  const editLabel = translateWithFallback('treeConsole.contextMenu.edit', 'Edit');
+  const copyLabel = translateWithFallback('treeConsole.contextMenu.copy', 'Copy');
+  const cutLabel = translateWithFallback('treeConsole.contextMenu.cut', 'Cut');
+  const duplicateLabel = translateWithFallback('treeConsole.contextMenu.duplicate', 'Duplicate');
+  const moveToTrashLabel = translateWithFallback('treeConsole.contextMenu.moveToTrash', 'Move to Trash');
+  const allowTrash = (typeof canTrash === 'boolean' ? canTrash : undefined) ?? (canRemove ?? true);
+  const checkReferenceLabel = translateWithFallback('treeConsole.contextMenu.checkReference', 'Check Reference');
+  const previewLabel = translateWithFallback('treeConsole.contextMenu.preview', 'Preview');
 
   // Use refs to store the latest props to avoid stale closures
   const propsRef = useRef(props);
@@ -166,11 +184,12 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
     setTimeout(() => { onDuplicate?.(); }, 0);
   };
 
-  const handleRemoveClick = () => {
-    const onRemove = propsRef.current.onRemove;
+  const handleTrashClick = () => {
+    const current = propsRef.current;
+    const handler = current.onTrash ?? current.onRemove;
     blurActive();
     handleMainMenuClose();
-    setTimeout(() => { onRemove?.(); }, 0);
+    setTimeout(() => { handler?.(); }, 0);
   };
 
   const handleCopyClick = () => {
@@ -294,11 +313,11 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         }}
       >
         {canCreate && (
-          <MenuItem onClick={handleAddMenuClick} aria-label="Create">
+          <MenuItem onClick={handleAddMenuClick} aria-label={createLabel}>
             <ListItemIcon>
               <AddIcon />
             </ListItemIcon>
-            <ListItemText>Create</ListItemText>
+            <ListItemText primary={createLabel} />
             <ChevronRightIcon sx={{ marginLeft: 'auto' }} />
           </MenuItem>
         )}
@@ -306,72 +325,72 @@ export function NodeContextMenu(props: NodeContextMenuProps): ReactElement | nul
         {canCreate && <Divider />}
 
         {isFolder ? (
-          <MenuItem onClick={handleOpenFolderClick} aria-label="Open Folder">
+          <MenuItem onClick={handleOpenFolderClick} aria-label={openFolderLabel}>
             <ListItemIcon>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText>Open Folder</ListItemText>
+            <ListItemText primary={openFolderLabel} />
           </MenuItem>
         ) : (
-          <MenuItem onClick={handleOpenClick} aria-label="Open">
+          <MenuItem onClick={handleOpenClick} aria-label={openLabel}>
             <ListItemIcon>
               <FolderIcon />
             </ListItemIcon>
-            <ListItemText>Open</ListItemText>
+            <ListItemText primary={openLabel} />
           </MenuItem>
         )}
 
-        <MenuItem onClick={handleEditClick} disabled={!canEdit} aria-label="Edit">
+        <MenuItem onClick={handleEditClick} disabled={!canEdit} aria-label={editLabel}>
           <ListItemIcon>
             <EditIcon />
           </ListItemIcon>
-          <ListItemText>Edit</ListItemText>
+          <ListItemText primary={editLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleCopyClick} disabled={!canCopy} aria-label="Copy">
+        <MenuItem onClick={handleCopyClick} disabled={!canCopy} aria-label={copyLabel}>
           <ListItemIcon>
             <ContentCopyIcon />
           </ListItemIcon>
-          <ListItemText>Copy</ListItemText>
+          <ListItemText primary={copyLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label="Cut">
+        <MenuItem onClick={handleCutClick} disabled={!canCut} aria-label={cutLabel}>
           <ListItemIcon>
             <ContentCutIcon />
           </ListItemIcon>
-          <ListItemText>Cut</ListItemText>
+          <ListItemText primary={cutLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label="Duplicate">
+        <MenuItem onClick={handleDuplicateClick} disabled={!canDuplicate} aria-label={duplicateLabel}>
           <ListItemIcon>
             <ContentCopyIcon />
           </ListItemIcon>
-          <ListItemText>Duplicate</ListItemText>
+          <ListItemText primary={duplicateLabel} />
         </MenuItem>
 
-        <MenuItem onClick={handleRemoveClick} disabled={!canRemove} aria-label="Move to Trash">
+        <MenuItem onClick={handleTrashClick} disabled={!allowTrash} aria-label={moveToTrashLabel}>
           <ListItemIcon>
             <ClearIcon color="error" />
           </ListItemIcon>
-          <ListItemText>Move to Trash</ListItemText>
+          <ListItemText primary={moveToTrashLabel} />
         </MenuItem>
 
         <Divider />
 
-        <MenuItem onClick={handleCheckReferenceClick} aria-label="Check Reference">
+        <MenuItem onClick={handleCheckReferenceClick} aria-label={checkReferenceLabel}>
           <ListItemIcon>
             <AssignmentTurnedInIcon />
           </ListItemIcon>
-          <ListItemText>Check Reference</ListItemText>
+          <ListItemText primary={checkReferenceLabel} />
         </MenuItem>
 
         {!isFolder && [
           <Divider key="divider-preview" />,
-          <MenuItem key="menuitem-preview" onClick={handlePreviewClick} aria-label="Preview">
+          <MenuItem key="menuitem-preview" onClick={handlePreviewClick} aria-label={previewLabel}>
             <ListItemIcon>
               <PlayArrowIcon />
             </ListItemIcon>
-            <ListItemText>Preview</ListItemText>
+            <ListItemText primary={previewLabel} />
           </MenuItem>,
         ]}
       </Menu>

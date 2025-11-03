@@ -59,7 +59,7 @@ export interface TreeConsolePanelProps {
   readonly viewMode: 'list' | 'grid';
   readonly canCreate: boolean;
   readonly canEdit: boolean;
-  readonly canDelete: boolean;
+  readonly canTrash: boolean;
   readonly showNavigationButtons?: boolean;
   readonly maxHeight?: number | string;
   readonly dense?: boolean;
