@@ -23,6 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
+import { useTranslation } from '@hierarchidb/ui-i18n';
 
 //  Icons -
 import {
@@ -72,13 +73,27 @@ const TreeConsoleToolbarContainer = styled(Box)(() => ({
   minHeight: '48px',
 }));
 
-function SearchField({ searchText, handleSearchTextChange, handleSearchCommit, fullWidth }: { searchText: string; handleSearchTextChange: (_value: string) => void; handleSearchCommit?: () => void; fullWidth?: boolean}) {
+function SearchField({
+  searchText,
+  handleSearchTextChange,
+  handleSearchCommit,
+  fullWidth,
+  placeholder,
+  ariaLabel,
+}: {
+  searchText: string;
+  handleSearchTextChange: (_value: string) => void;
+  handleSearchCommit?: () => void;
+  fullWidth?: boolean;
+  placeholder: string;
+  ariaLabel: string;
+}) {
   return (
     <SearchTextFieldContainer>
       <TextField
         fullWidth={fullWidth}
         size="small"
-        placeholder="Search......"
+        placeholder={placeholder}
         value={searchText}
         onChange={(event: React.ChangeEvent<HTMLInputElement>)=>handleSearchTextChange(event.target.value)}
         onBlur={() => handleSearchCommit?.()}
@@ -99,7 +114,7 @@ function SearchField({ searchText, handleSearchTextChange, handleSearchCommit, f
               </InputAdornment>
             ),
             inputProps: {
-              'aria-label': 'Tree search',
+              'aria-label': ariaLabel,
             autoComplete: 'new-password',
               name: 'hdb-tree-search',
               type: 'search',
@@ -150,6 +165,8 @@ function TreeConsoleToolbarContent({
                                      canDuplicate = false,
                                      canRemove = false,
                                      availableTemplates = [],
+                                     searchPlaceholder,
+                                     searchAriaLabel,
                                    }: {
   controller: TreeConsoleToolbarProps['controller'];
   hasTrashItems: boolean;
@@ -164,6 +181,8 @@ function TreeConsoleToolbarContent({
   canDuplicate?: boolean;
   canRemove?: boolean;
   availableTemplates?: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
+  searchPlaceholder: string;
+  searchAriaLabel: string;
 }) {
   const portalContainer = typeof window !== 'undefined' ? document.body : undefined;
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
