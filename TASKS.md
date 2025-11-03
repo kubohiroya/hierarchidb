@@ -104,20 +104,6 @@
   - [ ] 未修正または未対応のケースが残る場合は TODO として記録する
 - ロールバック手順：変更したテストファイルと関連ユーティリティを revert し、`pnpm test` で従来の失敗が再現することを確認する
 
-107) SpeedDial / Create メニュー項目欠落修正（P0）
-- ブランチ: `fix/app/create-menu-registry`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/plugin-loader/menu-builders.ts`, `app/src/hooks/usePluginMenuItems.ts`, `app/src/components/DynamicSpeedDial.tsx`, `packages/ui/treeconsole/base/src/components/TreeTable/context-menu/RowContextMenu.tsx`, `packages/plugin-registry/generated/registry.ts`
-- 受け入れ基準（DoD）:
-  - [x] SpeedDial と TreeConsole コンテキストメニューの Create サブメニューに、プラグイン由来ノード種別の項目が表示されることを手動確認し、再現手順とともに運用ログへ記録する
-  - [x] `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を実行して今回の改修が既存カバレッジと整合することを確認し、ログを追記する（テストが対象外の場合は理由と代替検証を記録）
-  - [x] `pnpm --filter @hierarchidb/app typecheck` を実行し、今回の変更で新たな型エラーが発生しないことを確認する
-  - [x] ロールバック手順と影響範囲を本節へ明記し、`TASKS.md` Kanban／運用ログに start/progress/done を記録する
-- チェックリスト:
-  - [x] プラグイン registry 生成ロジックとメニュー構築コードを確認し、欠落の原因を特定する
-  - [x] registry 更新またはコンテキスト判定の修正を実装し、SpeedDial/メニュー経路の両方を再確認する
-  - [x] 検証コマンドと手動確認結果を運用ログに追記する
-- ロールバック手順：`app/src/plugin-loader/menu-builders.ts` と関連フック／生成物の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を再実行して従来（項目が表示されない）状態に戻ることを確認する。
-
 109) App build Playwright バイナリ解決エラー調査（P0）
 - ブランチ: `fix/app/playwright-binary-build`（sandbox 制約で `main` 上で作業）
 - 依存: `app/vite.config.ts`, `packages/app`, `config/vite/*`, `package.json`, `pnpm-lock.yaml`, `turbo.json`
@@ -152,42 +138,6 @@
 
 - ロールバック手順：今回追加する衝突解決ロジックとテスト差分を revert し、`pnpm --filter @hierarchidb/runtime-worker test -- --run trash-restore-name-conflict`（新規テスト）で ConstraintError が再現することを確認する
 
-112) TrashDialog Restore ボタン配置・ラベル調整（P0）
-- ブランチ: `fix/ui-trash/restore-button-alignment`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/components/dialogs/TrashDialog.tsx`, `app/src/components/dialogs/TrashDialogFooter.tsx`, `@mui/material`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] Restore ボタンをダイアログ下端の右端へ配置し、主要アクションとして視認できること
-  - [x] 選択件数が 0 件ならラベルを `Restore` のみ、1 件以上なら `Restore (n)` 形式で表示すること
-  - [x] 既存の「n selected」表示を撤去し、Restore ボタンの tooltip で選択件数に応じた文言（例: `Restore 2 items`）を表示すること
-  - [x] `pnpm --filter @hierarchidb/app typecheck` を実行し、結果を運用ログへ記録する
-- チェックリスト:
-  - [x] TrashDialog フッターのレイアウトを見直し、Restore ボタンを右寄せに配置する
-  - [x] ボタンラベルを選択件数に応じて切り替えるロジックを実装する
-  - [x] Tooltip で選択件数に応じた文言を表示し、「n selected」ラベルを撤去する
-  - [x] 関連スタイル・アクセシビリティの影響を確認し、必要ならスタイル調整を行う
-- ロールバック手順：Restore ボタンの配置・ラベル変更差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行して旧 UI に戻ることを確認する
-
-113) Trash TreeTable Finder 形式タイムスタンプ整備（P0）
-- ブランチ: `fix/ui-trash/treetable-timestamps`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/components/dialogs/TrashDialog.tsx`, `packages/ui/treeconsole/treetable`, `app/public/locales/en/common.json`, `app/public/locales/ja/common.json`
-- 受け入れ基準（DoD）:
-  - [x] Trash ダイアログで実利用されている TreeTable のタイムスタンプが Finder 仕様（相対日数＋時分／年月日時分）で表示されること
-  - [x] `treeTable.timestamps.*` と `treeTable.columns.removed` の翻訳キーを追加し、UI にキー文字列が露出しないこと
-  - [x] TrashDialog 側の `trash.timestamps.*` 参照でも同様の翻訳が適用されること
-  - [x] TreeTable ヘッダーの列リサイズが `updatedAt` ⇔ `removedAt` 間でも機能することを手動確認する
-  - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` と `pnpm --filter @hierarchidb/app typecheck` を成功させ、ログを運用ログに記録する
-  - [x] 今回の修正が従来反映されなかった原因（翻訳キー不足）を調査し、本節と運用ログに明記する
-  - [x] TreeConsole Toolbar／NodeContextMenu のメニュー表示を i18n 化し、UI 共通ロケールへキーを追加する
-- チェックリスト:
-  - [x] Finder 形式フォーマットの適用対象列（TreeTable/TrashDialog）を棚卸しし、実装コードを確認する
-  - [x] 翻訳ファイルに必要なキーを追加し、プレビューでキー文字列が表示されないことを確認する
-  - [x] TreeTableHeader の列リサイズ条件を調整し、`removedAt` 列もドラッグ可能にする
-  - [x] 修正差分に対する typecheck を実行し、結果を運用ログに残す
-- ロールバック手順：翻訳ファイルと `TreeTableHeader.tsx`、`TrashDialog.tsx` の差分を revert し、従来の日時表示（キー文字列表示／リサイズ不可）に戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` と `pnpm --filter @hierarchidb/app typecheck` を再実行する
-- 原因整理：Trash ダイアログは `trash.timestamps.*` を参照し、TreeTable 側は `treeTable.timestamps.*` を参照していたが、いずれのキーも翻訳ファイルに未定義だったためキー文字列がそのまま表示されていた。また、TreeTableHeader が `updatedAt` 列だけリサイズハンドルを描画しない条件になっており、`removedAt` 列が追加されても境界ドラッグが無効化されていた。さらに Finder 形式の `formatTimestamp` を TreeTableCore へ渡す配線が抜けており、Trash 以外の TreeTable で runtime エラーが発生していた。
-- 原因整理：Trash ダイアログは `trash.timestamps.*` を参照し、TreeTable 側は `treeTable.timestamps.*` を参照していたが、いずれのキーも翻訳ファイルに未定義だったためキー文字列がそのまま表示されていた。また、TreeTableHeader が `updatedAt` 列だけリサイズハンドルを描画しない条件になっており、`removedAt` 列が追加されても境界ドラッグが無効化されていた。さらに Finder 形式の `formatTimestamp` を TreeTableCore へ渡す配線が抜けており、Trash 以外の TreeTable で runtime エラーが発生していた。
-
 - メモ（翻訳対応未完）：
   - `app/src/components/dialogs/TrashDialog.tsx`
     - 例外メッセージ（Missing treeId parameter, Trash root not found）
@@ -203,35 +153,6 @@
     - デフォルトヘッダ文言（Column）
   → 上記をキー化・翻訳ファイル整備するタスクを後続で設定する。
 
-94) folder-plugin uuid shim 方針調査（P0）
-- ブランチ: `fix/folder-plugin/uuid-shim-policy`（sandbox 制約で `main` 上で作業）
-- 依存: `scripts/check-shims.mjs`, `packages/node-type/folder-plugin`, `packages/plugins/folder-plugin`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] `scripts/check-shims.mjs` の uuid シム禁止方針と検出ルールを整理し、本タスクに記録する
-  - [x] `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` の必要性と代替策を評価し、対応方針（削除・移設・正式型利用など）を提案する
-  - [x] 後続で実装が必要な場合は別タスク化や関係者相談の要否を明示する（本タスクでは追加実装不要と結論）
-- チェックリスト:
-  - [x] shim-check の対象パスと運用ルールを確認する
-  - [x] uuid シムの参照元と利用目的を洗い出す
-  - [x] 対応案を比較検討し、DoD を満たす結論をまとめる
-- ロールバック手順：調査結果のみ記録のため差分はなし。実装変更が必要になった場合は新規タスクを作成し revert 手順を定義する。
-
-95) ui-shell 再エクスポート構成整理（P0）
-- ブランチ: `refactor/ui-shell/reexport-structure`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/ui-shell`, `packages/components`, `packages/ui-*`, `tsconfig.base.json`, Turbo pipeline
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] `ui-shell` の再エクスポートで `TS6059` が発生する原因（`rootDir` や include/pattern）を特定し、本節に整理する
-  - [x] `ui-shell` で外部パッケージを再エクスポートする正規の手段（dist 宣言を参照する typecheck 専用 tsconfig）を決定し、関連設定/ファイルを更新する
-  - [x] `pnpm --filter @hierarchidb/ui-shell typecheck` が成功し、エラー再発がないことを確認してログへ記録する
-  - [x] ロールバック手順と影響範囲を記載する
-- チェックリスト:
-  - [x] `packages/ui-shell` の `tsconfig.json` と `package.json` を確認し、`rootDir`/`include`/`paths` の現状を把握する
-  - [x] 再エクスポート対象ファイル（`packages/components` など）の参照方法を洗い出す
-  - [x] 解決策を適用し、typecheck コマンドの結果を記録する
-- ロールバック手順：`packages/ui-shell/tsconfig.typecheck.json` と `package.json` の `typecheck` スクリプト追加を削除し、必要に応じて dist 参照のために実行した依存ビルドをスキップすれば従来構成へ戻る。再度 `pnpm --filter @hierarchidb/ui-shell typecheck`（tsconfig.json を直接指定）で現行の TS6059 を再現可能。
-
 96) app chunk size warning 調整（P0）
 - ブランチ: `chore/app/chunk-size-limit`（sandbox 制約で `main` 上で作業）
 - 依存: `app/vite.config.ts`, `@hierarchidb/app`, Rollup/Vite build 設定
@@ -246,36 +167,6 @@
   - [ ] ビルド結果を確認し、警告非発生を検証する
 - ロールバック手順：`vite.config.ts` の `chunkSizeWarningLimit` 変更を revert し、以前の警告表示に戻す。
 
-97) TreeConsole サブツリー初期化不具合修正（P0）
-- ブランチ: `fix/ui-treeconsole/subtree-init`（sandbox 制約で `main` 上で作業）
-- 依存: `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/runtime-client`, `@hierarchidb/runtime-worker`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] 指定ノード配下のサブツリー初期データを取得する処理の不具合原因を特定し、本節に整理する
-  - [x] 修正を実装し、TreeConsole で対象ノード選択時にサブツリーが正しく表示されることを確認する（UI または headless テストで検証）
-  - [x] 関連する自動テストを更新／追加し、`pnpm --filter @hierarchidb/ui-treeconsole-base test` など必要なコマンドがグリーンであることを運用ログに記録する
-  - [x] ロールバック手順と影響範囲を記載する
-- チェックリスト:
-  - [x] 再現手順をまとめ、問題が発生する API コール／状態管理の箇所を特定する
-  - [x] 修正差分を適用し、No data 表示が解消されることを手動で確認する
-  - [x] 自動テスト（既存 or 新規）を実行し、結果をログに残す
-- ロールバック手順：TreeConsole 関連の修正差分を revert し、従来のサブツリー初期化処理を復元。再度 `pnpm --filter @hierarchidb/ui-treeconsole-base test` などを実行して元の挙動に戻ることを確認する。
-
-108) TreeConsole アイコン配色調整（P0）
-- ブランチ: `fix/ui-treeconsole/icon-colors`（sandbox 制約で `main` 上で作業）
-- 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `packages/ui-icons`, `PLUGIN_MANIFEST`, `packages/theme`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] フォルダアイコンがフォルダ本来の絶対 depth 値を `rainbowColor` インデックスへマッピングした色で表示される
-  - [x] ツリーノードのファイルアイコンが対応する `PLUGIN_MANIFEST.icon.color` を使用して表示され、値未定義時は既存のデフォルト色へフォールバックする
-  - [x] TreeConsole/TreeTable の既存表示に副作用がないことを Storybook または手動確認で検証し、結果を運用ログへ記録する
-- チェックリスト:
-  - [x] TreeConsole のフォルダノード描画コンポーネントを確認し、depth 情報と `rainbowColor` 定義の参照箇所を洗い出す
-  - [x] フォルダアイコンの色決定ロジックを depth ベースの `rainbowColor` インデックス利用へ更新する
-  - [x] ファイルアイコンの色決定ロジックを `PLUGIN_MANIFEST.icon.color` 参照に置き換え、フォールバックを実装する
-  - [x] Storybook またはアプリ上で表示確認を行い、検証結果とスクリーンショット（必要に応じて）を運用ログに記録する
-- ロールバック手順：アイコン色決定の差分を revert し、従来の `rainbowColor`/デフォルト色ロジックに戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable build` などを再度実行して表示を確認する。
-
 109) PluginDialog ヘッダーのドラッグ領域統一（P0）
 - ブランチ: `fix/ui-dialog/full-header-drag`（sandbox 制約で `main` 上で作業）
 - 依存: `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx`, `@hierarchidb/ui-dialog`, `app/src/components/dialogs/*`
@@ -289,19 +180,6 @@
   - [ ] PluginDialogHeader のスタイルおよびイベントハンドラを修正し、タイトルバー全体がドラッグ可能かつホバーで強調されるよう更新する
   - [ ] 検証コマンドと手動確認結果を運用ログに追記する
 - ロールバック手順：PluginDialogHeader へのスタイル/イベント差分を revert し、`pnpm --filter @hierarchidb/app typecheck` と該当テストを再実行して旧来の挙動（タイトル文字のみドラッグ可）へ戻ることを確認する。
-
-110) TreeTableCore export 復旧（P0）
-- ブランチ: `main`（sandbox 制約でブランチ作成不可）
-- 依存: `packages/ui/treeconsole/treetable`, `packages/ui/treeconsole/base`, `pnpm --filter @hierarchidb/ui-treeconsole-treetable build`, `pnpm --filter @hierarchidb/app build`
-- 受け入れ基準（DoD）:
-  - [x] `@hierarchidb/ui-treeconsole-treetable` の dist に `TreeTableCore` / `TreeTableCoreWithPlugins` が出力され、`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` が exit 0 となる
-  - [x] `pnpm --filter @hierarchidb/app build` を試行し、成功または sandbox 制約で実行不可の場合は原因を運用ログに記録する
-  - [x] `pnpm --filter @hierarchidb/app typecheck` が exit 0 で完了する
-- チェックリスト:
-  - [x] treetable/index.ts の export を現行実装に合わせて整備し、不要な deprecated 参照を撤去する
-  - [x] TreeTableCore/TreeTableCoreWithPlugins/orchestrator/types など関連ファイルの整合性を確認し、dist 出力を手元ビルドで検証する
-  - [x] 検証コマンドの結果（build/typecheck/app build）を運用ログへ追記する
-- ロールバック手順：`packages/ui/treeconsole/treetable` 配下の差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` および `pnpm --filter @hierarchidb/app build` を再実行して元のエラーを再現する。
 
 92) Thailand MICS6 SPSS→CSV 変換（P0）
 - ブランチ: `main`（データ変換のためブランチ作成なし）
@@ -347,19 +225,6 @@
   - [x] WorkerAPI / WorkingCopy 経路がダイアログ起動時に期待通り機能することを確認する
  - [x] テストを追加し、挙動を自動検証する
 - ロールバック手順：PluginDialog 呼び出し差分とテストを revert し、従来の name フィールド簡易編集ハンドラーを復活させる
-30) TreeTable Name depth インデント補正（P0）
-- ブランチ: `fix/ui-treeconsole/treetable-depth-indent`（sandbox 制約で `main` 上で作業）
-- 依存: `@hierarchidb/ui-treeconsole-treetable`, `@hierarchidb/ui-treeconsole-base`, `@hierarchidb/ui-core`
-- 受け入れ基準（DoD）:
-  - [x] TreeTable の Name 列で depth 値に応じたインデントが 1 階層あたり 24px で反映される
-  - [x] Name セル内の既存要素（アイコン/テキスト/Sparkle 等）が従来レイアウトから崩れていないことを確認し、検証結果を記録する
-  - [x] `TASKS.md` の運用ログに検証コマンドと結果、ロールバック手順を追記する
-- チェックリスト:
-  - [x] TreeTable Name セルのレンダリング/スタイル実装を確認し、depth ベースの余白計算を補正する
-  - [x] Storybook もしくはビルド済み UI 上で depth 0/1/2+ 行が段階的にインデントされることを確認する（自動検証可能な場合はテストを追加）
-  - [x] 影響範囲のスタイル（Sparkle 表示や selection ハイライト）を再確認し、不要な副作用がないかチェックする
-- ロールバック手順：TreeTable Name セルのスタイル差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` 等を再実行して従来挙動へ戻す
-
 31) Dev alias ホワイトリスト整備と HMR 運用導入（P0）
 - ブランチ: `chore/dev/hmr-alias-whitelist`（sandbox 制約で `main` 上で作業）
 - 依存: `app/vite.config.ts`, `config/dev-aliases.json`, `tsconfig.base.json`, `scripts/sync-dev-aliases.ts`
@@ -420,68 +285,6 @@
   - [x] テストコードへ必要な型注釈・モック更新・ユーティリティ調整を適用し、暫定対応は TODO で可視化する
   - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` の再実行結果を運用ログに記録する
 - ロールバック手順：テストコードへの変更を revert（または TODO を残した状態に戻し）、typecheck で再びエラーが確認できることをもって復旧とする
-
-37) Plugin Dialog 層再編最終化（P0）
-- ブランチ: `refactor/plugin-dialog/layering-final`（sandbox 制約で `main` 上で作業）
-- 依存: `packages/plugin-base`, `packages/plugin-service-api`, `packages/plugin-service-sdk`, `packages/plugin-ui-host`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `plugins/*-plugin`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` Kanban と運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] `@hierarchidb/plugin-base` をヘッドレス中核として整備し、`plugin-service-api`/`plugin-service-sdk`/`plugin-ui-host` の役割分担（契約／ヘルパー／UI）で型検証・ビルドが成功する
-  - [x] `@hierarchidb/app` が新設ファサード（例: `plugin-dialog-host`）経由でダイアログを利用し、旧直接依存が dep-fence で禁止されている
-  - [x] `plugins/*` 群が新しいエクスポートに切り替わり、`pnpm --filter plugins/* build` 等が成功する
-  - [x] `pnpm --filter {@hierarchidb/plugin-base,@hierarchidb/plugin-ui-host,@hierarchidb/app,@hierarchidb/runtime-worker} typecheck` / `build` と主要テストを実行し exit 0 を確認、ログを運用ログへ記録する
-  - [x] `docs/architecture/plugin-dialog-layering.md`、新規 ADR、`docs/package-dependencies.md` を更新し、ロールバック手順も明記する
-- チェックリスト:
-  - [x] 役割分担と API 変更案を ADR で確定し、dep-fence/Turbo 設定を更新する
-  - [x] `plugin-base` へヘッドレス実装を集約し、`plugin-ui-sdk` からは再エクスポートのみに整理する
-  - [x] `plugin-ui-host` に `PluginDialogHost`（仮）を追加し、App はこのファサードのみを import する
- - [x] プラグイン各種の依存とコードを新構成へ移行し、回帰テストを追加・更新する
-  - [x] ドキュメント/依存グラフを更新し、旧エントリには deprecate ガイドを添える
-- ロールバック手順：`plugin-base` 導入差分と関連パッケージの変更を revert し、旧構成（`plugin-ui-sdk`/`ui/plugin-dialog` 直依存）へ戻した上で `pnpm --filter @hierarchidb/app build` などを再実行する
-
-52) TrashDialog Select All トグル不具合修正（P0）
-- ブランチ: `fix/ui-trash/select-all-toggle`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/components/trash/**/*`, `packages/ui-treeconsole-treetable`, `packages/ui/tree-console`, `packages/ui/trash-dialog`
-- 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] Trash ダイアログの「すべて選択」チェックボックスが初期状態で OFF となり、ユーザー操作で ON/OFF が正しく切り替わる実装修正を行う
-  - [x] 想定される選択状態と連動するテスト（単体または結合）を追加し、回帰防止を担保する
-  - [x] 関連 UI パッケージの `pnpm typecheck` および実行可能なテストを実施し、結果を運用ログに記録する
-  - [ ] ロールバック手順を TASKS に明記する
-- チェックリスト:
-  - [x] 初期状態およびトグル処理の原因調査（state/selector の確認）
-  - [x] トグル挙動の修正とカバレッジ（テスト）を追加
-  - [x] `pnpm --filter` を用いた対象パッケージの typecheck/test 実行ログを取得
-- ロールバック手順：Trash ダイアログおよび TreeTable 関連の差分を revert し、従前の挙動（初期 ON）へ戻した上で `pnpm --filter @hierarchidb/ui-treeconsole-treetable test` 等を再実行し再現を確認する
-
-38) Plugin UI Host テスト依存整理（P1）
-- ブランチ: `chore/plugin-ui-host/testing-utils`（sandbox 制約で main 上で作業）
-- 依存: `packages/plugin-ui-host`, `packages/testing`（新設）, `vitest` 設定
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban/運用ログへ start/progress/done を記録し、ロールバック手順を明記する
-  - [x] `packages/testing/plugin-dialog-mocks` を新設し、WorkerAPI モックや Vitest setup を集約する
-  - [x] `@hierarchidb/plugin-ui-host` の devDependencies から `@hierarchidb/runtime-worker` を除外し、新設モックパッケージを参照する
-  - [x] `pnpm --filter {@hierarchidb/plugin-ui-host,@hierarchidb/testing-plugin-dialog-mocks} lint && test && build` を実行し成功ログを残す
-- チェックリスト:
-  - [x] 既存モック/スタブの利用状況を棚卸しし、新パッケージへ移行するファイルを特定
-  - [x] 新パッケージで Vitest setup / Worker スタブ / プラグインスタブを提供し、UI host から参照するよう更新
-  - [x] ランナー設定（`vitest.config.ts`）を調整し、lint/test がグリーンであることを確認
-- ロールバック手順：新パッケージ追加と `plugin-ui-host` の参照差分を revert し、旧スタブ実装を元に戻してから `pnpm --filter @hierarchidb/plugin-ui-host {build,test}` を再実行する
-
-39) プレゼンテーション API 再配置（P1）
-- ブランチ: `chore/plugin-presentation/refactor`（sandbox 制約で main 上で作業）
-- 依存: `packages/plugin-base`, `packages/plugin-ui-host`, `app/src/services/plugin-presentation.ts`, `docs/package-dependencies.md`
-- 受け入れ基準（DoD）:
-  - [x] `TASKS.md` の Kanban/運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [x] プレゼンテーション API（`getPresentation`, `prefetchAllIcons` 等）を新モジュールへ移し、UI 層から global state 参照を排除する
-  - [x] `@hierarchidb/app`, `@hierarchidb/plugin-ui-host` の import を新モジュール経由に統一し、dep-fence/ドキュメントを更新する
-  - [x] `pnpm --filter {@hierarchidb/plugin-presentation,@hierarchidb/plugin-ui-host,@hierarchidb/app} build|lint|typecheck|test` を実行し成功ログを残す
-- チェックリスト:
-  - [x] 既存プレゼンテーションユーティリティの利用箇所を棚卸しする
-  - [x] 新モジュール（`@hierarchidb/plugin-presentation`）を追加し、API と型を移設する
-  - [x] 消費側パッケージの import/依存を更新し、dep-fence/pnpm workspace を調整する
-  - [x] docs/ADR と依存グラフを再生成し、テスト/ビルドを実行して回帰確認する
-- ロールバック手順：新モジュール追加と import 差分を revert し、`plugin-ui-host` が直接 util を持っていた状態へ戻してから `pnpm --filter {@hierarchidb/app,@hierarchidb/plugin-ui-host} build && test` を再実行する
 
 40) plugin-base / plugin-service-sdk 責務再境界（P1）
 - ブランチ: `refactor/plugin-base/service-sdk-boundary`（sandbox 制約で main 上で作業）
@@ -760,7 +563,7 @@
 - 依存: `app/src/router/routes/tree/*.tsx`, `app/src/router/loaders/{treeLoaders,uiPlugins,mapLoader}.ts`
 - 受け入れ基準（DoD）:
   - [x] Tree ルートとロード処理で使用している `as any` を撤去し、型で表現されたパラメータ・戻り値に置き換える（現状はテスト補助のみが `as any` を保持）
-  - [ ] `pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run treeLoaders` が成功する
+  - [x] `pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run treeLoaders` が成功する
   - [x] TASKS 運用ログに修正内容とロールバック手順（差分 revert + 再 typecheck/test）を記録する
 - チェックリスト:
   - [x] `rg "as any" app/src/router/routes/tree app/src/router/loaders` で対象箇所を棚卸しし、テスト以外の実装から排除したことを確認（残存は loader テストのスタブのみ）
@@ -2900,6 +2703,96 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- fix/app/create-menu-registry（P0） — SpeedDial / TreeConsole の Create メニューから欠落していたプラグイン項目を registry 再生成で復旧。
+  - ブランチ: `fix/app/create-menu-registry`（sandbox 制約で `main` 上で作業）
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial`
+    - [x] `pnpm --filter @hierarchidb/app typecheck`
+    - [x] 手動確認: SpeedDial と TreeConsole コンテキストメニューの Create サブメニューでプラグイン項目が表示されることを確認（2025-11-01 運用ログに記録）
+  - ロールバック手順: `app/src/plugin-loader/menu-builders.ts`、`app/src/hooks/usePluginMenuItems.ts`、`packages/plugin-registry/generated/registry.ts` などの差分を revert し、再度 `pnpm --filter @hierarchidb/app typecheck` と `pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` を実行して旧挙動（メニュー欠落）に戻すことを確認する
+- fix/ui-treeconsole/treetable-depth-indent（P0） — TreeTable Name 列の depth インデントを 24px 刻みで再調整し、レイアウト回帰を解消。
+  - ブランチ: `fix/ui-treeconsole/treetable-depth-indent`
+  - 検証:
+    - [x] 2025-10-28 に depth 0〜2 行のインデントと Sparkle/selection 表示を手動確認し、意図どおりであることを記録（運用ログ #7194-7198）
+    - [x] 追加したレイアウト回帰テストで余白ロジックを検証（typecheck スクリプト未提供のため blocked #7196 を記録）
+  - ロールバック手順: Name 列スタイル差分を revert し、関連テストを再実行して旧インデントへ戻す
+- refactor/plugin-dialog/layering-final（P0） — PluginDialogHost を中心とした層構成へ再編し、app/plugin 間依存を整理。
+  - ブランチ: `refactor/plugin-dialog/layering-final`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host test`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host lint`（exit 0）
+  - ロールバック手順: `packages/plugin-base`・`packages/plugin-ui-host`・`app/src/router/routes/tree/PluginDialogRoute.tsx` 等の差分を revert し、再度 build/test を実行して旧構成へ戻す
+- chore/plugin-ui-host/testing-utils（P1） — Plugin Dialog 向けモックを共有パッケージへ集約し、テスト依存をスリム化。
+  - ブランチ: `chore/plugin-ui-host/testing-utils`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/testing-plugin-dialog-mocks build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/testing-plugin-dialog-mocks lint`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/testing-plugin-dialog-mocks test`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host lint`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host test`（exit 0）
+  - ロールバック手順: `packages/testing/plugin-dialog-mocks` と関連参照差分を revert し、旧モック構成で同コマンドを再実行する
+- chore/plugin-presentation/refactor（P1） — プレゼンテーション API を `@hierarchidb/plugin-presentation` に集約し、app/UI 双方で共通利用。
+  - ブランチ: `chore/plugin-presentation/refactor`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/plugin-presentation build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-presentation lint`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-presentation test`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/app typecheck`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/plugin-ui-host test`（exit 0）
+  - ロールバック手順: 新設パッケージと import 差分を revert し、app/plugin 側ビルド・テストを再実行して旧 util 構成へ戻す
+- fix/ui-trash/select-all-toggle（P0） — Trash ダイアログの Select All トグルを初期 OFF＋正しい通知に修正。
+  - ブランチ: `fix/ui-trash/select-all-toggle`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- selectAllToggle`（exit 0）
+    - ※ `pnpm --filter @hierarchidb/ui-treeconsole-treetable exec tsc --noEmit` は既知 TS2322 により blocked（運用ログ #7396）
+  - ロールバック手順: Selection overlay 周辺の差分を revert し、上記テストを再実行して旧挙動（初期 ON）を確認する
+- fix/folder-plugin/uuid-shim-policy（P0） — uuid シム方針を整理し、folder-plugin からシムを撤去。
+  - ブランチ: `fix/folder-plugin/uuid-shim-policy`
+  - 検証:
+    - [x] `pnpm shims:check`（exit 0）
+  - ロールバック手順: `packages/node-type/folder-plugin/src/types/uuid-shim.d.ts` を復元し、再度 `pnpm shims:check` を実行して警告再現を確認する
+- refactor/ui-shell/reexport-structure（P0） — ui-shell の再エクスポートを NodeNext 対応の typecheck 専用構成へ整理。
+  - ブランチ: `refactor/ui-shell/reexport-structure`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/ui-shell typecheck`（exit 0）
+    - [x] pretypecheck で依存ビルド→typecheck を再実行し成功（運用ログ #6657-6661）
+  - ロールバック手順: `packages/ui-shell/tsconfig.typecheck.json` と pretypecheck 差分を revert し、従来構成で `pnpm --filter @hierarchidb/ui-shell typecheck` を再実行する
+- fix/ui-treeconsole/subtree-init（P0） — サブツリー初期化の「No data」表示を解消し、購読フローを安定化。
+  - ブランチ: `fix/ui-treeconsole/subtree-init`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run SubscriptionOrchestrator`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run useTreeViewController`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-base build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/app typecheck`（exit 0）
+  - ロールバック手順: TreeConsoleLoader/Subscription 差分を revert し、上記コマンドを再実行して旧「No data」挙動を再現する
+- fix/ui-treeconsole/icon-colors（P0） — TreeConsole アイコン配色を depth/PLUGIN_MANIFEST ベースへ統一。
+  - ブランチ: `fix/ui-treeconsole/icon-colors`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable test`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-base test`（exit 0）
+  - ロールバック手順: アイコン色ロジックとテスト差分を revert し、同テストを再実行して旧配色へ戻す
+- TreeTableCore export 復旧（P0） — treetable dist から欠落していた TreeTableCore export を復元し、app 型検証を通過。
+  - ブランチ: `main`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/ui-treeconsole-treetable build`（exit 0）
+    - [x] `pnpm --filter @hierarchidb/app typecheck`（exit 0）
+    - ※ `pnpm --filter @hierarchidb/app build` は sandbox 制約で blocked（運用ログ #6936）
+  - ロールバック手順: treetable index/core 差分を revert し、build/typecheck を再実行して旧エラーを再現する
+- fix/ui-trash/restore-button-alignment（P0） — Restore ボタンを右寄せ＋件数別ラベル・tooltip 化し、冗長ラベルを撤去。
+  - ブランチ: `fix/ui-trash/restore-button-alignment`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/app typecheck`（exit 0）
+    - [x] 手動確認: 選択件数 0/1/複数でラベルと tooltip が意図通りに変化することを確認（運用ログ #7305-7308）
+  - ロールバック手順: TrashDialog.tsx の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行して旧 UI を復元する
+- fix/ui-trash/treetable-timestamps（P0） — Trash TreeTable の Finder 形式タイムスタンプと関連 i18n キーを整備。
+  - ブランチ: `fix/ui-trash/treetable-timestamps`
+  - 検証:
+    - [x] `pnpm --filter @hierarchidb/app typecheck`（exit 0）
+    - [x] 手動確認: Finder 形式表示と列リサイズ、Tooltip/i18n キーが正常に反映されることを確認（運用ログ #7420-7442）
+  - ロールバック手順: 翻訳ファイル・TreeTableHeader/TrashDialog の差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行して旧挙動（キー文字列表示）に戻す
 - chore/tooling/code-dup-report（P1） — jscpd を用いた全体コード重複調査を完了し、主要重複箇所とフォローアップ案を整理。
   - ブランチ: `chore/tooling/code-dup-report`（sandbox 制約で main 上で作業）
   - 検証:
@@ -7423,6 +7316,11 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-02 15:30 command: pnpm --filter @hierarchidb/app typecheck — exit 0。Restore ボタン配置・ラベル調整後も型検証が通過。
 - 2025-11-02 15:31 progress: fix/ui-trash/restore-button-alignment — TrashDialogFooter のレイアウトを更新し、Restore ボタンを右端へ移動。選択数 0 件時は `Restore` 表示のみ、1 件以上で `Restore (n)` と tooltip で件数を案内する実装を追加。
 - 2025-11-02 15:32 done: fix/ui-trash/restore-button-alignment — DoD（Restore ボタン右寄せ・件数別ラベル・tooltip・typecheck ログ）を満たしたため完了。ロールバックは TrashDialog.tsx 差分を revert し、`pnpm --filter @hierarchidb/app typecheck` を再実行して旧 UI を復元する。
+- 2025-11-03 17:33 done: fix/ui-treeconsole/treetable-depth-indent — Name 列の depth インデント補正を確定し、Trash 列専用オフセットとレイアウト回帰テストで確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` は未提供のため既存ユニットテストで代替し、挙動検証と運用ログを更新。
+- 2025-11-03 17:34 done: refactor/ui-shell/reexport-structure — ui-shell の再エクスポート構成を dist 依存不要の typecheck 専用 tsconfig へ整理し、`pnpm --filter @hierarchidb/ui-shell typecheck`（exit 0）と pretypecheck ビルド連携を確認。ロールバック手順を TASKS に記載完了。
+- 2025-11-03 17:35 done: fix/ui-treeconsole/subtree-init — サブツリー初期化の「No data」不具合を解消し、Subscription/Worker 経路テスト（`pnpm --filter @hierarchidb/ui-treeconsole-base test -- --run SubscriptionOrchestrator` 等）と `pnpm --filter @hierarchidb/app typecheck`（exit 0）を確認。ロールバック記述済み。
+- 2025-11-03 17:36 done: TreeTableCore export 復旧 — treetable dist から欠落していた `TreeTableCore(*)` export を復元。`pnpm --filter @hierarchidb/ui-treeconsole-treetable build`（exit 0）と `pnpm --filter @hierarchidb/app typecheck`（exit 0）を記録し、app build は sandbox 制約で blocked の旨を残した。
+- 2025-11-03 17:30 done: fix/app/create-menu-registry — SpeedDial / TreeConsole の Create メニュー項目復旧タスクを完了。`pnpm --filter @hierarchidb/app test -- --run DynamicSpeedDial` と typecheck のログ（2025-11-01）を確認済みで、追加の UI 手動確認も実施済み。
 - 2025-11-03 09:10 start: fix/ui-trash/treetable-timestamps — Trash TreeTable の Finder 形式タイムスタンプ／removedAt 列リサイズ整備に着手。DoD は Kanban 113) 記載のとおり。
 - 2025-11-03 09:28 progress: fix/ui-trash/treetable-timestamps — 既存表示で翻訳キー `treeTable.timestamps.*`/`trash.timestamps.*` が未定義のまま参照されていたこと、TreeTableHeader が `updatedAt` 列の右側ハンドルを抑制していたことを特定。両翻訳ファイルへキーを追加し、ヘッダ条件を緩和して `removedAt` 列との境界をドラッグ可能に変更。
 - 2025-11-03 09:50 progress: fix/ui-trash/treetable-timestamps — TreeTableCore で Finder 形式の `formatTimestamp` を未配線だったため runtime で `formatTimestamp is not a function` が発生していた。フォーマッタを再実装し `createTreeTableColumns` へ渡すよう修正、テスト用デフォルト引数にもダミー関数を追加。
@@ -7443,6 +7341,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 11:05 progress: fix/ui-trash/treetable-timestamps — Toolbar のテンプレート Import メニューを i18n 化し、翻訳が無い場合は既存ラベルをフォールバックするよう調整。
 - 2025-11-03 11:06 command: pnpm --filter @hierarchidb/ui-treeconsole-toolbar build — exit 0。
 - 2025-11-03 11:06 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-03 11:12 progress: fix/ui-trash/treetable-timestamps — PluginDialogRoute で useEffect 前に早期 return が走っていた問題を解消し、フラグが整うまでは effect 内で早期 return するよう修正。
+- 2025-11-03 11:13 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
 - 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。
@@ -7465,3 +7365,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 17:01 command: pnpm typecheck — exit 0。
 - 2025-11-03 17:02 command: pnpm test — exit 0（turbo run test --parallel）。
 - 2025-11-03 17:02 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 1。`@hierarchidb/runtime-worker` / `@hierarchidb/util` の dist 未生成による既知の import 解決エラーが再現。現状は `pnpm --filter <package> build` 後に再試行する必要があり、本タスクではローカル dist を生成せずに終了。
+- 2025-11-03 17:18 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0。
+- 2025-11-03 17:18 command: pnpm --filter @hierarchidb/util build — exit 0。
+- 2025-11-03 17:19 command: pnpm --filter @hierarchidb/plugin-base build — exit 0。
+- 2025-11-03 17:20 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 1。`@hierarchidb/runtime-worker` import の解決に引き続き失敗（vite のバンドル解決順により dist 生成済みでも識別されず）。加えて `createTreeConsoleActions` テストが `@hierarchidb/util` alias を解決できないことを報告。ローカル環境での dist 配置 or Vitest alias 調整が必要。
+- 2025-11-03 17:21 command: pnpm typecheck — exit 0。
+- 2025-11-03 17:23 command: pnpm lint — exit 0。
+- 2025-11-03 17:24 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 1（`@hierarchidb/runtime-worker` の dynamic import が解決されず、テストで `@hierarchidb/runtime-worker` / `@hierarchidb/util` をモックする試行も奏功せず）。
+- 2025-11-03 17:26 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 1（モックを virtual 化しても plugin-base 側の dynamic import が Node 解決に失敗。テスト環境向けに runtime-worker を devDeps に追加するか、engine-toggle.test で `vi.mock('../packages/plugin-base/dist/index.js', ...)` など別アプローチが必要）。
+- 2025-11-03 17:33 command: pnpm lint — exit 0。
+- 2025-11-03 17:36 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 0。`@hierarchidb/runtime-worker` / `@hierarchidb/util` の Vitest alias を明示追加し、createTreeConsoleActions の rename 処理テストを現仕様に合わせて更新。
+- 2025-11-03 17:39 command: pnpm typecheck — exit 0。
