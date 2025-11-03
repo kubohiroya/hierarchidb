@@ -792,6 +792,20 @@ export default defineConfig(({ mode, isSsrBuild }) => {
             isDev ? '../packages/ui/icon/src/index.ts' : '../packages/ui/icon/dist/index.js',
           ),
         },
+        {
+          find: '@hierarchidb/runtime-worker',
+          replacement: path.resolve(
+            __dirname,
+            isDev ? '../packages/runtime/worker/src/index.ts' : '../packages/runtime/worker/dist/index.js',
+          ),
+        },
+        {
+          find: '@hierarchidb/util',
+          replacement: path.resolve(
+            __dirname,
+            isDev ? '../packages/util/src/index.ts' : '../packages/util/dist/index.js',
+          ),
+        },
         // Unify plugin-dialog runtime to a single module instance to avoid split singletons
         { find: '@hierarchidb/runtime-ui-plugin-dialog', replacement: path.resolve(__dirname, '../packages/plugin-ui-sdk/dist/index.js') },
         // Base plugin is an internal helper library; if it accidentally appears in a virtual import,

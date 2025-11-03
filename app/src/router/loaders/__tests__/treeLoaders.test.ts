@@ -5,6 +5,16 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { loadTree, loadPageNode, loadTargetNode, loadNodeType, loadNodeAction } from '../treeLoaders.js';
+import type {
+  LoadTreeReturn,
+  LoadPageNodeReturn,
+  LoadTargetNodeReturn,
+  LoadNodeTypeReturn,
+  LoadNodeActionReturn,
+} from '~/loader.js';
+import type { Tree, TreeNode, TreeId, NodeId, NodeType, NodeAction } from '@hierarchidb/feature-core/common-types';
+import type { Remote } from 'comlink';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 // Mock the loader module
 vi.mock('~/loader.js', () => ({
@@ -15,6 +25,35 @@ vi.mock('~/loader.js', () => ({
   loadNodeType: vi.fn(),
   loadNodeAction: vi.fn(),
 }));
+
+function createMockClient(): Remote<WorkerAPI> {
+  return {} as unknown as Remote<WorkerAPI>;
+}
+
+function createTree(overrides: Partial<Tree> = {}): Tree {
+  return {
+    id: 'tree-1' as TreeId,
+    name: 'Mock Tree',
+    rootId: 'tree-1:root' as NodeId,
+    trashRootId: 'tree-1:trash' as NodeId,
+    superRootId: 'tree-1:super' as NodeId,
+    ...overrides,
+  };
+}
+
+function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
+  return {
+    id: 'node-1' as NodeId,
+    parentId: 'tree-1:root' as NodeId,
+    nodeType: 'folder' as NodeType,
+    name: 'Mock Node',
+    depth: 0,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    version: 1,
+    ...overrides,
+  };
+}
 
 describe('Tree Loaders for TanStack Router', () => {
   beforeEach(() => {
@@ -28,19 +67,22 @@ describe('Tree Loaders for TanStack Router', () => {
         if (!treeId) {
           throw new Error('treeId is required');
         }
-        return { tree: undefined, client: {} as any };
+        return {
+          tree: undefined,
+          client: createMockClient(),
+        } satisfies LoadTreeReturn;
       });
 
       await expect(loadTree({ treeId: '' })).rejects.toThrow('treeId is required');
     });
 
     it('should load tree data when treeId is provided', async () => {
-      const mockTree = { id: 'r', name: 'Resource Tree' };
+      const mockTree = createTree({ id: 'r' as TreeId, name: 'Resource Tree' });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadTree).mockResolvedValue({
-        tree: mockTree as any,
-        client: {} as any,
-      });
+        tree: mockTree,
+        client: createMockClient(),
+      } satisfies LoadTreeReturn);
 
       const result = await loadTree({ treeId: 'r' });
       expect(result).toHaveProperty('tree');
@@ -50,14 +92,14 @@ describe('Tree Loaders for TanStack Router', () => {
 
   describe('loadPageNode', () => {
     it('should load page node with resolved pageNodeId', async () => {
-      const mockPageNode = { id: 'r:root', name: 'Root' };
+      const mockPageNode = createTreeNode({ id: 'r:root' as NodeId, name: 'Root' });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadPageNode).mockResolvedValue({
-        tree: { id: 'r', name: 'Resource Tree' } as any,
-        client: {} as any,
-        pageNodeId: 'r:root' as any,
-        pageNode: mockPageNode as any,
-      });
+        tree: createTree({ id: 'r' as TreeId }),
+        client: createMockClient(),
+        pageNodeId: mockPageNode.id,
+        pageNode: mockPageNode,
+      } satisfies LoadPageNodeReturn);
 
       const result = await loadPageNode({ treeId: 'r', pageNodeId: 'r:root' });
       expect(result).toHaveProperty('pageNode');
@@ -67,16 +109,16 @@ describe('Tree Loaders for TanStack Router', () => {
 
   describe('loadTargetNode', () => {
     it('should load target node data', async () => {
-      const mockTargetNode = { id: 'target123', name: 'Target' };
+      const mockTargetNode = createTreeNode({ id: 'target123' as NodeId, name: 'Target' });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadTargetNode).mockResolvedValue({
-        tree: { id: 'r', name: 'Resource Tree' } as any,
-        client: {} as any,
-        pageNodeId: 'r:root' as any,
+        tree: createTree({ id: 'r' as TreeId }),
+        client: createMockClient(),
+        pageNodeId: 'r:root' as NodeId,
         pageNode: undefined,
-        targetNodeId: 'target123' as any,
-        targetNode: mockTargetNode as any,
-      });
+        targetNodeId: mockTargetNode.id,
+        targetNode: mockTargetNode,
+      } satisfies LoadTargetNodeReturn);
 
       const result = await loadTargetNode({
         treeId: 'r',
@@ -92,14 +134,14 @@ describe('Tree Loaders for TanStack Router', () => {
     it('should load node type data', async () => {
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadNodeType).mockResolvedValue({
-        tree: { id: 'r', name: 'Resource Tree' } as any,
-        client: {} as any,
-        pageNodeId: 'r:root' as any,
+        tree: createTree({ id: 'r' as TreeId }),
+        client: createMockClient(),
+        pageNodeId: 'r:root' as NodeId,
         pageNode: undefined,
-        targetNodeId: 'target123' as any,
-        targetNode: {} as any,
-        nodeType: 'folder' as any,
-      });
+        targetNodeId: 'target123' as NodeId,
+        targetNode: createTreeNode({ id: 'target123' as NodeId }),
+        nodeType: 'folder' as NodeType,
+      } satisfies LoadNodeTypeReturn);
 
       const result = await loadNodeType({
         treeId: 'r',
@@ -116,15 +158,15 @@ describe('Tree Loaders for TanStack Router', () => {
     it('should load node action data', async () => {
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadNodeAction).mockResolvedValue({
-        tree: { id: 'r', name: 'Resource Tree' } as any,
-        client: {} as any,
-        pageNodeId: 'r:root' as any,
+        tree: createTree({ id: 'r' as TreeId }),
+        client: createMockClient(),
+        pageNodeId: 'r:root' as NodeId,
         pageNode: undefined,
-        targetNodeId: 'target123' as any,
-        targetNode: {} as any,
-        nodeType: 'folder' as any,
-        action: 'edit' as any,
-      });
+        targetNodeId: 'target123' as NodeId,
+        targetNode: createTreeNode({ id: 'target123' as NodeId }),
+        nodeType: 'folder' as NodeType,
+        action: 'edit' as unknown as NodeAction,
+      } satisfies LoadNodeActionReturn);
 
       const result = await loadNodeAction({
         treeId: 'r',

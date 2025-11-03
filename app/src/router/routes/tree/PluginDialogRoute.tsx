@@ -43,6 +43,9 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 
   const navigate = useNavigate();
   const location = useLocation();
+  // State
+  const [isOpen, setIsOpen] = React.useState(true);
+
   const useWorkerHook = getWorkerClientHook() ?? (() => null);
   const ref = useWorkerHook();
   const client = ref?.client ?? null;
@@ -57,16 +60,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const effectiveNodeType: string | undefined = nodeType ?? params.nodeType;
   const effectiveAction: NodeAction | undefined = action ?? toNodeAction(params.action);
 
-  if (!treeId || !effectiveTargetNodeId || !effectivePageNodeId || !effectiveNodeType || !effectiveAction) {
-    console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {
-      treeId,
-      effectiveTargetNodeId,
-      effectivePageNodeId,
-      effectiveNodeType,
-      effectiveAction,
-    });
-    return null;
-  }
+  const isReady = Boolean(treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction);
 
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
@@ -78,16 +72,12 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const mode: 'create' | 'edit' = effectiveAction === NodeAction.CREATE ? 'create' : 'edit';
 
   // targetNodeId is the working copy ID (UUID) for both create and edit
-  const workingCopyId = effectiveTargetNodeId;
-
-  // State
-  const [isOpen, setIsOpen] = React.useState(true);
 
   // Ensure edit mode uses a working copy node id in the URL
   React.useEffect(() => {
     let disposed = false;
     (async () => {
-      if (!client) return;
+      if (!client || !isReady) return;
       if (mode !== 'edit') return;
       try {
         const query = await client.getQueryAPI();
@@ -121,6 +111,7 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     };
   }, [
     client,
+    isReady,
     mode,
     effectiveTargetNodeId,
     treeId,
@@ -132,27 +123,45 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
     location.hash,
   ]);
 
+  if (!isReady) {
+    console.warn('[PluginDialogRoute] Missing required data to render plugin dialog', {
+      treeId,
+      effectiveTargetNodeId,
+      effectivePageNodeId,
+      effectiveNodeType,
+      effectiveAction,
+    });
+    return null;
+  }
+
+  const resolvedTreeId = treeId as TreeId;
+  const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
+  const resolvedPageNodeId = effectivePageNodeId as NodeId;
+  const resolvedNodeType = effectiveNodeType as string;
+  const resolvedAction = effectiveAction as NodeAction;
+  const workingCopyId = resolvedTargetNodeId;
+
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
-    const destination = effectivePageNodeId ? `/t/${treeId}/${effectivePageNodeId}` : `/t/${treeId}`;
+    const destination = resolvedPageNodeId ? `/t/${resolvedTreeId}/${resolvedPageNodeId}` : `/t/${resolvedTreeId}`;
     void navigate({ to: destination });
   };
 
   // Handle success
   const handleSuccess = (savedNodeId: NodeId) => {
     // Navigate to the saved node
-    void navigate({ to: `/t/${treeId}/${effectivePageNodeId}/${savedNodeId}` });
+    void navigate({ to: `/t/${resolvedTreeId}/${resolvedPageNodeId}/${savedNodeId}` });
   };
 
   // Unified host: headless plugin dialog shell
   return (
     <PluginDialogHost
       mode={mode}
-      nodeType={effectiveNodeType}
+      nodeType={resolvedNodeType}
       nodeId={workingCopyId}
-      pageNodeId={effectivePageNodeId}
-      treeId={treeId}
+      pageNodeId={resolvedPageNodeId}
+      treeId={resolvedTreeId}
       open={isOpen}
       onClose={handleClose}
       onSuccess={handleSuccess}

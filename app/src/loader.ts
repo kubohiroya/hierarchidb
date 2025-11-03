@@ -1,10 +1,10 @@
-import type {
+import {
   NodeAction,
-  NodeId,
-  NodeType,
-  Tree,
-  TreeId,
-  TreeNode,
+  type NodeId,
+  type NodeType,
+  type Tree,
+  type TreeId,
+  type TreeNode,
 } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
 import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/feature-core/common-api';
@@ -424,10 +424,19 @@ export async function loadNodeAction({
   });
   return {
     ...loadNodeTypeReturn,
-    action: action as unknown as NodeAction | undefined,
+    action: normalizeNodeAction(action),
   };
 }
 
 export function useAppConfig(): LoadAppConfigReturn {
   return loadAppConfig();
+}
+
+function normalizeNodeAction(action: string | undefined): NodeAction | undefined {
+  if (!action) return undefined;
+  const candidate = action as NodeAction;
+  if ((Object.values(NodeAction) as readonly string[]).includes(candidate)) {
+    return candidate;
+  }
+  return undefined;
 }

@@ -13,6 +13,40 @@ vi.mock('../../../services/preconnect.js', () => ({
   preconnectPluginServices: vi.fn(async () => {}),
 }));
 
+vi.mock('@hierarchidb/util', () => {
+  class MockDualKeyMap<K, Secondary, V> {
+    private primary: Map<K, V>;
+    private secondary: Map<K, Secondary>;
+
+    constructor() {
+      this.primary = new Map<K, V>();
+      this.secondary = new Map<K, Secondary>();
+    }
+
+    set(key: K, value: V, secondary?: Secondary) {
+      this.primary.set(key, value);
+      if (secondary !== undefined) {
+        this.secondary.set(key, secondary);
+      }
+      return this;
+    }
+
+    get(key: K) {
+      return this.primary.get(key);
+    }
+
+    clone() {
+      const copy = new MockDualKeyMap<K, Secondary, V>();
+      for (const [key, value] of this.primary.entries()) {
+        copy.set(key, value, this.secondary.get(key));
+      }
+      return copy;
+    }
+  }
+
+  return { DualKeyMap: MockDualKeyMap };
+});
+
 const preconnectSpy = vi.mocked(preconnectPluginServices);
 
 type MockWorkingCopy = {
@@ -148,16 +182,23 @@ describe('createTreeConsoleActions.handleEdit', () => {
     expect(pushPath).toHaveBeenCalledWith('/t/tree-1/parent-1/wc-existing/folder/edit');
   });
 
-  it('invokes edit dialog when triggered via context menu rename-dialog action', async () => {
-    const { deps, workingCopyApi, pushPath } = buildDeps({ selectedIds: [] });
-    workingCopyApi.getWorkingCopy.mockReset();
-    workingCopyApi.getWorkingCopy.mockResolvedValue({
-      id: 'wc-from-context',
-      nodeType: 'folder',
-    } as unknown as TreeNode);
+  it('renames via context menu rename-dialog action', async () => {
+    const originalPrompt = globalThis.prompt;
+    globalThis.prompt = vi.fn(() => 'Renamed Folder');
 
-    const setSSOT = vi.fn();
-    deps.setSSOT = setSSOT;
+    const mutationAPI = {
+      updateNode: vi.fn(async () => ({ success: true })),
+    };
+
+    const { deps } = buildDeps({ selectedIds: [] });
+    (deps.client as unknown as { getMutationAPI: () => Promise<typeof mutationAPI> }).getMutationAPI = vi
+      .fn()
+      .mockResolvedValue(mutationAPI);
+
+    const loadChildrenOf = vi.fn(async () => {});
+    const refreshUndoRedo = vi.fn(async () => {});
+    deps.loadChildrenOf = loadChildrenOf;
+    deps.refreshUndoRedo = refreshUndoRedo;
 
     const actions = createTreeConsoleActions(deps);
 
@@ -165,11 +206,16 @@ describe('createTreeConsoleActions.handleEdit', () => {
       id: 'node-1',
       nodeType: 'folder',
       name: 'Existing',
+      parentId: 'parent-1',
     } as TreeNodeData;
 
     await actions.handleContextMenuAction('rename-dialog', node);
 
-    expect(setSSOT).toHaveBeenCalledWith({ selectedIds: ['node-1'] });
-    expect(pushPath).toHaveBeenCalledWith('/t/tree-1/parent-1/wc-from-context/folder/edit');
+    expect(globalThis.prompt).toHaveBeenCalledWith('Enter new name', 'Existing');
+    expect(mutationAPI.updateNode).toHaveBeenCalledWith({ nodeId: 'node-1', name: 'Renamed Folder' });
+    expect(loadChildrenOf).toHaveBeenCalledWith('parent-1');
+    expect(refreshUndoRedo).toHaveBeenCalled();
+
+    globalThis.prompt = originalPrompt;
   });
 });

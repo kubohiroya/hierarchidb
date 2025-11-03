@@ -10,6 +10,12 @@ vi.mock('../loaders/uiPlugins.js', () => ({
   }),
 }));
 
+vi.mock('@hierarchidb/runtime-worker', () => ({
+  storeRegistry: {
+    getPeer: vi.fn(() => undefined),
+  },
+}));
+
 describe('createHierarchiRouter', () => {
   beforeEach(() => {
     // Reset environment variables

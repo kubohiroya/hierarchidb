@@ -4,19 +4,19 @@
   "private": true,
   "type": "module",
   "bin": {
-    "hdb-analyze-licenses": "dist/cli.mjs"
+    "hdb-analyze-licenses": "dist/cli.js"
   },
   "exports": {
-    ".": "./dist/cli.mjs",
-    "./cli": "./dist/cli.mjs"
+    ".": "./dist/cli.js",
+    "./cli": "./dist/cli.js"
   },
   "types": "dist/cli.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "start": "node dist/cli.mjs",
-    "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --out-extension .mjs --banner.js '#!/usr/bin/env node'",
+    "start": "node dist/cli.js",
+    "build": "tsdown src/cli.ts --config ../../../tsdown.config.ts --outDir dist --splitting false --target node18 --banner.js '#!/usr/bin/env node'",
     "clean": "rm -rf dist"
   },
   "devDependencies": {

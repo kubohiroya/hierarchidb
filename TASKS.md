@@ -568,7 +568,7 @@
 - チェックリスト:
   - [x] `rg "as any" app/src/router/routes/tree app/src/router/loaders` で対象箇所を棚卸しし、テスト以外の実装から排除したことを確認（残存は loader テストのスタブのみ）
   - [x] `nodeTypeRoute.tsx` / `pageRoute.tsx` / `dialogRoute.tsx` の `resolvedPageNodeId` 取扱いとローダー返却値をユニオン型へ整理し、利用側の `as` キャストを解消
-  - [ ] `loadPageNode` や関連ローダーの引数・戻り値をジェネリクス／専用型で表現し、`as any` に頼らないようにする
+  - [x] `loadPageNode` や関連ローダーの引数・戻り値をジェネリクス／専用型で表現し、`as any` に頼らないようにする（テストのモックも `satisfies Load*Return` で型付きに揃えた）
   - [ ] 主要経路（ゴミ箱遷移含む）を手動確認し、検証ログを残す
 - ロールバック手順：該当ファイルを revert し、`pnpm --filter @hierarchidb/app {typecheck,test -- --run treeLoaders}` を再実行して従来挙動へ戻す
 
@@ -7343,6 +7343,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 11:06 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-03 11:12 progress: fix/ui-trash/treetable-timestamps — PluginDialogRoute で useEffect 前に早期 return が走っていた問題を解消し、フラグが整うまでは effect 内で早期 return するよう修正。
 - 2025-11-03 11:13 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
+- 2025-11-03 11:18 progress: tools/analyze-licenses — ライセンス分析 CLI を CJS API 依存から `license-checker` CLI 呼び出しに切り替え、文字列で返るバージョン値をオブジェクトへ正規化。ワークスペースルートを `INIT_CWD` / `--start` 引数から解決するよう調整。
+- 2025-11-03 11:19 command: pnpm run analyze:licenses — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
 - 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。
@@ -7376,3 +7378,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 17:33 command: pnpm lint — exit 0。
 - 2025-11-03 17:36 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 0。`@hierarchidb/runtime-worker` / `@hierarchidb/util` の Vitest alias を明示追加し、createTreeConsoleActions の rename 処理テストを現仕様に合わせて更新。
 - 2025-11-03 17:39 command: pnpm typecheck — exit 0。
+- 2025-11-03 18:04 command: pnpm typecheck — exit 0。`treeLoaders` のユニットテストを `satisfies Load*Return` 形式に書き換え、`NodeAction` / `NodeType` のブランド型に追従。
+- 2025-11-03 18:05 note: 主要経路（Trash → PluginDialog）についてはブラウザ手動確認が必要だが、ローカル sandbox では UI を起動できないため未実施。手順は後日 `pnpm dev` + ゴミ箱 → PluginDialog を再確認する。
+- 2025-11-03 18:06 command: pnpm --filter @hierarchidb/app test -- --run treeLoaders — exit 0。型付きモックに差し替えた `treeLoaders` 系テストが通過することを再確認。

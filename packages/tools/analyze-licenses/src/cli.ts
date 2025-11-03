@@ -1,10 +1,9 @@
 import path from 'path';
 import process from 'process';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 
-type LicenseCheckerInit = (
-  opts: Record<string, any>,
-  cb: (err: Error | null, packages: Record<string, any>) => void,
-) => void;
+type PackageInfo = Record<string, unknown>;
 
 interface LicenseInfo {
   path?: string;
@@ -13,65 +12,74 @@ interface LicenseInfo {
 }
 
 async function main() {
-  const cwd = process.cwd();
-  const start = cwd; // analyze workspace root by default
-
-  // license-checker is CJS; load via createRequire
-  let checker: { init: LicenseCheckerInit };
-  try {
-    const mod = await import('license-checker');
-    checker = (mod.default ?? mod) as { init: LicenseCheckerInit };
-  } catch (err) {
-    console.error('[licenses] Failed to load license-checker. Ensure it is installed.');
-    console.error(String(err));
-    process.exit(2);
+  const executionCwd = process.cwd();
+  const initCwd = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : undefined;
+  const cliStartArgIndex = process.argv.indexOf('--start');
+  let start = executionCwd;
+  if (cliStartArgIndex >= 0 && process.argv[cliStartArgIndex + 1]) {
+    start = path.resolve(process.argv[cliStartArgIndex + 1]);
+  } else if (initCwd) {
+    start = initCwd;
   }
 
-  const opts: Record<string, any> = {
-    start,
-    production: true,
-    json: true,
-    direct: true,
-    // excludePackages expects a semicolon-separated string; provide none and filter manually
-    // excludePackages: '',
-  };
+  const require = createRequire(import.meta.url);
+  const checkerBin = require.resolve('license-checker/bin/license-checker');
+  const args = [checkerBin, '--production', '--json', '--direct', '--start', start];
 
-  await new Promise<void>((resolve) => {
-    checker.init(opts, (err: Error | null, packages: Record<string, any>) => {
-      if (err) {
-        console.error('[licenses] Analysis failed:', err.message);
-        // Do not block the build on analysis failure; exit code 1 will break prebuild.
-        // Exit 3 to signal analysis tool error specifically.
-        process.exit(3);
-      }
-
-      const entries = Object.entries(packages).filter(([_name, info]) => {
-        // Ignore workspace paths (node_modules/.pnpm links still have paths)
-        const candidate = info as LicenseInfo;
-        const p = candidate.path;
-        return !p || !p.includes(path.sep + 'packages' + path.sep);
-      });
-
-      let missing = 0;
-      for (const [pkgKey, info] of entries) {
-        const candidate = info as LicenseInfo;
-        const licenses = candidate.licenses;
-        const primary = Array.isArray(licenses) ? licenses.join(', ') : licenses;
-        if (!primary || primary === 'UNLICENSED' || primary === 'UNKNOWN') {
-          missing++;
-          console.warn(`[licenses] Missing/unknown license: ${pkgKey}`);
-        }
-      }
-
-      console.log(`[licenses] Scanned ${entries.length} third-party packages.`);
-      if (missing > 0) {
-        console.warn(`[licenses] ${missing} package(s) missing/unknown license.`);
-      }
-
-      // Always exit 0 to keep prebuild non-blocking but informative.
-      resolve();
+  const packages: Record<string, PackageInfo> = await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, args, { cwd: executionCwd, stdio: ['ignore', 'pipe', 'inherit'] });
+    let stdout = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
     });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`[licenses] license-checker exited with code ${code}`));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stdout) as Record<string, PackageInfo>;
+        resolve(parsed);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }).catch((error) => {
+    console.error('[licenses] Failed to analyze dependencies:', error instanceof Error ? error.message : String(error));
+    process.exit(3);
+  }) as Record<string, PackageInfo>;
+
+  // Normalize entries: convert string values into objects
+  const normalizedEntries = Object.entries(packages).map(([key, value]) => {
+    if (typeof value === 'string') {
+      return [key, { version: value } as PackageInfo] as const;
+    }
+    return [key, value] as const;
   });
+
+  const entries = normalizedEntries.filter(([_name, info]) => {
+    const candidate = info as LicenseInfo;
+    const p = candidate.path;
+    return !p || !p.includes(path.sep + 'packages' + path.sep);
+  });
+
+  let missing = 0;
+  for (const [pkgKey, info] of entries) {
+    const candidate = info as LicenseInfo;
+    const licenses = candidate.licenses;
+    const primary = Array.isArray(licenses) ? licenses.join(', ') : licenses;
+    if (!primary || primary === 'UNLICENSED' || primary === 'UNKNOWN') {
+      missing++;
+      console.warn(`[licenses] Missing/unknown license: ${pkgKey}`);
+    }
+  }
+
+  console.log(`[licenses] Scanned ${entries.length} third-party packages.`);
+  if (missing > 0) {
+    console.warn(`[licenses] ${missing} package(s) missing/unknown license.`);
+  }
 }
 
 main().catch((e) => {
