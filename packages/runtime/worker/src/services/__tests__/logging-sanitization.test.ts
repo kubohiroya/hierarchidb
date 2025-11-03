@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
+import type { CoreDB } from '../CoreDB.js';
+import type { CommandEnvelope } from '../command-types.js';
 
-const coreDBStub: any = {};
+const coreDBStub = {} as CoreDB;
 
 describe('ZE-4: logging and event sanitization', () => {
   it('does not record event for validation failure', async () => {
     const cp = new CommandProcessor(coreDBStub);
-    const invalid: any = { commandId: 'c', groupId: 'g', payload: {}, issuedAt: Date.now() };
+    const invalid = {
+      commandId: 'c',
+      groupId: 'g',
+      payload: {},
+      issuedAt: Date.now(),
+    } as unknown as CommandEnvelope<string, Record<string, never>>;
     const result = await cp.processCommand(invalid);
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -18,13 +25,13 @@ describe('ZE-4: logging and event sanitization', () => {
 
   it('records event without leaking payload', async () => {
     const cp = new CommandProcessor(coreDBStub);
-    const ok: any = {
+    const ok = {
       commandId: 'c2',
       groupId: 'g2',
       kind: 'ping',
       payload: { secret: 'should-not-appear-in-event' },
       issuedAt: Date.now(),
-    };
+    } as unknown as CommandEnvelope<'ping', { secret: string }>;
     const result = await cp.processCommand(ok);
     expect(result.success).toBe(true);
     const evt = cp.getLastEvent();

@@ -7,4 +7,4 @@ export type { UseUrlDownloadOptions, UseUrlDownloadResult } from './hooks/useUrl
 // Hooks
 export { useUrlDownload } from './hooks/useUrlDownload.js';
 // Services
-export { UnifiedDownloadService } from './services/UnifiedDownloadService.js';
+export { downloadFile, UnifiedDownloadService } from './services/UnifiedDownloadService.js';

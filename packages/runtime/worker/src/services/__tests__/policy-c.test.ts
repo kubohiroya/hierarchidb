@@ -1,11 +1,16 @@
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
-import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
+import { encodeWorkingCopyHolderName } from '../utils/holder-encoding.js';
 
 describe('Policy C: block move/remove when WC exists', () => {
-  const makeNode = (id: string, parentId: string, name: string, nodeType: NodeType = 'folder' as NodeType): TreeNode => ({
+  const makeNode = (
+    id: string,
+    parentId: string,
+    name: string,
+    nodeType: NodeType = 'folder' as NodeType
+  ): TreeNode => ({
     id: id as NodeId,
     parentId: parentId as NodeId,
     nodeType,
@@ -16,7 +21,8 @@ describe('Policy C: block move/remove when WC exists', () => {
     version: 1,
   });
 
-  type CoreStub = Pick<CoreDB,
+  type CoreStub = Pick<
+    CoreDB,
     'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
   > & {
     nodes: { toArray: () => Promise<TreeNode[]> };
@@ -30,7 +36,10 @@ describe('Policy C: block move/remove when WC exists', () => {
     state = new Map<NodeId, TreeNode>();
     state.set('root' as NodeId, makeNode('root', 'super', 'root'));
     state.set('a' as NodeId, makeNode('a', 'root', 'A'));
-    state.set('r:workingCopy' as NodeId, makeNode('r:workingCopy', 'super', 'workingCopy', 'workingCopy' as NodeType));
+    state.set(
+      'r:workingCopy' as NodeId,
+      makeNode('r:workingCopy', 'super', 'workingCopy', 'workingCopy' as NodeType)
+    );
     state.set('wcHolder' as NodeId, {
       id: 'wcHolder' as NodeId,
       parentId: 'r:workingCopy' as NodeId,
@@ -70,7 +79,10 @@ describe('Policy C: block move/remove when WC exists', () => {
 
   it('blocks moveNodes when WC under subtree', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'root' as NodeId });
+    const env = cp.createEnvelope('moveNodes', {
+      nodeIds: ['a' as NodeId],
+      toParentId: 'root' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(false);
   });

@@ -1,12 +1,10 @@
-import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
-import {
-  UIPersistence,
-  getPeerDisplayMode,
-  setPeerDisplayMode,
-} from '../peerDialogPersistence.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getPeerDisplayMode, setPeerDisplayMode, UIPersistence } from '../peerDialogPersistence.js';
+
+type MockRow = { nodeId: string } & Record<string, unknown>;
 
 class MockEntitiesDB {
-  private rows = new Map<string, any>();
+  private rows = new Map<string, MockRow>();
 
   async open(): Promise<void> {
     // no-op for mock
@@ -15,7 +13,9 @@ class MockEntitiesDB {
   table() {
     return {
       get: async (id: string) => this.rows.get(id) ?? null,
-      put: async (row: any) => { this.rows.set(row.nodeId, row); },
+      put: async (row: MockRow) => {
+        this.rows.set(row.nodeId, row);
+      },
     };
   }
 }
@@ -45,8 +45,7 @@ describe('peerDialogPersistence default provider', () => {
   });
 });
 
-
-const fallbackRows = new Map<string, any>();
+const fallbackRows = new Map<string, MockRow>();
 
 vi.mock('@hierarchidb/runtime-worker', () => ({
   PLUGIN_WORKER_MODULE_IDS: {
@@ -63,11 +62,15 @@ vi.mock('@hierarchidb/runtime-worker', () => ({
 vi.mock('@hierarchidb/folder-plugin/worker', () => ({
   loadFolderEntitiesDbModule: async () => ({
     FolderEntitiesDB: class {
-      async open() { /* no-op */ }
+      async open() {
+        /* no-op */
+      }
       table() {
         return {
           get: async (id: string) => fallbackRows.get(id) ?? null,
-          put: async (row: any) => { fallbackRows.set(row.nodeId, row); },
+          put: async (row: MockRow) => {
+            fallbackRows.set(row.nodeId, row);
+          },
         };
       }
     },
@@ -78,13 +81,19 @@ describe('peerDialogPersistence EntitiesDB fallback', () => {
   beforeEach(() => {
     delete globalThis.__HDB_PLUGIN_ENTITY_OVERRIDES__;
     fallbackRows.clear();
-    const registry = UIPersistence as unknown as { providers: Map<string, unknown>; dbCache: Map<string, unknown> };
+    const registry = UIPersistence as unknown as {
+      providers: Map<string, unknown>;
+      dbCache: Map<string, unknown>;
+    };
     registry.providers.delete('folder');
     registry.dbCache.delete('folder');
   });
 
   afterEach(() => {
-    const registry = UIPersistence as unknown as { providers: Map<string, unknown>; dbCache: Map<string, unknown> };
+    const registry = UIPersistence as unknown as {
+      providers: Map<string, unknown>;
+      dbCache: Map<string, unknown>;
+    };
     registry.providers.delete('folder');
     registry.dbCache.delete('folder');
   });

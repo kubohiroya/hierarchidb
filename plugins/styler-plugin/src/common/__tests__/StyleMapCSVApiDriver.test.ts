@@ -4,8 +4,8 @@
  */
 
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
 
 const originalFetch = global.fetch;
@@ -326,7 +326,7 @@ Jane,25`;
       });
 
       await expect(csvApi.downloadCSVFromUrl('https://example.com/missing.csv')).rejects.toThrow(
-        'CSV download failed: HTTP 404',
+        'CSV download failed: HTTP 404'
       );
     });
   });
@@ -477,11 +477,11 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
         () =>
           new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Network timeout')), 100);
-          }),
+          })
       );
 
       await expect(csvApi.downloadCSVFromUrl('https://slow-server.com/data.csv')).rejects.toThrow(
-        'Network timeout',
+        'Network timeout'
       );
     });
 
@@ -489,7 +489,7 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
       const invalidTableId = 'non-existent-table-id';
 
       await expect(csvApi.getFilteredPreview(invalidTableId, [], 10)).rejects.toThrow(
-        'Table not found',
+        'Table not found'
       );
     });
 
@@ -497,11 +497,11 @@ Smith,35,New York,"Contains ""quotes"" and commas, semicolons;"`;
       const invalidTableId = 'non-existent-table-id';
 
       await expect(csvApi.addTableReference(invalidTableId, 'plugin1')).rejects.toThrow(
-        'Table not found',
+        'Table not found'
       );
 
       await expect(csvApi.removeTableReference(invalidTableId, 'plugin1')).rejects.toThrow(
-        'Table not found',
+        'Table not found'
       );
     });
 

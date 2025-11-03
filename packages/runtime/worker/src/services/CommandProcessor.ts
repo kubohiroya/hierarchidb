@@ -1,23 +1,23 @@
-import crypto from 'crypto';
 import type { CommandId, NodeId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
+import crypto from 'crypto';
 import { Subject } from 'rxjs';
-import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
-import { WorkerErrorCode } from './command-types.js';
-import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
-import type { CoreDB } from './CoreDB.js';
-import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
-import { commandRegistry, type CommandHandlerContext } from './command/registry.js';
-import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
-import {
-  CommandExecutionRunner,
-  type CommandExecutionContext,
-} from './command/execution/CommandExecutionRunner.js';
-import { executeCoreCommand } from './command/core-handlers/index.js';
-import { validateAndNormalizeEnvelope, isValidationFailure } from './validation/envelope.js';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { recordCommandLatency } from '../utils/metrics.js';
+import { PERFORMANCE_CONFIG } from '../utils/performance-config.js';
+import type { CoreDB } from './CoreDB.js';
+import { executeCoreCommand } from './command/core-handlers/index.js';
+import {
+  type CommandExecutionContext,
+  CommandExecutionRunner,
+} from './command/execution/CommandExecutionRunner.js';
+import { CommandHistoryManager } from './command/history/CommandHistoryManager.js';
+import { type CommandHandlerContext, commandRegistry } from './command/registry.js';
+import type { CommandEnvelope, CommandEvent, CommandMeta, CommandResult } from './command-types.js';
+import { WorkerErrorCode } from './command-types.js';
 import { TreeSubscriptionService } from './TreeSubscriptionService.js';
+import { classifyWorkerError, sanitizeMessageText } from './utils/error-adapter.js';
+import { isValidationFailure, validateAndNormalizeEnvelope } from './validation/envelope.js';
 
 type EntitiesDbTable = {
   delete(id: NodeId): Promise<void> | void;
@@ -49,7 +49,7 @@ function getEntitiesOverrides(): EntitiesOverrideRegistry | undefined {
 }
 
 async function resolveEntitiesOverride(
-  factory: EntitiesOverrideFactory | undefined,
+  factory: EntitiesOverrideFactory | undefined
 ): Promise<EntitiesDbAdapter | null> {
   if (!factory) return null;
   try {
@@ -87,7 +87,7 @@ export class CommandProcessor {
   createEnvelope<TType extends string, TPayload>(
     type: TType,
     payload: TPayload,
-    meta?: Partial<CommandMeta>,
+    meta?: Partial<CommandMeta>
   ): CommandEnvelope<TType, TPayload> {
     const commandId = meta?.commandId ?? (crypto.randomUUID() as CommandId);
     const timestamp = meta?.timestamp ?? (Date.now() as Timestamp);
@@ -112,7 +112,7 @@ export class CommandProcessor {
    * Process a command safely and record to undo/redo stacks when applicable.
    */
   async processCommand<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
+    envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
     try {
       const startedAt = Date.now();
@@ -127,7 +127,7 @@ export class CommandProcessor {
       if (envelope.commandId.length > PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH) {
         return this.createErrorResult(
           `Command ID too long (max ${PERFORMANCE_CONFIG.MAX_COMMAND_ID_LENGTH} chars)`,
-          WorkerErrorCode.INVALID_OPERATION,
+          WorkerErrorCode.INVALID_OPERATION
         );
       }
 
@@ -135,7 +135,7 @@ export class CommandProcessor {
       if (!this.isValidCommand(envelope.kind)) {
         return this.createErrorResult(
           `Invalid command type: ${envelope.kind}`,
-          WorkerErrorCode.INVALID_OPERATION,
+          WorkerErrorCode.INVALID_OPERATION
         );
       }
 
@@ -177,7 +177,7 @@ export class CommandProcessor {
    * Execute the actual command logic using registry when available.
    */
   private async executeCommand<TType extends string, TPayload>(
-    envelope: CommandEnvelope<TType, TPayload>,
+    envelope: CommandEnvelope<TType, TPayload>
   ): Promise<CommandResult> {
     return this.runner.run(envelope, (context) => this.executeCommandNoTx(envelope, context));
   }
@@ -188,7 +188,7 @@ export class CommandProcessor {
    */
   private async executeCommandNoTx<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
-    context: CommandExecutionContext,
+    context: CommandExecutionContext
   ): Promise<CommandResult> {
     // Delegate to handler if present
     const handler = commandRegistry.get(envelope.kind);
@@ -221,7 +221,7 @@ export class CommandProcessor {
         deletePeerEntitiesForNodes: (nodes) => this.deletePeerEntitiesForNodes(nodes),
         createErrorResult: (message, code, extra) => this.createErrorResult(message, code, extra),
         getNextSeq: () => this.getNextSeq(),
-      },
+      }
     );
 
     if (coreResult) {
@@ -251,7 +251,6 @@ export class CommandProcessor {
     return LEGACY_SUPPORTED.has(type);
   }
 
-
   /**
    * Get next sequence number
    */
@@ -265,7 +264,7 @@ export class CommandProcessor {
   private createErrorResult(
     error: string,
     code: WorkerErrorCode,
-    extra: ErrorResultExtras = {},
+    extra: ErrorResultExtras = {}
   ): CommandResult {
     return {
       success: false,
@@ -287,7 +286,11 @@ export class CommandProcessor {
     try {
       const canUndo = this.history.canUndo();
       const canRedo = this.history.canRedo();
-      if (!force && this.lastUndoState.canUndo === canUndo && this.lastUndoState.canRedo === canRedo) {
+      if (
+        !force &&
+        this.lastUndoState.canUndo === canUndo &&
+        this.lastUndoState.canRedo === canRedo
+      ) {
         return;
       }
       this.lastUndoState = { canUndo, canRedo };
@@ -356,7 +359,9 @@ export class CommandProcessor {
   }
 
   // Best-effort deletion of peerEntities (permanent delete only)
-  private async deletePeerEntitiesForNodes(nodes: Array<import('@hierarchidb/common-types').TreeNode>): Promise<void> {
+  private async deletePeerEntitiesForNodes(
+    nodes: Array<import('@hierarchidb/common-types').TreeNode>
+  ): Promise<void> {
     const { storeRegistry } = await import('../entity/store-registry.js');
     for (const n of nodes) {
       const nodeType = n.nodeType;
@@ -376,7 +381,7 @@ export class CommandProcessor {
     if (!overrideFactory) {
       console.warn(
         '[CommandProcessor] peer-entity cleanup skipped: no override registered for nodeType=',
-        nodeType,
+        nodeType
       );
       return;
     }
@@ -387,25 +392,29 @@ export class CommandProcessor {
         await table?.delete?.(nodeId);
         return;
       }
-      console.warn('[CommandProcessor] override provided for', nodeType, 'but no table() interface found');
+      console.warn(
+        '[CommandProcessor] override provided for',
+        nodeType,
+        'but no table() interface found'
+      );
     } catch (err) {
       console.warn('[CommandProcessor] override peer-entity cleanup failed:', err);
     }
   }
 
   /**
-      * :
+   * :
    * : setCoreDB
    * :
    * : any
    * : DI
-      */
+   */
   constructor(private readonly coreDB: CoreDB) {
-    const changeSubject = (coreDB as Partial<{ changeSubject?: { subscribe?: unknown } }>).changeSubject as
-      | { subscribe?: unknown }
-      | undefined;
+    const changeSubject = (coreDB as Partial<{ changeSubject?: { subscribe?: unknown } }>)
+      .changeSubject as { subscribe?: unknown } | undefined;
     if (!changeSubject || typeof changeSubject.subscribe !== 'function') {
-      (coreDB as unknown as { changeSubject: Subject<TreeChangeEvent> }).changeSubject = new Subject<TreeChangeEvent>();
+      (coreDB as unknown as { changeSubject: Subject<TreeChangeEvent> }).changeSubject =
+        new Subject<TreeChangeEvent>();
     }
     this.history = new CommandHistoryManager({
       coreDB,

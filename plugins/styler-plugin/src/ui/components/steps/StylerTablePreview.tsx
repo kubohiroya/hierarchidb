@@ -1,12 +1,17 @@
 /**
-  * @file StylerTablePreview.tsx
+ * @file StylerTablePreview.tsx
  * @description Styler table preview with color visualization (Step 6)
  * :
  * : eria-cartograph
  * :
-  */
+ */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  GridView as GridViewIcon,
+  Palette as PaletteIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Chip,
@@ -24,24 +29,19 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import {
-  GridView as GridViewIcon,
-  Palette as PaletteIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-} from '@mui/icons-material';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 // import { VariableSizeList as List } from 'provider-window';
 import type { StylerConfig } from '../../../common/types/stylerTypes.js';
 import { valueToColor } from '../../../common/utils/colorUtils.js';
 
 /**
-  * :
-  */
+ * :
+ */
 type SortDirection = 'asc' | 'desc' | null;
 
 /**
-  * :
-  */
+ * :
+ */
 export interface StylerTablePreviewProps {
   data: Array<Record<string, any>>;
   selectedKeyColumn?: string;
@@ -53,17 +53,17 @@ export interface StylerTablePreviewProps {
 }
 
 /**
-  * :
-  */
+ * :
+ */
 interface ColumnWidths {
   [key: string]: number;
 }
 
 /**
-  * :
  * :
  * :
-  */
+ * :
+ */
 const ResizableTableHeader: React.FC<{
   column: string;
   width: number;
@@ -72,15 +72,7 @@ const ResizableTableHeader: React.FC<{
   onSort?: () => void;
   isKeyColumn?: boolean;
   isValueColumn?: boolean;
-}> = ({
-        column,
-        width,
-        onResize,
-        sortDirection,
-        onSort,
-        isKeyColumn,
-        isValueColumn,
-      }) => {
+}> = ({ column, width, onResize, sortDirection, onSort, isKeyColumn, isValueColumn }) => {
   const [isResizing, setIsResizing] = useState(false);
   const startX = useRef<number>(0);
   const startWidth = useRef<number>(width);
@@ -129,9 +121,7 @@ const ResizableTableHeader: React.FC<{
           direction={sortDirection === 'desc' ? 'desc' : 'asc'}
           onClick={onSort}
         >
-          <Typography variant="subtitle2" noWrap
-                      sx={{padding: '0 3px 0 3px'}}
-          >
+          <Typography variant="subtitle2" noWrap sx={{ padding: '0 3px 0 3px' }}>
             **{column}
           </Typography>
         </TableSortLabel>
@@ -167,10 +157,10 @@ const ResizableTableHeader: React.FC<{
 };
 
 /**
-  * :
  * :
  * :
-  */
+ * :
+ */
 const TableRowComponent: React.FC<{
   rowData: Record<string, any>;
   columns: string[];
@@ -179,117 +169,119 @@ const TableRowComponent: React.FC<{
   selectedValueColumn?: string;
   config: StylerConfig;
   showColorPreview: boolean;
-}> = React.memo(({
-                   rowData,
-                   columns,
-                   columnWidths,
-                   selectedKeyColumn,
-                   selectedValueColumn,
-                   config,
-                   showColorPreview,
-                 }) => {
-  const theme = useTheme();
+}> = React.memo(
+  ({
+    rowData,
+    columns,
+    columnWidths,
+    selectedKeyColumn,
+    selectedValueColumn,
+    config,
+    showColorPreview,
+  }) => {
+    const theme = useTheme();
 
-  //  :
-  const colorResult = useMemo(() => {
-    if (!selectedValueColumn || !showColorPreview) {
+    //  :
+    const colorResult = useMemo(() => {
+      if (!selectedValueColumn || !showColorPreview) {
+        return null;
+      }
+
+      const value = rowData[selectedValueColumn];
+      if (typeof value === 'number') {
+        return valueToColor(value, config);
+      }
       return null;
-    }
+    }, [rowData, selectedValueColumn, config, showColorPreview]);
 
-    const value = rowData[selectedValueColumn];
-    if (typeof value === 'number') {
-      return valueToColor(value, config);
-    }
-    return null;
-  }, [rowData, selectedValueColumn, config, showColorPreview]);
+    return (
+      <TableRow hover>
+        {columns.map((col) => {
+          const isKeyColumn = col === selectedKeyColumn;
+          const isValueColumn = col === selectedValueColumn;
+          const cellValue = rowData[col];
 
-  return (
-    <TableRow hover>
-      {columns.map((col) => {
-        const isKeyColumn = col === selectedKeyColumn;
-        const isValueColumn = col === selectedValueColumn;
-        const cellValue = rowData[col];
+          const formatValue = (value: any): string => {
+            if (value === null || value === undefined) {
+              return '-';
+            }
+            if (typeof value === 'number') {
+              return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+            }
+            return String(value);
+          };
 
-        const formatValue = (value: any): string => {
-          if (value === null || value === undefined) {
-            return '-';
-          }
-          if (typeof value === 'number') {
-            return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-          }
-          return String(value);
-        };
+          return (
+            <TableCell
+              key={col}
+              sx={{
+                width: columnWidths[col],
+                minWidth: columnWidths[col],
+                maxWidth: columnWidths[col],
+                borderRight: '1px solid',
+                borderColor: 'divider',
+                backgroundColor: isKeyColumn
+                  ? theme.palette.primary.main + '10'
+                  : isValueColumn
+                    ? theme.palette.secondary.main + '10'
+                    : undefined,
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                {/* Color Preview */}
+                {isValueColumn && showColorPreview && colorResult && (
+                  <Tooltip title={`Color: ${colorResult.color}`}>
+                    <Box
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        backgroundColor: colorResult.color,
+                        opacity: colorResult.opacity,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 0.5,
+                      }}
+                    />
+                  </Tooltip>
+                )}
 
-        return (
-          <TableCell
-            key={col}
-            sx={{
-              width: columnWidths[col],
-              minWidth: columnWidths[col],
-              maxWidth: columnWidths[col],
-              borderRight: '1px solid',
-              borderColor: 'divider',
-              backgroundColor: isKeyColumn
-                ? theme.palette.primary.main + '10'
-                : isValueColumn
-                  ? theme.palette.secondary.main + '10'
-                  : undefined,
-            }}
-          >
-            <Stack direction="row" spacing={1} alignItems="center">
-              {/* Color Preview */}
-              {isValueColumn && showColorPreview && colorResult && (
-                <Tooltip title={`Color: ${colorResult.color}`}>
-                  <Box
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      backgroundColor: colorResult.color,
-                      opacity: colorResult.opacity,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 0.5,
-                    }}
-                  />
-                </Tooltip>
-              )}
-
-              {/* Cell Value */}
-              <Typography variant="body2" noWrap>
-                {formatValue(cellValue)}
-              </Typography>
-
-              {/* RGB Values (if color column) */}
-              {isValueColumn && showColorPreview && colorResult?.metadata && (
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  ({colorResult.metadata.r}, {colorResult.metadata.g}, {colorResult.metadata.b})
+                {/* Cell Value */}
+                <Typography variant="body2" noWrap>
+                  {formatValue(cellValue)}
                 </Typography>
-              )}
-            </Stack>
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  );
-});
+
+                {/* RGB Values (if color column) */}
+                {isValueColumn && showColorPreview && colorResult?.metadata && (
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    ({colorResult.metadata.r}, {colorResult.metadata.g}, {colorResult.metadata.b})
+                  </Typography>
+                )}
+              </Stack>
+            </TableCell>
+          );
+        })}
+      </TableRow>
+    );
+  }
+);
 
 TableRowComponent.displayName = 'TableRowComponent';
 
 /**
-  * : Styler
+ * : Styler
  * :
  * :
  * :
-  */
+ */
 export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
-                                                                        data,
-                                                                        selectedKeyColumn,
-                                                                        selectedValueColumn,
-                                                                        config,
-                                                                        onColumnSelect: _onColumnSelect,
-                                                                        maxRows = 1000,
-                                                                        // enableVirtualization = true,
-                                                                      }) => {
+  data,
+  selectedKeyColumn,
+  selectedValueColumn,
+  config,
+  onColumnSelect: _onColumnSelect,
+  maxRows = 1000,
+  // enableVirtualization = true,
+}) => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>({});
@@ -302,7 +294,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
 
   useMemo(() => {
     const initialWidths: ColumnWidths = {};
-    columns.forEach(col => {
+    columns.forEach((col) => {
       initialWidths[col] = 150;
     });
     setColumnWidths(initialWidths);
@@ -326,30 +318,31 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
 
       const aStr = String(aVal);
       const bStr = String(bVal);
-      return sortDirection === 'asc'
-        ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
+      return sortDirection === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
     });
 
     return sorted.slice(0, maxRows);
   }, [data, sortColumn, sortDirection, maxRows]);
 
-  const handleSort = useCallback((column: string) => {
-    if (sortColumn === column) {
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
-        setSortDirection(null);
-        setSortColumn(null);
+  const handleSort = useCallback(
+    (column: string) => {
+      if (sortColumn === column) {
+        if (sortDirection === 'asc') {
+          setSortDirection('desc');
+        } else if (sortDirection === 'desc') {
+          setSortDirection(null);
+          setSortColumn(null);
+        }
+      } else {
+        setSortColumn(column);
+        setSortDirection('asc');
       }
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
-    }
-  }, [sortColumn, sortDirection]);
+    },
+    [sortColumn, sortDirection]
+  );
 
   const handleColumnResize = useCallback((column: string, width: number) => {
-    setColumnWidths(prev => ({
+    setColumnWidths((prev) => ({
       ...prev,
       [column]: width,
     }));
@@ -393,9 +386,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {/* Header Controls */}
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography variant="h6">
-          Step 6: Table Preview with Style Mapping
-        </Typography>
+        <Typography variant="h6">Step 6: Table Preview with Style Mapping</Typography>
 
         <Stack direction="row" spacing={1}>
           <Chip
@@ -425,11 +416,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
             size="small"
           />
           {showColorPreview && (
-            <Chip
-              label={`Algorithm: ${config.algorithm}`}
-              size="small"
-              variant="outlined"
-            />
+            <Chip label={`Algorithm: ${config.algorithm}`} size="small" variant="outlined" />
           )}
         </Stack>
       )}

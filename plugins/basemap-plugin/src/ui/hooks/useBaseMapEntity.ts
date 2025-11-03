@@ -3,8 +3,8 @@
  * @description React hook for fetching and managing BaseMap entity data
  */
 
-import { useEffect, useState } from 'react';
 import type { NodeId } from '@hierarchidb/common-types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
 import { BaseMapEntityHandler } from './BaseMapEntityHandler.js';
 
@@ -31,7 +31,7 @@ export function useBaseMapEntity(
     pollingInterval?: number;
     /** Initial entity data */
     initialData?: BaseMapEntity;
-  } = {},
+  } = {}
 ): UseBaseMapEntityResult {
   const { skip = false, pollingInterval, initialData } = options;
 
@@ -39,10 +39,10 @@ export function useBaseMapEntity(
   const [loading, setLoading] = useState(!initialData && !skip);
   const [error, setError] = useState<Error | null>(null);
 
-  const handler = new BaseMapEntityHandler();
+  const handler = useMemo(() => new BaseMapEntityHandler(), []);
 
   // Fetch entity
-  const fetchEntity = async () => {
+  const fetchEntity = useCallback(async () => {
     if (!nodeId || skip) return;
 
     try {
@@ -63,7 +63,7 @@ export function useBaseMapEntity(
     } finally {
       setLoading(false);
     }
-  };
+  }, [handler, nodeId, skip]);
 
   // Update entity
   const updateEntity = async (updates: Partial<BaseMapEntity>) => {
@@ -86,7 +86,7 @@ export function useBaseMapEntity(
   // Initial fetch
   useEffect(() => {
     fetchEntity();
-  }, [nodeId, skip]);
+  }, [fetchEntity]);
 
   // Polling
   useEffect(() => {
@@ -94,7 +94,7 @@ export function useBaseMapEntity(
 
     const interval = setInterval(fetchEntity, pollingInterval);
     return () => clearInterval(interval);
-  }, [nodeId, pollingInterval, skip]);
+  }, [fetchEntity, nodeId, pollingInterval, skip]);
 
   return {
     entity,
@@ -173,7 +173,7 @@ export function useBaseMapValidation(config: Partial<BaseMapEntity>) {
         console.error('Validation error:', err);
         setValidation({
           isValid: false,
-          errors: ['Validation failed: ' + (err as Error).message],
+          errors: [`Validation failed: ${(err as Error).message}`],
         });
       } finally {
         setValidating(false);

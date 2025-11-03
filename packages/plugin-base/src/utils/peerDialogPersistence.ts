@@ -1,5 +1,5 @@
-import type { PeerStore, PeerEntity } from '@hierarchidb/runtime-worker';
 import type { NodeId } from '@hierarchidb/common-types';
+import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
 
 export type PeerDisplayMode = 'normal' | 'maximize' | 'full-screen';
 export type PeerDialogPosition = { x: number; y: number };
@@ -74,15 +74,18 @@ async function resolveStoreRegistry(): Promise<StoreRegistryShim | null> {
   return storeRegistryPromise;
 }
 
-function normalizeDisplayMode(value: string | undefined, fallback: PeerDisplayMode | undefined): PeerDisplayMode | undefined {
+function normalizeDisplayMode(
+  value: string | undefined,
+  fallback: PeerDisplayMode | undefined
+): PeerDisplayMode | undefined {
   if (value && VALID_DISPLAY_MODES.includes(value as PeerDisplayMode)) {
     return value as PeerDisplayMode;
   }
   return fallback;
 }
 
-function createAdapterFromPeerStore(store: PeerStore<any>): PeerEntitiesDBAdapter {
-  const mapEntityToRow = (entity: PeerEntity | undefined): PeerDialogRow | undefined => {
+function createAdapterFromPeerStore<TData>(store: PeerStore<TData>): PeerEntitiesDBAdapter {
+  const mapEntityToRow = (entity: PeerEntity<TData> | undefined): PeerDialogRow | undefined => {
     if (!entity) return undefined;
     return {
       nodeId: String(entity.nodeId),
@@ -99,8 +102,10 @@ function createAdapterFromPeerStore(store: PeerStore<any>): PeerEntitiesDBAdapte
       put: async (row: PeerDialogRow) => {
         const existing = await store.get(row.nodeId as NodeId);
         const nextDisplayMode = normalizeDisplayMode(row.displayMode, existing?.displayMode);
-        const next: PeerEntity = {
-          ...(existing ?? { nodeId: row.nodeId as NodeId }),
+        const baseEntity: PeerEntity<TData> =
+          existing ?? ({ nodeId: row.nodeId as NodeId } as PeerEntity<TData>);
+        const next: PeerEntity<TData> = {
+          ...baseEntity,
           displayMode: nextDisplayMode,
           dialogPosition: row.dialogPosition ?? existing?.dialogPosition ?? null,
           dialogSize: row.dialogSize ?? existing?.dialogSize ?? null,
@@ -130,29 +135,50 @@ class UIPersistenceRegistry {
 
   private noopProvider(): PeerDialogPersistence {
     return {
-      async getDisplayMode() { return null; },
-      async setDisplayMode() { /* no-op */ },
-      async getPosition() { return null; },
-      async setPosition() { /* no-op */ },
-      async getSize() { return null; },
-      async setSize() { /* no-op */ },
-      async copyState() { /* no-op */ },
+      async getDisplayMode() {
+        return null;
+      },
+      async setDisplayMode() {
+        /* no-op */
+      },
+      async getPosition() {
+        return null;
+      },
+      async setPosition() {
+        /* no-op */
+      },
+      async getSize() {
+        return null;
+      },
+      async setSize() {
+        /* no-op */
+      },
+      async copyState() {
+        /* no-op */
+      },
     };
   }
 
   private createDefaultProvider(nodeType: string): PeerDialogPersistence {
     const ensureDB = async () => {
       if (this.dbCache.has(nodeType)) return this.dbCache.get(nodeType);
-      if (!nodeType || typeof nodeType !== 'string') { this.dbCache.set(nodeType, null); return null; }
+      if (!nodeType || typeof nodeType !== 'string') {
+        this.dbCache.set(nodeType, null);
+        return null;
+      }
 
-      const overrides = typeof globalThis !== 'undefined' ? (globalThis as typeof globalThis & {
-        __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
-      }) : undefined;
+      const overrides =
+        typeof globalThis !== 'undefined'
+          ? (globalThis as typeof globalThis & {
+              __HDB_PLUGIN_ENTITY_OVERRIDES__?: EntitiesOverrideRegistry;
+            })
+          : undefined;
       const overrideFactory = overrides?.__HDB_PLUGIN_ENTITY_OVERRIDES__?.[nodeType];
       if (overrideFactory) {
-        const instance = typeof overrideFactory === 'function'
-          ? await Promise.resolve(overrideFactory())
-          : overrideFactory;
+        const instance =
+          typeof overrideFactory === 'function'
+            ? await Promise.resolve(overrideFactory())
+            : overrideFactory;
         if (instance) {
           this.dbCache.set(nodeType, instance);
           return instance;
@@ -162,7 +188,7 @@ class UIPersistenceRegistry {
       }
 
       const registry = await resolveStoreRegistry();
-      const peerStore = registry?.getPeer(nodeType) as PeerStore<any> | undefined;
+      const peerStore = registry?.getPeer(nodeType);
       if (peerStore) {
         const adapter = createAdapterFromPeerStore(peerStore);
         this.dbCache.set(nodeType, adapter);
@@ -176,8 +202,12 @@ class UIPersistenceRegistry {
       return null;
     };
 
-    const withRow = async (nodeId: string, updater: (row: PeerDialogRow) => void | Promise<void>) => {
-      const db = await ensureDB(); if (!db) return;
+    const withRow = async (
+      nodeId: string,
+      updater: (row: PeerDialogRow) => void | Promise<void>
+    ) => {
+      const db = await ensureDB();
+      if (!db) return;
       const tbl = db.table('peerEntities');
       const row = (await tbl.get(nodeId)) ?? { nodeId };
       await Promise.resolve(updater(row));
@@ -187,14 +217,16 @@ class UIPersistenceRegistry {
 
     return {
       getDisplayMode: async (nodeId) => {
-        const db = await ensureDB(); if (!db) return null;
+        const db = await ensureDB();
+        if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
         const raw = row?.displayMode ?? null;
         if (raw === 'normal' || raw === 'maximize' || raw === 'full-screen') {
           return raw;
         }
         if (raw === 'standard' || raw === 'maximized' || raw === 'fullscreen') {
-          const migrated = raw === 'standard' ? 'normal' : raw === 'maximized' ? 'maximize' : 'full-screen';
+          const migrated =
+            raw === 'standard' ? 'normal' : raw === 'maximized' ? 'maximize' : 'full-screen';
           await db.table('peerEntities').put({
             ...(row ?? { nodeId }),
             nodeId,
@@ -205,35 +237,49 @@ class UIPersistenceRegistry {
         }
         return null;
       },
-      setDisplayMode: async (nodeId, mode) => withRow(nodeId, (r) => { r.displayMode = mode; }),
+      setDisplayMode: async (nodeId, mode) =>
+        withRow(nodeId, (r) => {
+          r.displayMode = mode;
+        }),
       getPosition: async (nodeId) => {
-        const db = await ensureDB(); if (!db) return null;
+        const db = await ensureDB();
+        if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
         return (row?.dialogPosition as PeerDialogPosition) ?? null;
       },
-      setPosition: async (nodeId, pos) => withRow(nodeId, (r) => { r.dialogPosition = pos; }),
+      setPosition: async (nodeId, pos) =>
+        withRow(nodeId, (r) => {
+          r.dialogPosition = pos;
+        }),
       getSize: async (nodeId) => {
-        const db = await ensureDB(); if (!db) return null;
+        const db = await ensureDB();
+        if (!db) return null;
         const row = await db.table('peerEntities').get(nodeId);
         return (row?.dialogSize as PeerDialogSize) ?? null;
       },
-      setSize: async (nodeId, size) => withRow(nodeId, (r) => { r.dialogSize = size; }),
+      setSize: async (nodeId, size) =>
+        withRow(nodeId, (r) => {
+          r.dialogSize = size;
+        }),
       copyState: async (fromId, toId) => {
-        const db = await ensureDB(); if (!db) return;
+        const db = await ensureDB();
+        if (!db) return;
         const tbl = db.table('peerEntities');
-        const src = await tbl.get(fromId); if (!src) return;
+        const src = await tbl.get(fromId);
+        if (!src) return;
         const dst = (await tbl.get(toId)) || { nodeId: toId };
         if (src.displayMode) {
           const raw = src.displayMode;
-          const normalized = raw === 'normal' || raw === 'maximize' || raw === 'full-screen'
-            ? raw
-            : raw === 'standard'
-              ? 'normal'
-              : raw === 'maximized'
-                ? 'maximize'
-                : raw === 'fullscreen'
-                  ? 'full-screen'
-                  : null;
+          const normalized =
+            raw === 'normal' || raw === 'maximize' || raw === 'full-screen'
+              ? raw
+              : raw === 'standard'
+                ? 'normal'
+                : raw === 'maximized'
+                  ? 'maximize'
+                  : raw === 'fullscreen'
+                    ? 'full-screen'
+                    : null;
           if (normalized) {
             dst.displayMode = normalized;
           }
@@ -250,9 +296,15 @@ class UIPersistenceRegistry {
 export const UIPersistence = new UIPersistenceRegistry();
 
 // Convenience wrappers (default provider)
-export const getPeerDisplayMode = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getDisplayMode(nodeId);
-export const setPeerDisplayMode = (nodeType: string, nodeId: string, mode: PeerDisplayMode) => UIPersistence.get(nodeType).setDisplayMode(nodeId, mode);
-export const getPeerDialogPosition = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getPosition(nodeId);
-export const setPeerDialogPosition = (nodeType: string, nodeId: string, pos: PeerDialogPosition) => UIPersistence.get(nodeType).setPosition(nodeId, pos);
-export const getPeerDialogSize = (nodeType: string, nodeId: string) => UIPersistence.get(nodeType).getSize(nodeId);
-export const setPeerDialogSize = (nodeType: string, nodeId: string, size: PeerDialogSize) => UIPersistence.get(nodeType).setSize(nodeId, size);
+export const getPeerDisplayMode = (nodeType: string, nodeId: string) =>
+  UIPersistence.get(nodeType).getDisplayMode(nodeId);
+export const setPeerDisplayMode = (nodeType: string, nodeId: string, mode: PeerDisplayMode) =>
+  UIPersistence.get(nodeType).setDisplayMode(nodeId, mode);
+export const getPeerDialogPosition = (nodeType: string, nodeId: string) =>
+  UIPersistence.get(nodeType).getPosition(nodeId);
+export const setPeerDialogPosition = (nodeType: string, nodeId: string, pos: PeerDialogPosition) =>
+  UIPersistence.get(nodeType).setPosition(nodeId, pos);
+export const getPeerDialogSize = (nodeType: string, nodeId: string) =>
+  UIPersistence.get(nodeType).getSize(nodeId);
+export const setPeerDialogSize = (nodeType: string, nodeId: string, size: PeerDialogSize) =>
+  UIPersistence.get(nodeType).setSize(nodeId, size);

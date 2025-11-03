@@ -3,6 +3,7 @@
  * @description Authentication method settings component (currently disabled)
  */
 
+import { Info as InfoIcon } from '@mui/icons-material';
 // import React from 'provider'; // RemovedProperties: unused import
 import {
   Alert,
@@ -16,7 +17,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Info as InfoIcon } from '@mui/icons-material';
+
 // import { AuthService } from "@/shared/auth/services/AuthService"; // TODO: Implement AuthService
 const AuthService = {
   getInstance: () => ({

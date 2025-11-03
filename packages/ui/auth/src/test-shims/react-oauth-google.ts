@@ -19,4 +19,3 @@ export function useGoogleLogin(config?: {
 
 const ReactOauthGoogle = { useGoogleLogin };
 export { ReactOauthGoogle };
-

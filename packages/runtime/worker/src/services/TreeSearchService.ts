@@ -1,6 +1,6 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { TreeQueryService } from './TreeQueryService.js';
 import type { CoreDB } from './CoreDB.js';
+import { TreeQueryService } from './TreeQueryService.js';
 
 type DepthSearchOptions = {
   maxDepth: number;
@@ -32,7 +32,7 @@ export class TreeSearchService {
   async searchByNameWithDepth(
     rootNodeId: NodeId,
     query: string,
-    opts: DepthSearchOptions,
+    opts: DepthSearchOptions
   ): Promise<TreeNode[]> {
     try {
       const searchResults = await this.treeQuery.searchNodes({
@@ -53,7 +53,7 @@ export class TreeSearchService {
   async searchByNameWithMatchMode(
     rootNodeId: NodeId,
     query: string,
-    opts: MatchModeOptions,
+    opts: MatchModeOptions
   ): Promise<TreeNode[]> {
     try {
       const searchPattern = this.buildSearchPattern(query, opts.matchMode);
@@ -81,7 +81,6 @@ export class TreeSearchService {
         return `^${this.escapeRegexChars(query)}`;
       case 'suffix':
         return `${this.escapeRegexChars(query)}$`;
-      case 'partial':
       default:
         return query;
     }

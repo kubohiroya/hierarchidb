@@ -119,11 +119,11 @@ export const ResizableSidebar = ({
        */
     >
       <Stack
+        component="section"
         direction="row"
         alignItems="center"
         justifyContent="space-between"
         sx={{ padding: 1, width: drawerWidth - 5 }}
-        role="region"
         aria-label="sidebar"
       >
         {children}

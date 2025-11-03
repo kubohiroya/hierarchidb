@@ -87,7 +87,10 @@ export interface BaseEntity<ID = NodeId> {
  * TreeNode1PeerEntity
  * @example StylerEntity, BaseMapEntity
  */
-export type PeerEntity<TData extends object = {}, ID = NodeId> = BaseEntity<ID> &
+export type PeerEntity<
+  TData extends object = Record<string, unknown>,
+  ID = NodeId,
+> = BaseEntity<ID> &
   TData & {
     nodeId: NodeId;
     dialogMode?: 'normal' | 'full';
@@ -100,12 +103,15 @@ export type PeerEntity<TData extends object = {}, ID = NodeId> = BaseEntity<ID> 
     disabled?: boolean;
   };
 
-export type SavedPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<TData, ID>;
+export type SavedPeerEntity<
+  TData extends object = Record<string, unknown>,
+  ID = NodeId,
+> = PeerEntity<TData, ID>;
 
-export type DraftPeerEntity<TData extends object = {}, ID = NodeId> = PeerEntity<
-  Partial<TData>,
-  ID
->;
+export type DraftPeerEntity<
+  TData extends object = Record<string, unknown>,
+  ID = NodeId,
+> = PeerEntity<Partial<TData>, ID>;
 
 /**
  * GroupEntity - TreeNode1N

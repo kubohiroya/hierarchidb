@@ -22,7 +22,7 @@ export interface AuthRequiredNotification {
     method?: string;
     errorCode: number;
     errorMessage: string;
-    sessionId?: string;  // Batch processing session
+    sessionId?: string; // Batch processing session
     pluginType: PluginType;
     retryCount?: number;
   };
@@ -132,7 +132,7 @@ export class AuthNotificationRegistry {
     }
 
     // Dispatch to all handlers
-    const promises = Array.from(this.handlers.values()).map(handler => {
+    const promises = Array.from(this.handlers.values()).map((handler) => {
       switch (notification.type) {
         case 'AUTH_REQUIRED':
           return handler.onAuthRequired(notification);
@@ -140,6 +140,8 @@ export class AuthNotificationRegistry {
           return handler.onAuthSuccess(notification);
         case 'AUTH_CANCELLED':
           return handler.onAuthCancelled(notification);
+        default:
+          return Promise.resolve();
       }
     });
 

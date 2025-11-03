@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
 import { WebStorageStateStore } from 'oidc-client-ts';
+import type { ReactNode } from 'react';
 import { AuthProvider, type AuthProviderProps } from 'react-oidc-context';
+
 // import { getOAuthRedirectUri, getSilentRenewUri } from "@/config/routing";
 const getOAuthRedirectUri = () => `${window.location.origin}/auth/callback`;
 const getSilentRenewUri = () => `${window.location.origin}/auth/silent-renew`;
@@ -15,7 +16,7 @@ const getSecureConfig = () => ({
   isProduction: env.PROD,
   usePKCE: true,
 });
-const validateOAuthConfig = (_config: any) => true;
+const validateOAuthConfig = (_config: unknown) => true;
 
 // import { devWarn, devError } from "@/shared/utils/logger";
 // const devWarn = (msg: string) => console.warn(msg);

@@ -1,9 +1,11 @@
-import { PluginStepRegistry, StepComponentProps } from '@hierarchidb/plugin-base';
+import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
+// Reuse Spreadsheet steps as Step 2,3
+import {
+  DataSourceStep as SpreadsheetDataSourceStep,
+  FilteringStep as SpreadsheetFilteringStep,
+} from '@hierarchidb/spreadsheet-plugin';
 import { StylerStep5 } from './steps/StylerStep5.js';
 import { StylerStep6 } from './steps/StylerStep6.js';
-// Reuse Spreadsheet steps as Step 2,3
-import { DataSourceStep as SpreadsheetDataSourceStep } from '@hierarchidb/spreadsheet-plugin';
-import { FilteringStep as SpreadsheetFilteringStep } from '@hierarchidb/spreadsheet-plugin';
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -15,17 +17,13 @@ registry.registerConfigProvider({
       {
         id: 'data-source',
         label: 'Data Source',
-        componentFactory: (p: StepComponentProps) => (
-          <SpreadsheetDataSourceStep {...p} />
-        ),
+        componentFactory: (p: StepComponentProps) => <SpreadsheetDataSourceStep {...p} />,
       },
       // Step 3: Spreadsheet Filtering
       {
         id: 'filtering',
         label: 'Filtering',
-        componentFactory: (p: StepComponentProps) => (
-          <SpreadsheetFilteringStep {...p} />
-        ),
+        componentFactory: (p: StepComponentProps) => <SpreadsheetFilteringStep {...p} />,
       },
       // Step 4: Styler mapping (original Step2)
       {
@@ -61,5 +59,7 @@ registry.registerConfigProvider({
       },
     ];
   },
-  getEditStepConfigs() { return this.getCreateStepConfigs(); },
+  getEditStepConfigs() {
+    return this.getCreateStepConfigs();
+  },
 });

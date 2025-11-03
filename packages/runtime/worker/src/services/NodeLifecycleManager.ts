@@ -1,9 +1,9 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import type { CoreDB } from './CoreDB.js';
-import { workerError } from '../utils/workerLogger.js';
-import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types.js';
-import { SingletonMixin } from '@hierarchidb/util';
 import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
+import { SingletonMixin } from '@hierarchidb/util';
+import { workerError } from '../utils/workerLogger.js';
+import type { CoreDB } from './CoreDB.js';
+import type { LifecycleContext, LifecycleEvent, NodeLifecycleHooks } from './lifecycle-types.js';
 
 /**
  * Manages lifecycle hooks for node operations
@@ -11,7 +11,7 @@ import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
 export class NodeLifecycleManager {
   static async getSingleton(
     coreDB: CoreDB,
-    plugins: Record<string, PluginDefinition>,
+    plugins: Record<string, PluginDefinition>
   ): Promise<NodeLifecycleManager> {
     return SingletonMixin.getSingleton(NodeLifecycleManager.name, () => {
       return new NodeLifecycleManager(coreDB, plugins);
@@ -24,7 +24,7 @@ export class NodeLifecycleManager {
 
   constructor(
     private coreDB: CoreDB,
-    private plugins: Record<string, PluginDefinition>,
+    private plugins: Record<string, PluginDefinition>
   ) {}
 
   private getLifecycleHooks(nodeType: NodeType): NodeLifecycleHooks | undefined {
@@ -65,7 +65,7 @@ export class NodeLifecycleManager {
       }
 
       // Otherwise, log and continue
-      workerError(`Lifecycle hook ${hookName} failed for ${nodeType}:`, e as Record<string, any>);
+      workerError(`Lifecycle hook ${hookName} failed for ${nodeType}:`, undefined, e);
     } finally {
       // Record event
       this.recordEvent({
@@ -86,7 +86,7 @@ export class NodeLifecycleManager {
   async handleNodeCreation(
     parentId: NodeId,
     nodeData: TreeNode,
-    nodeType: NodeType,
+    nodeType: NodeType
   ): Promise<NodeId> {
     // Execute beforeCreate hook
     await this.executeLifecycleHook('beforeCreate', nodeType, parentId, nodeData);
@@ -109,7 +109,7 @@ export class NodeLifecycleManager {
   async handleNodeUpdate(
     nodeId: NodeId,
     updates: Partial<TreeNode>,
-    nodeType: NodeType,
+    nodeType: NodeType
   ): Promise<void> {
     // Execute beforeUpdate hook
     await this.executeLifecycleHook('beforeUpdate', nodeType, nodeId, updates);
@@ -145,7 +145,7 @@ export class NodeLifecycleManager {
     nodeId: NodeId,
     oldParentId: NodeId,
     newParentId: NodeId,
-    nodeType: NodeType,
+    nodeType: NodeType
   ): Promise<void> {
     // Execute beforeMove hook
     await this.executeLifecycleHook('beforeMove', nodeType, nodeId, oldParentId, newParentId);
@@ -177,7 +177,7 @@ export class NodeLifecycleManager {
   async handleBatchCreate(
     parentId: NodeId,
     nodes: Array<TreeNode>,
-    nodeType: NodeType,
+    nodeType: NodeType
   ): Promise<NodeId[]> {
     const nodeIds: NodeId[] = [];
 
@@ -268,7 +268,8 @@ export class NodeLifecycleManager {
     } catch (e) {
       workerError(
         `Failed to increment reference count for ${nodeType} node ${nodeId}:`,
-        e as Record<string, any>,
+        undefined,
+        e
       );
     }
   }
@@ -287,7 +288,8 @@ export class NodeLifecycleManager {
     } catch (e) {
       workerError(
         `Failed to decrement reference count for ${nodeType} node ${nodeId}:`,
-        e as Record<string, any>,
+        undefined,
+        e
       );
     }
   }
@@ -306,10 +308,15 @@ export class NodeLifecycleManager {
   /**
    * Inject reference counting handler registry (optional)
    */
-  setReferenceCountingRegistry(registry: Record<string, {
-    incrementReferenceCount(nodeId: NodeId): Promise<void>;
-    decrementReferenceCount(nodeId: NodeId): Promise<void>
-  }>) {
+  setReferenceCountingRegistry(
+    registry: Record<
+      string,
+      {
+        incrementReferenceCount(nodeId: NodeId): Promise<void>;
+        decrementReferenceCount(nodeId: NodeId): Promise<void>;
+      }
+    >
+  ) {
     this.refCountRegistry = registry;
   }
 
@@ -320,7 +327,7 @@ export class NodeLifecycleManager {
     hookName: THookName,
     nodeType: NodeType,
     context: LifecycleContext,
-    ...args: any[]
+    ...args: unknown[]
   ): Promise<void> {
     const enrichedContext = { ...context, nodeType };
     const lifecycleGlobal = globalThis as LifecycleGlobal;

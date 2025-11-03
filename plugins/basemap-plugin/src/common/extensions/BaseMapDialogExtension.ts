@@ -9,12 +9,18 @@ import { NodeDialogPlugin } from '@hierarchidb/plugin-ui-sdk';
 
 function isValidUrl(u: string | undefined): boolean {
   if (!u) return false;
-  try { new URL(u); return true; } catch { return false; }
+  try {
+    new URL(u);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 type BaseMapDialogPeer = PeerEntity<Record<string, unknown>>;
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 interface BaseMapDialogMapStyle {
   style?: string;
@@ -40,20 +46,20 @@ const asCoordinateTuple = (value: unknown): [number, number] | undefined => {
 const toDialogData = (value: BaseMapDialogPeer): BaseMapDialogData => {
   if (!isRecord(value)) return {};
 
-  const rawMapStyle = value['mapStyle'];
+  const rawMapStyle = value.mapStyle;
   const mapStyle: BaseMapDialogMapStyle | undefined = isRecord(rawMapStyle)
     ? {
-        style: typeof rawMapStyle['style'] === 'string' ? rawMapStyle['style'] : undefined,
+        style: typeof rawMapStyle.style === 'string' ? rawMapStyle.style : undefined,
         customStyleUrl:
-          typeof rawMapStyle['customStyleUrl'] === 'string' ? rawMapStyle['customStyleUrl'] : undefined,
+          typeof rawMapStyle.customStyleUrl === 'string' ? rawMapStyle.customStyleUrl : undefined,
       }
     : undefined;
 
-  const rawViewport = value['viewport'];
+  const rawViewport = value.viewport;
   const viewport: BaseMapDialogViewport | undefined = isRecord(rawViewport)
     ? {
-        center: asCoordinateTuple(rawViewport['center']),
-        zoom: typeof rawViewport['zoom'] === 'number' ? rawViewport['zoom'] : undefined,
+        center: asCoordinateTuple(rawViewport.center),
+        zoom: typeof rawViewport.zoom === 'number' ? rawViewport.zoom : undefined,
       }
     : undefined;
 
@@ -75,17 +81,20 @@ const hasValidViewportStep = (data: BaseMapDialogData): boolean => {
   const [lng, lat] = center;
   const zoom = data.viewport?.zoom;
   return (
-    typeof lng === 'number' && lng >= -180 && lng <= 180 &&
-    typeof lat === 'number' && lat >= -90 && lat <= 90 &&
-    typeof zoom === 'number' && zoom >= 0 && zoom <= 24
+    typeof lng === 'number' &&
+    lng >= -180 &&
+    lng <= 180 &&
+    typeof lat === 'number' &&
+    lat >= -90 &&
+    lat <= 90 &&
+    typeof zoom === 'number' &&
+    zoom >= 0 &&
+    zoom <= 24
   );
 };
 
-const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] => (
-  stepNumbers && stepNumbers.length > 0
-    ? Array.from(stepNumbers)
-    : [2, 3, 4]
-);
+const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] =>
+  stepNumbers && stepNumbers.length > 0 ? Array.from(stepNumbers) : [2, 3, 4];
 
 export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> {
   readonly pluginId = 'basemap-plugin-dialog-extension';

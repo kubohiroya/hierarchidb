@@ -1,17 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CommandEnvelope,
   NodeId,
-  NodeType,
   PasteNodesPayload,
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
 import { toNodeId, toNodeType } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
-import { storeRegistry } from '../store-registry.js';
 import type { PeerEntity, PeerStore } from '../store.js';
+import { storeRegistry } from '../store-registry.js';
 
 describe('EntityLifecycleManager.onPasteNodes (Peer via idMap)', () => {
   beforeEach(() => {

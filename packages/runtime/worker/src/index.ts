@@ -1,4 +1,4 @@
-import {
+import type {
   DialogStateAPI,
   ImportExportAPI,
   TagAPI,
@@ -7,34 +7,38 @@ import {
   TreeSubscriptionAPI,
   WorkingCopyAPI,
 } from '@hierarchidb/common-api';
-import { CoreDB } from './services/CoreDB.js';
-import { EphemeralDB } from './services/EphemeralDB.js';
-import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
-import { CommandProcessor } from './services/CommandProcessor.js';
-import { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
-import { TreeQueryService } from './services/TreeQueryService.js';
+import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
+import {
+  enableAllExporters,
+  enableAllImporters,
+  ImportExportService,
+} from '@hierarchidb/import-export';
+import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
+import { TagService } from '@hierarchidb/tag';
 import { SingletonMixin } from '@hierarchidb/util';
+import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
+import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
+import { CommandProcessor } from './services/CommandProcessor.js';
+import { CoreDB } from './services/CoreDB.js';
+import { DialogStateService } from './services/DialogStateService.js';
+import { EphemeralDB } from './services/EphemeralDB.js';
+import { bootstrapFeatures } from './services/FeatureBootstrap.js';
+import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
 //import {PluginDefinition} from '@hierarchidb/common-api';
 import { TreeMutationService } from './services/TreeMutationService.js';
+import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
-import { TagService } from '@hierarchidb/tag';
-
-import { TagDBPortCoreDBAdapter } from './services/adapters/TagDBPortCoreDBAdapter.js';
-import { enableAllExporters, enableAllImporters, ImportExportService } from '@hierarchidb/import-export';
-import { bootstrapFeatures } from './services/FeatureBootstrap.js';
-import { ImportExportDBPortCoreDBAdapter } from './services/adapters/ImportExportDBPortCoreDBAdapter.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
-import { DialogStateService } from './services/DialogStateService.js';
-import type { PluginDefinition } from '@hierarchidb/plugin-service-api';
-export { resolveDefaultNodeName } from './utils/default-node-name.js';
+
 export {
-  getWorkerContainer,
   configureWorkerContainer,
+  getWorkerContainer,
   resetWorkerContainerForTesting,
 } from './di/container.js';
-export { WorkerDiTokens } from './di/tokens.js';
 export type { PluginWorkerModuleLoader } from './di/interfaces.js';
+export { WorkerDiTokens } from './di/tokens.js';
+export { resolveDefaultNodeName } from './utils/default-node-name.js';
 
 interface PerformanceMemoryStats {
   usedJSHeapSize?: number;
@@ -42,9 +46,11 @@ interface PerformanceMemoryStats {
 }
 
 const readHeapStats = (): { used: number; limit: number } => {
-  const perf = typeof globalThis !== 'undefined'
-    ? (globalThis as { performance?: Performance & { memory?: PerformanceMemoryStats } }).performance
-    : undefined;
+  const perf =
+    typeof globalThis !== 'undefined'
+      ? (globalThis as { performance?: Performance & { memory?: PerformanceMemoryStats } })
+          .performance
+      : undefined;
   const memory = perf?.memory;
   return {
     used: memory?.usedJSHeapSize ?? 0,
@@ -72,12 +78,24 @@ export class WorkerService {
 
       // Optionally install XLSX parser for tabular-source if available
       await import('@hierarchidb/tabular-source-xlsx')
-        .then((mod: any) => {
-          if (mod && typeof mod.installTabularXlsx === 'function') {
-            mod.installTabularXlsx();
-            if (typeof mod.markTabularXlsxInstalled === 'function') mod.markTabularXlsxInstalled();
+        .then(
+          (
+            mod:
+              | undefined
+              | null
+              | {
+                  installTabularXlsx?: () => void;
+                  markTabularXlsxInstalled?: () => void;
+                }
+          ) => {
+            if (mod && typeof mod.installTabularXlsx === 'function') {
+              mod.installTabularXlsx();
+              if (typeof mod.markTabularXlsxInstalled === 'function') {
+                mod.markTabularXlsxInstalled();
+              }
+            }
           }
-        })
+        )
         .catch(() => {
           // XLSX support not installed; proceed without it
         });
@@ -91,18 +109,18 @@ export class WorkerService {
       const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
       const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
         coreDB,
-        commandProcessor,
+        commandProcessor
       );
       const treeSubscriptionService: TreeSubscriptionAPI =
         await TreeSubscriptionService.getSingleton(coreDB);
 
       const pluginMap: { [key: string]: PluginDefinition } = Object.fromEntries(
-        plugins.map((plugin) => [plugin.name, plugin]),
+        plugins.map((plugin) => [plugin.name, plugin])
       );
 
       const nodeLifecycleManager: NodeLifecycleManager = await NodeLifecycleManager.getSingleton(
         coreDB,
-        pluginMap,
+        pluginMap
       );
 
       // Import/Export services
@@ -113,7 +131,7 @@ export class WorkerService {
       const workingCopyService: WorkingCopyAPI = new WorkingCopyService(
         coreDB,
         ephemeralDB,
-        commandProcessor,
+        commandProcessor
       );
 
       const dialogStateService: DialogStateAPI = new DialogStateService();
@@ -129,7 +147,7 @@ export class WorkerService {
         tagService,
         nodeLifecycleManager,
         commandProcessor,
-        dialogStateService,
+        dialogStateService
       );
     });
   }
@@ -145,7 +163,7 @@ export class WorkerService {
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
-    private dialogStateService: DialogStateAPI,
+    private dialogStateService: DialogStateAPI
   ) {
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
@@ -290,29 +308,31 @@ export class WorkerService {
   }
 }
 
-// Re-export stage worker API contracts for clients (adapters)
-export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types.js';
-export { getStageProcessingClient, createStageWorkerClient } from './services/StageProcessingService.js';
-
+export { entityRegistry } from './entity/EntityRegistry.js';
 // Public re-exports for plugin-side stores and registry
 export type {
-  PeerEntity,
-  PeerStore,
   GroupItemBase,
   GroupStore,
+  PeerEntity,
+  PeerStore,
   RelationBase,
   RelationStore,
 } from './entity/store.js';
 export { storeRegistry } from './entity/store-registry.js';
+export * from './module-paths.js';
+export * from './services/downloadAdapter.js';
 export {
-  registerRuntimeWorkerClient,
-  unregisterRuntimeWorkerClient,
-  hasRuntimeWorkerClient,
   getRuntimeWorkerClient,
+  hasRuntimeWorkerClient,
   type RuntimeWorkerClientProvider,
   type RuntimeWorkerStageClient,
+  registerRuntimeWorkerClient,
+  unregisterRuntimeWorkerClient,
 } from './services/RuntimeWorkerService.js';
-export { entityRegistry } from './entity/EntityRegistry.js';
-export type {WorkerAPI} from './WorkerAPI.js';
-export * from './services/downloadAdapter.js';
-export * from './module-paths.js';
+export {
+  createStageWorkerClient,
+  getStageProcessingClient,
+} from './services/StageProcessingService.js';
+// Re-export stage worker API contracts for clients (adapters)
+export type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from './types.js';
+export type { WorkerAPI } from './WorkerAPI.js';

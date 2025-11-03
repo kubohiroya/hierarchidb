@@ -1,5 +1,5 @@
-import { Dexie, type Table } from 'dexie';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
 
 export interface TileRow {
   key: string; // `${sessionId}-${z}-${x}-${y}`

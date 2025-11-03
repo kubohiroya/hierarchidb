@@ -5,10 +5,11 @@
  * exposing plugin-specific commit/start-batch controls supplied by the
  * controller layer.
  */
-import React from 'react';
+
+import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
 import { Box, Button, Stack, Tooltip } from '@mui/material';
 import { useLocation } from '@tanstack/react-router';
-import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
+import React from 'react';
 
 export interface PluginDialogFooterPrimaryButtonOptions {
   leftVisibility?: 'auto' | 'hidden';
@@ -54,8 +55,14 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   const commitLabel = mode === 'create' ? 'Create' : 'Save';
   const isFirstStep = ctx.activeStepIndex === 0;
   const isLastStep = ctx.activeStepIndex >= ctx.stepComponents.length - 1;
-  const canNavigateBack = !isFirstStep && (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) || ctx.enabledStepIndices.length === 0);
-  const canNavigateNext = !isLastStep && (ctx.enabledStepIndices.includes(ctx.activeStepIndex + 1) || ctx.enabledStepIndices.length === 0);
+  const canNavigateBack =
+    !isFirstStep &&
+    (ctx.enabledStepIndices.includes(ctx.activeStepIndex - 1) ||
+      ctx.enabledStepIndices.length === 0);
+  const canNavigateNext =
+    !isLastStep &&
+    (ctx.enabledStepIndices.includes(ctx.activeStepIndex + 1) ||
+      ctx.enabledStepIndices.length === 0);
   const isDirty = ctx.isDirty;
 
   const handleBackOrCancel = () => {
@@ -67,7 +74,7 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
   };
 
   const handleNextOrSave = () => {
-    console.debug("[Folder-create]");
+    console.debug('[Folder-create]');
     if (isLastStep) {
       ctx.onRequestCommit?.();
       return;
@@ -75,8 +82,10 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
     ctx.onStepNavigate({ type: 'next' });
   };
 
-  const leftPrimaryLabel = primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
-  const rightPrimaryLabel = primaryButtonOptions?.rightLabelOverride ?? (isLastStep ? commitLabel : 'Next');
+  const leftPrimaryLabel =
+    primaryButtonOptions?.leftLabelOverride ?? (isFirstStep ? 'Cancel' : 'Back');
+  const rightPrimaryLabel =
+    primaryButtonOptions?.rightLabelOverride ?? (isLastStep ? commitLabel : 'Next');
   const disableLeftPrimary = isFirstStep ? false : !canNavigateBack;
   const disableRightPrimary = isLastStep ? !canCommit : !canNavigateNext;
   const showSaveDraft = typeof onSaveDraft === 'function';
@@ -93,13 +102,18 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
         backgroundColor: getDialogSurfaceColor(theme),
       })}
     >
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+      >
         <Stack direction="row" spacing={1.5} alignItems="center">
           {showLeftPrimary && (
             <Button
               variant="contained"
               size="large"
-              color={(isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary')}
+              color={isFirstStep ? 'inherit' : isResourcesTree ? 'primary' : 'secondary'}
               onClick={handleBackOrCancel}
               onPointerDown={stopPointerPropagation}
               disabled={disableLeftPrimary}
@@ -108,7 +122,10 @@ export const PluginDialogFooter: React.FC<PluginDialogFooterProps> = ({
             </Button>
           )}
           {showSaveDraft && (
-            <Tooltip title={disableDraftButton ? 'No changes to save' : ''} disableHoverListener={!disableDraftButton}>
+            <Tooltip
+              title={disableDraftButton ? 'No changes to save' : ''}
+              disableHoverListener={!disableDraftButton}
+            >
               <span>
                 <Button
                   variant="outlined"

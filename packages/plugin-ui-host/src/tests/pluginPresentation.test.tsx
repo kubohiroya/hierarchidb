@@ -1,10 +1,10 @@
-import React from 'react';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   getIconComponent,
   registerGlobalPluginDefinitions,
   resetPluginPresentationCacheForTests,
 } from '@hierarchidb/plugin-presentation';
+import React from 'react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 describe('plugin-presentation integration', () => {
   beforeEach(() => {

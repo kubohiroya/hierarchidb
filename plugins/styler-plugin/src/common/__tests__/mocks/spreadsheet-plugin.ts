@@ -7,19 +7,21 @@ import type {
   CSVTableListResult,
   CSVTableMetadata,
 } from '@hierarchidb/ui-csv-extract';
-import type { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
-import * as XLSX from 'xlsx';
 import * as JSZipNS from 'jszip';
+import * as XLSX from 'xlsx';
+import type { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
 
 function simpleHash(input: string): string {
   let h = 0;
-  for (let i = 0; i < input.length; i++) h = (h << 5) - h + input.charCodeAt(i), (h |= 0);
+  for (let i = 0; i < input.length; i++) (h = (h << 5) - h + input.charCodeAt(i)), (h |= 0);
   return `mock-hash-${Math.abs(h)}`;
 }
 
 function pickDelimiterFromHeader(headerLine: string): string {
   const candidates = [',', '\t', ';', '|'] as const;
-  const counts = candidates.map((d) => (headerLine.match(new RegExp(escapeRegExp(d), 'g')) || []).length);
+  const counts = candidates.map(
+    (d) => (headerLine.match(new RegExp(escapeRegExp(d), 'g')) || []).length
+  );
   const max = Math.max(...counts);
   return candidates[counts.indexOf(max)] || ',';
 }
@@ -62,15 +64,21 @@ function detectTypes(headers: string[], rows: any[]): CSVColumnInfo[] {
     }
     const uniques = new Set(values.map((v) => String(v))).size;
     const hasNull = rows.some((r) => r[h] === '' || r[h] == null);
-    return { name: h, index, type, uniqueValues: uniques, hasNullValues: hasNull, sampleValues: values.slice(0, 5) };
+    return {
+      name: h,
+      index,
+      type,
+      uniqueValues: uniques,
+      hasNullValues: hasNull,
+      sampleValues: values.slice(0, 5),
+    };
   });
 }
 
 export class SpreadsheetCSVApiDriver {
   private static tableData: Map<string, { rows: any[]; columns: CSVColumnInfo[] }> = new Map();
 
-  constructor(private manager: SimpleTableMetadataManager) {
-  }
+  constructor(private manager: SimpleTableMetadataManager) {}
 
   async uploadCSVFile(file: File, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
     const name = file.name.toLowerCase();
@@ -90,7 +98,10 @@ export class SpreadsheetCSVApiDriver {
       const id = `table_${contentHash}`;
       const metadata: CSVTableMetadata = {
         id,
-        filename: name.endsWith('.tsv') && file.name.includes('products.tsv') ? `${file.name} - TSV` : file.name,
+        filename:
+          name.endsWith('.tsv') && file.name.includes('products.tsv')
+            ? `${file.name} - TSV`
+            : file.name,
         contentHash,
         fileSizeBytes: file.size ?? size,
         totalRows: rows.length,
@@ -113,14 +124,20 @@ export class SpreadsheetCSVApiDriver {
       let body: any[] = [];
       if (Array.isArray(rows) && Array.isArray(rows[0])) {
         headers = rows[0] as string[];
-        body = (rows as any[]).slice(1).map((arr) => Object.fromEntries((headers as string[]).map((h, i) => [h, (arr as any[])[i]])));
+        body = (rows as any[])
+          .slice(1)
+          .map((arr) =>
+            Object.fromEntries((headers as string[]).map((h, i) => [h, (arr as any[])[i]]))
+          );
       }
       const columns = detectTypes(headers, body);
       const contentHash = simpleHash(headers.join(',') + JSON.stringify(body));
       const id = `table_${contentHash}`;
       const metadata: CSVTableMetadata = {
         id,
-        filename: file.name.includes('countries.xlsx') ? `${file.name} - EXCEL (Excel file processed)` : file.name,
+        filename: file.name.includes('countries.xlsx')
+          ? `${file.name} - EXCEL (Excel file processed)`
+          : file.name,
         contentHash,
         fileSizeBytes: file.size ?? size,
         totalRows: body.length,
@@ -136,17 +153,19 @@ export class SpreadsheetCSVApiDriver {
     if (name.endsWith('.zip') || file.type.includes('zip')) {
       if (size > 100 * 1024 * 1024) throw new Error('File size exceeds 100MB limit for ZIP files');
       const mod: any = JSZipNS as any;
-      let zipLoader: any ;
-        if (typeof mod.loadAsync === 'function') zipLoader = mod.loadAsync;
+      let zipLoader: any;
+      if (typeof mod.loadAsync === 'function') zipLoader = mod.loadAsync;
       if (!zipLoader) {
-          const def = (mod as any).default;
-          if (def && typeof def.loadAsync === 'function') zipLoader = def.loadAsync;
+        const def = (mod as any).default;
+        if (def && typeof def.loadAsync === 'function') zipLoader = def.loadAsync;
       }
       let text: string | undefined;
       let csvName: string | undefined;
       if (typeof zipLoader === 'function') {
         const zip = await zipLoader(buf);
-        const kv = Object.entries((zip as any).files).find(([n, f]: any) => !f.dir && n.endsWith('.csv')) as any;
+        const kv = Object.entries((zip as any).files).find(
+          ([n, f]: any) => !f.dir && n.endsWith('.csv')
+        ) as any;
         const csvEntry = kv?.[1];
         csvName = kv?.[0];
         if (csvEntry) text = await csvEntry.async('string');
@@ -161,7 +180,9 @@ export class SpreadsheetCSVApiDriver {
       const id = `table_${contentHash}`;
       const metadata: CSVTableMetadata = {
         id,
-        filename: file.name.includes('data.zip') ? `${file.name} - ZIP (ZIP file processed)${csvName ? ' - ' + csvName : ''}` : file.name,
+        filename: file.name.includes('data.zip')
+          ? `${file.name} - ZIP (ZIP file processed)${csvName ? ' - ' + csvName : ''}`
+          : file.name,
         contentHash,
         fileSizeBytes: file.size ?? size,
         totalRows: rows.length,
@@ -177,9 +198,13 @@ export class SpreadsheetCSVApiDriver {
     throw new Error('Unsupported file format');
   }
 
-  async downloadCSVFromUrl(url: string, config: CSVProcessingConfig = {}): Promise<CSVTableMetadata> {
+  async downloadCSVFromUrl(
+    url: string,
+    config: CSVProcessingConfig = {}
+  ): Promise<CSVTableMetadata> {
     const res = await fetch(url);
-    if (!('ok' in res) || !(res as any).ok) throw new Error(`Failed to download: ${(res as any).status} ${(res as any).statusText}`);
+    if (!('ok' in res) || !(res as any).ok)
+      throw new Error(`Failed to download: ${(res as any).status} ${(res as any).statusText}`);
     const text = await (res as any).text();
     const file = new File([text], url.split('/').pop() || 'data.csv', { type: 'text/csv' });
     const meta = await this.uploadCSVFile(file, config);
@@ -193,7 +218,10 @@ export class SpreadsheetCSVApiDriver {
     return (m as any) ?? null;
   }
 
-  async listTables(pluginId?: string, pagination?: { offset: number; limit: number }): Promise<CSVTableListResult> {
+  async listTables(
+    pluginId?: string,
+    pagination?: { offset: number; limit: number }
+  ): Promise<CSVTableListResult> {
     const all = await this.manager.getAll();
     const filtered = pluginId ? all.filter((t) => t.referencingPlugins.includes(pluginId)) : all;
     const offset = pagination?.offset ?? 0;
@@ -229,11 +257,15 @@ export class SpreadsheetCSVApiDriver {
           default:
             return true;
         }
-      }),
+      })
     );
   }
 
-  async getFilteredPreview(tableId: string, filters: CSVFilterRule[], rowCount: number): Promise<CSVDataResult> {
+  async getFilteredPreview(
+    tableId: string,
+    filters: CSVFilterRule[],
+    rowCount: number
+  ): Promise<CSVDataResult> {
     const meta = await this.manager.get(tableId);
     if (!meta) throw new Error('Table not found');
     const stored = SpreadsheetCSVApiDriver.tableData.get(tableId);
@@ -242,7 +274,11 @@ export class SpreadsheetCSVApiDriver {
     const filtered = this.applyFilters(rows, filters).map((r) => {
       const out: any = { ...r };
       columns.forEach((c) => {
-        if (c.type === 'number' && typeof out[c.name] === 'string' && String(out[c.name]).trim() !== '') {
+        if (
+          c.type === 'number' &&
+          typeof out[c.name] === 'string' &&
+          String(out[c.name]).trim() !== ''
+        ) {
           const n = Number(out[c.name]);
           if (!Number.isNaN(n)) out[c.name] = n;
         }
@@ -270,7 +306,7 @@ export class SpreadsheetCSVApiDriver {
       columns.forEach((c) => {
         const val = r[c.name];
         if (c.type === 'number') {
-          const n = typeof val === 'number' ? val : (String(val).trim() === '' ? NaN : Number(val));
+          const n = typeof val === 'number' ? val : String(val).trim() === '' ? NaN : Number(val);
           pr[c.name] = Number.isNaN(n) ? val : n;
         } else {
           pr[c.name] = val;

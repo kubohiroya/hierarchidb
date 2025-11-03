@@ -1,18 +1,24 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
 import type { BasemapPeerData } from '../common/types/BaseMapEntity.js';
+import type { BasemapEntitiesDB, BasemapPeerRow } from './basemapEntitiesDB.js';
+
 const createPeerStoreNormalizer = <TData>(
-  defaults: () => TData,
+  defaults: () => TData
 ): ((input?: Partial<TData> | null) => TData) => {
   return (input) => {
     const base = defaults();
+    const extractMetadata = (source?: Partial<TData> | null): Record<string, unknown> => {
+      const meta = (source as { metadata?: unknown })?.metadata;
+      return typeof meta === 'object' && meta !== null ? (meta as Record<string, unknown>) : {};
+    };
+
     return {
       ...base,
       ...(input ?? {}),
       metadata: {
-        ...((base as any)?.metadata ?? {}),
-        ...((input as any)?.metadata ?? {}),
+        ...extractMetadata(base),
+        ...extractMetadata(input),
       },
     } as TData;
   };

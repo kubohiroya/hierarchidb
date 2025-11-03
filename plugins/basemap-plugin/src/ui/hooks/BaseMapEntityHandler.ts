@@ -4,22 +4,22 @@
  */
 
 import type { NodeId, Timestamp } from '@hierarchidb/common-types';
-import type { Collection, IndexableType, Table } from 'dexie';
-import { HierarchicalEntityHandler } from '@hierarchidb/plugin-service-sdk';
 import { createDraftWorkingCopyBase } from '@hierarchidb/plugin-runtime-services';
+import { HierarchicalEntityHandler } from '@hierarchidb/plugin-service-sdk';
+import type { PeerEntity } from '@hierarchidb/runtime-worker';
+import type { Collection, IndexableType, Table } from 'dexie';
 import type {
+  BaseMapDraftPayload,
   BaseMapEntity,
   BaseMapSearchCriteria,
   BaseMapWorkingCopy,
+  BasemapPeerData,
   CreateBaseMapData,
   DisplayOptions,
   MapStyle,
   MapViewport,
-  BasemapPeerData,
-  BaseMapDraftPayload,
 } from '../../common/types/index.js';
 import { BaseMapDatabase } from '../../services/database/BaseMapDatabase.js';
-import type { PeerEntity } from '@hierarchidb/runtime-worker';
 
 /**
  * Default values for BaseMap configuration
@@ -73,7 +73,10 @@ function normalizeViewport(viewport?: Partial<MapViewport>): MapViewport {
   };
 }
 
-function resolveDisplayOptions(mapStyle: MapStyle, overrides?: Partial<DisplayOptions>): DisplayOptions {
+function resolveDisplayOptions(
+  mapStyle: MapStyle,
+  overrides?: Partial<DisplayOptions>
+): DisplayOptions {
   const base: DisplayOptions = { ...DEFAULT_DISPLAY_OPTIONS };
   const styleDefaults = STYLE_SPECIFIC_DEFAULTS[mapStyle.style];
   if (styleDefaults) {
@@ -85,7 +88,11 @@ function resolveDisplayOptions(mapStyle: MapStyle, overrides?: Partial<DisplayOp
   return base;
 }
 
-function normalizeTags(input: { explicitTags?: string[]; displayTags?: string[]; name?: string }): string[] {
+function normalizeTags(input: {
+  explicitTags?: string[];
+  displayTags?: string[];
+  name?: string;
+}): string[] {
   const tags = new Set<string>();
   const push = (value?: string | null) => {
     if (!value) return;
@@ -117,7 +124,9 @@ function normalizeTags(input: { explicitTags?: string[]; displayTags?: string[];
   return Array.from(tags);
 }
 
-function collectEntityTags(entity: Pick<BaseMapEntity, 'tags' | 'name' | 'displayOptions'>): string[] {
+function collectEntityTags(
+  entity: Pick<BaseMapEntity, 'tags' | 'name' | 'displayOptions'>
+): string[] {
   return normalizeTags({
     explicitTags: entity.tags,
     displayTags: entity.displayOptions?.tags,
@@ -143,7 +152,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
     super();
     this.baseMapDB = new BaseMapDatabase();
     this.table = this.baseMapDB.baseMaps as unknown as Table<BaseMapEntity, NodeId>;
-    this.workingCopyTable = this.baseMapDB.workingCopies as unknown as Table<BaseMapWorkingCopy, NodeId>;
+    this.workingCopyTable = this.baseMapDB.workingCopies as unknown as Table<
+      BaseMapWorkingCopy,
+      NodeId
+    >;
   }
 
   // Temporary brand helper: until all packages converge on NodeId as primary key
@@ -154,7 +166,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   protected buildEntity(
     nodeId: NodeId,
     entityId: NodeId,
-    data: Partial<BaseMapEntity>,
+    data: Partial<BaseMapEntity>
   ): BaseMapEntity {
     const now = Date.now();
     const mapStyle = normalizeMapStyle(data.mapStyle);
@@ -166,7 +178,8 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       name: data.name,
     });
     const entityTags = tags.length > 0 ? [...tags] : [];
-    const displayOptionsWithTags = tags.length > 0 ? { ...displayOptions, tags: [...tags] } : displayOptions;
+    const displayOptionsWithTags =
+      tags.length > 0 ? { ...displayOptions, tags: [...tags] } : displayOptions;
     return {
       id: entityId,
       nodeId,
@@ -195,8 +208,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
     } as BaseMapEntity;
   }
 
-  protected async cleanupEntityData(_entity: BaseMapEntity): Promise<void> {
-  }
+  protected async cleanupEntityData(_entity: BaseMapEntity): Promise<void> {}
 
   /** Create BaseMap entity */
   async createEntity(nodeId: NodeId, data?: CreateBaseMapData): Promise<BaseMapEntity> {
@@ -210,7 +222,8 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       name: data?.name,
     });
     const entityTags = tags.length > 0 ? [...tags] : [];
-    const displayOptions = tags.length > 0 ? { ...baseDisplayOptions, tags: [...tags] } : baseDisplayOptions;
+    const displayOptions =
+      tags.length > 0 ? { ...baseDisplayOptions, tags: [...tags] } : baseDisplayOptions;
     const entity: BaseMapEntity = {
       id: nodeId,
       nodeId,
@@ -283,7 +296,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
     return workingCopy;
   }
 
-  async commitWorkingCopy(_nodeId: NodeId, workingCopy: BaseMapWorkingCopy): Promise<BaseMapEntity> {
+  async commitWorkingCopy(
+    _nodeId: NodeId,
+    workingCopy: BaseMapWorkingCopy
+  ): Promise<BaseMapEntity> {
     // If original exists, update it; otherwise create a new entity for provided nodeId
     if (workingCopy.treeNodeId && (await this.getEntityByNodeId(workingCopy.treeNodeId))) {
       const mapStyle = normalizeMapStyle(workingCopy.mapStyle);
@@ -294,9 +310,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
         displayTags: workingCopy.displayOptions?.tags,
         name: workingCopy.name,
       });
-      const displayOptions = normalizedTags.length > 0
-        ? { ...baseDisplayOptions, tags: [...normalizedTags] }
-        : baseDisplayOptions;
+      const displayOptions =
+        normalizedTags.length > 0
+          ? { ...baseDisplayOptions, tags: [...normalizedTags] }
+          : baseDisplayOptions;
       const tags = normalizedTags.length > 0 ? [...normalizedTags] : [];
       const updated = await this.updateEntity(workingCopy.treeNodeId, {
         name: workingCopy.name,
@@ -326,7 +343,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
     // Remove any working copy associated with the node
-    const wc = await this.workingCopyTable.where('nodeId').equals(nodeId as string).first();
+    const wc = await this.workingCopyTable
+      .where('nodeId')
+      .equals(nodeId as string)
+      .first();
     if (wc) await this.workingCopyTable.delete(wc.treeNodeId);
   }
 
@@ -348,7 +368,7 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
 
   async updateDisplayOptions(
     nodeId: NodeId,
-    displayOptions: DisplayOptions,
+    displayOptions: DisplayOptions
   ): Promise<BaseMapEntity> {
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) throw new Error(`BaseMap entity for node ${nodeId} not found`);
@@ -358,9 +378,8 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       displayTags: baseOptions.tags,
       name: entity.name,
     });
-    const nextDisplayOptions = normalizedTags.length > 0
-      ? { ...baseOptions, tags: [...normalizedTags] }
-      : baseOptions;
+    const nextDisplayOptions =
+      normalizedTags.length > 0 ? { ...baseOptions, tags: [...normalizedTags] } : baseOptions;
     const tags = normalizedTags.length > 0 ? [...normalizedTags] : [];
     const updated = await this.updateEntity(entity.id, {
       displayOptions: nextDisplayOptions,
@@ -385,9 +404,10 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
       displayTags: baseDisplayOptions.tags,
       name: entity.name,
     });
-    const displayOptions = normalizedTags.length > 0
-      ? { ...baseDisplayOptions, tags: [...normalizedTags] }
-      : baseDisplayOptions;
+    const displayOptions =
+      normalizedTags.length > 0
+        ? { ...baseDisplayOptions, tags: [...normalizedTags] }
+        : baseDisplayOptions;
     return {
       mapStyle,
       viewport,
@@ -420,17 +440,24 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
 
     if (config.viewport) {
       const { center, zoom, bearing, pitch } = config.viewport;
-      if (!Array.isArray(center) || center.length !== 2 ||
-        typeof center[0] !== 'number' || typeof center[1] !== 'number') {
+      if (
+        !Array.isArray(center) ||
+        center.length !== 2 ||
+        typeof center[0] !== 'number' ||
+        typeof center[1] !== 'number'
+      ) {
         errors.push('Valid center coordinates are required');
       } else {
         const [lng, lat] = center;
         if (lng < -180 || lng > 180) errors.push('Longitude must be a number between -180 and 180');
         if (lat < -90 || lat > 90) errors.push('Latitude must be a number between -90 and 90');
       }
-      if (typeof zoom !== 'number' || zoom < 0 || zoom > 24) errors.push('Zoom must be a number between 0 and 24');
-      if (typeof bearing !== 'number' || bearing < 0 || bearing >= 360) errors.push('Bearing must be a number between 0 and 360');
-      if (typeof pitch !== 'number' || pitch < 0 || pitch > 60) errors.push('Pitch must be a number between 0 and 60');
+      if (typeof zoom !== 'number' || zoom < 0 || zoom > 24)
+        errors.push('Zoom must be a number between 0 and 24');
+      if (typeof bearing !== 'number' || bearing < 0 || bearing >= 360)
+        errors.push('Bearing must be a number between 0 and 360');
+      if (typeof pitch !== 'number' || pitch < 0 || pitch > 60)
+        errors.push('Pitch must be a number between 0 and 60');
     }
 
     return { isValid: errors.length === 0, errors };
@@ -442,12 +469,14 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
 
   protected applyAdditionalSearchCriteria(
     collection: Collection<BaseMapEntity, IndexableType, BaseMapEntity>,
-    criteria: BaseMapExtendedSearchCriteria,
+    criteria: BaseMapExtendedSearchCriteria
   ): Collection<BaseMapEntity, IndexableType, BaseMapEntity> {
     collection = super.applyAdditionalSearchCriteria(collection, criteria);
 
     if (criteria.mapStyle) {
-      collection = collection.filter((entity: BaseMapEntity) => entity.mapStyle.style === criteria.mapStyle);
+      collection = collection.filter(
+        (entity: BaseMapEntity) => entity.mapStyle.style === criteria.mapStyle
+      );
     }
 
     if (criteria.tags && criteria.tags.length > 0) {
@@ -489,14 +518,18 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
 
   async importConfiguration(
     nodeId: NodeId,
-    config: { mapStyle: MapStyle; viewport: MapViewport; displayOptions: DisplayOptions },
+    config: { mapStyle: MapStyle; viewport: MapViewport; displayOptions: DisplayOptions }
   ): Promise<BaseMapEntity> {
     const validation = await this.validateConfiguration(config);
-    if (!validation.isValid) throw new Error(`Invalid configuration: ${validation.errors.join(', ')}`);
+    if (!validation.isValid)
+      throw new Error(`Invalid configuration: ${validation.errors.join(', ')}`);
 
     const entity = await this.getEntityByNodeId(nodeId);
     if (!entity) {
-      const created = await this.createEntity(nodeId, { name: 'Imported BaseMap', ...config } as CreateBaseMapData);
+      const created = await this.createEntity(nodeId, {
+        name: 'Imported BaseMap',
+        ...config,
+      } as CreateBaseMapData);
       await this.mirrorToPeerStore(created).catch(() => {});
       return created;
     }
@@ -509,14 +542,21 @@ export class BaseMapEntityHandler extends HierarchicalEntityHandler<
   async getEntity(entityId: NodeId): Promise<BaseMapEntity | null> {
     const res = await super.getEntity(entityId);
     // Some tests expect undefined; coerce without using any
-    return (res ?? (undefined as unknown as BaseMapEntity | null));
+    return res ?? (undefined as unknown as BaseMapEntity | null);
   }
 
   async cloneToNode(sourceNodeId: NodeId, targetNodeId: NodeId): Promise<BaseMapEntity> {
     const sourceEntity = await this.getEntityByNodeId(sourceNodeId);
     if (!sourceEntity) throw new Error(`Source BaseMap ${sourceNodeId} not found`);
 
-    const { id, nodeId, createdAt, updatedAt, version, ...cloneData } = sourceEntity as BaseMapEntity & {
+    const {
+      id: _id,
+      nodeId: _nodeId,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      version: _version,
+      ...cloneData
+    } = sourceEntity as BaseMapEntity & {
       [k: string]: unknown;
     };
     const created = await this.createEntity(targetNodeId, {

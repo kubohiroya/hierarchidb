@@ -27,7 +27,7 @@ export function validateExternalURL(url: string): { valid: boolean; url?: string
       .join('/');
 
     return { valid: true, url: parsedUrl.toString() };
-  } catch (error) {
+  } catch (_error) {
     return { valid: false, error: 'Invalid URL format' };
   }
 }

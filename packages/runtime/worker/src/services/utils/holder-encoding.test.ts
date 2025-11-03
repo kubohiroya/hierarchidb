@@ -1,3 +1,4 @@
+import type { NodeId } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
 import {
   decodeWorkingCopyHolderName,
@@ -5,7 +6,6 @@ import {
   HOLDER_NAME_TAB,
   isValidWorkingCopyHolderName,
 } from './holder-encoding.js';
-import type { NodeId } from '@hierarchidb/common-types';
 
 describe('holder-encoding v1 (TAB separator)', () => {
   it('encodes and decodes WorkingCopy holder name roundtrip', () => {
@@ -34,7 +34,7 @@ describe('holder-encoding v1 (TAB separator)', () => {
 
   it('rejects empty or extreme length in decode (WorkingCopy)', () => {
     expect(() => decodeWorkingCopyHolderName('')).toThrow();
-    const veryLong = 'x'.repeat(10_000) + HOLDER_NAME_TAB + 'y';
+    const veryLong = `${'x'.repeat(10_000) + HOLDER_NAME_TAB}y`;
     // decode itself allows long strings but should not throw on valid format
     expect(() => decodeWorkingCopyHolderName(veryLong)).not.toThrow();
   });

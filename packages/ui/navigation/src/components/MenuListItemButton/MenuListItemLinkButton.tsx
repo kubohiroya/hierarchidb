@@ -1,8 +1,15 @@
 // Local implementation - using provider-router-dom directly
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
-import { type CSSProperties, type MouseEvent, type ReactNode, useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 export type MenuItemLinkType = {
   name: string;
@@ -11,9 +18,9 @@ export type MenuItemLinkType = {
 };
 
 export const MenuListItemLinkButton = ({
-                                         id,
-                                         items,
-                                       }: {
+  id,
+  items,
+}: {
   id: string;
   items: Array<MenuItemLinkType | null>;
 }) => {
@@ -39,35 +46,41 @@ export const MenuListItemLinkButton = ({
       justifyContent: 'flex-start',
       color: 'inherit',
     }),
-    [],
+    []
   );
+
+  let dividerKeyCounter = 0;
 
   return (
     <>
       <IconButton
-        id={id + '-button'}
+        id={`${id}-button`}
         sx={{ position: 'absolute', bottom: 10, right: 13, zIndex: 100 }}
         onClick={handleMenuOpenButtonClick}
       >
         <SpeedDialIcon />
       </IconButton>
-      <Menu id={id + '-menu'} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
-        {items.map((item: MenuItemLinkType | null, index: number) =>
-          item ? (
-            <MenuItem
-              key={index}
-              onClick={() => handleMenuItemClick(`${currentPath}/${item.url}`)}
-              aria-label={item.name}
-            >
-              <Link to={`${currentPath}/${item.url}` as any} style={baseLinkStyle} preload="intent">
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText>{item.name}</ListItemText>
-              </Link>
-            </MenuItem>
-          ) : (
-            <MenuItem key={index} divider />
-          ),
-        )}
+      <Menu id={`${id}-menu`} anchorEl={anchorElem} open={open} onClose={() => setAnchorElem(null)}>
+        {items.map((item: MenuItemLinkType | null) => {
+          if (item) {
+            const targetPath = `${currentPath}/${item.url}`;
+            const itemKey = item.url || `${item.name}-${id}`;
+            return (
+              <MenuItem
+                key={itemKey}
+                onClick={() => handleMenuItemClick(targetPath)}
+                aria-label={item.name}
+              >
+                <Link to={targetPath} style={baseLinkStyle} preload="intent">
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  <ListItemText>{item.name}</ListItemText>
+                </Link>
+              </MenuItem>
+            );
+          }
+          dividerKeyCounter += 1;
+          return <MenuItem key={`${id}-divider-${dividerKeyCounter}`} divider />;
+        })}
       </Menu>
     </>
   );

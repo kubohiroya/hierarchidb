@@ -14,7 +14,9 @@ export interface RegisterBasemapWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-async function resolveStoreRegistry(options: RegisterBasemapWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
+async function resolveStoreRegistry(
+  options: RegisterBasemapWorkerStoresOptions = {}
+): Promise<StoreRegistry | null> {
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
@@ -41,7 +43,9 @@ async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
   }
 }
 
-export async function registerBasemapWorkerStores(options: RegisterBasemapWorkerStoresOptions = {}): Promise<void> {
+export async function registerBasemapWorkerStores(
+  options: RegisterBasemapWorkerStoresOptions = {}
+): Promise<void> {
   if (!hasIndexedDB || options.signal?.aborted) {
     return;
   }

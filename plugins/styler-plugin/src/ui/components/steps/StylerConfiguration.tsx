@@ -1,13 +1,21 @@
 /**
-  * @file StylerConfiguration.tsx
+ * @file StylerConfiguration.tsx
  * @description Styler configuration UI component (Step 5)
  * : UI
  * : eria-cartographHierarchiDB UI
  * : MUIUI
-  */
+ */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import {
+  AutoFixHigh as AutoFixHighIcon,
+  BarChart as BarChartIcon,
+  Gradient as GradientIcon,
+  Info as InfoIcon,
+  Insights as InsightsIcon,
+  Palette as PaletteIcon,
+  ShowChart as ShowChartIcon,
+  ViewColumn as ViewColumnIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   AlertTitle,
@@ -29,25 +37,30 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import {
-  AutoFixHigh as AutoFixHighIcon,
-  BarChart as BarChartIcon,
-  Gradient as GradientIcon,
-  Info as InfoIcon,
-  Insights as InsightsIcon,
-  Palette as PaletteIcon,
-  ShowChart as ShowChartIcon,
-  ViewColumn as ViewColumnIcon,
-} from '@mui/icons-material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import type { ColorAlgorithm, ColorSpace, MapLibreStyleProperty, StylerConfig } from '../../../common/types/stylerTypes.js';
-import { MAPLIBRE_PROPERTY_GROUPS, MAPLIBRE_PROPERTY_METADATA, StylerConfigDefault } from '../../../common/types/stylerTypes.js';
+import type {
+  ColorAlgorithm,
+  ColorSpace,
+  MapLibreStyleProperty,
+  StylerConfig,
+} from '../../../common/types/stylerTypes.js';
+import {
+  MAPLIBRE_PROPERTY_GROUPS,
+  MAPLIBRE_PROPERTY_METADATA,
+  StylerConfigDefault,
+} from '../../../common/types/stylerTypes.js';
 import { generateColorGradient } from '../../../common/utils/colorUtils.js';
-import { analyzeData, type DataAnalysisResult, extractNumericValues } from '../../../common/utils/dataAnalysis.js';
+import {
+  analyzeData,
+  type DataAnalysisResult,
+  extractNumericValues,
+} from '../../../common/utils/dataAnalysis.js';
 
 /**
-  * : StylerConfiguration
-  */
+ * : StylerConfiguration
+ */
 export interface StylerConfigurationProps {
   config?: StylerConfig;
   onChange: (config: StylerConfig) => void;
@@ -60,21 +73,21 @@ export interface StylerConfigurationProps {
 }
 
 /**
-  * : StylerUI
+ * : StylerUI
  * : eria-cartographHierarchiDBMUI
  * :
  * : UI
-  */
+ */
 export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
-                                                                          config = StylerConfigDefault,
-                                                                          onChange,
-                                                                          values = [],
-                                                                          columns = [],
-                                                                          selectedKeyColumn,
-                                                                          selectedValueColumn,
-                                                                          onColumnSelect,
-                                                                          csvData = [],
-                                                                        }) => {
+  config = StylerConfigDefault,
+  onChange,
+  values = [],
+  columns = [],
+  selectedKeyColumn,
+  selectedValueColumn,
+  onColumnSelect,
+  csvData = [],
+}) => {
   const [localConfig, setLocalConfig] = useState<StylerConfig>(() => {
     // Initialize with sample values if available
     if (values.length > 0) {
@@ -101,58 +114,72 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   const [showRecommendation, setShowRecommendation] = useState(true);
 
   const { t } = useTranslation('styler-plugin');
-  const tStr = useCallback((key: string, defaultValue: string) => {
-    const result = t(key, { defaultValue });
-    return typeof result === 'string' ? result : defaultValue;
-  }, [t]);
+  const tStr = useCallback(
+    (key: string, defaultValue: string) => {
+      const result = t(key, { defaultValue });
+      return typeof result === 'string' ? result : defaultValue;
+    },
+    [t]
+  );
 
-  const formatTemplate = useCallback((template: string, values: Record<string, string | number>) => {
-    return Object.entries(values).reduce(
-      (acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)),
-      template,
-    );
-  }, []);
+  const formatTemplate = useCallback(
+    (template: string, values: Record<string, string | number>) => {
+      return Object.entries(values).reduce(
+        (acc, [key, value]) => acc.replace(new RegExp(`{${key}}`, 'g'), String(value)),
+        template
+      );
+    },
+    []
+  );
 
-  const algorithmLabels = useMemo(() => ({
-    linear: tStr('step5.algorithms.linear', 'Linear'),
-    quantile: tStr('step5.algorithms.quantile', 'Quantile'),
-    jenks: tStr('step5.algorithms.jenks', 'Jenks Natural Breaks'),
-    equal: tStr('step5.algorithms.equal', 'Equal Interval'),
-  }) as Record<ColorAlgorithm, string>, [tStr]);
+  const algorithmLabels = useMemo(
+    () =>
+      ({
+        linear: tStr('step5.algorithms.linear', 'Linear'),
+        quantile: tStr('step5.algorithms.quantile', 'Quantile'),
+        jenks: tStr('step5.algorithms.jenks', 'Jenks Natural Breaks'),
+        equal: tStr('step5.algorithms.equal', 'Equal Interval'),
+      }) as Record<ColorAlgorithm, string>,
+    [tStr]
+  );
 
-  const algorithmDescriptions = useMemo(() => ({
-    linear: tStr(
-      'step5.algorithms.linearDescription',
-      'Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.',
-    ),
-    quantile: tStr(
-      'step5.algorithms.quantileDescription',
-      'Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.',
-    ),
-    jenks: tStr(
-      'step5.algorithms.jenksDescription',
-      'Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.',
-    ),
-    equal: tStr(
-      'step5.algorithms.equalDescription',
-      'Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.',
-    ),
-  }) as Record<ColorAlgorithm, string>, [tStr]);
+  const algorithmDescriptions = useMemo(
+    () =>
+      ({
+        linear: tStr(
+          'step5.algorithms.linearDescription',
+          'Interpolates colors smoothly between minimum and maximum values. Ideal for evenly distributed data or when visualizing continuous transitions.'
+        ),
+        quantile: tStr(
+          'step5.algorithms.quantileDescription',
+          'Creates classes with an equal number of features. Produces balanced visuals even for skewed data and is resilient to outliers.'
+        ),
+        jenks: tStr(
+          'step5.algorithms.jenksDescription',
+          'Finds natural breaks by minimizing variance within classes and maximizing it between classes. Offers meaningful groupings at a higher computational cost.'
+        ),
+        equal: tStr(
+          'step5.algorithms.equalDescription',
+          'Divides the value range into equal intervals. Suited for continuous, roughly linear distributions such as temperature or elevation, and is fast and easy to understand.'
+        ),
+      }) as Record<ColorAlgorithm, string>,
+    [tStr]
+  );
 
   const recommendation = dataAnalysis?.recommendation || null;
   const recommendationTitle = recommendation
-    ? formatTemplate(
-      tStr('step5.recommendation.summary', 'Recommended algorithm: {algorithm}'),
-      { algorithm: algorithmLabels[recommendation.algorithm] || recommendation.algorithm },
-    )
+    ? formatTemplate(tStr('step5.recommendation.summary', 'Recommended algorithm: {algorithm}'), {
+        algorithm: algorithmLabels[recommendation.algorithm] || recommendation.algorithm,
+      })
     : '';
   const recommendationConfidence = recommendation
-    ? formatTemplate(
-      tStr('step5.recommendation.confidence', 'Confidence: {confidence}%'),
-      { confidence: Math.round(recommendation.confidence * 100) },
-    )
+    ? formatTemplate(tStr('step5.recommendation.confidence', 'Confidence: {confidence}%'), {
+        confidence: Math.round(recommendation.confidence * 100),
+      })
     : '';
-  const currentSuitability = recommendation ? recommendation.suitability[localConfig.algorithm] : null;
+  const currentSuitability = recommendation
+    ? recommendation.suitability[localConfig.algorithm]
+    : null;
 
   useEffect(() => {
     if (selectedValueColumn && csvData.length > 0) {
@@ -160,7 +187,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
 
       const analyzeAsync = async () => {
         try {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 300));
 
           const numericValues = extractNumericValues(csvData, selectedValueColumn);
           if (numericValues.length > 0) {
@@ -188,66 +215,73 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
     }
   }, [dataAnalysis, localConfig, onChange]);
 
-  const handleAlgorithmChange = useCallback((
-    _event: React.MouseEvent<HTMLElement>,
-    newAlgorithm: ColorAlgorithm | null,
-  ) => {
-    if (newAlgorithm) {
-      const newConfig = { ...localConfig, algorithm: newAlgorithm };
+  const handleAlgorithmChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newAlgorithm: ColorAlgorithm | null) => {
+      if (newAlgorithm) {
+        const newConfig = { ...localConfig, algorithm: newAlgorithm };
+        setLocalConfig(newConfig);
+        onChange(newConfig);
+      }
+    },
+    [localConfig, onChange]
+  );
+
+  const handleColorSpaceChange = useCallback(
+    (_event: React.MouseEvent<HTMLElement>, newColorSpace: ColorSpace | null) => {
+      if (newColorSpace) {
+        const newConfig = { ...localConfig, colorSpace: newColorSpace };
+        setLocalConfig(newConfig);
+        onChange(newConfig);
+      }
+    },
+    [localConfig, onChange]
+  );
+
+  const handleMappingChange = useCallback(
+    (field: keyof StylerConfig['mapping'], value: number | number[]) => {
+      const numValue = Array.isArray(value) ? value[0] : value;
+      const newConfig = {
+        ...localConfig,
+        mapping: {
+          ...localConfig.mapping,
+          [field]: numValue,
+        },
+      };
       setLocalConfig(newConfig);
       onChange(newConfig);
-    }
-  }, [localConfig, onChange]);
+    },
+    [localConfig, onChange]
+  );
 
-  const handleColorSpaceChange = useCallback((
-    _event: React.MouseEvent<HTMLElement>,
-    newColorSpace: ColorSpace | null,
-  ) => {
-    if (newColorSpace) {
-      const newConfig = { ...localConfig, colorSpace: newColorSpace };
+  const handleTargetPropertyChange = useCallback(
+    (event: any) => {
+      const targetProperty = event.target.value as MapLibreStyleProperty;
+      const newConfig = { ...localConfig, targetProperty };
       setLocalConfig(newConfig);
       onChange(newConfig);
-    }
-  }, [localConfig, onChange]);
+    },
+    [localConfig, onChange]
+  );
 
-  const handleMappingChange = useCallback((
-    field: keyof StylerConfig['mapping'],
-    value: number | number[],
-  ) => {
-    const numValue = Array.isArray(value) ? value[0] : value;
-    const newConfig = {
-      ...localConfig,
-      mapping: {
-        ...localConfig.mapping,
-        [field]: numValue,
-      },
-    };
-    setLocalConfig(newConfig);
-    onChange(newConfig);
-  }, [localConfig, onChange]);
+  const handleKeyColumnChange = useCallback(
+    (event: any) => {
+      const column = event.target.value;
+      if (onColumnSelect) {
+        onColumnSelect(column, 'key');
+      }
+    },
+    [onColumnSelect]
+  );
 
-  const handleTargetPropertyChange = useCallback((
-    event: any,
-  ) => {
-    const targetProperty = event.target.value as MapLibreStyleProperty;
-    const newConfig = { ...localConfig, targetProperty };
-    setLocalConfig(newConfig);
-    onChange(newConfig);
-  }, [localConfig, onChange]);
-
-  const handleKeyColumnChange = useCallback((event: any) => {
-    const column = event.target.value;
-    if (onColumnSelect) {
-      onColumnSelect(column, 'key');
-    }
-  }, [onColumnSelect]);
-
-  const handleValueColumnChange = useCallback((event: any) => {
-    const column = event.target.value;
-    if (onColumnSelect) {
-      onColumnSelect(column, 'value');
-    }
-  }, [onColumnSelect]);
+  const handleValueColumnChange = useCallback(
+    (event: any) => {
+      const column = event.target.value;
+      if (onColumnSelect) {
+        onColumnSelect(column, 'value');
+      }
+    },
+    [onColumnSelect]
+  );
 
   const gradientPreview = useMemo(() => {
     return generateColorGradient(localConfig);
@@ -280,11 +314,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               },
             }}
           >
-            <FormControl
-              fullWidth
-              size="small"
-              sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-            >
+            <FormControl fullWidth size="small" sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
               <InputLabel>Key Column</InputLabel>
               <Select
                 value={selectedKeyColumn || ''}
@@ -303,11 +333,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               <FormHelperText>Column to use as feature identifier</FormHelperText>
             </FormControl>
 
-            <FormControl
-              fullWidth
-              size="small"
-              sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}
-            >
+            <FormControl fullWidth size="small" sx={{ gridColumn: { xs: '1 / -1', md: 'auto' } }}>
               <InputLabel>Value Column</InputLabel>
               <Select
                 value={selectedValueColumn || ''}
@@ -317,11 +343,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {columns.filter(col => col !== selectedKeyColumn).map((col) => (
-                  <MenuItem key={col} value={col}>
-                    {col}
-                  </MenuItem>
-                ))}
+                {columns
+                  .filter((col) => col !== selectedKeyColumn)
+                  .map((col) => (
+                    <MenuItem key={col} value={col}>
+                      {col}
+                    </MenuItem>
+                  ))}
               </Select>
               <FormHelperText>Column containing values to map</FormHelperText>
             </FormControl>
@@ -366,7 +394,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
       {localConfig.targetProperty && targetMetadata?.type === 'color' && (
         <>
           {/*
-*/}
+           */}
           {dataAnalysis && showRecommendation && (
             <Collapse in={showRecommendation}>
               <Paper sx={{ p: 2, bgcolor: 'info.lighter', border: 1, borderColor: 'info.main' }}>
@@ -393,9 +421,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                       </Button>
                     }
                   >
-                    <AlertTitle>
-                      {recommendationTitle}
-                    </AlertTitle>
+                    <AlertTitle>{recommendationTitle}</AlertTitle>
                     {recommendation?.reasoning}
                     {recommendationConfidence && (
                       <Typography variant="caption" display="block" sx={{ mt: 1 }}>
@@ -430,8 +456,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                     <Chip
                       label={`${recommendation.suitability.linear}%`}
                       size="small"
-                      color={recommendation.suitability.linear > 70 ? 'success' :
-                        recommendation.suitability.linear > 40 ? 'default' : 'error'}
+                      color={
+                        recommendation.suitability.linear > 70
+                          ? 'success'
+                          : recommendation.suitability.linear > 40
+                            ? 'default'
+                            : 'error'
+                      }
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -446,8 +477,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                     <Chip
                       label={`${recommendation.suitability.quantile}%`}
                       size="small"
-                      color={recommendation.suitability.quantile > 70 ? 'success' :
-                        recommendation.suitability.quantile > 40 ? 'default' : 'error'}
+                      color={
+                        recommendation.suitability.quantile > 70
+                          ? 'success'
+                          : recommendation.suitability.quantile > 40
+                            ? 'default'
+                            : 'error'
+                      }
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -462,8 +498,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                     <Chip
                       label={`${recommendation.suitability.jenks}%`}
                       size="small"
-                      color={recommendation.suitability.jenks > 70 ? 'success' :
-                        recommendation.suitability.jenks > 40 ? 'default' : 'error'}
+                      color={
+                        recommendation.suitability.jenks > 70
+                          ? 'success'
+                          : recommendation.suitability.jenks > 40
+                            ? 'default'
+                            : 'error'
+                      }
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -478,8 +519,13 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                     <Chip
                       label={`${recommendation.suitability.equal}%`}
                       size="small"
-                      color={recommendation.suitability.equal > 70 ? 'success' :
-                        recommendation.suitability.equal > 40 ? 'default' : 'error'}
+                      color={
+                        recommendation.suitability.equal > 70
+                          ? 'success'
+                          : recommendation.suitability.equal > 40
+                            ? 'default'
+                            : 'error'
+                      }
                       sx={{ height: 16, fontSize: '0.7rem' }}
                     />
                   )}
@@ -488,7 +534,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
             </ToggleButtonGroup>
 
             {/*
-*/}
+             */}
             <Box sx={{ mt: 2, p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
               <Stack direction="row" spacing={1} alignItems="flex-start">
                 <InfoIcon fontSize="small" color="action" sx={{ mt: 0.5 }} />
@@ -501,13 +547,16 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
                   </Typography>
 
                   {/*
-*/}
+                   */}
                   {currentSuitability !== null && (
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="caption" color="primary">
                         {formatTemplate(
-                          tStr('step5.recommendation.suitability', 'Suitability for your data: {value}%'),
-                          { value: currentSuitability },
+                          tStr(
+                            'step5.recommendation.suitability',
+                            'Suitability for your data: {value}%'
+                          ),
+                          { value: currentSuitability }
                         )}
                       </Typography>
                     </Box>
@@ -679,12 +728,8 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
               }}
             />
             <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-              <Typography variant="caption">
-                {localConfig.mapping.min}
-              </Typography>
-              <Typography variant="caption">
-                {localConfig.mapping.max}
-              </Typography>
+              <Typography variant="caption">{localConfig.mapping.min}</Typography>
+              <Typography variant="caption">{localConfig.mapping.max}</Typography>
             </Stack>
           </Paper>
         </>

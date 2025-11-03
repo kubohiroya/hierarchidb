@@ -1,6 +1,7 @@
 import { type BffContext, getEnv } from '../utils/env.js';
 import { createSessionToken, extractBearerToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
+import { parseEnvInt } from '../utils/number.js';
 
 /**
  * Refresh token endpoint handler
@@ -26,7 +27,7 @@ export async function refreshToken(c: BffContext) {
     }
 
     const kvManager = new KVStorageManager(env.AUTH_KV, env.JWT_SECRET);
-    const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
+    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
 
     // Create new session token first
     const userData = await kvManager.getUserAuthBySession(token);

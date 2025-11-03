@@ -1,11 +1,11 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
-import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
@@ -26,7 +26,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
 
-    const treeId = toTreeId('r');
+    const treeId = 'r';
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');
@@ -37,10 +37,15 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
       parentId,
       Comlink.proxy((event: TreeNodeEvent) => {
         subtreeEvents.push(event);
-      }) as (event: TreeNodeEvent) => void,
+      }) as (event: TreeNodeEvent) => void
     );
 
-    const res = await mutationAPI.createNode({ nodeType: toNodeType('folder'), treeId, parentId, name: 'Created From Test' });
+    const res = await mutationAPI.createNode({
+      nodeType: toNodeType('folder'),
+      treeId,
+      parentId,
+      name: 'Created From Test',
+    });
     if (!res.success) {
       const message = 'error' in res ? res.error : 'unknown error';
       throw new Error(`createNode failed: ${message}`);
@@ -63,7 +68,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     expect(children.some((node) => node.id === newId)).toBe(false);
 
     const sawCreate = subtreeEvents.some(
-      (event) => event?.nodeId === newId && typeof event.type === 'string',
+      (event) => event?.nodeId === newId && typeof event.type === 'string'
     );
     expect(sawCreate).toBe(false);
 

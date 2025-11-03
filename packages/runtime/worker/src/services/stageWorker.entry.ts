@@ -6,4 +6,3 @@ import { getStageProcessingService } from './StageProcessingService.js';
   // Expose a stable surface over Comlink
   Comlink.expose(svc);
 })();
-

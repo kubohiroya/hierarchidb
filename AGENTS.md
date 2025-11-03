@@ -14,7 +14,7 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
 - `pnpm install --frozen-lockfile` – sync dependencies before editing.
 - `pnpm dev` / `pnpm dev:with-watch` – launch the app and worker watchers.
 - `pnpm typecheck` – workspace TypeScript validation; append `pnpm --filter <pkg> typecheck` for targeted checks.
-- `pnpm test` / `pnpm --filter @hierarchidb/runtime-worker test -- --run folder-undo-redo` – Vitest suites globally or for worker critical paths.
+- `pnpm test` / `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations` – Vitest suites globally or for worker critical paths.
 - `pnpm lint` / `pnpm format` / `pnpm biome:check` – enforce linting and formatting.
 - `pnpm e2e` – execute Playwright smoke tests; capture failures in `TASKS.md`.
 

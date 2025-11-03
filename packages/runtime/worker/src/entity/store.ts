@@ -1,4 +1,4 @@
-import type { NodeId, MultiStepDialogState } from '@hierarchidb/common-types';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 
 /**
  * Abstractions for plugin entity stores (Peer/Group/Relational).

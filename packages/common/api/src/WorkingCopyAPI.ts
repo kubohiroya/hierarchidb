@@ -54,7 +54,7 @@ export interface WorkingCopyAPI {
   createDraftWorkingCopy(
     nodeType: NodeType,
     parentId: NodeId,
-    initialData?: Partial<TreeNode>,
+    initialData?: Partial<TreeNode>
   ): Promise<TreeNode>;
 
   /**

@@ -531,7 +531,7 @@ describe('useLinkButton Hook', () => {
     await act(async () => {
       try {
         await result.current.executeAction();
-      } catch (e) {
+      } catch (_error) {
         // Expected error
       }
     });

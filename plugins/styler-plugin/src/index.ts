@@ -1,76 +1,69 @@
 /**
-  * @file RuntimeWorkerService.ts
+ * @file RuntimeWorkerService.ts
  * @description Styler plugin main entry point
  * : Styler
  * :
  * : HierarchiDB
-  */
+ */
 
 // Import manifest for legacy exports
 import { PLUGIN_MANIFEST } from './plugin-manifest.js';
-
-// Types exports
-export type {
-  StylerEntity,
-  StylerStyle,
-  StylerColorRule,
-} from './common/types/StylerEntity.js';
 
 export type {
   StylemapCategory,
   StylemapCategoryConfig,
 } from './common/types/category-types.js';
-
+// Types exports
 export type {
-  StylemapBasicInfoData,
-} from './ui/components/steps/BasicInfoStep.js';
-
+  StylerColorRule,
+  StylerEntity,
+  StylerStyle,
+} from './common/types/StylerEntity.js';
 export type {
-  StylerConfig,
-  MapLibreStyleProperty,
   ColorAlgorithm,
-  ColorSpace,
-  StylerMapping,
-  MapLibrePropertyMetadata,
-  PropertyGroup,
   ColorCalculationResult,
+  ColorSpace,
+  MapLibrePropertyMetadata,
+  MapLibreStyleProperty,
+  PropertyGroup,
+  StylerConfig,
+  StylerMapping,
   TablePreviewProps,
 } from './common/types/stylerTypes.js';
-
 // Constants and defaults
 export {
-  StylerConfigDefault,
-  MAPLIBRE_PROPERTY_METADATA,
   MAPLIBRE_PROPERTY_GROUPS,
+  MAPLIBRE_PROPERTY_METADATA,
+  StylerConfigDefault,
 } from './common/types/stylerTypes.js';
 export { PLUGIN_MANIFEST as StylerPluginManifest } from './plugin-manifest.js';
+export type { StylemapBasicInfoData } from './ui/components/steps/BasicInfoStep.js';
 
 // Extension definition (main plugin definition)
 
 // Entity handler
 export { StylerEntityHandler } from './common/handlers/StylerEntityHandler.js';
-
-// Services
-export { StylerDataService } from './services/StylerDataService.js';
-
-// Utilities
-export {
-  hsvToRgb,
-  rgbToHsv,
-  rgbToHex,
-  hexToRgb,
-  calculateLinearColor,
-  calculateQuantileColor,
-  generateColorGradient,
-  valueToColor,
-  adjustBrightness,
-  createColorVariations,
-  getContrastRatio,
-} from './common/utils/colorUtils.js';
 export type {
   ColorVariationOptions,
   ColorVariations,
 } from './common/utils/colorUtils.js';
+
+// Utilities
+export {
+  adjustBrightness,
+  calculateLinearColor,
+  calculateQuantileColor,
+  createColorVariations,
+  generateColorGradient,
+  getContrastRatio,
+  hexToRgb,
+  hsvToRgb,
+  rgbToHex,
+  rgbToHsv,
+  valueToColor,
+} from './common/utils/colorUtils.js';
+// Services
+export { StylerDataService } from './services/StylerDataService.js';
 
 // UI components are exported from subpath to avoid worker-time deps
 // import from '@hierarchidb/styler-plugin/ui' when needed
@@ -82,10 +75,10 @@ export type {
 export const PLUGIN_INFO = PLUGIN_MANIFEST;
 
 /**
-  * :
+ * :
  * : HierarchiDB
  * :
-  */
+ */
 /**
  * Legacy initializeStylerPlugin helper has been removed. Consumers should rely on
  * StylerDialogExtension / runtime registration instead of the old extension definition path.
@@ -99,7 +92,10 @@ export class RuntimeWiring {
 }
 
 // Dialog extension initializer
-export { initializeStylerDialogExtension, stylerDialogExtension } from './common/extensions/StylerDialogExtension.js';
+export {
+  initializeStylerDialogExtension,
+  stylerDialogExtension,
+} from './common/extensions/StylerDialogExtension.js';
 
 let initialized = false;
 

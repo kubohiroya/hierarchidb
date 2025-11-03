@@ -58,7 +58,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     // Reset AuthService singleton
-    (AuthService as any).instance = undefined;
+    Reflect.set(AuthService, 'instance', undefined);
 
     // Mock global objects
     originalWindow = globalThis.window;
@@ -66,15 +66,15 @@ describe('AuthService', () => {
 
     globalThis.window = {
       ...originalWindow,
-      open: vi.fn().mockReturnValue(mockPopup) as any,
-      addEventListener: vi.fn() as any,
-      removeEventListener: vi.fn() as any,
-      setInterval: vi.fn() as any,
-      clearInterval: vi.fn() as any,
-      setTimeout: vi.fn() as any,
+      open: vi.fn().mockReturnValue(mockPopup) as unknown as Window['open'],
+      addEventListener: vi.fn() as Window['addEventListener'],
+      removeEventListener: vi.fn() as Window['removeEventListener'],
+      setInterval: vi.fn() as typeof setInterval,
+      clearInterval: vi.fn() as typeof clearInterval,
+      setTimeout: vi.fn() as typeof setTimeout,
       screen: { width: 1920, height: 1080 },
       location: { origin: 'https://app.example.com', search: '' },
-    } as any;
+    } as unknown as typeof window;
 
     Object.defineProperty(globalThis, 'crypto', {
       value: mockCrypto,
@@ -157,7 +157,7 @@ describe('AuthService', () => {
       expect(mockOpen).toHaveBeenCalledWith(
         expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth'),
         'auth-popup',
-        'width=500,height=600,left=710,top=240,toolbar=no,menubar=no,scrollbars=yes',
+        'width=500,height=600,left=710,top=240,toolbar=no,menubar=no,scrollbars=yes'
       );
 
       // Simulate popup being closed to prevent hanging promise
@@ -167,9 +167,11 @@ describe('AuthService', () => {
 
     it('should throw error when popup is blocked', async () => {
       const service = AuthService.getInstance();
-      (globalThis.window.open as any) = vi.fn().mockReturnValue(null);
+      globalThis.window.open = vi.fn().mockReturnValue(null) as unknown as Window['open'];
 
-      await expect(service.authenticate()).rejects.toThrow('Popup blocked. Please allow popups for this site.');
+      await expect(service.authenticate()).rejects.toThrow(
+        'Popup blocked. Please allow popups for this site.'
+      );
     });
 
     it('should handle successful authentication via popup message', async () => {
@@ -180,7 +182,9 @@ describe('AuthService', () => {
 
       // Get the message handler that was registered
       expect(mockAddEventListener).toHaveBeenCalledWith('message', expect.any(Function));
-      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (event: MessageEvent) => void;
+      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (
+        event: MessageEvent
+      ) => void;
 
       // Simulate successful auth message
       const successEvent = {
@@ -214,9 +218,11 @@ describe('AuthService', () => {
       const authPromise = service.authenticate();
 
       // Wait for next tick to ensure event listener is set up
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
-      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (event: MessageEvent) => void;
+      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (
+        event: MessageEvent
+      ) => void;
 
       const errorEvent = {
         origin: mockConfig.authOrigin,
@@ -238,7 +244,9 @@ describe('AuthService', () => {
       const mockAddEventListener = vi.mocked(globalThis.window.addEventListener);
 
       const authPromise = service.authenticate();
-      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (event: MessageEvent) => void;
+      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (
+        event: MessageEvent
+      ) => void;
 
       const untrustedEvent = {
         origin: 'https://malicious.example.com',
@@ -274,11 +282,13 @@ describe('AuthService', () => {
       const authPromise = service.authenticate();
 
       // Wait for next tick to ensure timeout is set up
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       // Get the timeout callback
       expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), 5 * 60 * 1000);
-      const timeoutCallback = mockSetTimeout.mock.calls.find(call => call[1] === 5 * 60 * 1000)?.[0];
+      const timeoutCallback = mockSetTimeout.mock.calls.find(
+        (call) => call[1] === 5 * 60 * 1000
+      )?.[0];
 
       if (timeoutCallback && typeof timeoutCallback === 'function') {
         timeoutCallback();
@@ -292,8 +302,9 @@ describe('AuthService', () => {
     beforeEach(() => {
       // Mock DOM
       globalThis.document = {
-        body: { innerHTML: '' },
-      } as any;
+        ...globalThis.document,
+        body: { innerHTML: '' } as HTMLBodyElement,
+      } as Document;
     });
 
     it('should handle successful OAuth callback in popup', () => {
@@ -310,7 +321,7 @@ describe('AuthService', () => {
           origin: 'https://app.example.com',
         },
         close: vi.fn(),
-      } as any;
+      } as unknown as typeof window;
 
       AuthService.handleAuthCallback();
 
@@ -322,7 +333,7 @@ describe('AuthService', () => {
           expiresIn: 3600,
           tokenType: 'Bearer',
         },
-        'https://app.example.com',
+        'https://app.example.com'
       );
     });
 
@@ -340,7 +351,7 @@ describe('AuthService', () => {
           origin: 'https://app.example.com',
         },
         close: vi.fn(),
-      } as any;
+      } as unknown as typeof window;
 
       AuthService.handleAuthCallback();
 
@@ -350,7 +361,7 @@ describe('AuthService', () => {
           error: 'access_denied',
           errorDescription: 'The user denied the request',
         },
-        'https://app.example.com',
+        'https://app.example.com'
       );
     });
 
@@ -361,11 +372,13 @@ describe('AuthService', () => {
         location: {
           search: '?code=test-auth-code',
         },
-      } as any;
+      } as unknown as typeof window;
 
       AuthService.handleAuthCallback();
 
-      expect(globalThis.document.body.innerHTML).toBe('<p>Authentication complete. You can close this window.</p>');
+      expect(globalThis.document.body.innerHTML).toBe(
+        '<p>Authentication complete. You can close this window.</p>'
+      );
     });
   });
 
@@ -405,8 +418,7 @@ describe('AuthService', () => {
       // Test state generation by checking if crypto.getRandomValues is called
       const service = AuthService.getInstance();
 
-      service.authenticate().catch(() => {
-      }); // Ignore promise rejection
+      service.authenticate().catch(() => {}); // Ignore promise rejection
 
       expect(mockCrypto.getRandomValues).toHaveBeenCalledWith(expect.any(Uint8Array));
     });
@@ -428,7 +440,7 @@ describe('AuthService', () => {
       expect(mockSetInterval).toHaveBeenCalledWith(expect.any(Function), 500);
 
       // Simulate popup being closed
-      const intervalCallback = mockSetInterval.mock.calls.find(call => call[1] === 500)?.[0];
+      const intervalCallback = mockSetInterval.mock.calls.find((call) => call[1] === 500)?.[0];
       if (intervalCallback) {
         mockPopup.closed = true;
         intervalCallback();
@@ -447,7 +459,7 @@ describe('AuthService', () => {
       const authPromise = service.authenticate();
 
       // Wait for next tick to ensure event listener is set up
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       // Simulate success
       const messageHandler = mockAddEventListener.mock.calls[0]?.[1];
@@ -468,7 +480,7 @@ describe('AuthService', () => {
       await authPromise;
 
       // Wait for cleanup to complete
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       expect(mockRemoveEventListener).toHaveBeenCalledWith('message', expect.any(Function));
       expect(mockClearInterval).toHaveBeenCalled();
@@ -506,12 +518,11 @@ describe('AuthService', () => {
         responseType: 'code',
       };
 
-      (AuthService as any).instance = undefined;
+      Reflect.set(AuthService, 'instance', undefined);
       AuthService.initialize(microsoftConfig);
       const service = AuthService.getInstance();
 
-      service.authenticate().catch(() => {
-      });
+      service.authenticate().catch(() => {});
 
       const mockOpen = vi.mocked(globalThis.window.open);
       const authUrl = mockOpen.mock.calls[0]?.[0] as string;
@@ -532,8 +543,7 @@ describe('AuthService', () => {
       expect(service.isAuthenticating()).toBe(false); //  :
       expect(service.isAuthenticated()).toBe(false); //  :
 
-      service.authenticate().catch(() => {
-      });
+      service.authenticate().catch(() => {});
 
       expect(service.isAuthenticating()).toBe(true); //  :
 
@@ -546,7 +556,9 @@ describe('AuthService', () => {
       const mockAddEventListener = vi.mocked(globalThis.window.addEventListener);
 
       const authPromise = service.authenticate();
-      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (event: MessageEvent) => void;
+      const messageHandler = mockAddEventListener.mock.calls[0]?.[1] as (
+        event: MessageEvent
+      ) => void;
 
       const shortExpiryEvent = {
         origin: mockConfig.authOrigin,
@@ -588,7 +600,7 @@ describe('AuthService', () => {
         // usePKCE: true, // TODO: PKCE support not yet implemented
       };
 
-      (AuthService as any).instance = undefined;
+      Reflect.set(AuthService, 'instance', undefined);
       AuthService.initialize(pkceConfig);
       const service = AuthService.getInstance();
 
@@ -658,18 +670,17 @@ describe('AuthService', () => {
     });
 
     it('ネットワークエラー時に自動リトライする', async () => {
-
       const service = AuthService.getInstance();
       service.setMaxRetries(3);
 
       let attemptCount = 0;
-      (globalThis.window.open as any) = vi.fn().mockImplementation(() => {
+      globalThis.window.open = vi.fn().mockImplementation(() => {
         attemptCount++;
         if (attemptCount < 3) {
           return null;
         }
         return mockPopup;
-      });
+      }) as unknown as Window['open'];
 
       const authPromise = service.authenticateWithRetry();
 
@@ -678,12 +689,11 @@ describe('AuthService', () => {
     });
 
     it('エラー後に状態を正しくクリーンアップする', async () => {
-
       const service = AuthService.getInstance();
       const mockClearInterval = vi.mocked(globalThis.window.clearInterval);
       const mockRemoveEventListener = vi.mocked(globalThis.window.removeEventListener);
 
-      (globalThis.window.open as any) = vi.fn().mockReturnValue(null);
+      globalThis.window.open = vi.fn().mockReturnValue(null) as unknown as Window['open'];
 
       await expect(service.authenticate()).rejects.toThrow('Popup blocked');
 

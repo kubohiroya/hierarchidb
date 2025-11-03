@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandEnvelope } from '../../services/command-types.js';
 import type {
   CommitWorkingCopyPayload,
   DuplicateNodesPayload,
@@ -9,7 +7,9 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../services/CoreDB.js';
+import type { CommandEnvelope } from '../../services/command-types.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 
 describe('EntityLifecycleManager dispatch', () => {

@@ -3,5 +3,5 @@
  * @description BaseMap shared exports
  */
 
-export * from './utils.js';
 export * from './metadata.js';
+export * from './utils.js';

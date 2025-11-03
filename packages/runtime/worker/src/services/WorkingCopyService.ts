@@ -2,14 +2,17 @@ import type { CommitWorkingCopyOptions, WorkingCopyAPI } from '@hierarchidb/comm
 import type {
   CommandResult,
   CommitResult,
-  OnNameConflict,
   NodeId,
   NodeType,
+  OnNameConflict,
   TreeId,
   TreeNode,
   ValidationResult,
 } from '@hierarchidb/common-types';
+import { resolveDefaultNodeName } from '../utils/default-node-name.js';
+import type { CommandProcessor } from './CommandProcessor.js';
 import type { CoreDB } from './CoreDB.js';
+import type { CommitResultV2 } from './WorkingCopyTreeNodeOperations.js';
 import {
   createDraftWorkingCopyGetOrCreate,
   createWorkingCopyFromNode as createWcFromNode,
@@ -17,9 +20,6 @@ import {
   getWorkingCopy as getWc,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
-import type { CommitResultV2 } from './WorkingCopyTreeNodeOperations.js';
-import type { CommandProcessor } from './CommandProcessor.js';
-import { resolveDefaultNodeName } from '../utils/default-node-name.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -27,12 +27,16 @@ import { resolveDefaultNodeName } from '../utils/default-node-name.js';
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
-  constructor(private coreDB: CoreDB, _ephemeralDB: unknown, private commandProcessor?: CommandProcessor) {}
+  constructor(
+    private coreDB: CoreDB,
+    _ephemeralDB: unknown,
+    private commandProcessor?: CommandProcessor
+  ) {}
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
     parentId: NodeId,
-    initialData?: Partial<TreeNode>,
+    initialData?: Partial<TreeNode>
   ): Promise<TreeNode> {
     // Use holder-based create (get-or-create)
     const treeId = parentId.split(':')[0] as TreeId;
@@ -41,7 +45,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
       treeId,
       parentId,
       nodeType,
-      (initialData?.name && initialData.name.trim()) || resolveDefaultNodeName(nodeType),
+      initialData?.name?.trim() || resolveDefaultNodeName(nodeType)
     );
     const wc = await this.coreDB.nodes.get(wcNodeId);
     if (!wc) throw new Error('Working copy creation failed');
@@ -88,7 +92,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   async commitWorkingCopy(
     workingCopyId: NodeId,
-    options?: CommitWorkingCopyOptions,
+    options?: CommitWorkingCopyOptions
   ): Promise<CommitResult> {
     const context = await this.getWorkingCopyContext(workingCopyId);
     const conflictPolicy: OnNameConflict = options?.onNameConflict ?? 'auto-rename';
@@ -121,7 +125,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   }
 
   async discardWorkingCopy(nodeId: NodeId): Promise<void> {
-    const wc = (await getWc(this.coreDB, nodeId));
+    const wc = await getWc(this.coreDB, nodeId);
     if (!wc) return;
     await discardWc(this.coreDB, [wc.parentId, nodeId]);
   }
@@ -150,7 +154,9 @@ export class WorkingCopyService implements WorkingCopyAPI {
     return results;
   }
 
-  private async getWorkingCopyContext(workingCopyId: NodeId): Promise<WorkingCopyContext | undefined> {
+  private async getWorkingCopyContext(
+    workingCopyId: NodeId
+  ): Promise<WorkingCopyContext | undefined> {
     try {
       const wcNode = await this.coreDB.nodes.get(workingCopyId);
       if (!wcNode) return undefined;
@@ -164,8 +170,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
           const parsed = decodeWorkingCopyHolderName(holder.name);
           targetNodeId = targetNodeId ?? parsed.targetNodeId;
           targetParentNodeId = targetParentNodeId ?? parsed.targetParentNodeId;
-        } catch {
-        }
+        } catch {}
       }
       return { wcNode, holder, targetNodeId, targetParentNodeId };
     } catch {
@@ -173,7 +178,10 @@ export class WorkingCopyService implements WorkingCopyAPI {
     }
   }
 
-  private async loadCommittedNode(explicitId: NodeId | undefined, context?: WorkingCopyContext): Promise<TreeNode | undefined> {
+  private async loadCommittedNode(
+    explicitId: NodeId | undefined,
+    context?: WorkingCopyContext
+  ): Promise<TreeNode | undefined> {
     const candidate = explicitId ?? context?.targetNodeId;
     if (!candidate) return undefined;
     return this.coreDB.nodes.get(candidate) ?? undefined;
@@ -181,7 +189,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   private async mapCommandProcessorResult(
     result: CommandResult,
-    context?: WorkingCopyContext,
+    context?: WorkingCopyContext
   ): Promise<CommitResult | undefined> {
     if (result.success) {
       const canonicalId = (result.nodeId as NodeId | undefined) ?? context?.targetNodeId;
@@ -215,7 +223,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   private async mapCommitResultV2(
     result: CommitResultV2,
-    context?: WorkingCopyContext,
+    context?: WorkingCopyContext
   ): Promise<CommitResult> {
     if (result.status === 'ok') {
       const canonicalId = result.nodeId ?? context?.targetNodeId;
@@ -242,7 +250,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   private async commitWorkingCopyManually(
     workingCopyId: NodeId,
     context: WorkingCopyContext | undefined,
-    onNameConflict: OnNameConflict,
+    onNameConflict: OnNameConflict
   ): Promise<CommitResult> {
     let resolvedContext: WorkingCopyContext | undefined;
     try {
@@ -278,7 +286,9 @@ export class WorkingCopyService implements WorkingCopyAPI {
         }
 
         const finalName =
-          nameConflicts && onNameConflict === 'auto-rename' && suggestedName ? suggestedName : wcNode.name;
+          nameConflicts && onNameConflict === 'auto-rename' && suggestedName
+            ? suggestedName
+            : wcNode.name;
 
         await this.coreDB.createNode({
           ...wcNode,
@@ -312,7 +322,9 @@ export class WorkingCopyService implements WorkingCopyAPI {
       }
 
       const finalName =
-        nameConflicts && onNameConflict === 'auto-rename' && suggestedName ? suggestedName : wcNode.name;
+        nameConflicts && onNameConflict === 'auto-rename' && suggestedName
+          ? suggestedName
+          : wcNode.name;
 
       await this.coreDB.updateNode({
         ...wcNode,
@@ -328,7 +340,8 @@ export class WorkingCopyService implements WorkingCopyAPI {
       return this.buildOkResult(targetNodeId, resolvedContext, autoRenameTo);
     } catch (error) {
       const holderId =
-        resolvedContext?.wcNode?.parentId ?? context?.wcNode?.parentId ??
+        resolvedContext?.wcNode?.parentId ??
+        context?.wcNode?.parentId ??
         (resolvedContext?.holder?.id as NodeId | undefined);
       if (holderId) {
         await discardWc(this.coreDB, [holderId, workingCopyId]);
@@ -339,14 +352,9 @@ export class WorkingCopyService implements WorkingCopyAPI {
 
   private async ensureWorkingCopyContext(
     workingCopyId: NodeId,
-    context: WorkingCopyContext | undefined,
+    context: WorkingCopyContext | undefined
   ): Promise<WorkingCopyContext> {
-    if (
-      context?.wcNode &&
-      context.holder &&
-      context.targetNodeId &&
-      context.targetParentNodeId
-    ) {
+    if (context?.wcNode && context.holder && context.targetNodeId && context.targetParentNodeId) {
       return context;
     }
 
@@ -355,7 +363,8 @@ export class WorkingCopyService implements WorkingCopyAPI {
       throw new Error('Working copy not found');
     }
     const holder =
-      context?.holder ?? ((await this.coreDB.nodes.get(wcNode.parentId)) as WorkingCopyHolderNode | undefined);
+      context?.holder ??
+      ((await this.coreDB.nodes.get(wcNode.parentId)) as WorkingCopyHolderNode | undefined);
     if (!holder) {
       throw new Error('Working copy holder not found');
     }
@@ -388,7 +397,7 @@ export class WorkingCopyService implements WorkingCopyAPI {
   private async buildOkResult(
     nodeId: NodeId,
     context?: WorkingCopyContext,
-    autoRenameTo?: string,
+    autoRenameTo?: string
   ): Promise<CommitResult> {
     const committed = await this.loadCommittedNode(nodeId, context);
     return {
@@ -429,7 +438,8 @@ export class WorkingCopyService implements WorkingCopyAPI {
   async cleanupOldWorkingCopies(olderThan: number): Promise<number> {
     const list = await this.listWorkingCopies();
     const toDelete = list.filter((x) => x.updatedAt < olderThan);
-    for (const wc of toDelete) await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
+    for (const wc of toDelete)
+      await discardWc(this.coreDB, [wc.parentId as NodeId, wc.id as NodeId]);
     return toDelete.length;
   }
 }

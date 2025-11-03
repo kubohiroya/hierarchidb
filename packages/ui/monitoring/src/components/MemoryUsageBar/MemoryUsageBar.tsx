@@ -232,7 +232,7 @@ export const MemoryUsageBar: React.FC<MemoryUsageBarProps> = ({
             </Typography>
           </Box>
           {memoryInfo.breakdown.slice(0, 5).map((entry, index) => (
-            <Box key={index}>
+            <Box key={entry.url ?? index}>
               <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                 • {entry.url || 'Unknown'}: {formatBytes(entry.bytes || 0)}
               </Typography>

@@ -22,7 +22,10 @@ export interface BaseMapAPI {
 
   getWorkingCopy(workingCopyId: NodeId): Promise<BaseMapWorkingCopy | undefined>;
 
-  updateWorkingCopy(workingCopyId: NodeId, updates: Partial<BaseMapEntity>): Promise<BaseMapWorkingCopy>;
+  updateWorkingCopy(
+    workingCopyId: NodeId,
+    updates: Partial<BaseMapEntity>
+  ): Promise<BaseMapWorkingCopy>;
 
   commitWorkingCopy(workingCopyId: NodeId): Promise<NodeId>;
 

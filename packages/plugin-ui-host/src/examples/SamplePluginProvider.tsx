@@ -3,28 +3,40 @@
  * Example implementation of a plugin step provider
  */
 
-import { Box, TextField, Typography } from '@mui/material';
-import { Folder as FolderIcon } from '@mui/icons-material';
 import type { PluginStepProvider, StepComponentProps } from '@hierarchidb/plugin-base';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
+import { Folder as FolderIcon } from '@mui/icons-material';
+import { Box, TextField, Typography } from '@mui/material';
 
 /**
  * Sample configuration step component
  */
-const ConfigurationStep: React.FC<StepComponentProps> = ({
-                                                           data,
-                                                           onChange,
-                                                           setValid,
-                                                         }) => {
-  const handleChange = (field: string, value: any) => {
+type SampleStepData = {
+  setting1?: string;
+  setting2?: string;
+  batchSize?: number;
+  batchRunning?: boolean;
+  saving?: boolean;
+  targetNodes?: unknown[];
+};
+
+const ConfigurationStep: React.FC<StepComponentProps<SampleStepData>> = ({
+  data,
+  onChange,
+  setValid,
+}) => {
+  const handleChange = (
+    field: keyof SampleStepData,
+    value: SampleStepData[keyof SampleStepData]
+  ) => {
     onChange({
       ...data,
       [field]: value,
     });
 
     // Simple validation
-    const isValid = value && value.toString().trim().length > 0;
-    setValid(isValid);
+    const next = typeof value === 'string' ? value : '';
+    setValid(next.trim().length > 0);
   };
 
   return (
@@ -57,7 +69,7 @@ const ConfigurationStep: React.FC<StepComponentProps> = ({
 /**
  * Sample review step component
  */
-const ReviewStep: React.FC<StepComponentProps> = ({ data }) => {
+const ReviewStep: React.FC<StepComponentProps<SampleStepData>> = ({ data }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h6">Review Configuration</Typography>
@@ -95,12 +107,9 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ConfigurationStep
             mode="create"
             data={{}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         validate: () => true,
@@ -111,7 +120,7 @@ export class SamplePluginProvider implements PluginStepProvider {
           },
           canProceedToNext: (data) => {
             // Can proceed if required fields are filled
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canBackToPrevious: (_data) => {
             // Can always go back from configuration (though it's the first step)
@@ -119,7 +128,7 @@ export class SamplePluginProvider implements PluginStepProvider {
           },
           canSave: (data) => {
             // Can save if all required fields are filled
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canStartBatch: (_data) => {
             // Batch is not available from configuration step
@@ -134,19 +143,16 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ConfigurationStep
             mode="create"
             data={{}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         optional: true,
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
             // Can navigate if configuration is complete
-            return !!(_data?.setting1 && _data?.setting1.trim());
+            return Boolean(_data?.setting1?.trim?.());
           },
           canProceedToNext: (data) => {
             // Can proceed if batch settings are valid
@@ -173,19 +179,16 @@ export class SamplePluginProvider implements PluginStepProvider {
           <ReviewStep
             mode="create"
             data={{}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         optional: true,
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
             // Can navigate to review if configuration is complete
-            return !!(_data?.setting1 && _data?.setting1.trim());
+            return Boolean(_data?.setting1?.trim?.());
           },
           canProceedToNext: () => false, // This is the last step
           canBackToPrevious: (data) => {
@@ -205,7 +208,7 @@ export class SamplePluginProvider implements PluginStepProvider {
     ];
   }
 
-  getEditSteps(nodeId: string, data?: any): DialogStep[] {
+  getEditSteps(nodeId: string, data?: SampleStepData): DialogStep[] {
     return [
       {
         id: 'configuration',
@@ -216,23 +219,20 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         validate: () => true,
         capabilities: {
           canNavigateTo: () => true,
           canProceedToNext: (data) => {
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canBackToPrevious: () => true,
           canSave: (data) => {
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canStartBatch: () => false,
         },
@@ -245,18 +245,15 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         optional: true,
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canProceedToNext: (data) => {
             return !!(data?.batchSize && data?.batchSize > 0);
@@ -265,10 +262,12 @@ export class SamplePluginProvider implements PluginStepProvider {
           canSave: () => true,
           canStartBatch: (data) => {
             // Batch update is available when batch is properly configured
-            return !!(data?.batchSize &&
+            return !!(
+              data?.batchSize &&
               data?.batchSize > 0 &&
               data?.batchSize <= 1000 &&
-              data?.targetNodes?.length > 0);
+              data?.targetNodes?.length > 0
+            );
           },
         },
       },
@@ -280,27 +279,26 @@ export class SamplePluginProvider implements PluginStepProvider {
             mode="edit"
             nodeId={nodeId}
             data={data || {}}
-            onChange={() => {
-            }}
-            setValid={() => {
-            }}
-            setError={() => {
-            }}
+            onChange={() => {}}
+            setValid={() => {}}
+            setError={() => {}}
           />
         ),
         optional: true,
         capabilities: {
           canNavigateTo: (_fromStep, _data) => {
-            return !!(data?.setting1 && data?.setting1.trim());
+            return Boolean(data?.setting1?.trim?.());
           },
           canProceedToNext: () => false,
           canBackToPrevious: () => true,
           canSave: () => true,
           canStartBatch: (data) => {
-            return !!(data?.batchSize &&
+            return !!(
+              data?.batchSize &&
               data?.batchSize > 0 &&
               data?.batchSize <= 1000 &&
-              data?.targetNodes?.length > 0);
+              data?.targetNodes?.length > 0
+            );
           },
         },
       },

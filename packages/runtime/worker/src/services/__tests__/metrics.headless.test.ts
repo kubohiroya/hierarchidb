@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
-import { CoreDB } from '../CoreDB.js';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
+import { CoreDB } from '../CoreDB.js';
 import { commandMetrics } from '../utils/metrics.js';
 
 describe('Headless metrics (command latency)', () => {
@@ -25,15 +25,15 @@ describe('Headless metrics (command latency)', () => {
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
         name: 'X',
-      }),
+      })
     );
     // Ping (registered success)
     const pingPayload: Record<string, never> = {};
     await cp.processCommand(cp.createEnvelope('ping', pingPayload));
 
     const snap = commandMetrics.snapshot();
-    expect(snap['createNode']?.count ?? 0).toBeGreaterThan(0);
-    expect(snap['ping']?.count ?? 0).toBeGreaterThan(0);
-    expect((snap['ping']?.totalMs ?? 0) >= 0).toBe(true);
+    expect(snap.createNode?.count ?? 0).toBeGreaterThan(0);
+    expect(snap.ping?.count ?? 0).toBeGreaterThan(0);
+    expect((snap.ping?.totalMs ?? 0) >= 0).toBe(true);
   });
 });

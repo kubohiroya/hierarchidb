@@ -1,14 +1,9 @@
 import { pluginRegistry } from '../plugin-registry/index.js';
 
 function titleCase(input: string): string {
-  const words = input
-    .replace(/[-_]+/g, ' ')
-    .split(' ')
-    .filter(Boolean);
+  const words = input.replace(/[-_]+/g, ' ').split(' ').filter(Boolean);
   if (words.length === 0) return input;
-  return words
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }
 
 const cache = new Map<string, string>();
@@ -24,9 +19,8 @@ export function resolveDefaultNodeName(nodeType: string): string {
 
   const normalized = key.replace(/-plugin$/i, '');
   const entry = pluginRegistry.find((item) => item.nodeType.toLowerCase() === normalized);
-  const displayName = entry?.manifest?.displayName?.trim()
-    || entry?.manifest?.name?.trim()
-    || titleCase(normalized);
+  const displayName =
+    entry?.manifest?.displayName?.trim() || entry?.manifest?.name?.trim() || titleCase(normalized);
   const value = `New ${displayName}`.trim();
   cache.set(key, value);
   return value;

@@ -4,11 +4,11 @@
  */
 
 /**
-     */
+ */
 export type BasemapCategory = 'satellite' | 'street' | 'terrain' | 'dark' | 'light' | 'custom';
 
 /**
-    */
+ */
 export interface BasemapCategoryConfig {
   value: BasemapCategory;
   label: string;
@@ -17,7 +17,7 @@ export interface BasemapCategoryConfig {
 }
 
 /**
-    */
+ */
 export const BASEMAP_CATEGORIES: BasemapCategoryConfig[] = [
   {
     value: 'satellite',

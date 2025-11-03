@@ -6,7 +6,7 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { CommandResult, NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
@@ -87,8 +87,8 @@ export interface TreeConsoleActions {
       source?: 'breadcrumb' | 'treetable' | 'speedDial';
     }
   ) => void;
-  handleUndo: () => void;
-  handleRedo: () => void;
+  handleUndo: () => Promise<void>;
+  handleRedo: () => Promise<void>;
   handleCopy: () => void;
   handleCut: () => void;
   handlePaste: () => void;
@@ -102,8 +102,8 @@ export type MaybeCP = {
   getCommandProcessor?: () => Promise<{
     canUndo?: () => boolean;
     canRedo?: () => boolean;
-    undo?: () => Promise<void>;
-    redo?: () => Promise<void>;
+    undo?: () => Promise<CommandResult | void>;
+    redo?: () => Promise<CommandResult | void>;
   }>;
 };
 

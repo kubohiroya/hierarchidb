@@ -2,8 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { AuthProvider, useAuth } from 'react-oidc-context';
 // import { devError } from "@/shared/utils/logger";
 // const devError = (msg: string, error?: any) => console.error(msg, error);
-import { AuthContextType } from '../types/AuthContextType.js';
-import { AuthUser } from '../types/AuthUser.js';
+import type { AuthContextType } from '../types/AuthContextType.js';
+import type { AuthUser } from '../types/AuthUser.js';
+
 // import { getSecureConfig } from "@/config/secureConfig";
 const getSecureConfig = () => ({
   oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY || '',
@@ -67,9 +68,7 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
   useEffect(() => {
     if (auth.error) {
       if (import.meta.env.DEV) {
-
         console.error(`OIDC Authentication error:${auth.error}`);
-
       }
       notify.error('Authentication failed. Please try again.');
     }
@@ -87,7 +86,7 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
 
       auth.signinRedirect();
     },
-    [auth],
+    [auth]
   );
 
   const signOut = useCallback(async () => {
@@ -99,9 +98,7 @@ function OIDCAuthProviderInner({ fallbackPath, children }: OIDCAuthProviderInner
       await auth.signoutRedirect();
     } catch (error) {
       if (import.meta.env.DEV) {
-
         console.error(`Logout error: ${error}`);
-
       }
       // Fallback: redirect to home page
       window.location.href = fallbackPath;
@@ -189,9 +186,7 @@ export function OIDCAuthProvider({ fallbackPath, children }: OIDCAuthProviderPro
 
   if (!secureConfig.oidcClientId) {
     if (import.meta.env.DEV) {
-
       console.error('Google Client ID is not configured');
-
     }
     // Return a placeholder theme when clientId is missing
     return (

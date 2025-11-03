@@ -9,4 +9,3 @@ export interface PeerEntity {
   data?: unknown;
   updatedAt?: number;
 }
-

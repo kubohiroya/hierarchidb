@@ -13,4 +13,3 @@ export const PERFORMANCE_CONFIG = {
   COMMAND_TIMEOUT_MS: 30_000,
   BATCH_OPERATION_SIZE: 50,
 } as const;
-

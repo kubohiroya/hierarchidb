@@ -40,6 +40,7 @@ type RuntimeWorkerServices = {
   getImportExportAPI: () => unknown;
   getTagAPI: () => unknown;
   getDialogStateAPI: () => unknown;
+  getCommandProcessor: () => unknown;
 };
 
 type RuntimeWorkerModule = {
@@ -190,6 +191,7 @@ reporter.reportStepProgress('Load Comlink', 0);
         getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI() as any),
         getTagAPI: () => Comlink.proxy(services.getTagAPI() as any),
         getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI() as any),
+        getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor() as any),
       } as const;
 
       reporter.reportStepProgress('Create API facade', 100);

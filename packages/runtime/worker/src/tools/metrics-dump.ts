@@ -6,4 +6,3 @@ if (require.main === module) {
   console.log(JSON.stringify(snap, null, 2));
   commandMetrics.reset();
 }
-

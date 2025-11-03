@@ -37,7 +37,7 @@ export function useDragDrop({
         .map((ext) => ext.trim().toLowerCase())
         .filter((ext) => ext.startsWith('.'));
 
-      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+      const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
       const isAccepted = acceptedExtensions.some((ext) => fileExtension === ext);
 
       if (!isAccepted) {

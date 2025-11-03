@@ -2,8 +2,8 @@
  * Utility functions for Worker initialization
  */
 
-import { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 import type { InitializationStep } from './types.js';
+import { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
 
 /**
  * Helper function to wrap the entire Worker initialization with reporting
@@ -11,7 +11,7 @@ import type { InitializationStep } from './types.js';
 export async function initializeWorkerWithReporting(
   initFunction: () => Promise<void>,
   steps?: InitializationStep[],
-  debug = false,
+  debug = false
 ): Promise<void> {
   const reporter = new WorkerInitializationReporter(steps || [], debug);
 
@@ -21,7 +21,6 @@ export async function initializeWorkerWithReporting(
 
     // Report completion
     reporter.reportComplete();
-
   } catch (error) {
     reporter.reportError(error as Error);
     throw error;
@@ -36,7 +35,7 @@ export async function initializeWorkerWithReporting(
  */
 export function createLazySingletonInitializer<T>(
   factory: () => Promise<T>,
-  reportProgress?: (_message: string, _progress: number) => void,
+  reportProgress?: (_message: string, _progress: number) => void
 ): () => Promise<T> {
   let instance: T | null = null;
   let initPromise: Promise<T> | null = null;
@@ -84,7 +83,7 @@ export const DEFAULT_INIT_STEPS: InitializationStep[] = [
 export function createReportingWorker(
   workerUrl: URL | string,
   options?: WorkerOptions,
-  _debug = false,
+  _debug = false
 ): Worker {
   const worker = new Worker(workerUrl, options);
 

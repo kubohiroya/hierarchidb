@@ -1,31 +1,36 @@
 // API Interfaces
-export type { TreeMutationAPI } from './TreeMutationAPI.js';
-export type { ImportExportAPI } from './ImportExportAPI.js';
+
+export * from './BatchControlAPI.js';
+export type { DialogStateAPI, DialogStateSubscriptionId } from './DialogStateAPI.js';
 export type {
-  ImportNodesParams,
   ExportNodesParams,
-  ImportData,
-  ImportResult,
+  ExportProgress,
   ExportResult,
+  ImportData,
+  ImportExportAPI,
+  ImportNodesParams,
+  ImportProgress,
+  ImportResult,
+  OperationStatus,
   ValidateImportParams,
   ValidationWarning,
-  ImportProgress,
-  ExportProgress,
-  OperationStatus,
 } from './ImportExportAPI.js';
-export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-export type { TreeQueryAPI, ListChildrenOptions, ListChildrenPrefetchOptions } from './TreeQueryAPI.js';
-export type { WorkingCopyAPI, CommitWorkingCopyOptions } from './WorkingCopyAPI.js';
-export type { DialogStateAPI, DialogStateSubscriptionId } from './DialogStateAPI.js';
-export type { WorkerAPI } from './WorkerAPI.js';
-
+// Multi-Step Dialog API
+export type {
+  MultiStepDialogAPI,
+  StepCapabilities,
+  WorkingCopyData,
+} from './MultiStepDialogAPI.js';
 // New exports
 // Runtime wiring interfaces for plugin bootstrap (optional capabilities)
 export type { PluginRuntimeWiring } from './RuntimeWiring.js';
-
 export * from './TagAPI.js';
-
-// Multi-Step Dialog API
-export type { MultiStepDialogAPI, WorkingCopyData, StepCapabilities } from './MultiStepDialogAPI.js';
-
-export * from './BatchControlAPI.js';
+export type { TreeMutationAPI } from './TreeMutationAPI.js';
+export type {
+  ListChildrenOptions,
+  ListChildrenPrefetchOptions,
+  TreeQueryAPI,
+} from './TreeQueryAPI.js';
+export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
+export type { WorkerAPI } from './WorkerAPI.js';
+export type { CommitWorkingCopyOptions, WorkingCopyAPI } from './WorkingCopyAPI.js';

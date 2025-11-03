@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandResult, NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../CoreDB.js';
 
 const FOLDER_TYPE = 'folder' as NodeType;
@@ -17,7 +17,12 @@ interface CoreStub {
   bulkDeleteNodes?: (ids: NodeId[]) => Promise<void>;
 }
 
-function makeNode(id: string, parentId: string, name: string, nodeType: NodeType = FOLDER_TYPE): TreeNode {
+function makeNode(
+  id: string,
+  parentId: string,
+  name: string,
+  nodeType: NodeType = FOLDER_TYPE
+): TreeNode {
   const timestamp = Date.now();
   return {
     id: id as NodeId,
@@ -61,7 +66,9 @@ describe('CommandProcessor bulk operations', () => {
         return Array.from(state.values());
       },
       bulkUpdateNodes: vi.fn(async (nodes) => {
-        nodes.forEach((node) => state.set(node.id, { ...node }));
+        for (const node of nodes) {
+          state.set(node.id, { ...node });
+        }
       }),
     };
 
@@ -103,7 +110,9 @@ describe('CommandProcessor bulk operations', () => {
         return Array.from(state.values());
       },
       bulkDeleteNodes: vi.fn(async (ids) => {
-        ids.forEach((id) => state.delete(id));
+        for (const id of ids) {
+          state.delete(id);
+        }
       }),
     };
 
@@ -162,10 +171,14 @@ describe('CommandProcessor bulk operations', () => {
         return Array.from(state.values());
       },
       bulkUpdateNodes: vi.fn(async (nodes) => {
-        nodes.forEach((node) => state.set(node.id, { ...node }));
+        for (const node of nodes) {
+          state.set(node.id, { ...node });
+        }
       }),
       bulkDeleteNodes: vi.fn(async (ids) => {
-        ids.forEach((id) => state.delete(id));
+        for (const id of ids) {
+          state.delete(id);
+        }
       }),
     };
 
@@ -228,7 +241,9 @@ describe('CommandProcessor bulk operations', () => {
         return Array.from(state.values()).filter((node) => node.parentId === parent);
       },
       bulkUpdateNodes: vi.fn(async (nodes) => {
-        nodes.forEach((node) => state.set(node.id, { ...node }));
+        for (const node of nodes) {
+          state.set(node.id, { ...node });
+        }
       }),
     };
 
@@ -243,10 +258,9 @@ describe('CommandProcessor bulk operations', () => {
     expect(result.success).toBe(true);
     expect(core.bulkUpdateNodes).toHaveBeenCalledTimes(1);
 
-    const restoredNames = [
-      state.get('t1' as NodeId)?.name,
-      state.get('t2' as NodeId)?.name,
-    ].filter((name): name is string => typeof name === 'string');
+    const restoredNames = [state.get('t1' as NodeId)?.name, state.get('t2' as NodeId)?.name].filter(
+      (name): name is string => typeof name === 'string'
+    );
 
     expect(restoredNames).toHaveLength(2);
     expect(new Set(restoredNames).size).toBe(2);
@@ -288,7 +302,9 @@ describe('CommandProcessor bulk operations', () => {
         return Array.from(state.values()).filter((node) => node.parentId === parent);
       },
       bulkUpdateNodes: vi.fn(async (nodes) => {
-        nodes.forEach((node) => state.set(node.id, { ...node }));
+        for (const node of nodes) {
+          state.set(node.id, { ...node });
+        }
       }),
     };
 

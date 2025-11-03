@@ -63,4 +63,7 @@ export const PLUGIN_INFO = BaseMapPluginManifest;
 export class RuntimeWiring {}
 
 // Folder dialog extension initializer (optional)
-export { initializeBaseMapDialogExtension, baseMapDialogExtension } from './common/extensions/BaseMapDialogExtension.js';
+export {
+  baseMapDialogExtension,
+  initializeBaseMapDialogExtension,
+} from './common/extensions/BaseMapDialogExtension.js';

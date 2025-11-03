@@ -2,10 +2,19 @@
  * Styler extension step component for folder-plugin base-dialog
  */
 
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Slider,
+  TextField,
+  Typography,
+} from '@mui/material';
 import type React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, FormControl, InputLabel, MenuItem, Select, Slider, TextField, Typography } from '@mui/material';
 
 export interface StylerStepData {
   styleType?: 'choropleth' | 'heatmap' | 'points' | 'lines';
@@ -23,38 +32,38 @@ interface StylerExtensionStepProps {
 }
 
 export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
-                                                                          data,
-                                                                          onChange,
-                                                                          errors,
-                                                                          isSubmitting,
-                                                                        }) => {
+  data,
+  onChange,
+  errors,
+  isSubmitting,
+}) => {
   const { t } = useTranslation('styler-plugin');
   const handleStyleTypeChange = useCallback(
     (event: any) => {
       onChange({ ...data, styleType: event.target.value });
     },
-    [data, onChange],
+    [data, onChange]
   );
 
   const handleDataSourceChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange({ ...data, dataSource: event.target.value });
     },
-    [data, onChange],
+    [data, onChange]
   );
 
   const handleColorSchemeChange = useCallback(
     (event: any) => {
       onChange({ ...data, colorScheme: event.target.value });
     },
-    [data, onChange],
+    [data, onChange]
   );
 
   const handleOpacityChange = useCallback(
     (_event: any, value: number | number[]) => {
       onChange({ ...data, opacity: value as number });
     },
-    [data, onChange],
+    [data, onChange]
   );
 
   return (

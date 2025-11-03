@@ -4,30 +4,15 @@
  * Worker initialization notification system for reliable Worker-UI communication
  */
 
-// Core types
-export * from './types.js';
-
-// UI-side channel
-export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
-
-// Worker-side reporter
-export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
-
-// React components
-export { WorkerSingletonProvider, useWorker } from './provider/WorkerSingletonProvider.js';
-
-// UI: App-provided Worker client hook registration (shared for plugin-loader)
-export { registerWorkerClientHook, getWorkerClientHook } from './ui/workerClientHook.js';
-export type { WorkerClientHook, WorkerClientRef } from './ui/workerClientHook.js';
-
-// Wiring utilities (plugin capability bootstrap)
-export { wirePluginsFromModules } from './wiring/wirePlugins.js';
-export { getRuntimeExports, getAllRuntimeExports, registerRuntimeExports } from './wiring/runtime-export-registry.js';
-
-// Event bridging helpers (UI ↔ runtime worker ↔ stage worker)
-export {
-  createComlinkEventBridge,
-} from './events/comlinkEventBridge.js';
+export type {
+  ComlinkCommandBridge,
+  CommandInvoker,
+  CommandMap,
+  CommandTransformerOptions,
+  RemoteCommandInvoker,
+} from './events/comlinkCommandBridge.js';
+// Command bridging helpers (UI ↔ runtime ↔ stage workers)
+export { createComlinkCommandBridge } from './events/comlinkCommandBridge.js';
 export type {
   ComlinkEventBridge,
   ComlinkEventBridgeOptions,
@@ -37,27 +22,33 @@ export type {
   PhaseEventMap,
   RemoteEventListener,
 } from './events/comlinkEventBridge.js';
-
-// Command bridging helpers (UI ↔ runtime ↔ stage workers)
-export {
-  createComlinkCommandBridge,
-} from './events/comlinkCommandBridge.js';
-export type {
-  ComlinkCommandBridge,
-  CommandInvoker,
-  CommandMap,
-  CommandTransformerOptions,
-  RemoteCommandInvoker,
-} from './events/comlinkCommandBridge.js';
-
-
+// Event bridging helpers (UI ↔ runtime worker ↔ stage worker)
+export { createComlinkEventBridge } from './events/comlinkEventBridge.js';
+// React components
+export { useWorker, WorkerSingletonProvider } from './provider/WorkerSingletonProvider.js';
 // Re-export types for convenience
 export type {
+  InitializationResult,
+  InitializationStep,
+  WorkerInitConfig,
+  WorkerInitMessage,
   WorkerInitMessageType,
   WorkerInitRequest,
-  WorkerInitMessage,
-  WorkerInitConfig,
-  InitializationStep,
   WorkerInitState,
-  InitializationResult,
 } from './types.js';
+// Core types
+export * from './types.js';
+export type { WorkerClientHook, WorkerClientRef } from './ui/workerClientHook.js';
+// UI: App-provided Worker client hook registration (shared for plugin-loader)
+export { getWorkerClientHook, registerWorkerClientHook } from './ui/workerClientHook.js';
+// UI-side channel
+export { WorkerInitializationChannel } from './WorkerInitializationChannel.js';
+// Worker-side reporter
+export { WorkerInitializationReporter } from './WorkerInitializationReporter.js';
+export {
+  getAllRuntimeExports,
+  getRuntimeExports,
+  registerRuntimeExports,
+} from './wiring/runtime-export-registry.js';
+// Wiring utilities (plugin capability bootstrap)
+export { wirePluginsFromModules } from './wiring/wirePlugins.js';

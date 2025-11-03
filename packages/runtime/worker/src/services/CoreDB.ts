@@ -1,3 +1,4 @@
+import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import type {
   NodeId,
   NodeTagAssociation,
@@ -9,10 +10,9 @@ import type {
   TreeNode,
   TreeRootState,
 } from '@hierarchidb/common-types';
-import type { ListChildrenOptions } from '@hierarchidb/common-api';
 import { getDBName, SingletonMixin } from '@hierarchidb/util';
-import { Dexie, type Table } from 'dexie';
 import type { BulkError } from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
 
 export class CoreDB extends Dexie {
@@ -33,7 +33,7 @@ export class CoreDB extends Dexie {
   async runInTx<T>(
     mode: 'r' | 'rw',
     tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
-    fn: () => Promise<T>,
+    fn: () => Promise<T>
   ): Promise<T> {
     const tableMap = {
       trees: this.trees,
@@ -94,7 +94,7 @@ export class CoreDB extends Dexie {
       const rootStatesCount = await this.rootStates.count();
 
       // If database is partially initialized, clear it and start fresh
-      if (treesCount != 2 || rootStatesCount != 6) {
+      if (treesCount !== 2 || rootStatesCount !== 6) {
         console.warn('Database is in an inconsistent state. Clearing and reinitializing...');
         await this.trees.clear();
         await this.nodes.clear();
@@ -116,7 +116,7 @@ export class CoreDB extends Dexie {
             rootId: getRootNodeId(treeId, 'root'),
             trashRootId: getRootNodeId(treeId, 'trash'),
             workingCopyRootId: getRootNodeId(treeId, 'workingCopy'),
-          })),
+          }))
         );
       }
       if (nodesCount === 0) {
@@ -152,7 +152,7 @@ export class CoreDB extends Dexie {
               updatedAt: now,
               version: 1,
             },
-          ]) satisfies TreeNode[],
+          ]) satisfies TreeNode[]
         );
       }
 
@@ -162,7 +162,7 @@ export class CoreDB extends Dexie {
             treeId: treeId as TreeId,
             rootNodeId: getRootNodeId(treeId, treeRootNodeType),
             expanded: {},
-          })),
+          }))
         );
 
         try {
@@ -182,28 +182,21 @@ export class CoreDB extends Dexie {
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    
-    try {
-      const tree = await this.trees.get(treeId);
-      
+    const tree = await this.trees.get(treeId);
 
-      // Ensure we return a plain object that can be serialized by Comlink
-      if (tree) {
-        const plainTree: Tree = {
-          id: tree.id,
-          name: tree.name,
-          rootId: tree.rootId,
-          trashRootId: tree.trashRootId,
-          superRootId: tree.superRootId,
-        };
-        return plainTree;
-      }
-
+    if (!tree) {
       return undefined;
-    } catch (error) {
-      
-      throw error;
     }
+
+    // Ensure we return a plain object that can be serialized by Comlink
+    const plainTree: Tree = {
+      id: tree.id,
+      name: tree.name,
+      rootId: tree.rootId,
+      trashRootId: tree.trashRootId,
+      superRootId: tree.superRootId,
+    };
+    return plainTree;
   }
 
   async listTrees(): Promise<Tree[]> {
@@ -217,7 +210,7 @@ export class CoreDB extends Dexie {
         rootId: tree.rootId,
         trashRootId: tree.trashRootId,
         superRootId: tree.superRootId,
-      }),
+      })
     );
   }
 
@@ -243,18 +236,24 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
-        ...('holderType' in node && node.holderType !== undefined ? { holderType: node.holderType } : {}),
+        ...('holderType' in node && node.holderType !== undefined
+          ? { holderType: node.holderType }
+          : {}),
         ...('holderTargetId' in node && node.holderTargetId !== undefined
           ? { holderTargetId: node.holderTargetId }
           : {}),
         ...('holderMetaParentId' in node && node.holderMetaParentId !== undefined
           ? { holderMetaParentId: node.holderMetaParentId }
           : {}),
-        ...('originalName' in node && node.originalName !== undefined ? { originalName: node.originalName } : {}),
+        ...('originalName' in node && node.originalName !== undefined
+          ? { originalName: node.originalName }
+          : {}),
         ...('originalParentId' in node && node.originalParentId !== undefined
           ? { originalParentId: node.originalParentId }
           : {}),
-        ...('removedAt' in node && node.removedAt !== undefined ? { removedAt: node.removedAt } : {}),
+        ...('removedAt' in node && node.removedAt !== undefined
+          ? { removedAt: node.removedAt }
+          : {}),
       };
       return plainNode;
     }
@@ -371,10 +370,17 @@ export class CoreDB extends Dexie {
 
     const result = [...directChildren];
     const visited = new Set<string>(directChildren.map((node) => String(node.id)));
-    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({ node, depth: 1 }));
+    const queue: Array<{ node: TreeNode; depth: number }> = directChildren.map((node) => ({
+      node,
+      depth: 1,
+    }));
 
     while (queue.length > 0) {
-      const { node, depth: currentDepth } = queue.shift()!;
+      const next = queue.shift();
+      if (!next) {
+        continue;
+      }
+      const { node, depth: currentDepth } = next;
       if (currentDepth >= depth) {
         continue;
       }
@@ -398,7 +404,9 @@ export class CoreDB extends Dexie {
       parentId: String(parentId),
       requestedDepth: depth,
       total: result.length,
-      sample: result.slice(0, 10).map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
+      sample: result
+        .slice(0, 10)
+        .map((node) => ({ id: node.id, parentId: node.parentId, depth: node.depth })),
     });
     return result;
   }
@@ -414,7 +422,11 @@ export class CoreDB extends Dexie {
     const seen = new Set<NodeId>();
 
     while (stack.length) {
-      const { id, depth } = stack.pop()!;
+      const next = stack.pop();
+      if (!next) {
+        continue;
+      }
+      const { id, depth } = next;
       if (maxDepth !== undefined && depth >= maxDepth) continue;
       if (seen.has(id)) continue;
       seen.add(id);
@@ -442,7 +454,10 @@ export class CoreDB extends Dexie {
       const stack: Array<NodeId> = [rootId];
       const seen = new Set<NodeId>();
       while (stack.length) {
-        const pid = stack.pop()!;
+        const pid = stack.pop();
+        if (!pid) {
+          continue;
+        }
         if (seen.has(pid)) continue;
         seen.add(pid);
         const children = await this.nodes.where('parentId').equals(pid).toArray();
@@ -472,15 +487,15 @@ export class CoreDB extends Dexie {
   }
 
   /**
-      * Subject
-      */
+   * Subject
+   */
   close(): void {
     this.changeSubject.complete();
     super.close();
   }
 
   /**
-            */
+   */
   async bulkCreateNodes(nodes: TreeNode[]): Promise<void> {
     await this.nodes.bulkAdd(nodes);
 
@@ -626,7 +641,7 @@ export class CoreDB extends Dexie {
         updatedAt: node.updatedAt,
         version: node.version,
         ...(node.references && { references: node.references }),
-      }),
+      })
     );
   }
 
@@ -673,7 +688,10 @@ export class CoreDB extends Dexie {
       const processed = new Set<NodeId>();
 
       while (queue.length > 0) {
-        const node = queue.shift()!;
+        const node = queue.shift();
+        if (!node) {
+          continue;
+        }
 
         if (processed.has(node.id)) {
           continue;
@@ -716,7 +734,7 @@ export class CoreDB extends Dexie {
   async duplicateNode(
     sourceNodeId: NodeId,
     targetParentId: NodeId,
-    newNodeId?: NodeId,
+    newNodeId?: NodeId
   ): Promise<NodeId> {
     const sourceNode = await this.nodes.get(sourceNodeId);
     if (!sourceNode) {
@@ -733,7 +751,8 @@ export class CoreDB extends Dexie {
       ...sourceNode,
       id: duplicatedNodeId,
       parentId: targetParentId,
-      depth: targetParent.depth + 1, name: sourceNode.name + ' (Copy)',
+      depth: targetParent.depth + 1,
+      name: `${sourceNode.name} (Copy)`,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
@@ -752,12 +771,12 @@ export class CoreDB extends Dexie {
   }
 
   /**
-      * Duplicate a subtree and return the full oldnew id mapping as well as the new root id.
-      */
+   * Duplicate a subtree and return the full oldnew id mapping as well as the new root id.
+   */
   async duplicateSubtreeWithMap(
     sourceRootId: NodeId,
     targetParentId: NodeId,
-    options?: { rootNameOverride?: string },
+    options?: { rootNameOverride?: string }
   ): Promise<{ newRootId: NodeId; idMap: Map<NodeId, NodeId> }> {
     const sourceRoot = await this.nodes.get(sourceRootId);
     if (!sourceRoot) {
@@ -799,7 +818,10 @@ export class CoreDB extends Dexie {
     // Create duplicated nodes with correct depths
     const duplicatedNodes: TreeNode[] = [];
     for (const originalNode of subtreeNodes) {
-      const newNodeId = idMapping.get(originalNode.id)!;
+      const newNodeId = idMapping.get(originalNode.id);
+      if (!newNodeId) {
+        continue;
+      }
       let newParentId: NodeId;
       let newDepth: number;
 
@@ -809,7 +831,11 @@ export class CoreDB extends Dexie {
         newDepth = targetParent.depth + 1;
       } else {
         // Child nodes
-        newParentId = idMapping.get(originalNode.parentId)!;
+        const mappedParentId = idMapping.get(originalNode.parentId);
+        if (!mappedParentId) {
+          continue;
+        }
+        newParentId = mappedParentId;
         const newParent = duplicatedNodes.find((n) => n.id === newParentId);
         newDepth = newParent ? newParent.depth + 1 : 0;
       }
@@ -871,7 +897,7 @@ export class CoreDB extends Dexie {
       if (children.length > 0) {
         await this.pasteNodes(
           children.map((c) => c.id),
-          newNodeId,
+          newNodeId
         );
       }
     }
@@ -996,7 +1022,7 @@ export class CoreDB extends Dexie {
    */
   async getTagAssociation(
     nodeId: NodeId,
-    tagId: TagEntity['id'],
+    tagId: TagEntity['id']
   ): Promise<NodeTagAssociation | undefined> {
     return await this.tagAssociations.get([nodeId, tagId]);
   }

@@ -11,7 +11,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 interface WorkerState {
-  client: any; // Generic worker client type
+  client: unknown | null; // Generic worker client type
   isReady: boolean;
   error: Error | null;
   progress: number;
@@ -22,19 +22,19 @@ interface WorkerProviderProps {
   children: React.ReactNode;
   loadingComponent?: React.ReactNode;
   errorComponent?: React.ComponentType<{ error: Error }>;
-  getWorkerClient: () => Promise<any>;
+  getWorkerClient: () => Promise<unknown>;
   getRawWorker: () => Worker | null;
 }
 
 const WorkerContext = createContext<WorkerState | null>(null);
 
 export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
-                                                                         children,
-                                                                         loadingComponent,
-                                                                         errorComponent: ErrorComponent,
-                                                                         getWorkerClient,
-                                                                         getRawWorker,
-                                                                       }) => {
+  children,
+  loadingComponent,
+  errorComponent: ErrorComponent,
+  getWorkerClient,
+  getRawWorker,
+}) => {
   const [state, setState] = useState<WorkerState>({
     client: null,
     isReady: false,
@@ -71,11 +71,12 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
           });
 
           if (!initResult.success) {
-            const errorMessage = typeof initResult.error === 'string'
-              ? initResult.error
-              : initResult.error instanceof Error
-                ? initResult.error.message
-                : 'Worker initialization failed';
+            const errorMessage =
+              typeof initResult.error === 'string'
+                ? initResult.error
+                : initResult.error instanceof Error
+                  ? initResult.error.message
+                  : 'Worker initialization failed';
             throw new Error(errorMessage);
           }
 
@@ -98,7 +99,6 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
           return;
         } catch (error) {
           retryCount++;
-          
 
           if (retryCount >= maxRetries) {
             if (mounted) {
@@ -113,7 +113,7 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
             return;
           }
 
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
         }
       }
     };
@@ -139,11 +139,7 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
   }
 
   // Worker is ready
-  return (
-    <WorkerContext.Provider value={state}>
-      {children}
-    </WorkerContext.Provider>
-  );
+  return <WorkerContext.Provider value={state}>{children}</WorkerContext.Provider>;
 };
 
 export const useWorker = () => {

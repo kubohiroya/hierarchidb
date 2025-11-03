@@ -22,6 +22,19 @@ class InMemoryImportExportPort implements ImportExportDBPort {
     } as TreeNode);
   }
 
+  seedNode(node: TreeNode): void {
+    this.nodes.set(node.id, { ...node });
+    if (node.parentId) {
+      const parent = this.nodes.get(node.parentId);
+      if (parent) {
+        parent.hasChildren = true;
+        parent.updatedAt = Date.now();
+        parent.version = (parent.version || 0) + 1;
+        this.nodes.set(parent.id, parent);
+      }
+    }
+  }
+
   async bulkCreateNodes(nodes: TreeNode[]): Promise<void> {
     for (const node of nodes) {
       const copy = { ...node } as TreeNode;
@@ -112,5 +125,46 @@ describe('Import Template - depth assignment', () => {
     expect(rootNode?.hasChildren).toBe(true);
     const folderNode = byName.get('Total Population by Country');
     expect(folderNode?.hasChildren).toBe(true);
+  });
+});
+
+describe('Import Template - name conflicts', () => {
+  it('auto-renames nodes when conflictResolution is rename', async () => {
+    const port = new InMemoryImportExportPort('root' as NodeId, 0);
+    port.seedNode({
+      id: 'existing' as NodeId,
+      parentId: 'root' as NodeId,
+      nodeType: 'folder' as NodeType,
+      name: 'Report',
+      description: '',
+      depth: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      version: 1,
+    } as TreeNode);
+
+    const importData: ImportData = {
+      nodes: [
+        { name: 'Report', nodeType: 'folder' },
+        { name: 'Report', nodeType: 'folder' },
+      ],
+    };
+
+    const { ImportExportService } = await import('../ImportExportService.js');
+    const svc = await ImportExportService.getSingleton(port as unknown as ImportExportDBPort);
+
+    const result = await svc.importNodes({
+      treeId: 'r' as TreeId,
+      targetParentId: 'root' as NodeId,
+      data: importData,
+      format: 'json',
+      conflictResolution: 'rename',
+    });
+
+    expect(result.success).toBe(true);
+    const createdNames = port.createdNodes.map((node) => node.name);
+    expect(createdNames).toContain('Report (2)');
+    expect(createdNames).toContain('Report (3)');
+    expect(new Set(createdNames).size).toBe(createdNames.length);
   });
 });

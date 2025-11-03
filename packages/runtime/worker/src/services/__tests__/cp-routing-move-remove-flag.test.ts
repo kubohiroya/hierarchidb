@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
-import type { CoreDB } from '../CoreDB.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../CommandProcessor.js';
+import type { CoreDB } from '../CoreDB.js';
 
 const asNodeId = (value: string): NodeId => value as NodeId;
 const asNodeType = (value: string): NodeType => value as NodeType;
@@ -21,14 +21,16 @@ const createNode = (id: string, parentId: string, depth: number): TreeNode => {
   } satisfies TreeNode;
 };
 
-const clone = (node: TreeNode | undefined): TreeNode | undefined => (node ? ({ ...node } satisfies TreeNode) : undefined);
+const cloneNode = (node: TreeNode): TreeNode => ({ ...node }) satisfies TreeNode;
+const cloneOptional = (node: TreeNode | undefined): TreeNode | undefined =>
+  node ? cloneNode(node) : undefined;
 
 const createCoreMock = (nodes: Map<NodeId, TreeNode>) => {
-  const getNode = vi.fn(async (id: NodeId) => clone(nodes.get(id)));
+  const getNode = vi.fn(async (id: NodeId) => cloneOptional(nodes.get(id)));
   const listChildren = vi.fn(async (parentId: NodeId) =>
     Array.from(nodes.values())
       .filter((node) => node.parentId === parentId)
-      .map((node) => clone(node)!),
+      .map((node) => cloneNode(node))
   );
   const updateNode = vi.fn(async (node: TreeNode) => {
     const existing = nodes.get(node.id);
@@ -44,7 +46,9 @@ const createCoreMock = (nodes: Map<NodeId, TreeNode>) => {
     nodes.delete(id);
   });
   const bulkDeleteNodes = vi.fn(async (ids: NodeId[]) => {
-    ids.forEach((id) => nodes.delete(id));
+    for (const id of ids) {
+      nodes.delete(id);
+    }
   });
   const listDescendants = vi.fn(async () => [] as TreeNode[]);
   return {
@@ -78,7 +82,10 @@ describe('TreeMutationService command processor routing', () => {
     const processor = createProcessorMock();
 
     const { TreeMutationService } = await import('../TreeMutationService.js');
-    const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
+    const svc = new TreeMutationService(
+      core as unknown as CoreDB,
+      processor as unknown as CommandProcessor
+    );
 
     const outcome = await svc.moveNodes({
       nodeIds: [asNodeId('child-1')],
@@ -100,7 +107,10 @@ describe('TreeMutationService command processor routing', () => {
     const processor = createProcessorMock();
 
     const { TreeMutationService } = await import('../TreeMutationService.js');
-    const svc = new TreeMutationService(core as unknown as CoreDB, processor as unknown as CommandProcessor);
+    const svc = new TreeMutationService(
+      core as unknown as CoreDB,
+      processor as unknown as CommandProcessor
+    );
 
     const result = await svc.removeNodes([asNodeId('child-1')]);
 

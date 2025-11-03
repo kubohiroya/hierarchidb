@@ -1,10 +1,9 @@
+import type { NodeId, NodeTagAssociation, TagEntity, TagId } from '@hierarchidb/common-types';
 import type { TagDBPort } from '@hierarchidb/tag';
 import type { CoreDB } from '../CoreDB.js';
-import type { TagId, NodeId, NodeTagAssociation, TagEntity } from '@hierarchidb/common-types';
 
 export class TagDBPortCoreDBAdapter implements TagDBPort {
-  constructor(private coreDB: CoreDB) {
-  }
+  constructor(private coreDB: CoreDB) {}
 
   createTag(tag: TagEntity): Promise<void> {
     return this.coreDB.createTag(tag);

@@ -1,9 +1,9 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import type { MultiStepDialogState } from '@hierarchidb/common-types';
 import { toNodeId } from '@hierarchidb/common-types';
-import { DialogStateService } from '../DialogStateService.js';
-import { storeRegistry } from '../../entity/store-registry.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PeerEntity, PeerStore } from '../../entity/store.js';
+import { storeRegistry } from '../../entity/store-registry.js';
+import { DialogStateService } from '../DialogStateService.js';
 
 class InMemoryPeerStore implements PeerStore {
   private entities = new Map<string, PeerEntity>();
@@ -38,9 +38,7 @@ describe('DialogStateService', () => {
     const snapshot: MultiStepDialogState = {
       nodeId: toNodeId('node-1'),
       activeStepIndex: 0,
-      steps: [
-        { id: 'basic', title: 'Basic', enabled: true, completed: false, error: null },
-      ],
+      steps: [{ id: 'basic', title: 'Basic', enabled: true, completed: false, error: null }],
       canProceedNext: true,
       canGoBack: false,
       canSave: false,
@@ -50,7 +48,11 @@ describe('DialogStateService', () => {
       metadata: { title: 'Create Folder', subtitle: 'Draft', committableStepIndices: [0] },
     };
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-1'), state: snapshot });
+    await service.publishState({
+      nodeType: TEST_NODE_TYPE,
+      nodeId: toNodeId('node-1'),
+      state: snapshot,
+    });
 
     const stored = await service.getState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-1') });
     expect(stored).toMatchObject({ ...snapshot, updatedAt: expect.any(Number) });
@@ -61,7 +63,7 @@ describe('DialogStateService', () => {
 
     const subscriptionId = await service.subscribeState(
       { nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2') },
-      callback,
+      callback
     );
 
     expect(subscriptionId).toBeDefined();
@@ -85,16 +87,26 @@ describe('DialogStateService', () => {
       metadata: { title: 'Create', subtitle: 'Details', committableStepIndices: [1] },
     };
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2'), state: nextState });
-    expect(callback).toHaveBeenCalledTimes(2);
-    expect(callback).toHaveBeenLastCalledWith(expect.objectContaining({
+    await service.publishState({
+      nodeType: TEST_NODE_TYPE,
       nodeId: toNodeId('node-2'),
-      activeStepIndex: 1,
-    }));
+      state: nextState,
+    });
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        nodeId: toNodeId('node-2'),
+        activeStepIndex: 1,
+      })
+    );
 
     await service.unsubscribeState(subscriptionId);
 
-    await service.publishState({ nodeType: TEST_NODE_TYPE, nodeId: toNodeId('node-2'), state: null });
+    await service.publishState({
+      nodeType: TEST_NODE_TYPE,
+      nodeId: toNodeId('node-2'),
+      state: null,
+    });
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
@@ -102,12 +114,16 @@ describe('DialogStateService', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(
-      service.publishState({ nodeType: 'unknown-node-type', nodeId: toNodeId('missing'), state: null }),
+      service.publishState({
+        nodeType: 'unknown-node-type',
+        nodeId: toNodeId('missing'),
+        state: null,
+      })
     ).resolves.toBeUndefined();
 
     expect(warnSpy).toHaveBeenCalledWith(
       '[DialogStateService] no peer store registered for nodeType',
-      'unknown-node-type',
+      'unknown-node-type'
     );
   });
 });

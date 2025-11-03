@@ -2,13 +2,14 @@
  * @file UserAvatarMenu.test.tsx
  * @description Test suite for UserAvatarMenu component with authentication integration
  */
-import "@testing-library/jest-dom/vitest";
+import '@testing-library/jest-dom/vitest';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu.js';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import type { AuthContextProps } from 'react-oidc-context';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { UserAvatarMenu, UserProfile } from '../UserAvatarMenu.js';
 
 // Mock dependencies
 vi.mock('../utils/logger', () => ({
@@ -17,7 +18,17 @@ vi.mock('../utils/logger', () => ({
 
 // Mock external components that are not implemented yet
 vi.mock('../UserAvatar', () => ({
-  UserAvatar: ({ pictureUrl, email, name, size }: any) => (
+  UserAvatar: ({
+    pictureUrl,
+    email,
+    name,
+    size,
+  }: {
+    pictureUrl?: string;
+    email?: string;
+    name?: string;
+    size?: number;
+  }) => (
     <div
       data-testid="user-avatar"
       data-picture-url={pictureUrl}
@@ -30,25 +41,43 @@ vi.mock('../UserAvatar', () => ({
   ),
 }));
 
+type MockDropdownItem = {
+  id: string;
+  icon?: ReactNode;
+  label?: string;
+  name?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+};
+
 vi.mock('@hierarchidb/ui-core', () => ({
-  DropdownMenu: ({ children, id, items }: any) => (
+  DropdownMenu: ({
+    children,
+    id,
+    items,
+  }: {
+    children?: ReactNode;
+    id?: string;
+    items?: Array<MockDropdownItem | null>;
+  }) => (
     <div data-testid="dropdown-menu" data-id={id}>
       {children}
       <div data-testid="dropdown-items">
-        {items?.map((item: any, index: number) =>
-          item ? (
+        {items?.map((item, index) =>
+          item && item.kind === 'item' ? (
             <button
-              key={index}
+              key={item.id ?? `item-${index}`}
               data-testid={`dropdown-item-${index}`}
               onClick={item.onClick}
               style={{ color: item.color === 'error' ? 'red' : 'inherit' }}
+              type="button"
             >
               {item.icon}
               {item.label || item.name}
             </button>
           ) : (
-            <hr key={index} data-testid={`dropdown-separator-${index}`} />
-          ),
+            <hr key={item?.id ?? `divider-${index}`} data-testid={`dropdown-separator-${index}`} />
+          )
         )}
       </div>
     </div>
@@ -57,7 +86,7 @@ vi.mock('@hierarchidb/ui-core', () => ({
 
 // Mock provider-oidc-context
 vi.mock('provider-oidc-context', () => ({
-  withAuth: (component: any) => component,
+  withAuth: <T,>(component: T) => component,
 }));
 
 const mockUseAuth = {
@@ -70,12 +99,16 @@ vi.mock('../hooks/useAuth', () => ({
 }));
 
 // Mock browser APIs
-const mockCaches = {
+const mockCaches: Pick<CacheStorage, 'keys' | 'delete'> = {
   keys: vi.fn(),
   delete: vi.fn(),
 };
 
-const mockIndexedDB = {
+type IndexedDBDatabases = Array<{ name?: string | null; version?: number }>;
+
+const mockIndexedDB: Pick<IDBFactory, 'deleteDatabase'> & {
+  databases: () => Promise<IndexedDBDatabases>;
+} = {
   databases: vi.fn(),
   deleteDatabase: vi.fn(),
 };
@@ -123,8 +156,8 @@ describe('UserProfile', () => {
     revokeTokens: vi.fn(),
     startSilentRenew: vi.fn(),
     stopSilentRenew: vi.fn(),
-    events: {} as any,
-    settings: {} as any,
+    events: {} as Record<string, unknown>,
+    settings: {} as Record<string, unknown>,
     signinResourceOwnerCredentials: vi.fn(),
   };
 
@@ -144,8 +177,8 @@ describe('UserProfile', () => {
     // Mock browser APIs
     Object.assign(globalThis.window, {
       ...originalWindow,
-      caches: mockCaches as any,
-      indexedDB: mockIndexedDB as any,
+      caches: mockCaches as unknown as CacheStorage,
+      indexedDB: mockIndexedDB as unknown as IDBFactory,
       location: {
         ...originalWindow.location,
         reload: vi.fn(),
@@ -287,8 +320,8 @@ describe('UserProfile', () => {
 
     it('should clear all cache types when confirmed', async () => {
       const mockDeleteRequest = {
-        onsuccess: null as any,
-        onerror: null as any,
+        onsuccess: null as ((this: IDBOpenDBRequest, ev: Event) => void) | null,
+        onerror: null as ((this: IDBOpenDBRequest, ev: Event) => void) | null,
       };
       mockIndexedDB.deleteDatabase.mockReturnValue(mockDeleteRequest);
 
@@ -341,7 +374,7 @@ describe('UserProfile', () => {
       await waitFor(() => {
         expect(devError).toHaveBeenCalledWith('Failed to clear cache:', expect.any(Error));
         expect(globalThis.window.alert).toHaveBeenCalledWith(
-          'Failed to clear some cache data. Please try again.',
+          'Failed to clear some cache data. Please try again.'
         );
       });
     });

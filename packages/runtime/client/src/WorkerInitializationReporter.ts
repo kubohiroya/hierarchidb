@@ -48,7 +48,7 @@ export class WorkerInitializationReporter {
    * Report progress for a specific initialization step
    */
   public reportStepProgress(stepName: string, stepProgress: number = 100): void {
-    const stepIndex = this.initSteps.findIndex(s => s.name === stepName);
+    const stepIndex = this.initSteps.findIndex((s) => s.name === stepName);
     if (stepIndex === -1) {
       if (this.debug) {
         console.warn(`[WorkerInitReporter] Unknown step: ${stepName}`);
@@ -70,7 +70,7 @@ export class WorkerInitializationReporter {
     }
     const currentStep = this.initSteps[stepIndex];
     if (currentStep) {
-      totalProgress += (currentStep.weight * stepProgress / 100);
+      totalProgress += (currentStep.weight * stepProgress) / 100;
     }
 
     this.currentProgress = Math.round((totalProgress / totalWeight) * 100);
@@ -126,7 +126,10 @@ export class WorkerInitializationReporter {
   /**
    * Send a message to the UI thread
    */
-  private sendMessage(type: WorkerInitMessage['type'], payload?: WorkerInitMessage['payload']): void {
+  private sendMessage(
+    type: WorkerInitMessage['type'],
+    payload?: WorkerInitMessage['payload']
+  ): void {
     if (typeof self !== 'undefined' && 'postMessage' in self) {
       const message: WorkerInitMessage = {
         type,
@@ -147,10 +150,7 @@ export class WorkerInitializationReporter {
   /**
    * Track initialization with automatic progress reporting
    */
-  public async trackInitialization<T>(
-    stepName: string,
-    operation: () => Promise<T>,
-  ): Promise<T> {
+  public async trackInitialization<T>(stepName: string, operation: () => Promise<T>): Promise<T> {
     try {
       this.reportStepProgress(stepName, 0);
       const result = await operation();

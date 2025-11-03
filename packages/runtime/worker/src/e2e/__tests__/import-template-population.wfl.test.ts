@@ -1,13 +1,13 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
 import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
-import type { NodeId, TreeId } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
-import { exposeTestAPI } from '../test-worker.entry.js';
+import type { NodeId } from '@hierarchidb/common-types';
+import { toNodeType } from '@hierarchidb/common-types';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -28,7 +28,10 @@ type TemplateFile = {
   rootNodeIds: string[];
 };
 
-const templateUrl = new URL('../../../../../../app/public/templates/population-2023/tree-nodes.json', import.meta.url);
+const templateUrl = new URL(
+  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
+  import.meta.url
+);
 
 async function loadTemplate(): Promise<TemplateFile> {
   const raw = await readFile(templateUrl, 'utf-8');
@@ -66,7 +69,7 @@ describe('WFL import template: Total Population by Country', () => {
     const queryAPI = await client.getQueryAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = toTreeId('r');
+    const treeId = 'r';
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');
@@ -85,7 +88,9 @@ describe('WFL import template: Total Population by Country', () => {
     expect(result?.success).toBe(true);
 
     const rootChildren = await queryAPI.listChildren(rootId);
-    const populationFolder = rootChildren.find((node) => node.name === 'Total Population by Country');
+    const populationFolder = rootChildren.find(
+      (node) => node.name === 'Total Population by Country'
+    );
     expect(populationFolder).toBeTruthy();
     if (!populationFolder) throw new Error('Population folder not found');
 

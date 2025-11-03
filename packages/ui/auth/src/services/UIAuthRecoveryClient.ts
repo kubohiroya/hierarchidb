@@ -6,7 +6,9 @@ export type AuthPromptResult = {
   expiresAt?: number;
 };
 
-export type AuthPrompt = (n: { context: { requestId: string; sessionId?: string } }) => Promise<AuthPromptResult>;
+export type AuthPrompt = (n: {
+  context: { requestId: string; sessionId?: string };
+}) => Promise<AuthPromptResult>;
 
 /**
  * Register UI-side handlers to resolve AuthRequired notifications.
@@ -16,7 +18,9 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
   const registry = AuthNotificationRegistry.getInstance();
   const id = opts?.id ?? 'ui-auth-recovery-client';
   registry.register(id, {
-    onAuthRequired: async (notification: { context: { requestId: string; sessionId?: string } }): Promise<void> => {
+    onAuthRequired: async (notification: {
+      context: { requestId: string; sessionId?: string };
+    }): Promise<void> => {
       const { requestId, sessionId } = notification.context;
       try {
         const res = await prompt(notification);
@@ -28,7 +32,7 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
           sessionId,
         });
         await registry.dispatch(success);
-      } catch (e) {
+      } catch (_error) {
         const cancelled = AuthNotificationFactory.createAuthCancelled({
           requestId,
           sessionId,
@@ -37,9 +41,7 @@ export function registerAuthUIHandlers(prompt: AuthPrompt, opts?: { id?: string 
         await registry.dispatch(cancelled);
       }
     },
-    onAuthSuccess: async () => {
-    },
-    onAuthCancelled: async () => {
-    },
+    onAuthSuccess: async () => {},
+    onAuthCancelled: async () => {},
   });
 }

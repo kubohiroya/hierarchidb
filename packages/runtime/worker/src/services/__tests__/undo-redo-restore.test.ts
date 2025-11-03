@@ -1,6 +1,6 @@
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 describe('Undo/Redo for restoreFromTrash', () => {
@@ -10,7 +10,10 @@ describe('Undo/Redo for restoreFromTrash', () => {
     originalName?: string;
   };
 
-  type CoreStub = Pick<CoreDB, 'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'> & {
+  type CoreStub = Pick<
+    CoreDB,
+    'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'createNode'
+  > & {
     state: Map<NodeId, TrashedNode>;
   };
 
@@ -65,7 +68,10 @@ describe('Undo/Redo for restoreFromTrash', () => {
 
   it('undo/redo restoreFromTrash', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('restoreFromTrash', { nodeIds: ['x' as NodeId], toParentId: 'r_root' as NodeId });
+    const env = cp.createEnvelope('restoreFromTrash', {
+      nodeIds: ['x' as NodeId],
+      toParentId: 'r_root' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
     const restored = state.get('x' as NodeId);

@@ -1,15 +1,12 @@
-import { useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from 'react-oidc-context';
+import { useEffect } from 'react';
 
 //import { APP_PREFIX } from "@/config/appDescription";
 //`/${APP_PREFIX}/`
 /**
-    */
+ */
 export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null {
   const navigate = useNavigate();
-  const auth = useAuth();
-
   useEffect(() => {
     const handleAuthErrorEvent = (_event: CustomEvent) => {
       // if (import.meta.env.DEV) {
@@ -26,7 +23,7 @@ export function AuthErrorListener({ fallbackTo }: { fallbackTo: string }): null 
     return () => {
       window.removeEventListener('Auth-error', handleAuthErrorEvent as EventListener);
     };
-  }, [navigate, auth, fallbackTo]);
+  }, [navigate, fallbackTo]);
 
   return null;
 }

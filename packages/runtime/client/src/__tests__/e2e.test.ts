@@ -1,16 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 import type { WorkerInitMessage } from '../types.js';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 type MessageListener = (this: Worker, ev: MessageEvent<WorkerInitMessage>) => unknown;
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 class FakeWorker implements Worker {
-  public onerror: ((this: Worker, ev: ErrorEvent) => any) | null = null;
+  public onerror: ((this: Worker, ev: ErrorEvent) => unknown) | null = null;
   public onmessage: MessageListener | null = null;
-  public onmessageerror: ((this: Worker, ev: MessageEvent<any>) => any) | null = null;
-  public onPostMessage?: (message: any) => void;
+  public onmessageerror: ((this: Worker, ev: MessageEvent<unknown>) => unknown) | null = null;
+  public onPostMessage?: (message: unknown) => void;
 
   private listeners = new Map<EventListenerOrEventListenerObject, MessageListener>();
 
@@ -41,7 +41,7 @@ class FakeWorker implements Worker {
     return true;
   }
 
-  postMessage(message: any): void {
+  postMessage(message: unknown): void {
     this.onPostMessage?.(message);
   }
 
@@ -134,11 +134,13 @@ describe('Worker Initialization E2E Tests', () => {
       // Intentionally do nothing so the timeout triggers
     };
 
-    await expect(channel.waitForInitialization({
-      worker: worker as unknown as Worker,
-      timeout: 50,
-      debug: false,
-    })).rejects.toMatchObject({
+    await expect(
+      channel.waitForInitialization({
+        worker: worker as unknown as Worker,
+        timeout: 50,
+        debug: false,
+      })
+    ).rejects.toMatchObject({
       success: false,
       error: expect.objectContaining({
         message: expect.stringContaining('timeout'),
@@ -154,11 +156,13 @@ describe('Worker Initialization E2E Tests', () => {
       }
     };
 
-    await expect(channel.waitForInitialization({
-      worker: errorWorker as unknown as Worker,
-      timeout: 5000,
-      debug: false,
-    })).rejects.toMatchObject({
+    await expect(
+      channel.waitForInitialization({
+        worker: errorWorker as unknown as Worker,
+        timeout: 5000,
+        debug: false,
+      })
+    ).rejects.toMatchObject({
       success: false,
       error: expect.objectContaining({ message: 'Simulated initialization error' }),
     });

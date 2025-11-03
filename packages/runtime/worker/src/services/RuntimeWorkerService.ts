@@ -1,4 +1,3 @@
-
 /**
  * TODO(runtime-worker-factory): add vitest coverage for
  * register/get/unregister (positive + fallback) and ensure the new
@@ -24,7 +23,10 @@ interface RegistryEntry {
 
 const registry = new Map<string, RegistryEntry>();
 
-export function registerRuntimeWorkerClient(nodeType: string, provider: RuntimeWorkerClientProvider): void {
+export function registerRuntimeWorkerClient(
+  nodeType: string,
+  provider: RuntimeWorkerClientProvider
+): void {
   registry.set(nodeType, { provider });
 }
 
@@ -36,7 +38,9 @@ export function hasRuntimeWorkerClient(nodeType: string): boolean {
   return registry.has(nodeType);
 }
 
-async function resolveProvider(provider: RuntimeWorkerClientProvider): Promise<RuntimeWorkerStageClient | null> {
+async function resolveProvider(
+  provider: RuntimeWorkerClientProvider
+): Promise<RuntimeWorkerStageClient | null> {
   if (typeof provider === 'function') {
     return provider();
   }
@@ -45,7 +49,7 @@ async function resolveProvider(provider: RuntimeWorkerClientProvider): Promise<R
 
 export async function getRuntimeWorkerClient(
   nodeType: string,
-  options: { fallbackToLocal?: boolean } = {},
+  options: { fallbackToLocal?: boolean } = {}
 ): Promise<RuntimeWorkerStageClient | null> {
   const entry = registry.get(nodeType);
   if (entry) {

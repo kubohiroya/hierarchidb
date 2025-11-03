@@ -1,3 +1,5 @@
+import { parseEnvInt } from '../utils/number.js';
+
 export interface Env {
   ALLOWED_ORIGINS: string;
   PRODUCTION_ORIGINS?: string;
@@ -91,7 +93,7 @@ export async function checkRateLimit(
     'unknown';
 
   const key = `ratelimit:${ip}`;
-  const limit = parseInt(env.RATE_LIMIT_PER_MINUTE || '30');
+  const limit = parseEnvInt(env.RATE_LIMIT_PER_MINUTE, 30);
   const now = Date.now();
   const window = 60000; //  1
 
@@ -235,10 +237,10 @@ async function checkForSuspiciousActivity(ip: string, env: Env): Promise<void> {
 export function getJwtExpiry(environment: string, env: Env): number {
   const hours =
     environment === 'production'
-      ? parseInt(env.JWT_EXPIRY_HOURS_PROD || '2')
+      ? parseEnvInt(env.JWT_EXPIRY_HOURS_PROD, 2)
       : environment === 'staging'
-        ? parseInt(env.JWT_EXPIRY_HOURS_STAGING || '8')
-        : parseInt(env.JWT_EXPIRY_HOURS_DEV || '24');
+        ? parseEnvInt(env.JWT_EXPIRY_HOURS_STAGING, 8)
+        : parseEnvInt(env.JWT_EXPIRY_HOURS_DEV, 24);
 
   return hours * 3600;
 }

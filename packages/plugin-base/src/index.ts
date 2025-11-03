@@ -1,29 +1,26 @@
 // Registry exports
-export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
+
+// Re-export atoms for advanced consumers (mainly host integration/tests)
+export * from './atoms/workingCopyAtoms.js';
+export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
+// Hooks
+export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
+export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
 export type {
   PluginStepConfig,
   PluginStepProvider,
   StepComponentProps,
 } from './registry/PluginStepRegistry.js';
-export { HostProfileRegistry } from './registry/HostProfileRegistry.js';
-
+export { PluginStepRegistry } from './registry/PluginStepRegistry.js';
 // Services
 export { composeStepConfigs } from './services/StepComposer.js';
-
-// Hooks
-export { useDialogUrlSync } from './hooks/useDialogUrlSync.js';
-export type { DialogMapState, DialogModeState } from './hooks/useDialogUrlSync.js';
-
+export type { PeerDisplayMode } from './utils/peerDialogPersistence.js';
 // Utils
 export {
-  getPeerDisplayMode,
-  setPeerDisplayMode,
   getPeerDialogPosition,
-  setPeerDialogPosition,
   getPeerDialogSize,
+  getPeerDisplayMode,
+  setPeerDialogPosition,
   setPeerDialogSize,
+  setPeerDisplayMode,
 } from './utils/peerDialogPersistence.js';
-export type { PeerDisplayMode } from './utils/peerDialogPersistence.js';
-
-// Re-export atoms for advanced consumers (mainly host integration/tests)
-export * from './atoms/workingCopyAtoms.js';

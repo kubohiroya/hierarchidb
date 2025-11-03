@@ -1,17 +1,5 @@
 // import crypto from 'crypto';
-import type {
-  CommandEnvelope,
-  CommandResult,
-} from '../../command-types.js';
-import { WorkerErrorCode } from '../../command-types.js';
-import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
-import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
-import type { CoreDB } from '../../CoreDB.js';
-import {
-  commitWorkingCopyV2,
-  createNewName,
-} from '../../WorkingCopyTreeNodeOperations.js';
-import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
+
 import type {
   CommandId,
   NodeId,
@@ -20,6 +8,13 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
+import type { CoreDB } from '../../CoreDB.js';
+import type { CommandEnvelope, CommandResult } from '../../command-types.js';
+import { WorkerErrorCode } from '../../command-types.js';
+import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
+import { commitWorkingCopyV2, createNewName } from '../../WorkingCopyTreeNodeOperations.js';
+import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
+import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
 
 export interface CoreCommandDeps {
   coreDB: CoreDB;
@@ -34,7 +29,7 @@ export interface CoreCommandDeps {
       suggestedName?: string;
       originalVersion?: number;
       wcVersion?: number;
-    },
+    }
   ) => CommandResult;
   getNextSeq: () => Seq;
 }
@@ -42,7 +37,7 @@ export interface CoreCommandDeps {
 export async function executeCoreCommand(
   envelope: CommandEnvelope<string, unknown>,
   context: CommandExecutionContext,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult | null> {
   switch (envelope.kind) {
     case 'createNode':
@@ -70,7 +65,7 @@ export async function executeCoreCommand(
 
 async function handleCreateNode(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
@@ -99,14 +94,14 @@ async function handleCreateNode(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Create failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
 
 async function handleUpdateNode(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
@@ -122,12 +117,12 @@ async function handleUpdateNode(
     if (payload.name && payload.name !== node.name && node.parentId) {
       const siblings = (await deps.coreDB.listChildren?.(node.parentId)) || [];
       const hasConflict = siblings.some(
-        (sibling) => sibling.id !== node.id && sibling.name === payload.name,
+        (sibling) => sibling.id !== node.id && sibling.name === payload.name
       );
       if (hasConflict) {
         return deps.createErrorResult(
           `Name conflict: '${payload.name}' already exists`,
-          WorkerErrorCode.NAME_NOT_UNIQUE,
+          WorkerErrorCode.NAME_NOT_UNIQUE
         );
       }
     }
@@ -145,14 +140,14 @@ async function handleUpdateNode(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Update failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
 
 async function handleMoveNodes(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
@@ -165,7 +160,7 @@ async function handleMoveNodes(
       if (await hasWorkingCopyInSubtree(deps.coreDB, id)) {
         return deps.createErrorResult(
           'Blocked by Policy C: working copy exists in subtree',
-          WorkerErrorCode.INVALID_OPERATION,
+          WorkerErrorCode.INVALID_OPERATION
         );
       }
     }
@@ -202,7 +197,10 @@ async function handleMoveNodes(
     }
 
     if (toUpdate.length === 1) {
-      await deps.coreDB.updateNode?.(toUpdate[0]!);
+      const [singleUpdate] = toUpdate;
+      if (singleUpdate) {
+        await deps.coreDB.updateNode?.(singleUpdate);
+      }
     } else if (toUpdate.length > 1) {
       const size = deps.batchOperationSize;
       for (let i = 0; i < toUpdate.length; i += size) {
@@ -218,14 +216,14 @@ async function handleMoveNodes(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Move failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
 
 async function handleMoveToTrash(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as { nodeIds: NodeId[] };
@@ -252,7 +250,7 @@ async function handleMoveToTrash(
     }
 
     const rootToTrash = new Map<NodeId, NodeId>(
-      Array.isArray(trees) ? trees.map((tree) => [tree.rootId, tree.trashRootId]) : [],
+      Array.isArray(trees) ? trees.map((tree) => [tree.rootId, tree.trashRootId]) : []
     );
 
     for (const id of payload.nodeIds) {
@@ -272,8 +270,11 @@ async function handleMoveToTrash(
 
       while (cursor) {
         if (rootToTrash.has(cursor)) {
-          trashRootId = rootToTrash.get(cursor)!;
-          break;
+          const mappedTrashRootId = rootToTrash.get(cursor);
+          if (mappedTrashRootId) {
+            trashRootId = mappedTrashRootId;
+            break;
+          }
         }
         lastVisited = cursor;
         const parent = await deps.coreDB.getNode?.(cursor);
@@ -290,11 +291,11 @@ async function handleMoveToTrash(
             continue;
           }
           if (candidate.endsWith(':root')) {
-            trashRootId = (candidate.slice(0, -(':root'.length)) + ':trash') as NodeId;
+            trashRootId = `${candidate.slice(0, -':root'.length)}:trash` as NodeId;
             break;
           }
           if (candidate.endsWith(':superRoot')) {
-            trashRootId = (candidate.slice(0, -(':superRoot'.length)) + ':trash') as NodeId;
+            trashRootId = `${candidate.slice(0, -':superRoot'.length)}:trash` as NodeId;
             break;
           }
         }
@@ -356,7 +357,7 @@ async function handleMoveToTrash(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'MoveToTrash failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
@@ -364,7 +365,7 @@ async function handleMoveToTrash(
 async function handleRemove(
   envelope: CommandEnvelope<string, unknown>,
   context: CommandExecutionContext,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as { nodeIds: NodeId[] };
@@ -373,7 +374,7 @@ async function handleRemove(
       if (await hasWorkingCopyInSubtree(deps.coreDB, id)) {
         return deps.createErrorResult(
           'Blocked by Policy C: working copy exists in subtree',
-          WorkerErrorCode.INVALID_OPERATION,
+          WorkerErrorCode.INVALID_OPERATION
         );
       }
     }
@@ -383,7 +384,10 @@ async function handleRemove(
     const queue: NodeId[] = [...payload.nodeIds];
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (!current) {
+        continue;
+      }
       if (toDeleteSet.has(current)) {
         continue;
       }
@@ -403,7 +407,10 @@ async function handleRemove(
     for (let i = 0; i < ids.length; i += size) {
       const slice = ids.slice(i, i + size);
       if (slice.length === 1) {
-        await deps.coreDB.deleteNode?.(slice[0]!);
+        const [singleId] = slice;
+        if (singleId) {
+          await deps.coreDB.deleteNode?.(singleId);
+        }
       } else {
         await deps.coreDB.bulkDeleteNodes?.(slice);
       }
@@ -418,7 +425,7 @@ async function handleRemove(
         } catch (error) {
           console.warn(
             '[CommandProcessor/remove] peer-entity cleanup skipped:',
-            (error as Error)?.message || error,
+            (error as Error)?.message || error
           );
         }
       });
@@ -428,7 +435,7 @@ async function handleRemove(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Remove failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
@@ -436,7 +443,7 @@ async function handleRemove(
 async function handleRemoveSubtree(
   envelope: CommandEnvelope<string, unknown>,
   context: CommandExecutionContext,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as { rootId: NodeId };
@@ -478,7 +485,7 @@ async function handleRemoveSubtree(
         } catch (error) {
           console.warn(
             '[CommandProcessor/removeSubtree] peer-entity cleanup skipped:',
-            (error as Error)?.message || error,
+            (error as Error)?.message || error
           );
         }
       });
@@ -488,14 +495,14 @@ async function handleRemoveSubtree(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'RemoveSubtree failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
 
 async function handleRestoreFromTrash(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
@@ -553,7 +560,7 @@ async function handleRestoreFromTrash(
         return deps.createErrorResult(
           `Name "${baseName}" already exists under the target parent`,
           WorkerErrorCode.NAME_NOT_UNIQUE,
-          { status: 'NAME_CONFLICT', suggestedName },
+          { status: 'NAME_CONFLICT', suggestedName }
         );
       }
       siblingNames.add(nextName);
@@ -581,7 +588,10 @@ async function handleRestoreFromTrash(
     }
 
     if (toUpdate.length === 1) {
-      await deps.coreDB.updateNode?.(toUpdate[0]!);
+      const [singleUpdate] = toUpdate;
+      if (singleUpdate) {
+        await deps.coreDB.updateNode?.(singleUpdate);
+      }
     } else if (toUpdate.length > 1) {
       const size = deps.batchOperationSize;
       for (let i = 0; i < toUpdate.length; i += size) {
@@ -597,14 +607,14 @@ async function handleRestoreFromTrash(
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Recover failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }
 
 async function handleCommitWorkingCopy(
   envelope: CommandEnvelope<string, unknown>,
-  deps: CoreCommandDeps,
+  deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
     const payload = envelope.payload as {
@@ -617,9 +627,14 @@ async function handleCommitWorkingCopy(
     if (!wcNode) {
       return deps.createErrorResult('Working copy not found', WorkerErrorCode.INVALID_OPERATION);
     }
-    const holder = wcNode.parentId ? await deps.coreDB.nodes.get(wcNode.parentId as NodeId) : undefined;
+    const holder = wcNode.parentId
+      ? await deps.coreDB.nodes.get(wcNode.parentId as NodeId)
+      : undefined;
     if (!holder) {
-      return deps.createErrorResult('Working copy holder not found', WorkerErrorCode.INVALID_OPERATION);
+      return deps.createErrorResult(
+        'Working copy holder not found',
+        WorkerErrorCode.INVALID_OPERATION
+      );
     }
     const wcSnapshot: TreeNode = { ...wcNode };
     const holderSnapshot: TreeNode = { ...holder };
@@ -627,7 +642,7 @@ async function handleCommitWorkingCopy(
     const result = await commitWorkingCopyV2(
       deps.coreDB,
       payload.workingCopyId,
-      payload.onNameConflict ?? 'error',
+      payload.onNameConflict ?? 'error'
     );
 
     if (result.status === 'ok') {
@@ -660,7 +675,7 @@ async function handleCommitWorkingCopy(
           status: 'COMMIT_CONFLICT',
           originalVersion: result.originalVersion,
           wcVersion: result.wcVersion,
-        },
+        }
       );
     }
 
@@ -670,12 +685,12 @@ async function handleCommitWorkingCopy(
       {
         status: 'NAME_CONFLICT',
         suggestedName: result.suggestedName,
-      },
+      }
     );
   } catch (error) {
     return deps.createErrorResult(
       error instanceof Error ? error.message : 'Commit failed',
-      WorkerErrorCode.DATABASE_ERROR,
+      WorkerErrorCode.DATABASE_ERROR
     );
   }
 }

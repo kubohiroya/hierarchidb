@@ -57,6 +57,32 @@ export class ImportExportService implements ImportExportAPI {
 
       const nodes = params.data.nodes ?? [];
       const total = nodes.length;
+      const nameCache = new Map<NodeId | null, Set<string>>();
+
+      const getNameCacheForParent = async (parentId: NodeId | null): Promise<Set<string>> => {
+        if (nameCache.has(parentId)) {
+          return nameCache.get(parentId)!;
+        }
+        if (!parentId) {
+          const cache = new Set<string>();
+          nameCache.set(parentId, cache);
+          return cache;
+        }
+        const existingNames = await this.db.listChildren(parentId);
+        const cache = new Set(existingNames.map((child) => child.name));
+        nameCache.set(parentId, cache);
+        return cache;
+      };
+
+      const resolveConflictingName = async (parentId: NodeId, name: string): Promise<string> => {
+        if (params.conflictResolution !== 'rename') {
+          return name;
+        }
+        const cache = await getNameCacheForParent(parentId);
+        const unique = createUniqueName(cache, name);
+        cache.add(unique);
+        return unique;
+      };
       const depthCache = new Map<NodeId, number>();
       const resolveParentDepth = async (parentId: NodeId | null | undefined): Promise<number> => {
         if (!parentId) return -1;
@@ -83,11 +109,12 @@ export class ImportExportService implements ImportExportAPI {
           const nodeId = crypto.randomUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
           const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
+          const uniqueName = await resolveConflictingName(parentId, nodeData.name);
           const node: TreeNode = {
             id: nodeId,
             parentId,
             nodeType: (nodeData.nodeType || 'folder') as NodeType,
-            name: nodeData.name,
+            name: uniqueName,
             description: nodeData.description,
             depth: Math.max(0, parentDepth + 1),
             createdAt: Date.now(),
@@ -95,6 +122,9 @@ export class ImportExportService implements ImportExportAPI {
             version: 1,
           };
           toCreate.push({ node, children: nodeData.children });
+          if (!nameCache.has(node.id)) {
+            nameCache.set(node.id, new Set());
+          }
         } catch (error) {
           errors.push(`Failed to prepare node "${nodeData?.name}": ${error}`);
         }
@@ -374,4 +404,26 @@ export class ImportExportService implements ImportExportAPI {
   private generateOperationId(): string {
     return `op-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
+}
+
+function createUniqueName(existingNames: Set<string>, baseName: string): string {
+  if (!existingNames.has(baseName)) {
+    return baseName;
+  }
+
+  const escapedBase = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`^${escapedBase}\\s*\\((\\d+)\\)$`);
+
+  let maxSuffix = 1;
+  for (const name of existingNames) {
+    const match = pattern.exec(name);
+    if (match && match[1]) {
+      const parsed = Number.parseInt(match[1], 10);
+      if (!Number.isNaN(parsed) && parsed > maxSuffix) {
+        maxSuffix = parsed;
+      }
+    }
+  }
+
+  return `${baseName} (${maxSuffix + 1})`;
 }

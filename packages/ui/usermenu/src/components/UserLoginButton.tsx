@@ -1,4 +1,27 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  AuthProviderDialog,
+  type AuthProviderType,
+  UserAvatar,
+  useAuth,
+} from '@hierarchidb/ui-auth';
+import { SUPPORTED_LANGUAGES, useLanguage } from '@hierarchidb/ui-i18n';
+import {
+  getThemeDisplayName,
+  getThemeIcon,
+  ThemeContext,
+  type ThemeContextType,
+  type ThemeMode,
+} from '@hierarchidb/ui-theme';
+import {
+  Check as CheckIcon,
+  ChevronRight as ChevronRightIcon,
+  DeleteForever as DeleteForeverIcon,
+  Language as LanguageIcon,
+  Login as LoginIcon,
+  Logout as LogoutIcon,
+  Memory as MemoryIcon,
+  MemoryOutlined as MemoryOutlinedIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -14,43 +37,33 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
-import {
-  Check as CheckIcon,
-  ChevronRight as ChevronRightIcon,
-  DeleteForever as DeleteForeverIcon,
-  Language as LanguageIcon,
-  Login as LoginIcon,
-  Logout as LogoutIcon,
-  Memory as MemoryIcon,
-  MemoryOutlined as MemoryOutlinedIcon,
-} from '@mui/icons-material';
-import { AuthProviderDialog, type AuthProviderType, useAuth, UserAvatar } from '@hierarchidb/ui-auth';
-import { ThemeContext, type ThemeMode, type ThemeContextType, getThemeIcon, getThemeDisplayName } from '@hierarchidb/ui-theme';
-import { useLanguage, SUPPORTED_LANGUAGES } from '@hierarchidb/ui-i18n';
+import React, { useCallback, useContext, useEffect, useId, useMemo, useState } from 'react';
 
 type LanguageConfig = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const UserLoginButton: React.FC = () => {
-  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
+  const hasDom =
+    typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
 
   const { user, signIn, signOut, auth } = useAuth();
 
-  const themeContext= useContext<ThemeContextType | null>(ThemeContext);
+  const themeContext = useContext<ThemeContextType | null>(ThemeContext);
   // nst  = ;
   ///{ mode: themeMode, setMode: setThemeMode }
 
   const languageContext = useLanguage();
-  const fallbackLanguage: LanguageConfig = useMemo(() => (
-    SUPPORTED_LANGUAGES[0] ?? {
-      code: 'en',
-      name: 'English',
-      nativeName: 'English',
-      flag: '🇺🇸',
-      direction: 'ltr' as const,
-      dateLocale: undefined,
-    }
-  ), []);
-
+  const fallbackLanguage: LanguageConfig = useMemo(
+    () =>
+      SUPPORTED_LANGUAGES[0] ?? {
+        code: 'en',
+        name: 'English',
+        nativeName: 'English',
+        flag: '🇺🇸',
+        direction: 'ltr' as const,
+        dateLocale: undefined,
+      },
+    []
+  );
 
   // Load memory monitor visibility state on mount
   useEffect(() => {
@@ -60,13 +73,14 @@ export const UserLoginButton: React.FC = () => {
     }
   }, []);
 
-
   // Menu state management
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [themeMenuAnchorEl, setThemeMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const [languageMenuAnchorEl, setLanguageMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const [authProviderDialogOpen, setAuthProviderDialogOpen] = React.useState(false);
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = React.useState(false);
+  const clearDialogTitleId = useId();
+  const clearDialogDescriptionId = useId();
   const [memoryMonitorVisible, setMemoryMonitorVisible] = React.useState(false);
 
   const currentLanguage = languageContext.currentLanguage ?? fallbackLanguage;
@@ -83,7 +97,7 @@ export const UserLoginButton: React.FC = () => {
     window.dispatchEvent(
       new CustomEvent('memoryMonitorToggle', {
         detail: { visible: newVisibility },
-      }),
+      })
     );
   }, [memoryMonitorVisible]);
   // Event handlers
@@ -114,7 +128,7 @@ export const UserLoginButton: React.FC = () => {
   };
 
   const handleThemeChange = (newTheme: ThemeMode) => {
-    if(!themeContext) return;
+    if (!themeContext) return;
     themeContext.setMode(newTheme);
     handleThemeMenuClose();
     handleMenuClose();
@@ -156,7 +170,7 @@ export const UserLoginButton: React.FC = () => {
               });
             }
             return Promise.resolve();
-          }),
+          })
         );
       }
 
@@ -291,9 +305,7 @@ export const UserLoginButton: React.FC = () => {
                   width: '100%',
                 }}
               >
-                <span>
-                  {currentLanguage.flag} Language
-                </span>
+                <span>{currentLanguage.flag} Language</span>
                 <ChevronRightIcon fontSize="small" />
               </Box>
             </ListItemText>
@@ -460,12 +472,12 @@ export const UserLoginButton: React.FC = () => {
       <Dialog
         open={clearCacheDialogOpen}
         onClose={() => setClearCacheDialogOpen(false)}
-        aria-labelledby="clear-all-data-dialog-title"
-        aria-describedby="clear-all-data-dialog-description"
+        aria-labelledby={clearDialogTitleId}
+        aria-describedby={clearDialogDescriptionId}
       >
-        <DialogTitle id="clear-all-data-dialog-title">Clear All Data?</DialogTitle>
+        <DialogTitle id={clearDialogTitleId}>Clear All Data?</DialogTitle>
         <DialogContent>
-          <DialogContentText id="clear-cache-dialog-description" component="div">
+          <DialogContentText id={clearDialogDescriptionId} component="div">
             This will clear all data including:
             <ul style={{ marginTop: 8, marginBottom: 8 }}>
               <li>Cache API data</li>

@@ -1,25 +1,25 @@
 /**
-  * @file colorUtils.test.ts
+ * @file colorUtils.test.ts
  * @description Color utilities unit tests
  * :
  * :
  * :
-  */
+ */
 
 import { describe, expect, it } from 'vitest';
+import { StylerConfigDefault } from '../types/stylerTypes.js';
 import {
   adjustBrightness,
   calculateLinearColor,
+  createColorVariations,
   generateColorGradient,
   getContrastRatio,
   hexToRgb,
-  createColorVariations,
   hsvToRgb,
   rgbToHex,
   rgbToHsv,
   valueToColor,
 } from '../utils/colorUtils.js';
-import { StylerConfigDefault } from '../types/stylerTypes.js';
 
 describe('Color Utils', () => {
   describe('HSV/RGB Conversion', () => {
@@ -58,9 +58,9 @@ describe('Color Utils', () => {
 
     it('should have round-trip consistency HSV->RGB->HSV', () => {
       const testCases = [
-        [0, 1, 1],      // Red
-        [120, 1, 1],    // Green
-        [240, 1, 1],    // Blue
+        [0, 1, 1], // Red
+        [120, 1, 1], // Green
+        [240, 1, 1], // Blue
         [60, 0.5, 0.8], // Yellow-ish
         [300, 0.7, 0.9], // Magenta-ish
       ];
@@ -130,8 +130,8 @@ describe('Color Utils', () => {
         mapping: {
           min: 0,
           max: 100,
-          hueStart: 0,   // Red
-          hueEnd: 120,   // Green
+          hueStart: 0, // Red
+          hueEnd: 120, // Green
           saturation: 1,
           brightness: 1,
         },
@@ -163,7 +163,7 @@ describe('Color Utils', () => {
           min: 0,
           max: 100,
           startColor: '#ff0000', // Red
-          endColor: '#00ff00',   // Green
+          endColor: '#00ff00', // Green
           hueStart: 0,
           hueEnd: 120,
           saturation: 1,

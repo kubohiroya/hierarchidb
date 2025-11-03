@@ -27,7 +27,7 @@ export interface DialogStateAPI {
    */
   subscribeState(
     input: DialogStateSubscribeInput,
-    callback: (state: MultiStepDialogState | null) => void,
+    callback: (state: MultiStepDialogState | null) => void
   ): Promise<DialogStateSubscriptionId>;
 
   /** Cancel a previously established subscription */

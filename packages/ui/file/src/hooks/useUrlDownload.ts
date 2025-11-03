@@ -1,7 +1,7 @@
 import { validateExternalURL } from '@hierarchidb/util';
 import type { KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { UnifiedDownloadService } from '../services/UnifiedDownloadService.js';
+import { downloadFile } from '../services/UnifiedDownloadService.js';
 import { devError, devLog } from '../utils/logger.js';
 
 interface UrlDownloadAuth {
@@ -99,22 +99,27 @@ export function useUrlDownload({
       setIsAuthError(false);
       setDownloadError(undefined);
       wasAuthErrorRef.current = false;
-    } else if (isAuthError && !wasAuthErrorRef.current) {
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthError && !wasAuthErrorRef.current) {
       wasAuthErrorRef.current = true;
     }
-  }, [isAuthenticated, isAuthError]);
+  }, [isAuthError]);
+
+  const setDownloadUrlState = useCallback((url: string) => {
+    setDownloadUrl(url);
+    setDownloadSuccess(false);
+  }, []);
 
   useEffect(() => {
     if (defaultDownloadUrl && (!downloadUrl || downloadUrl.trim() === '')) {
-      setDownloadUrl(defaultDownloadUrl);
+      setDownloadUrlState(defaultDownloadUrl);
     }
-  }, [defaultDownloadUrl, downloadUrl]);
+  }, [defaultDownloadUrl, downloadUrl, setDownloadUrlState]);
 
-  useEffect(() => {
-    setDownloadSuccess(false);
-  }, [downloadUrl]);
-
-  const guessExtensionFromContentType = (contentType: string | undefined): string => {
+  const guessExtensionFromContentType = useCallback((contentType: string | undefined): string => {
     if (!contentType) return '';
 
     if (contentType.includes('csv')) return '.csv';
@@ -124,7 +129,7 @@ export function useUrlDownload({
     if (contentType.includes('xml')) return '.xml';
 
     return '';
-  };
+  }, []);
 
   const validateFileType = useCallback(
     (filename: string, contentType: string | undefined): string => {
@@ -153,7 +158,7 @@ export function useUrlDownload({
 
       return filename;
     },
-    [accept]
+    [accept, guessExtensionFromContentType]
   );
 
   const handleDownload = useCallback(async () => {
@@ -197,7 +202,7 @@ export function useUrlDownload({
 
       abortControllerRef.current = new AbortController();
 
-      const blob = await UnifiedDownloadService.downloadFile(validatedUrl, {
+      const blob = await downloadFile(validatedUrl, {
         onProgress: (progress) => {
           setDownloadProgress(progress);
           onDownloadProgress?.(progress);
@@ -242,7 +247,6 @@ export function useUrlDownload({
       abortControllerRef.current = null;
     }
   }, [
-    accept,
     disabled,
     downloadUrl,
     handleFileSelect,
@@ -270,10 +274,13 @@ export function useUrlDownload({
     },
     [handleDownload]
   );
+  const handleSignIn = (provider?: string) => {
+    signIn(provider);
+  };
 
   return {
     downloadUrl,
-    setDownloadUrl,
+    setDownloadUrl: setDownloadUrlState,
     isDownloading,
     downloadError,
     downloadProgress,
@@ -283,6 +290,6 @@ export function useUrlDownload({
     handleKeyPress,
     isAuthenticated,
     isLoadingAuth,
-    signIn,
+    signIn: handleSignIn,
   };
 }

@@ -1,2 +1,5 @@
 export type { RegisterStylerWorkerStoresOptions } from './registerStylerWorkerStores.js';
-export { registerStylerWorkerStores, loadStylerEntitiesDbModule } from './registerStylerWorkerStores.js';
+export {
+  loadStylerEntitiesDbModule,
+  registerStylerWorkerStores,
+} from './registerStylerWorkerStores.js';

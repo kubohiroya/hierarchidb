@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
+import { describe, expect, it } from 'vitest';
 import { PeerEntityHandler } from '../handlers/PeerEntityHandler.js';
 import type { PeerEntity, PeerStore } from '../store.js';
 

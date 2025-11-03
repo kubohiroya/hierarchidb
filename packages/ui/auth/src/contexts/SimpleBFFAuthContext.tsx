@@ -1,9 +1,7 @@
 import React from 'react';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
-
 import { PopupDetectionService } from '../services/PopupDetectionService.js';
-
 import type { AuthContextType } from '../types/AuthContextType.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import type { AuthUser } from '../types/AuthUser.js';
 
 const SimpleBFFAuthContext = React.createContext<AuthContextType | null>(null);
@@ -48,7 +46,7 @@ const normalizeGooglePhotoUrl = (photoUrl: string | undefined): string | undefin
  */
 const normalizeProfilePhotoUrl = (
   photoUrl: string | undefined,
-  provider: AuthProviderType,
+  provider: AuthProviderType
 ): string | undefined => {
   if (!photoUrl) return undefined;
 
@@ -141,7 +139,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         // Check for stuck authentication state
         const pkceTimestamp = sessionStorage.getItem('pkce_timestamp');
         if (pkceTimestamp && !storedUser) {
-          const pkceAge = Date.now() - parseInt(pkceTimestamp);
+          const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
           if (pkceAge > 10 * 60 * 1000) {
             // 10 minutes
 
@@ -177,8 +175,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
             // Mark as authenticated
             setIsAuthenticating(false);
             return; // Exit early to prevent further processing
-          } catch (_error) {
-          }
+          } catch (_error) {}
         }
 
         if (storedUser && storedToken) {
@@ -222,7 +219,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       // Check if we just completed authentication (within last 30 seconds)
       const lastAuthTime = localStorage.getItem('last_auth_completion');
       if (lastAuthTime) {
-        const timeSinceAuth = Date.now() - parseInt(lastAuthTime);
+        const timeSinceAuth = Date.now() - Number.parseInt(lastAuthTime, 10);
         if (timeSinceAuth < 30000) {
           // Increased to 30s to handle slow redirects
           return;
@@ -232,7 +229,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       // Clean up any stale PKCE parameters older than 5 minutes
       const pkceTimestamp = sessionStorage.getItem('pkce_timestamp');
       if (pkceTimestamp) {
-        const pkceAge = Date.now() - parseInt(pkceTimestamp);
+        const pkceAge = Date.now() - Number.parseInt(pkceTimestamp, 10);
         if (pkceAge > 5 * 60 * 1000) {
           // 5 minutes
           sessionStorage.removeItem('pkce_code_verifier');
@@ -354,7 +351,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           const popup = window.open(
             authUrl.toString(),
             `${provider}-auth`,
-            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`,
+            `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
           );
 
           if (!popup) {
@@ -393,7 +390,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
                 if (!popup.closed) {
                   popup.close();
                 }
-              } catch (e: unknown) {
+              } catch (_e: unknown) {
                 // Could not close popup (COOP)
               }
             } else if (event.key === 'auth_popup_error') {
@@ -432,18 +429,18 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
           windowWithAuth.handleAuthSuccess = () => {
             cleanupPopupListeners();
             setIsAuthenticating(false);
-              if (!popup.closed) {
-                popup.close();
-              }
+            if (!popup.closed) {
+              popup.close();
+            }
           };
 
           windowWithAuth.handleAuthError = (_error: string) => {
             cleanupPopupListeners();
             setIsAuthenticating(false);
 
-              if (!popup.closed) {
-                popup.close();
-              }
+            if (!popup.closed) {
+              popup.close();
+            }
           };
 
           // Additional COOP-safe mechanism: Use a shared timestamp to detect completion
@@ -496,7 +493,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
                   }
                 }, 200);
               }
-            } catch (e: unknown) {
+            } catch (_error: unknown) {
               consecutiveErrors++;
 
               // COOP error - we can't check popup.closed, so rely on other methods
@@ -538,7 +535,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
                 setIsAuthenticating(false);
                 return;
               }
-            } catch (e: unknown) {
+            } catch (_e: unknown) {
               // Could not verify endpoint availability, proceed anyway
             }
           }
@@ -557,7 +554,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
         sessionStorage.setItem('auth_force_cleanup', 'true');
       }
     },
-    [isAuthenticating, user],
+    [homeUrl, isAuthenticating, user]
   );
 
   const signOut = React.useCallback(async () => {
@@ -725,39 +722,39 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       }
 
       if (userInfo && accessToken) {
-          const userData = JSON.parse(userInfo);
-          const authUser: AuthUser = {
-            id: userData.sub || userData.id,
-            email: userData.email,
-            name: userData.name,
-            picture: normalizeProfilePhotoUrl(userData.picture, userData.provider || 'google'),
-            provider: (userData.provider || 'google') as AuthProviderType,
-            access_token: accessToken,
-            id_token: sessionStorage.getItem('id_token') || undefined,
-            expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
-          };
+        const userData = JSON.parse(userInfo);
+        const authUser: AuthUser = {
+          id: userData.sub || userData.id,
+          email: userData.email,
+          name: userData.name,
+          picture: normalizeProfilePhotoUrl(userData.picture, userData.provider || 'google'),
+          provider: (userData.provider || 'google') as AuthProviderType,
+          access_token: accessToken,
+          id_token: sessionStorage.getItem('id_token') || undefined,
+          expires_at: Date.now() + 48 * 60 * 60 * 1000, // 48 hours default
+        };
 
-          setUser(authUser);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
-          sessionStorage.setItem(TOKEN_KEY, accessToken);
+        setUser(authUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
+        sessionStorage.setItem(TOKEN_KEY, accessToken);
 
-          // Store token expiry time for monitoring
-          const expiresIn = sessionStorage.getItem('token_expires_in');
-          if (expiresIn) {
-            const expiresAt = Date.now() + parseInt(expiresIn) * 1000;
-            sessionStorage.setItem('token_expires_at', expiresAt.toString());
-          }
+        // Store token expiry time for monitoring
+        const expiresIn = sessionStorage.getItem('token_expires_in');
+        if (expiresIn) {
+          const expiresAt = Date.now() + Number.parseInt(expiresIn, 10) * 1000;
+          sessionStorage.setItem('token_expires_at', expiresAt.toString());
+        }
 
-          // Mark authentication as completed - use localStorage to persist
-          localStorage.setItem('last_auth_completion', Date.now().toString());
-          setIsAuthenticating(false);
+        // Mark authentication as completed - use localStorage to persist
+        localStorage.setItem('last_auth_completion', Date.now().toString());
+        setIsAuthenticating(false);
 
-          // Clean up PKCE data after successful auth
-          sessionStorage.removeItem('pkce_code_verifier');
-          sessionStorage.removeItem('pkce_state');
-          sessionStorage.removeItem('pkce_timestamp');
-          sessionStorage.removeItem('auth_callback_processing');
-          sessionStorage.removeItem('auth_processing_code');
+        // Clean up PKCE data after successful auth
+        sessionStorage.removeItem('pkce_code_verifier');
+        sessionStorage.removeItem('pkce_state');
+        sessionStorage.removeItem('pkce_timestamp');
+        sessionStorage.removeItem('auth_callback_processing');
+        sessionStorage.removeItem('auth_processing_code');
       }
     };
 
@@ -861,7 +858,7 @@ export function SimpleBFFAuthProvider({ children, homeUrl = '/' }: SimpleBFFAuth
       getAccessToken,
       getIdToken,
       refreshAccessToken,
-    ],
+    ]
   );
 
   // Make auth theme globally accessible for token refresh

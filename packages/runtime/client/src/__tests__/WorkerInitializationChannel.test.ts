@@ -3,32 +3,33 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 import type { WorkerInitConfig } from '../types.js';
+import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
 // Mock Worker class
 class MockWorker {
   private listeners: Map<string, Set<(event: MessageEvent) => void>> = new Map();
 
   addEventListener(type: string, handler: (event: MessageEvent) => void) {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
-    }
-    this.listeners.get(type)!.add(handler);
+    const handlers = this.listeners.get(type) ?? new Set();
+    handlers.add(handler);
+    this.listeners.set(type, handlers);
   }
 
   removeEventListener(type: string, handler: (event: MessageEvent) => void) {
     this.listeners.get(type)?.delete(handler);
   }
 
-  postMessage(_data: any) {
+  postMessage(_data: unknown) {
     // Mock implementation
   }
 
   // Helper method to simulate receiving a message
-  simulateMessage(data: any) {
+  simulateMessage(data: unknown) {
     const event = new MessageEvent('message', { data });
-    this.listeners.get('message')?.forEach(handler => handler(event));
+    this.listeners.get('message')?.forEach((handler) => {
+      handler(event);
+    });
   }
 }
 
@@ -90,12 +91,8 @@ describe('WorkerInitializationChannel', () => {
         payload: { progress: 50, message: 'Initializing database' },
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Progress: 25%'),
-      );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Progress: 50%'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Progress: 25%'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Progress: 50%'));
 
       // Complete initialization
       mockWorker.simulateMessage({ type: 'INIT_COMPLETE' });
@@ -226,7 +223,7 @@ describe('WorkerInitializationChannel', () => {
       channel.waitForInitialization(config);
 
       expect(postMessageSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'INIT_REQUEST' }),
+        expect.objectContaining({ type: 'INIT_REQUEST' })
       );
     });
 

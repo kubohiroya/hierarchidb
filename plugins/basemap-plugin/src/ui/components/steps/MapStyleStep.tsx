@@ -1,6 +1,15 @@
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import type React from 'react';
-import { useMemo } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import { useId, useMemo } from 'react';
 import type { MapStyle } from '../../../common/types/BaseMapEntity.js';
 
 export interface MapStyleStepProps {
@@ -11,8 +20,12 @@ export interface MapStyleStepProps {
 export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) => {
   const style = value?.style || 'streets';
   const url = value?.customStyleUrl || '';
+  const labelId = useId();
 
-  const presets = useMemo(() => ['streets', 'satellite', 'terrain', 'dark', 'light', 'custom'] as const, []);
+  const presets = useMemo(
+    () => ['streets', 'satellite', 'terrain', 'dark', 'light', 'custom'] as const,
+    []
+  );
 
   return (
     <Box sx={{ p: 2 }}>
@@ -22,15 +35,22 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
 
       <Stack spacing={2}>
         <FormControl fullWidth>
-          <InputLabel id="map-style-label">Style</InputLabel>
+          <InputLabel id={labelId}>Style</InputLabel>
           <Select
-            labelId="map-style-label"
+            labelId={labelId}
             label="Style"
             value={style}
-            onChange={(e) => onChange({ ...(value || { style: 'streets' }), style: e.target.value as MapStyle['style'] })}
+            onChange={(e) =>
+              onChange({
+                ...(value || { style: 'streets' }),
+                style: e.target.value as MapStyle['style'],
+              })
+            }
           >
             {presets.map((p) => (
-              <MenuItem key={p} value={p}>{p}</MenuItem>
+              <MenuItem key={p} value={p}>
+                {p}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -40,7 +60,13 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
             label="Custom Style URL"
             placeholder="https://example.com/style.json"
             value={url}
-            onChange={(e) => onChange({ ...(value || { style: 'custom' }), style: 'custom', customStyleUrl: e.target.value })}
+            onChange={(e) =>
+              onChange({
+                ...(value || { style: 'custom' }),
+                style: 'custom',
+                customStyleUrl: e.target.value,
+              })
+            }
             fullWidth
           />
         )}
@@ -48,4 +74,3 @@ export const MapStyleStep: React.FC<MapStyleStepProps> = ({ value, onChange }) =
     </Box>
   );
 };
-

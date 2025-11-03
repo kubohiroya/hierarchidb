@@ -1,22 +1,22 @@
 /**
-  * @file colorUtils.ts
+ * @file colorUtils.ts
  * @description Color conversion and manipulation utilities
  * :
  * : HSV/RGB/Hex
  * :
-  */
+ */
 
 import type { ColorCalculationResult, StylerConfig } from '../types/stylerTypes.js';
 
 /**
-  * : HSVRGB
+ * : HSVRGB
  * : HSVRGB
  * :
  * @param h - Hue (0-360)
  * @param s - Saturation (0-1)
  * @param v - Value/Brightness (0-1)
  * @returns [r, g, b] - RGB values (0-255)
-  */
+ */
 export function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   h = h % 360;
   if (h < 0) h += 360;
@@ -59,14 +59,14 @@ export function hsvToRgb(h: number, s: number, v: number): [number, number, numb
 }
 
 /**
-  * : RGBHSV
+ * : RGBHSV
  * : RGBHSV
  * :
  * @param r - Red (0-255)
  * @param g - Green (0-255)
  * @param b - Blue (0-255)
  * @returns [h, s, v] - HSV values
-  */
+ */
 export function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
   r /= 255;
   g /= 255;
@@ -94,14 +94,14 @@ export function rgbToHsv(r: number, g: number, b: number): [number, number, numb
 }
 
 /**
-  * : RGBHex
+ * : RGBHex
  * : RGB16
  * :
  * @param r - Red (0-255)
  * @param g - Green (0-255)
  * @param b - Blue (0-255)
  * @returns Hex color string (e.g., "#ff0000")
-  */
+ */
 export function rgbToHex(r: number, g: number, b: number): string {
   const toHex = (n: number) => {
     const hex = Math.round(Math.max(0, Math.min(255, n))).toString(16);
@@ -112,12 +112,12 @@ export function rgbToHex(r: number, g: number, b: number): string {
 }
 
 /**
-  * : HexRGB
+ * : HexRGB
  * : 16RGB
  * :
  * @param hex - Hex color string
  * @returns [r, g, b] - RGB values (0-255)
-  */
+ */
 export function hexToRgb(hex: string): [number, number, number] {
   // Remove # if present
   hex = hex.replace(/^#/, '');
@@ -139,17 +139,14 @@ export function hexToRgb(hex: string): [number, number, number] {
 }
 
 /**
-  * :
+ * :
  * :
  * :
  * @param value - Input value
  * @param config - Styler configuration
  * @returns Calculated color result
-  */
-export function calculateLinearColor(
-  value: number,
-  config: StylerConfig,
-): ColorCalculationResult {
+ */
+export function calculateLinearColor(value: number, config: StylerConfig): ColorCalculationResult {
   const { mapping, colorSpace } = config;
   const { min, max } = mapping;
 
@@ -217,18 +214,18 @@ export function calculateLinearColor(
 }
 
 /**
-  * :
+ * :
  * :
  * :
  * @param value - Input value
  * @param allValues - All values for quantile calculation
  * @param config - Styler configuration
  * @returns Calculated color result
-  */
+ */
 export function calculateQuantileColor(
   value: number,
   allValues: number[],
-  config: StylerConfig,
+  config: StylerConfig
 ): ColorCalculationResult {
   // Sort values
   const sorted = [...allValues].sort((a, b) => a - b);
@@ -251,13 +248,13 @@ export function calculateQuantileColor(
 }
 
 /**
-  * :
+ * :
  * :
  * : UI
  * @param config - Styler configuration
  * @param steps - Number of gradient steps
  * @returns CSS gradient string
-  */
+ */
 export function generateColorGradient(config: StylerConfig, steps: number = 20): string {
   const colors: string[] = [];
   const { min, max } = config.mapping;
@@ -272,18 +269,18 @@ export function generateColorGradient(config: StylerConfig, steps: number = 20):
 }
 
 /**
-  * :
+ * :
  * :
  * :
  * @param value - Input value
  * @param config - Styler configuration
  * @param allValues - All values (for quantile/jenks)
  * @returns Calculated color result
-  */
+ */
 export function valueToColor(
   value: number | null | undefined,
   config: StylerConfig,
-  allValues?: number[],
+  allValues?: number[]
 ): ColorCalculationResult {
   // Handle null/undefined values
   if (value === null || value === undefined) {
@@ -316,13 +313,13 @@ export function valueToColor(
 }
 
 /**
-  * :
+ * :
  * : HSV
  * :
  * @param color - Input color (hex)
  * @param factor - Brightness factor (0-2, 1 = no change)
  * @returns Adjusted color (hex)
-  */
+ */
 export function adjustBrightness(color: string, factor: number): string {
   const [r, g, b] = hexToRgb(color);
   const [h, s, v] = rgbToHsv(r, g, b);
@@ -352,15 +349,15 @@ export interface ColorVariations {
 }
 
 /**
-  * Generate simple color variations (darker / more saturated) using existing HSV utilities.
-  *
-  * @param color - Base color (hex form; 3 or 6 digits allowed)
-  * @param options - Adjustment deltas for saturation/value
-  * @returns Variations containing the normalized base plus adjusted variants
-  */
+ * Generate simple color variations (darker / more saturated) using existing HSV utilities.
+ *
+ * @param color - Base color (hex form; 3 or 6 digits allowed)
+ * @param options - Adjustment deltas for saturation/value
+ * @returns Variations containing the normalized base plus adjusted variants
+ */
 export function createColorVariations(
   color: string,
-  options: ColorVariationOptions = {},
+  options: ColorVariationOptions = {}
 ): ColorVariations {
   const { saturationDelta = 0.12, valueDelta = -0.1 } = options;
 
@@ -384,13 +381,13 @@ export function createColorVariations(
 }
 
 /**
-  * :
+ * :
  * : WCAG
  * :
  * @param color1 - First color (hex)
  * @param color2 - Second color (hex)
  * @returns Contrast ratio
-  */
+ */
 export function getContrastRatio(color1: string, color2: string): number {
   const getLuminance = (r: number, g: number, b: number): number => {
     const [rs, gs, bs] = [r, g, b].map((c): number => {

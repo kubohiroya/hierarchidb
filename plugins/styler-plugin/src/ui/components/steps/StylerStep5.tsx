@@ -1,13 +1,11 @@
-
-
-import React, { useCallback } from 'react';
+import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 // import { wrapDialogStepComponent } from '@hierarchidb/plugin-api';
 import { Box } from '@mui/material';
+import React, { useCallback } from 'react';
 // import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
 import type { StylerConfig } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
 import { StylerConfiguration } from './StylerConfiguration.js';
-import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 
 export interface StylerStep5Props {
   data: any;
@@ -19,18 +17,18 @@ export interface StylerStep5Props {
 }
 
 /**
-  * : Styler Step5
+ * : Styler Step5
  * : StylerConfiguration
  * :
  * : Spreadsheet
-  */
+ */
 export const StylerStep5: React.FC<StylerStep5Props> = ({
-                                                          data,
-                                                          onChange,
-                                                          onValidate,
-                                                          csvData = [],
-                                                          columns = [],
-                                                        }) => {
+  data,
+  onChange,
+  onValidate,
+  csvData = [],
+  columns = [],
+}) => {
   const currentConfig: StylerConfig = data?.stylerConfig || StylerConfigDefault;
 
   //  :
@@ -69,7 +67,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
         onValidate(isValid);
       }
     },
-    [data, onChange, onValidate],
+    [data, onChange, onValidate]
   );
 
   const handleColumnSelect = useCallback(
@@ -90,7 +88,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
         onValidate(hasRequiredFields);
       }
     },
-    [data, currentConfig, onChange, onValidate],
+    [data, currentConfig, onChange, onValidate]
   );
 
   return (
@@ -110,9 +108,9 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 };
 
 /**
-  * : Step
+ * : Step
  * Spreadsheet
-  */
+ */
 const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
 
 export const StylerStep5Definition = {

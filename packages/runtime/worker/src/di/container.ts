@@ -1,14 +1,14 @@
 import 'reflect-metadata';
-import { Container, interfaces } from 'inversify';
+import { Container, type interfaces } from 'inversify';
 import {
   pluginRegistry,
   pluginWorkerLoaders,
   pluginWorkerModuleMap,
   pluginWorkerSourceMap,
 } from '../plugin-registry/index.js';
-import { WorkerDiTokens } from './tokens.js';
 import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } from './interfaces.js';
 import { PluginWorkerModuleLoader } from './PluginWorkerModuleLoader.js';
+import { WorkerDiTokens } from './tokens.js';
 
 let containerInstance: Container | null = null;
 

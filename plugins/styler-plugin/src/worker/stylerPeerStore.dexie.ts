@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
-import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB.js';
 import type { StylerPeerData } from '../common/types/stylerTypes.js';
+import type { StylerEntitiesDB, StylerPeerRow } from './stylerEntitiesDB.js';
 
 interface StylerPeerEntity<TData = StylerPeerData> {
   nodeId: NodeId;

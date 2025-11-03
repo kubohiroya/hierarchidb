@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
-import { storeRegistry } from '../store-registry.js';
 import type { RelationBase, RelationStore } from '../store.js';
+import { storeRegistry } from '../store-registry.js';
 
 describe('EntityLifecycleManager.copyRelationsByMapping', () => {
   beforeEach(() => {

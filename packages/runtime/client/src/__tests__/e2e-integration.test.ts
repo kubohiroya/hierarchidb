@@ -4,37 +4,24 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { InitializationResult, WorkerInitMessage } from '../types.js';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
-import type { WorkerInitMessage } from '../types.js';
 
 type MessageListener = (event: MessageEvent<WorkerInitMessage>) => void;
-type WorkerInboundMessage = WorkerInitMessage | { type: 'INIT_REQUEST' | 'PING' | 'START_INIT'; payload?: unknown };
+type WorkerInboundMessage =
+  | WorkerInitMessage
+  | { type: 'INIT_REQUEST' | 'PING' | 'START_INIT'; payload?: unknown };
 
 // Create a more complete MockWorker class
 class MockWorker implements Partial<Worker> {
   private listeners: Map<string, Set<MessageListener>> = new Map();
-  private reporter: WorkerInitializationReporter | null = null;
   private initTimeout: ReturnType<typeof setTimeout> | null = null;
   public terminated = false;
 
-  constructor() {
-    // Simulate Worker-side reporter
-    this.reporter = new WorkerInitializationReporter(
-      [
-        { name: 'Loading modules', weight: 30 },
-        { name: 'Initializing database', weight: 40 },
-        { name: 'Setting up API', weight: 30 },
-      ],
-      false, // debug off
-    );
-  }
-
   addEventListener(type: string, listener: MessageListener): void {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
-    }
-    this.listeners.get(type)!.add(listener);
+    const handlers = this.listeners.get(type) ?? new Set<MessageListener>();
+    handlers.add(listener);
+    this.listeners.set(type, handlers);
   }
 
   removeEventListener(type: string, listener: MessageListener): void {
@@ -89,7 +76,7 @@ class MockWorker implements Partial<Worker> {
     for (const step of steps) {
       if (this.terminated) return;
 
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       this.sendToUI({
         type: 'INIT_PROGRESS',
@@ -193,10 +180,11 @@ describe('Worker Initialization Integration Tests', () => {
 
         // Should not reach here
         expect.fail('Should have timed out');
-      } catch (result: any) {
-        expect(result.success).toBe(false);
-        expect(result.error).toBeDefined();
-        expect(result.error.message).toContain('timeout');
+      } catch (result) {
+        const failure = result as InitializationResult;
+        expect(failure.success).toBe(false);
+        expect(failure.error).toBeDefined();
+        expect(failure.error?.message).toContain('timeout');
       } finally {
         slowWorker.terminate();
       }
@@ -217,10 +205,11 @@ describe('Worker Initialization Integration Tests', () => {
 
         // Should not reach here
         expect.fail('Should have failed with error');
-      } catch (result: any) {
-        expect(result.success).toBe(false);
-        expect(result.error).toBeDefined();
-        expect(result.error.message).toContain('Database connection failed');
+      } catch (result) {
+        const failure = result as InitializationResult;
+        expect(failure.success).toBe(false);
+        expect(failure.error).toBeDefined();
+        expect(failure.error?.message).toContain('Database connection failed');
       }
     });
   });
@@ -311,9 +300,7 @@ describe('Worker Initialization Integration Tests', () => {
       });
 
       // Check for debug logs
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[WorkerInitChannel]'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[WorkerInitChannel]'));
 
       consoleSpy.mockRestore();
     });

@@ -1,17 +1,17 @@
 /**
-  * :
+ * :
  * :
  * :
  * : OAuth2.0/JWT
-  */
+ */
 
 import { AUTH_CONSTANTS } from './AuthServiceConfig.js';
 
 /**
-  * :
+ * :
  * :
  * : OAuth2.0
-  */
+ */
 export interface AuthToken {
   accessToken: string;
   refreshToken?: string;
@@ -21,20 +21,20 @@ export interface AuthToken {
 }
 
 /**
-  * :
+ * :
  * :
  * : XSS
  * :
-  */
+ */
 export class AuthTokenManager {
   private currentToken: AuthToken | null = null;
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   setToken(token: Omit<AuthToken, 'issuedAt'>): void {
     //  :
     if (!token.accessToken || !token.tokenType) {
@@ -54,11 +54,11 @@ export class AuthTokenManager {
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   getToken(): AuthToken | null {
     if (!this.isTokenValid()) {
       this.clearToken();
@@ -68,11 +68,11 @@ export class AuthTokenManager {
   }
 
   /**
-      * :
+   * :
    * :
    * :
    * : JWT
-      */
+   */
   isTokenValid(): boolean {
     if (!this.currentToken) {
       return false;
@@ -82,28 +82,28 @@ export class AuthTokenManager {
     const tokenAgeSeconds = (now - this.currentToken.issuedAt) / 1000;
     const effectiveExpiresIn = Math.max(
       0,
-      this.currentToken.expiresIn - AUTH_CONSTANTS.TOKEN_EXPIRY_BUFFER_SECONDS,
+      this.currentToken.expiresIn - AUTH_CONSTANTS.TOKEN_EXPIRY_BUFFER_SECONDS
     );
 
     return tokenAgeSeconds < effectiveExpiresIn;
   }
 
   /**
-      * :
+   * :
    * :
    * : null
    * :
-      */
+   */
   clearToken(): void {
     this.currentToken = null;
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   getRemainingSeconds(): number {
     if (!this.currentToken) {
       return 0;
@@ -117,11 +117,11 @@ export class AuthTokenManager {
   }
 
   /**
-      * :
    * :
    * :
    * :
-      */
+   * :
+   */
   needsRefresh(): boolean {
     const remaining = this.getRemainingSeconds();
     //  1
@@ -129,29 +129,29 @@ export class AuthTokenManager {
   }
 
   /**
-      * :
    * :
    * :
-      */
+   * :
+   */
   getAccessToken(): string | null {
     const token = this.getToken();
     return token?.accessToken ?? null;
   }
 
   /**
-      * :
+   * :
    * :
    * : OAuth2.0
-      */
+   */
   getRefreshToken(): string | null {
     return this.currentToken?.refreshToken ?? null;
   }
 
   /**
-      * :
    * :
    * :
-      */
+   * :
+   */
   isAuthenticated(): boolean {
     return this.isTokenValid() && this.currentToken !== null;
   }

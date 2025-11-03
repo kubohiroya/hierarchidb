@@ -47,10 +47,10 @@ const getCurrentLanguage = (): string => {
 };
 
 // Simple translation function
-const t = (key: string, interpolations?: Record<string, any>): string => {
+const t = (key: string, interpolations?: Record<string, unknown>): string => {
   const currentLang = getCurrentLanguage();
   const langMap = (translations[currentLang] ?? translations.en) as Record<string, string>;
-  let text = (langMap[key] ?? key);
+  let text = langMap[key] ?? key;
 
   if (interpolations) {
     Object.entries(interpolations).forEach(([k, v]) => {
@@ -64,7 +64,7 @@ const t = (key: string, interpolations?: Record<string, any>): string => {
 // Worker logging functions with i18n
 export const workerLog = (
   key: string,
-  interpolations?: Record<string, any>,
+  interpolations?: Record<string, unknown>,
   ...args: unknown[]
 ) => {
   console.log(t(key, interpolations), ...args);
@@ -72,7 +72,7 @@ export const workerLog = (
 
 export const workerError = (
   key: string,
-  interpolations?: Record<string, any>,
+  interpolations?: Record<string, unknown>,
   ...args: unknown[]
 ) => {
   console.error(t(key, interpolations), ...args);
@@ -80,7 +80,7 @@ export const workerError = (
 
 export const workerWarn = (
   key: string,
-  interpolations?: Record<string, any>,
+  interpolations?: Record<string, unknown>,
   ...args: unknown[]
 ) => {
   console.warn(t(key, interpolations), ...args);
@@ -88,7 +88,7 @@ export const workerWarn = (
 
 export const workerInfo = (
   key: string,
-  interpolations?: Record<string, any>,
+  interpolations?: Record<string, unknown>,
   ...args: unknown[]
 ) => {
   console.info(t(key, interpolations), ...args);

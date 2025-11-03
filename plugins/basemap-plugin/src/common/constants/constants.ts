@@ -3,8 +3,7 @@
  * @description BaseMap shared constants
  */
 
-import { MapViewport } from '../types/BaseMapEntity.js';
-
+import type { MapViewport } from '../types/BaseMapEntity.js';
 
 export const DEFAULT_VIEWPORT: MapViewport = {
   center: [139.6917, 35.6895], // Tokyo

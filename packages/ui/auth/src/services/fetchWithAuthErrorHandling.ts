@@ -3,13 +3,13 @@
 import { handleAuthError } from './handleAuthError.js';
 
 /**
-  * fetch401
+ * fetch401
  * @param input fetch APIinput
  * @param init fetch APIinit
-  */
+ */
 export async function fetchWithAuthErrorHandling(
   input: RequestInfo | URL,
-  init?: RequestInit,
+  init?: RequestInit
 ): Promise<Response> {
   try {
     const response = await fetch(input, init);
@@ -21,9 +21,7 @@ export async function fetchWithAuthErrorHandling(
     return response;
   } catch (error) {
     if (import.meta.env.DEV) {
-
       console.error('Fetch error:', error);
-
     }
     throw error;
   }

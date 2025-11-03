@@ -8,4 +8,3 @@ export function detectFileType(file: File): SupportedFileType {
   if (name.endsWith('.zip') || file.type.includes('zip')) return 'zip';
   return 'unknown';
 }
-

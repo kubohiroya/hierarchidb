@@ -47,7 +47,7 @@ export interface TreeSubscriptionAPI {
   subscribeNode(
     nodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions,
+    options?: SubscriptionOptions
   ): Promise<SubscriptionId>;
 
   /**
@@ -72,7 +72,7 @@ export interface TreeSubscriptionAPI {
   subscribeSubtree(
     rootNodeId: NodeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions,
+    options?: SubscriptionOptions
   ): Promise<SubscriptionId>;
 
   /**
@@ -86,7 +86,7 @@ export interface TreeSubscriptionAPI {
   subscribeTree(
     treeId: TreeId,
     callback: (event: TreeNodeEvent) => void,
-    options?: SubscriptionOptions,
+    options?: SubscriptionOptions
   ): Promise<SubscriptionId>;
 
   /**

@@ -1,10 +1,10 @@
 import type { NodeId } from '@hierarchidb/common-types';
 /**
-  * : StylerEntity
+ * : StylerEntity
  * : SpreadsheetEntity
  * : SpreadsheetEntity -> FolderEntity -> BaseEntity
  * :
-  */
+ */
 //import type { SpreadsheetEntity } from '@hierarchidb/spreadsheet-plugin';
 import type { StylerConfig } from './stylerTypes.js';
 
@@ -87,11 +87,11 @@ export interface StylerColorRule {
  */
 
 /**
-  * : StylerEntity
+ * : StylerEntity
  * : SpreadsheetEntity
  * : SpreadsheetEntity -> FolderEntity -> BaseEntity
  * :
-  */
+ */
 export interface StylerEntity extends SpreadsheetEntity {
   //  SpreadsheetEntity ()
   //  - id: NodeId (PeerEntity)
@@ -124,9 +124,9 @@ export interface StylerEntity extends SpreadsheetEntity {
 }
 
 /**
-  * : StylerWorkingCopy
+ * : StylerWorkingCopy
  * : Working Copy
-  */
+ */
 // Working copies are handled by runtime-worker PeerStore; no dedicated type here.
 
 export interface StylerColorRule {

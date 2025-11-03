@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
-import { CoreDB } from '../../services/CoreDB.js';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
+import { CoreDB } from '../../services/CoreDB.js';
 
 describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
   beforeEach(async () => {
@@ -30,7 +30,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
         treeId: 'r' as TreeId,
         parentId: 'r:root' as NodeId,
         name: 'FolderB',
-      }),
+      })
     );
     expect(createRes.success).toBe(true);
     if (!createRes.success || !createRes.nodeId) {
@@ -39,12 +39,12 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     const nodeId = createRes.nodeId;
 
     const updateRes = await cp.processCommand(
-      cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' }),
+      cp.createEnvelope('updateNode', { nodeId, name: 'FolderB1' })
     );
     expect(updateRes.success).toBe(true);
 
     const parentId = await core.createNode({
-      id: ('p3-' + Date.now()) as NodeId,
+      id: `p3-${Date.now()}` as NodeId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'P3',
@@ -54,7 +54,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
       version: 1,
     });
     const moveRes = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId }),
+      cp.createEnvelope('moveNodes', { nodeIds: [nodeId], toParentId: parentId })
     );
     expect(moveRes.success).toBe(true);
 
@@ -62,7 +62,7 @@ describe('Headless E2E (Node + fake-indexeddb): CP routing + WC flows', () => {
     expect(mt.success).toBe(true);
 
     const rec = await cp.processCommand(
-      cp.createEnvelope('restoreFromTrash', { nodeIds: [nodeId] }),
+      cp.createEnvelope('restoreFromTrash', { nodeIds: [nodeId] })
     );
     expect(rec.success).toBe(true);
   });

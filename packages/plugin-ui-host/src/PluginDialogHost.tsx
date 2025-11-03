@@ -1,6 +1,9 @@
+import {
+  hydratePresentationDefinitionsFromGlobal,
+  prefetchAllIcons,
+} from '@hierarchidb/plugin-presentation';
 import React from 'react';
 import { PluginDialogShell, type PluginDialogShellProps } from './headless/PluginDialogShell.js';
-import { prefetchAllIcons, hydratePresentationDefinitionsFromGlobal } from '@hierarchidb/plugin-presentation';
 
 export interface PluginDialogHostProps extends PluginDialogShellProps {
   /**
@@ -10,7 +13,10 @@ export interface PluginDialogHostProps extends PluginDialogShellProps {
   prefetchIcons?: boolean;
 }
 
-export const PluginDialogHost: React.FC<PluginDialogHostProps> = ({ prefetchIcons = true, ...rest }) => {
+export const PluginDialogHost: React.FC<PluginDialogHostProps> = ({
+  prefetchIcons = true,
+  ...rest
+}) => {
   React.useEffect(() => {
     hydratePresentationDefinitionsFromGlobal();
     if (!prefetchIcons) return;

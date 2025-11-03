@@ -1,10 +1,13 @@
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import type { CoreDB } from '../CoreDB.js';
 
 describe('Undo/Redo for moveNodes and remove', () => {
-  type CoreStub = Pick<CoreDB, 'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'> & {
+  type CoreStub = Pick<
+    CoreDB,
+    'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
+  > & {
     state: Map<NodeId, TreeNode>;
   };
 
@@ -53,7 +56,10 @@ describe('Undo/Redo for moveNodes and remove', () => {
 
   it('undo/redo moveNodes', async () => {
     const cp = new CommandProcessor(core as unknown as CoreDB);
-    const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'p2' as NodeId });
+    const env = cp.createEnvelope('moveNodes', {
+      nodeIds: ['a' as NodeId],
+      toParentId: 'p2' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
     expect(state.get('a' as NodeId)?.parentId).toBe('p2');

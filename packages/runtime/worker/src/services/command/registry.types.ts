@@ -3,11 +3,11 @@
 // and utility types to infer payload/result shapes from a command kind.
 
 import type {
-  CommandEnvelope as CoreCommandEnvelope,
-  CommandResult as CoreCommandResult,
   CommitWorkingCopyForCreatePayload,
   CommitWorkingCopyPayload,
   CopyNodesPayload,
+  CommandEnvelope as CoreCommandEnvelope,
+  CommandResult as CoreCommandResult,
   CreateWorkingCopyForCreatePayload,
   CreateWorkingCopyPayload,
   DiscardWorkingCopyPayload,
@@ -19,8 +19,8 @@ import type {
   NodeId,
   NodeType,
   PasteNodesPayload,
-  RestoreFromTrashPayload,
   RedoPayload,
+  RestoreFromTrashPayload,
   Timestamp,
   TreeId,
   UndoPayload,
@@ -65,10 +65,16 @@ export interface CommandMap {
   };
 
   // WorkingCopy lifecycle (v1)
-  createWorkingCopyForCreate: { payload: CreateWorkingCopyForCreatePayload; result: CoreCommandResult };
+  createWorkingCopyForCreate: {
+    payload: CreateWorkingCopyForCreatePayload;
+    result: CoreCommandResult;
+  };
   createWorkingCopy: { payload: CreateWorkingCopyPayload; result: CoreCommandResult };
   discardWorkingCopy: { payload: DiscardWorkingCopyPayload; result: CoreCommandResult };
-  commitWorkingCopyForCreate: { payload: CommitWorkingCopyForCreatePayload; result: CoreCommandResult };
+  commitWorkingCopyForCreate: {
+    payload: CommitWorkingCopyForCreatePayload;
+    result: CoreCommandResult;
+  };
   commitWorkingCopy: { payload: CommitWorkingCopyPayload; result: CoreCommandResult };
 }
 

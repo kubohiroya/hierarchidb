@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import { TreeQueryService } from '../TreeQueryService.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../CoreDB.js';
+import { TreeQueryService } from '../TreeQueryService.js';
 
 const makeNode = (id: string, parentId: string | null, name: string): TreeNode => ({
   id: id as NodeId,
@@ -23,10 +23,15 @@ describe('TreeQueryService listChildren prefetch', () => {
   } as unknown as CoreDB;
 
   beforeEach(() => {
-    Object.keys(tree).forEach((key) => delete tree[key]);
-    tree['root'] = [makeNode('child-a', 'root', 'A'), makeNode('child-b', 'root', 'B')];
+    for (const key of Object.keys(tree)) {
+      delete tree[key];
+    }
+    tree.root = [makeNode('child-a', 'root', 'A'), makeNode('child-b', 'root', 'B')];
     tree['child-a'] = [makeNode('grand-a1', 'child-a', 'A1')];
-    tree['child-b'] = [makeNode('grand-b1', 'child-b', 'B1'), makeNode('grand-b2', 'child-b', 'B2')];
+    tree['child-b'] = [
+      makeNode('grand-b1', 'child-b', 'B1'),
+      makeNode('grand-b2', 'child-b', 'B2'),
+    ];
     tree['grand-b1'] = [makeNode('great-b1', 'grand-b1', 'B1-1')];
 
     service = new TreeQueryService(stubCoreDB);
@@ -48,6 +53,6 @@ describe('TreeQueryService listChildren prefetch', () => {
       'grand-b2',
       'great-b1',
     ]);
-    expect((stubCoreDB.listChildren as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1 + 2 + 3);
+    expect(stubCoreDB.listChildren as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1 + 2 + 3);
   });
 });

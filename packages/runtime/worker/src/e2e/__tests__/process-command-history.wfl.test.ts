@@ -1,11 +1,11 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import { exposeTestAPI } from '../test-worker.entry.js';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
+import { assertCommandSuccess, type CommandResultSuccess } from '../../test-utils/assertions.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
-import { assertCommandSuccess, CommandResultSuccess } from '../../test-utils/assertions.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type WorkerTestAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -40,7 +40,10 @@ describe('WFL command processor undo/redo flow', () => {
     const rootId = tree.rootId as NodeId;
 
     const executedUndoables: string[] = [];
-    const runCommand = async <K extends string, P>(kind: K, payload: P): Promise<CommandResultSuccess> => {
+    const runCommand = async <K extends string, P>(
+      kind: K,
+      payload: P
+    ): Promise<CommandResultSuccess> => {
       const envelope = await commandProcessor.createEnvelope(kind, payload);
       const result = await commandProcessor.processCommand(envelope);
       assertCommandSuccess(result, kind);
@@ -70,7 +73,11 @@ describe('WFL command processor undo/redo flow', () => {
 
     await runCommand('updateNode', { nodeId: subjectId, name: 'UndoRedo Subject Renamed' });
 
-    await runCommand('moveNodes', { nodeIds: [subjectId], toParentId: moveTargetId, onNameConflict: 'auto-rename' });
+    await runCommand('moveNodes', {
+      nodeIds: [subjectId],
+      toParentId: moveTargetId,
+      onNameConflict: 'auto-rename',
+    });
 
     await runCommand('moveToTrash', { nodeIds: [subjectId] });
 
@@ -90,11 +97,20 @@ describe('WFL command processor undo/redo flow', () => {
 
     await runCommand('remove', { nodeIds: [removeTargetId] });
 
-    const rootChildrenBeforeCommit = new Set((await queryAPI.listChildren(rootId)).map((node) => node.id));
-    const workingCopy = await workingCopyAPI.createDraftWorkingCopy('folder' as NodeType, rootId, { name: 'UndoRedo Draft' });
-    await runCommand('commitWorkingCopy', { workingCopyId: workingCopy.id, onNameConflict: 'auto-rename' });
+    const rootChildrenBeforeCommit = new Set(
+      (await queryAPI.listChildren(rootId)).map((node) => node.id)
+    );
+    const workingCopy = await workingCopyAPI.createDraftWorkingCopy('folder' as NodeType, rootId, {
+      name: 'UndoRedo Draft',
+    });
+    await runCommand('commitWorkingCopy', {
+      workingCopyId: workingCopy.id,
+      onNameConflict: 'auto-rename',
+    });
     const rootChildrenAfterCommit = await queryAPI.listChildren(rootId);
-    const committedNode = rootChildrenAfterCommit.find((node) => !rootChildrenBeforeCommit.has(node.id));
+    const committedNode = rootChildrenAfterCommit.find(
+      (node) => !rootChildrenBeforeCommit.has(node.id)
+    );
     const committedNodeId = committedNode?.id as NodeId | undefined;
     expect(committedNodeId).toBeDefined();
 
@@ -153,7 +169,7 @@ describe('WFL command processor undo/redo flow', () => {
 
     // Remove subtree (non-undoable command) to cover remaining handler
     const removeSubtreeResult = await commandProcessor.processCommand(
-      await commandProcessor.createEnvelope('removeSubtree', { rootId: moveTargetId }),
+      await commandProcessor.createEnvelope('removeSubtree', { rootId: moveTargetId })
     );
     expect(removeSubtreeResult.success).toBe(true);
     const childrenAfterRemoveSubtree = await queryAPI.listChildren(moveTargetId);
@@ -180,18 +196,21 @@ describe('WFL command processor undo/redo flow', () => {
         treeId,
         parentId: rootId,
         name: 'UndoRedo Headless Original',
-      }),
+      })
     );
     assertCommandSuccess(createResult, 'createNode');
     const nodeId = createResult.nodeId as NodeId;
 
     const renameResult = await commandProcessor.processCommand(
-      await commandProcessor.createEnvelope('updateNode', { nodeId, name: 'UndoRedo Headless Renamed' }),
+      await commandProcessor.createEnvelope('updateNode', {
+        nodeId,
+        name: 'UndoRedo Headless Renamed',
+      })
     );
     assertCommandSuccess(renameResult, 'updateNode');
 
     const moveToTrashResult = await commandProcessor.processCommand(
-      await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId] }),
+      await commandProcessor.createEnvelope('moveToTrash', { nodeIds: [nodeId] })
     );
     assertCommandSuccess(moveToTrashResult, 'moveToTrash');
 
@@ -200,7 +219,7 @@ describe('WFL command processor undo/redo flow', () => {
         nodeIds: [nodeId],
         toParentId: rootId,
         onNameConflict: 'auto-rename',
-      }),
+      })
     );
     expect(restoreResult.success).toBe(true);
 

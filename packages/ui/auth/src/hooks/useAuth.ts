@@ -3,11 +3,11 @@
  * @description Main authentication hook for BFF authentication
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
-import { PopupDetectionService } from '../services/PopupDetectionService.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BFFAuthService, type BFFSignInOptions, type BFFUser } from '../services/BFFAuthService.js';
+import { PopupDetectionService } from '../services/PopupDetectionService.js';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -115,7 +115,6 @@ export function useAuth(homeUrl = '/') {
         }
       }
 
-
       try {
         // Attempt sign in with BFF
         await bffAuth.signIn({
@@ -154,7 +153,7 @@ export function useAuth(homeUrl = '/') {
         }
       }
     },
-    [bffAuth, currentLocationHref, popupDetection],
+    [bffAuth, currentLocationHref, popupDetection]
   );
 
   /**
@@ -201,7 +200,7 @@ export function useAuth(homeUrl = '/') {
         void navigate({ to: defaultRedirect, replace: true });
       }
     },
-    [navigate, currentLocationHref, homeUrl],
+    [navigate, currentLocationHref, homeUrl]
   );
 
   /**
@@ -216,17 +215,17 @@ export function useAuth(homeUrl = '/') {
    */
   const user = bffAuth.user
     ? {
-      profile: {
-        sub: bffAuth.user.id,
-        email: bffAuth.user.email,
-        name: bffAuth.user.name,
-        picture: bffAuth.user.picture,
-        preferred_username: bffAuth.user.email,
-      },
-      access_token: bffAuth.user.access_token,
-      refresh_token: bffAuth.user.refresh_token,
-      expires_at: bffAuth.user.expires_at / 1000, // Convert to seconds
-    }
+        profile: {
+          sub: bffAuth.user.id,
+          email: bffAuth.user.email,
+          name: bffAuth.user.name,
+          picture: bffAuth.user.picture,
+          preferred_username: bffAuth.user.email,
+        },
+        access_token: bffAuth.user.access_token,
+        refresh_token: bffAuth.user.refresh_token,
+        expires_at: bffAuth.user.expires_at / 1000, // Convert to seconds
+      }
     : null;
 
   /**

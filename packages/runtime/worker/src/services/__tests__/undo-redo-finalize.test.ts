@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { describe, expect, it } from 'vitest';
 import type { CoreDB } from '../CoreDB.js';
 
 type TreeNodeState = Partial<Record<NodeId, TreeNode>>;
@@ -34,7 +34,9 @@ function makeCore(): CoreStub {
       delete state[id];
     },
     async listChildren(parentId: NodeId) {
-      return Object.values(state).filter((n): n is TreeNode => Boolean(n && n.parentId === parentId));
+      return Object.values(state).filter((n): n is TreeNode =>
+        Boolean(n && n.parentId === parentId)
+      );
     },
   };
 }

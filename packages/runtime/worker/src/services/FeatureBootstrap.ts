@@ -1,18 +1,20 @@
 //import { FeatureRegistry } from '@hierarchidb/feature-registry';
 //import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
 // Import feature definitions (static list for now; scanning can be added later)
-import { FeatureDefinition as TagFeatureDefinition } from '@hierarchidb/tag';
-import { FeatureDefinition as ImportExportFeatureDefinition } from '@hierarchidb/import-export';
-import { FeatureDefinition as TabularFeatureDefinition } from '@hierarchidb/tabular-source';
+
+import { FeatureDefinition as AuthRecoveryFeatureDefinition } from '@hierarchidb/auth-recovery';
 import { FeatureDefinition as ComputeFeatureDefinition } from '@hierarchidb/compute';
 import { FeatureDefinition as DownloadFeatureDefinition } from '@hierarchidb/download';
-import { FeatureDefinition as MapSourceFeatureDefinition } from '@hierarchidb/map-source';
-import { FeatureDefinition as AuthRecoveryFeatureDefinition } from '@hierarchidb/auth-recovery';
+import type { FeatureDefinition as FeatureDefinitionContract } from '@hierarchidb/feature-registry';
 import { FeatureRegistry } from '@hierarchidb/feature-registry';
+import { FeatureDefinition as ImportExportFeatureDefinition } from '@hierarchidb/import-export';
+import { FeatureDefinition as MapSourceFeatureDefinition } from '@hierarchidb/map-source';
+import { FeatureDefinition as TabularFeatureDefinition } from '@hierarchidb/tabular-source';
+import { FeatureDefinition as TagFeatureDefinition } from '@hierarchidb/tag';
 
 export async function bootstrapFeatures(): Promise<FeatureRegistry> {
   const registry = new FeatureRegistry();
-  [
+  const coreDefinitions = [
     TagFeatureDefinition,
     ImportExportFeatureDefinition,
     TabularFeatureDefinition,
@@ -21,25 +23,34 @@ export async function bootstrapFeatures(): Promise<FeatureRegistry> {
     DownloadFeatureDefinition,
     MapSourceFeatureDefinition,
     AuthRecoveryFeatureDefinition,
-  ].forEach((definition) => registry.register(definition));
-  // Optional: map-adapter (UI adapter only)
-  // Optional module: map-adapter
-  await import('@hierarchidb/map-adapter')
-    .then((mod: any) => {
-      if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
-    })
-    .catch(() => {
-      // optional, ignore
-    });
+  ];
+  for (const definition of coreDefinitions) {
+    registry.register(definition);
+  }
 
-  // Optional feature: tabular-source-xlsx
-  await import('@hierarchidb/tabular-source-xlsx')
-    .then((mod: any) => {
-      if (mod?.FeatureDefinition) registry.register(mod.FeatureDefinition);
-    })
-    .catch(() => {
+  const isFeatureModule = (
+    candidate: unknown
+  ): candidate is { FeatureDefinition: FeatureDefinitionContract } =>
+    Boolean(
+      candidate &&
+        typeof candidate === 'object' &&
+        'FeatureDefinition' in candidate &&
+        (candidate as { FeatureDefinition?: FeatureDefinitionContract }).FeatureDefinition
+    );
+
+  const registerOptionalDefinition = async (loader: () => Promise<unknown>) => {
+    try {
+      const mod = await loader();
+      if (isFeatureModule(mod)) {
+        registry.register(mod.FeatureDefinition);
+      }
+    } catch {
       // optional, ignore
-    });
+    }
+  };
+
+  await registerOptionalDefinition(() => import('@hierarchidb/map-adapter'));
+  await registerOptionalDefinition(() => import('@hierarchidb/tabular-source-xlsx'));
   await registry.startAll();
   return registry;
 }

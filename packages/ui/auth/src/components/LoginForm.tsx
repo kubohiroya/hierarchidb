@@ -1,6 +1,6 @@
+import { Alert, Box, Button, Typography } from '@mui/material';
 import type React from 'react';
 import { useState } from 'react';
-import { Alert, Box, Button, Typography } from '@mui/material';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
 
 interface LoginFormProps {
@@ -10,10 +10,10 @@ interface LoginFormProps {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
-                                                      onLogin,
-                                                      title = 'Sign In',
-                                                      subtitle = 'Choose your authentication provider',
-                                                    }) => {
+  onLogin,
+  title = 'Sign In',
+  subtitle = 'Choose your authentication provider',
+}) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

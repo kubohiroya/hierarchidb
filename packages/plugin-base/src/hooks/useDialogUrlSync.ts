@@ -32,7 +32,7 @@ export interface UseDialogUrlSyncOptions {
   readFrom?: 'search' | 'hash'; // default 'search'
 }
 
-function debounceFn<T extends (...args: any[]) => void>(fn: T, wait: number) {
+function debounceFn<T extends (...args: unknown[]) => void>(fn: T, wait: number) {
   let t: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
     if (t) clearTimeout(t);
@@ -41,13 +41,7 @@ function debounceFn<T extends (...args: any[]) => void>(fn: T, wait: number) {
 }
 
 export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
-  const {
-    namespace = 'd',
-    defaults,
-    debounce,
-    history,
-    readFrom = 'search',
-  } = options;
+  const { namespace = 'd', defaults, debounce, history, readFrom = 'search' } = options;
 
   const [step, setStep] = useState<number>(defaults?.step ?? 0);
   const [mode, setMode] = useState<DialogModeState>(defaults?.mode ?? 'normal');
@@ -96,19 +90,24 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   useEffect(() => {
     // Initialize from URL once
     readUrl();
-  }, []);
+  }, [readUrl]);
 
   const writeUrl = useCallback(
     (
       fields: { step?: number; mode?: DialogModeState; map?: DialogMapState },
-      which: 'step' | 'mode' | 'map',
+      which: 'step' | 'mode' | 'map'
     ) => {
       if (!isBrowser) return;
       const ns = (k: string) => `${namespace}_${k}`;
       const url = new URL(window.location.href);
-      const q = readFrom === 'hash'
-        ? new URLSearchParams(url.hash.includes('?') ? url.hash.split('?')[1] : '')
-        : new URLSearchParams(url.search);
+      const q = (() => {
+        if (readFrom === 'hash') {
+          const hash = url.hash ?? '';
+          const [, query = ''] = hash.split('?');
+          return new URLSearchParams(query);
+        }
+        return new URLSearchParams(url.search);
+      })();
 
       if (fields.step != null) q.set(ns('step'), String(fields.step));
       if (fields.mode) q.set(ns('mode'), fields.mode);
@@ -118,21 +117,28 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
       }
 
       if (readFrom === 'hash') {
-        const base = url.hash.includes('?') ? url.hash.split('?')[0] : (url.hash || '#');
-        url.hash = `${base}?${q.toString()}`;
+        const [head] = (url.hash ?? '').split('?');
+        const base = head && head.length > 0 ? head : '#';
+        const queryString = q.toString();
+        url.hash = queryString.length > 0 ? `${base}?${queryString}` : base;
       } else {
         url.search = q.toString();
       }
 
       writingRef.current = true;
-      const method = which === 'step' ? (history?.step === 'push' ? 'pushState' : 'replaceState') : 'replaceState';
+      const method =
+        which === 'step'
+          ? history?.step === 'push'
+            ? 'pushState'
+            : 'replaceState'
+          : 'replaceState';
       window.history[method](null, '', url);
       // next tick to ignore own popstate
       setTimeout(() => {
         writingRef.current = false;
       }, 0);
     },
-    [isBrowser, namespace, readFrom, history?.step],
+    [isBrowser, namespace, readFrom, history?.step]
   );
 
   // state -> URL (step, immediate)
@@ -148,7 +154,7 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
   // state -> URL (map, debounced)
   const debouncedWriteMap = useMemo(
     () => debounceFn((m: DialogMapState) => writeUrl({ map: m }, 'map'), debounce?.map ?? 400),
-    [writeUrl, debounce?.map],
+    [writeUrl, debounce?.map]
   );
   useEffect(() => {
     if (map) debouncedWriteMap(map);
@@ -170,8 +176,8 @@ export function useDialogUrlSync(options: UseDialogUrlSyncOptions = {}) {
     const url = new URL(window.location.href);
     const ns = `${namespace}_`;
     if (readFrom === 'hash') {
-      const hash = url.hash ?? '';
-      const base: string = hash.includes('?') ? hash.split('?')[0]! : (hash || '#');
+      const [head] = (url.hash ?? '').split('?');
+      const base = head && head.length > 0 ? head : '#';
       url.hash = base;
     } else {
       const q = new URLSearchParams(url.search);

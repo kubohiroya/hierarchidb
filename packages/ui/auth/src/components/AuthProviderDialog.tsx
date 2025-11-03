@@ -1,5 +1,3 @@
-import type React from 'react';
-import type { AuthProviderType } from '../types/AuthProviderType.js';
 import {
   Box,
   Dialog,
@@ -11,6 +9,9 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
+import type React from 'react';
+import { useId } from 'react';
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import { AuthProviderOptions } from './AuthProviderOptions.js';
 
 interface AuthProviderDialogProps {
@@ -23,10 +24,12 @@ interface AuthProviderDialogProps {
  * Dialog version of auth provider selection
  */
 export const AuthProviderDialog: React.FC<AuthProviderDialogProps> = ({
-                                                                        open,
-                                                                        onClose,
-                                                                        onSelectProvider,
-                                                                      }) => {
+  open,
+  onClose,
+  onSelectProvider,
+}) => {
+  const titleId = useId();
+
   const handleProviderSelect = (provider: AuthProviderType) => {
     onSelectProvider(provider);
     onClose();
@@ -38,10 +41,10 @@ export const AuthProviderDialog: React.FC<AuthProviderDialogProps> = ({
       onClose={onClose}
       maxWidth="xs"
       fullWidth
-      aria-labelledby="auth-provider-dialog-title"
+      aria-labelledby={titleId}
       disableRestoreFocus
     >
-      <DialogTitle id="auth-provider-dialog-title" sx={{ textAlign: 'center' }}>
+      <DialogTitle id={titleId} sx={{ textAlign: 'center' }}>
         Choose Authentication Provider
       </DialogTitle>
       <DialogContent>

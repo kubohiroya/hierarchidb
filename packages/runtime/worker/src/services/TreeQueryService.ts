@@ -1,3 +1,4 @@
+import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
 import type {
   CommandResult,
   CopyNodesPayload,
@@ -10,7 +11,6 @@ import type {
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import type { ListChildrenOptions, TreeQueryAPI } from '@hierarchidb/common-api';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 
@@ -21,8 +21,7 @@ export class TreeQueryService implements TreeQueryAPI {
     });
   }
 
-  constructor(private coreDB: CoreDB) {
-  }
+  constructor(private coreDB: CoreDB) {}
 
   // Basic Query Operations
 
@@ -31,9 +30,8 @@ export class TreeQueryService implements TreeQueryAPI {
   }
 
   async getTree(treeId: TreeId): Promise<Tree | undefined> {
-    
     const result = await this.coreDB.getTree(treeId);
-    
+
     return result;
   }
 
@@ -60,18 +58,25 @@ export class TreeQueryService implements TreeQueryAPI {
     }
 
     const hasPrefetchedDescendants = initial.some(
-      (node) => node.parentId && node.parentId !== parentId,
+      (node) => node.parentId && node.parentId !== parentId
     );
     if (hasPrefetchedDescendants) {
       return initial;
     }
 
     const result = [...initial];
-    const queue: Array<{ node: TreeNode; depth: number }> = initial.map((node) => ({ node, depth: 1 }));
+    const queue: Array<{ node: TreeNode; depth: number }> = initial.map((node) => ({
+      node,
+      depth: 1,
+    }));
     const visited = new Set<string>(initial.map((node) => String(node.id)));
 
     while (queue.length > 0) {
-      const { node, depth } = queue.shift()!;
+      const next = queue.shift();
+      if (!next) {
+        break;
+      }
+      const { node, depth } = next;
       if (depth >= requestedDepth) {
         continue;
       }
@@ -102,7 +107,11 @@ export class TreeQueryService implements TreeQueryAPI {
     const seen = new Set<NodeId>();
 
     while (stack.length) {
-      const { id, depth } = stack.pop()!;
+      const next = stack.pop();
+      if (!next) {
+        continue;
+      }
+      const { id, depth } = next;
       if (maxDepth !== undefined && depth >= maxDepth) continue;
       if (seen.has(id)) continue;
       seen.add(id);
@@ -166,7 +175,9 @@ export class TreeQueryService implements TreeQueryAPI {
       const nodeName = caseSensitive ? node.name : node.name.toLowerCase();
       const rawDescription = node.description ?? '';
       const nodeDesc = searchInDescription
-        ? (caseSensitive ? rawDescription : rawDescription.toLowerCase())
+        ? caseSensitive
+          ? rawDescription
+          : rawDescription.toLowerCase()
         : '';
 
       let matches = false;
@@ -179,7 +190,6 @@ export class TreeQueryService implements TreeQueryAPI {
             return text.startsWith(searchString);
           case 'suffix':
             return text.endsWith(searchString);
-          case 'partial':
           default:
             return text.includes(searchString);
         }
@@ -322,12 +332,12 @@ export class TreeQueryService implements TreeQueryAPI {
   // Copy/Export Operations
 
   /**
-      * :
+   * :
    * :
    * :
    * : DoS
    * : docs/14-copy-paste-analysis.md
-      */
+   */
   async copyNodes(payload: CopyNodesPayload): Promise<CommandResult> {
     const { nodeIds } = payload;
 
@@ -353,7 +363,7 @@ export class TreeQueryService implements TreeQueryAPI {
 
       //  : nodeId
       const validNodeIds: NodeId[] = nodeIds.filter(
-        (id) => typeof id === 'string' && id.length > 0 && id.length <= 255,
+        (id) => typeof id === 'string' && id.length > 0 && id.length <= 255
       ) as NodeId[];
 
       if (validNodeIds.length === 0) {

@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId } from '@hierarchidb/common-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
 import type { BaseMapEntity } from '../types/BaseMapEntity.js';
 
 // Mock the FolderEntityHandler since BaseMapEntityHandler extends it
 vi.mock('@hierarchidb/folder-plugin', () => ({
   FolderEntityHandler: class {
-    async createEntity(nodeId: NodeId, data?: any) {
+    async createEntity(nodeId: NodeId, data?: Partial<BaseMapEntity>) {
       return {
         id: crypto.randomUUID(),
         nodeId,
@@ -24,26 +24,19 @@ vi.mock('@hierarchidb/folder-plugin', () => ({
       };
     }
 
-    async updateEntity() {
-    }
+    async updateEntity() {}
 
-    async deleteEntity() {
-    }
+    async deleteEntity() {}
 
-    async getEntity() {
-    }
+    async getEntity() {}
 
-    async createWorkingCopy() {
-    }
+    async createWorkingCopy() {}
 
-    async commitWorkingCopy() {
-    }
+    async commitWorkingCopy() {}
 
-    async discardWorkingCopy() {
-    }
+    async discardWorkingCopy() {}
 
-    async cleanup() {
-    }
+    async cleanup() {}
   },
 }));
 
@@ -403,7 +396,7 @@ describe('BaseMapEntityHandler', () => {
           center: [0, 0],
           zoom: 10,
           bearing: 400, // Invalid bearing
-          pitch: 80,    // Invalid pitch
+          pitch: 80, // Invalid pitch
         },
       };
 

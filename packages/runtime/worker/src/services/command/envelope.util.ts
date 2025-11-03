@@ -21,7 +21,7 @@ function randomId(prefix: string): string {
 export function createEnvelope<K extends CommandKind>(
   kind: K,
   payload: PayloadOf<K>,
-  init?: EnvelopeInit,
+  init?: EnvelopeInit
 ): CommandEnvelope<K> {
   const issuedAt = (init?.issuedAt ?? Date.now()) as Timestamp;
   const envelope: CommandEnvelope<K> = {

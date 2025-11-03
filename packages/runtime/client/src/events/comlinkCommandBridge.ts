@@ -1,27 +1,35 @@
 import { proxy } from 'comlink';
 
-export type CommandHandler = (...args: any[]) => any;
+export type CommandHandler = (...args: unknown[]) => unknown;
 export type CommandMap = Record<string, CommandHandler>;
 
 export type CommandInvoker<TMap extends CommandMap> = (
   command: keyof TMap & string,
-  ...args: any[]
-) => any;
+  ...args: unknown[]
+) => unknown;
 
 export type RemoteCommandInvoker<TMap extends CommandMap> = CommandInvoker<TMap>;
 
-export interface CommandTransformerOptions<TRuntimeMap extends CommandMap, TUiMap extends CommandMap, TWorkerMap extends CommandMap> {
+export interface CommandTransformerOptions<
+  TRuntimeMap extends CommandMap,
+  TUiMap extends CommandMap,
+  TWorkerMap extends CommandMap,
+> {
   runtimeToUi?: (
     command: keyof TRuntimeMap & string,
-    args: any[]
-  ) => { command: keyof TUiMap & string; args: any[] };
+    args: unknown[]
+  ) => { command: keyof TUiMap & string; args: unknown[] };
   workerToRuntime?: (
     command: keyof TWorkerMap & string,
-    args: any[]
-  ) => { command: keyof TRuntimeMap & string; args: any[] };
+    args: unknown[]
+  ) => { command: keyof TRuntimeMap & string; args: unknown[] };
 }
 
-export interface ComlinkCommandBridge<TRuntimeMap extends CommandMap, TUiMap extends CommandMap, TWorkerMap extends CommandMap> {
+export interface ComlinkCommandBridge<
+  TRuntimeMap extends CommandMap,
+  TUiMap extends CommandMap,
+  TWorkerMap extends CommandMap,
+> {
   createUiInvoker(invoker: CommandInvoker<TUiMap>): RemoteCommandInvoker<TRuntimeMap>;
   toRuntimeInvoker(invoker: RemoteCommandInvoker<TRuntimeMap>): CommandInvoker<TWorkerMap>;
 }
@@ -29,13 +37,15 @@ export interface ComlinkCommandBridge<TRuntimeMap extends CommandMap, TUiMap ext
 export function createComlinkCommandBridge<
   TRuntimeMap extends CommandMap,
   TUiMap extends CommandMap = TRuntimeMap,
-  TWorkerMap extends CommandMap = TRuntimeMap
->(options: CommandTransformerOptions<TRuntimeMap, TUiMap, TWorkerMap> = {}): ComlinkCommandBridge<TRuntimeMap, TUiMap, TWorkerMap> {
+  TWorkerMap extends CommandMap = TRuntimeMap,
+>(
+  options: CommandTransformerOptions<TRuntimeMap, TUiMap, TWorkerMap> = {}
+): ComlinkCommandBridge<TRuntimeMap, TUiMap, TWorkerMap> {
   const { runtimeToUi, workerToRuntime } = options;
 
   return {
     createUiInvoker(invoker: CommandInvoker<TUiMap>): RemoteCommandInvoker<TRuntimeMap> {
-      return proxy((command: keyof TRuntimeMap & string, ...args: any[]) => {
+      return proxy((command: keyof TRuntimeMap & string, ...args: unknown[]) => {
         if (runtimeToUi) {
           const transformed = runtimeToUi(command, args);
           return invoker(transformed.command, ...transformed.args);
@@ -44,7 +54,7 @@ export function createComlinkCommandBridge<
       }) as RemoteCommandInvoker<TRuntimeMap>;
     },
     toRuntimeInvoker(invoker: RemoteCommandInvoker<TRuntimeMap>): CommandInvoker<TWorkerMap> {
-      return ((command: keyof TWorkerMap & string, ...args: any[]) => {
+      return ((command: keyof TWorkerMap & string, ...args: unknown[]) => {
         if (workerToRuntime) {
           const transformed = workerToRuntime(command, args);
           return invoker(transformed.command, ...transformed.args);

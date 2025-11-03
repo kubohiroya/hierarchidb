@@ -80,7 +80,7 @@ export class PopupDetectionService {
         const popup = window.open(
           testUrl,
           'popup-test',
-          'width=100,height=100,left=-1000,top=-1000',
+          'width=100,height=100,left=-1000,top=-1000'
         );
 
         if (!popup) {
@@ -113,7 +113,7 @@ export class PopupDetectionService {
           // Can't control popup due to COOP
           try {
             popup.close();
-          } catch (error) {
+          } catch (_error) {
             // Ignore error when closing popup
           }
           this.saveCapability('blocked');
@@ -131,7 +131,7 @@ export class PopupDetectionService {
               this.saveCapability('supported');
               resolve('supported');
             }
-          } catch (e) {
+          } catch (_e) {
             // Cross-origin error, popup is likely blocked
             clearInterval(checkInterval);
             clearTimeout(timeout);
@@ -150,7 +150,7 @@ export class PopupDetectionService {
             // Popup worked
             this.saveCapability('supported');
             resolve('supported');
-          } catch (e) {
+          } catch (_e) {
             // Error closing, probably blocked
             this.saveCapability('blocked');
             resolve('blocked');

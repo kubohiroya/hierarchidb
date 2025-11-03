@@ -13,16 +13,25 @@ function assertNoTab(value: string, label: string) {
 }
 
 // WorkingCopy holder encoding: `${targetParentNodeId}\t${targetNodeId}`
-export function encodeWorkingCopyHolderName(targetParentNodeId: NodeId, targetNodeId: NodeId): string {
+export function encodeWorkingCopyHolderName(
+  targetParentNodeId: NodeId,
+  targetNodeId: NodeId
+): string {
   assertNoTab(targetParentNodeId, 'targetParentNodeId');
   assertNoTab(targetNodeId, 'targetNodeId');
   return `${targetParentNodeId}${SEP}${targetNodeId}`;
 }
 
-export function decodeWorkingCopyHolderName(name: string): { targetParentNodeId: NodeId; targetNodeId: NodeId } {
+export function decodeWorkingCopyHolderName(name: string): {
+  targetParentNodeId: NodeId;
+  targetNodeId: NodeId;
+} {
   const i = name.indexOf(SEP);
   if (i <= 0 || i >= name.length - 1) throw new Error('Invalid workingCopy holder name');
-  return { targetParentNodeId: name.slice(0, i) as NodeId, targetNodeId: name.slice(i + 1) as NodeId };
+  return {
+    targetParentNodeId: name.slice(0, i) as NodeId,
+    targetNodeId: name.slice(i + 1) as NodeId,
+  };
 }
 
 // Fast validity checks (no allocations or slicing on success path)
@@ -39,10 +48,16 @@ export function encodeTrashHolderName(originalParentNodeId: NodeId, trashedNodeI
   return `${originalParentNodeId}${SEP}${trashedNodeId}`;
 }
 
-export function decodeTrashHolderName(name: string): { originalParentNodeId: NodeId; trashedNodeId: NodeId } {
+export function decodeTrashHolderName(name: string): {
+  originalParentNodeId: NodeId;
+  trashedNodeId: NodeId;
+} {
   const i = name.indexOf(SEP);
   if (i <= 0 || i >= name.length - 1) throw new Error('Invalid trash holder name');
-  return { originalParentNodeId: name.slice(0, i) as NodeId, trashedNodeId: name.slice(i + 1) as NodeId };
+  return {
+    originalParentNodeId: name.slice(0, i) as NodeId,
+    trashedNodeId: name.slice(i + 1) as NodeId,
+  };
 }
 
 export function isValidTrashHolderName(name: string): boolean {

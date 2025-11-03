@@ -1,6 +1,6 @@
+import { AuthSecurityUtils } from './AuthSecurityUtils.js';
 import { AUTH_CONSTANTS, type AuthConfig, AuthConfigValidator } from './AuthServiceConfig.js';
 import { type AuthToken, AuthTokenManager } from './AuthTokenManager.js';
-import { AuthSecurityUtils } from './AuthSecurityUtils.js';
 
 export type AuthMethod = 'popup' | 'redirect';
 export type { AuthConfig } from './AuthServiceConfig.js';
@@ -37,15 +37,11 @@ export class AuthService {
     if (!AuthService.instance) {
       AuthService.instance = new AuthService(config);
       if (import.meta.env.DEV) {
-
         console.log('AuthService初期化完了');
-
       }
     } else {
       if (import.meta.env.DEV) {
-
         console.warn('AuthServiceは既に初期化済みです。再初期化は無視されました。');
-
       }
     }
   }
@@ -63,9 +59,7 @@ export class AuthService {
 
   setAuthMethod(method: AuthMethod): void {
     if (import.meta.env.DEV) {
-
       console.log(`認証方式変更リクエスト: ${method}（現在はpopupのみサポート）`);
-
     }
   }
 
@@ -77,9 +71,11 @@ export class AuthService {
 
     //  :
     if (this.tokenManager.isAuthenticated()) {
-      const token = this.tokenManager.getToken()!;
-      const { issuedAt, ...result } = token;
-      return result;
+      const token = this.tokenManager.getToken();
+      if (token) {
+        const { issuedAt: _issuedAt, ...result } = token;
+        return result;
+      }
     }
 
     this.isAuthInProgress = true;
@@ -95,9 +91,7 @@ export class AuthService {
     } catch (error) {
       //  :
       if (import.meta.env.DEV) {
-
         console.error('認証エラー:', error);
-
       }
       throw error;
     } finally {
@@ -121,9 +115,7 @@ export class AuthService {
     }
 
     if (import.meta.env.DEV) {
-
       console.log('認証ポップアップを開きました');
-
     }
 
     return new Promise((resolve, reject) => {
@@ -135,18 +127,14 @@ export class AuthService {
       const messageHandler = (event: MessageEvent) => {
         if (!AuthSecurityUtils.isValidMessageOrigin(event.origin, this.config.authOrigin)) {
           if (import.meta.env.DEV) {
-
             console.log(`不正なOriginからのメッセージを無視: ${event.origin}`);
-
           }
           return;
         }
 
         if (event.data.type === 'auth-success') {
           if (import.meta.env.DEV) {
-
             console.log('認証成功');
-
           }
 
           const result: AuthResult = {
@@ -164,9 +152,7 @@ export class AuthService {
         //  :
         else if (event.data.type === 'auth-error') {
           if (import.meta.env.DEV) {
-
             console.error('認証エラー:', event.data.error);
-
           }
 
           clearTimeout(timeoutId);
@@ -207,7 +193,9 @@ export class AuthService {
     //  PKCE: code_challenge
     if (this.config.usePKCE) {
       this.currentCodeVerifier = AuthSecurityUtils.generateCodeVerifier();
-      params.code_challenge = await AuthSecurityUtils.generateCodeChallenge(this.currentCodeVerifier);
+      params.code_challenge = await AuthSecurityUtils.generateCodeChallenge(
+        this.currentCodeVerifier
+      );
       params.code_challenge_method = AUTH_CONSTANTS.CODE_CHALLENGE_METHOD;
     }
 
@@ -246,7 +234,10 @@ export class AuthService {
     }
   }
 
-  private cleanupPopupAuth(popup: Window | null, messageHandler: ((e: MessageEvent) => void) | null): void {
+  private cleanupPopupAuth(
+    popup: Window | null,
+    messageHandler: ((e: MessageEvent) => void) | null
+  ): void {
     if (messageHandler) {
       window.removeEventListener('message', messageHandler);
     }
@@ -258,9 +249,7 @@ export class AuthService {
         popup.close();
       } catch (e) {
         if (import.meta.env.DEV) {
-
           console.log('ポップアップクローズエラー（無視可能）:', e);
-
         }
       }
     }
@@ -270,14 +259,12 @@ export class AuthService {
   }
 
   private performCleanup(): void {
-    this.cleanupHandlers.forEach(handler => {
+    this.cleanupHandlers.forEach((handler) => {
       try {
         handler();
       } catch (e) {
         if (import.meta.env.DEV) {
-
           console.error('クリーンアップエラー:', e);
-
         }
       }
     });
@@ -304,7 +291,7 @@ export class AuthService {
   }
 
   setCustomScopes(scopes: string[]): void {
-    this.customScopes = scopes.filter(s => s.trim().length > 0);
+    this.customScopes = scopes.filter((s) => s.trim().length > 0);
   }
 
   async authenticateWithRetry(): Promise<AuthResult> {
@@ -313,9 +300,7 @@ export class AuthService {
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         if (import.meta.env.DEV) {
-
           console.log(`認証試行 ${attempt}/${this.maxRetries}`);
-
         }
         return await this.authenticate();
       } catch (error) {
@@ -325,11 +310,9 @@ export class AuthService {
           //  : 2^attempt * 1000ms
           const delay = Math.min(2 ** attempt * 1000, 30000);
           if (import.meta.env.DEV) {
-
             console.log(`${delay}ms後にリトライします...`);
-
           }
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -346,17 +329,13 @@ export class AuthService {
 
     if (!refreshToken) {
       if (import.meta.env.DEV) {
-
         console.warn('リフレッシュトークンが存在しません');
-
       }
       return null;
     }
 
     if (import.meta.env.DEV) {
-
       console.warn('リフレッシュトークン機能は未実装です');
-
     }
     return null;
   }
@@ -368,15 +347,9 @@ export class AuthService {
       const error = params.get('error');
 
       if (code) {
-        window.opener.postMessage(
-          { type: 'auth-success', code },
-          window.location.origin,
-        );
+        window.opener.postMessage({ type: 'auth-success', code }, window.location.origin);
       } else if (error) {
-        window.opener.postMessage(
-          { type: 'auth-error', error },
-          window.location.origin,
-        );
+        window.opener.postMessage({ type: 'auth-error', error }, window.location.origin);
       }
 
       document.body.innerHTML = '<p>認証完了。このウィンドウは自動的に閉じられます...</p>';
@@ -387,9 +360,7 @@ export class AuthService {
             window.close();
           } catch (e) {
             if (import.meta.env.DEV) {
-
               console.log('ウィンドウを閉じることができませんでした:', e);
-
             }
           }
         }

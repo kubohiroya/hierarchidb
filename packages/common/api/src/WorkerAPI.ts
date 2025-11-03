@@ -1,5 +1,6 @@
-import type { Remote } from 'comlink';
 import type { NodeId, NodeType } from '@hierarchidb/common-types';
+import type { Remote } from 'comlink';
+import type { BatchProgressEvent, BatchSessionId, BatchSessionStatus } from './BatchControlAPI.js';
 import type { DialogStateAPI } from './DialogStateAPI.js';
 import type { ImportExportAPI } from './ImportExportAPI.js';
 import type { TagAPI } from './TagAPI.js';
@@ -7,16 +8,23 @@ import type { TreeMutationAPI } from './TreeMutationAPI.js';
 import type { TreeQueryAPI } from './TreeQueryAPI.js';
 import type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
 import type { WorkingCopyAPI } from './WorkingCopyAPI.js';
-import type { BatchProgressEvent, BatchSessionId, BatchSessionStatus } from './BatchControlAPI.js';
 
 export interface PluginLifecycleAPI {
   register(
     pluginId: string,
-    implementation: unknown,
+    implementation: unknown
   ): Promise<{ success: boolean; error?: { code?: string; message?: string; detail?: unknown } }>;
-  unregister(pluginId: string): Promise<{ success: boolean; error?: { code?: string; message?: string; detail?: unknown } }>;
-  validatePlugin(pluginId: string): Promise<{ isValid: boolean; errors: unknown[]; warnings: unknown[] }>;
-  checkHealth(): Promise<{ status: 'ok' | 'degraded' | 'failed'; lastCheck: number; details?: Record<string, unknown> }>;
+  unregister(
+    pluginId: string
+  ): Promise<{ success: boolean; error?: { code?: string; message?: string; detail?: unknown } }>;
+  validatePlugin(
+    pluginId: string
+  ): Promise<{ isValid: boolean; errors: unknown[]; warnings: unknown[] }>;
+  checkHealth(): Promise<{
+    status: 'ok' | 'degraded' | 'failed';
+    lastCheck: number;
+    details?: Record<string, unknown>;
+  }>;
 }
 
 /**
@@ -44,7 +52,7 @@ export interface WorkerAPI {
   subscribeBatchProgress(
     nodeType: NodeType,
     sessionId: BatchSessionId,
-    cb: (event: BatchProgressEvent) => void,
+    cb: (event: BatchProgressEvent) => void
   ): Promise<() => void>;
 
   ping(): { response: 'pong'; timestamp: number };
@@ -52,7 +60,13 @@ export interface WorkerAPI {
   shutdown(): Promise<void>;
   getSystemHealth(): Promise<{
     databases: { coreDB: boolean; ephemeralDB: boolean };
-    services: { query: boolean; mutation: boolean; subscription: boolean; plugin: boolean; workingCopy: boolean };
+    services: {
+      query: boolean;
+      mutation: boolean;
+      subscription: boolean;
+      plugin: boolean;
+      workingCopy: boolean;
+    };
     memory: { used: number; limit: number };
     uptime: number;
   }>;

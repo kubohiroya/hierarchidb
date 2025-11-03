@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NodeId, NodeType, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, Timestamp, TreeNode } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
-import { storeRegistry } from '../store-registry.js';
 import type { GroupItemBase, GroupStore, RelationBase, RelationStore } from '../store.js';
+import { storeRegistry } from '../store-registry.js';
 
 describe('Lifecycle: Group/Relations duplication via idMap', () => {
   const folderType = toNodeType('folder');
@@ -42,7 +42,8 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
       async bulkUpsert(nodeId: NodeId, items) {
         upserts.push({ nodeId, items });
       },
-      async bulkDelete() { /* noop */
+      async bulkDelete() {
+        /* noop */
       },
     };
     storeRegistry.registerGroup(folderType, gstore);
@@ -82,7 +83,9 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
       updatedAt: Date.now(),
       version: 1,
     });
-    [s1, s2, ext].forEach((id) => nodeMap.set(id, makeNode(id)));
+    [s1, s2, ext].forEach((id) => {
+      nodeMap.set(id, makeNode(id));
+    });
 
     // Relations store stub
     const rels: RelationBase[] = [
@@ -96,14 +99,16 @@ describe('Lifecycle: Group/Relations duplication via idMap', () => {
       async bulkUpsert(rs) {
         bulk.push(...rs);
       },
-      async bulkDelete() { /* noop */
+      async bulkDelete() {
+        /* noop */
       },
     };
     storeRegistry.registerRelations(folderType, rstore);
 
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
     EntityLifecycleManager.setIdMapping('cmd-r', [
-      [s1, d1], [s2, d2],
+      [s1, d1],
+      [s2, d2],
     ]);
     await mgr.onDuplicateNodes({
       commandId: 'cmd-r',

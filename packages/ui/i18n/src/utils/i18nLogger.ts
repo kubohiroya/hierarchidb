@@ -151,7 +151,7 @@ export const i18nAssert = (
 ) => {
   if (!isDev) return;
   if (!condition) {
-    console.error('❌ ' + t('errors.assertionFailed') + ':', t(messageKey, options), ...args);
+    console.error(`❌ ${t('errors.assertionFailed')}:`, t(messageKey, options), ...args);
   }
 };
 
@@ -167,7 +167,7 @@ export const i18nFeature = (featureName: string, enabled: boolean, ...args: unkn
 export const i18nAPI = {
   request: (url: string, options?: unknown) => {
     if (!isDev) return;
-    console.log('🌐 ' + t('api.request') + ':', url, options);
+    console.log(`🌐 ${t('api.request')}:`, url, options);
   },
   response: (url: string, status: number, data?: unknown) => {
     if (!isDev) return;
@@ -176,7 +176,7 @@ export const i18nAPI = {
   },
   error: (url: string, error: unknown) => {
     if (!isDev) return;
-    console.error('💥 ' + t('api.error') + ':', url, error);
+    console.error(`💥 ${t('api.error')}:`, url, error);
   },
 };
 

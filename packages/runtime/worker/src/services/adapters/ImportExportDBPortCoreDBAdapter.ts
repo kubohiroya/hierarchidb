@@ -1,10 +1,9 @@
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
 import type { CoreDB } from '../CoreDB.js';
-import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 
 export class ImportExportDBPortCoreDBAdapter implements ImportExportDBPort {
-  constructor(private coreDB: CoreDB) {
-  }
+  constructor(private coreDB: CoreDB) {}
 
   getCoreDB(): CoreDB {
     return this.coreDB;

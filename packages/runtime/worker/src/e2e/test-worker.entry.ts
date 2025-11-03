@@ -1,11 +1,18 @@
 // Test-only worker entry that exposes WorkerService over a MessagePort/Comlink endpoint.
 // Runs in the same process for simplicity; fake-indexeddb provides IndexedDB in Node.
 import 'fake-indexeddb/auto';
-import {proxy, expose, Remote} from 'comlink';
+import type {
+  DialogStateAPI,
+  ImportExportAPI,
+  TreeMutationAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  WorkingCopyAPI,
+} from '@hierarchidb/common-api';
 import type { Endpoint as ComlinkEndpoint } from 'comlink';
+import { expose, proxy } from 'comlink';
 import { WorkerService } from '../index.js';
-import { DialogStateAPI, ImportExportAPI, TreeMutationAPI, TreeQueryAPI, TreeSubscriptionAPI, WorkingCopyAPI } from '@hierarchidb/common-api';
-import { CommandProcessor } from '../services/CommandProcessor.js';
+import type { CommandProcessor } from '../services/CommandProcessor.js';
 
 type Endpoint = MessagePort | Worker | ComlinkEndpoint;
 
@@ -14,8 +21,8 @@ async function main(endpoint?: Endpoint): Promise<void> {
   // No per-API facades; return Comlink proxies of service instances directly
 
   const api = {
-    ping: (): {response: string, timestamp: number} => svc.ping(),
-    getQueryAPI: (): TreeQueryAPI  => proxy(svc.getQueryAPI()),
+    ping: (): { response: string; timestamp: number } => svc.ping(),
+    getQueryAPI: (): TreeQueryAPI => proxy(svc.getQueryAPI()),
     getMutationAPI: (): TreeMutationAPI => proxy(svc.getMutationAPI()),
     getSubscriptionAPI: (): TreeSubscriptionAPI => proxy(svc.getSubscriptionAPI()),
     getImportExportAPI: (): ImportExportAPI => proxy(svc.getImportExportAPI()),

@@ -1,6 +1,6 @@
-import { Dexie, type Table } from 'dexie';
-import { getDBName } from '@hierarchidb/util';
 import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import { getDBName } from '@hierarchidb/util';
+import { Dexie, type Table } from 'dexie';
 import type { StylerPeerData } from '../common/types/stylerTypes.js';
 
 export type StylerPeerRow = {

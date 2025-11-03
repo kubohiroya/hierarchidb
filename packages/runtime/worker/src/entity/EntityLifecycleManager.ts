@@ -1,4 +1,3 @@
-import type { Dexie, Table } from 'dexie';
 import type {
   CommitWorkingCopyPayload,
   DiscardWorkingCopyPayload,
@@ -9,10 +8,11 @@ import type {
   PasteNodesPayload,
   TreeNode,
 } from '@hierarchidb/common-types';
-import type { CommandEnvelope } from '../services/command-types.js';
+import type { Dexie, Table } from 'dexie';
 import type { CoreDB } from '../services/CoreDB.js';
-import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
+import type { CommandEnvelope } from '../services/command-types.js';
 import { decodeWorkingCopyHolderName } from '../services/utils/holder-encoding.js';
+import { PeerEntityHandler } from './handlers/PeerEntityHandler.js';
 import { storeRegistry } from './store-registry.js';
 
 type CreateWorkingCopyPayload = {
@@ -36,9 +36,12 @@ type PeerDbLoader = () => Promise<PeerEntitiesDb | undefined>;
 
 const toNodeId = (value: string): NodeId => value as NodeId;
 const toNodeType = (value: string): NodeType => value as NodeType;
-const maybeNodeId = (value: unknown): NodeId | undefined => (typeof value === 'string' && value.length > 0 ? (value as NodeId) : undefined);
+const maybeNodeId = (value: unknown): NodeId | undefined =>
+  typeof value === 'string' && value.length > 0 ? (value as NodeId) : undefined;
 
-const buildSourceNodeMap = (nodes?: Record<string, TreeNode | undefined>): SourceNodeMap | undefined => {
+const buildSourceNodeMap = (
+  nodes?: Record<string, TreeNode | undefined>
+): SourceNodeMap | undefined => {
   if (!nodes) return undefined;
   const map = new Map<NodeId, TreeNode>();
   for (const [rawId, snapshot] of Object.entries(nodes)) {
@@ -58,7 +61,7 @@ export const registerPeerDbLoader = (nodeType: NodeType, loader: PeerDbLoader): 
   peerDbLoaders.set(nodeType, loader);
 };
 export const registerPeerDbLoaders = (
-  entries: ReadonlyArray<[NodeType, PeerDbLoader]> | Record<string, PeerDbLoader>,
+  entries: ReadonlyArray<[NodeType, PeerDbLoader]> | Record<string, PeerDbLoader>
 ): void => {
   if (Array.isArray(entries)) {
     for (const [type, loader] of entries) peerDbLoaders.set(type, loader);
@@ -69,7 +72,10 @@ export const registerPeerDbLoaders = (
   }
 };
 
-const withPeerDb = async (nodeType: NodeType, fn: (db: PeerEntitiesDb) => Promise<void>): Promise<void> => {
+const withPeerDb = async (
+  nodeType: NodeType,
+  fn: (db: PeerEntitiesDb) => Promise<void>
+): Promise<void> => {
   const loader = peerDbLoaders.get(nodeType);
   if (!loader) return;
   const db = await loader();
@@ -87,12 +93,19 @@ const withPeerDb = async (nodeType: NodeType, fn: (db: PeerEntitiesDb) => Promis
   }
 };
 
-const resolveFromSourceMap = (nodeId: NodeId, sourceNodes?: SourceNodeMap): TreeNode | undefined => {
+const resolveFromSourceMap = (
+  nodeId: NodeId,
+  sourceNodes?: SourceNodeMap
+): TreeNode | undefined => {
   if (!sourceNodes) return undefined;
   return sourceNodes.get(nodeId);
 };
 
-const resolveNode = async (coreDB: CoreDB, nodeId: NodeId, sourceNodes?: SourceNodeMap): Promise<TreeNode | undefined> => {
+const resolveNode = async (
+  coreDB: CoreDB,
+  nodeId: NodeId,
+  sourceNodes?: SourceNodeMap
+): Promise<TreeNode | undefined> => {
   const fromMap = resolveFromSourceMap(nodeId, sourceNodes);
   if (fromMap) return fromMap;
   try {
@@ -110,7 +123,8 @@ export class EntityLifecycleManager {
   private static idMappingByCommand = new Map<string, NodeMapping>();
 
   static getSingleton(coreDB: CoreDB): EntityLifecycleManager {
-    if (!EntityLifecycleManager.instance) EntityLifecycleManager.instance = new EntityLifecycleManager(coreDB);
+    if (!EntityLifecycleManager.instance)
+      EntityLifecycleManager.instance = new EntityLifecycleManager(coreDB);
     return EntityLifecycleManager.instance;
   }
 
@@ -182,8 +196,7 @@ export class EntityLifecycleManager {
       await withPeerDb(nodeType, async (db) => {
         await db.peerEntities.delete(wcId);
       });
-    } catch {
-    }
+    } catch {}
   }
 
   async onCommitWorkingCopy(env: CommitWorkingCopyEnvelope): Promise<void> {
@@ -209,8 +222,7 @@ export class EntityLifecycleManager {
       const peer = new PeerEntityHandler(store);
       await peer.upsertPeer(targetId, wcId);
       await peer.deletePeer(wcId);
-    } catch {
-    }
+    } catch {}
   }
 
   async onDuplicateNodes(env: DuplicateNodesEnvelope): Promise<void> {
@@ -239,7 +251,10 @@ export class EntityLifecycleManager {
     await this.copyRelationsByMapping(mapping, sourceNodes);
   }
 
-  private async copyPeersByMapping(mapping: NodeMapping, sourceNodes?: SourceNodeMap): Promise<void> {
+  private async copyPeersByMapping(
+    mapping: NodeMapping,
+    sourceNodes?: SourceNodeMap
+  ): Promise<void> {
     const byType = new Map<NodeType, Array<{ src: NodeId; dst: NodeId }>>();
     for (const [src, dst] of mapping.entries()) {
       try {
@@ -249,8 +264,7 @@ export class EntityLifecycleManager {
         const list = byType.get(nodeType) ?? [];
         list.push({ src, dst });
         byType.set(nodeType, list);
-      } catch {
-      }
+      } catch {}
     }
 
     for (const [nodeType, pairs] of byType.entries()) {
@@ -258,13 +272,17 @@ export class EntityLifecycleManager {
         const store = storeRegistry.getPeer(nodeType);
         if (!store) continue;
         const handler = new PeerEntityHandler(store);
-        await handler.bulkUpsertFromIds(pairs.map(({ src, dst }) => ({ fromId: src, targetId: dst })));
-      } catch {
-      }
+        await handler.bulkUpsertFromIds(
+          pairs.map(({ src, dst }) => ({ fromId: src, targetId: dst }))
+        );
+      } catch {}
     }
   }
 
-  private async copyGroupsByMapping(mapping: NodeMapping, sourceNodes?: SourceNodeMap): Promise<void> {
+  private async copyGroupsByMapping(
+    mapping: NodeMapping,
+    sourceNodes?: SourceNodeMap
+  ): Promise<void> {
     try {
       for (const [src, dst] of mapping.entries()) {
         const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
@@ -276,11 +294,13 @@ export class EntityLifecycleManager {
         if (!items || items.length === 0) continue;
         await store.bulkUpsert(dst, items);
       }
-    } catch {
-    }
+    } catch {}
   }
 
-  private async copyRelationsByMapping(mapping: NodeMapping, sourceNodes?: SourceNodeMap): Promise<void> {
+  private async copyRelationsByMapping(
+    mapping: NodeMapping,
+    sourceNodes?: SourceNodeMap
+  ): Promise<void> {
     try {
       for (const [src] of mapping.entries()) {
         const snapshot = await resolveNode(this.coreDB, src, sourceNodes);
@@ -299,7 +319,6 @@ export class EntityLifecycleManager {
         }
         if (transformed.length > 0) await relStore.bulkUpsert(transformed);
       }
-    } catch {
-    }
+    } catch {}
   }
 }

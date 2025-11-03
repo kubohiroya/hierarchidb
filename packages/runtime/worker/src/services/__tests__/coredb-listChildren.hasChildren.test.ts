@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import { describe, expect, it, beforeAll, afterAll } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CoreDB } from '../CoreDB.js';
 
 function legacyListChildrenProjection(children: TreeNode[]) {
@@ -47,7 +47,7 @@ describe('CoreDB.listChildren hasChildren propagation', () => {
     const projected = legacyListChildrenProjection(rawChildren);
     const target = projected.find((n) => n.id === childId);
     expect(target).toBeDefined();
-    expect(Object.prototype.hasOwnProperty.call(target ?? {}, 'hasChildren')).toBe(false);
+    expect(Object.hasOwn(target ?? {}, 'hasChildren')).toBe(false);
   });
 
   it('green: listChildren preserves hasChildren flag', async () => {

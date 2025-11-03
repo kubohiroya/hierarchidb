@@ -1,10 +1,16 @@
 import { PluginStepRegistry, type StepComponentProps } from '@hierarchidb/plugin-base';
-import type { MapStyle, MapViewport, DisplayOptions } from '../../common/types/BaseMapEntity.js';
+import type { DisplayOptions, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import { DisplayOptionsStep } from './steps/DisplayOptionsStep.js';
 import { MapStyleStep } from './steps/MapStyleStep.js';
 import { ViewportStep } from './steps/ViewportStep.js';
-import { DisplayOptionsStep } from './steps/DisplayOptionsStep.js';
 
-type P = StepComponentProps & { data: { mapStyle?: MapStyle; viewport?: MapViewport; displayOptions?: DisplayOptions } };
+type StepData = {
+  mapStyle?: MapStyle;
+  viewport?: MapViewport;
+  displayOptions?: DisplayOptions;
+};
+
+type P = StepComponentProps<StepData>;
 
 const registry = PluginStepRegistry.getInstance();
 
@@ -21,7 +27,7 @@ registry.registerConfigProvider({
             onChange={(next) => p.onChange({ ...(p.data || {}), mapStyle: next })}
           />
         ),
-        validate: (data?: any) => {
+        validate: (data?: StepData) => {
           try {
             const s = data?.mapStyle?.style;
             if (!s) return false;
@@ -30,7 +36,9 @@ registry.registerConfigProvider({
               new URL(String(url));
             }
             return true;
-          } catch { return false; }
+          } catch {
+            return false;
+          }
         },
       },
       {
@@ -42,7 +50,7 @@ registry.registerConfigProvider({
             onChange={(next) => p.onChange({ ...(p.data || {}), viewport: next })}
           />
         ),
-        validate: (data?: any) => {
+        validate: (data?: StepData) => {
           try {
             const vp = data?.viewport;
             if (!vp) return false;
@@ -50,10 +58,20 @@ registry.registerConfigProvider({
             const lng = Number(c[0]);
             const lat = Number(c[1]);
             const zoom = Number(vp.zoom);
-            return isFinite(lng) && lng >= -180 && lng <= 180 &&
-                   isFinite(lat) && lat >= -90 && lat <= 90 &&
-                   isFinite(zoom) && zoom >= 0 && zoom <= 24;
-          } catch { return false; }
+            return (
+              Number.isFinite(lng) &&
+              lng >= -180 &&
+              lng <= 180 &&
+              Number.isFinite(lat) &&
+              lat >= -90 &&
+              lat <= 90 &&
+              Number.isFinite(zoom) &&
+              zoom >= 0 &&
+              zoom <= 24
+            );
+          } catch {
+            return false;
+          }
         },
       },
       {
@@ -69,5 +87,7 @@ registry.registerConfigProvider({
       },
     ];
   },
-  getEditStepConfigs() { return this.getCreateStepConfigs(); },
+  getEditStepConfigs() {
+    return this.getCreateStepConfigs();
+  },
 });

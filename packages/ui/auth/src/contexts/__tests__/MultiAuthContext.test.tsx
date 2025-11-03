@@ -3,18 +3,18 @@
  * @description Test suite for MultiAuthContext with multiple OAuth providers
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext.js';
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthUser } from '../../types/AuthUser.js';
+import { MultiAuthProvider, useMultiAuth } from '../MultiAuthContext.js';
 
 // Mock @provider-oauth/google
 const mockGoogleLogin = vi.fn();
 const mockUseGoogleLogin = vi.fn().mockReturnValue(mockGoogleLogin);
+const fetchMock = vi.fn();
 
 vi.mock('@provider-oauth/google', () => ({
-  useGoogleLogin: (config: any) => {
+  useGoogleLogin: (config: unknown) => {
     mockUseGoogleLogin(config);
     return mockGoogleLogin;
   },
@@ -41,6 +41,7 @@ const TestComponent = () => {
       <div data-testid="provider">{auth.currentProvider || 'none'}</div>
 
       <button
+        type="button"
         data-testid="sign-in-google"
         onClick={() => auth.signIn({ provider: 'google' })}
       >
@@ -48,6 +49,7 @@ const TestComponent = () => {
       </button>
 
       <button
+        type="button"
         data-testid="sign-in-microsoft"
         onClick={() => auth.signIn({ provider: 'microsoft' })}
       >
@@ -55,13 +57,14 @@ const TestComponent = () => {
       </button>
 
       <button
+        type="button"
         data-testid="sign-in-github"
         onClick={() => auth.signIn({ provider: 'github' })}
       >
         Sign in with GitHub
       </button>
 
-      <button data-testid="sign-out" onClick={() => auth.signOut()}>
+      <button type="button" data-testid="sign-out" onClick={() => auth.signOut()}>
         Sign out
       </button>
 
@@ -127,19 +130,23 @@ describe('MultiAuthProvider', () => {
         replace: vi.fn(),
         toString: () => 'https://app.example.com/test?param=value',
       },
-      localStorage: mockLocalStorage as any,
+      localStorage: mockLocalStorage as unknown as Storage,
     });
 
     try {
-      Object.defineProperty(globalThis, 'crypto', { value: mockCrypto as any, configurable: true });
+      Object.defineProperty(globalThis, 'crypto', {
+        value: mockCrypto as unknown as Crypto,
+        configurable: true,
+      });
     } catch {
       // Fallback for environments where property is writable
-      (globalThis as any).crypto = mockCrypto as any;
+      Reflect.set(globalThis, 'crypto', mockCrypto as unknown as Crypto);
     }
-    globalThis.localStorage = mockLocalStorage as any;
+    globalThis.localStorage = mockLocalStorage as unknown as Storage;
 
     // Mock fetch for Google userinfo
-    globalThis.fetch = vi.fn();
+    fetchMock.mockReset();
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     vi.clearAllMocks();
   });
@@ -147,9 +154,12 @@ describe('MultiAuthProvider', () => {
   afterEach(() => {
     globalThis.window = originalWindow;
     try {
-      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto as any, configurable: true });
+      Object.defineProperty(globalThis, 'crypto', {
+        value: originalCrypto,
+        configurable: true,
+      });
     } catch {
-      (globalThis as any).crypto = originalCrypto as any;
+      Reflect.set(globalThis, 'crypto', originalCrypto);
     }
     globalThis.localStorage = originalLocalStorage;
   });
@@ -162,7 +172,7 @@ describe('MultiAuthProvider', () => {
       };
 
       expect(() => render(<TestComponentOutside />)).toThrow(
-        'useMultiAuth must be used within MultiAuthProvider',
+        'useMultiAuth must be used within MultiAuthProvider'
       );
     });
 
@@ -170,7 +180,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       expect(screen.getByTestId('loaded')).toHaveTextContent('loaded');
@@ -182,7 +192,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -202,7 +212,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -222,7 +232,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -239,17 +249,18 @@ describe('MultiAuthProvider', () => {
         return null;
       });
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
-      });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Authentication data corrupted. Please sign in again.');
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Authentication data corrupted. Please sign in again.'
+        );
         expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('multi-auth-user');
         expect(mockLocalStorage.removeItem).toHaveBeenCalledWith('multi-auth-provider');
       });
@@ -263,7 +274,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       expect(mockUseGoogleLogin).toHaveBeenCalledWith({
@@ -277,13 +288,16 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       fireEvent.click(screen.getByTestId('sign-in-google'));
 
       expect(mockGoogleLogin).toHaveBeenCalled();
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('multi-auth-redirect', '/test?param=value');
+      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
+        'multi-auth-redirect',
+        '/test?param=value'
+      );
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith('multi-auth-provider', 'google');
     });
 
@@ -295,7 +309,7 @@ describe('MultiAuthProvider', () => {
         picture: 'https://example.com/avatar.jpg',
       };
 
-      (globalThis.fetch as any).mockResolvedValue({
+      fetchMock.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockUserInfo),
       });
@@ -303,7 +317,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       // Get the onSuccess callback
@@ -325,23 +339,22 @@ describe('MultiAuthProvider', () => {
           headers: {
             Authorization: 'Bearer test-access-token',
           },
-        },
+        }
       );
 
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
         'multi-auth-user',
-        expect.stringContaining('"provider":"google"'),
+        expect.stringContaining('"provider":"google"')
       );
     });
 
     it('should handle Google authentication error', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
-      });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];
@@ -356,18 +369,17 @@ describe('MultiAuthProvider', () => {
     });
 
     it('should handle user info fetch failure', async () => {
-      (globalThis.fetch as any).mockResolvedValue({
+      fetchMock.mockResolvedValue({
         ok: false,
         status: 401,
       });
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
-      });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];
@@ -398,7 +410,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
@@ -413,7 +425,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       fireEvent.click(screen.getByTestId('sign-in-github'));
@@ -429,19 +441,18 @@ describe('MultiAuthProvider', () => {
         VITE_MICROSOFT_CLIENT_ID: '',
       }));
 
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
-      });
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
 
       expect(consoleSpy).toHaveBeenCalledWith(
-        'Microsoft Client ID is not configured. Please check your environment variables.',
+        'Microsoft Client ID is not configured. Please check your environment variables.'
       );
 
       consoleSpy.mockRestore();
@@ -451,13 +462,13 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider homeUrl="/custom/">
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       fireEvent.click(screen.getByTestId('sign-in-microsoft'));
 
       expect(globalThis.window.location.href).toContain(
-        encodeURIComponent('https://app.example.com/custom/redirect'),
+        encodeURIComponent('https://app.example.com/custom/redirect')
       );
     });
   });
@@ -475,7 +486,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       // Wait for user to be loaded
@@ -495,7 +506,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider homeUrl="/custom/">
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -521,7 +532,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -540,7 +551,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -553,7 +564,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -572,7 +583,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       await waitFor(() => {
@@ -586,7 +597,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       // Simulate sign in with custom return URL
@@ -595,7 +606,10 @@ describe('MultiAuthProvider', () => {
       const CustomButton = () => {
         const auth = useMultiAuth();
         return (
-          <button onClick={() => auth.signIn({ provider: 'google', returnUrl: customReturnUrl })}>
+          <button
+            type="button"
+            onClick={() => auth.signIn({ provider: 'google', returnUrl: customReturnUrl })}
+          >
             Custom Sign In
           </button>
         );
@@ -604,7 +618,7 @@ describe('MultiAuthProvider', () => {
       render(
         <MultiAuthProvider>
           <CustomButton />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       const customButton = screen.getByText('Custom Sign In');
@@ -620,20 +634,21 @@ describe('MultiAuthProvider', () => {
         return null;
       });
 
-      (globalThis.fetch as any).mockResolvedValue({
+      fetchMock.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          id: '123456',
-          email: 'test@example.com',
-          name: 'Test User',
-          picture: 'https://example.com/avatar.jpg',
-        }),
+        json: () =>
+          Promise.resolve({
+            id: '123456',
+            email: 'test@example.com',
+            name: 'Test User',
+            picture: 'https://example.com/avatar.jpg',
+          }),
       });
 
       render(
         <MultiAuthProvider>
           <TestComponent />
-        </MultiAuthProvider>,
+        </MultiAuthProvider>
       );
 
       const googleConfig = mockUseGoogleLogin.mock.calls[0]?.[0];

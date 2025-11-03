@@ -5,7 +5,7 @@
  * extracted dependencies from the integration hook.
  */
 
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { CommandResult, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { preconnectPluginServices } from '../../services/preconnect.js';
@@ -46,7 +46,12 @@ function buildIndexFromNodes(
   return index;
 }
 
-const showCommandError = console.error.bind(console, '[HDB] Command Error:');
+const showCommandError = (...args: unknown[]) => {
+  console.error('[HDB] Command Error:', ...args);
+};
+
+const isCommandResult = (value: unknown): value is CommandResult =>
+  typeof value === 'object' && value !== null && 'success' in value;
 
 export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConsoleActions {
   const {
@@ -79,6 +84,55 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     const canPaste = ids.length > 0;
     setState((prev) => ({ ...prev, canPaste }));
     setSSOT({ canPaste });
+  };
+
+  const resolveRefreshTarget = (): NodeId | undefined => {
+    if (pageNodeId) return pageNodeId as NodeId;
+    if (treeId) return `${treeId}:root` as NodeId;
+    return undefined;
+  };
+
+  const runHistoryAction = async (method: 'undo' | 'redo') => {
+    if (!client) return;
+    const getCP = (client as unknown as MaybeCP).getCommandProcessor;
+    if (typeof getCP !== 'function') return;
+
+    let historyInvoked = false;
+    try {
+      const cp = await getCP();
+      const historyFn =
+        cp && typeof cp[method] === 'function' ? (cp[method] as () => Promise<unknown>) : undefined;
+      if (!historyFn) return;
+
+      historyInvoked = true;
+      const result = await historyFn();
+
+      if (isCommandResult(result) && !result.success) {
+        showCommandError(result.code, result.error ?? `${method} failed`);
+        return;
+      }
+
+      const refreshTarget = resolveRefreshTarget();
+      if (refreshTarget) {
+        try {
+          await loadChildrenOf(refreshTarget);
+        } catch (error) {
+          console.warn(`[TreeConsoleActions] ${method} refresh failed`, error);
+        }
+      }
+    } catch (error) {
+      console.error(`[TreeConsoleActions] ${method} failed:`, error);
+      showCommandError('UNKNOWN_ERROR', error instanceof Error ? error.message : String(error));
+    } finally {
+      if (historyInvoked) {
+        try {
+          await refreshUndoRedo();
+        } catch (error) {
+          console.warn(`[TreeConsoleActions] refreshUndoRedo failed after ${method}`, error);
+        }
+        fireCmdEvent();
+      }
+    }
   };
 
   const navigateTo = (targetId: NodeId | null | undefined) => {
@@ -586,41 +640,9 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       }
     },
 
-    handleUndo: async () => {
-      if (!client) return;
-      try {
-        const getCP = (client as unknown as MaybeCP).getCommandProcessor;
-        if (typeof getCP !== 'function') return;
-        const cp = await getCP();
-        if (cp && typeof cp.undo === 'function') {
-          await cp.undo();
-          const root = pageNodeId as NodeId;
-          await loadChildrenOf(root);
-          await refreshUndoRedo();
-          fireCmdEvent();
-        }
-      } catch {
-        // Ignore optional command processor failures.
-      }
-    },
+    handleUndo: () => runHistoryAction('undo'),
 
-    handleRedo: async () => {
-      if (!client) return;
-      try {
-        const getCP = (client as unknown as MaybeCP).getCommandProcessor;
-        if (typeof getCP !== 'function') return;
-        const cp = await getCP();
-        if (cp && typeof cp.redo === 'function') {
-          await cp.redo();
-          const root = pageNodeId as NodeId;
-          await loadChildrenOf(root);
-          await refreshUndoRedo();
-          fireCmdEvent();
-        }
-      } catch {
-        // Ignore optional command processor failures.
-      }
-    },
+    handleRedo: () => runHistoryAction('redo'),
 
     handleCopy: () => {
       applyClipboard(selectedIds as NodeId[], false);

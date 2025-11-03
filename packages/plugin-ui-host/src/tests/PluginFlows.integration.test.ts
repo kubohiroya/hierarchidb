@@ -3,14 +3,14 @@
  * @description Headless integration tests per plugin, simulating dialog flows via WorkerAPI mock
  */
 
-import { beforeEach, afterEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import { WorkerAPIImpl } from '@hierarchidb/testing-plugin-dialog-mocks';
 
 type DialogAPI = ReturnType<WorkerAPIImpl['getMultiStepDialogAPI']>;
 
-let workerAPI: any;
+let workerAPI: WorkerAPIImpl | undefined;
 let dialogAPI: DialogAPI;
 
 beforeEach(async () => {
@@ -23,7 +23,11 @@ afterEach(async () => {
   await workerAPI?.shutdown?.();
 });
 
-async function driveToSavable(workingCopyId: NodeId, steps: number, updater: (step: number) => Promise<void>) {
+async function driveToSavable(
+  workingCopyId: NodeId,
+  steps: number,
+  updater: (step: number) => Promise<void>
+) {
   for (let s = 0; s < steps; s++) {
     const caps = await dialogAPI.evaluateCapabilities(workingCopyId, s);
     if (!caps.canProceedToNext && !caps.canSave) {
@@ -43,7 +47,9 @@ describe('Basemap plugin flow', () => {
       } else if (step === 1) {
         await dialogAPI.updateWorkingCopy(id, { data: { mapStyle: { style: 'streets' } } });
       } else if (step === 2) {
-        await dialogAPI.updateWorkingCopy(id, { data: { viewport: { center: [139.6917, 35.6895], zoom: 10 } } });
+        await dialogAPI.updateWorkingCopy(id, {
+          data: { viewport: { center: [139.6917, 35.6895], zoom: 10 } },
+        });
       }
     });
   });
@@ -67,10 +73,13 @@ describe('Shape plugin flow', () => {
     const id = await dialogAPI.createWorkingCopy('shape');
     await driveToSavable(id, 5, async (step) => {
       if (step === 0) await dialogAPI.updateWorkingCopy(id, { data: { name: 'Shapes' } });
-      if (step === 1) await dialogAPI.updateWorkingCopy(id, { data: { dataSourceName: 'geofabrik' } });
+      if (step === 1)
+        await dialogAPI.updateWorkingCopy(id, { data: { dataSourceName: 'geofabrik' } });
       if (step === 2) await dialogAPI.updateWorkingCopy(id, { data: { licenseAgreement: true } });
-      if (step === 3) await dialogAPI.updateWorkingCopy(id, { data: { selectedAdminLevels: [0, 1] } });
-      if (step === 4) await dialogAPI.updateWorkingCopy(id, { data: { selectedCountries: ['JPN'] } });
+      if (step === 3)
+        await dialogAPI.updateWorkingCopy(id, { data: { selectedAdminLevels: [0, 1] } });
+      if (step === 4)
+        await dialogAPI.updateWorkingCopy(id, { data: { selectedCountries: ['JPN'] } });
     });
   });
 });
@@ -80,8 +89,14 @@ describe('Styler plugin flow', () => {
     const id = await dialogAPI.createWorkingCopy('styler');
     await driveToSavable(id, 3, async (step) => {
       if (step === 0) await dialogAPI.updateWorkingCopy(id, { data: { name: 'Styler' } });
-      if (step === 1) await dialogAPI.updateWorkingCopy(id, { data: { /* styleType omitted => optional ok */ } });
-      if (step === 2) await dialogAPI.updateWorkingCopy(id, { data: { categories: ['A', 'B', 'C'] } });
+      if (step === 1)
+        await dialogAPI.updateWorkingCopy(id, {
+          data: {
+            /* styleType omitted => optional ok */
+          },
+        });
+      if (step === 2)
+        await dialogAPI.updateWorkingCopy(id, { data: { categories: ['A', 'B', 'C'] } });
     });
   });
 });
@@ -90,7 +105,10 @@ describe('Route plugin flow', () => {
   it('basic info valid -> subsequent steps savable', async () => {
     const id = await dialogAPI.createWorkingCopy('route');
     await driveToSavable(id, 3, async (step) => {
-      if (step === 0) await dialogAPI.updateWorkingCopy(id, { data: { name: 'Route1', routeType: 'car', transportModes: ['car'] } });
+      if (step === 0)
+        await dialogAPI.updateWorkingCopy(id, {
+          data: { name: 'Route1', routeType: 'car', transportModes: ['car'] },
+        });
     });
   });
 });
@@ -100,7 +118,8 @@ describe('Resolver plugin flow', () => {
     const id = await dialogAPI.createWorkingCopy('resolver');
     await driveToSavable(id, 6, async (step) => {
       if (step === 0) await dialogAPI.updateWorkingCopy(id, { data: { name: 'Resolver1' } });
-      if (step === 1) await dialogAPI.updateWorkingCopy(id, { data: { sourceSchema: 'S', targetSchema: 'T' } });
+      if (step === 1)
+        await dialogAPI.updateWorkingCopy(id, { data: { sourceSchema: 'S', targetSchema: 'T' } });
       if (step === 2) await dialogAPI.updateWorkingCopy(id, { data: { mappingRules: [] } });
     });
   });

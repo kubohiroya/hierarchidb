@@ -1,26 +1,28 @@
-import { describe, expect, it, vi } from 'vitest';
-import { Subject } from 'rxjs';
 import type {
   NodeId,
   NodeType,
   ObserveNodePayload,
+  Timestamp,
   TreeChangeEvent,
   TreeNode,
   TreeNodeEvent,
-  Timestamp,
 } from '@hierarchidb/common-types';
+import { Subject } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
+import type { CoreDB } from '../CoreDB.js';
 import type { CommandEnvelope } from '../command-types.js';
 import { TreeSubscriptionService } from '../TreeSubscriptionService.js';
-import type { CoreDB } from '../CoreDB.js';
 
-function createCoreStub(initialNodes: TreeNode[] = []): CoreDB & { __store: Map<NodeId, TreeNode> } {
+function createCoreStub(
+  initialNodes: TreeNode[] = []
+): CoreDB & { __store: Map<NodeId, TreeNode> } {
   const changeSubject = new Subject<TreeChangeEvent>();
   const store = new Map<NodeId, TreeNode>(initialNodes.map((node) => [node.id, node]));
 
   const core = {
     changeSubject,
     listChildren: vi.fn(async (parentId: NodeId) =>
-      Array.from(store.values()).filter((node) => node.parentId === parentId),
+      Array.from(store.values()).filter((node) => node.parentId === parentId)
     ),
     getNode: vi.fn(async (id: NodeId) => store.get(id)),
     nodes: {
@@ -153,7 +155,11 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
     });
 
     // Update within subtree
-    core.__store.set(childId, { ...childNode, name: 'Child Updated', updatedAt: (Date.now() + 1) as Timestamp });
+    core.__store.set(childId, {
+      ...childNode,
+      name: 'Child Updated',
+      updatedAt: (Date.now() + 1) as Timestamp,
+    });
     core.changeSubject.next({
       type: 'node-updated',
       nodeId: childId,
@@ -175,7 +181,9 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(received.some((event) => event.nodeId === childId && event.type === 'updated')).toBe(true);
+    expect(received.some((event) => event.nodeId === childId && event.type === 'updated')).toBe(
+      true
+    );
     expect(received.some((event) => event.nodeId === otherId)).toBe(false);
 
     // Deletion uses previousNode metadata
@@ -190,6 +198,8 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(received.some((event) => event.nodeId === childId && event.type === 'deleted')).toBe(true);
+    expect(received.some((event) => event.nodeId === childId && event.type === 'deleted')).toBe(
+      true
+    );
   });
 });

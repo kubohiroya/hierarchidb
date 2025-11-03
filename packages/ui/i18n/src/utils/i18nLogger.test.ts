@@ -9,7 +9,7 @@ import * as i18nLogger from './i18nLogger.js';
 // Mock i18next
 vi.mock('../i18n', () => ({
   default: {
-    t: vi.fn((key: string, options?: any) => {
+    t: vi.fn((key: string, options?: Record<string, unknown>) => {
       // Simple mock implementation
       const mockTranslations: Record<string, string> = {
         'common.enabled': 'ENABLED',

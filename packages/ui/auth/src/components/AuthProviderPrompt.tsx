@@ -1,5 +1,5 @@
-import type React from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
+import type React from 'react';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
 import { AuthProviderOptions } from './AuthProviderOptions.js';
 
@@ -14,11 +14,11 @@ interface AuthProviderPromptProps {
  * Inline version of auth provider selection
  */
 export const AuthProviderPrompt: React.FC<AuthProviderPromptProps> = ({
-                                                                        isLoadingAuth,
-                                                                        onSignIn,
-                                                                        title = 'Authentication Required',
-                                                                        subtitle = 'Please sign in to continue',
-                                                                      }) => {
+  isLoadingAuth,
+  onSignIn,
+  title = 'Authentication Required',
+  subtitle = 'Please sign in to continue',
+}) => {
   const handleSignIn = (provider: AuthProviderType) => {
     onSignIn(provider);
   };

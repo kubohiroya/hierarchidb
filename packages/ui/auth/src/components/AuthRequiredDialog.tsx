@@ -6,8 +6,20 @@
  * and needs user intervention to continue.
  */
 
-import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  CheckCircle as CheckCircleIcon,
+  Close as CloseIcon,
+  Error as ErrorIcon,
+  ExpandMore as ExpandMoreIcon,
+  GitHub as GitHubIcon,
+  Google as GoogleIcon,
+  Info as InfoIcon,
+  Lock as LockIcon,
+  Microsoft as MicrosoftIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -27,22 +39,11 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import {
-  CheckCircle as CheckCircleIcon,
-  Close as CloseIcon,
-  Error as ErrorIcon,
-  ExpandMore as ExpandMoreIcon,
-  GitHub as GitHubIcon,
-  Google as GoogleIcon,
-  Info as InfoIcon,
-  Lock as LockIcon,
-  Microsoft as MicrosoftIcon,
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
+import type React from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import type { AuthProviderType } from '../types/AuthProviderType.js';
+
 // Local minimal type to avoid workspace linking issues during typecheck.
 // Aligns with @hierarchidb/common-auth AuthRequiredNotification shape used here.
 type AuthRequiredNotification = {
@@ -70,7 +71,7 @@ export interface AuthRequiredDialogProps {
   /** Authentication notification with context details */
   notification: AuthRequiredNotification;
   /** Callback when authentication succeeds */
-  onSuccess: (token: string, expiresAt: number, userInfo?: any) => void;
+  onSuccess: (token: string, expiresAt: number, userInfo?: AuthUserInfo) => void;
   /** Callback when user cancels authentication */
   onCancel: () => void;
   /** Callback to retry without authentication (if applicable) */
@@ -80,6 +81,40 @@ export interface AuthRequiredDialogProps {
 }
 
 type AuthProvider = 'google' | 'github' | 'microsoft';
+
+export type AuthUserInfo = {
+  id?: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+};
+
+type AuthUserPayload = {
+  token: string;
+  expiresAt: number;
+  info: AuthUserInfo;
+};
+
+const createUserPayload = (
+  authUser: ReturnType<typeof useAuth>['user']
+): AuthUserPayload | null => {
+  if (!authUser?.access_token || !authUser.expires_at) {
+    return null;
+  }
+
+  const profile = authUser.profile ?? {};
+
+  return {
+    token: authUser.access_token,
+    expiresAt: authUser.expires_at,
+    info: {
+      id: profile.sub,
+      email: profile.email,
+      name: profile.name,
+      picture: profile.picture,
+    },
+  };
+};
 
 interface AuthProviderInfo {
   name: string;
@@ -110,22 +145,34 @@ const AUTH_PROVIDERS: Record<AuthProvider, AuthProviderInfo> = {
 };
 
 export function AuthRequiredDialog({
-                                     open,
-                                     title = 'Authentication Required',
-                                     message,
-                                     notification,
-                                     onSuccess,
-                                     onCancel,
-                                     onRetry,
-                                     showSessionDetails = true,
-                                   }: AuthRequiredDialogProps) {
+  open,
+  title = 'Authentication Required',
+  message,
+  notification,
+  onSuccess,
+  onCancel,
+  onRetry,
+  showSessionDetails = true,
+}: AuthRequiredDialogProps) {
   const { signIn, user, isAuthenticated } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AuthProvider | null>(null);
 
+  const dialogTitleId = useId();
+  const dialogDescriptionId = useId();
+
   const { context } = notification;
   const { url, errorMessage, sessionId, pluginType, retryCount = 0, errorCode } = context;
+
+  const currentUserPayload = useMemo(() => createUserPayload(user), [user]);
+
+  const handleUseCurrentSession = useCallback(() => {
+    if (currentUserPayload) {
+      console.log('✅ Using current authentication session for batch processing');
+      onSuccess(currentUserPayload.token, currentUserPayload.expiresAt, currentUserPayload.info);
+    }
+  }, [currentUserPayload, onSuccess]);
 
   // Clear error when base-dialog opens/closes
   useEffect(() => {
@@ -137,10 +184,10 @@ export function AuthRequiredDialog({
 
   // Auto-use current session if already authenticated
   useEffect(() => {
-    if (isAuthenticated && user && !isAuthenticating) {
+    if (isAuthenticated && currentUserPayload && !isAuthenticating) {
       handleUseCurrentSession();
     }
-  }, [isAuthenticated, user, isAuthenticating]);
+  }, [currentUserPayload, handleUseCurrentSession, isAuthenticated, isAuthenticating]);
 
   const handleSignIn = useCallback(
     async (provider: AuthProvider) => {
@@ -151,47 +198,31 @@ export function AuthRequiredDialog({
       try {
         console.log(`🔐 Starting ${provider} authentication for batch processing`);
 
-        await signIn({
+        const signInResult = await signIn({
           provider: provider as AuthProviderType,
           // Context is not part of BFFSignInOptions, so we remove it
         });
 
-        // After successful signIn, use the user from useAuth
-        if (user) {
-          console.log(`✅ Authentication successful with ${provider}`);
-          onSuccess(user.access_token, user.expires_at, {
-            id: user.profile.sub,
-            email: user.profile.email,
-            name: user.profile.name,
-            picture: user.profile.picture,
-          });
-        } else {
+        const payload = createUserPayload(signInResult ?? null) ?? currentUserPayload ?? null;
+
+        if (!payload) {
           throw new Error('Authentication failed');
         }
+
+        console.log(`✅ Authentication successful with ${provider}`);
+        onSuccess(payload.token, payload.expiresAt, payload.info);
       } catch (error) {
         console.error(`❌ Authentication failed with ${provider}:`, error);
         setAuthError(
-          error instanceof Error ? error.message : 'Authentication failed. Please try again.',
+          error instanceof Error ? error.message : 'Authentication failed. Please try again.'
         );
       } finally {
         setIsAuthenticating(false);
         setSelectedProvider(null);
       }
     },
-    [signIn, onSuccess, sessionId, pluginType, context.requestId],
+    [currentUserPayload, onSuccess, signIn]
   );
-
-  const handleUseCurrentSession = useCallback(() => {
-    if (user) {
-      console.log('✅ Using current authentication session for batch processing');
-      onSuccess(user.access_token, user.expires_at, {
-        id: user.profile.sub,
-        email: user.profile.email,
-        name: user.profile.name,
-        picture: user.profile.picture,
-      });
-    }
-  }, [user, onSuccess]);
 
   const handleCancel = useCallback(() => {
     const hasSession = Boolean(sessionId);
@@ -275,9 +306,10 @@ export function AuthRequiredDialog({
       maxWidth="md"
       fullWidth
       disableEscapeKeyDown={isAuthenticating}
-      aria-labelledby="auth-required-dialog-title"
+      aria-labelledby={dialogTitleId}
+      aria-describedby={dialogDescriptionId}
     >
-      <DialogTitle id="auth-required-dialog-title">
+      <DialogTitle id={dialogTitleId}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={2}>
             <LockIcon color="warning" />
@@ -297,7 +329,7 @@ export function AuthRequiredDialog({
         </Box>
       </DialogTitle>
 
-      <DialogContent>
+      <DialogContent id={dialogDescriptionId}>
         {/* Main Alert */}
         <Alert severity={getErrorSeverity()} icon={<LockIcon />} sx={{ mb: 3 }}>
           <Typography variant="body1">

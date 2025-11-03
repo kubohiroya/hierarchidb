@@ -1,26 +1,26 @@
-import type React from 'react';
-import { useCallback, useMemo } from 'react';
+import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import { getDialogSurfaceColor, useMultiStepDialogContext } from '@hierarchidb/ui-dialog';
+import {
+  Close as CloseIcon,
+  FullscreenExit as FullscreenExitIcon,
+  Fullscreen as FullscreenIcon,
+  OpenInFull as OpenInFullIcon,
+} from '@mui/icons-material';
 import {
   Box,
   IconButton,
   Stack,
-  Tooltip,
-  Typography,
-  Stepper,
   Step,
   StepButton,
   StepLabel,
+  Stepper,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import {
-  Close as CloseIcon,
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-  OpenInFull as OpenInFullIcon,
-} from '@mui/icons-material';
-import { useMultiStepDialogContext, getDialogSurfaceColor } from '@hierarchidb/ui-dialog';
-import { Link, useLocation } from '@tanstack/react-router';
 import { alpha } from '@mui/material/styles';
-import type { MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
+import { Link, useLocation } from '@tanstack/react-router';
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 
 export interface PluginDialogHeaderProps {
   title: string;
@@ -72,13 +72,16 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
     return undefined;
   }, [subtitle, ctx.stepComponents.length]);
 
-  const buildStepLink = useCallback((index: number) => {
-    const rawSearch = location.searchStr ? location.searchStr.slice(1) : '';
-    const params = new URLSearchParams(rawSearch);
-    params.set('d_step', String(index));
-    const query = params.toString();
-    return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
-  }, [location.pathname, location.searchStr, location.hash]);
+  const buildStepLink = useCallback(
+    (index: number) => {
+      const rawSearch = location.searchStr ? location.searchStr.slice(1) : '';
+      const params = new URLSearchParams(rawSearch);
+      params.set('d_step', String(index));
+      const query = params.toString();
+      return `${location.pathname}${query ? `?${query}` : ''}${location.hash ?? ''}`;
+    },
+    [location.pathname, location.searchStr, location.hash]
+  );
 
   const handleStepClick = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent, index: number, canNavigate: boolean) => {
@@ -88,7 +91,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
       }
       ctx.onStepNavigate({ type: 'direct', targetIndex: index });
     },
-    [ctx],
+    [ctx]
   );
 
   return (
@@ -168,15 +171,14 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                 const fallbackCanNavigate =
                   ctx.enabledStepIndices.includes(index) || index === ctx.activeStepIndex;
                 const canNavigate = workerStep?.enabled ?? fallbackCanNavigate;
-                const completed =
-                  workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
+                const completed = workerStep?.completed ?? ctx.validatedStepIndices.includes(index);
                 const label = workerStep?.title ?? step.label ?? step.id;
                 const stepLink = buildStepLink(index);
                 return (
                   <Step key={step.id} completed={completed}>
                     <StepButton
-                      component={Link as any}
-                      to={stepLink as any}
+                      component={Link}
+                      to={stepLink}
                       disabled={!canNavigate}
                       preload="intent"
                       onClick={(

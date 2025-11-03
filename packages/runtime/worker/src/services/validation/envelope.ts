@@ -26,19 +26,21 @@ export type ValidationFailure = {
   error: string;
 };
 
-export function isValidationFailure(x: ValidationSuccess | ValidationFailure): x is ValidationFailure {
+export function isValidationFailure(
+  x: ValidationSuccess | ValidationFailure
+): x is ValidationFailure {
   return x?.ok === false;
 }
 
 export function isValidationSuccess<TType extends string = string, TPayload = unknown>(
-  x: ValidationSuccess<TType, TPayload> | ValidationFailure,
+  x: ValidationSuccess<TType, TPayload> | ValidationFailure
 ): x is ValidationSuccess<TType, TPayload> {
   return x?.ok === true;
 }
 
 // Strict parse + normalization: ensure `kind` exists, preserve alias `type` for compatibility.
 export function validateAndNormalizeEnvelope(
-  envelope: EnvelopeInput,
+  envelope: EnvelopeInput
 ): ValidationSuccess | ValidationFailure {
   const obj = envelope as Record<string, unknown>;
   if (!obj || typeof obj !== 'object') {
@@ -53,7 +55,10 @@ export function validateAndNormalizeEnvelope(
   }
   const kind = (obj.kind ?? obj.type) as unknown;
   if (!isTypeString(kind)) {
-    return { ok: false, error: 'Either kind or type is required and must be alnum/dash/underscore' };
+    return {
+      ok: false,
+      error: 'Either kind or type is required and must be alnum/dash/underscore',
+    };
   }
   if (typeof obj.issuedAt !== 'number') {
     return { ok: false, error: 'issuedAt must be a number' };
@@ -64,7 +69,11 @@ export function validateAndNormalizeEnvelope(
   if (obj.sourceViewId !== undefined && !isNonEmptyString(obj.sourceViewId, SOURCE_VIEW_ID_MAX)) {
     return { ok: false, error: 'sourceViewId too long or invalid' };
   }
-  if (obj.onNameConflict !== undefined && obj.onNameConflict !== 'error' && obj.onNameConflict !== 'auto-rename') {
+  if (
+    obj.onNameConflict !== undefined &&
+    obj.onNameConflict !== 'error' &&
+    obj.onNameConflict !== 'auto-rename'
+  ) {
     return { ok: false, error: 'onNameConflict must be "error" or "auto-rename"' };
   }
   // meta (optional)
@@ -91,14 +100,15 @@ export function validateAndNormalizeEnvelope(
   let normalizedMeta: CommandMeta | undefined;
   if (metaSource) {
     normalizedMeta = {
-      commandId: typeof metaSource.commandId === 'string' && metaSource.commandId.length > 0
-        ? metaSource.commandId
-        : (obj.commandId as string),
-      timestamp: typeof metaSource.timestamp === 'number'
-        ? metaSource.timestamp
-        : (obj.issuedAt as number),
+      commandId:
+        typeof metaSource.commandId === 'string' && metaSource.commandId.length > 0
+          ? metaSource.commandId
+          : (obj.commandId as string),
+      timestamp:
+        typeof metaSource.timestamp === 'number' ? metaSource.timestamp : (obj.issuedAt as number),
       userId: typeof metaSource.userId === 'string' ? metaSource.userId : undefined,
-      correlationId: typeof metaSource.correlationId === 'string' ? metaSource.correlationId : undefined,
+      correlationId:
+        typeof metaSource.correlationId === 'string' ? metaSource.correlationId : undefined,
     };
   }
 

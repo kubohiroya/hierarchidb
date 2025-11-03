@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { CoreDB } from '../../services/CoreDB.js';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
+import { CoreDB } from '../../services/CoreDB.js';
 import { encodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
 
 describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
@@ -26,7 +26,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     const cp = new CommandProcessor(core);
 
     // Create a parent and a node 'a' under r:root
-    const aId = ('a-' + Date.now()) as NodeId;
+    const aId = `a-${Date.now()}` as NodeId;
     const aNode: TreeNode = {
       id: aId,
       parentId: 'r:root' as NodeId,
@@ -40,7 +40,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     await core.createNode(aNode);
 
     // Create a WC holder under r:workingCopy referring to node A
-    const holderId = ('wcH-' + Date.now()) as NodeId;
+    const holderId = `wcH-${Date.now()}` as NodeId;
     const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
     await core.createNode({
       id: holderId,
@@ -54,7 +54,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     });
     // Create WC child under holder
     await core.createNode({
-      id: ('wcC-' + Date.now()) as NodeId,
+      id: `wcC-${Date.now()}` as NodeId,
       parentId: holderId,
       nodeType: 'folder' as NodeType,
       name: 'Draft',
@@ -66,7 +66,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
 
     // Try move A to a new parent -> should be blocked
     const p2 = await core.createNode({
-      id: ('p2-' + Date.now()) as NodeId,
+      id: `p2-${Date.now()}` as NodeId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'P2',
@@ -77,7 +77,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     });
 
     const move = await cp.processCommand(
-      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId }),
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 as NodeId })
     );
     expect(move.success).toBe(false);
 
@@ -91,7 +91,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     const cp = new CommandProcessor(core);
 
     // create node in Projects tree (p)
-    const px = ('px-' + Date.now()) as NodeId;
+    const px = `px-${Date.now()}` as NodeId;
     await core.createNode({
       id: px,
       parentId: 'p:root' as NodeId,
@@ -104,7 +104,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     });
 
     // create WC holder that references a node in Resources tree (r)
-    const aId = ('Ar-' + Date.now()) as NodeId;
+    const aId = `Ar-${Date.now()}` as NodeId;
     await core.createNode({
       id: aId,
       parentId: 'r:root' as NodeId,
@@ -115,7 +115,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       updatedAt: Date.now(),
       version: 1,
     });
-    const holderId = ('wcH3-' + Date.now()) as NodeId;
+    const holderId = `wcH3-${Date.now()}` as NodeId;
     const holderName = encodeWorkingCopyHolderName('r:root' as NodeId, aId);
     await core.createNode({
       id: holderId,
@@ -128,7 +128,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       version: 1,
     });
     await core.createNode({
-      id: ('wcC3-' + Date.now()) as NodeId,
+      id: `wcC3-${Date.now()}` as NodeId,
       parentId: holderId,
       nodeType: 'folder' as NodeType,
       name: 'Draft3',
@@ -140,7 +140,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
 
     // Move PX within Projects should be allowed
     const p2 = await core.createNode({
-      id: ('p2-' + Date.now()) as NodeId,
+      id: `p2-${Date.now()}` as NodeId,
       parentId: 'p:root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'P2',
@@ -149,7 +149,9 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       updatedAt: Date.now(),
       version: 1,
     });
-    const ok = await cp.processCommand(cp.createEnvelope('moveNodes', { nodeIds: [px], toParentId: p2 as NodeId }));
+    const ok = await cp.processCommand(
+      cp.createEnvelope('moveNodes', { nodeIds: [px], toParentId: p2 as NodeId })
+    );
     expect(ok.success).toBe(true);
   });
 });

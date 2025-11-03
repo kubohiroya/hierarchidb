@@ -18,4 +18,3 @@ class EntityRegistry {
 }
 
 export const entityRegistry = new EntityRegistry();
-

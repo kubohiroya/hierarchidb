@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../services/CoreDB.js';
 import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
 
@@ -12,7 +12,7 @@ describe('EntityLifecycleManager.setIdMapping', () => {
     const core = makeCore();
     const mgr = EntityLifecycleManager.getSingleton(core as unknown as CoreDB);
 
-    const mapping = new Map<NodeId|number|string, NodeId|number|string>([
+    const mapping = new Map<NodeId | number | string, NodeId | number | string>([
       [123, 'dest' as NodeId],
       ['valid' as NodeId, null],
     ]);

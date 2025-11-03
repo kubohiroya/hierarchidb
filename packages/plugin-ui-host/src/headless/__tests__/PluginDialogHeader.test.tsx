@@ -1,7 +1,7 @@
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { MultiStepDialogProvider } from '@hierarchidb/ui-dialog';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { vi } from 'vitest';
 import { PluginDialogHeader } from '../components/PluginDialogHeader.js';
 
@@ -11,12 +11,16 @@ const headerLocationRef = {
   hash: '',
 };
 
+type MockLinkProps = ComponentProps<'a'> & {
+  to?: string | { to?: string };
+};
+
 vi.mock('@tanstack/react-router', () => {
-  const React = require('react');
+  const React = require('react') as typeof import('react');
   return {
     useNavigate: () => () => Promise.resolve(),
     useLocation: () => headerLocationRef,
-    Link: React.forwardRef<HTMLAnchorElement, any>(({ to, children, ...rest }, ref) => {
+    Link: React.forwardRef<HTMLAnchorElement, MockLinkProps>(({ to, children, ...rest }, ref) => {
       const href = typeof to === 'string' ? to : (to?.to ?? '#');
       return React.createElement('a', { ref, href, ...rest }, children);
     }),
@@ -57,7 +61,7 @@ describe('PluginDialogHeader', () => {
         <MultiStepDialogProvider value={contextValue}>
           <PluginDialogHeader title="Create Folder" mode="create" />
         </MultiStepDialogProvider>
-      </ThemeProvider>,
+      </ThemeProvider>
     );
 
     const detailsStepButton = screen.getByRole('link', { name: /Details/i });

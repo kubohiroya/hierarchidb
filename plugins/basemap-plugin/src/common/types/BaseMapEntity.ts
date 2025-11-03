@@ -16,7 +16,7 @@ import type {
 export interface MapStyle {
   style: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
   customStyleUrl?: string;
-  customStyleConfig?: Record<string, any>;
+  customStyleConfig?: Record<string, unknown>;
 }
 
 /**

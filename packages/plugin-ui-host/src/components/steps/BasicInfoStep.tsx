@@ -3,11 +3,11 @@
  * Common first step for all plugin dialogs
  */
 
+import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
+import { LocalOffer } from '@mui/icons-material';
+import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
 import type React from 'react';
 import { useCallback } from 'react';
-import { Box, FormControl, FormHelperText, TextField, Typography } from '@mui/material';
-import { LocalOffer } from '@mui/icons-material';
-import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';
 
 export interface BasicInfoData {
   name: string;
@@ -42,39 +42,48 @@ export interface BasicInfoStepProps {
  * Basic Information Step Component
  */
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
-                                                              name,
-                                                              description,
-                                                              tags = [],
-                                                              onChange,
-                                                              mode,
-                                                              validate,
-                                                              tagSuggestions = [],
-                                                            }) => {
+  name,
+  description,
+  tags = [],
+  onChange,
+  mode,
+  validate,
+  tagSuggestions = [],
+}) => {
   // Handle name change
-  const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      name: event.target.value,
-      description,
-      tags,
-    });
-  }, [description, tags, onChange]);
+  const handleNameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChange({
+        name: event.target.value,
+        description,
+        tags,
+      });
+    },
+    [description, tags, onChange]
+  );
 
   // Handle description change
-  const handleDescriptionChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange({
-      name,
-      description: event.target.value,
-      tags,
-    });
-  }, [name, tags, onChange]);
+  const handleDescriptionChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange({
+        name,
+        description: event.target.value,
+        tags,
+      });
+    },
+    [name, tags, onChange]
+  );
 
-  const handleTagsChange = useCallback((nextTags: string[]) => {
-    onChange({
-      name,
-      description,
-      tags: nextTags,
-    });
-  }, [name, description, onChange]);
+  const handleTagsChange = useCallback(
+    (nextTags: string[]) => {
+      onChange({
+        name,
+        description,
+        tags: nextTags,
+      });
+    },
+    [name, description, onChange]
+  );
 
   // Validation
   const validationError = validate?.({ name, description });
@@ -90,7 +99,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       <FormControl fullWidth error={!!nameError}>
         <TextField
-          label='Name'
+          label="Name"
           value={name}
           onChange={handleNameChange}
           required
@@ -123,7 +132,20 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       {/* Tags input */}
       <FormControl fullWidth>
         <TagChipsInput
-          label={<Box style={{gap: 1, justifyContent:"start", justifyItems:'start',  display:'flex', flexDirection:"row"}}><LocalOffer/><Box>Tags</Box></Box>}
+          label={
+            <Box
+              style={{
+                gap: 1,
+                justifyContent: 'start',
+                justifyItems: 'start',
+                display: 'flex',
+                flexDirection: 'row',
+              }}
+            >
+              <LocalOffer />
+              <Box>Tags</Box>
+            </Box>
+          }
           value={tags}
           onChange={handleTagsChange}
           suggestions={tagSuggestions}
@@ -131,11 +153,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         />
       </FormControl>
 
-      {validationError && (
-        <FormHelperText error>
-          {validationError}
-        </FormHelperText>
-      )}
+      {validationError && <FormHelperText error>{validationError}</FormHelperText>}
     </Box>
   );
 };

@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../CoreDB.js';
 
-type CoreStub = Pick<CoreDB,
+type CoreStub = Pick<
+  CoreDB,
   'getNode' | 'updateNode' | 'listChildren' | 'deleteNode' | 'bulkDeleteNodes' | 'runInTx'
 > & {
   state: Map<NodeId, TreeNode>;
@@ -29,11 +30,13 @@ function makeCore({ throwOnUpdate = false }: { throwOnUpdate?: boolean } = {}): 
       state.delete(id);
     }),
     bulkDeleteNodes: vi.fn(async (ids: NodeId[]) => {
-      ids.forEach((id) => state.delete(id));
+      for (const id of ids) {
+        state.delete(id);
+      }
     }),
     runInTx: vi.fn(async (_mode, _tables, fn) => {
       const snapshot = new Map<NodeId, TreeNode>(
-        Array.from(state.entries()).map(([id, node]) => [id, { ...node }]),
+        Array.from(state.entries()).map(([id, node]) => [id, { ...node }])
       );
       try {
         return await fn();
@@ -65,7 +68,6 @@ const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
 });
 
 describe('transaction wrapper', () => {
-
   it('wraps moveNodes in a transaction when CoreDB supports runInTx', async () => {
     const core = makeCore();
     core.state.set('a' as NodeId, makeNode('a', 'root', 'A'));
@@ -73,7 +75,10 @@ describe('transaction wrapper', () => {
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
-    const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'p2' as NodeId });
+    const env = cp.createEnvelope('moveNodes', {
+      nodeIds: ['a' as NodeId],
+      toParentId: 'p2' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
     expect(core.runInTx).toHaveBeenCalledTimes(1);
@@ -89,7 +94,10 @@ describe('transaction wrapper', () => {
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
-    const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'p2' as NodeId });
+    const env = cp.createEnvelope('moveNodes', {
+      nodeIds: ['a' as NodeId],
+      toParentId: 'p2' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(true);
     expect(core.runInTx).toBeUndefined();
@@ -104,7 +112,10 @@ describe('transaction wrapper', () => {
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
-    const env = cp.createEnvelope('moveNodes', { nodeIds: ['a' as NodeId], toParentId: 'p2' as NodeId });
+    const env = cp.createEnvelope('moveNodes', {
+      nodeIds: ['a' as NodeId],
+      toParentId: 'p2' as NodeId,
+    });
     const r = await cp.processCommand(env);
     expect(r.success).toBe(false);
     // state should be restored to original due to rollback simulation
@@ -132,7 +143,9 @@ describe('transaction wrapper', () => {
     const { CommandProcessor } = await loadCommandProcessor();
     const cp = new CommandProcessor(core as unknown as CoreDB);
 
-    const cpInternals = cp as unknown as { deletePeerEntitiesForNodes(nodeIds: NodeId[]): Promise<void> };
+    const cpInternals = cp as unknown as {
+      deletePeerEntitiesForNodes(nodeIds: NodeId[]): Promise<void>;
+    };
 
     const cleanupSpy = vi
       .spyOn(cpInternals, 'deletePeerEntitiesForNodes')

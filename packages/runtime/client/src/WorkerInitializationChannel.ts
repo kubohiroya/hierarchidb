@@ -5,7 +5,12 @@
  * its internal initialization, using native browser messaging APIs.
  */
 
-import type { InitializationResult, WorkerInitConfig, WorkerInitMessage, WorkerInitRequest } from './types.js';
+import type {
+  InitializationResult,
+  WorkerInitConfig,
+  WorkerInitMessage,
+  WorkerInitRequest,
+} from './types.js';
 
 const INIT_EVENT_START = 'hierarchidb-worker-init-start';
 const INIT_EVENT_PROGRESS = 'hierarchidb-worker-init-progress';
@@ -61,7 +66,8 @@ export class WorkerInitializationChannel {
         }
 
         switch (message.type) {
-          case 'INIT_COMPLETE': {
+          case 'INIT_COMPLETE':
+            {
               if (timeoutId) {
                 clearTimeout(timeoutId);
               }
@@ -94,7 +100,7 @@ export class WorkerInitializationChannel {
           case 'INIT_PROGRESS':
             if (this.debug) {
               console.log(
-                `[WorkerInitChannel] Progress: ${message.payload?.progress}% - ${message.payload?.message}`,
+                `[WorkerInitChannel] Progress: ${message.payload?.progress}% - ${message.payload?.message}`
               );
             }
             dispatchInitEvent(INIT_EVENT_PROGRESS, {

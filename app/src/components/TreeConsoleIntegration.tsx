@@ -550,15 +550,15 @@ const TreeConsoleIntegrationInner: React.FC<
         canCopy={selectedIds.length > 0}
         canPaste={state.canPaste || false}
         canDuplicate={selectedIds.length > 0}
-        availableTemplates={(() => {
+        canTrash={canTrash}
+        canRemove={canTrash}
+        availableTemplates={() => {
           // Only resources tree ('r') has templates for now
           if (treeId === 'r') {
-            return [
-              { id: 'population-2023', label: 'Import Template: Total Population by Country' },
-            ];
+            return [{ id: 'population-2023', label: 'Total Population by Country' }];
           }
           return [];
-        })()}
+        }}
       />
 
       {/* TreeConsole Panel */}

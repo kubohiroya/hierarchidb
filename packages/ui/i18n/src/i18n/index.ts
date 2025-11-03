@@ -163,7 +163,7 @@ function computeBasePath(): string {
   const toAbs = (v: string) => {
     if (!v) return '/';
     // Ensure trailing slash
-    const withSlash = v.endsWith('/') ? v : v + '/';
+    const withSlash = v.endsWith('/') ? v : `${v}/`;
     if (/^https?:\/\//i.test(withSlash)) return withSlash;
     if (typeof window !== 'undefined') {
       if (withSlash.startsWith('/')) return `${window.location.origin}${withSlash}`;

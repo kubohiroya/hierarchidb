@@ -1,5 +1,5 @@
 import { HostProfileRegistry } from '../registry/HostProfileRegistry.js';
-import { PluginStepRegistry, type PluginStepConfig } from '../registry/PluginStepRegistry.js';
+import { type PluginStepConfig, PluginStepRegistry } from '../registry/PluginStepRegistry.js';
 
 export interface ComposeResult {
   configs: PluginStepConfig[];
@@ -19,7 +19,9 @@ export function composeStepConfigs(nodeType: string, mode: 'create' | 'edit'): C
   // Prefer config providers if available
   const cfgp = pluginReg.getConfigProvider(nodeType);
   const pluginCfgs = cfgp
-    ? (mode === 'create' ? cfgp.getCreateStepConfigs() : cfgp.getEditStepConfigs(''))
+    ? mode === 'create'
+      ? cfgp.getCreateStepConfigs()
+      : cfgp.getEditStepConfigs('')
     : [];
 
   // Deduplicate by step id with "extension/plugin overrides host" policy.

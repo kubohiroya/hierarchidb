@@ -3,26 +3,25 @@
  * @description Export all authentication system components
  */
 
-export * from './AuthNotificationSystem.js';
-
 // Re-export commonly used types
 export type {
-  AuthNotification,
-  AuthRequiredNotification,
-  AuthSuccessNotification,
   AuthCancelledNotification,
+  AuthNotification,
   AuthNotificationHandler,
-  AuthSource,
-  PluginType,
   AuthNotificationType,
+  AuthRequiredNotification,
+  AuthSource,
+  AuthSuccessNotification,
+  PluginType,
 } from './AuthNotificationSystem.js';
+export * from './AuthNotificationSystem.js';
 
 // Re-export main classes and utilities
 export {
-  AuthNotificationRegistry,
+  AUTH_CONSTANTS,
   AuthNotificationFactory,
   AuthNotificationGuards,
-  AUTH_CONSTANTS,
-  generateRequestId,
+  AuthNotificationRegistry,
   detectAuthSource,
+  generateRequestId,
 } from './AuthNotificationSystem.js';

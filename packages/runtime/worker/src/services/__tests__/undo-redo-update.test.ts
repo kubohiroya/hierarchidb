@@ -1,6 +1,7 @@
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandProcessor } from '../CommandProcessor.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
+import type { CoreDB } from '../CoreDB.js';
 
 describe('Undo/Redo for updateNode', () => {
   const baseNode: TreeNode = {
@@ -14,7 +15,12 @@ describe('Undo/Redo for updateNode', () => {
     version: 1,
   };
 
-  let coreDBStub: any;
+  type CoreStub = Pick<
+    CoreDB,
+    'getNode' | 'updateNode' | 'deleteNode' | 'createNode' | 'listChildren'
+  >;
+
+  let coreDBStub: CoreStub;
 
   beforeEach(() => {
     const state: Record<string, TreeNode> = { [baseNode.id]: { ...baseNode } };
@@ -24,15 +30,14 @@ describe('Undo/Redo for updateNode', () => {
         const prev = state[node.id];
         state[node.id] = { ...prev, ...node } as TreeNode;
       }),
-      deleteNode: vi.fn(async (_id: NodeId) => {
-      }),
+      deleteNode: vi.fn(async (_id: NodeId) => {}),
       createNode: vi.fn(async (node: TreeNode) => node.id),
       listChildren: vi.fn(async (_id: NodeId) => []),
     };
   });
 
   it('undo restores previous name and redo reapplies new name', async () => {
-    const cp = new CommandProcessor(coreDBStub);
+    const cp = new CommandProcessor(coreDBStub as unknown as CoreDB);
 
     const updateEnv = cp.createEnvelope('updateNode', {
       nodeId: 'n1' as NodeId,

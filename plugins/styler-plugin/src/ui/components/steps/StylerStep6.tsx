@@ -1,21 +1,21 @@
 /**
-  * @file StylerStep6.tsx
+ * @file StylerStep6.tsx
  * @description Step 6 wrapper component for Styler table preview
  * :
  * :
  * :
-  */
+ */
 
-import React, { useCallback, useMemo } from 'react';
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Alert, AlertTitle, Box } from '@mui/material';
-import { StylerTablePreview } from './StylerTablePreview.js';
+import React, { useCallback, useMemo } from 'react';
 import type { StylerConfig } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
+import { StylerTablePreview } from './StylerTablePreview.js';
 
 /**
-  * : Step6
-  */
+ * : Step6
+ */
 export interface StylerStep6Props {
   data: any;
   onChange: (data: any) => void;
@@ -26,18 +26,18 @@ export interface StylerStep6Props {
 }
 
 /**
-  * : Styler Step6
+ * : Styler Step6
  * : StylerTablePreview
  * :
  * :
-  */
+ */
 export const StylerStep6: React.FC<StylerStep6Props> = ({
-                                                          data,
-                                                          onChange,
-                                                          onValidate,
-                                                          csvData = [],
-                                                          // columns = [],
-                                                        }) => {
+  data,
+  onChange,
+  onValidate,
+  csvData = [],
+  // columns = [],
+}) => {
   const config: StylerConfig = data?.stylerConfig || StylerConfigDefault;
   const selectedKeyColumn = data?.selectedKeyColumn;
   const selectedValueColumn = data?.selectedValueColumn;
@@ -64,7 +64,7 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 
       onChange(updatedData);
     },
-    [data, onChange],
+    [data, onChange]
   );
 
   React.useEffect(() => {
@@ -115,7 +115,7 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
       />
 
       {/*
-*/}
+       */}
       {csvData.length > 1000 && (
         <Alert severity="info" sx={{ mt: 2 }}>
           Showing preview of first 1,000 rows. Full dataset contains{' '}
@@ -127,8 +127,8 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
 };
 
 /**
-  * : Step
-  */
+ * : Step
+ */
 const StylerStep6Component = wrapDialogStepComponent(StylerStep6);
 
 export const StylerStep6Definition = {

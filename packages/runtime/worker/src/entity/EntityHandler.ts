@@ -23,4 +23,3 @@ export interface EntityHandler {
 
   deleteRelations?(nodeId: NodeId): Promise<void>;
 }
-

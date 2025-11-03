@@ -52,7 +52,7 @@ export function useGlobalI18nTranslator(options: TranslatorOptions = {}) {
 
       return fallback;
     },
-    [i18n, baseOptions, language]
+    [i18n, baseOptions]
   );
 
   return useMemo(() => ({ t: translator, language }), [translator, language]);

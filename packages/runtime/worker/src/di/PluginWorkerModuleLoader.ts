@@ -1,6 +1,6 @@
 import { inject, injectable, optional } from 'inversify';
-import { WorkerDiTokens } from './tokens.js';
 import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } from './interfaces.js';
+import { WorkerDiTokens } from './tokens.js';
 
 type PluginWorkerModuleMap = Record<string, string>;
 type PluginWorkerSourceMap = Record<string, string | undefined>;
@@ -21,17 +21,17 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     private readonly sourceMap?: PluginWorkerSourceMap,
     @inject(WorkerDiTokens.PluginRegistry)
     @optional()
-    private readonly registry?: Array<{ nodeType: string }>,
+    private readonly registry?: Array<{ nodeType: string }>
   ) {}
 
   has(nodeType: string): boolean {
-    if (this.loaderMap && Object.prototype.hasOwnProperty.call(this.loaderMap, nodeType)) {
+    if (this.loaderMap && Object.hasOwn(this.loaderMap, nodeType)) {
       return true;
     }
     if (this.registry) {
       return this.registry.some((entry) => entry.nodeType === nodeType);
     }
-    return Object.prototype.hasOwnProperty.call(this.specMap, nodeType);
+    return Object.hasOwn(this.specMap, nodeType);
   }
 
   listNodeTypes(): string[] {
@@ -73,7 +73,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
         const spec = this.specMap[nodeType];
         if (!spec) {
           return Promise.reject(
-            new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`),
+            new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`)
           );
         }
         const loaderPromise = this.loadFromSpecifier<T>(nodeType, spec);
@@ -81,7 +81,13 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
       }
     }
 
-    return this.cache.get(nodeType)! as Promise<T>;
+    const cached = this.cache.get(nodeType);
+    if (!cached) {
+      return Promise.reject(
+        new Error(`[PluginWorkerModuleLoader] Plugin "${nodeType}" not registered in loader cache`)
+      );
+    }
+    return cached as Promise<T>;
   }
 
   private async loadFromSpecifier<T>(nodeType: string, spec: string): Promise<T> {
@@ -91,7 +97,11 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     } catch (primaryError) {
       const attempted: string[] = [spec];
 
-      if (typeof import.meta !== 'undefined' && (import.meta as any)?.env?.DEV && this.sourceMap) {
+      const isDevEnvironment =
+        typeof import.meta !== 'undefined' &&
+        Boolean((import.meta as ImportMeta & { env?: Record<string, unknown> }).env?.DEV);
+
+      if (isDevEnvironment && this.sourceMap) {
         const relativePath = this.sourceMap[nodeType];
         if (relativePath) {
           try {
@@ -101,7 +111,10 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
             const result = await import(/* @vite-ignore */ devUrl);
             return result as T;
           } catch (devError) {
-            console.warn(`[PluginWorkerModuleLoader] dev import fallback failed for ${nodeType}`, devError);
+            console.warn(
+              `[PluginWorkerModuleLoader] dev import fallback failed for ${nodeType}`,
+              devError
+            );
           }
         }
       }
@@ -121,7 +134,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
           } catch (sourceError) {
             console.warn(
               `[PluginWorkerModuleLoader] source import fallback failed for ${nodeType}`,
-              sourceError,
+              sourceError
             );
           }
         }
@@ -135,13 +148,16 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
           const result = await import(/* @vite-ignore */ distSpec);
           return result as T;
         } catch (distError) {
-          console.warn(`[PluginWorkerModuleLoader] dist import fallback failed for ${nodeType}`, distError);
+          console.warn(
+            `[PluginWorkerModuleLoader] dist import fallback failed for ${nodeType}`,
+            distError
+          );
         }
       }
 
       console.warn(
         `[PluginWorkerModuleLoader] import failed for ${nodeType} after attempts: ${attempted.join(', ')}`,
-        primaryError,
+        primaryError
       );
       throw primaryError;
     }

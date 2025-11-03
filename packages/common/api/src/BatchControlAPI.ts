@@ -144,8 +144,8 @@ export function isBatchControlAPIV2Enabled(): boolean {
 /**
  * Factory function to create unified batch managers
  */
-export interface BatchManagerFactory<TConfig = any, TData = any> {
-  createManager(deps?: any): IBatchSessionManager;
+export interface BatchManagerFactory<TConfig = Record<string, unknown>, TData = unknown> {
+  createManager(deps?: Record<string, unknown>): IBatchSessionManager;
 
   validateConfig(config: TConfig): boolean;
 

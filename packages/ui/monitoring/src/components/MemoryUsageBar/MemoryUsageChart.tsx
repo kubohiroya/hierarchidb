@@ -93,7 +93,7 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
     (
       breakdown?: Array<{ bytes?: number; types?: string[]; url?: string }>
     ): { [key: string]: number } => {
-      const categories: { [key: string]: number } = {
+      const categories: Record<string, number> = {
         JavaScript: 0,
         DOM: 0,
         Images: 0,
@@ -108,18 +108,18 @@ export const MemoryUsageChart: React.FC<MemoryUsageChartProps> = ({
         const types = entry.types || [];
 
         if (types.includes('JavaScript')) {
-          categories['JavaScript'] = (categories['JavaScript'] || 0) + bytes;
+          categories.JavaScript = (categories.JavaScript || 0) + bytes;
         } else if (types.includes('DOM')) {
-          categories['DOM'] = (categories['DOM'] || 0) + bytes;
+          categories.DOM = (categories.DOM || 0) + bytes;
         } else if (
           entry.url &&
           (entry.url.includes('.jpg') || entry.url.includes('.png') || entry.url.includes('.gif'))
         ) {
-          categories['Images'] = (categories['Images'] || 0) + bytes;
+          categories.Images = (categories.Images || 0) + bytes;
         } else if (entry.url && (entry.url.includes('.css') || types.includes('CSS'))) {
-          categories['Styles'] = (categories['Styles'] || 0) + bytes;
+          categories.Styles = (categories.Styles || 0) + bytes;
         } else {
-          categories['Other'] = (categories['Other'] || 0) + bytes;
+          categories.Other = (categories.Other || 0) + bytes;
         }
       });
 

@@ -1,8 +1,17 @@
+import {
+  generateNodeId,
+  type NodeBase,
+  type NodeId,
+  type NodeType,
+  type Seq,
+  type Timestamp,
+  type TreeId,
+  type TreeNode,
+} from '@hierarchidb/common-types';
 import crypto from 'crypto';
-import { generateNodeId, type NodeBase, type NodeId, type NodeType, type Timestamp, type TreeId, type TreeNode, type Seq } from '@hierarchidb/common-types';
+import type { CoreDB } from './CoreDB.js';
 import type { CommandEnvelope, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
-import type { CoreDB } from './CoreDB.js';
 import { encodeWorkingCopyHolderName } from './utils/holder-encoding.js';
 
 export function createWorkingCopyNodeHolderParentId(treeId: TreeId) {
@@ -26,7 +35,7 @@ export async function createNewDraftWorkingCopy(
   treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
-  baseName: string,
+  baseName: string
 ): Promise<NodeId> {
   const workingCopyNodeHolderParentId = createWorkingCopyNodeHolderParentId(treeId);
   // Note: WorkingCopy は workingCopyRoot 直下の専用名前空間に作成するため、
@@ -81,9 +90,16 @@ export async function createNewDraftWorkingCopy(
       await coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
     });
     return workingCopyNodeHolderId;
-  } catch (err: any) {
+  } catch (err: unknown) {
     // ConstraintError: created concurrently; re-read existing
-    if (err && (err.name === 'ConstraintError' || /Constraint/i.test(String(err?.message)))) {
+    const isConstraintError =
+      typeof err === 'object' &&
+      err !== null &&
+      (('name' in err &&
+        typeof (err as { name?: unknown }).name === 'string' &&
+        (err as { name: string }).name === 'ConstraintError') ||
+        /Constraint/i.test(String((err as { message?: unknown }).message)));
+    if (isConstraintError) {
       const holder = await coreDB.nodes
         .where('[parentId+name]')
         .equals([workingCopyNodeHolderParentId, holderName])
@@ -100,7 +116,7 @@ export async function createDraftWorkingCopyGetOrCreate(
   treeId: TreeId,
   parentId: NodeId,
   nodeType: NodeType,
-  baseName: string,
+  baseName: string
 ): Promise<{ wcHolderId: NodeId; wcNodeId: NodeId; returnedExisting: boolean }> {
   const workingCopyRootId = createWorkingCopyNodeHolderParentId(treeId);
   const targetNodeId = generateNodeId();
@@ -113,15 +129,19 @@ export async function createDraftWorkingCopyGetOrCreate(
 
   if (existing) {
     // Ensure holder metadata exists; if missing, backfill from encoded name
-    const ex: any = existing;
-    if (!ex.holderType || !ex.holderTargetId || !ex.holderMetaParentId) {
+    const patchedExisting: TreeNode = { ...existing };
+    if (
+      !patchedExisting.holderType ||
+      !patchedExisting.holderTargetId ||
+      !patchedExisting.holderMetaParentId
+    ) {
       try {
         const { decodeWorkingCopyHolderName } = await import('./utils/holder-encoding.js');
-        const parsed = decodeWorkingCopyHolderName(ex.name as string);
-        ex.holderType = 'workingCopy';
-        ex.holderTargetId = parsed.targetNodeId;
-        ex.holderMetaParentId = parsed.targetParentNodeId;
-        await coreDB.nodes.put(ex);
+        const parsed = decodeWorkingCopyHolderName(existing.name);
+        patchedExisting.holderType = 'workingCopy';
+        patchedExisting.holderTargetId = parsed.targetNodeId;
+        patchedExisting.holderMetaParentId = parsed.targetParentNodeId;
+        await coreDB.nodes.put(patchedExisting);
       } catch {
         // ignore; commit will still be able to decode from name
       }
@@ -169,7 +189,7 @@ export async function createDraftWorkingCopyGetOrCreate(
 export async function createWorkingCopyFromNode(
   coreDB: CoreDB,
   treeId: TreeId,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): Promise<NodeId> {
   const workingCopyNodeHolderParentId = createWorkingCopyNodeHolderParentId(treeId);
 
@@ -222,36 +242,39 @@ export async function createWorkingCopyFromNode(
 
   try {
     const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
-      const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
-      await lifecycle.handleCommand({
-        commandId: crypto.randomUUID(),
-        groupId: crypto.randomUUID(),
-        kind: 'createWorkingCopy',
-        payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
-        issuedAt: Date.now(),
-        type: 'createWorkingCopy',
-      });
-  } catch {
-  }
+    const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
+    await lifecycle.handleCommand({
+      commandId: crypto.randomUUID(),
+      groupId: crypto.randomUUID(),
+      kind: 'createWorkingCopy',
+      payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
+      issuedAt: Date.now(),
+      type: 'createWorkingCopy',
+    });
+  } catch {}
 
   return nodeId;
 }
 
 // V2 commit result types (non-breaking: new API)
 export type CommitOk = { status: 'ok'; nodeId: NodeId; autoRenameTo?: string };
-export type CommitConflict = { status: 'COMMIT_CONFLICT'; originalVersion: number; wcVersion: number };
+export type CommitConflict = {
+  status: 'COMMIT_CONFLICT';
+  originalVersion: number;
+  wcVersion: number;
+};
 export type NameConflict = { status: 'NAME_CONFLICT'; suggestedName: string };
 export type CommitResultV2 = CommitOk | CommitConflict | NameConflict;
 
 /**
-  * Commit working copy (V2)
+ * Commit working copy (V2)
  * - Editing WC: merge to original (optimistic lock). On name conflict NAME_CONFLICT (or auto-rename).
  * - Draft WC: create new node under targetParentId with targetNodeId. Handle name conflicts similarly.
-  */
+ */
 export async function commitWorkingCopyV2(
   coreDB: CoreDB,
   workingCopyNodeId: NodeId,
-  onNameConflict: 'error' | 'auto-rename' = 'error',
+  onNameConflict: 'error' | 'auto-rename' = 'error'
 ): Promise<CommitResultV2> {
   const now = Date.now() as Timestamp;
   const wcNode = await coreDB.nodes.get(workingCopyNodeId);
@@ -318,7 +341,11 @@ export async function commitWorkingCopyV2(
   // Editing path: optimistic lock
   const originalVersion = wcNode.version || 1;
   if (originalNode.version > originalVersion) {
-    return { status: 'COMMIT_CONFLICT', originalVersion: originalNode.version, wcVersion: originalVersion };
+    return {
+      status: 'COMMIT_CONFLICT',
+      originalVersion: originalNode.version,
+      wcVersion: originalVersion,
+    };
   }
 
   if (nameConflicts) {
@@ -351,7 +378,7 @@ export async function commitWorkingCopy(
   coreDB: CoreDB,
   workingCopyNodeId: NodeId,
   isDraft: boolean,
-  onNameConflict: 'error' | 'auto-rename' = 'error',
+  onNameConflict: 'error' | 'auto-rename' = 'error'
 ): Promise<CommandResult> {
   try {
     const now = Date.now() as Timestamp;
@@ -463,7 +490,7 @@ export async function commitWorkingCopy(
  */
 export async function discardWorkingCopy(
   coreDB: CoreDB,
-  workingCopyNodeIdPair: NodeId[],
+  workingCopyNodeIdPair: NodeId[]
 ): Promise<void> {
   await coreDB.nodes.bulkDelete(workingCopyNodeIdPair);
   // workingCopyNodeIdPair = [holderId, wcId]; inform lifecycle to drop wc peer
@@ -482,8 +509,7 @@ export async function discardWorkingCopy(
       };
       await lifecycle.handleCommand(envelope);
     }
-  } catch {
-  }
+  } catch {}
 }
 
 /**
@@ -491,13 +517,13 @@ export async function discardWorkingCopy(
  */
 export async function getWorkingCopy(
   coreDB: CoreDB,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): Promise<NodeBase | undefined> {
   // First, treat the provided id as a direct working copy node id.
   const direct = await coreDB.nodes.get(nodeId);
   if (direct) {
     // If the record itself is a holder, resolve its child working copy.
-    if ((direct as any).holderType === 'workingCopy') {
+    if (direct.holderType === 'workingCopy') {
       const child = await coreDB.nodes.where('parentId').equals(direct.id).first();
       if (child) {
         return child;
@@ -507,7 +533,7 @@ export async function getWorkingCopy(
     // If the record is a child of a working copy holder, return it directly.
     if (direct.parentId) {
       const parent = await coreDB.nodes.get(direct.parentId);
-      if ((parent as any)?.holderType === 'workingCopy') {
+      if (parent?.holderType === 'workingCopy') {
         return direct;
       }
     }
@@ -529,7 +555,7 @@ export async function getWorkingCopy(
 export async function updateWorkingCopy(
   coreDB: CoreDB,
   nodeId: NodeId,
-  updates: Partial<NodeBase>,
+  updates: Partial<NodeBase>
 ): Promise<void> {
   const existing = await getWorkingCopy(coreDB, nodeId);
   if (!existing) {
@@ -565,18 +591,18 @@ export async function checkWorkingCopyConflict(coreDB: CoreDB, nodeId: NodeId): 
 }
 
 /**
-  * Get names of all children of a parent node
+ * Get names of all children of a parent node
  * Utility function from eria-cartograph
-  */
+ */
 export async function getChildNames(coreDB: CoreDB, parentId: NodeId): Promise<string[]> {
   const children = await coreDB.listChildren(parentId);
   return children.map((child: TreeNode) => child.name);
 }
 
 /**
-  * Create a unique name by adding (n) suffix if needed
+ * Create a unique name by adding (n) suffix if needed
  * Based on user requirements and eria-cartograph pattern
-  */
+ */
 export function createNewName(siblingNames: string[], baseName: string): string {
   if (!siblingNames.includes(baseName)) {
     return baseName;
@@ -589,7 +615,7 @@ export function createNewName(siblingNames: string[], baseName: string): string 
   const existingNumbers = siblingNames
     .map((name) => {
       const match = pattern.exec(name);
-      return match && match[1] ? parseInt(match[1], 10) : 0;
+      return match?.[1] ? parseInt(match[1], 10) : 0;
     })
     .filter((n) => n > 0);
 

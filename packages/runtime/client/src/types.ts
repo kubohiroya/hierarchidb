@@ -27,10 +27,10 @@ export interface WorkerInitRequest {
 export interface WorkerInitMessage {
   type: WorkerInitMessageType;
   payload?: {
-    progress?: number;    // 0-100
-    message?: string;     // Status description
-    error?: string;       // Error details
-    timestamp?: number;   // Message timestamp
+    progress?: number; // 0-100
+    message?: string; // Status description
+    error?: string; // Error details
+    timestamp?: number; // Message timestamp
   };
 }
 
@@ -61,11 +61,7 @@ export interface InitializationStep {
 /**
  * Worker initialization state
  */
-export type WorkerInitState =
-  | 'uninitialized'
-  | 'initializing'
-  | 'ready'
-  | 'error';
+export type WorkerInitState = 'uninitialized' | 'initializing' | 'ready' | 'error';
 
 /**
  * Initialization result

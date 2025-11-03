@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import { CoreDB } from '../../services/CoreDB.js';
+import { describe, expect, it } from 'vitest';
 import { CommandProcessor } from '../../services/CommandProcessor.js';
+import { CoreDB } from '../../services/CoreDB.js';
 
 describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', () => {
   const rTree = 'r' as TreeId;
@@ -17,7 +17,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
 
     // create parent P2
     const parentNode: TreeNode = {
-      id: (`p2-${Date.now()}`) as NodeId,
+      id: `p2-${Date.now()}` as NodeId,
       parentId: 'r:root' as NodeId,
       nodeType: 'folder' as NodeType,
       name: 'P2',
@@ -35,7 +35,7 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
         treeId: rTree,
         parentId: 'r:root' as NodeId,
         name: 'A',
-      }),
+      })
     );
     expect(createResult.success).toBe(true);
     if (!createResult.success || !createResult.nodeId) {
@@ -44,11 +44,15 @@ describe('Headless E2E (Node + fake-indexeddb): Undo/Redo representative flow', 
     const aId = createResult.nodeId;
 
     // rename A -> A1
-    const u1 = await cp.processCommand(cp.createEnvelope('updateNode', { nodeId: aId, name: 'A1' }));
+    const u1 = await cp.processCommand(
+      cp.createEnvelope('updateNode', { nodeId: aId, name: 'A1' })
+    );
     expect(u1.success).toBe(true);
 
     // move A1 -> P2
-    const m1 = await cp.processCommand(cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 }));
+    const m1 = await cp.processCommand(
+      cp.createEnvelope('moveNodes', { nodeIds: [aId], toParentId: p2 })
+    );
     expect(m1.success).toBe(true);
 
     // undo: move back

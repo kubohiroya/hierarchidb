@@ -88,7 +88,7 @@ export interface ImportData {
     name: string;
     nodeType?: string;
     description?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     children?: ImportData['nodes'];
   }>;
 

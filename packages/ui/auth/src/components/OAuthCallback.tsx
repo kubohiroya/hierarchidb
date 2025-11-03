@@ -4,11 +4,11 @@
  * Processes OAuth callbacks and exchanges authorization codes for tokens
  */
 
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 import { BFFAuthService } from '../services/BFFAuthService.js';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
 
 export const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();

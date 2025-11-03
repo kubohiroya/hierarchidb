@@ -1,5 +1,5 @@
-import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 import { AuthRecoveryService } from '@hierarchidb/auth-recovery';
+import { DexieChunkStoragePort, DownloadService, FetchNetworkPort } from '@hierarchidb/download';
 
 export interface SharedDownloadOptions {
   dbPrefix?: string;
@@ -13,7 +13,9 @@ export interface SharedDownloadService {
   readAll: (fileId: string) => Promise<ArrayBuffer>;
 }
 
-export async function createSharedDownloadService(opts?: SharedDownloadOptions): Promise<SharedDownloadService> {
+export async function createSharedDownloadService(
+  opts?: SharedDownloadOptions
+): Promise<SharedDownloadService> {
   const auth = await AuthRecoveryService.getSingleton();
   const net = new FetchNetworkPort({
     headers: () => auth.getAuthHeaders(),
@@ -35,15 +37,20 @@ export async function createSharedDownloadService(opts?: SharedDownloadOptions):
 }
 
 /**
-  * POST helper (JSON) using AuthRecovery complements DownloadService (GET-oriented).
-  */
-export async function postJson(url: string, body: string | object, headers?: Record<string, string>) {
+ * POST helper (JSON) using AuthRecovery complements DownloadService (GET-oriented).
+ */
+export async function postJson(
+  url: string,
+  body: string | object,
+  headers?: Record<string, string>
+) {
   const auth = await AuthRecoveryService.getSingleton();
   const init: RequestInit = {
     method: 'POST',
     body: typeof body === 'string' ? body : JSON.stringify(body),
     headers: {
-      'Content-Type': typeof body === 'string' ? 'application/x-www-form-urlencoded' : 'application/json',
+      'Content-Type':
+        typeof body === 'string' ? 'application/x-www-form-urlencoded' : 'application/json',
       ...(headers || {}),
     },
   };

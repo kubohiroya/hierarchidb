@@ -1,14 +1,23 @@
+import { BasicInfoFields, TagInput } from '@hierarchidb/ui-plugin-basic-info';
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+} from '@mui/material';
 import type React from 'react';
 import { useState } from 'react';
-import { Box, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import {BasicInfoFields, TagInput} from '@hierarchidb/ui-plugin-basic-info';
 
 type TagId = string;
 type TagEntity = { id: TagId; name?: string };
 
 /**
-    */
+ */
 export interface StylemapBasicInfoData {
   name: string;
   description?: string;
@@ -26,13 +35,13 @@ export interface BasicInfoStepProps {
 }
 
 /**
-    */
+ */
 export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
-                                                              data,
-                                                              onNext,
-                                                              errors = [],
-                                                              disabled = false,
-                                                            }) => {
+  data,
+  onNext,
+  errors = [],
+  disabled = false,
+}) => {
   const { t } = useTranslation('styler-plugin');
   const tStr = (key: string, def: string): string => {
     const val = t(key, { defaultValue: def });
@@ -66,12 +75,12 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   };
 
   const handleTagsChange = (newTags: TagEntity[]) => {
-    const tagIds = newTags.map(tag => tag.id);
+    const tagIds = newTags.map((tag) => tag.id);
     handleInputChange('tags', tagIds);
   };
 
   const getFieldError = (field: string): string | undefined => {
-    return errors.find(error => error.toLowerCase().includes(field.toLowerCase()));
+    return errors.find((error) => error.toLowerCase().includes(field.toLowerCase()));
   };
 
   // NOTE: name/description errors are handled by BasicInfoFields; omit unused locals to satisfy DTS
@@ -84,7 +93,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       </Typography>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {tStr('basicInfo.description', 'Enter the basic information for your styler. This will help organize and identify your map style configuration.')}
+        {tStr(
+          'basicInfo.description',
+          'Enter the basic information for your styler. This will help organize and identify your map style configuration.'
+        )}
       </Typography>
 
       <Box
@@ -102,14 +114,18 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             value={{ name: localData.name, description: localData.description }}
             onChange={(updates: Partial<{ name: string; description: string }>) => {
               if (updates.name !== undefined) handleInputChange('name', updates.name);
-              if (updates.description !== undefined) handleInputChange('description', updates.description);
+              if (updates.description !== undefined)
+                handleInputChange('description', updates.description);
             }}
             disabled={disabled}
             nameLabel={tStr('basicInfo.name.label', 'Stylemap Name')}
             nameHelperText={tStr('basicInfo.name.hint', 'Enter a descriptive name for this styler')}
             nameRequiredText={tStr('basicInfo.name.required', 'Stylemap name is required')}
             descriptionLabel={tStr('basicInfo.description.label', 'Description')}
-            descriptionHelperText={tStr('basicInfo.description.hint', 'Optional description of what this styler visualizes')}
+            descriptionHelperText={tStr(
+              'basicInfo.description.hint',
+              'Optional description of what this styler visualizes'
+            )}
           />
         </Box>
 
@@ -121,14 +137,15 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             onChange={(e) => handleInputChange('styleType', e.target.value)}
             disabled={disabled}
           >
-            {styleTypeOptions.map(option => (
+            {styleTypeOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
             ))}
           </Select>
           <FormHelperText>
-            {styleTypeError || tStr('basicInfo.styleType.hint', 'Choose the geometry type for this style')}
+            {styleTypeError ||
+              tStr('basicInfo.styleType.hint', 'Choose the geometry type for this style')}
           </FormHelperText>
         </FormControl>
 
@@ -143,7 +160,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
             <MenuItem value="">
               <em>{tStr('basicInfo.colorScheme.none', 'None selected')}</em>
             </MenuItem>
-            {colorSchemeOptions.map(option => (
+            {colorSchemeOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
@@ -159,9 +176,15 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           label={tStr('basicInfo.dataSource.label', 'Data Source')}
           value={localData.dataSource || ''}
           onChange={(e) => handleInputChange('dataSource', e.target.value)}
-          helperText={tStr('basicInfo.dataSource.hint', 'Optional reference to the data source or layer')}
+          helperText={tStr(
+            'basicInfo.dataSource.hint',
+            'Optional reference to the data source or layer'
+          )}
           disabled={disabled}
-          placeholder={tStr('basicInfo.dataSource.placeholder', 'e.g., Census data, OpenStreetMap layers')}
+          placeholder={tStr(
+            'basicInfo.dataSource.placeholder',
+            'e.g., Census data, OpenStreetMap layers'
+          )}
           sx={{ gridColumn: '1 / -1' }}
         />
 
@@ -171,15 +194,24 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           </Typography>
           <TagInput
             value={localData.tags.map((tagId) => ({ id: tagId, name: tagId }))}
-            placeholder={tStr('basicInfo.tags.placeholder', 'Add tags to help organize and search...')}
+            placeholder={tStr(
+              'basicInfo.tags.placeholder',
+              'Add tags to help organize and search...'
+            )}
             onChange={(updated) => {
               if (disabled) return;
-              const tagEntities: TagEntity[] = updated.map((tag) => ({ id: tag.id, name: tag.name }));
+              const tagEntities: TagEntity[] = updated.map((tag) => ({
+                id: tag.id,
+                name: tag.name,
+              }));
               handleTagsChange(tagEntities);
             }}
           />
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-            {tStr('basicInfo.tags.hint', 'Add tags to make this styler easier to find and organize')}
+            {tStr(
+              'basicInfo.tags.hint',
+              'Add tags to make this styler easier to find and organize'
+            )}
           </Typography>
         </Box>
       </Box>

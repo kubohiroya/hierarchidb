@@ -9,7 +9,7 @@ import type { LinkButtonProps, ToastConfig } from './LinkButton.js';
 
 // Mock toast hook
 const useToast = () => ({
-  showToast: (config: any) => console.log('Toast:', config),
+  showToast: (config: ToastConfig) => console.log('Toast:', config),
 });
 
 /**

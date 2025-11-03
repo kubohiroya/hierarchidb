@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import type { NodeId } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
-import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type TestWorkerAPI = {
   getQueryAPI(): Promise<import('@hierarchidb/common-api').TreeQueryAPI>;
@@ -14,13 +14,22 @@ type TestWorkerAPI = {
   getWorkingCopyAPI(): Promise<import('@hierarchidb/common-api').WorkingCopyAPI>;
 };
 
-async function createCommittedNode(worker: TestWorkerAPI, parentId: NodeId, name: string): Promise<NodeId> {
+async function createCommittedNode(
+  worker: TestWorkerAPI,
+  parentId: NodeId,
+  name: string
+): Promise<NodeId> {
   const mutationAPI = await worker.getMutationAPI();
   const workingCopyAPI = await worker.getWorkingCopyAPI();
   const queryAPI = await worker.getQueryAPI();
   const treeId = toTreeId('r');
 
-  const res = await mutationAPI.createNode({ nodeType: toNodeType('folder'), treeId, parentId, name });
+  const res = await mutationAPI.createNode({
+    nodeType: toNodeType('folder'),
+    treeId,
+    parentId,
+    name,
+  });
   if (!res.success || !res.nodeId) {
     const message = 'error' in res ? res.error : 'unknown error';
     throw new Error(`createNode failed: ${message}`);

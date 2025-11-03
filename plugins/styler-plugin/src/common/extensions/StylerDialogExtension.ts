@@ -4,11 +4,14 @@
  */
 
 import type { PeerEntity } from '@hierarchidb/common-types';
-import { NodeDialogStepDefinition, NodeDialogPlugin, wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
-
-import type { StylerConfig } from '../types/stylerTypes.js';
+import {
+  NodeDialogPlugin,
+  type NodeDialogStepDefinition,
+  wrapDialogStepComponent,
+} from '@hierarchidb/plugin-ui-sdk';
 import { StylerStep5 } from '../../ui/components/steps/StylerStep5.js';
 import { StylerStep6 } from '../../ui/components/steps/StylerStep6.js';
+import type { StylerConfig } from '../types/stylerTypes.js';
 
 type StylerDialogPeer = PeerEntity<Record<string, unknown>>;
 
@@ -17,19 +20,17 @@ type StylerDialogRecord = Record<string, unknown> & {
   selectedValueColumn?: unknown;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
-const toDialogRecord = (value: StylerDialogPeer): StylerDialogRecord => (
-  isRecord(value) ? (value as StylerDialogRecord) : {}
-);
+const toDialogRecord = (value: StylerDialogPeer): StylerDialogRecord =>
+  isRecord(value) ? (value as StylerDialogRecord) : {};
 
-const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] => (
-  stepNumbers && stepNumbers.length > 0 ? Array.from(stepNumbers) : [5, 6]
-);
+const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): number[] =>
+  stepNumbers && stepNumbers.length > 0 ? Array.from(stepNumbers) : [5, 6];
 
-const readNumber = (value: unknown): number | null => (
-  typeof value === 'number' && Number.isFinite(value) ? value : null
-);
+const readNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const hasStylerConfiguration = (dialogData: StylerDialogRecord): boolean => {
   const configCandidate = isRecord(dialogData.stylerConfig)
@@ -42,9 +43,8 @@ const hasStylerConfiguration = (dialogData: StylerDialogRecord): boolean => {
 
   const config = configCandidate as Record<string, unknown>;
 
-  const targetProperty = typeof config.targetProperty === 'string'
-    ? config.targetProperty.trim()
-    : '';
+  const targetProperty =
+    typeof config.targetProperty === 'string' ? config.targetProperty.trim() : '';
   const mappingCandidate = config.mapping;
   const mapping = isRecord(mappingCandidate)
     ? (mappingCandidate as Record<string, unknown>)
@@ -52,11 +52,12 @@ const hasStylerConfiguration = (dialogData: StylerDialogRecord): boolean => {
 
   const min = mapping ? readNumber(mapping.min) : null;
   const max = mapping ? readNumber(mapping.max) : null;
-  const selectedValueColumn = typeof dialogData.selectedValueColumn === 'string'
-    ? dialogData.selectedValueColumn.trim()
-    : '';
+  const selectedValueColumn =
+    typeof dialogData.selectedValueColumn === 'string' ? dialogData.selectedValueColumn.trim() : '';
 
-  return Boolean(targetProperty && selectedValueColumn && min !== null && max !== null && min < max);
+  return Boolean(
+    targetProperty && selectedValueColumn && min !== null && max !== null && min < max
+  );
 };
 
 const StylerStep5Component = wrapDialogStepComponent(StylerStep5);
@@ -69,14 +70,14 @@ const STYLER_STEP_DEFINITIONS: NodeDialogStepDefinition[] = [
     component: StylerStep5Component,
     dependsOn: [4],
     validation: {
-      validate: async (data: unknown) => (
+      validate: async (data: unknown) =>
         hasStylerConfiguration(toDialogRecord(data as StylerDialogPeer))
           ? { valid: true }
           : {
-            valid: false,
-            message: 'Styler configuration requires a target property, value column, and valid range.',
-          }
-      ),
+              valid: false,
+              message:
+                'Styler configuration requires a target property, value column, and valid range.',
+            },
     },
   },
   {
@@ -91,11 +92,12 @@ const STYLER_STEP_DEFINITIONS: NodeDialogStepDefinition[] = [
   },
 ];
 
-const cloneStepDefinitions = (): NodeDialogStepDefinition[] => STYLER_STEP_DEFINITIONS.map((step) => ({
-  ...step,
-  dependsOn: step.dependsOn ? [...step.dependsOn] : undefined,
-  validation: step.validation ? { ...step.validation } : undefined,
-}));
+const cloneStepDefinitions = (): NodeDialogStepDefinition[] =>
+  STYLER_STEP_DEFINITIONS.map((step) => ({
+    ...step,
+    dependsOn: step.dependsOn ? [...step.dependsOn] : undefined,
+    validation: step.validation ? { ...step.validation } : undefined,
+  }));
 
 const evaluateStylerSteps = (data: StylerDialogPeer) => {
   const dialogData = toDialogRecord(data);

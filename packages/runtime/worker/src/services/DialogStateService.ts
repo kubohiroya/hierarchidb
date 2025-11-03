@@ -1,15 +1,12 @@
-import type {
-  DialogStateAPI,
-  DialogStateSubscriptionId,
-} from '@hierarchidb/common-api';
+import type { DialogStateAPI, DialogStateSubscriptionId } from '@hierarchidb/common-api';
 import type {
   DialogStateRequestInput,
   DialogStateSubscribeInput,
   DialogStateUpdateInput,
   MultiStepDialogState,
 } from '@hierarchidb/common-types';
-import { storeRegistry } from '../entity/store-registry.js';
 import type { PeerEntity } from '../entity/store.js';
+import { storeRegistry } from '../entity/store-registry.js';
 
 interface SubscriptionEntry {
   key: string;
@@ -33,7 +30,7 @@ export class DialogStateService implements DialogStateAPI {
     }
 
     const existing = await store.get(nodeId);
-    const next: PeerEntity<any> = {
+    const next: PeerEntity = {
       nodeId,
       ...(existing ?? {}),
       updatedAt: Date.now(),
@@ -55,7 +52,10 @@ export class DialogStateService implements DialogStateAPI {
     this.emit(buildKey(nodeType, nodeId), state ?? null);
   }
 
-  async getState({ nodeId, nodeType }: DialogStateRequestInput): Promise<MultiStepDialogState | null> {
+  async getState({
+    nodeId,
+    nodeType,
+  }: DialogStateRequestInput): Promise<MultiStepDialogState | null> {
     const store = storeRegistry.getPeer(nodeType);
     if (!store) {
       return null;
@@ -67,11 +67,12 @@ export class DialogStateService implements DialogStateAPI {
 
   async subscribeState(
     input: DialogStateSubscribeInput,
-    callback: (state: MultiStepDialogState | null) => void,
+    callback: (state: MultiStepDialogState | null) => void
   ): Promise<DialogStateSubscriptionId> {
-    const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
-      ? crypto.randomUUID()
-      : `dlg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `dlg-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const entry: SubscriptionEntry = {
       key: buildKey(input.nodeType, input.nodeId),
       callback,

@@ -1,6 +1,7 @@
 import { MenuItem, MenuList, Typography } from '@mui/material';
 import { Link } from '@tanstack/react-router';
 import type { CSSProperties, ReactNode } from 'react';
+
 // InlineIcon should be imported from @hierarchidb/ui package
 // For now, we'll create a simple inline version
 const InlineIcon = ({ icon }: { icon: ReactNode }) => (
@@ -25,10 +26,10 @@ export const NavLinkMenu = ({ items }: { items: NavLinkItemType[] }) => {
 
   return (
     <MenuList sx={{ marginBottom: '30px', backgroundColor: 'red' }}>
-      {items.map((item, index) => (
-        <MenuItem key={index} sx={{ padding: 0, margin: 0 }} aria-label={item.name}>
+      {items.map((item) => (
+        <MenuItem key={item.url || item.name} sx={{ padding: 0, margin: 0 }} aria-label={item.name}>
           <Link
-            to={item.url as any}
+            to={item.url}
             preload="intent"
             activeProps={{ style: { ...baseLinkStyle, color: '#c34' } }}
             inactiveProps={{ style: { ...baseLinkStyle, color: '#545e6f' } }}

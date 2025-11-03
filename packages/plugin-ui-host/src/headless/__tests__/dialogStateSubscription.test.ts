@@ -1,5 +1,10 @@
+import type { DialogStateAPI } from '@hierarchidb/common-api';
+import type {
+  DialogStateSubscribeInput,
+  MultiStepDialogState,
+  NodeId,
+} from '@hierarchidb/common-types';
 import { describe, expect, it, vi } from 'vitest';
-import type { DialogStateSubscribeInput, MultiStepDialogState, NodeId } from '@hierarchidb/common-types';
 import { subscribeDialogState } from '../usePluginDialogController.js';
 
 type SnapshotFactoryOptions = {
@@ -30,11 +35,11 @@ describe('subscribeDialogState', () => {
 
     await expect(
       subscribeDialogState({
-        api: { getState } as any,
+        api: { getState } as unknown as DialogStateAPI,
         params,
         onSnapshot: vi.fn(),
         logger: { warn },
-      }),
+      })
     ).rejects.toThrow('DialogStateAPI must implement subscribeState/unsubscribeState');
 
     expect(warn).toHaveBeenCalled();
@@ -43,21 +48,23 @@ describe('subscribeDialogState', () => {
 
   it('subscribes/unsubscribes and hydrates the initial snapshot', async () => {
     const snapshot = createSnapshot();
-    const subscribeState = vi.fn().mockImplementation(async (_input, callback: any) => {
-      callback(snapshot);
-      return 'sub-1';
-    });
+    const subscribeState = vi
+      .fn()
+      .mockImplementation(async (_input, callback: (state: MultiStepDialogState) => void) => {
+        callback(snapshot);
+        return 'sub-1';
+      });
     const unsubscribeState = vi.fn().mockResolvedValue(undefined);
     const getState = vi.fn().mockResolvedValue(snapshot);
     const release = vi.fn();
     const onSnapshot = vi.fn();
 
     const cleanup = await subscribeDialogState({
-      api: { subscribeState, unsubscribeState, getState } as any,
+      api: { subscribeState, unsubscribeState, getState } as DialogStateAPI,
       params,
       onSnapshot,
       deps: {
-        createCallback: handler => handler,
+        createCallback: (handler) => handler,
         releaseCallback: release,
       },
     });
@@ -80,15 +87,15 @@ describe('subscribeDialogState', () => {
 
     await expect(
       subscribeDialogState({
-        api: { subscribeState, unsubscribeState } as any,
+        api: { subscribeState, unsubscribeState } as DialogStateAPI,
         params,
         onSnapshot: vi.fn(),
         logger: { warn },
         deps: {
-          createCallback: handler => handler,
+          createCallback: (handler) => handler,
           releaseCallback: release,
         },
-      }),
+      })
     ).rejects.toThrow('subscribe failed');
 
     expect(warn).toHaveBeenCalled();
@@ -101,7 +108,7 @@ describe('subscribeDialogState', () => {
         api: null,
         params,
         onSnapshot: vi.fn(),
-      }),
+      })
     ).rejects.toThrow('DialogStateAPI unavailable; cannot subscribe');
   });
 });

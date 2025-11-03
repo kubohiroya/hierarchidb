@@ -5,8 +5,8 @@
  * providing the wrapped client to child components.
  */
 
-import React, { type ReactNode, useContext, useEffect, useState } from 'react';
 import type { Remote } from 'comlink';
+import React, { type ReactNode, useContext, useEffect, useState } from 'react';
 
 export interface WorkerClientProviderProps<T> {
   /** The initialized Worker instance */
@@ -54,15 +54,14 @@ export function createWorkerClientProvider<T>() {
   const ClientContext = React.createContext<ClientState<T> | null>(null);
 
   const WorkerClientProvider: React.FC<WorkerClientProviderProps<T>> = ({
-                                                                          worker,
-                                                                          wrapWorker,
-                                                                          children,
-                                                                          loadingComponent = <div>Preparing Worker
-                                                                            client...</div>,
-                                                                          debug = false,
-                                                                          healthCheckInterval = 30000,
-                                                                          onClientReady,
-                                                                        }) => {
+    worker,
+    wrapWorker,
+    children,
+    loadingComponent = <div>Preparing Worker client...</div>,
+    debug = false,
+    healthCheckInterval = 30000,
+    onClientReady,
+  }) => {
     const [state, setState] = useState<ClientState<T>>({
       client: null,
       isReady: false,
@@ -114,7 +113,7 @@ export function createWorkerClientProvider<T>() {
               try {
                 await ping();
 
-                setState(prev => {
+                setState((prev) => {
                   if (!prev.isConnected) {
                     if (debug) {
                       console.log('[WorkerClientProvider] Connection restored');
@@ -124,7 +123,7 @@ export function createWorkerClientProvider<T>() {
                   return prev;
                 });
               } catch (error) {
-                setState(prev => {
+                setState((prev) => {
                   if (prev.isConnected) {
                     if (debug) {
                       console.error('[WorkerClientProvider] Health check failed:', error);
@@ -175,18 +174,12 @@ export function createWorkerClientProvider<T>() {
     // Show error if Comlink setup failed
     if (state.error) {
       return (
-        <div style={{ color: 'red' }}>
-          Failed to setup Worker client: {state.error.message}
-        </div>
+        <div style={{ color: 'red' }}>Failed to setup Worker client: {state.error.message}</div>
       );
     }
 
     // Provide client to children
-    return (
-      <ClientContext.Provider value={state}>
-        {children}
-      </ClientContext.Provider>
-    );
+    return <ClientContext.Provider value={state}>{children}</ClientContext.Provider>;
   };
 
   /**

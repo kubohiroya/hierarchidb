@@ -4,40 +4,30 @@
  * Shows a live preview of the configured basemap settings
  */
 
-import type React from 'react';
-import { Suspense, lazy, useMemo } from 'react';
-import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
-import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
-import { type MapLibreLayer, type MapLibreMapInstance, type MapLibreStyle, type MapViewState, loadMapLibreMap } from '@hierarchidb/ui-map';
 import { CrossViewSnackbar } from '@hierarchidb/ui-data-grid';
+import {
+  loadMapLibreMap,
+  type MapLibreLayer,
+  type MapLibreMapInstance,
+  type MapLibreStyle,
+  type MapViewState,
+} from '@hierarchidb/ui-map';
+import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
+import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
+import type React from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { getBuiltInStyleUrl, getStyleAttribution } from '../../common/constants/builtInStyles.js';
+import type { DisplayOptions, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
 
 export interface BaseMapPreviewProps {
   /** Map style configuration */
-  mapStyle: {
-    style: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom';
-    customStyleUrl?: string;
-    customStyleConfig?: Record<string, any>;
-  };
+  mapStyle: MapStyle;
   /** Viewport configuration */
-  viewport: {
-    center: [number, number];
-    zoom: number;
-    bearing?: number;
-    pitch?: number;
-  };
+  viewport: MapViewport;
   /** Optional zxy string for map preview URL (zoom,lng,lat) */
   zxy?: string;
   /** Display options */
-  displayOptions?: {
-    show3dBuildings?: boolean;
-    showTraffic?: boolean;
-    showTransit?: boolean;
-    showTerrain?: boolean;
-    showLabels?: boolean;
-    attribution?: string;
-    tags?: string[];
-  };
+  displayOptions?: DisplayOptions;
   /** Preview size */
   width?: string | number;
   height?: string | number;
@@ -73,17 +63,17 @@ const LazyMapLibreMap = lazy(async () => {
  * Provides a preview of the basemap configuration
  */
 export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
-                                                                mapStyle,
-                                                                viewport,
-                                                                zxy,
-                                                                displayOptions = {},
-                                                                width = '100%',
-                                                                height = 300,
-                                                                showMetadata = true,
-                                                                interactive = false,
-                                                                title = 'BaseMap Preview',
-                                                                datasetId,
-                                                              }) => {
+  mapStyle,
+  viewport,
+  zxy,
+  displayOptions = {},
+  width = '100%',
+  height = 300,
+  showMetadata = true,
+  interactive = false,
+  title = 'BaseMap Preview',
+  datasetId,
+}) => {
   // Convert to MapLibre view state
   const initialViewState = useMemo<MapViewState>(
     () => ({
@@ -93,7 +83,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
       bearing: viewport.bearing || 0,
       pitch: viewport.pitch || 0,
     }),
-    [viewport],
+    [viewport]
   );
 
   // Generate zxy string from viewport if not provided
@@ -106,7 +96,8 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   const handleMapClick = () => {
     if (!interactive) {
       const baseUrl = window.location.origin;
-      const prefix = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_APP_PREFIX : undefined;
+      const prefix =
+        typeof import.meta !== 'undefined' ? import.meta.env?.VITE_APP_PREFIX : undefined;
       const sanitized = prefix?.replace(/^\/+|\/+$/g, '');
       const basePath = sanitized ? `/${sanitized}/` : '/';
       const mapUrl = `${baseUrl}${basePath}map?zxy=${zxyString}`;
@@ -204,66 +195,66 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
               touchZoomRotate: interactive,
             }}
             onLoad={(map: MapLibreMapInstance) => {
-            // Apply display options
-            if (!displayOptions.showLabels) {
-              // Hide all label layers
-              const layers = map.getStyle().layers;
-              layers.forEach((layer: MapLibreLayer) => {
-                if (layer.type === 'symbol' && layer.id.includes('label')) {
-                  map.setLayoutProperty(layer.id, 'visibility', 'none');
-                }
-              });
-            }
-
-            // Add 3D buildings if requested and available
-            if (displayOptions.show3dBuildings) {
-              // Check if the style supports 3D buildings
-              if (!map.getLayer('building-3d')) {
-                // Add a simple 3D building layer if not present
+              // Apply display options
+              if (!displayOptions.showLabels) {
+                // Hide all label layers
                 const layers = map.getStyle().layers;
-                const labelLayerId = layers.find((layer: MapLibreLayer) => {
-                  if (layer.type !== 'symbol') return false;
-                  const layout = layer.layout as Record<string, unknown> | undefined;
-                  return typeof layout?.['text-field'] !== 'undefined';
-                })?.id;
+                layers.forEach((layer: MapLibreLayer) => {
+                  if (layer.type === 'symbol' && layer.id.includes('label')) {
+                    map.setLayoutProperty(layer.id, 'visibility', 'none');
+                  }
+                });
+              }
 
-                if (map.getSource('openmaptiles') || map.getSource('composite')) {
-                  map.addLayer(
-                    {
-                      id: 'building-3d',
-                      source: map.getSource('openmaptiles') ? 'openmaptiles' : 'composite',
-                      'source-layer': 'building',
-                      type: 'fill-extrusion',
-                      minzoom: 15,
-                      paint: {
-                        'fill-extrusion-color': '#aaa',
-                        'fill-extrusion-height': [
-                          'interpolate',
-                          ['linear'],
-                          ['zoom'],
-                          15,
-                          0,
-                          15.05,
-                          ['get', 'height'],
-                        ],
-                        'fill-extrusion-base': [
-                          'interpolate',
-                          ['linear'],
-                          ['zoom'],
-                          15,
-                          0,
-                          15.05,
-                          ['get', 'min_height'],
-                        ],
-                        'fill-extrusion-opacity': 0.6,
+              // Add 3D buildings if requested and available
+              if (displayOptions.show3dBuildings) {
+                // Check if the style supports 3D buildings
+                if (!map.getLayer('building-3d')) {
+                  // Add a simple 3D building layer if not present
+                  const layers = map.getStyle().layers;
+                  const labelLayerId = layers.find((layer: MapLibreLayer) => {
+                    if (layer.type !== 'symbol') return false;
+                    const layout = layer.layout as Record<string, unknown> | undefined;
+                    return typeof layout?.['text-field'] !== 'undefined';
+                  })?.id;
+
+                  if (map.getSource('openmaptiles') || map.getSource('composite')) {
+                    map.addLayer(
+                      {
+                        id: 'building-3d',
+                        source: map.getSource('openmaptiles') ? 'openmaptiles' : 'composite',
+                        'source-layer': 'building',
+                        type: 'fill-extrusion',
+                        minzoom: 15,
+                        paint: {
+                          'fill-extrusion-color': '#aaa',
+                          'fill-extrusion-height': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            15,
+                            0,
+                            15.05,
+                            ['get', 'height'],
+                          ],
+                          'fill-extrusion-base': [
+                            'interpolate',
+                            ['linear'],
+                            ['zoom'],
+                            15,
+                            0,
+                            15.05,
+                            ['get', 'min_height'],
+                          ],
+                          'fill-extrusion-opacity': 0.6,
+                        },
                       },
-                    },
-                    labelLayerId,
-                  );
+                      labelLayerId
+                    );
+                  }
                 }
               }
-            }
-          }}
+            }}
           />
         </Suspense>
 
@@ -334,9 +325,9 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
                 }}
               >
                 <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                  {displayOptions.tags.slice(0, 3).map((tag, index) => (
+                  {displayOptions.tags.slice(0, 3).map((tag) => (
                     <Chip
-                      key={index}
+                      key={tag}
                       label={tag}
                       size="small"
                       sx={{

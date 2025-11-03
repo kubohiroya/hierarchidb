@@ -1,6 +1,7 @@
 import { type BffContext, getEnv } from '../utils/env.js';
 import { createSessionToken } from '../utils/jwt.js';
 import { KVStorageManager } from '../utils/kv-storage.js';
+import { parseEnvInt } from '../utils/number.js';
 import {
   getAppCallbackUrlFromState,
   getDynamicRedirectUri,
@@ -240,7 +241,7 @@ export async function exchangeCodeForToken(c: BffContext) {
     });
 
     // Create session JWT
-    const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
+    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
     const sessionToken = await createSessionToken(
       {
         sub: userInfo.id,

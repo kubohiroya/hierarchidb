@@ -1,8 +1,10 @@
 import type { DownloadWorkerAPI, SimplifyWorkerAPI, VectorTileWorkerAPI } from '../types.js';
+
 // Use @types/vt-pbf for typing while importing '@maplibre/vt-pbf' at runtime
 import type vtPbfNS = require('vt-pbf');
-import { createSharedDownloadService } from './downloadAdapter.js';
+
 import type { SharedDownloadService } from './downloadAdapter.js';
+import { createSharedDownloadService } from './downloadAdapter.js';
 import { TilesDB } from './TilesDB.js';
 
 /**
@@ -31,7 +33,8 @@ class RealDownloadWorker implements DownloadWorkerAPI {
 }
 
 // Minimal in-process registry to simulate buffer lineage across stages.
-const bufferRegistry: Map<string, { parent?: string; stage: 's1' | 's2' | 'src'; ts: number }> = new Map();
+const bufferRegistry: Map<string, { parent?: string; stage: 's1' | 's2' | 'src'; ts: number }> =
+  new Map();
 
 class RealSimplifyWorker implements SimplifyWorkerAPI {
   async simplifyStage1(inputBufferId: string, _config: { tolerance: number; minArea: number }) {
@@ -69,7 +72,10 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     return Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * 2 ** z);
   }
 
-  async generateTiles(inputBufferId: string, _config: { format: 'mvt'; compression?: 'gzip' | 'none' }) {
+  async generateTiles(
+    inputBufferId: string,
+    _config: { format: 'mvt'; compression?: 'gzip' | 'none' }
+  ) {
     const buf = await this.readBuffer(inputBufferId);
     if (!buf) return { tilesGenerated: 0, totalBytes: 0 };
     const txt = new TextDecoder().decode(buf);
@@ -83,24 +89,38 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     // Runtime import; typed via @types/vt-pbf without ambient shims
     const vtpbf = await loadVtPbf();
     const extent = 4096;
-    const index = geojsonvt(geojson as GeojsonVtData, { maxZoom: 6, extent, indexMaxZoom: 6, promoteId: 'id' });
+    const index = geojsonvt(geojson as GeojsonVtData, {
+      maxZoom: 6,
+      extent,
+      indexMaxZoom: 6,
+      promoteId: 'id',
+    });
 
     // Compute bbox
     const fc = geojson;
     const feats = fc?.features || [];
     if (feats.length === 0) return { tilesGenerated: 0, totalBytes: 0 };
-    let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+    let minLon = Infinity,
+      minLat = Infinity,
+      maxLon = -Infinity,
+      maxLat = -Infinity;
     for (const f of feats) {
       const c = f?.geometry?.coordinates;
       if (Array.isArray(c) && typeof c[0] === 'number' && typeof c[1] === 'number') {
-        const lon = c[0], lat = c[1];
+        const lon = c[0],
+          lat = c[1];
         if (lon < minLon) minLon = lon;
         if (lat < minLat) minLat = lat;
         if (lon > maxLon) maxLon = lon;
         if (lat > maxLat) maxLat = lat;
       }
     }
-    if (!isFinite(minLon) || !isFinite(minLat) || !isFinite(maxLon) || !isFinite(maxLat)) {
+    if (
+      !Number.isFinite(minLon) ||
+      !Number.isFinite(minLat) ||
+      !Number.isFinite(maxLon) ||
+      !Number.isFinite(maxLat)
+    ) {
       return { tilesGenerated: 0, totalBytes: 0 };
     }
 
@@ -117,8 +137,8 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     const y2 = this.lat2tile(minLat, z);
     for (let x = x1; x <= x2; x++) {
       for (let y = y1; y <= y2; y++) {
-      const tile = index.getTile(z, x, y);
-        if (tile && tile.features && tile.features.length) {
+        const tile = index.getTile(z, x, y);
+        if (tile?.features?.length) {
           const pbf = vtpbf.fromGeojsonVt({ layer0: tile }, { version: 2 });
           const bytes = pbf as Uint8Array;
           tiles++;
@@ -127,7 +147,9 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
           await db.tiles.put({
             key,
             sessionId,
-            z, x, y,
+            z,
+            x,
+            y,
             // Ensure ArrayBuffer, not SharedArrayBuffer union
             data: bytes.slice().buffer,
             size: bytes.byteLength,
@@ -151,7 +173,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
   async listTiles(sessionId: string) {
     const db = await TilesDB.getSingleton();
     const rows = await db.tiles.where('sessionId').equals(sessionId).toArray();
-    return rows.map(r => ({ z: r.z, x: r.x, y: r.y, size: r.size, timestamp: r.timestamp }));
+    return rows.map((r) => ({ z: r.z, x: r.x, y: r.y, size: r.size, timestamp: r.timestamp }));
   }
 
   async getSummary(sessionId: string) {
@@ -160,7 +182,7 @@ class RealVectorTileWorker implements VectorTileWorkerAPI {
     if (rows.length === 0) return { tiles: 0, totalBytes: 0 };
     const tiles = rows.length;
     const totalBytes = rows.reduce((s, r) => s + r.size, 0);
-    const zooms = rows.map(r => r.z);
+    const zooms = rows.map((r) => r.z);
     return { tiles, totalBytes, zoomMin: Math.min(...zooms), zoomMax: Math.max(...zooms) };
   }
 }

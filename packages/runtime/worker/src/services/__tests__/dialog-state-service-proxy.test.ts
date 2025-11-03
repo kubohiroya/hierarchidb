@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'node:worker_threads';
-import { expose, proxy, wrap, type Remote } from 'comlink';
 import type { DialogStateAPI } from '@hierarchidb/common-api';
-import { DialogStateService } from '../DialogStateService.js';
+import { expose, proxy, type Remote, wrap } from 'comlink';
+import { describe, expect, it } from 'vitest';
 import { createEndpointFromMessagePort } from '../../e2e/test-utils/messagePortEndpoint.js';
+import { DialogStateService } from '../DialogStateService.js';
 
 describe('DialogStateService via Comlink proxy', () => {
   it('exposes dialog state methods as callable functions on the remote proxy', async () => {
@@ -17,11 +17,11 @@ describe('DialogStateService via Comlink proxy', () => {
             return proxy(service) as unknown as DialogStateAPI;
           },
         },
-        createEndpointFromMessagePort(port2),
+        createEndpointFromMessagePort(port2)
       );
 
       const remote = wrap<{ getDialogStateAPI(): Remote<DialogStateAPI> }>(
-        createEndpointFromMessagePort(port1),
+        createEndpointFromMessagePort(port1)
       );
       const api = await remote.getDialogStateAPI();
 

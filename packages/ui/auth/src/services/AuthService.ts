@@ -141,9 +141,9 @@ export class AuthService {
   }
 
   /**
-      * Authenticate using popup window
+   * Authenticate using popup window
    * Performance & Security: Improved cleanup and error handling
-      */
+   */
   private async authenticateViaPopup(): Promise<AuthResult> {
     const authUrl = this.buildAuthUrl(true);
 
@@ -238,8 +238,8 @@ export class AuthService {
   }
 
   /**
-      * Performance: Get optimized popup configuration
-      */
+   * Performance: Get optimized popup configuration
+   */
   private getPopupConfig(): string {
     const width = 500;
     const height = 600;
@@ -250,16 +250,16 @@ export class AuthService {
   }
 
   /**
-      * Performance: Get configurable authentication timeout
-      */
+   * Performance: Get configurable authentication timeout
+   */
   private getAuthTimeout(): number {
     return 5 * 60 * 1000; // 5 minutes default
   }
 
   /**
-      * Build authentication URL
+   * Build authentication URL
    * Performance: Optimized URL building with proper encoding
-      */
+   */
   private buildAuthUrl(isPopup: boolean): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
@@ -335,7 +335,7 @@ export class AuthService {
             error: error,
             errorDescription: params.get('error_description'),
           },
-          window.location.origin,
+          window.location.origin
         );
       } else if (code) {
         // In a real implementation, exchange code for tokens here
@@ -348,7 +348,7 @@ export class AuthService {
             expiresIn: 3600,
             tokenType: 'Bearer',
           },
-          window.location.origin,
+          window.location.origin
         );
       }
 
@@ -428,33 +428,33 @@ export class AuthService {
   }
 
   /**
-      * : code_verifier
+   * : code_verifier
    * :
    * : PKCE
    * : OAuth2.0 PKCE
-      */
+   */
   getStoredCodeVerifier(): string | null {
     //  : code_verifier
     return this.codeVerifier;
   }
 
   /**
-      * :
+   * :
    * :
    * :
    * : OAuth2
-      */
+   */
   setCustomScopes(scopes: string[]): void {
     //  :
     this.customScopes = scopes;
   }
 
   /**
-      * :
+   * :
    * :
    * :
    * : OAuth2
-      */
+   */
   async refreshToken(): Promise<AuthResult> {
     //  :
     //  TODO: Refactor
@@ -472,11 +472,11 @@ export class AuthService {
   }
 
   /**
-      * :
+   * :
    * :
    * :
    * : OAuth2
-      */
+   */
   private buildScope(): string {
     //  :
     const defaultScopes = this.config.scope.split(' ');
@@ -489,11 +489,11 @@ export class AuthService {
   }
 
   /**
-      * : PKCEcode_verifier
+   * : PKCEcode_verifier
    * :
    * : PKCE
    * : OAuth2.0 PKCE
-      */
+   */
   private generateCodeVerifier(): string {
     //  : 43-128
     const array = new Uint8Array(32);
@@ -507,11 +507,11 @@ export class AuthService {
   }
 
   /**
-      * : code_challenge
+   * : code_challenge
    * : code_verifierSHA256
    * : PKCE
    * : OAuth2.0 PKCE
-      */
+   */
   private generateCodeChallenge(verifier: string): string {
     //  :
     //  SHA256WebCrypto API
@@ -522,11 +522,11 @@ export class AuthService {
   }
 
   /**
-      * : OpenID Connectnonce
+   * : OpenID Connectnonce
    * :
    * : nonce
    * : OIDC
-      */
+   */
   private generateNonce(): string {
     //  : 16
     const array = new Uint8Array(16);

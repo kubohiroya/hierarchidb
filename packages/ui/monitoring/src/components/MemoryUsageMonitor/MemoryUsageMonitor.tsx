@@ -47,7 +47,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
       try {
         const parsed = JSON.parse(savedPosition);
         setPosition(parsed);
-      } catch (e) {
+      } catch (_error) {
         // Use default position if parsing fails
         setPosition({ x: defaultX, y: defaultY });
       }
@@ -73,7 +73,7 @@ export function MemoryUsageMonitor({ className }: DevelopmentTimestampProps) {
       try {
         const parsed = JSON.parse(savedDimensions);
         setChartDimensions(parsed);
-      } catch (e) {
+      } catch (_error) {
         // Use default dimensions if parsing fails
       }
     }

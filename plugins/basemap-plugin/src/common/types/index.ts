@@ -4,13 +4,13 @@
  */
 
 export type {
-  BaseMapEntity,
-  BaseMapWorkingCopy,
   BaseMapDraftPayload,
-  CreateBaseMapData,
+  BaseMapEntity,
   BaseMapSearchCriteria,
+  BaseMapWorkingCopy,
+  BasemapPeerData,
+  CreateBaseMapData,
+  DisplayOptions,
   MapStyle,
   MapViewport,
-  DisplayOptions,
-  BasemapPeerData,
 } from './BaseMapEntity.js';

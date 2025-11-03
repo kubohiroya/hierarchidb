@@ -20,17 +20,19 @@ export type EventTransformer<TInput, TOutput> = (event: TInput) => TOutput;
 export function createComlinkEventBridge<
   TRuntimeEvent,
   TUiEvent = TRuntimeEvent,
-  TWorkerEvent = TRuntimeEvent
->(options: ComlinkEventBridgeOptions<TRuntimeEvent, TUiEvent, TWorkerEvent> = {}): ComlinkEventBridge<TRuntimeEvent, TUiEvent, TWorkerEvent> {
+  TWorkerEvent = TRuntimeEvent,
+>(
+  options: ComlinkEventBridgeOptions<TRuntimeEvent, TUiEvent, TWorkerEvent> = {}
+): ComlinkEventBridge<TRuntimeEvent, TUiEvent, TWorkerEvent> {
   const { runtimeToUi, workerToRuntime } = options;
 
   const toUi: EventTransformer<TRuntimeEvent, TUiEvent> = runtimeToUi
     ? runtimeToUi
-    : ((event: TRuntimeEvent) => event as unknown as TUiEvent);
+    : (event: TRuntimeEvent) => event as unknown as TUiEvent;
 
   const toRuntime: EventTransformer<TWorkerEvent, TRuntimeEvent> = workerToRuntime
     ? workerToRuntime
-    : ((event: TWorkerEvent) => event as unknown as TRuntimeEvent);
+    : (event: TWorkerEvent) => event as unknown as TRuntimeEvent;
 
   return {
     createUiProxy(listener: EventListener<TUiEvent>): RemoteEventListener<TRuntimeEvent> {

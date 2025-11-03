@@ -1,5 +1,9 @@
-import { type ReactNode, useCallback, useState } from 'react';
-import { type AuthContextProps, withAuth } from 'react-oidc-context';
+import {
+  DeleteForever,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  Login as LoginIcon,
+  Logout as LogoutIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -13,14 +17,23 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-
+import { type ReactNode, useCallback, useId, useMemo, useState } from 'react';
+import { type AuthContextProps, withAuth } from 'react-oidc-context';
 import { UserAvatar } from './UserAvatar.js';
-import {
-  DeleteForever,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  Login as LoginIcon,
-  Logout as LogoutIcon,
-} from '@mui/icons-material';
+
+type MenuEntry =
+  | {
+      kind: 'item';
+      id: string;
+      label: string;
+      icon?: ReactNode;
+      onClick?: () => void;
+      disabled?: boolean;
+    }
+  | {
+      kind: 'divider';
+      id: string;
+    };
 
 // Working copy cleanup removed - functionality was deprecated
 
@@ -30,15 +43,19 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
   //  : UserAvatarMenu.test.tsx
   //  :
   const auth = props.auth;
-  const signIn = () => auth.signinRedirect();
-  const signOut = () => auth.signoutRedirect();
+  const signIn = useCallback(() => {
+    void auth.signinRedirect();
+  }, [auth]);
+  const signOut = useCallback(() => {
+    void auth.signoutRedirect();
+  }, [auth]);
   const [clearCacheDialogOpen, setClearCacheDialogOpen] = useState(false);
   // Working copy cleanup removed - functionality was deprecated
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  },[]);
+  }, []);
   const handleClose = useCallback(() => {
     setAnchorEl(null);
   }, []);
@@ -64,7 +81,7 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
               });
             }
             return Promise.resolve();
-          }),
+          })
         );
       }
 
@@ -82,12 +99,37 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
     }
   };
 
+  const menuId = useId();
+  const clearCacheTitleId = useId();
+  const clearCacheDescriptionId = useId();
+
+  const userMenu: MenuEntry[] = useMemo(
+    () => [
+      {
+        kind: 'item',
+        id: 'logout',
+        label: 'Logout', //  : namelabel
+        icon: <LogoutIcon />,
+        onClick: () => signOut(),
+      },
+      { kind: 'divider', id: 'divider-cache' },
+      {
+        kind: 'item',
+        id: 'clear-cache',
+        label: 'Clear All Cache', //  : namelabel
+        icon: <DeleteForever />,
+        onClick: () => setClearCacheDialogOpen(true),
+      },
+    ],
+    [signOut]
+  );
+
   // Working copy cleanup removed - functionality was deprecated
   if (!auth.user) {
     return (
       <Button
         variant={'contained'}
-        onClick={() => void signIn()}
+        onClick={signIn}
         style={{ borderRadius: '15px', margin: '3px' }}
         size="large"
         startIcon={<LoginIcon />}
@@ -96,33 +138,6 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
       </Button>
     );
   }
-
-  //  : DropdownMenuItemType
-  //  : nameDropdownMenulabel
-  //  : DropdownMenuItemType
-  type MenuItem = {
-    id: string;
-    label: string;
-    icon?: React.ReactNode;
-    onClick?: () => void;
-    disabled?: boolean;
-  };
-
-  const userMenu: Array<MenuItem | null> = [
-    {
-      id: 'logout',
-      label: 'Logout', //  : namelabel
-      icon: <LogoutIcon />,
-      onClick: () => signOut(),
-    },
-    null,
-    {
-      id: 'clear-cache',
-      label: 'Clear All Cache', //  : namelabel
-      icon: <DeleteForever />,
-      onClick: () => setClearCacheDialogOpen(true),
-    },
-  ];
   return (
     <Box
       style={{
@@ -150,27 +165,27 @@ export const UserProfile = (props: { auth: AuthContextProps }) => {
         </Box>
         <Typography>{auth.user?.profile.name}</Typography>
       </Button>
-      <Menu id={`avatarMenu`}
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}>
-        {userMenu.map((item, index)=>(
-          (item) ? <MenuItem key={`menuItem-${index}`}>
-            {item.icon}
-            {item.label}
-          </MenuItem>: <Divider key={`divider-${index}`} />
-          ))
-        }
+      <Menu id={menuId} anchorEl={anchorEl} open={open} onClose={handleClose}>
+        {userMenu.map((entry) =>
+          entry.kind === 'item' ? (
+            <MenuItem key={entry.id} onClick={entry.onClick} disabled={entry.disabled}>
+              {entry.icon}
+              {entry.label}
+            </MenuItem>
+          ) : (
+            <Divider key={entry.id} />
+          )
+        )}
       </Menu>
       <Dialog
         open={clearCacheDialogOpen}
         onClose={() => setClearCacheDialogOpen(false)}
-        aria-labelledby="clear-cache-dialog-title"
-        aria-describedby="clear-cache-dialog-description"
+        aria-labelledby={clearCacheTitleId}
+        aria-describedby={clearCacheDescriptionId}
       >
-        <DialogTitle id="clear-cache-dialog-title">Clear All Cache Data?</DialogTitle>
+        <DialogTitle id={clearCacheTitleId}>Clear All Cache Data?</DialogTitle>
         <DialogContent>
-          <DialogContentText id="clear-cache-dialog-description" component="div">
+          <DialogContentText id={clearCacheDescriptionId} component="div">
             This will clear all cached data including:
             <ul style={{ marginTop: 8, marginBottom: 8 }}>
               <li>Cache API data</li>

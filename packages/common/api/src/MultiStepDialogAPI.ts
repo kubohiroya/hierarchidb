@@ -12,12 +12,12 @@ export interface WorkingCopyData {
   id: NodeId;
   nodeType: string;
   parentNodeId?: NodeId;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   metadata: {
     createdAt: Date;
     updatedAt: Date;
     currentStep: number;
-    validationState: Record<string, any>;
+    validationState: Record<string, unknown>;
   };
 }
 
@@ -65,7 +65,7 @@ export interface MultiStepDialogAPI {
    */
   updateWorkingCopy(
     workingCopyId: NodeId,
-    updates: Partial<WorkingCopyData>,
+    updates: Partial<WorkingCopyData>
   ): Promise<WorkingCopyData>;
 
   /**
@@ -99,7 +99,7 @@ export interface MultiStepDialogAPI {
    * @returns Map of working copy IDs to step capabilities
    */
   batchEvaluateCapabilities(
-    requests: Array<{ workingCopyId: NodeId; step: number }>,
+    requests: Array<{ workingCopyId: NodeId; step: number }>
   ): Promise<Record<NodeId, StepCapabilities>>;
 
   /**

@@ -1,11 +1,10 @@
 import type { ImportNodesParams, ImportResult } from '@hierarchidb/common-api';
-import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
-import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
+import type { CommandEnvelope, ImportNodesPayload, Timestamp } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
-import type { CoreDB } from './CoreDB.js';
-import type { CommandEnvelope, ImportNodesPayload } from '@hierarchidb/common-types';
-import type { Timestamp } from '@hierarchidb/common-types';
+import { ImportExportService as BaseImportExportService } from '@hierarchidb/import-export';
 import { SingletonMixin } from '@hierarchidb/util';
+import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
+import type { CoreDB } from './CoreDB.js';
 
 // Augment base ImportExportService with lifecycle notifications.
 export class ImportExportService extends BaseImportExportService {
@@ -18,9 +17,7 @@ export class ImportExportService extends BaseImportExportService {
   private constructor(db: ImportExportDBPort) {
     super(db);
     const adapter = db as { getCoreDB?: () => CoreDB };
-    this.coreDB = typeof adapter.getCoreDB === 'function'
-      ? adapter.getCoreDB()
-      : null;
+    this.coreDB = typeof adapter.getCoreDB === 'function' ? adapter.getCoreDB() : null;
   }
 
   async importNodes(params: ImportNodesParams): Promise<ImportResult> {

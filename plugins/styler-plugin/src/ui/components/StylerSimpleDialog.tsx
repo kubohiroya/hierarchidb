@@ -1,4 +1,5 @@
-import React, { useCallback, useState } from 'react';
+import type { NodeId } from '@hierarchidb/common-types';
+import { Add, Cancel, Delete, Save } from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -16,9 +17,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Add, Cancel, Delete, Save } from '@mui/icons-material';
-import type { NodeId } from '@hierarchidb/common-types';
-import type { StylerColorRule, StylerEntity, StylerStyle } from '../../common/types/StylerEntity.js';
+import React, { useCallback, useState } from 'react';
+import type {
+  StylerColorRule,
+  StylerEntity,
+  StylerStyle,
+} from '../../common/types/StylerEntity.js';
 
 export interface StylerSimpleDialogProps {
   open: boolean;
@@ -37,11 +41,11 @@ export interface StylerCreateConfig {
 }
 
 export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
-                                                                        open,
-                                                                        onClose,
-                                                                        onSave,
-                                                                        existingEntity,
-                                                                      }) => {
+  open,
+  onClose,
+  onSave,
+  existingEntity,
+}) => {
   const [keyColumn, setKeyColumn] = useState('');
   const [colorRules, setColorRules] = useState<StylerColorRule[]>([]);
   const [defaultStyle, setDefaultStyle] = useState<StylerStyle>({
@@ -67,7 +71,9 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
   }, []);
 
   const handleUpdateColorRule = useCallback((index: number, updates: Partial<StylerColorRule>) => {
-    setColorRules((prev: StylerColorRule[]) => prev.map((rule, i) => i === index ? { ...rule, ...updates } : rule));
+    setColorRules((prev: StylerColorRule[]) =>
+      prev.map((rule, i) => (i === index ? { ...rule, ...updates } : rule))
+    );
   }, []);
 
   const handleRemoveColorRule = useCallback((index: number) => {
@@ -111,9 +117,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {existingEntity ? 'Edit Styler' : 'Create Styler'}
-      </DialogTitle>
+      <DialogTitle>{existingEntity ? 'Edit Styler' : 'Create Styler'}</DialogTitle>
 
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
@@ -126,7 +130,9 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
           />
 
           <Paper sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}
+            >
               <Typography variant="h6">Color Rules</Typography>
               <Button startIcon={<Add />} onClick={handleAddColorRule}>
                 Add Rule
@@ -169,9 +175,11 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
                   label="Color"
                   type="color"
                   value={rule.style.backgroundColor || '#ffffff'}
-                  onChange={(e) => handleUpdateColorRule(index, {
-                    style: { ...rule.style, backgroundColor: e.target.value },
-                  })}
+                  onChange={(e) =>
+                    handleUpdateColorRule(index, {
+                      style: { ...rule.style, backgroundColor: e.target.value },
+                    })
+                  }
                   size="small"
                   sx={{ width: 80 }}
                 />
@@ -189,20 +197,29 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
           </Paper>
 
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>Default Style</Typography>
+            <Typography variant="h6" gutterBottom>
+              Default Style
+            </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="Background Color"
                 type="color"
                 value={defaultStyle.backgroundColor || '#ffffff'}
-                onChange={(e) => setDefaultStyle((prev: StylerStyle) => ({ ...prev, backgroundColor: e.target.value }))}
+                onChange={(e) =>
+                  setDefaultStyle((prev: StylerStyle) => ({
+                    ...prev,
+                    backgroundColor: e.target.value,
+                  }))
+                }
                 size="small"
               />
               <TextField
                 label="Text Color"
                 type="color"
                 value={defaultStyle.textColor || '#000000'}
-                onChange={(e) => setDefaultStyle((prev: StylerStyle) => ({ ...prev, textColor: e.target.value }))}
+                onChange={(e) =>
+                  setDefaultStyle((prev: StylerStyle) => ({ ...prev, textColor: e.target.value }))
+                }
                 size="small"
               />
             </Box>

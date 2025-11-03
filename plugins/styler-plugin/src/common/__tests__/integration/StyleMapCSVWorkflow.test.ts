@@ -4,8 +4,8 @@
  */
 
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimpleTableMetadataManager } from '../../services/SimpleTableMetadataManager.js';
 
 // Mock hashUtils
@@ -94,7 +94,7 @@ Australia,25690000,51812,Oceania,2021`;
     expect(tableMetadata.totalRows).toBe(10);
     expect(tableMetadata.columns).toHaveLength(5);
 
-    const columnNames = tableMetadata.columns.map(c => c.name);
+    const columnNames = tableMetadata.columns.map((c) => c.name);
     expect(columnNames).toEqual(['country', 'population', 'gdp_per_capita', 'continent', 'year']);
 
     // Check column types detection
@@ -124,8 +124,8 @@ Australia,25690000,51812,Oceania,2021`;
 
     // Verify filtering results
     expect(filteredPreview.totalRows).toBe(8); // Excludes Australia (Oceania) and Canada (population < 50M)
-    expect(filteredPreview.rows.every(row => row.continent !== 'Oceania')).toBe(true);
-    expect(filteredPreview.rows.every(row => Number(row.population) > 50000000)).toBe(true);
+    expect(filteredPreview.rows.every((row) => row.continent !== 'Oceania')).toBe(true);
+    expect(filteredPreview.rows.every((row) => Number(row.population) > 50000000)).toBe(true);
 
     // Step 3: Column selection and mapping
     const columnMappings: CSVColumnMapping[] = [
@@ -177,9 +177,9 @@ Australia,25690000,51812,Oceania,2021`;
     ];
 
     // Test column selection result
-    const selectedColumns = columnMappings.filter(m => m.included);
+    const selectedColumns = columnMappings.filter((m) => m.included);
     expect(selectedColumns).toHaveLength(4);
-    expect(selectedColumns.map(c => c.targetColumn)).toEqual([
+    expect(selectedColumns.map((c) => c.targetColumn)).toEqual([
       'region_name',
       'population_count',
       'economic_indicator',
@@ -189,7 +189,7 @@ Australia,25690000,51812,Oceania,2021`;
     // Step 4: Get final processed data for Styler
     const finalData = await csvApi.getFilteredData(tableMetadata.id, {
       keyColumn: 'country',
-      valueColumns: selectedColumns.map(c => c.sourceColumn),
+      valueColumns: selectedColumns.map((c) => c.sourceColumn),
       filterRules: filters,
       customMappings: [],
     });
@@ -226,7 +226,7 @@ Australia,25690000,51812,Oceania,2021`;
       tableMetadataId: tableMetadata.id,
       selectedKeyColumn: 'country',
       selectedValueColumns: ['population', 'gdp_per_capita'],
-      filterRules: filters.map(f => ({
+      filterRules: filters.map((f) => ({
         id: f.id,
         column: f.column,
         operator: f.operator as any,
@@ -323,16 +323,18 @@ West,90000,18000`;
     await expect(csvApi.uploadCSVFile(headersOnlyFile)).rejects.toThrow('No data rows found');
 
     // Test malformed CSV
-    const malformedFile = new File(['name,age\nJohn,30,ExtraColumn\nJane'], 'malformed.csv', { type: 'text/csv' });
+    const malformedFile = new File(['name,age\nJohn,30,ExtraColumn\nJane'], 'malformed.csv', {
+      type: 'text/csv',
+    });
     const result = await csvApi.uploadCSVFile(malformedFile);
 
     // Should handle malformed data gracefully
     expect(result.totalRows).toBe(2); // Both rows parsed (malformed data handled gracefully)
 
     // Test invalid table ID
-    await expect(
-      csvApi.getFilteredPreview('invalid-table-id', [], 10),
-    ).rejects.toThrow('Table not found');
+    await expect(csvApi.getFilteredPreview('invalid-table-id', [], 10)).rejects.toThrow(
+      'Table not found'
+    );
 
     // Test filter with non-existent column
     const validFile = new File(['name,age\nJohn,30'], 'valid.csv', { type: 'text/csv' });
@@ -366,12 +368,16 @@ West,90000,18000`;
 
     // Test data consistency across different filter operations
     const noFilter = await csvApi.getFilteredPreview(tableMetadata.id, [], 100);
-    const category1Filter = await csvApi.getFilteredPreview(tableMetadata.id, [
-      { id: '1', column: 'category', operator: 'equals', value: 'Category 1', enabled: true },
-    ], 100);
-    const valueFilter = await csvApi.getFilteredPreview(tableMetadata.id, [
-      { id: '2', column: 'value', operator: 'greater_than', value: 200, enabled: true },
-    ], 100);
+    const category1Filter = await csvApi.getFilteredPreview(
+      tableMetadata.id,
+      [{ id: '1', column: 'category', operator: 'equals', value: 'Category 1', enabled: true }],
+      100
+    );
+    const valueFilter = await csvApi.getFilteredPreview(
+      tableMetadata.id,
+      [{ id: '2', column: 'value', operator: 'greater_than', value: 200, enabled: true }],
+      100
+    );
 
     // Verify data consistency
     expect(noFilter.totalRows).toBe(5);
@@ -379,8 +385,8 @@ West,90000,18000`;
     expect(valueFilter.totalRows).toBe(2); // Items D and E
 
     // Verify that the same data appears in different queries
-    const itemA = noFilter.rows.find(row => row.name === 'Item A');
-    const itemAFiltered = category1Filter.rows.find(row => row.name === 'Item A');
+    const itemA = noFilter.rows.find((row) => row.name === 'Item A');
+    const itemAFiltered = category1Filter.rows.find((row) => row.name === 'Item A');
 
     expect(itemA).toEqual(itemAFiltered);
 
@@ -411,7 +417,7 @@ West,90000,18000`;
     expect(tableMetadata.totalRows).toBe(3); // From mock data
     expect(tableMetadata.columns).toHaveLength(3);
 
-    const columnNames = tableMetadata.columns.map(c => c.name);
+    const columnNames = tableMetadata.columns.map((c) => c.name);
     expect(columnNames).toEqual(['country', 'population', 'continent']);
 
     // Apply filters specific to the Excel data
@@ -429,7 +435,7 @@ West,90000,18000`;
 
     // Verify filtering works on Excel-derived data
     expect(filteredData.totalRows).toBe(2); // China and Japan
-    expect(filteredData.rows.every(row => row.continent === 'Asia')).toBe(true);
+    expect(filteredData.rows.every((row) => row.continent === 'Asia')).toBe(true);
 
     // Test final data export for Styler
     const finalData = await csvApi.getFilteredData(tableMetadata.id, {
@@ -487,7 +493,7 @@ West,90000,18000`;
     });
 
     expect(allData.totalRows).toBe(3);
-    expect(allData.rows.map(r => r.country).sort()).toEqual(['China', 'Japan', 'United States']);
+    expect(allData.rows.map((r) => r.country).sort()).toEqual(['China', 'Japan', 'United States']);
 
     console.log('✓ ZIP to Styler workflow test passed');
   });
@@ -504,7 +510,7 @@ Product C\t150\tElectronics`;
 
     expect(tsvTable.filename).toContain('TSV');
     expect(tsvTable.totalRows).toBe(3);
-    expect(tsvTable.columns.map(c => c.name)).toEqual(['name', 'value', 'category']);
+    expect(tsvTable.columns.map((c) => c.name)).toEqual(['name', 'value', 'category']);
 
     // Test that TSV data is processed correctly with tab delimiters
     const tsvData = await csvApi.getFilteredPreview(tsvTable.id, [], 10);

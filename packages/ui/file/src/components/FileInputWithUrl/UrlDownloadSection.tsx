@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 import type React from 'react';
 
+type AuthProviderType = 'google' | 'microsoft' | 'github';
+
 // import { AuthRequiredPrompt } from "@/shared/auth/containers/AuthProviderPrompt";
 // import { AuthProviderType } from "@/shared/auth/types/AuthProviderType.ts";
 
@@ -29,7 +31,7 @@ interface UrlDownloadSectionProps {
   onUrlChange: (url: string) => void;
   handleDownload: () => void;
   onKeyPress: (event: React.KeyboardEvent) => void;
-  onSignIn?: (provider?: any /*AuthProviderType*/) => void;
+  onSignIn?: (provider?: AuthProviderType) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   compact?: boolean;

@@ -1,6 +1,5 @@
+import { Box, Stack, TextField, Typography } from '@mui/material';
 import type React from 'react';
-import { Box, TextField, Typography } from '@mui/material';
-import { Stack } from '@mui/material';
 import type { MapViewport } from '../../../common/types/BaseMapEntity.js';
 
 export interface ViewportStepProps {
@@ -11,8 +10,8 @@ export interface ViewportStepProps {
 export const ViewportStep: React.FC<ViewportStepProps> = ({ value, onChange }) => {
   const vp: MapViewport = value || { center: [139.767, 35.681], zoom: 10, bearing: 0, pitch: 0 };
 
-  const set = (k: keyof MapViewport, v: any) => {
-    onChange({ ...vp, [k]: v } as MapViewport);
+  const set = <K extends keyof MapViewport>(key: K, value: MapViewport[K]) => {
+    onChange({ ...vp, [key]: value } as MapViewport);
   };
 
   const setCenter = (idx: 0 | 1, v: number) => {

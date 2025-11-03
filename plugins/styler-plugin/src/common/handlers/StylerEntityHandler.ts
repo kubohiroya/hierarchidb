@@ -4,11 +4,11 @@
  */
 
 import type { NodeId } from '@hierarchidb/common-types';
+import type { StylerDataService } from '../../services/StylerDataService.js';
 // Note: Do not implement the shared EntityHandler interface here because this handler returns
 // operation-result shapes used by tests. Build-time typing is kept local to avoid signature clashes.
 import type { StylerEntity } from '../types/StylerEntity.js';
 import { StylerConfigDefault } from '../types/stylerTypes.js';
-import type { StylerDataService } from '../../services/StylerDataService.js';
 
 // Type for base handler (since SpreadsheetEntityHandler is not exported)
 type HandlerPayload<T> =
@@ -26,11 +26,16 @@ interface BaseEntityHandler {
 
   updateEntity(nodeId: NodeId, data: Partial<StylerEntity>): Promise<HandlerResult<StylerEntity>>;
 
-  deleteEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<HandlerResult<StylerEntity> | void>;
+  deleteEntity(
+    nodeId: NodeId,
+    data?: Partial<StylerEntity>
+  ): Promise<HandlerResult<StylerEntity> | void>;
 }
 
 function hasData<T>(value: unknown): value is { data: T } {
-  return typeof value === 'object' && value !== null && 'data' in (value as Record<string, unknown>);
+  return (
+    typeof value === 'object' && value !== null && 'data' in (value as Record<string, unknown>)
+  );
 }
 
 function unwrapHandlerResult<T>(result: HandlerResult<T>): T | undefined {
@@ -62,7 +67,10 @@ export class StylerEntityHandler {
     this.dataService = dataService;
   }
 
-  async createEntity(nodeId: NodeId, data?: Partial<StylerEntity>): Promise<{ success: true; data: StylerEntity }> {
+  async createEntity(
+    nodeId: NodeId,
+    data?: Partial<StylerEntity>
+  ): Promise<{ success: true; data: StylerEntity }> {
     // Create base spreadsheet entity (result or raw)
     const base = await this.spreadsheetHandler.createEntity(nodeId, data);
     const baseEntity = unwrapHandlerResult(base);
@@ -100,7 +108,10 @@ export class StylerEntityHandler {
     return { success: true, data: entity };
   }
 
-  async updateEntity(nodeId: NodeId, data: Partial<StylerEntity>): Promise<{ success: boolean; data?: StylerEntity }> {
+  async updateEntity(
+    nodeId: NodeId,
+    data: Partial<StylerEntity>
+  ): Promise<{ success: boolean; data?: StylerEntity }> {
     const updated = await this.spreadsheetHandler.updateEntity(nodeId, data);
     const updatedEntity = unwrapHandlerResult(updated);
     const baseEntity =
@@ -117,11 +128,16 @@ export class StylerEntityHandler {
       };
     }
 
-    if ((data.stylerConfig || data.selectedKeyColumn || data.selectedValueColumn) && entity && data.spreadsheetMetadataId && entity.stylerConfig.targetProperty) {
+    if (
+      (data.stylerConfig || data.selectedKeyColumn || data.selectedValueColumn) &&
+      entity &&
+      data.spreadsheetMetadataId &&
+      entity.stylerConfig.targetProperty
+    ) {
       try {
         const { styleSpec, colorMapping } = await this.dataService.generateMapLibreStyle(
           data.spreadsheetMetadataId,
-          entity,
+          entity
         );
         entity.generatedStyle = {
           maplibreStyleSpec: styleSpec,
@@ -145,7 +161,8 @@ export class StylerEntityHandler {
     if (tableId) {
       try {
         await this.dataService.removeTableReference(tableId);
-      } catch { /* ignore */
+      } catch {
+        /* ignore */
       }
     }
     await this.spreadsheetHandler.deleteEntity(nodeId);
@@ -160,7 +177,7 @@ export class StylerEntityHandler {
       // Build the module specifier dynamically to avoid TS trying to resolve it at type time
       const workerModName: string = '@hierarchidb' + '/runtime-worker';
       // Use variable-based dynamic import to avoid build-time type resolution
-      const mod = await import(/* @vite-ignore */ (workerModName as string));
+      const mod = await import(/* @vite-ignore */ workerModName as string);
       const store = mod.storeRegistry.getPeer('styler');
       if (!store) return;
       const payload = {

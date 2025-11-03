@@ -1,33 +1,33 @@
 /**
-  * @file StylerDataService.ts
+ * @file StylerDataService.ts
  * @description Styler plugin data service integrating with Spreadsheet CSV API
  * : Styler
  * : SpreadsheetCSVApiDriverCSV
  * : Spreadsheet
-  */
+ */
 
+import type {
+  CSVColumnInfo,
+  CSVTableMetadata,
+  CSVTableMetadataLike,
+} from '@hierarchidb/tabular-store';
 import type {
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
-import type {
-  CSVColumnInfo,
-  CSVTableMetadata,
-  CSVTableMetadataLike,
-} from '@hierarchidb/tabular-store';
 
 import type { StylerEntity } from '../common/types/StylerEntity.js';
 import type { StylerConfig } from '../common/types/stylerTypes.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
 
 /**
-  * : Styler
+ * : Styler
  * : SpreadsheetCSV
  * :
  * : Spreadsheet
-  */
+ */
 export class StylerDataService {
   private csvApiDriver: TabularDataApi;
   private pluginId: string = 'styler';
@@ -37,14 +37,14 @@ export class StylerDataService {
   }
 
   /**
-      * : CSV
+   * : CSV
    * : SpreadsheetuploadCSVFile
    * : Styler
    * : Spreadsheet
-      */
+   */
   async uploadCSVFile(
     file: File,
-    config: CSVProcessingConfig = {},
+    config: CSVProcessingConfig = {}
   ): Promise<{
     tableMetadata: CSVTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
@@ -62,13 +62,13 @@ export class StylerDataService {
   }
 
   /**
-      * : URLCSV
+   * : URLCSV
    * : SpreadsheetdownloadCSVFromUrl
    * : Spreadsheet
-      */
+   */
   async downloadCSVFromUrl(
     url: string,
-    config: CSVProcessingConfig = {},
+    config: CSVProcessingConfig = {}
   ): Promise<{
     tableMetadata: CSVTableMetadata;
     suggestedConfig: Partial<StylerConfig>;
@@ -83,16 +83,16 @@ export class StylerDataService {
   }
 
   /**
-      * :
+   * :
    * : SpreadsheetStyler
    * :
    * :
-      */
+   */
   async getStyledPreview(
     tableId: string,
     stylerConfig: StylerConfig,
     filters: CSVFilterRule[] = [],
-    rowCount: number = 100,
+    rowCount: number = 100
   ): Promise<{
     data: CSVDataResult;
     styledRows: Array<{
@@ -125,14 +125,14 @@ export class StylerDataService {
   }
 
   /**
-      * : MapLibre
+   * : MapLibre
    * : StylerConfigMapLibre GL JS
    * : MapLibre
    * : MapLibre
-      */
+   */
   async generateMapLibreStyle(
     tableId: string,
-    entity: StylerEntity,
+    entity: StylerEntity
   ): Promise<{
     styleSpec: any;
     colorMapping: Record<string, string>;
@@ -159,7 +159,8 @@ export class StylerDataService {
       layers: [
         {
           id: `styler-layer-${entity.id}`,
-          type: 'fill', paint: {},
+          type: 'fill',
+          paint: {},
         },
       ],
     };
@@ -188,41 +189,45 @@ export class StylerDataService {
   }
 
   /**
-      * :
+   * :
    * : SpreadsheetaddTableReference
    * :
-      */
+   */
   async addTableReference(tableId: string): Promise<void> {
     await this.csvApiDriver.addTableReference(tableId, this.pluginId);
   }
 
   /**
-      * :
+   * :
    * : SpreadsheetremoveTableReference
    * :
-      */
+   */
   async removeTableReference(tableId: string): Promise<void> {
     await this.csvApiDriver.removeTableReference(tableId, this.pluginId);
   }
 
   /**
-      * :
+   * :
    * : Styler
    * :
-      */
+   */
   async listStylerTables(): Promise<CSVTableMetadata[]> {
     const allTables = await this.csvApiDriver.listTables();
-    const filtered = allTables.tables.filter((table) => table.referencingPlugins?.includes(this.pluginId));
+    const filtered = allTables.tables.filter((table) =>
+      table.referencingPlugins?.includes(this.pluginId)
+    );
     return filtered.map((table) => this.ensureFullMetadata(table));
   }
 
   /**
-      * : Styler
+   * : Styler
    * :
    * :
-      */
+   */
   private generateInitialStylerConfig(tableMetadata: CSVTableMetadata): Partial<StylerConfig> {
-    const numericColumns = tableMetadata.columns.filter((col: CSVColumnInfo) => col.type === 'number');
+    const numericColumns = tableMetadata.columns.filter(
+      (col: CSVColumnInfo) => col.type === 'number'
+    );
     const selectedValueColumn = numericColumns[0]?.name;
     if (selectedValueColumn === undefined) {
       throw new Error('No numeric columns found in the table');
@@ -231,7 +236,8 @@ export class StylerDataService {
     const cfg: Partial<StylerConfig> = {
       algorithm: 'linear',
       colorSpace: 'hsv',
-      targetProperty: 'fill-color', mapping: {
+      targetProperty: 'fill-color',
+      mapping: {
         min: 0,
         max: 100,
         hueStart: 0,
@@ -265,7 +271,7 @@ export class StylerDataService {
       columns: table.columns ?? [],
       createdAt: table.createdAt ?? Date.now(),
       updatedAt: table.updatedAt,
-      referenceCount: table.referenceCount ?? (table.referencingPlugins?.length ?? 0),
+      referenceCount: table.referenceCount ?? table.referencingPlugins?.length ?? 0,
       referencingPlugins: table.referencingPlugins ?? [],
       isChunked: table.isChunked ?? false,
       chunkCount: table.chunkCount ?? 0,

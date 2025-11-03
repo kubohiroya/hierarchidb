@@ -14,7 +14,9 @@ export interface RegisterStylerWorkerStoresOptions {
   signal?: AbortSignal;
 }
 
-async function resolveStoreRegistry(options: RegisterStylerWorkerStoresOptions = {}): Promise<StoreRegistry | null> {
+async function resolveStoreRegistry(
+  options: RegisterStylerWorkerStoresOptions = {}
+): Promise<StoreRegistry | null> {
   if (options.storeRegistry) {
     return options.storeRegistry;
   }
@@ -40,7 +42,9 @@ async function ensureStylerStores(registry: StoreRegistry): Promise<void> {
   }
 }
 
-export async function registerStylerWorkerStores(options: RegisterStylerWorkerStoresOptions = {}): Promise<void> {
+export async function registerStylerWorkerStores(
+  options: RegisterStylerWorkerStoresOptions = {}
+): Promise<void> {
   if (!hasIndexedDB || options.signal?.aborted) {
     return;
   }

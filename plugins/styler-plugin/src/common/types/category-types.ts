@@ -1,6 +1,6 @@
 /**
-  * StylemapCategory -
-  */
+ * StylemapCategory -
+ */
 
 export type StylemapCategory =
   | 'choropleth'
@@ -22,7 +22,7 @@ export interface StylemapCategoryConfig {
 }
 
 /**
-    */
+ */
 export const STYLEMAP_CATEGORY_CONFIGS: StylemapCategoryConfig[] = [
   {
     value: 'choropleth',

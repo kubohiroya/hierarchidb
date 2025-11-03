@@ -5,8 +5,8 @@
  * Plugins can retrieve it via `getWorkerClientHook()` to acquire the app's worker client.
  */
 
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
-import type {WorkerAPI} from '@hierarchidb/common-api'
 
 export interface WorkerClientRef {
   /** Active WorkerAPI proxy when initialized */
@@ -33,13 +33,15 @@ export type WorkerClientHook<T = WorkerClientRef> = () => T;
 
 let currentHook: WorkerClientHook | null = null;
 
-export function registerWorkerClientHook<T = any>(hook: WorkerClientHook<T>) {
+export function registerWorkerClientHook<T = WorkerClientRef>(hook: WorkerClientHook<T>): void {
   currentHook = hook as WorkerClientHook;
 }
 
-export function getWorkerClientHook<T = any>(): WorkerClientHook<T> {
-  if(!currentHook){
-    throw new Error('Worker client hook is not registered. Please ensure registerWorkerClientHook is called at app startup.');
+export function getWorkerClientHook<T = WorkerClientRef>(): WorkerClientHook<T> {
+  if (!currentHook) {
+    throw new Error(
+      'Worker client hook is not registered. Please ensure registerWorkerClientHook is called at app startup.'
+    );
   }
   return currentHook as WorkerClientHook<T>;
 }

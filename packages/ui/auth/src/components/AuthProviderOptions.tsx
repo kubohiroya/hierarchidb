@@ -1,6 +1,6 @@
+import { GitHub as GitHubIcon, Google as GoogleIcon } from '@mui/icons-material';
 import * as React from 'react';
 import type { AuthProviderOption } from './AuthProviderOption.js';
-import { GitHub as GitHubIcon, Google as GoogleIcon } from '@mui/icons-material';
 import { MicrosoftIcon } from './MicrosoftIcon.js';
 
 export const AuthProviderOptions: AuthProviderOption[] = [

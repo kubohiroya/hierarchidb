@@ -15,7 +15,7 @@ export interface HostProfileProvider<TData = unknown> {
 
 export class HostProfileRegistry {
   private static singleton: HostProfileRegistry | null = null;
-  private providers = new Map<HostName, HostProfileProvider<any>>();
+  private providers = new Map<HostName, HostProfileProvider<unknown>>();
   private listeners: Set<() => void> = new Set();
   private version = 0;
 
@@ -25,11 +25,11 @@ export class HostProfileRegistry {
   }
 
   register<TData>(provider: HostProfileProvider<TData>): void {
-    this.providers.set(provider.name, provider as HostProfileProvider<any>);
+    this.providers.set(provider.name, provider as HostProfileProvider<unknown>);
     this.emitChange();
   }
 
-  get(name: HostName): HostProfileProvider<any> | undefined {
+  get(name: HostName): HostProfileProvider<unknown> | undefined {
     return this.providers.get(name);
   }
 
@@ -40,7 +40,9 @@ export class HostProfileRegistry {
   resolveHostForNodeType(nodeType: string): HostName | undefined {
     try {
       type PluginDef = { nodeType: string; config?: { extends?: string; base?: string } };
-      const g = (typeof window !== 'undefined' ? window : ({} as unknown)) as { __HDB_PLUGIN_DEFS__?: PluginDef[] };
+      const g = (typeof window !== 'undefined' ? window : ({} as unknown)) as {
+        __HDB_PLUGIN_DEFS__?: PluginDef[];
+      };
       const defs: PluginDef[] = Array.isArray(g.__HDB_PLUGIN_DEFS__)
         ? (g.__HDB_PLUGIN_DEFS__ as PluginDef[])
         : [];
@@ -55,16 +57,24 @@ export class HostProfileRegistry {
   /** Subscribe to changes. Returns an unsubscribe function. */
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   /** Current change counter. */
-  getVersion(): number { return this.version; }
+  getVersion(): number {
+    return this.version;
+  }
 
   private emitChange(): void {
     this.version++;
     for (const fn of Array.from(this.listeners)) {
-      try { fn(); } catch { /* noop */ }
+      try {
+        fn();
+      } catch {
+        /* noop */
+      }
     }
   }
 }

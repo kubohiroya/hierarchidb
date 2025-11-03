@@ -6,22 +6,25 @@
 export {}; // Make this file a module
 
 // Simple CSV parser for testing
-const parseCSVContent = (content: string, delimiter: string = ','): {
+const parseCSVContent = (
+  content: string,
+  delimiter: string = ','
+): {
   columns: string[];
   rows: Array<Array<string | number>>;
 } => {
-  const lines = content.split('\n').filter(line => line.trim());
+  const lines = content.split('\n').filter((line) => line.trim());
   if (lines.length === 0) {
     return { columns: [], rows: [] };
   }
 
   // Parse header
-  const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
+  const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^["']|["']$/g, ''));
 
   // Parse rows
   const rows: Array<Array<string | number>> = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(delimiter).map(v => {
+    const values = lines[i].split(delimiter).map((v) => {
       // Remove quotes
       const cleaned = v.trim().replace(/^["']|["']$/g, '');
       // Try to parse as number

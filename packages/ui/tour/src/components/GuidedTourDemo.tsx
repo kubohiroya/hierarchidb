@@ -3,19 +3,19 @@
  */
 
 import { Box, Button, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type { Step } from 'react-joyride';
 import { GenericGuidedTour } from './GenericGuidedTour.js';
 
-const demoSteps: Step[] = [
+const createDemoSteps = (buttonId: string, contentId: string): Step[] => [
   {
-    target: '#demo-button',
+    target: `#${buttonId}`,
     content: (
       <Box>
         <Typography variant="h6" gutterBottom>
           Welcome to the GuidedTour Demo!
         </Typography>
-        <Typography>
+        <Typography component="div">
           This is a demo of the enhanced GuidedTour with:
           <ul>
             <li>ESC key support to close the tour</li>
@@ -28,7 +28,7 @@ const demoSteps: Step[] = [
     placement: 'bottom',
   },
   {
-    target: '#demo-content',
+    target: `#${contentId}`,
     content: (
       <Box>
         <Typography variant="h6" gutterBottom>
@@ -46,6 +46,9 @@ const demoSteps: Step[] = [
 
 export const GuidedTourDemo = () => {
   const [runTour, setRunTour] = useState(true);
+  const buttonId = useId();
+  const contentId = useId();
+  const demoSteps = useMemo(() => createDemoSteps(buttonId, contentId), [buttonId, contentId]);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -53,12 +56,12 @@ export const GuidedTourDemo = () => {
         GuidedTour Demo
       </Typography>
 
-      <Button id="demo-button" variant="contained" onClick={() => setRunTour(true)} sx={{ mb: 4 }}>
+      <Button id={buttonId} variant="contained" onClick={() => setRunTour(true)} sx={{ mb: 4 }}>
         Start Tour
       </Button>
 
       <Box
-        id="demo-content"
+        id={contentId}
         sx={{
           p: 3,
           border: '1px solid #ccc',

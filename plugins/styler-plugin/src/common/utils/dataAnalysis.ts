@@ -1,15 +1,15 @@
 /**
-  * @file dataAnalysis.ts
+ * @file dataAnalysis.ts
  * @description Data analysis utilities for algorithm recommendation
  * :
  * :
  * :
-  */
+ */
 
 import type { ColorAlgorithm } from '../types/stylerTypes.js';
 
 /**
-    */
+ */
 export interface DataStatistics {
   min: number;
   max: number;
@@ -31,7 +31,7 @@ export interface DataStatistics {
 }
 
 /**
-    */
+ */
 export interface AlgorithmRecommendation {
   algorithm: ColorAlgorithm;
   confidence: number;
@@ -45,7 +45,7 @@ export interface AlgorithmRecommendation {
 }
 
 /**
-    */
+ */
 export interface DataAnalysisResult {
   statistics: DataStatistics;
   recommendation: AlgorithmRecommendation;
@@ -54,10 +54,10 @@ export interface DataAnalysisResult {
 }
 
 /**
-  * :
  * :
  * :
-  */
+ * :
+ */
 export function calculateStatistics(values: number[]): DataStatistics {
   if (values.length === 0) {
     return {
@@ -84,9 +84,10 @@ export function calculateStatistics(values: number[]): DataStatistics {
   const max = sorted[n - 1] ?? min;
   const sum = values.reduce((acc, val) => acc + val, 0);
   const mean = sum / n;
-  const median = n % 2 === 0
-    ? (((sorted[n / 2 - 1] ?? min) + (sorted[n / 2] ?? max)) / 2)
-    : (sorted[Math.floor(n / 2)] ?? min);
+  const median =
+    n % 2 === 0
+      ? ((sorted[n / 2 - 1] ?? min) + (sorted[n / 2] ?? max)) / 2
+      : (sorted[Math.floor(n / 2)] ?? min);
 
   const variance = values.reduce((acc, val) => acc + (val - mean) ** 2, 0) / n;
   const stdDev = Math.sqrt(variance);
@@ -99,20 +100,22 @@ export function calculateStatistics(values: number[]): DataStatistics {
   const q3 = sorted[q3Index] ?? max;
 
   //  Skewness
-  const skewness = n > 2 && stdDev > 0
-    ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 3, 0) / n
-    : 0;
+  const skewness =
+    n > 2 && stdDev > 0
+      ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 3, 0) / n
+      : 0;
 
   //  Kurtosis
-  const kurtosis = n > 3 && stdDev > 0
-    ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 4, 0) / n - 3
-    : 0;
+  const kurtosis =
+    n > 3 && stdDev > 0
+      ? values.reduce((acc, val) => acc + ((val - mean) / stdDev) ** 4, 0) / n - 3
+      : 0;
 
   //  IQR
   const iqr = q3 - q1;
   const lowerBound = q1 - 1.5 * iqr;
   const upperBound = q3 + 1.5 * iqr;
-  const outliers = values.filter(v => v < lowerBound || v > upperBound);
+  const outliers = values.filter((v) => v < lowerBound || v > upperBound);
 
   const uniqueCount = new Set(values).size;
 
@@ -145,11 +148,14 @@ export function calculateStatistics(values: number[]): DataStatistics {
 }
 
 /**
-  * :
  * :
  * :
-  */
-export function detectNaturalBreaks(values: number[], binCount: number = 20): {
+ * :
+ */
+export function detectNaturalBreaks(
+  values: number[],
+  binCount: number = 20
+): {
   hasBreaks: boolean;
   breakPoints?: number[];
   clusterCount?: number;
@@ -192,18 +198,22 @@ export function detectNaturalBreaks(values: number[], binCount: number = 20): {
 }
 
 /**
-  * :
  * :
  * :
-  */
-export function calculateAlgorithmSuitability(stats: DataStatistics, hasNaturalBreaks: boolean): {
+ * :
+ */
+export function calculateAlgorithmSuitability(
+  stats: DataStatistics,
+  hasNaturalBreaks: boolean
+): {
   linear: number;
   quantile: number;
   jenks: number;
   equal: number;
 } {
   const scores = {
-    linear: 50, quantile: 50,
+    linear: 50,
+    quantile: 50,
     jenks: 50,
     equal: 50,
   };
@@ -212,32 +222,32 @@ export function calculateAlgorithmSuitability(stats: DataStatistics, hasNaturalB
     scores.equal += 35;
     scores.linear += 25;
     scores.quantile += 10;
-    scores.jenks += 15;      //  Jenks
+    scores.jenks += 15; //  Jenks
   }
 
   if (stats.distribution === 'skewed' || Math.abs(stats.skewness) > 1) {
     scores.quantile += 35;
-    scores.jenks += 25;      //  Jenks
+    scores.jenks += 25; //  Jenks
     scores.equal -= 20;
     scores.linear -= 10;
   }
 
   if (stats.hasOutliers) {
     scores.quantile += 20;
-    scores.jenks += 15;      //  Jenks
+    scores.jenks += 15; //  Jenks
     scores.equal -= 15;
     scores.linear -= 10;
   }
 
   if (hasNaturalBreaks) {
-    scores.jenks += 40;      //  Jenks
+    scores.jenks += 40; //  Jenks
     scores.quantile += 10;
     scores.equal -= 5;
     scores.linear -= 5;
   }
 
   if (stats.uniqueCount < 10) {
-    scores.jenks += 20;      //  Jenks
+    scores.jenks += 20; //  Jenks
     scores.quantile += 15;
     scores.linear -= 10;
     scores.equal -= 10;
@@ -247,7 +257,7 @@ export function calculateAlgorithmSuitability(stats: DataStatistics, hasNaturalB
     scores.equal += 30;
     scores.linear += 20;
     scores.quantile -= 10;
-    scores.jenks -= 5;       //  Jenks
+    scores.jenks -= 5; //  Jenks
   }
 
   //  0-100
@@ -264,13 +274,13 @@ export function calculateAlgorithmSuitability(stats: DataStatistics, hasNaturalB
 }
 
 /**
-  * :
  * :
  * :
-  */
+ * :
+ */
 export function recommendAlgorithm(
   data: number[],
-  dataType?: 'population' | 'ratio' | 'continuous' | 'categorical',
+  dataType?: 'population' | 'ratio' | 'continuous' | 'categorical'
 ): AlgorithmRecommendation {
   const stats = calculateStatistics(data);
   const naturalBreaks = detectNaturalBreaks(data);
@@ -295,9 +305,10 @@ export function recommendAlgorithm(
 
   switch (bestAlgorithm) {
     case 'equal':
-      reasoning = stats.distribution === 'normal'
-        ? 'データが正規分布に従っているため、等間隔分類が視覚的にバランスの良い表現を提供します'
-        : 'データが比較的均等に分布しているため、等間隔分類が適切です';
+      reasoning =
+        stats.distribution === 'normal'
+          ? 'データが正規分布に従っているため、等間隔分類が視覚的にバランスの良い表現を提供します'
+          : 'データが比較的均等に分布しているため、等間隔分類が適切です';
       break;
 
     case 'quantile':
@@ -355,14 +366,14 @@ export function recommendAlgorithm(
 }
 
 /**
-  * :
  * :
  * :
-  */
+ * :
+ */
 export function analyzeData(
   values: number[],
   _column?: string,
-  dataType?: 'population' | 'ratio' | 'continuous' | 'categorical',
+  dataType?: 'population' | 'ratio' | 'continuous' | 'categorical'
 ): DataAnalysisResult {
   const statistics = calculateStatistics(values);
   const naturalBreaks = detectNaturalBreaks(values);
@@ -377,23 +388,20 @@ export function analyzeData(
 }
 
 /**
-  * : CSV
+ * : CSV
  * :
  * :
-  */
+ */
 export function extractNumericValues(
   csvData: Array<Record<string, any>>,
-  column: string,
+  column: string
 ): number[] {
   const values: number[] = [];
 
   for (const row of csvData) {
     const value = row[column];
-    const numeric = typeof value === 'number'
-      ? value
-      : typeof value === 'string'
-        ? parseFloat(value)
-        : NaN;
+    const numeric =
+      typeof value === 'number' ? value : typeof value === 'string' ? parseFloat(value) : NaN;
 
     if (!isNaN(numeric) && isFinite(numeric)) {
       values.push(numeric);

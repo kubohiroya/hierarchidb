@@ -1,5 +1,5 @@
-import type { CommandEnvelope } from '../command-types.js';
 import type { Seq } from '@hierarchidb/common-types';
+import type { CommandEnvelope } from '../command-types.js';
 
 // Minimal command handler interfaces and registry implementation.
 // Keeps behavior identical to the previous switch-case logic while
@@ -13,23 +13,25 @@ export type CommandHandlerContext<TType extends string, TPayload> = {
 export interface CommandHandler<TType extends string = string, TPayload = unknown> {
   validate?: (payload: TPayload) => boolean | Promise<boolean>;
   execute: (
-    ctx: CommandHandlerContext<TType, TPayload>,
+    ctx: CommandHandlerContext<TType, TPayload>
   ) => Promise<import('../command-types.js').CommandResult>;
   undo?: (ctx: CommandHandlerContext<TType, TPayload>) => Promise<void>;
   redo?: (ctx: CommandHandlerContext<TType, TPayload>) => Promise<void>;
 }
 
+type GenericCommandHandler = CommandHandler<string, unknown>;
+
 class CommandRegistry {
-  private handlers = new Map<string, CommandHandler<any, any>>();
+  private handlers = new Map<string, GenericCommandHandler>();
 
   register<TType extends string, TPayload>(
     type: TType,
-    handler: CommandHandler<TType, TPayload>,
+    handler: CommandHandler<TType, TPayload>
   ): void {
-    this.handlers.set(type, handler as CommandHandler<any, any>);
+    this.handlers.set(type, handler as GenericCommandHandler);
   }
 
-  get(type: string): CommandHandler | undefined {
+  get(type: string): GenericCommandHandler | undefined {
     return this.handlers.get(type);
   }
 }

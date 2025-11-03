@@ -7,7 +7,7 @@ type NodeMessageListener = (value: unknown) => void;
 
 function invokeListener(
   handler: EventListenerOrEventListenerObject | MessageEventListener,
-  event: MessageEventLike,
+  event: MessageEventLike
 ): void {
   if (typeof handler === 'function') {
     (handler as MessageEventListener)(event);
@@ -22,7 +22,10 @@ function invokeListener(
  * Wraps a Node.js MessagePort to behave like the interface Comlink expects in browser contexts.
  */
 export function createEndpointFromMessagePort(port: NodeMessagePort): Endpoint {
-  const listeners = new Map<EventListenerOrEventListenerObject | MessageEventListener, NodeMessageListener>();
+  const listeners = new Map<
+    EventListenerOrEventListenerObject | MessageEventListener,
+    NodeMessageListener
+  >();
 
   return {
     postMessage(value, transfer) {

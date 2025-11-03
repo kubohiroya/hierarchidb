@@ -1,15 +1,18 @@
-import type { CoreDB } from '../CoreDB.js';
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { CoreDB } from '../CoreDB.js';
 import { decodeWorkingCopyHolderName } from './holder-encoding.js';
 
 export async function collectSubtreeIds(coreDB: CoreDB, rootId: NodeId): Promise<Set<NodeId>> {
   const ids = new Set<NodeId>();
   const queue: NodeId[] = [rootId];
   while (queue.length) {
-    const id = queue.shift()!;
+    const id = queue.shift();
+    if (!id) {
+      continue;
+    }
     if (ids.has(id)) continue;
     ids.add(id);
-    const children: TreeNode[] = (await (coreDB.listChildren?.(id))!) || [];
+    const children: TreeNode[] = (await coreDB.listChildren?.(id)) ?? [];
     for (const c of children) queue.push(c.id);
   }
   return ids;
@@ -30,10 +33,9 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
       .map((t) => t.workingCopyRootId)
       .filter((id): id is NodeId => typeof id === 'string' && id.length > 0);
     if (wcRootIds.length > 0) {
-      const holders = (await coreDB.nodes
-        .where?.('parentId')
-        .anyOf?.(wcRootIds)
-        .toArray?.()) as TreeNode[] | undefined;
+      const holders = (await coreDB.nodes.where?.('parentId').anyOf?.(wcRootIds).toArray?.()) as
+        | TreeNode[]
+        | undefined;
       if (Array.isArray(holders)) {
         for (const h of holders) {
           try {
@@ -53,7 +55,9 @@ export async function hasWorkingCopyInSubtree(coreDB: CoreDB, rootId: NodeId): P
   if (!nodesTable || typeof nodesTable.toArray !== 'function') return false;
   const all = (await nodesTable.toArray()) as TreeNode[] | undefined;
   if (!Array.isArray(all)) return false;
-  const holders = all.filter((n) => typeof n?.parentId === 'string' && (n.parentId as string).endsWith(':workingCopy'));
+  const holders = all.filter(
+    (n) => typeof n?.parentId === 'string' && (n.parentId as string).endsWith(':workingCopy')
+  );
   for (const h of holders) {
     try {
       const { targetParentNodeId, targetNodeId } = decodeWorkingCopyHolderName(h.name);

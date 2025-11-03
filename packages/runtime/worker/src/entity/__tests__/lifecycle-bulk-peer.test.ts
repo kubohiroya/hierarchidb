@@ -1,9 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { CommandResult, NodeId, NodeType, PasteNodesPayload, Timestamp, TreeNode } from '@hierarchidb/common-types';
+import type {
+  CommandResult,
+  NodeId,
+  PasteNodesPayload,
+  Timestamp,
+  TreeNode,
+} from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CommandProcessor } from '../../services/CommandProcessor.js';
 import type { CoreDB } from '../../services/CoreDB.js';
 import type { CommandEnvelope } from '../../services/command-types.js';
-import type { CommandProcessor } from '../../services/CommandProcessor.js';
 import type { PeerEntity, PeerStore } from '../store.js';
 import { storeRegistry } from '../store-registry.js';
 
@@ -21,13 +27,15 @@ describe('Lifecycle uses bulkUpsert when available', () => {
         return node.id;
       }),
       bulkCreateNodes: vi.fn(async (nodes: TreeNode[]) => {
-        nodes.forEach((node) => nodeMap.set(node.id, { ...node }));
+        nodes.forEach((node) => {
+          nodeMap.set(node.id, { ...node });
+        });
       }),
       getNode: vi.fn(async (id: NodeId) => nodeMap.get(id)),
     };
 
     const processor: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(async () => ({ success: true, seq: 1 } as CommandResult)),
+      processCommand: vi.fn(async () => ({ success: true, seq: 1 }) as CommandResult),
     };
 
     const collected: PeerEntity[] = [];

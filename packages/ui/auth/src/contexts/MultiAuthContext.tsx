@@ -1,10 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
-// import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
-import type { AuthProviderType } from '../types/AuthProviderType.js';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { AuthContextType } from '../types/AuthContextType.js';
 import type { AuthProviderConfig } from '../types/AuthProviderConfig.js';
+// import { APP_PREFIX } from "@/config/appDescription"; // Removed to avoid hard-coded dependency
+import type { AuthProviderType } from '../types/AuthProviderType.js';
 import type { AuthUser } from '../types/AuthUser.js';
+
 // import { getSecureConfig } from "@/config/secureConfig"; // TODO: Fix config import
 // import { notify } from "@/shared/containers/NotificationSystem/NotificationSystem"; // TODO: Fix notification import
 
@@ -126,7 +127,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
           localStorage.removeItem(REDIRECT_URL_KEY);
           window.location.href = redirectUrl;
         }
-      } catch (error) {
+      } catch (_error) {
         notify.error('Failed to process Google login. Please try again.');
       }
     },
@@ -153,7 +154,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(PROVIDER_KEY);
         }
-      } catch (error) {
+      } catch (_error) {
         notify.error('Authentication data corrupted. Please sign in again.');
         localStorage.removeItem(STORAGE_KEY);
         localStorage.removeItem(PROVIDER_KEY);
@@ -184,7 +185,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
         const providerName =
           provider === 'microsoft' ? 'Microsoft' : provider === 'github' ? 'GitHub' : provider;
         notify.error(
-          `${providerName} Client ID is not configured. Please check your environment variables.`,
+          `${providerName} Client ID is not configured. Please check your environment variables.`
         );
         return;
       }
@@ -207,7 +208,7 @@ export function MultiAuthProvider({ children, homeUrl = '/' }: MultiAuthProvider
 
       window.location.href = `${config.authUrl}?${params.toString()}`;
     },
-    [googleLogin, homeUrl],
+    [googleLogin, homeUrl]
   );
 
   const signOut = useCallback(() => {

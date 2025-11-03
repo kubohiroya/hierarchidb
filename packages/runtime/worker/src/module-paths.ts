@@ -6,10 +6,10 @@
  * registry emitted by scripts/generate-plugin-loader.mjs.
  */
 
-import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 import { getWorkerContainer } from './di/container.js';
-import { WorkerDiTokens } from './di/tokens.js';
 import type { PluginWorkerModuleLoader } from './di/interfaces.js';
+import { WorkerDiTokens } from './di/tokens.js';
+import { pluginWorkerModuleMap } from './plugin-registry/index.js';
 
 export const RUNTIME_MODULE_IDS = {
   runtimeWorker: '@hierarchidb/runtime-worker',
@@ -25,7 +25,10 @@ export const OPTIONAL_FEATURE_MODULE_IDS = {
 // Keys are nodeType (e.g., 'basemap', 'folder', ...), and values echo the key.
 
 export const PLUGIN_WORKER_MODULE_IDS = Object.freeze(
-  Object.fromEntries(Object.keys(pluginWorkerModuleMap).map((k) => [k, k])) as Record<string, string>
+  Object.fromEntries(Object.keys(pluginWorkerModuleMap).map((k) => [k, k])) as Record<
+    string,
+    string
+  >
 );
 
 export type OptionalFeatureId = keyof typeof OPTIONAL_FEATURE_MODULE_IDS;
@@ -36,14 +39,8 @@ export type StoreRegistry = {
   registerPeer<T = unknown>(nodeType: string, store: T): void;
 };
 
-type RuntimeWorkerModule = {
-  storeRegistry?: StoreRegistry;
-  [key: string]: unknown;
-};
-
 type OptionalFeatureModule = Record<string, unknown> | unknown;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PluginWorkerModule = Record<string, any> | any;
+export type PluginWorkerModule = Record<string, unknown>;
 
 /*
 const runtimeWorkerImporter = () =>

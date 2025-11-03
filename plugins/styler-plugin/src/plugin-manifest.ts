@@ -3,7 +3,8 @@ import type { PluginManifest } from '@hierarchidb/plugin-service-api';
 
 export const PLUGIN_ID = '@hierarchidb/styler-plugin' as const;
 export const PLUGIN_VERSION = '1.0.0' as const;
-export const PLUGIN_DESCRIPTION = 'Styler Plugin for HierarchiDB - Dynamic styling for map visualizations' as const;
+export const PLUGIN_DESCRIPTION =
+  'Styler Plugin for HierarchiDB - Dynamic styling for map visualizations' as const;
 export const PLUGIN_NODE_TYPE = 'styler' as NodeType;
 
 export const PLUGIN_MANIFEST: PluginManifest = {

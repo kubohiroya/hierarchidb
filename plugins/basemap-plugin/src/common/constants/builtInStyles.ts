@@ -121,7 +121,7 @@ export const PREMIUM_STYLES = {
  * Falls back to streets style if not found
  */
 export function getBuiltInStyleUrl(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
 ): string {
   if (styleType === 'custom') {
     // Custom style should provide its own URL
@@ -136,7 +136,7 @@ export function getBuiltInStyleUrl(
  * Get attribution text for a style
  */
 export function getStyleAttribution(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
 ): string {
   if (styleType === 'custom') {
     return '© Map data contributors';
@@ -150,7 +150,7 @@ export function getStyleAttribution(
  * Check if a style requires an API key
  */
 export function styleRequiresApiKey(
-  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom',
+  styleType: 'streets' | 'satellite' | 'terrain' | 'dark' | 'light' | 'custom'
 ): boolean {
   if (styleType === 'custom') {
     return false; // Depends on the custom URL
@@ -190,9 +190,11 @@ export const CUSTOM_STYLE_EXAMPLES = {
     version: 8,
     name: 'Watercolor',
     sources: {
-      'stamen': {
+      stamen: {
         type: 'raster',
-        tiles: ['https://watercolormaps.collection.cooperhewitt.org/tile/watercolor/{z}/{x}/{y}.jpg'],
+        tiles: [
+          'https://watercolormaps.collection.cooperhewitt.org/tile/watercolor/{z}/{x}/{y}.jpg',
+        ],
         tileSize: 256,
         attribution: '© Stamen Design',
       },

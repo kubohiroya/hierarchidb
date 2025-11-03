@@ -17,6 +17,7 @@ import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
   LightMode as LightModeIcon,
   RestoreFromTrash as RecyclingIcon,
   Redo as RedoIcon,
@@ -49,7 +50,14 @@ import {
   Typography,
 } from '@mui/material';
 import { styled, useTheme } from '@mui/material/styles';
-import { type MouseEvent, useCallback, useState } from 'react';
+import {
+  type FocusEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 
 import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types.js';
 
@@ -175,6 +183,7 @@ function TreeConsoleToolbarContent({
   canPaste = false,
   canDuplicate = false,
   canTrash = false,
+  canRemove,
   availableTemplates = [],
   searchPlaceholder,
   searchAriaLabel,
@@ -191,6 +200,7 @@ function TreeConsoleToolbarContent({
   canPaste?: boolean;
   canDuplicate?: boolean;
   canTrash?: boolean;
+  canRemove?: boolean;
   availableTemplates?: NonNullable<TreeConsoleToolbarProps['availableTemplates']>;
   searchPlaceholder: string;
   searchAriaLabel: string;
@@ -211,10 +221,12 @@ function TreeConsoleToolbarContent({
   const [language, setLanguage] = useState<string>(
     () => (typeof localStorage !== 'undefined' && localStorage.getItem('app.lang')) || 'system'
   );
+  const [templateAnchorEl, setTemplateAnchorEl] = useState<null | HTMLElement>(null);
 
   const settingsOpen = Boolean(settingsAnchorEl);
   const importExportOpen = Boolean(importExportAnchorEl);
   const trashOpen = Boolean(trashAnchorEl);
+  const templateMenuOpen = Boolean(templateAnchorEl);
 
   const undoTooltip = t('tooltips.undo', { shortcut: '⌘+Z' });
   const redoTooltip = t('tooltips.redo', { shortcut: '⌘+Shift+Z' });
@@ -224,7 +236,24 @@ function TreeConsoleToolbarContent({
   const duplicateTooltip = t('tooltips.duplicate', { shortcut: '⌘+D' });
   const moveToTrashTooltip = t('tooltips.moveToTrash', { shortcut: '⌘+X' });
 
-  const allowTrash = canTrash;
+  const allowTrash =
+    (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
+
+  const resolvedTemplates = useMemo(() => {
+    try {
+      const raw = typeof availableTemplates === 'function' ? availableTemplates() : availableTemplates;
+      if (!Array.isArray(raw)) return [];
+      return raw.filter(
+        (item): item is { id: string; label?: string } =>
+          Boolean(item && typeof item.id === 'string')
+      );
+    } catch (error) {
+      console.warn('[TreeConsoleToolbar] availableTemplates() failed', error);
+      return [];
+    }
+  }, [availableTemplates]);
+
+  const hasTemplates = resolvedTemplates.length > 0;
 
   const trashButtonLabel = t('aria.trashMenuButton');
   const importExportButtonLabel = t('aria.importExportButton');
@@ -298,6 +327,7 @@ function TreeConsoleToolbarContent({
 
   const handleImportExportClose = () => {
     setImportExportAnchorEl(null);
+    setTemplateAnchorEl(null);
   };
 
   const handleTrashClick = (event: MouseEvent<HTMLElement>) => {
@@ -311,6 +341,20 @@ function TreeConsoleToolbarContent({
 
   const handleTrashClose = () => {
     setTrashAnchorEl(null);
+  };
+
+  const handleTemplateMenuOpen = (
+    event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement> | KeyboardEvent<HTMLElement>
+  ) => {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    const target = event.currentTarget as HTMLElement | null;
+    if (!target) return;
+    setTemplateAnchorEl(target);
+  };
+
+  const handleTemplateMenuClose = () => {
+    setTemplateAnchorEl(null);
   };
 
   // Action handler
@@ -545,33 +589,55 @@ function TreeConsoleToolbarContent({
             </ListItemIcon>
             <ListItemText primary={exportLabel} />
           </MenuItem>
-          {availableTemplates &&
-            availableTemplates.length > 0 && [
-              <Divider key="tmpl-divider" />,
+          {hasTemplates && [
+            <Divider key="import-template-divider" />,
+            <MenuItem
+              key="import-template-trigger"
+              aria-haspopup="menu"
+              aria-label={importTemplateLabel}
+              onMouseEnter={handleTemplateMenuOpen}
+              onFocus={handleTemplateMenuOpen}
+              onClick={handleTemplateMenuOpen}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowRight') {
+                  handleTemplateMenuOpen(event);
+                }
+              }}
+            >
+              <ListItemIcon>
+                <SnippetFolderIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={importTemplateLabel} />
+              <KeyboardArrowRightIcon fontSize="small" />
+            </MenuItem>,
+          ]}
+        </Menu>
+
+        {hasTemplates && (
+          <Menu
+            anchorEl={templateAnchorEl}
+            open={templateMenuOpen}
+            onClose={handleTemplateMenuClose}
+            container={portalContainer}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+            MenuListProps={{ onMouseLeave: handleTemplateMenuClose }}
+          >
+            {resolvedTemplates.map((template) => (
               <MenuItem
-                key="tmpl-import"
+                key={template.id}
                 onClick={() => {
-                  const first = availableTemplates[0]!;
-                  handleAction('import-template', { templateId: first.id });
+                  handleAction('import-template', { templateId: template.id });
+                  handleTemplateMenuClose();
                   handleImportExportClose();
                 }}
-                aria-label={
-                  availableTemplates.length === 1
-                    ? (availableTemplates[0]?.label ?? importTemplateFallback)
-                    : importTemplateLabel
-                }
+                aria-label={template.label ?? importTemplateFallback}
               >
-                <ListItemIcon>
-                  <SnippetFolderIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>
-          {availableTemplates.length === 1
-            ? availableTemplates[0]?.label ?? importTemplateFallback
-            : importTemplateLabel}
-                </ListItemText>
-              </MenuItem>,
-            ]}
-        </Menu>
+                <ListItemText primary={template.label ?? importTemplateFallback} />
+              </MenuItem>
+            ))}
+          </Menu>
+        )}
 
         {/* Settings Button */}
         <IconButton
@@ -787,6 +853,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
         canPaste={canPaste}
         canDuplicate={canDuplicate}
         canTrash={resolvedCanTrash}
+        canRemove={canRemove}
         availableTemplates={availableTemplates}
         searchPlaceholder={searchPlaceholder}
         searchAriaLabel={searchAriaLabel}

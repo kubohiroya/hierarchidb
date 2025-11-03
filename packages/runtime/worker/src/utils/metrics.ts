@@ -14,7 +14,10 @@ export function recordCommandLatency(kind: string, ms: number): void {
   byCommand.set(kind, s);
 }
 
-export function getCommandLatencySnapshot(): Record<string, { count: number; avgMs: number; maxMs: number }> {
+export function getCommandLatencySnapshot(): Record<
+  string,
+  { count: number; avgMs: number; maxMs: number }
+> {
   const out: Record<string, { count: number; avgMs: number; maxMs: number }> = {};
   for (const [k, v] of byCommand.entries()) {
     out[k] = { count: v.count, avgMs: v.count > 0 ? v.totalMs / v.count : 0, maxMs: v.maxMs };

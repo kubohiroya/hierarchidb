@@ -10,7 +10,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import type React from 'react';
+import { type FC, useId } from 'react';
 import { useLinkButton } from './useLinkButton.js';
 
 // Toast configuration type (placeholder)
@@ -103,7 +103,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
    * Return `false` to cancel navigation.
    * @deprecated Use `validate` or `steps` instead
    */
-  onBeforeNavigate?: () => Promise<boolean | void>;
+  onBeforeNavigate?: () => Promise<boolean | undefined>;
 
   /**
    * Callback before any action starts
@@ -233,7 +233,7 @@ export interface LinkButtonProps extends Omit<ButtonProps, 'onClick'> {
  * </LinkButton>
  * ```
  */
-export const LinkButton: React.FC<LinkButtonProps> = (props) => {
+export const LinkButton: FC<LinkButtonProps> = (props) => {
   const {
     // Extract all LinkButton-specific props that shouldn't go to Button
     to: _to,
@@ -263,6 +263,8 @@ export const LinkButton: React.FC<LinkButtonProps> = (props) => {
   } = props;
 
   const { loading, confirmOpen, handleClick, handleConfirm, handleCancel } = useLinkButton(props);
+  const titleId = useId();
+  const descriptionId = useId();
 
   return (
     <>
@@ -282,24 +284,15 @@ export const LinkButton: React.FC<LinkButtonProps> = (props) => {
         <Dialog
           open={confirmOpen}
           onClose={handleCancel}
-          aria-labelledby="confirm-dialog-title"
-          aria-describedby="confirm-dialog-description"
+          aria-labelledby={confirmDialog.title ? titleId : undefined}
+          aria-describedby={descriptionId}
         >
-          {confirmDialog.title && (
-            <DialogTitle id="confirm-dialog-title">{confirmDialog.title}</DialogTitle>
-          )}
+          {confirmDialog.title && <DialogTitle id={titleId}>{confirmDialog.title}</DialogTitle>}
           <DialogContent>
-            <DialogContentText id="confirm-dialog-description">
-              {confirmDialog.message}
-            </DialogContentText>
+            <DialogContentText id={descriptionId}>{confirmDialog.message}</DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={handleCancel}
-              color="primary"
-              aria-label="cancel-confirmation-dialog"
-              role="button"
-            >
+            <Button onClick={handleCancel} color="primary" aria-label="cancel-confirmation-dialog">
               {confirmDialog.cancelText || 'Cancel'}
             </Button>
             <Button
@@ -309,7 +302,6 @@ export const LinkButton: React.FC<LinkButtonProps> = (props) => {
               variant="contained"
               startIcon={loading ? <CircularProgress size={16} /> : undefined}
               aria-label="confirm-action"
-              role="button"
               {...confirmDialog.confirmButtonProps}
             >
               {confirmDialog.confirmText || 'Confirm'}

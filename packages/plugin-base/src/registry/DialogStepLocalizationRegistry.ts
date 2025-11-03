@@ -30,7 +30,9 @@ class DialogStepLocalizationRegistry {
   }
 
   registerMany(nodeType: string, steps: StepLocalizationInput[]): void {
-    steps.forEach((step) => this.register(nodeType, step));
+    for (const step of steps) {
+      this.register(nodeType, step);
+    }
   }
 
   resolveTitle(nodeType: string, stepId: string, locale?: string): string {
@@ -46,9 +48,9 @@ class DialogStepLocalizationRegistry {
     const bucket = this.entries.get(nodeType);
     if (!bucket) return [];
     const normalized = normalizeLocale(locale ?? this.detectLocale());
-    return Array.from(bucket.values()).map((entry) => (
-      entry.titles?.[normalized] ?? entry.defaultTitle ?? entry.id
-    ));
+    return Array.from(bucket.values()).map(
+      (entry) => entry.titles?.[normalized] ?? entry.defaultTitle ?? entry.id
+    );
   }
 
   detectLocale(): string {

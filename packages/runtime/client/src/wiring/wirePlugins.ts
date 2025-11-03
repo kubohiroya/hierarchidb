@@ -24,7 +24,8 @@ function toRuntimeWiring(candidate: unknown): PluginRuntimeWiring | undefined {
   for (const key of RUNTIME_METHOD_KEYS) {
     const fn = source[key];
     if (typeof fn === 'function') {
-      wiring[key] = () => (fn as Function).call(source);
+      const callable = fn as (...args: unknown[]) => unknown;
+      wiring[key] = () => callable.call(source);
       hasMember = true;
     }
   }
@@ -41,7 +42,8 @@ function toLifecycle(candidate: unknown): Record<string, unknown> | undefined {
     if (['length', 'name', 'prototype'].includes(name)) continue;
     const value = source[name];
     if (typeof value === 'function') {
-      lifecycle[name] = (...args: unknown[]) => (value as Function).apply(source, args);
+      const callable = value as (...args: unknown[]) => unknown;
+      lifecycle[name] = (...args: unknown[]) => callable.apply(source, args);
       hasMember = true;
     }
   }
@@ -59,7 +61,7 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
     try {
       const moduleRecord: Record<string, unknown> | null =
         (typeof mod === 'object' || typeof mod === 'function') && mod !== null
-          ? mod as Record<string, unknown>
+          ? (mod as Record<string, unknown>)
           : null;
       const wiringCandidates: PluginRuntimeWiring[] = [];
       const objectWiring = toRuntimeWiring(moduleRecord?.runtimeWiring);
@@ -77,9 +79,10 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
       }
       // Register standardized factories/lifecycle when present
       const exp: Record<string, unknown> = {};
-      const workerSource = moduleRecord?.worker && typeof moduleRecord.worker === 'object'
-        ? moduleRecord.worker as Record<string, unknown>
-        : moduleRecord;
+      const workerSource =
+        moduleRecord?.worker && typeof moduleRecord.worker === 'object'
+          ? (moduleRecord.worker as Record<string, unknown>)
+          : moduleRecord;
       if (workerSource && typeof workerSource.createEntityHandler === 'function') {
         exp.createEntityHandler = workerSource.createEntityHandler;
       }
@@ -87,9 +90,10 @@ export async function wirePluginsFromModules(entries: PluginModuleEntry[]): Prom
         exp.createBatchManager = workerSource.createBatchManager;
       }
 
-      const workerLifecycle = workerSource && workerSource.lifecycle && typeof workerSource.lifecycle === 'object'
-        ? workerSource.lifecycle as Record<string, unknown>
-        : toLifecycle(workerSource?.Lifecycle);
+      const workerLifecycle =
+        workerSource?.lifecycle && typeof workerSource.lifecycle === 'object'
+          ? (workerSource.lifecycle as Record<string, unknown>)
+          : toLifecycle(workerSource?.Lifecycle);
       if (workerLifecycle) {
         exp.lifecycle = workerLifecycle;
       }

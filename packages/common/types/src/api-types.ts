@@ -2,7 +2,7 @@ import type { GroupEntity, PeerEntity, RelationalEntity } from './entity-types.j
 import type { NodeId } from './id-types.js';
 
 //  API
-export type APIMethodArgs = readonly [NodeId, ...any[]];
+export type APIMethodArgs = readonly [NodeId, ...unknown[]];
 export type APIMethodReturn =
   | PeerEntity
   | GroupEntity
@@ -13,7 +13,7 @@ export type APIMethodReturn =
   | string
   | number
   | boolean
-  | void
+  | undefined
   | { [key: string]: string | number | boolean };
 
 //  Worker API

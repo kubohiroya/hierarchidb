@@ -1,15 +1,15 @@
 /**
-  * @file stylerTypes.ts
+ * @file stylerTypes.ts
  * @description Styler plugin type definitions
  * : Styler
  * : eria-cartographHierarchiDB
  * :
-  */
+ */
 
 /**
-  * : MapLibre style property
+ * : MapLibre style property
  * : MapLibre GL JS
-  */
+ */
 export type MapLibreStyleProperty =
   | 'fill-color'
   | 'fill-opacity'
@@ -23,21 +23,21 @@ export type MapLibreStyleProperty =
   | 'text-halo-width';
 
 /**
-  * :
+ * :
  * : 2
-  */
+ */
 export type ColorAlgorithm = 'linear' | 'quantile' | 'jenks' | 'equal';
 
 /**
-  * :
+ * :
  * : HSVRGB
-  */
+ */
 export type ColorSpace = 'hsv' | 'rgb' | 'lab';
 
 /**
-  * : Styler
+ * : Styler
  * :
-  */
+ */
 export interface StylerMapping {
   min: number;
   max: number;
@@ -54,9 +54,9 @@ export interface StylerMapping {
 }
 
 /**
-  * : Styler
+ * : Styler
  * :
-  */
+ */
 export interface StylerConfig {
   targetProperty: MapLibreStyleProperty | null;
 
@@ -79,9 +79,9 @@ export interface StylerConfig {
 }
 
 /**
-  * : MapLibre
+ * : MapLibre
  * :
-  */
+ */
 export interface MapLibrePropertyMetadata {
   name: string;
   displayName: string;
@@ -94,9 +94,9 @@ export interface MapLibrePropertyMetadata {
 }
 
 /**
-  * :
+ * :
  * : UI
-  */
+ */
 export interface PropertyGroup {
   name: string;
   displayName: string;
@@ -104,9 +104,9 @@ export interface PropertyGroup {
 }
 
 /**
-  * :
+ * :
  * : UI
-  */
+ */
 export interface TablePreviewProps {
   data: Array<Record<string, any>>;
   selectedKeyColumn?: string;
@@ -116,9 +116,9 @@ export interface TablePreviewProps {
 }
 
 /**
-  * :
  * :
-  */
+ * :
+ */
 export interface ColorCalculationResult {
   color: string; //  RGB/HSV/Hex
   opacity?: number;
@@ -133,9 +133,9 @@ export interface ColorCalculationResult {
 }
 
 /**
-  * : Styler
+ * : Styler
  * :
-  */
+ */
 export const StylerConfigDefault: StylerConfig = {
   targetProperty: null,
   algorithm: 'linear',
@@ -164,9 +164,9 @@ export interface StylerPeerData {
 }
 
 /**
-  * : MapLibre
  * : MapLibre
-  */
+ * : MapLibre
+ */
 export const MAPLIBRE_PROPERTY_METADATA: Record<MapLibreStyleProperty, MapLibrePropertyMetadata> = {
   'fill-color': {
     name: 'fill-color',
@@ -256,9 +256,9 @@ export const MAPLIBRE_PROPERTY_METADATA: Record<MapLibreStyleProperty, MapLibreP
 };
 
 /**
-  * :
+ * :
  * : UI
-  */
+ */
 export const MAPLIBRE_PROPERTY_GROUPS: PropertyGroup[] = [
   {
     name: 'fill',

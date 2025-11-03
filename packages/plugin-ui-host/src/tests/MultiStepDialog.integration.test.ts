@@ -5,12 +5,12 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
-import { WorkerAPIImpl } from '@hierarchidb/testing-plugin-dialog-mocks';
 import type { NodeId } from '@hierarchidb/common-types';
+import { WorkerAPIImpl } from '@hierarchidb/testing-plugin-dialog-mocks';
 
 describe('Multi-Step Dialog Integration', () => {
-  let workerAPI: any; // WorkerAPIImpl type not available
-  let dialogAPI: any;
+  let workerAPI: WorkerAPIImpl | undefined;
+  let dialogAPI: ReturnType<WorkerAPIImpl['getMultiStepDialogAPI']>;
 
   beforeEach(async () => {
     //  WorkerAPI
@@ -258,7 +258,9 @@ describe('Multi-Step Dialog Integration', () => {
         data: {
           name: 'Test Location',
           locationType: 'restaurant',
-          latitude: 91, longitude: 181, contact: {
+          latitude: 91,
+          longitude: 181,
+          contact: {
             email: 'invalid-email',
           },
         },
@@ -279,13 +281,13 @@ describe('Multi-Step Dialog Integration', () => {
       const nonExistentId = 'non-existent-id' as NodeId;
 
       await expect(dialogAPI.evaluateCapabilities(nonExistentId, 0)).rejects.toThrow(
-        'Working copy not found',
+        'Working copy not found'
       );
     });
 
     it('should handle unsupported node type', async () => {
       await expect(dialogAPI.createWorkingCopy('unsupported-type')).rejects.toThrow(
-        'No handler found for node type: unsupported-type',
+        'No handler found for node type: unsupported-type'
       );
     });
   });

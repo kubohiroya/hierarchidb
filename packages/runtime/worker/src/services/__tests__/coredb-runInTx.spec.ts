@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { CoreDB } from '../CoreDB.js';
 
 describe('CoreDB runInTx coverage', () => {
@@ -10,7 +10,7 @@ describe('CoreDB runInTx coverage', () => {
       db.runInTx('rw', ['nodes', 'trees', 'rootStates', 'tags', 'tagAssociations'], async () => {
         const trees = await db.trees.toArray();
         expect(Array.isArray(trees)).toBe(true);
-      }),
+      })
     ).resolves.toBeUndefined();
   });
 });

@@ -1,12 +1,12 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
-import type { NodeId, TreeId, TreeNodeEvent } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
 import { toNodeType, toTreeId } from '@hierarchidb/common-types';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
 import { decodeWorkingCopyHolderName } from '../../services/utils/holder-encoding.js';
-import { exposeTestAPI } from '../test-worker.entry.js';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type TestWorkerAPI = {
   ping(): Promise<{ response: string; timestamp: number }>;
@@ -18,7 +18,10 @@ type TestWorkerAPI = {
 
 type SubscriptionEvent = TreeNodeEvent;
 
-async function waitFor<T>(predicate: () => T | Promise<T>, opts?: { timeout?: number; interval?: number }) {
+async function waitFor<T>(
+  predicate: () => T | Promise<T>,
+  opts?: { timeout?: number; interval?: number }
+) {
   const timeout = opts?.timeout ?? 10000;
   const interval = opts?.interval ?? 25;
   const start = Date.now();
@@ -59,18 +62,29 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
 
     const subtreeSid = await subscriptionAPI.subscribeSubtree(
       rootId,
-      Comlink.proxy((event: SubscriptionEvent) => { subtreeEvents.push(event); }),
+      Comlink.proxy((event: SubscriptionEvent) => {
+        subtreeEvents.push(event);
+      })
     );
     const trashSid = await subscriptionAPI.subscribeSubtree(
       trashRootId,
-      Comlink.proxy((event: SubscriptionEvent) => { trashEvents.push(event); }),
+      Comlink.proxy((event: SubscriptionEvent) => {
+        trashEvents.push(event);
+      })
     );
     const trashNodeSid = await subscriptionAPI.subscribeNode(
       trashRootId,
-      Comlink.proxy((event: SubscriptionEvent) => { trashNodeEvents.push(event); }),
+      Comlink.proxy((event: SubscriptionEvent) => {
+        trashNodeEvents.push(event);
+      })
     );
 
-    const createRes = await mutationAPI.createNode({ nodeType: toNodeType('folder'), treeId, parentId: rootId, name: 'tmp' });
+    const createRes = await mutationAPI.createNode({
+      nodeType: toNodeType('folder'),
+      treeId,
+      parentId: rootId,
+      name: 'tmp',
+    });
     if (!createRes.success) {
       const message = 'error' in createRes ? createRes.error : 'unknown error';
       throw new Error(`createNode failed: ${message}`);
@@ -91,9 +105,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(commitRes?.status).toBe('ok');
 
     await waitFor(() =>
-      subtreeEvents.some(
-        (event) => event?.nodeId === canonicalId && typeof event.type === 'string',
-      ),
+      subtreeEvents.some((event) => event?.nodeId === canonicalId && typeof event.type === 'string')
     );
 
     const mvRes = await mutationAPI.moveNodesToTrash([canonicalId]);
@@ -116,7 +128,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(trashedNode.originalParentId).toBe(rootId);
 
     const subtreeEventsBeforeRestore = subtreeEvents.length;
-    const restoreRes = await mutationAPI.restoreNodesFromTrash({ nodeIds: [canonicalId], toParentId: rootId });
+    const restoreRes = await mutationAPI.restoreNodesFromTrash({
+      nodeIds: [canonicalId],
+      toParentId: rootId,
+    });
     expect(restoreRes?.success).toBe(true);
 
     await waitFor(async () => {
@@ -141,9 +156,10 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
         .slice(subtreeEventsBeforeSecondMove)
         .some(
           (event) =>
-            (event.nodeId === canonicalId && (event.type === 'moved' || event.type === 'deleted')) ||
-            (event.nodeId === rootId && event.type === 'updated'),
-        ),
+            (event.nodeId === canonicalId &&
+              (event.type === 'moved' || event.type === 'deleted')) ||
+            (event.nodeId === rootId && event.type === 'updated')
+        )
     );
 
     const afterSecondRootChildren = await queryAPI.listChildren(rootId);
@@ -162,7 +178,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(
       trashEvents
         .slice(trashEventsBeforeSecondMove)
-        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId),
+        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId)
     ).toBe(true);
 
     const trashEventsBeforeRemoval = trashEvents.length;
@@ -174,13 +190,13 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(
       trashEvents
         .slice(trashEventsBeforeRemoval)
-        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId),
+        .some((event) => event.nodeId === canonicalId || event.nodeId === trashRootId)
     ).toBe(true);
 
     await waitFor(() =>
       trashNodeEvents
         .slice(trashNodeEventsBeforeRemoval)
-        .some((event) => event.nodeId === trashRootId && String(event.type).length > 0),
+        .some((event) => event.nodeId === trashRootId && String(event.type).length > 0)
     );
 
     const finalDesc = await queryAPI.listDescendants(trashRootId);

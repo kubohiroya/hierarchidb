@@ -1,6 +1,6 @@
-import type React from 'react';
-import { useState, useEffect } from 'react';
 import type { PluginStepConfig } from '@hierarchidb/plugin-base';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface StepAdapterProps {
   cfg: PluginStepConfig;
@@ -12,19 +12,21 @@ interface StepAdapterProps {
 }
 
 export const StepAdapter: React.FC<StepAdapterProps> = ({
-                                                          cfg,
-                                                          mode,
-                                                          nodeId,
-                                                          parentId,
-                                                          data,
-                                                          updateWorkingCopy,
-                                                        }) => {
+  cfg,
+  mode,
+  nodeId,
+  parentId,
+  data,
+  updateWorkingCopy,
+}) => {
   const [, setValid] = useState<boolean | undefined>();
   const [, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof cfg.validate === 'function') {
-      Promise.resolve(cfg.validate()).then(res => setValid(!!res)).catch(() => setValid(false));
+      Promise.resolve(cfg.validate())
+        .then((res) => setValid(!!res))
+        .catch(() => setValid(false));
     }
   }, [cfg]);
 

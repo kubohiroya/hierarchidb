@@ -9,7 +9,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { enUS, ja } from 'date-fns/locale';
 import type { i18n as I18nInstance } from 'i18next';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import { i18n as configuredI18n } from '../i18n/index.js';
 import { isDevEnv } from '../utils/env.js';
@@ -175,25 +175,28 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
   const [currentLanguage, setCurrentLanguage] = useState<LanguageConfig>(getCurrentLanguage);
 
   // Create locale-aware formatters
-  const createFormatters = (locale: string) => ({
-    number: new Intl.NumberFormat(locale),
-    currency: new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'USD', // Default currency, can be made configurable
+  const createFormatters = useCallback(
+    (locale: string) => ({
+      number: new Intl.NumberFormat(locale),
+      currency: new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: 'USD', // Default currency, can be made configurable
+      }),
+      date: new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+      time: new Intl.DateTimeFormat(locale, {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      relativeTime: new Intl.RelativeTimeFormat(locale, {
+        numeric: 'auto',
+      }),
     }),
-    date: new Intl.DateTimeFormat(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }),
-    time: new Intl.DateTimeFormat(locale, {
-      hour: '2-digit',
-      minute: '2-digit',
-    }),
-    relativeTime: new Intl.RelativeTimeFormat(locale, {
-      numeric: 'auto',
-    }),
-  });
+    []
+  );
 
   const [formatters, setFormatters] = useState(() => createFormatters(currentLanguage.code));
 
@@ -250,7 +253,7 @@ const LanguageProviderInner: React.FC<LanguageProviderProps> = ({ children }) =>
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
-  }, [i18n, currentLanguage.code]);
+  }, [i18n, currentLanguage.code, createFormatters]);
 
   // Context value
   const contextValue: LanguageContextType = {

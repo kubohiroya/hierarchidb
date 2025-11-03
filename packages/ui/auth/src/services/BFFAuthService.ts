@@ -30,30 +30,40 @@ export interface BFFAuthResponse {
   redirect_url?: string;
 }
 
-/**
- * PKCE (Proof Key for Code Exchange) utilities
- */
-class PKCEUtils {
-  static generateCodeVerifier(): string {
-    const array = new Uint8Array(64);
-    crypto.getRandomValues(array);
-    return PKCEUtils.base64UrlEncode(array);
-  }
+type TokenResponseUserInfo = Partial<Record<'sub' | 'email' | 'name' | 'picture', string>>;
 
-  static async generateCodeChallenge(verifier: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(verifier);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return PKCEUtils.base64UrlEncode(new Uint8Array(hash));
-  }
-
-  private static base64UrlEncode(array: Uint8Array): string {
-    return btoa(String.fromCharCode(...array))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  }
+interface TokenResponsePayload {
+  access_token?: string;
+  refresh_token?: string;
+  refresh_token_id?: string;
+  id_token?: string;
+  expires_in?: number;
+  provider?: AuthProviderType;
+  sub?: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  userinfo?: TokenResponseUserInfo;
 }
+
+const base64UrlEncode = (array: Uint8Array): string =>
+  btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+
+const generateCodeVerifier = (): string => {
+  const array = new Uint8Array(64);
+  crypto.getRandomValues(array);
+  return base64UrlEncode(array);
+};
+
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return base64UrlEncode(new Uint8Array(hash));
+};
 
 /**
  * BFF Authentication Service
@@ -73,7 +83,7 @@ export class BFFAuthService {
     // In development, use relative URL for proxy; in production, use full URL
     if (isDevelopment && (!envUrl || envUrl.startsWith('http'))) {
       // Use proxy path in development
-      this.baseUrl = '';  // Empty string to use relative paths with proxy
+      this.baseUrl = ''; // Empty string to use relative paths with proxy
     } else {
       this.baseUrl = envUrl || '/api/auth';
     }
@@ -107,8 +117,8 @@ export class BFFAuthService {
    */
   private async signInWithPopup(provider: AuthProviderType, returnUrl?: string): Promise<BFFUser> {
     // Generate PKCE parameters
-    const codeVerifier = PKCEUtils.generateCodeVerifier();
-    const codeChallenge = await PKCEUtils.generateCodeChallenge(codeVerifier);
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
 
     // Store for later use
     sessionStorage.setItem('pkce_code_verifier', codeVerifier);
@@ -134,11 +144,11 @@ export class BFFAuthService {
    */
   private async signInWithRedirect(
     provider: AuthProviderType,
-    returnUrl?: string,
+    returnUrl?: string
   ): Promise<BFFUser> {
     // Generate PKCE parameters
-    const codeVerifier = PKCEUtils.generateCodeVerifier();
-    const codeChallenge = await PKCEUtils.generateCodeChallenge(codeVerifier);
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
 
     // Store for later use (use localStorage for redirect flow)
     localStorage.setItem('pkce_code_verifier', codeVerifier);
@@ -155,8 +165,7 @@ export class BFFAuthService {
     window.location.href = authUrl.toString();
 
     // This will never resolve as the page redirects
-    return new Promise(() => {
-    });
+    return new Promise(() => {});
   }
 
   /**
@@ -165,7 +174,7 @@ export class BFFAuthService {
   private buildAuthorizationUrl(
     provider: AuthProviderType,
     codeChallenge: string,
-    method: 'popup' | 'redirect',
+    method: 'popup' | 'redirect'
   ): URL {
     const { isAbsolute, authBase } = this.resolveAuthBase();
 
@@ -185,7 +194,10 @@ export class BFFAuthService {
     // Add redirect URI (BFF will handle the actual OAuth redirect)
     if (method === 'redirect') {
       const baseClean = this.getAppBasePrefix();
-      authUrl.searchParams.set('redirect_uri', `${window.location.origin}${baseClean}/auth/callback`);
+      authUrl.searchParams.set(
+        'redirect_uri',
+        `${window.location.origin}${baseClean}/auth/callback`
+      );
     }
 
     return authUrl;
@@ -215,7 +227,7 @@ export class BFFAuthService {
     }
 
     const appBase = this.getAppBasePrefix(); // '' or '/hierarchidb'
-    const base = (this.baseUrl && this.baseUrl.trim()) || '/auth';
+    const base = this.baseUrl?.trim() || '/auth';
     const rel = base.endsWith('/auth') ? base : `${base.replace(/\/$/, '')}/auth`;
 
     // Join like `${appBase}${rel}` but avoid double slashes
@@ -257,7 +269,7 @@ export class BFFAuthService {
           popup.close();
           reject(new Error('Authentication timeout'));
         },
-        5 * 60 * 1000,
+        5 * 60 * 1000
       );
     });
   }
@@ -316,7 +328,7 @@ export class BFFAuthService {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.error_description || `Token exchange failed: ${response.statusText}`,
+        errorData.error_description || `Token exchange failed: ${response.statusText}`
       );
     }
 
@@ -355,7 +367,7 @@ export class BFFAuthService {
           },
           credentials: 'include',
         });
-      } catch (error) {
+      } catch (_error) {
         // Ignore revoke errors
       }
     }
@@ -407,7 +419,7 @@ export class BFFAuthService {
       }
 
       return this.parseTokenResponse(data);
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -424,7 +436,7 @@ export class BFFAuthService {
     try {
       // Parse JWT to get user info (without verification)
       return this.parseTokenToUser(token);
-    } catch (error) {
+    } catch (_error) {
       return null;
     }
   }
@@ -432,7 +444,7 @@ export class BFFAuthService {
   /**
    * Parse token response to user object
    */
-  private parseTokenResponse(data: any): BFFUser {
+  private parseTokenResponse(data: TokenResponsePayload): BFFUser {
     const userInfo = data.userinfo || {};
 
     return {
@@ -468,7 +480,7 @@ export class BFFAuthService {
         expires_at: (payload.exp || 0) * 1000, // Convert to milliseconds
         provider: payload.provider || 'google',
       };
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid token format');
     }
   }
@@ -493,7 +505,7 @@ export class BFFAuthService {
       url,
       'oauth-popup',
       `width=${width},height=${height},left=${left},top=${top},` +
-      'toolbar=no,menubar=no,location=no,status=no',
+        'toolbar=no,menubar=no,location=no,status=no'
     );
 
     return this.popupWindow;

@@ -1,12 +1,4 @@
 import type {
-  CommandEnvelope,
-  CommandEvent,
-  CommandResult,
-} from '../../command-types.js';
-import { WorkerErrorCode } from '../../command-types.js';
-import type { CoreDB } from '../../CoreDB.js';
-import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
-import type {
   CommandId,
   NodeId,
   NodeType,
@@ -14,6 +6,10 @@ import type {
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
+import type { CoreDB } from '../../CoreDB.js';
+import type { CommandEnvelope, CommandEvent, CommandResult } from '../../command-types.js';
+import { WorkerErrorCode } from '../../command-types.js';
+import { createNewName } from '../../WorkingCopyTreeNodeOperations.js';
 
 type SanitizedLogResult = {
   success: boolean;
@@ -44,25 +40,31 @@ export class CommandHistoryManager {
     CommandId,
     Map<NodeId, { nextParentId: NodeId; nextName: string }>
   >();
-  private readonly preMoveToTrashState = new Map<CommandId, Array<{
-    nodeId: NodeId;
-    previousParentId: NodeId;
-    previousName: string;
-    previousOriginalName?: string;
-    previousOriginalParentId?: NodeId;
-    previousRemovedAt?: Timestamp;
-    previousHolderType?: TreeNode['holderType'];
-    previousHolderTargetId?: NodeId;
-    previousHolderMetaParentId?: NodeId;
-    trashRootId: NodeId;
-    trashRemovedAt: Timestamp;
-    trashName: string;
-  }>>();
-  private readonly preCommitWorkingCopyState = new Map<CommandId, {
-    workingCopy: TreeNode;
-    holder: TreeNode;
-    committedNode?: TreeNode;
-  }>();
+  private readonly preMoveToTrashState = new Map<
+    CommandId,
+    Array<{
+      nodeId: NodeId;
+      previousParentId: NodeId;
+      previousName: string;
+      previousOriginalName?: string;
+      previousOriginalParentId?: NodeId;
+      previousRemovedAt?: Timestamp;
+      previousHolderType?: TreeNode['holderType'];
+      previousHolderTargetId?: NodeId;
+      previousHolderMetaParentId?: NodeId;
+      trashRootId: NodeId;
+      trashRemovedAt: Timestamp;
+      trashName: string;
+    }>
+  >();
+  private readonly preCommitWorkingCopyState = new Map<
+    CommandId,
+    {
+      workingCopy: TreeNode;
+      holder: TreeNode;
+      committedNode?: TreeNode;
+    }
+  >();
 
   private static readonly UNDOABLE_COMMANDS = new Set([
     'createNode',
@@ -86,12 +88,12 @@ export class CommandHistoryManager {
           suggestedName?: string;
           originalVersion?: number;
           wcVersion?: number;
-        },
+        }
       ) => CommandResult;
       maxUndoStackSize: number;
       maxRedoStackSize: number;
       maxEventHistorySize: number;
-    },
+    }
   ) {}
 
   isUndoableCommand(type: string): boolean {
@@ -208,19 +210,25 @@ export class CommandHistoryManager {
     if (this.preMoveState.has(commandId)) {
       return;
     }
-    this.preMoveState.set(commandId, nodes.map((node) => ({ ...node })));
+    this.preMoveState.set(
+      commandId,
+      nodes.map((node) => ({ ...node }))
+    );
   }
 
   storePreRemoveState(commandId: CommandId, nodes: TreeNode[]): void {
     if (this.preRemoveState.has(commandId)) {
       return;
     }
-    this.preRemoveState.set(commandId, nodes.map((node) => ({ ...node })));
+    this.preRemoveState.set(
+      commandId,
+      nodes.map((node) => ({ ...node }))
+    );
   }
 
   storePreRecoverState(
     commandId: CommandId,
-    entries: Array<{ node: TreeNode; holder?: TreeNode; nextParentId: NodeId; nextName: string }>,
+    entries: Array<{ node: TreeNode; holder?: TreeNode; nextParentId: NodeId; nextName: string }>
   ): void {
     if (this.preRestoreState.has(commandId)) {
       return;
@@ -232,7 +240,7 @@ export class CommandHistoryManager {
         holder: holder ? ({ ...holder } as TreeNode) : undefined,
         nextParentId,
         nextName,
-      })),
+      }))
     );
     const snapshotMap = new Map<NodeId, { nextParentId: NodeId; nextName: string }>();
     for (const entry of entries) {
@@ -259,12 +267,15 @@ export class CommandHistoryManager {
       trashRootId: NodeId;
       trashRemovedAt: Timestamp;
       trashName: string;
-    }>,
+    }>
   ): void {
     if (this.preMoveToTrashState.has(commandId)) {
       return;
     }
-    this.preMoveToTrashState.set(commandId, entries.map((entry) => ({ ...entry })));
+    this.preMoveToTrashState.set(
+      commandId,
+      entries.map((entry) => ({ ...entry }))
+    );
   }
 
   storeCommitWorkingCopySnapshot(
@@ -273,7 +284,7 @@ export class CommandHistoryManager {
       workingCopy: TreeNode;
       holder: TreeNode;
       committedNode?: TreeNode;
-    },
+    }
   ): void {
     if (this.preCommitWorkingCopyState.has(commandId)) {
       return;
@@ -316,9 +327,7 @@ export class CommandHistoryManager {
     };
   }
 
-  private async executeReverseCommand(
-    command: CommandEnvelope<string, unknown>,
-  ): Promise<void> {
+  private async executeReverseCommand(command: CommandEnvelope<string, unknown>): Promise<void> {
     switch (command.kind) {
       case 'createNode':
       case 'create': {
@@ -418,9 +427,7 @@ export class CommandHistoryManager {
     }
   }
 
-  private async executeRedoCommand(
-    command: CommandEnvelope<string, unknown>,
-  ): Promise<void> {
+  private async executeRedoCommand(command: CommandEnvelope<string, unknown>): Promise<void> {
     switch (command.kind) {
       case 'createNode':
       case 'create': {
@@ -485,7 +492,7 @@ export class CommandHistoryManager {
             const siblings = (await this.deps.coreDB.listChildren?.(payload.toParentId)) || [];
             nextName = createNewName(
               siblings.map((sibling) => sibling.name),
-              node.name,
+              node.name
             );
           }
           await this.deps.coreDB.updateNode?.({
@@ -529,7 +536,8 @@ export class CommandHistoryManager {
             continue;
           }
 
-          const nextName = storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.name;
+          const nextName =
+            storedNext?.nextName ?? (node as { originalName?: string }).originalName ?? node.name;
           await this.deps.coreDB.updateNode?.({
             ...node,
             parentId: targetParentId,

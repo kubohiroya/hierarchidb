@@ -1,5 +1,5 @@
-import { WorkerErrorCode } from '../command-types.js';
 import { PERFORMANCE_CONFIG } from '../../utils/performance-config.js';
+import { WorkerErrorCode } from '../command-types.js';
 
 const KNOWN_CODES = new Set<WorkerErrorCode>(Object.values(WorkerErrorCode));
 const DATABASE_ERROR_NAMES = new Set([
@@ -19,9 +19,15 @@ export type WorkerErrorClassification = {
 /**
  * Normalize error text so that logs/results never leak long or multi-line content.
  */
-export function sanitizeMessageText(input: unknown, fallback = 'An unexpected error occurred'): string {
+export function sanitizeMessageText(
+  input: unknown,
+  fallback = 'An unexpected error occurred'
+): string {
   const raw = extractRawMessage(input);
-  const collapsed = raw.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  const collapsed = raw
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
   if (!collapsed) {
     return fallback;
   }
@@ -34,7 +40,7 @@ export function sanitizeMessageText(input: unknown, fallback = 'An unexpected er
  */
 export function classifyWorkerError(
   error: unknown,
-  fallback: WorkerErrorCode = WorkerErrorCode.UNKNOWN_ERROR,
+  fallback: WorkerErrorCode = WorkerErrorCode.UNKNOWN_ERROR
 ): WorkerErrorClassification {
   const message = sanitizeMessageText(error);
 

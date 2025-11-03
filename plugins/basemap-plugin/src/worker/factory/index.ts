@@ -1,2 +1,5 @@
 export type { RegisterBasemapWorkerStoresOptions } from './registerBasemapWorkerStores.js';
-export { registerBasemapWorkerStores, loadBasemapEntitiesDbModule } from './registerBasemapWorkerStores.js';
+export {
+  loadBasemapEntitiesDbModule,
+  registerBasemapWorkerStores,
+} from './registerBasemapWorkerStores.js';

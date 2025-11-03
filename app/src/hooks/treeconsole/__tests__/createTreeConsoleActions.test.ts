@@ -219,3 +219,99 @@ describe('createTreeConsoleActions.handleEdit', () => {
     globalThis.prompt = originalPrompt;
   });
 });
+
+describe('createTreeConsoleActions.handleUndoRedo', () => {
+  it('executes undo/redo, refreshes data, and dispatches command events', async () => {
+    const { deps } = buildDeps();
+    const loadChildrenOf = vi.fn(async () => {});
+    const refreshUndoRedo = vi.fn(async () => {});
+    deps.loadChildrenOf = loadChildrenOf;
+    deps.refreshUndoRedo = refreshUndoRedo;
+
+    const undo = vi.fn(async () => ({ success: true, seq: 1 } as const));
+    const redo = vi.fn(async () => ({ success: true, seq: 2 } as const));
+    const cp = { undo, redo, canUndo: () => true, canRedo: () => true };
+
+    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
+      .fn()
+      .mockResolvedValue(cp);
+
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    const actions = createTreeConsoleActions(deps);
+
+    await actions.handleUndo();
+
+    expect(undo).toHaveBeenCalledTimes(1);
+    expect(loadChildrenOf).toHaveBeenCalledWith('parent-1');
+    expect(refreshUndoRedo).toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalled();
+    expect(dispatchSpy.mock.calls.at(-1)?.[0]).toMatchObject({ type: 'hdb-cmd' });
+
+    loadChildrenOf.mockClear();
+    refreshUndoRedo.mockClear();
+
+    await actions.handleRedo();
+
+    expect(redo).toHaveBeenCalledTimes(1);
+    expect(loadChildrenOf).toHaveBeenCalledWith('parent-1');
+    expect(refreshUndoRedo).toHaveBeenCalled();
+    expect(dispatchSpy.mock.calls.at(-1)?.[0]).toMatchObject({ type: 'hdb-cmd' });
+
+    dispatchSpy.mockRestore();
+  });
+
+  it('surfaces errors when undo fails and skips refresh', async () => {
+    const { deps } = buildDeps();
+    const loadChildrenOf = vi.fn(async () => {});
+    const refreshUndoRedo = vi.fn(async () => {});
+    deps.loadChildrenOf = loadChildrenOf;
+    deps.refreshUndoRedo = refreshUndoRedo;
+
+    const undo = vi.fn(async () => ({ success: false, error: 'No command to undo', code: 'INVALID_OPERATION' } as const));
+    const cp = { undo };
+    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
+      .fn()
+      .mockResolvedValue(cp);
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const actions = createTreeConsoleActions(deps);
+
+    await actions.handleUndo();
+
+    expect(loadChildrenOf).not.toHaveBeenCalled();
+    expect(refreshUndoRedo).toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('[HDB] Command Error:', 'INVALID_OPERATION', 'No command to undo');
+
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('falls back to tree root when pageNodeId is undefined', async () => {
+    const { deps } = buildDeps();
+    deps.pageNodeId = undefined;
+    deps.ssot = { ...deps.ssot, pageNodeId: '' };
+
+    const loadChildrenOf = vi.fn(async () => {});
+    const refreshUndoRedo = vi.fn(async () => {});
+    deps.loadChildrenOf = loadChildrenOf;
+    deps.refreshUndoRedo = refreshUndoRedo;
+
+    const undo = vi.fn(async () => ({ success: true, seq: 10 } as const));
+    const cp = { undo };
+    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
+      .fn()
+      .mockResolvedValue(cp);
+
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation(() => true);
+
+    const actions = createTreeConsoleActions(deps);
+    await actions.handleUndo();
+
+    expect(loadChildrenOf).toHaveBeenCalledWith('tree-1:root');
+
+    dispatchSpy.mockRestore();
+  });
+});

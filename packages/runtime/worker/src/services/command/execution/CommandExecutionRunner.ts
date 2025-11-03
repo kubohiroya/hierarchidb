@@ -1,5 +1,5 @@
-import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 import type { CoreDB } from '../../CoreDB.js';
+import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 
 /**
  * Wraps Dexie transaction execution for command handlers and coordinates
@@ -13,13 +13,9 @@ export type CommandExecutionContext = {
 
 export class CommandExecutionRunner {
   private static readonly NON_TRANSACTIONAL_COMMANDS = new Set(['commitWorkingCopy']);
-  private static readonly TRANSACTION_TABLES: Array<'nodes' | 'trees' | 'rootStates' | 'tags' | 'tagAssociations'> = [
-    'nodes',
-    'trees',
-    'rootStates',
-    'tags',
-    'tagAssociations',
-  ];
+  private static readonly TRANSACTION_TABLES: Array<
+    'nodes' | 'trees' | 'rootStates' | 'tags' | 'tagAssociations'
+  > = ['nodes', 'trees', 'rootStates', 'tags', 'tagAssociations'];
 
   constructor(private readonly coreDB: CoreDB) {}
 
@@ -29,19 +25,24 @@ export class CommandExecutionRunner {
 
   async run<TType extends string, TPayload>(
     envelope: CommandEnvelope<TType, TPayload>,
-    execute: (context: CommandExecutionContext) => Promise<CommandResult>,
+    execute: (context: CommandExecutionContext) => Promise<CommandResult>
   ): Promise<CommandResult> {
     let context = this.createContext();
     let result: CommandResult | undefined;
     let retriedWithoutTx = false;
 
-    const runInTx = typeof this.coreDB.runInTx === 'function' ? this.coreDB.runInTx.bind(this.coreDB) : null;
+    const runInTx =
+      typeof this.coreDB.runInTx === 'function' ? this.coreDB.runInTx.bind(this.coreDB) : null;
     if (runInTx && !CommandExecutionRunner.NON_TRANSACTIONAL_COMMANDS.has(envelope.kind)) {
       try {
-        result = await runInTx('rw', CommandExecutionRunner.TRANSACTION_TABLES, () => execute(context));
+        result = await runInTx('rw', CommandExecutionRunner.TRANSACTION_TABLES, () =>
+          execute(context)
+        );
       } catch (error) {
         if (this.isRetryableTransactionError(error)) {
-          console.warn('[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.');
+          console.warn(
+            '[CommandProcessor] Dexie transaction failed with PrematureCommitError; retrying without TX.'
+          );
           retriedWithoutTx = true;
         } else {
           throw error;
@@ -62,7 +63,7 @@ export class CommandExecutionRunner {
 
   private async runPostCommitTasks(
     result: CommandResult,
-    context: CommandExecutionContext,
+    context: CommandExecutionContext
   ): Promise<void> {
     if (!result.success || context.postCommitTasks.length === 0) {
       return;

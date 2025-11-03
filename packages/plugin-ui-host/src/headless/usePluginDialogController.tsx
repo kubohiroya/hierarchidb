@@ -5,29 +5,8 @@
  * capability evaluation so the headless dialog shell can render plugin-loader with
  * consistent Next/Save guards derived from plugin-provided services.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import {
-  HeadlessMultiStepDialogProps,
-  HeadlessContentRenderProps,
-  StepComponentDescriptor,
-  StepNavigationEvent,
-  FRAME_CONSTANTS,
-  getViewportSize,
-  getPresetSize,
-  normalizeDialogState,
-  initialPosition,
-  sizesEqual,
-  positionsEqual,
-} from '@hierarchidb/ui-dialog';
-import { Box } from '@mui/material';
-import type {
-  DialogStep,
-  DialogDisplayMode,
-  MultiDialogSize,
-  MultiDialogPosition,
-} from '@hierarchidb/ui-dialog';
-import type { DialogStateAPI, DialogStateSubscriptionId} from '@hierarchidb/common-api';
+
+import type { DialogStateAPI, DialogStateSubscriptionId, WorkerAPI } from '@hierarchidb/common-api';
 import type {
   DialogStateSubscribeInput,
   MultiStepDialogState,
@@ -36,30 +15,54 @@ import type {
   TreeId,
 } from '@hierarchidb/common-types';
 import {
-  PluginStepRegistry,
-  type PluginStepConfig,
-  HostProfileRegistry,
   composeStepConfigs,
-  getPeerDisplayMode,
-  setPeerDisplayMode,
   getPeerDialogPosition,
-  setPeerDialogPosition,
   getPeerDialogSize,
-  setPeerDialogSize,
-  useDialogUrlSync,
+  getPeerDisplayMode,
+  HostProfileRegistry,
   type PeerDisplayMode,
+  type PluginStepConfig,
+  PluginStepRegistry,
+  setPeerDialogPosition,
+  setPeerDialogSize,
+  setPeerDisplayMode,
+  useDialogUrlSync,
 } from '@hierarchidb/plugin-base';
 import {
-  useDialogWorkingCopy,
-  type WorkingCopyData,
-} from '@hierarchidb/plugin-ui-sdk';
-import { getIconComponent, getPresentation, hydratePresentationDefinitionsFromGlobal } from '@hierarchidb/plugin-presentation';
-import { PluginDialogHeader, PluginDialogFooter } from './components/index.js';
-import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
-import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
+  getIconComponent,
+  getPresentation,
+  hydratePresentationDefinitionsFromGlobal,
+} from '@hierarchidb/plugin-presentation';
+import { useDialogWorkingCopy, type WorkingCopyData } from '@hierarchidb/plugin-ui-sdk';
 import { getWorkerClientHook, type WorkerClientRef } from '@hierarchidb/runtime-client';
-import { Remote, proxy, releaseProxy } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/common-api';
+import type {
+  DialogDisplayMode,
+  DialogStep,
+  MultiDialogPosition,
+  MultiDialogSize,
+} from '@hierarchidb/ui-dialog';
+import {
+  FRAME_CONSTANTS,
+  getPresetSize,
+  getViewportSize,
+  type HeadlessContentRenderProps,
+  type HeadlessMultiStepDialogProps,
+  initialPosition,
+  normalizeDialogState,
+  positionsEqual,
+  type StepComponentDescriptor,
+  type StepComponentProps,
+  type StepNavigationEvent,
+  sizesEqual,
+} from '@hierarchidb/ui-dialog';
+import { Box } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
+import { proxy, type Remote, releaseProxy } from 'comlink';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BasicInfoStep } from '../components/steps/BasicInfoStep.js';
+import { PluginDialogFooter, PluginDialogHeader } from './components/index.js';
+import type { PluginDialogFooterPrimaryButtonOptions } from './components/PluginDialogFooter.js';
 
 export interface PluginDialogControllerOptions {
   mode: 'create' | 'edit';
@@ -79,9 +82,11 @@ export interface PluginDialogFooterOptions {
   saveDraftLabel?: string;
 }
 
+type StepData = Record<string, unknown>;
+
 export interface PluginDialogControllerState {
-  headlessProps: HeadlessMultiStepDialogProps<any>;
-  stepDescriptors: ReadonlyArray<StepComponentDescriptor<any>>;
+  headlessProps: HeadlessMultiStepDialogProps<StepData>;
+  stepDescriptors: ReadonlyArray<StepComponentDescriptor<StepData>>;
   loading: boolean;
   error: unknown;
   icon?: React.ReactNode;
@@ -102,13 +107,11 @@ const clampIndex = (index: number, length: number) => {
   return Math.min(Math.max(index, 0), length - 1);
 };
 
-const toRecord = (value: unknown): Record<string, unknown> | undefined => (
-  typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
-);
+const toRecord = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
 
-const toStringArray = (value: unknown): string[] => (
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
-);
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 
 type BasicInfoState = { name: string; description: string; tags: string[] };
 
@@ -151,7 +154,7 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   useEffect(() => {
     if (typeof cfg.validate === 'function') {
       Promise.resolve(cfg.validate())
-        .then(res => setValid(Boolean(res)))
+        .then((res) => setValid(Boolean(res)))
         .catch(() => setValid(false));
     }
   }, [cfg]);
@@ -171,7 +174,12 @@ const StepAdapterComponent: React.FC<StepAdapterProps> = ({
   );
 };
 
-function mergeDialogData(basic: BasicInfoState, workingData: Record<string, unknown> | null | undefined): Record<string, unknown> {
+const PlaceholderStep: React.FC<StepComponentProps<StepData>> = () => null;
+
+function mergeDialogData(
+  basic: BasicInfoState,
+  workingData: Record<string, unknown> | null | undefined
+): Record<string, unknown> {
   const merged: Record<string, unknown> = workingData ? { ...workingData } : {};
   merged.name = basic.name;
   merged.description = basic.description;
@@ -181,22 +189,26 @@ function mergeDialogData(basic: BasicInfoState, workingData: Record<string, unkn
 
 async function evaluateValidationState(steps: DialogStep[]): Promise<boolean[]> {
   if (!steps.length) return [];
-  const results = await Promise.all(steps.map(async (step) => {
-    if (typeof step?.validate === 'function') {
-      try {
-        const outcome = await Promise.resolve(step.validate());
-        return Boolean(outcome);
-      } catch {
-        return false;
+  const results = await Promise.all(
+    steps.map(async (step) => {
+      if (typeof step?.validate === 'function') {
+        try {
+          const outcome = await Promise.resolve(step.validate());
+          return Boolean(outcome);
+        } catch {
+          return false;
+        }
       }
-    }
-    return true;
-  }));
+      return true;
+    })
+  );
   return results;
 }
 
-function createStepConfigMap(configs: ReadonlyArray<PluginStepConfig>): Map<string, PluginStepConfig> {
-  return new Map(configs.map(cfg => [cfg.id, cfg]));
+function createStepConfigMap(
+  configs: ReadonlyArray<PluginStepConfig>
+): Map<string, PluginStepConfig> {
+  return new Map(configs.map((cfg) => [cfg.id, cfg]));
 }
 
 function sequentiallyReachable(index: number, steps: DialogStep[], filled: boolean[]): boolean {
@@ -236,8 +248,8 @@ async function evaluateStepGuards({
   const activeConfig = activeStep ? configMap.get(activeStep.id) : undefined;
 
   const callBoolean = async <T extends boolean>(
-    fn: ((...args: any[]) => T | Promise<T>) | undefined,
-    fallback: boolean,
+    fn: ((...args: unknown[]) => T | Promise<T>) | undefined,
+    fallback: boolean
   ): Promise<boolean> => {
     if (!fn) return fallback;
     try {
@@ -255,7 +267,9 @@ async function evaluateStepGuards({
     const targetConfig = targetStep ? configMap.get(targetStep.id) : undefined;
     if (targetConfig?.capabilities?.canNavigateTo) {
       try {
-        const res = await Promise.resolve(targetConfig.capabilities.canNavigateTo(activeStepIndex, dialogData));
+        const res = await Promise.resolve(
+          targetConfig.capabilities.canNavigateTo(activeStepIndex, dialogData)
+        );
         return Boolean(res);
       } catch {
         return false;
@@ -283,11 +297,17 @@ async function evaluateStepGuards({
 
   const nextIndex = activeStepIndex + 1;
   const defaultCanProceed = nextIndex < steps.length ? await checkNavigate(nextIndex) : false;
-  const canProceedNext = await callBoolean(activeConfig?.capabilities?.canProceedToNext, defaultCanProceed);
+  const canProceedNext = await callBoolean(
+    activeConfig?.capabilities?.canProceedToNext,
+    defaultCanProceed
+  );
 
   const prevIndex = activeStepIndex - 1;
   const defaultCanBack = prevIndex >= 0 ? await checkNavigate(prevIndex) : false;
-  const canGoBack = await callBoolean(activeConfig?.capabilities?.canBackToPrevious, defaultCanBack);
+  const canGoBack = await callBoolean(
+    activeConfig?.capabilities?.canBackToPrevious,
+    defaultCanBack
+  );
 
   const canStartBatch = await callBoolean(activeConfig?.capabilities?.canStartBatch, false);
 
@@ -314,7 +334,9 @@ async function evaluateStepGuards({
   };
 }
 
-type DialogStateApiSubset = Partial<Pick<DialogStateAPI, 'subscribeState' | 'unsubscribeState' | 'getState'>>;
+type DialogStateApiSubset = Partial<
+  Pick<DialogStateAPI, 'subscribeState' | 'unsubscribeState' | 'getState'>
+>;
 
 type DialogStateSubscriptionLogger = Pick<Console, 'warn'> | undefined;
 
@@ -352,14 +374,18 @@ export async function subscribeDialogState({
     throw error;
   }
 
-  const subscribeFn = typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
-  const unsubscribeFn = typeof api.unsubscribeState === 'function' ? api.unsubscribeState.bind(api) : null;
+  const subscribeFn =
+    typeof api.subscribeState === 'function' ? api.subscribeState.bind(api) : null;
+  const unsubscribeFn =
+    typeof api.unsubscribeState === 'function' ? api.unsubscribeState.bind(api) : null;
   const getStateFn = typeof api.getState === 'function' ? api.getState.bind(api) : null;
 
-  const createCallback = deps?.createCallback
-    ?? ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
-  const releaseCallback = deps?.releaseCallback
-    ?? ((callback: unknown) => {
+  const createCallback =
+    deps?.createCallback ??
+    ((handler: (state: MultiStepDialogState | null) => void) => proxy(handler));
+  const releaseCallback =
+    deps?.releaseCallback ??
+    ((callback: unknown) => {
       if (!callback) return;
       try {
         const releaser = (callback as { [releaseProxy]?: () => void })[releaseProxy];
@@ -379,7 +405,9 @@ export async function subscribeDialogState({
         keys: api ? Object.keys(api as unknown as Record<string, unknown>) : [],
       });
     }
-    const error = new Error('[PluginDialogShell] DialogStateAPI must implement subscribeState/unsubscribeState');
+    const error = new Error(
+      '[PluginDialogShell] DialogStateAPI must implement subscribeState/unsubscribeState'
+    );
     warn(error.message, params);
     throw error;
   }
@@ -403,7 +431,7 @@ export async function subscribeDialogState({
   try {
     subscriptionId = await subscribeFn(
       params,
-      callback as (state: MultiStepDialogState | null) => void,
+      callback as (state: MultiStepDialogState | null) => void
     );
     if (getStateFn) {
       try {
@@ -422,7 +450,9 @@ export async function subscribeDialogState({
   }
 }
 
-export function usePluginDialogController(options: PluginDialogControllerOptions): PluginDialogControllerState {
+export function usePluginDialogController(
+  options: PluginDialogControllerOptions
+): PluginDialogControllerState {
   const {
     mode,
     nodeType,
@@ -476,10 +506,11 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         }
 
         const hasMethod = (method: keyof DialogStateAPI) => typeof api?.[method] === 'function';
-        const missingRequiredMethod = !hasMethod('publishState')
-          || !hasMethod('getState')
-          || !hasMethod('subscribeState')
-          || !hasMethod('unsubscribeState');
+        const missingRequiredMethod =
+          !hasMethod('publishState') ||
+          !hasMethod('getState') ||
+          !hasMethod('subscribeState') ||
+          !hasMethod('unsubscribeState');
 
         if (missingRequiredMethod) {
           const details = {
@@ -532,7 +563,14 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     discardWorkingCopy,
     loading,
     error,
-  } = useDialogWorkingCopy({ mode, nodeType, nodeId, parentId: pageNodeId, treeId, workerClient: ref ?? null });
+  } = useDialogWorkingCopy({
+    mode,
+    nodeType,
+    nodeId,
+    parentId: pageNodeId,
+    treeId,
+    workerClient: ref ?? null,
+  });
 
   useEffect(() => {
     if (!nodeType || !nodeId) {
@@ -572,7 +610,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         }
       } catch (error) {
         if (typeof console !== 'undefined' && typeof console.error === 'function') {
-          console.error('[PluginDialogShell] failed to establish dialog state subscription bridge', error);
+          console.error(
+            '[PluginDialogShell] failed to establish dialog state subscription bridge',
+            error
+          );
         }
         if (!disposed) {
           setWorkerDialogState(null);
@@ -591,7 +632,12 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     };
   }, [dialogStateApi, nodeType, nodeId]);
 
-  const { step: urlStep, setStep: setUrlStep, mode: urlMode, setMode: setUrlMode } = useDialogUrlSync({
+  const {
+    step: urlStep,
+    setStep: setUrlStep,
+    mode: urlMode,
+    setMode: setUrlMode,
+  } = useDialogUrlSync({
     defaults: { step: initialStep, mode: 'normal' },
     debounce: { map: 0 },
     history: { step: 'replace' },
@@ -646,83 +692,102 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         console.warn('[PluginDialogShell] restore frame state failed', err);
       }
     })();
-    return () => { mounted = false; };
-  }, [nodeType, nodeId, setUrlMode]);
-
-  const persistDisplayMode = useCallback((value: DialogDisplayMode) => {
-    setDisplayModeState(value);
-    setPeerDisplayMode(nodeType, String(nodeId), value as PeerDisplayMode).catch(() => void 0);
-    setUrlMode(value === 'full-screen' ? 'full' : 'normal');
-  }, [nodeType, nodeId, setUrlMode]);
-
-  useEffect(() => () => {
-    if (positionPersistTimeoutRef.current !== null && typeof window !== 'undefined') {
-      window.clearTimeout(positionPersistTimeoutRef.current);
-      positionPersistTimeoutRef.current = null;
-    }
-  }, []);
-
-  const persistPosition = useCallback((next: MultiDialogPosition) => {
-    setDialogPosition(next);
-    dialogPositionRef.current = next;
-
-    if (typeof window !== 'undefined') {
-      if (positionPersistTimeoutRef.current !== null) {
-        window.clearTimeout(positionPersistTimeoutRef.current);
-      }
-      positionPersistTimeoutRef.current = window.setTimeout(() => {
-        positionPersistTimeoutRef.current = null;
-        setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
-      }, 16); // ~1 frame debounce
-    } else {
-      setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
-    }
-  }, [nodeType, nodeId]);
-
-  const persistSize = useCallback((next: MultiDialogSize) => {
-    setDialogSize(next);
-    dialogSizeRef.current = next;
-    setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
-  }, [nodeType, nodeId]);
-
-  const transitionDisplayMode = useCallback(async (mode: DialogDisplayMode) => {
-    const viewport = getViewportSize();
-
-    const applyNormalizedState = (size: MultiDialogSize, position: MultiDialogPosition) => {
-      dialogSizeRef.current = size;
-      dialogPositionRef.current = position;
-      persistSize(size);
-      persistPosition(position);
+    return () => {
+      mounted = false;
     };
+  }, [nodeType, nodeId, setUrlMode]);
 
-    if (mode === 'full-screen') {
-      const fullSize: MultiDialogSize = {
-        width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
-        height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
-      };
-      applyNormalizedState(fullSize, { x: 0, y: 0 });
-    } else if (mode === 'maximize') {
-      const size = getPresetSize('maximize', viewport);
-      const position: MultiDialogPosition = {
-        x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-      };
-      const normalized = normalizeDialogState(size, position, viewport, {
-        enforceTopLeftMargin: false,
-        minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
-        clampSizeToViewport: true,
-      });
-      applyNormalizedState(normalized.size, normalized.position);
-    } else {
-      const size = getPresetSize('normal', viewport);
-      const position = initialPosition(size, viewport);
-      const normalized = normalizeDialogState(size, position, viewport, { enforceTopLeftMargin: true });
-      applyNormalizedState(normalized.size, normalized.position);
-    }
+  const persistDisplayMode = useCallback(
+    (value: DialogDisplayMode) => {
+      setDisplayModeState(value);
+      setPeerDisplayMode(nodeType, String(nodeId), value as PeerDisplayMode).catch(() => void 0);
+      setUrlMode(value === 'full-screen' ? 'full' : 'normal');
+    },
+    [nodeType, nodeId, setUrlMode]
+  );
 
-    setDisplayModeState(mode);
-    persistDisplayMode(mode);
-  }, [persistDisplayMode, persistPosition, persistSize]);
+  useEffect(
+    () => () => {
+      if (positionPersistTimeoutRef.current !== null && typeof window !== 'undefined') {
+        window.clearTimeout(positionPersistTimeoutRef.current);
+        positionPersistTimeoutRef.current = null;
+      }
+    },
+    []
+  );
+
+  const persistPosition = useCallback(
+    (next: MultiDialogPosition) => {
+      setDialogPosition(next);
+      dialogPositionRef.current = next;
+
+      if (typeof window !== 'undefined') {
+        if (positionPersistTimeoutRef.current !== null) {
+          window.clearTimeout(positionPersistTimeoutRef.current);
+        }
+        positionPersistTimeoutRef.current = window.setTimeout(() => {
+          positionPersistTimeoutRef.current = null;
+          setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
+        }, 16); // ~1 frame debounce
+      } else {
+        setPeerDialogPosition(nodeType, String(nodeId), next).catch(() => void 0);
+      }
+    },
+    [nodeType, nodeId]
+  );
+
+  const persistSize = useCallback(
+    (next: MultiDialogSize) => {
+      setDialogSize(next);
+      dialogSizeRef.current = next;
+      setPeerDialogSize(nodeType, String(nodeId), next).catch(() => void 0);
+    },
+    [nodeType, nodeId]
+  );
+
+  const transitionDisplayMode = useCallback(
+    async (mode: DialogDisplayMode) => {
+      const viewport = getViewportSize();
+
+      const applyNormalizedState = (size: MultiDialogSize, position: MultiDialogPosition) => {
+        dialogSizeRef.current = size;
+        dialogPositionRef.current = position;
+        persistSize(size);
+        persistPosition(position);
+      };
+
+      if (mode === 'full-screen') {
+        const fullSize: MultiDialogSize = {
+          width: Math.max(viewport.width, FRAME_CONSTANTS.MIN_DIALOG_WIDTH),
+          height: Math.max(viewport.height, FRAME_CONSTANTS.MIN_DIALOG_HEIGHT),
+        };
+        applyNormalizedState(fullSize, { x: 0, y: 0 });
+      } else if (mode === 'maximize') {
+        const size = getPresetSize('maximize', viewport);
+        const position: MultiDialogPosition = {
+          x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        };
+        const normalized = normalizeDialogState(size, position, viewport, {
+          enforceTopLeftMargin: false,
+          minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          clampSizeToViewport: true,
+        });
+        applyNormalizedState(normalized.size, normalized.position);
+      } else {
+        const size = getPresetSize('normal', viewport);
+        const position = initialPosition(size, viewport);
+        const normalized = normalizeDialogState(size, position, viewport, {
+          enforceTopLeftMargin: true,
+        });
+        applyNormalizedState(normalized.size, normalized.position);
+      }
+
+      setDisplayModeState(mode);
+      persistDisplayMode(mode);
+    },
+    [persistDisplayMode, persistPosition, persistSize]
+  );
 
   useEffect(() => {
     const modeKey = urlMode as string;
@@ -762,7 +827,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         };
       } else if (displayMode === 'maximize') {
         targetSize = getPresetSize('maximize', viewport);
-        targetPosition = { x: FRAME_CONSTANTS.NON_STANDARD_MARGIN, y: FRAME_CONSTANTS.NON_STANDARD_MARGIN };
+        targetPosition = {
+          x: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+          y: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
+        };
         options = {
           enforceTopLeftMargin: false,
           minPosition: FRAME_CONSTANTS.NON_STANDARD_MARGIN,
@@ -801,9 +869,13 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
   const [basicInfo, setBasicInfo] = useState({ name: '', description: '', tags: [] as string[] });
   useEffect(() => {
     if (workingCopy) {
-      const tagsValue = workingCopy.data?.['tags'];
+      const tagsValue = workingCopy.data?.tags;
       const tags = toStringArray(tagsValue);
-      setBasicInfo({ name: workingCopy.name ?? '', description: workingCopy.description ?? '', tags });
+      setBasicInfo({
+        name: workingCopy.name ?? '',
+        description: workingCopy.description ?? '',
+        tags,
+      });
     }
   }, [workingCopy]);
 
@@ -816,17 +888,27 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         if (!client) return;
         const tagAPI = await client.getTagAPI();
         const all = await tagAPI.getAllTags();
-        if (!disposed) setTagSuggestions(all.map((t: TagEntity) => t.name).filter((name:string): name is string => typeof name === 'string'));
+        if (!disposed)
+          setTagSuggestions(
+            all
+              .map((t: TagEntity) => t.name)
+              .filter((name: string): name is string => typeof name === 'string')
+          );
         if (mode === 'edit' && nodeId) {
           const nodeTags = await tagAPI.getTagsForNode(nodeId);
-          const names = (nodeTags || []).map((t: TagEntity) => t.name).filter((name: string): name is string => typeof name === 'string');
-          if (!disposed && names.length) setBasicInfo(prev => ({ ...prev, tags: prev.tags.length ? prev.tags : names }));
+          const names = (nodeTags || [])
+            .map((t: TagEntity) => t.name)
+            .filter((name: string): name is string => typeof name === 'string');
+          if (!disposed && names.length)
+            setBasicInfo((prev) => ({ ...prev, tags: prev.tags.length ? prev.tags : names }));
         }
       } catch (err) {
         console.warn('[PluginDialogShell] load tag suggestions failed', err);
       }
     })();
-    return () => { disposed = true; };
+    return () => {
+      disposed = true;
+    };
   }, [client, nodeId, mode]);
 
   useEffect(() => {
@@ -838,8 +920,8 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         const node = await query.getNode(nodeId);
         if (!node || disposed) return;
         const nodeData = toRecord((node as unknown as { data?: unknown }).data);
-        const nodeTags = toStringArray(nodeData?.['tags']);
-        setBasicInfo(prev => ({
+        const nodeTags = toStringArray(nodeData?.tags);
+        setBasicInfo((prev) => ({
           name: prev.name || node.name || '',
           description: prev.description || node.description || '',
           tags: prev.tags.length ? prev.tags : nodeTags,
@@ -848,39 +930,49 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
         console.warn('[PluginDialogShell] prefill from QueryAPI failed', err);
       }
     })();
-    return () => { disposed = true; };
+    return () => {
+      disposed = true;
+    };
   }, [client, nodeId]);
 
   const [regTick, setRegTick] = useState(0);
   const [hostTick, setHostTick] = useState(0);
   useEffect(() => {
-    const unsubA = stepRegistry.subscribe?.(() => setRegTick(v => v + 1));
-    const unsubB = hostRegistry?.subscribe?.(() => setHostTick(v => v + 1));
-    return () => { unsubA?.(); unsubB?.(); };
+    const unsubA = stepRegistry.subscribe?.(() => setRegTick((v) => v + 1));
+    const unsubB = hostRegistry?.subscribe?.(() => setHostTick((v) => v + 1));
+    return () => {
+      unsubA?.();
+      unsubB?.();
+    };
   }, [stepRegistry, hostRegistry]);
 
   const composedConfigs = useMemo(() => {
-    void regTick; void hostTick;
+    void regTick;
+    void hostTick;
     return composeStepConfigs(nodeType, mode);
   }, [nodeType, mode, regTick, hostTick]);
 
   const pluginConfigSteps = useMemo(() => {
     void regTick;
     if (mode === 'create') return stepRegistry.getCreateSteps(nodeType);
-    if (mode === 'edit') return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopy?.data);
+    if (mode === 'edit')
+      return stepRegistry.getEditSteps(nodeType, String(nodeId), workingCopy?.data);
     return [];
   }, [mode, nodeType, nodeId, workingCopy?.data, stepRegistry, regTick]);
 
-  const renderStep = useCallback((cfg: PluginStepConfig) => (
-    <StepAdapterComponent
-      cfg={cfg}
-      mode={mode}
-      nodeId={String(nodeId)}
-      parentId={String(pageNodeId)}
-      workingData={workingCopy?.data}
-      updateWorkingCopy={updateWorkingCopy}
-    />
-  ), [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]);
+  const renderStep = useCallback(
+    (cfg: PluginStepConfig) => (
+      <StepAdapterComponent
+        cfg={cfg}
+        mode={mode}
+        nodeId={String(nodeId)}
+        parentId={String(pageNodeId)}
+        workingData={workingCopy?.data}
+        updateWorkingCopy={updateWorkingCopy}
+      />
+    ),
+    [mode, nodeId, pageNodeId, updateWorkingCopy, workingCopy?.data]
+  );
 
   const steps: DialogStep[] = useMemo(() => {
     const result: DialogStep[] = [];
@@ -895,7 +987,13 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
             description={basicInfo.description}
             tags={basicInfo.tags}
             tagSuggestions={tagSuggestions}
-            onChange={(data) => setBasicInfo({ name: data.name, description: data.description ?? '', tags: data.tags ?? [] })}
+            onChange={(data) =>
+              setBasicInfo({
+                name: data.name,
+                description: data.description ?? '',
+                tags: data.tags ?? [],
+              })
+            }
             mode={mode}
           />
         ),
@@ -904,7 +1002,7 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
 
     if (composedConfigs.configs.length) {
-      composedConfigs.configs.forEach(cfg => {
+      composedConfigs.configs.forEach((cfg) => {
         const validateFn = cfg.validate;
         result.push({
           id: cfg.id,
@@ -918,7 +1016,15 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
 
     return result.concat(pluginConfigSteps);
-  }, [composedConfigs, basicInfo, tagSuggestions, mode, renderStep, pluginConfigSteps, workingCopy?.data]);
+  }, [
+    composedConfigs,
+    basicInfo,
+    tagSuggestions,
+    mode,
+    renderStep,
+    pluginConfigSteps,
+    workingCopy?.data,
+  ]);
 
   useEffect(() => {
     hydratePresentationDefinitionsFromGlobal();
@@ -943,7 +1049,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return undefined;
   }, [mode, presentation?.description]);
 
-  const [evaluatedState, setEvaluatedState] = useState<{ filled: boolean[]; guards: StepGuardState }>({
+  const [evaluatedState, setEvaluatedState] = useState<{
+    filled: boolean[];
+    guards: StepGuardState;
+  }>({
     filled: [],
     guards: emptyGuards,
   });
@@ -953,7 +1062,10 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     const evaluate = async () => {
       try {
         const filled = await evaluateValidationState(steps);
-        const dialogData = mergeDialogData(basicInfo, workingCopy?.data as Record<string, unknown> | undefined);
+        const dialogData = mergeDialogData(
+          basicInfo,
+          workingCopy?.data as Record<string, unknown> | undefined
+        );
         const guards = await evaluateStepGuards({
           steps,
           configs: composedConfigs.configs,
@@ -976,21 +1088,35 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     return () => {
       cancelled = true;
     };
-  }, [steps, composedConfigs.configs, composedConfigs.hostCanSubmit, activeStepIndex, basicInfo, workingCopy?.data]);
+  }, [
+    steps,
+    composedConfigs.configs,
+    composedConfigs.hostCanSubmit,
+    activeStepIndex,
+    basicInfo,
+    workingCopy?.data,
+  ]);
 
   const enabledStepIndices = useMemo(() => {
     const flags = evaluatedState.guards.enabledSteps || [];
-    return flags.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
+    return flags.reduce<number[]>((acc, value, idx) => {
+      if (value) acc.push(idx);
+      return acc;
+    }, []);
   }, [evaluatedState.guards.enabledSteps]);
 
   const validatedStepIndices = useMemo(() => {
     const filled = evaluatedState.filled || [];
-    return filled.reduce<number[]>((acc, value, idx) => { if (value) acc.push(idx); return acc; }, []);
+    return filled.reduce<number[]>((acc, value, idx) => {
+      if (value) acc.push(idx);
+      return acc;
+    }, []);
   }, [evaluatedState.filled]);
 
-  const committableStepIndices = useMemo(() => (
-    steps.length ? [steps.length - 1] : []
-  ), [steps.length]);
+  const committableStepIndices = useMemo(
+    () => (steps.length ? [steps.length - 1] : []),
+    [steps.length]
+  );
 
   useEffect(() => {
     if (!dialogStateApi) return;
@@ -1061,44 +1187,53 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     publishState({ nodeType, nodeId, state: null }).catch(() => {});
   }, [dialogStateApi, nodeType, nodeId, open]);
 
-  useEffect(() => () => {
-    if (!dialogStateApi || !nodeType || !nodeId) return;
-    const publishState = dialogStateApi.publishState;
-    if (typeof publishState !== 'function') return;
-    publishState({ nodeType, nodeId, state: null }).catch(() => {});
-  }, [dialogStateApi, nodeType, nodeId]);
+  useEffect(
+    () => () => {
+      if (!dialogStateApi || !nodeType || !nodeId) return;
+      const publishState = dialogStateApi.publishState;
+      if (typeof publishState !== 'function') return;
+      publishState({ nodeType, nodeId, state: null }).catch(() => {});
+    },
+    [dialogStateApi, nodeType, nodeId]
+  );
 
-  const handleNavigation = useCallback((event: StepNavigationEvent) => {
-    let nextIndex = activeStepIndex;
-    switch (event.type) {
-      case 'direct':
-        nextIndex = clampIndex(event.targetIndex, steps.length);
-        break;
-      case 'next':
-        nextIndex = clampIndex(activeStepIndex + 1, steps.length);
-        break;
-      case 'back':
-        nextIndex = clampIndex(activeStepIndex - 1, steps.length);
-        break;
-    }
-    if (nextIndex === activeStepIndex) return;
-    setActiveStepIndex(nextIndex);
-    setUrlStep(nextIndex);
-  }, [activeStepIndex, steps.length, setUrlStep]);
+  const handleNavigation = useCallback(
+    (event: StepNavigationEvent) => {
+      let nextIndex = activeStepIndex;
+      switch (event.type) {
+        case 'direct':
+          nextIndex = clampIndex(event.targetIndex, steps.length);
+          break;
+        case 'next':
+          nextIndex = clampIndex(activeStepIndex + 1, steps.length);
+          break;
+        case 'back':
+          nextIndex = clampIndex(activeStepIndex - 1, steps.length);
+          break;
+      }
+      if (nextIndex === activeStepIndex) return;
+      setActiveStepIndex(nextIndex);
+      setUrlStep(nextIndex);
+    },
+    [activeStepIndex, steps.length, setUrlStep]
+  );
 
-  const navigateToNode = useCallback((targetId: NodeId) => {
-    void navigate({ to: `/t/${treeId}/${pageNodeId}/${targetId}` as const });
-  }, [navigate, treeId, pageNodeId]);
+  const navigateToNode = useCallback(
+    (targetId: NodeId) => {
+      void navigate({ to: `/t/${treeId}/${pageNodeId}/${targetId}` as const });
+    },
+    [navigate, treeId, pageNodeId]
+  );
 
   const saveDraftInProgress = useRef(false);
 
   const handleSubmit = useCallback(async () => {
-    console.debug("[Folder-create]");
+    console.debug('[Folder-create]');
     const finalData = {
       ...workingCopy,
       name: basicInfo.name,
       description: basicInfo.description,
-      data: { ...(workingCopy?.data as Record<string, unknown> || {}), tags: basicInfo.tags },
+      data: { ...((workingCopy?.data as Record<string, unknown>) || {}), tags: basicInfo.tags },
     };
 
     const savedNodeId = await saveWorkingCopy(finalData);
@@ -1115,7 +1250,15 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     }
 
     onClose();
-  }, [workingCopy, basicInfo, saveWorkingCopy, discardWorkingCopy, onSuccess, navigateToNode, onClose]);
+  }, [
+    workingCopy,
+    basicInfo,
+    saveWorkingCopy,
+    discardWorkingCopy,
+    onSuccess,
+    navigateToNode,
+    onClose,
+  ]);
 
   const handleSaveDraft = useCallback(async () => {
     try {
@@ -1142,59 +1285,80 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     onClose();
   }, [discardWorkingCopy, onClose]);
 
-  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<any>>>(() => (
-    steps.map(step => ({ id: step.id, label: step.label ?? step.id, component: () => null }))
-  ), [steps]);
+  const stepDescriptors = useMemo<ReadonlyArray<StepComponentDescriptor<StepData>>>(
+    () =>
+      steps.map((step) => ({
+        id: step.id,
+        label: step.label ?? step.id,
+        component: PlaceholderStep,
+      })),
+    [steps]
+  );
 
   const canSaveCurrent = evaluatedState.guards.canSave;
   const canStartBatch = evaluatedState.guards.canStartBatch;
   const footerPrimaryButtons = footerOptions?.primaryButtons;
   const footerSaveDraftLabel = footerOptions?.saveDraftLabel;
 
-  const HeaderComponent: HeadlessMultiStepDialogProps<any>['HeaderComponent'] = useCallback(() => (
-    <PluginDialogHeader
-      title={dialogTitle}
-      subtitle={headerSubtitle}
-      icon={icon || undefined}
-      dialogState={workerDialogState}
-    />
-  ), [dialogTitle, headerSubtitle, icon, workerDialogState]);
+  const HeaderComponent: HeadlessMultiStepDialogProps<StepData>['HeaderComponent'] = useCallback(
+    () => (
+      <PluginDialogHeader
+        title={dialogTitle}
+        subtitle={headerSubtitle}
+        icon={icon || undefined}
+        dialogState={workerDialogState}
+      />
+    ),
+    [dialogTitle, headerSubtitle, icon, workerDialogState]
+  );
 
-  const renderContent = useCallback((propsContent: HeadlessContentRenderProps<any>) => {
-    const step = steps[propsContent.activeStepIndex];
-    return (
-      <Box
-        sx={(theme) => ({
-          flex: 1,
-          overflow: 'auto',
-          padding: theme.spacing(2),
-          backgroundColor: theme.palette.background.default,
-        })}
-      >
-        {step?.component ?? null}
-      </Box>
-    );
-  }, [steps]);
+  const renderContent = useCallback(
+    (propsContent: HeadlessContentRenderProps<StepData>) => {
+      const step = steps[propsContent.activeStepIndex];
+      return (
+        <Box
+          sx={(theme) => ({
+            flex: 1,
+            overflow: 'auto',
+            padding: theme.spacing(2),
+            backgroundColor: theme.palette.background.default,
+          })}
+        >
+          {step?.component ?? null}
+        </Box>
+      );
+    },
+    [steps]
+  );
 
-  const FooterComponent: HeadlessMultiStepDialogProps<any>['FooterComponent'] = useCallback(() => (
-    <PluginDialogFooter
-      mode={mode}
-      canCommit={canSaveCurrent}
-      onSaveDraft={handleSaveDraft ? () => { handleSaveDraft().catch(() => void 0); } : undefined}
-      disableDraft={!hasUnsavedChanges}
-      canStartBatch={canStartBatch}
-      primaryButtonOptions={footerPrimaryButtons}
-      saveDraftLabel={footerSaveDraftLabel}
-    />
-  ), [
-    mode,
-    canSaveCurrent,
-    handleSaveDraft,
-    hasUnsavedChanges,
-    canStartBatch,
-    footerPrimaryButtons,
-    footerSaveDraftLabel,
-  ]);
+  const FooterComponent: HeadlessMultiStepDialogProps<StepData>['FooterComponent'] = useCallback(
+    () => (
+      <PluginDialogFooter
+        mode={mode}
+        canCommit={canSaveCurrent}
+        onSaveDraft={
+          handleSaveDraft
+            ? () => {
+                handleSaveDraft().catch(() => void 0);
+              }
+            : undefined
+        }
+        disableDraft={!hasUnsavedChanges}
+        canStartBatch={canStartBatch}
+        primaryButtonOptions={footerPrimaryButtons}
+        saveDraftLabel={footerSaveDraftLabel}
+      />
+    ),
+    [
+      mode,
+      canSaveCurrent,
+      handleSaveDraft,
+      hasUnsavedChanges,
+      canStartBatch,
+      footerPrimaryButtons,
+      footerSaveDraftLabel,
+    ]
+  );
 
   const handleCloseRequest = useCallback(() => {
     if (saveDraftInProgress.current) {
@@ -1205,60 +1369,60 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     handleCancel().catch(() => void 0);
   }, [handleCancel, onClose]);
 
-  const handleSizeChange = useCallback((next?: MultiDialogSize) => {
-    if (!next) return;
-    const viewport = getViewportSize();
-    const normalized = normalizeDialogState(
-      next,
-      dialogPositionRef.current,
-      viewport,
-      {
+  const handleSizeChange = useCallback(
+    (next?: MultiDialogSize) => {
+      if (!next) return;
+      const viewport = getViewportSize();
+      const normalized = normalizeDialogState(next, dialogPositionRef.current, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
         minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
         clampSizeToViewport: true,
-      },
-    );
-    if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
-      persistSize(normalized.size);
-    }
-    if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
-      persistPosition(normalized.position);
-    }
-  }, [displayMode, persistPosition, persistSize]);
+      });
+      if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
+        persistSize(normalized.size);
+      }
+      if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
+        persistPosition(normalized.position);
+      }
+    },
+    [displayMode, persistPosition, persistSize]
+  );
 
-  const handlePositionChange = useCallback((next?: MultiDialogPosition) => {
-    if (!next) return;
-    const viewport = getViewportSize();
-    const normalized = normalizeDialogState(
-      dialogSizeRef.current,
-      next,
-      viewport,
-      {
+  const handlePositionChange = useCallback(
+    (next?: MultiDialogPosition) => {
+      if (!next) return;
+      const viewport = getViewportSize();
+      const normalized = normalizeDialogState(dialogSizeRef.current, next, viewport, {
         enforceTopLeftMargin: displayMode === 'normal',
         minPosition: displayMode === 'normal' ? 0 : FRAME_CONSTANTS.NON_STANDARD_MARGIN,
         clampSizeToViewport: true,
-      },
-    );
-    if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
-      persistSize(normalized.size);
-    }
-    if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
-      persistPosition(normalized.position);
-    }
-  }, [displayMode, persistPosition, persistSize]);
+      });
+      if (!sizesEqual(dialogSizeRef.current, normalized.size)) {
+        persistSize(normalized.size);
+      }
+      if (!positionsEqual(dialogPositionRef.current, normalized.position)) {
+        persistPosition(normalized.position);
+      }
+    },
+    [displayMode, persistPosition, persistSize]
+  );
 
   if (dialogStateError) {
-    const errorObject = dialogStateError instanceof Error
-      ? dialogStateError
-      : new Error(String(dialogStateError));
+    const errorObject =
+      dialogStateError instanceof Error ? dialogStateError : new Error(String(dialogStateError));
     throw errorObject;
   }
 
-  const headlessProps: HeadlessMultiStepDialogProps<any> = {
+  const currentStepData: StepData = toRecord(workingCopy?.data) ?? {};
+
+  const headlessProps: HeadlessMultiStepDialogProps<StepData> = {
     open,
     stepComponents: stepDescriptors,
-    stepData: workingCopy?.data ?? {},
-    onStepDataChange: (patch: Record<string, unknown>) => updateWorkingCopy({ data: { ...(workingCopy?.data as Record<string, unknown> || {}), ...patch } }),
+    stepData: currentStepData,
+    onStepDataChange: (patch: Partial<StepData>) =>
+      updateWorkingCopy({
+        data: { ...currentStepData, ...patch },
+      }),
     activeStepIndex,
     onStepNavigate: handleNavigation,
     enabledStepIndices,
@@ -1266,14 +1430,19 @@ export function usePluginDialogController(options: PluginDialogControllerOptions
     committableStepIndices,
     invalidMessageMap: {},
     onRequestClose: handleCloseRequest,
-    onRequestCommit: () => { console.debug("[Folder-create]"); handleSubmit().catch(() => void 0); },
+    onRequestCommit: () => {
+      console.debug('[Folder-create]');
+      handleSubmit().catch(() => void 0);
+    },
     isDirty: hasUnsavedChanges,
     position: dialogPosition,
     onPositionChange: handlePositionChange,
     size: dialogSize,
     onSizeChange: handleSizeChange,
     displayMode,
-    onDisplayModeChange: (mode) => { void transitionDisplayMode(mode); },
+    onDisplayModeChange: (mode) => {
+      void transitionDisplayMode(mode);
+    },
     HeaderComponent,
     renderContent,
     FooterComponent,

@@ -15,6 +15,7 @@ import { validateOrigin } from './middleware/origin-validator.js';
 import { getCORSHeaders, parseAllowedOrigins } from './utils/cors.js';
 import { type BffBindings, getEnv } from './utils/env.js';
 import { createSessionToken, extractBearerToken, verifySessionToken } from './utils/jwt.js';
+import { parseEnvInt } from './utils/number.js';
 import { getDynamicRedirectUri } from './utils/redirect-uri.js';
 import { StateManager } from './utils/state-manager.js';
 import { requireTurnstile } from './utils/turnstile.js';
@@ -285,7 +286,7 @@ app.post('/auth/google/callback', async (c) => {
     const userInfo = await getGoogleUserInfo(tokens.access_token);
 
     // Create session JWT
-    const sessionDuration = parseInt(env.SESSION_DURATION_HOURS || '24');
+    const sessionDuration = parseEnvInt(env.SESSION_DURATION_HOURS, 24);
     const sessionToken = await createSessionToken(
       {
         sub: userInfo.id,

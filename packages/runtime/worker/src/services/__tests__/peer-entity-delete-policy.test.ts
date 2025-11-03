@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import type { CoreDB } from '../CoreDB.js';
-import { CommandProcessor } from '../CommandProcessor.js';
-import { storeRegistry } from '../../entity/store-registry.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PeerEntity, PeerStore } from '../../entity/store.js';
+import { storeRegistry } from '../../entity/store-registry.js';
+import { CommandProcessor } from '../CommandProcessor.js';
+import type { CoreDB } from '../CoreDB.js';
 
 const FOLDER_TYPE = 'folder' as NodeType;
 const TRASH_TYPE = 'trash' as NodeType;
@@ -27,7 +27,8 @@ describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
   let state: TreeNodeState;
   let folderPeerStore: PeerStore<FolderPeerData>;
 
-  const makeNode = (timestamp: number) =>
+  const makeNode =
+    (timestamp: number) =>
     (id: string, parentId: string, nodeType: NodeType, name: string): TreeNode => ({
       id: id as NodeId,
       parentId: parentId as NodeId,
@@ -69,10 +70,14 @@ describe('PeerEntity delete policy (trash vs permanent vs WC)', () => {
         return node.id;
       },
       async listChildren(parentId: NodeId) {
-        return Object.values(state).filter((node): node is TreeNode => Boolean(node && node.parentId === parentId));
+        return Object.values(state).filter((node): node is TreeNode =>
+          Boolean(node && node.parentId === parentId)
+        );
       },
       trees: {
-        toArray: vi.fn(async () => [{ rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId }]),
+        toArray: vi.fn(async () => [
+          { rootId: 'r:root' as NodeId, trashRootId: 'r:trash' as NodeId },
+        ]),
       },
     };
 

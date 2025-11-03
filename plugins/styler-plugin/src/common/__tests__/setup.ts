@@ -11,7 +11,7 @@ globalThis.afterEach = afterEach;
 
 // File API polyfill for Vitest environment
 if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {
-  File.prototype.arrayBuffer = function() {
+  File.prototype.arrayBuffer = function () {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as ArrayBuffer);
@@ -21,7 +21,7 @@ if (typeof File !== 'undefined' && !File.prototype.arrayBuffer) {
 }
 
 if (typeof File !== 'undefined' && !File.prototype.text) {
-  File.prototype.text = function() {
+  File.prototype.text = function () {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);

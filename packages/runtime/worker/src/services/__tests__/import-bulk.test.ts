@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { ImportExportDBPort } from '@hierarchidb/import-export';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('ImportExportService importNodes bulk path', () => {
   beforeEach(() => vi.resetModules());
@@ -9,7 +9,9 @@ describe('ImportExportService importNodes bulk path', () => {
     const created: NodeId[] = [];
     const port: ImportExportDBPort = {
       bulkCreateNodes: vi.fn(async (nodes: TreeNode[]) => {
-        nodes.forEach((node) => created.push(node.id));
+        for (const node of nodes) {
+          created.push(node.id);
+        }
       }),
       listChildren: vi.fn(async () => []),
       getNode: vi.fn(async () => undefined),
@@ -18,10 +20,7 @@ describe('ImportExportService importNodes bulk path', () => {
     const svc = await ImportExportService.getSingleton(port);
     const r = await svc.importNodes({
       data: {
-        nodes: [
-          { name: 'A' },
-          { name: 'B', children: [{ name: 'B1' }] },
-        ],
+        nodes: [{ name: 'A' }, { name: 'B', children: [{ name: 'B1' }] }],
       },
       format: 'json',
       treeId: 'r' as TreeId,

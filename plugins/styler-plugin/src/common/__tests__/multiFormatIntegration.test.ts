@@ -4,8 +4,8 @@
  */
 
 import 'fake-indexeddb/auto';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SpreadsheetCSVApiDriver as StylerCSVApiDriver } from '@hierarchidb/spreadsheet-plugin';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimpleTableMetadataManager } from '../services/SimpleTableMetadataManager.js';
 import { detectFileType } from '../utils/fileProcessingUtils.js';
 
@@ -16,7 +16,7 @@ vi.mock('../utils/hashUtils', () => ({
       let hash = 0;
       for (let i = 0; i < content.length; i++) {
         const char = content.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
+        hash = (hash << 5) - hash + char;
         hash = hash & hash;
       }
       return Promise.resolve(`mock-hash-${Math.abs(hash)}`);
@@ -143,9 +143,9 @@ Jane\t25\tLos Angeles`;
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      await expect(csvApi.uploadCSVFile(file))
-        .rejects
-        .toThrow('File size exceeds 50MB limit for EXCEL files');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
+        'File size exceeds 50MB limit for EXCEL files'
+      );
     });
   });
 
@@ -169,9 +169,9 @@ Jane\t25\tLos Angeles`;
       const largeBuffer = new ArrayBuffer(120 * 1024 * 1024); // 120MB
       const file = new File([largeBuffer], 'large.zip', { type: 'application/zip' });
 
-      await expect(csvApi.uploadCSVFile(file))
-        .rejects
-        .toThrow('File size exceeds 100MB limit for ZIP files');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow(
+        'File size exceeds 100MB limit for ZIP files'
+      );
     });
   });
 
@@ -179,17 +179,13 @@ Jane\t25\tLos Angeles`;
     it('should reject unsupported file formats', async () => {
       const file = new File(['content'], 'test.pdf', { type: 'application/pdf' });
 
-      await expect(csvApi.uploadCSVFile(file))
-        .rejects
-        .toThrow('Unsupported file format');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('Unsupported file format');
     });
 
     it('should reject image files', async () => {
       const file = new File(['binary'], 'image.jpg', { type: 'image/jpeg' });
 
-      await expect(csvApi.uploadCSVFile(file))
-        .rejects
-        .toThrow('Unsupported file format');
+      await expect(csvApi.uploadCSVFile(file)).rejects.toThrow('Unsupported file format');
     });
   });
 
@@ -197,23 +193,23 @@ Jane\t25\tLos Angeles`;
     it('should apply different size limits per format', async () => {
       // CSV: 10MB limit
       const csv11MB = new File(['x'.repeat(11 * 1024 * 1024)], 'big.csv', { type: 'text/csv' });
-      await expect(csvApi.uploadCSVFile(csv11MB))
-        .rejects
-        .toThrow('File size exceeds 10MB limit for CSV files');
+      await expect(csvApi.uploadCSVFile(csv11MB)).rejects.toThrow(
+        'File size exceeds 10MB limit for CSV files'
+      );
 
       // Excel: 50MB limit
       const excel51MB = new ArrayBuffer(51 * 1024 * 1024);
       const excelFile = new File([excel51MB], 'big.xlsx', { type: 'application/excel' });
-      await expect(csvApi.uploadCSVFile(excelFile))
-        .rejects
-        .toThrow('File size exceeds 50MB limit for EXCEL files');
+      await expect(csvApi.uploadCSVFile(excelFile)).rejects.toThrow(
+        'File size exceeds 50MB limit for EXCEL files'
+      );
 
       // ZIP: 100MB limit
       const zip101MB = new ArrayBuffer(101 * 1024 * 1024);
       const zipFile = new File([zip101MB], 'big.zip', { type: 'application/zip' });
-      await expect(csvApi.uploadCSVFile(zipFile))
-        .rejects
-        .toThrow('File size exceeds 100MB limit for ZIP files');
+      await expect(csvApi.uploadCSVFile(zipFile)).rejects.toThrow(
+        'File size exceeds 100MB limit for ZIP files'
+      );
     });
   });
 });

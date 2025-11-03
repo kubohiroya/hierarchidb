@@ -3,6 +3,7 @@ import { Button, Snackbar } from '@mui/material';
 
 import Gravatar from 'react-gravatar';
 import { useAuth } from 'react-oidc-context';
+
 // import { useAuthLib as useAuthLib } from "@/shared/auth/hooks/useAuthLib.ts";
 const useAuthLib = () => ({
   signIn: () => Promise.resolve(),
@@ -25,19 +26,12 @@ export function AuthPanel() {
   }
 
   if (auth.error) {
-    return (
-      <Snackbar
-        message={`Oops... ${auth.error.name} caused ${auth.error.message}`}
-      />
-    );
+    return <Snackbar message={`Oops... ${auth.error.name} caused ${auth.error.message}`} />;
   }
 
   if (auth.isAuthenticated) {
     return (
-      <Gravatar
-        email={auth.user?.profile.email}
-        style={{ borderRadius: '50%' }}
-      >
+      <Gravatar email={auth.user?.profile.email} style={{ borderRadius: '50%' }}>
         <Button onClick={() => signOut()}>Log out</Button>
       </Gravatar>
     );

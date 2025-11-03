@@ -3,8 +3,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
 import type { InitializationStep } from '../types.js';
+import { WorkerInitializationReporter } from '../WorkerInitializationReporter.js';
 
 type WorkerLikeScope = {
   addEventListener: (type: 'message', handler: (event: MessageEvent) => void) => void;
@@ -36,11 +36,13 @@ describe('WorkerInitializationReporter', () => {
     globalWithWorker.self = mockSelf;
 
     // Capture the message handler
-    mockSelf.addEventListener.mockImplementation((type: string, handler: (event: MessageEvent) => void) => {
-      if (type === 'message') {
-        messageHandler = handler;
+    mockSelf.addEventListener.mockImplementation(
+      (type: string, handler: (event: MessageEvent) => void) => {
+        if (type === 'message') {
+          messageHandler = handler;
+        }
       }
-    });
+    );
 
     // Clear mock calls
     vi.clearAllMocks();
@@ -65,7 +67,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 15, // 30% weight * 50% progress = 15%
             message: 'Loading modules',
           }),
-        }),
+        })
       );
 
       reporter.reportStepProgress('Loading modules', 100);
@@ -77,7 +79,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 30, // 30% weight * 100% progress = 30%
             message: 'Loading modules',
           }),
-        }),
+        })
       );
     });
 
@@ -87,7 +89,7 @@ describe('WorkerInitializationReporter', () => {
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ progress: 30 }),
-        }),
+        })
       );
 
       // Half-complete second step (40% weight * 50%)
@@ -95,7 +97,7 @@ describe('WorkerInitializationReporter', () => {
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ progress: 50 }), // 30% + 20% = 50%
-        }),
+        })
       );
 
       // Complete second step
@@ -103,7 +105,7 @@ describe('WorkerInitializationReporter', () => {
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ progress: 70 }), // 30% + 40% = 70%
-        }),
+        })
       );
 
       // Complete third step
@@ -111,7 +113,7 @@ describe('WorkerInitializationReporter', () => {
       expect(mockSelf.postMessage).toHaveBeenLastCalledWith(
         expect.objectContaining({
           payload: expect.objectContaining({ progress: 100 }), // All complete
-        }),
+        })
       );
     });
 
@@ -125,7 +127,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 100,
             message: 'Worker initialized successfully',
           }),
-        }),
+        })
       );
 
       expect(reporter.isReady()).toBe(true);
@@ -147,7 +149,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 0,
             message: 'Starting initialization...',
           }),
-        }),
+        })
       );
 
       // Progress to 50%
@@ -166,7 +168,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 50,
             message: 'Initializing database',
           }),
-        }),
+        })
       );
     });
 
@@ -183,48 +185,45 @@ describe('WorkerInitializationReporter', () => {
           payload: expect.objectContaining({
             timestamp: expect.any(Number),
           }),
-        }),
+        })
       );
     });
 
     it('should track async operations with trackInitialization', async () => {
       const mockOperation = vi.fn().mockResolvedValue('result');
 
-      const result = await reporter.trackInitialization(
-        'Loading modules',
-        mockOperation,
-      );
+      const result = await reporter.trackInitialization('Loading modules', mockOperation);
 
       expect(result).toBe('result');
       expect(mockOperation).toHaveBeenCalled();
 
       // Should report 0% at start
-      expect(mockSelf.postMessage).toHaveBeenNthCalledWith(1,
+      expect(mockSelf.postMessage).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           type: 'INIT_PROGRESS',
           payload: expect.objectContaining({
             progress: 0,
             message: 'Loading modules',
           }),
-        }),
+        })
       );
 
       // Should report 100% at end
-      expect(mockSelf.postMessage).toHaveBeenNthCalledWith(2,
+      expect(mockSelf.postMessage).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({
           type: 'INIT_PROGRESS',
           payload: expect.objectContaining({
             progress: 30, // 30% weight for first step
             message: 'Loading modules',
           }),
-        }),
+        })
       );
     });
 
     it('should add steps dynamically', () => {
-      const newSteps: InitializationStep[] = [
-        { name: 'Additional step', weight: 10 },
-      ];
+      const newSteps: InitializationStep[] = [{ name: 'Additional step', weight: 10 }];
 
       reporter.addSteps(newSteps);
       reporter.reportStepProgress('Additional step', 100);
@@ -236,7 +235,7 @@ describe('WorkerInitializationReporter', () => {
           payload: expect.objectContaining({
             message: 'Additional step',
           }),
-        }),
+        })
       );
     });
   });
@@ -252,7 +251,7 @@ describe('WorkerInitializationReporter', () => {
           payload: expect.objectContaining({
             error: 'Initialization failed',
           }),
-        }),
+        })
       );
     });
 
@@ -265,20 +264,17 @@ describe('WorkerInitializationReporter', () => {
           payload: expect.objectContaining({
             error: 'Something went wrong',
           }),
-        }),
+        })
       );
     });
 
     it('should handle unknown step names gracefully', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
-      });
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const reporter = new WorkerInitializationReporter(defaultSteps, true);
 
       reporter.reportStepProgress('Unknown step', 50);
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Unknown step'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown step'));
 
       // Should not send any message for unknown step
       expect(mockSelf.postMessage).not.toHaveBeenCalled();
@@ -290,9 +286,9 @@ describe('WorkerInitializationReporter', () => {
       const error = new Error('Operation failed');
       const mockOperation = vi.fn().mockRejectedValue(error);
 
-      await expect(
-        reporter.trackInitialization('Loading modules', mockOperation),
-      ).rejects.toThrow('Operation failed');
+      await expect(reporter.trackInitialization('Loading modules', mockOperation)).rejects.toThrow(
+        'Operation failed'
+      );
 
       // Should send error message
       expect(mockSelf.postMessage).toHaveBeenCalledWith(
@@ -301,7 +297,7 @@ describe('WorkerInitializationReporter', () => {
           payload: expect.objectContaining({
             error: 'Operation failed',
           }),
-        }),
+        })
       );
     });
   });
@@ -334,7 +330,7 @@ describe('WorkerInitializationReporter', () => {
             progress: 100,
             message: 'Worker initialized successfully',
           }),
-        }),
+        })
       );
     });
   });

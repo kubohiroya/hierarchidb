@@ -1,7 +1,7 @@
+import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { describe, expectTypeOf, it } from 'vitest';
 import { createEnvelope } from '../envelope.util.js';
 import type { PayloadOf, ResultOf } from '../registry.types.js';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 
 describe('CommandRegistry types: envelope inference', () => {
   it('infers payload type from kind (moveNodes)', () => {
@@ -36,35 +36,31 @@ describe('CommandRegistry types: envelope inference', () => {
         nodeIds: [] as NodeId[],
         toParentId: 'p' as NodeId,
       },
-      { commandId: 'c1', groupId: 'g1', sourceViewId: 'view-1' },
+      { commandId: 'c1', groupId: 'g1', sourceViewId: 'view-1' }
     );
     expectTypeOf(env.payload).toEqualTypeOf<PayloadOf<'pasteNodes'>>();
   });
 
   it('includes working copy lifecycle and trash ops in CommandMap', () => {
     // Working copy lifecycle
-    const c1 = createEnvelope(
-      'createWorkingCopyForCreate',
-      {
-        workingCopyOf: 'n1' as NodeId,
-        parentId: 'p1' as NodeId,
-        name: 'x',
-        description: 'd',
-        nodeType: 'folder' as NodeType,
-      } satisfies PayloadOf<'createWorkingCopyForCreate'>,
-    );
+    const c1 = createEnvelope('createWorkingCopyForCreate', {
+      workingCopyOf: 'n1' as NodeId,
+      parentId: 'p1' as NodeId,
+      name: 'x',
+      description: 'd',
+      nodeType: 'folder' as NodeType,
+    } satisfies PayloadOf<'createWorkingCopyForCreate'>);
     expectTypeOf(c1.payload).toEqualTypeOf<PayloadOf<'createWorkingCopyForCreate'>>();
 
     // Trash related
-    const mt = createEnvelope('moveToTrash', { nodeIds: [] as NodeId[] } satisfies PayloadOf<'moveToTrash'>);
+    const mt = createEnvelope('moveToTrash', {
+      nodeIds: [] as NodeId[],
+    } satisfies PayloadOf<'moveToTrash'>);
     expectTypeOf(mt.payload).toEqualTypeOf<PayloadOf<'moveToTrash'>>();
 
-    const rt = createEnvelope(
-      'restoreFromTrash',
-      {
-        nodeIds: [] as NodeId[],
-      } satisfies PayloadOf<'restoreFromTrash'>,
-    );
+    const rt = createEnvelope('restoreFromTrash', {
+      nodeIds: [] as NodeId[],
+    } satisfies PayloadOf<'restoreFromTrash'>);
     expectTypeOf(rt.payload).toEqualTypeOf<PayloadOf<'restoreFromTrash'>>();
   });
 });

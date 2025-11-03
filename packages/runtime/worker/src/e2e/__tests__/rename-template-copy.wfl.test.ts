@@ -1,21 +1,19 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect } from 'vitest';
-import * as Comlink from 'comlink';
-import { MessageChannel } from 'worker_threads';
-import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import type { ImportData } from '@hierarchidb/common-api';
 import type {
   CommandEnvelope,
   CommandResult,
   NodeId,
   PasteNodesPayload,
-  TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import { toNodeType, toTreeId } from '@hierarchidb/common-types';
-import { exposeTestAPI } from '../test-worker.entry.js';
+import * as Comlink from 'comlink';
+import { describe, expect, it } from 'vitest';
+import { MessageChannel } from 'worker_threads';
 import { createEndpointFromMessagePort } from '../test-utils/messagePortEndpoint.js';
+import { exposeTestAPI } from '../test-worker.entry.js';
 
 type ExtendedTreeMutationAPI = import('@hierarchidb/common-api').TreeMutationAPI & {
   pasteNodes(command: CommandEnvelope<'pasteNodes', PasteNodesPayload>): Promise<CommandResult>;
@@ -41,7 +39,10 @@ type TemplateFile = {
   rootNodeIds: string[];
 };
 
-const templateUrl = new URL('../../../../../../app/public/templates/population-2023/tree-nodes.json', import.meta.url);
+const templateUrl = new URL(
+  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
+  import.meta.url
+);
 
 async function loadTemplate(): Promise<TemplateFile> {
   const raw = await readFile(templateUrl, 'utf-8');
@@ -72,7 +73,7 @@ function buildImportNodes(data: TemplateFile): ImportData['nodes'] {
 
 async function buildClipboard(
   queryAPI: import('@hierarchidb/common-api').TreeQueryAPI,
-  rootId: NodeId,
+  rootId: NodeId
 ): Promise<{ nodes: Record<NodeId, TreeNode>; nodeIds: NodeId[] }> {
   const rootNode = await queryAPI.getNode(rootId);
   if (!rootNode) throw new Error(`Node ${rootId} not found`);
@@ -82,7 +83,10 @@ async function buildClipboard(
   const order: NodeId[] = [rootNodeId];
   const stack: NodeId[] = [rootNodeId];
   while (stack.length > 0) {
-    const current = stack.pop()!;
+    const current = stack.pop();
+    if (!current) {
+      continue;
+    }
     const children = await queryAPI.listChildren(current);
     for (const child of children) {
       const childId = child.id as NodeId;
@@ -94,20 +98,18 @@ async function buildClipboard(
   return { nodes: result, nodeIds: order };
 }
 
-function createPasteEnvelope(
-  payload: CommandEnvelope<'pasteNodes', PasteNodesPayload>['payload'],
-): CommandEnvelope<'pasteNodes', PasteNodesPayload> {
-  return {
-    commandId: randomUUID(),
-    groupId: randomUUID(),
-    kind: 'pasteNodes',
-    payload,
-    issuedAt: Date.now(),
-  };
-}
+const createPasteEnvelope = (
+  payload: CommandEnvelope<'pasteNodes', PasteNodesPayload>['payload']
+): CommandEnvelope<'pasteNodes', PasteNodesPayload> => ({
+  commandId: randomUUID(),
+  groupId: randomUUID(),
+  kind: 'pasteNodes',
+  payload,
+  issuedAt: Date.now(),
+});
 
-describe('WFL paste behavior for imported template', () => {
-  it('pastes folder under root with unique name and allows self/descendant targets', async () => {
+describe('WFL paste rename behavior for imported template', () => {
+  it('pastes with unique name, allows rename, and blocks conflicting rename', async () => {
     const { port1, port2 } = new MessageChannel();
     await exposeTestAPI(createEndpointFromMessagePort(port1));
     const client = Comlink.wrap<TestWorkerAPI>(createEndpointFromMessagePort(port2));
@@ -116,7 +118,7 @@ describe('WFL paste behavior for imported template', () => {
     const mutationAPI = await client.getMutationAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = toTreeId('r');
+    const treeId = 'r';
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId) throw new Error('rootId missing');
     const rootId = tree.rootId as NodeId;
@@ -133,38 +135,12 @@ describe('WFL paste behavior for imported template', () => {
     expect(importResult?.success).toBe(true);
 
     const rootChildren = await queryAPI.listChildren(rootId);
-    const populationFolder = rootChildren.find((node) => node.name === 'Total Population by Country');
+    const populationFolder = rootChildren.find(
+      (node) => node.name === 'Total Population by Country'
+    );
     if (!populationFolder) throw new Error('Population folder not found');
 
     const clipboard = await buildClipboard(queryAPI, populationFolder.id as NodeId);
-
-    const pasteSelf = await mutationAPI.pasteNodes(
-      createPasteEnvelope({
-        nodes: clipboard.nodes,
-        nodeIds: clipboard.nodeIds,
-        toParentId: populationFolder.id as NodeId,
-        onNameConflict: 'auto-rename',
-      }),
-    );
-    if (!pasteSelf.success) {
-      const message = 'error' in pasteSelf ? pasteSelf.error : 'unknown error';
-      throw new Error(`pasteNodes self failed: ${message}`);
-    }
-    expect(pasteSelf.newNodeIds?.length).toBe(clipboard.nodeIds.length);
-
-    const templateChildren = await queryAPI.listChildren(populationFolder.id as NodeId);
-    const shapeNode = templateChildren.find((node) => node.nodeType === toNodeType('shape'));
-    if (!shapeNode) throw new Error('Shape child not found');
-
-    const pasteToDescendant = await mutationAPI.pasteNodes(
-      createPasteEnvelope({
-        nodes: clipboard.nodes,
-        nodeIds: clipboard.nodeIds,
-        toParentId: shapeNode.id as NodeId,
-        onNameConflict: 'auto-rename',
-      }),
-    );
-    expect(pasteToDescendant.success).toBe(true);
 
     const pasteRoot = await mutationAPI.pasteNodes(
       createPasteEnvelope({
@@ -172,22 +148,45 @@ describe('WFL paste behavior for imported template', () => {
         nodeIds: clipboard.nodeIds,
         toParentId: rootId,
         onNameConflict: 'auto-rename',
-      }),
+      })
     );
     if (!pasteRoot.success) {
       const message = 'error' in pasteRoot ? pasteRoot.error : 'unknown error';
-      throw new Error(`pasteNodes to root failed: ${message}`);
+      throw new Error(`pasteNodes failed: ${message}`);
     }
-    const pastedRootId = pasteRoot.newNodeIds?.[0];
+    const pastedRootId = pasteRoot.newNodeIds?.[0] as NodeId | undefined;
     expect(pastedRootId).toBeDefined();
 
     const rootChildrenAfterPaste = await queryAPI.listChildren(rootId);
     const pastedFolder = rootChildrenAfterPaste.find((child) => child.id === pastedRootId);
     expect(pastedFolder).toBeTruthy();
     expect(pastedFolder?.name).not.toBe(populationFolder.name);
-    expect(pastedFolder?.name.startsWith(populationFolder.name)).toBe(true);
 
-    const uniqueNames = new Set(rootChildrenAfterPaste.map((node) => node.name));
-    expect(uniqueNames.size).toBe(rootChildrenAfterPaste.length);
+    if (!pastedRootId) {
+      throw new Error('pasted root id missing');
+    }
+
+    const renameRes = await mutationAPI.updateNode({
+      nodeId: pastedRootId,
+      name: 'Population Folder Copy',
+    });
+    expect(renameRes.success).toBe(true);
+
+    const renamedNode = await queryAPI.getNode(pastedRootId);
+    expect(renamedNode?.name).toBe('Population Folder Copy');
+
+    const renameConflict = await mutationAPI.updateNode({
+      nodeId: pastedRootId,
+      name: populationFolder.name,
+    });
+    expect(renameConflict.success).toBe(false);
+    expect(renameConflict.error ?? '').toMatch(/ConstraintError|already exists|NAME_NOT_UNIQUE/);
+
+    const finalRootChildren = await queryAPI.listChildren(rootId);
+    const originalNameCount = finalRootChildren.filter(
+      (node) => node.name === populationFolder.name
+    ).length;
+    expect(originalNameCount).toBe(1);
+    expect(finalRootChildren.some((node) => node.name === 'Population Folder Copy')).toBe(true);
   }, 30_000);
 });

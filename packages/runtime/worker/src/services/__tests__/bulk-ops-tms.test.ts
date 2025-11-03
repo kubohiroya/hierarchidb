@@ -1,16 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   CommandEnvelope,
   CommandResult,
-  NodeId,
-  NodeType,
   PasteNodesPayload,
   Timestamp,
   TreeNode,
 } from '@hierarchidb/common-types';
 import { toNodeId, toNodeType } from '@hierarchidb/common-types';
-import type { CoreDB } from '../CoreDB.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../CommandProcessor.js';
+import type { CoreDB } from '../CoreDB.js';
 
 const makeNode = (id: string, parentId: string, name: string): TreeNode => ({
   id: toNodeId(id),
@@ -33,7 +31,7 @@ describe('TreeMutationService bulk paths', () => {
       bulkCreateNodes: vi.fn(async () => undefined),
     };
     const processor: Pick<CommandProcessor, 'processCommand'> = {
-      processCommand: vi.fn(async () => ({ success: true, seq: 1 } as CommandResult)),
+      processCommand: vi.fn(async () => ({ success: true, seq: 1 }) as CommandResult),
     };
     const { TreeMutationService } = await import('../TreeMutationService.js');
     const svc = new TreeMutationService(core as unknown as CoreDB, processor as CommandProcessor);

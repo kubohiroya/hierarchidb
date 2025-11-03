@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { UnifiedDownloadService } from '../../../services/UnifiedDownloadService';
+import { downloadFile } from '../../../services/UnifiedDownloadService';
 // import { convertCorsProxyURL } from "@/domains/resources/_shapes_buggy/batch/utils/convertCorsProxyUrl";
 // import { useAuth } from "@/shared/auth";
 import { devLog } from '../../../utils/logger';
 import { validateExternalURL } from '../../../utils/validation';
 export function useUrlDownload({
-  accept,
   disabled,
   loading,
   defaultDownloadUrl,
@@ -33,57 +32,32 @@ export function useUrlDownload({
   // Store auth error state in ref to avoid stale closure
   const wasAuthErrorRef = useRef(false);
   // Reset auth error when user becomes authenticated
+  const shouldResetAuthError = isAuthenticated && wasAuthErrorRef.current;
+
   useEffect(() => {
-    if (isAuthenticated && wasAuthErrorRef.current) {
-      setIsAuthError(false);
-      setDownloadError(undefined);
-      wasAuthErrorRef.current = false;
-    } else if (isAuthError && !wasAuthErrorRef.current) {
+    if (!shouldResetAuthError) return;
+    setIsAuthError(false);
+    setDownloadError(undefined);
+    wasAuthErrorRef.current = false;
+  }, [shouldResetAuthError]);
+
+  useEffect(() => {
+    if (isAuthError && !wasAuthErrorRef.current) {
       wasAuthErrorRef.current = true;
     }
-  }, [isAuthenticated, isAuthError]);
+  }, [isAuthError]);
+
+  const setDownloadUrlState = useCallback((url) => {
+    setDownloadUrl(url);
+    setDownloadSuccess(false);
+  }, []);
+
   // Update downloadUrl when defaultDownloadUrl changes and there's no user-entered URL
   useEffect(() => {
     if (defaultDownloadUrl && (!downloadUrl || downloadUrl.trim() === '')) {
-      setDownloadUrl(defaultDownloadUrl);
+      setDownloadUrlState(defaultDownloadUrl);
     }
-  }, [defaultDownloadUrl, downloadUrl]);
-  // Reset download success when URL changes
-  useEffect(() => {
-    setDownloadSuccess(false);
-  }, [downloadUrl]);
-  const guessExtensionFromContentType = (contentType) => {
-    if (!contentType) return '';
-    if (contentType.includes('csv')) return '.csv';
-    if (contentType.includes('excel') || contentType.includes('spreadsheet')) return '.xlsx';
-    if (contentType.includes('zip')) return '.zip';
-    if (contentType.includes('json')) return '.json';
-    if (contentType.includes('xml')) return '.xml';
-    return '';
-  };
-  const validateFileType = useCallback(
-    (filename, contentType) => {
-      if (accept === '*') return filename;
-      const acceptedExtensions = accept
-        .split(',')
-        .map((ext) => ext.trim().toLowerCase())
-        .filter((ext) => ext.startsWith('.'));
-      const hasValidExtension = acceptedExtensions.some((ext) =>
-        filename.toLowerCase().endsWith(ext)
-      );
-      if (!hasValidExtension) {
-        const guessedExtension = guessExtensionFromContentType(contentType);
-        if (guessedExtension && acceptedExtensions.includes(guessedExtension)) {
-          return filename + guessedExtension;
-        }
-        throw new Error(
-          `Unable to determine file type or unsupported file type. Please ensure the URL points to one of: ${acceptedExtensions.join(', ')}`
-        );
-      }
-      return filename;
-    },
-    [accept]
-  );
+  }, [defaultDownloadUrl, downloadUrl, setDownloadUrlState]);
   // RemovedProperties downloadWithProgress - now handled by UnifiedDownloadService
   const handleDownload = useCallback(async () => {
     if (!downloadUrl.trim() || isDownloading || loading || disabled) {
@@ -121,7 +95,7 @@ export function useUrlDownload({
           (import.meta && import.meta.env && import.meta.env.VITE_CORS_PROXY_BASE_URL) || '';
       } catch {}
       if (!corsProxyBaseURL && typeof globalThis !== 'undefined') {
-        corsProxyBaseURL = (globalThis.ENV && globalThis.ENV.VITE_CORS_PROXY_BASE_URL) || '';
+        corsProxyBaseURL = globalThis.ENV?.VITE_CORS_PROXY_BASE_URL || '';
       }
       if (needsCorsProxy && corsProxyBaseURL && !hasValidToken) {
         setIsAuthError(true);
@@ -131,10 +105,11 @@ export function useUrlDownload({
       }
       // Create abort controller for this download
       abortControllerRef.current = new AbortController();
-      // Use UnifiedDownloadService for optimized download
-      const blob = await UnifiedDownloadService.downloadFile(validatedUrl, {
+      // Use shared download helper for optimized download
+      const blob = await downloadFile(validatedUrl, {
         onProgress: (progress) => {
           setDownloadProgress(progress);
+          onDownloadProgress?.(progress);
         },
         signal: abortControllerRef.current.signal,
       });
@@ -188,20 +163,16 @@ export function useUrlDownload({
     } finally {
       setIsDownloading(false);
       setDownloadProgress(undefined);
-      if (onDownloadProgress) {
-        onDownloadProgress(undefined);
-      }
+      onDownloadProgress?.(undefined);
     }
   }, [
     downloadUrl,
     handleFileSelect,
-    user,
     isDownloading,
     loading,
     disabled,
     handleUrlDownload,
     onDownloadProgress,
-    validateFileType,
     hasValidToken,
   ]);
   const handleKeyPress = useCallback(
@@ -216,25 +187,21 @@ export function useUrlDownload({
   // Reset auth error state when user becomes authenticated
   // But do NOT auto-retry - user must click download button again
   useEffect(() => {
-    if (isAuthenticated && wasAuthErrorRef.current) {
-      wasAuthErrorRef.current = false;
-      setIsAuthError(false);
-      // Clear the error but don't auto-retry
-      setDownloadError(undefined);
-      // User must manually click download again
-    }
-  }, [isAuthenticated]);
+    if (!shouldResetAuthError) return;
+    wasAuthErrorRef.current = false;
+    setIsAuthError(false);
+    // Clear the error but don't auto-retry
+    setDownloadError(undefined);
+    // User must manually click download again
+  }, [shouldResetAuthError]);
   // Wrap signIn to accept provider parameter
-  const handleSignIn = useCallback(
-    (_provider) => {
-      // Mock sign in - do nothing since auth is not available
-      signIn();
-    },
-    [signIn]
-  );
+  const handleSignIn = (_provider) => {
+    // Mock sign in - do nothing since auth is not available
+    signIn();
+  };
   return {
     downloadUrl,
-    setDownloadUrl,
+    setDownloadUrl: setDownloadUrlState,
     isDownloading,
     downloadError,
     downloadProgress,

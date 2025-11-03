@@ -2,9 +2,9 @@
  * Working Copy Atoms for Jotai state management
  */
 
-import { atom } from 'jotai';
 import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { DialogStep } from '@hierarchidb/ui-dialog';
+import { atom } from 'jotai';
 
 /**
  * Working copy data state
@@ -79,17 +79,13 @@ export const dialogStateAtom = atom<DialogState>({
  * Validation results from Worker
  * Map from stepId to validation result
  */
-export const validationResultsAtom = atom<Map<string, ValidationResult>>(
-  new Map(),
-);
+export const validationResultsAtom = atom<Map<string, ValidationResult>>(new Map());
 
 /**
  * Step capabilities for all steps
  * Map from step index to capabilities
  */
-export const stepCapabilitiesAtom = atom<Map<number, StepCapabilities>>(
-  new Map(),
-);
+export const stepCapabilitiesAtom = atom<Map<number, StepCapabilities>>(new Map());
 
 /**
  * Worker connection state
@@ -129,13 +125,15 @@ export const currentStepCapabilitiesAtom = atom((get) => {
   const dialogState = get(dialogStateAtom);
   const capabilities = get(stepCapabilitiesAtom);
 
-  return capabilities.get(dialogState.currentStep) || {
-    canNavigateTo: false,
-    canProceedToNext: false,
-    canBackToPrevious: false,
-    canSave: false,
-    canStartBatch: false,
-  };
+  return (
+    capabilities.get(dialogState.currentStep) || {
+      canNavigateTo: false,
+      canProceedToNext: false,
+      canBackToPrevious: false,
+      canSave: false,
+      canStartBatch: false,
+    }
+  );
 });
 
 /**
@@ -195,9 +193,7 @@ export const canGoPreviousAtom = atom((get) => {
   const capabilities = get(currentStepCapabilitiesAtom);
   const dialogState = get(dialogStateAtom);
 
-  return dialogState.currentStep > 0 &&
-    capabilities.canBackToPrevious &&
-    !dialogState.isSubmitting;
+  return dialogState.currentStep > 0 && capabilities.canBackToPrevious && !dialogState.isSubmitting;
 });
 
 // ============================================================================
@@ -207,38 +203,32 @@ export const canGoPreviousAtom = atom((get) => {
 /**
  * Update working copy data
  */
-export const updateWorkingCopyAtom = atom(
-  null,
-  (get, set, update: Partial<WorkingCopyData>) => {
-    const current = get(workingCopyAtom);
-    if (!current) return;
+export const updateWorkingCopyAtom = atom(null, (get, set, update: Partial<WorkingCopyData>) => {
+  const current = get(workingCopyAtom);
+  if (!current) return;
 
-    set(workingCopyAtom, {
-      ...current,
-      ...update,
-      lastModified: Date.now(),
-    });
+  set(workingCopyAtom, {
+    ...current,
+    ...update,
+    lastModified: Date.now(),
+  });
 
-    // Mark as having unsaved changes
-    set(dialogStateAtom, (prev: DialogState) => ({
-      ...prev,
-      hasUnsavedChanges: true,
-    }));
-  },
-);
+  // Mark as having unsaved changes
+  set(dialogStateAtom, (prev: DialogState) => ({
+    ...prev,
+    hasUnsavedChanges: true,
+  }));
+});
 
 /**
  * Update dialog state
  */
-export const updateDialogStateAtom = atom(
-  null,
-  (_get, set, update: Partial<DialogState>) => {
-    set(dialogStateAtom, (prev: DialogState) => ({
-      ...prev,
-      ...update,
-    }));
-  },
-);
+export const updateDialogStateAtom = atom(null, (_get, set, update: Partial<DialogState>) => {
+  set(dialogStateAtom, (prev: DialogState) => ({
+    ...prev,
+    ...update,
+  }));
+});
 
 /**
  * Set validation result for a step
@@ -253,7 +243,7 @@ export const setValidationResultAtom = atom(
       timestamp: Date.now(),
     });
     set(validationResultsAtom, results);
-  },
+  }
 );
 
 /**
@@ -265,59 +255,50 @@ export const setStepCapabilitiesAtom = atom(
     const caps = new Map(get(stepCapabilitiesAtom));
     caps.set(stepIndex, capabilities);
     set(stepCapabilitiesAtom, caps);
-  },
+  }
 );
 
 /**
  * Navigate to step
  */
-export const navigateToStepAtom = atom(
-  null,
-  (get, set, stepIndex: number) => {
-    const dialogState = get(dialogStateAtom);
-    const visitedSteps = new Set(dialogState.visitedSteps);
-    visitedSteps.add(stepIndex);
+export const navigateToStepAtom = atom(null, (get, set, stepIndex: number) => {
+  const dialogState = get(dialogStateAtom);
+  const visitedSteps = new Set(dialogState.visitedSteps);
+  visitedSteps.add(stepIndex);
 
-    set(dialogStateAtom, {
-      ...dialogState,
-      currentStep: stepIndex,
-      visitedSteps,
-    });
-  },
-);
+  set(dialogStateAtom, {
+    ...dialogState,
+    currentStep: stepIndex,
+    visitedSteps,
+  });
+});
 
 /**
  * Mark step as completed
  */
-export const markStepCompletedAtom = atom(
-  null,
-  (get, set, stepIndex: number) => {
-    const dialogState = get(dialogStateAtom);
-    const completedSteps = new Set(dialogState.completedSteps);
-    completedSteps.add(stepIndex);
+export const markStepCompletedAtom = atom(null, (get, set, stepIndex: number) => {
+  const dialogState = get(dialogStateAtom);
+  const completedSteps = new Set(dialogState.completedSteps);
+  completedSteps.add(stepIndex);
 
-    set(dialogStateAtom, {
-      ...dialogState,
-      completedSteps,
-    });
-  },
-);
+  set(dialogStateAtom, {
+    ...dialogState,
+    completedSteps,
+  });
+});
 
 /**
  * Reset dialog state
  */
-export const resetDialogAtom = atom(
-  null,
-  (_get, set) => {
-    set(workingCopyAtom, null);
-    set(dialogStateAtom, {
-      currentStep: 0,
-      completedSteps: new Set<number>(),
-      visitedSteps: new Set<number>([0]),
-      isSubmitting: false,
-      hasUnsavedChanges: false,
-    });
-    set(validationResultsAtom, new Map());
-    set(stepCapabilitiesAtom, new Map());
-  },
-);
+export const resetDialogAtom = atom(null, (_get, set) => {
+  set(workingCopyAtom, null);
+  set(dialogStateAtom, {
+    currentStep: 0,
+    completedSteps: new Set<number>(),
+    visitedSteps: new Set<number>([0]),
+    isSubmitting: false,
+    hasUnsavedChanges: false,
+  });
+  set(validationResultsAtom, new Map());
+  set(stepCapabilitiesAtom, new Map());
+});
