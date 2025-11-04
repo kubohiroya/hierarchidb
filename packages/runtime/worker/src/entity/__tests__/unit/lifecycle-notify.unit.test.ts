@@ -48,7 +48,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(
@@ -80,7 +80,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(
@@ -146,7 +146,7 @@ describe('Entity lifecycle notifications from services', () => {
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
     const getSingletonSpy = vi
       .spyOn(EntityLifecycleManager, 'getSingleton')
       .mockReturnValue(

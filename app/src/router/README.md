@@ -13,7 +13,7 @@ router/
 │   ├── indexRoute.tsx      # Home page (/)
 │   ├── infoRoute.tsx       # Info page (/info)
 │   ├── mapRoute.tsx        # Map page (/map)
-│   ├── authRoutes.tsx      # Auth routes (/auth/*)
+│   ├── index.tsx      # Auth routes (/auth/*)
 │   ├── utilityRoutes.tsx   # Utility routes (/tags, /plugins, etc.)
 │   └── tree/               # Tree routes (Phase 3)
 │       ├── layoutRoute.tsx   # /t/:treeId layout

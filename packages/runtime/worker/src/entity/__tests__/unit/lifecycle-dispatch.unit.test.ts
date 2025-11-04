@@ -10,7 +10,7 @@ import type {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import type { CommandEnvelope } from '../../../services/command-types.js';
-import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
+import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
 
 describe('EntityLifecycleManager dispatch', () => {
   beforeEach(() => {

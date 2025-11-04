@@ -43,7 +43,7 @@ if (!process.listenerCount('unhandledRejection')) {
   });
 }
 
-type AliasEntry = { find: string; replacement: string };
+type AliasEntry = { find: string | RegExp; replacement: string };
 
 interface RuntimeAliasConfig {
   aliases: AliasEntry[];
@@ -483,7 +483,8 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           return null;
         },
         transform(code, id) {
-          const text = typeof code === 'string' ? code : Buffer.isBuffer(code) ? code.toString('utf8') : null;
+          //const text = typeof code === 'string' ? code : Buffer.isBuffer(code) ? code.toString('utf8') : null;
+          const text = code;
           if (text !== null) {
             const trimmed = text.trim();
             if (trimmed === 'this') {

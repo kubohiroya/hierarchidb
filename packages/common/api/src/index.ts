@@ -32,5 +32,5 @@ export type {
   TreeQueryAPI,
 } from './TreeQueryAPI.js';
 export type { TreeSubscriptionAPI } from './TreeSubscriptionAPI.js';
-export type { WorkerAPI } from './WorkerAPI.js';
+export type { PluginLifecycleAPI, WorkerAPI } from './WorkerAPI.js';
 export type { CommitWorkingCopyOptions, WorkingCopyAPI } from './WorkingCopyAPI.js';

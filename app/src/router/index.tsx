@@ -34,7 +34,7 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { infoRoute } = await import('./routes/infoRoute.js');
   const { mapRoute } = await import('./routes/mapRoute.js');
   const { authLoginRoute, authCallbackRoute, authSilentRenewRoute } = await import(
-    './routes/authRoutes.js'
+    './routes/auth/index.js'
   );
   const { tagsRoute, tagDetailRoute, pluginsRoute } = await import('./routes/utilityRoutes.js');
 

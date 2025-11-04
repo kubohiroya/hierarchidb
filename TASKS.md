@@ -7098,6 +7098,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 23:15 progress: main — runtime-worker の lint 指摘箇所一覧（TreeMutationService／CoreDB／DialogStateService／FeatureBootstrap／bulk-ops-tms.test など）を抽出し、修正順序と必要テスト（`pnpm --filter @hierarchidb/runtime-worker format -- --max-diagnostics=20`, `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations`）を計画。
 - 2025-11-03 23:33 command: pnpm --filter @hierarchidb/runtime-worker format — exit 0。Biom e で runtime-worker 配下の lint/format を再実行し、追加診断なし（`--max-diagnostics` は format スクリプト未対応のため素のコマンドで実行）。
 - 2025-11-03 23:34 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations — exit 0。Undo/Redo 関連 WFL/サービステストを含む 35 ファイル・72 テストがグリーン（Dexie 初期化の警告ログのみ、既知挙動のため記録）。
+- 2025-11-03 23:40 progress: main — `pnpm --filter @hierarchidb/app typecheck` で `PluginLifecycleAPI` export 欠如（`@hierarchidb/feature-core/common-api` 経由）を確認。根源は `packages/common/api/src/index.ts` で `PluginLifecycleAPI` を再輸出していない点と判断し、common-api 側を修正して再 typecheck する方針。
+- 2025-11-03 23:44 command: pnpm --filter @hierarchidb/common-api build — exit 0。`PluginLifecycleAPI` を index から再輸出後、dist を再生成して依存パッケージ（feature-core/common-api 経由）で新しい型を解決可能にした。
+- 2025-11-03 23:46 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`PluginLifecycleAPI` export エラーが解消されたことを確認（既存の EphemeralLocationDB 警告以外の新規エラーなし）。
 - 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。既存ユニット継続グリーン。
 - 2025-10-28 13:10 start: fix/ui/treeconsole-inline-edit-blur — RowClickAction inline edit blur commit タスクを開始。DoD/チェックリストを Kanban に追加し、当面は `main` 上で進行する。
 - 2025-10-28 13:34 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck — exit 0（typecheck スクリプト未定義のため実行対象なし。代替確認は test/build でカバー）
@@ -7524,3 +7527,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 22:19 command: pnpm -F @hierarchidb/ui-monitoring format — exit 0。
 - 2025-11-03 22:33 progress: chore/ui-file/biome-clean — useUrlDownload を依存配列・optional chaining・ダウンロードユーティリティ関数へリファクタし、downloadFile ヘルパーを導入。UrlDownloadSection の `any` を型化し、validation の未使用変数を整理。
 - 2025-11-03 22:33 command: pnpm -F @hierarchidb/ui-file format — exit 0。
+- 2025-11-04 15:28 progress: chore/app/test-structure-alignment — app/src 配下のユニットテスト 11 件を `__tests__/unit` へ移設し、`動詞-目的語.モード.test.ts` 命名へ改めた（hooks/plugin-loader/router/services/worker-runtime 各領域）。関連 import を階層に合わせて更新。
+- 2025-11-04 15:33 command: pnpm --filter @hierarchidb/app test -- --run configure-router-mode — exit 1（`initialize-worker-state.unit.test.ts` が旧 `../WorkerStateStore.js` を参照していたため解決失敗、router browser-mode テストも既知タイムアウト）。相対パスを `../../WorkerStateStore.js` へ修正後に再実行。
+- 2025-11-04 15:37 command: pnpm --filter @hierarchidb/app test -- --run start-worker-client — exit 0（再配置した unit テスト群すべてが検出され、router/browser テストも完走）。
+- 2025-11-04 15:41 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 2（TreeId brandingを満たしていない WFL テスト 4 件と、EntityLifecycleManager 系ユニットテストが `.js` 拡張で import しているため NodeNext 解決に失敗）。これよりテスト側の型補強と import 拡張修正に着手する。
+- 2025-11-04 15:48 progress: chore/runtime-worker/typecheck-clean — WFL テスト（create/import/duplicate/rename template 系）で `TreeId` branding を `toTreeId('r')` に統一し、EntityLifecycleManager 配下の unit tests は `../../EntityLifecycleManager.js` など正しい相対パスへ修正。再度 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0 を確認。
+- 2025-11-04 15:20 start: chore/app/test-structure-alignment — Step1（app/src テストの棚卸しと配置計画）を開始。DoD: unit/headless/e2e への振り分け案と命名案を `TASKS.md` へ記載し、曖昧ケースは選択肢付きで整理する。

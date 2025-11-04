@@ -14,11 +14,11 @@ import { Alert, Box, CircularProgress } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkerClient } from '../contexts/WorkerProvider.js';
 import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
-import type { SubscriptionCallback } from '../subscriptions/controller.ts';
-import { Subscriptions } from '../subscriptions/controller.ts';
+import type { SubscriptionCallback } from '../services/SubscriptionServices.ts';
+import { Subscriptions } from '../services/SubscriptionServices.ts';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
 
@@ -476,6 +476,19 @@ const TreeConsoleIntegrationInner: React.FC<
     setTourRun(false);
   }, []);
 
+  const availableTemplateOptions = useMemo(
+    () =>
+      treeId === 'r'
+        ? [
+          {
+            id: 'population-2023',
+            label: 'Total Population by Country',
+          },
+        ]
+        : [],
+    [treeId]
+  );
+
   const lowerPageNodeId = pageNodeId ? String(pageNodeId).toLowerCase() : '';
   const isTrashPage =
     pageTreeNode?.nodeType === 'trash' ||
@@ -552,13 +565,7 @@ const TreeConsoleIntegrationInner: React.FC<
         canDuplicate={selectedIds.length > 0}
         canTrash={canTrash}
         canRemove={canTrash}
-        availableTemplates={() => {
-          // Only resources tree ('r') has templates for now
-          if (treeId === 'r') {
-            return [{ id: 'population-2023', label: 'Total Population by Country' }];
-          }
-          return [];
-        }}
+        availableTemplates={availableTemplateOptions}
       />
 
       {/* TreeConsole Panel */}

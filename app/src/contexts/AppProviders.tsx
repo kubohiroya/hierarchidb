@@ -5,11 +5,11 @@ import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-shell/ui-t
 import { Box, CircularProgress, CssBaseline } from '@mui/material';
 import { StyledEngineProvider } from '@mui/material/styles';
 import type { ReactNode } from 'react';
-import { AppThemeProvider } from '../../components/AppThemeProvider.js';
-import { LanguageEventsBridge } from '../../components/LanguageEventsBridge.js';
-import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
-import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
-import { WorkerProvider } from '../../contexts/WorkerProvider.js';
+import { AppThemeProvider } from '../components/AppThemeProvider.js';
+import { LanguageEventsBridge } from '../components/LanguageEventsBridge.js';
+import { AppConfigProvider } from '../contexts/AppConfigContext.js';
+import { BootProgressProvider } from '../contexts/BootProgressProvider.js';
+import { WorkerProvider } from '../contexts/WorkerProvider.js';
 import {
   AuthReadyReporter,
   ConfigReadyReporter,
@@ -17,7 +17,7 @@ import {
   ThemeReadyReporter,
   UIReadyReporter,
   WorkerProgressReporter,
-} from '../../init/InitReporters.js';
+} from '../components/Reporters.tsx';
 
 /**
  * Common providers wrapper for both React Router and TanStack Router

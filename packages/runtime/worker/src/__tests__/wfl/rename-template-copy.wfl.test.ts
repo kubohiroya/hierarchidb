@@ -7,8 +7,10 @@ import type {
   CommandResult,
   NodeId,
   PasteNodesPayload,
+  TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
+import { toTreeId } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -118,7 +120,7 @@ describe('WFL paste rename behavior for imported template', () => {
     const mutationAPI = await client.getMutationAPI();
     const importExportAPI = await client.getImportExportAPI();
 
-    const treeId = 'r';
+    const treeId: TreeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId) throw new Error('rootId missing');
     const rootId = tree.rootId as NodeId;

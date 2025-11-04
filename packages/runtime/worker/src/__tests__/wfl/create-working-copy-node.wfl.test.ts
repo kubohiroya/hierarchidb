@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import type { NodeId, TreeNodeEvent } from '@hierarchidb/common-types';
-import { toNodeType } from '@hierarchidb/common-types';
+import type { NodeId, TreeNodeEvent, TreeId } from '@hierarchidb/common-types';
+import { toNodeType, toTreeId } from '@hierarchidb/common-types';
 import * as Comlink from 'comlink';
 import { describe, expect, it } from 'vitest';
 import { MessageChannel } from 'worker_threads';
@@ -26,7 +26,7 @@ describe('Comlink + fake-indexeddb integration: create flow uses workingCopy bef
     const mutationAPI = await client.getMutationAPI();
     const subscriptionAPI = await client.getSubscriptionAPI();
 
-    const treeId = 'r';
+    const treeId: TreeId = toTreeId('r');
     const tree = await queryAPI.getTree(treeId);
     expect(tree?.rootId).toBeDefined();
     if (!tree?.rootId) throw new Error('rootId missing');

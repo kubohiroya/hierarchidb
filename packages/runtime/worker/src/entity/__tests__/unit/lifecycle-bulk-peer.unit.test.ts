@@ -10,8 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CommandProcessor } from '../../../services/CommandProcessor.js';
 import type { CoreDB } from '../../../services/CoreDB.js';
 import type { CommandEnvelope } from '../../../services/command-types.js';
-import type { PeerEntity, PeerStore } from '../store.js';
-import { storeRegistry } from '../store-registry.js';
+import type { PeerEntity, PeerStore } from '../../store.js';
+import { storeRegistry } from '../../store-registry.js';
 
 describe('Lifecycle uses bulkUpsert when available', () => {
   beforeEach(() => {

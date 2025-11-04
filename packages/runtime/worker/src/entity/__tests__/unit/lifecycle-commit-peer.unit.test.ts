@@ -2,9 +2,9 @@ import type { NodeId, Timestamp, TreeNode } from '@hierarchidb/common-types';
 import { toNodeType } from '@hierarchidb/common-types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
-import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
-import type { PeerEntity, PeerStore } from '../store.js';
-import { storeRegistry } from '../store-registry.js';
+import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
+import type { PeerEntity, PeerStore } from '../../store.js';
+import { storeRegistry } from '../../store-registry.js';
 
 describe('EntityLifecycleManager.onCommitWorkingCopy (Peer)', () => {
   beforeEach(() => {

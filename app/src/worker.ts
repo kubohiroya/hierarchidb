@@ -5,6 +5,17 @@
 
 import './worker-react-refresh-shim.js';
 import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
+import type {
+  DialogStateAPI,
+  ImportExportAPI,
+  PluginLifecycleAPI,
+  TagAPI,
+  TreeMutationAPI,
+  TreeQueryAPI,
+  TreeSubscriptionAPI,
+  WorkerAPI,
+  WorkingCopyAPI,
+} from '@hierarchidb/feature-core/common-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
@@ -32,19 +43,19 @@ type WorkerMessagePort = typeof self & {
 };
 
 type RuntimeWorkerServices = {
-  ping: () => unknown;
-  initialize: () => Promise<unknown> | unknown;
-  shutdown: () => Promise<unknown> | unknown;
-  getSystemHealth: () => Promise<unknown>;
-  getQueryAPI: () => unknown;
-  getMutationAPI: () => unknown;
-  getSubscriptionAPI: () => unknown;
-  getWorkingCopyAPI: () => unknown;
-  getPluginLifecycleAPI: () => unknown;
-  getImportExportAPI: () => unknown;
-  getTagAPI: () => unknown;
-  getDialogStateAPI: () => unknown;
-  getCommandProcessor: () => unknown;
+  ping: WorkerAPI['ping'];
+  initialize: WorkerAPI['initialize'];
+  shutdown: WorkerAPI['shutdown'];
+  getSystemHealth: WorkerAPI['getSystemHealth'];
+  getQueryAPI: () => TreeQueryAPI;
+  getMutationAPI: () => TreeMutationAPI;
+  getSubscriptionAPI: () => TreeSubscriptionAPI;
+  getWorkingCopyAPI: () => WorkingCopyAPI;
+  getPluginLifecycleAPI: () => PluginLifecycleAPI;
+  getImportExportAPI: () => ImportExportAPI;
+  getTagAPI: () => TagAPI;
+  getDialogStateAPI: () => DialogStateAPI;
+  getCommandProcessor: () => object;
 };
 
 type RuntimeWorkerModule = {
@@ -194,15 +205,15 @@ reporter.reportStepProgress('Load Comlink', 0);
         initialize: () => services.initialize(),
         shutdown: () => services.shutdown(),
         getSystemHealth: () => services.getSystemHealth(),
-        getQueryAPI: () => Comlink.proxy(services.getQueryAPI() as unknown),
-        getMutationAPI: () => Comlink.proxy(services.getMutationAPI() as unknown),
-        getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI() as unknown),
-        getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI() as unknown),
-        getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI() as unknown),
-        getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI() as unknown),
-        getTagAPI: () => Comlink.proxy(services.getTagAPI() as unknown),
-        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI() as unknown),
-        getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor() as unknown),
+        getQueryAPI: () => Comlink.proxy(services.getQueryAPI()),
+        getMutationAPI: () => Comlink.proxy(services.getMutationAPI()),
+        getSubscriptionAPI: () => Comlink.proxy(services.getSubscriptionAPI()),
+        getWorkingCopyAPI: () => Comlink.proxy(services.getWorkingCopyAPI()),
+        getPluginLifecycleAPI: () => Comlink.proxy(services.getPluginLifecycleAPI()),
+        getImportExportAPI: () => Comlink.proxy(services.getImportExportAPI()),
+        getTagAPI: () => Comlink.proxy(services.getTagAPI()),
+        getDialogStateAPI: () => Comlink.proxy(services.getDialogStateAPI()),
+        getCommandProcessor: () => Comlink.proxy(services.getCommandProcessor()),
       } as const;
 
       reporter.reportStepProgress('Create API facade', 100);

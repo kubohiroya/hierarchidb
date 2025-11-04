@@ -13,7 +13,7 @@ describe('EntityLifecycleManager integration (base skeleton)', () => {
       updateNode: vi.fn(async () => undefined),
       createNode: vi.fn(async () => undefined),
     };
-    const { EntityLifecycleManager } = await import('../EntityLifecycleManager.js');
+    const { EntityLifecycleManager } = await import('../../EntityLifecycleManager.js');
     type LifecycleInstance = ReturnType<typeof EntityLifecycleManager.getSingleton>;
     const lifecycleMock = {
       handleCommand: vi.fn(async () => undefined),

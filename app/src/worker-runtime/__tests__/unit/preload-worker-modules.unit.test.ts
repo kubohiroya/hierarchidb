@@ -8,7 +8,7 @@ const workerClientMock = vi.hoisted(() => ({
   getSingleton: vi.fn<() => Remote<WorkerAPI>>(),
 }));
 
-vi.mock('../WorkerAPIClient.ts', () => ({
+vi.mock('../../WorkerAPIClient.ts', () => ({
   WorkerAPIClient: workerClientMock,
   NotInitializedError: class NotInitializedError extends Error {},
 }));
@@ -70,7 +70,7 @@ describe('WorkerModuleLoader', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    const { ensureWorkerRuntime } = await import('../WorkerModuleLoader.js');
+    const { ensureWorkerRuntime } = await import('../../WorkerModuleLoader.js');
 
     await ensureWorkerRuntime();
     await ensureWorkerRuntime();

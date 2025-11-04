@@ -12,7 +12,7 @@ import {
   getNodeTypesByCategoryId,
   getNodeTypesByMenuGroup,
   orderNodeTypes,
-} from '../services/plugin-registry.ts';
+} from './plugin-registry.ts';
 
 const CORE_PLUGINS = orderNodeTypes(getNodeTypesByMenuGroup('core'));
 const GEOGRAPHIC_PLUGINS = orderNodeTypes(getNodeTypesByCategoryId('geographic'));

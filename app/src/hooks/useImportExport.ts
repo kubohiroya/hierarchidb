@@ -1,4 +1,5 @@
 import type {
+  ImportData,
   ImportProgress as APIImportProgress,
   WorkerAPI,
 } from '@hierarchidb/feature-core/common-api';
@@ -61,9 +62,8 @@ export interface ValidationResult {
   errors: string[];
 }
 
-type ImportNodesPayload = {
-  nodes: Array<Record<string, unknown>>;
-};
+type ImportNode = ImportData['nodes'][number];
+type ImportNodesPayload = ImportData;
 
 /**
  * Hook for import/export functionality
@@ -76,6 +76,10 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   const [importError, setImportError] = useState<Error | null>(null);
   const [exportError, setExportError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const validateImportData = useCallback(async (data: ImportNodesPayload) => {
+    return validateImportDataPayload(data);
+  }, []);
 
   /**
    * Import file with progress tracking
@@ -109,7 +113,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         const normalizedData = normalizeImportData(parsedData);
 
         // Validate import data
-        const validation = validateImportDataPayload(normalizedData);
+        const validation = await validateImportData(normalizedData);
         if (!validation.valid) {
           throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
         }
@@ -143,7 +147,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         abortControllerRef.current = null;
       }
     },
-    [client, ready]
+    [client, ready, validateImportData]
   );
 
   /**
@@ -411,16 +415,42 @@ async function collectNodesForExport(
 }
 
 function normalizeImportData(data: unknown): ImportNodesPayload {
+  const mapEntries = (entries: unknown[], parentName: string) =>
+    entries.map((entry, index) => {
+      if (entry && typeof entry === 'object') {
+        return coerceImportNode(entry as Record<string, unknown>, `${parentName} Child ${index + 1}`);
+      }
+      return coerceImportNode({}, `${parentName} Child ${index + 1}`);
+    });
+
   if (Array.isArray(data)) {
-    return { nodes: data as Array<Record<string, unknown>> };
+    return { nodes: mapEntries(data, 'Imported Node') };
   }
   if (data && typeof data === 'object') {
     const maybeNodes = (data as { nodes?: unknown }).nodes;
     if (Array.isArray(maybeNodes)) {
-      return { nodes: maybeNodes as Array<Record<string, unknown>> };
+      return { nodes: mapEntries(maybeNodes, 'Imported Node') };
     }
   }
   throw new Error('Invalid data structure: missing nodes array');
+}
+
+function coerceImportNode(source: Record<string, unknown>, fallbackName: string): ImportNode {
+  const nameCandidate = source.name;
+  const name =
+    typeof nameCandidate === 'string' && nameCandidate.trim().length > 0
+      ? nameCandidate
+      : fallbackName;
+  const childrenSource = source.children;
+  const children = Array.isArray(childrenSource)
+    ? childrenSource.map((child, index) =>
+        coerceImportNode(
+          (child && typeof child === 'object' ? child : {}) as Record<string, unknown>,
+          `${name} Child ${index + 1}`
+        )
+      )
+    : undefined;
+  return { ...source, name, children } as ImportNode;
 }
 
 function parseCSV(content: string, options?: CSVImportOptions): ImportNodesPayload {
@@ -448,7 +478,7 @@ function parseCSV(content: string, options?: CSVImportOptions): ImportNodesPaylo
   const headers = hasHeader ? rows[0] : [];
   const dataRows = hasHeader ? rows.slice(1) : rows;
 
-  const nodes = dataRows.map((row) => {
+  const nodes = dataRows.map((row, index) => {
     const node: Record<string, unknown> = {};
 
     if (options?.columnMapping) {
@@ -465,7 +495,7 @@ function parseCSV(content: string, options?: CSVImportOptions): ImportNodesPaylo
       node.description = row[2];
     }
 
-    return node;
+    return coerceImportNode(node, `Imported Row ${index + 1}`);
   });
 
   return { nodes };
@@ -477,9 +507,6 @@ function validateImportDataPayload(data: ImportNodesPayload): ValidationResult {
   const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
 
   data.nodes.forEach((node, index) => {
-    if (!('name' in node) || typeof node.name !== 'string') {
-      errors.push(`Node ${index}: missing required field 'name'`);
-    }
     const nodeType = (node as Record<string, unknown>).nodeType;
     if (typeof nodeType === 'string' && !validNodeTypes.has(nodeType)) {
       errors.push(`Node ${index}: invalid node type '${nodeType}'`);

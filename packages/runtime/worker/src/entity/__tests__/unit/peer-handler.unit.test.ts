@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
-import { PeerEntityHandler } from '../handlers/PeerEntityHandler.js';
-import type { PeerEntity, PeerStore } from '../store.js';
+import { PeerEntityHandler } from '../../handlers/PeerEntityHandler.js';
+import type { PeerEntity, PeerStore } from '../../store.js';
 
 function makePeerStoreStub<TData>(): PeerStore<TData> & { map: Map<NodeId, PeerEntity<TData>> } {
   const map = new Map<NodeId, PeerEntity<TData>>();

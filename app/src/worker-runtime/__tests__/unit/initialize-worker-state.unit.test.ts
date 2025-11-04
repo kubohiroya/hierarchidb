@@ -12,12 +12,12 @@ const ensureWorkerRuntimeMock = vi.hoisted(() => vi.fn<() => Promise<Remote<Work
 
 class MockNotInitializedError extends Error {}
 
-vi.mock('../WorkerAPIClient.ts', () => ({
+vi.mock('../../WorkerAPIClient.ts', () => ({
   WorkerAPIClient: workerClientMock,
   NotInitializedError: MockNotInitializedError,
 }));
 
-vi.mock('../WorkerModuleLoader.js', () => ({
+vi.mock('../../WorkerModuleLoader.js', () => ({
   ensureWorkerRuntime: ensureWorkerRuntimeMock,
 }));
 
@@ -42,7 +42,7 @@ describe('WorkerStateStore', () => {
     ensureWorkerRuntimeMock.mockResolvedValue(fakeClient);
 
     const { ensureWorkerInitialized, getWorkerSnapshot, subscribeWorkerState } = await import(
-      '../WorkerStateStore.js'
+      '../../WorkerStateStore.js'
     );
 
     const observedStates: string[] = [];
@@ -69,7 +69,7 @@ describe('WorkerStateStore', () => {
     });
     ensureWorkerRuntimeMock.mockRejectedValue(loaderError);
 
-    const { ensureWorkerInitialized, getWorkerSnapshot } = await import('../WorkerStateStore.js');
+    const { ensureWorkerInitialized, getWorkerSnapshot } = await import('../../WorkerStateStore.js');
 
     await expect(ensureWorkerInitialized()).rejects.toThrow('boom');
     const snapshot = getWorkerSnapshot();

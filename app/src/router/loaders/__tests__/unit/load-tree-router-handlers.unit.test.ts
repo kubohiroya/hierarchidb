@@ -27,7 +27,7 @@ import {
   loadPageNode,
   loadTargetNode,
   loadTree,
-} from '../treeLoaders.js';
+} from '../../treeLoaders.js';
 
 // Mock the loader module
 vi.mock('~/loader.js', () => ({

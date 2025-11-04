@@ -4,8 +4,8 @@ import {
   buildMenuItemsForContext,
   buildMenuItemsForTreeId,
   type PluginMenuItem,
-} from '../menu-builders.js';
-import { getMenuSpec } from '../menu-spec.ts';
+} from '../../menu-builders.js';
+import { getMenuSpec } from '../../menu-spec.ts';
 
 describe('menu-builders', () => {
   it('maps treeId to context implicitly in buildMenuItemsForTreeId', () => {

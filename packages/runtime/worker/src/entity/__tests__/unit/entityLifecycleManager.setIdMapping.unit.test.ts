@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../../services/CoreDB.js';
-import { EntityLifecycleManager } from '../EntityLifecycleManager.js';
+import { EntityLifecycleManager } from '../../EntityLifecycleManager.js';
 
 const makeCore = () => ({
   getNode: vi.fn(async (): Promise<TreeNode | undefined> => undefined),
