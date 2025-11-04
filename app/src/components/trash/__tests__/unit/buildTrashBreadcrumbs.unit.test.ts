@@ -1,19 +1,17 @@
 /**
  * Tests for trash breadcrumb normalisation utilities.
- *
- * Location: app/src/components/trash/__tests__/buildTrashBreadcrumbs.test.ts
- * Purpose: validate that breadcrumbs prefer preserved names and remain stable when metadata is missing.
  */
-import { describe, expect, it } from 'vitest';
+
 import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import { buildTrashBreadcrumbs } from '../buildTrashBreadcrumbs.js';
+import { describe, expect, it } from 'vitest';
+import { buildTrashBreadcrumbs } from '../../buildTrashBreadcrumbs.js';
 
 function createNode(
   id: string,
-  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number } = {},
+  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number } = {}
 ): TreeNode {
   const nodeId = id as NodeId;
-  const parentId = overrides.parentId ?? ('parent-' + id) as NodeId;
+  const parentId = overrides.parentId ?? (`parent-${id}` as NodeId);
   const now = Date.now();
 
   return {
@@ -94,4 +92,3 @@ describe('buildTrashBreadcrumbs', () => {
     expect(target?.name).toBe('Live Name B');
   });
 });
-

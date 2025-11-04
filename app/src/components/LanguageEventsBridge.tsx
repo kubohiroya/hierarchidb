@@ -27,7 +27,8 @@ export function LanguageEventsBridge() {
       bridgeWindow.i18next?.changeLanguage?.(lang);
     };
     window.addEventListener('hierarchidb-language-change', handler as EventListener);
-    return () => window.removeEventListener('hierarchidb-language-change', handler as EventListener);
+    return () =>
+      window.removeEventListener('hierarchidb-language-change', handler as EventListener);
   }, []);
 
   return null;

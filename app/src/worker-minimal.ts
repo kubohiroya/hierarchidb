@@ -19,7 +19,7 @@ const minimalAPI = {
 
   asyncTest: async () => {
     console.log('[Minimal Worker] asyncTest() called');
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return { result: 'async-success' };
   },
 };

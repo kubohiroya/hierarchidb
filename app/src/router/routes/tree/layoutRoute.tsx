@@ -1,13 +1,13 @@
 /**
  * Tree Layout Route for TanStack Router
- * 
+ *
  * This route handles the `/t/:treeId` path and loads the tree data.
  * It corresponds to the React Router route `t.($treeId)._layout.tsx`
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { treeBaseRoute } from './baseRoute.js';
 import { loadTree } from '../../loaders/treeLoaders.js';
+import { treeBaseRoute } from './baseRoute.js';
 
 export const treeLayoutRoute = createRoute({
   getParentRoute: () => treeBaseRoute,

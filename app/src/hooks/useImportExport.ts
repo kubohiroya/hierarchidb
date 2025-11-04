@@ -1,8 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
+import type {
+  ImportProgress as APIImportProgress,
+  WorkerAPI,
+} from '@hierarchidb/feature-core/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import type { ImportProgress as APIImportProgress } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import { useCallback, useRef, useState } from 'react';
 import { getInstalledPlugins } from '../services/plugin-registry.ts';
 
 // Import/Export Types
@@ -135,7 +137,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         abortControllerRef.current = null;
       }
     },
-    [client, ready],
+    [client, ready]
   );
 
   /**
@@ -210,7 +212,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         abortControllerRef.current = null;
       }
     },
-    [client, ready],
+    [client, ready]
   );
 
   /**
@@ -310,7 +312,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         errors,
       };
     },
-    [],
+    []
   );
 
   return {
@@ -417,7 +419,7 @@ async function processImport(
   client: Remote<WorkerAPI>,
   data: any,
   targetNodeId: NodeId,
-  onProgress?: (progress: ImportProgress) => void,
+  onProgress?: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
   const importExportAPI = await client.getImportExportAPI();
 
@@ -453,7 +455,7 @@ async function processImport(
 async function collectNodesForExport(
   client: Remote<WorkerAPI>,
   nodeIds: NodeId[],
-  includeChildren: boolean,
+  includeChildren: boolean
 ): Promise<TreeNode[]> {
   const queryAPI = await client.getQueryAPI();
   const nodes: TreeNode[] = [];

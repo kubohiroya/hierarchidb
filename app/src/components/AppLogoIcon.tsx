@@ -9,14 +9,7 @@ interface AppLogoIconProps {
  * Pure SVG (no layout), safe for use inside MUI IconButton.
  */
 export const AppLogoIcon: React.FC<AppLogoIconProps> = ({ size = 32 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 80 80"
-    fill="none"
-    aria-hidden
-    focusable={false}
-  >
+  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" aria-hidden focusable={false}>
     {/* Top node */}
     <circle cx="40" cy="15" r="8" fill="#1976d2" />
     {/* Connections to middle */}

@@ -1,5 +1,4 @@
 import {
-  setPluginPresentationDefinitions,
   getPresentation as coreGetPresentation,
   getPresentations as coreGetPresentations,
   prefetchAllIcons as corePrefetchAllIcons,
@@ -7,9 +6,13 @@ import {
   type PluginPresentation,
   type PluginPresentationDefinition,
   type PluginPresentationManifest,
+  setPluginPresentationDefinitions,
 } from '@hierarchidb/feature-core/plugin-presentation';
+import type {
+  PluginIconConfig,
+  PluginManifest,
+} from '@hierarchidb/feature-core/plugin-registry/types';
 import { getInstalledPlugins, type InstalledPlugin } from './plugin-registry.js';
-import type { PluginManifest, PluginIconConfig } from '@hierarchidb/feature-core/plugin-registry/types';
 
 let currentSignature: string | null = null;
 
@@ -25,7 +28,9 @@ function normalizeManifestIcon(icon: PluginIconConfig | undefined | null) {
   } satisfies PluginPresentationManifest['icon'];
 }
 
-function toPresentationManifest(manifest: PluginManifest | null): PluginPresentationManifest | undefined {
+function toPresentationManifest(
+  manifest: PluginManifest | null
+): PluginPresentationManifest | undefined {
   if (!manifest) return undefined;
   return {
     displayName: manifest.displayName ?? undefined,

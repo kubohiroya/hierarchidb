@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TreeConsoleActionDeps } from '../types.js';
-import { createTreeConsoleActions } from '../createTreeConsoleActions.js';
-import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
-import type { TreeId, TreeNode, NodeId } from '@hierarchidb/feature-core/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { Remote } from 'comlink';
-import { preconnectPluginServices } from '../../../services/preconnect.js';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
+import type { Remote } from 'comlink';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
+import { preconnectPluginServices } from '../../../../services/preconnect.js';
+import { createTreeConsoleActions } from '../../createTreeConsoleActions.js';
+import type { TreeConsoleActionDeps } from '../../types.js';
 
-vi.mock('../../../services/preconnect.js', () => ({
+vi.mock('../../../../services/preconnect.js', () => ({
   preconnectPluginServices: vi.fn(async () => {}),
 }));
 
@@ -71,10 +71,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
   } as unknown as TreeNode;
 
   const workingCopyApi = {
-    getWorkingCopy: vi
-      .fn()
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce(workingCopyNode),
+    getWorkingCopy: vi.fn().mockResolvedValueOnce(undefined).mockResolvedValueOnce(workingCopyNode),
     createWorkingCopyFromNode: vi.fn(async () => workingCopyNode),
   } as MockWorkingCopy;
 
@@ -92,12 +89,16 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
   } as unknown as Remote<WorkerAPI>;
 
   const nodeIndex = new DualKeyMap<NodeId, NodeId, TreeNode>();
-  nodeIndex.set(nodeId, {
-    id: nodeId,
-    parentId: pageNodeId,
-    nodeType: 'folder',
-    name: 'Existing',
-  } as unknown as TreeNode, pageNodeId);
+  nodeIndex.set(
+    nodeId,
+    {
+      id: nodeId,
+      parentId: pageNodeId,
+      nodeType: 'folder',
+      name: 'Existing',
+    } as unknown as TreeNode,
+    pageNodeId
+  );
 
   const baseSSOT: TreeConsoleSSOTEntry = {
     pageNodeId,
@@ -191,9 +192,9 @@ describe('createTreeConsoleActions.handleEdit', () => {
     };
 
     const { deps } = buildDeps({ selectedIds: [] });
-    (deps.client as unknown as { getMutationAPI: () => Promise<typeof mutationAPI> }).getMutationAPI = vi
-      .fn()
-      .mockResolvedValue(mutationAPI);
+    (
+      deps.client as unknown as { getMutationAPI: () => Promise<typeof mutationAPI> }
+    ).getMutationAPI = vi.fn().mockResolvedValue(mutationAPI);
 
     const loadChildrenOf = vi.fn(async () => {});
     const refreshUndoRedo = vi.fn(async () => {});
@@ -212,7 +213,10 @@ describe('createTreeConsoleActions.handleEdit', () => {
     await actions.handleContextMenuAction('rename-dialog', node);
 
     expect(globalThis.prompt).toHaveBeenCalledWith('Enter new name', 'Existing');
-    expect(mutationAPI.updateNode).toHaveBeenCalledWith({ nodeId: 'node-1', name: 'Renamed Folder' });
+    expect(mutationAPI.updateNode).toHaveBeenCalledWith({
+      nodeId: 'node-1',
+      name: 'Renamed Folder',
+    });
     expect(loadChildrenOf).toHaveBeenCalledWith('parent-1');
     expect(refreshUndoRedo).toHaveBeenCalled();
 
@@ -228,13 +232,13 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     deps.loadChildrenOf = loadChildrenOf;
     deps.refreshUndoRedo = refreshUndoRedo;
 
-    const undo = vi.fn(async () => ({ success: true, seq: 1 } as const));
-    const redo = vi.fn(async () => ({ success: true, seq: 2 } as const));
+    const undo = vi.fn(async () => ({ success: true, seq: 1 }) as const);
+    const redo = vi.fn(async () => ({ success: true, seq: 2 }) as const);
     const cp = { undo, redo, canUndo: () => true, canRedo: () => true };
 
-    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
-      .fn()
-      .mockResolvedValue(cp);
+    (
+      deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }
+    ).getCommandProcessor = vi.fn().mockResolvedValue(cp);
 
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
 
@@ -268,11 +272,14 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     deps.loadChildrenOf = loadChildrenOf;
     deps.refreshUndoRedo = refreshUndoRedo;
 
-    const undo = vi.fn(async () => ({ success: false, error: 'No command to undo', code: 'INVALID_OPERATION' } as const));
+    const undo = vi.fn(
+      async () =>
+        ({ success: false, error: 'No command to undo', code: 'INVALID_OPERATION' }) as const
+    );
     const cp = { undo };
-    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
-      .fn()
-      .mockResolvedValue(cp);
+    (
+      deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }
+    ).getCommandProcessor = vi.fn().mockResolvedValue(cp);
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -283,7 +290,11 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
 
     expect(loadChildrenOf).not.toHaveBeenCalled();
     expect(refreshUndoRedo).toHaveBeenCalled();
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[HDB] Command Error:', 'INVALID_OPERATION', 'No command to undo');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[HDB] Command Error:',
+      'INVALID_OPERATION',
+      'No command to undo'
+    );
 
     consoleErrorSpy.mockRestore();
     consoleWarnSpy.mockRestore();
@@ -299,11 +310,11 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     deps.loadChildrenOf = loadChildrenOf;
     deps.refreshUndoRedo = refreshUndoRedo;
 
-    const undo = vi.fn(async () => ({ success: true, seq: 10 } as const));
+    const undo = vi.fn(async () => ({ success: true, seq: 10 }) as const);
     const cp = { undo };
-    (deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }).getCommandProcessor = vi
-      .fn()
-      .mockResolvedValue(cp);
+    (
+      deps.client as unknown as { getCommandProcessor?: () => Promise<typeof cp> }
+    ).getCommandProcessor = vi.fn().mockResolvedValue(cp);
 
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent').mockImplementation(() => true);
 

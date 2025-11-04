@@ -1,7 +1,7 @@
-import { getPluginRegistryContainer } from '../plugin-registry/di/container.ts';
-import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.ts';
-import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.ts';
 import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
+import { getPluginRegistryContainer } from '../plugin-registry/di/container.ts';
+import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.ts';
+import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.ts';
 
 type DefinitionWithDeps = PluginDefinition & {
   dependencies?: string[];

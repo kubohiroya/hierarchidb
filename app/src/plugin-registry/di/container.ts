@@ -1,14 +1,9 @@
 import 'reflect-metadata';
 import { Container } from 'inversify';
-import {
-  pluginDefinitions,
-  pluginRegistry,
-  pluginUiModuleMap,
-  pluginUiLoaders,
-} from '../index.js';
-import { UIPluginRegistryTokens } from './tokens.js';
+import { pluginDefinitions, pluginRegistry, pluginUiLoaders, pluginUiModuleMap } from '../index.js';
 import type { PluginUiModuleLoader as PluginUiModuleLoaderContract } from './interfaces.js';
 import { PluginUiModuleLoader } from './PluginUiModuleLoader.js';
+import { UIPluginRegistryTokens } from './tokens.js';
 
 let containerInstance: Container | null = null;
 

@@ -28,12 +28,12 @@ export function useQuery<T>(options: QueryOptions<T>): QueryResult<T> {
   useEffect(() => {
     let active = true;
     if (!queryFn || !enabled) {
-      setState(prev => ({ ...prev, isLoading: false }));
+      setState((prev) => ({ ...prev, isLoading: false }));
       return () => {
         active = false;
       };
     }
-    setState(prev => ({ ...prev, isLoading: true, error: undefined }));
+    setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
     queryFn()
       .then((data) => {
         if (!active) return;
@@ -41,12 +41,11 @@ export function useQuery<T>(options: QueryOptions<T>): QueryResult<T> {
       })
       .catch((error) => {
         if (!active) return;
-        setState(prev => ({ ...prev, isLoading: false, error }));
+        setState((prev) => ({ ...prev, isLoading: false, error }));
       });
     return () => {
       active = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, queryFn, enabled]);
 
   return state;

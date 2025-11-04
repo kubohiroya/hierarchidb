@@ -77,10 +77,10 @@ export const DEFAULT_PLUGIN_CONFIG: PluginConfig = {
   loadAll: false,
 
   options: {
-    failOnMissing: false,  // Continue even if some plugin-loader fail
-    verbose: true,          // Log details in development
-    lazyLoad: false,        // Load all plugin-loader at startup
-    loadTimeout: 5000,      // 5 second timeout per plugin
+    failOnMissing: false, // Continue even if some plugin-loader fail
+    verbose: true, // Log details in development
+    lazyLoad: false, // Load all plugin-loader at startup
+    loadTimeout: 5000, // 5 second timeout per plugin
   },
 };
 
@@ -102,12 +102,12 @@ export const PLUGIN_CONFIGS: Record<string, PluginConfig> = {
   // Production: Only load what's needed
   production: {
     ...DEFAULT_PLUGIN_CONFIG,
-    autoDiscovery: false,  // Use static imports in production
+    autoDiscovery: false, // Use static imports in production
     options: {
       ...DEFAULT_PLUGIN_CONFIG.options,
       verbose: false,
       failOnMissing: true,
-      lazyLoad: true,  // Enable lazy loading in production
+      lazyLoad: true, // Enable lazy loading in production
     },
   },
 
@@ -140,16 +140,16 @@ function resolveRuntimeMode(): string {
  */
 export const PLUGIN_FEATURES = {
   // Geographic features
-  enableGeographic: true,  // Enables basemap, shape-plugin plugin-loader
+  enableGeographic: true, // Enables basemap, shape-plugin plugin-loader
 
   // Data processing features
-  enableDataProcessing: true,  // Enables spreadsheet-plugin plugin
+  enableDataProcessing: true, // Enables spreadsheet-plugin plugin
 
   // Styling features
-  enableStyling: true,  // Enables styler-plugin plugin
+  enableStyling: true, // Enables styler-plugin plugin
 
   // Experimental features
-  enableExperimental: false,  // Enables experimental plugin-loader
+  enableExperimental: false, // Enables experimental plugin-loader
 } as const;
 
 /**
@@ -179,7 +179,7 @@ export function getRequestedPlugins(): NodeType[] {
 
   // Remove excluded plugin-loader
   if (config.excluded && config.excluded.length > 0) {
-    requested = requested.filter(p => !config.excluded!.includes(p));
+    requested = requested.filter((p) => !config.excluded!.includes(p));
   }
 
   return requested;

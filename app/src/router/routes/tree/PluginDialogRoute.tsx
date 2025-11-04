@@ -3,11 +3,11 @@
  * Integrates plugin dialogs with React Router
  */
 
-import React from 'react';
-import { useLoaderData, useNavigate, useLocation } from '@tanstack/react-router';
-import { NodeAction, NodeId, TreeId } from '@hierarchidb/feature-core/common-types';
+import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/feature-core/common-types';
 import { getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
 import { PluginDialogHost } from '@hierarchidb/ui-shell/plugin-ui-host';
+import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
+import React from 'react';
 import type { LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
 
 type TreeDialogRouteParams = {
@@ -32,14 +32,7 @@ export interface PluginDialogRouteProps {
 }
 
 const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ data }) => {
-  const {
-    tree,
-    pageNodeId,
-    targetNodeId,
-    nodeType,
-    action,
-    params,
-  } = data;
+  const { tree, pageNodeId, targetNodeId, nodeType, action, params } = data;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,7 +53,9 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const effectiveNodeType: string | undefined = nodeType ?? params.nodeType;
   const effectiveAction: NodeAction | undefined = action ?? toNodeAction(params.action);
 
-  const isReady = Boolean(treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction);
+  const isReady = Boolean(
+    treeId && effectiveTargetNodeId && effectivePageNodeId && effectiveNodeType && effectiveAction
+  );
 
   // Parse query params for additional context
   const searchParams = new URLSearchParams(location.searchStr ? location.searchStr.slice(1) : '');
@@ -90,10 +85,12 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
         }
         // Treat targetNodeId as canonical id; find or create WC and redirect
         const existing = await wcApi.getWorkingCopy(effectiveTargetNodeId);
-        const wc = existing ?? (await (async () => {
-          await wcApi.createWorkingCopyFromNode(effectiveTargetNodeId);
-          return await wcApi.getWorkingCopy(effectiveTargetNodeId);
-        })());
+        const wc =
+          existing ??
+          (await (async () => {
+            await wcApi.createWorkingCopyFromNode(effectiveTargetNodeId);
+            return await wcApi.getWorkingCopy(effectiveTargetNodeId);
+          })());
         if (!disposed && wc?.id && wc.id !== effectiveTargetNodeId) {
           const search = location.searchStr || '';
           const hash = location.hash || '';
@@ -138,13 +135,14 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
   const resolvedTargetNodeId = effectiveTargetNodeId as NodeId;
   const resolvedPageNodeId = effectivePageNodeId as NodeId;
   const resolvedNodeType = effectiveNodeType as string;
-  const resolvedAction = effectiveAction as NodeAction;
   const workingCopyId = resolvedTargetNodeId;
 
   // Handle close
   const handleClose = () => {
     setIsOpen(false);
-    const destination = resolvedPageNodeId ? `/t/${resolvedTreeId}/${resolvedPageNodeId}` : `/t/${resolvedTreeId}`;
+    const destination = resolvedPageNodeId
+      ? `/t/${resolvedTreeId}/${resolvedPageNodeId}`
+      : `/t/${resolvedTreeId}`;
     void navigate({ to: destination });
   };
 
@@ -173,7 +171,10 @@ const PluginDialogRouteBody: React.FC<{ data: PluginDialogLoaderData }> = ({ dat
 const PluginDialogRouteFromRouter: React.FC = () => {
   const candidate = useLoaderData({
     from: '/t/$treeId/$pageNodeId/$targetNodeId/$nodeType/$action',
-  }) as PluginDialogLoaderData | { kind: 'trash'; data: unknown } | { kind: 'plugin'; data: PluginDialogLoaderData };
+  }) as
+    | PluginDialogLoaderData
+    | { kind: 'trash'; data: unknown }
+    | { kind: 'plugin'; data: PluginDialogLoaderData };
   if (typeof candidate === 'object' && candidate !== null && 'kind' in candidate) {
     if (candidate.kind === 'plugin') {
       return <PluginDialogRouteBody data={candidate.data} />;

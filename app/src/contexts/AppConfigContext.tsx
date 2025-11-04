@@ -1,7 +1,6 @@
 import { createContext, type ReactNode, useContext } from 'react';
-
-import { loadAppConfig } from '../loadAppConfig.ts';
 import type { LoadAppConfigReturn } from '../loadAppConfig.ts';
+import { loadAppConfig } from '../loadAppConfig.ts';
 
 export type AppConfig = LoadAppConfigReturn;
 
@@ -12,11 +11,7 @@ const AppConfigContext = createContext<AppConfig | undefined>(undefined);
 export function AppConfigProvider({ children }: { children: ReactNode }) {
   const config = resolveAppConfig();
 
-  return (
-    <AppConfigContext.Provider value={config}>
-      {children}
-    </AppConfigContext.Provider>
-  );
+  return <AppConfigContext.Provider value={config}>{children}</AppConfigContext.Provider>;
 }
 
 export function useAppConfig(): AppConfig {

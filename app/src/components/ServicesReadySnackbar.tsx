@@ -1,5 +1,5 @@
+import { Alert, Snackbar } from '@mui/material';
 import React from 'react';
-import { Snackbar, Alert } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 type Detail = { source: 'worker' | 'ui'; at?: number; nodeTypes?: string[] };
@@ -12,7 +12,8 @@ const FALLBACK_MESSAGES = {
 };
 
 export function ServicesReadySnackbar() {
-  const hasDom = typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
+  const hasDom =
+    typeof document !== 'undefined' && typeof window !== 'undefined' && !!document.body;
 
   const [open, setOpen] = React.useState(false);
   const [detail, setDetail] = React.useState<Detail | null>(null);
@@ -41,14 +42,16 @@ export function ServicesReadySnackbar() {
 
   const message = React.useMemo(() => {
     const locale = i18n?.language ?? 'en';
-    const timeSuffix = detail?.at
-      ? ` (${new Date(detail.at).toLocaleTimeString(locale)})`
-      : '';
+    const timeSuffix = detail?.at ? ` (${new Date(detail.at).toLocaleTimeString(locale)})` : '';
 
     const tr = (
-      key: 'servicesReady.default' | 'servicesReady.worker' | 'servicesReady.prefetch' | 'servicesReady.prefetchList',
+      key:
+        | 'servicesReady.default'
+        | 'servicesReady.worker'
+        | 'servicesReady.prefetch'
+        | 'servicesReady.prefetchList',
       fallback: string,
-      params?: Record<string, unknown>,
+      params?: Record<string, unknown>
     ): string => i18n?.t?.(key, { defaultValue: fallback, ...(params ?? {}) }) ?? fallback;
 
     if (!detail) {
@@ -77,7 +80,12 @@ export function ServicesReadySnackbar() {
   }
 
   return (
-    <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+    <Snackbar
+      open={open}
+      autoHideDuration={3000}
+      onClose={() => setOpen(false)}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    >
       <Alert severity="success" onClose={() => setOpen(false)} sx={{ width: '100%' }}>
         {message}
       </Alert>

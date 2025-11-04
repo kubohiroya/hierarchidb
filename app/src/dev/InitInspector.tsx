@@ -1,6 +1,6 @@
+import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 
 type Status = 'unknown' | 'starting' | 'ready' | 'error';
 const WORKER_INIT_EVENT = 'hierarchidb-worker-init-complete' as const;
@@ -42,7 +42,7 @@ export const InitInspector: React.FC = () => {
         const hasInstance = WorkerAPIClient.getRawWorkerInstance() != null;
         const initCompleteFlag = isWorkerInitCompleted();
         if (!mounted) return;
-        setState(s => ({
+        setState((s) => ({
           ...s,
           clientReady,
           workerHasInstance: hasInstance,
@@ -57,11 +57,12 @@ export const InitInspector: React.FC = () => {
     };
     update();
     const id = window.setInterval(update, 400);
-    const onEvt = () => setState(s => ({
-      ...s,
-      lastInitEventTs: Date.now(),
-      channelMessageCount: s.channelMessageCount + 1,
-    }));
+    const onEvt = () =>
+      setState((s) => ({
+        ...s,
+        lastInitEventTs: Date.now(),
+        channelMessageCount: s.channelMessageCount + 1,
+      }));
     try {
       window.addEventListener(WORKER_INIT_EVENT, onEvt);
     } catch (error) {
@@ -75,7 +76,6 @@ export const InitInspector: React.FC = () => {
       } catch (error) {
         logDevWarning('Failed to remove worker init event listener', error);
       }
-      ;
     };
   }, []);
 
@@ -121,7 +121,7 @@ export const InitInspector: React.FC = () => {
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
+        await Promise.all(keys.map((k) => caches.delete(k)));
       }
     } catch (error) {
       logDevWarning('Failed to purge Cache Storage entries', error);
@@ -220,8 +220,13 @@ export const InitInspector: React.FC = () => {
       </DialogTitle>
       <DialogContent dividers sx={{ p: 1.25 }}>
         <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-          <div>Worker: {state.workerState} / hasInstance: {String(state.workerHasInstance)}</div>
-          <div>Client ready: {String(state.clientReady)} / INIT_COMPLETE: {String(state.initCompleteFlag)}</div>
+          <div>
+            Worker: {state.workerState} / hasInstance: {String(state.workerHasInstance)}
+          </div>
+          <div>
+            Client ready: {String(state.clientReady)} / INIT_COMPLETE:{' '}
+            {String(state.initCompleteFlag)}
+          </div>
           <div>
             Event count: {state.channelMessageCount} / last:{' '}
             {state.lastInitEventTs ? new Date(state.lastInitEventTs).toLocaleTimeString() : '-'}
@@ -267,7 +272,9 @@ export const InitInspector: React.FC = () => {
             Clear Caches
           </button>
         </div>
-        <div style={{ marginTop: 6, fontSize: 11, color: '#6b7280' }}>Add ?debug=init to toggle.</div>
+        <div style={{ marginTop: 6, fontSize: 11, color: '#6b7280' }}>
+          Add ?debug=init to toggle.
+        </div>
       </DialogContent>
     </Dialog>
   );

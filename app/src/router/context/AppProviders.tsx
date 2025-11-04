@@ -1,22 +1,22 @@
-import { type ReactNode } from 'react';
-import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
-import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
+import { NotificationSystem } from '@hierarchidb/ui-shell/components';
 import { SimpleBFFAuthProvider } from '@hierarchidb/ui-shell/ui-auth';
 import { LanguageProvider } from '@hierarchidb/ui-shell/ui-i18n';
-import { Box, CssBaseline, CircularProgress } from '@mui/material';
-import { StyledEngineProvider } from '@mui/material/styles';
 import { ThemeProvider as CustomThemeProvider } from '@hierarchidb/ui-shell/ui-theme';
+import { Box, CircularProgress, CssBaseline } from '@mui/material';
+import { StyledEngineProvider } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 import { AppThemeProvider } from '../../components/AppThemeProvider.js';
 import { LanguageEventsBridge } from '../../components/LanguageEventsBridge.js';
-import { NotificationSystem } from '@hierarchidb/ui-shell/components';
+import { AppConfigProvider } from '../../contexts/AppConfigContext.js';
+import { BootProgressProvider } from '../../contexts/BootProgressProvider.js';
 import { WorkerProvider } from '../../contexts/WorkerProvider.js';
 import {
-  WorkerProgressReporter,
+  AuthReadyReporter,
   ConfigReadyReporter,
+  I18nReadyReporter,
   ThemeReadyReporter,
   UIReadyReporter,
-  I18nReadyReporter,
-  AuthReadyReporter,
+  WorkerProgressReporter,
 } from '../../init/InitReporters.js';
 
 /**
@@ -24,7 +24,6 @@ import {
  * This component abstracts all the shared context providers needed by the application
  */
 export function AppProviders({ children }: { children: ReactNode }) {
-
   const workerFallback = (
     <Box
       sx={{

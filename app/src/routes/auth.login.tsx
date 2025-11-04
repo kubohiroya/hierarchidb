@@ -1,10 +1,11 @@
 /**
-   * TurnstileOAuth2
-  */
-import { useState } from 'react';
-import { useLocation, useNavigate } from '@tanstack/react-router';
-import { Box, Container, Paper } from '@mui/material';
+ * TurnstileOAuth2
+ */
+
 import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { Box, Container, Paper } from '@mui/material';
+import { useLocation } from '@tanstack/react-router';
+import { useState } from 'react';
 
 export default function LoginRoute() {
   const location = useLocation();
@@ -12,7 +13,8 @@ export default function LoginRoute() {
   const [error, setError] = useState<string | null>(null);
 
   // Get the return URL from state or default to home
-  const locationState = (location?.state as { from?: { pathname?: string } } | undefined) ?? undefined;
+  const locationState =
+    (location?.state as { from?: { pathname?: string } } | undefined) ?? undefined;
   const from = locationState?.from?.pathname ?? '/';
 
   const handleLogin = async (provider: string, _turnstileToken: string) => {

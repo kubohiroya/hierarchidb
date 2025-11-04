@@ -2,7 +2,7 @@ import { createRouter } from '@tanstack/react-router';
 import type { RouterMode } from './config.js';
 
 export type { RouterMode } from './config.js';
-export { getRouterMode, getBasePath } from './config.js';
+export { getBasePath, getRouterMode } from './config.js';
 export type RouterEngine = 'react-router' | 'tanstack';
 
 export interface RouterConfig {
@@ -19,7 +19,7 @@ export interface HierarchiRouter {
 /**
  * Creates a router instance based on the specified mode
  * Supports both browser and hash routing modes
- * 
+ *
  * @param config - Router configuration with mode and optional basename
  * @returns Router instance for TanStack Router
  */
@@ -31,16 +31,10 @@ export async function createHierarchiRouter(config: RouterConfig) {
   const { indexRoute } = await import('./routes/indexRoute.js');
   const { infoRoute } = await import('./routes/infoRoute.js');
   const { mapRoute } = await import('./routes/mapRoute.js');
-  const { 
-    authLoginRoute, 
-    authCallbackRoute, 
-    authSilentRenewRoute 
-  } = await import('./routes/authRoutes.js');
-  const {
-    tagsRoute,
-    tagDetailRoute,
-    pluginsRoute,
-  } = await import('./routes/utilityRoutes.js');
+  const { authLoginRoute, authCallbackRoute, authSilentRenewRoute } = await import(
+    './routes/authRoutes.js'
+  );
+  const { tagsRoute, tagDetailRoute, pluginsRoute } = await import('./routes/utilityRoutes.js');
 
   // Import tree routes
   const { treeBaseRoute } = await import('./routes/tree/baseRoute.js');
@@ -57,11 +51,7 @@ export async function createHierarchiRouter(config: RouterConfig) {
     treeLayoutRoute.addChildren([
       treeLayoutIndexRoute,
       treePageRoute.addChildren([
-        treeTargetRoute.addChildren([
-          treeNodeTypeRoute.addChildren([
-            treeDialogRoute,
-          ]),
-        ]),
+        treeTargetRoute.addChildren([treeNodeTypeRoute.addChildren([treeDialogRoute])]),
       ]),
     ]),
   ]);

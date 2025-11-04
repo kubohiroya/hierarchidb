@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { Remote } from 'comlink';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const workerClientMock = vi.hoisted(() => ({
   getOrInit: vi.fn<() => Promise<Remote<WorkerAPI>>>(),
@@ -41,11 +41,9 @@ describe('WorkerStateStore', () => {
     workerClientMock.getOrInit.mockImplementation(async () => fakeClient);
     ensureWorkerRuntimeMock.mockResolvedValue(fakeClient);
 
-    const {
-      ensureWorkerInitialized,
-      getWorkerSnapshot,
-      subscribeWorkerState,
-    } = await import('../WorkerStateStore.js');
+    const { ensureWorkerInitialized, getWorkerSnapshot, subscribeWorkerState } = await import(
+      '../WorkerStateStore.js'
+    );
 
     const observedStates: string[] = [];
     const unsubscribe = subscribeWorkerState((snapshot) => {
@@ -71,10 +69,7 @@ describe('WorkerStateStore', () => {
     });
     ensureWorkerRuntimeMock.mockRejectedValue(loaderError);
 
-    const {
-      ensureWorkerInitialized,
-      getWorkerSnapshot,
-    } = await import('../WorkerStateStore.js');
+    const { ensureWorkerInitialized, getWorkerSnapshot } = await import('../WorkerStateStore.js');
 
     await expect(ensureWorkerInitialized()).rejects.toThrow('boom');
     const snapshot = getWorkerSnapshot();

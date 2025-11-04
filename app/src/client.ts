@@ -1,11 +1,12 @@
 /**
  * UI-side worker bootstrap: create and wrap app/src/worker.ts via Comlink.
  */
+
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
-import workerScriptUrl from './worker.ts?worker&url';
 import { bootLog } from './utils/bootLog.ts';
 import { APP_VERSION } from './version.ts';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import workerScriptUrl from './worker.ts?worker&url';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/feature-core/runtime-client to avoid `any` fallbacks
 // while the package-level re-export remains unavailable to the app bundler during typecheck.
@@ -92,7 +93,11 @@ function isWorkerInitMessage(value: unknown): value is WorkerInitMessage {
 function isWorkerServicesReadyMessage(value: unknown): value is WorkerServicesReadyMessage {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as { type?: unknown; source?: unknown; at?: unknown };
-  return candidate.type === 'SERVICES_READY' && candidate.source === 'worker' && typeof candidate.at === 'number';
+  return (
+    candidate.type === 'SERVICES_READY' &&
+    candidate.source === 'worker' &&
+    typeof candidate.at === 'number'
+  );
 }
 
 export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
@@ -121,10 +126,15 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       rawWorkerInstance.addEventListener('message', (event: MessageEvent<unknown>) => {
         const { data } = event;
         const messageType =
-          typeof data === 'object' && data !== null && 'type' in data && typeof (data as { type?: unknown }).type === 'string'
+          typeof data === 'object' &&
+          data !== null &&
+          'type' in data &&
+          typeof (data as { type?: unknown }).type === 'string'
             ? String((data as { type: string }).type)
-            : typeof data === 'object' && data !== null && 'payload' in data &&
-              typeof (data as { payload?: { type?: unknown } }).payload?.type === 'string'
+            : typeof data === 'object' &&
+                data !== null &&
+                'payload' in data &&
+                typeof (data as { payload?: { type?: unknown } }).payload?.type === 'string'
               ? String((data as { payload: { type: string } }).payload.type)
               : 'unknown';
         if (!COMLINK_NOISE_TYPES.has(messageType)) {
@@ -162,7 +172,7 @@ export async function initializeWorker(): Promise<Remote<WorkerAPI>> {
       workerInstance = null;
       if (attempt < RETRY_DELAYS.length) {
         const delay = RETRY_DELAYS[attempt];
-        await new Promise(r => setTimeout(r, delay));
+        await new Promise((r) => setTimeout(r, delay));
       } else {
         throw error;
       }
@@ -176,5 +186,9 @@ export async function getWorkerClient(): Promise<Remote<WorkerAPI>> {
   return workerInstance;
 }
 
-export function getRawWorkerInstance(): Worker | null { return rawWorkerInstance; }
-export function isWorkerInitCompleted(): boolean { return workerInitCompleted; }
+export function getRawWorkerInstance(): Worker | null {
+  return rawWorkerInstance;
+}
+export function isWorkerInitCompleted(): boolean {
+  return workerInitCompleted;
+}

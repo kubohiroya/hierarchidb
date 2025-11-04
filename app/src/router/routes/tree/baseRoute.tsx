@@ -1,15 +1,15 @@
 /**
  * Base Tree Route for TanStack Router
- * 
+ *
  * This route handles the `/t` path and initializes the Worker API client.
  * It corresponds to the React Router route `t.tsx`
- * 
+ *
  * This route provides worker initialization as a shared barrier for all tree-related routes.
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';
-import { rootRoute } from '../rootRoute.js';
 import { loadWorkerAPIClient } from '../../loaders/treeLoaders.js';
+import { rootRoute } from '../rootRoute.js';
 
 type BootWindow = Window & {
   __HDB_INIT_WAIT__?: Promise<void> | null;
@@ -31,7 +31,12 @@ export const treeBaseRoute = createRoute({
     if (bootWindow && !bootWindow.__HDB_INIT_WAIT__) {
       bootWindow.__HDB_INIT_WAIT__ = new Promise<void>((resolve) => {
         let done = false;
-        const finish = () => { if (!done) { done = true; resolve(); } };
+        const finish = () => {
+          if (!done) {
+            done = true;
+            resolve();
+          }
+        };
         const handler = () => {
           bootWindow.removeEventListener('hierarchidb-worker-init-complete', handler);
           bootWindow.__HDB_INIT_COMPLETE__ = true;
@@ -40,15 +45,20 @@ export const treeBaseRoute = createRoute({
         bootWindow.addEventListener('hierarchidb-worker-init-complete', handler, { once: true });
         const poll = bootWindow.setInterval(() => {
           // Defer to WorkerAPIClient if available
-          import('~/WorkerAPIClient.ts').then(({ WorkerAPIClient }) => {
-            if (WorkerAPIClient.isReady()) {
-              bootWindow.clearInterval(poll);
-              finish();
-            }
-          }).catch(() => {});
+          import('~/WorkerAPIClient.ts')
+            .then(({ WorkerAPIClient }) => {
+              if (WorkerAPIClient.isReady()) {
+                bootWindow.clearInterval(poll);
+                finish();
+              }
+            })
+            .catch(() => {});
         }, 100);
         // Soft cap; child loaders also set their own timeout
-        bootWindow.setTimeout(() => { bootWindow.clearInterval(poll); finish(); }, 20000);
+        bootWindow.setTimeout(() => {
+          bootWindow.clearInterval(poll);
+          finish();
+        }, 20000);
       });
     }
 

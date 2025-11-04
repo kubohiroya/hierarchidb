@@ -17,7 +17,8 @@ function createFallbackEntry(nodeType: string): DatabaseLoaderEntry | undefined 
 
   const registryEntry = pluginRegistry.find((item) => item.nodeType === nodeType);
   if (!registryEntry) return undefined;
-  const specifier = registryEntry.modules.database?.specifier ?? registryEntry.modules.root?.specifier;
+  const specifier =
+    registryEntry.modules.database?.specifier ?? registryEntry.modules.root?.specifier;
   if (!specifier) return undefined;
 
   const loader: Loader = async () => import(/* @vite-ignore */ specifier);
@@ -33,7 +34,9 @@ function getLoaderEntry(nodeType: string): DatabaseLoaderEntry | undefined {
   return pluginDatabaseLoaders[nodeType] ?? createFallbackEntry(nodeType);
 }
 
-async function loadModuleFromEntry(entry: DatabaseLoaderEntry | undefined): Promise<unknown | null> {
+async function loadModuleFromEntry(
+  entry: DatabaseLoaderEntry | undefined
+): Promise<unknown | null> {
   if (!entry) return null;
 
   if (typeof entry.loader === 'function') {

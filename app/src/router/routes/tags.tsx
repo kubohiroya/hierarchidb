@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+// import { useWorkerClient } from '../contexts/WorkerProvider.js';
+import type { TagEntity } from '@hierarchidb/feature-core/common-types';
+import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 // import { useNavigate } from 'react-router';
 import {
   Badge,
@@ -16,10 +18,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
-// import { useWorkerClient } from '../contexts/WorkerProvider.js';
-import type { TagEntity } from '@hierarchidb/feature-core/common-types';
 import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 
 // Meta function for React Router v7
@@ -86,7 +86,7 @@ export default function TagsPage() {
       acc[category]!.push(tag);
       return acc;
     },
-    {} as Record<string, TagEntity[]>,
+    {} as Record<string, TagEntity[]>
   );
 
   // Toggle sort order
@@ -102,7 +102,7 @@ export default function TagsPage() {
   // Handle tag click - navigate to search with tag filter
   const handleTagClick = (tag: TagEntity) => {
     // Navigate to resources tree with tag filter
-    navigate({to:`/t/r?tag=${encodeURIComponent(tag.name)}`});
+    navigate({ to: `/t/r?tag=${encodeURIComponent(tag.name)}` });
   };
 
   // Handle tag edit
@@ -123,7 +123,7 @@ export default function TagsPage() {
       <Paper elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Container maxWidth="lg">
           <Box sx={{ py: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton onClick={() => navigate({to:'/'})} size="large">
+            <IconButton onClick={() => navigate({ to: '/' })} size="large">
               <ArrowBack />
             </IconButton>
 

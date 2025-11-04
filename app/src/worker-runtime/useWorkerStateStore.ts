@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { WorkerStateSnapshot, WorkerInitializationProgress } from './WorkerStateStore.js';
+import type { WorkerInitializationProgress, WorkerStateSnapshot } from './WorkerStateStore.js';
 import {
   ensureWorkerInitialized,
   getWorkerSnapshot,
@@ -16,7 +16,9 @@ export function useWorkerState(): WorkerStateSnapshot {
 }
 
 export function useWorkerProgress(): WorkerInitializationProgress {
-  const [progress, setProgress] = useState<WorkerInitializationProgress>(() => getWorkerSnapshot().progress);
+  const [progress, setProgress] = useState<WorkerInitializationProgress>(
+    () => getWorkerSnapshot().progress
+  );
 
   useEffect(() => subscribeWorkerProgress(setProgress), []);
 

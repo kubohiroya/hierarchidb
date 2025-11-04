@@ -1,15 +1,19 @@
-import { registerWorkerClientHook, getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
+import {
+  getWorkerClientHook,
+  registerWorkerClientHook,
+} from '@hierarchidb/feature-core/runtime-client';
 import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-shell/ui-icon';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType } from 'react';
 import { pluginIconLoaders, pluginRegistry } from '~/plugin-registry/index.ts';
-import { bootLog } from '../../utils/bootLog.ts';
-import { APP_VERSION, BUILD_TIME } from '../../version.ts';
-import { loadAllUIPlugins } from '../../services/ui-plugin-loader.ts';
 import { useWorkerClient } from '../../contexts/WorkerProvider.js';
 import { getInstalledPlugins } from '../../services/plugin-registry.ts';
+import { loadAllUIPlugins } from '../../services/ui-plugin-loader.ts';
+import { bootLog } from '../../utils/bootLog.ts';
+import { APP_VERSION, BUILD_TIME } from '../../version.ts';
 
-type TreeConsolePanelGlobal = typeof import('@hierarchidb/ui-shell/ui-treeconsole-base')['TreeConsolePanel'];
+type TreeConsolePanelGlobal =
+  typeof import('@hierarchidb/ui-shell/ui-treeconsole-base')['TreeConsolePanel'];
 
 type BrowserGlobals = Window & {
   __uiPluginsRegistered?: boolean;
@@ -82,7 +86,9 @@ export function initializeBrowserGlobals(): void {
     .then(async (mod) => {
       (globalWindow as Window & { __HDB_MENU_BUILDERS__?: unknown }).__HDB_MENU_BUILDERS__ = mod;
       try {
-        await (mod as { prefetchIconsForAllContexts?: () => Promise<void> }).prefetchIconsForAllContexts?.();
+        await (
+          mod as { prefetchIconsForAllContexts?: () => Promise<void> }
+        ).prefetchIconsForAllContexts?.();
       } catch (error) {
         logWarning('Prefetching icon contexts failed', error);
       }
@@ -157,7 +163,7 @@ export function initializeBrowserGlobals(): void {
         } catch (error) {
           failedLoaderNodeTypes.push({ nodeType: entry.nodeType, error });
         }
-      }),
+      })
     );
 
     setGlobalMuiIconMap(iconMap);
@@ -195,7 +201,7 @@ export function initializeBrowserGlobals(): void {
         window.dispatchEvent(
           new CustomEvent('hdb-services-ready', {
             detail: { source: 'ui', at: Date.now(), nodeTypes },
-          }),
+          })
         );
       })
       .catch((error) => {
@@ -206,7 +212,10 @@ export function initializeBrowserGlobals(): void {
   bootLog('Browser globals initialized');
 }
 
-function normalizeToReactComponent(value: unknown, seen = new Set<unknown>()): ComponentType<SvgIconProps> | null {
+function normalizeToReactComponent(
+  value: unknown,
+  seen = new Set<unknown>()
+): ComponentType<SvgIconProps> | null {
   if (!value) return null;
   if (seen.has(value)) return null;
   seen.add(value);
@@ -216,7 +225,11 @@ function normalizeToReactComponent(value: unknown, seen = new Set<unknown>()): C
   }
 
   if (typeof value === 'object') {
-    const candidate = value as Record<string, unknown> & { $$typeof?: unknown; render?: unknown; type?: unknown };
+    const candidate = value as Record<string, unknown> & {
+      $$typeof?: unknown;
+      render?: unknown;
+      type?: unknown;
+    };
 
     if (typeof candidate.$$typeof === 'symbol' || typeof candidate.render === 'function') {
       return candidate as unknown as ComponentType<SvgIconProps>;

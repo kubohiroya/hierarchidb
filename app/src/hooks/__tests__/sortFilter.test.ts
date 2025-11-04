@@ -4,8 +4,8 @@
  * Verifies ordering, filtering, and search behaviour for applySortFilterSearch.
  */
 
-import { describe, expect, it } from 'vitest';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import { describe, expect, it } from 'vitest';
 import { applySortFilterSearch } from '../treeconsole/sortFilter.js';
 
 const sampleNodes: TreeNodeData[] = [

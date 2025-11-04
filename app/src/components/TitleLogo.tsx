@@ -6,37 +6,41 @@ interface TitleLogoProps {
 }
 
 export function TitleLogo({
-                            title = 'HierarchiDB',
-                            description = 'High-performance tree-structured data management framework',
-                            showProgress = false,
-                            progressText = 'Initializing application...',
-                          }: TitleLogoProps) {
+  title = 'HierarchiDB',
+  description = 'High-performance tree-structured data management framework',
+  showProgress = false,
+  progressText = 'Initializing application...',
+}: TitleLogoProps) {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      width: '600px',  // Fixed width to prevent text wrapping differences
-      height: '280px', // Fixed total height for consistent layout
-      justifyContent: 'center',
-      marginTop: showProgress ? '-58px' : '0', // Move up 58px for splash screen
-    }}>
-      {/* Logo - no animation to ensure consistent appearance */}
-      <div style={{
-        height: '80px',  // Fixed height
-        width: '80px',   // Fixed width
+    <div
+      style={{
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
+        width: '600px', // Fixed width to prevent text wrapping differences
+        height: '280px', // Fixed total height for consistent layout
         justifyContent: 'center',
-        marginBottom: '24px',
-      }}>
+        marginTop: showProgress ? '-58px' : '0', // Move up 58px for splash screen
+      }}
+    >
+      {/* Logo - no animation to ensure consistent appearance */}
+      <div
+        style={{
+          height: '80px', // Fixed height
+          width: '80px', // Fixed width
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '24px',
+        }}
+      >
         <svg
           width="80"
           height="80"
           viewBox="0 0 80 80"
           fill="none"
           style={{
-            display: 'block',  // Prevent inline spacing issues
+            display: 'block', // Prevent inline spacing issues
           }}
         >
           {/* TreeTypes structure with nodes and connections */}
@@ -66,76 +70,90 @@ export function TitleLogo({
       </div>
 
       {/* Title */}
-      <h1 style={{
-        fontSize: '48px',
-        fontWeight: 400,
-        margin: '0',
-        marginBottom: '16px',
-        color: '#333333',
-        fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
-        lineHeight: '1.2',
-      }}>
+      <h1
+        style={{
+          fontSize: '48px',
+          fontWeight: 400,
+          margin: '0',
+          marginBottom: '16px',
+          color: '#333333',
+          fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
+          lineHeight: '1.2',
+        }}
+      >
         {title}
       </h1>
 
       {/* Description area - fixed height whether shown or not */}
-      <div style={{
-        height: '24px',  // Fixed height for description area
-        marginBottom: '32px',
-        width: '100%',
-      }}>
+      <div
+        style={{
+          height: '24px', // Fixed height for description area
+          marginBottom: '32px',
+          width: '100%',
+        }}
+      >
         {!showProgress && (
-          <p style={{
-            fontSize: '16px',
-            color: '#666666',
-            margin: '0',
-            textAlign: 'center',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
-            lineHeight: '1.5',
-          }}>
+          <p
+            style={{
+              fontSize: '16px',
+              color: '#666666',
+              margin: '0',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
+              lineHeight: '1.5',
+            }}
+          >
             {description}
           </p>
         )}
       </div>
 
       {/* Bottom area - same total height for both modes */}
-      <div style={{
-        height: '66px',  // Fixed height for bottom area
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <div
+        style={{
+          height: '66px', // Fixed height for bottom area
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         {showProgress ? (
           <>
             {/* Progress bar */}
-            <div style={{
-              width: '300px',
-              height: '2px',
-              backgroundColor: '#e0e0e0',
-              borderRadius: '1px',
-              overflow: 'hidden',
-              marginBottom: '8px',
-            }}>
-              <div style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: '#1976d2',
-                animation: 'progress 2s ease-in-out infinite',
-              }} />
+            <div
+              style={{
+                width: '300px',
+                height: '2px',
+                backgroundColor: '#e0e0e0',
+                borderRadius: '1px',
+                overflow: 'hidden',
+                marginBottom: '8px',
+              }}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: '#1976d2',
+                  animation: 'progress 2s ease-in-out infinite',
+                }}
+              />
             </div>
 
             {/* Loading text */}
-            <p style={{
-              fontSize: '14px',
-              color: '#999999',
-              fontStyle: 'italic',
-              margin: 0,
-              fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
-            }}>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#999999',
+                fontStyle: 'italic',
+                margin: 0,
+                fontFamily: 'Roboto, "Helvetica Neue", Arial, sans-serif',
+              }}
+            >
               {progressText}
             </p>
           </>
@@ -146,8 +164,9 @@ export function TitleLogo({
       </div>
 
       {/* Inline styles for progress animation only */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes progress {
           0% {
             transform: translateX(-100%);
@@ -160,7 +179,8 @@ export function TitleLogo({
           }
         }
       `,
-      }} />
+        }}
+      />
     </div>
   );
 }

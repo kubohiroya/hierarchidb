@@ -2,9 +2,12 @@
  * React hook to get SpeedDial/Menu items based on tree context
  */
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
-import { useEffect, useState } from 'react';
 import { prefetchMuiIcons } from '@hierarchidb/ui-shell/ui-icon';
-import type { TreeContext, PluginMenuItem as LoaderMenuItem } from '../plugin-loader/menu-builders.ts';
+import { useEffect, useState } from 'react';
+import type {
+  PluginMenuItem as LoaderMenuItem,
+  TreeContext,
+} from '../plugin-loader/menu-builders.ts';
 // Local replicas of menu types to avoid hard dependency on virtual modules
 
 export type PluginMenuItem = LoaderMenuItem;
@@ -15,7 +18,9 @@ type MenuBuildersCache = {
   normalizeContextFromTreeId?: (treeId?: TreeId | null) => TreeContext;
 };
 
-type MenuBuildersModule = Required<Pick<MenuBuildersCache, 'buildMenuItemsForTreeId' | 'buildMenuItemsForContext'>> &
+type MenuBuildersModule = Required<
+  Pick<MenuBuildersCache, 'buildMenuItemsForTreeId' | 'buildMenuItemsForContext'>
+> &
   Pick<MenuBuildersCache, 'normalizeContextFromTreeId'>;
 
 const globalMenuBuilders = globalThis as typeof globalThis & {
@@ -35,9 +40,9 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
         if (cached.buildMenuItemsForTreeId || cached.buildMenuItemsForContext) {
           const list = cached.buildMenuItemsForTreeId
             ? cached.buildMenuItemsForTreeId(treeId)
-            : cached.buildMenuItemsForContext?.(
-                cached.normalizeContextFromTreeId?.(treeId) ?? 'projects',
-              ) ?? [];
+            : (cached.buildMenuItemsForContext?.(
+                cached.normalizeContextFromTreeId?.(treeId) ?? 'projects'
+              ) ?? []);
           if (active) setItems(list);
           await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName).filter(Boolean));
           return;
@@ -56,7 +61,7 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
         const list = cache.buildMenuItemsForTreeId
           ? cache.buildMenuItemsForTreeId(treeId)
           : cache.buildMenuItemsForContext!(
-              cache.normalizeContextFromTreeId?.(treeId) ?? 'projects',
+              cache.normalizeContextFromTreeId?.(treeId) ?? 'projects'
             );
         if (active) setItems(list);
         await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName).filter(Boolean));

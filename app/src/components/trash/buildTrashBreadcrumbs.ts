@@ -1,5 +1,5 @@
-import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import { getTrashDisplayName } from './getTrashDisplayName.js';
 
 export interface BuildTrashBreadcrumbsParams {
@@ -87,7 +87,8 @@ export function buildTrashBreadcrumbs({
     const parentId: string = parentRaw ? String(parentRaw) : rootId;
 
     const displayName = getTrashDisplayName(currentNode) || currentId;
-    const originalParentId = (currentNode as { originalParentId?: NodeId } | undefined)?.originalParentId;
+    const originalParentId = (currentNode as { originalParentId?: NodeId } | undefined)
+      ?.originalParentId;
     const metaParentId = originalParentId ? String(originalParentId) : parentId;
 
     chain.unshift({

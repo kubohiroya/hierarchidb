@@ -1,20 +1,17 @@
 /**
  * Tree Dialog Route for TanStack Router
- * 
+ *
  * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` path
  * and displays the appropriate dialog component.
  * Corresponds to React Router route `t.($treeId).($pageNodeId).($targetNodeId).$nodeType.$action.tsx`
  */
 
-import { lazy, Suspense } from 'react';
 import { createRoute } from '@tanstack/react-router';
+import { lazy, Suspense } from 'react';
+import type { TrashDialogData, TrashDialogRouteParams } from '~/components/dialogs/TrashDialog.js';
+import { type LoadNodeActionReturn, loadNodeAction } from '../../loaders/treeLoaders.js';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
-import { loadNodeAction, type LoadNodeActionReturn } from '../../loaders/treeLoaders.js';
-import { PluginDialogRoute, type PluginDialogLoaderData } from './PluginDialogRoute.js';
-import type {
-  TrashDialogData,
-  TrashDialogRouteParams,
-} from '~/components/dialogs/TrashDialog.js';
+import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
 
 type TreeDialogLoaderResult =
   | {
@@ -116,7 +113,7 @@ function toTrashDialogParams(params: TreeDialogResolvedParams): TrashDialogRoute
 
 function toPluginDialogLoaderData(
   loaderData: LoadNodeActionReturn,
-  params: TreeDialogResolvedParams,
+  params: TreeDialogResolvedParams
 ): PluginDialogLoaderData {
   return {
     ...loaderData,

@@ -1,17 +1,16 @@
 /**
  * Tree Page Route for TanStack Router
- * 
+ *
  * This route handles the `/t/:treeId/:pageNodeId` path and loads the page node data.
  * It displays the TreeConsoleIntegration component with AppBar.
  * Corresponds to React Router route `t.($treeId).($pageNodeId).tsx`
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { treeLayoutRoute } from './layoutRoute.js';
 import { loadPageNode } from '../../loaders/treeLoaders.js';
-
 // Import the existing React Router component to reuse
 import TreePageLayout from '../t.($treeId).($pageNodeId).js';
+import { treeLayoutRoute } from './layoutRoute.js';
 
 export const treePageRoute = createRoute({
   getParentRoute: () => treeLayoutRoute,

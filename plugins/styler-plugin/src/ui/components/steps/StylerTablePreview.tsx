@@ -31,7 +31,7 @@ import {
 } from '@mui/material';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 // import { VariableSizeList as List } from 'provider-window';
-import type { StylerConfig } from '../../../common/types/stylerTypes.js';
+import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
 import { valueToColor } from '../../../common/utils/colorUtils.js';
 
 /**
@@ -43,7 +43,7 @@ type SortDirection = 'asc' | 'desc' | null;
  * :
  */
 export interface StylerTablePreviewProps {
-  data: Array<Record<string, any>>;
+  data: StylerTableRow[];
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   config: StylerConfig;
@@ -55,9 +55,7 @@ export interface StylerTablePreviewProps {
 /**
  * :
  */
-interface ColumnWidths {
-  [key: string]: number;
-}
+type ColumnWidths = Record<string, number>;
 
 /**
  * :
@@ -162,7 +160,7 @@ const ResizableTableHeader: React.FC<{
  * :
  */
 const TableRowComponent: React.FC<{
-  rowData: Record<string, any>;
+  rowData: StylerTableRow;
   columns: string[];
   columnWidths: ColumnWidths;
   selectedKeyColumn?: string;
@@ -201,7 +199,7 @@ const TableRowComponent: React.FC<{
           const isValueColumn = col === selectedValueColumn;
           const cellValue = rowData[col];
 
-          const formatValue = (value: any): string => {
+          const formatValue = (value: unknown): string => {
             if (value === null || value === undefined) {
               return '-';
             }
@@ -441,18 +439,24 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedData.map((row, index) => (
-              <TableRowComponent
-                key={index}
-                rowData={row}
-                columns={columns}
-                columnWidths={columnWidths}
-                selectedKeyColumn={selectedKeyColumn}
-                selectedValueColumn={selectedValueColumn}
-                config={config}
-                showColorPreview={showColorPreview}
-              />
-            ))}
+            {sortedData.map((row, index) => {
+              const rowKey =
+                selectedKeyColumn && row[selectedKeyColumn] !== undefined
+                  ? `${selectedKeyColumn}-${String(row[selectedKeyColumn])}`
+                  : `row-${index}-${Object.values(row).join('|')}`;
+              return (
+                <TableRowComponent
+                  key={rowKey}
+                  rowData={row}
+                  columns={columns}
+                  columnWidths={columnWidths}
+                  selectedKeyColumn={selectedKeyColumn}
+                  selectedValueColumn={selectedValueColumn}
+                  config={config}
+                  showColorPreview={showColorPreview}
+                />
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

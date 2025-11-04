@@ -5,7 +5,13 @@
  * extracted dependencies from the integration hook.
  */
 
-import type { CommandResult, NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type {
+  CommandResult,
+  NodeId,
+  NodeType,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { preconnectPluginServices } from '../../services/preconnect.js';

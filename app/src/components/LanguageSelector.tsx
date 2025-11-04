@@ -1,17 +1,18 @@
+import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 
 type Manifest = {
-  languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr' | 'rtl' }>
+  languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr' | 'rtl' }>;
 };
 
 const readCurrent = (): string => {
   if (typeof window === 'undefined') return 'en';
-  const ls = window.localStorage.getItem('preferred-language') || window.localStorage.getItem('i18nextLng');
+  const ls =
+    window.localStorage.getItem('preferred-language') || window.localStorage.getItem('i18nextLng');
   if (ls && ls.length > 0) return ls.split('-')[0] as string;
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'en';
-  return ((nav || 'en').split('-')[0]) as string;
+  return (nav || 'en').split('-')[0] as string;
 };
 
 export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size = 'small' }) => {
@@ -26,7 +27,7 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
         const res = await fetch(`${base}locales/manifest.json`).catch(() => null);
         if (active && res && res.ok) {
           const data = (await res.json()) as Manifest;
-          const detected = (data.languages || []);
+          const detected = data.languages || [];
           if (detected.length > 0) setLangs(detected);
         }
       } catch {
@@ -39,16 +40,18 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
     };
   }, []);
 
-  const options = useMemo(() => (
-    langs.length > 0
-      ? langs
-      : [{ code: 'en', name: 'English', nativeName: 'English', direction: 'ltr' as const }]
-  ), [langs]);
+  const options = useMemo(
+    () =>
+      langs.length > 0
+        ? langs
+        : [{ code: 'en', name: 'English', nativeName: 'English', direction: 'ltr' as const }],
+    [langs]
+  );
 
   // If current value is not in options yet (e.g., 'ja' before manifest loads),
   // normalize it to the first available option to avoid MUI out-of-range warnings.
   const normalizedValue = useMemo(() => {
-    if (options.some(o => o.code === value)) return value;
+    if (options.some((o) => o.code === value)) return value;
     return options[0]?.code ?? '';
   }, [options, value]);
 
@@ -91,7 +94,9 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
       <InputLabel id="lang-select-label">Lang</InputLabel>
       <Select labelId="lang-select-label" label="Lang" value={normalizedValue} onChange={onChange}>
         {options.map((entry) => (
-          <MenuItem key={entry.code} value={entry.code}>{labelFor(entry)}</MenuItem>
+          <MenuItem key={entry.code} value={entry.code}>
+            {labelFor(entry)}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>

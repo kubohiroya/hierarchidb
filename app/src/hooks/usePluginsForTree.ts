@@ -5,11 +5,11 @@
  * Provides dynamic plugin loading for SpeedDial menus.
  */
 
-import { useEffect, useState } from 'react';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/feature-core/plugin-ui-sdk';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
+import { useEffect, useState } from 'react';
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
@@ -21,7 +21,7 @@ export interface UsePluginsForTreeResult {
 
 export function usePluginsForTree(
   treeId: TreeId | undefined,
-  _workerClient: Remote<WorkerAPI> | null,
+  _workerClient: Remote<WorkerAPI> | null
 ): UsePluginsForTreeResult {
   const [plugins, setPlugins] = useState<PluginDefinition[]>([]);
   const [pluginInfo, setPluginInfo] = useState<TreePluginInfo[]>([]);

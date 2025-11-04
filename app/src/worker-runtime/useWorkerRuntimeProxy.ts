@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import type { WorkerRuntimeState, WorkerClientProxy } from './WorkerClientProxy.js';
-import { createWorkerClientProxy } from './WorkerClientProxy.js';
 import { useWorkerState } from './useWorkerStateStore.js';
+import type { WorkerClientProxy, WorkerRuntimeState } from './WorkerClientProxy.js';
+import { createWorkerClientProxy } from './WorkerClientProxy.js';
 
 export type WorkerRuntimeHook = {
   proxy: WorkerClientProxy;

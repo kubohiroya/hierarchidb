@@ -4,13 +4,17 @@
  */
 
 import './worker-react-refresh-shim.js';
-import { WorkerInitializationReporter, wirePluginsFromModules, getAllRuntimeExports } from '@hierarchidb/feature-core/runtime-client';
+import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
+import {
+  getAllRuntimeExports,
+  WorkerInitializationReporter,
+  wirePluginsFromModules,
+} from '@hierarchidb/feature-core/runtime-client';
 import {
   getWorkerContainer,
-  WorkerDiTokens,
   type PluginWorkerModuleLoader,
+  WorkerDiTokens,
 } from '@hierarchidb/feature-core/runtime-worker';
-import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
 import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-registry/index.ts';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
@@ -76,7 +80,7 @@ const reporter = new WorkerInitializationReporter(
     { name: 'Create API facade', weight: 10 },
     { name: 'Expose API', weight: 10 },
   ],
-  false,
+  false
 );
 reporter.reportStepProgress('Load Comlink', 0);
 
@@ -99,20 +103,21 @@ reporter.reportStepProgress('Load Comlink', 0);
 
     // Note: Legacy workerModuleLoaders are no longer generated; the DI-provided moduleLoader now resolves plugin bundles.
 
-    const denyEnv = typeof import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY === 'string'
-      ? import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY
-      : '';
+    const denyEnv =
+      typeof import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY === 'string'
+        ? import.meta.env.VITE_HDB_WORKER_PLUGIN_DENY
+        : '';
     const denyList = new Set(
       denyEnv
         .split(',')
         .map((entry) => entry.trim())
-        .filter(Boolean),
+        .filter(Boolean)
     );
 
     const moduleEntries: Array<{ nodeType: string; mod: unknown }> = [];
     const workerContainer = getWorkerContainer();
     const moduleLoader = workerContainer.get<PluginWorkerModuleLoader>(
-      WorkerDiTokens.PluginWorkerModuleLoader,
+      WorkerDiTokens.PluginWorkerModuleLoader
     );
 
     for (const definition of pluginDefinitions) {
@@ -149,7 +154,9 @@ reporter.reportStepProgress('Load Comlink', 0);
     });
 
     try {
-      const runtimeModule = await import('@hierarchidb/feature-core/runtime-worker') as unknown as RuntimeWorkerModule;
+      const runtimeModule = (await import(
+        '@hierarchidb/feature-core/runtime-worker'
+      )) as unknown as RuntimeWorkerModule;
       const entityRegistry = runtimeModule.entityRegistry;
       if (entityRegistry) {
         for (const [nodeType, entry] of Object.entries(exportsByType)) {
@@ -161,7 +168,11 @@ reporter.reportStepProgress('Load Comlink', 0);
                 entityRegistry.register(nodeType, handler);
               }
             } catch (error) {
-              console.warn('[worker bootstrap] entity handler registration failed:', nodeType, error);
+              console.warn(
+                '[worker bootstrap] entity handler registration failed:',
+                nodeType,
+                error
+              );
             }
           }
         }
@@ -169,7 +180,7 @@ reporter.reportStepProgress('Load Comlink', 0);
 
       const { WorkerService } = runtimeModule;
       const services = await WorkerService.getSingleton(
-        enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions,
+        enrichedDefinitions.length > 0 ? enrichedDefinitions : pluginDefinitions
       );
       reporter.reportStepProgress('Bootstrap services', 100);
 

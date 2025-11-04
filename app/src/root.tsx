@@ -42,14 +42,16 @@ export function HydrateFallback() {
           animation: 'hdb-spin 0.8s linear infinite',
         }}
       />
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes hdb-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
       `,
-      }} />
+        }}
+      />
     </div>
   );
 }

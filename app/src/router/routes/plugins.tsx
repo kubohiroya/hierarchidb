@@ -1,5 +1,23 @@
-import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+// import { WorkerAPIClient } from '../WorkerAPIClient.ts';
+// import type { Remote } from 'comlink';
+// import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeType } from '@hierarchidb/feature-core/common-types';
+// UIPluginRegistry is legacy; this page now reads vite-generated metadata
+// import { getUIPluginRegistry } from '@hierarchidb/ui-shell/ui-core';
+import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
+import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
+import {
+  AccountTree as AccountTreeIcon,
+  CheckCircle as CheckCircleIcon,
+  Delete as DeleteIcon,
+  Extension as ExtensionIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  Link as LinkIcon,
+  MoreVert as MoreVertIcon,
+  Refresh as RefreshIcon,
+  Warning as WarningIcon,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -34,29 +52,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  AccountTree as AccountTreeIcon,
-  CheckCircle as CheckCircleIcon,
-  Delete as DeleteIcon,
-  Extension as ExtensionIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  Link as LinkIcon,
-  MoreVert as MoreVertIcon,
-  Refresh as RefreshIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
-// import { WorkerAPIClient } from '../WorkerAPIClient.ts';
-// import type { Remote } from 'comlink';
-// import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeType } from '@hierarchidb/feature-core/common-types';
-// UIPluginRegistry is legacy; this page now reads vite-generated metadata
-// import { getUIPluginRegistry } from '@hierarchidb/ui-shell/ui-core';
-import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
 import { useNavigate } from '@tanstack/react-router';
-import { getInstalledPlugins } from '~/services/plugin-registry.js';
-import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getInstalledPlugins } from '~/services/plugin-registry.js';
 
 // Meta function for React Router v7
 export function meta() {
@@ -130,7 +130,7 @@ function EnhancedPluginRow({
   const iconNode = getMuiIconComponent(
     plugin.icon.muiIconName,
     plugin.icon.emoji,
-    plugin.iconColor,
+    plugin.iconColor
   );
   const description = t(`plugins.${plugin.nodeType}.description`, {
     defaultValue: plugin.description || plugin.displayName,
@@ -307,9 +307,10 @@ function EnhancedPluginRow({
                   <Box>
                     <Alert severity="info" icon={<AccountTreeIcon />}>
                       <Typography variant="body2">
-                        <strong>{t('plugins.corePlugin', 'Core Plugin')}:</strong> {t(
+                        <strong>{t('plugins.corePlugin', 'Core Plugin')}:</strong>{' '}
+                        {t(
                           'plugins.corePluginMessage',
-                          'This plugin cannot be deleted as it provides the foundation for all other plugins.',
+                          'This plugin cannot be deleted as it provides the foundation for all other plugins.'
                         )}
                       </Typography>
                     </Alert>
@@ -326,14 +327,14 @@ function EnhancedPluginRow({
 
 // Reset Plugin Confirmation Dialog
 function ResetPluginDialog({
-                             open,
-                             pluginName,
-                             affectedPlugins,
-                             isProduction,
-                             onConfirm,
-                             onCancel,
-                             loading = false,
-                           }: ResetPluginDialogProps) {
+  open,
+  pluginName,
+  affectedPlugins,
+  isProduction,
+  onConfirm,
+  onCancel,
+  loading = false,
+}: ResetPluginDialogProps) {
   const isFolderPlugin = pluginName === 'folder';
 
   return (
@@ -430,13 +431,13 @@ function ResetPluginDialog({
 
 // Delete Plugin Confirmation Dialog
 function DeletePluginDialog({
-                              open,
-                              pluginName,
-                              affectedPlugins,
-                              onConfirm,
-                              onCancel,
-                              loading = false,
-                            }: DeletePluginDialogProps) {
+  open,
+  pluginName,
+  affectedPlugins,
+  onConfirm,
+  onCancel,
+  loading = false,
+}: DeletePluginDialogProps) {
   const [clearDatabase, setClearDatabase] = useState(true);
 
   return (
@@ -704,7 +705,7 @@ export default function PluginsPage() {
     return (
       <FullScreenDialog
         open={true}
-        onClose={() => navigate({to:'/'})}
+        onClose={() => navigate({ to: '/' })}
         title="Plugin Registry"
         subtitle="View and manage all registered plugins"
         icon={<ExtensionIcon />}
@@ -720,7 +721,7 @@ export default function PluginsPage() {
     return (
       <FullScreenDialog
         open={true}
-        onClose={() => navigate({to:'/'})}
+        onClose={() => navigate({ to: '/' })}
         title="Plugin Registry"
         subtitle="View and manage all registered plugins"
         icon={<ExtensionIcon />}
@@ -733,7 +734,7 @@ export default function PluginsPage() {
   return (
     <FullScreenDialog
       open={true}
-      onClose={() => navigate({to:'/'})}
+      onClose={() => navigate({ to: '/' })}
       title="Plugin Registry"
       subtitle="View and manage all registered plugins in the HierarchiDB system"
       icon={<ExtensionIcon />}
@@ -867,9 +868,11 @@ export default function PluginsPage() {
                     <TableCell>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                          {getMuiIconComponent(plugin.icon.muiIconName, plugin.icon.emoji, plugin.iconColor) ?? (
-                            <ExtensionIcon fontSize="small" color="primary" />
-                          )}
+                          {getMuiIconComponent(
+                            plugin.icon.muiIconName,
+                            plugin.icon.emoji,
+                            plugin.iconColor
+                          ) ?? <ExtensionIcon fontSize="small" color="primary" />}
                         </Box>
                         <Typography variant="body1" fontWeight="medium">
                           {plugin.nodeType}
@@ -879,7 +882,9 @@ export default function PluginsPage() {
                     <TableCell>
                       <Stack direction="row" spacing={1}>
                         {plugin.hasUI && <Chip label="UI" size="small" variant="outlined" />}
-                        {plugin.hasWorker && <Chip label="Worker" size="small" variant="outlined" />}
+                        {plugin.hasWorker && (
+                          <Chip label="Worker" size="small" variant="outlined" />
+                        )}
                       </Stack>
                     </TableCell>
                     <TableCell align="center">{plugin.createOrder || 'N/A'}</TableCell>

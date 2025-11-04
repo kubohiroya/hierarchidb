@@ -1,5 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import { DualKeyMap } from '@hierarchidb/util';
+import type { DualKeyMap } from '@hierarchidb/util';
 
 type TreeNodeLike = {
   id?: string | number;
@@ -21,10 +21,7 @@ function getNodeId(node: TreeNodeLike | null | undefined): NodeId | null {
   return id === EMPTY_NODE_ID ? null : id;
 }
 
-function removeSubtree(
-  index: DualKeyMap<NodeId, NodeId, TreeNode>,
-  nodeId: NodeId,
-): void {
+function removeSubtree(index: DualKeyMap<NodeId, NodeId, TreeNode>, nodeId: NodeId): void {
   const childIds = index.getPrimaryKeysBySecondary(nodeId);
   for (const childId of childIds) {
     removeSubtree(index, childId as NodeId);
@@ -34,7 +31,7 @@ function removeSubtree(
 
 export function removeNodeAndDescendants(
   index: DualKeyMap<NodeId, NodeId, TreeNode>,
-  nodeId: NodeId,
+  nodeId: NodeId
 ): void {
   removeSubtree(index, nodeId);
 }
@@ -42,7 +39,7 @@ export function removeNodeAndDescendants(
 export function syncNodeIndex(
   index: DualKeyMap<NodeId, NodeId, TreeNode>,
   parentId: NodeId,
-  children: readonly TreeNodeLike[],
+  children: readonly TreeNodeLike[]
 ): void {
   const parentKey = toNodeId(parentId);
   const nextIds = new Set<NodeId>();
@@ -67,10 +64,10 @@ export function syncNodeIndex(
 export function buildVisibleRows(
   rootId: NodeId,
   index: DualKeyMap<NodeId, NodeId, TreeNode>,
-  expandedIds: readonly (NodeId | string | number | undefined)[],
+  expandedIds: readonly (NodeId | string | number | undefined)[]
 ): TreeNode[] {
   const expanded = new Set<NodeId>(
-    (expandedIds ?? []).map((id) => toNodeId(id)).filter((id) => id !== EMPTY_NODE_ID),
+    (expandedIds ?? []).map((id) => toNodeId(id)).filter((id) => id !== EMPTY_NODE_ID)
   );
 
   const result: TreeNode[] = [];

@@ -1,6 +1,6 @@
 /**
  * Tree NodeType Route for TanStack Router
- * 
+ *
  * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` path
  * and loads the node type data with NotFound handling.
  * Corresponds to React Router routes:
@@ -8,11 +8,18 @@
  * - `t.($treeId).($pageNodeId).($targetNodeId).($nodeType)._layout.tsx`
  */
 
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import { createRoute, Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
-import { treeTargetRoute } from './targetRoute.js';
 import { loadNodeType } from '../../loaders/treeLoaders.js';
+import { treeTargetRoute } from './targetRoute.js';
 
 export const treeNodeTypeRoute = createRoute({
   getParentRoute: () => treeTargetRoute,

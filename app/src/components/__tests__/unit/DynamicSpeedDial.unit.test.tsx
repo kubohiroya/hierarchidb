@@ -1,10 +1,10 @@
-import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import { fireEvent, render, screen } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DynamicSpeedDial } from '../../DynamicSpeedDial.js';
 import type { PluginMenuItem } from '../../hooks/usePluginMenuItems.ts';
-import "@testing-library/jest-dom";
+import '@testing-library/jest-dom';
 
 const iconModule = vi.hoisted(() => ({
   getMuiIconWithColor: vi.fn(() => <div data-testid="speed-dial-icon" />),
@@ -57,12 +57,7 @@ describe('DynamicSpeedDial', () => {
   });
 
   it('renders SpeedDial actions with manifest-provided icon metadata', () => {
-    render(
-      <DynamicSpeedDial
-        treeId={'r' as TreeId}
-        onCreateAction={vi.fn()}
-      />,
-    );
+    render(<DynamicSpeedDial treeId={'r' as TreeId} onCreateAction={vi.fn()} />);
 
     const fab = document.body.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
     expect(fab).not.toBeNull();

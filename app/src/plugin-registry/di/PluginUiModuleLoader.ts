@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
-import { UIPluginRegistryTokens } from './tokens.js';
 import type { PluginUiModuleLoader as PluginUiModuleLoaderContract } from './interfaces.js';
+import { UIPluginRegistryTokens } from './tokens.js';
 
 type PluginUiModuleMap = Record<string, string>;
 type PluginUiLoaderMap = Record<string, () => Promise<unknown>>;
@@ -13,14 +13,14 @@ export class PluginUiModuleLoader implements PluginUiModuleLoaderContract {
     @inject(UIPluginRegistryTokens.PluginUiModuleMap)
     private readonly specMap: PluginUiModuleMap,
     @inject(UIPluginRegistryTokens.PluginUiLoaders)
-    private readonly loaderMap: PluginUiLoaderMap,
+    private readonly loaderMap: PluginUiLoaderMap
   ) {}
 
   has(nodeType: string): boolean {
-    if (this.loaderMap && Object.prototype.hasOwnProperty.call(this.loaderMap, nodeType)) {
+    if (this.loaderMap && Object.hasOwn(this.loaderMap, nodeType)) {
       return true;
     }
-    return Object.prototype.hasOwnProperty.call(this.specMap, nodeType);
+    return Object.hasOwn(this.specMap, nodeType);
   }
 
   listNodeTypes(): string[] {
@@ -40,9 +40,7 @@ export class PluginUiModuleLoader implements PluginUiModuleLoaderContract {
       } else {
         const spec = this.specMap[nodeType];
         if (!spec) {
-          return Promise.reject(
-            new Error(`[PluginUiModuleLoader] Unknown UI plugin: ${nodeType}`),
-          );
+          return Promise.reject(new Error(`[PluginUiModuleLoader] Unknown UI plugin: ${nodeType}`));
         }
         promise = import(/* @vite-ignore */ spec);
       }

@@ -1,5 +1,6 @@
-import type { MouseEvent, ReactNode } from 'react';
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import type { Tree } from '@hierarchidb/feature-core/common-types';
+import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
+import { Folder as FolderIcon, AccountTree as TreeIcon } from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -16,14 +17,13 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { ThemeProvider, createTheme, useTheme } from '@mui/material/styles';
-import { AccountTree as TreeIcon, Folder as FolderIcon } from '@mui/icons-material';
-import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
+import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
+import { Outlet, useLoaderData, useNavigate } from '@tanstack/react-router';
+import type { MouseEvent, ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
 import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { Tree } from '@hierarchidb/feature-core/common-types';
-import AppLogoIcon from '~/components/AppLogoIcon.js';
-import { Outlet, useNavigate, useLoaderData } from '@tanstack/react-router';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
@@ -49,9 +49,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
   const bootProgress = useOptionalBootProgress();
   const isUserMenuReady = Boolean(
-    bootProgress?.steps.Auth.done &&
-    bootProgress?.steps.Theme.done &&
-    bootProgress?.steps.I18n.done,
+    bootProgress?.steps.Auth.done && bootProgress?.steps.Theme.done && bootProgress?.steps.I18n.done
   );
 
   const nodeNotFound = data.pageNode === undefined && data.tree !== undefined;
@@ -83,7 +81,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const handleTreeChange = (_event: MouseEvent<HTMLElement>, newTreeId: string | null) => {
     if (newTreeId && newTreeId !== selectedTreeId) {
       setSelectedTreeId(newTreeId);
-      navigate({to:`/t/${newTreeId}`});
+      navigate({ to: `/t/${newTreeId}` });
     }
   };
 
@@ -95,7 +93,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
         <AppBar position="static" color="default" elevation={1}>
           <Toolbar>
             <IconButton
-              onClick={() => navigate({to:'/'})}
+              onClick={() => navigate({ to: '/' })}
               edge="start"
               color="primary"
               aria-label="Go to HierarchiDB home"
@@ -171,20 +169,40 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
 
         <Box sx={{ flex: 1, overflow: 'hidden' }}>
           {nodeNotFound ? (
-            <Dialog open={notFoundOpen} onClose={() => navigate({to:`/t/${data.tree?.id ?? 'r'}`})}>
+            <Dialog
+              open={notFoundOpen}
+              onClose={() => navigate({ to: `/t/${data.tree?.id ?? 'r'}` })}
+            >
               <DialogTitle>Node Not Found</DialogTitle>
               <DialogContent>
                 <Typography>Node Not Found: ({data.pageNodeId ?? 'Unknown'})</Typography>
               </DialogContent>
               <DialogActions>
                 {/* Use router navigation to avoid coupling with e2e-only Playwright helpers */}
-                <Button onClick={() => navigate({to:`/t/${data.tree?.id ?? 'r'}`, replace: true})} variant="contained" autoFocus>
+                <Button
+                  onClick={() => navigate({ to: `/t/${data.tree?.id ?? 'r'}`, replace: true })}
+                  variant="contained"
+                  autoFocus
+                >
                   Go to Tree Root
                 </Button>
               </DialogActions>
             </Dialog>
           ) : (
-            <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}><CircularProgress /></Box>}>
+            <Suspense
+              fallback={
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              }
+            >
               <LazyTreeConsoleIntegration
                 key={`${data.tree?.id ?? ''}:${data.pageNodeId ?? ''}`}
                 treeId={data.tree?.id}
@@ -201,13 +219,7 @@ export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   );
 }
 
-function TreeConsoleThemeBoundary({
-                                    treeId,
-                                    children,
-                                  }: {
-  treeId?: string;
-  children: ReactNode;
-}) {
+function TreeConsoleThemeBoundary({ treeId, children }: { treeId?: string; children: ReactNode }) {
   const baseTheme = useTheme();
 
   const themed = useMemo(() => {

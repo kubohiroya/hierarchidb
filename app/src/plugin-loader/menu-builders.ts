@@ -4,8 +4,8 @@
  */
 
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
-import { getPresentation, prefetchAllIcons } from '../services/plugin-presentation.ts';
 import { getMenuSpec, type MenuGroup } from '../plugin-loader/menu-spec.ts';
+import { getPresentation, prefetchAllIcons } from '../services/plugin-presentation.ts';
 import { getInstalledPlugins, type InstalledPlugin } from '../services/plugin-registry.ts';
 
 export type TreeContext = 'resources' | 'projects';
@@ -25,11 +25,7 @@ export interface PluginMenuItem {
   backgroundColor: string;
 }
 
-function createMenuItem(
-  plugin: InstalledPlugin,
-  group: string,
-  priority: number,
-): PluginMenuItem {
+function createMenuItem(plugin: InstalledPlugin, group: string, priority: number): PluginMenuItem {
   const presentation = getPresentation(plugin.nodeType);
   return {
     key: plugin.nodeType,
@@ -86,7 +82,7 @@ export function buildMenuItemsForContext(treeContext: TreeContext): PluginMenuIt
   remaining.forEach((plugin, idx) => {
     const fallbackGroup = spec.groups.length > 0 ? spec.groups[spec.groups.length - 1] : 'core';
     const group = (spec.groupOf[plugin.nodeType] ?? plugin.menuGroup ?? fallbackGroup) as string;
-    const groupIndex = Math.max(spec.groups.indexOf(group as typeof spec.groups[number]), 0);
+    const groupIndex = Math.max(spec.groups.indexOf(group as (typeof spec.groups)[number]), 0);
     const priority = groupIndex * 100 + baseOffset + idx;
     items.push(createMenuItem(plugin, group, priority));
   });

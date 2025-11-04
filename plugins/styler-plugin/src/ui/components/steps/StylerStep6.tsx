@@ -9,19 +9,22 @@
 import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Alert, AlertTitle, Box } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
-import type { StylerConfig } from '../../../common/types/stylerTypes.js';
+import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
+import type { StylerStep5Data } from './StylerStep5.js';
 import { StylerTablePreview } from './StylerTablePreview.js';
 
 /**
  * : Step6
  */
+export interface StylerStep6Data extends StylerStep5Data {}
+
 export interface StylerStep6Props {
-  data: any;
-  onChange: (data: any) => void;
+  data: StylerStep6Data;
+  onChange: (data: StylerStep6Data) => void;
   onValidate?: (isValid: boolean) => void;
   //  CSV
-  csvData?: Array<Record<string, any>>;
+  csvData?: StylerTableRow[];
   columns?: string[];
 }
 
@@ -50,7 +53,7 @@ export const StylerStep6: React.FC<StylerStep6Props> = ({
   //  :
   const handleColumnSelect = useCallback(
     (columnName: string, type: 'key' | 'value') => {
-      const updatedData = {
+      const updatedData: StylerStep6Data = {
         ...data,
         [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: columnName,
       };
@@ -136,7 +139,7 @@ export const StylerStep6Definition = {
   title: 'Preview with Style Mapping',
   component: StylerStep6Component,
   validation: {
-    validate: async (_data: any) => {
+    validate: async (_data: StylerStep6Data) => {
       //  OK
       return { isValid: true, errors: [] };
     },

@@ -21,8 +21,9 @@ export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
     // UI-specific properties can be added here
     children: undefined, // Will be populated when expanded
     removedAt: (() => {
-      const source = (node as { removedAt?: number | string; deletedAt?: number | string }).removedAt
-        ?? (node as { deletedAt?: number | string }).deletedAt;
+      const source =
+        (node as { removedAt?: number | string; deletedAt?: number | string }).removedAt ??
+        (node as { deletedAt?: number | string }).deletedAt;
       if (source == null) return undefined;
       const numeric = typeof source === 'number' ? source : Number(source);
       return Number.isFinite(numeric) ? numeric : undefined;
@@ -33,9 +34,7 @@ export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
 /**
  * Convert array of TreeNodes to TreeNodeData array
  */
-export function convertTreeNodesToTreeNodeData(
-  nodes: TreeNode[],
-): TreeNodeData[] {
+export function convertTreeNodesToTreeNodeData(nodes: TreeNode[]): TreeNodeData[] {
   return nodes.map(convertTreeNodeToTreeNodeData);
 }
 
@@ -107,14 +106,16 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.createdAt', 'Created'),
       sortable: true,
       width: 180,
-      render: (_value: unknown, node: TreeNodeData) => formatTimestamp(node.createdAt as number | string | null),
+      render: (_value: unknown, node: TreeNodeData) =>
+        formatTimestamp(node.createdAt as number | string | null),
     },
     {
       id: 'updatedAt',
       label: t('trash.columns.updatedAt', 'Modified'),
       sortable: true,
       width: 180,
-      render: (_value: unknown, node: TreeNodeData) => formatTimestamp(node.updatedAt as number | string | null),
+      render: (_value: unknown, node: TreeNodeData) =>
+        formatTimestamp(node.updatedAt as number | string | null),
     },
   ];
 
@@ -124,7 +125,10 @@ export function createDefaultColumns(options?: ColumnOptions): TreeTableColumn[]
       label: t('trash.columns.removedAt', 'Removed'),
       sortable: true,
       width: 200,
-      render: (_value: unknown, node: TreeNodeData & { removedAt?: number | string; deletedAt?: number | string }) => {
+      render: (
+        _value: unknown,
+        node: TreeNodeData & { removedAt?: number | string; deletedAt?: number | string }
+      ) => {
         return formatTimestamp(node.removedAt ?? node.deletedAt ?? null);
       },
     });
@@ -156,7 +160,7 @@ export function createBreadcrumbFromTreeNode(node: TreeNode): {
 export function filterTreeNodeData(
   nodes: TreeNodeData[],
   searchTerm: string,
-  caseSensitive = false,
+  caseSensitive = false
 ): TreeNodeData[] {
   if (!searchTerm.trim()) {
     return nodes;
@@ -176,7 +180,7 @@ export function filterTreeNodeData(
 export function sortTreeNodeData(
   nodes: TreeNodeData[],
   sortBy: string,
-  sortDirection: 'asc' | 'desc',
+  sortDirection: 'asc' | 'desc'
 ): TreeNodeData[] {
   return [...nodes].sort((a, b) => {
     let aValue: string | number;
@@ -200,12 +204,14 @@ export function sortTreeNodeData(
         bValue = b.updatedAt || 0;
         break;
       case 'removedAt': {
-        const aRemoved = (a as { removedAt?: number | string; deletedAt?: number | string }).removedAt
-          ?? (a as { deletedAt?: number | string }).deletedAt
-          ?? 0;
-        const bRemoved = (b as { removedAt?: number | string; deletedAt?: number | string }).removedAt
-          ?? (b as { deletedAt?: number | string }).deletedAt
-          ?? 0;
+        const aRemoved =
+          (a as { removedAt?: number | string; deletedAt?: number | string }).removedAt ??
+          (a as { deletedAt?: number | string }).deletedAt ??
+          0;
+        const bRemoved =
+          (b as { removedAt?: number | string; deletedAt?: number | string }).removedAt ??
+          (b as { deletedAt?: number | string }).deletedAt ??
+          0;
         aValue = typeof aRemoved === 'number' ? aRemoved : Number(aRemoved);
         bValue = typeof bRemoved === 'number' ? bRemoved : Number(bRemoved);
         break;

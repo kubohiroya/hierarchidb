@@ -5,11 +5,24 @@
  * to any descendant component while coordinating suspense for the worker
  * bootstrap flow so that consumers never observe a null client reference.
  */
-import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
-import type { Remote } from 'comlink';
+
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import { WorkerInitializationChannel, type WorkerClientRef } from '@hierarchidb/feature-core/runtime-client';
+import type {
+  WorkerClientRef,
+  WorkerInitializationChannel,
+} from '@hierarchidb/feature-core/runtime-client';
+import type { Remote } from 'comlink';
+import type { CSSProperties, ReactNode } from 'react';
+import {
+  createContext,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -25,12 +38,16 @@ function normalizeError(error: unknown): Error {
   }
   return new Error(String(error));
 }
-import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
-import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
-import { bootLog } from '../utils/bootLog.ts';
-import { useBootProgress } from './BootProgressProvider.js';
-import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from '../worker-runtime/workerApiClientLoader.js';
+
 import { ensureDialogStateAPI } from '../loader.js';
+import { bootLog } from '../utils/bootLog.ts';
+import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
+import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
+import {
+  getWorkerAPIClientModule,
+  loadWorkerAPIClientModule,
+} from '../worker-runtime/workerApiClientLoader.js';
+import { useBootProgress } from './BootProgressProvider.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -228,7 +245,13 @@ type WorkerClientGateProps = {
   children: ReactNode;
 };
 
-function WorkerClientGate({ status, renderOverlay, onRetry, proxy, children }: WorkerClientGateProps) {
+function WorkerClientGate({
+  status,
+  renderOverlay,
+  onRetry,
+  proxy,
+  children,
+}: WorkerClientGateProps) {
   const initPromiseRef = useRef<Promise<Remote<WorkerAPI>> | null>(null);
 
   useEffect(() => {
@@ -277,8 +300,14 @@ function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void })
         <div style={overlayHeadingStyle}>Worker initialization error</div>
         <div style={overlayBodyStyle}>{error.message || 'Unknown error'}</div>
         <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-          <button type="button" style={buttonStyle} onClick={onRetry}>Retry</button>
-          <button type="button" style={secondaryButtonStyle} onClick={() => window.location.reload()}>
+          <button type="button" style={buttonStyle} onClick={onRetry}>
+            Retry
+          </button>
+          <button
+            type="button"
+            style={secondaryButtonStyle}
+            onClick={() => window.location.reload()}
+          >
             Reload
           </button>
         </div>
@@ -315,7 +344,6 @@ export const WorkerProvider = ({
     });
   }, []);
 
-
   useEffect(() => {
     const unsubscribe = proxy.subscribeProgress((detail: WorkerInitializationProgress) => {
       setStatus((prev) => ({
@@ -329,7 +357,7 @@ export const WorkerProvider = ({
     return unsubscribe;
   }, [proxy, bootProgress]);
   useEffect(() => {
-    setStatus(prev => {
+    setStatus((prev) => {
       let next = prev;
       let changed = false;
 
@@ -386,7 +414,7 @@ export const WorkerProvider = ({
     } catch (error) {
       const normalized = normalizeError(error);
       console.error('[WorkerProvider] finalizeInitialized error', normalized);
-      setStatus(prev => ({ ...prev, error: normalized }));
+      setStatus((prev) => ({ ...prev, error: normalized }));
     }
   }, []);
 
@@ -412,7 +440,7 @@ export const WorkerProvider = ({
   const runInitialization = useCallback(async () => {
     bootLog('WorkerProvider initialize() start');
     latestProgressRef.current = 0;
-    setStatus(prev => ({
+    setStatus((prev) => ({
       ...prev,
       error: null,
       initProgress: 0,
@@ -432,7 +460,7 @@ export const WorkerProvider = ({
     try {
       const client = await proxy.ensureInitialized();
       await ensureDialogStateAPI(client);
-      setStatus(prev => ({
+      setStatus((prev) => ({
         ...prev,
         client,
         isInitialized: true,
@@ -443,7 +471,7 @@ export const WorkerProvider = ({
     } catch (error) {
       const normalized = normalizeError(error);
       console.error('[WorkerProvider] ensureInitialized failed', normalized);
-      setStatus(prev => ({ ...prev, error: normalized, isInitialized: false }));
+      setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
       bootProgress?.setStepProgress('Worker', latestProgressRef.current, normalized.message);
     }
   }, [bootProgress, markComplete, proxy]);
@@ -540,17 +568,20 @@ export const WorkerProvider = ({
     };
   }, [markComplete, runInitialization]);
 
-  const contextValue = useMemo<WorkerContextValue>(() => ({
-    client: status.client,
-    isInitialized: status.isInitialized,
-    isConnected: Boolean(status.client && status.isInitialized),
-    initProgress: status.initProgress,
-    initMessage: status.initMessage,
-    error: status.error,
-    initialize,
-    reset,
-    getAPI,
-  }), [status, getAPI, initialize, reset]);
+  const contextValue = useMemo<WorkerContextValue>(
+    () => ({
+      client: status.client,
+      isInitialized: status.isInitialized,
+      isConnected: Boolean(status.client && status.isInitialized),
+      initProgress: status.initProgress,
+      initMessage: status.initMessage,
+      error: status.error,
+      initialize,
+      reset,
+      getAPI,
+    }),
+    [status, getAPI, initialize, reset]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -573,7 +604,12 @@ export const WorkerProvider = ({
   return (
     <WorkerContext.Provider value={contextValue}>
       <Suspense fallback={suspenseFallback}>
-        <WorkerClientGate status={status} renderOverlay={renderOverlay} onRetry={retryInitialization} proxy={proxy}>
+        <WorkerClientGate
+          status={status}
+          renderOverlay={renderOverlay}
+          onRetry={retryInitialization}
+          proxy={proxy}
+        >
           {children}
         </WorkerClientGate>
       </Suspense>
@@ -585,7 +621,9 @@ export const useWorker = (): WorkerContextValue => {
   const context = useContext(WorkerContext);
   if (!context) {
     if (typeof console !== 'undefined') {
-      console.warn('[WorkerProvider] useWorker invoked outside provider; returning fallback context.');
+      console.warn(
+        '[WorkerProvider] useWorker invoked outside provider; returning fallback context.'
+      );
     }
     return fallbackWorkerContextValue;
   }

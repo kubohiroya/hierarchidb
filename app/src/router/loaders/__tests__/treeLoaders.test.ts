@@ -3,18 +3,31 @@
  * Testing the loader functions that will be used by TanStack Router
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { loadTree, loadPageNode, loadTargetNode, loadNodeType, loadNodeAction } from '../treeLoaders.js';
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type {
-  LoadTreeReturn,
+  NodeAction,
+  NodeId,
+  NodeType,
+  Tree,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/feature-core/common-types';
+import type { Remote } from 'comlink';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  LoadNodeActionReturn,
+  LoadNodeTypeReturn,
   LoadPageNodeReturn,
   LoadTargetNodeReturn,
-  LoadNodeTypeReturn,
-  LoadNodeActionReturn,
+  LoadTreeReturn,
 } from '~/loader.js';
-import type { Tree, TreeNode, TreeId, NodeId, NodeType, NodeAction } from '@hierarchidb/feature-core/common-types';
-import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import {
+  loadNodeAction,
+  loadNodeType,
+  loadPageNode,
+  loadTargetNode,
+  loadTree,
+} from '../treeLoaders.js';
 
 // Mock the loader module
 vi.mock('~/loader.js', () => ({

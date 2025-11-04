@@ -1,6 +1,6 @@
 /**
  * Map Loader for TanStack Router
- * 
+ *
  * Handles parsing and formatting of map position (zxy) parameters
  */
 
@@ -21,7 +21,7 @@ export const DEFAULT_VIEW_STATE: MapViewState = {
  * Parse zxy parameter from URL
  * Format: zxy=zoom,longitude,latitude
  * Example: zxy=3,135,40
- * 
+ *
  * @param zxy - The zxy parameter string from URL
  * @returns Parsed view state or null if invalid
  */
@@ -29,7 +29,7 @@ export function parseZxyParam(zxy: string | null): MapViewState | null {
   if (!zxy) return null;
 
   const parts = zxy.split(',');
-  
+
   // BUG FIX: Changed from "parts.length === 3" to "parts.length !== 3"
   // The original condition would return null when we have exactly 3 parts,
   // which is the expected format!
@@ -50,7 +50,7 @@ export function parseZxyParam(zxy: string | null): MapViewState | null {
 
 /**
  * Format view state to zxy parameter
- * 
+ *
  * @param viewState - The map view state to format
  * @returns Formatted zxy string
  */
@@ -65,7 +65,7 @@ export function formatZxyParam(viewState: MapViewState): string {
 
 /**
  * Map loader for TanStack Router
- * 
+ *
  * @param search - Search params from route
  * @returns Initial view state for the map
  */

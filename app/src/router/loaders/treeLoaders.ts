@@ -1,3 +1,4 @@
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type {
   NodeAction,
   NodeId,
@@ -6,31 +7,30 @@ import type {
   TreeNode,
 } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 // Re-export types from loader.ts for compatibility
 export type {
-  LoadWorkerAPIClientReturn,
-  LoadTreeArgs,
-  LoadTreeReturn,
+  LoadNodeActionArgs,
+  LoadNodeActionReturn,
+  LoadNodeTypeArgs,
+  LoadNodeTypeReturn,
   LoadPageNodeArgs,
   LoadPageNodeReturn,
   LoadTargetNodeArgs,
   LoadTargetNodeReturn,
-  LoadNodeTypeArgs,
-  LoadNodeTypeReturn,
-  LoadNodeActionArgs,
-  LoadNodeActionReturn,
+  LoadTreeArgs,
+  LoadTreeReturn,
+  LoadWorkerAPIClientReturn,
 } from '~/loader.js';
 
 // Import the actual loader functions from the existing loader.ts
 export {
-  loadWorkerAPIClient,
-  loadTree,
+  loadNodeAction,
+  loadNodeType,
   loadPageNode,
   loadTargetNode,
-  loadNodeType,
-  loadNodeAction,
+  loadTree,
+  loadWorkerAPIClient,
 } from '~/loader.js';
 
 /**

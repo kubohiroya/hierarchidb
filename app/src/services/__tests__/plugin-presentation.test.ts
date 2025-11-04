@@ -1,15 +1,13 @@
-import { describe, expect, beforeEach, afterEach, it, vi } from 'vitest';
 import type { NodeType } from '@hierarchidb/feature-core/common-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getPresentation, resetPluginPresentationCacheForTests } from '../plugin-presentation.js';
 import type { InstalledPlugin } from '../plugin-registry.js';
-import {
-  getPresentation,
-  resetPluginPresentationCacheForTests,
-} from '../plugin-presentation.js';
 
 let mockDefinitions: InstalledPlugin[] = [];
 
 vi.mock('../plugin-registry.js', async () => {
-  const actual = await vi.importActual<typeof import('../plugin-registry.js')>('../plugin-registry.js');
+  const actual =
+    await vi.importActual<typeof import('../plugin-registry.js')>('../plugin-registry.js');
   return {
     ...actual,
     getInstalledPlugins: () => mockDefinitions,

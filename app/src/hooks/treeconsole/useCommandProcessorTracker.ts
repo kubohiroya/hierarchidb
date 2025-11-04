@@ -5,11 +5,11 @@
  * exposed by the Worker command processor.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import { proxy, type Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { SubscriptionId, UndoStateEvent } from '@hierarchidb/feature-core/common-types';
+import { proxy, type Remote } from 'comlink';
+import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
 import type { MaybeCP, TreeConsoleState } from './types.js';
 
@@ -28,14 +28,18 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
       if (!cp) return;
       const canUndo = typeof cp.canUndo === 'function' ? Boolean(cp.canUndo()) : false;
       const canRedo = typeof cp.canRedo === 'function' ? Boolean(cp.canRedo()) : false;
-      setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+      setState((prev) =>
+        prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }
+      );
     } catch {
       // Swallow errors caused by optional command processor implementations.
     }
   }, [client, setState]);
 
   useEffect(() => {
-    const handler = () => { void refreshUndoRedo(); };
+    const handler = () => {
+      void refreshUndoRedo();
+    };
     window.addEventListener('hdb-cmd', handler as EventListener);
     return () => window.removeEventListener('hdb-cmd', handler as EventListener);
   }, [refreshUndoRedo]);
@@ -55,7 +59,11 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
           if (!isActive) return;
           const { canUndo, canRedo } = event;
           subscriptionEstablishedRef.current = true;
-          setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+          setState((prev) =>
+            prev.canUndo === canUndo && prev.canRedo === canRedo
+              ? prev
+              : { ...prev, canUndo, canRedo }
+          );
           setSSOT({ canUndo, canRedo });
         });
 
@@ -72,7 +80,10 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
       if (subscriptionId && subscriptionAPI) {
         void subscriptionAPI.unsubscribe(subscriptionId).catch(() => {});
       } else if (subscriptionId) {
-        void client.getSubscriptionAPI().then((api) => api.unsubscribe(subscriptionId!)).catch(() => {});
+        void client
+          .getSubscriptionAPI()
+          .then((api) => api.unsubscribe(subscriptionId!))
+          .catch(() => {});
       }
     };
   }, [client, setSSOT, setState]);
@@ -90,7 +101,11 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
         const typed = cp as { canUndo?: () => boolean; canRedo?: () => boolean };
         const canUndo = typeof typed.canUndo === 'function' ? Boolean(typed.canUndo()) : false;
         const canRedo = typeof typed.canRedo === 'function' ? Boolean(typed.canRedo()) : false;
-        setState((prev) => (prev.canUndo === canUndo && prev.canRedo === canRedo ? prev : { ...prev, canUndo, canRedo }));
+        setState((prev) =>
+          prev.canUndo === canUndo && prev.canRedo === canRedo
+            ? prev
+            : { ...prev, canUndo, canRedo }
+        );
         setSSOT({ canUndo, canRedo });
       } catch {
         // Ignore polling errors to keep UI responsive.

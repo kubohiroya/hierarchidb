@@ -13,17 +13,16 @@
  * - Maintain browser history for navigation
  */
 
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
-import useGeolocation from 'react-hook-geolocation';
 import type { MapLibreMapInstance, MapViewState } from '@hierarchidb/ui-shell/ui-map';
 import { loadMapLibreMap } from '@hierarchidb/ui-shell/ui-map';
 import { Box } from '@mui/material';
+import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import useGeolocation from 'react-hook-geolocation';
 import {
-  DEFAULT_VIEW_STATE as LOADER_DEFAULT_VIEW_STATE,
   formatZxyParam,
-  parseZxyParam,
   type MapViewState as LoaderMapViewState,
+  parseZxyParam,
 } from '../loaders/mapLoader.js';
 
 type MapSearch = {
@@ -102,7 +101,7 @@ export default function MapPage() {
         }
       }, 500);
     },
-    [navigate],
+    [navigate]
   );
 
   // Handle URL parameter changes (e.g., browser back/forward)
@@ -163,14 +162,16 @@ export default function MapPage() {
         </Box>
 
         {/* Geolocation status */}
-        {geolocation.latitude === undefined && geolocation.longitude === undefined && !geolocation.error && (
-          <Box
-            component="p"
-            sx={{ margin: 0, marginTop: 1, fontSize: '0.75rem', color: 'primary.main' }}
-          >
-            📍 Getting your location...
-          </Box>
-        )}
+        {geolocation.latitude === undefined &&
+          geolocation.longitude === undefined &&
+          !geolocation.error && (
+            <Box
+              component="p"
+              sx={{ margin: 0, marginTop: 1, fontSize: '0.75rem', color: 'primary.main' }}
+            >
+              📍 Getting your location...
+            </Box>
+          )}
         {geolocation.error && (
           <Box
             component="p"
@@ -192,7 +193,15 @@ export default function MapPage() {
       {/* Map component */}
       <Suspense
         fallback={
-          <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             Loading map...
           </Box>
         }

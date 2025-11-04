@@ -5,4 +5,3 @@ export function normalizeNodeType(input: string | undefined | null): NodeType | 
   const s = String(input);
   return (s.endsWith('-plugin') ? s.slice(0, -7) : s) as NodeType;
 }
-

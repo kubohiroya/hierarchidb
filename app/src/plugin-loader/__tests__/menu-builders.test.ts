@@ -1,6 +1,10 @@
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
-import { describe, it, expect } from 'vitest';
-import { buildMenuItemsForContext, buildMenuItemsForTreeId, type PluginMenuItem } from '../menu-builders.js';
+import { describe, expect, it } from 'vitest';
+import {
+  buildMenuItemsForContext,
+  buildMenuItemsForTreeId,
+  type PluginMenuItem,
+} from '../menu-builders.js';
 import { getMenuSpec } from '../menu-spec.ts';
 
 describe('menu-builders', () => {
@@ -10,7 +14,9 @@ describe('menu-builders', () => {
     const p = buildMenuItemsForTreeId('p' as TreeId);
     expect(r.length).toBeGreaterThan(0);
     expect(t.length).toBeGreaterThan(0);
-    expect(p.map((i: PluginMenuItem) => i.nodeType)).toEqual(t.map((i: PluginMenuItem) => i.nodeType));
+    expect(p.map((i: PluginMenuItem) => i.nodeType)).toEqual(
+      t.map((i: PluginMenuItem) => i.nodeType)
+    );
   });
 
   it('builds resources (r) menu in specified order and groups', () => {

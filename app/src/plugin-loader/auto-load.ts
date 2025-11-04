@@ -1,6 +1,6 @@
 /**
-  * Auto-load HierarchiDB UI plugin-loader using virtual modules generated at build time.
-  *
+ * Auto-load HierarchiDB UI plugin-loader using virtual modules generated at build time.
+ *
  * This module is responsible for discovering and importing UI plugin entry points so
  * that components, menus, and registrations are initialized in the browser. The module
  * loader is provided by the plugin registry DI container at runtime; no pre-generated
@@ -8,10 +8,10 @@
  */
 
 import type { NodeType } from '@hierarchidb/feature-core/common-types';
-import { getPluginRegistryContainer } from '../plugin-registry/di/container.ts';
-import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.ts';
-import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.ts';
 import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
+import { getPluginRegistryContainer } from '../plugin-registry/di/container.ts';
+import type { PluginUiModuleLoader } from '../plugin-registry/di/interfaces.ts';
+import { UIPluginRegistryTokens } from '../plugin-registry/di/tokens.ts';
 
 type PluginDefinitionVM = {
   nodeType: string;

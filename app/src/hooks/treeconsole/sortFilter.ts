@@ -18,7 +18,7 @@ export interface SortFilterConfig {
 export function applySortFilterSearch(
   nodes: TreeNodeData[],
   config: SortFilterConfig,
-  overrideTerm?: string,
+  overrideTerm?: string
 ): TreeNodeData[] {
   const sortBy = config.sortBy || 'name';
   const sortDir = config.sortDirection || 'asc';
@@ -40,14 +40,20 @@ export function applySortFilterSearch(
     const key = sortBy || 'name';
     const va = (a as unknown as Record<string, unknown>)[key] ?? '';
     const vb = (b as unknown as Record<string, unknown>)[key] ?? '';
-    const cmp = String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' });
+    const cmp = String(va).localeCompare(String(vb), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
     return sortDir === 'asc' ? cmp : -cmp;
   });
 
   return arr;
 }
 
-export function deriveConfigFromState(state: TreeConsoleState, searchTerm: string): SortFilterConfig {
+export function deriveConfigFromState(
+  state: TreeConsoleState,
+  searchTerm: string
+): SortFilterConfig {
   return {
     sortBy: state.sortBy,
     sortDirection: state.sortDirection,

@@ -1,16 +1,18 @@
 /**
  * OAuth2/OIDC
  */
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+
 import { BFFAuthService } from '@hierarchidb/ui-shell/ui-auth';
-import { useNavigate, useLocation } from '@tanstack/react-router';
+import { Alert, Box, CircularProgress, Typography } from '@mui/material';
+import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function AuthCallbackRoute() {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = useMemo(() => {
-    const searchString = location?.searchStr ?? (typeof window !== 'undefined' ? window.location.search : '');
+    const searchString =
+      location?.searchStr ?? (typeof window !== 'undefined' ? window.location.search : '');
     return new URLSearchParams(searchString ?? '');
   }, [location?.searchStr]);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function AuthCallbackRoute() {
 
         const returnUrl = localStorage.getItem('auth_return_url') || '/';
         localStorage.removeItem('auth_return_url');
-        navigate({to: returnUrl, replace: true });
+        navigate({ to: returnUrl, replace: true });
       } catch (err) {
         console.error('Auth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
@@ -49,10 +51,7 @@ export default function AuthCallbackRoute() {
   useEffect(() => {
     if (window.opener) {
       const params = Object.fromEntries(searchParams.entries());
-      window.opener.postMessage(
-        { type: 'auth-callback', params },
-        window.location.origin,
-      );
+      window.opener.postMessage({ type: 'auth-callback', params }, window.location.origin);
       window.close();
     }
   }, [searchParams]);

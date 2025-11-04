@@ -1,5 +1,11 @@
-
-import React from 'react';
+import type {
+  NodeTagAssociation,
+  TagEntity,
+  TagId,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/feature-core/common-types';
+import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Box,
   Breadcrumbs,
@@ -15,11 +21,10 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
-import { useQuery } from '~/hooks/useQuery.js';
-import { useWorkerClient } from '~/contexts/WorkerProvider.js';
-import type { NodeTagAssociation, TagEntity, TreeId, TreeNode, TagId } from '@hierarchidb/feature-core/common-types';
 import { Link as RouterLink } from '@tanstack/react-router';
+import React from 'react';
+import { useWorkerClient } from '~/contexts/WorkerProvider.js';
+import { useQuery } from '~/hooks/useQuery.js';
 
 interface TaggedNode {
   node: TreeNode;

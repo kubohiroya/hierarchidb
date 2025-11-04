@@ -1,7 +1,9 @@
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { WorkerRuntimeState, WorkerInitializationProgress } from './WorkerStateStore.js';
-export type { WorkerRuntimeState, WorkerInitializationProgress } from './WorkerStateStore.js';
+import type { Remote } from 'comlink';
+import type { WorkerInitializationProgress, WorkerRuntimeState } from './WorkerStateStore.js';
+
+export type { WorkerInitializationProgress, WorkerRuntimeState } from './WorkerStateStore.js';
+
 import {
   ensureWorkerInitialized,
   getWorkerSnapshot,
@@ -20,7 +22,8 @@ export interface WorkerClientProxy {
 }
 
 export function createWorkerClientProxy(): WorkerClientProxy {
-  const ensureInitialized = (options?: { signal?: AbortSignal }) => ensureWorkerInitialized(options);
+  const ensureInitialized = (options?: { signal?: AbortSignal }) =>
+    ensureWorkerInitialized(options);
 
   const getCachedClient = () => getWorkerSnapshot().client;
   const getState = () => getWorkerSnapshot().state;

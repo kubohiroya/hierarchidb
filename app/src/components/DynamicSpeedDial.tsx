@@ -5,14 +5,14 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, SpeedDial, SpeedDialAction, SpeedDialIcon, Portal } from '@mui/material';
-import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
-import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
-import { usePluginMenuItems } from '../hooks/usePluginMenuItems.js';
-import type { TreeContext, PluginMenuItem } from '../plugin-loader/menu-builders.js';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
+import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
+import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePluginMenuItems } from '../hooks/usePluginMenuItems.js';
+import type { PluginMenuItem, TreeContext } from '../plugin-loader/menu-builders.js';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;
@@ -27,11 +27,11 @@ type DynamicSpeedDialWindow = Window & {
 };
 
 export function DynamicSpeedDial({
-                                   treeId,
-                                   onCreateAction,
-                                   position = { bottom: 16, right: 16 },
-                                   hidden = false,
-                                 }: DynamicSpeedDialProps) {
+  treeId,
+  onCreateAction,
+  position = { bottom: 16, right: 16 },
+  hidden = false,
+}: DynamicSpeedDialProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [debugHitbox, setDebugHitbox] = useState<boolean>(() => {
@@ -39,8 +39,11 @@ export function DynamicSpeedDial({
       // URL param sdHitbox=1 or debug=sd, or persisted flag
       const sp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const urlOn = sp?.get('sdHitbox') === '1' || sp?.get('debug') === 'sd';
-      const persisted = typeof localStorage !== 'undefined' ? localStorage.getItem('hdb.sd.hitbox') === '1' : false;
-      const globalOn = typeof window !== 'undefined' && (window as DynamicSpeedDialWindow).__HDB_SD_HITBOX__ === true;
+      const persisted =
+        typeof localStorage !== 'undefined' ? localStorage.getItem('hdb.sd.hitbox') === '1' : false;
+      const globalOn =
+        typeof window !== 'undefined' &&
+        (window as DynamicSpeedDialWindow).__HDB_SD_HITBOX__ === true;
       return urlOn || persisted || globalOn;
     } catch {
       return false;
@@ -69,7 +72,7 @@ export function DynamicSpeedDial({
       }
       return translated;
     },
-    [t],
+    [t]
   );
 
   const handleClose = () => setOpen(false);
@@ -133,7 +136,7 @@ export function DynamicSpeedDial({
       const rectRoot = root.getBoundingClientRect();
       const rectFab = fab?.getBoundingClientRect();
       const rectActs = actions.map((a) => a.getBoundingClientRect());
-      let topAtFab: string | undefined ;
+      let topAtFab: string | undefined;
       if (rectFab) {
         const cx = rectFab.left + rectFab.width / 2;
         const cy = rectFab.top + rectFab.height / 2;
@@ -238,48 +241,53 @@ export function DynamicSpeedDial({
         >
           {useVM
             ? vmItems.map((item: PluginMenuItem) => {
-              const localizedLabel = translateWithFallback(
-                `plugins.${item.nodeType}.name`,
-                item.label,
-              );
-              const localizedDescription = translateWithFallback(
-                `plugins.${item.nodeType}.description`,
-                (item.description ?? '').trim(),
-              ).trim();
-              const tooltipLabel = localizedDescription.length > 0
-                ? `${localizedLabel} : ${localizedDescription}`
-                : localizedLabel;
+                const localizedLabel = translateWithFallback(
+                  `plugins.${item.nodeType}.name`,
+                  item.label
+                );
+                const localizedDescription = translateWithFallback(
+                  `plugins.${item.nodeType}.description`,
+                  (item.description ?? '').trim()
+                ).trim();
+                const tooltipLabel =
+                  localizedDescription.length > 0
+                    ? `${localizedLabel} : ${localizedDescription}`
+                    : localizedLabel;
 
-              return (
-                <SpeedDialAction
-                  key={`${item.key}-${language}`}
-                  icon={getMuiIconComponent(item.icon?.muiIconName, item.icon?.emoji, item.icon?.color)}
-                  tooltipTitle={tooltipLabel}
-                  onClick={() => handleVMActionClick(item.nodeType)}
-                  sx={{
-                    '& .MuiTooltip-tooltip': {
-                      maxWidth: 300,
-                      fontSize: '0.875rem',
-                    },
-                  }}
-                  FabProps={{
-                    size: 'medium',
-                    color: 'default',
-                    sx: {
-                    pointerEvents: 'auto',
-                    touchAction: 'manipulation',
-                    transform: 'translate3d(0,0,0)',
-                    bgcolor: item.backgroundColor,
-                    '&:hover': {
-                      bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
-                    },
-                  },
-                }}
-                  tooltipPlacement="left"
-                  data-testid={`create-${item.nodeType}-action`}
-                />
-              );
-            })
+                return (
+                  <SpeedDialAction
+                    key={`${item.key}-${language}`}
+                    icon={getMuiIconComponent(
+                      item.icon?.muiIconName,
+                      item.icon?.emoji,
+                      item.icon?.color
+                    )}
+                    tooltipTitle={tooltipLabel}
+                    onClick={() => handleVMActionClick(item.nodeType)}
+                    sx={{
+                      '& .MuiTooltip-tooltip': {
+                        maxWidth: 300,
+                        fontSize: '0.875rem',
+                      },
+                    }}
+                    FabProps={{
+                      size: 'medium',
+                      color: 'default',
+                      sx: {
+                        pointerEvents: 'auto',
+                        touchAction: 'manipulation',
+                        transform: 'translate3d(0,0,0)',
+                        bgcolor: item.backgroundColor,
+                        '&:hover': {
+                          bgcolor: item.icon?.color ? `${item.icon.color}33` : item.backgroundColor,
+                        },
+                      },
+                    }}
+                    tooltipPlacement="left"
+                    data-testid={`create-${item.nodeType}-action`}
+                  />
+                );
+              })
             : null}
         </SpeedDial>
 
@@ -305,7 +313,7 @@ export function DynamicSpeedDial({
               <Box
                 sx={{
                   position: 'fixed',
-                  left: (hitboxes.fab?.left ?? hitboxes.container!.left),
+                  left: hitboxes.fab?.left ?? hitboxes.container!.left,
                   top: (hitboxes.fab?.top ?? hitboxes.container!.top) - 22,
                   px: 1,
                   py: 0.25,
@@ -321,16 +329,17 @@ export function DynamicSpeedDial({
             )}
             {/* Action boxes outline rendered via CSS; extra fixed rectangles to visualize area explicitly */}
             {hitboxes.actions.map((r, idx) => (
-              <Box key={idx}
-                   sx={{
-                     position: 'fixed',
-                     left: r.left,
-                     top: r.top,
-                     width: r.width,
-                     height: r.height,
-                     border: '1px dotted rgba(255,165,0,0.9)',
-                     pointerEvents: 'none',
-                   }}
+              <Box
+                key={idx}
+                sx={{
+                  position: 'fixed',
+                  left: r.left,
+                  top: r.top,
+                  width: r.width,
+                  height: r.height,
+                  border: '1px dotted rgba(255,165,0,0.9)',
+                  pointerEvents: 'none',
+                }}
               />
             ))}
           </>

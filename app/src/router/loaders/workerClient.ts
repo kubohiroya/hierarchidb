@@ -1,8 +1,8 @@
 /**
  * workerClient.ts - Worker initialization service for TanStack Router
- * 
+ *
  * Phase 4: Worker initialization refactor
- * 
+ *
  * This module provides a unified interface for Worker initialization with:
  * - Automatic retry with configurable delays
  * - Timeout handling
@@ -10,9 +10,12 @@
  * - Integration with TanStack Router beforeLoad hooks
  */
 
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import { ensureWorkerInitialized, getWorkerSnapshot } from '../../worker-runtime/WorkerStateStore.js';
+import type { Remote } from 'comlink';
+import {
+  ensureWorkerInitialized,
+  getWorkerSnapshot,
+} from '../../worker-runtime/WorkerStateStore.js';
 
 /**
  * Configuration options for Worker initialization
@@ -60,20 +63,20 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Ensure Worker is started with retry and timeout support
- * 
+ *
  * This function is the primary entry point for TanStack Router loaders
  * to ensure the Worker is initialized before loading data.
- * 
+ *
  * Features:
  * - Automatic retry on failure with exponential backoff
  * - Global timeout to prevent indefinite waiting
  * - AbortSignal support for cancellation
  * - Returns cached client if already initialized
- * 
+ *
  * @param options Configuration options for initialization
  * @returns Promise that resolves to the Worker API client
  * @throws Error if initialization fails after all retries or timeout
- * 
+ *
  * @example
  * ```typescript
  * // In a TanStack Router beforeLoad hook
@@ -153,10 +156,7 @@ export async function ensureWorkerStarted(
       lastError = error instanceof Error ? error : new Error(String(error));
 
       // Don't retry on abort or timeout
-      if (
-        lastError.name === 'AbortError' ||
-        lastError.message.includes('timeout')
-      ) {
+      if (lastError.name === 'AbortError' || lastError.message.includes('timeout')) {
         throw lastError;
       }
 
@@ -168,7 +168,7 @@ export async function ensureWorkerStarted(
             `[workerClient] Attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`
           );
         }
-        if(delay){
+        if (delay) {
           await sleep(delay);
         }
       }
@@ -185,15 +185,15 @@ export async function ensureWorkerStarted(
 
 /**
  * Get the cached Worker client if available
- * 
+ *
  * This is a synchronous function that returns the client immediately
  * if it's already initialized, or null otherwise.
- * 
+ *
  * Use this when you want to check if the Worker is ready without
  * triggering initialization.
- * 
+ *
  * @returns The Worker API client or null if not initialized
- * 
+ *
  * @example
  * ```typescript
  * const client = getWorkerClient();
@@ -211,7 +211,7 @@ export function getWorkerClient(): Remote<WorkerAPI> | null {
 
 /**
  * Check if Worker is ready
- * 
+ *
  * @returns true if Worker is initialized and ready
  */
 export function isWorkerReady(): boolean {

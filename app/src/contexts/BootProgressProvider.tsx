@@ -1,5 +1,13 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Box, LinearProgress, Typography } from '@mui/material';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
@@ -41,10 +49,12 @@ export const useOptionalBootProgress = (): BootProgressContextValue | null => {
   return useContext(BootProgressContext);
 };
 
-export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
-  = ({ children }) => {
+export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [steps, setSteps] = useState<Record<StepName, BootStep>>(() => {
-    const base = Object.fromEntries(defaultSteps.map(s => [s.name, { ...s }])) as Record<StepName, BootStep>;
+    const base = Object.fromEntries(defaultSteps.map((s) => [s.name, { ...s }])) as Record<
+      StepName,
+      BootStep
+    >;
     // Persisted flags to survive remounts during dev/hydration
     const bootWindow = typeof window !== 'undefined' ? (window as BootWindow) : undefined;
     if (bootWindow?.__HDB_INIT_COMPLETE__) {
@@ -58,7 +68,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
   const workerForcedRef = useRef(false);
 
   const setStepProgress = useCallback((name: StepName, progress: number, message?: string) => {
-    setSteps(prev => {
+    setSteps((prev) => {
       const cur = prev[name];
       if (!cur) return prev;
       // If already done, ignore further updates to avoid churn from multiple sources
@@ -72,19 +82,22 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
       }
       const next = { ...prev } as typeof prev;
       next[name] = { ...cur, progress: clamped, done: nextDone, message: nextMsg };
-      
+
       return next;
     });
   }, []);
 
-  const markStepDone = useCallback((name: StepName, message?: string) => {
-    // If already done, avoid redundant updates
-    if (steps[name]?.done) return;
-    
-    setStepProgress(name, 100, message);
-  }, [steps, setStepProgress]);
+  const markStepDone = useCallback(
+    (name: StepName, message?: string) => {
+      // If already done, avoid redundant updates
+      if (steps[name]?.done) return;
 
-  const isStepDone = useMemo(()=>(name: StepName) => steps[name]?.done === true, [steps]);
+      setStepProgress(name, 100, message);
+    },
+    [steps, setStepProgress]
+  );
+
+  const isStepDone = useMemo(() => (name: StepName) => steps[name]?.done === true, [steps]);
 
   const overallProgress = useMemo(() => {
     const list = Object.values(steps);
@@ -93,12 +106,11 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
     return Math.round((acc / totalWeight) * 100);
   }, [steps]);
 
-  const isAllDone = overallProgress >= 100 && Object.values(steps).every(s => s.done);
+  const isAllDone = overallProgress >= 100 && Object.values(steps).every((s) => s.done);
   const overallLoggedRef = useRef(false);
   useEffect(() => {
     if (overallProgress === 100 && !overallLoggedRef.current) {
       overallLoggedRef.current = true;
-      
     }
     if (overallProgress < 100 && overallLoggedRef.current) {
       // reset if progress regresses (dev hot updates)
@@ -106,25 +118,33 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
     }
   }, [overallProgress]);
 
-  const value: BootProgressContextValue = useMemo(() => ({
-    steps,
-    setStepProgress,
-    markStepDone,
-    isStepDone,
-    overallProgress,
-    isAllDone,
-  }), [steps, setStepProgress, markStepDone, isStepDone, overallProgress, isAllDone]);
+  const value: BootProgressContextValue = useMemo(
+    () => ({
+      steps,
+      setStepProgress,
+      markStepDone,
+      isStepDone,
+      overallProgress,
+      isAllDone,
+    }),
+    [steps, setStepProgress, markStepDone, isStepDone, overallProgress, isAllDone]
+  );
 
   // Global worker-done fail-safe: if INIT_COMPLETE is already set globally or event fires,
   // ensure Step Worker becomes done even if reporter timing races.
   useEffect(() => {
     const forceDone = () => {
       if (workerForcedRef.current) return;
-      setSteps(prev => {
+      setSteps((prev) => {
         if (prev.Worker?.done) return prev;
         const next = { ...prev } as typeof prev;
-        next.Worker = { ...prev.Worker, progress: 100, done: true, message: prev.Worker.message || 'Worker ready' };
-        
+        next.Worker = {
+          ...prev.Worker,
+          progress: 100,
+          done: true,
+          message: prev.Worker.message || 'Worker ready',
+        };
+
         return next;
       });
       workerForcedRef.current = true;
@@ -134,12 +154,14 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }>
     };
     maybeDone();
     const onEvt = () => {
-      
       forceDone();
     };
     window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
     const t = window.setInterval(maybeDone, 200);
-    return () => { window.removeEventListener('hierarchidb-worker-init-complete', onEvt); window.clearInterval(t); };
+    return () => {
+      window.removeEventListener('hierarchidb-worker-init-complete', onEvt);
+      window.clearInterval(t);
+    };
   }, []);
 
   return (
@@ -158,9 +180,7 @@ const BootOverlay: React.FC = () => {
   const lastLogRef = useRef<number>(-1);
   const lastMsgRef = useRef<string>('');
 
-  useEffect(() => {
-    
-  }, []);
+  useEffect(() => {}, []);
 
   useEffect(() => {
     // Hide overlay when either all steps are done, or at least Worker is done (temporary gating)
@@ -169,13 +189,15 @@ const BootOverlay: React.FC = () => {
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
       hideTimer.current = window.setTimeout(() => setVisible(false), 100);
     }
-    return () => { if (hideTimer.current) window.clearTimeout(hideTimer.current); };
+    return () => {
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    };
   }, [isAllDone, steps?.Worker?.done]);
 
   const currentMessage = (() => {
     // Show the first step that is not yet 100, else show last completed
     const list = Object.values(steps);
-    const firstPending = list.find(s => s.progress < 100);
+    const firstPending = list.find((s) => s.progress < 100);
     return firstPending?.message || firstPending?.name || 'Initializing...';
   })();
 
@@ -183,8 +205,12 @@ const BootOverlay: React.FC = () => {
   useEffect(() => {
     const p = overallProgress;
     const m = currentMessage || '';
-    if (p === 0 || p === 100 || Math.abs(p - (lastLogRef.current || 0)) >= 10 || m !== lastMsgRef.current) {
-      
+    if (
+      p === 0 ||
+      p === 100 ||
+      Math.abs(p - (lastLogRef.current || 0)) >= 10 ||
+      m !== lastMsgRef.current
+    ) {
       lastLogRef.current = p;
       lastMsgRef.current = m;
     }
@@ -210,11 +236,21 @@ const BootOverlay: React.FC = () => {
       }}
     >
       <Box sx={{ width: '100%', maxWidth: 480 }}>
-        <LinearProgress variant="determinate" value={overallProgress} sx={{ height: 10, borderRadius: 5 }} />
+        <LinearProgress
+          variant="determinate"
+          value={overallProgress}
+          sx={{ height: 10, borderRadius: 5 }}
+        />
         <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
           {overallProgress}% Complete
         </Typography>
-        <Typography variant="caption" color="text.secondary" align="center" display="block" sx={{ mt: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          align="center"
+          display="block"
+          sx={{ mt: 1 }}
+        >
           {currentMessage}
         </Typography>
       </Box>
@@ -223,15 +259,16 @@ const BootOverlay: React.FC = () => {
 };
 
 // StageGate renders children only when all dependsOn steps are done
-export const StageGate: React.FC<{ dependsOn: StepName[]; children: React.ReactNode }>
-  = ({ dependsOn, children }) => {
+export const StageGate: React.FC<{ dependsOn: StepName[]; children: React.ReactNode }> = ({
+  dependsOn,
+  children,
+}) => {
   const { isStepDone } = useBootProgress();
   const ok = dependsOn.every(isStepDone);
   const openedRef = React.useRef(false);
   React.useEffect(() => {
     if (ok && !openedRef.current) {
       openedRef.current = true;
-      
     }
   }, [ok, dependsOn]);
   return ok ? <>{children}</> : null;

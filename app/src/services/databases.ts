@@ -49,7 +49,11 @@ function scoreKey(key: string): number {
   return 10;
 }
 
-function resolvePrewarmHandle(value: unknown, depth: number, visited: WeakSet<object>): PrewarmHandle | null {
+function resolvePrewarmHandle(
+  value: unknown,
+  depth: number,
+  visited: WeakSet<object>
+): PrewarmHandle | null {
   if (depth > MAX_DEPTH) return null;
 
   if (isPrewarmHandle(value)) {
@@ -100,14 +104,14 @@ function resolvePrewarmHandle(value: unknown, depth: number, visited: WeakSet<ob
 function getPrewarmDescriptors(entry: DatabaseLoaderEntry | undefined): PrewarmDescriptor[] {
   if (!entry?.prewarm) return [];
   return entry.prewarm.filter((descriptor) =>
-    Boolean(descriptor && descriptor.exportName && descriptor.specifier),
+    Boolean(descriptor && descriptor.exportName && descriptor.specifier)
   ) as PrewarmDescriptor[];
 }
 
 async function loadModuleForDescriptor(
   descriptor: PrewarmDescriptor,
   entry: DatabaseLoaderEntry | undefined,
-  cache: Map<string, Promise<unknown>>,
+  cache: Map<string, Promise<unknown>>
 ): Promise<unknown | null> {
   const specifier = descriptor.specifier;
   if (!specifier) return null;
@@ -141,7 +145,7 @@ function logPrewarmDescriptorWarning(
   nodeType: string,
   descriptor: PrewarmDescriptor,
   message: string,
-  error?: unknown,
+  error?: unknown
 ): void {
   if (typeof console === 'undefined') return;
   const detail = `${message} for ${nodeType} (export ${descriptor.exportName} from ${descriptor.specifier})`;
@@ -161,8 +165,8 @@ export async function prewarmPluginDatabases(inputNodeTypes?: string[]): Promise
 
   const successful = new Set<string>();
   const moduleCache = new Map<string, Promise<unknown>>();
-  const targetNodeTypes = (inputNodeTypes ?? prewarmNodeTypesCache).filter((nodeType) =>
-    getPrewarmDescriptors(pluginDatabaseLoaders[nodeType]).length > 0,
+  const targetNodeTypes = (inputNodeTypes ?? prewarmNodeTypesCache).filter(
+    (nodeType) => getPrewarmDescriptors(pluginDatabaseLoaders[nodeType]).length > 0
   );
 
   for (const nodeType of targetNodeTypes) {

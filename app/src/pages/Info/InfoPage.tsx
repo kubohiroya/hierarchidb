@@ -1,9 +1,9 @@
-import { Box, Divider, Link, Typography } from '@mui/material';
-import { Info as InfoIcon } from '@mui/icons-material';
-import { useNavigate } from '@tanstack/react-router';
-import type { LoadAppConfigReturn } from '../../loader.ts';
-import { LicenseInfo } from '../../components/LicenseInfo.js';
 import { AutoHideFullScreenDialog as FullScreenDialog } from '@hierarchidb/ui-shell/ui-dialog';
+import { Info as InfoIcon } from '@mui/icons-material';
+import { Box, Divider, Link, Typography } from '@mui/material';
+import { useNavigate } from '@tanstack/react-router';
+import { LicenseInfo } from '../../components/LicenseInfo.js';
+import type { LoadAppConfigReturn } from '../../loader.ts';
 
 // LicenseInfo temporarily commented out until component is available
 // const LazyLicenseInfo = lazy(() =>

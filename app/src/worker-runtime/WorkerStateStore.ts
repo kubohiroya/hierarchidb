@@ -1,5 +1,5 @@
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { Remote } from 'comlink';
 import { ensureWorkerRuntime } from './WorkerModuleLoader.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
@@ -68,9 +68,7 @@ let snapshot: WorkerStateSnapshot = {
   state: initialState,
   client: initialClient,
   error: null,
-  progress: initialClient
-    ? { progress: 100, message: 'Worker初期化完了' }
-    : DEFAULT_PROGRESS,
+  progress: initialClient ? { progress: 100, message: 'Worker初期化完了' } : DEFAULT_PROGRESS,
 };
 
 const listeners = new Set<WorkerStateListener>();
@@ -152,13 +150,15 @@ export async function ensureWorkerInitialized(options?: {
         options.signal!.addEventListener(
           'abort',
           () => reject(new DOMException('The operation was aborted.', 'AbortError')),
-          { once: true },
+          { once: true }
         );
       })
     : null;
 
   if (initializationPromise) {
-    return abortPromise ? Promise.race([initializationPromise, abortPromise]) : initializationPromise;
+    return abortPromise
+      ? Promise.race([initializationPromise, abortPromise])
+      : initializationPromise;
   }
 
   updateSnapshot((prev) => ({

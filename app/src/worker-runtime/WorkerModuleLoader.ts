@@ -1,8 +1,8 @@
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { PluginWorkerId } from '@hierarchidb/feature-core/runtime-worker';
-import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
+import type { Remote } from 'comlink';
 import { pluginWorkerPreloads } from '~/plugin-registry/index.ts';
+import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 // NOTE: Worker runtime and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the

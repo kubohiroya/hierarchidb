@@ -1,15 +1,14 @@
 /**
  * Map Route for TanStack Router
- * 
+ *
  * Displays the map page with URL-synchronized position
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { rootRoute } from './rootRoute.js';
-import { mapLoader, type MapViewState } from '../loaders/mapLoader.js';
-
+import { type MapViewState, mapLoader } from '../loaders/mapLoader.js';
 // Import the existing map page component
 import MapPage from './map.js';
+import { rootRoute } from './rootRoute.js';
 
 interface MapSearch {
   zxy?: string;

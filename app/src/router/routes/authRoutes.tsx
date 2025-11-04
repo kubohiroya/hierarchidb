@@ -1,6 +1,6 @@
 /**
  * Auth Routes for TanStack Router
- * 
+ *
  * Handles authentication flows:
  * - /auth/login - Login page
  * - /auth/callback - OAuth callback handler
@@ -8,12 +8,12 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { rootRoute } from './rootRoute.js';
+import CallbackRoute from '../../routes/auth.callback.js';
 
 // Import existing auth components from React Router routes
 import LoginRoute from '../../routes/auth.login.js';
-import CallbackRoute from '../../routes/auth.callback.js';
 import SilentRenewRoute from '../../routes/auth.silent-renew.js';
+import { rootRoute } from './rootRoute.js';
 
 export const authLoginRoute = createRoute({
   getParentRoute: () => rootRoute,

@@ -1,13 +1,13 @@
 /**
  * workerClient.test.ts - Tests for Worker initialization service
- * 
+ *
  * Phase 4: Worker initialization refactor tests
  * Tests retry logic, timeout handling, and success scenarios
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { Remote } from 'comlink';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the WorkerStateStore module
 vi.mock('../../../worker-runtime/WorkerStateStore.js', () => ({
@@ -32,7 +32,9 @@ describe('workerClient', () => {
   describe('ensureWorkerStarted', () => {
     it('should successfully initialize worker on first try', async () => {
       // Import after mocks are set up
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<WorkerAPI>;
@@ -45,11 +47,13 @@ describe('workerClient', () => {
     });
 
     it('should retry on failure and succeed on second attempt', async () => {
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<WorkerAPI>;
-      
+
       // First call fails, second succeeds
       vi.mocked(ensureWorkerInitialized)
         .mockRejectedValueOnce(new Error('Worker initialization failed'))
@@ -65,7 +69,9 @@ describe('workerClient', () => {
     });
 
     it('should throw error after all retries exhausted', async () => {
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       const error = new Error('Worker initialization failed');
@@ -82,7 +88,9 @@ describe('workerClient', () => {
     });
 
     it('should timeout if initialization takes too long', async () => {
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       // Mock a never-resolving promise
@@ -101,7 +109,9 @@ describe('workerClient', () => {
     }, 10000); // Give the test itself more time
 
     it('should use default retry delays if not specified', async () => {
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       const mockClient = { ping: vi.fn() } as unknown as Remote<WorkerAPI>;
@@ -114,7 +124,9 @@ describe('workerClient', () => {
     });
 
     it('should handle AbortSignal correctly', async () => {
-      const { ensureWorkerInitialized } = await import('../../../worker-runtime/WorkerStateStore.js');
+      const { ensureWorkerInitialized } = await import(
+        '../../../worker-runtime/WorkerStateStore.js'
+      );
       const { ensureWorkerStarted } = await import('../workerClient.js');
 
       const controller = new AbortController();

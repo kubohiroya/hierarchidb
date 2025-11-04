@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { Remote } from 'comlink';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const workerClientMock = vi.hoisted(() => ({
   getOrInit: vi.fn<() => Promise<Remote<WorkerAPI>>>(),
@@ -13,9 +13,9 @@ vi.mock('../WorkerAPIClient.ts', () => ({
   NotInitializedError: class NotInitializedError extends Error {},
 }));
 
-const importPluginWorkerMock = vi.hoisted(() => vi.fn<
-  (id: string) => Promise<Record<string, unknown>>
->());
+const importPluginWorkerMock = vi.hoisted(() =>
+  vi.fn<(id: string) => Promise<Record<string, unknown>>>()
+);
 
 const mockStoreRegistry = {
   getPeer: vi.fn(),

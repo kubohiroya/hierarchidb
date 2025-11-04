@@ -5,11 +5,11 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import { useEffect, useMemo, useState } from 'react';
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
+import type { Remote } from 'comlink';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Params {
   client: Remote<WorkerAPI> | undefined;
@@ -45,14 +45,20 @@ export function useTreeConsoleBreadcrumbs({ client, pageTreeNode }: Params): Bre
 
         const queryAPI = await client.getQueryAPI();
         const ancestors = await queryAPI.listAncestors(pageTreeNode.id as NodeId);
-        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({ id: n.id, name: n.name, nodeType: n.nodeType }));
+        let nodes: BreadcrumbNode[] = ancestors.map((n) => ({
+          id: n.id,
+          name: n.name,
+          nodeType: n.nodeType,
+        }));
 
         if (nodes.length + 1 > maxBreadcrumbItems) {
           const keepTail = Math.max(1, maxBreadcrumbItems - 3);
           const rootNode = nodes[0];
           const tail = nodes.slice(Math.max(1, nodes.length - keepTail));
           nodes = [
-            ...(rootNode ? [{ id: rootNode.id, name: rootNode.name, nodeType: rootNode.nodeType }] : []),
+            ...(rootNode
+              ? [{ id: rootNode.id, name: rootNode.name, nodeType: rootNode.nodeType }]
+              : []),
             { id: '__ellipsis__', name: '…', nodeType: 'ellipsis', isClickable: false },
             ...tail,
           ];

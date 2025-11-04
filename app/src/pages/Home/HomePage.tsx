@@ -1,15 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, Button, IconButton, Tooltip } from '@mui/material';
-import { AccountTree, Folder } from '@mui/icons-material';
-import { Info as InfoIcon, GitHub as GitHubIcon, HelpOutline as HelpOutlineIcon, Extension as ExtensionIcon, LocalOffer as LocalOfferIcon } from '@mui/icons-material';
 import type { TreeConfig } from '@hierarchidb/ui-shell/components';
 import { TreeToggleButtonGroup } from '@hierarchidb/ui-shell/components';
-import { TitleLogo } from '../../components/TitleLogo.js';
-import { useAppConfig } from '~/contexts/AppConfigContext.js';
 import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
-import { TopPageGuidedTour } from '~/components/tour/index.js';
-import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
+import {
+  AccountTree,
+  Extension as ExtensionIcon,
+  Folder,
+  GitHub as GitHubIcon,
+  HelpOutline as HelpOutlineIcon,
+  Info as InfoIcon,
+  LocalOffer as LocalOfferIcon,
+} from '@mui/icons-material';
+import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { TopPageGuidedTour } from '~/components/tour/index.js';
+import { useAppConfig } from '~/contexts/AppConfigContext.js';
+import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
+import { TitleLogo } from '../../components/TitleLogo.js';
 
 export function meta() {
   const { appPrefix, appFavicon } = loadAppConfig();
@@ -68,7 +75,7 @@ export default function HomePage() {
         return null;
       }
     },
-    [isClient, getSessionStorageKey],
+    [isClient, getSessionStorageKey]
   );
 
   const savePageNodeId = useCallback(
@@ -80,7 +87,7 @@ export default function HomePage() {
         /* ignore */
       }
     },
-    [isClient, getSessionStorageKey],
+    [isClient, getSessionStorageKey]
   );
 
   const handleTreeSelect = useCallback(
@@ -89,7 +96,7 @@ export default function HomePage() {
       const path = savedPageNodeId ? `/t/${treeId}/${savedPageNodeId}` : `/t/${treeId}`;
       navigate({ to: path });
     },
-    [getSavedPageNodeId, navigate],
+    [getSavedPageNodeId, navigate]
   );
 
   const githubButton = useMemo(() => {
@@ -142,7 +149,11 @@ export default function HomePage() {
           {isUserMenuReady ? <UserLoginButton /> : null}
         </div>
 
-        <TitleLogo title={appTitle} description={appDescription || undefined} showProgress={false} />
+        <TitleLogo
+          title={appTitle}
+          description={appDescription || undefined}
+          showProgress={false}
+        />
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <TreeToggleButtonGroup
@@ -223,9 +234,7 @@ export default function HomePage() {
         </div>
       </Box>
 
-      {isTourOpen && (
-        <TopPageGuidedTour run={isTourOpen} onFinish={() => setIsTourOpen(false)} />
-      )}
+      {isTourOpen && <TopPageGuidedTour run={isTourOpen} onFinish={() => setIsTourOpen(false)} />}
     </>
   );
 }

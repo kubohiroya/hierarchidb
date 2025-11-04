@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
 import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
+import { useEffect, useMemo, useState } from 'react';
 
 export type ViewMode = 'list' | 'grid';
 
@@ -54,7 +54,11 @@ function getStore(): TreeConsoleSSOT {
 function updateStore(mutator: (prev: TreeConsoleSSOT) => TreeConsoleSSOT) {
   STORE = mutator(STORE);
   for (const fn of Array.from(LISTENERS)) {
-    try { fn(); } catch { /* noop */ }
+    try {
+      fn();
+    } catch {
+      /* noop */
+    }
   }
 }
 

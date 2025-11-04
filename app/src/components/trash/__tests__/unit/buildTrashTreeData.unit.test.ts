@@ -1,10 +1,10 @@
+import type { NodeId, TreeNode } from '@hierarchi../../feature-co../../common-types';
 import { describe, expect, it } from 'vitest';
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
-import { buildTrashTreeData } from '../buildTrashTreeData.js';
+import { buildTrashTreeData } from '../../buildTrashTreeData.js';
 
 function createNode(
   id: string,
-  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number } = {},
+  overrides: Partial<TreeNode> & { parentId?: NodeId; depth?: number } = {}
 ): TreeNode {
   const nodeId = id as NodeId;
   const parentId = overrides.parentId ?? (`parent-${id}` as NodeId);

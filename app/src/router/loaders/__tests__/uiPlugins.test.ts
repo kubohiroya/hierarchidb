@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupUIPlugins } from '../uiPlugins.js';
 
 // Mock the ui-loader to avoid loading actual plugin-loader in tests
@@ -23,13 +23,13 @@ describe('setupUIPlugins', () => {
 
   it('should resolve servicesReady promise', async () => {
     const result = await setupUIPlugins();
-    
+
     await expect(result.servicesReady).resolves.toBeUndefined();
   });
 
   it('should allow teardown to be called', async () => {
     const result = await setupUIPlugins();
-    
+
     await expect(result.teardown()).resolves.toBeUndefined();
   });
 

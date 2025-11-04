@@ -6,7 +6,12 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { CommandResult, NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type {
+  CommandResult,
+  NodeId,
+  TreeId,
+  TreeNode,
+} from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { ExpandMore as ExpandMoreIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -20,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ChipProps } from '@mui/material/Chip';
-import { Search as SearchIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import React, { useEffect, useState } from 'react';
 
 interface LicenseData {
   [packageName: string]: {
@@ -114,22 +114,38 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
 
   // Filter packages based on search query
   const filteredPackages = Object.entries(packages).filter(([name]) =>
-    name.toLowerCase().includes(searchQuery.toLowerCase()),
+    name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Group packages by license type
-  const groupedPackages = filteredPackages.reduce((acc, [name, info]) => {
-    const license = info.licenses || 'UNKNOWN';
-    const category = categorizeLicense(license);
+  const groupedPackages = filteredPackages.reduce(
+    (acc, [name, info]) => {
+      const license = info.licenses || 'UNKNOWN';
+      const category = categorizeLicense(license);
 
-    acc[category] = acc[category] ?? [];
-    acc[category]!.push({ name, ...info });
-    return acc;
-  }, {} as Record<string, Array<{ name: string } & LicenseData[string]>>);
+      acc[category] = acc[category] ?? [];
+      acc[category]!.push({ name, ...info });
+      return acc;
+    },
+    {} as Record<string, Array<{ name: string } & LicenseData[string]>>
+  );
 
   // Sort categories by safety (MIT/Apache first, GPL last)
   const sortedCategories = Object.keys(groupedPackages).sort((a, b) => {
-    const order = ['MIT', 'Apache-2.0', 'BSD-3-Clause', 'BSD-2-Clause', 'ISC', 'CC0-1.0', 'CC-BY-4.0', 'Unlicense', 'LGPL', 'GPL', 'GPL-3.0', 'UNKNOWN'];
+    const order = [
+      'MIT',
+      'Apache-2.0',
+      'BSD-3-Clause',
+      'BSD-2-Clause',
+      'ISC',
+      'CC0-1.0',
+      'CC-BY-4.0',
+      'Unlicense',
+      'LGPL',
+      'GPL',
+      'GPL-3.0',
+      'UNKNOWN',
+    ];
     return order.indexOf(a) - order.indexOf(b);
   });
 
@@ -218,7 +234,8 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
               <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
                 <Chip label={config.label} color={config.color} size="small" />
                 <Typography variant="subtitle1">
-                  {categoryPackages?.length || 0} package{(categoryPackages?.length || 0) !== 1 ? 's' : ''}
+                  {categoryPackages?.length || 0} package
+                  {(categoryPackages?.length || 0) !== 1 ? 's' : ''}
                 </Typography>
               </Stack>
             </AccordionSummary>
@@ -242,16 +259,10 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Chip
-                            label={pkg.licenses || 'Unknown'}
-                            size="small"
-                            variant="outlined"
-                          />
+                          <Chip label={pkg.licenses || 'Unknown'} size="small" variant="outlined" />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {pkg.publisher || '-'}
-                          </Typography>
+                          <Typography variant="body2">{pkg.publisher || '-'}</Typography>
                         </TableCell>
                         <TableCell>
                           {pkg.repository ? (

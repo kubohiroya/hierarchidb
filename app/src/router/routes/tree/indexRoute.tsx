@@ -5,10 +5,10 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { treeLayoutRoute } from './layoutRoute.js';
+import type { LoadPageNodeReturn } from '../../loaders/treeLoaders.js';
 import { loadPageNode } from '../../loaders/treeLoaders.js';
 import { TreeLayoutBody } from '../t.($treeId).($pageNodeId).js';
-import type { LoadPageNodeReturn } from '../../loaders/treeLoaders.js';
+import { treeLayoutRoute } from './layoutRoute.js';
 
 export const treeLayoutIndexRoute = createRoute({
   getParentRoute: () => treeLayoutRoute,

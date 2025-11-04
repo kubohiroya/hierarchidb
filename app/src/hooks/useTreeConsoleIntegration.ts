@@ -5,22 +5,18 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
-import { useImportExport } from '../hooks/useImportExport.ts';
-import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
-import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
-import { buildVisibleRows, syncNodeIndex } from '../state/treeconsole.derive.js';
-import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
 import { DualKeyMap } from '@hierarchidb/util';
-import { useTreeConsoleBreadcrumbs } from './treeconsole/useTreeConsoleBreadcrumbs.js';
-import { useTreeConsoleLoader } from './treeconsole/useTreeConsoleLoader.js';
-import { useTreeConsoleSubscription } from './treeconsole/useTreeConsoleSubscription.js';
-import { useCommandProcessorTracker } from './treeconsole/useCommandProcessorTracker.js';
-import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useImportExport } from '../hooks/useImportExport.ts';
 import { getMenuSpec } from '../plugin-loader/menu-spec.ts';
+import { useTreeConsoleSSOT } from '../state/treeconsole.atoms.ts';
+import { buildVisibleRows, syncNodeIndex } from '../state/treeconsole.derive.js';
+import { convertTreeNodeToTreeNodeData, createDefaultColumns } from '../utils/treeNodeConverter.js';
+import { createTreeConsoleActions } from './treeconsole/createTreeConsoleActions.js';
+import { applySortFilterSearch, deriveConfigFromState } from './treeconsole/sortFilter.js';
 import type {
   ImportExportAdapter,
   TreeConsoleActions,
@@ -28,6 +24,10 @@ import type {
   UseTreeConsoleIntegrationParams,
   ViewMode,
 } from './treeconsole/types.ts';
+import { useCommandProcessorTracker } from './treeconsole/useCommandProcessorTracker.js';
+import { useTreeConsoleBreadcrumbs } from './treeconsole/useTreeConsoleBreadcrumbs.js';
+import { useTreeConsoleLoader } from './treeconsole/useTreeConsoleLoader.js';
+import { useTreeConsoleSubscription } from './treeconsole/useTreeConsoleSubscription.js';
 
 export function useTreeConsoleIntegration({
   client,
@@ -37,7 +37,12 @@ export function useTreeConsoleIntegration({
   pushPath,
   locationSearch,
 }: UseTreeConsoleIntegrationParams) {
-  const { state: ssot, set: setSSOT, incRef, decRef } = useTreeConsoleSSOT(pageNodeId as string | undefined);
+  const {
+    state: ssot,
+    set: setSSOT,
+    incRef,
+    decRef,
+  } = useTreeConsoleSSOT(pageNodeId as string | undefined);
   const debugEnabled = (() => {
     try {
       const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
@@ -68,20 +73,18 @@ export function useTreeConsoleIntegration({
     canPaste: ssot.canPaste,
   });
 
-  const columns = useMemo(
-    () => createDefaultColumns({ t, locale }),
-    [locale, t],
-  );
+  const columns = useMemo(() => createDefaultColumns({ t, locale }), [locale, t]);
   const breadcrumbItems = useTreeConsoleBreadcrumbs({ client, pageTreeNode });
   const importExport = useImportExport(client, !!client) as unknown as ImportExportAdapter;
 
   const nodeIndex = ssot.nodeIndex;
-  const nodeIndexSnapshot = useMemo(() => (
-    nodeIndex ? nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>()
-  ), [nodeIndex]);
+  const nodeIndexSnapshot = useMemo(
+    () => (nodeIndex ? nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>()),
+    [nodeIndex]
+  );
   const sortConfig = useMemo(
     () => deriveConfigFromState(state, searchTerm),
-    [state.sortBy, state.sortDirection, state.filterBy, searchTerm],
+    [state.sortBy, state.sortDirection, state.filterBy, searchTerm]
   );
   const treeData = useMemo<TreeNodeData[]>(() => {
     if (!nodeIndex) return [];
@@ -182,9 +185,9 @@ export function useTreeConsoleIntegration({
               mode: 'partial',
               maxResults: 200,
             })) as TreeNode[];
-        const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
-        syncNodeIndex(index, pageNodeId as NodeId, results);
-        setSSOT({ nodeIndex: index });
+            const index = new DualKeyMap<NodeId, NodeId, TreeNode>();
+            syncNodeIndex(index, pageNodeId as NodeId, results);
+            setSSOT({ nodeIndex: index });
             setState((prev) => ({ ...prev, loading: false }));
             setSSOT({ loading: false, searchTerm: q });
             return;
@@ -254,7 +257,7 @@ export function useTreeConsoleIntegration({
       ssot,
       teardownSubscription,
       treeId,
-    ],
+    ]
   );
 
   const canCreate = true;

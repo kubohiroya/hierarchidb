@@ -3,16 +3,22 @@ import { wrapDialogStepComponent } from '@hierarchidb/plugin-ui-sdk';
 import { Box } from '@mui/material';
 import React, { useCallback } from 'react';
 // import { StylerConfiguration } from '../../components/step5/StylerConfiguration.js';
-import type { StylerConfig } from '../../../common/types/stylerTypes.js';
+import type { StylerConfig, StylerTableRow } from '../../../common/types/stylerTypes.js';
 import { StylerConfigDefault } from '../../../common/types/stylerTypes.js';
 import { StylerConfiguration } from './StylerConfiguration.js';
 
+export interface StylerStep5Data {
+  stylerConfig?: StylerConfig;
+  selectedKeyColumn?: string;
+  selectedValueColumn?: string;
+}
+
 export interface StylerStep5Props {
-  data: any;
-  onChange: (data: any) => void;
+  data: StylerStep5Data;
+  onChange: (data: StylerStep5Data) => void;
   onValidate?: (isValid: boolean) => void;
   //  CSVspreadsheet
-  csvData?: Array<Record<string, any>>;
+  csvData?: StylerTableRow[];
   columns?: string[];
 }
 
@@ -55,7 +61,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
   const handleConfigChange = useCallback(
     (newConfig: StylerConfig) => {
-      const updatedData = {
+      const updatedData: StylerStep5Data = {
         ...data,
         stylerConfig: newConfig,
       };
@@ -72,7 +78,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
   const handleColumnSelect = useCallback(
     (column: string, type: 'key' | 'value') => {
-      const updatedData = {
+      const updatedData: StylerStep5Data = {
         ...data,
         [type === 'key' ? 'selectedKeyColumn' : 'selectedValueColumn']: column,
         stylerConfig: {
@@ -118,7 +124,7 @@ export const StylerStep5Definition = {
   title: 'Style Mapping Configuration',
   component: StylerStep5Component,
   validation: {
-    validate: async (data: any) => {
+    validate: async (data: StylerStep5Data) => {
       const config = data?.stylerConfig;
 
       if (!config?.targetProperty) {

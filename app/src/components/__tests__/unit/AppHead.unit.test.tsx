@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockConfig = {
   appPrefix: '/hierarchidb/',
@@ -30,7 +30,7 @@ describe('AppHead', () => {
   });
 
   it('renders favicon links using resolved paths', async () => {
-    const { AppHead } = await import('../AppHead.js');
+    const { AppHead } = await import('../../AppHead.js');
     const { container } = render(<AppHead />);
 
     const svgLink = container.querySelector('link[rel="icon"][type="image/svg+xml"]');

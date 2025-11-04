@@ -7508,6 +7508,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-04 12:47 done: chore/basemap-plugin/biome-clean — 上記修正を完了。ロールバックは `plugins/basemap-plugin/src` 配下の差分を revert し、`pnpm -F @hierarchidb/basemap-plugin format` を再実行すれば旧挙動へ戻る。
 - 2025-11-04 12:48 start: chore/styler-plugin/biome-clean — styler-plugin の Biome 警告（CSV サポートモック／handler／UI 手順での `any`・regex）を順次解消するタスクに着手。
 - 2025-11-04 13:05 progress: chore/styler-plugin/biome-clean — csvParser/mocks から `isNaN`/comma operator/`as any` を排除し、JSZip モックと peer-store 正規化を typed 化。handler/StylerEntity/types へ明示的な型を導入し、control character 判定は数値チェックへ差し替え。`pnpm -F @hierarchidb/styler-plugin format` では残り 20+ 件（StylerDataService, StylerSimpleDialog, Step5/6, TablePreview などの `any`/index key）が継続中。
+- 2025-11-04 13:42 progress: chore/styler-plugin/biome-clean — Step5/6 UI（BasicInfoStep, StylerConfiguration/Extension, TablePreview, SimpleDialog）から `any` を排除し、`useCallback` 依存や row key を安定化。`pnpm -F @hierarchidb/styler-plugin format` を再実行して 0 diagnostics を確認。
+- 2025-11-04 13:42 command: pnpm -F @hierarchidb/styler-plugin format — exit 0。
+- 2025-11-04 13:43 command: pnpm --filter @hierarchidb/styler-plugin typecheck — 失敗（script 未定義のためスキップ）。
+- 2025-11-04 13:44 command: pnpm --filter @hierarchidb/styler-plugin build — exit 0（tsdown が ColorCalculationResult の未エクスポート警告を出力するが既知の既存警告でビルドは成功）。
 - 2025-11-03 22:13 progress: chore/cors-proxy/biome-env-int — env-mapper で `parseEnvInt` と同様の `readString` ヘルパーを導入し、`Record<string, unknown>` ベースで map するよう型安全化。Biome の `noExplicitAny` を解消。
 - 2025-11-03 22:13 command: pnpm --filter @hierarchidb/cors-proxy format — exit 0。
 - 2025-11-03 22:13 progress: chore/ui-layout/a11y-sidebar — ResizableSidebar の Stack を `component="section"` に変更し、`role="region"` へ頼らずセマンティック要素で aria-label を維持。

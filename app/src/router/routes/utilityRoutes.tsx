@@ -1,6 +1,6 @@
 /**
  * Utility Routes for TanStack Router
- * 
+ *
  * Includes:
  * - /tags - Tag list and search
  * - /tags/:uuid - Tag detail page
@@ -8,12 +8,11 @@
  */
 
 import { createRoute } from '@tanstack/react-router';
+import PluginsRoute from './plugins.js';
 import { rootRoute } from './rootRoute.js';
-
+import TagDetailRoute from './tags.($uuid).js';
 // Import existing components from React Router routes
 import TagsRoute from './tags.js';
-import TagDetailRoute from './tags.($uuid).js';
-import PluginsRoute from './plugins.js';
 
 export const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,

@@ -1,8 +1,13 @@
-import React, { type PropsWithChildren, useEffect, useMemo } from 'react';
-import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { createAppTheme, useThemeMode, type ThemeMode, getStoredThemeMode } from '@hierarchidb/ui-shell/ui-theme';
+import {
+  createAppTheme,
+  getStoredThemeMode,
+  type ThemeMode,
+  useThemeMode,
+} from '@hierarchidb/ui-shell/ui-theme';
+import { CssBaseline, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import { type PropsWithChildren, useEffect, useMemo } from 'react';
 
-export function AppThemeProvider({ children }: PropsWithChildren<{}>) {
+export function AppThemeProvider({ children }: PropsWithChildren<unknown>) {
   const { actualTheme, setMode } = useThemeMode();
 
   // Bridge custom events from UI to theme context

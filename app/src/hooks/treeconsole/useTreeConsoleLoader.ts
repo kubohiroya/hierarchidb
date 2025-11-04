@@ -4,15 +4,15 @@
  * Centralises the logic for fetching, normalising, and sorting tree data.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import type { Remote } from 'comlink';
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
-import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
-import { syncNodeIndex, buildVisibleRows } from '~/state/treeconsole.derive.js';
+import type { Remote } from 'comlink';
+import type { Dispatch, SetStateAction } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { preconnectForNodeTypes } from '~/services/preconnect.js';
+import type { TreeConsoleSSOTEntry } from '~/state/treeconsole.atoms.js';
+import { buildVisibleRows, syncNodeIndex } from '~/state/treeconsole.derive.js';
 import type { TreeConsoleState } from './types.js';
 
 interface Params {
@@ -31,8 +31,8 @@ export function useTreeConsoleLoader({
   client,
   pageNodeId,
   pageTreeNode,
-                                       // state,
-                                       // searchTerm,
+  // state,
+  // searchTerm,
   expandedIds,
   ssot,
   setState,
@@ -47,7 +47,7 @@ export function useTreeConsoleLoader({
     }
   })();
   const nodeIndexRef = useRef<DualKeyMap<NodeId, NodeId, TreeNode>>(
-    ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>(),
+    ssot.nodeIndex ? ssot.nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>()
   );
   const expandedIdsRef = useRef<NodeId[]>(expandedIds);
   const setSSOTRef = useRef(setSSOT);
@@ -87,11 +87,14 @@ export function useTreeConsoleLoader({
             })),
           });
         }
-        const shouldFlattenTrash = pageTreeNode?.nodeType === 'trash' && parentId === (pageNodeId as NodeId);
+        const shouldFlattenTrash =
+          pageTreeNode?.nodeType === 'trash' && parentId === (pageNodeId as NodeId);
         let displayNodes: TreeNode[] = children;
 
         if (shouldFlattenTrash) {
-          const batches = await Promise.all(children.map((h) => queryAPI.listChildren(h.id as NodeId)));
+          const batches = await Promise.all(
+            children.map((h) => queryAPI.listChildren(h.id as NodeId))
+          );
           displayNodes = batches.flat();
           if (debugEnabled) {
             console.log('[TreeConsoleLoader] flattened trash nodes', {
@@ -123,7 +126,9 @@ export function useTreeConsoleLoader({
         nodeIndexRef.current = index;
         setSSOTRef.current({ nodeIndex: index });
 
-        const types = displayNodes.map((n) => String((n as unknown as { nodeType?: string }).nodeType || ''));
+        const types = displayNodes.map((n) =>
+          String((n as unknown as { nodeType?: string }).nodeType || '')
+        );
         void preconnectForNodeTypes(types);
       } catch (err) {
         console.error('Failed to load children:', err);
@@ -133,7 +138,7 @@ export function useTreeConsoleLoader({
         setSSOTRef.current({ loading: false });
       }
     },
-    [client, pageNodeId, pageTreeNode?.nodeType, setState],
+    [client, pageNodeId, pageTreeNode?.nodeType, setState]
   );
 
   return { loadChildrenOf };

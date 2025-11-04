@@ -1,11 +1,10 @@
-
+import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { Box, Container, Paper } from '@mui/material';
+import { useLocation } from '@tanstack/react-router';
 /**
  * TurnstileOAuth2
  */
 import { useState } from 'react';
-import { Box, Container, Paper } from '@mui/material';
-import { LoginForm, useAuth } from '@hierarchidb/ui-shell/ui-auth';
-import { useLocation, } from '@tanstack/react-router';
 
 export default function LoginRoute() {
   const location = useLocation();

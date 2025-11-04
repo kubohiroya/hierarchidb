@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useBootProgress } from '../contexts/BootProgressProvider.js';
-import { useTranslation } from 'react-i18next';
 import { useSimpleBFFAuth } from '@hierarchidb/ui-shell/ui-auth';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useBootProgress } from '../contexts/BootProgressProvider.js';
 import { useWorker } from '../contexts/WorkerProvider.js';
 
 const logInitReporterWarning = (message: string, error: unknown): void => {
@@ -11,8 +11,10 @@ const logInitReporterWarning = (message: string, error: unknown): void => {
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
-export const MarkStepDoneOnMount: React.FC<{ step: StepName; message?: string }>
-  = ({ step, message }) => {
+export const MarkStepDoneOnMount: React.FC<{ step: StepName; message?: string }> = ({
+  step,
+  message,
+}) => {
   const { markStepDone } = useBootProgress();
   useEffect(() => {
     markStepDone(step, message);
@@ -96,14 +98,16 @@ export const WorkerProgressReporter: React.FC = () => {
     }
     const t = window.setInterval(() => {
       // Late import to avoid circular
-      import('../WorkerAPIClient.ts').then(({ WorkerAPIClient }) => {
-        if (WorkerAPIClient.isReady()) {
-          markStepDone('Worker', 'Worker ready');
-          window.clearInterval(t);
-        }
-      }).catch((error) => {
-        logInitReporterWarning('Failed to poll WorkerAPIClient readiness', error);
-      });
+      import('../WorkerAPIClient.ts')
+        .then(({ WorkerAPIClient }) => {
+          if (WorkerAPIClient.isReady()) {
+            markStepDone('Worker', 'Worker ready');
+            window.clearInterval(t);
+          }
+        })
+        .catch((error) => {
+          logInitReporterWarning('Failed to poll WorkerAPIClient readiness', error);
+        });
     }, 200);
     return () => {
       window.removeEventListener('hierarchidb-worker-init-complete', onEvt);

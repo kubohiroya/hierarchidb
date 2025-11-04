@@ -1,6 +1,6 @@
+import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { NodeId, SubscriptionId } from '@hierarchidb/feature-core/common-types';
 import type { Remote } from 'comlink';
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 
 type SubscriptionKind = 'trash' | 'page';
 export type SubscriptionCallback = (event: unknown) => void;
@@ -32,7 +32,7 @@ export class Subscriptions {
     kind: SubscriptionKind,
     client: Remote<WorkerAPI>,
     nodeId: NodeId,
-    callback: SubscriptionCallback,
+    callback: SubscriptionCallback
   ): Promise<{ subId: SubscriptionId; created: boolean }> {
     const key = Subscriptions.key(kind, nodeId);
     const existing = Subscriptions.registry.get(key);
@@ -68,10 +68,18 @@ export class Subscriptions {
     try {
       switch (kind) {
         case 'trash':
-          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void, options);
+          subId = await subscriptionAPI.subscribeSubtree(
+            nodeId,
+            callback as (event: any) => void,
+            options
+          );
           break;
         case 'page':
-          subId = await subscriptionAPI.subscribeSubtree(nodeId, callback as (event: any) => void, options);
+          subId = await subscriptionAPI.subscribeSubtree(
+            nodeId,
+            callback as (event: any) => void,
+            options
+          );
           break;
         default:
           subId = await subscriptionAPI.subscribeNode(nodeId, callback as (event: any) => void);
@@ -100,7 +108,11 @@ export class Subscriptions {
     return { subId, created: true };
   }
 
-  static async release(kind: SubscriptionKind, client: Remote<WorkerAPI>, nodeId: NodeId): Promise<void> {
+  static async release(
+    kind: SubscriptionKind,
+    client: Remote<WorkerAPI>,
+    nodeId: NodeId
+  ): Promise<void> {
     const key = Subscriptions.key(kind, nodeId);
     const info = Subscriptions.registry.get(key);
     Subscriptions.registry.delete(key);
@@ -110,7 +122,8 @@ export class Subscriptions {
       const subscriptionAPI = await client.getSubscriptionAPI();
       const debugEnabled = (() => {
         try {
-          const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+          const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> })
+            .env;
           return env?.VITE_SUBSCRIPTION_DEBUG === '1';
         } catch {
           return false;

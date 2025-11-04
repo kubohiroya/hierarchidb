@@ -1,13 +1,13 @@
 /**
  * Info Route for TanStack Router
- * 
+ *
  * Displays application information and licenses
  */
 
 import { createRoute } from '@tanstack/react-router';
-import { rootRoute } from './rootRoute.js';
-import { InfoPage } from '../../pages/Info/InfoPage.js';
 import { loadAppConfig } from '../../loadAppConfig.js';
+import { InfoPage } from '../../pages/Info/InfoPage.js';
+import { rootRoute } from './rootRoute.js';
 
 interface InfoLoaderResult {
   appConfig: ReturnType<typeof loadAppConfig>;

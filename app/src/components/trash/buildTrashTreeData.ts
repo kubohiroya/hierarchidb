@@ -58,7 +58,7 @@ export function buildTrashTreeData({
 
   const selectedNodes: TreeNodeData[] = [];
   const seen = new Set<string>();
-  
+
   sourceMap.forEach((node) => {
     const rawId = String(node.id);
     if (rawId === rootId) {

@@ -18,7 +18,9 @@ function buildMenuSpec(groups: MenuGroup[]): MenuSpec {
     groupRank.set(group, index);
   });
 
-  const installed = getInstalledPlugins().filter((plugin) => allowed.has(plugin.menuGroup as MenuGroup));
+  const installed = getInstalledPlugins().filter((plugin) =>
+    allowed.has(plugin.menuGroup as MenuGroup)
+  );
   installed.sort((a, b) => {
     const groupA = (a.menuGroup ?? groups[0]) as MenuGroup;
     const groupB = (b.menuGroup ?? groups[0]) as MenuGroup;
@@ -28,8 +30,16 @@ function buildMenuSpec(groups: MenuGroup[]): MenuSpec {
       return rankA - rankB;
     }
 
-    const orderA = Number.isFinite(a.createOrder) ? a.createOrder : Number.isFinite(a.manifest?.priority) ? Number(a.manifest?.priority) : Number.POSITIVE_INFINITY;
-    const orderB = Number.isFinite(b.createOrder) ? b.createOrder : Number.isFinite(b.manifest?.priority) ? Number(b.manifest?.priority) : Number.POSITIVE_INFINITY;
+    const orderA = Number.isFinite(a.createOrder)
+      ? a.createOrder
+      : Number.isFinite(a.manifest?.priority)
+        ? Number(a.manifest?.priority)
+        : Number.POSITIVE_INFINITY;
+    const orderB = Number.isFinite(b.createOrder)
+      ? b.createOrder
+      : Number.isFinite(b.manifest?.priority)
+        ? Number(b.manifest?.priority)
+        : Number.POSITIVE_INFINITY;
     if (orderA !== orderB) {
       return orderA - orderB;
     }

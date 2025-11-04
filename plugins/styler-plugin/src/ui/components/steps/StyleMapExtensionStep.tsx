@@ -12,6 +12,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import type React from 'react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -39,8 +40,8 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
 }) => {
   const { t } = useTranslation('styler-plugin');
   const handleStyleTypeChange = useCallback(
-    (event: any) => {
-      onChange({ ...data, styleType: event.target.value });
+    (event: SelectChangeEvent<StylerStepData['styleType']>) => {
+      onChange({ ...data, styleType: event.target.value as StylerStepData['styleType'] });
     },
     [data, onChange]
   );
@@ -53,14 +54,14 @@ export const StylerExtensionStep: React.FC<StylerExtensionStepProps> = ({
   );
 
   const handleColorSchemeChange = useCallback(
-    (event: any) => {
+    (event: SelectChangeEvent<NonNullable<StylerStepData['colorScheme']>>) => {
       onChange({ ...data, colorScheme: event.target.value });
     },
     [data, onChange]
   );
 
   const handleOpacityChange = useCallback(
-    (_event: any, value: number | number[]) => {
+    (_event: Event, value: number | number[]) => {
       onChange({ ...data, opacity: value as number });
     },
     [data, onChange]
