@@ -156,7 +156,7 @@
     "tsc-alias": "^1.8.16",
     "tsdown": "^0.14.2",
     "tsx": "^4.20.5",
-    "turbo": "^2.5.8",
+    "turbo": "^2.6.0",
     "typescript": "5.9.3",
     "vite": "^6.3.5",
     "vite-plugin-checker": "^0.8.0",
