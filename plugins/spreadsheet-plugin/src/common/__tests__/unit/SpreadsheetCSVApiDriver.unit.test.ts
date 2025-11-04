@@ -6,11 +6,11 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Removed unused imports - NodeId, EntityId
-import { SpreadsheetCSVApiDriver } from '../services/SpreadsheetCSVApiDriver.js';
+import { SpreadsheetCSVApiDriver } from '../../services/SpreadsheetCSVApiDriver.js';
 import type { CSVFilterRule, CSVProcessingConfig } from '@hierarchidb/ui-csv-extract';
 
 // Mock external dependencies
-vi.mock('../utils/hashUtils', () => ({
+vi.mock('../../utils/hashUtils', () => ({
   calculateFileHash: vi.fn().mockImplementation(async (file: any) => {
     // Generate different hashes for different content
     const content = await file.text();
@@ -18,7 +18,7 @@ vi.mock('../utils/hashUtils', () => ({
   }),
 }));
 
-vi.mock('../utils/csvParser', () => ({
+vi.mock('../../utils/csvParser', () => ({
   parseCSVContent: vi.fn().mockImplementation(async (content, _config) => {
     if (content.includes('product,price,category')) {
       return {
@@ -62,13 +62,13 @@ vi.mock('../utils/csvParser', () => ({
   }),
 }));
 
-vi.mock('../utils/securityUtils', () => ({
+vi.mock('../../utils/securityUtils', () => ({
   validateFileUrl: vi.fn(),
   sanitizeCsvData: vi.fn().mockImplementation(data => data),
   validateFileContent: vi.fn(),
 }));
 
-vi.mock('../utils/fileProcessingUtils', () => ({
+vi.mock('../../utils/fileProcessingUtils', () => ({
   processExcelFile: vi.fn().mockResolvedValue({
     content: 'name,age,email\nJohn,25,john@test.com',
     detectedConfig: { delimiter: ',' },
@@ -81,7 +81,7 @@ vi.mock('../utils/fileProcessingUtils', () => ({
   detectCSVDelimiter: vi.fn().mockReturnValue(','),
 }));
 
-vi.mock('../utils/filterUtils', () => ({
+vi.mock('../../utils/filterUtils', () => ({
   applyCsvFilters: vi.fn().mockImplementation(data => data),
   validateFilterRules: vi.fn().mockReturnValue({ isValid: true, errors: [] }),
   getFilterStatistics: vi.fn().mockReturnValue({
@@ -95,7 +95,7 @@ vi.mock('../utils/filterUtils', () => ({
 // Mock SimpleTableMetadataManager to avoid database conflicts
 const mockTables = new Map();
 
-vi.mock('../services/SimpleTableMetadataManager', () => ({
+vi.mock('../../services/SimpleTableMetadataManager', () => ({
   SimpleTableMetadataManager: vi.fn().mockImplementation(() => ({
     create: vi.fn().mockImplementation(async (metadata, _pluginId) => {
       mockTables.set(metadata.id, metadata);
@@ -114,7 +114,7 @@ vi.mock('../services/SimpleTableMetadataManager', () => ({
 const mockHashToMetadata = new Map();
 let duplicateCount = 0;
 
-vi.mock('../../services/database/SpreadsheetDatabase', () => ({
+vi.mock('../../../services/database/SpreadsheetDatabase', () => ({
   SpreadsheetDatabase: vi.fn().mockImplementation(() => ({
     findRawFileMetadataByHash: vi.fn().mockImplementation(async (hash: string) => {
       const existing = mockHashToMetadata.get(hash);
