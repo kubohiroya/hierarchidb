@@ -81,7 +81,7 @@ test.describe('Route progress controls', () => {
         const queryAPI = await client.getQueryAPI();
         const trees = await queryAPI.listTrees();
         const tree = trees.find((t) => t.id === ('r' as any)) ?? trees[0];
-        if (!tree) throw new Error('No tree available');
+        if (!tree) throw new Error('No console available');
         const rootId = tree.rootId;
 
         const pickExisting = async () => {

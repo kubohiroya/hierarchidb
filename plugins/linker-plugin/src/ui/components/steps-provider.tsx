@@ -19,7 +19,7 @@ registry.registerConfigProvider({
             value={new Set<string>(Array.isArray(p.data?.likedNodeIdSet) ? (p.data!.likedNodeIdSet as string[]) : Array.from(p.data?.likedNodeIdSet || new Set<string>()))}
             onChange={(setLike: Set<string>) =>
               p.onChange({ ...(p.data || {}), likedNodeIdSet: new Set<string>(setLike) })}
-            notice={'Select resources from the tree. Multiple selection is allowed. Data is read-only.'}
+            notice={'Select resources from the console. Multiple selection is allowed. Data is read-only.'}
           />
         ),
         validate: (data?: { likedNodeIdSet?: Set<string> | string[] }) => {

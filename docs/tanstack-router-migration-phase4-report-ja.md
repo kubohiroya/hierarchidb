@@ -216,7 +216,7 @@ if (typeof window !== 'undefined') {
 Phase 4の`workerClient.ts`は、Phase 3で実装されたTanStack Routerのツリールートで使用できます：
 
 ```typescript
-// app/src/router/routes/tree/baseRoute.tsx での使用例
+// app/src/router/routes/console/baseRoute.tsx での使用例
 import { ensureWorkerStarted } from '../../loaders/workerClient.js';
 
 export const treeBaseRoute = createRoute({

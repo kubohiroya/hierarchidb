@@ -2,7 +2,7 @@ import type { NodeId, NodeType, TreeId, ValidationResult } from '@hierarchidb/co
 
 /**
  * Import/Export API for data transfer operations
- * Provides functionality for importing and exporting tree nodes in various formats
+ * Provides functionality for importing and exporting console nodes in various formats
  */
 export interface ImportExportAPI {
   /**
@@ -57,7 +57,7 @@ export interface ImportExportAPI {
  * Parameters for node import operation
  */
 export interface ImportNodesParams {
-  /** Target tree for import */
+  /** Target console for import */
   treeId: TreeId;
 
   /** Parent node under which to import */
@@ -182,7 +182,7 @@ export interface ValidateImportParams {
   /** Expected format */
   format: 'json' | 'csv' | 'xml';
 
-  /** Target tree context for validation */
+  /** Target console context for validation */
   treeId?: TreeId;
 
   /** Target parent for context validation */

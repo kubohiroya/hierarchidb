@@ -79,7 +79,7 @@ export const InfoPanel = ({
                             actions = [],
                             onInfoClick,
                             onHelpClick,
-                            infoButtonLabel = 'Info',
+                            infoButtonLabel = 'info',
                             helpButtonLabel = 'Help',
                             buttonStyle = {
                               textTransform: 'none',

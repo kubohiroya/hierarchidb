@@ -130,8 +130,8 @@ Create `packages/ui-treeconsole/tsconfig.json`:
 
 ```bash
 mkdir -p packages/ui-treeconsole/src/{
-  containers/{console,dialogs,ui},
-  features/{tree-console,tree-table,tree-view-controller},
+  containers/{console,console,ui},
+  features/{console-console,console-table,console-view-controller},
   contexts,
   hooks,
   types,
@@ -149,16 +149,16 @@ export { ResourcesConsole } from '~/containers/console/ResourcesConsole';
 export { ProjectsConsole } from '~/containers/console/ProjectsConsole';
 export { TreeConsole } from '~/containers/console/TreeConsole';
 
-// Core tree table containers
-export { TreeTableCore } from '~/features/tree-table/containers/TreeTableCore';
-export { TreeTableConsolePanel } from '~/features/tree-console/containers/TreeTableConsolePanel';
+// Core console table containers
+export { TreeTableCore } from '~/features/console-table/containers/TreeTableCore';
+export { TreeTableConsolePanel } from '~/features/console-console/containers/TreeTableConsolePanel';
 
 // Contexts
-export { TreeTableConsolePanelContext } from '~/features/tree-console/containers/TreeTableConsolePanelContext';
-export { DragDropConfigContext } from '~/features/tree-table/contexts/DragDropConfigContext';
+export { TreeTableConsolePanelContext } from '~/features/console-console/containers/TreeTableConsolePanelContext';
+export { DragDropConfigContext } from '~/features/console-table/contexts/DragDropConfigContext';
 
 // Hooks
-export { useTreeViewController } from '~/features/tree-view-controller/hooks/useTreeViewController';
+export { useTreeViewController } from '~/features/console-view-controller/hooks/useTreeViewController';
 
 // Types
 export * from '~/types';
@@ -228,7 +228,7 @@ Components will be migrated in dependency order (leaf components first):
 **Migration Steps:**
 ```bash
 # Copy types file
-cp references/eria-cartograph/app0/src/features/tree-console/types/openstreetmap-type.ts \
+cp references/eria-cartograph/app0/src/features/console-console/types/openstreetmap-type.ts \
    packages/ui-treeconsole/src/types/openstreetmap-type.ts
 ```
 
@@ -297,9 +297,9 @@ export default InlineIcon;
 
 **Migration Steps:**
 ```bash
-mkdir -p packages/ui-treeconsole/src/containers/dialogs/FullScreenDialog
-cp references/eria-cartograph/app0/src/shared/containers/dialogs/FullScreenDialog.tsx \
-   packages/ui-treeconsole/src/containers/dialogs/FullScreenDialog/index.tsx
+mkdir -p packages/ui-treeconsole/src/containers/console/FullScreenDialog
+cp references/eria-cartograph/app0/src/shared/containers/console/FullScreenDialog.tsx \
+   packages/ui-treeconsole/src/containers/console/FullScreenDialog/index.tsx
 ```
 
 **Required Updates:**
@@ -494,7 +494,7 @@ pnpm --filter @hierarchidb/ui-treeconsole typecheck
 #### 3.2.1 Internal Import Pattern
 ```typescript
 // Use ~ prefix for package-internal imports
-import { TreeConsoleHeader } from '~/features/tree-console/containers/TreeConsoleHeader';
+import { TreeConsoleHeader } from '~/features/console-console/containers/TreeConsoleHeader';
 import { useDragDropConfig } from '~/contexts/DragDropConfigContext';
 ```
 
@@ -763,7 +763,7 @@ export interface TreeViewState {
   expandedNodeIds: Set<string>;
   selectedNodeIds: Set<string>;
   searchQuery: string;
-  viewMode: 'tree' | 'list';
+  viewMode: 'console' | 'list';
 }
 ```
 
@@ -998,7 +998,7 @@ describe('Package Integration', () => {
       />
     );
     
-    expect(screen.getByTestId('tree-console')).toBeInTheDocument();
+    expect(screen.getByTestId('console-console')).toBeInTheDocument();
   });
   
   it('should integrate with registry services', async () => {
@@ -1024,7 +1024,7 @@ Create `packages/ui-treeconsole/src/test/performance/virtualization.test.tsx`:
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { render } from '../utils';
-import { TreeTableCore } from '~/features/tree-table/containers/TreeTableCore';
+import { TreeTableCore } from '~/features/console-table/containers/TreeTableCore';
 import { createLargeTestTree } from '../fixtures';
 
 describe('Virtualization Performance', () => {
@@ -1053,7 +1053,7 @@ describe('Virtualization Performance', () => {
 #### 5.5.1 A11y Requirements
 
 ```typescript
-// packages/ui-treeconsole/src/test/accessibility/tree-console.a11y.test.tsx
+// packages/ui-treeconsole/src/test/accessibility/console-console.a11y.test.tsx
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/provider';
 import { axe, toHaveNoViolations } from 'jest-axe';
@@ -1263,7 +1263,7 @@ export const ProjectsMode: Story = {
 
 export const WithLargeTree: Story = {
   args: {
-    rootNodeIds: ['large-tree-root'],
+    rootNodeIds: ['large-console-root'],
     mode: 'resources',
   },
 };
@@ -1590,7 +1590,7 @@ const { nodes, updateNodes } = useTreeViewController({
 import * as MUI from '@mui/material';
 import _ from 'lodash';
 
-// ✅ CORRECT: Specific imports and tree-shaking
+// ✅ CORRECT: Specific imports and console-shaking
 import { Box, Button } from '@mui/material';
 import debounce from 'lodash/debounce';
 ```
@@ -1679,12 +1679,12 @@ export function TreeConsole({
 ```typescript
 // ❌ WRONG: Fixed timeouts
 await page.waitForTimeout(1000);
-await page.click('.tree-node');
+await page.click('.console-node');
 
 // ✅ CORRECT: Explicit waits
-await page.waitForSelector('.tree-node', { state: 'visible' });
-await page.click('.tree-node');
-await expect(page.locator('.tree-node')).toHaveAttribute('aria-expanded', 'true');
+await page.waitForSelector('.console-node', { state: 'visible' });
+await page.click('.console-node');
+await expect(page.locator('.console-node')).toHaveAttribute('aria-expanded', 'true');
 ```
 
 **Solution:**

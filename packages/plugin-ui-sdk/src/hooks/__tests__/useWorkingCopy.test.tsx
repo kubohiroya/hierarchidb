@@ -79,7 +79,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeType: 'folder',
       nodeId: existing.id,
       parentId: 'parent-1' as NodeId,
-      treeId: 'tree-1' as TreeId,
+      treeId: 'console-1' as TreeId,
       workerClient,
     }));
 
@@ -99,7 +99,7 @@ describe('useWorkingCopy (create mode)', () => {
       nodeType: 'folder',
       nodeId: 'wc-missing' as NodeId,
       parentId: 'parent-2' as NodeId,
-      treeId: 'tree-1' as TreeId,
+      treeId: 'console-1' as TreeId,
       workerClient,
     }));
 

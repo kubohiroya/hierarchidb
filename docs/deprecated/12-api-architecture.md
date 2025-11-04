@@ -101,7 +101,7 @@ await workerAPI.commitWorkingCopyForCreate({
 ```typescript
 // Single call orchestrates complete workflow
 const result = await workerAPI.createFolder({
-  treeId: 'test-tree',
+  treeId: 'test-console',
   parentNodeId: parentId,
   name: 'Test Folder',
   description: 'Optional description',
@@ -226,7 +226,7 @@ try {
 ```typescript
 // Single call with automatic error handling
 const result = await api.createFolder({
-  treeId: 'my-tree',
+  treeId: 'my-console',
   parentNodeId: parentId,
   name: 'My Folder',
 });

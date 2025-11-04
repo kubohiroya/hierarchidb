@@ -918,7 +918,7 @@ hierarchidbフレームワークとeria-cartographのUIパターンに基づい�
 import React, { useCallback, useEffect } from 'react';
 import { Box, Paper, Typography, TextField } from '@mui/material';
 import { Shapes as ShapesIcon } from '@mui/icons-material';
-import { CommonDialog } from '@hierarchidb/ui-core/components/dialogs/CommonDialog';
+import { CommonDialog } from '@hierarchidb/ui-core/components/console/CommonDialog';
 import { useShapesManager } from '../hooks/useShapesManager';
 import { useDraftChipState } from '@hierarchidb/ui-core/hooks/useDraftChipState';
 import { useResourceDialogLifecycle } from '@hierarchidb/ui-core/hooks/useResourceDialogLifecycle';

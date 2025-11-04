@@ -70,7 +70,7 @@ const emit = async (event: BatchProgressEvent) => {
 
     await emit({
       sessionId: 'session-1',
-      nodeId: 'tree-1' as any,
+      nodeId: 'console-1' as any,
       stage: 'download',
       phase: 'running',
       timestamp: Date.now(),
@@ -113,7 +113,7 @@ const emit = async (event: BatchProgressEvent) => {
 
     await emit({
       sessionId: 'session-err',
-      nodeId: 'tree-err' as any,
+      nodeId: 'console-err' as any,
       stage: 'simplify1',
       phase: 'failed',
       timestamp: Date.now(),

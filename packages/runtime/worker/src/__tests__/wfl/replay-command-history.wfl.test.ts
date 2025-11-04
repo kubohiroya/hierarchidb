@@ -36,7 +36,7 @@ describe('WFL command processor undo/redo flow', () => {
 
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
-    if (!tree?.rootId) throw new Error('Root tree not found');
+    if (!tree?.rootId) throw new Error('Root console not found');
     const rootId = tree.rootId as NodeId;
 
     const executedUndoables: string[] = [];
@@ -186,7 +186,7 @@ describe('WFL command processor undo/redo flow', () => {
     const commandProcessor = await client.getCommandProcessor();
 
     const tree = await queryAPI.getTree(treeId);
-    if (!tree) throw new Error('Expected default tree to exist');
+    if (!tree) throw new Error('Expected default console to exist');
     const rootId = tree.rootId as NodeId;
     const trashRootId = tree.trashRootId as NodeId;
 

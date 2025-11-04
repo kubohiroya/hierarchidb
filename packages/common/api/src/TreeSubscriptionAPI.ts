@@ -1,7 +1,7 @@
 /**
- * Real-time data monitoring and subscription-based tree management API.
+ * Real-time data monitoring and subscription-based console management API.
  *
- * Provides subscription management for tree nodes and subtrees, delivering event-driven updates
+ * Provides subscription management for console nodes and subtrees, delivering event-driven updates
  * and handling the full lifecycle of subscriptions.
  */
 
@@ -17,7 +17,7 @@ import type {
 /**
  * Real-time data subscription and monitoring API
  *
- * Provides event-driven monitoring of tree nodes and subtrees with automatic
+ * Provides event-driven monitoring of console nodes and subtrees with automatic
  * cleanup and lifecycle management.
  */
 export interface TreeSubscriptionAPI {
@@ -76,10 +76,10 @@ export interface TreeSubscriptionAPI {
   ): Promise<SubscriptionId>;
 
   /**
-   * Subscribe to all changes within a specific tree
+   * Subscribe to all changes within a specific console
    *
-   * @param treeId - Target tree identifier
-   * @param callback - Function to call when any node in tree changes
+   * @param treeId - Target console identifier
+   * @param callback - Function to call when any node in console changes
    * @param options - Optional subscription configuration
    * @returns Subscription identifier for cleanup
    */
@@ -123,9 +123,9 @@ export interface TreeSubscriptionAPI {
   unsubscribeNode(nodeId: NodeId): Promise<number>;
 
   /**
-   * Remove all subscriptions for a specific tree
+   * Remove all subscriptions for a specific console
    *
-   * @param treeId - Target tree identifier
+   * @param treeId - Target console identifier
    * @returns Number of subscriptions that were removed
    */
   unsubscribeTree(treeId: TreeId): Promise<number>;

@@ -1,5 +1,5 @@
 /**
- * Tree Page Route for TanStack Router
+ * console Page Route for TanStack Router
  *
  * This route handles the `/t/:treeId/:pageNodeId` path and loads the page node data.
  * It displays the TreeConsoleIntegration component with AppBar.

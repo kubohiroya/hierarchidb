@@ -24,7 +24,7 @@ function node(
 describe('CoreDB.duplicateSubtreeWithMap', () => {
   it('duplicates subtree and returns idMap', async () => {
     const map = new Map<NodeId, TreeNode>();
-    // Tree: p -> a -> b
+    // console: p -> a -> b
     const p = 'p' as NodeId;
     const a = 'a' as NodeId;
     const b = 'b' as NodeId;

@@ -1,5 +1,5 @@
 /**
- * Route Basic Info Step Component
+ * Route Basic info Step Component
  */
 
 import type React from 'react';

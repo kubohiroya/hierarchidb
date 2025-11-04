@@ -1,5 +1,5 @@
 /**
- * React hook to get SpeedDial/Menu items based on tree context
+ * React hook to get SpeedDial/Menu items based on console context
  */
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import { prefetchMuiIcons } from '@hierarchidb/ui-shell/ui-icon';

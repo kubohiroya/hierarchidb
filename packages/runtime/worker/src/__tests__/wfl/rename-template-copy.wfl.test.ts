@@ -42,7 +42,7 @@ type TemplateFile = {
 };
 
 const templateUrl = new URL(
-  '../../../../../../app/public/templates/population-2023/tree-nodes.json',
+  '../../../../../../app/public/templates/population-2023/console-nodes.json',
   import.meta.url
 );
 

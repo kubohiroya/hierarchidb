@@ -85,7 +85,7 @@ describe('Folder CRUD Operations', () => {
 
     test('コンテキストメニューからのフォルダ作成', async ({ page }) => {
       // 親フォルダを右クリック
-      const parentFolder = page.locator('[data-testid="tree-node"][data-node-type="folder-plugin"]').first();
+      const parentFolder = page.locator('[data-testid="console-node"][data-node-type="folder-plugin"]').first();
       await parentFolder.click({ button: 'right' });
 
       // コンテキストメニューの表示確認
@@ -262,7 +262,7 @@ async function createTestFolder(page: Page, name: string): Promise<string> {
 }
 
 async function waitForTreeTableLoad(page: Page): Promise<void> {
-  await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+  await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
   await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
 }
 ```

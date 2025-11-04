@@ -162,7 +162,7 @@ TreeQueryAPIは、IndexedDBのインデックスを活用して高速な検索�
 
 **使用例:**
 ```typescript
-const treeId = 'tree-001' as TreeId;
+const treeId = 'console-001' as TreeId;
 const tree = await queryAPI.getTree(treeId);
 
 if (tree) {

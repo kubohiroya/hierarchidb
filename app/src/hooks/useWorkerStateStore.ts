@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { WorkerInitializationProgress, WorkerStateSnapshot } from './WorkerStateStore.js';
 import {
-  ensureWorkerInitialized,
-  getWorkerSnapshot,
-  subscribeWorkerProgress,
-  subscribeWorkerState,
-} from './WorkerStateStore.js';
+  ensureWorkerInitialized, getWorkerSnapshot,
+  subscribeWorkerProgress, subscribeWorkerState, WorkerInitializationProgress, WorkerStateSnapshot } from '~/worker-runtime/WorkerStateStore.ts';
 
 export function useWorkerState(): WorkerStateSnapshot {
   const [snapshot, setSnapshot] = useState<WorkerStateSnapshot>(() => getWorkerSnapshot());

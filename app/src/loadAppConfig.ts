@@ -76,7 +76,7 @@ export function loadAppConfig(): LoadAppConfigReturn {
     appTitle: VITE_APP_TITLE || 'HierarchiDB',
     appDescription:
       VITE_APP_DESCRIPTION ||
-      'High-performance tree-structured data management framework for browser environments',
+      'High-performance console-structured data management framework for browser environments',
     appDetails:
       VITE_APP_DETAILS ||
       'A powerful framework for managing hierarchical data in browser environments',

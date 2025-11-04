@@ -33,7 +33,7 @@ export interface ValidationExtension {
 }
 
 /**
- * Entity-level extension contract used by plugin dialogs.
+ * Entity-level extension contract used by plugin console.
  */
 export interface BaseEntityExtension<_TBase = unknown, TExtended = unknown> {
   getExtendedData: (nodeId: NodeId) => Promise<Partial<TExtended>>;

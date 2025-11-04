@@ -1,10 +1,10 @@
 /**
- * Base Tree Route for TanStack Router
+ * Base console Route for TanStack Router
  *
  * This route handles the `/t` path and initializes the Worker API client.
  * It corresponds to the React Router route `t.tsx`
  *
- * This route provides worker initialization as a shared barrier for all tree-related routes.
+ * This route provides worker initialization as a shared barrier for all console-related routes.
  */
 
 import { createRoute, Outlet } from '@tanstack/react-router';

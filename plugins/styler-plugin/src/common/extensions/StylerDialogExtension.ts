@@ -112,7 +112,7 @@ const evaluateStylerSteps = (data: StylerDialogPeer) => {
 export class StylerDialogExtension extends NodeDialogPlugin<StylerDialogPeer> {
   readonly pluginId = 'styler-plugin-dialog-extension';
   readonly pluginName = 'Styler Dialog Extension';
-  readonly pluginDescription = 'Adds Styler dialog steps to plugin dialogs';
+  readonly pluginDescription = 'Adds Styler dialog steps to plugin console';
   readonly pluginVersion = '1.0.0';
   protected readonly dependencies = ['spreadsheet-plugin-dialog-extension'];
 

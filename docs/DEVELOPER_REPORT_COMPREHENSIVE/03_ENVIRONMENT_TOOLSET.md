@@ -1358,7 +1358,7 @@ describe('TreeMutationService Integration', () => {
 **E2E Test例**
 
 ```typescript
-// e2e/tests/tree-operations.spec.ts
+// e2e/tests/console-operations.spec.ts
 test('should create and edit node', async ({ page }) => {
   await page.goto('/t/test-tree');
   
@@ -1369,16 +1369,16 @@ test('should create and edit node', async ({ page }) => {
   await page.click('[data-testid="save-button"]');
   
   // Verify node created
-  await expect(page.locator('[data-testid="tree-node"]')).toContainText('New Node');
+  await expect(page.locator('[data-testid="console-node"]')).toContainText('New Node');
   
   // Edit node
-  await page.click('[data-testid="tree-node"]:has-text("New Node")');
+  await page.click('[data-testid="console-node"]:has-text("New Node")');
   await page.click('[data-testid="edit-button"]');
   await page.fill('[data-testid="node-name-input"]', 'Edited Node');
   await page.click('[data-testid="save-button"]');
   
   // Verify edit
-  await expect(page.locator('[data-testid="tree-node"]')).toContainText('Edited Node');
+  await expect(page.locator('[data-testid="console-node"]')).toContainText('Edited Node');
 });
 ```
 

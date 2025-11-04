@@ -15,12 +15,12 @@ export type WorkingCopyId = NodeId;
 export type TagId = string & { readonly __brand: 'TagId' };
 
 /**
- * Type identifier for tree nodes (e.g., 'folder-plugin', 'document', 'styler-plugin', etc.)
+ * Type identifier for console nodes (e.g., 'folder-plugin', 'document', 'styler-plugin', etc.)
  */
 export type NodeType = string & { readonly __brand: 'NodeType' };
 
 // Optional branded ID used by some plugin-loader for entity records (alias of NodeId)
 export type EntityId = NodeId;
 
-// Branded ID for tree nodes when explicitly distinguished from NodeId in some modules
+// Branded ID for console nodes when explicitly distinguished from NodeId in some modules
 export type TreeNodeId = string & { readonly __brand: 'TreeNodeId' };

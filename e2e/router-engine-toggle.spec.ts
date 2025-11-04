@@ -142,7 +142,7 @@ test.describe('Router Engine Toggle - Smoke Tests', () => {
 
     expect(hasContent).toBe(true);
     
-    console.log('✅ Home page navigation successful');
+    console.log('✅ home page navigation successful');
   });
 
   test('should not show router-related errors @router-toggle', async () => {

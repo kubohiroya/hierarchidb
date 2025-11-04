@@ -91,7 +91,7 @@ Created `app/src/router/loaders/__tests__/treeLoaders.test.ts` with tests for:
 ### Test Coverage
 
 ```bash
-# Run tree loader tests
+# Run console loader tests
 pnpm -C app test -- router/loaders/__tests__/treeLoaders.test.ts --run
 ```
 
@@ -111,7 +111,7 @@ pnpm -C app test -- router/loaders/__tests__/treeLoaders.test.ts --run
 const ROUTER_ENGINE = import.meta.env.VITE_ROUTER_ENGINE ?? 'react-router';
 
 if (ROUTER_ENGINE === 'tanstack') {
-  // Use TanStack Router with tree routes
+  // Use TanStack Router with console routes
   const router = await createHierarchiRouter({ mode, basename });
 } else {
   // Use React Router (default)
@@ -134,7 +134,7 @@ const notFound = targetNode === undefined;
 The `dialogRoute.tsx` handles trash specially:
 ```typescript
 if (nodeType === 'trash') {
-  const trashDialogModule = await import('~/components/dialogs/TrashDialog.js');
+  const trashDialogModule = await import('~/components/console/TrashDialog.js');
   // Use trash-specific loader
 }
 ```

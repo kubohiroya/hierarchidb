@@ -1,6 +1,6 @@
 /**
  * Plugin Dialog Route Component
- * Integrates plugin dialogs with React Router
+ * Integrates plugin console with React Router
  */
 
 import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/feature-core/common-types';
@@ -192,7 +192,7 @@ export const PluginDialogRoute: React.FC<PluginDialogRouteProps> = ({ loaderData
 };
 
 /**
- * Create route configuration for plugin dialogs
+ * Create route configuration for plugin console
  * Uses the existing route pattern: /t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action
  */
 export function createPluginDialogRoutes() {

@@ -45,7 +45,7 @@ describe('Comlink + fake-indexeddb integration: partial trash restore flow', () 
     expect(tree?.rootId).toBeDefined();
     expect(tree?.trashRootId).toBeDefined();
     if (!tree?.rootId || !tree.trashRootId) {
-      throw new Error('Expected tree roots to be defined');
+      throw new Error('Expected console roots to be defined');
     }
 
     const rootId = tree.rootId as NodeId;

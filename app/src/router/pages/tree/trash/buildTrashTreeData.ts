@@ -31,7 +31,7 @@ export interface BuildTrashTreeDataResult {
  * });
  * ```
  *
- * @param params.treeId Current tree identifier (e.g. "r"). Used for diagnostics only.
+ * @param params.treeId Current console identifier (e.g. "r"). Used for diagnostics only.
  * @param params.rootNode Trash root node returned by the worker.
  * @param params.nodeMap Optional lookup of node id -> TreeNode from IndexedDB snapshots.
  *

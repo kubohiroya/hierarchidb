@@ -167,7 +167,7 @@ export class ShapeDB extends Dexie {
     super(getDBName('shape-db'));
 
     this.version(1).stores({
-      // Core entities - indexed by nodeId for tree integration
+      // Core entities - indexed by nodeId for console integration
       shapeEntities: '&id, nodeId, status, dataSourceName, createdAt, updatedAt',
 
       // Batch processing - indexed for session and task management

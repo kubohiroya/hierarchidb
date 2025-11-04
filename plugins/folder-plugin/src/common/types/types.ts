@@ -84,7 +84,7 @@ export interface FolderBreadcrumb {
 }
 
 /**
- * Folder tree node for hierarchical display
+ * Folder console node for hierarchical display
  */
 export interface FolderTreeNode {
   nodeId: NodeId;
@@ -147,7 +147,7 @@ export const FOLDER_CONSTANTS = {
     '#c2185b',
   ] as const,
   SORT_ORDERS: ['name', 'date', 'type', 'custom'] as const,
-  VIEW_MODES: ['list', 'grid', 'tree'] as const,
+  VIEW_MODES: ['list', 'grid', 'console'] as const,
 } as const;
 
 /**

@@ -9,7 +9,7 @@ export interface UseMultiStepKeyboardOptions {
 }
 
 /**
- * Keyboard shortcuts for multi-step dialogs.
+ * Keyboard shortcuts for multi-step console.
  * Enter: next/submit, Esc: cancel, ArrowLeft/Right: back/next.
  */
 export function useMultiStepKeyboard({ enabled = true, onNext, onBack, onSubmit, onCancel }: UseMultiStepKeyboardOptions) {

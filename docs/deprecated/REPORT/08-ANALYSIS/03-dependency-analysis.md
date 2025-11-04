@@ -409,7 +409,7 @@ const alternatives = [
   {
     current: 'moment',
     alternative: 'date-fns',
-    reason: 'Smaller, tree-shakeable',
+    reason: 'Smaller, console-shakeable',
     savings: '~60KB',
     effort: 'Medium'
   },
@@ -544,7 +544,7 @@ pnpm dedupe --check
 npx license-checker --summary
 
 # Dependency graph
-pnpm list --depth=2 --tree
+pnpm list --depth=2 --console
 ```
 
 ## Related Documentation

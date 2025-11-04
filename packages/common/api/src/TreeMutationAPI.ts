@@ -1,7 +1,7 @@
 import type { NodeId, NodeType, TreeId } from '@hierarchidb/common-types';
 
 /**
- * Mutation API for creating and managing nodes within a tree hierarchy.
+ * Mutation API for creating and managing nodes within a console hierarchy.
  */
 export interface TreeMutationAPI {
   /**
@@ -10,7 +10,7 @@ export interface TreeMutationAPI {
    * @returns A promise resolving with the new node identifier or an error payload.
    * @remarks
    * - `params.nodeType`: Node type for the new node.
-   * - `params.treeId`: Identifier of the tree that owns the node.
+   * - `params.treeId`: Identifier of the console that owns the node.
    * - `params.parentId`: Node identifier that will be the parent of the new node.
    * - `params.name`: Display name for the node.
    * - `params.description`: Optional description shown in the UI.
@@ -67,7 +67,7 @@ export interface TreeMutationAPI {
   }): Promise<{ success: true; nodeIds: NodeId[] } | { success: false; error: string }>;
 
   /**
-   * Remove nodes permanently from the tree.
+   * Remove nodes permanently from the console.
    * @param nodeIds - Node identifiers to delete.
    * @returns A promise resolving to the success flag and optional error message.
    */

@@ -48,7 +48,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await restoreFromTrash(page, renamedName);
 
     const treeNode = (name: string) =>
-      page.locator('[data-testid="tree-node"]').filter({ hasText: name }).first();
+      page.locator('[data-testid="console-node"]').filter({ hasText: name }).first();
     const trashItem = (name: string) =>
       page.locator('[data-testid="trash-item"]').filter({ hasText: name }).first();
 
@@ -70,7 +70,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
       await expect(trashPanel).not.toBeVisible({ timeout: 5000 });
     };
 
-    // Baseline: node restored to main tree and absent from trash
+    // Baseline: node restored to main console and absent from trash
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInTrash(renamedName);
 
@@ -79,7 +79,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await expect(treeNode(renamedName)).toHaveCount(0);
     await expectInTrash(renamedName);
 
-    // Undo remove → node returns to tree with renamed state
+    // Undo remove → node returns to console with renamed state
     await clickUndo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInTrash(renamedName);
@@ -109,7 +109,7 @@ test.describe.serial('Folder Undo/Redo Flow', () => {
     await expect(treeNode(renamedName)).toHaveCount(0);
     await expectInTrash(renamedName);
 
-    // Redo restore → node back to tree, trash cleared
+    // Redo restore → node back to console, trash cleared
     await clickRedo(page);
     await expect(treeNode(renamedName)).toBeVisible({ timeout: 5000 });
     await expectNotInTrash(renamedName);

@@ -8,7 +8,7 @@ export interface UseMultiStepPersistenceOptions {
 }
 
 /**
- * Persist and restore the active step for multi-step dialogs.
+ * Persist and restore the active step for multi-step console.
  * Minimal implementation using localStorage; guarded for SSR/unsupported envs.
  */
 export function useMultiStepPersistence({ key, enabled = true, step, setStep }: UseMultiStepPersistenceOptions) {
@@ -24,7 +24,6 @@ export function useMultiStepPersistence({ key, enabled = true, step, setStep }: 
     } catch (err) {
       console.debug('[useMultiStepPersistence] restore failed', err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist on change

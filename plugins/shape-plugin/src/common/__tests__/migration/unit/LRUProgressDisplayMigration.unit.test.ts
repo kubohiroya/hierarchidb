@@ -16,7 +16,7 @@ import { ShapeBatchProgressDisplay } from '../../ui/components/ShapeBatchProgres
 import type { BatchProgressEvent } from '../../types/BatchProgressEvent.js';
 import type { NodeId } from '@hierarchidb/common-types';
 type TreeNodeId = NodeId;
-const mockTreeNodeId = 'tree-node-123' as TreeNodeId;
+const mockTreeNodeId = 'console-node-123' as TreeNodeId;
 
 const baseTimestamp = Date.now();
 
@@ -234,7 +234,7 @@ describe('LRU Progress Display Migration Tests', () => {
         ...mockBatchProgressEvents,
         {
           sessionId: 'session-456',
-          treeNodeId: 'tree-node-456' as TreeNodeId,
+          treeNodeId: 'console-node-456' as TreeNodeId,
           stage: 'download' as const,
           progress: 10,
           completedTasks: 1,

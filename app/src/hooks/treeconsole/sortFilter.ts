@@ -1,7 +1,7 @@
 /**
  * TreeConsole sorting and filtering helpers.
  *
- * Provides pure utilities for ordering and narrowing tree node lists.
+ * Provides pure utilities for ordering and narrowing console node lists.
  */
 
 import type { NodeType } from '@hierarchidb/feature-core/common-types';

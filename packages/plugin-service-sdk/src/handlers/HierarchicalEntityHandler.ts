@@ -31,7 +31,7 @@ export interface HierarchicalSearchCriteria extends BaseSearchCriteria {
 }
 
 /**
- * Tree node representation for hierarchical data
+ * console node representation for hierarchical data
  */
 export interface TreeNode<TEntity extends HierarchicalEntity> {
   entity: TEntity;
@@ -41,7 +41,7 @@ export interface TreeNode<TEntity extends HierarchicalEntity> {
 
 /**
  * Abstract base class for hierarchical entity handlers
- * Provides tree structure operations
+ * Provides console structure operations
  */
 export abstract class HierarchicalEntityHandler<
   TEntity extends HierarchicalEntity,
@@ -124,13 +124,13 @@ export abstract class HierarchicalEntityHandler<
   }
 
   /**
-   * Build tree structure from flat list
+   * Build console structure from flat list
    */
   buildTree(entities: TEntity[], rootParentId?: NodeId): TreeNode<TEntity>[] {
     const nodeMap = new Map<NodeId, TreeNode<TEntity>>();
     const rootNodes: TreeNode<TEntity>[] = [];
 
-    // Create tree nodes
+    // Create console nodes
     entities.forEach((entity) => {
       nodeMap.set(entity.nodeId, {
         entity,
@@ -284,7 +284,7 @@ export abstract class HierarchicalEntityHandler<
   }
 
   /**
-   * Sort tree nodes (can be overridden by derived classes)
+   * Sort console nodes (can be overridden by derived classes)
    */
   protected sortTreeNodes(nodes: TreeNode<TEntity>[]): TreeNode<TEntity>[] {
     const getName = (entity: TEntity): string => {

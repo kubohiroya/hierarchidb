@@ -144,7 +144,7 @@ export const TreeTableView = memo(function TreeTableView(props: TreeTableViewPro
   const someSelected = visibleNodes.some((node) => isSelected(node.id));
 
   const renderRow = (node: TreeNodeData): React.ReactNode => {
-    const hasChildren = Boolean(node.children?.length) || Boolean((node as TreeNode).hasChildren);
+    const hasChildren = Boolean(node.hasChildren) || Boolean(node.children?.length);
     const expanded = isExpanded(node.id);
     const selected = isSelected(node.id);
     const nodeWithAbsolute = node as TreeNodeData & { absoluteDepth?: number };

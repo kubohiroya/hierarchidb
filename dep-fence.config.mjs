@@ -83,7 +83,7 @@ const custom = [
   {
     id: 'app-plugin-dialog-layering',
     when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
-    because: 'App must interact with plugin dialogs via @hierarchidb/plugin-ui-host facade.',
+    because: 'App must interact with plugin console via @hierarchidb/plugin-ui-host facade.',
     rules: [
       {
         rule: 'import-path-ban',

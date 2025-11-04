@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
   dismissGuidedTour,
-  waitForTreeTableLoad,
   setupConsoleErrorTracking,
   clearTestData,
   createTestFolder,
@@ -23,7 +22,7 @@ test.describe('Folder CRUD Operations', () => {
   test.beforeEach(async ({ page }) => {
     setupConsoleErrorTracking(page);
     await clearTestData(page);
-    // Navigate to specific tree with valid IDs to avoid routing issues
+    // Navigate to specific console with valid IDs to avoid routing issues
     // Using 'default' as treeId and 'defaultRoot' as pageTreeNodeId
     await page.goto(buildAppUrl('t/r'));
 
@@ -54,7 +53,7 @@ test.describe('Folder CRUD Operations', () => {
   test.describe.skip('Legacy folder CRUD (TODO: pending selector updates)', () => {
   test('フォルダ作成 - コンテキストメニューから', async ({ page }) => {
     // ルートノードを右クリック
-    const rootNode = page.locator('[data-testid="tree-node"]').first();
+    const rootNode = page.locator('[data-testid="console-node"]').first();
     await rootNode.click({ button: 'right' });
 
     // コンテキストメニューの確認
@@ -364,7 +363,7 @@ test.describe('Folder CRUD Operations', () => {
   test('フォルダ作成の取り消し（Undo）', async ({ page }) => {
     // 初期状態のフォルダ数を記録
     const initialFolders = await page
-      .locator('[data-testid="tree-node"][data-node-type="folder-plugin"]')
+      .locator('[data-testid="console-node"][data-node-type="folder-plugin"]')
       .count();
 
     // フォルダを作成
@@ -384,7 +383,7 @@ test.describe('Folder CRUD Operations', () => {
 
     // フォルダ数が元に戻ることを確認
     const finalFolders = await page
-      .locator('[data-testid="tree-node"][data-node-type="folder-plugin"]')
+      .locator('[data-testid="console-node"][data-node-type="folder-plugin"]')
       .count();
     expect(finalFolders).toBe(initialFolders);
   });

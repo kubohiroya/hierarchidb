@@ -51,7 +51,7 @@ describe('Comlink + fake-indexeddb integration: subtree/trash subscriptions', ()
     expect(tree?.trashRootId).toBeDefined();
 
     if (!tree?.rootId || !tree.trashRootId) {
-      throw new Error('Expected tree roots to be defined');
+      throw new Error('Expected console roots to be defined');
     }
     const rootId = tree.rootId as NodeId;
     const trashRootId = tree.trashRootId as NodeId;

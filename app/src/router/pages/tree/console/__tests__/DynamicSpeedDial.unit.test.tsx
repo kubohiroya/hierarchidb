@@ -1,7 +1,7 @@
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DynamicSpeedDial } from '../../DynamicSpeedDial.js';
+import { DynamicSpeedDial } from '../DynamicSpeedDial.js';
 import type { PluginMenuItem } from '~/hooks/usePluginMenuItems.js';
 import '@testing-library/jest-dom';
 

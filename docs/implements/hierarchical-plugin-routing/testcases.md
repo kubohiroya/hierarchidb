@@ -8,7 +8,7 @@
 - **期待される結果**: 
   ```typescript
   {
-    treeId: "tree-123",
+    treeId: "console-123",
     pageTreeNodeId: "node-456", 
     targetTreeNodeId: "node-789",
     treeNodeType: "basemap",
@@ -68,7 +68,7 @@
 - **期待される結果**: 
   ```typescript
   {
-    treeId: "tree-123",
+    treeId: "console-123",
     pageTreeNodeId: undefined,
     targetTreeNodeId: undefined,
     treeNodeType: undefined,
@@ -102,13 +102,13 @@
 describe('階層的URLルーティング', () => {
   it('階層的URLパラメータを正常に解析する', async () => {
     // Given: テストデータとルート設定
-    const testUrl = '/t/tree-123/node-456/node-789/basemap/edit';
+    const testUrl = '/t/console-123/node-456/node-789/basemap/edit';
     
     // When: ルートにナビゲート
     const { params } = await navigateTo(testUrl);
     
     // Then: パラメータが正しく解析される
-    expect(params.treeId).toBe('tree-123');
+    expect(params.treeId).toBe('console-123');
     expect(params.pageTreeNodeId).toBe('node-456');
     expect(params.targetTreeNodeId).toBe('node-789');
     expect(params.treeNodeType).toBe('basemap');

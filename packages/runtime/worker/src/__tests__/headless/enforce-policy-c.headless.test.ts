@@ -86,11 +86,11 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
     expect(rem.success).toBe(false);
   });
 
-  it('WC in another tree does not block current tree operations', async () => {
+  it('WC in another console does not block current console operations', async () => {
     const core = await newCore('multitree');
     const cp = new CommandProcessor(core);
 
-    // create node in Projects tree (p)
+    // create node in Projects console (p)
     const px = `px-${Date.now()}` as NodeId;
     await core.createNode({
       id: px,
@@ -103,7 +103,7 @@ describe('Headless E2E: Policy C with fake-indexeddb + CoreDB', () => {
       version: 1,
     });
 
-    // create WC holder that references a node in Resources tree (r)
+    // create WC holder that references a node in Resources console (r)
     const aId = `Ar-${Date.now()}` as NodeId;
     await core.createNode({
       id: aId,

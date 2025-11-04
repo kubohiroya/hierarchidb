@@ -85,8 +85,8 @@ export interface UseTreeViewControllerReturn extends TreeViewController {
   //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
-  deleteNode: (nodeId: NodeId) => Promise<void>;
-  deleteNodes: (nodeIds: NodeId[]) => Promise<void>;
+  trashNode: (nodeId: NodeId) => Promise<void>;
+  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
@@ -139,9 +139,9 @@ export function useTreeViewController(
     return client != null && typeof client === 'object' && 'getAPI' in client;
   };
 
-  const api: WorkerAPI | Record<string, unknown> | null = hasGetAPI(workerClient)
+  const api: WorkerAPI | null = hasGetAPI(workerClient)
     ? workerClient.getAPI()
-    : (stateManager as Record<string, unknown> | null) || null;
+    : null;
 
   //  WorkerAPIAdapter
   const workerAdapter = useMemo(() => {
@@ -486,7 +486,7 @@ export function useTreeViewController(
           (event) => {
             void handleEvent(event);
           },
-          { viewId: 'treeconsole-view', prefetchDepth: PREFETCH_DEPTH },
+          { viewId: 'treeconsole-view' },
         );
 
         if (cancelled) {

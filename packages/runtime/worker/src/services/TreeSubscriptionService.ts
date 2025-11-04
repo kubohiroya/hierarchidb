@@ -33,7 +33,7 @@ import { TreeSearchService } from './TreeSearchService.js';
 
 /**
  * TreeSubscriptionService - Implements TreeSubscriptionAPI
- * Provides real-time subscription functionality for tree structure changes
+ * Provides real-time subscription functionality for console structure changes
  */
 export class TreeSubscriptionService {
   static async getSingleton(coreDB: CoreDB): Promise<TreeSubscriptionService> {
@@ -673,7 +673,7 @@ export class TreeSubscriptionService {
       return maxDepth === undefined || maxDepth >= 1;
     }
 
-    // For deeper hierarchy, we would need to traverse up the tree
+    // For deeper hierarchy, we would need to traverse up the console
     // For now, we'll use the database lookup method as fallback
     return this.isDescendantNode(node.id, ancestorNodeId, maxDepth, node);
   }
@@ -952,7 +952,7 @@ export class TreeSubscriptionService {
   }
 
   /**
-   * Subscribe to all changes within a specific tree (TreeSubscriptionAPI)
+   * Subscribe to all changes within a specific console (TreeSubscriptionAPI)
    */
   async subscribeTree(
     treeId: TreeId,
@@ -974,7 +974,7 @@ export class TreeSubscriptionService {
 
     this.registry.register(subscriptionInfo);
 
-    // Set up the observable stream for entire tree
+    // Set up the observable stream for entire console
     const stream = this.globalChangeSubject.pipe(
       rxFilter((event) => this.isEventRelevantForTreeObservation(event, treeId)),
       map((event) => this.convertToTreeNodeEvent(event))
@@ -1072,7 +1072,7 @@ export class TreeSubscriptionService {
   }
 
   /**
-   * Remove all subscriptions for a specific tree (TreeSubscriptionAPI)
+   * Remove all subscriptions for a specific console (TreeSubscriptionAPI)
    */
   async unsubscribeTree(treeId: TreeId): Promise<number> {
     let count = 0;
@@ -1247,7 +1247,7 @@ export class TreeSubscriptionService {
   }
 
   /**
-   * Check if event is relevant for tree observation
+   * Check if event is relevant for console observation
    */
   private isEventRelevantForTreeObservation(_event: TreeChangeEvent, _treeId: TreeId): boolean {
     //  TreeChangeEventtreeIdnodeIdTreeId

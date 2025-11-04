@@ -22,7 +22,7 @@
 // 共通型（抽象例）
 export type QueryKey = readonly [string, ...Array<string | number>];
 export type CommandId = string;
-export type Topic = string; // e.g., `tree:${id}`
+export type Topic = string; // e.g., `console:${id}`
 
 export interface ClientOptions { retry?: number; timeoutMs?: number; }
 

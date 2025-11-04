@@ -122,7 +122,7 @@ if (notFound) {
 
 ```typescript
 if (nodeType === 'trash') {
-  const trashDialogModule = await import('~/components/dialogs/TrashDialog.js');
+  const trashDialogModule = await import('~/components/console/TrashDialog.js');
   return await trashDialogModule.clientLoader({ params });
 }
 ```

@@ -1,7 +1,7 @@
 /**
  * TreeConsole Integration Component
  *
- * Integrates TreeConsolePanel with WorkerAPIClient for tree data management.
+ * Integrates TreeConsolePanel with WorkerAPIClient for console data management.
  * Avoids Orchestrated APIs as requested and focuses on direct Worker API calls.
  */
 
@@ -15,12 +15,11 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWorkerClient } from '../contexts/WorkerProvider.js';
-import { useTreeConsoleIntegration } from '../hooks/useTreeConsoleIntegration.ts';
-import type { SubscriptionCallback } from '../services/SubscriptionServices.ts';
-import { Subscriptions } from '../services/SubscriptionServices.ts';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
-import { ProjectsGuidedTour, ResourcesGuidedTour, TopPageGuidedTour } from './tour/index.js';
+import { SubscriptionCallback, Subscriptions } from '~/services/SubscriptionServices.ts';
+import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
+import { useWorkerClient } from '~/contexts/WorkerProvider.tsx';
+
 
 const logIntegrationWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -67,7 +66,6 @@ const TreeConsoleIntegrationInner: React.FC<
 > = ({ client: workerClient, treeId, pageNodeId, pageTreeNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [tourRun, setTourRun] = useState(false);
   const [hasTrashItems, setHasTrashItems] = useState(false);
   const [trashRootId, setTrashRootId] = useState<NodeId | null>(null);
   const trashSubRef = useRef<string | null>(null);
@@ -467,15 +465,6 @@ const TreeConsoleIntegrationInner: React.FC<
     [actions, pageNodeId, treeId]
   );
 
-  // Handler for starting guided tour
-  const handleStartTour = useCallback(() => {
-    setTourRun(true);
-  }, []);
-
-  const handleTourFinish = useCallback(() => {
-    setTourRun(false);
-  }, []);
-
   const availableTemplateOptions = useMemo(
     () =>
       treeId === 'r'
@@ -530,23 +519,11 @@ const TreeConsoleIntegrationInner: React.FC<
     );
   }
 
-  // Select the appropriate tour based on the current path
-  const renderGuidedTour = () => {
-    if (treeId === 'p') {
-      return <ProjectsGuidedTour run={tourRun} onFinish={handleTourFinish} />;
-    } else if (treeId === 'r') {
-      return <ResourcesGuidedTour run={tourRun} onFinish={handleTourFinish} />;
-    } else {
-      return <TopPageGuidedTour run={tourRun} onFinish={handleTourFinish} />;
-    }
-  };
-
   // Compute counts for footer display
   // Removed verbose footer counts (subscription/loaded/selected) per request
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {renderGuidedTour()}
       <TreeConsoleToolbar
         isProjectsPage={pageTreeNode?.name?.toLowerCase().includes('project')}
         isResourcesPage={pageTreeNode?.name?.toLowerCase().includes('resource')}
@@ -573,7 +550,6 @@ const TreeConsoleIntegrationInner: React.FC<
         <TreeConsolePanelWithDynamicSpeedDial
           treeId={treeId as TreeId}
           workerClient={workerClient}
-          onStartTour={handleStartTour}
           title={`Tree: ${pageTreeNode?.name || 'Root'}`}
           pageNodeId={pageNodeId}
           pageTreeNode={pageTreeNode}

@@ -24,7 +24,7 @@ export interface PluginDefinition {
   // Icon configuration
   readonly icon?: NodeTypeIconDefinition;
 
-  // Category configuration - defines which tree(s) this plugin is available in
+  // Category configuration - defines which console(s) this plugin is available in
   readonly category: CategoryDefinition;
 
   // Database configuration
@@ -105,7 +105,7 @@ export interface NodeTypeIconDefinition {
 
 /**
  * Category definition for plugin-loader
- * Defines which tree(s) a plugin should be available in
+ * Defines which console(s) a plugin should be available in
  */
 export interface CategoryDefinition {
   // TreeTypes ID where this plugin should be available

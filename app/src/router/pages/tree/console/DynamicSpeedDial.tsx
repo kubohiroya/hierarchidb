@@ -11,8 +11,8 @@ import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shel
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePluginMenuItems } from '../hooks/usePluginMenuItems.js';
-import type { PluginMenuItem, TreeContext } from '../plugin-loader/menu-builders.js';
+import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';
+import type { PluginMenuItem, TreeContext } from '~/plugin-loader/menu-builders.js';
 
 interface DynamicSpeedDialProps {
   treeId: TreeId | undefined;

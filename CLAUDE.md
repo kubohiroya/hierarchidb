@@ -133,7 +133,7 @@ const treeId = generateId() as TreeId;  // Required cast
 // Entity handler hierarchy
 BaseEntityHandler<TEntity, TWorkingCopy>
   ├── MetadataEntityHandler  // For entities with metadata/tags
-  ├── HierarchicalEntityHandler  // For tree structures
+  ├── HierarchicalEntityHandler  // For console structures
   └── (Custom handlers)
 
 // Usage example

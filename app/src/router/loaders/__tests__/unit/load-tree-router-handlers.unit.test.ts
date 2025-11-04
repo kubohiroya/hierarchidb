@@ -1,5 +1,5 @@
 /**
- * Unit tests for tree loaders
+ * Unit tests for console loaders
  * Testing the loader functions that will be used by TanStack Router
  */
 
@@ -45,11 +45,11 @@ function createMockClient(): Remote<WorkerAPI> {
 
 function createTree(overrides: Partial<Tree> = {}): Tree {
   return {
-    id: 'tree-1' as TreeId,
-    name: 'Mock Tree',
-    rootId: 'tree-1:root' as NodeId,
-    trashRootId: 'tree-1:trash' as NodeId,
-    superRootId: 'tree-1:super' as NodeId,
+    id: 'console-1' as TreeId,
+    name: 'Mock console',
+    rootId: 'console-1:root' as NodeId,
+    trashRootId: 'console-1:trash' as NodeId,
+    superRootId: 'console-1:super' as NodeId,
     ...overrides,
   };
 }
@@ -57,7 +57,7 @@ function createTree(overrides: Partial<Tree> = {}): Tree {
 function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
   return {
     id: 'node-1' as NodeId,
-    parentId: 'tree-1:root' as NodeId,
+    parentId: 'console-1:root' as NodeId,
     nodeType: 'folder' as NodeType,
     name: 'Mock Node',
     depth: 0,
@@ -68,7 +68,7 @@ function createTreeNode(overrides: Partial<TreeNode> = {}): TreeNode {
   };
 }
 
-describe('Tree Loaders for TanStack Router', () => {
+describe('console Loaders for TanStack Router', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -89,8 +89,8 @@ describe('Tree Loaders for TanStack Router', () => {
       await expect(loadTree({ treeId: '' })).rejects.toThrow('treeId is required');
     });
 
-    it('should load tree data when treeId is provided', async () => {
-      const mockTree = createTree({ id: 'r' as TreeId, name: 'Resource Tree' });
+    it('should load console data when treeId is provided', async () => {
+      const mockTree = createTree({ id: 'r' as TreeId, name: 'Resource console' });
       const loaderModule = await import('~/loader.js');
       vi.mocked(loaderModule.loadTree).mockResolvedValue({
         tree: mockTree,

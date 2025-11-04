@@ -7532,4 +7532,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-04 15:37 command: pnpm --filter @hierarchidb/app test -- --run start-worker-client — exit 0（再配置した unit テスト群すべてが検出され、router/browser テストも完走）。
 - 2025-11-04 15:41 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 2（TreeId brandingを満たしていない WFL テスト 4 件と、EntityLifecycleManager 系ユニットテストが `.js` 拡張で import しているため NodeNext 解決に失敗）。これよりテスト側の型補強と import 拡張修正に着手する。
 - 2025-11-04 15:48 progress: chore/runtime-worker/typecheck-clean — WFL テスト（create/import/duplicate/rename template 系）で `TreeId` branding を `toTreeId('r')` に統一し、EntityLifecycleManager 配下の unit tests は `../../EntityLifecycleManager.js` など正しい相対パスへ修正。再度 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0 を確認。
+- 2025-11-04 16:00 progress: fix/ui-treeconsole/expand-toggle — TreeTableView 側で `node.hasChildren` を参照せず `node.children` だけを見ていたため、子ノードを遅延ロードする TreeConsole では開閉アイコンが描画されなかった。`hasChildren` フラグも判定に加え、UI 側の `TreeNodeData` から正しく引き継ぐよう修正。
+- 2025-11-04 16:02 progress: fix/ui-treeconsole/expand-toggle — `TreeTableView.hasChildren.test.tsx` を追加し、`hasChildren: true` かつ `children` 未定義でも expand トグルが描画されることを自動テスト化。
+- 2025-11-04 16:03 command: pnpm --filter @hierarchidb/ui-treeconsole-base exec vitest run src/components/TreeTable/__tests__/TreeTableView.hasChildren.test.tsx — exit 0（新規テスト 1 件がグリーン）。
 - 2025-11-04 15:20 start: chore/app/test-structure-alignment — Step1（app/src テストの棚卸しと配置計画）を開始。DoD: unit/headless/e2e への振り分け案と命名案を `TASKS.md` へ記載し、曖昧ケースは選択肢付きで整理する。

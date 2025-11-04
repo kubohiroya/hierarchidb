@@ -98,7 +98,7 @@ const unsubscribe = Comlink.proxy((change: TreeChangeEvent) => {
 **Old Pattern:**
 ```typescript
 // Custom CommandManager
-import { CommandManager } from '@/features/tree-data/services/CommandManager';
+import { CommandManager } from '@/features/console-data/services/CommandManager';
 commandManager.undo();
 commandManager.redo();
 ```

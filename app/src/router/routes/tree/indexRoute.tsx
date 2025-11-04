@@ -1,7 +1,7 @@
 /**
- * Tree Index Route for TanStack Router
+ * console Index Route for TanStack Router
  *
- * Handles the `/t/:treeId` path (without pageNodeId) and loads the tree root node.
+ * Handles the `/t/:treeId` path (without pageNodeId) and loads the console root node.
  */
 
 import { createRoute } from '@tanstack/react-router';

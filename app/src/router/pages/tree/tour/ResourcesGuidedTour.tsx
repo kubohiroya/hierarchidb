@@ -33,7 +33,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({ run, o
       },
     },
     {
-      target: '[title="Back to Home"]',
+      target: '[title="Back to home"]',
       content: (
         <div>
           <h3>Navigation - Home 🏠</h3>
@@ -46,7 +46,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({ run, o
       disableBeacon: true,
     },
     {
-      target: '[aria-label="tree selection"]',
+      target: '[aria-label="console selection"]',
       content: (
         <div>
           <h3>Navigation - Tree Switcher 🔄</h3>
@@ -125,7 +125,7 @@ export const ResourcesGuidedTour: React.FC<ResourcesGuidedTourProps> = ({ run, o
       disableBeacon: true,
     },
     {
-      target: '[data-tour-id="tree-table"]',
+      target: '[data-tour-id="console-table"]',
       content: (
         <div>
           <h3>Resource Table View 📋</h3>

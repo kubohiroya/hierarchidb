@@ -141,7 +141,7 @@ if (isWorkerReady()) {
 ### 2. TanStack Router Integration
 
 ```typescript
-// Usable in Phase 3 tree routes
+// Usable in Phase 3 console routes
 export const treeBaseRoute = createRoute({
   beforeLoad: async ({ abortController }) => {
     const client = await ensureWorkerStarted({
@@ -220,7 +220,7 @@ if (typeof window !== 'undefined') {
 Phase 4's `workerClient.ts` can be used in Phase 3's TanStack Router tree routes:
 
 ```typescript
-// app/src/router/routes/tree/baseRoute.tsx usage example
+// app/src/router/routes/console/baseRoute.tsx usage example
 import { ensureWorkerStarted } from '../../loaders/workerClient.js';
 
 export const treeBaseRoute = createRoute({

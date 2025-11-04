@@ -217,7 +217,7 @@ const ancestors = await queryService.getAncestors({
   nodeId: currentNodeId
 });
 
-// Expand tree branch
+// Expand console branch
 const descendants = await queryService.getDescendants({
   nodeId: branchNodeId,
   maxDepth: 2

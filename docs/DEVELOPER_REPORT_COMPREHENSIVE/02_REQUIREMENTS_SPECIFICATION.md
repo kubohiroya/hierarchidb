@@ -1656,7 +1656,7 @@ export class TreeQueryService {
     } catch (error) {
       return {
         success: false,
-        error: new HierarchiDBError('Failed to get tree nodes', 'DB_ERROR', { treeId, error })
+        error: new HierarchiDBError('Failed to get console nodes', 'DB_ERROR', { treeId, error })
       };
     }
   }

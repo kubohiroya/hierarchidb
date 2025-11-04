@@ -1,7 +1,7 @@
 /**
  * TreeConsole data loader hook.
  *
- * Centralises the logic for fetching, normalising, and sorting tree data.
+ * Centralises the logic for fetching, normalising, and sorting console data.
  */
 
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';

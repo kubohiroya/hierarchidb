@@ -48,7 +48,7 @@ E2Eテストを最小限にし、統合テストと単体テストを重視し�
 
 ### 例
 ```typescript
-// packages/core/src/utils/__tests__/tree.test.ts
+// packages/core/src/utils/__tests__/console.test.ts
 describe('TreeNodeUtils', () => {
   it('should calculate node depth correctly', () => {
     const node = { path: '/root/parent/child' };

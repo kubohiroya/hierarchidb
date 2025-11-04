@@ -125,7 +125,7 @@ function SearchField({
           inputProps: {
             'aria-label': ariaLabel,
             autoComplete: 'new-password',
-            name: 'hdb-tree-search',
+            name: 'hdb-console-search',
             type: 'search',
             inputMode: 'search',
             spellCheck: false,

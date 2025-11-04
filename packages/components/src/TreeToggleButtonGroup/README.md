@@ -130,7 +130,7 @@ function MultiTreeComponent() {
 ```tsx
 import { TreeToggleButtonGroup, TreeConfig } from '@hierarchidb/ui-core';
 
-// Function to determine which tree a node belongs to
+// Function to determine which console a node belongs to
 async function getNodeTreeId(nodeId: string): Promise<string | null> {
   const node = await fetchNodeMetadata(nodeId);
   
@@ -148,7 +148,7 @@ async function getNodeTreeId(nodeId: string): Promise<string | null> {
 
 function ValidatedTreeToggle() {
   const trees: TreeConfig[] = [
-    // ... tree configurations
+    // ... console configurations
   ];
   
   return (

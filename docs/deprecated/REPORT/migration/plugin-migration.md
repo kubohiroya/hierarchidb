@@ -449,7 +449,7 @@ export default defineConfig([
 // src/openstreetmap-type.ts - Main entry point
 export * from './shared';
 
-// Export everything for tree-shaking
+// Export everything for console-shaking
 export * from './ui';
 export * from './worker';
 

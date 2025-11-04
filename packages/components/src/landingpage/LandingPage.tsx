@@ -19,7 +19,7 @@ export interface LandingPageProps {
  * Generic Landing Page component that abstracts the ERIA-Cartograph landing page structure.
  * - Places first child in top-left and second child in top-right as overlay areas.
  * - Centers logo, heading, description in the viewport.
- * - Provides Info and Help buttons that can be wired by props.
+ * - Provides info and Help buttons that can be wired by props.
  */
 export function LandingPage(props: LandingPageProps) {
   const {

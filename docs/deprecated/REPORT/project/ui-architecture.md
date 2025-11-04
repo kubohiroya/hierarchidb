@@ -165,7 +165,7 @@ export const ResourceSelectionStep: React.FC<ResourceSelectionStepProps> = ({
   const [selectedResources, setSelectedResources] = useState<ResourceSelection[]>([]);
   const [filterOptions, setFilterOptions] = useState<ResourceFilterOptions>({});
   
-  // Load Resources tree structure
+  // Load Resources console structure
   useEffect(() => {
     loadResourcesTreeStructure().then(setResourcesTree);
   }, []);
@@ -582,7 +582,7 @@ const useResponsiveLayout = () => {
 ### Component Optimization
 
 ```typescript
-// Memoized tree node rendering
+// Memoized console node rendering
 const TreeNodeItem = React.memo<TreeNodeItemProps>(({ node, onSelect, isSelected }) => {
   return (
     <div className={`tree-node ${isSelected ? 'selected' : ''}`}>

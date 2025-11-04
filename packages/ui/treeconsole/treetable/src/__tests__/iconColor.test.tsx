@@ -75,7 +75,7 @@ const defaultParams: ColumnBuilderParams = {
   setEditingError: () => {},
   setEditingNodeId: () => {},
   setEditingField: () => {},
-  treeId: 'tree',
+  treeId: 'console',
   setContextMenuState: () => {},
   visualSelectionSet: new Set(),
   useTrashColumns: false,

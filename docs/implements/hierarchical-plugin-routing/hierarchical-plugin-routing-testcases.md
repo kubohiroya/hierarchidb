@@ -22,7 +22,7 @@
 - **期待される結果**: 
   ```typescript
   {
-    treeId: 'tree-123',
+    treeId: 'console-123',
     pageTreeNodeId: 'node-456', 
     targetTreeNodeId: 'node-789',
     treeNodeType: 'basemap',
@@ -62,7 +62,7 @@
 - **入力値**: 
   ```typescript
   {
-    treeId: 'tree-123',
+    treeId: 'console-123',
     pageTreeNodeId: 'node-456',
     targetTreeNodeId: 'node-789',
     treeNodeType: 'basemap'
@@ -215,7 +215,7 @@ describe('階層的URL解析', () => {
 
     // 【テストデータ準備】: 実際のプラグイン編集画面のURLパターンを模擬
     // 【初期条件設定】: バリッドなURL形式を準備
-    const testUrl = '/t/tree-123/node-456/node-789/basemap/edit';
+    const testUrl = '/t/console-123/node-456/node-789/basemap/edit';
 
     // 【実際の処理実行】: parseHierarchicalUrl関数を呼び出してURL解析を実行
     // 【処理内容】: URL文字列を階層パラメータオブジェクトに変換
@@ -223,7 +223,7 @@ describe('階層的URL解析', () => {
 
     // 【結果検証】: 各パラメータが期待値と一致することを確認
     // 【期待値確認】: ドキュメント8.2.1で定義された階層パターンに準拠した結果
-    expect(result.treeId).toBe('tree-123'); // 【確認内容】: ツリーIDが正確に抽出されること
+    expect(result.treeId).toBe('console-123'); // 【確認内容】: ツリーIDが正確に抽出されること
     expect(result.pageTreeNodeId).toBe('node-456'); // 【確認内容】: ページノードIDが正確に抽出されること  
     expect(result.targetTreeNodeId).toBe('node-789'); // 【確認内容】: ターゲットノードIDが正確に抽出されること
     expect(result.treeNodeType).toBe('basemap'); // 【確認内容】: プラグインタイプが正確に抽出されること

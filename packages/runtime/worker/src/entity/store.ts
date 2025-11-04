@@ -18,7 +18,7 @@ export interface PeerEntity<TData = unknown> {
   // Domain data only; UI-facing fields (name/description) live in TreeNode
   data?: TData;
   updatedAt?: number;
-  // UI presentation mode for dialogs/panels associated with this node
+  // UI presentation mode for console/panels associated with this node
   displayMode?: 'normal' | 'maximize' | 'full-screen';
   // Optional persisted dialog window position/size for UI
   dialogPosition?: { x: number; y: number } | null;

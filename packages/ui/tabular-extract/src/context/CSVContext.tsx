@@ -21,7 +21,7 @@ export interface CSVProviderProps {
 
 /**
  * CSV Provider Component
- * Injects CSV API implementation into the component tree
+ * Injects CSV API implementation into the component console
  */
 export const CSVProvider: React.FC<CSVProviderProps> = ({
                                                           children,

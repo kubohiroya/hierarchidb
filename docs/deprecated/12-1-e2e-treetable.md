@@ -53,13 +53,13 @@ describe('TreeTable Basic Display', () => {
 
   test('初期表示とレンダリング', async ({ page }) => {
     // TreeTable コンポーネントの表示確認
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
     
     // ヘッダー行の確認
-    await expect(page.locator('[data-testid="tree-table-header"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-header"]')).toBeVisible();
     
     // データ行の確認
-    await expect(page.locator('[data-testid="tree-table-row"]')).toHaveCount.atLeast(1);
+    await expect(page.locator('[data-testid="console-table-row"]')).toHaveCount.atLeast(1);
   });
 
   test('カラム表示と幅調整', async ({ page }) => {
@@ -109,7 +109,7 @@ describe('TreeTable Expansion', () => {
     await dismissGuidedTour(page);
 
     // 折りたたまれた状態の確認
-    const parentNode = page.locator('[data-testid="tree-node"][data-has-children="true"]').first();
+    const parentNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
     await expect(parentNode.locator('[data-testid="expand-icon"]')).toHaveAttribute('data-expanded', 'false');
 
     // ノード展開
@@ -117,12 +117,12 @@ describe('TreeTable Expansion', () => {
     await expect(parentNode.locator('[data-testid="expand-icon"]')).toHaveAttribute('data-expanded', 'true');
 
     // 子ノードの表示確認
-    await expect(page.locator('[data-testid="tree-node"][data-parent-id]')).toHaveCount.atLeast(1);
+    await expect(page.locator('[data-testid="console-node"][data-parent-id]')).toHaveCount.atLeast(1);
 
     // ノード折りたたみ
     await parentNode.locator('[data-testid="expand-button"]').click();
     await expect(parentNode.locator('[data-testid="expand-icon"]')).toHaveAttribute('data-expanded', 'false');
-    await expect(page.locator('[data-testid="tree-node"][data-parent-id]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="console-node"][data-parent-id]')).toHaveCount(0);
   });
 
   test('全展開・全折りたたみ', async ({ page }) => {
@@ -133,7 +133,7 @@ describe('TreeTable Expansion', () => {
     await page.locator('[data-testid="expand-all-button"]').click();
     
     // すべての親ノードが展開されていることを確認
-    const expandableNodes = page.locator('[data-testid="tree-node"][data-has-children="true"]');
+    const expandableNodes = page.locator('[data-testid="console-node"][data-has-children="true"]');
     const expandedCount = await expandableNodes.count();
     
     for (let i = 0; i < expandedCount; i++) {
@@ -156,7 +156,7 @@ describe('TreeTable Expansion', () => {
     await dismissGuidedTour(page);
 
     // ノード展開
-    const parentNode = page.locator('[data-testid="tree-node"][data-has-children="true"]').first();
+    const parentNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
     await parentNode.locator('[data-testid="expand-button"]').click();
     
     const nodeId = await parentNode.getAttribute('data-node-id');
@@ -185,8 +185,8 @@ describe('TreeTable Drag and Drop', () => {
     await dismissGuidedTour(page);
 
     // ドラッグ対象ノードの特定
-    const sourceNode = page.locator('[data-testid="tree-node"]').first();
-    const targetNode = page.locator('[data-testid="tree-node"]').nth(2);
+    const sourceNode = page.locator('[data-testid="console-node"]').first();
+    const targetNode = page.locator('[data-testid="console-node"]').nth(2);
 
     const sourceId = await sourceNode.getAttribute('data-node-id');
     const targetId = await targetNode.getAttribute('data-node-id');
@@ -225,10 +225,10 @@ describe('TreeTable Drag and Drop', () => {
     await dismissGuidedTour(page);
 
     // 循環参照の防止テスト
-    const parentNode = page.locator('[data-testid="tree-node"][data-has-children="true"]').first();
+    const parentNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
     await parentNode.locator('[data-testid="expand-button"]').click();
     
-    const childNode = page.locator('[data-testid="tree-node"][data-parent-id]').first();
+    const childNode = page.locator('[data-testid="console-node"][data-parent-id]').first();
     
     // 子ノードを親ノードにドロップしようとする
     await childNode.hover();
@@ -252,9 +252,9 @@ describe('TreeTable Drag and Drop', () => {
     await dismissGuidedTour(page);
 
     // 複数ノード選択
-    const firstNode = page.locator('[data-testid="tree-node"]').first();
-    const secondNode = page.locator('[data-testid="tree-node"]').nth(1);
-    const targetNode = page.locator('[data-testid="tree-node"]').nth(3);
+    const firstNode = page.locator('[data-testid="console-node"]').first();
+    const secondNode = page.locator('[data-testid="console-node"]').nth(1);
+    const targetNode = page.locator('[data-testid="console-node"]').nth(3);
 
     // Ctrlキーを押しながら複数選択
     await firstNode.locator('[data-testid="node-checkbox"]').click();
@@ -300,8 +300,8 @@ describe('TreeTable Realtime Sync', () => {
     await dismissGuidedTour(page2);
 
     // 同じサブツリーを表示していることを確認
-    await expect(page1.locator('[data-testid="tree-table"]')).toBeVisible();
-    await expect(page2.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page1.locator('[data-testid="console-table"]')).toBeVisible();
+    await expect(page2.locator('[data-testid="console-table"]')).toBeVisible();
 
     // Page1で新規ノード作成
     await page1.locator('[data-testid="create-node-button"]').click();
@@ -309,15 +309,15 @@ describe('TreeTable Realtime Sync', () => {
     await page1.locator('[data-testid="create-confirm-button"]').click();
 
     // Page2でリアルタイム更新を確認
-    await expect(page2.locator('[data-testid="tree-node"]:has-text("Test Node")')).toBeVisible({ timeout: 5000 });
+    await expect(page2.locator('[data-testid="console-node"]:has-text("Test Node")')).toBeVisible({ timeout: 5000 });
 
     // Page2でノード削除
-    await page2.locator('[data-testid="tree-node"]:has-text("Test Node")').click({ button: 'right' });
+    await page2.locator('[data-testid="console-node"]:has-text("Test Node")').click({ button: 'right' });
     await page2.locator('[data-testid="context-menu-delete"]').click();
     await page2.locator('[data-testid="delete-confirm-button"]').click();
 
     // Page1で削除の反映を確認
-    await expect(page1.locator('[data-testid="tree-node"]:has-text("Test Node")')).not.toBeVisible({ timeout: 5000 });
+    await expect(page1.locator('[data-testid="console-node"]:has-text("Test Node")')).not.toBeVisible({ timeout: 5000 });
   });
 
   test('購読の自動再接続', async ({ page }) => {
@@ -338,7 +338,7 @@ describe('TreeTable Realtime Sync', () => {
 
     // データ同期の復旧確認
     await page.locator('[data-testid="refresh-button"]').click();
-    await expect(page.locator('[data-testid="tree-table-row"]')).toHaveCount.atLeast(1);
+    await expect(page.locator('[data-testid="console-table-row"]')).toHaveCount.atLeast(1);
   });
 
   test('部分的SubTree更新', async ({ page }) => {
@@ -346,7 +346,7 @@ describe('TreeTable Realtime Sync', () => {
     await dismissGuidedTour(page);
 
     // 特定のサブツリーのみを展開
-    const parentNode = page.locator('[data-testid="tree-node"][data-has-children="true"]').first();
+    const parentNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
     await parentNode.locator('[data-testid="expand-button"]').click();
     
     const parentId = await parentNode.getAttribute('data-node-id');
@@ -370,7 +370,7 @@ describe('TreeTable Realtime Sync', () => {
       .toBeVisible({ timeout: 3000 });
 
     // 他のサブツリーは影響を受けないことを確認
-    const otherNodes = page.locator('[data-testid="tree-node"]').filter({ hasNot: page.locator(`[data-parent-id="${parentId}"]`) });
+    const otherNodes = page.locator('[data-testid="console-node"]').filter({ hasNot: page.locator(`[data-parent-id="${parentId}"]`) });
     const initialCount = await otherNodes.count();
     await page.waitForTimeout(1000);
     await expect(otherNodes).toHaveCount(initialCount);

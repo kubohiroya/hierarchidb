@@ -871,7 +871,7 @@ const aggregatedData = await projectAPI.aggregateResources(project.nodeId);
 ```typescript
 const referenceService = new CrossTreeReferenceService(treeQueryAPI);
 
-// Get Resources tree structure
+// Get Resources console structure
 const treeStructure = await referenceService.getResourcesTreeStructure();
 
 // Validate multiple references

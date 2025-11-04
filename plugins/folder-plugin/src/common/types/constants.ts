@@ -40,7 +40,7 @@ export const FOLDER_DISPLAY = {
   DEFAULT_SORT_ORDER: 'name' as const,
   DEFAULT_SORT_DIRECTION: 'asc' as const,
 
-  VIEW_MODES: ['list', 'grid', 'tree'] as const,
+  VIEW_MODES: ['list', 'grid', 'console'] as const,
   DEFAULT_VIEW_MODE: 'list' as const,
 } as const;
 

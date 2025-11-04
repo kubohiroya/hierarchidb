@@ -34,7 +34,7 @@ export {
 } from '~/loader.js';
 
 /**
- * Context type for TanStack Router tree routes
+ * Context type for TanStack Router console routes
  */
 export interface TreeRouteContext {
   client?: Remote<WorkerAPI>;

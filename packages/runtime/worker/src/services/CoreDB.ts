@@ -82,7 +82,7 @@ export class CoreDB extends Dexie {
     });
   }
 
-  // tree name helper was unused in the current implementation
+  // console name helper was unused in the current implementation
 
   async initialize(): Promise<void> {
     await this.transaction('rw', this.trees, this.nodes, this.rootStates, async () => {
@@ -1067,19 +1067,19 @@ export class CoreDB extends Dexie {
   }
 
   /**
-   * Check if a node exists in any tree (helper method for TagService)
+   * Check if a node exists in any console (helper method for TagService)
    */
   async nodeExistsInTree(treeId: TreeId, nodeId: NodeId): Promise<boolean> {
-    // Check if the node exists and is part of the specified tree
+    // Check if the node exists and is part of the specified console
     const node = await this.nodes.get(nodeId);
     if (!node) return false;
 
-    // Get tree info to check if node belongs to this tree
+    // Get console info to check if node belongs to this console
     const tree = await this.trees.get(treeId);
     if (!tree) return false;
 
-    // Simple check: if the tree exists and node exists, assume they're connected
-    // In a more sophisticated implementation, you might want to traverse the tree
+    // Simple check: if the console exists and node exists, assume they're connected
+    // In a more sophisticated implementation, you might want to traverse the console
     return true;
   }
 

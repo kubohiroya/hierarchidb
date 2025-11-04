@@ -128,7 +128,7 @@ export interface TreeConsoleToolbarProps {
   canRemove?: boolean;
 
   /**
-   * Importable templates for the current tree. If empty or undefined,
+   * Importable templates for the current console. If empty or undefined,
    * the "Import Template" menu item will be hidden.
    */
   availableTemplates?: Array<{ id: string; label?: string }>;

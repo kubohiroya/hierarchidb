@@ -31,7 +31,7 @@ function createNode(
 }
 
 describe('buildTrashTreeData', () => {
-  const root = createNode('trash-root', { parentId: 'tree-root' as NodeId, depth: 0 });
+  const root = createNode('trash-root', { parentId: 'console-root' as NodeId, depth: 0 });
 
   it('prefers original metadata and marks entries as trash', () => {
     const trashedParent = createNode('leaf-1', {

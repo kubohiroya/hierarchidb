@@ -1,5 +1,5 @@
 /**
- * Tree NodeType Route for TanStack Router
+ * console NodeType Route for TanStack Router
  *
  * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType` path
  * and loads the node type data with NotFound handling.

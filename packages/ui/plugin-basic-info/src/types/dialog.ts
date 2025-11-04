@@ -30,7 +30,7 @@ export interface BaseDialogProps<T = any> {
 }
 
 /**
- * Extended base-dialog props for node-related dialogs
+ * Extended base-dialog props for node-related console
  */
 export interface NodeDialogProps<T = any> extends BaseDialogProps<T> {
   /**
@@ -39,13 +39,13 @@ export interface NodeDialogProps<T = any> extends BaseDialogProps<T> {
   readonly parentId?: NodeId;
 
   /**
-   * The node being edited (for edit dialogs)
+   * The node being edited (for edit console)
    */
   readonly nodeId?: NodeId;
 }
 
 /**
- * Props for dialogs with initial data
+ * Props for console with initial data
  */
 export interface EditDialogProps<T = any> extends NodeDialogProps<T> {
   /**
@@ -60,7 +60,7 @@ export interface EditDialogProps<T = any> extends NodeDialogProps<T> {
 }
 
 /**
- * Props for confirmation dialogs
+ * Props for confirmation console
  */
 export interface ConfirmDialogProps extends Omit<BaseDialogProps<void>, 'onSubmit'> {
   /**

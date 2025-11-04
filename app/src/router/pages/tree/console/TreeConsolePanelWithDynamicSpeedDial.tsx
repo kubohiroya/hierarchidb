@@ -15,6 +15,13 @@ import {
 import { Box } from '@mui/material';
 import type { Remote } from 'comlink';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
+import { useCallback, useMemo, useState } from 'react';
+
+import { ProjectsGuidedTour } from '../tour/ProjectsGuidedTour.tsx';
+import { ResourcesGuidedTour } from '../tour/ResourcesGuidedTour.tsx';
+//import { TopPageGuidedTour } from '../tour/TopPageGuidedTour.tsx';
+
+// Select the appropriate tour based on the current path
 
 type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'onDelete'> & {
   treeId: TreeId | undefined;
@@ -37,6 +44,22 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   onDelete,
   ...panelProps
 }: TreeConsolePanelWithDynamicSpeedDialProps) {
+
+  const [tourRun, setTourRun] = useState(false);
+  // Handler for starting guided tour
+
+  const handleTourFinish = useCallback(() => {
+    setTourRun(false);
+  }, []);
+
+  const guidedTour = useMemo(() => {
+    if (treeId === 'p') {
+      return <ProjectsGuidedTour run={tourRun} onFinish={handleTourFinish} />;
+    } else if (treeId === 'r') {
+      return <ResourcesGuidedTour run={tourRun} onFinish={handleTourFinish} />;
+    }
+  }, [handleTourFinish, tourRun, treeId]);
+
   const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {});
   const resolvedOnDelete = onDelete ?? onTrash ?? (() => {});
   const parentForSpeedDial = (pageTreeNode?.parentId ??
@@ -51,8 +74,7 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   } as TreeNodeData;
   return (
     <Box sx={{ position: 'relative', height: '100%', minHeight: 0 }}>
-      {/* TreeConsolePanel without SpeedDial (we'll add our own)
-       */}
+      {guidedTour}
       <TreeConsolePanel
         {...panelProps}
         treeId={treeId}

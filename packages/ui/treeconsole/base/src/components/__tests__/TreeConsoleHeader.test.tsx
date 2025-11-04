@@ -26,7 +26,7 @@ const mockController: TreeViewController = {
   },
   moveNodes: async () => {
   },
-  deleteNodes: async () => {
+  trashNodes: async () => {
   },
   duplicateNodes: async () => {
   },

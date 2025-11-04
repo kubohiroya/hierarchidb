@@ -39,7 +39,7 @@ This document provides guidance for migrating between major versions of Hierarch
 ```typescript
 // Plain string IDs
 const nodeId: string = "node-123";
-const treeId: string = "tree-456";
+const treeId: string = "console-456";
 
 interface TreeNode {
   id: string;
@@ -54,7 +54,7 @@ interface TreeNode {
 import { NodeId, TreeId } from '@hierarchidb/core';
 
 const nodeId = "node-123" as NodeId;
-const treeId = "tree-456" as TreeId;
+const treeId = "console-456" as TreeId;
 
 interface TreeNode {
   id: NodeId;

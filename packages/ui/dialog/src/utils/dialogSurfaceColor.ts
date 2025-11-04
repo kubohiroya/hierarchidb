@@ -5,7 +5,7 @@ const LIGHT_MODE_DARKEN = 0.04;
 const DARK_MODE_LIGHTEN = 0.08;
 
 /**
- * Returns a gently contrasted surface color for plugin/trash dialogs that
+ * Returns a gently contrasted surface color for plugin/trash console that
  * keeps parity across themes while nudging the tone one step stronger.
  */
 export function getDialogSurfaceColor(theme: Theme): string {

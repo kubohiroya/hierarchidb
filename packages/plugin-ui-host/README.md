@@ -67,7 +67,7 @@ function MyStepperDialog({ open, onClose }) {
   
   const steps = [
     {
-      label: 'Basic Info',
+      label: 'Basic info',
       content: <BasicInfoStep />,
       validate: () => formData.name.length > 0,
     },

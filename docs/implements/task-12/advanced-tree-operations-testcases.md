@@ -305,7 +305,7 @@ it('should return empty array for leaf nodes', async () => {
 
 #### TC-GAD-P001: 大規模子孫取得
 ```typescript
-it('should efficiently get descendants from large tree', async () => {
+it('should efficiently get descendants from large console', async () => {
   // Given: 10000ノードの大規模ツリー
   await setupLargeTestTree(10000);
   

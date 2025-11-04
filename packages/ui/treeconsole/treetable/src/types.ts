@@ -14,10 +14,10 @@ export interface TreeNodeInUI extends TreeNode {
   type?: string;
   name: string;
   hasChildren?: boolean;
+  children?: NodeId[];
   isExpanded?: boolean;
   depth: number;
   absoluteDepth?: number;
-  // [key: string]: any;
 }
 
 // TreeTable controller interface
@@ -85,7 +85,7 @@ export interface TreeTableCoreProps {
   pageNodeId?: string;
 
   /**
-   * Current tree context (used for path building and context menus)
+   * Current console context (used for path building and context menus)
    */
   treeId?: string;
 

@@ -3,9 +3,8 @@ import type { ComponentProps, ReactElement } from 'react';
 import { Box, Typography } from '@mui/material';
 import type { TreeTableColumn } from './TreeTable/index.js';
 // RowContextMenu removed: right-click is disabled app-wide
-import type { TreeNodeInUI, TreeTableController } from '@hierarchidb/ui-treeconsole-treetable';
-import type { NodeId, NodeType, TreeNode } from '@hierarchidb/common-types';
-import { TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
+import { toNodeType, type NodeId, type NodeType, type TreeNode } from '@hierarchidb/common-types';
+import { TreeNodeInUI, TreeTableController, TreeTableCore } from '@hierarchidb/ui-treeconsole-treetable';
 import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-treeconsole-breadcrumb';
 import { TreeConsoleFooter } from './TreeConsoleFooter.js';
 import type { TreeNodeData } from '../types/index.js';
@@ -138,7 +137,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       const normalizedDepth = Math.max(1, Math.round(resolvedDepth + depthOffset));
       const base: TreeNodeInUI = {
         ...node,
-        nodeType: (node.nodeType || node.type || 'folder') as string,
+        nodeType: toNodeType(node.nodeType || node.type || 'folder'),
         type: (node.type || node.nodeType || 'folder') as string,
         name: node.name || '',
         hasChildren: Boolean(node.hasChildren ?? (Array.isArray(node.children) && node.children.length > 0)),
@@ -147,7 +146,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
       };
 
       if (Array.isArray(node.children) && node.children.length > 0) {
-        base.children = node.children.map((child) => toTreeNodeInUI(child, resolvedDepth + 1));
+        base.children = node.children;
       }
 
       return base;
@@ -184,10 +183,12 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         if (node && props.onNodeClick) {
           // Cast TreeNodeInUI to TreeNodeData for callback
           // TreeNodeInUI is compatible with TreeNodeData
+
           const nodeData: TreeNodeData = {
             ...node,
-            type: node.type || node.nodeType,
+            type: node.type,
           };
+
           props.onNodeClick(nodeData);
         }
       },
@@ -223,6 +224,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
   // const visibleItems = props.data.length; // In real implementation, this would be filtered count
 
   // Compute footer counters for loading state (controller not yet available)
+  /*
   const countLoadedRecursive = (nodes: readonly TreeNodeData[]): number => {
     let c = 0;
     for (const n of nodes || []) {
@@ -232,8 +234,10 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
     }
     return c;
   };
+   */
+
   const footerTopLevel = Array.isArray(props.data) ? props.data.length : 0;
-  const footerLoaded = countLoadedRecursive(props.data);
+  //const footerLoaded = countLoadedRecursive(props.data);
   const footerSelected = props.selectedIds.length;
 
   return (
@@ -306,7 +310,7 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
           controller={null} // TODO: Convert TreeTableController to TreeViewController
           onStartTour={props.onStartTour}
           height={32}
-          loadingText={`${footerTopLevel} / ${footerLoaded} / ${footerSelected}`}
+          loadingText={`${footerTopLevel} / ${footerSelected}`}
           loadingTooltip={(
             <Box sx={{ p: 0.5 }}>
               <Typography variant="caption" display="block">From left to right:</Typography>
@@ -319,9 +323,6 @@ export const TreeConsolePanel = memo(function TreeConsolePanel(props: TreeConsol
         />
       }
 
-      {/* Right-click context menu removed per policy */}
-
-      {/* Built-in SpeedDial disabled */}
     </Box>
   );
 });

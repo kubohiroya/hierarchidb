@@ -77,7 +77,7 @@ describe('TreeTable Name column indentation', () => {
     setEditingError: () => {},
     setEditingNodeId: () => {},
     setEditingField: () => {},
-    treeId: 'tree',
+    treeId: 'console',
   setContextMenuState: () => {},
   visualSelectionSet: new Set(),
   useTrashColumns: false,

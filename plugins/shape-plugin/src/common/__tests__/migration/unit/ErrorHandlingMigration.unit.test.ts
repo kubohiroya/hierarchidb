@@ -17,13 +17,10 @@ import { ErrorCategory, ErrorSeverity, ShapeErrorFactory } from '../../types/Sha
 
 describe('Error Handling Migration Tests', () => {
   let errorHandler: ShapeErrorHandler;
-  let mockTreeNodeId: string;
   let mockBatchConfig: BatchConfig;
 
   beforeEach(() => {
     //  Given:
-    mockTreeNodeId = 'tree-node-error-test';
-
     mockBatchConfig = {
       corsProxyBaseURL: 'https://test-proxy.example.com',
       dataSource: 'naturalearth',
@@ -60,9 +57,6 @@ describe('Error Handling Migration Tests', () => {
 
   describe('Worker通信エラーハンドリングテスト', () => {
     it('Workerとの通信切断が適切にハンドリングされる', async () => {
-      //  Given: Worker
-      const disconnectedWorkerError = new Error('Worker connection lost');
-
       //  When: Worker
       const processedError = await errorHandler.handleWorkerError(new Error('Worker connection lost'));
 

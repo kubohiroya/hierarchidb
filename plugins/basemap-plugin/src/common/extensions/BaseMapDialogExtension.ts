@@ -99,7 +99,7 @@ const resolveStepNumbers = (stepNumbers: ReadonlyArray<number> | undefined): num
 export class BaseMapDialogExtension extends NodeDialogPlugin<BaseMapDialogPeer> {
   readonly pluginId = 'basemap-plugin-dialog-extension';
   readonly pluginName = 'BaseMap Dialog Extension';
-  readonly pluginDescription = 'Adds BaseMap step evaluators to plugin dialogs';
+  readonly pluginDescription = 'Adds BaseMap step evaluators to plugin console';
   readonly pluginVersion = '1.0.0';
 
   protected getStepStateEvaluator() {

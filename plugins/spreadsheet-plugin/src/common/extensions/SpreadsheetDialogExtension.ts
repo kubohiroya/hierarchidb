@@ -16,7 +16,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 export class SpreadsheetDialogExtension extends NodeDialogPlugin<SpreadsheetPeerEntity> {
   readonly pluginId = 'spreadsheet-plugin-dialog-extension';
   readonly pluginName = 'Spreadsheet Dialog Extension';
-  readonly pluginDescription = 'Adds Spreadsheet step evaluators to plugin dialogs';
+  readonly pluginDescription = 'Adds Spreadsheet step evaluators to plugin console';
   readonly pluginVersion = '1.0.0';
 
   protected getStepStateEvaluator() {

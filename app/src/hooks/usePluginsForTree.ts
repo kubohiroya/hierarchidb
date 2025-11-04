@@ -1,7 +1,7 @@
 /**
  * usePluginsForTree Hook
  *
- * Fetches plugin-loader available for a specific tree ID from the worker registry.
+ * Fetches plugin-loader available for a specific console ID from the worker registry.
  * Provides dynamic plugin loading for SpeedDial menus.
  */
 

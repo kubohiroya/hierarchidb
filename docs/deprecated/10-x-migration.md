@@ -82,7 +82,7 @@ interface FolderEntity extends BaseEntity {
   metadata?: {
     isExpanded?: boolean;
     sortOrder?: 'name' | 'created' | 'modified' | 'custom';
-    viewMode?: 'list' | 'grid' | 'tree';
+    viewMode?: 'list' | 'grid' | 'console';
   };
   createdAt: number;
   updatedAt: number;

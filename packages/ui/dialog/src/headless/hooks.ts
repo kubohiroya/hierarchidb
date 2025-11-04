@@ -150,7 +150,7 @@ interface DialogInteractionGuardsOptions {
 }
 
 /**
- * Provide reusable guards to keep front-most dialogs from leaking interactions
+ * Provide reusable guards to keep front-most console from leaking interactions
  * (wheel/drag) to underlying content and to avoid inadvertent backdrop closes
  * right after drag/resize gestures.
  */

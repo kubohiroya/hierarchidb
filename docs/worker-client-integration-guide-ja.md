@@ -73,7 +73,7 @@ export const heavyRoute = createRoute({
 既存の`baseRoute.tsx`を更新して、新しい`workerClient`サービスを使用:
 
 ```typescript
-// app/src/router/routes/tree/baseRoute.tsx
+// app/src/router/routes/console/baseRoute.tsx
 import { createRoute, Outlet } from '@tanstack/react-router';
 import { ensureWorkerStarted } from '../../loaders/workerClient.js';
 import { rootRoute } from '../rootRoute.js';
@@ -103,7 +103,7 @@ function TreeBaseLayout() {
 子ルートでは、親から提供された`client`を使用するか、独自に初期化できます:
 
 ```typescript
-// app/src/router/routes/tree/layoutRoute.tsx
+// app/src/router/routes/console/layoutRoute.tsx
 import { createRoute } from '@tanstack/react-router';
 import { treeBaseRoute } from './baseRoute.js';
 import { loadTree } from '../../loaders/treeLoaders.js';

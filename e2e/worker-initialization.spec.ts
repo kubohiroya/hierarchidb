@@ -30,8 +30,7 @@ test.describe('Worker Initialization System', () => {
 
     // Check that the loading screen appears first
     // The TitleLogo component should be visible during initialization
-    const loadingIndicator = page.locator('[data-testid="title-logo"], .MuiCircularProgress-root, [role="progressbar"]');
-    
+
     // Initial state: loading should be visible (briefly)
     // Note: This might be too fast to catch, so we'll check the final state instead
     
@@ -64,8 +63,7 @@ test.describe('Worker Initialization System', () => {
       // Check if WorkerAPIClient is available globally or in window
       try {
         // Try to access the Worker API through a global method if exposed
-        const { WorkerAPIClient } = await (window as any).import?.('/src/WorkerAPIClient.js')
-          .catch(() => ({ WorkerAPIClient: null }));
+        const { WorkerAPIClient } = await (window as any).import?.('/src/WorkerAPIClient.js')?.catch(() => ({ WorkerAPIClient: null })) || {};
         
         if (WorkerAPIClient && WorkerAPIClient.isReady()) {
           const client = WorkerAPIClient.getSingleton();
@@ -290,7 +288,7 @@ test.describe('Worker API Facade Usage', () => {
       waitUntil: 'networkidle'
     });
 
-    // Navigate to a tree page to trigger API calls
+    // Navigate to a console page to trigger API calls
     const treeLink = page.locator('a[href*="/t/"]').first();
     if (await treeLink.isVisible()) {
       await treeLink.click();

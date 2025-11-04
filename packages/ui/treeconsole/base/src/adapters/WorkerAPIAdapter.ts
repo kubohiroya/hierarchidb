@@ -123,7 +123,7 @@ export class WorkerAPIAdapter {
 
   /**
             */
-  async deleteNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
+  async trashNodes(nodeIds: NodeId[], contextOverrides?: Partial<AdapterContext>): Promise<void> {
     const options = this.createDefaultOptions(contextOverrides);
     return this.mutationAdapter.deleteNodes(nodeIds, options);
   }

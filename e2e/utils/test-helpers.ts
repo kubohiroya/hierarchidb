@@ -78,7 +78,7 @@ export async function dismissGuidedTour(page: Page): Promise<void> {
  */
 export async function waitForTreeTableLoad(page: Page): Promise<void> {
   // Wait for the main TreeTable component
-  await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+  await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
 
   // Wait for loading indicators to disappear
   await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
@@ -86,8 +86,8 @@ export async function waitForTreeTableLoad(page: Page): Promise<void> {
   // Wait for at least one row to be present (or empty state)
   await page.waitForFunction(
     () => {
-      const table = document.querySelector('[data-testid="tree-table"]');
-      const rows = table?.querySelectorAll('[data-testid="tree-table-row"]');
+      const table = document.querySelector('[data-testid="console-table"]');
+      const rows = table?.querySelectorAll('[data-testid="console-table-row"]');
       const emptyState = table?.querySelector('[data-testid="empty-state"]');
       return (rows && rows.length > 0) || emptyState;
     },
@@ -103,7 +103,7 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
   const folderName = `${baseName} ${timestamp}`;
   const folderDescription = `Automated description for ${folderName}`;
 
-  // Ensure main tree is ready
+  // Ensure main console is ready
   await waitForTreeTableLoad(page);
 
   // Open SpeedDial menu (Floating Action Button labelled "Create new item")
@@ -136,7 +136,7 @@ export async function createTestFolder(page: Page, baseName: string): Promise<st
 
   await expect(dialog).not.toBeVisible({ timeout: 5000 });
 
-  const newNode = page.locator('[data-testid="tree-node"]').filter({ hasText: folderName }).first();
+  const newNode = page.locator('[data-testid="console-node"]').filter({ hasText: folderName }).first();
   await expect(newNode).toBeVisible({ timeout: 10000 });
 
   console.log('SpeedDial folder creation flow completed successfully');
@@ -223,7 +223,7 @@ export async function renameFolder(
   const nextName = `${baseName} ${timestamp}`;
 
   const folderNode = page
-    .locator('[data-testid="tree-node"]')
+    .locator('[data-testid="console-node"]')
     .filter({ hasText: currentName })
     .first();
   await expect(folderNode).toBeVisible({ timeout: 5000 });
@@ -243,14 +243,14 @@ export async function renameFolder(
 
   await waitForWorkingCopyUpdate(page);
   await expect(
-    page.locator('[data-testid="tree-node"]').filter({ hasText: nextName }).first()
+    page.locator('[data-testid="console-node"]').filter({ hasText: nextName }).first()
   ).toBeVisible({ timeout: 5000 });
 
   return nextName;
 }
 
 /**
- * Restores a folder from the trash panel back to the main tree.
+ * Restores a folder from the trash panel back to the main console.
  */
 export async function restoreFromTrash(page: Page, folderName: string): Promise<void> {
   const trashButton = page.locator('[data-testid="trash-button"]');

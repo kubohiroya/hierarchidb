@@ -8,7 +8,6 @@ import {
   createChildFolder,
   performDragDrop,
   waitForSubTreeUpdate,
-  waitForWorkingCopyUpdate,
 } from '../utils/test-helpers';
 
 /**
@@ -31,11 +30,10 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
   test('フォルダの移動 - 同一階層での並び替え', async ({ page }) => {
     // テストフォルダを作成
     const folder1 = await createTestFolder(page, 'Folder A');
-    const folder2 = await createTestFolder(page, 'Folder B');
     const folder3 = await createTestFolder(page, 'Folder C');
 
     // 初期順序を記録
-    const nodes = page.locator('[data-testid="tree-node"]');
+    const nodes = page.locator('[data-testid="console-node"]');
     const initialOrder = await nodes.evaluateAll((elements) =>
       elements.map((el) => el.textContent?.trim()).filter((text) => text?.includes('Folder'))
     );
@@ -107,7 +105,7 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
     await expect(childNode).toBeVisible();
 
     // 子フォルダをルートレベルにドラッグ
-    const rootArea = page.locator('[data-testid="tree-table-body"]');
+    const rootArea = page.locator('[data-testid="console-table-body"]');
     await performDragDrop(page, childNode, rootArea);
     await waitForSubTreeUpdate(page);
 
@@ -216,7 +214,6 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
     // テストフォルダを作成
     const folder1 = await createTestFolder(page, 'Position A');
     const folder2 = await createTestFolder(page, 'Position B');
-    const folder3 = await createTestFolder(page, 'Position C');
 
     const sourceNode = page.locator(`[data-testid="tree-node"]:has-text("${folder1}")`);
     const targetNode = page.locator(`[data-testid="tree-node"]:has-text("${folder2}")`);
@@ -247,7 +244,7 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
     await waitForSubTreeUpdate(page);
 
     // フォルダ1がフォルダ2の前に配置されたことを確認
-    const nodes = page.locator('[data-testid="tree-node"]');
+    const nodes = page.locator('[data-testid="console-node"]');
     const order = await nodes.evaluateAll((elements) =>
       elements.map((el) => el.textContent?.trim()).filter((text) => text?.includes('Position'))
     );
@@ -305,8 +302,8 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
     await waitForTreeTableLoad(page);
 
     // 大量のフォルダがある環境での操作
-    const sourceNode = page.locator('[data-testid="tree-node"]').first();
-    const targetNode = page.locator('[data-testid="tree-node"]').nth(10);
+    const sourceNode = page.locator('[data-testid="console-node"]').first();
+    const targetNode = page.locator('[data-testid="console-node"]').nth(10);
 
     const startTime = Date.now();
     await performDragDrop(page, sourceNode, targetNode);

@@ -215,12 +215,12 @@ export class CrossTreeReferenceService {
   }
 
   async getResourcesTreeStructure(): Promise<TreeStructure> {
-    // Get the Resources tree root
+    // Get the Resources console root
     const resourcesTreeId = await this.getResourcesTreeId();
     const rootNode = await this.treeQueryAPI.getTreeRoot(resourcesTreeId);
     
     if (!rootNode) {
-      throw new Error('Resources tree root not found');
+      throw new Error('Resources console root not found');
     }
 
     return this.buildTreeStructure(rootNode);
@@ -259,12 +259,12 @@ export class CrossTreeReferenceService {
 
   private async getResourcesTreeId(): Promise<TreeId> {
     // Implementation depends on how Resources/Projects trees are distinguished
-    // This might involve tree metadata or naming conventions
+    // This might involve console metadata or naming conventions
     const trees = await this.treeQueryAPI.getAllTrees();
     const resourcesTree = trees.find(tree => tree.name === 'Resources');
     
     if (!resourcesTree) {
-      throw new Error('Resources tree not found');
+      throw new Error('Resources console not found');
     }
     
     return resourcesTree.id;
@@ -411,7 +411,7 @@ import {
   TreeView,
   TreeItem,
   TreeItemProps
-} from '@mui/x-tree-view';
+} from '@mui/x-console-view';
 import {
   ExpandMoreIcon,
   ChevronRightIcon,
@@ -435,7 +435,7 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
   const [expanded, setExpanded] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load tree structure
+  // Load console structure
   useEffect(() => {
     const loadTreeData = async () => {
       try {
@@ -1058,7 +1058,7 @@ export default defineConfig({
     'provider',
     'provider-dom',
     '@mui/material',
-    '@mui/x-tree-view',
+    '@mui/x-console-view',
     'maplibre-gl'
   ]
 });

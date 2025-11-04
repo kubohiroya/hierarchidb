@@ -404,7 +404,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
         </Stack>
       </Stack>
 
-      {/* Info Messages */}
+      {/* info Messages */}
       {selectedValueColumn && (
         <Stack direction="row" spacing={1}>
           <Chip
@@ -461,7 +461,7 @@ export const StylerTablePreview: React.FC<StylerTablePreviewProps> = ({
         </Table>
       </TableContainer>
 
-      {/* Footer Info */}
+      {/* Footer info */}
       {data.length > maxRows && (
         <Typography variant="caption" color="text.secondary" align="center">
           Showing first {maxRows} rows of {data.length} total rows

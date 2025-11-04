@@ -50,7 +50,7 @@ export async function exportFullDatabase(): Promise<string> {
 ### Selective Export
 
 ```typescript
-// Selective tree export
+// Selective console export
 export async function exportTree(treeId: TreeId): Promise<ExportData> {
   const nodes = await db.nodes
     .where('treeId')

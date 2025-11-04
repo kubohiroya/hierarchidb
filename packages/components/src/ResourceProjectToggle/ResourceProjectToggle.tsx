@@ -13,7 +13,7 @@ export type ResourceProjectToggleOrientation = 'horizontal' | 'vertical';
 export type ResourceProjectToggleSize = 'small' | 'medium' | 'large';
 
 interface ResourceProjectToggleProps {
-  /** Currently selected type - 'none' for neutral state (Home page) */
+  /** Currently selected type - 'none' for neutral state (home page) */
   selected?: ResourceProjectType;
   /** Current pageNodeId to preserve */
   currentPageNodeId?: string;

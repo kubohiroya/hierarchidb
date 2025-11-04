@@ -9,7 +9,7 @@ interface TitleLogoProps {
 
 export function TitleLogo({
   title = 'HierarchiDB',
-  description = 'High-performance tree-structured data management framework',
+  description = 'High-performance console-structured data management framework',
   showProgress = false,
   progressText = 'Initializing application...',
 }: TitleLogoProps) {

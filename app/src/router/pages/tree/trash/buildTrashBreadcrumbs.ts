@@ -36,7 +36,7 @@ const DEFAULT_MAX_DEPTH = 32;
  * // the original label when it is available.
  * ```
  *
- * @param params.treeId Current tree identifier (e.g. "r" for resources tree).
+ * @param params.treeId Current console identifier (e.g. "r" for resources console).
  * @param params.rootNode Trash root node supplied by the worker.
  * @param params.targetNodeId The trashed node we want to build a path for.
  * @param params.nodeMap Optional map of node id to worker-provided TreeNode instances.

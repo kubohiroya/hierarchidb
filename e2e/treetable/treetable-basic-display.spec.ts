@@ -23,19 +23,19 @@ test.describe('TreeTable Basic Display', () => {
 
   test('初期表示とレンダリング', async ({ page }) => {
     // TreeTable コンポーネントの表示確認
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
 
     // ヘッダー行の確認
-    await expect(page.locator('[data-testid="tree-table-header"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-header"]')).toBeVisible();
 
     // データ行の確認
     await waitForTreeTableLoad(page);
-    const rows = page.locator('[data-testid="tree-table-row"]');
+    const rows = page.locator('[data-testid="console-table-row"]');
     await expect(rows).toHaveCount.atLeast(1);
 
     // TreeTable の基本構造確認
-    await expect(page.locator('[data-testid="tree-table-container"]')).toBeVisible();
-    await expect(page.locator('[data-testid="tree-table-body"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-container"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-body"]')).toBeVisible();
   });
 
   test('カラム表示と基本構造', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('TreeTable Basic Display', () => {
     // ローディング完了後の確認
     await waitForTreeTableLoad(page);
     await expect(page.locator('[data-testid="loading-spinner"]')).not.toBeVisible();
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
   });
 
   test('エラー状態のハンドリング', async ({ page }) => {
@@ -122,15 +122,15 @@ test.describe('TreeTable Basic Display', () => {
 
     // デスクトップビューポートでの確認
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
 
     // タブレットビューポートでの確認
     await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
 
     // モバイルビューポートでの確認
     await page.setViewportSize({ width: 375, height: 667 });
-    await expect(page.locator('[data-testid="tree-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table"]')).toBeVisible();
 
     // モバイルでは一部カラムが非表示になることを確認
     const columns = page.locator('th');
@@ -144,7 +144,7 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // WAI-ARIA 属性の確認
-    await expect(page.locator('[data-testid="tree-table"]')).toHaveAttribute('role', 'table');
+    await expect(page.locator('[data-testid="console-table"]')).toHaveAttribute('role', 'table');
     await expect(page.locator('th').first()).toHaveAttribute('role', 'columnheader');
     await expect(page.locator('td').first()).toHaveAttribute('role', 'cell');
 
@@ -199,11 +199,11 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // ツールバーの確認
-    await expect(page.locator('[data-testid="tree-table-toolbar"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-toolbar"]')).toBeVisible();
     await expect(page.locator('[data-testid="search-input"]')).toBeVisible();
 
     // フッターの確認
-    await expect(page.locator('[data-testid="tree-table-footer"]')).toBeVisible();
+    await expect(page.locator('[data-testid="console-table-footer"]')).toBeVisible();
     await expect(page.locator('[data-testid="item-count"]')).toBeVisible();
   });
 
@@ -226,7 +226,7 @@ test.describe('TreeTable Basic Display', () => {
     await waitForTreeTableLoad(page);
 
     // Material-UI テーマの適用確認
-    const treeTable = page.locator('[data-testid="tree-table"]');
+    const treeTable = page.locator('[data-testid="console-table"]');
 
     // CSS カスタムプロパティの確認
     const computedStyle = await treeTable.evaluate((el) => {

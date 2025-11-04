@@ -1,6 +1,6 @@
 /**
  * Basic Information Step Component
- * Common first step for all plugin dialogs
+ * Common first step for all plugin console
  */
 
 import { TagChipsInput } from '@hierarchidb/ui-plugin-basic-info';

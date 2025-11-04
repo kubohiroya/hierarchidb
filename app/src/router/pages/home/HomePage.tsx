@@ -13,17 +13,17 @@ import {
 import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TopPageGuidedTour } from '~/components/tour/index.js';
+import { TopPageGuidedTour } from './tour/TopPageGuidedTour.js';
 import { useAppConfig } from '~/contexts/AppConfigContext.js';
 import { loadAppConfig, resolveAssetHref } from '~/loadAppConfig.js';
-import { TitleLogo } from '../../components/TitleLogo.js';
+import { TitleLogo } from './TitleLogo.js';
 
 export function meta() {
   const { appPrefix, appFavicon } = loadAppConfig();
   const faviconHref = resolveAssetHref(appPrefix, appFavicon);
   return [
     { title: 'HierarchiDB' },
-    { name: 'description', content: 'High-performance tree-structured data management framework' },
+    { name: 'description', content: 'High-performance console-structured data management framework' },
     {
       tagName: 'link',
       rel: 'icon',

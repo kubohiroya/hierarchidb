@@ -27,7 +27,7 @@ import { useWorkerClient } from '~/contexts/WorkerProvider.js';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
-  const mod = await import('~/components/TreeConsoleIntegration.js');
+  const mod = await import('~/router/pages/tree/console/TreeConsoleIntegration.js');
   return { default: mod.TreeConsoleIntegration };
 });
 

@@ -1,6 +1,6 @@
 /**
  * @file TreeToggleButtonGroup.tsx
- * @description Flexible button group for toggling between multiple tree pages
+ * @description Flexible button group for toggling between multiple console pages
  */
 
 import { Button, ButtonGroup, type ButtonProps, Tooltip } from '@mui/material';
@@ -23,7 +23,7 @@ export type ButtonGroupSize = 'small' | 'medium' | 'large';
  * TreeTypes configuration for button group
  */
 export interface TreeConfig {
-  /** Unique identifier for the tree */
+  /** Unique identifier for the console */
   id: string;
   /** Display label for the button */
   label: string;
@@ -35,7 +35,7 @@ export interface TreeConfig {
   color?: 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
   /** Tooltip text (defaults to label if not provided) */
   tooltip?: string;
-  /** Whether this tree option is disabled */
+  /** Whether this console option is disabled */
   disabled?: boolean;
 }
 
@@ -43,19 +43,19 @@ export interface TreeConfig {
  * Props for TreeToggleButtonGroup
  */
 export interface TreeToggleButtonGroupProps {
-  /** Array of tree configurations */
+  /** Array of console configurations */
   trees: TreeConfig[];
-  /** Currently selected tree ID (null for neutral state) */
+  /** Currently selected console ID (null for neutral state) */
   selectedTreeId: string | null;
   /** Current page node ID to preserve */
   currentPageNodeId?: string;
   /** App prefix for routing (optional, only needed if not using React Router basename) */
   appPrefix?: string;
-  /** Callback to get saved page node ID for a given tree */
+  /** Callback to get saved page node ID for a given console */
   getSavedPageNodeId: (treeId: string) => string | null;
-  /** Callback to save page node ID for a given tree */
+  /** Callback to save page node ID for a given console */
   savePageNodeId: (treeId: string, pageNodeId: string) => void;
-  /** Optional callback to validate which tree a node belongs to */
+  /** Optional callback to validate which console a node belongs to */
   getNodeTreeId?: (pageNodeId: string) => Promise<string | null>;
   /** Button group orientation */
   orientation?: ButtonGroupOrientation;
@@ -65,12 +65,12 @@ export interface TreeToggleButtonGroupProps {
   showLabelsOnSmallScreens?: boolean;
   /** Custom styles for the button group */
   sx?: any;
-  /** Callback when a tree is selected */
+  /** Callback when a console is selected */
   onTreeSelect?: (treeId: string) => void;
 }
 
 /**
- * Flexible tree toggle button group component
+ * Flexible console toggle button group component
  */
 export function TreeToggleButtonGroup({
                                         trees,
@@ -105,12 +105,12 @@ export function TreeToggleButtonGroup({
     const targetTree = trees.find((t) => t.id === targetTreeId);
     if (!targetTree || targetTree.disabled) return;
 
-    // Save current page node ID if we're navigating away from a selected tree
+    // Save current page node ID if we're navigating away from a selected console
     if (selectedTreeId && targetTreeId !== selectedTreeId && currentPageNodeId) {
-      // If getNodeTreeId is provided, validate the node belongs to the current tree
+      // If getNodeTreeId is provided, validate the node belongs to the current console
       if (getNodeTreeId && pageNodeId) {
         const nodeTreeId = await getNodeTreeId(pageNodeId);
-        // Only save if the node belongs to the currently selected tree
+        // Only save if the node belongs to the currently selected console
         if (nodeTreeId === selectedTreeId) {
           savePageNodeId(selectedTreeId, currentPageNodeId);
         }
@@ -120,7 +120,7 @@ export function TreeToggleButtonGroup({
       }
     }
 
-    // Get saved page node ID for target tree
+    // Get saved page node ID for target console
     const savedPageNodeId = getSavedPageNodeId(targetTreeId);
 
     // Navigate to target page (don't include appPrefix since it's already in basename)
@@ -214,7 +214,7 @@ export function TreeToggleButtonGroup({
 }
 
 /**
- * Helper function to create a tree config for resources
+ * Helper function to create a console config for resources
  */
 export function createResourcesTreeConfig(
   icon: React.ComponentType<any>,
@@ -231,7 +231,7 @@ export function createResourcesTreeConfig(
 }
 
 /**
- * Helper function to create a tree config for projects
+ * Helper function to create a console config for projects
  */
 export function createProjectsTreeConfig(
   icon: React.ComponentType<any>,

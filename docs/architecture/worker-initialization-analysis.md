@@ -311,8 +311,8 @@ window.addEventListener('unhandledrejection', (event) => {
 // E2Eテスト例
 test('Direct URL access should display TreeTable', async ({ page }) => {
   await page.goto('http://localhost:4201/hierarchidb/#/t/r');
-  await page.waitForSelector('.tree-table-console', { timeout: 5000 });
-  const isVisible = await page.isVisible('.tree-table-console');
+  await page.waitForSelector('.console-table-console', { timeout: 5000 });
+  const isVisible = await page.isVisible('.console-table-console');
   expect(isVisible).toBe(true);
 });
 ```

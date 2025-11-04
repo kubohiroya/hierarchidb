@@ -29,7 +29,7 @@ import type {
 // CommandMap covers the core mutation commands first. Additional commands can be
 // extended incrementally without breaking existing usages.
 export interface CommandMap {
-  // Core tree mutations
+  // Core console mutations
   moveNodes: { payload: MoveNodesPayload; result: CoreCommandResult };
   duplicateNodes: { payload: DuplicateNodesPayload; result: CoreCommandResult };
   pasteNodes: { payload: PasteNodesPayload; result: CoreCommandResult };

@@ -41,13 +41,13 @@ function normalizeError(error: unknown): Error {
 
 import { ensureDialogStateAPI } from '../loader.js';
 import { bootLog } from '../utils/bootLog.ts';
-import type { WorkerClientProxy, WorkerInitializationProgress } from '../worker-runtime/index.js';
-import { useWorkerRuntimeProxy } from '../worker-runtime/index.js';
+import { useWorkerRuntimeProxy } from '../hooks/useWorkerRuntimeProxy.js';
 import {
   getWorkerAPIClientModule,
   loadWorkerAPIClientModule,
 } from '../worker-runtime/workerApiClientLoader.js';
 import { useOptionalBootProgress } from './BootProgressProvider.js';
+import { WorkerClientProxy, WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;

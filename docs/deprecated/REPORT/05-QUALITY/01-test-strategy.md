@@ -159,7 +159,7 @@ describe('Database Transactions', () => {
 ### React Testing Library使用
 ```typescript
 describe('TreeConsolePanel', () => {
-  it('should render tree structure', () => {
+  it('should render console structure', () => {
     const { getByText, queryByText } = render(
       <TreeConsolePanel
         data={mockTreeData}

@@ -167,9 +167,9 @@ export interface MetricOptions {
  * ```typescript
  * const pluginTreeAPI = workerAPI.getPluginTreeAPI();
  *
- * // Get plugin-loader for a tree
+ * // Get plugin-loader for a console
  * const response = await pluginTreeAPI.getPluginsForTree({
- *   treeId: 'my-tree-123' as TreeId
+ *   treeId: 'my-console-123' as TreeId
  * });
  * ```
  */
@@ -178,15 +178,15 @@ export interface MetricOptions {
  */
 export interface PluginTreeAPI {
   /**
-   * Retrieve plugins that can operate on the specified tree.
-   * @param request - Request payload describing target tree and optional filters.
-   * @returns Plugin metadata and capability information for the requested tree.
+   * Retrieve plugins that can operate on the specified console.
+   * @param request - Request payload describing target console and optional filters.
+   * @returns Plugin metadata and capability information for the requested console.
    */
   getPluginsForTree(request: GetPluginsForTreeRequest): Promise<GetPluginsForTreeResponse>;
 
   /**
-   * Fetch usage statistics for a plugin in a tree.
-   * @param treeId - Identifier of the tree to analyse.
+   * Fetch usage statistics for a plugin in a console.
+   * @param treeId - Identifier of the console to analyse.
    * @param nodeType - Node type whose usage should be reported.
    * @param period - Optional time period to constrain the statistics.
    * @returns Aggregated usage information for the specified plugin.
@@ -199,30 +199,30 @@ export interface PluginTreeAPI {
 
   /**
    * Evaluate compatibility for a collection of plugins.
-   * @param treeId - Identifier of the tree whose configuration is being checked.
+   * @param treeId - Identifier of the console whose configuration is being checked.
    * @param nodeTypes - Node types to include in the compatibility analysis.
    * @returns Detected conflicts, warnings, and remediation suggestions.
    */
   getPluginCompatibility(treeId: TreeId, nodeTypes: NodeType[]): Promise<CompatibilityResult>;
 
   /**
-   * Produce optimization recommendations for a tree's plugin configuration.
-   * @param treeId - Identifier of the tree to analyse.
+   * Produce optimization recommendations for a console's plugin configuration.
+   * @param treeId - Identifier of the console to analyse.
    * @returns Recommended actions and the expected improvement metrics.
    */
   optimizePluginConfiguration(treeId: TreeId): Promise<OptimizationResult>;
 
   /**
-   * Construct a dependency graph between plugins associated with a tree.
-   * @param treeId - Identifier of the tree whose dependencies should be graphed.
+   * Construct a dependency graph between plugins associated with a console.
+   * @param treeId - Identifier of the console whose dependencies should be graphed.
    * @param options - Graph rendering options including layout and metric flags.
    * @returns Structured dependency data suitable for visualisation.
    */
   getPluginDependencyGraph(treeId: TreeId, options?: GraphOptions): Promise<DependencyGraph>;
 
   /**
-   * Retrieve performance metrics for a plugin instance within a tree.
-   * @param treeId - Identifier of the tree hosting the plugin.
+   * Retrieve performance metrics for a plugin instance within a console.
+   * @param treeId - Identifier of the console hosting the plugin.
    * @param nodeType - Plugin node type being measured.
    * @param options - Optional time range used to scope metrics.
    * @returns Performance snapshots and trend information.

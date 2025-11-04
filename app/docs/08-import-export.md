@@ -47,7 +47,7 @@ HierarchiDBのネイティブ形式：
 {
   "version": "1.0",
   "tree": {
-    "id": "tree-001",
+    "id": "console-001",
     "name": "マイプロジェクト",
     "nodes": [
       {

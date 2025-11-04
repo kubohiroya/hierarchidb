@@ -35,7 +35,7 @@ type EntityId = string & { readonly __brand: 'EntityId' };
 
 // Usage
 const nodeId = 'node-123' as NodeId;
-const treeId = 'tree-456' as TreeId;
+const treeId = 'console-456' as TreeId;
 ```
 
 #### Command Pattern

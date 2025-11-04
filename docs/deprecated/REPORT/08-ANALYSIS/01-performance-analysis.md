@@ -93,7 +93,7 @@ const memoryProfile = {
 // Identified bottlenecks
 const databaseBottlenecks = {
   issue: 'Complex queries with multiple indexes',
-  impact: 'Slow tree traversal for deep hierarchies',
+  impact: 'Slow console traversal for deep hierarchies',
   
   measurement: {
     query_depth_5: '15ms',
@@ -215,7 +215,7 @@ class OptimizedCoreDB extends Dexie {
              '[treeId+parentNodeId], [treeId+nodeType], ' +
              '[treeId+path], [treeId+depth+name]',
       
-      // Covering index for tree loading
+      // Covering index for console loading
       treeIndex: '&[treeId+depth+parentNodeId], treeId'
     });
   }
@@ -227,7 +227,7 @@ class OptimizedCoreDB extends Dexie {
     });
   }
   
-  // Optimized tree loading
+  // Optimized console loading
   async loadTreeOptimized(treeId: TreeId): Promise<TreeNode[]> {
     // Single query with compound index
     return await this.nodes
@@ -241,7 +241,7 @@ class OptimizedCoreDB extends Dexie {
 ### Rendering Optimization
 
 ```typescript
-// Optimized tree component
+// Optimized console component
 const OptimizedTreeConsole: React.FC = () => {
   // Use virtualization
   const virtualizer = useVirtualizer({

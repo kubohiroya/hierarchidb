@@ -8,7 +8,7 @@
 ### 1.2 実装仕様
 
 ```typescript
-// packages/core/src/types/tree-lifecycle-plugin-definition.ts に追加
+// packages/core/src/types/console-lifecycle-plugin-definition.ts に追加
 export interface DraftProperties {
   isDraft?: boolean; // エンティティ作成が未完了のノード
 }
@@ -59,7 +59,7 @@ interface DirectOperations {
 ### 3.1 Descendant情報の強化
 
 ```typescript
-// packages/core/src/types/tree-lifecycle-plugin-definition.ts
+// packages/core/src/types/console-lifecycle-plugin-definition.ts
 export interface DescendantProperties {
   hasChildren?: boolean;      // 子ノードの有無
   descendantCount?: number;    // 直接の子ノード数
@@ -74,7 +74,7 @@ export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {
 ### 3.2 プロパティのMixin構成
 
 ```typescript
-// packages/core/src/types/tree-lifecycle-plugin-definition.ts
+// packages/core/src/types/console-lifecycle-plugin-definition.ts
 import type { Timestamped } from './timestamped';
 import type { WorkingCopyProperties } from './workingCopy';
 import type { DraftProperties } from './draft';

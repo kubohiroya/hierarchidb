@@ -67,7 +67,7 @@ export const TopPageGuidedTour: React.FC<TopPageGuidedTourProps> = ({ run, onFin
       },
     } as Step,
     {
-      target: '[aria-label="tree selection"]',
+      target: '[aria-label="console selection"]',
       content: (
         <div>
           <h3>Tree Navigation 🌳</h3>

@@ -75,7 +75,7 @@ const runFolderUndoRedoFlow = async () => {
     const treeId = 'r' as TreeId;
     const tree = await queryAPI.getTree(treeId);
     if (!tree?.rootId || !tree.trashRootId) {
-      throw new Error('expected default tree with root and trash');
+      throw new Error('expected default console with root and trash');
     }
     const rootId = tree.rootId as NodeId;
     const trashRootId = tree.trashRootId as NodeId;

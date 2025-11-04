@@ -1,5 +1,5 @@
 /**
- * @fileoverview CountryMatrixStep - Step component for use in multi-step dialogs
+ * @fileoverview CountryMatrixStep - Step component for use in multi-step console
  * @module @hierarchidb/ui-country-select/components
  */
 
@@ -38,7 +38,7 @@ export interface CountryMatrixStepProps {
 }
 
 /**
- * CountryMatrixStep - Ready-to-use step component for multi-step dialogs
+ * CountryMatrixStep - Ready-to-use step component for multi-step console
  *
  * This component wraps CountryMatrixSelector with additional UI elements
  * suitable for use in multi-step workflows like StepperDialog.

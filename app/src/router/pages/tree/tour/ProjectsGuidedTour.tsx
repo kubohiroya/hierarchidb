@@ -33,7 +33,7 @@ export const ProjectsGuidedTour: React.FC<ProjectsGuidedTourProps> = ({ run, onF
       },
     },
     {
-      target: '[title="Back to Home"]',
+      target: '[title="Back to home"]',
       content: (
         <div>
           <h3>Navigation - Home 🏠</h3>
@@ -46,7 +46,7 @@ export const ProjectsGuidedTour: React.FC<ProjectsGuidedTourProps> = ({ run, onF
       disableBeacon: true,
     },
     {
-      target: '[aria-label="tree selection"]',
+      target: '[aria-label="console selection"]',
       content: (
         <div>
           <h3>Navigation - Tree Switcher 🔄</h3>

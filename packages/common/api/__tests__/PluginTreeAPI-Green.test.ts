@@ -75,7 +75,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         request: GetPluginsForTreeRequest,
       ): Promise<GetPluginsForTreeResponse> => {
         //  : ID
-        if (request.treeId === ('non-existent-tree' as TreeId)) {
+        if (request.treeId === ('non-existent-console' as TreeId)) {
           return {
             success: false,
             treeId: request.treeId,
@@ -151,7 +151,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         period?: TimePeriod,
       ): Promise<PluginUsageStats> => {
         //  :
-        if (treeId === 'empty-tree' || nodeType === 'unused-plugin') {
+        if (treeId === 'empty-console' || nodeType === 'unused-plugin') {
           return {
             treeId,
             nodeType,
@@ -240,7 +240,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       //  : optimizePluginConfiguration()
       optimizePluginConfiguration: async (treeId: TreeId): Promise<OptimizationResult> => {
         //  :
-        if (treeId === 'optimized-tree') {
+        if (treeId === 'optimized-console') {
           return {
             treeId,
             recommendations: [
@@ -284,7 +284,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         options?: GraphOptions,
       ): Promise<DependencyGraph> => {
         //  :
-        if (treeId === 'cyclic-tree') {
+        if (treeId === 'cyclic-console') {
           return {
             treeId,
             nodes: [
@@ -379,7 +379,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
   describe('getPluginsForTree() - ツリー固有プラグイン取得機能', () => {
     test('🔴 指定ツリーで利用可能な全プラグインを取得できる', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'test-tree-123' as TreeId,
+        treeId: 'test-console-123' as TreeId,
         includeInactive: false,
       };
 
@@ -398,7 +398,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 フィルター条件でプラグインを絞り込める', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'test-tree-123' as TreeId,
+        treeId: 'test-console-123' as TreeId,
         filters: {
           nodeTypes: ['folder', 'document'] as NodeType[],
           categories: ['core'],
@@ -418,7 +418,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 ソート条件でプラグインを並び替えられる', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'test-tree-123' as TreeId,
+        treeId: 'test-console-123' as TreeId,
         sortBy: 'usageCount',
         sortOrder: 'desc',
       };
@@ -436,7 +436,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 非アクティブプラグインを含む一覧を取得できる', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'test-tree-123' as TreeId,
+        treeId: 'test-console-123' as TreeId,
         includeInactive: true,
       };
 
@@ -453,20 +453,20 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 存在しないツリーIDで適切なエラーを返す', async () => {
       const request: GetPluginsForTreeRequest = {
-        treeId: 'non-existent-tree' as TreeId,
+        treeId: 'non-existent-console' as TreeId,
       };
 
       const response = await pluginTreeAPI.getPluginsForTree(request);
 
       expect(response.success).toBe(false);
       expect(response.error?.code).toBe('TREE_NOT_FOUND');
-      expect(response.error?.message).toContain('non-existent-tree');
+      expect(response.error?.message).toContain('non-existent-console');
     });
   });
 
   describe('getPluginUsageStats() - プラグイン使用統計取得', () => {
     test('🔴 指定ツリーでのプラグイン使用統計を取得できる', async () => {
-      const treeId = 'stats-tree-456' as TreeId;
+      const treeId = 'stats-console-456' as TreeId;
       const nodeType = 'folder' as NodeType;
 
       const result = await pluginTreeAPI.getPluginUsageStats(treeId, nodeType);
@@ -482,7 +482,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
     test('🔴 使用されていないプラグインでゼロ統計を返す', async () => {
       const result = await pluginTreeAPI.getPluginUsageStats(
-        'empty-tree' as TreeId,
+        'empty-console' as TreeId,
         'unused-plugin' as NodeType,
       );
 
@@ -497,7 +497,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const toDate = Date.now();
 
       const result = await pluginTreeAPI.getPluginUsageStats(
-        'stats-tree-456' as TreeId,
+        'stats-console-456' as TreeId,
         'folder' as NodeType,
         { from: fromDate, to: toDate },
       );
@@ -517,7 +517,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     test('🔴 互換性のあるプラグイン組み合わせで成功を返す', async () => {
       const nodeTypes: NodeType[] = ['folder', 'document', 'project'] as NodeType[];
 
-      const result = await pluginTreeAPI.getPluginCompatibility('compat-tree' as TreeId, nodeTypes);
+      const result = await pluginTreeAPI.getPluginCompatibility('compat-console' as TreeId, nodeTypes);
 
       expect(result.compatible).toBe(true);
       expect(result.conflicts).toHaveLength(0);
@@ -532,7 +532,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       ] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
-        'compat-tree' as TreeId,
+        'compat-console' as TreeId,
         conflictingTypes,
       );
 
@@ -546,7 +546,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       const dependentType: NodeType[] = ['requires-dependency'] as NodeType[];
 
       const result = await pluginTreeAPI.getPluginCompatibility(
-        'compat-tree' as TreeId,
+        'compat-console' as TreeId,
         dependentType,
       );
 
@@ -559,7 +559,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
   describe('optimizePluginConfiguration() - プラグイン設定最適化', () => {
     test('🔴 ツリーに最適化されたプラグイン設定を提案できる', async () => {
-      const treeId = 'optimize-tree' as TreeId;
+      const treeId = 'optimize-console' as TreeId;
 
       const result = await pluginTreeAPI.optimizePluginConfiguration(treeId);
 
@@ -571,7 +571,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 使用パターンに基づく具体的な推奨事項を提供する', async () => {
-      const result = await pluginTreeAPI.optimizePluginConfiguration('pattern-tree' as TreeId);
+      const result = await pluginTreeAPI.optimizePluginConfiguration('pattern-console' as TreeId);
 
       expect(result.recommendations.length).toBeGreaterThan(0);
 
@@ -583,7 +583,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 既に最適化されたツリーで最小限の推奨事項を返す', async () => {
-      const result = await pluginTreeAPI.optimizePluginConfiguration('optimized-tree' as TreeId);
+      const result = await pluginTreeAPI.optimizePluginConfiguration('optimized-console' as TreeId);
 
       expect(result.recommendations.length).toBeLessThan(3);
       expect(result.currentPerformance.score).toBeGreaterThan(0.8);
@@ -593,7 +593,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
 
   describe('getPluginDependencyGraph() - プラグイン依存関係グラフ', () => {
     test('🔴 ツリー内プラグインの依存関係グラフを生成できる', async () => {
-      const treeId = 'graph-tree' as TreeId;
+      const treeId = 'graph-console' as TreeId;
 
       const result = await pluginTreeAPI.getPluginDependencyGraph(treeId);
 
@@ -605,7 +605,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
     });
 
     test('🔴 循環依存を含む依存関係グラフで警告を含む結果を返す', async () => {
-      const result = await pluginTreeAPI.getPluginDependencyGraph('cyclic-tree' as TreeId);
+      const result = await pluginTreeAPI.getPluginDependencyGraph('cyclic-console' as TreeId);
 
       expect(result.metadata.hasCycles).toBe(true);
       expect(result.warnings.length).toBeGreaterThan(0);
@@ -621,7 +621,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
         includeMetrics: true,
       };
 
-      const result = await pluginTreeAPI.getPluginDependencyGraph('layout-tree' as TreeId, options);
+      const result = await pluginTreeAPI.getPluginDependencyGraph('layout-console' as TreeId, options);
 
       expect(result.layout).toBe('hierarchical');
       expect(result.groups).toBeDefined();
@@ -632,12 +632,12 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
   describe('getPluginMetrics() - プラグインパフォーマンス指標', () => {
     test('🔴 指定プラグインの詳細パフォーマンス指標を取得できる', async () => {
       const metrics = await pluginTreeAPI.getPluginMetrics(
-        'metrics-tree' as TreeId,
+        'metrics-console' as TreeId,
         'performance-plugin' as NodeType,
       );
 
       expect(metrics.nodeType).toBe('performance-plugin');
-      expect(metrics.treeId).toBe('metrics-tree');
+      expect(metrics.treeId).toBe('metrics-console');
       expect(typeof metrics.performance.averageResponseTime).toBe('number');
       expect(typeof metrics.performance.throughput).toBe('number');
       expect(typeof metrics.performance.errorRate).toBe('number');
@@ -651,7 +651,7 @@ describe('PluginTreeAPI - TDD Green Phase', () => {
       };
 
       const metrics = await pluginTreeAPI.getPluginMetrics(
-        'metrics-tree' as TreeId,
+        'metrics-console' as TreeId,
         'performance-plugin' as NodeType,
         { timeRange },
       );

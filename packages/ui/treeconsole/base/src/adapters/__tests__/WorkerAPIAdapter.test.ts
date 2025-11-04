@@ -193,7 +193,7 @@ describe('WorkerAPIAdapter', () => {
 
       mockWorkerAPI.moveToTrash.mockResolvedValue(successResult);
 
-      await adapter.deleteNodes(['node1', 'node2'] as any);
+      await adapter.trashNodes(['node1', 'node2'] as any);
 
       expect(mockWorkerAPI.moveToTrash).toHaveBeenCalledWith(['node1', 'node2']);
     });

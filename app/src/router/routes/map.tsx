@@ -131,7 +131,7 @@ export default function MapPage() {
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      {/* Info overlay */}
+      {/* info overlay */}
       <Box
         sx={{
           position: 'absolute',

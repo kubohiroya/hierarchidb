@@ -186,7 +186,7 @@ const subtree$ = await service.observeSubtree({
 #### `observeWorkingCopies()` - Edit Session Monitoring
 ```typescript
 interface ObserveWorkingCopiesPayload {
-  treeId?: string;     // Filter by tree
+  treeId?: string;     // Filter by console
   userId?: string;     // Filter by user
 }
 

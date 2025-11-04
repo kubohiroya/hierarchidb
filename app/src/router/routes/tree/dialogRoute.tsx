@@ -1,5 +1,5 @@
 /**
- * Tree Dialog Route for TanStack Router
+ * console Dialog Route for TanStack Router
  *
  * This route handles the `/t/:treeId/:pageNodeId/:targetNodeId/:nodeType/:action` path
  * and displays the appropriate dialog component.
@@ -8,7 +8,7 @@
 
 import { createRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
-import type { TrashDialogData, TrashDialogRouteParams } from '~/components/dialogs/TrashDialog.js';
+import type { TrashDialogData, TrashDialogRouteParams } from '~/router/pages/tree/trash/TrashDialog.js';
 import { type LoadNodeActionReturn, loadNodeAction } from '../../loaders/treeLoaders.js';
 import { treeNodeTypeRoute } from './nodeTypeRoute.js';
 import { type PluginDialogLoaderData, PluginDialogRoute } from './PluginDialogRoute.js';
@@ -24,7 +24,7 @@ type TreeDialogLoaderResult =
       data: PluginDialogLoaderData;
     };
 
-const TrashDialogLazy = lazy(() => import('~/components/dialogs/TrashDialog.js'));
+const TrashDialogLazy = lazy(() => import('~/router/pages/tree/trash/TrashDialog.js'));
 
 export const treeDialogRoute = createRoute({
   getParentRoute: () => treeNodeTypeRoute,
@@ -46,7 +46,7 @@ export const treeDialogRoute = createRoute({
 
     // Special handling for trash dialog
     if (nodeType === 'trash') {
-      const trashDialogModule = await import('~/components/dialogs/TrashDialog.js');
+      const trashDialogModule = await import('~/router/pages/tree/trash/TrashDialog.js');
       if (trashDialogModule.clientLoader) {
         const trashParams = toTrashDialogParams(resolvedParams);
         const data = await trashDialogModule.clientLoader({ params: trashParams });

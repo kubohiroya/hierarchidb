@@ -21,7 +21,7 @@ const breadcrumbModule = vi.hoisted(() => ({
 vi.mock('@hierarchidb/ui-treeconsole-breadcrumb', () => breadcrumbModule);
 
 vi.mock('@hierarchidb/ui-treeconsole-treetable', () => ({
-  TreeTableCore: () => React.createElement('div', { 'data-testid': 'tree-table-core' }),
+  TreeTableCore: () => React.createElement('div', { 'data-testid': 'console-table-core' }),
 }));
 
 const noop = () => {};

@@ -676,7 +676,7 @@ interface MapView {
   
   // レイヤーコントロール
   layerControl: {
-    type: 'list' | 'tree' | 'grouped';
+    type: 'list' | 'console' | 'grouped';
     position: 'left' | 'right';
     collapsible: boolean;
   };

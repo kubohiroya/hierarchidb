@@ -2,7 +2,7 @@ import type { NodeId, Timestamp } from '@hierarchidb/common-types';
 
 /**
  * Base information retained for any working copy.
- * Working copies keep a partial entity snapshot in `draft` while preserving tree metadata.
+ * Working copies keep a partial entity snapshot in `draft` while preserving console metadata.
  */
 export interface WorkingCopyBase<TEntity> {
   treeNodeId: NodeId;

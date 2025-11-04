@@ -369,7 +369,7 @@ return { ...loadTargetTreeNodeReturn, treeNodeType: treeNodeType as TreeNodeType
 コンポーネント側の利用例:
 ```tsx
 const data = useLoaderData() as LoadTreeNodeActionReturn;
-// data.tree?.treeId, data.pageTreeNode?.treeNodeId, data.targetTreeNode?.treeNodeId,
+// data.console?.treeId, data.pageTreeNode?.treeNodeId, data.targetTreeNode?.treeNodeId,
 // data.treeNodeType, data.action が利用可能
 ```
 

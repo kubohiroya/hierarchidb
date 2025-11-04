@@ -26,7 +26,7 @@ describe('BatchSession Migration Tests', () => {
   beforeEach(() => {
     //  Given:
     mockNodeId = 'test-shape-plugin-node' as NodeId;
-    mockTreeNodeId = 'tree-node-123' as TreeNodeId;
+    mockTreeNodeId = 'console-node-123' as TreeNodeId;
 
     mockBatchConfig = {
       corsProxyBaseURL: 'https://test-proxy.example.com',

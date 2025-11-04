@@ -4,7 +4,7 @@ import type { WorkerAPIAdapter } from '../adapters/index.js';
 
 type StateManagerLike = Partial<{
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index: number) => Promise<void> | void;
-  deleteNode: (nodeId: NodeId) => Promise<void> | void;
+  trashNode: (nodeId: NodeId) => Promise<void> | void;
   duplicateNode: (nodeId: NodeId) => Promise<void> | void;
 }>;
 
@@ -26,8 +26,8 @@ export interface UseCRUDOperationsReturn {
   //  CRUD
   moveNode: (nodeId: NodeId, targetParentId: NodeId, index?: number) => Promise<void>;
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
-  deleteNode: (nodeId: NodeId) => Promise<void>;
-  deleteNodes: (nodeIds: NodeId[]) => Promise<void>;
+  trashNode: (nodeId: NodeId) => Promise<void>;
+  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNode: (nodeId: NodeId) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
@@ -110,22 +110,22 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
       if (workerAdapter) {
         setIsLoading?.(true);
         try {
-          await workerAdapter.deleteNodes([nodeId]);
+          await workerAdapter.trashNodes([nodeId]);
           // Remove from selection
           onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           // Remove from expanded nodes
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
-          // Clear current node if it was deleted
+          // Clear current node if it was trashed
           onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
         } finally {
           setIsLoading?.(false);
         }
       } else {
-        const canTrash = stateManager && typeof stateManager.deleteNode === 'function';
+        const canTrash = stateManager && typeof stateManager.trashNode === 'function';
         if (!canTrash) throw new Error('No adapter available for trash operation');
         setIsLoading?.(true);
         try {
-          await stateManager.deleteNode!(nodeId);
+          await stateManager.trashNode!(nodeId);
           onSelectedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onExpandedNodesChange?.((prev) => prev.filter((id) => id !== nodeId));
           onCurrentNodeChange?.((prev) => (prev?.id === nodeId ? null : prev));
@@ -140,11 +140,11 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
   const trashNodes = useCallback(
     async (nodeIds: NodeId[]) => {
       if (!workerAdapter) {
-        const canTrash = stateManager && typeof stateManager.deleteNode === 'function';
+        const canTrash = stateManager && typeof stateManager.trashNode === 'function';
         if (!canTrash) throw new Error('WorkerAPIAdapter not available');
         setIsLoading?.(true);
         try {
-          for (const id of nodeIds) await stateManager.deleteNode!(id);
+          for (const id of nodeIds) await stateManager.trashNode!(id);
           onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
           onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
@@ -156,12 +156,12 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
 
       setIsLoading?.(true);
       try {
-        await workerAdapter.deleteNodes(nodeIds);
+        await workerAdapter.trashNodes(nodeIds);
         // Remove from selection
         onSelectedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
         // Remove from expanded nodes
         onExpandedNodesChange?.((prev) => prev.filter((id) => !nodeIds.includes(id)));
-        // Clear current node if it was deleted
+        // Clear current node if it was trashed
         onCurrentNodeChange?.((prev) => (prev && nodeIds.includes(prev.id) ? null : prev));
       } finally {
         setIsLoading?.(false);
@@ -264,7 +264,7 @@ export function useCRUDOperations(options: UseCRUDOperationsOptions = {}): UseCR
     //  CRUD
     moveNode,
     moveNodes,
-    deleteNode,
+    trashNode,
     trashNodes,
     duplicateNode,
     duplicateNodes,

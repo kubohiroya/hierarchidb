@@ -1,7 +1,7 @@
 /**
  * Root Route for TanStack Router
  *
- * This is the root of the route tree. It sets up:
+ * This is the root of the route console. It sets up:
  * - UI plugin initialization via beforeLoad
  * - Common context available to all child routes
  * - App providers wrapper

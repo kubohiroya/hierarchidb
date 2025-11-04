@@ -65,7 +65,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 新しいフォルダが表示されることを確認
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Real-time Test Folder")')
+      page.locator('[data-testid="console-node"]:has-text("Real-time Test Folder")')
     ).toBeVisible({ timeout: 5000 });
 
     // 更新通知の表示確認
@@ -94,7 +94,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // 更新されたフォルダ名が表示されることを確認
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Updated Folder Name")')
+      page.locator('[data-testid="console-node"]:has-text("Updated Folder Name")')
     ).toBeVisible({ timeout: 5000 });
 
     // 古い名前がないことを確認
@@ -131,10 +131,6 @@ test.describe('TreeTable Real-time Synchronization', () => {
   });
 
   test('複数ノードの同時更新処理', async ({ page }) => {
-    // 複数のテストフォルダを作成
-    const folder1 = await createTestFolder(page, 'Batch Update 1');
-    const folder2 = await createTestFolder(page, 'Batch Update 2');
-    const folder3 = await createTestFolder(page, 'Batch Update 3');
 
     // 複数ノードの同時更新をシミュレート
     await page.evaluate(async () => {
@@ -154,13 +150,13 @@ test.describe('TreeTable Real-time Synchronization', () => {
 
     // すべての更新が反映されることを確認
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Batch Updated 1")')
+      page.locator('[data-testid="console-node"]:has-text("Batch Updated 1")')
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Batch Updated 2")')
+      page.locator('[data-testid="console-node"]:has-text("Batch Updated 2")')
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Batch Updated 3")')
+      page.locator('[data-testid="console-node"]:has-text("Batch Updated 3")')
     ).toBeVisible();
 
     // バッチ更新インジケーターの確認
@@ -227,7 +223,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // Working Copy中は外部変更が即座に反映されないことを確認
     await page.waitForTimeout(2000);
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("External Change During Working Copy")')
+      page.locator('[data-testid="console-node"]:has-text("External Change During Working Copy")')
     ).not.toBeVisible();
 
     // 保留中の変更通知の確認
@@ -240,7 +236,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // コミット後に外部変更が反映されることを確認
     await waitForSubTreeUpdate(page);
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("External Change During Working Copy")')
+      page.locator('[data-testid="console-node"]:has-text("External Change During Working Copy")')
     ).toBeVisible({ timeout: 5000 });
   });
 
@@ -271,7 +267,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // フィルター範囲外の変更は通知されないことを確認
     await page.waitForTimeout(2000);
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Outside Filter Range")')
+      page.locator('[data-testid="console-node"]:has-text("Outside Filter Range")')
     ).not.toBeVisible();
 
     // フィルター範囲内での変更をシミュレート
@@ -320,7 +316,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // 最終的にすべての更新が反映されることを確認
     await waitForSubTreeUpdate(page, 10000);
 
-    const highFrequencyNodes = page.locator('[data-testid="tree-node"]:has-text("High Frequency")');
+    const highFrequencyNodes = page.locator('[data-testid="console-node"]:has-text("High Frequency")');
     await expect(highFrequencyNodes).toHaveCount.atLeast(45); // スロットリングで一部が結合される可能性
   });
 
@@ -420,7 +416,7 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // 停止中は変更が反映されないことを確認
     await page.waitForTimeout(2000);
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Created While Paused")')
+      page.locator('[data-testid="console-node"]:has-text("Created While Paused")')
     ).not.toBeVisible();
 
     // 購読を再開
@@ -432,10 +428,10 @@ test.describe('TreeTable Real-time Synchronization', () => {
     // 停止中の変更がすべて反映されることを確認
     await waitForSubTreeUpdate(page, 10000);
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Created While Paused")')
+      page.locator('[data-testid="console-node"]:has-text("Created While Paused")')
     ).toBeVisible();
     await expect(
-      page.locator('[data-testid="tree-node"]:has-text("Another While Paused")')
+      page.locator('[data-testid="console-node"]:has-text("Another While Paused")')
     ).toBeVisible();
 
     // 同期完了の確認

@@ -124,7 +124,7 @@ export class ImportService {
     // Eria Cartographからロジック移植
     // 1. ZIPファイル読み込み
     // 2. manifest.json検証
-    // 3. tree-nodes.json処理
+    // 3. console-nodes.json処理
     // 4. リソースデータ処理
     // 5. ID マッピング
   }
@@ -176,9 +176,9 @@ export class ExportService {
     };
     zip.file('manifest.json', JSON.stringify(manifest, null, 2));
     
-    // tree-nodes.json作成
+    // console-nodes.json作成
     const nodes = await this.collectNodes(nodeIds);
-    zip.file('tree-nodes.json', JSON.stringify(nodes, null, 2));
+    zip.file('console-nodes.json', JSON.stringify(nodes, null, 2));
     
     // ZIPファイル生成
     return await zip.generateAsync({ type: 'blob' });

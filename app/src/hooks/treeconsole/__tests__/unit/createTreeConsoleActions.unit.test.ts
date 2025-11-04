@@ -60,7 +60,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
   pushPath: ReturnType<typeof vi.fn>;
 } {
   const nodeId = 'node-1' as NodeId;
-  const treeId = 'tree-1' as TreeId;
+  const treeId = 'console-1' as TreeId;
   const pageNodeId = 'parent-1' as NodeId;
 
   const workingCopyNode = {
@@ -160,7 +160,7 @@ describe('createTreeConsoleActions.handleEdit', () => {
 
     expect(workingCopyApi.getWorkingCopy).toHaveBeenCalledTimes(2);
     expect(workingCopyApi.createWorkingCopyFromNode).toHaveBeenCalledWith('node-1');
-    expect(pushPath).toHaveBeenCalledWith('/t/tree-1/parent-1/wc-1/folder/edit');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-1/folder/edit');
     expect(preconnectSpy).toHaveBeenCalledWith('folder');
   });
 
@@ -180,7 +180,7 @@ describe('createTreeConsoleActions.handleEdit', () => {
     await actions.handleEdit();
 
     expect(workingCopyApi.createWorkingCopyFromNode).not.toHaveBeenCalled();
-    expect(pushPath).toHaveBeenCalledWith('/t/tree-1/parent-1/wc-existing/folder/edit');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-existing/folder/edit');
   });
 
   it('renames via context menu rename-dialog action', async () => {
@@ -300,7 +300,7 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it('falls back to tree root when pageNodeId is undefined', async () => {
+  it('falls back to console root when pageNodeId is undefined', async () => {
     const { deps } = buildDeps();
     deps.pageNodeId = undefined;
     deps.ssot = { ...deps.ssot, pageNodeId: '' };
@@ -321,7 +321,7 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     const actions = createTreeConsoleActions(deps);
     await actions.handleUndo();
 
-    expect(loadChildrenOf).toHaveBeenCalledWith('tree-1:root');
+    expect(loadChildrenOf).toHaveBeenCalledWith('console-1:root');
 
     dispatchSpy.mockRestore();
   });

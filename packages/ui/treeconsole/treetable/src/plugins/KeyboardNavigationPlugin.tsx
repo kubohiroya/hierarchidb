@@ -115,10 +115,10 @@ export function createKeyboardNavigationPlugin(config?: KeyboardNavigationPlugin
           return true;
         }
 
-        //  Home/End
-        if (event.key === 'Home' || event.key === 'End') {
+        //  home/End
+        if (event.key === 'home' || event.key === 'End') {
           event.preventDefault();
-          console.log(`Moving to ${event.key === 'Home' ? 'first' : 'last'} node`);
+          console.log(`Moving to ${event.key === 'home' ? 'first' : 'last'} node`);
           return true;
         }
 

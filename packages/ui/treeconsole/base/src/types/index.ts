@@ -32,7 +32,7 @@ export interface TreeTableConsolePanelProps {
   trashAction?: 'restore' | 'empty';
   containerWidth?: number;
   containerHeight?: number;
-  handleStartTour?: () => void;
+  handleStartTour: () => void;
   footerHeight?: number;
   mode?: 'restore' | 'dispose';
   workerClient?: WorkerAPI; // Optional WorkerAPIClient for standalone usage
@@ -188,11 +188,6 @@ export interface TreeNodeWithChildren extends TreeNode {
 }
 
 /**
- * SpeedDial
- */
-// Deprecated: SpeedDialActionType removed.
-
-/**
  * Undo/Redo
  */
 export interface UndoRedoCommand {
@@ -242,7 +237,7 @@ export interface TreeViewController {
 
   //  CRUD - WorkerAPI
   moveNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
-  deleteNodes: (nodeIds: NodeId[]) => Promise<void>;
+  trashNodes: (nodeIds: NodeId[]) => Promise<void>;
   duplicateNodes: (nodeIds: NodeId[], targetParentId: NodeId) => Promise<void>;
 
   //  Working Copy
@@ -258,8 +253,6 @@ export interface TreeViewController {
   onCreate?: (parentId: NodeId, nodeType: string) => void;
   onDuplicate?: (nodeId: NodeId) => void;
   onTrash?: (nodeIds: NodeId[]) => void;
-  /** @deprecated Use onTrash */
-  onRemove?: (nodeIds: NodeId[]) => void;
   createNode?: (nodeType: string) => void;
 
   rootNodeId?: NodeId;
@@ -274,8 +267,6 @@ export interface TreeViewController {
   clearHistory: () => Promise<{ success: boolean; error?: string }>;
 }
 
-// Deprecated: SpeedDialAction removed from base types.
-
 //  TreeNodeData - UI
 //  TreeNodeInUI
 export interface TreeNodeData extends TreeNode {
@@ -285,7 +276,7 @@ export interface TreeNodeData extends TreeNode {
   // name: string;
   // depth: number;
 
-  children?: TreeNodeData[];
+  children?: NodeId[];
   // UI specific properties
   hasChildren?: boolean;
   deletedAt?: string | number;
@@ -293,7 +284,6 @@ export interface TreeNodeData extends TreeNode {
   type?: string; // backward compatibility - UI uses string
 }
 
-//  UI
 export interface SelectionState {
   selectedIds: NodeId[];
   mode: SelectionMode;

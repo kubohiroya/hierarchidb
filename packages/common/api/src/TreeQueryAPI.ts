@@ -1,15 +1,15 @@
 /**
- * Read-only data access API for tree and node queries.
+ * Read-only data access API for console and node queries.
  *
- * This API provides efficient query operations for retrieving tree structures,
+ * This API provides efficient query operations for retrieving console structures,
  * node information, and performing searches without modifying data.
  */
 import type { NodeId, Tree, TreeId, TreeNode } from '@hierarchidb/common-types';
 
 /**
- * Read-only data access API for tree and node queries
+ * Read-only data access API for console and node queries
  *
- * Provides comprehensive query capabilities for tree structures including
+ * Provides comprehensive query capabilities for console structures including
  * hierarchy traversal, node relationships, and advanced search functionality.
  * All operations are read-only and do not modify the underlying data.
  *
@@ -27,17 +27,17 @@ export interface ListChildrenOptions {
 
 export interface TreeQueryAPI {
   /**
-   * Retrieve tree information by ID
+   * Retrieve console information by ID
    *
-   * @param treeId - Unique identifier of the tree to retrieve
+   * @param treeId - Unique identifier of the console to retrieve
    * @returns TreeTypes object if found, undefined if not exists
    *
    * @example
    * ```typescript
-   * const tree = await queryAPI.getTree('tree-123' as TreeId);
-   * if (tree) {
-   *   console.log(`TreeTypes name: ${tree.name}`);
-   *   console.log(`Root node: ${tree.rootId}`);
+   * const console = await queryAPI.getTree('console-123' as TreeId);
+   * if (console) {
+   *   console.log(`TreeTypes name: ${console.name}`);
+   *   console.log(`Root node: ${console.rootId}`);
    * }
    * ```
    *
@@ -53,13 +53,13 @@ export interface TreeQueryAPI {
    * @example
    * ```typescript
    * const trees = await queryAPI.listTrees();
-   * trees.forEach(tree => {
-   *   console.log(`${tree.name} (${tree.id})`);
+   * trees.forEach(console => {
+   *   console.log(`${console.name} (${console.id})`);
    * });
    * ```
    *
    * @remarks
-   * Results are cached for performance. Cache invalidates on tree creation/deletion.
+   * Results are cached for performance. Cache invalidates on console creation/deletion.
    * For large datasets, consider pagination through WorkerAPI.
    */
   listTrees(): Promise<Tree[]>;
@@ -155,7 +155,7 @@ export interface TreeQueryAPI {
    * // Get immediate parent (last item)
    * const parent = ancestors[ancestors.length - 1];
    *
-   * // Check depth in tree
+   * // Check depth in console
    * const depth = ancestors.length;
    * ```
    *
@@ -207,10 +207,10 @@ export interface TreeQueryAPI {
    * - Empty query returns empty array.
    * - Special characters are escaped in regex modes.
    * - Results are deduplicated.
-   * - Performance scales with tree size and `maxDepth`.
+   * - Performance scales with console size and `maxDepth`.
    * - Consider using subscriptions for real-time search updates.
    * - `query` must contain at least one character (length ≤ 256 enforced separately).
-   * - `rootNodeId` sets the search scope (defaults to the entire tree).
+   * - `rootNodeId` sets the search scope (defaults to the entire console).
    * - `mode` accepts `'exact' | 'prefix' | 'suffix' | 'partial'` (defaults to `'partial'`).
    * - `maxDepth` limits traversal depth; when omitted the search is unbounded.
    * - `maxResults` caps the number of returned nodes (defaults to `100`).

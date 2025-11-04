@@ -26,7 +26,7 @@ const capturedControllers = vi.hoisted(() => [] as TreeTableController[]);
 vi.mock('@hierarchidb/ui-treeconsole-treetable', () => {
   const MockTreeTableCore = ({ controller }: { controller: TreeTableController }) => {
     capturedControllers.push(controller);
-    return React.createElement('div', { 'data-testid': 'tree-table-core' });
+    return React.createElement('div', { 'data-testid': 'console-table-core' });
   };
   return {
     TreeTableCore: MockTreeTableCore,

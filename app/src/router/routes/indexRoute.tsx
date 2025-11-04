@@ -1,11 +1,11 @@
 /**
- * Index Route (Home Page) for TanStack Router
+ * Index Route (home Page) for TanStack Router
  *
- * Displays the landing page with tree type selection
+ * Displays the landing page with console type selection
  */
 
 import { createRoute } from '@tanstack/react-router';
-import HomePage from '../../pages/Home/HomePage.js';
+import HomePage from '~/router/pages/home/HomePage.js';
 import { rootRoute } from './rootRoute.js';
 
 export const indexRoute = createRoute({

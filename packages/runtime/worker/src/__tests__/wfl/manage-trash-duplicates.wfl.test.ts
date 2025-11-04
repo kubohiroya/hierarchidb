@@ -61,7 +61,7 @@ describe('trash duplicate names handling', () => {
     const mutationAPI = await client.getMutationAPI();
     const tree = await queryAPI.getTree(toTreeId('r'));
     if (!tree?.rootId || !tree.trashRootId) {
-      throw new Error('tree roots not available');
+      throw new Error('console roots not available');
     }
     const rootId = tree.rootId as NodeId;
     const trashRootId = tree.trashRootId as NodeId;

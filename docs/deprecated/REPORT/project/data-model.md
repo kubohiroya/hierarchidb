@@ -22,7 +22,7 @@ interface ProjectDatabaseStructure {
   projects: ProjectEntity[];              // Main project configurations (PeerEntity)
   
   // Resource reference management
-  resourceReferences: ResourceReference[]; // References to Resources tree nodes (GroupEntity)
+  resourceReferences: ResourceReference[]; // References to Resources console nodes (GroupEntity)
   
   // Layer and composition configuration
   layerConfigurations: LayerConfiguration[]; // Layer-specific settings (RelationalEntity)
@@ -109,7 +109,7 @@ export interface ResourceReference extends GroupEntity {
   projectNodeId: NodeId;       // Parent project node
   
   // Reference information
-  resourceNodeId: NodeId;      // Referenced node in Resources tree
+  resourceNodeId: NodeId;      // Referenced node in Resources console
   resourceTreeId: TreeId;      // TreeTypes containing the referenced node
   referenceType: ResourceReferenceType;
   
@@ -345,7 +345,7 @@ References to Resources tree nodes are managed through the TreeNode reference sy
 interface CrossTreeReference {
   // Reference identity
   sourceNodeId: NodeId;           // Project node making reference
-  targetNodeId: NodeId;           // Referenced node in Resources tree
+  targetNodeId: NodeId;           // Referenced node in Resources console
   targetTreeId: TreeId;           // TreeTypes containing referenced node
   
   // Reference metadata

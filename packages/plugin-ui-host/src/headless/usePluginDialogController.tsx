@@ -1,5 +1,5 @@
 /**
- * usePluginDialogController – core state machine for plugin dialogs.
+ * usePluginDialogController – core state machine for plugin console.
  *
  * Coordinates worker access, step composition, navigation rules, and
  * capability evaluation so the headless dialog shell can render plugin-loader with

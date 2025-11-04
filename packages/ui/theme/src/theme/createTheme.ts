@@ -94,7 +94,7 @@ const getDesignTokens = (mode: PaletteMode): ThemeOptions => ({
         },
         background: {
           default: '#0f0f0f', // Deeper black
-          paper: '#1a1a1a', // Background for cards and dialogs
+          paper: '#1a1a1a', // Background for cards and console
         },
         text: {
           primary: '#ffffff', // Pure white for better contrast

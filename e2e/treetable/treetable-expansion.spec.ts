@@ -26,7 +26,7 @@ test.describe('TreeTable Expansion', () => {
   test('個別ノードの展開・折りたたみ', async ({ page }) => {
     // 展開可能なノードを特定
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expect(expandableNode).toBeVisible();
 
@@ -68,7 +68,7 @@ test.describe('TreeTable Expansion', () => {
   test('キーボードによる展開・折りたたみ', async ({ page }) => {
     // 展開可能なノードにフォーカス
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expandableNode.focus();
 
@@ -95,7 +95,7 @@ test.describe('TreeTable Expansion', () => {
 
   test('全展開・全折りたたみ', async ({ page }) => {
     // 展開可能なノードの数を取得
-    const expandableNodes = page.locator('[data-testid="tree-node"][data-has-children="true"]');
+    const expandableNodes = page.locator('[data-testid="console-node"][data-has-children="true"]');
     const nodeCount = await expandableNodes.count();
 
     if (nodeCount === 0) {
@@ -130,7 +130,7 @@ test.describe('TreeTable Expansion', () => {
   test('ネストされた階層の展開', async ({ page }) => {
     // 最上位ノードを展開
     const topLevelNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await topLevelNode.locator('[data-testid="expand-button"]').click();
     await waitForSubTreeUpdate(page);
@@ -169,7 +169,7 @@ test.describe('TreeTable Expansion', () => {
   test('展開状態の永続化', async ({ page }) => {
     // ノードを展開
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     const nodeId = await expandableNode.getAttribute('data-node-id');
 
@@ -202,7 +202,7 @@ test.describe('TreeTable Expansion', () => {
 
     // ノードを展開
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expandableNode.locator('[data-testid="expand-button"]').click();
 
@@ -229,7 +229,7 @@ test.describe('TreeTable Expansion', () => {
     await waitForTreeTableLoad(page);
 
     // 大量ノードを持つフォルダを展開
-    const largeNode = page.locator('[data-testid="tree-node"][data-has-children="true"]').first();
+    const largeNode = page.locator('[data-testid="console-node"][data-has-children="true"]').first();
 
     const startTime = Date.now();
     await largeNode.locator('[data-testid="expand-button"]').click();
@@ -252,7 +252,7 @@ test.describe('TreeTable Expansion', () => {
 
     // ノード展開を試行
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expandableNode.locator('[data-testid="expand-button"]').click();
 
@@ -276,7 +276,7 @@ test.describe('TreeTable Expansion', () => {
     });
 
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
 
     // 展開開始
@@ -307,7 +307,7 @@ test.describe('TreeTable Expansion', () => {
 
     // タッチによる展開
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expandableNode.locator('[data-testid="expand-button"]').tap();
     await waitForSubTreeUpdate(page);
@@ -322,7 +322,7 @@ test.describe('TreeTable Expansion', () => {
   test('展開状態とフィルタリングの組み合わせ', async ({ page }) => {
     // ノードを展開
     const expandableNode = page
-      .locator('[data-testid="tree-node"][data-has-children="true"]')
+      .locator('[data-testid="console-node"][data-has-children="true"]')
       .first();
     await expandableNode.locator('[data-testid="expand-button"]').click();
     await waitForSubTreeUpdate(page);

@@ -24,7 +24,7 @@ describe('Headless: Policy C load (moderate subtree)', () => {
     const core = await newCore('200');
     const cp = new CommandProcessor(core);
 
-    // Build a moderate tree: root -> A -> 200 children B_i
+    // Build a moderate console: root -> A -> 200 children B_i
     const aId = `A-${Date.now()}` as NodeId;
     await core.createNode({
       id: aId,

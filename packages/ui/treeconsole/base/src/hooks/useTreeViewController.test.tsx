@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { TreeViewControllerProps } from './useTreeViewController.js';
 import { useTreeViewController } from './useTreeViewController.js';
-import type { NodeId, TreeNode, TreeNodeEvent } from '@hierarchidb/common-types';
+import { toNodeId, toNodeType, type NodeId, type TreeNode, type TreeNodeEvent } from '@hierarchidb/common-types';
 import type { WorkerAPI } from '@hierarchidb/common-api';
 
 vi.mock('comlink', () => ({
@@ -19,7 +19,7 @@ vi.mock('@hierarchidb/provider', () => ({
   useTreeOperations: vi.fn(() => ({
     updateNode: vi.fn(),
     moveNode: vi.fn(),
-    deleteNode: vi.fn(),
+    trashNode: vi.fn(),
     duplicateNode: vi.fn(),
   })),
   useTreeState: vi.fn(() => ({
@@ -44,12 +44,12 @@ describe('useTreeViewController', () => {
       getChildren: vi.fn(),
       updateNode: vi.fn(),
       moveNode: vi.fn(),
-      deleteNode: vi.fn(),
+      trashNode: vi.fn(),
       duplicateNode: vi.fn(),
     } as any;
 
     mockProps = {
-      treeId: 'test-tree-id',
+      treeId: 'test-console-id',
       stateManager: mockStateManager,
       onStateChange: mockOnStateChange,
     };
@@ -219,7 +219,7 @@ describe('useTreeViewController', () => {
       });
 
       await act(async () => {
-        await result.current.deleteNode('$1' as NodeId);
+        await result.current.trashNode('$1' as NodeId);
       });
 
       expect(mockStateManager.deleteNode).toHaveBeenCalledWith('$1' as NodeId);
@@ -239,7 +239,7 @@ describe('useTreeViewController', () => {
       expect(result.current.selectedNodeIds).toEqual(['node-1', 'node-2'] as NodeId[]);
 
       await act(async () => {
-        await result.current.deleteNode('$1' as NodeId);
+        await result.current.trashNode('$1' as NodeId);
       });
 
       // Deleted node should be removed from selection
@@ -259,7 +259,7 @@ describe('useTreeViewController', () => {
       expect(result.current.expandedNodeIds).toContain('node-1');
 
       await act(async () => {
-        await result.current.deleteNode('$1' as NodeId);
+        await result.current.trashNode('$1' as NodeId);
       });
 
       // Deleted node should be removed from expanded nodes
@@ -287,7 +287,7 @@ describe('useTreeViewController', () => {
       expect(result.current.currentNode).toBeTruthy();
 
       await act(async () => {
-        await result.current.deleteNode('$1' as NodeId);
+        await result.current.trashNode('$1' as NodeId);
       });
 
       // Current node should be cleared
@@ -1017,7 +1017,7 @@ describe('useTreeViewController', () => {
 
         mockStateManager.deleteNode = vi.fn().mockResolvedValue({ success: true });
         await act(async () => {
-          await result.current.deleteNode('$1' as NodeId);
+          await result.current.trashNode('$1' as NodeId);
         });
 
         //  undo
@@ -1042,7 +1042,7 @@ describe('useTreeViewController', () => {
         expect(result.current.canUndo).toBe(false);
 
         await act(async () => {
-          await result.current.deleteNode('$1' as NodeId);
+          await result.current.trashNode('$1' as NodeId);
         });
 
         //  undo
@@ -1135,16 +1135,16 @@ describe('useTreeViewController', () => {
   describe('worker integration', () => {
     it('loads initial subtree and applies updates from subscription events', async () => {
       const rootNodeId = 'root-node' as NodeId;
-      const rootNode: TreeNode = {
+      const rootNode: Partial<TreeNode> = {
         id: rootNodeId,
         name: 'Root Folder',
-        nodeType: 'folder',
+        nodeType: toNodeType('folder'),
         parentId: null,
       };
-      const childNode: TreeNode = {
-        id: 'child-1',
+      const childNode: Partial<TreeNode> = {
+        id: toNodeId('child-1'),
         name: 'Child Node',
-        nodeType: 'folder',
+        nodeType: toNodeType('folder'),
         parentId: rootNodeId,
       };
 
@@ -1195,7 +1195,7 @@ describe('useTreeViewController', () => {
 
       const { result } = renderHook(() =>
         useTreeViewController({
-          treeId: 'test-tree-id',
+          treeId: 'test-console-id',
           rootNodeId,
           workerClient: mockWorkerClient,
         }),
@@ -1221,7 +1221,7 @@ describe('useTreeViewController', () => {
         subscriptionCallback?.({
           type: 'updated',
           nodeId: childNode.id as NodeId,
-          node: { ...childNode, name: 'Updated Child Node' },
+          //node: { ...childNode, name: 'Updated Child Node' },
           parentId: rootNodeId,
           timestamp: Date.now(),
         });

@@ -649,7 +649,7 @@ async function cleanupMyPluginResources(nodeId: NodeId): Promise<void> {
 // Main entry point
 export * from './shared';
 
-// Conditional exports for tree-shaking
+// Conditional exports for console-shaking
 export * from './ui';
 export * from './worker';
 
