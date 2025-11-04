@@ -1,8 +1,8 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
-import { type CreateResolverData, ResolverEntityService } from '../../../worker/ResolverEntityService.js';
-import { resolverDB } from '../../../worker/database/ResolverDatabase.js';
+import { type CreateResolverData, ResolverEntityService } from '../../worker/ResolverEntityService.js';
+import { resolverDB } from '../../worker/database/ResolverDatabase.js';
 
 describe('ResolverEntityService', () => {
   let handler: ResolverEntityService;
