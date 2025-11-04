@@ -38,12 +38,14 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTranslation } from 'react-i18next';
 
 import type {
   ColorAlgorithm,
   ColorSpace,
   MapLibreStyleProperty,
+  StylerTableRow,
   StylerConfig,
 } from '../../../common/types/stylerTypes.js';
 import {
@@ -69,7 +71,7 @@ export interface StylerConfigurationProps {
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   onColumnSelect?: (column: string, type: 'key' | 'value') => void;
-  csvData?: Array<Record<string, any>>; //  CSV
+  csvData?: StylerTableRow[]; //  CSV
 }
 
 /**
@@ -254,7 +256,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   );
 
   const handleTargetPropertyChange = useCallback(
-    (event: any) => {
+    (event: SelectChangeEvent<MapLibreStyleProperty>) => {
       const targetProperty = event.target.value as MapLibreStyleProperty;
       const newConfig = { ...localConfig, targetProperty };
       setLocalConfig(newConfig);
@@ -264,7 +266,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   );
 
   const handleKeyColumnChange = useCallback(
-    (event: any) => {
+    (event: SelectChangeEvent<string>) => {
       const column = event.target.value;
       if (onColumnSelect) {
         onColumnSelect(column, 'key');
@@ -274,7 +276,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   );
 
   const handleValueColumnChange = useCallback(
-    (event: any) => {
+    (event: SelectChangeEvent<string>) => {
       const column = event.target.value;
       if (onColumnSelect) {
         onColumnSelect(column, 'value');
