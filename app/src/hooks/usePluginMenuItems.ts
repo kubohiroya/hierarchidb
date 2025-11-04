@@ -60,9 +60,9 @@ export function usePluginMenuItems(treeId?: TreeId): PluginMenuItem[] {
         globalMenuBuilders.__HDB_MENU_BUILDERS__ = cache;
         const list = cache.buildMenuItemsForTreeId
           ? cache.buildMenuItemsForTreeId(treeId)
-          : cache.buildMenuItemsForContext!(
+          : (cache.buildMenuItemsForContext?.(
               cache.normalizeContextFromTreeId?.(treeId) ?? 'projects'
-            );
+            ) ?? []);
         if (active) setItems(list);
         await prefetchMuiIcons(list.map((i) => i.icon?.muiIconName).filter(Boolean));
         return;

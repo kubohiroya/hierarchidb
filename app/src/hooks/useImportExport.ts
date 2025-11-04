@@ -61,6 +61,10 @@ export interface ValidationResult {
   errors: string[];
 }
 
+type ImportNodesPayload = {
+  nodes: Array<Record<string, unknown>>;
+};
+
 /**
  * Hook for import/export functionality
  * @param client - Worker API client instance
@@ -93,7 +97,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         const content = await readFileContent(file);
 
         // Parse and validate content based on format
-        let parsedData: any;
+        let parsedData: unknown;
         if (format === 'json') {
           parsedData = JSON.parse(content);
         } else if (format === 'csv') {
@@ -102,8 +106,10 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
           throw new Error(`Unsupported format: ${format}`);
         }
 
+        const normalizedData = normalizeImportData(parsedData);
+
         // Validate import data
-        const validation = await validateImportData(parsedData);
+        const validation = validateImportDataPayload(normalizedData);
         if (!validation.valid) {
           throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
         }
@@ -117,7 +123,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         });
 
         // Process import via Worker API
-        const result = await processImport(client, parsedData, targetNodeId, onProgress);
+        const result = await processImport(client, normalizedData, targetNodeId, onProgress);
 
         // Report completion
         onProgress?.({
@@ -248,41 +254,6 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   }, []);
 
   /**
-   * Validate import data structure
-   */
-  const validateImportData = useCallback(async (data: any): Promise<ValidationResult> => {
-    const errors: string[] = [];
-
-    if (!data.nodes || !Array.isArray(data.nodes)) {
-      // If data is an array, treat it as nodes array
-      if (Array.isArray(data)) {
-        data = { nodes: data };
-      } else {
-        errors.push('Invalid data structure: missing nodes array');
-        return { valid: false, errors };
-      }
-    }
-
-    // Validate each node
-    const pluginNodeTypes = new Set(getInstalledPlugins().map((plugin) => plugin.nodeType));
-    const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
-
-    data.nodes.forEach((node: any, index: number) => {
-      if (!node.name) {
-        errors.push(`Node ${index}: missing required field 'name'`);
-      }
-      if (node.nodeType && !validNodeTypes.has(node.nodeType)) {
-        errors.push(`Node ${index}: invalid node type '${node.nodeType}'`);
-      }
-    });
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }, []);
-
-  /**
    * Validate CSV columns
    */
   const validateCSVColumns = useCallback(
@@ -346,48 +317,6 @@ async function readFileContent(file: File): Promise<string> {
   });
 }
 
-function parseCSV(content: string, options?: CSVImportOptions): any {
-  const lines = content.split('\n').filter((line) => line.trim());
-  const delimiter = options?.delimiter || ',';
-  const hasHeader = options?.hasHeader ?? true;
-
-  const rows = lines.map((line) => {
-    // Simple CSV parsing (can be enhanced with proper CSV library)
-    return line.split(delimiter).map((cell) => cell.trim());
-  });
-
-  if (rows.length === 0) {
-    return { nodes: [] };
-  }
-
-  const headers = hasHeader ? rows[0] : [];
-  const dataRows = hasHeader ? rows.slice(1) : rows;
-
-  // Convert to nodes
-  const nodes = dataRows.map((row) => {
-    const node: any = {};
-
-    if (options?.columnMapping) {
-      Object.entries(options.columnMapping).forEach(([field, index]) => {
-        node[field] = row[index];
-      });
-    } else if (hasHeader && headers) {
-      headers.forEach((header, index) => {
-        node[header] = row[index];
-      });
-    } else {
-      // Default mapping
-      node.name = row[0];
-      node.nodeType = row[1];
-      node.description = row[2];
-    }
-
-    return node;
-  });
-
-  return { nodes };
-}
-
 function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
   const delimiter = options?.delimiter || ',';
   const includeHeader = options?.includeHeader ?? true;
@@ -417,7 +346,7 @@ function formatCSV(nodes: TreeNode[], options?: CSVExportOptions): string {
 
 async function processImport(
   client: Remote<WorkerAPI>,
-  data: any,
+  data: ImportNodesPayload,
   targetNodeId: NodeId,
   onProgress?: (progress: ImportProgress) => void
 ): Promise<ImportResult> {
@@ -479,4 +408,86 @@ async function collectNodesForExport(
   }
 
   return nodes;
+}
+
+function normalizeImportData(data: unknown): ImportNodesPayload {
+  if (Array.isArray(data)) {
+    return { nodes: data as Array<Record<string, unknown>> };
+  }
+  if (data && typeof data === 'object') {
+    const maybeNodes = (data as { nodes?: unknown }).nodes;
+    if (Array.isArray(maybeNodes)) {
+      return { nodes: maybeNodes as Array<Record<string, unknown>> };
+    }
+  }
+  throw new Error('Invalid data structure: missing nodes array');
+}
+
+function parseCSV(content: string, options?: CSVImportOptions): ImportNodesPayload {
+  const lines = content.split('\n').filter((line) => line.trim());
+  const delimiter = options?.delimiter || ',';
+  const hasHeader = options?.hasHeader ?? true;
+
+  const rows = lines.map((line) => {
+    const quoted = /"([^"\\\\]*(?:\\.[^"\\\\]*)*)"/g;
+    return line
+      .replace(quoted, (match) => match.replace(/,/g, '\u2001'))
+      .split(delimiter)
+      .map((cell) =>
+        cell
+          .replace(/\u2001/g, ',')
+          .replace(/^"|"$/g, '')
+          .trim()
+      );
+  });
+
+  if (rows.length === 0) {
+    return { nodes: [] };
+  }
+
+  const headers = hasHeader ? rows[0] : [];
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+
+  const nodes = dataRows.map((row) => {
+    const node: Record<string, unknown> = {};
+
+    if (options?.columnMapping) {
+      Object.entries(options.columnMapping).forEach(([field, index]) => {
+        node[field] = row[index];
+      });
+    } else if (hasHeader && headers) {
+      headers.forEach((header, index) => {
+        node[header] = row[index];
+      });
+    } else {
+      node.name = row[0];
+      node.nodeType = row[1];
+      node.description = row[2];
+    }
+
+    return node;
+  });
+
+  return { nodes };
+}
+
+function validateImportDataPayload(data: ImportNodesPayload): ValidationResult {
+  const errors: string[] = [];
+  const pluginNodeTypes = new Set(getInstalledPlugins().map((plugin) => plugin.nodeType));
+  const validNodeTypes = new Set<string>(['folder', 'file', 'project', ...pluginNodeTypes]);
+
+  data.nodes.forEach((node, index) => {
+    if (!('name' in node) || typeof node.name !== 'string') {
+      errors.push(`Node ${index}: missing required field 'name'`);
+    }
+    const nodeType = (node as Record<string, unknown>).nodeType;
+    if (typeof nodeType === 'string' && !validNodeTypes.has(nodeType)) {
+      errors.push(`Node ${index}: invalid node type '${nodeType}'`);
+    }
+  });
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
 }

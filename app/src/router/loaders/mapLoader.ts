@@ -40,7 +40,7 @@ export function parseZxyParam(zxy: string | null): MapViewState | null {
   const latitude = parts[2] ? parseFloat(parts[2]) : 0;
 
   // Validate parsed values
-  if (isNaN(zoom) || isNaN(longitude) || isNaN(latitude)) return null;
+  if (Number.isNaN(zoom) || Number.isNaN(longitude) || Number.isNaN(latitude)) return null;
   if (zoom < 0 || zoom > 22) return null;
   if (longitude < -180 || longitude > 180) return null;
   if (latitude < -90 || latitude > 90) return null;

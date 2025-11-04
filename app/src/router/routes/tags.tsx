@@ -73,8 +73,8 @@ export default function TagsPage() {
     const query = searchQuery.toLowerCase();
     return (
       tag.name.toLowerCase().includes(query) ||
-      (tag.description && tag.description.toLowerCase().includes(query)) ||
-      (tag.category && tag.category.toLowerCase().includes(query))
+      tag.description?.toLowerCase().includes(query) ||
+      tag.category?.toLowerCase().includes(query)
     );
   });
 
@@ -82,8 +82,9 @@ export default function TagsPage() {
   const tagsByCategory = filteredTags.reduce(
     (acc, tag) => {
       const category = tag.category || 'uncategorized';
-      acc[category] = acc[category] ?? [];
-      acc[category]!.push(tag);
+      const list = acc[category] ?? [];
+      list.push(tag);
+      acc[category] = list;
       return acc;
     },
     {} as Record<string, TagEntity[]>

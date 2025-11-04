@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface TitleLogoProps {
   title?: string;
   description?: string;
@@ -11,6 +13,8 @@ export function TitleLogo({
   showProgress = false,
   progressText = 'Initializing application...',
 }: TitleLogoProps) {
+  const svgTitleId = useId();
+
   return (
     <div
       style={{
@@ -39,10 +43,13 @@ export function TitleLogo({
           height="80"
           viewBox="0 0 80 80"
           fill="none"
+          role="img"
+          aria-labelledby={svgTitleId}
           style={{
             display: 'block', // Prevent inline spacing issues
           }}
         >
+          <title id={svgTitleId}>HierarchiDB logo</title>
           {/* TreeTypes structure with nodes and connections */}
           {/* Top node */}
           <circle cx="40" cy="15" r="8" fill="#1976d2" />
@@ -164,9 +171,7 @@ export function TitleLogo({
       </div>
 
       {/* Inline styles for progress animation only */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      <style>{`
         @keyframes progress {
           0% {
             transform: translateX(-100%);
@@ -178,9 +183,7 @@ export function TitleLogo({
             transform: translateX(100%);
           }
         }
-      `,
-        }}
-      />
+      `}</style>
     </div>
   );
 }

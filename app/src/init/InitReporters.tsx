@@ -18,9 +18,7 @@ export const MarkStepDoneOnMount: React.FC<{ step: StepName; message?: string }>
   const { markStepDone } = useBootProgress();
   useEffect(() => {
     markStepDone(step, message);
-    // run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [markStepDone, message, step]);
   return null;
 };
 

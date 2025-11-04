@@ -179,7 +179,7 @@ export function getRequestedPlugins(): NodeType[] {
 
   // Remove excluded plugin-loader
   if (config.excluded && config.excluded.length > 0) {
-    requested = requested.filter((p) => !config.excluded!.includes(p));
+    requested = requested.filter((p) => !config.excluded?.includes(p));
   }
 
   return requested;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type QueryKey = unknown;
 
@@ -24,9 +24,15 @@ export function useQuery<T>(options: QueryOptions<T>): QueryResult<T> {
   }));
 
   const key = useMemo(() => JSON.stringify(options.queryKey ?? null), [options.queryKey]);
+  const latestKeyRef = useRef(key);
+
+  useEffect(() => {
+    latestKeyRef.current = key;
+  }, [key]);
 
   useEffect(() => {
     let active = true;
+    const runKey = key;
     if (!queryFn || !enabled) {
       setState((prev) => ({ ...prev, isLoading: false }));
       return () => {
@@ -36,11 +42,11 @@ export function useQuery<T>(options: QueryOptions<T>): QueryResult<T> {
     setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
     queryFn()
       .then((data) => {
-        if (!active) return;
+        if (!active || latestKeyRef.current !== runKey) return;
         setState({ isLoading: false, data, error: undefined });
       })
       .catch((error) => {
-        if (!active) return;
+        if (!active || latestKeyRef.current !== runKey) return;
         setState((prev) => ({ ...prev, isLoading: false, error }));
       });
     return () => {

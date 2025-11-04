@@ -138,7 +138,7 @@ export function useTreeConsoleLoader({
         setSSOTRef.current({ loading: false });
       }
     },
-    [client, pageNodeId, pageTreeNode?.nodeType, setState]
+    [client, debugEnabled, pageNodeId, pageTreeNode?.nodeType, setState]
   );
 
   return { loadChildrenOf };

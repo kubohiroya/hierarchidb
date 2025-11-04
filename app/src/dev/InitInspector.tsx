@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogTitle } from '@mui/material';
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Status = 'unknown' | 'starting' | 'ready' | 'error';
 const WORKER_INIT_EVENT = 'hierarchidb-worker-init-complete' as const;
@@ -21,14 +21,14 @@ export const InitInspector: React.FC = () => {
     route: typeof location !== 'undefined' ? location.pathname + location.search : '',
   });
 
-  const logDevWarning = (message: string, error?: unknown) => {
+  const logDevWarning = useCallback((message: string, error?: unknown) => {
     if (typeof console === 'undefined') return;
     if (typeof error === 'undefined') {
       console.warn(`[InitInspector] ${message}`);
     } else {
       console.warn(`[InitInspector] ${message}`, error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -77,7 +77,7 @@ export const InitInspector: React.FC = () => {
         logDevWarning('Failed to remove worker init event listener', error);
       }
     };
-  }, []);
+  }, [logDevWarning]);
 
   const badge: Status = useMemo(() => {
     if (state.clientReady) return 'ready';
@@ -144,7 +144,7 @@ export const InitInspector: React.FC = () => {
       logDevWarning('Failed to enumerate IndexedDB databases for cleanup', error);
     }
     console.log('[InitInspector] caches cleared. Reloading…');
-    location.replace(location.pathname + '?nocache=' + Date.now());
+    location.replace(`${location.pathname}?nocache=${Date.now()}`);
   };
 
   // Draggable position state (translate from initial bottom-right)
@@ -235,6 +235,7 @@ export const InitInspector: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <button
+            type="button"
             onClick={ping}
             style={{
               fontSize: 11,
@@ -247,6 +248,7 @@ export const InitInspector: React.FC = () => {
             Ping
           </button>
           <button
+            type="button"
             onClick={forceEvent}
             style={{
               fontSize: 11,
@@ -259,6 +261,7 @@ export const InitInspector: React.FC = () => {
             Dispatch INIT
           </button>
           <button
+            type="button"
             onClick={clearCaches}
             style={{
               fontSize: 11,

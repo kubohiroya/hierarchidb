@@ -6,7 +6,6 @@
 import type { NodeType } from '@hierarchidb/feature-core/common-types';
 import type { PluginInfo } from '@hierarchidb/feature-core/plugin-ui-sdk';
 import { useEffect, useState } from 'react';
-import { useWorker } from '../contexts/WorkerProvider.js';
 
 /**
  * Hook for accessing plugin registry information
@@ -32,7 +31,6 @@ import { useWorker } from '../contexts/WorkerProvider.js';
  * ```
  */
 export function usePluginRegistry() {
-  const worker = useWorker();
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +53,7 @@ export function usePluginRegistry() {
     }
 
     loadPlugins();
-  }, [worker]);
+  }, []);
 
   return { plugins, loading, error };
 }
@@ -85,7 +83,6 @@ export function usePluginRegistry() {
  * ```
  */
 export function usePluginInfo(nodeType: NodeType) {
-  const worker = useWorker();
   const [plugin, setPlugin] = useState<PluginInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +105,7 @@ export function usePluginInfo(nodeType: NodeType) {
     }
 
     loadPluginInfo();
-  }, [worker, nodeType]);
+  }, [nodeType]);
 
   return { plugin, loading, error };
 }
@@ -143,7 +140,6 @@ export function usePluginInfo(nodeType: NodeType) {
  * ```
  */
 export function usePluginDependencies(nodeType: NodeType) {
-  const worker = useWorker();
   const [dependencies, setDependencies] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -163,7 +159,7 @@ export function usePluginDependencies(nodeType: NodeType) {
     }
 
     loadDependencies();
-  }, [worker, nodeType]);
+  }, [nodeType]);
 
   return { dependencies, loading };
 }
@@ -191,7 +187,6 @@ export function usePluginDependencies(nodeType: NodeType) {
  * ```
  */
 export function usePluginLoadOrder() {
-  const worker = useWorker();
   const [loadOrder, setLoadOrder] = useState<NodeType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -211,7 +206,7 @@ export function usePluginLoadOrder() {
     }
 
     loadOrder();
-  }, [worker]);
+  }, []);
 
   return { loadOrder, loading };
 }

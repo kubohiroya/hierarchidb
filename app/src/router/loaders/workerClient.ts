@@ -120,7 +120,7 @@ export async function ensureWorkerStarted(
   // Create timeout promise
   const timeoutPromise = new Promise<never>((_, reject) => {
     const timer = setTimeout(() => {
-      reject(new Error('Worker initialization timeout after ' + config.timeoutMs + 'ms'));
+      reject(new Error(`Worker initialization timeout after ${config.timeoutMs}ms`));
     }, config.timeoutMs);
 
     // Clear timeout if signal is aborted

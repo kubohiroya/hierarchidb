@@ -10,10 +10,12 @@ export interface RouterConfig {
   basename?: string;
 }
 
+export type AppRouterInstance = ReturnType<typeof createRouter>;
+
 export interface HierarchiRouter {
   mode: RouterMode;
   engine: RouterEngine;
-  instance: any; // ReactRouter or TanStack Router
+  instance: AppRouterInstance;
 }
 
 /**

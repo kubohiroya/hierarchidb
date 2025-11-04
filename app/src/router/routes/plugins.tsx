@@ -54,7 +54,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type React from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getInstalledPlugins } from '~/services/plugin-registry.js';
 
@@ -124,6 +124,8 @@ function EnhancedPluginRow({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const menuOpen = Boolean(anchorEl);
   const { t } = useTranslation('common');
+  const pluginMenuButtonId = useId();
+  const pluginMenuId = useId();
 
   const isFolderPlugin = plugin.nodeType === 'folder';
   const canDelete = !isFolderPlugin;
@@ -215,8 +217,9 @@ function EnhancedPluginRow({
         <TableCell align="center">{plugin.createOrder || 'N/A'}</TableCell>
         <TableCell>
           <IconButton
+            id={pluginMenuButtonId}
             aria-label="more"
-            aria-controls={menuOpen ? 'plugin-menu' : undefined}
+            aria-controls={menuOpen ? pluginMenuId : undefined}
             aria-haspopup="true"
             aria-expanded={menuOpen ? 'true' : undefined}
             onClick={handleMenuClick}
@@ -225,12 +228,12 @@ function EnhancedPluginRow({
             <MoreVertIcon />
           </IconButton>
           <Menu
-            id="plugin-menu"
+            id={pluginMenuId}
             anchorEl={anchorEl}
             open={menuOpen}
             onClose={handleMenuClose}
             MenuListProps={{
-              'aria-labelledby': 'plugin-menu-button',
+              'aria-labelledby': pluginMenuButtonId,
             }}
           >
             <MenuItem onClick={handleReset}>
@@ -336,17 +339,19 @@ function ResetPluginDialog({
   loading = false,
 }: ResetPluginDialogProps) {
   const isFolderPlugin = pluginName === 'folder';
+  const titleId = useId();
+  const descriptionId = useId();
 
   return (
     <Dialog
       open={open}
       onClose={onCancel}
-      aria-labelledby="reset-dialog-title"
-      aria-describedby="reset-dialog-description"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle id="reset-dialog-title">
+      <DialogTitle id={titleId}>
         <Stack direction="row" spacing={1} alignItems="center">
           <RefreshIcon color={isProduction && isFolderPlugin ? 'error' : 'warning'} />
           <Typography>
@@ -357,7 +362,7 @@ function ResetPluginDialog({
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
-          <DialogContentText id="reset-dialog-description">
+          <DialogContentText id={descriptionId}>
             {isFolderPlugin
               ? 'This will reset the entire system, clearing ALL data including TreeNodes, all plugin entities, and recreating initial trees and root nodes.'
               : 'This will clear GroupEntity and RelationalEntity data for this plugin type. TreeNodes and PeerEntity data will be preserved.'}
@@ -439,17 +444,19 @@ function DeletePluginDialog({
   loading = false,
 }: DeletePluginDialogProps) {
   const [clearDatabase, setClearDatabase] = useState(true);
+  const titleId = useId();
+  const descriptionId = useId();
 
   return (
     <Dialog
       open={open}
       onClose={onCancel}
-      aria-labelledby="delete-dialog-title"
-      aria-describedby="delete-dialog-description"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle id="delete-dialog-title">
+      <DialogTitle id={titleId}>
         <Stack direction="row" spacing={1} alignItems="center">
           <DeleteIcon color="error" />
           <Typography>Delete Plugin: {pluginName}</Typography>
@@ -457,7 +464,7 @@ function DeletePluginDialog({
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
-          <DialogContentText id="delete-dialog-description">
+          <DialogContentText id={descriptionId}>
             This action will delete the selected plugin and all plugins that depend on it.
           </DialogContentText>
 
@@ -539,7 +546,10 @@ export default function PluginsPage() {
     const queue = [pluginName];
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (!current) {
+        continue;
+      }
 
       // Find all plugin-loader that depend on the current one
       for (const [plugin, deps] of Object.entries(pluginDependencies)) {

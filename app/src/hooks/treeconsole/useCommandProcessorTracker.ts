@@ -80,9 +80,10 @@ export function useCommandProcessorTracker({ client, setState, setSSOT }: Params
       if (subscriptionId && subscriptionAPI) {
         void subscriptionAPI.unsubscribe(subscriptionId).catch(() => {});
       } else if (subscriptionId) {
+        const pendingId = subscriptionId;
         void client
           .getSubscriptionAPI()
-          .then((api) => api.unsubscribe(subscriptionId!))
+          .then((api) => api.unsubscribe(pendingId))
           .catch(() => {});
       }
     };

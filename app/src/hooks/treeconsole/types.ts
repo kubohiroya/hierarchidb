@@ -107,8 +107,8 @@ export type MaybeCP = {
   getCommandProcessor?: () => Promise<{
     canUndo?: () => boolean;
     canRedo?: () => boolean;
-    undo?: () => Promise<CommandResult | void>;
-    redo?: () => Promise<CommandResult | void>;
+    undo?: () => Promise<CommandResult | undefined>;
+    redo?: () => Promise<CommandResult | undefined>;
   }>;
 };
 

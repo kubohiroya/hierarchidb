@@ -20,7 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { ChipProps } from '@mui/material/Chip';
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface LicenseData {
   [packageName: string]: {
@@ -78,30 +78,17 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | false>('MIT');
 
-  useEffect(() => {
-    if (licenseData) {
-      setPackages(licenseData);
-      setLoading(false);
-    } else {
-      // Try to load license data dynamically
-      loadLicenseData();
-    }
-  }, [licenseData]);
-
-  const loadLicenseData = async () => {
+  const loadLicenseData = useCallback(async () => {
     try {
       setLoading(true);
-      // Try to fetch license data from a pre-generated file
-      // Use base URL from environment if available
       const basePath = import.meta.env.BASE_URL || '/';
       const licensePath = `${basePath}licenses.json`.replace(/\/+/g, '/');
       const response = await fetch(licensePath).catch(() => null);
 
-      if (response && response.ok) {
+      if (response?.ok) {
         const data = await response.json();
         setPackages(data);
       } else {
-        // Fallback: show a message about running license-checker
         setError('License data not available. Run "npm run analyze:licenses" to generate it.');
       }
     } catch (err) {
@@ -110,7 +97,16 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (licenseData) {
+      setPackages(licenseData);
+      setLoading(false);
+    } else {
+      loadLicenseData();
+    }
+  }, [licenseData, loadLicenseData]);
 
   // Filter packages based on search query
   const filteredPackages = Object.entries(packages).filter(([name]) =>
@@ -123,8 +119,9 @@ export function LicenseInfo({ licenseData }: LicenseInfoProps) {
       const license = info.licenses || 'UNKNOWN';
       const category = categorizeLicense(license);
 
-      acc[category] = acc[category] ?? [];
-      acc[category]!.push({ name, ...info });
+      const entries = acc[category] ?? [];
+      entries.push({ name, ...info });
+      acc[category] = entries;
       return acc;
     },
     {} as Record<string, Array<{ name: string } & LicenseData[string]>>

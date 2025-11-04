@@ -1,7 +1,7 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BaseMapEntityHandler } from '../handlers/BaseMapEntityHandler.js';
-import type { BaseMapEntity } from '../types/BaseMapEntity.js';
+import { BaseMapEntityHandler } from '../../handlers/BaseMapEntityHandler.js';
+import type { BaseMapEntity } from '../../types/BaseMapEntity.js';
 
 // Mock the FolderEntityHandler since BaseMapEntityHandler extends it
 vi.mock('@hierarchidb/folder-plugin', () => ({

@@ -145,7 +145,9 @@ export function DynamicSpeedDial({
           const cls = (el as HTMLElement).className?.toString?.() || '';
           const id = (el as HTMLElement).id ? `#${(el as HTMLElement).id}` : '';
           const tn = el.nodeName.toLowerCase();
-          topAtFab = `${tn}${id}${cls ? '.' + cls.toString().split(' ').slice(0, 3).join('.') : ''}`;
+          topAtFab = `${tn}${id}${
+            cls ? `.${cls.toString().split(' ').slice(0, 3).join('.')}` : ''
+          }`;
         }
       }
       setHitboxes({ container: rectRoot, fab: rectFab, actions: rectActs, topAtFab });
@@ -165,7 +167,7 @@ export function DynamicSpeedDial({
       window.removeEventListener('scroll', onScrollOrResize, true);
       window.removeEventListener('resize', onScrollOrResize);
     };
-  }, [debugHitbox, open]);
+  }, [debugHitbox]);
 
   // Don't render if hidden
   if (hidden) {
@@ -313,8 +315,8 @@ export function DynamicSpeedDial({
               <Box
                 sx={{
                   position: 'fixed',
-                  left: hitboxes.fab?.left ?? hitboxes.container!.left,
-                  top: (hitboxes.fab?.top ?? hitboxes.container!.top) - 22,
+                  left: hitboxes.fab?.left ?? hitboxes.container?.left,
+                  top: (hitboxes.fab?.top ?? hitboxes.container?.top ?? 0) - 22,
                   px: 1,
                   py: 0.25,
                   fontSize: 11,
@@ -330,7 +332,7 @@ export function DynamicSpeedDial({
             {/* Action boxes outline rendered via CSS; extra fixed rectangles to visualize area explicitly */}
             {hitboxes.actions.map((r, idx) => (
               <Box
-                key={idx}
+                key={`${r.left}-${r.top}-${r.width}-${r.height}-${idx}`}
                 sx={{
                   position: 'fixed',
                   left: r.left,

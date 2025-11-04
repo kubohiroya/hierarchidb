@@ -39,14 +39,12 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTranslation } from 'react-i18next';
 
 import type {
   ColorAlgorithm,
   ColorSpace,
   MapLibreStyleProperty,
-  StylerTableRow,
   StylerConfig,
   StylerTableRow,
 } from '../../../common/types/stylerTypes.js';

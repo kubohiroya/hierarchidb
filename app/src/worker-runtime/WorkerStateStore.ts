@@ -147,7 +147,7 @@ export async function ensureWorkerInitialized(options?: {
 
   const abortPromise = options?.signal
     ? new Promise<never>((_, reject) => {
-        options.signal!.addEventListener(
+        options.signal?.addEventListener(
           'abort',
           () => reject(new DOMException('The operation was aborted.', 'AbortError')),
           { once: true }

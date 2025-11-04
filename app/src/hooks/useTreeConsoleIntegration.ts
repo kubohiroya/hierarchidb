@@ -82,10 +82,7 @@ export function useTreeConsoleIntegration({
     () => (nodeIndex ? nodeIndex.clone() : new DualKeyMap<NodeId, NodeId, TreeNode>()),
     [nodeIndex]
   );
-  const sortConfig = useMemo(
-    () => deriveConfigFromState(state, searchTerm),
-    [state.sortBy, state.sortDirection, state.filterBy, searchTerm]
-  );
+  const sortConfig = useMemo(() => deriveConfigFromState(state, searchTerm), [state, searchTerm]);
   const treeData = useMemo<TreeNodeData[]>(() => {
     if (!nodeIndex) return [];
     const root = (pageNodeId || '') as NodeId;
@@ -252,7 +249,6 @@ export function useTreeConsoleIntegration({
       searchTerm,
       selectedIds,
       setSSOT,
-      setState,
       setupSubscription,
       ssot,
       teardownSubscription,

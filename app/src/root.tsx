@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StrictMode } from 'react';
+import { StrictMode, useId } from 'react';
 import { AppProviders } from './router/context/AppProviders.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 
@@ -18,9 +18,12 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export function HydrateFallback() {
+  const containerId = useId();
+  const statusId = useId();
+
   return (
     <div
-      id="hdb-hydrate-fallback"
+      id={containerId}
       style={{
         position: 'fixed',
         inset: 0,
@@ -30,9 +33,10 @@ export function HydrateFallback() {
         backgroundColor: '#ffffff',
       }}
     >
-      <div
+      <output
+        id={statusId}
+        aria-live="polite"
         aria-label="Loading"
-        role="status"
         style={{
           width: '32px',
           height: '32px',
@@ -40,18 +44,17 @@ export function HydrateFallback() {
           borderTopColor: '#1976d2',
           borderRadius: '50%',
           animation: 'hdb-spin 0.8s linear infinite',
+          display: 'inline-block',
         }}
-      />
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
+      >
+        <span style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>Loading</span>
+      </output>
+      <style>{`
         @keyframes hdb-spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-      `,
-        }}
-      />
+      `}</style>
     </div>
   );
 }

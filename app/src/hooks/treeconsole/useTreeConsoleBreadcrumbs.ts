@@ -89,7 +89,7 @@ export function useTreeConsoleBreadcrumbs({ client, pageTreeNode }: Params): Bre
     return () => {
       disposed = true;
     };
-  }, [client, pageTreeNode?.id, pageTreeNode?.name, pageTreeNode?.nodeType, maxBreadcrumbItems]);
+  }, [client, pageTreeNode, maxBreadcrumbItems]);
 
   return breadcrumbItems;
 }

@@ -47,7 +47,7 @@ import {
   getWorkerAPIClientModule,
   loadWorkerAPIClientModule,
 } from '../worker-runtime/workerApiClientLoader.js';
-import { useBootProgress } from './BootProgressProvider.js';
+import { useOptionalBootProgress } from './BootProgressProvider.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -149,11 +149,7 @@ let initStarted = false;
 let initCompleted = false;
 
 function useBootProgressSafe() {
-  try {
-    return useBootProgress();
-  } catch {
-    return null;
-  }
+  return useOptionalBootProgress();
 }
 
 const overlayContainerStyle: CSSProperties = {

@@ -48,6 +48,12 @@ export class PluginUiModuleLoader implements PluginUiModuleLoaderContract {
       this.cache.set(nodeType, promise as Promise<unknown>);
     }
 
-    return this.cache.get(nodeType)! as Promise<T>;
+    const cached = this.cache.get(nodeType);
+    if (!cached) {
+      return Promise.reject(
+        new Error(`[PluginUiModuleLoader] Failed to load UI plugin: ${nodeType}`)
+      );
+    }
+    return cached as Promise<T>;
   }
 }

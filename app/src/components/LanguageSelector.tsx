@@ -1,6 +1,6 @@
 import { FormControl, InputLabel, MenuItem, Select, type SelectChangeEvent } from '@mui/material';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 
 type Manifest = {
   languages: Array<{ code: string; name?: string; nativeName?: string; direction?: 'ltr' | 'rtl' }>;
@@ -18,6 +18,7 @@ const readCurrent = (): string => {
 export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size = 'small' }) => {
   const [langs, setLangs] = useState<Manifest['languages']>([]);
   const [value, setValue] = useState<string>(readCurrent());
+  const labelId = useId();
 
   useEffect(() => {
     let active = true;
@@ -91,8 +92,8 @@ export const LanguageSelector: React.FC<{ size?: 'small' | 'medium' }> = ({ size
 
   return (
     <FormControl size={size} sx={{ minWidth: 120 }}>
-      <InputLabel id="lang-select-label">Lang</InputLabel>
-      <Select labelId="lang-select-label" label="Lang" value={normalizedValue} onChange={onChange}>
+      <InputLabel id={labelId}>Lang</InputLabel>
+      <Select labelId={labelId} label="Lang" value={normalizedValue} onChange={onChange}>
         {options.map((entry) => (
           <MenuItem key={entry.code} value={entry.code}>
             {labelFor(entry)}

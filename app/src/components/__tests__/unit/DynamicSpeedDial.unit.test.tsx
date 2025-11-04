@@ -1,6 +1,5 @@
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import { fireEvent, render, screen } from '@testing-library/react';
-import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DynamicSpeedDial } from '../../DynamicSpeedDial.js';
 import type { PluginMenuItem } from '../../hooks/usePluginMenuItems.ts';
@@ -61,7 +60,10 @@ describe('DynamicSpeedDial', () => {
 
     const fab = document.body.querySelector('.MuiSpeedDial-fab') as HTMLElement | null;
     expect(fab).not.toBeNull();
-    fireEvent.click(fab!);
+    if (!fab) {
+      throw new Error('SpeedDial fab not found');
+    }
+    fireEvent.click(fab);
 
     const action = screen.getByTestId('create-basemap-action');
     expect(action).toBeInTheDocument();

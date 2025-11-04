@@ -270,8 +270,8 @@ export const StageGate: React.FC<{ dependsOn: StepName[]; children: React.ReactN
     if (ok && !openedRef.current) {
       openedRef.current = true;
     }
-  }, [ok, dependsOn]);
-  return ok ? <>{children}</> : null;
+  }, [ok]);
+  return ok ? children : null;
 };
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;

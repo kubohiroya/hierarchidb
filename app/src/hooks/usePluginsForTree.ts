@@ -9,7 +9,7 @@ import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { TreeId } from '@hierarchidb/feature-core/common-types';
 import type { PluginDefinition, TreePluginInfo } from '@hierarchidb/feature-core/plugin-ui-sdk';
 import type { Remote } from 'comlink';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface UsePluginsForTreeResult {
   plugins: PluginDefinition[];
@@ -28,7 +28,7 @@ export function usePluginsForTree(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPlugins = async () => {
+  const fetchPlugins = useCallback(async () => {
     if (!treeId || !_workerClient) {
       setPlugins([]);
       setPluginInfo([]);
@@ -42,11 +42,11 @@ export function usePluginsForTree(
     setPlugins([]);
     setPluginInfo([]);
     setLoading(false);
-  };
+  }, [treeId, _workerClient]);
 
   useEffect(() => {
     fetchPlugins();
-  }, [treeId]);
+  }, [fetchPlugins]);
 
   return {
     plugins,

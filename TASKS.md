@@ -7512,6 +7512,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-04 13:42 command: pnpm -F @hierarchidb/styler-plugin format — exit 0。
 - 2025-11-04 13:43 command: pnpm --filter @hierarchidb/styler-plugin typecheck — 失敗（script 未定義のためスキップ）。
 - 2025-11-04 13:44 command: pnpm --filter @hierarchidb/styler-plugin build — exit 0（tsdown が ColorCalculationResult の未エクスポート警告を出力するが既知の既存警告でビルドは成功）。
+- 2025-11-04 14:05 start: chore/app/biome-clean — `@hierarchidb/app` の `biome check --write src` で報告される 30+ 件の diagnostics（useExhaustiveDependencies, noExplicitAny, unique ID, SVG title, static-only class など）を段階的に解消する作業に着手。
+- 2025-11-04 14:06 command: pnpm -F @hierarchidb/app format — exit 1（WorkerAPIClient/LanguageSelector/TreeConsoleIntegration/LicenseInfo 等の修正途中で、`src/hooks/useImportExport.ts` の any, `src/root.tsx` の fallback DOM, `src/router/routes/plugins.tsx` の固定 id など残り 20+ 件）。
+- 2025-11-04 14:36 progress: chore/app/biome-clean — WorkerAPIClient をモジュールスコープ関数へ移行、LanguageSelector/TitleLogo/AppLogoIcon/InitInspector の a11y 修正、useImportExport の型付けと CSV パーサー正規化、Subscriptions controller を関数化するなど 15 件解消。`pnpm -F @hierarchidb/app format` では root.tsx の fallback, router plugins メニュー ID, useImportExport helper 未利用 ほか 10 件が継続中。
+- 2025-11-04 14:58 done: chore/app/biome-clean — `pnpm -F @hierarchidb/app format` → exit 0、続けて `pnpm format` 実行で他パッケージの Biome エラーが `@hierarchidb/styler-plugin` の重複 import 1 件のみに絞られたため同時解消。ロールバックは `app/src/**/*` と `plugins/styler-plugin/src/ui/components/steps/*.tsx` の差分を revert し再度 format を実行すれば元状態へ戻る。
 - 2025-11-03 22:13 progress: chore/cors-proxy/biome-env-int — env-mapper で `parseEnvInt` と同様の `readString` ヘルパーを導入し、`Record<string, unknown>` ベースで map するよう型安全化。Biome の `noExplicitAny` を解消。
 - 2025-11-03 22:13 command: pnpm --filter @hierarchidb/cors-proxy format — exit 0。
 - 2025-11-03 22:13 progress: chore/ui-layout/a11y-sidebar — ResizableSidebar の Stack を `component="section"` に変更し、`role="region"` へ頼らずセマンティック要素で aria-label を維持。

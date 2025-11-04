@@ -1,4 +1,4 @@
-export function bootLog(...args: unknown[]): void {
+export function bootLog(..._args: unknown[]): void {
   const isDev = Boolean(import.meta.env?.DEV);
   const want = shouldLog();
   if (!want && !isDev) return;

@@ -103,9 +103,9 @@ function resolvePrewarmHandle(
 
 function getPrewarmDescriptors(entry: DatabaseLoaderEntry | undefined): PrewarmDescriptor[] {
   if (!entry?.prewarm) return [];
-  return entry.prewarm.filter((descriptor) =>
-    Boolean(descriptor && descriptor.exportName && descriptor.specifier)
-  ) as PrewarmDescriptor[];
+  return entry.prewarm.filter((descriptor): descriptor is PrewarmDescriptor =>
+    Boolean(descriptor?.exportName && descriptor.specifier)
+  );
 }
 
 async function loadModuleForDescriptor(
@@ -117,7 +117,10 @@ async function loadModuleForDescriptor(
   if (!specifier) return null;
 
   if (cache.has(specifier)) {
-    return await cache.get(specifier)!;
+    const cached = cache.get(specifier);
+    if (cached) {
+      return await cached;
+    }
   }
 
   const load = async () => {
