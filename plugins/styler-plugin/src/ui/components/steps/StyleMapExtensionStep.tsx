@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import type React from 'react';
+import type { SelectChangeEvent } from '@mui/material/Select';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
