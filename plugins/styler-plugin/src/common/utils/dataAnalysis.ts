@@ -6,7 +6,7 @@
  * :
  */
 
-import type { ColorAlgorithm } from '../types/stylerTypes.js';
+import type { ColorAlgorithm, StylerTableRow } from '../types/stylerTypes.js';
 
 /**
  */
@@ -392,10 +392,7 @@ export function analyzeData(
  * :
  * :
  */
-export function extractNumericValues(
-  csvData: Array<Record<string, any>>,
-  column: string
-): number[] {
+export function extractNumericValues(csvData: StylerTableRow[], column: string): number[] {
   const values: number[] = [];
 
   for (const row of csvData) {
@@ -403,7 +400,7 @@ export function extractNumericValues(
     const numeric =
       typeof value === 'number' ? value : typeof value === 'string' ? parseFloat(value) : NaN;
 
-    if (!isNaN(numeric) && isFinite(numeric)) {
+    if (Number.isFinite(numeric)) {
       values.push(numeric);
     }
   }

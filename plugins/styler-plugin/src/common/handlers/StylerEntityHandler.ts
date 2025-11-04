@@ -29,7 +29,7 @@ interface BaseEntityHandler {
   deleteEntity(
     nodeId: NodeId,
     data?: Partial<StylerEntity>
-  ): Promise<HandlerResult<StylerEntity> | void>;
+  ): Promise<HandlerResult<StylerEntity> | undefined>;
 }
 
 function hasData<T>(value: unknown): value is { data: T } {

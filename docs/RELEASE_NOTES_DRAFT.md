@@ -32,7 +32,7 @@ Migration (Trash)
 
 Testing (Headless)
 - Policy C and CP routing verified under Node + fake-indexeddb
-- See `packages/runtime/worker/src/e2e/__tests__/*.headless.test.ts`
+- See `packages/runtime/worker/src/__tests__/headless/*.headless.test.ts`
 
 Known Items / Next Steps
 - Reference counting: port provided (registry injection), per-plugin implementation can follow

@@ -11,16 +11,28 @@ import type {
   CSVTableMetadata,
   CSVTableMetadataLike,
 } from '@hierarchidb/tabular-store';
+import type { MapLibreStyle } from '@hierarchidb/ui-map';
 import type {
   CSVDataResult,
   CSVFilterRule,
   CSVProcessingConfig,
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
-
 import type { StylerEntity } from '../common/types/StylerEntity.js';
-import type { StylerConfig } from '../common/types/stylerTypes.js';
+import type { StylerConfig, StylerTableRow } from '../common/types/stylerTypes.js';
+import type { ColorCalculationResult } from '../common/utils/colorUtils.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
+
+type StyledCellStyle = {
+  backgroundColor: string;
+  opacity?: number;
+  metadata?: ColorCalculationResult['metadata'];
+};
+
+type StyledRow = {
+  row: StylerTableRow;
+  styles: Record<string, StyledCellStyle>;
+};
 
 /**
  * : Styler
@@ -93,18 +105,12 @@ export class StylerDataService {
     stylerConfig: StylerConfig,
     filters: CSVFilterRule[] = [],
     rowCount: number = 100
-  ): Promise<{
-    data: CSVDataResult;
-    styledRows: Array<{
-      row: Record<string, any>;
-      styles: Record<string, any>;
-    }>;
-  }> {
+  ): Promise<{ data: CSVDataResult; styledRows: StyledRow[] }> {
     //  Spreadsheet
     const data = await this.csvApiDriver.getFilteredPreview(tableId, filters, rowCount);
 
-    const styledRows = data.rows.map((row) => {
-      const styles: Record<string, any> = {};
+    const styledRows: StyledRow[] = data.rows.map((row) => {
+      const styles: Record<string, StyledCellStyle> = {};
 
       if (stylerConfig.valueColumn) {
         const value = row[stylerConfig.valueColumn];
@@ -118,7 +124,7 @@ export class StylerDataService {
         }
       }
 
-      return { row, styles };
+      return { row: row as StylerTableRow, styles };
     });
 
     return { data, styledRows };
@@ -133,10 +139,7 @@ export class StylerDataService {
   async generateMapLibreStyle(
     tableId: string,
     entity: StylerEntity
-  ): Promise<{
-    styleSpec: any;
-    colorMapping: Record<string, string>;
-  }> {
+  ): Promise<{ styleSpec: MapLibreStyle; colorMapping: Record<string, string> }> {
     const { stylerConfig, selectedKeyColumn, selectedValueColumn } = entity;
 
     if (!selectedKeyColumn || !selectedValueColumn || !stylerConfig.targetProperty) {
@@ -146,14 +149,14 @@ export class StylerDataService {
     const data = await this.csvApiDriver.getFilteredPreview(tableId, [], 1000);
     const values = data.rows
       .map((row) => row[selectedValueColumn])
-      .filter((val) => typeof val === 'number') as number[];
+      .filter((val): val is number => typeof val === 'number');
 
     if (values.length === 0) {
       throw new Error('No numeric values found in selected column');
     }
 
     const colorMapping: Record<string, string> = {};
-    const styleSpec: any = {
+    const styleSpec: MapLibreStyle = {
       version: 8,
       sources: {},
       layers: [
@@ -163,7 +166,7 @@ export class StylerDataService {
           paint: {},
         },
       ],
-    };
+    } as MapLibreStyle;
 
     values.forEach((value) => {
       const colorResult = valueToColor(value, stylerConfig, values);

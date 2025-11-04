@@ -13,6 +13,15 @@ export interface StylerExtensionData {
   strokeWidth?: number;
 }
 
+type StylerStoredConfig = StylerExtensionData & {
+  nodeId: NodeId;
+  colorScheme: string;
+  opacity: number;
+  strokeWidth: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export class StylerExtensionHandler {
   /**
    * Process extension data when creating a folder-plugin
@@ -29,7 +38,7 @@ export class StylerExtensionHandler {
 
     // 2. Store configuration in StylerDB
     try {
-      const config = {
+      const config: StylerStoredConfig = {
         nodeId,
         styleType: data.styleType || 'choropleth',
         dataSource: data.dataSource || '',
@@ -66,10 +75,15 @@ export class StylerExtensionHandler {
       }
 
       // 2. Merge with new data
-      const updatedConfig = {
-        ...existingConfig,
+      const updatedConfig: StylerStoredConfig = {
+        ...(existingConfig ?? ({ nodeId } as StylerStoredConfig)),
         ...data,
+        nodeId,
+        colorScheme: data.colorScheme ?? existingConfig?.colorScheme ?? 'viridis',
+        opacity: data.opacity ?? existingConfig?.opacity ?? 0.8,
+        strokeWidth: data.strokeWidth ?? existingConfig?.strokeWidth ?? 1,
         updatedAt: Date.now(),
+        createdAt: (existingConfig as StylerStoredConfig | null)?.createdAt ?? Date.now(),
       };
 
       // 3. Validate the updated configuration
@@ -140,20 +154,20 @@ export class StylerExtensionHandler {
 
   // === Private Helper Methods ===
 
-  private async initializeStylerData(nodeId: NodeId, _config: any): Promise<void> {
+  private async initializeStylerData(nodeId: NodeId, _config: StylerStoredConfig): Promise<void> {
     // Initialize any necessary data structures for the Styler
     console.log('Initializing Styler data structures for:', nodeId);
     // This would set up default data structures, cache entries, etc.
   }
 
-  private async loadConfiguration(nodeId: NodeId): Promise<StylerExtensionData | null> {
+  private async loadConfiguration(nodeId: NodeId): Promise<StylerStoredConfig | null> {
     // Load existing configuration from database
     console.log('Loading Styler configuration for:', nodeId);
     // This would fetch from actual database
     return null; // Placeholder
   }
 
-  private async saveConfiguration(nodeId: NodeId, config: any): Promise<void> {
+  private async saveConfiguration(nodeId: NodeId, config: StylerStoredConfig): Promise<void> {
     // Save configuration to database
     console.log('Saving Styler configuration for:', nodeId, config);
     // This would save to actual database

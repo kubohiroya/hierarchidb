@@ -221,9 +221,9 @@ const TableRowComponent: React.FC<{
                 borderRight: '1px solid',
                 borderColor: 'divider',
                 backgroundColor: isKeyColumn
-                  ? theme.palette.primary.main + '10'
+                  ? `${theme.palette.primary.main}10`
                   : isValueColumn
-                    ? theme.palette.secondary.main + '10'
+                    ? `${theme.palette.secondary.main}10`
                     : undefined,
               }}
             >

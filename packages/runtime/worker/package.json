@@ -18,7 +18,7 @@
     "test": "vitest run",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",
-    "wfl": "node -e \"require('fs').mkdirSync('../../../reports/runtime-worker', { recursive: true })\" && vitest run src/e2e/__tests__/cp-routing-wc.wfl.test.ts --reporter=default --reporter=junit --outputFile=../../../reports/runtime-worker/cp-routing-wfl.xml",
+    "wfl": "node -e \"require('fs').mkdirSync('../../../reports/runtime-worker', { recursive: true })\" && vitest run src/__tests__/wfl/cp-routing-wc.wfl.test.ts --reporter=default --reporter=junit --outputFile=../../../reports/runtime-worker/cp-routing-wfl.xml",
     "clean": "rm -rf dist",
     "clean:force": "NODE_OPTIONS=\"--loader ts-node/esm\" rm -rf dist node_modules tsconfig.tsbuildinfo tsup.config.bundled_*.mjs",
     "format": "biome check --write src",

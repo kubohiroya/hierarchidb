@@ -105,7 +105,7 @@ export function rgbToHsv(r: number, g: number, b: number): [number, number, numb
 export function rgbToHex(r: number, g: number, b: number): string {
   const toHex = (n: number) => {
     const hex = Math.round(Math.max(0, Math.min(255, n))).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
+    return hex.length === 1 ? `0${hex}` : hex;
   };
 
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -394,7 +394,7 @@ export function getContrastRatio(color1: string, color2: string): number {
       c = c / 255;
       return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
     });
-    return 0.2126 * rs! + 0.7152 * gs! + 0.0722 * bs!;
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
   };
 
   const [r1, g1, b1] = hexToRgb(color1);

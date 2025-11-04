@@ -1,6 +1,6 @@
 # Runtime Worker WFL シナリオ実行ガイド
 
-cp-routing バッチフローの Worker-level 結合テスト（WFL）を CI / ローカル双方で安定的に実行するための手順です。テスト本体は `packages/runtime/worker/src/e2e/__tests__/cp-routing-wc.wfl.test.ts` に収録されています。
+cp-routing バッチフローの Worker-level 結合テスト（WFL）を CI / ローカル双方で安定的に実行するための手順です。テスト本体は `packages/runtime/worker/src/__tests__/wfl/cp-routing-wc.wfl.test.ts` に収録されています。
 
 ## 実行コマンド
 
@@ -12,7 +12,7 @@ pnpm wfl --filter @hierarchidb/runtime-worker
 pnpm --filter @hierarchidb/runtime-worker wfl
 ```
 
-内部では `vitest run src/e2e/__tests__/cp-routing-wc.wfl.test.ts` を呼び出し、Jest 互換の JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力します。CI で WARN / FAIL が発生した場合はこの XML を参照してください。
+内部では `vitest run src/__tests__/wfl/cp-routing-wc.wfl.test.ts` を呼び出し、Jest 互換の JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力します。CI で WARN / FAIL が発生した場合はこの XML を参照してください。
 
 ## レポートの確認
 

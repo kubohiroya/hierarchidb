@@ -40,19 +40,27 @@ vi.mock('xlsx', () => {
 
 // Mock jszip for ZIP testing (ESM-compatible default export)
 vi.mock('jszip', () => {
-  const MockJSZip: any = vi.fn().mockImplementation(() => ({
-    files: {
+  class MockJSZip {
+    files = {
       'countries.csv': {
-        dir: false,
-        async: vi.fn().mockResolvedValue(`country,population,continent
+        async async() {
+          return {
+            async text() {
+              return `country,population,continent
 United States,331900000,North America
 China,1439323776,Asia
-Japan,125800000,Asia`),
-        _data: { uncompressedSize: 100 },
+Japan,125800000,Asia`;
+            },
+          };
+        },
       },
-    },
-  }));
-  MockJSZip.loadAsync = vi.fn().mockResolvedValue(new MockJSZip());
+    };
+
+    async loadAsync() {
+      return this;
+    }
+  }
+
   return { default: MockJSZip };
 });
 
@@ -229,7 +237,7 @@ Australia,25690000,51812,Oceania,2021`;
       filterRules: filters.map((f) => ({
         id: f.id,
         column: f.column,
-        operator: f.operator as any,
+        operator: f.operator,
         value: String(f.value),
         enabled: f.enabled,
       })),

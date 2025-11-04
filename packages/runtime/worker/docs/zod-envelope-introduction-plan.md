@@ -108,7 +108,7 @@
   - 失敗時の `code === VALIDATION_ERROR`、メッセージがサニタイズ済み。
   - 正常系では既存の `processCommand` 挙動に影響がないこと。
 - 成果物:
-  - `src/services/__tests__/envelope-validation.test.ts`（例）。
+  - `src/services/__tests__/unit/envelope-validation.test.ts`（例）。
 - 受け入れ基準:
   - `pnpm test` 合格、既存テストに回帰なし。
 

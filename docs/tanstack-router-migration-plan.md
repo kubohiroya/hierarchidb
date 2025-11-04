@@ -290,7 +290,7 @@ sequenceDiagram
 
 ### テスト / DoD
 - RED: `app/src/router/loaders/__tests__/treeLoaders.test.ts` で `loadPageNode` が `treeId` 未指定時に例外を投げることを検証。
-- GREEN: `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,process-command-history` を通す。
+- GREEN: `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,replay-command-history` を通す。
 - Playwright 一覧（上記 5 本）を CI 相当で通過。
 - `mapLoader` テストが `zxy=3,135,40` を GREEN にする。
 

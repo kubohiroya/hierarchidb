@@ -20,7 +20,7 @@ export default defineConfig({
       if (process.env.WORKER_E2E !== '1') {
         ex.push('src/**/*.headless.test.ts');
         // Gate the semi-e2e working copy commit test as well
-        ex.push('src/services/__tests__/wc-commit-e2e.test.ts');
+        ex.push('src/__tests__/headless/commit-working-copy.headless.test.ts');
       }
       if (process.env.WORKER_ENTITY_TESTS !== '1') {
         ex.push('src/entity/**/__tests__/**/*.test.ts');

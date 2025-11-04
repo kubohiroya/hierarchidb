@@ -91,7 +91,7 @@ export const StylerConfiguration: React.FC<StylerConfigurationProps> = ({
   const [localConfig, setLocalConfig] = useState<StylerConfig>(() => {
     // Initialize with sample values if available
     if (values.length > 0) {
-      const numericValues = values.filter((v) => !isNaN(v));
+      const numericValues = values.filter((v) => !Number.isNaN(v));
 
       if (numericValues.length > 0) {
         const min = Math.min(...numericValues);

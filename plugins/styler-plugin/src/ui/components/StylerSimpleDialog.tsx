@@ -46,8 +46,17 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
   onSave,
   existingEntity,
 }) => {
+  type ColorRuleState = StylerColorRule & { _id: string };
+  const generateRuleId = useCallback(
+    () =>
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `rule-${Date.now()}-${Math.random()}`,
+    []
+  );
+
   const [keyColumn, setKeyColumn] = useState('');
-  const [colorRules, setColorRules] = useState<StylerColorRule[]>([]);
+  const [colorRules, setColorRules] = useState<ColorRuleState[]>([]);
   const [defaultStyle, setDefaultStyle] = useState<StylerStyle>({
     backgroundColor: '#ffffff',
     textColor: '#000000',
@@ -58,7 +67,8 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
   const [error, setError] = useState<string>('');
 
   const handleAddColorRule = useCallback(() => {
-    const newRule: StylerColorRule = {
+    const newRule: ColorRuleState = {
+      _id: generateRuleId(),
       column: '',
       operator: 'equals',
       value: '',
@@ -67,17 +77,15 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
         textColor: '#000000',
       },
     };
-    setColorRules((prev: StylerColorRule[]) => [...prev, newRule]);
-  }, []);
+    setColorRules((prev) => [...prev, newRule]);
+  }, [generateRuleId]);
 
   const handleUpdateColorRule = useCallback((index: number, updates: Partial<StylerColorRule>) => {
-    setColorRules((prev: StylerColorRule[]) =>
-      prev.map((rule, i) => (i === index ? { ...rule, ...updates } : rule))
-    );
+    setColorRules((prev) => prev.map((rule, i) => (i === index ? { ...rule, ...updates } : rule)));
   }, []);
 
   const handleRemoveColorRule = useCallback((index: number) => {
-    setColorRules((prev: StylerColorRule[]) => prev.filter((_, i) => i !== index));
+    setColorRules((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -92,7 +100,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
     try {
       const config: StylerCreateConfig = {
         keyColumn,
-        colorRules,
+        colorRules: colorRules.map(({ _id, ...rule }) => rule),
         defaultStyle,
         description: description || undefined,
       };
@@ -109,7 +117,12 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
   React.useEffect(() => {
     if (existingEntity) {
       setKeyColumn(existingEntity.keyColumn || '');
-      setColorRules(existingEntity.colorRules || []);
+      setColorRules(
+        (existingEntity.colorRules || []).map((rule, index) => ({
+          ...rule,
+          _id: `${existingEntity.id}-rule-${index}`,
+        }))
+      );
       setDefaultStyle(existingEntity.defaultStyle || { textColor: '', backgroundColor: '' });
       setDescription(existingEntity.description || '');
     }
@@ -140,7 +153,7 @@ export const StylerSimpleDialog: React.FC<StylerSimpleDialogProps> = ({
             </Box>
 
             {colorRules.map((rule, index) => (
-              <Box key={index} sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+              <Box key={rule._id} sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
                 <TextField
                   label="Column"
                   value={rule.column}

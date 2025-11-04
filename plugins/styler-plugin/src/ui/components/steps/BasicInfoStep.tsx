@@ -68,7 +68,10 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
     { value: 'custom', label: tStr('colorSchemes.custom', 'Custom Colors') },
   ];
 
-  const handleInputChange = (field: keyof StylemapBasicInfoData, value: any) => {
+  const handleInputChange = <K extends keyof StylemapBasicInfoData>(
+    field: K,
+    value: StylemapBasicInfoData[K]
+  ) => {
     const updatedData = { ...localData, [field]: value };
     setLocalData(updatedData);
     onNext(updatedData);

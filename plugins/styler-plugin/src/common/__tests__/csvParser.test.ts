@@ -3,8 +3,6 @@
  * @description Tests for CSV parsing functionality
  */
 
-export {}; // Make this file a module
-
 // Simple CSV parser for testing
 const parseCSVContent = (
   content: string,
@@ -29,7 +27,7 @@ const parseCSVContent = (
       const cleaned = v.trim().replace(/^["']|["']$/g, '');
       // Try to parse as number
       const num = parseFloat(cleaned);
-      return isNaN(num) ? cleaned : num;
+      return Number.isNaN(num) ? cleaned : num;
     });
 
     if (values.length === headers.length) {

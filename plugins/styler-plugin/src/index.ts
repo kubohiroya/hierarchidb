@@ -85,11 +85,9 @@ export const PLUGIN_INFO = PLUGIN_MANIFEST;
  */
 
 // Optional runtime wiring (no-op)
-export class RuntimeWiring {
-  static async registerRuntimeWorkerAdapters(): Promise<void> {
-    // Styler plugin currently relies on default runtime worker lifecycle behaviour.
-  }
-}
+export const registerRuntimeWorkerAdapters = async (): Promise<void> => {
+  // Styler plugin currently relies on default runtime worker lifecycle behaviour.
+};
 
 // Dialog extension initializer
 export {

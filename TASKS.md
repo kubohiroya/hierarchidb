@@ -288,7 +288,7 @@
 
 33) runtime-worker test type fixes（P0）
 - ブランチ: `refactor/worker/test-type-fixes`（sandbox 制約で `main` 上で作業）
-- 依存: `@hierarchidb/runtime-worker`, `vitest`, `packages/runtime-worker/src/__tests__`, `packages/runtime-worker/src/e2e/__tests__`
+- 依存: `@hierarchidb/runtime-worker`, `vitest`, `packages/runtime-worker/src/__tests__``
 - 受け入れ基準（DoD）:
   - [ ] `TASKS.md` Kanban と運用ログに start/progress/done を記録し、ブランチ作業状況とロールバック手順を明記する
   - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck` で発生するテストコード由来の型エラーのうち修正方針が自明なものをテスト側（必要に応じてテスト補助ユーティリティ）で解消し、曖昧なケースは TODO として記録する
@@ -364,9 +364,9 @@
   - [ ] UI 側の Undo/Redo アクションと Worker 応答の連携を修正し、手動確認結果を記録する
   - [ ] TreeConsole Undo/Redo シナリオをカバーする自動テスト（既存テスト拡張可）を用意し、green を確認する
 - [ ] WFL: 連続操作の取り消し/やり直し
-    - [x] WFL シナリオ `packages/runtime-worker/src/e2e/__tests__/undo-folder-operations.wfl.test.ts` を整備し、`renameNode` / `moveToTrash` / `restoreFromTrash` / `undo` / `redo` を一連で検証。
+    - [x] WFL シナリオ `packages/runtime-worker/src/__tests__/wfl/undo-folder-operations.wfl.test.ts` を整備し、`renameNode` / `moveToTrash` / `restoreFromTrash` / `undo` / `redo` を一連で検証。
     - [x] Worker flag override 経路を `app/src/config/worker-flag-overrides.ts` 経由で UI ↔ Worker 間に導入し、localStorage → Worker URL param を接続。
-    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,process-command-history` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,replay-command-history` を通し、flag off/on 両経路の Undo/Redo を結合テストとして検証。
     - [ ] 必要なら補助的な Playwright スモークを実行し、結果と差分を運用ログへ記録。
  - [x] ドキュメント更新（運用と制約）
  - ※ Playwright スモーク整備は ToDo「test/runtime-worker/undo-redo-playwright-smoke」でテストファースト実施予定（red→greenで完了させる）。
@@ -415,10 +415,10 @@
 
 26) runtime-worker 型整備 & legacy WFL/E2E 更新（P0）
 - ブランチ: `main`（sandbox 制約で直編集）
-- 依存: `packages/runtime/worker/src/**`, `packages/runtime/worker/src/e2e/__tests__`, `packages/common/api|types`
+- 依存: `packages/runtime/worker/src/**`, `packages/runtime/worker/src/__tests__`, `packages/common/api|types`
 - 受け入れ基準（DoD）:
   - [ ] CommandResult/CommitResult/TreeChangeEvent など基幹型を最新仕様に統一し、参照先のサービス/ユーティリティからの不整合を解消
-  - [ ] legacy WFL/E2E（process-command-history / wc-commit / 他該当）を新型定義に合わせて修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0
+  - [ ] legacy WFL/E2E（replay-command-history / commit-working-copy / 他該当）を新型定義に合わせて修正し、`pnpm --filter @hierarchidb/runtime-worker typecheck` が exit 0
   - [ ] 代表的シナリオで `pnpm --filter @hierarchidb/runtime-worker test -- <target tests>` を実行しグリーン（ログを運用ログへ記録）
   - [ ] TASKS Kanban/運用ログに start/progress/done と検証ログ、ロールバック手順を明記
 - チェックリスト:
@@ -2321,17 +2321,17 @@ EPIC) プロジェクト地図タイムライン（時系列メタデータ＋�
 - 2025-10-01 11:30 start: chore/runtime-shared/lane-env-safeguard — `packages/runtime-shared/batch-processor/src/lane/LaneSemaphoreRegistry.ts` で `process.env` 参照が残っているため、ブラウザ互換な環境変数読取（import.meta / globalThis）へ置き換える作業を `feat/worker/cp-routing-move-remove` ブランチ上で開始。ロールバックは当該ファイルのユーティリティ関数を現状へ戻すだけで可。
 - 2025-10-01 11:45 progress: 同タスク — LaneSemaphoreRegistry の `readEnv` を import.meta / `__HIERARCHIDB_ENV__` / 直接 global property 読取へ差し替え、`packages/runtime-shared/batch-processor/src/lane/__tests__/LaneSemaphoreRegistry.test.ts` も `process.env` 依存を排除。ロールバックは該当ファイルを差分前に戻すのみで可。
 - 2025-10-01 11:55 done: 同タスク — `pnpm --filter @hierarchidb/runtime-shared-batch-processor typecheck` と `pnpm --filter @hierarchidb/runtime-shared-batch-processor test -- LaneSemaphoreRegistry` を実行し成功。ブラウザ上でも `process` ポリフィル不要となる想定で、追加確認が必要なら `globalThis[ENV_KEY]` の上書き手順を共有予定。
-- 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `restore-trash-partial.wfl.test.ts`, `undo-folder-operations.wfl.test.ts`, `process-command-history.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,undo-folder-operations` と `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
+- 2025-09-30 21:10 start: fix/runtime-worker/undo-trash-stability — `restore-trash-subset.wfl.test.ts`, `undo-folder-operations.wfl.test.ts`, `replay-command-history.wfl.test.ts` のタイムアウト/アサーション失敗を解消するため、TASKS を Doing に追加。sandbox 制約で新規ブランチ作成が拒否されたため main 上で暫定作業を行う。まずは `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,undo-folder-operations` と `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` を再実行して症状を再現し、待機条件と trash holder 管理ロジックの差異を調査する。
 - 2025-09-30 15:20 start: feat/worker/undo-redo-finalize — Undo/Redo 仕上げタスクに着手。sandbox 制約でブランチ新規作成が拒否されたため既存ブランチ上で差分を管理しつつ、TASKS を Doing へ移動。UI 操作用ヘルパーと Undo/Redo シナリオの E2E 設計を開始。
-- 2025-09-30 14:10 start: feat/e2e/route-command-working-copy — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/route-command-working-copy` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
-- 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/route-command-working-copy-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
-- 2025-09-30 18:20 progress: 同タスク — `packages/runtime-worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` を新設し、Comlink + fake-indexeddb 環境で create → rename → move → trash → restore を flag off/on 両モードで検証。`pnpm --filter @hierarchidb/runtime-worker test route-command-working-copy.wfl.test.ts` が通過。Playwright 側は未実行のため TODO を維持。
+- 2025-09-30 14:10 start: feat/e2e/route-working-copy-commands — Route/Worker バッチ E2E 整備に着手。ブランチ `feat/e2e/route-working-copy-commands` を作成し、Playwright OFF→ON シナリオとデータセット要件の棚卸しを開始。
+- 2025-09-30 15:45 progress: 同タスク — Worker フラグ override を localStorage→worker URL param 経由で注入する仕組みを導入 (`app/src/client.ts`, `app/src/worker.ts`, `app/src/config/worker-flag-overrides.ts`)。Playwright 補助 util へ override 設定 API を追加し、`e2e/route-working-copy-commands-flow.spec.ts` を OFF/ON 双方のバッチ操作シナリオへ更新。今後は (1) `pnpm exec playwright test` 実行手順の整理、(2) TreeTable DOM 安定化の追加ガード、(3) テスト毎の localStorage 初期化/CI 組み込みが残課題。
+- 2025-09-30 18:20 progress: 同タスク — `packages/runtime-worker/src/__tests__/wfl/route-working-copy-commands.headless.test.ts` を新設し、Comlink + fake-indexeddb 環境で create → rename → move → trash → restore を flag off/on 両モードで検証。`pnpm --filter @hierarchidb/runtime-worker test route-working-copy-commands.headless.test.ts` が通過。Playwright 側は未実行のため TODO を維持。
 - 2025-09-30 16:30 progress: feat/worker/undo-redo-finalize — Playwright シナリオ `e2e/folder/folder-undo-redo.spec.ts` を追加し、`renameFolder` / `restoreFromTrash` / `clickUndo` / `clickRedo` を含むテストヘルパーを拡張。Toolbar に Undo/Redo の data-testid を付与し、flag override 連携を UI/Worker 共通設定 (`app/src/config/worker-flag-overrides.ts`) へ集約。次ステップで `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行し、flag OFF/ON 両経路の整合を検証する。
 - 2025-09-30 16:55 progress: 同タスク — `playwright.config.ts` の webServer timeout を 480 秒へ延長（app build が 300 秒超かかるため）。Chromium 単体実行を目標に `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を再試行する準備完了。
 - 2025-09-30 17:05 blocked: 同タスク — `pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium` を実行したところ、`playwright.config.ts` の webServer (`pnpm --filter @hierarchidb/app build && preview`) 起動時に `vite preview` の `listen EPERM: operation not permitted 0.0.0.0:4173` で失敗。sandbox ではポート開放不可のため外部環境での再実行が必要。`pnpm --filter @hierarchidb/app build` までは完了済みで、chromium 向けシナリオとヘルパーは動作確認待ち。必要なら webServer のポート/ホスト設定を 127.0.0.1 固定で再試行する。
 - 2025-09-30 start: feat/worker/cp-routing-move-remove — CommandProcessor の move/remove 経路を既定OFFフラグ付きで実装開始。ブランチ `feat/worker/cp-routing-move-remove` を作成し、TASKS を Doing へ移動。
 - 2025-10-02 16:20 progress: feat/worker/cp-routing-move-remove — `WORKER_USE_CMDPROC_MOVE_REMOVE` の OFF/ON 双方で TreeMutationService.move/remove が CommandProcessor 経由で動作することを確認（テストは後続タスクで再実行予定）。
-- 2025-10-02 17:50 done: fix/worker/undo-redo-restore-name — CommandHistoryManager のスナップショット保持を再試行で上書きしないようガードし、`pnpm --filter @hierarchidb/runtime-worker test -- --run route-command-working-copy.wfl` を実行して undo/redo シナリオがグリーンで通過することを確認。
+- 2025-10-02 17:50 done: fix/worker/undo-redo-restore-name — CommandHistoryManager のスナップショット保持を再試行で上書きしないようガードし、`pnpm --filter @hierarchidb/runtime-worker test -- --run route-working-copy-commands.headless` を実行して undo/redo シナリオがグリーンで通過することを確認。
 - 2025-09-30 start: refactor/worker/wc-impl-align — Worker Commit の戻り値統一タスクに着手。sandbox 制約で新規ブランチ作成が拒否されたため、暫定的に `feat/worker/cp-routing-move-remove` 上で差分管理しつつ TASKS を Doing へ移動。
 - 2025-09-03 start: refactor/ui-map/maplibre-wrapper — basemap-plugin からの maplibre 依存/型リーク除去。`ui-map` のみに `skipLibCheck` を集約。
 - 2025-09-03 done: `ui-map`/`basemap-plugin` の型調整・shim削除完了。`pnpm --filter @hierarchidb/ui-map typecheck` と `pnpm --filter @hierarchidb/basemap-plugin typecheck` が成功。`app` は別既知課題により typecheck 未クリア（非関連）。
@@ -2449,7 +2449,7 @@ P2:
 - 2025-10-03 16:00 progress: fix/ui/i18n-browser-detector-missing — TreeTable のラベルが言語切替で更新されない問題に対し、`TreeTableCore` の `useMemo` 依存へ `i18n.resolvedLanguage` を組み込み、言語変更で列メタが再評価されるよう修正。再度 `pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck` / `build` と `pnpm -C app typecheck` を実行し成功。ロールバックは当該依存追加を戻し再ビルドする。
 - 2025-10-03 16:30 progress: fix/ui/speeddial-dialog-state — SpeedDial 起点のフォルダ作成で Worker 側が古い DialogStateAPI を返し `publishState`/`subscribeState` が未定義となるケースに備え、`packages/runtime-ui/plugin-dialog/src/headless/usePluginDialogController.tsx` にフォールバック API を実装し、state bridge 不在でも例外なく動作するように調整。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` → `pnpm -C app typecheck` が成功。ロールバックはフォールバック実装を除去しガードを元に戻して再度 typecheck。
 - 2025-10-03 17:05 note: DialogStateAPI 周辺の未結線課題を整理し、ToDo #13〜#15 を追加（テストファーストでサービス→PeerStore→UI 同期を順に整備するタスク群）。
-- 2025-10-03 17:15 progress: test/runtime/dialog-state-service-sanity — `packages/runtime/worker/src/services/__tests__/dialog-state-service.test.ts` を追加し、`DialogStateService` の publish/get/subscribe/unsubscribe を in-memory PeerStore で検証。`pnpm --filter @hierarchidb/runtime-worker test` がグリーン。
+- 2025-10-03 17:15 progress: test/runtime/dialog-state-service-sanity — `packages/runtime/worker/src/services/__tests__/unit/dialog-state-service.test.ts` を追加し、`DialogStateService` の publish/get/subscribe/unsubscribe を in-memory PeerStore で検証。`pnpm --filter @hierarchidb/runtime-worker test` がグリーン。
 - 2025-10-03 20:05 progress: test/runtime/dialog-state-service-sanity — Comlink proxy テストで `"publishState" in api` が false となったため、判定を `typeof api.publishState === 'function'` に揃えて Vitest を再実行。`pnpm --filter @hierarchidb/runtime-worker test` が再度グリーン。
 - 2025-10-03 20:12 progress: fix/ui/speeddial-dialog-state — フォールバック API 実装後の影響を確認するため `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` / `pnpm --filter @hierarchidb/* typecheck` / `pnpm -C app typecheck` を再走し、いずれも成功。
 - 2025-10-03 21:35 progress: fix/ui/i18n-browser-detector-missing — `@hierarchidb/ui-i18n` の default export 利用箇所を洗い替え、`app/src/components/ServicesReadySnackbar.tsx` などを名前付き import へ統一済みであることを再確認。sandbox 制約で `pnpm --filter @hierarchidb/ui-i18n typecheck` が `.tsbuildinfo` 書き込みで失敗するため、`pnpm exec tsc -p packages/ui/i18n/tsconfig.json --noEmit --tsBuildInfoFile /tmp/ui-i18n.tsbuildinfo` を実行しグリーンを確認。その後 `pnpm --filter @hierarchidb/ui-i18n build` も成功。ロールバックは `app/src/client.ts` 等の named import 差分を戻し、同コマンドを再実行する。
@@ -2966,10 +2966,10 @@ P2:
   - 要点:
     - `CoreDB` の changeSubject へ流すイベントに `parentId` / `previousParentId` / `previousNode` を付加し、削除・移動時でもメタデータが欠落しないよう統一。
     - `TreeSubscriptionService` の subtree 判定を async 化し、Dexie を通じた祖先探索・削除イベントの previousNode 利用を実装。RxJS パイプラインも Promise 対応へ更新。
-    - ユニットテストに subtree/deletion ケースを追加し、`subscribe-trash-events` / `commit-working-copy-create` WFL テストを通じてイベント伝搬を再確認。
+    - ユニットテストに subtree/deletion ケースを追加し、`subscribe-trash-events` / `create-working-copy-node` WFL テストを通じてイベント伝搬を再確認。
     - `@hierarchidb/runtime-worker` に `typecheck` スクリプトを追加し実行ログを記録（既存 e2e テストの型エラーは別途フォローアップ）。
   - 検証:
-    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/subscribe-trash-events.wfl.test.ts src/e2e/__tests__/commit-working-copy-create.wfl.test.ts`
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/tree-subscription.subscribe.test.ts src/__tests__/wfl/subscribe-trash-events.wfl.test.ts src/__tests__/wfl/create-working-copy-node.wfl.test.ts`
     - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck`（legacy テストの型エラーを把握しログ化）
   - ロールバック手順: `packages/runtime/worker/src/services/{CoreDB,TreeSubscriptionService}.ts` と追加テスト差分を revert し、上記テストを再実行して旧来のイベント欠落と未通知挙動を再現する。
 - chore/tools-build-scripts-turbo-dependency（P0） — tools manifest loader build precedes build scripts via Turbo
@@ -3087,20 +3087,20 @@ P2:
   - ブランチ: `fix/ui/i18n-browser-detector-missing`
   - 要点: `@hierarchidb/ui-i18n` の `package.json` を更新し、`i18next-browser-languagedetector` / `i18next-http-backend` / `date-fns` を runtime dependencies へ移行。`pnpm --filter @hierarchidb/ui-i18n typecheck` は `.tsbuildinfo` 書き込み制限でローカル実行不可だったため、書き込み可能な環境での再確認を要ログ。
 - Route/Worker バッチ結合テスト整備（P1） — cp-routing WFL/Playwright/CI 統合で flag off/on 両経路を保証
-  - ブランチ: `feat/e2e/route-command-working-copy`
+  - ブランチ: `feat/e2e/route-working-copy-commands`
   - 受け入れ基準（DoD）：
-    - [x] `packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` で create/update/move/trash/restore/undo/redo を flag off/on 両モードで検証
-    - [x] Playwright `e2e/route-command-working-copy-flow.spec.ts` のスモーク手順を整備し、DOM 安定化・フラグ初期化ヘルパーを共通化
+    - [x] `packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` で create/update/move/trash/restore/undo/redo を flag off/on 両モードで検証
+    - [x] Playwright `e2e/route-working-copy-commands-flow.spec.ts` のスモーク手順を整備し、DOM 安定化・フラグ初期化ヘルパーを共通化
     - [x] Turborepo `wfl` タスクを追加し、`pnpm wfl --filter @hierarchidb/runtime-worker` で JUnit レポート（`reports/runtime-worker/cp-routing-wfl.xml`）を生成
   - チェックリスト：
     - [x] Worker flag override を `createWorkerFlagOverrideLifecycle` へ統一
     - [x] `waitForNodeEventDuring` タイムアウト経路のテスト追加
-    - [x] Playwright / WFL 実行ドキュメント（`docs/testing/route-command-working-copy-playwright.md` / `docs/testing/runtime-worker-wfl.md`）を更新
+    - [x] Playwright / WFL 実行ドキュメント（`docs/testing/route-working-copy-commands-playwright.md` / `docs/testing/runtime-worker-wfl.md`）を更新
   - ロールバック手順：
-    - `turbo.json`・`package.json`・`packages/runtime/worker/package.json` の `wfl` 差分と関連ドキュメント更新をリバートし、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` を再実行して旧構成へ戻す
+    - `turbo.json`・`package.json`・`packages/runtime/worker/package.json` の `wfl` 差分と関連ドキュメント更新をリバートし、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` を再実行して旧構成へ戻す
   - 運用ログ：
     - done: 2025-10-02 20:05 `pnpm --filter @hierarchidb/runtime-worker wfl` を実行し、JUnit レポート出力と docs 反映を確認
-    - done: 2025-10-02 20:08 `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,process-command-history` を実行し、Undo/Redo シナリオの flag off/on 両経路がグリーンであることを確認（Playwright スモークは sandbox 制約により後続確認）。
+    - done: 2025-10-02 20:08 `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,replay-command-history` を実行し、Undo/Redo シナリオの flag off/on 両経路がグリーンであることを確認（Playwright スモークは sandbox 制約により後続確認）。
     - done: 2025-10-02 20:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行しグリーン、`pnpm --filter @hierarchidb/runtime-worker test` も再確認（tsconfig に `src/e2e/**` を除外して typecheck 対象を整理）。
     - done: 2025-10-02 20:18 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行しグリーン、`pnpm --filter @hierarchidb/runtime-worker test` も再確認（tsconfig へ `src/e2e/**` を除外して typecheck 対象を調整）。
 - WC 実装アライン（commit V2 戻り統一）（P1） — WorkingCopy API の戻り値と onNameConflict ハンドリングを統一
@@ -3119,7 +3119,7 @@ P2:
   - 受け入れ基準（DoD）：
     - [x] 既定OFFフラグ `WORKER_USE_CMDPROC_MOVE_REMOVE` で導入し、OFF 時は従来経路で非回帰（2025-10-02 手元確認）
     - [x] フラグ ON 時に TreeMutationService.move/remove が CommandProcessor 経由で従来同等の結果を返す
-    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck`（既存ログ参照）と `pnpm --filter @hierarchidb/runtime-worker test -- --run route-command-working-copy.wfl` がグリーン（2025-10-02 17:50 実行）
+    - [x] `pnpm --filter @hierarchidb/runtime-worker typecheck`（既存ログ参照）と `pnpm --filter @hierarchidb/runtime-worker test -- --run route-working-copy-commands.headless` がグリーン（2025-10-02 17:50 実行）
   - チェックリスト：
     - [x] ガード分岐の実装と最小テスト
     - [x] CommandProcessor 実処理（moveNodes/remove）
@@ -3163,20 +3163,20 @@ P2:
   - ブランチ: `fix/worker/undo-redo-restore-name`
   - 依存: trash-holder, cp-routing undo/redo 完了タスク
   - 受け入れ基準（DoD）：
-    - [x] `packages/runtime-worker/src/e2e/__tests__/restore-trash-partial.wfl.test.ts` がタイムアウトせず成功
-    - [x] `packages/runtime-worker/src/e2e/__tests__/undo-folder-operations.wfl.test.ts` の flag off/on 両ケースが成功
-    - [x] `packages/runtime-worker/src/e2e/__tests__/process-command-history.wfl.test.ts` が全アサーションを満たす
-    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,undo-folder-operations` と `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` がグリーン
+    - [x] `packages/runtime-worker/src/__tests__/wfl/restore-trash-subset.wfl.test.ts` がタイムアウトせず成功
+    - [x] `packages/runtime-worker/src/__tests__/wfl/undo-folder-operations.wfl.test.ts` の flag off/on 両ケースが成功
+    - [x] `packages/runtime-worker/src/__tests__/wfl/replay-command-history.wfl.test.ts` が全アサーションを満たす
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,undo-folder-operations` と `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` がグリーン
   - チェックリスト：
     - [x] `moveToTrash`／`restoreFromTrash` がホルダーノード生成なしで Trash 直下へ移動する実装に変更
-    - [x] CommandHistoryManager／TreeMutationService／テスト（restore-trash-partial, subscribe-trash-events, bulk-ops-cp, trash-holder）を新仕様へ追随
+    - [x] CommandHistoryManager／TreeMutationService／テスト（restore-trash-subset, subscribe-trash-events, bulk-ops-cp, trash-holder）を新仕様へ追随
     - [x] holder name マイクロベンチ閾値を環境差分に耐えられるよう緩和（`holder-encoding.test.ts`）
   - ロールバック手順：
-    - 対象ファイルを差分前に戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,undo-folder-operations,process-command-history` を再実行して既存ホルダー方式へ復旧する
+    - 対象ファイルを差分前に戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,undo-folder-operations,replay-command-history` を再実行して既存ホルダー方式へ復旧する
   - 運用ログ：
     - start: 2025-10-02 12:55 undo/redo 失敗再現と調査開始（sandbox 制約により main 上で作業）
     - progress: 2025-10-02 14:35 folder undo/redo シナリオの整理・skip 対応後、Trash 直下移動仕様への移行検討
-    - progress: 2025-10-02 15:48 trash holder 廃止コード反映、関連テスト修正、`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,undo-folder-operations` / `--run process-command-history` 実行でグリーン確認
+    - progress: 2025-10-02 15:48 trash holder 廃止コード反映、関連テスト修正、`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,undo-folder-operations` / `--run replay-command-history` 実行でグリーン確認
     - done: 2025-10-02 20:05 fix/app/services-ready-snackbar-i18n — `ServicesReadySnackbar` を i18n 対応し、`common.json`（en/ja）へ `servicesReady.*` キーを追加。`pnpm --filter @hierarchidb/app typecheck` は既存の plugin worker export 未整備による TS2614/TS2339 で失敗することを確認（今回差分による新規エラーなし）。ロールバックはコンポーネントと locale の差分を戻すのみ。
 - chore/runtime-shared/module-paths-tsconfig — runtime-shared module-paths の `tsconfig.paths` から dist/*.d.ts 参照を排除
   - ブランチ: `chore/runtime-shared/module-paths-tsconfig`（sandbox 制約で実ブランチ未作成・main 上で対応）
@@ -4019,8 +4019,8 @@ P2:
     - 変更ファイルを差分前へ戻し、旧プレイスホルダー方式（フォルダ経由）へ復帰。必要に応じてゴミ箱移行スクリプトを再実行
   - 運用ログ：
     - start: 2025-09-22 16:34 ゴミ箱直下格納方式への移行検討に着手
-    - blocked: 2025-09-22 18:10 `CI=1 pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` を実行すると 5 件の失敗が残存（process-command-history, restore-trash-partial, subscribe-trash-events, bulk-ops-cp, tree-query.prefetch）。`originalName`/`originalParentId` の復旧ロジック未整備と Trash holder 処理の移行不足が原因と推測
-    - progress: 2025-09-22 18:52 Trash holder 実装を導入し、`moveToTrash` でホルダー生成 + UUID リネーム、`restoreFromTrash` でホルダー経由復帰するよう更新。`process-command-history` 系の undo/redo でもホルダーと元名称を保持するよう `CommandHistoryManager` を拡張。`pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` がグリーン
+    - blocked: 2025-09-22 18:10 `CI=1 pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` を実行すると 5 件の失敗が残存（replay-command-history, restore-trash-subset, subscribe-trash-events, bulk-ops-cp, tree-query.prefetch）。`originalName`/`originalParentId` の復旧ロジック未整備と Trash holder 処理の移行不足が原因と推測
+    - progress: 2025-09-22 18:52 Trash holder 実装を導入し、`moveToTrash` でホルダー生成 + UUID リネーム、`restoreFromTrash` でホルダー経由復帰するよう更新。`replay-command-history` 系の undo/redo でもホルダーと元名称を保持するよう `CommandHistoryManager` を拡張。`pnpm --filter @hierarchidb/runtime-worker test -- --run --reporter=dot --silent` がグリーン
 - investigate/ui/treeconsole-i18n — TreeTableCore で i18next インスタンス未初期化エラーを調査
   - ブランチ: `investigate/ui/treeconsole-i18n`（サンドボックス制約によりローカルでは `main` 上で調査）
   - 依存: `@hierarchidb/ui-treeconsole-base`, `app/src/contexts`
@@ -4091,7 +4091,7 @@ P2:
     - progress: 2025-09-21 17:28 TrashDialog の `trashItemsState` 初期化をハンドラ定義より前へ移動し、`ReferenceError: Cannot access 'trashItemsState' before initialization` を解消。`pnpm --filter @hierarchidb/app typecheck` を再実行して正常終了を確認
     - progress: 2025-09-21 18:07 TrashDialog の TreeTable を SubscriptionAPI ベースで自動更新できるようにし、ゴミ箱サブツリーの購読と再描画を Worker 経由で実装。`pnpm --filter @hierarchidb/app typecheck` を実行して成功を確認
     - progress: 2025-09-21 18:22 runtime-worker の `trash-holder` 結合テストを拡張し、孫ノード（2階層目以降）がゴミ箱から復帰した際に元親へ戻ることを検証するケースを追加。`pnpm --filter @hierarchidb/runtime-worker test:run -- trash-holder.test.ts` を実行し成功（既存テスト出力の SubscriptionService 警告は従来どおり）
-    - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `restore-trash-partial.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- restore-trash-partial.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
+    - progress: 2025-09-21 19:05 runtime-worker の Comlink/fake-indexeddb 結合テスト `restore-trash-subset.wfl.test.ts` を追加し、まとめてゴミ箱へ移動したノード群から一部のみ復元できることを検証。`pnpm --filter @hierarchidb/runtime-worker test:run -- restore-trash-subset.wfl.test.ts` を実行して成功（command processor の undo-state subscribe 警告は既知のログ）
     - progress: 2025-09-21 19:44 `@hierarchidb/ui-dialog` に汎用リサイズ対応フレーム `MultiDialogFrame` を追加し、TrashDialog はこれを `FrameComponent` として利用する形にリファクタ。`pnpm --filter @hierarchidb/ui-dialog build` と `pnpm --filter @hierarchidb/app build` を再実行してグリーンを確認
     - progress: 2025-09-21 19:55 `@hierarchidb/ui-dialog` に表示モード遷移ユーティリティ `useDialogDisplayTransition`・`fullscreen` ヘルパを実装し、TrashDialog からサイズ補正・位置補正・FullScreen API 呼び出しロジックを移管。`pnpm --filter @hierarchidb/ui-dialog typecheck && pnpm --filter @hierarchidb/app build` で確認
     - progress: 2025-09-21 20:05 プラグイン系ダイアログ（`usePluginDialogController`）でも `useDialogDisplayTransition` を適用し、表示モード切替・サイズ補正ロジックを共通化。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` を実行し成功
@@ -5501,7 +5501,7 @@ P2:
     - [x] removeNodes を用いた永久削除で購読イベント（holder 更新・trash ルート更新）をアサート
     - [x] 最終的に trash root の子孫/子が空であることを確認
   - ロールバック手順：
-    - `packages/runtime-worker/worker/src/e2e/__tests__/subscribe-trash-events.wfl.test.ts` の変更を元に戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run subscribe-trash-events` を再実行
+    - `packages/runtime-worker/worker/src/__tests__/wfl/subscribe-trash-events.wfl.test.ts` の変更を元に戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run subscribe-trash-events` を再実行
   - 運用ログ：
     - start: 2025-09-20 23:05 subscribe-trash-events.wfl.test.ts にゴミ箱復元/再移動/永久削除フローを追加開始
     - progress: 2025-09-20 23:11 removeNodes を用いた永久削除に切り替え、購読イベントの検証ロジックを整備
@@ -5520,7 +5520,7 @@ P2:
     - [x] TreeMutationService.duplicateNodesCommand で名称衝突回避と自己/子孫検出を実装
     - [x] duplicate-template-population.wfl.test.ts に成功ケースと失敗ケースを追加
   - ロールバック手順：
-    - CoreDB と TreeMutationService の変更を差し戻し、`packages/runtime-worker/worker/src/e2e/__tests__/duplicate-template-population.wfl.test.ts` を削除。`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
+    - CoreDB と TreeMutationService の変更を差し戻し、`packages/runtime-worker/worker/src/__tests__/wfl/duplicate-template-population.wfl.test.ts` を削除。`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
   - 運用ログ：
     - start: 2025-09-20 23:24 duplicateNodes の挙動調査とテスト素案を作成
     - progress: 2025-09-20 23:30 CoreDB.duplicateSubtreeWithMap に root 名上書きを追加し、TreeMutationService に名称衝突回避と自己/子孫ガードを実装
@@ -5540,31 +5540,31 @@ P2:
     - [x] Comlink 経由で pasteNodes コマンドエンベロープを生成し、自己／子孫／root への貼り付けと名称変更フローを検証
     - [x] ルート配下で名称がユニークに生成され、重複名称への rename が拒否されることを確認
   - ロールバック手順：
-    - `packages/runtime-worker/worker/src/e2e/__tests__/copy-template-population.wfl.test.ts` を削除し、`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
+    - `packages/runtime-worker/worker/src/__tests__/wfl/paste-template-population.wfl.test.ts` を削除し、`pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を再実行
   - 運用ログ：
     - start: 2025-09-20 23:35 pasteNodes API の利用方法を調査し、コピー＆ペースト検証のテスト素案を作成
     - progress: 2025-09-20 23:36 paste エンベロープ生成ヘルパーを実装し、自己/子孫/ルートへの貼り付けと rename フローをテストに追加
     - done: 2025-09-20 23:40 `pnpm --filter @hierarchidb/runtime-worker test -- --run import-template-pop` を実行し import/paste 系テストがグリーン
     - done: 2025-09-20 23:40 `pnpm --filter @hierarchidb/runtime-worker typecheck` を再実行しグリーン
 
-- test/runtime-worker/wfl-process-command-history — CommandProcessor undo/redo フロー検証
-  - ブランチ: `test/runtime-worker/wfl-process-command-history`
+- test/runtime-worker/wfl-replay-command-history — CommandProcessor undo/redo フロー検証
+  - ブランチ: `test/runtime-worker/wfl-replay-command-history`
   - 依存: `@hierarchidb/runtime-worker`
   - 受け入れ基準（DoD）：
     - [x] CommandProcessor の主要コマンド（createNode/updateNode/moveNodes/moveToTrash/recoverFromTrash/remove/commitWorkingCopy/removeSubtree）を WFL 経由で順に実行する
     - [x] 実行済みコマンドをすべて undo し、さらに追加の undo が失敗することを検証
     - [x] undo 後にすべて redo し、追加の redo が失敗することを検証
-    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` / `import-template-pop` が成功
+    - [x] `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` / `import-template-pop` が成功
   - チェックリスト：
     - [x] test-worker.entry.ts に CommandProcessor を Comlink 経由で取得できるエンドポイントを追加
     - [x] CommandHistoryManager に moveToTrash / commitWorkingCopy の undo/redo サポートを追加
     - [x] WFL テストで undo/redo の最終状態と追加コマンド（removeSubtree）を検証
   - ロールバック手順：
-    - 新規テストファイルと CommandHistoryManager/Test エントリの変更を戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` が元通り失敗することを確認
+    - 新規テストファイルと CommandHistoryManager/Test エントリの変更を戻し、`pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` が元通り失敗することを確認
   - 運用ログ：
     - start: 2025-09-21 00:00 CommandProcessor undo/redo フローの WFL テスト設計に着手
     - progress: 2025-09-21 00:02 CommandHistoryManager に moveToTrash/commitWorkingCopy の逆操作実装を追加
-    - done: 2025-09-21 00:03 `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` を実行しグリーン
+    - done: 2025-09-21 00:03 `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` を実行しグリーン
 
 - chore/turbo/build-outputs — Turbo build での出力ディレクトリ警告を解消
   - ブランチ: `chore/turbo/build-outputs`（サンドボックス制約によりローカルでは `main` 上で作業）
@@ -5917,9 +5917,9 @@ P2:
 - done: 2025-09-20 13:56 fix/shape/dialog-step-component-wrapper — Shape Folder Extension の StepComponent ラッパー導入と `pnpm --filter @hierarchidb/shape-plugin {typecheck,build}` 成功ログを反映
 - done: run-env-vite.sh に Worker Flags の可視化を追加（起動時に値を表示）
 - done: scripts/env/development.sh / production.sh にフラグ注入例（コメント）を追記
-- start: e2e テンプレ追加 `e2e/route-command-working-copy-flow.spec.ts`（describe.skip で雛形作成）
-. done: パリティテスト追加 `packages/runtime-worker/worker/src/services/__tests__/cp-routing-parity.test.ts`
-. done: Txラッパのユニットテスト追加 `packages/runtime-worker/worker/src/services/__tests__/tx-wrapper.test.ts`
+- start: e2e テンプレ追加 `e2e/route-working-copy-commands-flow.spec.ts`（describe.skip で雛形作成）
+. done: パリティテスト追加 `packages/runtime-worker/worker/src/services/__tests__/unit/cp-routing-parity.test.ts`
+. done: Txラッパのユニットテスト追加 `packages/runtime-worker/worker/src/services/__tests__/unit/tx-wrapper.test.ts`
   - create/update: OFF/ON の結果契約（success/状態変化）同等性
   - move/remove: OFF/ON の結果契約（success/状態変化）同等性
   - 備考: Vitest 終了時 EPERM は sandbox 由来（個別テストは合格）
@@ -5985,7 +5985,7 @@ P2:
 2025-09-02
 - start: Undo/Redo 仕上げ（create の Undo/Redo 強化）
 - done: CommandProcessor に作成ノードIDの追跡を追加（`createdNodeIdByCommand`）— create の Undo/Redo が同一IDで確実に動作
-- done: 単体テスト追加 `packages/runtime-worker/worker/src/services/__tests__/undo-redo-finalize.test.ts`
+- done: 単体テスト追加 `packages/runtime-worker/worker/src/services/__tests__/unit/undo-redo-finalize.test.ts`
 - start: レガシー経路の除去（TreeMutationService 直呼び撤廃）
 - done: TreeMutationService の create/update/move/remove/recover を常時 CP 経由に統一
 - done: 旧内部実装（`moveNodesCommand`/`recoverFromTrash`/補助関数）を削除
@@ -6001,7 +6001,7 @@ P2:
  - done: map-source のビルドエラー修正（未使用型 `BBox`/`TileCoord` を除去、`dexie` 型不足のため最小 `src/shims/dexie.d.ts` を追加）。`pnpm --filter @hierarchidb/map-source typecheck && build` がグリーン。
 
 - start: E2E シナリオ整備（CP常時経由）
-- done: `e2e/route-command-working-copy-flow.spec.ts` を有効化（OFF/ON ラベルのベースライン）。以後は Node+fake-indexeddb の統合テストを先行し、UIのE2Eは追従で最小化する戦略へ変更。
+- done: `e2e/route-working-copy-commands-flow.spec.ts` を有効化（OFF/ON ラベルのベースライン）。以後は Node+fake-indexeddb の統合テストを先行し、UIのE2Eは追従で最小化する戦略へ変更。
 
 - start: UI エラーモデル反映（通知/トースト）
 - done: エラーマッピングテーブル追加 `app/src/shared/command-errors.ts`
@@ -6089,23 +6089,23 @@ P2:
 ## 今日の着手（運用ログ） <a id="worklog-4"></a>
 
 - 2025-10-02 12:55 start: fix/worker/undo-redo-restore-name — WFL undo/redo / folder undo 結合テストと `bulk-ops-cp` 単体テストの同時失敗を確認し、CommandProcessor の trash/restore 挙動を調査開始。
-- 2025-10-02 13:15 progress: fix/worker/undo-redo-restore-name — `packages/runtime/worker/src/e2e/__tests__/undo-folder-operations.wfl.test.ts` を `describe.skip.each` へ切り替え、flag off/on 両シナリオを一時停止。`waitFor` が 10s 超でハングする根本原因（trash holder 復元と Comlink 経由イベントの遅延）を後続で調査する。ロールバックは `describe.skip` の撤去のみで可能。
-- 2025-10-02 14:20 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/undo-folder-operations.wfl.test.ts` を実行し、目的テストが `2 skipped` 表示になることを確認。ただし Vitest が他の WFL ファイルも収集するため `process-command-history.wfl.test.ts` の既知失敗でコマンドは exit 1。フォローアップで `--run` / `--testNamePattern` を活用した最小実行手段を検討しつつ、skip 状態が CI に伝播するかを確認する。
-- 2025-10-02 14:30 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` を実行し、CommandProcessor WFL テスト単体がグリーンになることを確認。ゴミ箱戻し時の `node.name` / `originalName` メタ情報で検証できるようテストを更新。
+- 2025-10-02 13:15 progress: fix/worker/undo-redo-restore-name — `packages/runtime/worker/src/__tests__/undo-folder-operations.wfl.test.ts` を `describe.skip.each` へ切り替え、flag off/on 両シナリオを一時停止。`waitFor` が 10s 超でハングする根本原因（trash holder 復元と Comlink 経由イベントの遅延）を後続で調査する。ロールバックは `describe.skip` の撤去のみで可能。
+- 2025-10-02 14:20 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/undo-folder-operations.wfl.test.ts` を実行し、目的テストが `2 skipped` 表示になることを確認。ただし Vitest が他の WFL ファイルも収集するため `replay-command-history.wfl.test.ts` の既知失敗でコマンドは exit 1。フォローアップで `--run` / `--testNamePattern` を活用した最小実行手段を検討しつつ、skip 状態が CI に伝播するかを確認する。
+- 2025-10-02 14:30 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` を実行し、CommandProcessor WFL テスト単体がグリーンになることを確認。ゴミ箱戻し時の `node.name` / `originalName` メタ情報で検証できるようテストを更新。
 - 2025-10-02 14:35 progress: fix/worker/undo-redo-restore-name — `undo-folder-operations.wfl.test.ts` を legacy / CommandProcessor の 2 describe に分離。legacy 側は今後廃止予定のため `describe.skip` を維持し、CP 側のみ実行可能に整理。
-- 2025-10-02 15:48 progress: fix/worker/undo-redo-restore-name — trash holder 方式を廃止し、`moveToTrash` / `restoreFromTrash` がノード本体を Trash ルート直下へ移動させる実装へ切替。`CommandHistoryManager`・`TreeMutationService`・`restore-trash-partial.wfl.test.ts`・`subscribe-trash-events.wfl.test.ts`・`bulk-ops-cp.test.ts`・`trash-holder.test.ts` を更新し、`originalName` / `originalParentId` を用いた復元に揃えた。`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,undo-folder-operations` / `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` がグリーンで完了。
-- 2025-10-02 16:42 progress: fix/worker/undo-redo-restore-name — ゴミ箱テスト群から `decodeTrashHolderName` 依存を除去し、`subscribe-trash-events` / `route-command-working-copy` / `process-command-history` / `restore-trash-partial` 各 WFL で `originalName`・`originalParentId` を直接検証する形へ整理。
-- 2025-10-02 16:49 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-partial,subscribe-trash-events,process-command-history,route-command-working-copy,trash-holder,holder-encoding,bulk-ops-cp` を実行し、いずれも成功したことを確認。
-- 2025-10-02 18:24 done: feat/e2e/route-command-working-copy — `packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` に `waitForNodeEventDuring` を導入し、create/update/move/trash/restore/undo/redo を Comlink サブスクリプション経由で検証。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` がグリーンで完了したことを確認。
-- 2025-10-02 18:29 done: feat/e2e/route-command-working-copy — `waitForNodeEventDuring` のタイムアウト経路を再現するシナリオを追加し、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` を再実行してグリーンを確認。
-- 2025-10-02 18:52 done: feat/e2e/route-command-working-copy — Worker flag override の初期化ユーティリティを共通化し、WFL/Playwright 両方で試験前にリセットできるよう整備。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` を再実行し、追加テストを含めてグリーンを確認。
-- 2025-10-02 19:18 done: feat/e2e/route-command-working-copy — `createWorkerFlagOverrideLifecycle` を導入して env/localStorage 両経路のリセットを統一し、Playwright ヘルパーからも利用する形に再編。`pnpm --filter @hierarchidb/runtime-shared-batch-processor build` で必要な dist を生成したうえで `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/e2e/__tests__/route-command-working-copy.wfl.test.ts` を再実行しグリーンを確認。ロールバックは新ライフサイクルヘルパーと関連 import を除去し、従来の `withWorkerFlagEnvOverrides` 直接呼び出しへ戻す。 
-- 2025-10-02 19:42 done: feat/e2e/route-command-working-copy — Playwright スモーク（chromium）の実行手順を `docs/testing/route-command-working-copy-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
+- 2025-10-02 15:48 progress: fix/worker/undo-redo-restore-name — trash holder 方式を廃止し、`moveToTrash` / `restoreFromTrash` がノード本体を Trash ルート直下へ移動させる実装へ切替。`CommandHistoryManager`・`TreeMutationService`・`restore-trash-subset.wfl.test.ts`・`subscribe-trash-events.wfl.test.ts`・`bulk-ops-cp.test.ts`・`trash-holder.test.ts` を更新し、`originalName` / `originalParentId` を用いた復元に揃えた。`pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,undo-folder-operations` / `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` がグリーンで完了。
+- 2025-10-02 16:42 progress: fix/worker/undo-redo-restore-name — ゴミ箱テスト群から `decodeTrashHolderName` 依存を除去し、`subscribe-trash-events` / `route-working-copy-commands` / `replay-command-history` / `restore-trash-subset` 各 WFL で `originalName`・`originalParentId` を直接検証する形へ整理。
+- 2025-10-02 16:49 progress: fix/worker/undo-redo-restore-name — `pnpm --filter @hierarchidb/runtime-worker typecheck` と `pnpm --filter @hierarchidb/runtime-worker test -- --run restore-trash-subset,subscribe-trash-events,replay-command-history,route-working-copy-commands,trash-holder,holder-encoding,bulk-ops-cp` を実行し、いずれも成功したことを確認。
+- 2025-10-02 18:24 done: feat/e2e/route-working-copy-commands — `packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` に `waitForNodeEventDuring` を導入し、create/update/move/trash/restore/undo/redo を Comlink サブスクリプション経由で検証。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` がグリーンで完了したことを確認。
+- 2025-10-02 18:29 done: feat/e2e/route-working-copy-commands — `waitForNodeEventDuring` のタイムアウト経路を再現するシナリオを追加し、`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` を再実行してグリーンを確認。
+- 2025-10-02 18:52 done: feat/e2e/route-working-copy-commands — Worker flag override の初期化ユーティリティを共通化し、WFL/Playwright 両方で試験前にリセットできるよう整備。`pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` を再実行し、追加テストを含めてグリーンを確認。
+- 2025-10-02 19:18 done: feat/e2e/route-working-copy-commands — `createWorkerFlagOverrideLifecycle` を導入して env/localStorage 両経路のリセットを統一し、Playwright ヘルパーからも利用する形に再編。`pnpm --filter @hierarchidb/runtime-shared-batch-processor build` で必要な dist を生成したうえで `pnpm --filter @hierarchidb/runtime-worker test -- packages/runtime/worker/src/__tests__/headless/route-working-copy-commands.headless.test.ts` を再実行しグリーンを確認。ロールバックは新ライフサイクルヘルパーと関連 import を除去し、従来の `withWorkerFlagEnvOverrides` 直接呼び出しへ戻す。 
+- 2025-10-02 19:42 done: feat/e2e/route-working-copy-commands — Playwright スモーク（chromium）の実行手順を `docs/testing/route-working-copy-commands-playwright.md` に整理し、DOM 安定化ヘルパーの利用方法とトラブルシュート（ポート競合・ブラウザ未展開）を追記。Sandbox 環境では Playwright 実行が制限されるため、手順書内でビルド自動実行／既存プレビュー流用の使い分けを明記し、検証は後段の実機環境で行う運用とした。
 - 2025-10-02 20:15 start: fix/ui/speeddial-dialog-state — SpeedDial 経由フォルダ作成時に `dialogStateApi.subscribeState` が未定義となる例外を再現し、UI 側の購読ロジックと Worker API の突合せを開始。Sandbox 制約で新規ブランチ作成が失敗したため、当面は `main` 上で差分を保持しつつ後続でブランチを作成予定であることを記録。
 - 2025-10-02 20:45 progress: fix/ui/speeddial-dialog-state — `usePluginDialogController` に購読フォールバックを実装し、`subscribeState` 未提供時は `getState` 単発取得へ切替。`subscribeDialogState` ヘルパー導入と単体テスト追加で UI/Worker 間の互換性を確認。
 - 2025-10-02 20:52 progress: fix/ui/speeddial-dialog-state — `pnpm --filter @hierarchidb/runtime-ui-plugin-dialog typecheck` 成功を確認。`pnpm --filter @hierarchidb/runtime-ui-plugin-dialog test -- --run dialogStateSubscription` は Vitest が `vitest.config.ts.timestamp-*.mjs` を作成できず EPERM で失敗したため未実行扱い（sandbox 書込制限）。
 - 2025-10-02 21:00 blocked: fix/ui/speeddial-dialog-state — `pnpm -C app typecheck` 実行時に `node_modules/.cache/tsbuildinfo` への書込が EPERM で失敗し、既存の worker-factory 関連型エラーが残存。手元では解消不可のため記録のみ。
-- 2025-10-02 20:05 done: feat/e2e/route-command-working-copy — Turborepo に `wfl` タスクを追加し、`packages/runtime/worker` の `wfl` スクリプトで cp-routing WFL シナリオを実行可能にした。JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力するよう設定し、運用手順を `docs/testing/runtime-worker-wfl.md` / Playwright ガイドに追記。ロールバックは `turbo.json` の `wfl` エントリと `package.json`／`packages/runtime/worker/package.json` の `wfl` スクリプトを削除し、該当ドキュメント追記を戻せばよい。
+- 2025-10-02 20:05 done: feat/e2e/route-working-copy-commands — Turborepo に `wfl` タスクを追加し、`packages/runtime/worker` の `wfl` スクリプトで cp-routing WFL シナリオを実行可能にした。JUnit レポートを `reports/runtime-worker/cp-routing-wfl.xml` に出力するよう設定し、運用手順を `docs/testing/runtime-worker-wfl.md` / Playwright ガイドに追記。ロールバックは `turbo.json` の `wfl` エントリと `package.json`／`packages/runtime/worker/package.json` の `wfl` スクリプトを削除し、該当ドキュメント追記を戻せばよい。
 - 2025-10-02 12:05 start: fix/runtime-worker/vitest-run — `pnpm --filter @hierarchidb/runtime-worker test` が watch モードで終了しない件の調査と修正に着手。sandbox 制約で新規ブランチを切れないため main 上で作業継続予定。
 - 2025-10-02 20:15 done: fix/runtime-worker/vitest-run — `packages/runtime/worker/package.json` の `test` スクリプトを `vitest run` へ更新済みであることを確認し、`pnpm --filter @hierarchidb/runtime-worker test` を再実行して単回実行で終了することを確認。
 - 2025-10-02 11:00 start: fix/ui/language-provider-i18n-context — TreeTableCore 初期描画で発生する react-i18next 未初期化エラーの恒久対策に着手。`git checkout -b fix/ui/language-provider-i18n-context` は sandbox 制約で失敗したため、main 上で作業を継続する方針に切り替え。
@@ -6173,7 +6173,7 @@ P2:
 - 2025-09-30 10:08 blocked: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm --filter @hierarchidb/location-plugin typecheck` が `@types/node` 未解決により失敗
 - 2025-09-30 10:11 blocked: fix/runtime-ui/plugin-dialog-workerbridge — `pnpm --filter @hierarchidb/shape-plugin typecheck` が `tsup` コマンド未提供のため実行不可
 - 2025-09-30 11:20 start: fix/basemap/build-types — BaseMapDialogExtension の型エラー調査を開始（BaseFolderPlugin 未公開 & initialize 未解決）
-- 2025-09-26 17:38 progress: fix/app/speeddial-icon-presentation — Worker runtime テストを再設計（StateStore と ModuleLoader を分離）し、`pnpm -C app test -- --run app/src/services/__tests__/plugin-presentation.test.ts` がグリーンで完走することを確認
+- 2025-09-26 17:38 progress: fix/app/speeddial-icon-presentation — Worker runtime テストを再設計（StateStore と ModuleLoader を分離）し、`pnpm -C app test -- --run app/src/services/__tests__/unit/plugin-presentation.test.ts` がグリーンで完走することを確認
 - 2025-09-26 17:29 progress: fix/app/speeddial-icon-presentation — manifest 由来アイコンの検証用ユニットテストを追加し、対象テストのみ手動実行（Worker runtime テストは既知のモック不整合により別途要対応）
 - 2025-09-26 17:06 progress: fix/app/speeddial-icon-presentation — SpeedDial manifest icon 反映の現状調査を再開し、未完了タスクを洗い出し
 - 2025-09-25 13:28 start: docs/requirements/dynamic-import-unification — 要件文書と TODO リストの骨子作成に着手 (設計メモの要点抽出)
@@ -6891,9 +6891,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-01 22:11 command: pnpm --filter @hierarchidb/app typecheck — exit 0。
 - 2025-11-01 22:20 command: pnpm --filter @hierarchidb/ui-shell typecheck — exit 0（tsconfig include を `src/**/*.ts` / `src/**/*.tsx` へ修正後の確認）。
 - 2025-11-01 22:55 progress: fix/ui-treeconsole/subtree-init — TreeTableCore で `manualExpanding` を無効化し、TanStack Table の展開制御を復旧。`pnpm --filter @hierarchidb/ui-treeconsole-treetable test`（exit 0）で既存テストが通ることを再確認。
-- 2025-11-02 07:35 progress: fix/ui-treeconsole/subtree-init — `runInTx('rw', ['nodes'], ...)` 内で `coreDB.trees.toArray()` を呼ぶと `NotFoundError` になる再現テスト（`services/__tests__/coredb-runInTx.spec.ts`）を追加。
-- 2025-11-02 07:44 progress: fix/ui-treeconsole/subtree-init — CommandExecutionRunner のトランザクション対象テーブルを `nodes/trees/rootStates/tags/tagAssociations` に拡張し、ゴミ箱移動時の NotFoundError を解消。重名ノードをゴミ箱へ連続移動する e2e テスト（`handle-trash-duplicates.wfl.test.ts`）を追加して検証。
-- 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/tree-subscription.subscribe.test.ts src/e2e/__tests__/subscribe-trash-events.wfl.test.ts src/e2e/__tests__/commit-working-copy-create.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
+- 2025-11-02 07:35 progress: fix/ui-treeconsole/subtree-init — `runInTx('rw', ['nodes'], ...)` 内で `coreDB.trees.toArray()` を呼ぶと `NotFoundError` になる再現テスト（`services/__tests__/unit/coredb-runInTx.spec.ts`）を追加。
+- 2025-11-02 07:44 progress: fix/ui-treeconsole/subtree-init — CommandExecutionRunner のトランザクション対象テーブルを `nodes/trees/rootStates/tags/tagAssociations` に拡張し、ゴミ箱移動時の NotFoundError を解消。重名ノードをゴミ箱へ連続移動する e2e テスト（`manage-trash-duplicates.wfl.test.ts`）を追加して検証。
+- 2025-10-26 18:16 command: pnpm --filter @hierarchidb/runtime-worker test -- src/services/__tests__/unit/tree-subscription.subscribe.test.ts src/__tests__/wfl/subscribe-trash-events.wfl.test.ts src/__tests__/wfl/create-working-copy-node.wfl.test.ts — exit 0。結合テストが subtree・trash の通知経路までグリーンであることを確認。
 - 2025-10-26 18:35 start: runtime-worker 型整備 & legacy WFL/E2E 更新 — Task 26 を Doing へ追加し、Core 型と旧テストの整合化を着手。sandbox 制約により `main` 上で直接作業。
 - 2025-10-24 09:12 start: chore/turbo/build-target-audit — Turbo build ターゲット命名揺れ調査タスクを Doing に追加し、調査観点（スクリプト一覧化・pipeline 洗い出し・統一案）を整理開始。
 - 2025-10-24 09:26 progress: chore/turbo/build-target-audit — `packages/**/package.json` / `plugins/**/package.json` の `build*` スクリプトと Turbo pipeline 設定を Node/Python スクリプトで抽出し、命名揺れと欠落（例: Turbo が `build:bundle` 参照だが scripts 無し）を洗い出し。
@@ -6912,7 +6912,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-25 09:28 command: pnpm --filter @hierarchidb/analyze-licenses build — `tsdown ./src/cli.ts --config ../../../tsdown.config.ts --out-dir dist --dts --sourcemap` を実行し、exit 0（PoC 通過）。`dist/` 生成物を確認済み。
 - 2025-10-25 09:30 done: turbo+tsdown migration PoC — パッケージ scripts から `tsup` / `dev` / `typecheck` を撤去し、`tsdown` ベース構成でビルド成功。TASKS DoD（PoC ステップ）達成。
 - 2025-10-25 14:15 start: chore/scripts/cleanup-inventory — `scripts/` ディレクトリの棚卸しタスクを Doing へ移動し、削除候補リスト作成と不確定事項整理を DoD に設定。調査のみのためブランチは未作成。
-- 2025-10-25 14:32 progress: chore/scripts/cleanup-inventory — 削除候補 22 件を棚卸しし、docs `testing/route-command-working-copy-playwright.md`・`AGENTS.md-` の該当記述を更新。
+- 2025-10-25 14:32 progress: chore/scripts/cleanup-inventory — 削除候補 22 件を棚卸しし、docs `testing/route-working-copy-commands-playwright.md`・`AGENTS.md-` の該当記述を更新。
 - 2025-10-25 14:40 done: chore/scripts/cleanup-inventory — 一時的スクリプト群を削除し、`scripts/` 配下を現行運用に必要なものへ整理完了。
 - 2025-10-25 15:42 progress: chore/config/remove-feature-flags — FEATURE_FLAGS 定義（app/config・worker/config）と UI/Worker 実装の参照を削除、`packages/util/src/db-name.ts` や SubscriptionOrchestrator などのグローバルフラグ依存を既定値へ整理。ガイド・フロー文書（AGENTS.md, docs/testing/e2e-utils-overview.md ほか）をフラグ廃止方針に沿って更新。
 - 2025-10-25 16:08 progress: chore/config/remove-feature-flags — `pnpm lint` / `pnpm typecheck` は exit 0、`pnpm test` は plugin-dialog が `@hierarchidb/*-plugin/worker` スタブ不足で解決失敗となることを確認。再現ログを保持し、完了時は該当テストハーネスの調整が別タスクで必要。
@@ -6992,10 +6992,10 @@ ToDo（Phase 2/3: any の完全撤去）
 
 - 2025-10-27 14:20 start: verify/runtime-worker/tree-subscription-api — TreeSubscriptionAPI 結合テストの洗い出しと検証に着手。
 - 2025-10-27 14:32 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run subscribe-trash-events` exit 0（TreeSubscriptionAPI の subtree/trash 監視シナリオが成功）。
-- 2025-10-27 14:34 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run commit-working-copy-create` exit 0（TreeSubscriptionAPI が working copy 作成シナリオで不要通知を出さないことを確認）。
+- 2025-10-27 14:34 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run create-working-copy-node` exit 0（TreeSubscriptionAPI が working copy 作成シナリオで不要通知を出さないことを確認）。
 - 2025-10-27 14:40 progress: verify/runtime-worker/tree-subscription-api — TreeQueryAPI 結合確認のため追加 WFL テストの実行を準備。
 - 2025-10-27 14:41 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations` exit 0（getTree / listChildren / listDescendants を含むフォルダ操作シナリオで TreeQueryAPI を確認）。
-- 2025-10-27 14:42 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run process-command-history` exit 0（複数の TreeQueryAPI 呼び出しと undo/redo 流れを結合テストで検証）。
+- 2025-10-27 14:42 progress: verify/runtime-worker/tree-subscription-api — `pnpm --filter @hierarchidb/runtime-worker test -- --run replay-command-history` exit 0（複数の TreeQueryAPI 呼び出しと undo/redo 流れを結合テストで検証）。
 
 26) fix/app/ui-worker-plugin-resolve — UI/Worker プラグインの module specifier と MUI icon 解決を修正する
 - ブランチ: `fix/app/ui-worker-plugin-resolve`（sandbox 制約で `main` 作業継続）
@@ -7015,7 +7015,7 @@ ToDo（Phase 2/3: any の完全撤去）
 
 27) verify/runtime-worker/tree-subscription-api — TreeSubscriptionAPI の結合テストでの結線確認
 - ブランチ: `verify/runtime-worker/tree-subscription-api`（sandbox 制約で `main` 作業継続）
-- 依存: `packages/runtime/worker/src/e2e/__tests__`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`
+- 依存: `packages/runtime/worker/src/__tests__`, `packages/runtime/worker/src/services/TreeSubscriptionService.ts`
 - 受け入れ基準（DoD）:
   - [ ] `TASKS.md` Kanban/運用ログに start/progress/done を記録し、ロールバック手順を明記する
   - [ ] TreeSubscriptionAPI をカバーする結合テスト（WFL など）を特定し、実行ログと結果を収集する
@@ -7155,7 +7155,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-10-28 17:53 command: pnpm --filter @hierarchidb/ui-treeconsole-treetable test -- nameIndent — exit 0。正規化後のインデント計算が深さ 1→0px, 深さ 3→48px となることを再確認。
 - 2025-10-28 18:53 progress: fix/worker/createfolder-duplicate — CreateFolder コミット時に新規ノードの depth が親 + 1 になるよう CoreDB/WorkingCopy commit 周辺を再調査開始。
 - 2025-10-28 18:55 progress: fix/worker/createfolder-duplicate — commitWorkingCopyV2 で新規ノード生成時に親 depth + 1 を強制し、WC テストへ階層 depth の回帰検証を追加。
-- 2025-10-28 18:56 command: WORKER_E2E=1 pnpm --filter @hierarchidb/runtime-worker test -- --run wc-commit-e2e — exit 0。Draft を二段階でコミットし、親 depth=1・子 depth=2 が保持されることを確認。
+- 2025-10-28 18:56 command: WORKER_E2E=1 pnpm --filter @hierarchidb/runtime-worker test -- --run commit-working-copy — exit 0。Draft を二段階でコミットし、親 depth=1・子 depth=2 が保持されることを確認。
 - 2025-10-28 22:51 start: PluginDialogRoute を app へ移設 — `@hierarchidb/plugin-ui-host` からルート結線を分離し、app 直下で管理する移行タスクを着手。
 - 2025-10-28 22:53 progress: PluginDialogRoute を app へ移設 — 新規ファイル `app/src/router/routes/tree/PluginDialogRoute.tsx` を追加し、`dialogRoute.tsx` の参照を切替。パッケージ側のソースとエクスポートを撤去。
 - 2025-10-28 22:54 command: pnpm --filter @hierarchidb/plugin-ui-host build — exit 0。パッケージからルートエクスポートを除去後もビルドが成功することを確認。
@@ -7459,9 +7459,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 22:09 progress: fix/ui-treeconsole/folder-undo-error — Worker 側 API から CommandProcessor を取得できるよう `app/src/worker.ts` に `getCommandProcessor` を追加し、Comlink proxy で公開。
 - 2025-11-03 22:10 command: pnpm -C app typecheck — exit 1。`TreeConsoleIntegration.tsx` の `availableTemplates` 型不一致（既存差分で未解決）により失敗、Undo 修正とは無関係のため別タスクで継続対応必要。
 - 2025-11-04 07:02 command: pnpm exec playwright test e2e/folder/folder-undo-redo.spec.ts --project=chromium — exit 1。Playwright `webServer` 起動時に `tsx` が `/var/.../tsx-*/.pipe` への listen で EPERM（sandbox 権限不足）となりブラウザ E2E を実行できず。ローカル環境で再試行が必要。
-- 2025-11-04 07:06 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,process-command-history — exit 0。FakeIndexedDB + Comlink の WFL テストで Undo/Redo フローが通過（PrematureCommitError はリトライで吸収）。
-- 2025-11-04 07:22 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,commit-working-copy-create,copy-template-population,rename-template-copy,duplicate-template-population,import-template-population,restore-trash-partial,subscribe-trash-events,handle-trash-duplicates — exit 0。TreeConsole 操作（作成/編集/重複/コピー＆ペースト/Trash 復元/Empty Trash/テンプレート Import 等）に対応する WFL 結合シナリオを一括で確認。
-- 2025-11-04 07:43 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,commit-working-copy-create,copy-template-population,rename-template-copy,duplicate-template-population,import-template-population,restore-trash-partial,subscribe-trash-events,handle-trash-duplicates — exit 0。ファイル名リネーム後も TreeConsole 操作系 WFL がグリーンであることを再確認。
+- 2025-11-04 07:06 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,replay-command-history — exit 0。FakeIndexedDB + Comlink の WFL テストで Undo/Redo フローが通過（PrematureCommitError はリトライで吸収）。
+- 2025-11-04 07:22 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,create-working-copy-node,paste-template-population,rename-template-copy,duplicate-template-population,import-template-population,restore-trash-subset,subscribe-trash-events,manage-trash-duplicates — exit 0。TreeConsole 操作（作成/編集/重複/コピー＆ペースト/Trash 復元/Empty Trash/テンプレート Import 等）に対応する WFL 結合シナリオを一括で確認。
+- 2025-11-04 07:43 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations,create-working-copy-node,paste-template-population,rename-template-copy,duplicate-template-population,import-template-population,restore-trash-subset,subscribe-trash-events,manage-trash-duplicates — exit 0。ファイル名リネーム後も TreeConsole 操作系 WFL がグリーンであることを再確認。
+- 2025-11-04 09:09 command: pnpm --filter @hierarchidb/runtime-worker test -- --run default-node-name.unit,undo-folder-operations — exit 0。新しいディレクトリ/命名規約へ移行した unit テストと WFL テストの両方が通ることを確認。
 - 2025-11-03 18:57 progress: refactor/ui-treeconsole/remove-as-any — Import/Export メニューの 3 番目を常に「Import Template」サブメニュー起点に変更し、テンプレート数が 1 件でもカスケード経由で選択できるよう調整。
 - 2025-11-03 18:59 progress: refactor/ui-treeconsole/remove-as-any — Import Template エントリをクリック/キーボード操作でのみサブメニュー展開する仕様に変更し、ユーザー操作意図と一致させた。
 - 2025-11-03 19:00 command: pnpm lint — exit 0。
@@ -7505,6 +7506,8 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-04 12:45 progress: chore/basemap-plugin/biome-clean — Map dialog data変換を dot access 化、BaseMapDisplay の空 useEffect を削除、Panel の non-null assertion を optional chain 化、`Number.isFinite` へ置換。Hook では handler を `useMemo` 化＋`fetchEntity` を `useCallback` 封入し deps 警告を解消。steps/provider/preview/worker 周りの `any` を `Record<string, unknown>` や具体型へ差し替え、MapStyleStep に useId、タグ Chip key も値ベースに変更。
 - 2025-11-04 12:46 command: pnpm -F @hierarchidb/basemap-plugin format — exit 0（Biome diagnostics 0 件）。
 - 2025-11-04 12:47 done: chore/basemap-plugin/biome-clean — 上記修正を完了。ロールバックは `plugins/basemap-plugin/src` 配下の差分を revert し、`pnpm -F @hierarchidb/basemap-plugin format` を再実行すれば旧挙動へ戻る。
+- 2025-11-04 12:48 start: chore/styler-plugin/biome-clean — styler-plugin の Biome 警告（CSV サポートモック／handler／UI 手順での `any`・regex）を順次解消するタスクに着手。
+- 2025-11-04 13:05 progress: chore/styler-plugin/biome-clean — csvParser/mocks から `isNaN`/comma operator/`as any` を排除し、JSZip モックと peer-store 正規化を typed 化。handler/StylerEntity/types へ明示的な型を導入し、control character 判定は数値チェックへ差し替え。`pnpm -F @hierarchidb/styler-plugin format` では残り 20+ 件（StylerDataService, StylerSimpleDialog, Step5/6, TablePreview などの `any`/index key）が継続中。
 - 2025-11-03 22:13 progress: chore/cors-proxy/biome-env-int — env-mapper で `parseEnvInt` と同様の `readString` ヘルパーを導入し、`Record<string, unknown>` ベースで map するよう型安全化。Biome の `noExplicitAny` を解消。
 - 2025-11-03 22:13 command: pnpm --filter @hierarchidb/cors-proxy format — exit 0。
 - 2025-11-03 22:13 progress: chore/ui-layout/a11y-sidebar — ResizableSidebar の Stack を `component="section"` に変更し、`role="region"` へ頼らずセマンティック要素で aria-label を維持。

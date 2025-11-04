@@ -1,4 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
+import type { CSVFilterRule } from '@hierarchidb/ui-csv-extract';
+import type { MapLibreStyle } from '@hierarchidb/ui-map';
 /**
  * : StylerEntity
  * : SpreadsheetEntity
@@ -45,8 +47,8 @@ export interface SpreadsheetEntity {
     hasHeader?: boolean;
   };
   filters?: {
-    rows: any[];
-    columns: any[];
+    rows: CSVFilterRule[];
+    columns: CSVFilterRule[];
   };
 }
 
@@ -109,7 +111,7 @@ export interface StylerEntity extends SpreadsheetEntity {
   selectedValueColumn?: string;
 
   generatedStyle?: {
-    maplibreStyleSpec: any;
+    maplibreStyleSpec: MapLibreStyle | Record<string, unknown>;
     colorMapping: Record<string, string>;
     lastUpdated: number;
   };

@@ -557,7 +557,7 @@ John,"${longText}"`;
         {
           id: '2',
           column: 'age',
-          operator: 'invalid_operator' as any,
+          operator: 'invalid_operator' as CSVFilterRule['operator'],
           value: 'not_a_number',
           enabled: true,
         },

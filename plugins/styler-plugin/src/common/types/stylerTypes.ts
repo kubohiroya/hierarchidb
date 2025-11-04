@@ -103,12 +103,15 @@ export interface PropertyGroup {
   properties: MapLibreStyleProperty[];
 }
 
+export type StylerTablePrimitive = string | number | boolean | null | undefined;
+export type StylerTableRow = Record<string, StylerTablePrimitive>;
+
 /**
  * :
  * : UI
  */
 export interface TablePreviewProps {
-  data: Array<Record<string, any>>;
+  data: StylerTableRow[];
   selectedKeyColumn?: string;
   selectedValueColumn?: string;
   config: StylerConfig;

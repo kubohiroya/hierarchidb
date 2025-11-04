@@ -49,8 +49,8 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
     return csvData
       .map((row) => row[valueColumn])
-      .filter((val) => typeof val === 'number' && !isNaN(val))
-      .slice(0, 100); //  100
+      .filter((val): val is number => typeof val === 'number' && !Number.isNaN(val))
+      .slice(0, 100);
   }, [csvData, data?.selectedValueColumn]);
 
   const handleConfigChange = useCallback(
