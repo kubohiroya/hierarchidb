@@ -13,11 +13,6 @@ import {
   tableDataAtom,
 } from '../state/index.js';
 
-const logSubscriptionWarning = (message: string, error: unknown): void => {
-  if (typeof console === 'undefined') return;
-  console.warn('[SubscriptionOrchestrator]', message, error);
-};
-
 const BATCH_DELAY_MS = 100;
 
 /**

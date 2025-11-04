@@ -77,6 +77,10 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
   const [exportError, setExportError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const validateImportData = useCallback(async (data: ImportNodesPayload) => {
+    return validateImportDataPayload(data);
+  }, []);
+
   /**
    * Import file with progress tracking
    */
@@ -109,7 +113,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         const normalizedData = normalizeImportData(parsedData);
 
         // Validate import data
-        const validation = validateImportDataPayload(normalizedData);
+        const validation = await validateImportData(normalizedData);
         if (!validation.valid) {
           throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
         }
@@ -143,7 +147,7 @@ export function useImportExport(client?: Remote<WorkerAPI>, ready?: boolean) {
         abortControllerRef.current = null;
       }
     },
-    [client, ready]
+    [client, ready, validateImportData]
   );
 
   /**
