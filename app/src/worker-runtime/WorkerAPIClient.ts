@@ -8,13 +8,6 @@ import type { Remote } from 'comlink';
 // Create a type that matches the shared contract
 type WorkerInterface = Remote<WorkerAPI>;
 
-export class NotInitializedError extends Error {
-  constructor() {
-    super('WorkerAPIClient is not initialized. Make sure to call initialize() first.');
-    this.name = 'NotInitializedError';
-  }
-}
-
 let workerInstance: WorkerInterface | null = null;
 let state: 'uninitialized' | 'initializing' | 'initialized' | 'error' = 'uninitialized';
 let initializationPromise: Promise<void> | null = null;
@@ -127,18 +120,6 @@ function getRawWorkerInstance(): Worker | null {
   return module?.getRawWorkerInstance?.() ?? null;
 }
 
-export const WorkerAPIClient = {
-  initialize,
-  getSingleton,
-  getOrInit,
-  reset,
-  isReady,
-  getRawWorkerInstance,
-} as const;
-
-// Export for compatibility
-export const getWorkerAPIClient = () => getSingleton();
-
 type WorkerStatusWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
 };
@@ -165,3 +146,19 @@ async function loadClientModule(): Promise<ClientModule> {
 function getClientModuleOrNull(): ClientModule | null {
   return clientModule;
 }
+
+export class NotInitializedError extends Error {
+  constructor() {
+    super('WorkerAPIClient is not initialized. Make sure to call initialize() first.');
+    this.name = 'NotInitializedError';
+  }
+}
+
+export const WorkerAPIClient = {
+  initialize,
+  getSingleton,
+  getOrInit,
+  reset,
+  isReady,
+  getRawWorkerInstance,
+} as const;

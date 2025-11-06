@@ -19,7 +19,6 @@ export function convertTreeNodeToTreeNodeData(node: TreeNode): TreeNodeData {
     nodeType: node.nodeType,
 
     // UI-specific properties can be added here
-    children: undefined, // Will be populated when expanded
     removedAt: (() => {
       const source =
         (node as { removedAt?: number | string; deletedAt?: number | string }).removedAt ??

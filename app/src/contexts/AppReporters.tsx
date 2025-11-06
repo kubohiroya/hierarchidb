@@ -74,32 +74,36 @@ export const AuthReadyReporter: React.FC = () => {
 export const WorkerProgressReporter: React.FC = () => {
   const { setStepProgress, markStepDone } = useBootProgress();
   const { initProgress, isInitialized, initMessage } = useWorker();
+  const { t } = useTranslation();
   // Reflect Provider progress
   useEffect(() => {
-    setStepProgress('Worker', initProgress || 0, initMessage || 'Worker initializing');
-    if (isInitialized) markStepDone('Worker', 'Worker ready');
-  }, [initProgress, isInitialized, initMessage, setStepProgress, markStepDone]);
+    const fallbackMessage = t('workerInit.progressFallback');
+    const readyLabel = t('workerInit.status.ready');
+    setStepProgress('Worker', initProgress || 0, initMessage || fallbackMessage);
+    if (isInitialized) markStepDone('Worker', readyLabel);
+  }, [initProgress, isInitialized, initMessage, markStepDone, setStepProgress, t]);
 
   // Fallbacks: event and polling
   useEffect(() => {
+    const readyLabel = t('workerInit.status.ready');
     const onEvt = () => {
-      markStepDone('Worker', 'Worker ready');
+      markStepDone('Worker', readyLabel);
     };
     window.addEventListener('hierarchidb-worker-init-complete', onEvt, { once: true });
     // Immediate check on mount
     try {
       if ((window as InitStatusWindow).__HDB_INIT_COMPLETE__) {
-        markStepDone('Worker', 'Worker ready');
+        markStepDone('Worker', readyLabel);
       }
     } catch (error) {
       logInitReporterWarning('Failed to inspect __HDB_INIT_COMPLETE__ flag', error);
     }
     const t = window.setInterval(() => {
       // Late import to avoid circular
-      import('../WorkerAPIClient.ts')
+      import('~/worker-runtime/WorkerAPIClient.ts')
         .then(({ WorkerAPIClient }) => {
           if (WorkerAPIClient.isReady()) {
-            markStepDone('Worker', 'Worker ready');
+            markStepDone('Worker', readyLabel);
             window.clearInterval(t);
           }
         })
@@ -111,7 +115,7 @@ export const WorkerProgressReporter: React.FC = () => {
       window.removeEventListener('hierarchidb-worker-init-complete', onEvt);
       window.clearInterval(t);
     };
-  }, [markStepDone]);
+  }, [markStepDone, t]);
   return null;
 };
 type InitStatusWindow = Window & {

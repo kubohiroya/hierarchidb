@@ -1,6 +1,6 @@
-//import { FeatureRegistry } from '@hierarchidb/feature-registry';
+//import { FeatureRegistry } from '@hierarchidb/features-registry';
 //import { importOptionalFeature } from '@hierarchidb/runtime-shared-module-paths';
-// Import feature definitions (static list for now; scanning can be added later)
+// Import features definitions (static list for now; scanning can be added later)
 
 import { FeatureDefinition as AuthRecoveryFeatureDefinition } from '@hierarchidb/auth-recovery';
 import { FeatureDefinition as ComputeFeatureDefinition } from '@hierarchidb/compute';

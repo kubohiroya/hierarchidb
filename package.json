@@ -37,6 +37,7 @@
     "turbo:watch": "pnpm run turbo:watch:internal",
     "turbo:watch:internal": "turbo run build --filter @hierarchidb/app^... --watch",
     "preview": "turbo run preview",
+    "preview:init": "pnpm run tools:gen-plugin-registry && pnpm --filter @hierarchidb/plugin-registry build && pnpm --filter @hierarchidb/runtime-worker build && pnpm --filter @hierarchidb/app build && pnpm preview",
     "prepreview": "pnpm run tools:gen-plugin-registry",
     "typecheck": "turbo run typecheck",
     "typecheck:ci": "CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" turbo run typecheck",

@@ -23,7 +23,7 @@ export interface FeatureCollection {
 }
 
 export interface MapSourcePort {
-  // Return a feature collection intersecting bbox at (optional) zoom LOD
+  // Return a features collection intersecting bbox at (optional) zoom LOD
   queryByBBox(bbox: BBox, zoom?: number, filters?: Record<string, any>): Promise<FeatureCollection>;
 
   // Return features for a WebMercator tile (z/x/y)

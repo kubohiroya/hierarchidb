@@ -1082,7 +1082,7 @@ const BatchProgressSplitView = ({
   // ペイン状態管理（LRU + 自動展開）
   const [paneStates, setPaneStates] = useState<PaneState[]>([
     { id: 'download', title: `Download Shape Data (${config.concurrentDownloads} concurrent)`, isExpanded: true, ... },
-    { id: 'feature', title: 'Feature Processing', isExpanded: false, ... },
+    { id: 'features', title: 'Feature Processing', isExpanded: false, ... },
     { id: 'simplify', title: 'Tile Simplification', isExpanded: false, ... },
     { id: 'vectortile', title: `Vector Tiles (${config.concurrentProcesses} concurrent)`, isExpanded: false, ... },
   ]);
@@ -1098,7 +1098,7 @@ const BatchProgressSplitView = ({
   // 進捗完了時の自動展開ロジック
   useEffect(() => {
     if (prevProgress.download < 100 && paneProgress.download === 100) {
-      autoExpandPane('feature'); // ダウンロード完了→フィーチャー処理を展開
+      autoExpandPane('features'); // ダウンロード完了→フィーチャー処理を展開
     }
     if (prevProgress.feature < 100 && paneProgress.feature === 100) {
       autoExpandPane('simplify'); // フィーチャー処理完了→簡略化を展開

@@ -72,7 +72,7 @@ export function validateProcessingConfig(config: Partial<ProcessingConfig>): Val
     }
   }
 
-  // Validate feature area threshold
+  // Validate features area threshold
   if (config.featureAreaThreshold !== undefined) {
     if (config.featureAreaThreshold < 0 || config.featureAreaThreshold > 1) {
       errors.push('Feature area threshold must be between 0 and 1');

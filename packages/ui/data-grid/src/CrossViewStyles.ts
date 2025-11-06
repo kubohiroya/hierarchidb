@@ -7,7 +7,7 @@
  * - datasetId ごとにチャネルを分離します（例: `shape:table-123`）。
  * - 行⇔フィーチャのマッピング（1:n / n:n）を保持し、片側の状態変更をもう片側へ反映します。
  * - スタイル辞書（Map<StyleId,StyleSpec>）は表用(row)と地図用(map)の両表現を持てます。priority により競合解消が可能です。
- * - deck.gl/MapLibreGL への適用を補助するアクセサ/feature-state 更新関数を提供します。
+ * - deck.gl/MapLibreGL への適用を補助するアクセサ/features-state 更新関数を提供します。
  * - フォーカスイベント（hover/selection 時に付帯情報を Snackbar へ表示する等）を publish/subscribe できます。
  *
  * 典型的な利用手順:
@@ -42,7 +42,7 @@ export interface Mapping { rowToFeatures: Map<Id, Set<Id>>; featureToRows: Map<I
 
 export interface FocusEventPayload {
   datasetId: DatasetId;
-  source: 'row'|'feature';
+  source: 'row'|'features';
   id: Id;
   data?: any; // name/type/description/coordinates etc.
 }
@@ -177,8 +177,8 @@ export const CrossViewStyles = {
   },
 
   /**
-   * MapLibre の feature-state をスタイル辞書にもとづいて一括更新します。
-   * paint/line-paint の式側で ['feature-state','selected'] などを参照してください。
+   * MapLibre の features-state をスタイル辞書にもとづいて一括更新します。
+   * paint/line-paint の式側で ['features-state','selected'] などを参照してください。
    */
   applyMapLibreFeatureState(datasetId: DatasetId, map:any, sourceId:string){
     const ch=getCh(datasetId);

@@ -185,13 +185,13 @@ export function createWorkerClientProvider<T>() {
   /**
    * Hook to access the Worker client from context
    */
-  const useWorkerClient = (): {
+  const useWorker = (): {
     client: Remote<T>;
     isConnected: boolean;
   } => {
     const state = useContext(ClientContext);
     if (!state) {
-      throw new Error('useWorkerClient must be used within WorkerClientProvider');
+      throw new Error('useWorker must be used within WorkerClientProvider');
     }
     if (!state.client) {
       throw new Error('Worker client is not ready');
@@ -204,6 +204,6 @@ export function createWorkerClientProvider<T>() {
 
   return {
     WorkerClientProvider,
-    useWorkerClient,
+    useWorker,
   };
 }

@@ -74,7 +74,7 @@ describe('i18nLogger', () => {
       expect(mockConsole.log).toHaveBeenCalledWith('test.interpolation');
     });
 
-    it('should handle feature logging', () => {
+    it('should handle features logging', () => {
       i18nLogger.i18nFeature('testFeature', true);
       expect(mockConsole.log).toHaveBeenCalledWith('✅ Feature testFeature:', 'ENABLED');
     });

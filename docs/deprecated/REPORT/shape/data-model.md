@@ -32,7 +32,7 @@ interface ShapesDatabaseStructure {
     featureIndices: FeatureIndex[];  // Feature spatial indices
   };
   
-  // 3. FeatureBufferDB - Processed feature data
+  // 3. FeatureBufferDB - Processed features data
   featureBufferDB: {
     featureBuffers: FeatureBuffer[]; // Feature binary data
   };
@@ -321,7 +321,7 @@ Spatial indexing for efficient geographic queries.
 export interface FeatureIndexEntity extends PeerEntity {
   // Base PeerEntity properties
   indexId: string;           // Primary key
-  featureId: string;         // Referenced feature
+  featureId: string;         // Referenced features
   bufferId: string;          // Source buffer reference
   
   // Spatial indexing
@@ -654,7 +654,7 @@ export class DownloadWorker implements DownloadWorkerAPI {
       // 3. Generate spatial indices
       const spatialIndices = await this.generateSpatialIndices(geoJson);
       
-      // 4. Store in feature buffers
+      // 4. Store in features buffers
       const bufferIds = await this.storeFeatureBuffers(geoJson, spatialIndices);
       
       // 5. Create batch buffer record
@@ -695,7 +695,7 @@ Performs feature-level simplification:
  * SimplifyWorker1 - Feature-level simplification
  * 
  * Responsibilities:
- * - Individual feature simplification using Douglas-Peucker algorithm
+ * - Individual features simplification using Douglas-Peucker algorithm
  * - Topology preservation options (prevent self-intersection)
  * - Morton code recalculation for simplified geometries
  * - Area and complexity-based filtering

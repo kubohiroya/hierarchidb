@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.ts';
 
 type AliasEntry = { find: string | RegExp; replacement: string };
 
@@ -57,7 +58,7 @@ export default defineConfig(({ mode }) => {
     ['@hierarchidb/util', '../packages/util/dist/index.js'],
     ['@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js'],
     ['@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js'],
-    ['@hierarchidb/map-adapter', '../packages/feature/map-adapter/dist/index.js'],
+    ['@hierarchidb/map-adapter', '../packages/features/map-adapter/dist/index.js'],
     ['@hierarchidb/plugin-presentation', '../packages/plugin-presentation/dist/index.js'],
     ['@hierarchidb/plugin-registry', '../packages/plugin-registry/dist/registry.js'],
     ['@hierarchidb/plugin-registry/derivations', '../packages/plugin-registry/dist/derivations.js'],
@@ -71,13 +72,13 @@ export default defineConfig(({ mode }) => {
     ['@hierarchidb/shape-plugin', '../plugins/shape-plugin/dist/index.js'],
     ['@hierarchidb/spreadsheet-plugin', '../plugins/spreadsheet-plugin/dist/index.js'],
     ['@hierarchidb/styler-plugin', '../plugins/styler-plugin/dist/index.js'],
-    ['@hierarchidb/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js'],
+    ['@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js'],
     ['@hierarchidb/timeline-plugin', '../plugins/timeline-plugin/dist/index.js'],
   ];
   addAliasIfExists(rootDir, '../packages/runtime/worker/dist/index.ts', '@hierarchidb/feature-core/runtime-worker', aliases);
   addAliasIfExists(rootDir, '../packages/runtime/client/dist/index.ts', '@hierarchidb/feature-core/runtime-client', aliases);
-  addAliasIfExists(rootDir, '../packages/feature/map-adapter/dist/index.ts', '@hierarchidb/feature-core/map-adapter', aliases);
-  addAliasIfExists(rootDir, '../packages/feature/tabular-source-xlsx/dist/index.ts', '@hierarchidb/feature-core/tabular-source-xlsx', aliases);
+  addAliasIfExists(rootDir, '../packages/features/map-adapter/dist/index.ts', '@hierarchidb/feature-core/map-adapter', aliases);
+  addAliasIfExists(rootDir, '../packages/features/tabular-source-xlsx/dist/index.ts', '@hierarchidb/feature-core/tabular-source-xlsx', aliases);
   addAliasIfExists(rootDir, '../packages/util/dist/index.ts', '@hierarchidb/feature-core/util', aliases);
   addAliasIfExists(rootDir, '../packages/ui/i18n/dist/index.js', '@hierarchidb/ui-shell/ui-i18n', aliases);
   addAliasIfExists(rootDir, '../packages/ui/icon/src/index.ts', '@hierarchidb/ui-shell/ui-icon', aliases);
@@ -157,6 +158,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base,
+    plugins: [pluginWorkerVirtualModule()],
     preview: {
       port: 4173,
       open: true,

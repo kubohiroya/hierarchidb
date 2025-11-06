@@ -73,7 +73,7 @@ export class SpreadsheetCSVApiDriver implements TabularDataApi {
 
     // Ensure private helpers are treated as used for strict noUnused* settings
     // without altering runtime behavior.
-    // These helpers are wired in larger flows during full feature enablement.
+    // These helpers are wired in larger flows during full features enablement.
     // helpers are now wired into the flow via upload/download paths
   }
 

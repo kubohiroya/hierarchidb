@@ -1,4 +1,4 @@
-// Minimal optional feature stubs for Vitest.
+// Minimal optional features stubs for Vitest.
 
 export const mapAdapter = {
   async initialize() {

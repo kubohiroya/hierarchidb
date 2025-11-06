@@ -8,7 +8,7 @@ import type { DataSourceName } from '@hierarchidb/ui-datasource';
 export type FeatureFilterMethod = 'bbox_only' | 'polygon_only' | 'hybrid';
 
 /**
- * Configuration for hybrid feature filtering algorithm
+ * Configuration for hybrid features filtering algorithm
  */
 export interface HybridFilterConfig {
   // Step 1: Quick rejection threshold
@@ -54,7 +54,7 @@ export interface SimplifySession1Config {
   featureAreaThreshold: number; // Percentage threshold for filtering small features (0-100)
   minVertexCountForAreaFilter: number; // Minimum vertex count to apply area filtering
   aspectRatioThreshold: number; // Aspect ratio threshold for switching to polygon area calculation
-  featureFilterMethod: FeatureFilterMethod; // Method for feature filtering
+  featureFilterMethod: FeatureFilterMethod; // Method for features filtering
   hybridFilterConfig?: HybridFilterConfig; // Hybrid filter specific configuration
 
   deleteOnComplete?: boolean; // Delete FeatureIndex/FeatureBuffer after session completes

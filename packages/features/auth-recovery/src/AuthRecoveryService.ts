@@ -26,7 +26,7 @@ export class AuthRecoveryService implements AuthHeadersProvider {
 
   constructor() {
     // Listen for success/cancel notifications from UI
-    this.registry.register('feature-auth-recovery', {
+    this.registry.register('features-auth-recovery', {
       onAuthRequired: async (_notification: AuthRequiredNotification) => {
         // No-op: the worker initiates auth flows directly via awaitAuth
       },

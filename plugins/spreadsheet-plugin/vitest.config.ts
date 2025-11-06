@@ -20,7 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,
-      '@hierarchidb/download': path.resolve(__dirname, '../../packages/feature/download/src/index.ts'),
+      '@hierarchidb/download': path.resolve(__dirname, '../../packages/features/download/src/index.ts'),
     },
   },
 });

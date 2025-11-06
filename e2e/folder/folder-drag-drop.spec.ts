@@ -320,7 +320,7 @@ test.describe.skip('Folder Drag & Drop Operations (legacy - TODO update selector
 
   test('タッチデバイスでのドラッグ&ドロップ', async ({ page }) => {
     // タッチデバイスをエミュレート
-    await page.emulate(require('@playwright/test').devices['iPad']);
+    //await page.emulate(require('@playwright/test').devices['iPad']);
 
     await page.goto('/treeconsole-simple');
     await dismissGuidedTour(page);

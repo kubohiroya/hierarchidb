@@ -116,9 +116,9 @@ const custom = [
     ],
   },
   {
-    id: 'app-feature-core-bundle',
+    id: 'app-features-core-bundle',
     when: (ctx) => ctx.pkg?.name === '@hierarchidb/app',
-    because: 'App feature/data imports should go through @hierarchidb/feature-core facades.',
+    because: 'App features/data imports should go through @hierarchidb/features-core facades.',
     rules: [
       {
         rule: 'import-path-ban',
@@ -126,7 +126,7 @@ const custom = [
           forbid: [
             '^@hierarchidb/(common-(?:api|auth|types)|util|runtime-(?:client|worker)|plugin-(?:presentation|registry|ui-sdk)|map-adapter|(?:basemap|folder|linker|location|resolver|route|shape|spreadsheet|styler|timeline)-plugin|tabular-source-xlsx)(?:/|$)',
           ],
-          message: 'Use @hierarchidb/feature-core/{module} instead of {importPath}.',
+          message: 'Use @hierarchidb/features-core/{module} instead of {importPath}.',
         },
         severity: 'ERROR',
       },

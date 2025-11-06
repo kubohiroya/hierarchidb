@@ -568,7 +568,7 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
 
       if (summary.workerSourceEntry) {
         modules.worker = {
-          specifier: `${summary.packageName}/worker`,
+          specifier: `@hierarchidb/plugins/${summary.nodeType}/worker`,
           source: summary.workerSourceEntry,
         };
       }

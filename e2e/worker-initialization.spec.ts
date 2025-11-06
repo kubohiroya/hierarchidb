@@ -138,7 +138,7 @@ test.describe('Worker Initialization System', () => {
       let attemptCount = 0;
       
       window.Worker = class extends OriginalWorker {
-        constructor(scriptURL: string | URL, options?: WorkerOptions) {
+        new(scriptURL: string | URL, options?: WorkerOptions) {
           attemptCount++;
           
           // Fail the first 2 attempts to test retry logic

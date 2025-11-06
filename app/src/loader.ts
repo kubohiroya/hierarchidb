@@ -11,6 +11,7 @@ import type { Remote } from 'comlink';
 import type { LoadAppConfigReturn } from './loadAppConfig.ts';
 import { loadAppConfig } from './loadAppConfig.ts';
 import { normalizeNodeType } from './utils/nodeTypeNormalize.ts';
+import { createWorkerClientHandle } from './worker-runtime/WorkerStateStore.ts';
 
 export type { LoadAppConfigReturn };
 
@@ -119,7 +120,7 @@ async function retryComlinkCall<T>(
 
       // Avoid recreating the Worker while it is still booting to prevent races
       const bootWindow = getBootWindow();
-      const { WorkerAPIClient } = await import('./WorkerAPIClient.ts');
+      const { WorkerAPIClient } = await import('./worker-runtime/WorkerAPIClient.ts');
       const initComplete = Boolean(bootWindow?.__HDB_INIT_COMPLETE__ || WorkerAPIClient.isReady());
 
       if (!initComplete) {
@@ -160,7 +161,7 @@ export async function loadWorkerAPIClient(): Promise<LoadWorkerAPIClientReturn> 
 
   try {
     //  WorkerAPIClient
-    const { WorkerAPIClient } = await import('./WorkerAPIClient.ts');
+    const { WorkerAPIClient } = await import('./worker-runtime/WorkerAPIClient.ts');
 
     // Fast path: if global INIT_COMPLETE already observed, return immediately
     const initWindow = getBootWindow();
@@ -305,10 +306,11 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
     throw new Error('treeId is required');
   }
 
+  const workerHandle = await createWorkerClientHandle();
+
   const tree = await retryComlinkCall(async () => {
-    // Get fresh client each time to handle reconnections
-    const workerAPIClientReturn = await loadWorkerAPIClient();
-    const client = workerAPIClientReturn.client;
+    const client = await workerHandle.ensureLatest();
+    await ensureDialogStateAPI(client);
 
     // Use facade API instead of deprecated direct method
     const queryAPI = await client.getQueryAPI();
@@ -319,10 +321,8 @@ export async function loadTree({ treeId }: LoadTreeArgs): Promise<LoadTreeReturn
     console.warn('[loader] getTree returned no data', { treeId });
   }
 
-  // Get final client state for return
-  const workerAPIClientReturn = await loadWorkerAPIClient();
   return {
-    client: workerAPIClientReturn.client,
+    client: workerHandle.getClient(),
     tree,
   };
 }
@@ -418,10 +418,6 @@ export async function loadNodeAction({
     ...loadNodeTypeReturn,
     action: normalizeNodeAction(action),
   };
-}
-
-export function useAppConfig(): LoadAppConfigReturn {
-  return loadAppConfig();
 }
 
 function normalizeNodeAction(action: string | undefined): NodeAction | undefined {

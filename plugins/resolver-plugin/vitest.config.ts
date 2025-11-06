@@ -25,7 +25,7 @@ export default defineConfig({
       '~': path.resolve(__dirname, 'src'),
       '@hierarchidb/util': path.resolve(__dirname, '../../packages/util/src/index.ts'),
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,
-      '@hierarchidb/download': path.resolve(__dirname, '../../packages/feature/download/src/index.ts'),
+      '@hierarchidb/download': path.resolve(__dirname, '../../packages/features/download/src/index.ts'),
       '@hierarchidb/runtime-client': path.resolve(__dirname, '../../packages/runtime/client/src/index.ts'),
     },
   },

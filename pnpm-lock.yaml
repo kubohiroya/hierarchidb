@@ -269,6 +269,9 @@ importers:
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../packages/plugin-service-api
+      '@hierarchidb/tag':
+        specifier: workspace:*
+        version: link:../packages/features/tag
       '@hierarchidb/ui-shell':
         specifier: workspace:*
         version: link:../packages/ui-shell
@@ -436,7 +439,7 @@ importers:
     devDependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../feature/auth-recovery
+        version: link:../features/auth-recovery
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../common/api
@@ -445,7 +448,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../feature/download
+        version: link:../features/download
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -545,7 +548,7 @@ importers:
         version: link:../../plugins/location-plugin
       '@hierarchidb/map-adapter':
         specifier: workspace:*
-        version: link:../feature/map-adapter
+        version: link:../features/map-adapter
       '@hierarchidb/plugin-presentation':
         specifier: workspace:*
         version: link:../plugin-presentation
@@ -578,7 +581,7 @@ importers:
         version: link:../../plugins/styler-plugin
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
-        version: link:../feature/tabular-source-xlsx
+        version: link:../features/tabular-source-xlsx
       '@hierarchidb/timeline-plugin':
         specifier: workspace:*
         version: link:../../plugins/timeline-plugin
@@ -590,7 +593,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/auth-recovery:
+  packages/features/auth-recovery:
     devDependencies:
       '@hierarchidb/common-auth':
         specifier: workspace:*
@@ -602,7 +605,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/batch:
+  packages/features/batch:
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
@@ -623,7 +626,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/compute:
+  packages/features/compute:
     dependencies:
       '@hierarchidb/util':
         specifier: workspace:*
@@ -633,7 +636,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/download:
+  packages/features/download:
     dependencies:
       '@noble/hashes':
         specifier: ^1.4.0
@@ -652,13 +655,13 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/feature-registry:
+  packages/features/feature-registry:
     devDependencies:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/fetch-save-metadata:
+  packages/features/fetch-save-metadata:
     devDependencies:
       '@types/node':
         specifier: 18.19.123
@@ -682,7 +685,7 @@ importers:
         specifier: ^7.15.0
         version: 7.16.0
 
-  packages/feature/import-export:
+  packages/features/import-export:
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
@@ -697,7 +700,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/map-adapter:
+  packages/features/map-adapter:
     dependencies:
       deck.gl:
         specifier: ^9.1.14
@@ -716,7 +719,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/map-source:
+  packages/features/map-source:
     dependencies:
       dexie:
         specifier: 4.2.0
@@ -729,7 +732,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/route-resolver:
+  packages/features/route-resolver:
     dependencies:
       '@webgpu/types':
         specifier: '*'
@@ -739,7 +742,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/route-searoute:
+  packages/features/route-searoute:
     dependencies:
       '@hierarchidb/download':
         specifier: workspace:*
@@ -752,7 +755,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/tabular-source:
+  packages/features/tabular-source:
     devDependencies:
       '@hierarchidb/common-types':
         specifier: workspace:*
@@ -764,7 +767,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/tabular-source-xlsx:
+  packages/features/tabular-source-xlsx:
     dependencies:
       xlsx:
         specifier: ^0.18.5
@@ -780,7 +783,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/tabular-store:
+  packages/features/tabular-store:
     devDependencies:
       '@hierarchidb/util':
         specifier: workspace:*
@@ -792,7 +795,7 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
-  packages/feature/tag:
+  packages/features/tag:
     devDependencies:
       '@hierarchidb/common-api':
         specifier: workspace:*
@@ -860,7 +863,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../feature/download
+        version: link:../features/download
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../plugin-service-api
@@ -898,7 +901,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../feature/download
+        version: link:../features/download
       '@types/node':
         specifier: 18.19.123
         version: 18.19.123
@@ -999,7 +1002,7 @@ importers:
         version: link:../common/types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../feature/download
+        version: link:../features/download
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.0(@testing-library/dom@9.3.4)(@types/react-dom@18.3.7(@types/react@18.3.26))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1129,7 +1132,7 @@ importers:
         version: 2.2.0
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../feature/auth-recovery
+        version: link:../../features/auth-recovery
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../common/api
@@ -1138,31 +1141,31 @@ importers:
         version: link:../../common/types
       '@hierarchidb/compute':
         specifier: workspace:*
-        version: link:../../feature/compute
+        version: link:../../features/compute
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../feature/download
+        version: link:../../features/download
       '@hierarchidb/feature-registry':
         specifier: workspace:*
-        version: link:../../feature/feature-registry
+        version: link:../../features/feature-registry
       '@hierarchidb/import-export':
         specifier: workspace:*
-        version: link:../../feature/import-export
+        version: link:../../features/import-export
       '@hierarchidb/map-adapter':
         specifier: workspace:*
-        version: link:../../feature/map-adapter
+        version: link:../../features/map-adapter
       '@hierarchidb/map-source':
         specifier: workspace:*
-        version: link:../../feature/map-source
+        version: link:../../features/map-source
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../feature/tabular-source
+        version: link:../../features/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../feature/tabular-store
+        version: link:../../features/tabular-store
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../../feature/tag
+        version: link:../../features/tag
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1184,7 +1187,7 @@ importers:
     optionalDependencies:
       '@hierarchidb/tabular-source-xlsx':
         specifier: workspace:*
-        version: link:../../feature/tabular-source-xlsx
+        version: link:../../features/tabular-source-xlsx
 
   packages/testing/plugin-dialog-mocks:
     dependencies:
@@ -1406,7 +1409,7 @@ importers:
         version: link:../../common/types
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../feature/tabular-store
+        version: link:../../features/tabular-store
       '@hierarchidb/util':
         specifier: workspace:*
         version: link:../../util
@@ -1844,10 +1847,10 @@ importers:
     devDependencies:
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../feature/tabular-source
+        version: link:../../features/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../feature/tabular-store
+        version: link:../../features/tabular-store
       '@hierarchidb/ui-file':
         specifier: workspace:*
         version: link:../file
@@ -2365,7 +2368,7 @@ importers:
         version: link:../../packages/runtime/worker
       '@hierarchidb/tag':
         specifier: workspace:*
-        version: link:../../packages/feature/tag
+        version: link:../../packages/features/tag
       '@hierarchidb/ui-dialog':
         specifier: workspace:*
         version: link:../../packages/ui/dialog
@@ -2526,10 +2529,10 @@ importers:
     devDependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../packages/feature/auth-recovery
+        version: link:../../packages/features/auth-recovery
       '@hierarchidb/batch':
         specifier: workspace:*
-        version: link:../../packages/feature/batch
+        version: link:../../packages/features/batch
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2544,7 +2547,7 @@ importers:
         version: link:../../packages/components
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/feature/download
+        version: link:../../packages/features/download
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
@@ -2559,7 +2562,7 @@ importers:
         version: link:../../packages/runtime/worker
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-store
+        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-data-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -2681,7 +2684,7 @@ importers:
     devDependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../packages/feature/auth-recovery
+        version: link:../../packages/features/auth-recovery
       '@hierarchidb/batch-runtime-services':
         specifier: workspace:*
         version: link:../../packages/batch-runtime-services
@@ -2696,7 +2699,7 @@ importers:
         version: link:../../packages/components
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/feature/download
+        version: link:../../packages/features/download
       '@hierarchidb/plugin-service-api':
         specifier: workspace:*
         version: link:../../packages/plugin-service-api
@@ -2714,7 +2717,7 @@ importers:
         version: link:../../packages/runtime/worker
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-store
+        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-data-grid':
         specifier: workspace:*
         version: link:../../packages/ui/data-grid
@@ -2799,10 +2802,10 @@ importers:
     devDependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../packages/feature/auth-recovery
+        version: link:../../packages/features/auth-recovery
       '@hierarchidb/batch':
         specifier: workspace:*
-        version: link:../../packages/feature/batch
+        version: link:../../packages/features/batch
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2814,7 +2817,7 @@ importers:
         version: link:../../packages/common/types
       '@hierarchidb/download':
         specifier: workspace:*
-        version: link:../../packages/feature/download
+        version: link:../../packages/features/download
       '@hierarchidb/folder-plugin':
         specifier: workspace:*
         version: link:../folder-plugin
@@ -2829,7 +2832,7 @@ importers:
         version: link:../../packages/runtime/worker
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-store
+        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-accordion-config':
         specifier: workspace:*
         version: link:../../packages/ui/accordion-config
@@ -2923,7 +2926,7 @@ importers:
     devDependencies:
       '@hierarchidb/auth-recovery':
         specifier: workspace:*
-        version: link:../../packages/feature/auth-recovery
+        version: link:../../packages/features/auth-recovery
       '@hierarchidb/common-api':
         specifier: workspace:*
         version: link:../../packages/common/api
@@ -2944,10 +2947,10 @@ importers:
         version: link:../../packages/runtime/worker
       '@hierarchidb/tabular-source':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-source
+        version: link:../../packages/features/tabular-source
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-store
+        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-datasource':
         specifier: workspace:*
         version: link:../../packages/ui/datasource
@@ -3038,7 +3041,7 @@ importers:
         version: link:../spreadsheet-plugin
       '@hierarchidb/tabular-store':
         specifier: workspace:*
-        version: link:../../packages/feature/tabular-store
+        version: link:../../packages/features/tabular-store
       '@hierarchidb/ui-plugin-basic-info':
         specifier: workspace:*
         version: link:../../packages/ui/plugin-basic-info

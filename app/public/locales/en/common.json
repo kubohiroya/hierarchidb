@@ -9,6 +9,26 @@
     "prefetch": "Service preconnection is complete.{{time}}",
     "prefetchList": "Service preconnection complete: {{list}}"
   },
+  "workerInit": {
+    "heading": "Setting up worker…",
+    "progressFallback": "Worker initializing",
+    "progressLabel": "{{value}}% Complete",
+    "messages": {
+      "start": "Starting worker initialization…",
+      "complete": "Worker initialization complete"
+    },
+    "error": {
+      "title": "Worker initialization error",
+      "unknown": "Unknown error",
+      "actions": {
+        "retry": "Retry",
+        "reload": "Reload"
+      }
+    },
+    "status": {
+      "ready": "Worker ready"
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {

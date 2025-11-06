@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
+import * as path from 'path';
 
 const workspaceRoot = path.resolve(__dirname, '../..');
 const basePluginEntry = path.resolve(workspaceRoot, 'packages/plugin-ui-sdk/src/index.ts');
@@ -10,8 +10,6 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
     globals: true,
     pool: 'threads',
-    maxThreads: 1,
-    minThreads: 1,
     coverage: {
       provider: 'v8',
       reportsDirectory: 'coverage',

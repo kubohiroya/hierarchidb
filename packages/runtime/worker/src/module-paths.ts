@@ -62,7 +62,7 @@ export function importRuntimeWorkerBootstrap() {
  */
 
 /**
- * Dynamically import an optional feature module (e.g. map adapter).
+ * Dynamically import an optional features module (e.g. map adapter).
  */
 export function importOptionalFeature<T extends OptionalFeatureId>(feature: T) {
   return optionalFeatureImporters[feature]() as Promise<OptionalFeatureModule>;

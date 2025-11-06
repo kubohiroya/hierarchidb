@@ -160,7 +160,7 @@ export const i18nFeature = (featureName: string, enabled: boolean, ...args: unkn
   if (!isDev) return;
   const status = enabled ? '✅' : '❌';
   const statusText = enabled ? t('common.enabled') : t('common.disabled');
-  console.log(`${status} ${t('common.feature')} ${featureName}:`, statusText, ...args);
+  console.log(`${status} ${t('common.features')} ${featureName}:`, statusText, ...args);
 };
 
 // API call logging with i18n

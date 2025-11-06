@@ -117,7 +117,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/basemap-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/basemap-plugin/worker",
+          "specifier": "@hierarchidb/plugins/basemap/worker",
           "source": "plugins/basemap-plugin/src/worker/index.ts"
         },
         "database": {
@@ -238,7 +238,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/folder-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/folder-plugin/worker",
+          "specifier": "@hierarchidb/plugins/folder/worker",
           "source": "plugins/folder-plugin/src/worker/index.ts"
         },
         "icon": {
@@ -342,7 +342,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/linker-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/linker-plugin/worker",
+          "specifier": "@hierarchidb/plugins/linker/worker",
           "source": "plugins/linker-plugin/src/worker/index.ts"
         },
         "common": {
@@ -466,7 +466,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/location-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/location-plugin/worker",
+          "specifier": "@hierarchidb/plugins/location/worker",
           "source": "plugins/location-plugin/src/worker/index.ts"
         },
         "icon": {
@@ -570,7 +570,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/resolver-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/resolver-plugin/worker",
+          "specifier": "@hierarchidb/plugins/resolver/worker",
           "source": "plugins/resolver-plugin/src/worker/index.ts"
         },
         "database": {
@@ -691,7 +691,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/route-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/route-plugin/worker",
+          "specifier": "@hierarchidb/plugins/route/worker",
           "source": "plugins/route-plugin/src/worker/index.ts"
         },
         "database": {
@@ -858,7 +858,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/shape-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/shape-plugin/worker",
+          "specifier": "@hierarchidb/plugins/shape/worker",
           "source": "plugins/shape-plugin/src/worker/index.ts"
         },
         "icon": {
@@ -987,7 +987,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/spreadsheet-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/spreadsheet-plugin/worker",
+          "specifier": "@hierarchidb/plugins/spreadsheet/worker",
           "source": "plugins/spreadsheet-plugin/src/worker/index.ts"
         },
         "database": {
@@ -1108,7 +1108,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/styler-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/styler-plugin/worker",
+          "specifier": "@hierarchidb/plugins/styler/worker",
           "source": "plugins/styler-plugin/src/worker/index.ts"
         },
         "icon": {
@@ -1202,7 +1202,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "source": "plugins/timeline-plugin/src/ui/index.ts"
         },
         "worker": {
-          "specifier": "@hierarchidb/timeline-plugin/worker",
+          "specifier": "@hierarchidb/plugins/timeline/worker",
           "source": "plugins/timeline-plugin/src/worker/index.ts"
         },
         "common": {

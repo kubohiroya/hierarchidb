@@ -39,7 +39,7 @@ export interface Env {
   // Cloudflare KV
   AUTH_KV?: KVNamespace;
 
-  // Turnstile / feature toggles
+  // Turnstile / features toggles
   TURNSTILE_SECRET_KEY?: string;
   SKIP_TURNSTILE?: string;
 

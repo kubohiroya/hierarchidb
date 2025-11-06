@@ -42,7 +42,7 @@
   ```js
   // dep-fence.config.mjs
   export const policies = [
-    { rule: 'maplibre-allowlist', options: { allow: ['@hierarchidb/ui-map', '@hierarchidb/feature-map-adapter'] }, severity: 'ERROR' },
+    { rule: 'maplibre-allowlist', options: { allow: ['@hierarchidb/ui-map', '@hierarchidb/features-map-adapter'] }, severity: 'ERROR' },
     // ...
   ];
   ```
@@ -91,7 +91,7 @@
 - このリポでは、以下のように `dep-fence.config.mjs` で統合運用しています：
   ```js
   export const policyOptions = {
-    mapLibreAllowedPackages: ['@hierarchidb/ui-map','@hierarchidb/feature-map-adapter'],
+    mapLibreAllowedPackages: ['@hierarchidb/ui-map','@hierarchidb/features-map-adapter'],
     uiPeerLibs: ['react','react-dom','@mui/material','@emotion/react','@emotion/styled'],
   };
   // 実際の dep-fence では policies 配列に個別ルールとして追加する想定です。

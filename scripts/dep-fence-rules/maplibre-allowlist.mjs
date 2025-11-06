@@ -9,7 +9,7 @@
  *
  * Example wiring (conceptual):
  *   import { maplibreAllowlist } from 'dep-fence-rules/maplibre-allowlist';
- *   policies.push(maplibreAllowlist({ allow: ['@scope/ui-map', '@scope/feature-map-adapter'] }));
+ *   policies.push(maplibreAllowlist({ allow: ['@scope/ui-map', '@scope/features-map-adapter'] }));
  */
 
 export const id = 'maplibre-allowlist';

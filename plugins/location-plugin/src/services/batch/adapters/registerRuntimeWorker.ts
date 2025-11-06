@@ -1,6 +1,6 @@
 /**
  * @file registerRuntimeWorker.ts
- * @description Scaffolding for runtime worker registration (feature-flagged, no-op safe)
+ * @description Scaffolding for runtime worker registration (features-flagged, no-op safe)
  */
 
 import { readRuntimeEnvValue } from '@hierarchidb/util';

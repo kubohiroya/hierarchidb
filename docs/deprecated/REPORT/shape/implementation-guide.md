@@ -125,7 +125,7 @@ export class SimplifyWorker2 {
     // 1. Convert features to TopoJSON
     // 2. Apply topology-preserving simplification
     // 3. Resolve shared boundaries
-    // 4. Generate optimized feature buffers
+    // 4. Generate optimized features buffers
   }
 }
 ```

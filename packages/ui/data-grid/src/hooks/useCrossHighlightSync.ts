@@ -64,7 +64,7 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
         const fid = toFeatureId(info?.object?.id);
         if (fid != null) {
           CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
-          CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'feature', id: fid, data: info.object?.properties });
+          CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'features', id: fid, data: info.object?.properties });
         } else {
           CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set());
           CrossViewStyles.emitBlur(datasetId);
@@ -89,7 +89,7 @@ export function useCrossHighlightSync({ datasetId, withDeckAccessors = true }: U
         return;
       }
       CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set<Id>([fid]));
-      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'feature', id: fid, data: f.properties });
+      CrossViewStyles.emitFocus(datasetId, { datasetId, source: 'features', id: fid, data: f.properties });
       CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId);
     };
     const onLeave = () => { CrossViewStyles.setState(datasetId, 'features', 'hovered', new Set()); CrossViewStyles.emitBlur(datasetId); CrossViewStyles.applyMapLibreFeatureState(datasetId, map, sourceId); };

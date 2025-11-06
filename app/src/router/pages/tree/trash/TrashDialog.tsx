@@ -49,7 +49,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import type { LoadTreeReturn } from '~/loader.js';
 import { loadTree } from '~/loader.js';
-import { WorkerAPIClient } from '../../../../WorkerAPIClient.ts';
+import { WorkerAPIClient } from '~/worker-runtime/WorkerAPIClient.ts';
 import { buildTrashBreadcrumbs } from '../trash/buildTrashBreadcrumbs.js';
 import { buildTrashTreeData } from '../trash/buildTrashTreeData.js';
 import { getTrashDisplayName } from '../trash/getTrashDisplayName.js';

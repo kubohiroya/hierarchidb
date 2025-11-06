@@ -1,17 +1,13 @@
-import { useMemo } from 'react';
-import { useWorkerState } from './useWorkerStateStore.js';
-import type { WorkerClientProxy, WorkerRuntimeState } from '~/worker-runtime/WorkerClientProxy.js';
+import { useEffect, useMemo, useState } from 'react';
 import { createWorkerClientProxy } from '~/worker-runtime/WorkerClientProxy.js';
+import { WorkerRuntimeHook } from '~/hooks/WorkerRuntimeHook.ts';
 
-export type WorkerRuntimeHook = {
-  proxy: WorkerClientProxy;
-  state: WorkerRuntimeState;
-  error: Error | null;
-};
+import {
+  getWorkerSnapshot, subscribeWorkerState, WorkerStateSnapshot } from '~/worker-runtime/WorkerStateStore.ts';
 
 export function useWorkerRuntimeProxy(): WorkerRuntimeHook {
   const proxy = useMemo(() => createWorkerClientProxy(), []);
-  const snapshot = useWorkerState();
-
+  const [snapshot, setSnapshot] = useState<WorkerStateSnapshot>(() => getWorkerSnapshot());
+  useEffect(() => subscribeWorkerState(setSnapshot), []);
   return { proxy, state: snapshot.state, error: snapshot.error };
 }

@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTranslation } from '@hierarchidb/ui-shell/ui-i18n';
 
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
@@ -48,6 +49,11 @@ import {
 } from '../worker-runtime/workerApiClientLoader.js';
 import { useOptionalBootProgress } from './BootProgressProvider.js';
 import { WorkerClientProxy, WorkerInitializationProgress } from '~/worker-runtime/WorkerClientProxy.ts';
+import {
+  getWorkerInitCompleteMessage,
+  getWorkerInitFallbackMessage,
+  getWorkerInitStartMessage,
+} from '~/i18n/workerInitMessages.js';
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
@@ -130,7 +136,7 @@ const fallbackWorkerContextValue: WorkerContextValue = {
   isInitialized: false,
   isConnected: false,
   initProgress: 0,
-  initMessage: 'Worker not initialized',
+  initMessage: getWorkerInitFallbackMessage(),
   error: new Error('WorkerProvider context missing'),
   initialize: async () => {
     if (typeof console !== 'undefined') {
@@ -273,38 +279,49 @@ function WorkerClientGate({
   return <>{children}</>;
 }
 
-function InitializingOverlay({ progress, message }: { progress: number; message: string }) {
+function InitializingOverlay({
+  progress,
+  message,
+}: {
+  progress: number;
+  message?: string | null;
+}) {
+  const { t } = useTranslation();
   const clamped = Math.max(0, Math.min(100, Math.round(progress)));
+  const resolvedMessage = message?.trim().length
+    ? message
+    : t('workerInit.progressFallback');
   return (
     <div style={overlayContainerStyle}>
       <div style={overlayCardStyle}>
-        <div style={overlayHeadingStyle}>Setting up worker…</div>
+        <div style={overlayHeadingStyle}>{t('workerInit.heading')}</div>
         <div style={progressTrackStyle}>
           <div style={progressBarStyle(clamped)} />
         </div>
-        <div style={overlayBodyStyle}>{message || 'Worker initializing'}</div>
-        <div style={overlayCaptionStyle}>{clamped}% Complete</div>
+        <div style={overlayBodyStyle}>{resolvedMessage}</div>
+        <div style={overlayCaptionStyle}>{t('workerInit.progressLabel', { value: clamped })}</div>
       </div>
     </div>
   );
 }
 
 function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <div style={overlayContainerStyle}>
       <div style={overlayCardStyle}>
-        <div style={overlayHeadingStyle}>Worker initialization error</div>
-        <div style={overlayBodyStyle}>{error.message || 'Unknown error'}</div>
+        <div style={overlayHeadingStyle}>{t('workerInit.error.title')}</div>
+        <div style={overlayBodyStyle}>{error.message || t('workerInit.error.unknown')}</div>
         <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
           <button type="button" style={buttonStyle} onClick={onRetry}>
-            Retry
+            {t('workerInit.error.actions.retry')}
           </button>
           <button
             type="button"
             style={secondaryButtonStyle}
             onClick={() => window.location.reload()}
           >
-            Reload
+            {t('workerInit.error.actions.reload')}
           </button>
         </div>
       </div>
@@ -318,13 +335,14 @@ export const WorkerProvider = ({
   fallback = null,
 }: WorkerProviderProps) => {
   const bootProgress = useBootProgressSafe();
+  const { t } = useTranslation();
   const { proxy, state: proxyState, error: proxyError } = useWorkerRuntimeProxy();
   const initialProgress = proxy.getProgress();
   const [status, setStatus] = useState<WorkerStatusState>(() => ({
     client: proxy.getCachedClient(),
     isInitialized: proxyState === 'ready',
     initProgress: initialProgress.progress,
-    initMessage: initialProgress.message,
+    initMessage: initialProgress.message ?? getWorkerInitStartMessage(),
     error: proxyError,
   }));
   const initChannelRef = useRef<WorkerInitializationChannel | null>(null);
@@ -335,20 +353,21 @@ export const WorkerProvider = ({
       client: null,
       isInitialized: false,
       initProgress: 0,
-      initMessage: 'Worker初期化を開始しています...',
+      initMessage: getWorkerInitStartMessage(),
       error: null,
     });
   }, []);
 
   useEffect(() => {
     const unsubscribe = proxy.subscribeProgress((detail: WorkerInitializationProgress) => {
+      const progressMessage = detail.message ?? getWorkerInitFallbackMessage();
       setStatus((prev) => ({
         ...prev,
         initProgress: detail.progress,
-        initMessage: detail.message,
+        initMessage: progressMessage,
       }));
       console.log('[WorkerProvider] progress update', detail);
-      bootProgress?.setStepProgress('Worker', detail.progress, detail.message);
+      bootProgress?.setStepProgress('Worker', detail.progress, progressMessage);
     });
     return unsubscribe;
   }, [proxy, bootProgress]);
@@ -365,7 +384,7 @@ export const WorkerProvider = ({
             client,
             isInitialized: true,
             initProgress: 100,
-            initMessage: 'Worker初期化完了',
+            initMessage: getWorkerInitCompleteMessage(),
             error: proxyError ?? null,
           };
           changed = true;
@@ -375,7 +394,7 @@ export const WorkerProvider = ({
           ...prev,
           isInitialized: false,
           initProgress: 0,
-          initMessage: 'Worker初期化を開始しています...',
+          initMessage: getWorkerInitStartMessage(),
         };
         changed = true;
       }
@@ -403,7 +422,7 @@ export const WorkerProvider = ({
         client,
         isInitialized: true,
         initProgress: 100,
-        initMessage: 'Worker初期化完了',
+        initMessage: getWorkerInitCompleteMessage(),
         error: null,
       });
       console.log('[WorkerProvider] finalizeInitialized complete');
@@ -421,6 +440,7 @@ export const WorkerProvider = ({
       }
     }
     initCompleted = true;
+    const readyLabel = t('workerInit.status.ready');
     try {
       if (typeof window !== 'undefined') {
         (window as BootWindow).__HDB_INIT_COMPLETE__ = true;
@@ -428,22 +448,23 @@ export const WorkerProvider = ({
     } catch (error) {
       logWorkerProviderWarning('Failed to set __HDB_INIT_COMPLETE__ flag', error);
     }
-    bootProgress?.setStepProgress('Worker', 100, 'Worker ready');
-    bootProgress?.markStepDone('Worker', 'Worker ready');
+    bootProgress?.setStepProgress('Worker', 100, readyLabel);
+    bootProgress?.markStepDone('Worker', readyLabel);
     await finalizeInitialized();
-  }, [bootProgress, finalizeInitialized]);
+  }, [bootProgress, finalizeInitialized, t]);
 
   const runInitialization = useCallback(async () => {
     bootLog('WorkerProvider initialize() start');
     latestProgressRef.current = 0;
+    const initializingLabel = t('workerInit.progressFallback');
     setStatus((prev) => ({
       ...prev,
       error: null,
       initProgress: 0,
-      initMessage: 'Worker初期化を開始しています...',
+      initMessage: getWorkerInitStartMessage(),
       isInitialized: false,
     }));
-    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+    bootProgress?.setStepProgress('Worker', 0, initializingLabel);
 
     try {
       if (typeof window !== 'undefined') {
@@ -468,9 +489,10 @@ export const WorkerProvider = ({
       const normalized = normalizeError(error);
       console.error('[WorkerProvider] ensureInitialized failed', normalized);
       setStatus((prev) => ({ ...prev, error: normalized, isInitialized: false }));
-      bootProgress?.setStepProgress('Worker', latestProgressRef.current, normalized.message);
+      const errorLabel = normalized.message || t('workerInit.error.unknown');
+      bootProgress?.setStepProgress('Worker', latestProgressRef.current, errorLabel);
     }
-  }, [bootProgress, markComplete, proxy]);
+  }, [bootProgress, markComplete, proxy, t]);
 
   const retryInitialization = useCallback(() => {
     bootLog('WorkerProvider retry requested');
@@ -479,9 +501,10 @@ export const WorkerProvider = ({
     initStarted = false;
     latestProgressRef.current = 0;
     resetState();
-    bootProgress?.setStepProgress('Worker', 0, 'Worker initializing');
+    const initializingLabel = t('workerInit.progressFallback');
+    bootProgress?.setStepProgress('Worker', 0, initializingLabel);
     void runInitialization();
-  }, [bootProgress, resetState, runInitialization]);
+  }, [bootProgress, resetState, runInitialization, t]);
 
   const getAPI = useCallback((): Remote<WorkerAPI> => {
     if (!status.client) {
@@ -624,8 +647,4 @@ export const useWorker = (): WorkerContextValue => {
     return fallbackWorkerContextValue;
   }
   return context;
-};
-
-export const useWorkerClient = (): WorkerContextValue => {
-  return useWorker();
 };

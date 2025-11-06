@@ -72,7 +72,7 @@
 
 ### SHOULD（入れるべき）
 - `dependencies`: `@hierarchidb/util`（必須ユーティリティ）
-- 必要に応じて `@hierarchidb/feature/*`（例: `@hierarchidb/table-metadata`, `@hierarchidb/download`, `@hierarchidb/tabular`）
+- 必要に応じて `@hierarchidb/features/*`（例: `@hierarchidb/table-metadata`, `@hierarchidb/download`, `@hierarchidb/tabular`）
 
 ### SHOULD NOT（入れるべきではない）
 - `dependencies` に peer にすべきライブラリ（React/MUI/Dexie/i18n/Map）

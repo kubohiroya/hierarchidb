@@ -20,7 +20,7 @@ packages:
   - packages/ui-shell
   - packages/feature-core
   - packages/backend/*
-  - packages/feature/*
+  - packages/features/*
   - packages/plugin-runtime-services
   - packages/plugin-ui-sdk
   - packages/plugin-types

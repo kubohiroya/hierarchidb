@@ -54,7 +54,7 @@ export default defineConfig({
       '@hierarchidb/plugin-runtime-services': entityServiceEntry,
       '@hierarchidb/download': path.resolve(
         __dirname,
-        '../../packages/feature/download/src/index.ts',
+        '../../packages/features/download/src/index.ts',
       ),
       '~': path.resolve(__dirname, './src'),
       // App client hook is now injected via registerWorkerClientHook in tests

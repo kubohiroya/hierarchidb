@@ -9,6 +9,26 @@
     "prefetch": "サービスの事前接続が完了しました。{{time}}",
     "prefetchList": "サービスの事前接続が完了: {{list}}"
   },
+  "workerInit": {
+    "heading": "Worker をセットアップしています…",
+    "progressFallback": "Worker を初期化しています",
+    "progressLabel": "{{value}}% 完了",
+    "messages": {
+      "start": "Worker 初期化を開始しています…",
+      "complete": "Worker の初期化が完了しました"
+    },
+    "error": {
+      "title": "Worker 初期化エラー",
+      "unknown": "不明なエラー",
+      "actions": {
+        "retry": "再試行",
+        "reload": "再読み込み"
+      }
+    },
+    "status": {
+      "ready": "Worker の準備が整いました"
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {

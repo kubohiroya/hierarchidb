@@ -14,10 +14,10 @@
         "plugins/*-plugin/src/index.ts"
       ],
       "@hierarchidb/auth-recovery": [
-        "packages/feature/auth-recovery/dist/index.js"
+        "packages/features/auth-recovery/dist/index.js"
       ],
       "@hierarchidb/auth-recovery/*": [
-        "packages/feature/auth-recovery/dist/*"
+        "packages/features/auth-recovery/dist/*"
       ],
       "@hierarchidb/basemap-plugin": [
         "plugins/basemap-plugin/src/index.ts"
@@ -26,7 +26,7 @@
         "plugins/basemap-plugin/src/*"
       ],
       "@hierarchidb/batch": [
-        "packages/feature/batch/dist/index.js"
+        "packages/features/batch/dist/index.js"
       ],
       "@hierarchidb/batch-runtime-services": [
         "packages/batch-runtime-services/dist/index.js"
@@ -35,7 +35,7 @@
         "packages/batch-runtime-services/dist/*"
       ],
       "@hierarchidb/batch/*": [
-        "packages/feature/batch/dist/*"
+        "packages/features/batch/dist/*"
       ],
       "@hierarchidb/bff": [
         "packages/backend/bff/src/index.ts"
@@ -68,10 +68,10 @@
         "packages/components/src/*"
       ],
       "@hierarchidb/compute": [
-        "packages/feature/compute/dist/index.js"
+        "packages/features/compute/dist/index.js"
       ],
       "@hierarchidb/compute/*": [
-        "packages/feature/compute/dist/*"
+        "packages/features/compute/dist/*"
       ],
       "@hierarchidb/cors-proxy": [
         "packages/backend/cors-proxy/src/index.mts"
@@ -80,22 +80,22 @@
         "packages/backend/cors-proxy/src/*"
       ],
       "@hierarchidb/download": [
-        "packages/feature/download/dist/index.js"
+        "packages/features/download/dist/index.js"
       ],
       "@hierarchidb/download/*": [
-        "packages/feature/download/dist/*"
+        "packages/features/download/dist/*"
       ],
       "@hierarchidb/feature-registry": [
-        "packages/feature/feature-registry/dist/index.js"
+        "packages/features/feature-registry/dist/index.js"
       ],
       "@hierarchidb/feature-registry/*": [
-        "packages/feature/feature-registry/dist/*"
+        "packages/features/feature-registry/dist/*"
       ],
       "@hierarchidb/fetch-save-metadata": [
-        "packages/feature/fetch-save-metadata/dist/index.js"
+        "packages/features/fetch-save-metadata/dist/index.js"
       ],
       "@hierarchidb/fetch-save-metadata/*": [
-        "packages/feature/fetch-save-metadata/dist/*"
+        "packages/features/fetch-save-metadata/dist/*"
       ],
       "@hierarchidb/folder-plugin": [
         "plugins/folder-plugin/src/index.ts"
@@ -104,10 +104,10 @@
         "plugins/folder-plugin/src/*"
       ],
       "@hierarchidb/import-export": [
-        "packages/feature/import-export/dist/index.js"
+        "packages/features/import-export/dist/index.js"
       ],
       "@hierarchidb/import-export/*": [
-        "packages/feature/import-export/dist/*"
+        "packages/features/import-export/dist/*"
       ],
       "@hierarchidb/linker-plugin": [
         "plugins/linker-plugin/src/index.ts"
@@ -122,16 +122,16 @@
         "plugins/location-plugin/src/*"
       ],
       "@hierarchidb/map-adapter": [
-        "packages/feature/map-adapter/src/index.ts"
+        "packages/features/map-adapter/src/index.ts"
       ],
       "@hierarchidb/map-adapter/*": [
-        "packages/feature/map-adapter/src/*"
+        "packages/features/map-adapter/src/*"
       ],
       "@hierarchidb/map-source": [
-        "packages/feature/map-source/dist/index.js"
+        "packages/features/map-source/dist/index.js"
       ],
       "@hierarchidb/map-source/*": [
-        "packages/feature/map-source/dist/*"
+        "packages/features/map-source/dist/*"
       ],
       "@hierarchidb/memory-usage": [
         "packages/ui/memory-usage/src/index.ts"
@@ -188,16 +188,16 @@
         "plugins/route-plugin/src/*"
       ],
       "@hierarchidb/route-resolver": [
-        "packages/feature/route-resolver/dist/index.js"
+        "packages/features/route-resolver/dist/index.js"
       ],
       "@hierarchidb/route-resolver/*": [
-        "packages/feature/route-resolver/dist/*"
+        "packages/features/route-resolver/dist/*"
       ],
       "@hierarchidb/route-searoute": [
-        "packages/feature/route-searoute/dist/index.js"
+        "packages/features/route-searoute/dist/index.js"
       ],
       "@hierarchidb/route-searoute/*": [
-        "packages/feature/route-searoute/dist/*"
+        "packages/features/route-searoute/dist/*"
       ],
       "@hierarchidb/runtime-client": [
         "packages/runtime/client/src/index.ts"
@@ -248,40 +248,40 @@
         "packages/feature-core/src/*"
       ],
       "@hierarchidb/table-metadata": [
-        "packages/feature/table-metadata/src/index.ts"
+        "packages/features/table-metadata/src/index.ts"
       ],
       "@hierarchidb/table-metadata/*": [
-        "packages/feature/table-metadata/src/*"
+        "packages/features/table-metadata/src/*"
       ],
       "@hierarchidb/tabular": [
-        "packages/feature/tabular/src/index.ts"
+        "packages/features/tabular/src/index.ts"
       ],
       "@hierarchidb/tabular-source": [
-        "packages/feature/tabular-source/dist/index.js"
+        "packages/features/tabular-source/dist/index.js"
       ],
       "@hierarchidb/tabular-source-xlsx": [
-        "packages/feature/tabular-source-xlsx/src/index.ts"
+        "packages/features/tabular-source-xlsx/src/index.ts"
       ],
       "@hierarchidb/tabular-source-xlsx/*": [
-        "packages/feature/tabular-source-xlsx/src/*"
+        "packages/features/tabular-source-xlsx/src/*"
       ],
       "@hierarchidb/tabular-source/*": [
-        "packages/feature/tabular-source/dist/*"
+        "packages/features/tabular-source/dist/*"
       ],
       "@hierarchidb/tabular-store": [
-        "packages/feature/tabular-store/dist/index.js"
+        "packages/features/tabular-store/dist/index.js"
       ],
       "@hierarchidb/tabular-store/*": [
-        "packages/feature/tabular-store/dist/*"
+        "packages/features/tabular-store/dist/*"
       ],
       "@hierarchidb/tabular/*": [
-        "packages/feature/tabular/src/*"
+        "packages/features/tabular/src/*"
       ],
       "@hierarchidb/tag": [
-        "packages/feature/tag/dist/index.js"
+        "packages/features/tag/dist/index.js"
       ],
       "@hierarchidb/tag/*": [
-        "packages/feature/tag/dist/*"
+        "packages/features/tag/dist/*"
       ],
       "@hierarchidb/timeline-plugin": [
         "plugins/timeline-plugin/src/index.ts"

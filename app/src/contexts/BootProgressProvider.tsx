@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { getWorkerInitCompleteMessage } from '~/i18n/workerInitMessages.js';
 
 type StepName = 'Config' | 'Theme' | 'I18n' | 'Auth' | 'UI' | 'Worker';
 
@@ -60,7 +61,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (bootWindow?.__HDB_INIT_COMPLETE__) {
       base.Worker.progress = 100;
       base.Worker.done = true;
-      base.Worker.message = 'Worker ready';
+      base.Worker.message = getWorkerInitCompleteMessage();
     }
     return base;
   });
@@ -142,7 +143,7 @@ export const BootProgressProvider: React.FC<{ children: React.ReactNode }> = ({ 
           ...prev.Worker,
           progress: 100,
           done: true,
-          message: prev.Worker.message || 'Worker ready',
+          message: prev.Worker.message || getWorkerInitCompleteMessage(),
         };
 
         return next;

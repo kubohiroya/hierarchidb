@@ -42,7 +42,7 @@ export interface WorkerProviderProps<T> {
  * Create a dual-layer Worker provider for a specific Worker type
  */
 export function createWorkerProvider<T>() {
-  const { WorkerClientProvider, useWorkerClient } = createWorkerClientProvider<T>();
+  const { WorkerClientProvider, useWorker } = createWorkerClientProvider<T>();
 
   const WorkerProvider: React.FC<WorkerProviderProps<T>> = ({
     createWorker,
@@ -86,7 +86,7 @@ export function createWorkerProvider<T>() {
 
   return {
     DualLayerWorkerProvider: WorkerProvider,
-    useWorkerClient,
+    useWorker,
   };
 }
 
@@ -102,7 +102,7 @@ export function createWorkerProvider<T>() {
  * }
  *
  * // Create provider and hook
- * const { DualLayerWorkerProvider, useWorkerClient } = createDualLayerWorkerProvider<MyWorkerAPI>();
+ * const { DualLayerWorkerProvider, useWorker } = createDualLayerWorkerProvider<MyWorkerAPI>();
  *
  * // Use in your app
  * function App() {
@@ -127,7 +127,7 @@ export function createWorkerProvider<T>() {
  *
  * // Use in components
  * function MyComponent() {
- *   const { client, isConnected } = useWorkerClient();
+ *   const { client, isConnected } = useWorker();
  *
  *   // Use the fully initialized client
  *   const handleClick = async () => {

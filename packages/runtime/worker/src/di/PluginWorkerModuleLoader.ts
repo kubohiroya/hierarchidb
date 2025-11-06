@@ -57,7 +57,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     if (!this.cache.has(nodeType)) {
       const directLoader = this.loaderMap?.[nodeType];
       if (directLoader) {
-        const spec = this.specMap[nodeType];
+        const spec = normalizeWorkerSpecifier(nodeType, this.specMap[nodeType]);
         const loaderPromise = (async () => {
           try {
             return await directLoader();
@@ -70,7 +70,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
         })();
         this.cache.set(nodeType, loaderPromise as Promise<unknown>);
       } else {
-        const spec = this.specMap[nodeType];
+        const spec = normalizeWorkerSpecifier(nodeType, this.specMap[nodeType]);
         if (!spec) {
           return Promise.reject(
             new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`)
@@ -162,4 +162,14 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
       throw primaryError;
     }
   }
+}
+const createPluginWorkerSpecifier = (nodeType: string) =>
+  `@hierarchidb/plugins/${nodeType}/worker`;
+
+function normalizeWorkerSpecifier(nodeType: string, specifier: string | undefined): string {
+  if (!specifier) return createPluginWorkerSpecifier(nodeType);
+  if (specifier.startsWith('@hierarchidb/feature-core/')) {
+    return createPluginWorkerSpecifier(nodeType);
+  }
+  return specifier;
 }

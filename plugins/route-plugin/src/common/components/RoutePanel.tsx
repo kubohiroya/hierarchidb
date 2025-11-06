@@ -322,7 +322,7 @@ export const RoutePanel: React.FC<RoutePanelProps> = ({
         </CardActions>
       </Card>
 
-      {/* Batch Launch (feature flag) */}
+      {/* Batch Launch (features flag) */}
       {isFlagEnabled('ROUTE_BATCH_ENABLED', true) && (
         <Card sx={{ mt: 2 }}>
           <CardContent>

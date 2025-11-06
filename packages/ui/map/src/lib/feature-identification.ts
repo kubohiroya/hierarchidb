@@ -72,7 +72,7 @@ const pickQueriedFeatures = (
     const result = map.queryRenderedFeatures(geometry, options);
     return Array.isArray(result) ? result : undefined;
   } catch (error) {
-    console.warn('Map feature identification failed to query rendered features.', error);
+    console.warn('Map features identification failed to query rendered features.', error);
     return undefined;
   }
 };

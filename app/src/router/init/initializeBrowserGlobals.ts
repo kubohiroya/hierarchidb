@@ -6,7 +6,7 @@ import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-shell/ui-icon
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType } from 'react';
 import { pluginIconLoaders, pluginRegistry } from '~/plugin-registry/index.ts';
-import { useWorkerClient } from '../../contexts/WorkerProvider.js';
+import { useWorker } from '../../contexts/WorkerProvider.js';
 import { getInstalledPlugins } from '../../services/plugin-registry.ts';
 import { loadAllUIPlugins } from '../../services/ui-plugin-loader.ts';
 import { bootLog } from '../../utils/bootLog.ts';
@@ -41,7 +41,7 @@ export function initializeBrowserGlobals(): void {
   if (initialized) return;
   initialized = true;
 
-  registerWorkerClientHook(useWorkerClient);
+  registerWorkerClientHook(useWorker);
 
   const localBuildTime = (() => {
     try {
@@ -78,7 +78,7 @@ export function initializeBrowserGlobals(): void {
     /* swallow to avoid unhandled rejection */
   });
 
-  void import('../../WorkerAPIClient.ts').catch((error) => {
+  void import('../../worker-runtime/WorkerAPIClient.ts').catch((error) => {
     console.error('[browser-globals] Failed to load WorkerAPIClient module:', error);
   });
 

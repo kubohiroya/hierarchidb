@@ -119,7 +119,7 @@ export function TabularPreview({ pluginId, tableId }: {
         const filterArgs: ColumnFilter[] = filters.map(({ column, op, value }) => ({ column, op, value }));
         const data = await svc.query(tableId, filterArgs, 1000);
         if (!cancelled) setRows(data);
-        // Auto-detect row→feature mapping when possible
+        // Auto-detect row→features mapping when possible
         try {
           const pairs: Array<{ rowId: Id; featureIds: Id[] }> = [];
           for (let i = 0; i < Math.min(500, data.length); i++) {
@@ -134,7 +134,7 @@ export function TabularPreview({ pluginId, tableId }: {
           }
           if (pairs.length > 0) CrossViewStyles.setMapping(datasetId, pairs);
         } catch (error) {
-          logTabularPreviewWarning('Failed to set row to feature mapping', error);
+          logTabularPreviewWarning('Failed to set row to features mapping', error);
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.message || String(e));

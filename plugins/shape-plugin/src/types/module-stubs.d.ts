@@ -9,5 +9,5 @@ declare module '@hierarchidb/runtime-shared-batch-processor' {
 }
 
 declare module '@hierarchidb/compute' {
-  export * from '../../../../packages/feature/compute/src/index';
+  export * from '../../../../packages/features/compute/src/index';
 }

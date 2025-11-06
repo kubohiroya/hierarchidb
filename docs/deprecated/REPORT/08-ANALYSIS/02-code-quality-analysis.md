@@ -405,7 +405,7 @@ const technicalDebt = {
   ],
   
   estimated_total_effort: '4 weeks',
-  recommended_approach: 'Incremental refactoring during feature work'
+  recommended_approach: 'Incremental refactoring during features work'
 };
 ```
 

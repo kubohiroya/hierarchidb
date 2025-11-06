@@ -494,7 +494,7 @@ describe('ShapesPluginAPI', () => {
     });
   });
 
-  describe('feature queries', () => {
+  describe('features queries', () => {
     it('should search features', async () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
@@ -523,7 +523,7 @@ describe('ShapesPluginAPI', () => {
       expect(Array.isArray(features)).toBe(true);
     });
 
-    it('should get feature by ID', async () => {
+    it('should get features by ID', async () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
       const mockFeature = {

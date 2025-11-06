@@ -273,7 +273,7 @@ describe('ShapesService', () => {
     });
   });
 
-  describe('feature management', () => {
+  describe('features management', () => {
     it('should search features by name', async () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
@@ -333,7 +333,7 @@ describe('ShapesService', () => {
       expect(features).toHaveLength(1);
     });
 
-    it('should get feature by ID', async () => {
+    it('should get features by ID', async () => {
       // Arrange
       const nodeId: NodeId = 'node-123' as NodeId;
       const featureId = 1;

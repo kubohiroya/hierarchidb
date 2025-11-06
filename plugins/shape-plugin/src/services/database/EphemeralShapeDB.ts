@@ -8,7 +8,7 @@ import { getDBName } from '@hierarchidb/util';
 import type { NodeId } from '@hierarchidb/common-types';
 
 /**
- * Raw feature buffer from download stage
+ * Raw features buffer from download stage
  */
 export interface RawFeatureBuffer {
   id: string;
@@ -23,7 +23,7 @@ export interface RawFeatureBuffer {
 }
 
 /**
- * Simplified feature buffer from simplify stages
+ * Simplified features buffer from simplify stages
  */
 export interface SimplifiedFeatureBuffer {
   id: string;

@@ -3302,62 +3302,62 @@
           "text": ".filter((chunk) => !allMetadataIds.includes(chunk.rawFileMetadataId))"
         },
         {
-          "file": "./packages/feature/import-export/src/ImportExportService.ts",
+          "file": "./packages/features/import-export/src/ImportExportService.ts",
           "line": 88,
           "text": "const size = 100; // conservative batch size; callers can chunk earlier if needed"
         },
         {
-          "file": "./packages/feature/tabular-store/src/Indexer.ts",
+          "file": "./packages/features/tabular-store/src/Indexer.ts",
           "line": 63,
           "text": "// Resolve rows by rowIds via chunk mapping"
         },
         {
-          "file": "./packages/feature/tabular/README.md",
+          "file": "./packages/features/tabular/README.md",
           "line": 17,
           "text": "- `ingest(input, storePort, opts)` → orchestrates parse→chunk→store"
         },
         {
-          "file": "./packages/feature/tabular/README.md",
+          "file": "./packages/features/tabular/README.md",
           "line": 23,
           "text": "- `writeChunk(session, chunk)`"
         },
         {
-          "file": "./packages/feature/tabular/src/store.ts",
+          "file": "./packages/features/tabular/src/store.ts",
           "line": 27,
           "text": "writeChunk(session: TabularIngestSession, chunk: TabularChunk): Promise<void>;"
         },
         {
-          "file": "./packages/feature/tabular/src/types.ts",
+          "file": "./packages/features/tabular/src/types.ts",
           "line": 16,
           "text": "index: number; // 0-based chunk index"
         },
         {
-          "file": "./packages/feature/tabular/src/types.ts",
+          "file": "./packages/features/tabular/src/types.ts",
           "line": 30,
           "text": "chunkSize?: number; // target rows per chunk, default 1000"
         },
         {
-          "file": "./packages/feature/tabular/src/TabularService.ts",
+          "file": "./packages/features/tabular/src/TabularService.ts",
           "line": 49,
           "text": "for await (const chunk of parsed) {"
         },
         {
-          "file": "./packages/feature/tabular/src/TabularService.ts",
+          "file": "./packages/features/tabular/src/TabularService.ts",
           "line": 52,
           "text": "await store.writeChunk(session, chunk);"
         },
         {
-          "file": "./packages/feature/tabular/src/TabularService.ts",
+          "file": "./packages/features/tabular/src/TabularService.ts",
           "line": 55,
           "text": "for (const row of chunk.rows) {"
         },
         {
-          "file": "./packages/feature/tabular/src/TabularService.ts",
+          "file": "./packages/features/tabular/src/TabularService.ts",
           "line": 72,
           "text": "await store.writeChunk(session, { rows: transformed, index: chunk.index, hasMore: chunk.hasMore });"
         },
         {
-          "file": "./packages/feature/tabular/src/TabularService.ts",
+          "file": "./packages/features/tabular/src/TabularService.ts",
           "line": 74,
           "text": "totalRows += chunk.rows.length;"
         },

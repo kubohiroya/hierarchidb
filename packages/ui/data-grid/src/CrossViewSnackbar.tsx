@@ -5,10 +5,10 @@ import { CrossViewStyles } from './CrossViewStyles.js';
 export function CrossViewSnackbar({ datasetId, autoHideDuration = 3000, format }: {
   datasetId: string;
   autoHideDuration?: number;
-  format?: (ev: { source: 'row'|'feature'; id: string|number; data?: any }) => { title?: string; message?: string };
+  format?: (ev: { source: 'row'|'features'; id: string|number; data?: any }) => { title?: string; message?: string };
 }) {
   const [open, setOpen] = React.useState(false);
-  const [payload, setPayload] = React.useState<{ source:'row'|'feature'; id:string|number; data?:any }|null>(null);
+  const [payload, setPayload] = React.useState<{ source:'row'|'features'; id:string|number; data?:any }|null>(null);
 
   React.useEffect(() => {
     const unsub = CrossViewStyles.subscribeFocus(datasetId, (ev) => {

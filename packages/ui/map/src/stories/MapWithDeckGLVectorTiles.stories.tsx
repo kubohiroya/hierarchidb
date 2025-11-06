@@ -21,7 +21,7 @@ type PrefectureFeatureProperties = {
 type PrefectureFeature = Feature<Polygon, PrefectureFeatureProperties>;
 
 type HighlightArgs = {
-  /** Highlight feature that matches this id */
+  /** Highlight features that matches this id */
   highlightId?: string;
   /** GeoJSON property key to test */
   matchProperty?: keyof PrefectureFeatureProperties;

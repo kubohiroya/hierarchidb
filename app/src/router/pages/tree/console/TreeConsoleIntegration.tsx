@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
 import { SubscriptionCallback, Subscriptions } from '~/services/SubscriptionServices.ts';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
-import { useWorkerClient } from '~/contexts/WorkerProvider.tsx';
+import { useWorker } from '~/contexts/WorkerProvider.tsx';
 
 
 const logIntegrationWarning = (message: string, error: unknown): void => {
@@ -609,7 +609,7 @@ export const TreeConsoleIntegration: React.FC<TreeConsoleIntegrationProps> = ({
   pageTreeNode,
 }) => {
   // Get the Worker API client from WorkerSingletonProvider
-  const { client: workerClient, isConnected } = useWorkerClient();
+  const { client: workerClient, isConnected } = useWorker();
 
   // Check connection status
   if (!isConnected || !workerClient) {

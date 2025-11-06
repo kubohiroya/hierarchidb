@@ -9,6 +9,7 @@ import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
+import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.ts';
 import {
   collectWorkspacePackages,
   createDevAliasSelection,
@@ -91,7 +92,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/util', src: '../packages/util/src/index.ts', dist: '../packages/util/dist/index.js' },
     { spec: '@hierarchidb/runtime-client', src: '../packages/runtime/client/src/index.ts', dist: '../packages/runtime/client/dist/index.js' },
     { spec: '@hierarchidb/runtime-worker', src: '../packages/runtime/worker/src/index.ts', dist: '../packages/runtime/worker/dist/index.js' },
-    { spec: '@hierarchidb/map-adapter', src: '../packages/feature/map-adapter/src/index.ts', dist: '../packages/feature/map-adapter/dist/index.js' },
+    { spec: '@hierarchidb/map-adapter', src: '../packages/features/map-adapter/src/index.ts', dist: '../packages/features/map-adapter/dist/index.js' },
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
     { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/src/index.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
@@ -105,7 +106,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/shape-plugin', src: '../plugins/shape-plugin/src/index.ts', dist: '../plugins/shape-plugin/dist/index.js' },
     { spec: '@hierarchidb/spreadsheet-plugin', src: '../plugins/spreadsheet-plugin/src/index.ts', dist: '../plugins/spreadsheet-plugin/dist/index.js' },
     { spec: '@hierarchidb/styler-plugin', src: '../plugins/styler-plugin/src/index.ts', dist: '../plugins/styler-plugin/dist/index.js' },
-    { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/feature/tabular-source-xlsx/src/index.ts', dist: '../packages/feature/tabular-source-xlsx/dist/index.js' },
+    { spec: '@hierarchidb/tabular-source-xlsx', src: '../packages/features/tabular-source-xlsx/src/index.ts', dist: '../packages/features/tabular-source-xlsx/dist/index.js' },
     { spec: '@hierarchidb/timeline-plugin', src: '../plugins/timeline-plugin/src/index.ts', dist: '../plugins/timeline-plugin/dist/index.js' },
   ] as const;
 
@@ -160,12 +161,12 @@ function createRuntimeAliasConfig({
       group: 'runtime',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/feature-core/map-adapter', '../packages/feature/map-adapter/src/index.ts', {
-      group: 'feature',
+    registerDevPackage('@hierarchidb/feature-core/map-adapter', '../packages/features/map-adapter/src/index.ts', {
+      group: 'features',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/src/index.ts', {
-      group: 'feature',
+    registerDevPackage('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/src/index.ts', {
+      group: 'features',
       exclude: true,
     });
     registerDevPackage('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/src/index.ts', {
@@ -223,8 +224,8 @@ function createRuntimeAliasConfig({
   } else {
     addAlias('@hierarchidb/feature-core/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
     addAlias('@hierarchidb/feature-core/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/feature-core/map-adapter', '../packages/feature/map-adapter/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/feature/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/feature-core/map-adapter', '../packages/features/map-adapter/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
     addAlias('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
 
     for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
@@ -512,6 +513,7 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       rootDir: repoRoot,
       shouldAlias: (entry) => isDev && shouldUsePluginSource(devAliasSelection, entry.packageName, entry.nodeType),
     }),
+    pluginWorkerVirtualModule(),
     /*
     devHealthPlugin({
       // Ignore virtual/server-only or known peer-provided modules to avoid false positives

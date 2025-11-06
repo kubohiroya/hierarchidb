@@ -26,7 +26,7 @@
     },
     {
       "packageName": "@hierarchidb/download",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/download",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/download",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -34,7 +34,7 @@
     },
     {
       "packageName": "@hierarchidb/feature-registry",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/feature-registry",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/feature-registry",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -42,7 +42,7 @@
     },
     {
       "packageName": "@hierarchidb/map-source",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/map-source",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/map-source",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -50,7 +50,7 @@
     },
     {
       "packageName": "@hierarchidb/route-resolver",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/route-resolver",
       "rule": "peer-in-external",
       "severity": "WARN",
       "message": "peer not in tsup.external:\n- @webgpu/types",
@@ -58,7 +58,7 @@
     },
     {
       "packageName": "@hierarchidb/route-resolver",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/route-resolver",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/route-resolver",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -66,7 +66,7 @@
     },
     {
       "packageName": "@hierarchidb/table-metadata",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/table-metadata",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/table-metadata",
       "rule": "skipLibCheck-not-allowed",
       "severity": "ERROR",
       "message": "skipLibCheck is enabled but not allowed.",
@@ -74,7 +74,7 @@
     },
     {
       "packageName": "@hierarchidb/tabular-store",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/tabular-store",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/tabular-store",
       "rule": "external-in-deps",
       "severity": "WARN",
       "message": "external also in dependencies (consider peer):\n- dexie",
@@ -82,7 +82,7 @@
     },
     {
       "packageName": "@hierarchidb/tabular-xlsx",
-      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/feature/tabular-xlsx",
+      "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/features/tabular-xlsx",
       "rule": "external-in-deps",
       "severity": "WARN",
       "message": "external also in dependencies (consider peer):\n- xlsx",
@@ -141,7 +141,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -165,7 +165,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/folder-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-dialog -> ../../ui/dialog/src/index.ts\n- @hierarchidb/runtime-worker -> ../../runtime-worker/worker/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -213,7 +213,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -229,7 +229,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/project-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/common-type -> ../../common/types/src/index.ts\n- @hierarchidb/base-plugin -> ../../node-type/base-plugin/src/index.ts\n- @hierarchidb/ui-map -> ../../ui/map/src/index.ts\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -269,7 +269,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -277,7 +277,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/resolver-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -301,7 +301,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../feature/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../feature/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -309,7 +309,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/route-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../feature/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../feature/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/runtime-shared-batch-processor -> ../../runtime-shared/batch-processor/src/index.ts\n- @hierarchidb/download -> ../../features/download/src/index.ts\n- @hierarchidb/auth-recovery -> ../../features/auth-recovery/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -373,7 +373,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -389,7 +389,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/node-type/spreadsheet-plugin",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../feature/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../feature/tabular-store/src/index.ts",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/ui-core -> ../../ui/core/src/index.ts\n- @hierarchidb/ui-data-grid -> ../../ui/data-grid/src/index.ts\n- @hierarchidb/table-metadata -> ../../features/table-metadata/src/index.ts\n- @hierarchidb/tabular-store -> ../../features/tabular-store/src/index.ts",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {
@@ -621,7 +621,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../feature/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../feature/tabular/src/*",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../features/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../features/tabular/src/*",
       "because": "公開物はリポジトリ標準のtsconfigを継承し、他パッケージの../srcを直参照しないため。"
     },
     {
@@ -637,7 +637,7 @@
       "packageDir": "/Users/hiroya/WebstormProjects/hierarchidb/packages/runtime-worker/worker",
       "rule": "paths-direct-src",
       "severity": "WARN",
-      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../feature/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../feature/tabular/src/*",
+      "message": "tsconfig paths direct src reference:\n- @hierarchidb/tabular -> ../../features/tabular/src/index.ts\n- @hierarchidb/tabular/* -> ../../features/tabular/src/*",
       "because": "ビルド成果物の安定性のため、公開物では他パッケージの../src直参照を避けるため。"
     },
     {

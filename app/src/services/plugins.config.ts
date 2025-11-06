@@ -136,7 +136,7 @@ function resolveRuntimeMode(): string {
 }
 
 /**
- * Plugin feature flags for conditional loading
+ * Plugin features flags for conditional loading
  */
 export const PLUGIN_FEATURES = {
   // Geographic features
@@ -153,7 +153,7 @@ export const PLUGIN_FEATURES = {
 } as const;
 
 /**
- * Get filtered plugin list based on feature flags
+ * Get filtered plugin list based on features flags
  */
 export function getRequestedPlugins(): NodeType[] {
   const config = getPluginConfig();
@@ -161,7 +161,7 @@ export function getRequestedPlugins(): NodeType[] {
     ? orderNodeTypes(getAllPluginNodeTypes())
     : orderNodeTypes(config.requested);
 
-  // Filter based on feature flags
+  // Filter based on features flags
   if (!PLUGIN_FEATURES.enableGeographic) {
     const exclude = new Set(GEOGRAPHIC_PLUGINS);
     requested = requested.filter((p) => !exclude.has(p));

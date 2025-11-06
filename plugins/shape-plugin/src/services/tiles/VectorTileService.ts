@@ -2,7 +2,7 @@
  * VectorTileService - Manages vector tile generation and serving
  *
  * Handles:
- * - Vector tile generation from feature data
+ * - Vector tile generation from features data
  * - Tile caching and retrieval
  * - Tile metadata management
  * - Spatial indexing for efficient queries

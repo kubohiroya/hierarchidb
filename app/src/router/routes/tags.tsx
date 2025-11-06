@@ -1,4 +1,4 @@
-// import { useWorkerClient } from '../contexts/WorkerProvider.js';
+// import { useWorker } from '../contexts/WorkerProvider.js';
 import type { TagEntity } from '@hierarchidb/feature-core/common-types';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 // import { useNavigate } from 'react-router';
@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { useWorkerClient } from '~/contexts/WorkerProvider.js';
+import { useWorker } from '~/contexts/WorkerProvider.js';
 
 // Meta function for React Router v7
 export function meta() {
@@ -32,7 +32,7 @@ export function meta() {
 
 export default function TagsPage() {
   const navigate = useNavigate();
-  const { client, isConnected } = useWorkerClient();
+  const { client, isConnected } = useWorker();
   const [tags, setTags] = useState<TagEntity[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);

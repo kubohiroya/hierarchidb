@@ -288,7 +288,7 @@ export class LocationBatchManager {
    * Search locations based on configuration
    */
   private async searchLocations(config: LocationSearchConfig): Promise<LocationEntity[]> {
-    // Try Strategy registry first (feature-gated)
+    // Try Strategy registry first (features-gated)
     try {
       const { getLocationStrategy } = await import('./download/registry.js');
       const strategy = getLocationStrategy(config);

@@ -286,7 +286,7 @@ export class VersionDetector {
 ### Feature Flags
 
 ```typescript
-// feature-flags.ts
+// features-flags.ts
 export class FeatureFlags {
   private flags: Map<string, boolean> = new Map();
   

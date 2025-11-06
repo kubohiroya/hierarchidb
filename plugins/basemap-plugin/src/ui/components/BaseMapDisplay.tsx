@@ -53,7 +53,7 @@ export interface BaseMapDisplayProps {
   datasetId?: string;
   /** Optional: bind MapLibre events to these layers for cross-highlight */
   bindLayerIds?: string[];
-  /** Optional: MapLibre source id to apply feature-state updates */
+  /** Optional: MapLibre source id to apply features-state updates */
   bindSourceId?: string;
   /** Optional: show a minimal demo overlay (local GeoJSON) for hover/select showcasing */
   enableDemoOverlay?: boolean;
@@ -208,7 +208,7 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
           // Note: Traffic and transit layers depend on the map style
           // and may not be available in all styles
 
-          // Optional demo overlay: small squares around the map center with feature ids
+          // Optional demo overlay: small squares around the map center with features ids
           if (enableDemoOverlay) {
             const c = {
               lng: entity?.viewport?.center?.[0] ?? 0,
@@ -251,9 +251,9 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
                 paint: {
                   'fill-color': [
                     'case',
-                    ['to-boolean', ['feature-state', 'selected']],
+                    ['to-boolean', ['features-state', 'selected']],
                     '#1976d2',
-                    ['to-boolean', ['feature-state', 'hovered']],
+                    ['to-boolean', ['features-state', 'hovered']],
                     '#64b5f6',
                     '#3f51b5',
                   ],
@@ -269,17 +269,17 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
                 paint: {
                   'line-color': [
                     'case',
-                    ['to-boolean', ['feature-state', 'selected']],
+                    ['to-boolean', ['features-state', 'selected']],
                     '#0d47a1',
-                    ['to-boolean', ['feature-state', 'hovered']],
+                    ['to-boolean', ['features-state', 'hovered']],
                     '#1976d2',
                     '#283593',
                   ],
                   'line-width': [
                     'case',
-                    ['to-boolean', ['feature-state', 'selected']],
+                    ['to-boolean', ['features-state', 'selected']],
                     3,
-                    ['to-boolean', ['feature-state', 'hovered']],
+                    ['to-boolean', ['features-state', 'hovered']],
                     2.5,
                     2,
                   ],

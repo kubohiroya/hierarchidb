@@ -30,7 +30,7 @@ export interface LocationPointProperties<
   gid0: string;
   gid1?: string;
   gid2?: string;
-  /** Additional attributes mirrored to vector-tile feature properties. */
+  /** Additional attributes mirrored to vector-tile features properties. */
   payload: TPayload;
   /** Acquisition metadata. */
   source?: LocationPointSource;

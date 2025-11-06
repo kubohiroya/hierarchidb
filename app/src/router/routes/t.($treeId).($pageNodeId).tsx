@@ -23,7 +23,7 @@ import type { MouseEvent, ReactNode } from 'react';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import AppLogoIcon from '~/components/AppLogoIcon.js';
 import { useOptionalBootProgress } from '~/contexts/BootProgressProvider.js';
-import { useWorkerClient } from '~/contexts/WorkerProvider.js';
+import { useWorker } from '~/contexts/WorkerProvider.js';
 import type { LoadPageNodeReturn } from '../loaders/treeLoaders.js';
 
 const LazyTreeConsoleIntegration = lazy(async () => {
@@ -44,7 +44,7 @@ export default function TLayout() {
 
 export function TreeLayoutBody({ data }: TreeLayoutBodyProps) {
   const navigate = useNavigate();
-  const { client: workerClient } = useWorkerClient();
+  const { client: workerClient } = useWorker();
   const [trees, setTrees] = useState<Tree[]>([]);
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(data.tree?.id || null);
   const bootProgress = useOptionalBootProgress();

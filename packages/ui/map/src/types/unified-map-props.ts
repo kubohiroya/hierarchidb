@@ -118,7 +118,7 @@ export interface MapFeatureIdentifyConfig {
   /** MapLibre layer IDs to query for features */
   layerIds?: string[];
 
-  /** Radius in screen pixels used for feature querying (defaults to 5px) */
+  /** Radius in screen pixels used for features querying (defaults to 5px) */
   radius?: number;
 
   /** Optional MapLibre filter expression passed to queryRenderedFeatures */
@@ -127,18 +127,18 @@ export interface MapFeatureIdentifyConfig {
   /** Whether to fall back to the event.features array when queries return no results (defaults to true) */
   includeEventFeatures?: boolean;
 
-  /** Custom accessor to derive a stable identifier from a feature */
+  /** Custom accessor to derive a stable identifier from a features */
   getFeatureId?: (feature: MapLibreGeoJSONFeature) => MapFeatureIdentifier | null | undefined;
 
   /** Optional callback invoked when identification finishes */
   onIdentify?: (result: MapFeatureIdentifyResult) => void;
 
-  /** Whether to suppress the default Snackbar that displays identified feature IDs (defaults to false) */
+  /** Whether to suppress the default Snackbar that displays identified features IDs (defaults to false) */
   disableDefaultSnackbar?: boolean;
 }
 
 export interface MapIdentifyProps {
-  /** Enables feature identification on map clicks */
+  /** Enables features identification on map clicks */
   identifyFeatureOnClick?: MapFeatureIdentifyConfig;
 }
 

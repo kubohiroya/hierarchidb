@@ -19,21 +19,21 @@
 | `packages/common/auth` | tsconfig.json, tsconfig.typecheck.json |
 | `packages/common/types` | tsconfig.json |
 | `packages/components` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/auth-recovery` | tsconfig.json |
-| `packages/feature/batch` | tsconfig.json |
-| `packages/feature/compute` | tsconfig.json |
-| `packages/feature/download` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/feature-registry` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/fetch-save-metadata` | tsconfig.json |
-| `packages/feature/import-export` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/map-adapter` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/map-source` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/route-resolver` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/route-searoute` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tabular-source` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tabular-source-xlsx` | tsconfig.json |
-| `packages/feature/tabular-store` | tsconfig.json, tsconfig.typecheck.json |
-| `packages/feature/tag` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/auth-recovery` | tsconfig.json |
+| `packages/features/batch` | tsconfig.json |
+| `packages/features/compute` | tsconfig.json |
+| `packages/features/download` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/feature-registry` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/fetch-save-metadata` | tsconfig.json |
+| `packages/features/import-export` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/map-adapter` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/map-source` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/route-resolver` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/route-searoute` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/tabular-source` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/tabular-source-xlsx` | tsconfig.json |
+| `packages/features/tabular-store` | tsconfig.json, tsconfig.typecheck.json |
+| `packages/features/tag` | tsconfig.json, tsconfig.typecheck.json |
 | `app/src/plugin-registry` | — |
 | `packages/plugin-runtime-services` | tsconfig.json |
 | `packages/plugin-types` | tsconfig.json |
@@ -95,7 +95,7 @@
 
 ## 作業計画（turbo + tsdown への段階移行）
 1. **現状調査と PoC**
-   - 代表パッケージ（例: `packages/feature/feature-registry`）で既存ビルド・型検証フローを把握。
+   - 代表パッケージ（例: `packages/features/feature-registry`）で既存ビルド・型検証フローを把握。
    - `tsdown` を導入し、`tsup` スクリプトを差し替えた上で Turbo 経由の `build` が成功するか検証。
    - PoC 結果を TASKS 運用ログへ記録。
 2. **共通設定の整備**

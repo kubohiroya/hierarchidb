@@ -1,5 +1,9 @@
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
+import {
+  getWorkerInitCompleteMessage,
+  getWorkerInitStartMessage,
+} from '~/i18n/workerInitMessages.js';
 import { ensureWorkerRuntime } from './WorkerModuleLoader.js';
 import { getWorkerAPIClientModule, loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
@@ -19,6 +23,11 @@ export interface WorkerStateSnapshot {
 
 export type WorkerStateListener = (snapshot: WorkerStateSnapshot) => void;
 export type WorkerProgressListener = (progress: WorkerInitializationProgress) => void;
+
+export interface WorkerClientHandle {
+  getClient(): Remote<WorkerAPI>;
+  ensureLatest(options?: { signal?: AbortSignal }): Promise<Remote<WorkerAPI>>;
+}
 
 const getWorkerClientModule = () => getWorkerAPIClientModule();
 
@@ -51,10 +60,10 @@ const isWorkerReady = (): boolean => {
 };
  */
 
-const DEFAULT_PROGRESS: WorkerInitializationProgress = {
+const getDefaultProgress = (): WorkerInitializationProgress => ({
   progress: 0,
-  message: 'Worker初期化を開始しています...',
-};
+  message: getWorkerInitStartMessage(),
+});
 
 const EVENT_INIT_START = 'hierarchidb-worker-init-start';
 const EVENT_INIT_PROGRESS = 'hierarchidb-worker-init-progress';
@@ -68,7 +77,9 @@ let snapshot: WorkerStateSnapshot = {
   state: initialState,
   client: initialClient,
   error: null,
-  progress: initialClient ? { progress: 100, message: 'Worker初期化完了' } : DEFAULT_PROGRESS,
+  progress: initialClient
+    ? { progress: 100, message: getWorkerInitCompleteMessage() }
+    : getDefaultProgress(),
 };
 
 const listeners = new Set<WorkerStateListener>();
@@ -165,7 +176,7 @@ export async function ensureWorkerInitialized(options?: {
     state: 'initializing',
     client: prev.client,
     error: null,
-    progress: prev.state === 'ready' ? prev.progress : DEFAULT_PROGRESS,
+    progress: prev.state === 'ready' ? prev.progress : getDefaultProgress(),
   }));
 
   initializationPromise = (async () => {
@@ -180,7 +191,7 @@ export async function ensureWorkerInitialized(options?: {
         state: 'ready',
         client,
         error: null,
-        progress: { progress: 100, message: 'Worker初期化完了' },
+        progress: { progress: 100, message: getWorkerInitCompleteMessage() },
       }));
       return client;
     } catch (error) {
@@ -200,13 +211,29 @@ export async function ensureWorkerInitialized(options?: {
   return initializationPromise;
 }
 
+export async function createWorkerClientHandle(options?: {
+  signal?: AbortSignal;
+}): Promise<WorkerClientHandle> {
+  let currentClient = await ensureWorkerInitialized(options);
+
+  const ensureLatest = async (ensureOptions?: { signal?: AbortSignal }) => {
+    currentClient = await ensureWorkerInitialized(ensureOptions ?? options);
+    return currentClient;
+  };
+
+  return {
+    getClient: () => currentClient,
+    ensureLatest,
+  };
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener(EVENT_INIT_START, () => {
     updateSnapshot((prev) => ({
       state: 'initializing',
       client: prev.client,
       error: null,
-      progress: { progress: 0, message: 'Worker初期化を開始しています...' },
+      progress: { progress: 0, message: getWorkerInitStartMessage() },
     }));
   });
 
@@ -221,7 +248,7 @@ if (typeof window !== 'undefined') {
           typeof detail.progress === 'number'
             ? Math.max(0, Math.min(100, detail.progress))
             : prev.progress.progress,
-        message: detail.message ?? prev.progress.message ?? 'Worker初期化を開始しています...',
+        message: detail.message ?? prev.progress.message ?? getWorkerInitStartMessage(),
       },
     }));
   });
@@ -244,7 +271,7 @@ if (typeof window !== 'undefined') {
       state: 'ready',
       client: getCachedClient(),
       error: null,
-      progress: { progress: 100, message: 'Worker初期化完了' },
+      progress: { progress: 100, message: getWorkerInitCompleteMessage() },
     }));
   });
 }

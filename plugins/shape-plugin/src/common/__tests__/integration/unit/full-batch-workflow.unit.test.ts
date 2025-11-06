@@ -275,7 +275,7 @@ describe('Full Batch Processing Workflow Integration Tests', () => {
         throw new Error('Invalid data format');
       }
 
-      // Simulate feature processing
+      // Simulate features processing
       const processedFeatures = data.features.length;
 
       return {

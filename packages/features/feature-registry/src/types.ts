@@ -2,7 +2,7 @@ export interface FeatureManifest {
   name: string;
   version?: string;
   provides?: string[]; // capabilities/features
-  depends?: string[];  // other feature names
+  depends?: string[];  // other features names
   optional?: string[]; // soft deps
 }
 

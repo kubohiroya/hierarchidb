@@ -42,6 +42,9 @@
       "persistent": true
     },
     "preview": {
+      "dependsOn": [
+        "build"
+      ],
       "cache": false,
       "persistent": true
     },

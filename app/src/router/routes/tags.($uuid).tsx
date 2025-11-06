@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Link as RouterLink } from '@tanstack/react-router';
-import { useWorkerClient } from '~/contexts/WorkerProvider.js';
+import { useWorker } from '~/contexts/WorkerProvider.js';
 import { useQuery } from '~/hooks/useQuery.js';
 
 interface TaggedNode {
@@ -32,7 +32,7 @@ interface TaggedNode {
 }
 
 export default function TagsPage({ uuid }: { uuid?: string }) {
-  const { client: workerClient, isConnected } = useWorkerClient();
+  const { client: workerClient, isConnected } = useWorker();
 
   //  uuid
   const { data: allTags = [], isLoading: isLoadingTags } = useQuery<TagEntity[]>({

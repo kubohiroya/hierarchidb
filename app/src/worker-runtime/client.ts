@@ -4,8 +4,8 @@
 
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
-import { bootLog } from './utils/bootLog.ts';
-import { APP_VERSION } from './version.ts';
+import { bootLog } from '~/utils/bootLog.ts';
+import { APP_VERSION } from '~/version.ts';
 import workerScriptUrl from './worker.ts?worker&url';
 
 // Mirrors WorkerInitMessageType defined in @hierarchidb/feature-core/runtime-client to avoid `any` fallbacks

@@ -31,7 +31,7 @@ Use `TASKS.md` as the single source of truth: move cards to Doing, note branches
 Work in small, reviewable increments. Document sandbox blockers and attempted alternatives in `TASKS.md`, and never modify code without updating the Kanban and 運用ログ. Prioritise reversibility—capture config edits, migrations, and generated assets so a flag toggle or revert restores prior behaviour quickly.
 
 ### 失敗例（再発防止メモ）
-- 2025-10-20: `@hierarchidb/batch-types` の型ビルドで `packages/feature/batch/dist/index.d.ts` を生成せずに `api-extractor` を実行し、依存宣言だけ変更した時点で検証を怠ったため、ユーザー環境ではエラーが継続した。**教訓**: 依存パッケージのビルド有無を CLI で再現確認してから完了報告すること。必要であれば `prebuild:*` スクリプトなどで明示的に依存ビルドを組み込み、Turbo 以外の単独実行でも成功するよう担保する。
+- 2025-10-20: `@hierarchidb/batch-types` の型ビルドで `packages/features/batch/dist/index.d.ts` を生成せずに `api-extractor` を実行し、依存宣言だけ変更した時点で検証を怠ったため、ユーザー環境ではエラーが継続した。**教訓**: 依存パッケージのビルド有無を CLI で再現確認してから完了報告すること。必要であれば `prebuild:*` スクリプトなどで明示的に依存ビルドを組み込み、Turbo 以外の単独実行でも成功するよう担保する。
 
 ### 作業プロセスの自己ルール
 - **DoD 提案義務**: ユーザーからタスク指示を受けるたびに、着手前に自分から DoD（受け入れ基準）を箇条書きで提案し、ユーザーの了承を得てから作業を開始する。承認前にタスクを進めない。

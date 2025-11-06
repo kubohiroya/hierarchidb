@@ -8,6 +8,10 @@
 import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
 import type { Remote } from 'comlink';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  getWorkerInitCompleteMessage,
+  getWorkerInitStartMessage,
+} from '~/i18n/workerInitMessages.js';
 
 // Mock the WorkerStateStore module
 vi.mock('../../../../worker-runtime/WorkerStateStore.js', () => ({
@@ -16,7 +20,7 @@ vi.mock('../../../../worker-runtime/WorkerStateStore.js', () => ({
     state: 'uninitialized',
     client: null,
     error: null,
-    progress: { progress: 0, message: 'Worker初期化を開始しています...' },
+    progress: { progress: 0, message: getWorkerInitStartMessage() },
   })),
 }));
 
@@ -169,7 +173,7 @@ describe('workerClient', () => {
         state: 'ready',
         client: mockClient,
         error: null,
-        progress: { progress: 100, message: 'Worker初期化完了' },
+        progress: { progress: 100, message: getWorkerInitCompleteMessage() },
       });
 
       const result = getWorkerClient();
@@ -185,7 +189,7 @@ describe('workerClient', () => {
         state: 'uninitialized',
         client: null,
         error: null,
-        progress: { progress: 0, message: 'Worker初期化を開始しています...' },
+        progress: { progress: 0, message: getWorkerInitStartMessage() },
       });
 
       const result = getWorkerClient();
