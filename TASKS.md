@@ -95,7 +95,25 @@
   - [ ] WorkerStateStore（または Proxy）にハンドル構造体と `refresh()` 相当のメソッドを実装する
   - [ ] loader.ts の `retryComlinkCall` / 戻り値処理を新 API に合わせて整理し、必要に応じてコメントで用途を補足する
   - [ ] 影響範囲を軽く grep して同様のパターンがないか確認し、必要に応じて TODO を残す
-- ロールバック手順：追加したハンドル API と loader.ts の変更を revert し、旧二重 `loadWorkerAPIClient()` 呼び出し構成へ戻す
+ - ロールバック手順：追加したハンドル API と loader.ts の変更を revert し、旧二重 `loadWorkerAPIClient()` 呼び出し構成へ戻す
+
+
+910) plugin-registry stage worker 解決フロー修正（P0）
+- ブランチ: `fix/plugin-registry/stage-worker-specifier`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/plugin-registry`, `packages/runtime/worker`, `packages/plugin-registry/scripts/postbuild.mjs`, `app/vite.config.ts`, Turbo 依存設定
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順を明記する
+  - [ ] `@hierarchidb/runtime-worker` が `stageWorker.entry.ts` を `@hierarchidb/runtime-worker/stage-worker` として exports/types で公開し、dist `.d.ts` を paths で直接参照しない構成へ更新する
+  - [ ] `packages/plugin-registry/scripts/postbuild.mjs`（必要に応じて周辺生成物）が stage worker 参照を上記公式エクスポートへ確実に書き換え、`pnpm --filter @hierarchidb/plugin-registry build` が成功したログを取得する
+  - [ ] `pnpm --filter @hierarchidb/app build` を実行し、`stageWorker.entry.js`/`stage-worker` 関連の解決エラーが発生しないことをビルドログで確認する
+  - [ ] `PluginWorkerModuleLoader` の stage worker import 失敗ログが preview/build で発生しないことを確認し、結果を運用ログに記録する（sandbox で preview が制限される場合は理由とともに blocked/保留を明示）
+- チェックリスト:
+  - [ ] runtime-worker の `package.json` exports/types を更新し、必要なら tsconfig references も調整
+  - [ ] plugin-registry の postbuild 置換と生成スクリプトを更新し、差分を自己レビュー
+  - [ ] `pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/runtime-worker} build` を順に実行し、成功ログを運用ログへ追記
+  - [ ] `pnpm --filter @hierarchidb/app build` の結果を確認し、stage worker に関するエラーが消えたことを記録
+  - [ ] 懸念点（preview での HMR 等）があれば TASKS の進捗メモへ追記
+- ロールバック手順：runtime-worker の exports/tsconfig と plugin-registry の postbuild/生成スクリプト変更を revert し、`pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/app} build` を再度実行して旧エラー再現を確認する
 
 
 912) Home 初期進捗メッセージ i18n 対応（P1）
@@ -112,6 +130,25 @@
   - [x] `locales/en/*.json` / `locales/ja/*.json` に対応エントリを追加し、命名規約とコメントを整理する
   - [x] 英語/日本語でメッセージが切り替わることを手動 or 自動で確認し、結果を運用ログに記録する
 - ロールバック手順：追加した翻訳キーと Home 関連コンポーネントの差分を revert し、`pnpm -C app dev` などで旧文言へ戻ることを確認する
+- ロールバック手順詳細：`app/public/locales/*/common.json`, `app/src/i18n/workerInitMessages.ts`, `app/src/contexts/{WorkerProvider,AppReporters,BootProgressProvider}.tsx`, `app/src/worker-runtime/WorkerStateStore.ts` などの差分を revert し、`pnpm --filter @hierarchidb/app test -- --run workerInitMessages` を再実行して既存文言へ戻す。
+
+913) Plugin Worker Loader Hardening（P0）
+- ブランチ: `chore/plugins/worker-loader-hardening`（sandbox 制約で `main` 上で作業）
+- 依存: `app/vite.config.ts`, `packages/runtime/worker/src/**/*.ts`, `dep-fence.config.mjs`, `plugins/*-plugin/src/worker/**/*`, `plugins/*-plugin/package.json`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] basemap / folder / resolver / route / styler / timeline / spreadsheet / location / shape など Worker Dexie を持つプラグインの `register*WorkerStores` / `load*EntitiesDbModule` が `../*EntitiesDB.js` 相対 import へ統一され、`@vite-ignore` を含まない
+  - [ ] Vite alias（`app/vite.config.ts`）で各プラグインの `@hierarchidb/<plugin>/worker` / `worker-factory` / `worker/database` が dev/prod の両モードで解決できる設定になっている（必要な alias を追加し、重複を除去）
+  - [ ] dep-fence に「プラグインから `@hierarchidb/*-plugin/(worker|worker-database)` へ直接 import 禁止」「worker factory から他パッケージ dist 直参照禁止」などの拘束ルールを追加し、`pnpm dep-fence` がグリーンである
+  - [ ] `packages/runtime/worker` および `app/src/worker-runtime` に plugin worker import 失敗を検知するユニットテストを追加し、`pnpm --filter @hierarchidb/app test -- --run preload-worker-modules` など関連スイートが成功する
+  - [ ] `pnpm --filter @hierarchidb/{basemap,folder,resolver,route,styler,timeline,spreadsheet}-plugin build` と `pnpm --filter @hierarchidb/app build` が exit 0 で通るログを運用ログに記録する
+- チェックリスト:
+  - [ ] `plugins/*-plugin/src/worker/factory/register*WorkerStores.ts` の import を点検し、相対パスへ統一する
+  - [ ] `app/vite.config.ts` の alias 生成ロジックで全プラグインがカバーされるか確認し、漏れを補完する
+  - [ ] dep-fence ルールを拡張し、禁止 import が存在する場合に検出できるようにする
+  - [ ] runtime/app テストを追加し、plugin worker 読み込みが期待通り呼び出されることを検証する
+  - [ ] build コマンドの結果を `TASKS.md` 運用ログに追記する
+- ロールバック手順：追加した dep-fence ルール／Vite alias／テストコード／plugin import 修正を revert し、`pnpm dep-fence` と `pnpm --filter @hierarchidb/app build` を再実行して従来構成へ戻す
 - ロールバック手順詳細：`app/public/locales/*/common.json`, `app/src/i18n/workerInitMessages.ts`, `app/src/contexts/{WorkerProvider,AppReporters,BootProgressProvider}.tsx`, `app/src/worker-runtime/WorkerStateStore.ts` などの差分を revert し、`pnpm --filter @hierarchidb/app test -- --run workerInitMessages` を再実行して既存メッセージへ戻す。
 
 91) App 依存束ねパッケージ導入（P0）
@@ -565,6 +602,22 @@
   - [x] 再現用テスト（既存テストの拡張でも可）で onChange 不発・blur 反映を確認
   - [ ] 影響範囲の手動確認（name/description、CreateFolder/Route 等で inline edit が有効な場面）
 - ロールバック手順：該当差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck && test` を再実行して従来の逐次反映挙動に戻す
+
+951) feature-core バンドル撤廃（P0）
+- ブランチ: `chore/app/remove-feature-core`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/**/*`, `app/vite*.config.ts`, `app/package.json`, `config/dev-aliases.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `docs/architecture/*`, `packages/tooling`, `packages/runtime/worker`
+- 受け入れ基準（DoD）:
+  - [x] `@hierarchidb/feature-core` を参照する import/設定/依存をすべて実体パッケージへ差し替え、bundle ディレクトリを削除する
+  - [x] `pnpm-workspace.yaml`・`pnpm-lock.yaml`・`tsconfig.base.json`・Vite 設定・dev alias を更新し、本番/preview/HMR の解決が一貫するよう整備する
+  - [x] `docs/architecture/app-dependency-bundles.md` など関連ドキュメントに bundle 廃止後の方針を明記する
+  - [x] `pnpm --filter @hierarchidb/app build` と `pnpm --filter @hierarchidb/app typecheck` の成功ログを取得し、運用ログへ記録する（typecheck exit 0、build は `generate:favicon` を手動実行→`vite build` で成功したログを記録）
+  - [x] TASKS Kanban／運用ログに start/progress/done とロールバック手順を反映する
+- チェックリスト:
+  - [x] `rg '@hierarchidb/feature-core'` ヒット箇所を `@hierarchidb/<actual>` へ置換し、ツリーコンソール/Worker/API すべてで型が通ることを確認
+  - [x] `packages/feature-core` と関連 path alias/依存エントリを削除
+  - [x] docs/architecture での bundle 記述を最新化し、dep-fence 方針も明記
+  - [x] `pnpm --filter @hierarchidb/app {build,typecheck}` の結果をログ化（typecheck exit 0、build は sandbox 制約で失敗・詳細を運用ログに追記済み）
+- ロールバック手順：`packages/feature-core` 復元と tsconfig/pnpm-workspace/Vite/dep alias 差分を revert し、`pnpm --filter @hierarchidb/app build` が旧 `@hierarchidb/feature-core` 経由で成功することを確認する
 
 ### ToDo（優先度順） <a id="kanban-todo"></a>
 
@@ -2757,6 +2810,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- fix/styler/color-calculation-export（P0） — StylerDataService が `ColorCalculationResult` を `stylerTypes` 経由で参照するよう更新し、tsdown build の Missing export 警告を解消。
+  - ブランチ: `fix/styler/color-calculation-export`
+  - 成果:
+    - StylerDataService の type import を `../common/types/stylerTypes.js` へ切り替え、colorUtils は変換関数群のみをエクスポートする構成に整理。
+    - `pnpm --filter @hierarchidb/styler-plugin build` を実行して MISSING_EXPORT 警告が出ないことを確認し、運用ログへ start/progress/command/done を記録。
+    - Kanban カードに影響範囲（Styler CSV プレビューと MapLibre スタイル生成のみ）とロールバック手順を明記。
+  - 影響範囲：StylerDataService を介した CSV プレビュー／MapLibre スタイル生成で `ColorCalculationResult` 型を利用する箇所のみ。`valueToColor` の実装や他プラグインへの影響はなし。
+  - ロールバック手順：`plugins/styler-plugin/src/services/StylerDataService.ts` の import 差分を revert し、`pnpm --filter @hierarchidb/styler-plugin build` を再実行して既知の警告が再現することを確認する。
 - chore/app/worker-client-dependency-map（P1） — Worker loader/client/proxy 依存構造を図示し、痛点と段階的な簡素化案を整理。
   - ブランチ: `chore/app/worker-client-dependency-map`
   - 成果:
@@ -7182,7 +7243,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 23:15 progress: main — runtime-worker の lint 指摘箇所一覧（TreeMutationService／CoreDB／DialogStateService／FeatureBootstrap／bulk-ops-tms.test など）を抽出し、修正順序と必要テスト（`pnpm --filter @hierarchidb/runtime-worker format -- --max-diagnostics=20`, `pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations`）を計画。
 - 2025-11-03 23:33 command: pnpm --filter @hierarchidb/runtime-worker format — exit 0。Biom e で runtime-worker 配下の lint/format を再実行し、追加診断なし（`--max-diagnostics` は format スクリプト未対応のため素のコマンドで実行）。
 - 2025-11-03 23:34 command: pnpm --filter @hierarchidb/runtime-worker test -- --run undo-folder-operations — exit 0。Undo/Redo 関連 WFL/サービステストを含む 35 ファイル・72 テストがグリーン（Dexie 初期化の警告ログのみ、既知挙動のため記録）。
-- 2025-11-03 23:40 progress: main — `pnpm --filter @hierarchidb/app typecheck` で `PluginLifecycleAPI` export 欠如（`@hierarchidb/feature-core/common-api` 経由）を確認。根源は `packages/common/api/src/index.ts` で `PluginLifecycleAPI` を再輸出していない点と判断し、common-api 側を修正して再 typecheck する方針。
+- 2025-11-03 23:40 progress: main — `pnpm --filter @hierarchidb/app typecheck` で `PluginLifecycleAPI` export 欠如（`@hierarchidb/common-api` 経由）を確認。根源は `packages/common/api/src/index.ts` で `PluginLifecycleAPI` を再輸出していない点と判断し、common-api 側を修正して再 typecheck する方針。
 - 2025-11-03 23:44 command: pnpm --filter @hierarchidb/common-api build — exit 0。`PluginLifecycleAPI` を index から再輸出後、dist を再生成して依存パッケージ（feature-core/common-api 経由）で新しい型を解決可能にした。
 - 2025-11-03 23:46 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`PluginLifecycleAPI` export エラーが解消されたことを確認（既存の EphemeralLocationDB 警告以外の新規エラーなし）。
 - 2025-10-28 09:18 command: pnpm --filter @hierarchidb/app test -- menu-builders — exit 0。既存ユニット継続グリーン。
@@ -7492,6 +7553,16 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 11:18 progress: tools/analyze-licenses — ライセンス分析 CLI を CJS API 依存から `license-checker` CLI 呼び出しに切り替え、文字列で返るバージョン値をオブジェクトへ正規化。ワークスペースルートを `INIT_CWD` / `--start` 引数から解決するよう調整。
 - 2025-11-03 11:19 command: pnpm run analyze:licenses — exit 0。
 - 2025-11-03 09:58 done: fix/ui-trash/treetable-timestamps — Finder 形式の Trash 日時表示が翻訳付きで描画され、列リサイズ・`formatTimestamp` 呼び出しとも正常化したことを確認。`pnpm --filter @hierarchidb/ui-treeconsole-treetable typecheck`（スクリプト未定義確認）と `pnpm --filter @hierarchidb/app typecheck` exit 0 を記録し、ロールバックは翻訳差分とヘッダ条件・フォーマッタ配線の revert で旧挙動（キー文字列表示／リサイズ不可／フォーマッタ未呼び出し）に戻る。
+- 2025-11-03 18:40 start: fix/plugin-registry/stage-worker-specifier — DoD（runtime-worker 公式 stage-worker export、plugin-registry postbuild リライト、app build 成功、PluginWorkerModuleLoader の import 成功ログ、TASKS 記録）を登録し、sandbox 制約のため `main` 直上で実装開始。
+- 2025-11-03 19:05 progress: fix/plugin-registry/stage-worker-specifier — `packages/runtime/worker/package.json` へ `./stage-worker` exports を追加し、`tsconfig.base.json` に src alias を登録。`pnpm --filter @hierarchidb/runtime-worker build` および `pnpm --filter @hierarchidb/plugin-registry build`（postbuild 書き換え含む）を実行し exit 0 を確認。
+- 2025-11-03 19:30 blocked: fix/plugin-registry/stage-worker-specifier — `pnpm --filter @hierarchidb/app build` で stage worker 解決エラーは解消されたが、Rollup が `node:module` 由来の `createRequire` import を Worker バンドルで許容できず失敗。stage worker 参照は `@hierarchidb/runtime-worker/stage-worker` で正しく解決できたため、次段として `worker.ts` の Node API 依存を整理する必要あり。
+- 2025-11-03 19:55 progress: fix/plugin-registry/stage-worker-specifier — `packages/plugin-registry/package.json` の tsdown 設定を `platform: "browser"`, `target: "es2020"` へ更新し Node API を含まないよう再構成。`pnpm --filter @hierarchidb/plugin-registry build` 後の `dist` から `createRequire` が排除されたこと、`new Worker(new URL('@hierarchidb/runtime-worker/stage-worker', …))` が維持されていることを確認。
+- 2025-11-03 20:05 done: fix/plugin-registry/stage-worker-specifier — `pnpm --filter @hierarchidb/app build` が成功（17.97s, exit 0）し、GitHub Pages 前提で Node API を含まない Worker/registry 構成へ修正完了。PluginWorkerModuleLoader の HMR/preload ログ確認は sandbox で preview が開けないため保留（blocked: ポート制限）。ロールバックは `packages/runtime/worker/package.json`, `tsconfig.base.json`, `packages/plugin-registry/package.json`, `app/vite.config.ts`, `app/vite.preview.config.ts`, `packages/plugin-registry/scripts/postbuild.mjs` の差分を戻し、旧構成で `pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/app} build` を再実行して Node API 混入エラーが再現することを確認。
+- 2025-11-03 20:20 blocked: fix/plugin-registry/stage-worker-specifier — `pnpm --filter @hierarchidb/app preview --host 127.0.0.1 --strictPort` を試行したが、環境側制限により `listen EPERM 127.0.0.1:4173` で起動失敗。ログ `/tmp/app-preview.log` を保存。ポート制御が解除され次第、PluginWorkerModuleLoader の import ログ確認を再実施予定。
+- 2025-11-03 21:05 progress: fix/plugin-registry/stage-worker-specifier — registry generatorの worker specifier を `${packageName}/worker` へ修正し、`packages/plugin-registry/dist/registry.js` と runtime-worker を再ビルド。`pnpm --filter @hierarchidb/app build` exit 0。preview でのポート解放後に worker import ログを再確認予定。
+- 2025-11-03 21:35 progress: fix/plugin-registry/stage-worker-specifier — resolver-plugin の DB エクスポートを標準化（`@hierarchidb/resolver-plugin/database`）し、postbuild の ResolverDatabase 生成／書き換えを撤去。`pnpm --filter {@hierarchidb/resolver-plugin,@hierarchidb/plugin-registry,@hierarchidb/runtime-worker,@hierarchidb/app} build` を再実行し exit 0。
+- 2025-11-04 09:20 progress: fix/plugin-registry/stage-worker-specifier — basemap/shape プレビューで発生している `@hierarchidb/<plugin>/worker` import 失敗を再確認。resolver/shape 両プラグインが Worker Dexie を package exports ではなく `../ResolverDatabase.js` / `../shapeEntitiesDB.js` に依存していることが原因で、plugin-registry dist から `./ResolverDatabase.js` / `../shapeEntitiesDB.js` を解決できず再現。`@hierarchidb/<plugin>/database` へ統一する修正を進める。
+- 2025-11-04 11:10 progress: fix/plugin-registry/stage-worker-specifier — resolver/basemap の Worker Dexie を `@hierarchidb/<plugin>/worker-database` 系エントリへ整理。resolver は `ResolverDatabase` → `ResolverEntitiesDB` に改名し、旧 Peer Dexie を `ResolverPeerEntitiesDB` へリネーム。`pnpm --filter {@hierarchidb/basemap-plugin,@hierarchidb/resolver-plugin} build && pnpm run tools:gen-plugin-registry && pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/runtime-worker,@hierarchidb/app} build` が exit 0 となり、app build では `../routeEntitiesDB.js` エラーが解消され dist 生成まで完走。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
 - 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。
 - 2025-11-03 15:13 command: npx biome format --write app/src/components/TreeConsoleIntegration.tsx app/src/components/TreeConsolePanelWithDynamicSpeedDial.tsx app/src/components/dialogs/TrashDialog.tsx app/src/hooks/treeconsole/{createTreeConsoleActions.ts,types.ts} packages/ui/treeconsole/{base/src/components/common/NodeContextMenu.tsx,base/src/types/index.ts,breadcrumb/src/components/TreeConsoleBreadcrumb.tsx,toolbar/src/components/TreeConsoleToolbar.tsx,treetable/src/components/internal/TreeTableContextMenu.tsx,treetable/src/types.ts} — exit 0。
@@ -7616,6 +7687,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-04 15:37 command: pnpm --filter @hierarchidb/app test -- --run start-worker-client — exit 0（再配置した unit テスト群すべてが検出され、router/browser テストも完走）。
 - 2025-11-04 15:41 command: pnpm --filter @hierarchidb/runtime-worker typecheck — exit 2（TreeId brandingを満たしていない WFL テスト 4 件と、EntityLifecycleManager 系ユニットテストが `.js` 拡張で import しているため NodeNext 解決に失敗）。これよりテスト側の型補強と import 拡張修正に着手する。
 - 2025-11-04 15:48 progress: chore/runtime-worker/typecheck-clean — WFL テスト（create/import/duplicate/rename template 系）で `TreeId` branding を `toTreeId('r')` に統一し、EntityLifecycleManager 配下の unit tests は `../../EntityLifecycleManager.js` など正しい相対パスへ修正。再度 `pnpm --filter @hierarchidb/runtime-worker typecheck` を実行し exit 0 を確認。
+- 2025-11-04 15:50 start: fix/styler/color-calculation-export — ColorCalculationResult の Missing export 警告を解消するため、Kanban #950 を Doing に追加し StylerDataService の import 修正とビルド検証を開始。
+- 2025-11-04 15:53 progress: fix/styler/color-calculation-export — StylerDataService の `ColorCalculationResult` import を `../common/types/stylerTypes.js` 由来へ更新し、colorUtils は関数群のみをエクスポートする構成に整理。
+- 2025-11-04 15:54 command: pnpm --filter @hierarchidb/styler-plugin build — exit 0（MISSING_EXPORT 警告なしで完走）。
+- 2025-11-04 15:58 done: fix/styler/color-calculation-export — `StylerDataService.d.ts` からの type import が `stylerTypes` 経由で生成されることを確認し、Kanban #950 に影響範囲とロールバック手順を追記したうえでタスクを完了。
 - 2025-11-04 16:00 progress: fix/ui-treeconsole/expand-toggle — TreeTableView 側で `node.hasChildren` を参照せず `node.children` だけを見ていたため、子ノードを遅延ロードする TreeConsole では開閉アイコンが描画されなかった。`hasChildren` フラグも判定に加え、UI 側の `TreeNodeData` から正しく引き継ぐよう修正。
 - 2025-11-04 16:02 progress: fix/ui-treeconsole/expand-toggle — `TreeTableView.hasChildren.test.tsx` を追加し、`hasChildren: true` かつ `children` 未定義でも expand トグルが描画されることを自動テスト化。
 - 2025-11-04 16:03 command: pnpm --filter @hierarchidb/ui-treeconsole-base exec vitest run src/components/TreeTable/__tests__/TreeTableView.hasChildren.test.tsx — exit 0（新規テスト 1 件がグリーン）。
@@ -7630,5 +7705,63 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-05 14:02 command: pnpm --filter @hierarchidb/app test -- --run start-worker-client — exit 0。Worker 初期化関連の既存ユニットテストが新しい文言取得ロジックでグリーン維持されることを確認。
 - 2025-11-05 14:03 command: pnpm --filter @hierarchidb/app test -- --run workerInitMessages — exit 0。追加した `workerInitMessages` のユニットテストで i18n 未初期化時のフォールバックと翻訳適用の両方を検証。
 - 2025-11-05 14:05 done: fix/ui/home-progress-i18n — トップページ初期表示および Worker 初期化オーバーレイのメッセージを i18n 化し、辞書エントリとユニットテストを整備。ロールバックは `app/public/locales/*/common.json`, `app/src/i18n/workerInitMessages.ts`, `app/src/contexts/{WorkerProvider,AppReporters,BootProgressProvider}.tsx`, `app/src/worker-runtime/WorkerStateStore.ts` など今回変更したファイルを revert したうえで `pnpm --filter @hierarchidb/app test -- --run workerInitMessages` を再実行して旧文言へ戻す。
+- 2025-11-08 07:20 start: chore/plugins/worker-loader-hardening — プラグイン Worker ローダーの再発防止（相対 import, dep-fence, alias, テスト, build 拘束）に着手。
+- 2025-11-08 07:32 progress: chore/plugins/worker-loader-hardening — resolver/route/styler/basemap/folder/timeline/spreadsheet 各プラグインの `load*EntitiesDbModule` から `@vite-ignore` を撤去し、`../*EntitiesDB.js` の相対 import に統一。`pnpm --filter @hierarchidb/{resolver,route,styler,basemap,timeline,spreadsheet,folder}-plugin build` で dist 生成を確認。
+- 2025-11-08 07:37 command: pnpm --filter @hierarchidb/app build — exit 0。新しいプラグイン dist で Worker import が解決されることを確認。
+- 2025-11-08 07:32 progress: chore/plugins/worker-database-import — resolver/route/styler/basemap/folder/timeline/spreadsheet 各プラグインの `load*EntitiesDbModule` から `@vite-ignore` を撤去し、`../*EntitiesDB.js` への相対 import へ揃えることで Vite が dist/worker/*.js を正しく解決できるよう調整。各プラグインで `pnpm --filter <plugin> build` を実行し exit 0 を確認。
+- 2025-11-08 07:37 command: pnpm --filter @hierarchidb/app build — exit 0。../*EntitiesDB.js の解決失敗が解消され、app 本番ビルドが通過することを確認。
+- 2025-11-08 07:57 progress: chore/plugins/worker-loader-hardening — `PluginWorkerModuleLoader` へ import 候補生成ヘルパーを実装し、`import.meta.resolve` ベースでパッケージ spec / dist spec / workspace src を順次解決するよう改修。`packages/runtime/worker/src/di/__tests__/PluginWorkerModuleLoader.spec.ts` を追加し、候補リストを検証。
+- 2025-11-09 09:15 restart: chore/plugins/worker-loader-hardening — 11/8 の試行がロールバックされ機能差分が残っていないことを確認。DoD（alias/dep-fence/loader/tests/build）を再確認し、今回の再実装範囲とロールバック手順を Kanban に反映。
+- 2025-11-09 09:28 progress: chore/plugins/worker-loader-hardening — `git status` と差分ファイルを棚卸しし、`app/package.json` などに未完成の `@hierarchidb/feature-core` 依存や loader 改変が残っていることを把握。Step1 でこれらをクリーンに戻す方針を確定。
+- 2025-11-09 09:42 progress: chore/plugins/worker-loader-hardening — `app/package.json`, `app/src/plugin-registry/index.ts`, `app/vite.config.ts`, `dep-fence.config.mjs`, `packages/plugin-registry/package.json`, `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts`, `plugins/resolver-plugin/src/worker/database/index.ts`, `tsconfig.base.json` を `HEAD` 版へ差し戻し、未完成差分を一旦ゼロ化。現状の再現環境が `TASKS.md` のみ dirty であることを確認。
+- 2025-11-09 09:55 command: pnpm --filter @hierarchidb/app build — exit 0。ビルド段階では plugin worker 解決エラーが再現しないものの、preview/dev での `@hierarchidb/basemap-plugin/worker` import failure は継続している（ブラウザでの再現待ち・後段で alias/loader を再実装）。
+- 2025-11-09 10:08 progress: chore/plugins/worker-loader-hardening — Vite dev alias に `/worker` `/worker-factory` `/worker/database` `/database` `/ui` `/icon` を追加し、plugin packages の worker factory から `@hierarchidb/*-plugin/worker` 参照を排除。`PluginWorkerModuleLoader` へ candidate builder + importer モードを実装し、fallback 順序とログを整理。Dexie loader (`load*EntitiesDbModule`) の `@vite-ignore` を撤去し `.js` 参照へ統一。dep-fence にプラグイン向け禁止ルールを追加。
+- 2025-11-09 10:15 command: pnpm --filter @hierarchidb/runtime-worker test -- --run PluginWorkerModuleLoader — exit 1。`vitest run --run` が WFL テンプレート依存スイートを同時実行し、`app/public/templates/population-2023/console-nodes.json` 不在で ENOENT。worker loader 専用 spec のみ再実行する方針へ切替。
+- 2025-11-09 10:17 command: pnpm --filter @hierarchidb/runtime-worker exec vitest run src/di/__tests__/PluginWorkerModuleLoader.spec.ts — exit 0。新設ユニットテストで candidate 生成順と fallback キャッシュを検証。
+- 2025-11-09 10:20 command: pnpm --filter @hierarchidb/app test -- --run preload-worker-modules — exit 0。Worker preload 経路の既存ユニットテストが新しい loader map で成功することを確認。
+- 2025-11-09 10:24 command: pnpm dep-fence — exit 0。追加したプラグイン向け禁止ルール（worker/package import・dist 直参照）を含め全ポリシーがグリーン。
+- 2025-11-09 10:29 command: pnpm --filter @hierarchidb/basemap-plugin --filter @hierarchidb/folder-plugin --filter @hierarchidb/resolver-plugin --filter @hierarchidb/route-plugin --filter @hierarchidb/styler-plugin --filter @hierarchidb/timeline-plugin --filter @hierarchidb/spreadsheet-plugin build — exit 0。対象プラグイン7件の tsdown build が成功し、Dexie 相対 import 差分でリグレッションが無いことを確認。
+- 2025-11-09 10:36 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再生成 → app 本番ビルドまで通過し、`@hierarchidb/basemap-plugin/worker` 解決失敗がログに現れないことを確認。
+- 2025-11-09 11:05 blocked: chore/plugins/worker-loader-hardening — ユーザー環境で `pnpm preview:init` 実行時に `@hierarchidb/basemap-plugin/worker` / `@hierarchidb/basemap-plugin/dist/worker/index.js` の解決失敗が再現。preview（静的配信）では Vite alias が効かず bare spec が残るため、loader のデフォルト spec を `/plugins/<nodeType>/worker` へ切り替えて plugin-worker-virtual が解決できるよう修正する方針。
+- 2025-11-09 11:18 progress: chore/plugins/worker-loader-hardening — `createPluginWorkerSpecifier` を `@hierarchidb/plugins/${nodeType}/worker` へ変更し、fallback 候補に `/plugins/<nodeType>/worker` と同 dist を追加。対応するユニットテスト (`packages/runtime/worker/src/di/__tests__/PluginWorkerModuleLoader.spec.ts`) の期待値を更新。
+- 2025-11-09 11:20 command: pnpm --filter @hierarchidb/runtime-worker exec vitest run src/di/__tests__/PluginWorkerModuleLoader.spec.ts — exit 0。新しい candidate 順序（legacy spec → plugins spec → dist → src）を確認。
+- 2025-11-09 11:22 command: pnpm --filter @hierarchidb/app test -- --run preload-worker-modules — exit 0。App 側ユニットテストで loader map が変わってもグリーン維持を確認。
+- 2025-11-09 11:28 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再生成後の本番ビルドが通過（preview 用 bundle 更新済み）。`pnpm preview:init` は sandbox のポート制限で再現不可のため、ブラウザ確認はユーザー環境待ち。
+- 2025-11-09 11:46 progress: chore/plugins/worker-loader-hardening — preview:init が runtime-worker 再ビルドを自動で実行するよう、root `package.json` を `turbo run build --filter @hierarchidb/app && HDB_SKIP_FAVICON=1 pnpm preview` に変更。さらに `app/package.json` の turbo `build.dependsOn` に `@hierarchidb/runtime-worker#build` を追加し、Turbo 経由の build/prevew 起動で runtime-worker dist が必ず更新されるようにした。
+- 2025-11-09 12:05 progress: chore/plugins/worker-loader-hardening — PluginWorkerModuleLoader のフォールバックを撤去し、`@hierarchidb/<nodeType>-plugin/worker` の単一 spec のみを解決する実装へ戻した。これに伴い `packages/runtime/worker/src/di/__tests__/PluginWorkerModuleLoader.spec.ts` を更新し、direct loader → bare spec の順序のみを検証するよう修正。`pnpm --filter @hierarchidb/runtime-worker exec vitest run src/di/__tests__/PluginWorkerModuleLoader.spec.ts` を実行し exit 0 を確認。
+- 2025-11-09 12:58 progress: chore/plugins/worker-loader-hardening — plugin-registry 生成ロジックを更新し、`modules.*.specifier` が dist への `new URL('../../plugins/<name>-plugin/dist/...', import.meta.url).href` を返すよう resolver 層を導入。将来的に npm publish モードへ切り替えられるよう、dist entry/override を `ManifestSummary` に保持。
+- 2025-11-09 13:04 command: pnpm run tools:gen-plugin-registry — exit 0。生成物（`packages/plugin-registry/generated/registry.ts`）が dist パスを含むことを確認。
+- 2025-11-09 13:30 progress: chore/plugins/worker-loader-hardening — plugin-registry 生成ロジックを `generatePluginRegistry` 関数として公開し、`app/vite.config.ts` の `pluginRegistryGeneratorPlugin` から dev/build それぞれで呼び出すよう移植。`pnpm dev` では `package` モード、build/preview では `dist-url` モードで自動再生成されるため、手動の `tools:gen-plugin-registry` 呼び出しが不要に。
+- 2025-11-08 07:58 command: pnpm --filter @hierarchidb/runtime-worker exec vitest run src/di/__tests__/PluginWorkerModuleLoader.spec.ts — exit 0。
+- 2025-11-08 07:59 command: pnpm dep-fence — exit 0（`plugin-worker-local-imports` ルールで `@hierarchidb/*-plugin/(worker|worker-database)` 自己 import を禁止）。
+- 2025-11-08 08:05 command: pnpm --filter @hierarchidb/{basemap,folder,resolver,route,styler,timeline,spreadsheet,shape,location}-plugin build — exit 0。
+- 2025-11-08 08:08 command: pnpm --filter @hierarchidb/app build — exit 0（Worker loader 更新後の本番ビルド確認）。
+- 2025-11-08 08:10 command: pnpm --filter @hierarchidb/runtime-worker build — exit 0（Loader 改修を dist へ反映）。
+- 2025-11-08 08:12 command: pnpm --filter @hierarchidb/app build — exit 0（最新 runtime-worker dist を取り込んだ再ビルド）。
+- 2025-11-08 08:25 command: pnpm --filter @hierarchidb/app build — exit 0（plugin alias 更新後の本番ビルド確認）。
+- 2025-11-05 15:20 start: chore/app/remove-feature-core — `@hierarchidb/feature-core` 依存を全廃し、app から実体ワークスペースパッケージを直接参照する移行を開始。DoD は Kanban #951 記載どおり。
+- 2025-11-05 15:45 progress: chore/app/remove-feature-core — `rg '@hierarchidb/feature-core'` ヒット箇所の import を `@hierarchidb/{common-api,common-types,plugin-registry,...}` 等へ置換し、`packages/feature-core` ディレクトリや tsconfig/pnpm-workspace/dev-alias/docs を更新。`app/tsconfig.json` へ直接 alias を追加し、`app/package.json` / `pnpm-lock.yaml` に必要な workspace 依存を列挙。
+- 2025-11-05 15:50 command: pnpm --filter @hierarchidb/app build — exit 1。`pnpm run generate:favicon` 内で `tsx` が `/var/.../tsx-501/*.pipe` へ listen する際に EPERM が発生し、sandbox 環境で IPC ソケットを開けないためビルド検証に至らず。
+- 2025-11-05 15:55 command: pnpm --filter @hierarchidb/app typecheck — exit 1。`@hierarchidb/plugin-registry/{types,derivations}` の alias 未整備や `plugin-ui-sdk` の型不整合、`AppReporters.tsx` の既知課題などが残存しており、feature-core 廃止に伴い顕在化。後続タスクで型エクスポートの整備と AppReporters の `t` 参照を修正予定。
+- 2025-11-05 16:20 command: pnpm --filter @hierarchidb/plugin-service-api build — exit 0。`TreePluginInfo` 再エクスポートを dist へ反映。
+- 2025-11-05 16:28 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`@hierarchidb/plugin-registry/{types,derivations}` の d.ts 参照と runtime-client/linker/shape/styler の型修正後に全警告が解消。
+- 2025-11-05 16:32 blocked: pnpm --filter @hierarchidb/app build — exit 1。sandbox で `tsx scripts/generate-favicon.ts` が IPC パイプを開けず EPERM のまま（再現ログあり）。ビルド自体は未検証・ログ済み。
+- 2025-11-05 16:45 command: pnpm --filter @hierarchidb/app run generate:favicon — exit 0（ユーザー許可に基づき sandbox 権限を昇格して実行し、favicon アセットを手動生成）。
+- 2025-11-05 16:46 command: pnpm --filter @hierarchidb/app run generate:nojekyll — exit 0。
+- 2025-11-05 16:47 command: pnpm --filter @hierarchidb/plugin-registry build — exit 0（既知の icon unresolved warning のみ）。
+- 2025-11-05 16:50 command: vite build --config vite.config.ts — exit 0。手動で favicon/nojekyll/registry build を済ませたうえでアプリ本番ビルドを完走。
+- 2025-11-05 16:55 progress: chore/app/remove-feature-core — `scripts/generate-favicon.ts` を ESM `.mjs` 化し、`HDB_SKIP_FAVICON=1` で安全にスキップできるようガードを追加。`pnpm run generate:favicon` は node 実行に切り替えたため、sandbox でも tsx IPC を要求しなくなった。
+- 2025-11-05 16:58 blocked: pnpm --filter @hierarchidb/app preview -- --host 127.0.0.1 --port 4173 --strictPort — exit 1。sandbox が `0.0.0.0:4173` の listen を EPERM で拒否するためプレビューサーバーを起動できず。手動 build 済みの dist は利用可能だが preview 確認はホスト許可が必要。
+- 2025-11-05 16:20 command: pnpm --filter @hierarchidb/plugin-service-api build — exit 0。`TreePluginInfo` 再エクスポートを dist へ反映。
+- 2025-11-05 16:28 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`@hierarchidb/plugin-registry/{types,derivations}` の d.ts 参照と runtime-client/linker/shape/styler の型修正後に全警告が解消。
+- 2025-11-05 16:32 blocked: pnpm --filter @hierarchidb/app build — exit 1。sandbox で `tsx scripts/generate-favicon.ts` が IPC パイプを開けず EPERM のまま（再現ログあり）。ビルド自体は未検証・ログ済み。
 - 2025-11-05 13:34 start: fix/ui/home-progress-i18n — トップページ初回アクセス時の進捗メッセージが英語選択でも日本語固定になる不具合を調査・修正開始。DoD: i18n 辞書整備、Home コンポーネントでの `t()` 適用、手動確認ログ、ロールバック記載。
 - 2025-11-05 13:35 blocked: fix/ui/home-progress-i18n — `git checkout -b fix/ui/home-progress-i18n` が `.git/refs/heads/...` への書き込み不可で失敗。sandbox 制約のため既存 `main` ブランチ上で作業継続。
+
+## 今日の着手（運用ログ） <a id="worklog-10"></a>
+
+- 2025-11-10 13:40 start: chore/scripts/dev-start-simplify — DoD（run-env-vite.sh 廃止・pnpm dev/build/preview:init の prep/start 再構成・関連ドキュメント更新・ロールバック手順明示）を確認し、影響範囲を `package.json` / `scripts/env/README.md` / `scripts/run-dev-with-turbo-watch.mjs` に特定。
+- 2025-11-10 15:05 progress: chore/scripts/dev-start-simplify — `package.json` に `dev:pre` / `dev:start(:production)` / `build:pre` / `build:start` / `preview:(build|start)` を追加し、Bash ワンライナーで環境スクリプトと `.env.secrets` を読み込む方式へ移行。`pnpm run dev:pre`（dependency guard → alias ビルド）と `pnpm run preview:build`（`turbo run build --filter @hierarchidb/app`）の exit 0 を取得。watcher 用スクリプトも `pnpm run dev` を直接起動するよう更新。
+- 2025-11-10 15:30 done: chore/scripts/dev-start-simplify — `scripts/run-env-vite.sh` を削除し、`scripts/env/README.md` へ新手順を追記。ロールバックは `git checkout HEAD^ -- package.json scripts/run-dev-with-turbo-watch.mjs scripts/run-env-vite.sh scripts/env/README.md` で旧構成を復元し、`pnpm dev`/`preview:init` スクリプトを従来フローに戻すこと。
+- 2025-11-10 16:20 progress: fix/dev-plugin-registry-alias — dev 警告原因を特定（tsconfig/vite alias が `packages/plugin-registry/dist/registry.js` を参照しており、`pnpm dev` でも dist モードの動的 import が残存）。`tsconfig.base.json` / `app/tsconfig.json` / `app/vite.config.ts` の alias を `packages/plugin-registry/generated/registry.ts` へ切替え、`HDB_PLUGIN_SPEC_MODE=package pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` で正規 specifier を再生成。
+- 2025-11-10 16:35 done: fix/dev-plugin-registry-alias — python 経由の `pnpm dev` 起動テストで `[generate-plugin-registry] updated files { registry: true }` を確認し、生成物が package spec へ戻ることをログ化。ロールバックは該当 tsconfig/vite alias を dist に戻し、`HDB_PLUGIN_SPEC_MODE=dist-url pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` を再実行すること。

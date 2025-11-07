@@ -22,6 +22,9 @@
       ],
       "worker": [
         "dist/worker/index.d.ts"
+      ],
+      "worker-database": [
+        "dist/worker/basemapEntitiesDB.d.ts"
       ]
     }
   },
@@ -33,6 +36,10 @@
     "./worker": {
       "types": "./dist/worker/index.d.ts",
       "import": "./dist/worker/index.js"
+    },
+    "./worker-database": {
+      "types": "./dist/worker/basemapEntitiesDB.d.ts",
+      "import": "./dist/worker/basemapEntitiesDB.js"
     },
     "./database": {
       "types": "./dist/services/database/index.d.ts",

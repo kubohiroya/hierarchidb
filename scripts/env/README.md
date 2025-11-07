@@ -11,7 +11,7 @@ local.sh / staging.sh / production.sh (差分のみ)
     ↓
 .env.secrets (セキュアな値、オプション)
     ↓
-run-env-vite.sh (統一実行)
+pnpm scripts (`pnpm dev`, `pnpm build`, など)
 ```
 
 ## ファイル構成
@@ -23,7 +23,6 @@ scripts/
 │   ├── local.sh           # ローカル環境の差分
 │   ├── staging.sh         # ステージング環境の差分
 │   └── production.sh      # 本番環境の差分
-├── run-env-vite.sh            # 統一起動スクリプト
 └── env/README.md          # このファイル
 
 app/
@@ -35,7 +34,8 @@ app/
 
 1. **コマンド実行**
    ```bash
-   pnpm dev:local  # = ./scripts/run-env-vite.sh local
+   pnpm dev              # development.sh を読み込む
+   pnpm dev:production   # production.sh を読み込む
    ```
 
 2. **設定の読み込み順序**
@@ -92,15 +92,15 @@ NEW_API_SECRET=actual-secret-value
 source scripts/env/local.sh
 env | grep VITE_
 
-# または起動時に表示される設定を確認
-./scripts/run-env-vite.sh local
+# または一時的に読み込んで確認
+bash -lc 'set -a; source scripts/env/local.sh; env | grep VITE_'
 ```
 
 ### トラブルシューティング
 
 ```bash
-# bashのデバッグモードで実行
-bash -x ./scripts/run-env-vite.sh local
+# bash のデバッグモードで環境設定を確認
+bash -lc 'set -a; set -x; source scripts/env/local.sh'
 
 # 特定の変数を追跡
 echo "BFF URL: $VITE_BFF_BASE_URL"
@@ -116,7 +116,8 @@ echo "BFF URL: $VITE_BFF_BASE_URL"
 
 2. **package.jsonにスクリプトを追加**
    ```json
-   "dev:qa": "./scripts/run-env-vite.sh qa"
+   "dev:start:qa": "bash -lc 'set -a; source scripts/env/qa.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; pnpm --filter @hierarchidb/app dev'",
+   "dev:qa": "pnpm run dev:pre && pnpm run dev:start:qa"
    ```
 
 3. **実行**
@@ -151,12 +152,9 @@ export VITE_BFF_BASE_URL="http://localhost:8787/api/auth"  # 差分のみ
 # GitHub Actions例
 - name: Build Production
   run: |
-    # CI環境用のシークレットを設定
     echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> app/.env.secrets
     echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> app/.env.secrets
-    
-    # ビルド実行
-    ./scripts/run-env-vite.sh production build
+    pnpm run build
 ```
 
 ## セキュリティ注意事項

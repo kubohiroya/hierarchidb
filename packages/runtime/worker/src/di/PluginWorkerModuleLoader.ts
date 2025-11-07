@@ -3,8 +3,9 @@ import type { PluginWorkerModuleLoader as PluginWorkerModuleLoaderContract } fro
 import { WorkerDiTokens } from './tokens.js';
 
 type PluginWorkerModuleMap = Record<string, string>;
-type PluginWorkerSourceMap = Record<string, string | undefined>;
 type PluginWorkerLoaderMap = Record<string, () => Promise<unknown>>;
+const createPluginWorkerSpecifier = (nodeType: string) =>
+  `@hierarchidb/${nodeType}-plugin/worker`;
 
 @injectable()
 export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContract {
@@ -16,9 +17,6 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     @inject(WorkerDiTokens.PluginWorkerLoaderMap)
     @optional()
     private readonly loaderMap?: PluginWorkerLoaderMap,
-    @inject(WorkerDiTokens.PluginWorkerSourceMap)
-    @optional()
-    private readonly sourceMap?: PluginWorkerSourceMap,
     @inject(WorkerDiTokens.PluginRegistry)
     @optional()
     private readonly registry?: Array<{ nodeType: string }>
@@ -55,30 +53,8 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
 
   importModule<T = unknown>(nodeType: string): Promise<T> {
     if (!this.cache.has(nodeType)) {
-      const directLoader = this.loaderMap?.[nodeType];
-      if (directLoader) {
-        const spec = normalizeWorkerSpecifier(nodeType, this.specMap[nodeType]);
-        const loaderPromise = (async () => {
-          try {
-            return await directLoader();
-          } catch (loaderError) {
-            if (spec) {
-              return this.loadFromSpecifier<T>(nodeType, spec);
-            }
-            throw loaderError;
-          }
-        })();
-        this.cache.set(nodeType, loaderPromise as Promise<unknown>);
-      } else {
-        const spec = normalizeWorkerSpecifier(nodeType, this.specMap[nodeType]);
-        if (!spec) {
-          return Promise.reject(
-            new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`)
-          );
-        }
-        const loaderPromise = this.loadFromSpecifier<T>(nodeType, spec);
-        this.cache.set(nodeType, loaderPromise as Promise<unknown>);
-      }
+      const loaderPromise = this.loadWorkerModule<T>(nodeType);
+      this.cache.set(nodeType, loaderPromise as Promise<unknown>);
     }
 
     const cached = this.cache.get(nodeType);
@@ -90,86 +66,40 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
     return cached as Promise<T>;
   }
 
-  private async loadFromSpecifier<T>(nodeType: string, spec: string): Promise<T> {
+  private async loadWorkerModule<T>(nodeType: string): Promise<T> {
+    const specifier = this.specMap[nodeType] ?? createPluginWorkerSpecifier(nodeType);
+    if (!specifier) {
+      throw new Error(`[PluginWorkerModuleLoader] Unknown worker plugin: ${nodeType}`);
+    }
+
+    const directLoader = this.loaderMap?.[nodeType];
+    if (directLoader) {
+      try {
+        return (await directLoader()) as T;
+      } catch (loaderError) {
+        console.warn(
+          `[PluginWorkerModuleLoader] direct loader failed for ${nodeType}, attempting bare specifier`,
+          loaderError
+        );
+      }
+    }
+
     try {
-      const result = await import(/* @vite-ignore */ spec);
-      return result as T;
-    } catch (primaryError) {
-      const attempted: string[] = [spec];
-
-      const isDevEnvironment =
-        typeof import.meta !== 'undefined' &&
-        Boolean((import.meta as ImportMeta & { env?: Record<string, unknown> }).env?.DEV);
-
-      if (isDevEnvironment && this.sourceMap) {
-        const relativePath = this.sourceMap[nodeType];
-        if (relativePath) {
-          try {
-            const runtimeSrcUrl = new URL('../', import.meta.url);
-            const devUrl = new URL(relativePath, runtimeSrcUrl).href;
-            attempted.push(devUrl);
-            const result = await import(/* @vite-ignore */ devUrl);
-            return result as T;
-          } catch (devError) {
-            console.warn(
-              `[PluginWorkerModuleLoader] dev import fallback failed for ${nodeType}`,
-              devError
-            );
-          }
-        }
-      }
-
-      if (this.sourceMap) {
-        const relativeSource = this.sourceMap[nodeType];
-        if (relativeSource) {
-          try {
-            const runtimeSrcUrl = new URL('../', import.meta.url);
-            const normalizedSource = relativeSource.startsWith('.')
-              ? relativeSource
-              : `../../../../../${relativeSource}`;
-            const prodUrl = new URL(normalizedSource, runtimeSrcUrl).href;
-            attempted.push(prodUrl);
-            const result = await import(/* @vite-ignore */ prodUrl);
-            return result as T;
-          } catch (sourceError) {
-            console.warn(
-              `[PluginWorkerModuleLoader] source import fallback failed for ${nodeType}`,
-              sourceError
-            );
-          }
-        }
-      }
-
-      // Attempt to load explicit dist path as a final fallback
-      const distSpec = spec.replace(/\/worker$/, '/dist/worker/index.js');
-      if (distSpec !== spec && !attempted.includes(distSpec)) {
-        try {
-          attempted.push(distSpec);
-          const result = await import(/* @vite-ignore */ distSpec);
-          return result as T;
-        } catch (distError) {
-          console.warn(
-            `[PluginWorkerModuleLoader] dist import fallback failed for ${nodeType}`,
-            distError
-          );
-        }
-      }
-
+      return await this.loadFromSpecifier<T>(specifier);
+    } catch (error) {
       console.warn(
-        `[PluginWorkerModuleLoader] import failed for ${nodeType} after attempts: ${attempted.join(', ')}`,
-        primaryError
+        `[PluginWorkerModuleLoader] import failed for ${nodeType} via ${specifier}`,
+        error
       );
-      throw primaryError;
+      throw error;
     }
   }
-}
-const createPluginWorkerSpecifier = (nodeType: string) =>
-  `@hierarchidb/plugins/${nodeType}/worker`;
 
-function normalizeWorkerSpecifier(nodeType: string, specifier: string | undefined): string {
-  if (!specifier) return createPluginWorkerSpecifier(nodeType);
-  if (specifier.startsWith('@hierarchidb/feature-core/')) {
-    return createPluginWorkerSpecifier(nodeType);
+  protected loadFromSpecifier<T>(specifier: string): Promise<T> {
+    const isBareSpecifier = specifier.startsWith('@hierarchidb/');
+    if (isBareSpecifier) {
+      return import(specifier) as Promise<T>;
+    }
+    return import(/* @vite-ignore */ specifier) as Promise<T>;
   }
-  return specifier;
 }

@@ -22,6 +22,9 @@
       "@hierarchidb/basemap-plugin": [
         "plugins/basemap-plugin/src/index.ts"
       ],
+      "@hierarchidb/basemap-plugin/worker-database": [
+        "plugins/basemap-plugin/src/worker/basemapEntitiesDB.ts"
+      ],
       "@hierarchidb/basemap-plugin/*": [
         "plugins/basemap-plugin/src/*"
       ],
@@ -140,10 +143,17 @@
         "packages/ui/memory-usage/src/*"
       ],
       "@hierarchidb/plugin-registry": [
-        "packages/plugin-registry/dist/registry.js"
+        "packages/plugin-registry/generated/registry.ts"
+      ],
+      "@hierarchidb/plugin-registry/derivations": [
+        "packages/plugin-registry/src/derivations.ts"
+      ],
+      "@hierarchidb/plugin-registry/types": [
+        "packages/plugin-registry/src/types.ts"
       ],
       "@hierarchidb/plugin-registry/*": [
-        "packages/plugin-registry/dist/*"
+        "packages/plugin-registry/generated/*",
+        "packages/plugin-registry/src/*"
       ],
       "@hierarchidb/plugin-presentation": [
         "packages/plugin-presentation/src/index.ts"
@@ -177,6 +187,9 @@
       ],
       "@hierarchidb/resolver-plugin": [
         "plugins/resolver-plugin/src/index.ts"
+      ],
+      "@hierarchidb/resolver-plugin/database": [
+        "plugins/resolver-plugin/src/worker/database/index.ts"
       ],
       "@hierarchidb/resolver-plugin/*": [
         "plugins/resolver-plugin/src/*"
@@ -220,6 +233,9 @@
       "@hierarchidb/runtime-worker": [
         "packages/runtime/worker/src/index.ts"
       ],
+      "@hierarchidb/runtime-worker/stage-worker": [
+        "packages/runtime/worker/src/stageWorker.entry.ts"
+      ],
       "@hierarchidb/runtime-worker/*": [
         "packages/runtime/worker/src/*"
       ],
@@ -240,12 +256,6 @@
       ],
       "@hierarchidb/styler-plugin/*": [
         "plugins/styler-plugin/src/*"
-      ],
-      "@hierarchidb/feature-core": [
-        "packages/feature-core/src/index.ts"
-      ],
-      "@hierarchidb/feature-core/*": [
-        "packages/feature-core/src/*"
       ],
       "@hierarchidb/table-metadata": [
         "packages/features/table-metadata/src/index.ts"

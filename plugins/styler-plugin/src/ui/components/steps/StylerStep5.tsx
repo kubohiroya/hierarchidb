@@ -90,7 +90,7 @@ export const StylerStep5: React.FC<StylerStep5Props> = ({
 
       if (onValidate) {
         const hasRequiredFields =
-          !!updatedData.stylerConfig.targetProperty && !!updatedData.selectedValueColumn;
+          !!updatedData.stylerConfig?.targetProperty && !!updatedData.selectedValueColumn;
         onValidate(hasRequiredFields);
       }
     },

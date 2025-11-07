@@ -5,7 +5,7 @@
  * Avoids Orchestrated APIs and uses direct Worker API calls.
  */
 
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';

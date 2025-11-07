@@ -14,8 +14,8 @@ export type {
   ShapeBatchCommandMap,
   ShapeBatchCommandPayload,
   BatchTaskStageType,
-  BatchTaskStage,
 } from './types.js';
+export { BatchTaskStage } from './types.js';
 
 // Metadata
 export * from './metadata.js';

@@ -64,7 +64,7 @@ export async function registerStylerWorkerStores(
 }
 
 export async function loadStylerEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../stylerEntitiesDB.js');
+  return import('../stylerEntitiesDB.js');
 }
 
 registerStylerWorkerStores().catch(() => {});

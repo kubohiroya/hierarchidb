@@ -25,7 +25,10 @@ function toRuntimeWiring(candidate: unknown): PluginRuntimeWiring | undefined {
     const fn = source[key];
     if (typeof fn === 'function') {
       const callable = fn as (...args: unknown[]) => unknown;
-      wiring[key] = () => callable.call(source);
+      wiring[key] = () => {
+        const result = callable.call(source);
+        return result as void | Promise<void>;
+      };
       hasMember = true;
     }
   }

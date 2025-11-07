@@ -2,7 +2,7 @@
  * Tests for trash breadcrumb normalisation utilities.
  */
 
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
 import { buildTrashBreadcrumbs } from '../../buildTrashBreadcrumbs.js';
 

@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
 import { buildTrashTreeData } from '../../buildTrashTreeData.js';
 

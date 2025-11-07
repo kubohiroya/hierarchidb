@@ -91,7 +91,7 @@ process.on('SIGINT', () => initiateShutdown(0));
 process.on('SIGTERM', () => initiateShutdown(0));
 
 spawnWithLabel('turbo', COLORS.turbo, 'pnpm', ['run', 'turbo:watch:internal']);
-spawnWithLabel('dev', COLORS.dev, 'bash', ['./scripts/run-env-vite.sh', 'development']);
+spawnWithLabel('dev', COLORS.dev, 'pnpm', ['run', 'dev']);
 
 process.on('exit', () => {
   for (const { child } of processes) {

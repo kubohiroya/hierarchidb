@@ -98,13 +98,13 @@ export const WorkerProgressReporter: React.FC = () => {
     } catch (error) {
       logInitReporterWarning('Failed to inspect __HDB_INIT_COMPLETE__ flag', error);
     }
-    const t = window.setInterval(() => {
+    const intervalId = window.setInterval(() => {
       // Late import to avoid circular
       import('~/worker-runtime/WorkerAPIClient.ts')
         .then(({ WorkerAPIClient }) => {
           if (WorkerAPIClient.isReady()) {
             markStepDone('Worker', readyLabel);
-            window.clearInterval(t);
+            window.clearInterval(intervalId);
           }
         })
         .catch((error) => {
@@ -113,7 +113,7 @@ export const WorkerProgressReporter: React.FC = () => {
     }, 200);
     return () => {
       window.removeEventListener('hierarchidb-worker-init-complete', onEvt);
-      window.clearInterval(t);
+      window.clearInterval(intervalId);
     };
   }, [markStepDone, t]);
   return null;

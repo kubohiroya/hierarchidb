@@ -33,7 +33,7 @@ async function resolveStoreRegistry(
 }
 
 async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
-  const { BasemapEntitiesDB } = await import('../basemapEntitiesDB.js');
+  const { BasemapEntitiesDB } = await import('@hierarchidb/basemap-plugin/worker-database');
   const db = new BasemapEntitiesDB();
   await db.open?.();
 
@@ -65,7 +65,7 @@ export async function registerBasemapWorkerStores(
 }
 
 export async function loadBasemapEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../basemapEntitiesDB.js');
+  return import('@hierarchidb/basemap-plugin/worker-database');
 }
 
 // Preserve legacy side-effect registration

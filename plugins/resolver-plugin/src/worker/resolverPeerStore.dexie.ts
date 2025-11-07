@@ -1,6 +1,6 @@
 import type { NodeId } from '@hierarchidb/common-types';
 import type { PeerEntity, PeerStore } from '@hierarchidb/runtime-worker';
-import type { ResolverEntitiesDB, ResolverPeerRow } from './resolverEntitiesDB.js';
+import type { ResolverPeerEntitiesDB, ResolverPeerRow } from './resolverPeerEntitiesDB.js';
 import type { ResolverPeerData } from '../common/types/index.js';
 
 // TODO(resolver-runtime-worker-integration): once resolver plugin has runtime
@@ -14,7 +14,7 @@ const normalizeResolverPeerData = (data?: ResolverPeerData | null): ResolverPeer
   metadata: data?.metadata ?? {},
 });
 
-export function createResolverPeerStoreDexie(db: ResolverEntitiesDB): PeerStore<ResolverPeerData> {
+export function createResolverPeerStoreDexie(db: ResolverPeerEntitiesDB): PeerStore<ResolverPeerData> {
   return {
     async get(nodeId: NodeId) {
       const row = await db.peerEntities.get(nodeId);

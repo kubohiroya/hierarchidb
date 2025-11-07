@@ -2,8 +2,8 @@ import type {
   ImportData,
   ImportProgress as APIImportProgress,
   WorkerAPI,
-} from '@hierarchidb/feature-core/common-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-api';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import { useCallback, useRef, useState } from 'react';
 import { getInstalledPlugins } from '../services/plugin-registry.ts';

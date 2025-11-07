@@ -1,5 +1,5 @@
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';

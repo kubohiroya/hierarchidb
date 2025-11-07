@@ -7,11 +7,11 @@ import {
   type PluginPresentationDefinition,
   type PluginPresentationManifest,
   setPluginPresentationDefinitions,
-} from '@hierarchidb/feature-core/plugin-presentation';
+} from '@hierarchidb/plugin-presentation';
 import type {
   PluginIconConfig,
   PluginManifest,
-} from '@hierarchidb/feature-core/plugin-registry/types';
+} from '@hierarchidb/plugin-registry/types';
 import { getInstalledPlugins, type InstalledPlugin } from './plugin-registry.js';
 
 let currentSignature: string | null = null;
@@ -95,4 +95,4 @@ export function resetPluginPresentationCacheForTests(): void {
   coreResetForTests();
 }
 
-export type { PluginPresentation } from '@hierarchidb/feature-core/plugin-presentation';
+export type { PluginPresentation } from '@hierarchidb/plugin-presentation';

@@ -5,7 +5,7 @@ import {
   createDraftWorkingCopyBase,
   markWorkingCopyUpdated,
 } from '@hierarchidb/plugin-runtime-services';
-import { resolverDB } from './database/ResolverDatabase.js';
+import { resolverEntitiesDB } from './database/index.js';
 import type {
   DataTransformation,
   DuplicateResolutionStrategy,
@@ -53,7 +53,7 @@ export class ResolverEntityService extends BaseEntityService<
   CreateResolverData,
   ResolverSearchCriteria
 > {
-  protected table: Table<ResolverEntity, NodeId> = resolverDB.resolvers;
+  protected table: Table<ResolverEntity, NodeId> = resolverEntitiesDB.resolvers;
 
   /**
    * Build a Resolver entity from creation data
@@ -119,7 +119,7 @@ export class ResolverEntityService extends BaseEntityService<
    */
   protected async cleanupEntityData(entity: ResolverEntity): Promise<void> {
     // Delete working copies associated with this entity
-    await resolverDB.workingCopies.delete(entity.nodeId);
+    await resolverEntitiesDB.workingCopies.delete(entity.nodeId);
 
     // Additional cleanup for compiled functions or cached data could go here
   }
@@ -158,8 +158,8 @@ export class ResolverEntityService extends BaseEntityService<
       throw new Error('Working copy missing treeNodeId during creation');
     }
 
-    await resolverDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
-    const stored = await resolverDB.workingCopies.get(workingCopy.treeNodeId);
+    await resolverEntitiesDB.workingCopies.put(workingCopy, workingCopy.treeNodeId);
+    const stored = await resolverEntitiesDB.workingCopies.get(workingCopy.treeNodeId);
     if (stored) {
       return {
         ...stored,
@@ -175,7 +175,7 @@ export class ResolverEntityService extends BaseEntityService<
    * Get working copy by node ID
    */
   async getWorkingCopy(nodeId: NodeId): Promise<ResolverWorkingCopy | null> {
-    const existing = await resolverDB.workingCopies.get(nodeId);
+    const existing = await resolverEntitiesDB.workingCopies.get(nodeId);
     return existing ?? null;
   }
 
@@ -189,7 +189,7 @@ export class ResolverEntityService extends BaseEntityService<
     if (typeof treeNodeId !== 'string') {
       throw new TypeError(`Working copy key must be string, received ${String(treeNodeId)}`);
     }
-    const workingCopy = await resolverDB.workingCopies.get(treeNodeId);
+    const workingCopy = await resolverEntitiesDB.workingCopies.get(treeNodeId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${treeNodeId}`);
     }
@@ -207,7 +207,7 @@ export class ResolverEntityService extends BaseEntityService<
       workingCopyId: workingCopy.workingCopyId ?? workingCopy.treeNodeId,
     };
 
-    await resolverDB.workingCopies.put(merged, merged.treeNodeId);
+    await resolverEntitiesDB.workingCopies.put(merged, merged.treeNodeId);
     return merged;
   }
 
@@ -215,7 +215,7 @@ export class ResolverEntityService extends BaseEntityService<
    * Commit working copy changes back to the entity
    */
   async commitWorkingCopy(workingCopyId: NodeId): Promise<ResolverEntity> {
-    const workingCopy = await resolverDB.workingCopies.get(workingCopyId);
+    const workingCopy = await resolverEntitiesDB.workingCopies.get(workingCopyId);
     if (!workingCopy) {
       throw new Error(`Working copy not found: ${workingCopyId}`);
     }
@@ -231,7 +231,7 @@ export class ResolverEntityService extends BaseEntityService<
 
     const updatedEntity = await this.updateEntity(entityId as NodeId, entityData);
 
-    await resolverDB.workingCopies.delete(workingCopyId);
+    await resolverEntitiesDB.workingCopies.delete(workingCopyId);
 
     return updatedEntity;
   }
@@ -240,7 +240,7 @@ export class ResolverEntityService extends BaseEntityService<
    * Discard working copy changes
    */
   async discardWorkingCopy(workingCopyId: NodeId): Promise<void> {
-    await resolverDB.workingCopies.delete(workingCopyId);
+    await resolverEntitiesDB.workingCopies.delete(workingCopyId);
   }
 
   /**

@@ -38,7 +38,7 @@
   - やること: Dexie 利用有無の判断、必要なら loader 追加・ModuleLoader 更新
 
 ## Phase 3: 全プラグイン展開
-- [ ] `scripts/` 配下のユーティリティ (run-env-vite.sh, dep-fence, codemod runner など) を新しい import/プラグイン構成に合わせて更新
+- [ ] `scripts/` 配下のユーティリティ（`package.json` の `dev:*` / `build:*` スクリプト、dep-fence、codemod runner 等）を新しい import/プラグイン構成に合わせて更新（run-env-vite.sh 廃止後のフローで検証）
 - [ ] `knip.json` / `knip.*` の未使用判定設定を調整し、新構成のエントリを検出対象に追加
 - [ ] 共通ビルド/設定ファイル (`tsup.*`, `vitest.config.ts`, `eslint.config`, `dep-fence.config` 等) を見直し、runtime/プラグイン構成変化に追随
 - [ ] プラグイン全体へ codemod を適用（basemap / styler / spreadsheet / route / timeline 等）

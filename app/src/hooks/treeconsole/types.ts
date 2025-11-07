@@ -5,13 +5,13 @@
  * useTreeConsoleIntegration hook modules.
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   CommandResult,
   NodeId,
   TreeId,
   TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';

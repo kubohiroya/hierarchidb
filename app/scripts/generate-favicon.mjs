@@ -18,6 +18,14 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const shouldSkip =
+  process.env.HDB_SKIP_FAVICON === '1' || process.env.SKIP_FAVICON === '1';
+
+if (shouldSkip) {
+  console.log('ℹ️  Skipping favicon generation (HDB_SKIP_FAVICON=1)');
+  process.exit(0);
+}
+
 const publicDir = join(__dirname, '..', 'public');
 const svgPath = join(publicDir, 'favicon.svg');
 const pngPath = join(publicDir, 'favicon.png');
@@ -43,7 +51,7 @@ console.log('✅ Generated favicon assets');
 console.log(`   - favicon.png (${width}x${height})`);
 console.log('   - favicon.ico (PNG payload inside ICO container)');
 
-function readPngDimensions(buffer: Buffer): { width: number; height: number } {
+function readPngDimensions(buffer) {
   const expectedSignature = 0x89504e47;
   const signature = buffer.readUInt32BE(0);
   if (signature !== expectedSignature) {
@@ -55,7 +63,7 @@ function readPngDimensions(buffer: Buffer): { width: number; height: number } {
   return { width, height };
 }
 
-function createIcoFromPng(pngBuffer: Buffer, width: number, height: number): Buffer {
+function createIcoFromPng(pngBuffer, width, height) {
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0); // reserved
   header.writeUInt16LE(1, 2); // icon type

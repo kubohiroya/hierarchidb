@@ -61,7 +61,7 @@ export async function registerTimelineWorkerStores(options: RegisterTimelineWork
 }
 
 export async function loadTimelineEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../timelineEntitiesDB.js');
+  return import('../timelineEntitiesDB.js');
 }
 
 // Maintain legacy side-effect registration for existing consumers

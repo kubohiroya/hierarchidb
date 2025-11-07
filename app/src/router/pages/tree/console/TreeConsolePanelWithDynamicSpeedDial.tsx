@@ -5,8 +5,8 @@
  * to replace hardcoded plugin actions with dynamic plugin loading.
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
 import {
   TreeConsolePanel,
   type TreeConsolePanelProps,

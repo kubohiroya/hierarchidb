@@ -25,10 +25,6 @@ export async function loadResolverEntityHandlerModule() {
   return import(/* @vite-ignore */ './worker/ResolverEntityService.js');
 }
 
-export async function loadResolverDatabaseModule() {
-  return import(/* @vite-ignore */ './worker/database/ResolverDatabase.js');
-}
-
 export async function loadResolverDialogModule() {
   return import(/* @vite-ignore */ './ui/components/ResolverDialog.js');
 }

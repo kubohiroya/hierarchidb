@@ -6,11 +6,11 @@
  * bootstrap flow so that consumers never observe a null client reference.
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   WorkerClientRef,
   WorkerInitializationChannel,
-} from '@hierarchidb/feature-core/runtime-client';
+} from '@hierarchidb/runtime-client';
 import type { Remote } from 'comlink';
 import type { CSSProperties, ReactNode } from 'react';
 import {

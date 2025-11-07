@@ -1,17 +1,17 @@
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { PluginWorkerId } from '@hierarchidb/feature-core/runtime-worker';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { PluginWorkerId } from '@hierarchidb/runtime-worker';
 import type { Remote } from 'comlink';
 import { pluginWorkerPreloads } from '~/plugin-registry/index.ts';
 import { loadWorkerAPIClientModule } from './workerApiClientLoader.js';
 
 // NOTE: Worker runtime and plugin worker modules are no longer imported through
 // legacy `*/worker` subpath specifiers.  Instead we delegate to the
-// `@hierarchidb/feature-core/runtime-worker` module-path helpers so that both the runtime
+// `@hierarchidb/runtime-worker` module-path helpers so that both the runtime
 // bundle and each plugin worker can be resolved via a single, versioned entry
 // point.  This loader keeps the cache warm and preloads the optional peer store
 // registration helpers for the plugin-loader that still expose Dexie-backed stores.
 
-type ModulePathsModule = typeof import('@hierarchidb/feature-core/runtime-worker');
+type ModulePathsModule = typeof import('@hierarchidb/runtime-worker');
 
 const pluginWorkerPreloadMap = pluginWorkerPreloads as Record<string, string[]>;
 const PLUGINS_TO_PRELOAD = Object.keys(pluginWorkerPreloadMap) as PluginWorkerId[];
@@ -29,7 +29,7 @@ const getModulePaths = (): ModulePathsModule | null => cachedModulePaths;
 const loadModulePaths = async (): Promise<ModulePathsModule> => {
   if (cachedModulePaths) return cachedModulePaths;
   if (!modulePathsPromise) {
-    modulePathsPromise = import('@hierarchidb/feature-core/runtime-worker').then((mod) => {
+    modulePathsPromise = import('@hierarchidb/runtime-worker').then((mod) => {
       cachedModulePaths = mod;
       return mod;
     });

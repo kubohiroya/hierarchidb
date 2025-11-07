@@ -5,8 +5,8 @@
  * when change events stream in from the runtime.
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';

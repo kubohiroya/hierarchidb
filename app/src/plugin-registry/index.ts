@@ -3,16 +3,16 @@ import {
   pluginDatabaseLoaders,
   pluginWorkerPreloads,
   pluginIconLoaders as registryIconLoaders,
-} from '@hierarchidb/feature-core/plugin-registry';
+} from '@hierarchidb/plugin-registry';
 import {
   derivePluginDefinitions,
   derivePluginModuleSources,
   derivePluginModuleSpecifiers,
-} from '@hierarchidb/feature-core/plugin-registry/derivations';
+} from '@hierarchidb/plugin-registry/derivations';
 import type {
   PluginDefinition,
   PluginRegistryEntry,
-} from '@hierarchidb/feature-core/plugin-registry/types';
+} from '@hierarchidb/plugin-registry/types';
 
 export const pluginRegistry: PluginRegistryEntry[] = canonicalRegistry;
 
@@ -88,6 +88,28 @@ export const pluginIconLoaders: Record<string, () => Promise<unknown>> = Object.
 export const pluginWorkerModuleMap: Record<string, string> = derivePluginModuleSpecifiers(
   pluginRegistry,
   'worker'
+);
+
+export const pluginWorkerModuleSources: Record<string, string | undefined> =
+  derivePluginModuleSources(pluginRegistry, 'worker');
+
+const workerModuleGlob = import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}');
+
+function resolveWorkerLoader(sourcePath: string | undefined):
+  | (() => Promise<unknown>)
+  | undefined {
+  if (!sourcePath) return undefined;
+  const relativeKey = `../../../${sourcePath}`;
+  return workerModuleGlob[relativeKey];
+}
+
+export const pluginWorkerLoaders: Record<string, () => Promise<unknown>> = Object.fromEntries(
+  Object.entries(pluginWorkerModuleSources)
+    .map(([nodeType, sourcePath]) => {
+      const loader = resolveWorkerLoader(sourcePath);
+      return loader ? ([nodeType, loader] as const) : null;
+    })
+    .filter((entry): entry is readonly [string, () => Promise<unknown>] => entry !== null)
 );
 
 export const pluginDatabaseModuleMap: Record<string, string> = derivePluginModuleSpecifiers(

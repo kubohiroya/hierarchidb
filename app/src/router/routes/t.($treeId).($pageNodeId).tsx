@@ -1,4 +1,4 @@
-import type { Tree } from '@hierarchidb/feature-core/common-types';
+import type { Tree } from '@hierarchidb/common-types';
 import { UserLoginButton } from '@hierarchidb/ui-shell/ui-usermenu';
 import { Folder as FolderIcon, AccountTree as TreeIcon } from '@mui/icons-material';
 import {

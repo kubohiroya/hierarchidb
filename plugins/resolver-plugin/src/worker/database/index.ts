@@ -1,5 +1,22 @@
-export { resolverDB } from './ResolverDatabase.js';
+import { Dexie, type Table } from 'dexie';
+import { getDBName } from '@hierarchidb/util';
+import type { ResolverEntity, ResolverWorkingCopy } from '../../common/types/index.js';
 
-export async function loadResolverDatabaseModule() {
-  return import(/* @vite-ignore */ './ResolverDatabase.js');
+/**
+ * Resolver worker-side storage for resolver definitions and working copies.
+ * Exposed via `@hierarchidb/resolver-plugin/database` so loaders can prewarm Dexie consistently.
+ */
+export class ResolverEntitiesDB extends Dexie {
+  resolvers!: Table<ResolverEntity>;
+  workingCopies!: Table<ResolverWorkingCopy>;
+
+  constructor() {
+    super(getDBName('resolver-db'));
+    this.version(1).stores({
+      resolvers: '&id, nodeId, name, createdAt, updatedAt',
+      workingCopies: '&treeNodeId, createdAt, updatedAt',
+    });
+  }
 }
+
+export const resolverEntitiesDB = new ResolverEntitiesDB();

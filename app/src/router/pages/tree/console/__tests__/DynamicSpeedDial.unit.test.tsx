@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import type { TreeId } from '@hierarchidb/common-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DynamicSpeedDial } from '../DynamicSpeedDial.js';

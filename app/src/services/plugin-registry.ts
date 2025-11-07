@@ -1,10 +1,10 @@
-import type { NodeType } from '@hierarchidb/feature-core/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 import type {
   PluginCategoryConfig,
   PluginIconConfig,
   PluginManifest,
   PluginRegistryEntry,
-} from '@hierarchidb/feature-core/plugin-registry/types';
+} from '@hierarchidb/plugin-registry/types';
 import appPackageJson from '../../package.json' with { type: 'json' };
 import { pluginRegistry } from '../plugin-registry/index.ts';
 

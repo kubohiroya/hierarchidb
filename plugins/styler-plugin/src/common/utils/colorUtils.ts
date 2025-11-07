@@ -393,7 +393,7 @@ export function getContrastRatio(color1: string, color2: string): number {
     const [rs, gs, bs] = [r, g, b].map((c): number => {
       c = c / 255;
       return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-    });
+    }) as [number, number, number];
     return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
   };
 

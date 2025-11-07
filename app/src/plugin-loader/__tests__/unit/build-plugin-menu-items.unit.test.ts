@@ -1,4 +1,4 @@
-import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import type { TreeId } from '@hierarchidb/common-types';
 import { describe, expect, it } from 'vitest';
 import {
   buildMenuItemsForContext,

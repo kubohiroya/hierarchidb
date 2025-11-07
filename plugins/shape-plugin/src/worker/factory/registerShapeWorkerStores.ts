@@ -78,7 +78,7 @@ export async function registerShapeWorkerStores(options: RegisterShapeWorkerStor
 }
 
 export async function loadShapeEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../shapeEntitiesDB.js');
+  return import('../shapeEntitiesDB.js');
 }
 
 registerShapeWorkerStores().catch(() => {});

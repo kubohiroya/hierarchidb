@@ -6,12 +6,12 @@
   "main": "src/entry.client.tsx",
   "scripts": {
     "generate:nojekyll": "mkdir -p dist/assets && touch dist/assets/.nojekyll",
-    "generate:favicon": "tsx scripts/generate-favicon.ts",
+    "generate:favicon": "node scripts/generate-favicon.mjs",
     "dev": "vite dev",
     "test": "vitest run",
     "typecheck": "NODE_OPTIONS=\"--max-old-space-size=6144\" tsc -b tsconfig.typecheck.json --noEmit --pretty false",
     "build": "pnpm run generate:favicon && pnpm run generate:nojekyll && pnpm --filter @hierarchidb/plugin-registry build && vite build --config vite.config.ts",
-    "preview": "vite preview --config vite.preview.config.ts",
+    "preview": "vite preview",
     "format": "biome check --write src",
     "format:check": "biome check src --reporter summary",
     "predeploy": "pnpm run build",
@@ -25,9 +25,26 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@hierarchidb/feature-core": "workspace:*",
+    "@hierarchidb/common-api": "workspace:*",
+    "@hierarchidb/common-types": "workspace:*",
     "@hierarchidb/tag": "workspace:*",
     "@hierarchidb/plugin-service-api": "workspace:*",
+    "@hierarchidb/plugin-presentation": "workspace:*",
+    "@hierarchidb/plugin-registry": "workspace:*",
+    "@hierarchidb/plugin-ui-sdk": "workspace:*",
+    "@hierarchidb/runtime-client": "workspace:*",
+    "@hierarchidb/runtime-worker": "workspace:*",
+    "@hierarchidb/util": "workspace:*",
+    "@hierarchidb/basemap-plugin": "workspace:*",
+    "@hierarchidb/folder-plugin": "workspace:*",
+    "@hierarchidb/linker-plugin": "workspace:*",
+    "@hierarchidb/location-plugin": "workspace:*",
+    "@hierarchidb/resolver-plugin": "workspace:*",
+    "@hierarchidb/route-plugin": "workspace:*",
+    "@hierarchidb/shape-plugin": "workspace:*",
+    "@hierarchidb/spreadsheet-plugin": "workspace:*",
+    "@hierarchidb/styler-plugin": "workspace:*",
+    "@hierarchidb/timeline-plugin": "workspace:*",
     "@hierarchidb/ui-shell": "workspace:*",
     "@mui/icons-material": "^7.3.2",
     "@mui/material": "^7.3.2",
@@ -69,22 +86,33 @@
   "turbo": {
     "pipeline": {
       "build": {
-      "dependsOn": [
-        "^build",
-        "@hierarchidb/tools-build-scripts#build",
-        "@hierarchidb/tools-load-plugin-manifest#build",
-        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
-        "@hierarchidb/plugin-registry#build"
-      ]
-    },
-    "typecheck": {
-      "dependsOn": [
-        "@hierarchidb/tools-build-scripts#build",
-        "@hierarchidb/tools-load-plugin-manifest#build",
-        "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
-        "@hierarchidb/plugin-registry#build"
-      ]
+        "dependsOn": [
+          "^build",
+          "@hierarchidb/tools-build-scripts#build",
+          "@hierarchidb/tools-load-plugin-manifest#build",
+          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+          "@hierarchidb/runtime-worker#build",
+          "@hierarchidb/plugin-registry#build",
+          "@hierarchidb/basemap-plugin#build",
+          "@hierarchidb/folder-plugin#build",
+          "@hierarchidb/linker-plugin#build",
+          "@hierarchidb/location-plugin#build",
+          "@hierarchidb/resolver-plugin#build",
+          "@hierarchidb/route-plugin#build",
+          "@hierarchidb/shape-plugin#build",
+          "@hierarchidb/spreadsheet-plugin#build",
+          "@hierarchidb/styler-plugin#build",
+          "@hierarchidb/timeline-plugin#build"
+        ]
+      },
+      "typecheck": {
+        "dependsOn": [
+          "@hierarchidb/tools-build-scripts#build",
+          "@hierarchidb/tools-load-plugin-manifest#build",
+          "@hierarchidb/vite-plugin-hierarchidb-plugin-alias#build",
+          "@hierarchidb/plugin-registry#build"
+        ]
+      }
     }
   }
-}
 }

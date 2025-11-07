@@ -10,8 +10,8 @@
   - `@hierarchidb/shape-plugin` のみ直接指定されている。プラグインを段階的に factory 化する際に対象を追加する必要がある。
 
 ## Scripts
-- `scripts/run-env-vite.sh`, `scripts/generate-plugin-loader.mjs`
-  - プラグインの手動列挙があるため、動的 import 版のレジストリへ置き換える必要があるか調査中。
+- `package.json` の `dev:*` / `build:*` / `preview:*` スクリプト、`scripts/generate-plugin-loader.mjs`
+  - 2025-11-10 時点で run-env-vite.sh を廃止し、Bash ワンライナーで環境設定を読み込む方式へ移行済み。動的 import レジストリは Vite プラグイン内で自動生成されるため、旧 `tools:gen-plugin-registry` 呼び出しは不要になった。
 - `scripts/check-shims.mjs`
   - dist 参照など、factory 化後にパスが変わる箇所を検出する必要有り。
   - 要調査: Worker factory への移行後に shim が再生成されるかどうか。

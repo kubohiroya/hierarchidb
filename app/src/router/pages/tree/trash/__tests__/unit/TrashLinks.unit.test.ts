@@ -1,4 +1,4 @@
-import type { NodeId } from '@hierarchidb/feature-core/common-types';
+import type { NodeId } from '@hierarchidb/common-types';
 import { buildTreeConsoleLinkHref } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import { describe, expect, it } from 'vitest';
 

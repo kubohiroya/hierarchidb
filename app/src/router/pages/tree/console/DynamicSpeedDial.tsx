@@ -5,7 +5,7 @@
  * and displays them as creation actions, filtered by treeId.
  */
 
-import type { TreeId } from '@hierarchidb/feature-core/common-types';
+import type { TreeId } from '@hierarchidb/common-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';

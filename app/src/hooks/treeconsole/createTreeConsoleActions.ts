@@ -11,7 +11,7 @@ import type {
   NodeType,
   TreeId,
   TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { preconnectPluginServices } from '../../services/preconnect.js';

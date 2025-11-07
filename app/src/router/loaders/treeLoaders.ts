@@ -1,11 +1,11 @@
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   NodeAction,
   NodeId,
   NodeType,
   Tree,
   TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 
 // Re-export types from loader.ts for compatibility

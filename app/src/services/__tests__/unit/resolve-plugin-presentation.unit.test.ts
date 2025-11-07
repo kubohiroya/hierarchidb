@@ -1,4 +1,4 @@
-import type { NodeType } from '@hierarchidb/feature-core/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPresentation, resetPluginPresentationCacheForTests } from '../../plugin-presentation.js';
 import type { InstalledPlugin } from '../../plugin-registry.js';
@@ -18,7 +18,7 @@ vi.mock('../../plugin-registry.js', async () => {
 
 const createPlugin = (overrides: Partial<InstalledPlugin>): InstalledPlugin => ({
   nodeType: overrides.nodeType ?? ('folder' as NodeType),
-  packageName: overrides.packageName ?? '@hierarchidb/feature-core/folder-plugin',
+  packageName: overrides.packageName ?? '@hierarchidb/folder-plugin',
   version: overrides.version ?? '0.0.0',
   manifest: overrides.manifest ?? null,
   hasUI: overrides.hasUI ?? true,

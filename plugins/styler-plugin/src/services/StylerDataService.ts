@@ -19,8 +19,11 @@ import type {
   TabularDataApi,
 } from '@hierarchidb/ui-tabular-extract';
 import type { StylerEntity } from '../common/types/StylerEntity.js';
-import type { StylerConfig, StylerTableRow } from '../common/types/stylerTypes.js';
-import type { ColorCalculationResult } from '../common/utils/colorUtils.js';
+import type {
+  ColorCalculationResult,
+  StylerConfig,
+  StylerTableRow,
+} from '../common/types/stylerTypes.js';
 import { valueToColor } from '../common/utils/colorUtils.js';
 
 type StyledCellStyle = {

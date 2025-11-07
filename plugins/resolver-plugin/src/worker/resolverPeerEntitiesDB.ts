@@ -13,7 +13,7 @@ export type ResolverPeerRow = {
   dialogState?: MultiStepDialogState | null;
 };
 
-export class ResolverEntitiesDB extends Dexie {
+export class ResolverPeerEntitiesDB extends Dexie {
   peerEntities!: Table<ResolverPeerRow, NodeId>;
 
   constructor(name = getDBName('resolver-entities-db')) {

@@ -22,8 +22,8 @@ async function resolveStoreRegistry(options: RegisterResolverWorkerStoresOptions
 }
 
 async function ensureResolverStores(registry: StoreRegistry): Promise<void> {
-  const { ResolverEntitiesDB } = await import('../resolverEntitiesDB.js');
-  const db = new ResolverEntitiesDB();
+  const { ResolverPeerEntitiesDB } = await import('../resolverPeerEntitiesDB.js');
+  const db = new ResolverPeerEntitiesDB();
   await db.open?.();
 
   if (!registry.getPeer('resolver')) {
@@ -52,7 +52,7 @@ export async function registerResolverWorkerStores(options: RegisterResolverWork
 }
 
 export async function loadResolverEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../resolverEntitiesDB.js');
+  return import('../resolverPeerEntitiesDB.js');
 }
 
 registerResolverWorkerStores().catch(() => {});

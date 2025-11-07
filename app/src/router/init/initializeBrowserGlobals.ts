@@ -1,7 +1,7 @@
 import {
   getWorkerClientHook,
   registerWorkerClientHook,
-} from '@hierarchidb/feature-core/runtime-client';
+} from '@hierarchidb/runtime-client';
 import { setGlobalMuiIconMap, toPascalCase } from '@hierarchidb/ui-shell/ui-icon';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType } from 'react';

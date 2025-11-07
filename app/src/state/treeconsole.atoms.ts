@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useState } from 'react';
 

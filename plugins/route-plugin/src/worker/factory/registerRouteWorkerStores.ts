@@ -69,7 +69,7 @@ export async function registerRouteWorkerStores(options: RegisterRouteWorkerStor
 }
 
 export async function loadRouteEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../routeEntitiesDB.js');
+  return import('../routeEntitiesDB.js');
 }
 
 registerRouteWorkerStores().catch(() => {});

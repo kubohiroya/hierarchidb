@@ -132,6 +132,38 @@ const custom = [
       },
     ],
   },
+  {
+    id: 'plugin-worker-package-import-ban',
+    when: (ctx) => (ctx.pkg?.name ?? '').endsWith('-plugin'),
+    because: 'Plugin worker factories must rely on local relative imports instead of package worker entries.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: [
+            '^@hierarchidb/.+-plugin/(?:worker(?:/.*)?|worker-database(?:/.*)?)',
+          ],
+          message: 'Use relative plugin sources instead of {importPath}.',
+        },
+        severity: 'ERROR',
+      },
+    ],
+  },
+  {
+    id: 'plugin-worker-no-dist-relative-imports',
+    when: (ctx) => (ctx.pkg?.name ?? '').endsWith('-plugin'),
+    because: 'Worker stores must not import dist bundles directly to avoid stale Dexie schemas.',
+    rules: [
+      {
+        rule: 'import-path-ban',
+        options: {
+          forbid: ['\\.\\./dist/'],
+          message: 'Reference Dexie modules via src/ paths instead of {importPath}.',
+        },
+        severity: 'ERROR',
+      },
+    ],
+  },
 
   // plugin-base must stay UI-headless (no worker/service SDK dependencies)
   {

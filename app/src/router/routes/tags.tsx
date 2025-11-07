@@ -1,5 +1,5 @@
 // import { useWorker } from '../contexts/WorkerProvider.js';
-import type { TagEntity } from '@hierarchidb/feature-core/common-types';
+import type { TagEntity } from '@hierarchidb/common-types';
 import { ArrowBack, FilterList, LocalOffer, Search, Sort } from '@mui/icons-material';
 // import { useNavigate } from 'react-router';
 import {

@@ -33,7 +33,7 @@
     }
   },
   "scripts": {
-    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist",
+    "build": "pnpm run clean && tsdown generated/registry.ts generated/types.ts generated/derivations.ts --config ../../tsdown.config.ts --outDir dist && node ./scripts/postbuild.mjs",
     "clean": "rm -rf dist"
   },
   "turbo": {
@@ -47,6 +47,8 @@
   },
   "tsdown": {
     "splitting": false,
+    "platform": "browser",
+    "target": "es2020",
     "external": [
       "@hierarchidb/*"
     ]

@@ -11,6 +11,7 @@
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -51,6 +52,9 @@ const pluginRegistryPackageDir = path.join(repoRoot, 'packages', 'plugin-registr
 const registryGeneratedDir = path.join(pluginRegistryPackageDir, 'generated');
 const registryOutputFile = path.join(registryGeneratedDir, 'registry.ts');
 const registryDeclarationsFile = path.join(registryGeneratedDir, 'registry.modules.d.ts');
+const registryOutputDir = path.dirname(registryOutputFile);
+export type PluginSpecifierMode = 'package' | 'dist-url';
+let pluginSpecifierMode: PluginSpecifierMode = 'package';
 const WORKER_ENTRY_BASENAMES = [
   'src/worker/index.ts',
   'src/worker/index.tsx',
@@ -147,6 +151,57 @@ const ICON_ENTRY_BASENAMES = [
   'src/icon.mjs',
   'src/icon.js',
   'src/icon.cjs',
+];
+const ROOT_DIST_ENTRY_BASENAMES = [
+  'dist/index.js',
+  'dist/index.mjs',
+  'dist/index.cjs',
+];
+const WORKER_DIST_ENTRY_BASENAMES = [
+  'dist/worker/index.js',
+  'dist/worker/index.mjs',
+  'dist/worker/index.cjs',
+  'dist/worker.js',
+  'dist/worker.mjs',
+  'dist/worker.cjs',
+];
+const UI_DIST_ENTRY_BASENAMES = [
+  'dist/ui/index.js',
+  'dist/ui/index.mjs',
+  'dist/ui/index.cjs',
+  'dist/ui.js',
+  'dist/ui.mjs',
+  'dist/ui.cjs',
+];
+const DATABASE_DIST_ENTRY_BASENAMES = [
+  'dist/services/database/index.js',
+  'dist/services/database/index.mjs',
+  'dist/services/database/index.cjs',
+  'dist/worker/database/index.js',
+  'dist/worker/database/index.mjs',
+  'dist/worker/database/index.cjs',
+  'dist/database/index.js',
+  'dist/database/index.mjs',
+  'dist/database/index.cjs',
+  'dist/database.js',
+  'dist/database.mjs',
+  'dist/database.cjs',
+];
+const COMMON_DIST_ENTRY_BASENAMES = [
+  'dist/common/index.js',
+  'dist/common/index.mjs',
+  'dist/common/index.cjs',
+  'dist/shared/index.js',
+  'dist/shared/index.mjs',
+  'dist/shared/index.cjs',
+];
+const ICON_DIST_ENTRY_BASENAMES = [
+  'dist/icon/index.js',
+  'dist/icon/index.mjs',
+  'dist/icon/index.cjs',
+  'dist/icon.js',
+  'dist/icon.mjs',
+  'dist/icon.cjs',
 ];
 
 function deriveNodeType(pkgName: string): string | undefined {
@@ -370,10 +425,16 @@ interface ManifestSummary {
   workerSourceEntry: string | null;
   databaseSourceEntry: string | null;
   commonSourceEntry: string | null;
+  rootDistEntry: string | null;
+  uiDistEntry: string | null;
+  workerDistEntry: string | null;
+  databaseDistEntry: string | null;
+  commonDistEntry: string | null;
   iconComponent?: {
     specifier: string;
     exportName?: string;
     sourceEntry?: string | null;
+    distEntry?: string | null;
   };
   workerPreloadExports: string[];
   databaseModuleSpecifier: string | null;
@@ -551,57 +612,119 @@ function indentJSON(value: unknown, indent: number): string {
   return json.replace(/\n/g, `\n${indentation}`);
 }
 
+function toRelativeImportPath(entry: string): string {
+  const absolute = path.join(repoRoot, entry);
+  let relative = path.relative(registryOutputDir, absolute).split(path.sep).join('/');
+  if (!relative.startsWith('.')) {
+    relative = `./${relative}`;
+  }
+  return relative;
+}
+
+function createDistSpecifierExpression(distEntry: string | null | undefined, fallbackSpecifier: string): string {
+  if (!distEntry) {
+    return JSON.stringify(fallbackSpecifier);
+  }
+  const relativePath = toRelativeImportPath(distEntry);
+  return `new URL(${JSON.stringify(relativePath)}, import.meta.url).href`;
+}
+
+function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: string): string | null {
+  if (!specifier || !specifier.startsWith(summary.packageName)) {
+    return null;
+  }
+  const suffix = specifier.slice(summary.packageName.length);
+  switch (suffix) {
+    case '':
+    case '/':
+      return summary.rootDistEntry;
+    case '/worker':
+      return summary.workerDistEntry;
+    case '/ui':
+      return summary.uiDistEntry;
+    case '/database':
+      return summary.databaseDistEntry;
+    case '/common':
+      return summary.commonDistEntry;
+    case '/icon':
+      return summary.iconComponent?.distEntry ?? null;
+    default:
+      return null;
+  }
+}
+
+function resolveSpecifierExpression(summary: ManifestSummary, fallbackSpecifier: string, distEntry?: string | null): string {
+  if (pluginSpecifierMode === 'dist-url') {
+    return createDistSpecifierExpression(distEntry ?? null, fallbackSpecifier);
+  }
+  return JSON.stringify(fallbackSpecifier);
+}
+
+function resolveTargetSpecifier(summary: ManifestSummary, specifier: string): string {
+  if (pluginSpecifierMode === 'dist-url') {
+    const distEntry = inferDistEntryForSpecifier(summary, specifier);
+    if (distEntry) {
+      return createDistSpecifierExpression(distEntry, specifier);
+    }
+  }
+  return JSON.stringify(specifier);
+}
+
+function formatModuleInfo(specifierExpr: string, options: { source?: string | null; exportName?: string } = {}): string {
+  const lines: string[] = ['{', `        specifier: ${specifierExpr},`];
+  if (options.source) {
+    lines.push(`        source: ${JSON.stringify(options.source)},`);
+  }
+  if (options.exportName) {
+    lines.push(`        exportName: ${JSON.stringify(options.exportName)},`);
+  }
+  lines.push('      }');
+  return lines.join('\n');
+}
+
+function formatModulesLiteral(summary: ManifestSummary): string {
+  const entries: string[] = [];
+  const rootSpecifier = resolveSpecifierExpression(summary, summary.packageName, summary.rootDistEntry);
+  entries.push(`    root: ${formatModuleInfo(rootSpecifier)}`);
+
+  if (summary.uiSourceEntry || summary.uiDistEntry) {
+    const specExpr = resolveSpecifierExpression(summary, `${summary.packageName}/ui`, summary.uiDistEntry);
+    entries.push(`    ui: ${formatModuleInfo(specExpr, { source: summary.uiSourceEntry })}`);
+  }
+
+  if (summary.workerSourceEntry || summary.workerDistEntry) {
+    const specExpr = resolveSpecifierExpression(summary, `${summary.packageName}/worker`, summary.workerDistEntry);
+    entries.push(`    worker: ${formatModuleInfo(specExpr, { source: summary.workerSourceEntry })}`);
+  }
+
+  if (summary.databaseSourceEntry || summary.databaseDistEntry) {
+    const specExpr = resolveSpecifierExpression(summary, `${summary.packageName}/database`, summary.databaseDistEntry);
+    entries.push(`    database: ${formatModuleInfo(specExpr, { source: summary.databaseSourceEntry })}`);
+  }
+
+  if (summary.commonSourceEntry || summary.commonDistEntry) {
+    const specExpr = resolveSpecifierExpression(summary, `${summary.packageName}/common`, summary.commonDistEntry);
+    entries.push(`    common: ${formatModuleInfo(specExpr, { source: summary.commonSourceEntry })}`);
+  }
+
+  if (summary.iconComponent) {
+    const icon = summary.iconComponent;
+    const iconSpecExpr = resolveSpecifierExpression(summary, icon.specifier, icon.distEntry ?? null);
+    entries.push(`    icon: ${formatModuleInfo(iconSpecExpr, { source: icon.sourceEntry, exportName: icon.exportName })}`);
+  }
+
+  return entries.length > 0
+    ? `{\n${entries.join(',\n')}\n  }`
+    : '{}';
+}
+
 function generateRegistrySource(summaries: ManifestSummary[]): string {
   const entries = summaries
     .map((summary) => {
       const version = summary.manifest.version ?? summary.packageVersion;
-      const modules: Record<string, { specifier: string; source?: string; exportName?: string }> = {
-        root: { specifier: summary.packageName },
-      };
-
-      if (summary.uiSourceEntry) {
-        modules.ui = {
-          specifier: `${summary.packageName}/ui`,
-          source: summary.uiSourceEntry,
-        };
-      }
-
-      if (summary.workerSourceEntry) {
-        modules.worker = {
-          specifier: `@hierarchidb/plugins/${summary.nodeType}/worker`,
-          source: summary.workerSourceEntry,
-        };
-      }
-
-      if (summary.databaseSourceEntry) {
-        modules.database = {
-          specifier: `${summary.packageName}/database`,
-          source: summary.databaseSourceEntry,
-        };
-      }
-
-      if (summary.commonSourceEntry) {
-        modules.common = {
-          specifier: `${summary.packageName}/common`,
-          source: summary.commonSourceEntry,
-        };
-      }
-
-      if (summary.iconComponent) {
-        modules.icon = {
-          specifier: summary.iconComponent.specifier,
-        };
-        if (summary.iconComponent.sourceEntry) {
-          modules.icon.source = summary.iconComponent.sourceEntry;
-        }
-        if (summary.iconComponent.exportName) {
-          modules.icon.exportName = summary.iconComponent.exportName;
-        }
-      }
-
       const dependenciesJSON = indentJSON(summary.dependencies, 6);
       const manifestJSON = indentJSON(summary.manifest ?? null, 6);
-      const modulesJSON = indentJSON(modules, 6);
+      const modulesLiteral = formatModulesLiteral(summary);
 
       return `  {
     nodeType: ${JSON.stringify(summary.nodeType)},
@@ -609,7 +732,7 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
     version: ${JSON.stringify(version)},
     dependencies: ${dependenciesJSON},
     manifest: ${manifestJSON},
-    modules: ${modulesJSON}
+    modules: ${modulesLiteral}
   },`;
     })
     .join('\n');
@@ -666,16 +789,18 @@ function generateRegistrySource(summaries: ManifestSummary[]): string {
       const lines: string[] = [];
       lines.push(`  ${JSON.stringify(summary.nodeType)}: {`);
       if (hasLoader) {
-        lines.push(`    moduleSpecifier: '${moduleSpecifier}',`);
+        const moduleSpecifierExpr = resolveSpecifierExpression(summary, moduleSpecifier, summary.databaseDistEntry);
+        lines.push(`    moduleSpecifier: ${moduleSpecifierExpr},`);
         lines.push('    async loader() {');
-        lines.push(`      const mod = await import('${moduleSpecifier}');`);
+        lines.push(`      const mod = await import(${moduleSpecifierExpr});`);
         lines.push('      return mod;');
         lines.push('    },');
       }
       if (hasPrewarm) {
         lines.push('    prewarm: [');
         for (const target of summary.databasePrewarmTargets) {
-          lines.push(`      { specifier: '${target.specifier}', exportName: '${target.exportName}' },`);
+          const targetSpecifierExpr = resolveTargetSpecifier(summary, target.specifier);
+          lines.push(`      { specifier: ${targetSpecifierExpr}, exportName: ${JSON.stringify(target.exportName)} },`);
         }
         lines.push('    ],');
       }
@@ -894,11 +1019,17 @@ async function collectManifests(): Promise<ManifestSummary[]> {
     } else {
       exportPathSet.add('');
     }
+    const rootDistEntry = await findEntryFile(pkgDir, ROOT_DIST_ENTRY_BASENAMES);
     const workerSourceEntry = await findEntryFile(pkgDir, WORKER_ENTRY_BASENAMES);
+    const workerDistEntry = await findEntryFile(pkgDir, WORKER_DIST_ENTRY_BASENAMES);
     const uiSourceEntry = await findEntryFile(pkgDir, UI_ENTRY_BASENAMES);
+    const uiDistEntry = await findEntryFile(pkgDir, UI_DIST_ENTRY_BASENAMES);
     const databaseSourceEntry = await findEntryFile(pkgDir, DATABASE_ENTRY_BASENAMES);
+    const databaseDistEntry = await findEntryFile(pkgDir, DATABASE_DIST_ENTRY_BASENAMES);
     const commonSourceEntry = await findEntryFile(pkgDir, COMMON_ENTRY_BASENAMES);
+    const commonDistEntry = await findEntryFile(pkgDir, COMMON_DIST_ENTRY_BASENAMES);
     const iconSourceEntry = await findEntryFile(pkgDir, ICON_ENTRY_BASENAMES);
+    const iconDistEntry = await findEntryFile(pkgDir, ICON_DIST_ENTRY_BASENAMES);
 
     const hasWorker = !!workerSourceEntry;
     const hasUI = !!uiSourceEntry;
@@ -914,6 +1045,7 @@ async function collectManifests(): Promise<ManifestSummary[]> {
               ? iconComponentConfig.exportName
               : undefined,
             sourceEntry: iconSourceEntry,
+            distEntry: iconDistEntry,
           }
         : undefined;
 
@@ -963,6 +1095,11 @@ async function collectManifests(): Promise<ManifestSummary[]> {
       workerSourceEntry,
       databaseSourceEntry,
       commonSourceEntry,
+      rootDistEntry,
+      uiDistEntry,
+      workerDistEntry,
+      databaseDistEntry,
+      commonDistEntry,
       iconComponent,
       workerPreloadExports,
       databaseModuleSpecifier,
@@ -974,7 +1111,14 @@ async function collectManifests(): Promise<ManifestSummary[]> {
   return manifests;
 }
 
-async function writeRegistrations(): Promise<void> {
+export type GeneratePluginRegistryOptions = {
+  mode?: PluginSpecifierMode;
+};
+
+export async function generatePluginRegistry(options: GeneratePluginRegistryOptions = {}): Promise<void> {
+  const requestedMode = (options.mode ?? (process.env.HDB_PLUGIN_SPEC_MODE as PluginSpecifierMode | undefined) ?? 'package')
+    .toLowerCase() as PluginSpecifierMode;
+  pluginSpecifierMode = requestedMode;
   const summaries = await collectManifests();
   const registrySource = generateRegistrySource(summaries);
   const declarationSource = generateModuleDeclarationSource(summaries);
@@ -989,4 +1133,6 @@ async function writeRegistrations(): Promise<void> {
   });
 }
 
-await writeRegistrations();
+if (import.meta.url === pathToFileURL(fileURLToPath(import.meta.url)).href) {
+  await generatePluginRegistry();
+}

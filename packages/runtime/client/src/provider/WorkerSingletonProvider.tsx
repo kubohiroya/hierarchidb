@@ -7,11 +7,14 @@
  */
 
 import type React from 'react';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { WorkerInitializationChannel } from '../WorkerInitializationChannel.js';
 
+type WorkerClient = WorkerAPI;
+
 interface WorkerState {
-  client: unknown | null; // Generic worker client type
+  client: WorkerClient | null;
   isReady: boolean;
   error: Error | null;
   progress: number;
@@ -22,7 +25,7 @@ interface WorkerProviderProps {
   children: React.ReactNode;
   loadingComponent?: React.ReactNode;
   errorComponent?: React.ComponentType<{ error: Error }>;
-  getWorkerClient: () => Promise<unknown>;
+  getWorkerClient: () => Promise<WorkerClient>;
   getRawWorker: () => Worker | null;
 }
 
@@ -81,10 +84,13 @@ export const WorkerSingletonProvider: React.FC<WorkerProviderProps> = ({
           }
 
           // Now verify Comlink communication is working
-          try {
-            await client.ping();
-          } catch (verifyError) {
-            throw new Error(`Comlink verification failed: ${verifyError}`);
+          const pingable = client as WorkerClient & { ping?: () => Promise<unknown> };
+          if (typeof pingable.ping === 'function') {
+            try {
+              await pingable.ping();
+            } catch (verifyError) {
+              throw new Error(`Comlink verification failed: ${verifyError}`);
+            }
           }
 
           if (mounted) {

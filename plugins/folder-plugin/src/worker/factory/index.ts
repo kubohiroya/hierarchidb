@@ -1,2 +1,2 @@
-export type { RegisterFolderWorkerStoresOptions } from './registerFolderWorkerStores.ts';
-export { registerFolderWorkerStores, loadFolderEntitiesDbModule } from './registerFolderWorkerStores.ts';
+export type { RegisterFolderWorkerStoresOptions } from './registerFolderWorkerStores.js';
+export { registerFolderWorkerStores, loadFolderEntitiesDbModule } from './registerFolderWorkerStores.js';

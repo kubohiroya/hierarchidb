@@ -5,8 +5,8 @@
  * a truncated breadcrumb list suitable for rendering in the console.
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import { useEffect, useMemo, useState } from 'react';

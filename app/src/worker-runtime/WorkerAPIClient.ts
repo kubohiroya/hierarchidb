@@ -2,7 +2,7 @@
  * WorkerAPIClient - Synchronous singleton for Worker access
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 
 // Create a type that matches the shared contract

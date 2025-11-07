@@ -9,7 +9,7 @@ import { faviconPlugin } from './vite-plugins/vite-plugin-favicon.js';
 import { comlink } from 'vite-plugin-comlink';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { createNodeTypeAliasPlugin } from './vite-plugins/vite-plugin-hierarchidb-plugin-alias/src/index.js';
-import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.ts';
+import { pluginWorkerVirtualModule } from './vite-plugins/vite-plugin-plugin-worker-virtual.js';
 import {
   collectWorkspacePackages,
   createDevAliasSelection,
@@ -21,6 +21,10 @@ import {
   toPosixRelative,
 } from '../config/dev-alias-config.js';
 import type { DevAliasSelection, WorkspacePackageMeta } from '../config/dev-alias-config.js';
+import {
+  generatePluginRegistry,
+  type PluginSpecifierMode,
+} from '../packages/tools/build-scripts/src/gen-plugin-registry.js';
 
 if (!process.listenerCount('uncaughtException')) {
   process.on('uncaughtException', (error) => {
@@ -63,7 +67,7 @@ function createRuntimeAliasConfig({
   workspacePackages: WorkspacePackageMeta[];
 }): RuntimeAliasConfig {
   const aliasMap = new Map<string, AliasEntry>();
-  const optimizeExclude = new Set<string>(['@hierarchidb/feature-core/runtime-client']);
+  const optimizeExclude = new Set<string>(['@hierarchidb/runtime-client']);
 
   const legacyUiMappings = [
     { spec: '@hierarchidb/components', src: '../packages/components/src/index.ts', dist: '../packages/components/dist/index.js' },
@@ -94,7 +98,7 @@ function createRuntimeAliasConfig({
     { spec: '@hierarchidb/runtime-worker', src: '../packages/runtime/worker/src/index.ts', dist: '../packages/runtime/worker/dist/index.js' },
     { spec: '@hierarchidb/map-adapter', src: '../packages/features/map-adapter/src/index.ts', dist: '../packages/features/map-adapter/dist/index.js' },
     { spec: '@hierarchidb/plugin-presentation', src: '../packages/plugin-presentation/src/index.ts', dist: '../packages/plugin-presentation/dist/index.js' },
-    { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/src/index.ts', dist: '../packages/plugin-registry/dist/registry.js' },
+    { spec: '@hierarchidb/plugin-registry', src: '../packages/plugin-registry/generated/registry.ts', dist: '../packages/plugin-registry/dist/registry.js' },
     { spec: '@hierarchidb/plugin-registry/derivations', src: '../packages/plugin-registry/src/derivations.ts', dist: '../packages/plugin-registry/dist/derivations.js' },
     { spec: '@hierarchidb/plugin-registry/types', src: '../packages/plugin-registry/src/types.ts', dist: '../packages/plugin-registry/dist/types.d.ts' },
     { spec: '@hierarchidb/plugin-ui-sdk', src: '../packages/plugin-ui-sdk/src/index.ts', dist: '../packages/plugin-ui-sdk/dist/index.js' },
@@ -153,19 +157,23 @@ function createRuntimeAliasConfig({
   };
 
   if (isDev) {
-    registerDevPackage('@hierarchidb/feature-core/runtime-worker', '../packages/runtime/worker/src/index.ts', {
+    registerDevPackage('@hierarchidb/runtime-worker', '../packages/runtime/worker/src/index.ts', {
       group: 'runtime',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/feature-core/runtime-client', '../packages/runtime/client/src/index.ts', {
+    addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime/worker/src/stageWorker.entry.ts', {
+      exclude: true,
+      exact: true,
+    });
+    registerDevPackage('@hierarchidb/runtime-client', '../packages/runtime/client/src/index.ts', {
       group: 'runtime',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/feature-core/map-adapter', '../packages/features/map-adapter/src/index.ts', {
+    registerDevPackage('@hierarchidb/map-adapter', '../packages/features/map-adapter/src/index.ts', {
       group: 'features',
       exclude: true,
     });
-    registerDevPackage('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/src/index.ts', {
+    registerDevPackage('@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/src/index.ts', {
       group: 'features',
       exclude: true,
     });
@@ -198,7 +206,16 @@ function createRuntimeAliasConfig({
 
     const pluginPkgRoot = path.resolve(rootDir, '../plugins');
     if (fs.existsSync(pluginPkgRoot)) {
+      const workerCandidates = ['src/worker/index.ts', 'src/worker.ts'];
       const workerFactoryCandidates = ['src/worker/factory/index.ts', 'src/worker-factory/index.ts', 'src/worker-factory.ts'];
+      const workerDatabaseCandidates = [
+        'src/worker/database/index.ts',
+        'src/services/database/index.ts',
+        'src/database/index.ts',
+        'src/database.ts',
+      ];
+      const uiCandidates = ['src/ui/index.ts', 'src/ui.ts'];
+      const iconCandidates = ['src/icon/index.ts', 'src/icon.ts'];
       const rootCandidates = ['src/index.ts', 'src/index.tsx', 'src/index.mts', 'src/index.mjs', 'src/index.js', 'src/index.cjs'];
 
       for (const entry of fs.readdirSync(pluginPkgRoot, { withFileTypes: true })) {
@@ -215,17 +232,42 @@ function createRuntimeAliasConfig({
           addAlias(specBase, rootRel, { exclude: true });
         }
 
+        const workerRel = resolvePluginCandidate(workerCandidates, pluginName);
+        if (workerRel) {
+          addAlias(`${specBase}/worker`, workerRel, { exclude: true });
+        }
+
         const workerFactoryRel = resolvePluginCandidate(workerFactoryCandidates, pluginName);
         if (workerFactoryRel) {
           addAlias(`${specBase}/worker-factory`, workerFactoryRel, { exclude: true });
         }
+
+        const workerDbRel = resolvePluginCandidate(workerDatabaseCandidates, pluginName);
+        if (workerDbRel) {
+          addAlias(`${specBase}/worker/database`, workerDbRel, { exclude: true });
+          addAlias(`${specBase}/database`, workerDbRel, { exclude: true });
+        }
+
+        const uiRel = resolvePluginCandidate(uiCandidates, pluginName);
+        if (uiRel) {
+          addAlias(`${specBase}/ui`, uiRel, { exclude: true });
+        }
+
+        const iconRel = resolvePluginCandidate(iconCandidates, pluginName);
+        if (iconRel) {
+          addAlias(`${specBase}/icon`, iconRel, { exclude: true });
+        }
       }
     }
   } else {
-    addAlias('@hierarchidb/feature-core/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/feature-core/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
-    addAlias('@hierarchidb/feature-core/map-adapter', '../packages/features/map-adapter/dist/index.js', { exclude: true, exact: true });
-    addAlias('@hierarchidb/feature-core/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/runtime-worker', '../packages/runtime/worker/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/runtime-worker/stage-worker', '../packages/runtime/worker/dist/stageWorker.entry.js', {
+      exclude: true,
+      exact: true,
+    });
+    addAlias('@hierarchidb/runtime-client', '../packages/runtime/client/dist/index.js', { exact: true });
+    addAlias('@hierarchidb/map-adapter', '../packages/features/map-adapter/dist/index.js', { exclude: true, exact: true });
+    addAlias('@hierarchidb/tabular-source-xlsx', '../packages/features/tabular-source-xlsx/dist/index.js', { exclude: true, exact: true });
     addAlias('@hierarchidb/ui-shell/ui-i18n', '../packages/ui/i18n/dist/index.js', { exclude: true, exact: true });
 
     for (const mapping of [...legacyUiMappings, ...legacyFeatureMappings]) {
@@ -316,6 +358,28 @@ function createRuntimeAliasConfig({
   };
 }
 
+const facadePrefixMap = [
+  { prefix: '@hierarchidb/', targetPrefix: '@hierarchidb/' },
+  { prefix: '@hierarchidb/ui-shell/', targetPrefix: '@hierarchidb/' },
+] as const;
+
+function facadeAliasPlugin(): Plugin {
+  return {
+    name: 'hierarchidb:facade-alias',
+    async resolveId(source, importer, options) {
+      for (const entry of facadePrefixMap) {
+        if (!source.startsWith(entry.prefix)) continue;
+        const subpath = source.slice(entry.prefix.length);
+        const normalized = `${entry.targetPrefix}${subpath}`;
+        const resolved = await this.resolve(normalized, importer, { ...options, skipSelf: true });
+        if (resolved) return resolved;
+        return normalized;
+      }
+      return null;
+    },
+  };
+}
+
 function missingSourceMapFallbackPlugin(): Plugin {
   return {
     name: 'hierarchidb:missing-sourcemap-fallback',
@@ -355,16 +419,16 @@ const pluginManifestWatchPattern = new RegExp(
 
 let pluginRegistryGenerationQueue: Promise<unknown> = Promise.resolve();
 
-function enqueuePluginRegistryGeneration() {
+function enqueuePluginRegistryGeneration(mode: PluginSpecifierMode) {
   pluginRegistryGenerationQueue = pluginRegistryGenerationQueue
-    //.then(() => generatePluginRegistry())
+    .then(() => generatePluginRegistry({ mode }))
     .catch((error) => {
       console.error('[plugin-registry-generator] Failed to regenerate registry', error);
     });
   return pluginRegistryGenerationQueue;
 }
 
-function pluginRegistryGeneratorPlugin({ rootDir }: { rootDir?: string } = {}): Plugin {
+function pluginRegistryGeneratorPlugin({ rootDir, mode }: { rootDir?: string; mode: PluginSpecifierMode }): Plugin {
   const resolvedRoot = rootDir ? path.resolve(rootDir) : path.resolve(__dirname, '..');
   const appPackagePath = path.resolve(resolvedRoot, 'app', 'package.json');
 
@@ -376,12 +440,12 @@ function pluginRegistryGeneratorPlugin({ rootDir }: { rootDir?: string } = {}): 
   return {
     name: 'hierarchidb:plugin-registry-generator',
     async configResolved() {
-      await enqueuePluginRegistryGeneration();
+      await enqueuePluginRegistryGeneration(mode);
     },
     configureServer(server) {
       const schedule = (file: string) => {
         if (shouldTrigger(file)) {
-          void enqueuePluginRegistryGeneration();
+          void enqueuePluginRegistryGeneration(mode);
         }
       };
       server.watcher.on('add', schedule);
@@ -389,7 +453,7 @@ function pluginRegistryGeneratorPlugin({ rootDir }: { rootDir?: string } = {}): 
     },
     async handleHotUpdate(ctx) {
       if (shouldTrigger(ctx.file)) {
-        await enqueuePluginRegistryGeneration();
+        await enqueuePluginRegistryGeneration(mode);
       }
       return undefined;
     },
@@ -508,11 +572,13 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   const plugins = [
     pluginRegistryGeneratorPlugin({
       rootDir: repoRoot,
+      mode: isDev ? 'package' : 'dist-url',
     }),
     createNodeTypeAliasPlugin({
       rootDir: repoRoot,
       shouldAlias: (entry) => isDev && shouldUsePluginSource(devAliasSelection, entry.packageName, entry.nodeType),
     }),
+    facadeAliasPlugin(),
     pluginWorkerVirtualModule(),
     /*
     devHealthPlugin({
@@ -867,10 +933,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           'react-resizable',
           'react-draggable',
           // Prevent bundling plugin database entry points; they stay lazy-loaded via plugin loader
-          '@hierarchidb/feature-core/basemap-plugin/database',
-          '@hierarchidb/feature-core/resolver-plugin/database',
-          '@hierarchidb/feature-core/route-plugin/database',
-          '@hierarchidb/feature-core/spreadsheet-plugin/database',
+          '@hierarchidb/basemap-plugin/database',
+          '@hierarchidb/basemap-plugin/dist/services/database/index.js',
+          '@hierarchidb/resolver-plugin/database',
+          '@hierarchidb/resolver-plugin/dist/services/database/index.js',
+          '@hierarchidb/route-plugin/database',
+          '@hierarchidb/route-plugin/dist/services/database/index.js',
+          '@hierarchidb/spreadsheet-plugin/database',
+          '@hierarchidb/spreadsheet-plugin/dist/services/database/index.js',
 
         ],
         output: {

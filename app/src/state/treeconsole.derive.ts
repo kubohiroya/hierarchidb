@@ -1,4 +1,4 @@
-import type { NodeId, TreeNode } from '@hierarchidb/feature-core/common-types';
+import type { NodeId, TreeNode } from '@hierarchidb/common-types';
 import type { DualKeyMap } from '@hierarchidb/util';
 
 type TreeNodeLike = {

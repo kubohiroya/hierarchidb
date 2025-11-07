@@ -4,7 +4,7 @@
  * Provides pure utilities for ordering and narrowing console node lists.
  */
 
-import type { NodeType } from '@hierarchidb/feature-core/common-types';
+import type { NodeType } from '@hierarchidb/common-types';
 import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
 import type { TreeConsoleState } from './types.js';
 

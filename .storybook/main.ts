@@ -9,7 +9,7 @@ function getAbsolutePath(value: string): any {
   return dirname(require.resolve(join(value, 'package.json')));
 }
 
-const config: StorybookConfig = {
+export const config: StorybookConfig = {
   stories: ['../packages/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     getAbsolutePath('@storybook/addon-links'),
@@ -41,4 +41,3 @@ const config: StorybookConfig = {
   },
 };
 
-export default config;

@@ -37,7 +37,7 @@ async function resolveStoreRegistry(options: RegisterFolderWorkerStoresOptions =
 }
 
 async function ensureFolderStores(registry: StoreRegistry): Promise<void> {
-  const { FolderEntitiesDB } = await import('../folderEntitiesDB.ts');
+  const { FolderEntitiesDB } = await import('../folderEntitiesDB.js');
   const db = new FolderEntitiesDB();
   await db.open?.();
 
@@ -77,7 +77,7 @@ export async function registerFolderWorkerStores(options: RegisterFolderWorkerSt
 }
 
 export async function loadFolderEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../folderEntitiesDB.ts');
+  return import('../folderEntitiesDB.js');
 }
 
 // Maintain legacy side-effect registration for existing consumers

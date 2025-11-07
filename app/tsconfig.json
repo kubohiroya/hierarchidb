@@ -15,6 +15,55 @@
       "@hierarchidb/*-plugin": [
         "../plugins/*-plugin/src/index.ts"
       ],
+      "@hierarchidb/common-api": [
+        "../packages/common/api/src/index.ts"
+      ],
+      "@hierarchidb/common-api/*": [
+        "../packages/common/api/src/*"
+      ],
+      "@hierarchidb/common-types": [
+        "../packages/common/types/src/index.ts"
+      ],
+      "@hierarchidb/common-types/*": [
+        "../packages/common/types/src/*"
+      ],
+      "@hierarchidb/plugin-presentation": [
+        "../packages/plugin-presentation/src/index.ts"
+      ],
+      "@hierarchidb/plugin-presentation/*": [
+        "../packages/plugin-presentation/src/*"
+      ],
+      "@hierarchidb/plugin-registry": [
+        "../packages/plugin-registry/generated/registry.ts"
+      ],
+      "@hierarchidb/plugin-registry/derivations": [
+        "../packages/plugin-registry/src/derivations.ts"
+      ],
+      "@hierarchidb/plugin-registry/types": [
+        "../packages/plugin-registry/src/types.ts"
+      ],
+      "@hierarchidb/plugin-registry/*": [
+        "../packages/plugin-registry/generated/*",
+        "../packages/plugin-registry/src/*"
+      ],
+      "@hierarchidb/plugin-ui-sdk": [
+        "../packages/plugin-ui-sdk/src/index.ts"
+      ],
+      "@hierarchidb/plugin-ui-sdk/*": [
+        "../packages/plugin-ui-sdk/src/*"
+      ],
+      "@hierarchidb/runtime-client": [
+        "../packages/runtime/client/src/index.ts"
+      ],
+      "@hierarchidb/runtime-client/*": [
+        "../packages/runtime/client/src/*"
+      ],
+      "@hierarchidb/runtime-worker": [
+        "../packages/runtime/worker/src/index.ts"
+      ],
+      "@hierarchidb/runtime-worker/*": [
+        "../packages/runtime/worker/src/*"
+      ],
       "@hierarchidb/util": [
         "../packages/util/src/index.ts"
       ],

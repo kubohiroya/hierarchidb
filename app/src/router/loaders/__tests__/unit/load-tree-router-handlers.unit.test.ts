@@ -3,7 +3,7 @@
  * Testing the loader functions that will be used by TanStack Router
  */
 
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type {
   NodeAction,
   NodeId,
@@ -11,7 +11,7 @@ import type {
   Tree,
   TreeId,
   TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {

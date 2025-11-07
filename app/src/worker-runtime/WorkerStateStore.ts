@@ -1,4 +1,4 @@
-import type { WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { Remote } from 'comlink';
 import {
   getWorkerInitCompleteMessage,

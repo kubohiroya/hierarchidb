@@ -45,7 +45,6 @@
     "**/node_modules/**",
     "**/*.d.ts",
     "app/docs/**",
-    "app/vite.preview.config.ts",
     "coverage/**",
     "docs/pdf/**",
     "packages/**/dist/**",
@@ -104,8 +103,7 @@
         },
         "vite": {
           "config": [
-            "app/vite.config.ts",
-            "app/vite.preview.config.ts"
+            "app/vite.config.ts"
           ]
         },
         "storybook": {

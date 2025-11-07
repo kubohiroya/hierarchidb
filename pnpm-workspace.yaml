@@ -18,7 +18,6 @@ packages:
   - packages/plugin-presentation
   - packages/plugin-base
   - packages/ui-shell
-  - packages/feature-core
   - packages/backend/*
   - packages/features/*
   - packages/plugin-runtime-services

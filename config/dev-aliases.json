@@ -4,10 +4,10 @@
     "ui"
   ],
   "packages": [
-    "@hierarchidb/feature-core/runtime-worker",
-    "@hierarchidb/feature-core/runtime-client",
-    "@hierarchidb/feature-core/map-adapter",
-    "@hierarchidb/feature-core/tabular-source-xlsx",
+    "@hierarchidb/runtime-worker",
+    "@hierarchidb/runtime-client",
+    "@hierarchidb/map-adapter",
+    "@hierarchidb/tabular-source-xlsx",
     "@hierarchidb/ui-shell/ui-i18n",
     "@hierarchidb/ui-shell/ui-icon"
   ],

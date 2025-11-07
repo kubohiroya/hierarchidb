@@ -1,4 +1,4 @@
-import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/feature-core/common-api';
+import type { DialogStateAPI, WorkerAPI } from '@hierarchidb/common-api';
 import {
   NodeAction,
   type NodeId,
@@ -6,7 +6,7 @@ import {
   type Tree,
   type TreeId,
   type TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import type { Remote } from 'comlink';
 import type { LoadAppConfigReturn } from './loadAppConfig.ts';
 import { loadAppConfig } from './loadAppConfig.ts';

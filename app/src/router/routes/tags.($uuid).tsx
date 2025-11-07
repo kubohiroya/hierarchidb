@@ -4,7 +4,7 @@ import type {
   TagId,
   TreeId,
   TreeNode,
-} from '@hierarchidb/feature-core/common-types';
+} from '@hierarchidb/common-types';
 import { FolderOpen as NodeIcon, LocalOffer as TagIcon } from '@mui/icons-material';
 import {
   Box,

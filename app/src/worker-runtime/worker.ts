@@ -4,7 +4,7 @@
  */
 
 import './worker-react-refresh-shim.js';
-import type { PluginDefinition } from '@hierarchidb/feature-core/plugin-registry/types';
+import type { PluginDefinition } from '@hierarchidb/plugin-registry/types';
 import type {
   DialogStateAPI,
   ImportExportAPI,
@@ -15,18 +15,22 @@ import type {
   TreeSubscriptionAPI,
   WorkerAPI,
   WorkingCopyAPI,
-} from '@hierarchidb/feature-core/common-api';
+} from '@hierarchidb/common-api';
 import {
   getAllRuntimeExports,
   WorkerInitializationReporter,
   wirePluginsFromModules,
-} from '@hierarchidb/feature-core/runtime-client';
+} from '@hierarchidb/runtime-client';
 import {
   getWorkerContainer,
+  configureWorkerContainer,
   type PluginWorkerModuleLoader,
   WorkerDiTokens,
-} from '@hierarchidb/feature-core/runtime-worker';
-import { pluginDefinitions as staticPluginDefinitions } from '~/plugin-registry/index.ts';
+} from '@hierarchidb/runtime-worker';
+import {
+  pluginDefinitions as staticPluginDefinitions,
+  pluginWorkerLoaders,
+} from '~/plugin-registry/index.ts';
 
 /** Runtime export metadata (subset consumed during bootstrap). */
 type RuntimeExportEntry = {
@@ -126,6 +130,11 @@ reporter.reportStepProgress('Load Comlink', 0);
     );
 
     const moduleEntries: Array<{ nodeType: string; mod: unknown }> = [];
+
+    configureWorkerContainer((container) => {
+      container.rebind(WorkerDiTokens.PluginWorkerLoaderMap).toConstantValue(pluginWorkerLoaders);
+    });
+
     const workerContainer = getWorkerContainer();
     const moduleLoader = workerContainer.get<PluginWorkerModuleLoader>(
       WorkerDiTokens.PluginWorkerModuleLoader
@@ -136,6 +145,21 @@ reporter.reportStepProgress('Load Comlink', 0);
       if (!nodeType || denyList.has(nodeType)) {
         continue;
       }
+      const localLoader = pluginWorkerLoaders[nodeType];
+      if (localLoader) {
+        try {
+          const mod = await localLoader();
+          moduleEntries.push({ nodeType, mod });
+          continue;
+        } catch (loaderError) {
+          const msg = loaderError instanceof Error ? loaderError.message : String(loaderError);
+          console.warn(
+            `[worker bootstrap] local loader failed for ${nodeType}, fallback to registry loader:`,
+            msg
+          );
+        }
+      }
+
       if (!moduleLoader.has(nodeType)) {
         continue;
       }
@@ -166,7 +190,7 @@ reporter.reportStepProgress('Load Comlink', 0);
 
     try {
       const runtimeModule = (await import(
-        '@hierarchidb/feature-core/runtime-worker'
+        '@hierarchidb/runtime-worker'
       )) as unknown as RuntimeWorkerModule;
       const entityRegistry = runtimeModule.entityRegistry;
       if (entityRegistry) {

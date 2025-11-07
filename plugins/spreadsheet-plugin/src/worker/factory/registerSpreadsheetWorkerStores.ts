@@ -76,7 +76,7 @@ export async function registerSpreadsheetWorkerStores(options: RegisterSpreadshe
 }
 
 export async function loadSpreadsheetEntitiesDbModule() {
-  return import(/* @vite-ignore */ '../spreadsheetEntitiesDB.js');
+  return import('../spreadsheetEntitiesDB.js');
 }
 
 registerSpreadsheetWorkerStores().catch(() => {});

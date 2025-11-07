@@ -3,8 +3,8 @@
  * Integrates plugin console with React Router
  */
 
-import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/feature-core/common-types';
-import { getWorkerClientHook } from '@hierarchidb/feature-core/runtime-client';
+import { NodeAction, type NodeId, type TreeId } from '@hierarchidb/common-types';
+import { getWorkerClientHook } from '@hierarchidb/runtime-client';
 import { PluginDialogHost } from '@hierarchidb/ui-shell/plugin-ui-host';
 import { useLoaderData, useLocation, useNavigate } from '@tanstack/react-router';
 import React from 'react';

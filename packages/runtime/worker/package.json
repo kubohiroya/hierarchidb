@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./stage-worker": {
+      "types": "./dist/stageWorker.entry.d.ts",
+      "import": "./dist/stageWorker.entry.js",
+      "default": "./dist/stageWorker.entry.js"
     }
   },
   "scripts": {

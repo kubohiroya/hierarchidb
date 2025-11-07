@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import 'fake-indexeddb/auto';
 import type { NodeId } from '@hierarchidb/common-types';
 import { type CreateResolverData, ResolverEntityService } from '../../worker/ResolverEntityService.js';
-import { resolverDB } from '../../worker/database/ResolverDatabase.js';
+import { resolverEntitiesDB } from '@hierarchidb/resolver-plugin/database';
 
 describe('ResolverEntityService', () => {
   let handler: ResolverEntityService;
@@ -12,13 +12,13 @@ describe('ResolverEntityService', () => {
   });
 
   afterEach(async () => {
-    await resolverDB.resolvers.clear();
-    await resolverDB.workingCopies.clear();
+    await resolverEntitiesDB.resolvers.clear();
+    await resolverEntitiesDB.workingCopies.clear();
   });
 
   afterAll(async () => {
-    await resolverDB.delete();
-    resolverDB.close();
+    await resolverEntitiesDB.delete();
+    resolverEntitiesDB.close();
   });
 
   describe('createEntity', () => {

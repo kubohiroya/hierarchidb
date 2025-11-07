@@ -38,7 +38,7 @@ export const PLUGIN_MANIFEST: PluginManifest = {
     prewarm: [
       {
         specifier: '@hierarchidb/resolver-plugin/database',
-        export: 'resolverDB',
+        export: 'resolverEntitiesDB',
       },
     ],
   },

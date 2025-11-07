@@ -35,6 +35,7 @@ const DEFAULT_EXTERNAL = [
   'dexie',
   'react-i18next',
   'i18next',
+  'worker_threads',
 ];
 
 const cwd = process.cwd();

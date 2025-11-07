@@ -32,7 +32,7 @@ declare module '@hierarchidb/resolver-plugin/icon' {
 }
 
 declare module '@hierarchidb/resolver-plugin/database' {
-  export const resolverDB: unknown;
+  export const resolverEntitiesDB: unknown;
   const mod: Record<string, unknown>;
   export default mod;
 }
