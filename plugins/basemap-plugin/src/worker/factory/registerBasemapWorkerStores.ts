@@ -37,19 +37,27 @@ type BasemapEntitiesDBCtor = new () => {
 };
 
 async function loadBasemapEntitiesDBCtor(): Promise<BasemapEntitiesDBCtor> {
-  const mod = await import('@hierarchidb/basemap-plugin/worker-database');
-  const ctor =
-    (mod as { BasemapEntitiesDB?: BasemapEntitiesDBCtor }).BasemapEntitiesDB ??
-    ((mod as { default?: BasemapEntitiesDBCtor | { BasemapEntitiesDB?: BasemapEntitiesDBCtor } }).default as
-      | BasemapEntitiesDBCtor
-      | { BasemapEntitiesDB?: BasemapEntitiesDBCtor }
-      | undefined)?.BasemapEntitiesDB ??
-    ((mod as { default?: BasemapEntitiesDBCtor }).default ?? undefined);
+  try {
+    const mod = await import('@hierarchidb/basemap-plugin/worker-database');
+    const ctor =
+      (mod as { BasemapEntitiesDB?: BasemapEntitiesDBCtor }).BasemapEntitiesDB ??
+      ((mod as { default?: BasemapEntitiesDBCtor | { BasemapEntitiesDB?: BasemapEntitiesDBCtor } }).default as
+        | BasemapEntitiesDBCtor
+        | { BasemapEntitiesDB?: BasemapEntitiesDBCtor }
+        | undefined)?.BasemapEntitiesDB ??
+      ((mod as { default?: BasemapEntitiesDBCtor }).default ?? undefined);
 
-  if (typeof ctor !== 'function') {
+    if (typeof ctor === 'function') {
+      return ctor;
+    }
     throw new TypeError('[basemap-worker] BasemapEntitiesDB export missing or invalid');
+  } catch (error) {
+    if (import.meta.env?.DEV) {
+      console.warn('[basemap-worker] worker-database import failed, falling back to source module', error);
+    }
+    const fallback = (await import('../basemapEntitiesDB.js')) as { BasemapEntitiesDB: BasemapEntitiesDBCtor };
+    return fallback.BasemapEntitiesDB;
   }
-  return ctor;
 }
 
 async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
@@ -85,7 +93,12 @@ export async function registerBasemapWorkerStores(
 }
 
 export async function loadBasemapEntitiesDbModule() {
-  return import('@hierarchidb/basemap-plugin/worker-database');
+  return import('@hierarchidb/basemap-plugin/worker-database').catch(async (error) => {
+    if (import.meta.env?.DEV) {
+      console.warn('[basemap-worker] worker-database module import fallback triggered', error);
+    }
+    return import('../basemapEntitiesDB.js');
+  });
 }
 
 // Preserve legacy side-effect registration

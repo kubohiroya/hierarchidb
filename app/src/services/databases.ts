@@ -123,16 +123,7 @@ async function loadModuleForDescriptor(
     }
   }
 
-  const load = async () => {
-    if (entry?.moduleSpecifier === specifier && typeof entry.loader === 'function') {
-      try {
-        return await entry.loader();
-      } catch {
-        // fall back to direct import below
-      }
-    }
-    return await import(/* @vite-ignore */ specifier);
-  };
+  const load = async () => import(/* @vite-ignore */ specifier);
 
   const promise = load();
   cache.set(specifier, promise);
