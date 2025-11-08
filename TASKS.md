@@ -93,9 +93,23 @@
   - [ ] `pnpm --filter @hierarchidb/app typecheck` など関連コマンドを実行し、結果を運用ログへ記録する（既知失敗は blocked として記載）
 - チェックリスト:
   - [ ] WorkerStateStore（または Proxy）にハンドル構造体と `refresh()` 相当のメソッドを実装する
-  - [ ] loader.ts の `retryComlinkCall` / 戻り値処理を新 API に合わせて整理し、必要に応じてコメントで用途を補足する
+ - [ ] loader.ts の `retryComlinkCall` / 戻り値処理を新 API に合わせて整理し、必要に応じてコメントで用途を補足する
   - [ ] 影響範囲を軽く grep して同様のパターンがないか確認し、必要に応じて TODO を残す
  - ロールバック手順：追加したハンドル API と loader.ts の変更を revert し、旧二重 `loadWorkerAPIClient()` 呼び出し構成へ戻す
+
+
+1204) App build crypto 警告解消（P0）
+- ブランチ: `fix/app/crypto-warnings`（sandbox 制約で `main` 上で作業）
+- 依存: `app/vite.config.ts`, `packages/runtime/worker/src/**/*`, `packages/features/import-export/src/**/*`, `plugins/location-plugin/src/**/*`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] `pnpm --filter @hierarchidb/app build`（もしくは同等のアプリ本番ビルド）が Node `crypto` / `@hierarchidb/plugin-registry*` 未解決警告なしで完了し、ビルドログを運用ログに追記する
+  - [ ] 警告解消の内容（Web Crypto 前提への統一・shim/フォールバック方針・影響範囲）とロールバック手順を `TASKS.md` と最終レポートに記録する
+- チェックリスト:
+  - [ ] `packages/runtime/worker` / `packages/features/import-export` / `plugins/location-plugin` から Node `crypto` import を除去し、`globalThis.crypto` を前提とした共通実装へ統一する
+  - [ ] `app/vite.config.ts` の `crypto` shim alias がブラウザビルドで正しく機能するか確認し、必要なら補足コメントや調整を加える
+  - [ ] 影響箇所の単体または WFL テスト、もしくは最小限の `pnpm --filter <pkg> build|test` を実行し、成功ログを運用ログに追記する
+- ロールバック手順：今回の差分（各パッケージの crypto 参照調整と Vite 設定）を revert し、`pnpm --filter @hierarchidb/app build` を再実行して警告の再現を確認する
 
 
 910) plugin-registry stage worker 解決フロー修正（P0）
@@ -7765,3 +7779,14 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-10 15:30 done: chore/scripts/dev-start-simplify — `scripts/run-env-vite.sh` を削除し、`scripts/env/README.md` へ新手順を追記。ロールバックは `git checkout HEAD^ -- package.json scripts/run-dev-with-turbo-watch.mjs scripts/run-env-vite.sh scripts/env/README.md` で旧構成を復元し、`pnpm dev`/`preview:init` スクリプトを従来フローに戻すこと。
 - 2025-11-10 16:20 progress: fix/dev-plugin-registry-alias — dev 警告原因を特定（tsconfig/vite alias が `packages/plugin-registry/dist/registry.js` を参照しており、`pnpm dev` でも dist モードの動的 import が残存）。`tsconfig.base.json` / `app/tsconfig.json` / `app/vite.config.ts` の alias を `packages/plugin-registry/generated/registry.ts` へ切替え、`HDB_PLUGIN_SPEC_MODE=package pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` で正規 specifier を再生成。
 - 2025-11-10 16:35 done: fix/dev-plugin-registry-alias — python 経由の `pnpm dev` 起動テストで `[generate-plugin-registry] updated files { registry: true }` を確認し、生成物が package spec へ戻ることをログ化。ロールバックは該当 tsconfig/vite alias を dist に戻し、`HDB_PLUGIN_SPEC_MODE=dist-url pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` を再実行すること。
+
+## 今日の着手（運用ログ） <a id="worklog-11"></a>
+
+- 2025-11-08 20:25 start: fix/app/crypto-warnings — `@hierarchidb/app` 本番ビルドで発生する Node `crypto` / `@hierarchidb/plugin-registry*` 未解決警告の解消に着手。DoD: TASKS/ログ更新、Node 依存の除去＋Web Crypto への統一、`pnpm --filter @hierarchidb/app build` 警告ゼロのログ取得、ロールバック手順の明記。
+- 2025-11-08 20:26 blocked: fix/app/crypto-warnings — `git checkout -b fix/app/crypto-warnings` が sandbox の `.git/refs/heads/...` 書き込み不可で失敗。ブランチ名だけ記録し、既存 `main` 上で作業継続。
+- 2025-11-08 20:29 progress: fix/app/crypto-warnings — `packages/util` に Web Crypto helper（`safeRandomUUID`/`digestSha256Hex`）を追加し、runtime-worker・import-export・location plugin から Node `crypto` import／動的 `await import('crypto')` を撤去。Web 向けランダム ID/ハッシュ生成を共通化して dist に Node 組み込みが残らないようにした。
+- 2025-11-08 20:30 command: pnpm --filter @hierarchidb/app build — exit 0。`vite build` ログに `[UNRESOLVED_IMPORT]` / `crypto` / `@hierarchidb/plugin-registry` の警告は出力されず、app 本番ビルドが完走することを確認。
+- 2025-11-08 20:33 progress: fix/app/crypto-warnings — `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts` のダイナミック import に `/* @vite-ignore */` を付与し、Vite import-analysis が bare specifier を静的解決しようとして警告する問題を抑止。さらに `app/vite.config.ts` の dev/prod alias へ `@hierarchidb/*-plugin/worker-database` を追加し、`pnpm dev` で `worker-database` サブパスが src/dist 双方に解決されるよう調整。
+- 2025-11-08 20:34 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再ビルド＋ `vite build` でも警告/エラー発生なし（dev alias 変更後の回 regresion チェックとして実行）。
+- 2025-11-08 21:18 progress: fix/app/crypto-warnings — basemap プラグインの `registerBasemapWorkerStores` で `@hierarchidb/basemap-plugin/worker-database` の Named export が dev prebundle で `default` 側に巻き取られるケースへ対応するため、ctor ローダーを実装して `default`/`default.BasemapEntitiesDB`/named のいずれでも動作するよう調整。`BasemapEntitiesDB` が関数でない場合は明示的に TypeError を投げる。
+- 2025-11-08 21:19 command: pnpm --filter @hierarchidb/app build — exit 0。前段の loader 調整後も app 本番ビルドが成功し、追加の警告が発生しないことを確認。

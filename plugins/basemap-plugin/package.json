@@ -24,7 +24,7 @@
         "dist/worker/index.d.ts"
       ],
       "worker-database": [
-        "dist/worker/basemapEntitiesDB.d.ts"
+        "dist/worker/database/index.d.ts"
       ]
     }
   },
@@ -38,8 +38,8 @@
       "import": "./dist/worker/index.js"
     },
     "./worker-database": {
-      "types": "./dist/worker/basemapEntitiesDB.d.ts",
-      "import": "./dist/worker/basemapEntitiesDB.js"
+      "types": "./dist/worker/database/index.d.ts",
+      "import": "./dist/worker/database/index.js"
     },
     "./database": {
       "types": "./dist/services/database/index.d.ts",
@@ -57,7 +57,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/basemapEntitiesDB.ts src/worker/basemapPeerStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/database/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/basemapEntitiesDB.ts src/worker/database/index.ts src/worker/basemapPeerStore.dexie.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -134,7 +134,7 @@
       "name": "BaseMap Plugin",
       "icon": {
         "mui": "Public",
-        "emoji": "🌍",
+        "emoji": "\ud83c\udf0d",
         "color": "#b0b3d9",
         "component": {
           "specifier": "@hierarchidb/basemap-plugin/icon",
@@ -185,5 +185,10 @@
         ]
       }
     }
+  },
+  "tsdown": {
+    "external": [
+      "@hierarchidb/basemap-plugin/worker-database"
+    ]
   }
 }

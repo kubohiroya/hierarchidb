@@ -23,7 +23,7 @@
         "plugins/basemap-plugin/src/index.ts"
       ],
       "@hierarchidb/basemap-plugin/worker-database": [
-        "plugins/basemap-plugin/src/worker/basemapEntitiesDB.ts"
+        "plugins/basemap-plugin/src/worker/database/index.ts"
       ],
       "@hierarchidb/basemap-plugin/*": [
         "plugins/basemap-plugin/src/*"

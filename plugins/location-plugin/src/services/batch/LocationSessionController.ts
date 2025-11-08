@@ -4,6 +4,7 @@
 import type { NodeId, ProgressEvent } from '@hierarchidb/common-types';
 import { getEphemeralLocationDB } from '../database/EphemeralLocationDB.js';
 import { TabularWriter } from '@hierarchidb/tabular-store';
+import { digestSha256Hex } from '@hierarchidb/util';
 // External libs (ambient types declared under types/external.d.ts)
 import { DexieChunkStoragePort } from '@hierarchidb/download';
 import { BatchService, createLaneSemaphoreRegistry } from '@hierarchidb/batch';
@@ -172,7 +173,7 @@ export class LocationSessionController {
         const copy = new Uint8Array(u8);
         const data: ArrayBuffer = copy.buffer.slice(0);
         const id = `loc-mvt-${this.sessionId}-${t.z}-${t.x}-${t.y}`;
-        const hash = await sha256Hex(new Uint8Array(data));
+        const hash = await digestSha256Hex(new Uint8Array(data));
         await db.vectorTiles.put({
           id,
           sessionId: this.sessionId,
@@ -237,21 +238,6 @@ function computeBbox(pts: LocationPointInput[]): [number, number, number, number
 }
 
 // Note: tile range enumeration and vt encoding moved to runtime-worker side.
-
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  if (typeof crypto !== 'undefined' && 'subtle' in crypto) {
-    // Avoid BufferSource typing issues under libs that include SharedArrayBuffer by
-    // passing a plain ArrayBuffer copy to SubtleCrypto.
-    const h = await crypto.subtle.digest(
-      'SHA-256',
-      bytes.slice().buffer,
-    );
-    return Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, '0')).join('');
-  }
-  // Node fallback
-  const { createHash } = await import('crypto');
-  return createHash('sha256').update(Buffer.from(bytes)).digest('hex');
-}
 
 // Build columns and rows from normalized features
 function determineColumns(features: any[], allow?: string[]): string[] {

@@ -32,8 +32,28 @@ async function resolveStoreRegistry(
   }
 }
 
+type BasemapEntitiesDBCtor = new () => {
+  open?: () => Promise<unknown> | unknown;
+};
+
+async function loadBasemapEntitiesDBCtor(): Promise<BasemapEntitiesDBCtor> {
+  const mod = await import('@hierarchidb/basemap-plugin/worker-database');
+  const ctor =
+    (mod as { BasemapEntitiesDB?: BasemapEntitiesDBCtor }).BasemapEntitiesDB ??
+    ((mod as { default?: BasemapEntitiesDBCtor | { BasemapEntitiesDB?: BasemapEntitiesDBCtor } }).default as
+      | BasemapEntitiesDBCtor
+      | { BasemapEntitiesDB?: BasemapEntitiesDBCtor }
+      | undefined)?.BasemapEntitiesDB ??
+    ((mod as { default?: BasemapEntitiesDBCtor }).default ?? undefined);
+
+  if (typeof ctor !== 'function') {
+    throw new TypeError('[basemap-worker] BasemapEntitiesDB export missing or invalid');
+  }
+  return ctor;
+}
+
 async function ensureBasemapStores(registry: StoreRegistry): Promise<void> {
-  const { BasemapEntitiesDB } = await import('@hierarchidb/basemap-plugin/worker-database');
+  const BasemapEntitiesDB = await loadBasemapEntitiesDBCtor();
   const db = new BasemapEntitiesDB();
   await db.open?.();
 

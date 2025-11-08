@@ -98,7 +98,7 @@ export class PluginWorkerModuleLoader implements PluginWorkerModuleLoaderContrac
   protected loadFromSpecifier<T>(specifier: string): Promise<T> {
     const isBareSpecifier = specifier.startsWith('@hierarchidb/');
     if (isBareSpecifier) {
-      return import(specifier) as Promise<T>;
+      return import(/* @vite-ignore */ specifier) as Promise<T>;
     }
     return import(/* @vite-ignore */ specifier) as Promise<T>;
   }

@@ -653,7 +653,7 @@ function inferDistEntryForSpecifier(summary: ManifestSummary, specifier: string)
   }
 }
 
-function resolveSpecifierExpression(summary: ManifestSummary, fallbackSpecifier: string, distEntry?: string | null): string {
+function resolveSpecifierExpression(_summary: ManifestSummary, fallbackSpecifier: string, distEntry?: string | null): string {
   if (pluginSpecifierMode === 'dist-url') {
     return createDistSpecifierExpression(distEntry ?? null, fallbackSpecifier);
   }
