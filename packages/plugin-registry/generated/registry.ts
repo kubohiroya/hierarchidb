@@ -451,7 +451,7 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "prewarm": [
             {
               "export": "getEphemeralLocationDB",
-              "specifier": "@hierarchidb/location-plugin"
+              "specifier": "@hierarchidb/location-plugin/database"
             }
           ]
         },
@@ -468,6 +468,10 @@ export const pluginRegistry: PluginRegistryEntry[] = [
     worker: {
         specifier: "@hierarchidb/location-plugin/worker",
         source: "plugins/location-plugin/src/worker/index.ts",
+      },
+    database: {
+        specifier: "@hierarchidb/location-plugin/database",
+        source: "plugins/location-plugin/src/database/index.ts",
       },
     icon: {
         specifier: "@hierarchidb/location-plugin/icon",
@@ -1297,7 +1301,7 @@ export const pluginWorkerPreloads: Record<string, string[]> = {
   "timeline": ["registerTimelineWorkerStores","loadTimelineEntitiesDbModule"],
 };
 
-export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier: string; exportName: string }[] }> = {
+export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; loader?: () => Promise<unknown>; prewarm?: { specifier?: string; exportName: string; load: () => Promise<unknown> }[] }> = {
   "basemap": {
     moduleSpecifier: "@hierarchidb/basemap-plugin/database",
     async loader() {
@@ -1305,7 +1309,14 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/basemap-plugin/database", exportName: "BaseMapDatabase" },
+      {
+        specifier: "@hierarchidb/basemap-plugin/database",
+        exportName: "BaseMapDatabase",
+        async load() {
+          const mod = await import("@hierarchidb/basemap-plugin/database");
+          return mod;
+        },
+      },
     ],
   },
   "folder": {
@@ -1323,13 +1334,20 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
     },
   },
   "location": {
-    moduleSpecifier: "@hierarchidb/location-plugin",
+    moduleSpecifier: "@hierarchidb/location-plugin/database",
     async loader() {
-      const mod = await import("@hierarchidb/location-plugin");
+      const mod = await import("@hierarchidb/location-plugin/database");
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/location-plugin", exportName: "getEphemeralLocationDB" },
+      {
+        specifier: "@hierarchidb/location-plugin/database",
+        exportName: "getEphemeralLocationDB",
+        async load() {
+          const mod = await import("@hierarchidb/location-plugin/database");
+          return mod;
+        },
+      },
     ],
   },
   "resolver": {
@@ -1339,7 +1357,14 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/resolver-plugin/database", exportName: "resolverEntitiesDB" },
+      {
+        specifier: "@hierarchidb/resolver-plugin/database",
+        exportName: "resolverEntitiesDB",
+        async load() {
+          const mod = await import("@hierarchidb/resolver-plugin/database");
+          return mod;
+        },
+      },
     ],
   },
   "route": {
@@ -1349,7 +1374,14 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/route-plugin/database", exportName: "RouteDatabase" },
+      {
+        specifier: "@hierarchidb/route-plugin/database",
+        exportName: "RouteDatabase",
+        async load() {
+          const mod = await import("@hierarchidb/route-plugin/database");
+          return mod;
+        },
+      },
     ],
   },
   "shape": {
@@ -1359,7 +1391,14 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/shape-plugin", exportName: "ShapeDB" },
+      {
+        specifier: "@hierarchidb/shape-plugin",
+        exportName: "ShapeDB",
+        async load() {
+          const mod = await import("@hierarchidb/shape-plugin");
+          return mod;
+        },
+      },
     ],
   },
   "spreadsheet": {
@@ -1369,7 +1408,14 @@ export const pluginDatabaseLoaders: Record<string, { moduleSpecifier?: string; l
       return mod;
     },
     prewarm: [
-      { specifier: "@hierarchidb/spreadsheet-plugin/database", exportName: "SpreadsheetDatabase" },
+      {
+        specifier: "@hierarchidb/spreadsheet-plugin/database",
+        exportName: "SpreadsheetDatabase",
+        async load() {
+          const mod = await import("@hierarchidb/spreadsheet-plugin/database");
+          return mod;
+        },
+      },
     ],
   },
   "styler": {

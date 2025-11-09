@@ -2,8 +2,9 @@ declare module '@hierarchidb/plugin-registry' {
   import type { PluginRegistryEntry } from '@hierarchidb/plugin-registry/types';
 
   export interface PluginDatabasePrewarmDescriptor {
-    specifier: string;
+    specifier?: string;
     exportName: string;
+    load: () => Promise<unknown>;
   }
 
   export interface PluginDatabaseLoaderEntry {

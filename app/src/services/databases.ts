@@ -104,7 +104,11 @@ function resolvePrewarmHandle(
 function getPrewarmDescriptors(entry: DatabaseLoaderEntry | undefined): PrewarmDescriptor[] {
   if (!entry?.prewarm) return [];
   return entry.prewarm.filter((descriptor): descriptor is PrewarmDescriptor =>
-    Boolean(descriptor?.exportName && descriptor.specifier)
+    Boolean(
+      descriptor &&
+        typeof descriptor.exportName === 'string' &&
+        typeof descriptor.load === 'function'
+    )
   );
 }
 
@@ -113,24 +117,32 @@ async function loadModuleForDescriptor(
   entry: DatabaseLoaderEntry | undefined,
   cache: Map<string, Promise<unknown>>
 ): Promise<unknown | null> {
-  const specifier = descriptor.specifier;
-  if (!specifier) return null;
+  const loadFn = typeof descriptor.load === 'function'
+    ? descriptor.load
+    : typeof entry?.loader === 'function'
+      ? entry.loader
+      : null;
+  if (!loadFn) return null;
 
-  if (cache.has(specifier)) {
-    const cached = cache.get(specifier);
+  const cacheKey = descriptor.specifier ?? entry?.moduleSpecifier;
+  if (cacheKey && cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey);
     if (cached) {
       return await cached;
     }
   }
 
-  const load = async () => import(/* @vite-ignore */ specifier);
-
-  const promise = load();
-  cache.set(specifier, promise);
+  const promise = loadFn();
+  if (cacheKey) {
+    cache.set(cacheKey, promise);
+  }
   try {
-    return await promise;
+    const result = await promise;
+    return result;
   } catch (error) {
-    cache.delete(specifier);
+    if (cacheKey) {
+      cache.delete(cacheKey);
+    }
     throw error;
   }
 }
@@ -142,7 +154,8 @@ function logPrewarmDescriptorWarning(
   error?: unknown
 ): void {
   if (typeof console === 'undefined') return;
-  const detail = `${message} for ${nodeType} (export ${descriptor.exportName} from ${descriptor.specifier})`;
+  const specifierDetail = descriptor.specifier ? ` from ${descriptor.specifier}` : '';
+  const detail = `${message} for ${nodeType} (export ${descriptor.exportName}${specifierDetail})`;
   if (error) {
     console.warn(`[services/databases] ${detail}`, error);
   } else {

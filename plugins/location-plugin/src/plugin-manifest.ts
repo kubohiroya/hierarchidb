@@ -38,7 +38,7 @@ export const PLUGIN_MANIFEST = {
   database: {
     prewarm: [
       {
-        specifier: '@hierarchidb/location-plugin',
+        specifier: '@hierarchidb/location-plugin/database',
         export: 'getEphemeralLocationDB',
       },
     ],

@@ -129,6 +129,22 @@
   - [ ] 懸念点（preview での HMR 等）があれば TASKS の進捗メモへ追記
 - ロールバック手順：runtime-worker の exports/tsconfig と plugin-registry の postbuild/生成スクリプト変更を revert し、`pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/app} build` を再度実行して旧エラー再現を確認する
 
+950) fix/app/preview-plugin-db-loader（P0）
+- ブランチ: `fix/app/preview-plugin-db-loader`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/services/databases.ts`, `packages/tools/build-scripts`, `packages/plugin-registry`, `types/@hierarchidb__plugin-registry`, `app/vite.config.ts`, `scripts/preview.*`
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm build` を実行し、hash routing 構成でビルドが成功したログ（終了コードと要約）を運用ログへ記載する
+  - [ ] `pnpm preview`（hash routing 前提）で `/hierarchidb/#/...` 直接アクセス時に plugin database loader/import エラーが発生しないことを確認し、ブラウザ console 代替ログを残す
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を追記し、ロールバック手順と検証ログを明記する
+  - [ ] dep-fence／plugin registry 周辺の設定変更が必要な場合は差分と理由を TASKS に記録し、bare specifier が preview/build に残らないことを示す
+  - [ ] Hash routing 導線での DB プリウォーム要件と確認結果をまとめ、再発時のロールバック/再検証手順を記述する
+- チェックリスト:
+  - [ ] plugin registry generator を更新し、prewarm descriptor に bundler 解決可能な loader を同梱する
+  - [ ] `@hierarchidb/plugin-registry` の型定義／`app/src/services/databases.ts` を loader 方式へ合わせる
+  - [ ] `pnpm run tools:gen-plugin-registry` → `pnpm --filter @hierarchidb/app build` → `pnpm preview -- --host 127.0.0.1 --port 4173 --strictPort` の順で実行し、ログを取得する
+  - [ ] Hash routing URL 直指定時の console を確認し、plugin database import エラーが消えたことを記録する
+- ロールバック手順：plugin registry generator・型定義・app services の差分を revert し、`pnpm run tools:gen-plugin-registry` → `pnpm --filter @hierarchidb/app build` を再実行して旧挙動へ戻す
+
 
 912) Home 初期進捗メッセージ i18n 対応（P1）
 - ブランチ: `fix/ui/home-progress-i18n`（sandbox 制約で `main` 上で作業）
@@ -7577,6 +7593,7 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-03 21:35 progress: fix/plugin-registry/stage-worker-specifier — resolver-plugin の DB エクスポートを標準化（`@hierarchidb/resolver-plugin/database`）し、postbuild の ResolverDatabase 生成／書き換えを撤去。`pnpm --filter {@hierarchidb/resolver-plugin,@hierarchidb/plugin-registry,@hierarchidb/runtime-worker,@hierarchidb/app} build` を再実行し exit 0。
 - 2025-11-04 09:20 progress: fix/plugin-registry/stage-worker-specifier — basemap/shape プレビューで発生している `@hierarchidb/<plugin>/worker` import 失敗を再確認。resolver/shape 両プラグインが Worker Dexie を package exports ではなく `../ResolverDatabase.js` / `../shapeEntitiesDB.js` に依存していることが原因で、plugin-registry dist から `./ResolverDatabase.js` / `../shapeEntitiesDB.js` を解決できず再現。`@hierarchidb/<plugin>/database` へ統一する修正を進める。
 - 2025-11-04 11:10 progress: fix/plugin-registry/stage-worker-specifier — resolver/basemap の Worker Dexie を `@hierarchidb/<plugin>/worker-database` 系エントリへ整理。resolver は `ResolverDatabase` → `ResolverEntitiesDB` に改名し、旧 Peer Dexie を `ResolverPeerEntitiesDB` へリネーム。`pnpm --filter {@hierarchidb/basemap-plugin,@hierarchidb/resolver-plugin} build && pnpm run tools:gen-plugin-registry && pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/runtime-worker,@hierarchidb/app} build` が exit 0 となり、app build では `../routeEntitiesDB.js` エラーが解消され dist 生成まで完走。
+- 2025-11-04 12:05 progress: fix/plugin-registry/stage-worker-specifier — GitHub Pages 想定の build/preview で hash routing を強制するため、`getRouterMode()` に `VITE_USE_HASH_ROUTING` フラグを参照させ、TanStack Router の history を hash/browser/memory で出し分けるよう更新。`pnpm --filter @hierarchidb/app test -- --run configure-router-mode` を実行し、ルーター構成テストがグリーンであることを確認。
 - 2025-11-03 14:15 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole フロント層 trash 命名移行（Phase1）に着手。段階計画を更新し、Working Copy 破棄は `discard` 用語で統一する方針を記録。
 - 2025-11-03 15:12 progress: refactor/ui-treeconsole/trash-naming-phase1 — turbo.json に `format` タスクを追記し、`pnpm format` がタスク未定義で失敗していた問題を解消。Prettier 一括適用はロールバックし、Biome で対象ファイルのみ整形する方針に変更。
 - 2025-11-03 15:13 command: npx biome format --write app/src/components/TreeConsoleIntegration.tsx app/src/components/TreeConsolePanelWithDynamicSpeedDial.tsx app/src/components/dialogs/TrashDialog.tsx app/src/hooks/treeconsole/{createTreeConsoleActions.ts,types.ts} packages/ui/treeconsole/{base/src/components/common/NodeContextMenu.tsx,base/src/types/index.ts,breadcrumb/src/components/TreeConsoleBreadcrumb.tsx,toolbar/src/components/TreeConsoleToolbar.tsx,treetable/src/components/internal/TreeTableContextMenu.tsx,treetable/src/types.ts} — exit 0。
@@ -7790,3 +7807,13 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-08 20:34 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再ビルド＋ `vite build` でも警告/エラー発生なし（dev alias 変更後の回 regresion チェックとして実行）。
 - 2025-11-08 21:18 progress: fix/app/crypto-warnings — basemap プラグインの `registerBasemapWorkerStores` で `@hierarchidb/basemap-plugin/worker-database` の Named export が dev prebundle で `default` 側に巻き取られるケースへ対応するため、ctor ローダーを実装して `default`/`default.BasemapEntitiesDB`/named のいずれでも動作するよう調整。`BasemapEntitiesDB` が関数でない場合は明示的に TypeError を投げる。
 - 2025-11-08 21:19 command: pnpm --filter @hierarchidb/app build — exit 0。前段の loader 調整後も app 本番ビルドが成功し、追加の警告が発生しないことを確認。
+- 2025-11-08 23:58 start: fix/app/preview-plugin-db-loader — Hash routing 直リンクで plugin database import が解決できず画面が真っ白になる件の恒久対応に着手。DoD: `pnpm build`/`pnpm preview` 成功ログ、TASKS/ログ更新、dep-fence/registry差分記録、hash ルート直アクセス確認。
+- 2025-11-09 00:05 progress: fix/app/preview-plugin-db-loader — plugin registry generator に prewarm loader を埋め込み、app/services/databases と型定義を loader 経由に更新。`pnpm run tools:gen-plugin-registry` で dist/registry を再生成。
+- 2025-11-09 00:07 command: pnpm run tools:gen-plugin-registry — exit 0（@hierarchidb/vite-plugin-hierarchidb-plugin-alias build → tools-load-plugin-manifest build → tools-build-scripts gen のチェーン実行）。
+- 2025-11-09 00:10 command: pnpm build — exit 0（generate:favicon → dep-fence/ライセンス/シム/"as any" チェック → turbo lint/build を完走）。
+- 2025-11-09 00:12 blocked: fix/app/preview-plugin-db-loader — `pnpm --filter @hierarchidb/app preview --host 127.0.0.1 --port 4173 --strictPort` が `listen EPERM` で失敗。sandbox では 4173/4175 いずれも bind 不可のため preview 実機確認は不可。代替として `app/dist/assets/databases-*.js` を確認し、prewarm loader が bundler import へ置換されていることを記録。
+- 2025-11-09 00:22 progress: fix/app/preview-plugin-db-loader — @hierarchidb/location-plugin に `src/database/index.ts` と `./database` export を追加し、manifest prewarm を `@hierarchidb/location-plugin/database` 指向へ更新。
+- 2025-11-09 00:24 command: pnpm --filter @hierarchidb/location-plugin build — exit 0（tsdown が database/index.ts を含む dist を生成）。
+- 2025-11-09 00:26 command: pnpm run tools:gen-plugin-registry — exit 0（registry に location/database loader が追加されたことを確認）。
+- 2025-11-09 00:28 command: pnpm --filter @hierarchidb/app build — exit 0（plugin-registry build → vite build が通過し、app/dist/assets/databases-*.js から bare specifier が消えた）。
+- 2025-11-09 00:29 blocked: fix/app/preview-plugin-db-loader — `pnpm --filter @hierarchidb/app preview --host 127.0.0.1 --port 4173 --strictPort` は引き続き sandbox で `listen EPERM`。ローカル dist の databases チャンクには `@hierarchidb/location-plugin/database` の import が埋め込まれていることを確認済み。

@@ -83,6 +83,16 @@ describe('getRouterMode', () => {
     vi.stubEnv('VITE_ROUTER_MODE', 'invalid');
     expect(getRouterMode()).toBe('browser');
   });
+
+  it('should return "hash" when VITE_USE_HASH_ROUTING is true', () => {
+    vi.stubEnv('VITE_USE_HASH_ROUTING', 'true');
+    expect(getRouterMode()).toBe('hash');
+  });
+
+  it('should return "browser" when VITE_USE_HASH_ROUTING is false', () => {
+    vi.stubEnv('VITE_USE_HASH_ROUTING', 'false');
+    expect(getRouterMode()).toBe('browser');
+  });
 });
 
 describe('getBasePath', () => {

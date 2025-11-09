@@ -5,10 +5,16 @@ export type RouterMode = 'browser' | 'hash';
  * Priority: VITE_ROUTER_MODE > default to 'browser'
  */
 export function getRouterMode(): RouterMode {
-  const mode = import.meta.env.VITE_ROUTER_MODE?.toLowerCase();
-  if (mode === 'hash' || mode === 'browser') {
-    return mode;
+  const explicitMode = import.meta.env.VITE_ROUTER_MODE?.toLowerCase();
+  if (explicitMode === 'hash' || explicitMode === 'browser') {
+    return explicitMode;
   }
+
+  const hashFlag = import.meta.env.VITE_USE_HASH_ROUTING;
+  if (typeof hashFlag === 'string' && hashFlag.toLowerCase() !== 'false') {
+    return 'hash';
+  }
+
   return 'browser';
 }
 

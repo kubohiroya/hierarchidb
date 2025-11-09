@@ -1,4 +1,4 @@
-import { createRouter } from '@tanstack/react-router';
+import { createRouter, createBrowserHistory, createHashHistory, createMemoryHistory } from '@tanstack/react-router';
 import type { RouterMode } from './config.js';
 
 export type { RouterMode } from './config.js';
@@ -26,7 +26,7 @@ export interface HierarchiRouter {
  * @returns Router instance for TanStack Router
  */
 export async function createHierarchiRouter(config: RouterConfig) {
-  const { basename } = config;
+  const { basename, mode } = config;
 
   // Import route definitions dynamically
   const { rootRoute } = await import('./routes/rootRoute.js');
@@ -74,11 +74,19 @@ export async function createHierarchiRouter(config: RouterConfig) {
 
   // Create appropriate history based on mode
 
-  // Create TanStack router
+  const normalizedBasepath = basename && basename !== '/' ? basename : undefined;
+  const hasWindow = typeof window !== 'undefined';
+  const history = hasWindow
+    ? mode === 'hash'
+      ? createHashHistory({ window })
+      : createBrowserHistory({ window })
+    : createMemoryHistory({ initialEntries: [normalizedBasepath ?? '/'] });
+
   const router = createRouter({
     routeTree,
     defaultPreload: 'intent',
-    basepath: basename && basename !== '/' ? basename : undefined,
+    history,
+    basepath: mode === 'hash' ? undefined : normalizedBasepath,
   });
 
   return router;

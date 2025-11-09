@@ -26,6 +26,12 @@ declare module '@hierarchidb/location-plugin/icon' {
   export default LocationPluginIcon;
 }
 
+declare module '@hierarchidb/location-plugin/database' {
+  export const getEphemeralLocationDB: unknown;
+  const mod: Record<string, unknown>;
+  export default mod;
+}
+
 declare module '@hierarchidb/resolver-plugin/icon' {
   export const ResolverPluginIcon: unknown;
   export default ResolverPluginIcon;

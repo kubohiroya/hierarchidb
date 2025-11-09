@@ -22,6 +22,10 @@
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "import": "./dist/ui/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.js"
     }
   },
   "typesVersions": {
@@ -37,11 +41,14 @@
       ],
       "worker": [
         "dist/worker/index.d.ts"
+      ],
+      "database": [
+        "dist/database/index.d.ts"
       ]
     }
   },
   "scripts": {
-    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationPeerStore.dexie.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
+    "build": "tsdown src/index.ts src/services/index.ts src/ui/index.ts src/worker/index.ts src/worker/factory/index.ts src/worker/locationEntitiesDB.ts src/worker/locationPeerStore.dexie.ts src/worker/locationGroupStore.dexie.ts src/worker/locationRelationStore.dexie.ts src/database/index.ts src/locationEntitiesDB.ts src/icon/index.ts --config ../../tsdown.config.ts",
     "test": "vitest",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
@@ -109,7 +116,7 @@
       "description": "Geographic location nodes with Shape integration",
       "icon": {
         "mui": "LocationOn",
-        "emoji": "📍",
+        "emoji": "\ud83d\udccd",
         "color": "#a3b030",
         "component": {
           "specifier": "@hierarchidb/location-plugin/icon",
