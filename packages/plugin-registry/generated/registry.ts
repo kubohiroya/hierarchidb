@@ -1034,7 +1034,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/spreadsheet-plugin",
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/components",
-        "@hierarchidb/plugin-base"
+        "@hierarchidb/plugin-base",
+        "@hierarchidb/ui-csv-extract",
+        "@hierarchidb/ui-map"
       ],
     manifest: {
         "id": "@hierarchidb/styler-plugin",
@@ -1067,7 +1069,9 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/spreadsheet-plugin",
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/components",
-          "@hierarchidb/plugin-base"
+          "@hierarchidb/plugin-base",
+          "@hierarchidb/ui-csv-extract",
+          "@hierarchidb/ui-map"
         ],
         "icon": {
           "mui": "Palette",

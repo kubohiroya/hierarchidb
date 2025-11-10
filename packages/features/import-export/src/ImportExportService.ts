@@ -9,7 +9,7 @@ import type {
   OperationStatus,
   ValidateImportParams,
 } from '@hierarchidb/common-api';
-import { SingletonMixin, safeRandomUUID } from '@hierarchidb/util';
+import { SingletonMixin, generateUUID } from '@hierarchidb/util';
 import type { ImportExportDBPort } from './ports.js';
 
 type ImportNodeInput = ImportData['nodes'][number];
@@ -105,7 +105,7 @@ export class ImportExportService implements ImportExportAPI {
               continue;
             }
           }
-          const nodeId = safeRandomUUID('imp') as NodeId;
+          const nodeId = generateUUID() as NodeId;
           const parentDepth = await resolveParentDepth(params.targetParentId);
           const parentId: NodeId = (params.targetParentId ?? (nodeData as { parentNodeId?: NodeId })?.parentNodeId ?? nodeId) as NodeId;
           const uniqueName = await resolveConflictingName(parentId, nodeData.name);

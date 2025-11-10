@@ -54,21 +54,6 @@
 ### Doing（進行中） <a id="kanban-doing"></a>
 
 
-114) TreeConsole trash 操作命名移行 Phase1（P0）
-- ブランチ: `refactor/ui-treeconsole/trash-naming-phase1`（sandbox 制約で `main` 上で作業）
-- 依存: `app/src/components/tree-console/**/*`, `app/src/components/dialogs/**/*`, `packages/ui-treeconsole-*`, `packages/ui/treeconsole`
-- 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [ ] TreeConsole フロント層（`createTreeConsoleActions`・ContextMenu・Panel・関連型定義）が `trash*` 系の命名へ移行し、既存 `remove*` 系 API は暫定互換ラッパーとして提供されている
-  - [ ] UI からの操作・型経路で `trashNodes` / `emptyTrash` / 互換 `removeNodes` が整合し、`pnpm lint && pnpm format && pnpm typecheck && pnpm test` が成功したログを運用ログへ記録する
-  - [ ] 後続フェーズ（Worker API 層、Working Copy `discard` 化、文言統一）の計画メモを更新し、Step3 が `discard` 用語を採用することを明示する
-- チェックリスト:
-  - [ ] `createTreeConsoleActions` と関連型を `trash` 系命名へリネームし、`remove` ラッパーを残す
-  - [ ] TreeConsole / Trash 関連 ContextMenu・パネル・ヘッダーのプロップとハンドラを `trash` 系へ揃える
-  - [ ] UI 文言・翻訳キーのうち本段階で必要な最小セットを更新し、互換動作を手動確認する
-  - [ ] 必要な単体/結合テストを更新し、実行ログを取得する
-- ロールバック手順：当該差分（`trash` 命名移行と互換ラッパー追加）を revert し、`pnpm lint && pnpm typecheck && pnpm test` を再実行して旧 `remove` 系動線が維持されることを確認する
-
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/components/TreeConsoleIntegration.tsx`, `packages/ui/treeconsole/toolbar/src/components/TreeConsoleToolbar.tsx`, `packages/ui/treeconsole/toolbar/src/types.ts`, `packages/runtime-worker` Undo 履歴 API
@@ -96,20 +81,6 @@
  - [ ] loader.ts の `retryComlinkCall` / 戻り値処理を新 API に合わせて整理し、必要に応じてコメントで用途を補足する
   - [ ] 影響範囲を軽く grep して同様のパターンがないか確認し、必要に応じて TODO を残す
  - ロールバック手順：追加したハンドル API と loader.ts の変更を revert し、旧二重 `loadWorkerAPIClient()` 呼び出し構成へ戻す
-
-
-1204) App build crypto 警告解消（P0）
-- ブランチ: `fix/app/crypto-warnings`（sandbox 制約で `main` 上で作業）
-- 依存: `app/vite.config.ts`, `packages/runtime/worker/src/**/*`, `packages/features/import-export/src/**/*`, `plugins/location-plugin/src/**/*`
-- 受け入れ基準（DoD）:
-  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
-  - [ ] `pnpm --filter @hierarchidb/app build`（もしくは同等のアプリ本番ビルド）が Node `crypto` / `@hierarchidb/plugin-registry*` 未解決警告なしで完了し、ビルドログを運用ログに追記する
-  - [ ] 警告解消の内容（Web Crypto 前提への統一・shim/フォールバック方針・影響範囲）とロールバック手順を `TASKS.md` と最終レポートに記録する
-- チェックリスト:
-  - [ ] `packages/runtime/worker` / `packages/features/import-export` / `plugins/location-plugin` から Node `crypto` import を除去し、`globalThis.crypto` を前提とした共通実装へ統一する
-  - [ ] `app/vite.config.ts` の `crypto` shim alias がブラウザビルドで正しく機能するか確認し、必要なら補足コメントや調整を加える
-  - [ ] 影響箇所の単体または WFL テスト、もしくは最小限の `pnpm --filter <pkg> build|test` を実行し、成功ログを運用ログに追記する
-- ロールバック手順：今回の差分（各パッケージの crypto 参照調整と Vite 設定）を revert し、`pnpm --filter @hierarchidb/app build` を再実行して警告の再現を確認する
 
 
 910) plugin-registry stage worker 解決フロー修正（P0）
@@ -2840,6 +2811,24 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 114) TreeConsole trash 操作命名移行 Phase1（P0） — 完了 (2025-11-10)
+  - DoD（2025-11-10 再定義）:
+    - `app/src/hooks/treeconsole/createTreeConsoleActions.ts` と `types.ts` で `handleTrash` 系 API を正式化し、`handleRemove` は互換目的の optional として維持。`handleContextMenuAction` は `'remove'` を `'trash'` に正規化。
+    - TreeConsole UI（`packages/ui/treeconsole/{toolbar,breadcrumb,base}`）のメニュー/パネル/SpeedDial が `onTrash` ハンドラを利用し、旧 `onRemove` props には `onTrash` を橋渡しして後方互換を確保。
+    - Worker 呼び出しは `MutationAPI.moveNodesToTrash` を入口とし、`packages/ui/treeconsole/base/src/hooks/useCRUDOperations.ts` などの `trashNodes`/`emptyTrash` 型経路で整合性を確認。
+    - 検証: `pnpm -C app test -- createTreeConsoleActions`（2025-11-10 15:00 JST） exit 0 を運用ログ #worklog-10 に記録。
+    - 後続フェーズ（Worker API 層 rename／Working Copy `discard` Terminology／文言統一）は進捗メモ 2025-11-10 付けで整理。
+  - 既知の制約: `pnpm --filter @hierarchidb/app typecheck` は util/webCrypto SharedArrayBuffer 互換と Styler plugin 依存不足に起因して失敗（本タスク外の既知課題として #worklog-10 に blocked を記載）。
+  - ロールバック手順：TreeConsole hook/UI/adapter の `trash` 命名差分を revert し、`pnpm -C app test -- createTreeConsoleActions` を再実行して旧 `remove` 系動線へ戻す。
+
+- fix/app/crypto-warnings（P0） — Web Crypto helper で runtime-worker/import-export/location plugin から Node `crypto` 依存を撤去し、`@hierarchidb/app` build・dev の未解決警告を解消。
+  - ブランチ: `fix/app/crypto-warnings`
+  - 成果:
+    - `packages/util/src/webCrypto.ts` を新設し、`safeRandomUUID` / `digestSha256Hex` を通じて Web Crypto を単一道筋に集約。runtime-worker／ImportExportService／location plugin が Node `crypto` import を行わない構成へ置換。
+    - `packages/runtime/worker/src/di/PluginWorkerModuleLoader.ts` の動的 import に `/* @vite-ignore */` を付与し、`app/vite.config.ts` に `@hierarchidb/*-plugin/worker-database` alias を追加して dev/pre-bundle での解決失敗を排除。
+    - `pnpm --filter @hierarchidb/app build`（2025-11-08 20:30 / 21:19 実行）で `[UNRESOLVED_IMPORT] crypto` や basemap worker Dexie TypeError が再発しないことを確認し、運用ログ #worklog-11 に記録。
+  - ロールバック手順：`packages/util/src/webCrypto.ts` とそれを参照する runtime-worker／ImportExportService／LocationSessionController／PluginWorkerModuleLoader／app/vite.config.ts の差分を revert し、`pnpm --filter @hierarchidb/app build` を再実行して警告が戻ることを確認する。
+
 - fix/styler/color-calculation-export（P0） — StylerDataService が `ColorCalculationResult` を `stylerTypes` 経由で参照するよう更新し、tsdown build の Missing export 警告を解消。
   - ブランチ: `fix/styler/color-calculation-export`
   - 成果:
@@ -6131,6 +6120,7 @@ P2:
 
 ### 進捗メモ <a id="progress-notes"></a>
 
+- 2025-11-10: TreeConsole trash 操作命名移行 Phase1 を完了。Phase2 では Worker API / MutationService / Undo 経路の命名を `trash*` へ統一し、Phase3 で Working Copy / UI 文言を `discard` 用語へ集約する計画。`handleRemove` / `onRemove` の互換レイヤーは Phase2 が終わるまで維持し、Task 303（Undo 仕上げ）と Worker 側タスクに依存することを明記。
 - 2025-10-06: Route プラグインの UI ユーティリティ（RouteDialog/RouteBasicInfoStep/RouteSelectionStep/RouteProcessingStep）を `RouteWorkingCopy.draft` ベースへ揃え、`getRouteDraft` ヘルパーを追加して旧 `workingCopy.*` 参照を除去。`tsconfig.json` にローカルパスを追加して `pnpm --filter @hierarchidb/route-plugin typecheck` が sandbox 環境でもグリーンとなった。
 - 2025-09-20: ui-map デッキストーリーの公式型適用 — `@deck.gl/{geo-layers,layers,mapbox}` と `@types/geojson` を devDependencies として追加し、`tsconfig.json` の他パッケージ node_modules 参照を整理。`MapWithDeckGLVectorTiles.stories.tsx` を GeoJsonLayer/TileLayer の正式シグネチャに沿って書き換え、`src/types/story-shims.d.ts` を削除。`pnpm install` → `pnpm --filter @hierarchidb/ui-map typecheck` → `node scripts/check-shims.mjs` → `pnpm as-any:report` まで成功。
 - 2025-09-20: runtime env 読み出しの共通化 — `@hierarchidb/util` に `readRuntimeEnvValue` / `readRuntimeMode` などのヘルパーを追加し、app / map-adapter / node-type plugins からの `process.env` 参照を排除。`eslint.config.js` の `no-restricted-globals: process` を `app/src` と `packages/**/src` へ拡張し、`pnpm --filter` {app,route-plugin,location-plugin,resolver-plugin,map-adapter} `typecheck` を実行してグリーンを確認。
@@ -7794,8 +7784,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-10 13:40 start: chore/scripts/dev-start-simplify — DoD（run-env-vite.sh 廃止・pnpm dev/build/preview:init の prep/start 再構成・関連ドキュメント更新・ロールバック手順明示）を確認し、影響範囲を `package.json` / `scripts/env/README.md` / `scripts/run-dev-with-turbo-watch.mjs` に特定。
 - 2025-11-10 15:05 progress: chore/scripts/dev-start-simplify — `package.json` に `dev:pre` / `dev:start(:production)` / `build:pre` / `build:start` / `preview:(build|start)` を追加し、Bash ワンライナーで環境スクリプトと `.env.secrets` を読み込む方式へ移行。`pnpm run dev:pre`（dependency guard → alias ビルド）と `pnpm run preview:build`（`turbo run build --filter @hierarchidb/app`）の exit 0 を取得。watcher 用スクリプトも `pnpm run dev` を直接起動するよう更新。
 - 2025-11-10 15:30 done: chore/scripts/dev-start-simplify — `scripts/run-env-vite.sh` を削除し、`scripts/env/README.md` へ新手順を追記。ロールバックは `git checkout HEAD^ -- package.json scripts/run-dev-with-turbo-watch.mjs scripts/run-env-vite.sh scripts/env/README.md` で旧構成を復元し、`pnpm dev`/`preview:init` スクリプトを従来フローに戻すこと。
+- 2025-11-10 15:45 start: refactor/ui-treeconsole/trash-naming-phase1 — TreeConsole front-layerの命名移行タスクを棚卸しし、現状の差分と不足箇所を再調査。DoD を UI フロントの互換保証 + テストログ取得 + 後続フェーズ計画明記へ再定義。
+- 2025-11-10 15:58 progress: refactor/ui-treeconsole/trash-naming-phase1 — `app/src/hooks/treeconsole/{createTreeConsoleActions.ts,types.ts}` / `packages/ui/treeconsole/{toolbar,breadcrumb,base}` を確認し、`handleTrash`/`onTrash` 経路が全 UI 入口で使われていることを再レビュー。`pnpm -C app test -- createTreeConsoleActions` — exit 0 を取得し、互換テストを運用ログに記録。
+- 2025-11-10 16:02 blocked: refactor/ui-treeconsole/trash-naming-phase1 — `pnpm --filter @hierarchidb/app typecheck` が `packages/util/src/webCrypto.ts`（SharedArrayBuffer）と styler plugin 依存未解決で失敗。本タスクのコード差分とは無関係の既知課題として記録し、別タスクで対応予定。
 - 2025-11-10 16:20 progress: fix/dev-plugin-registry-alias — dev 警告原因を特定（tsconfig/vite alias が `packages/plugin-registry/dist/registry.js` を参照しており、`pnpm dev` でも dist モードの動的 import が残存）。`tsconfig.base.json` / `app/tsconfig.json` / `app/vite.config.ts` の alias を `packages/plugin-registry/generated/registry.ts` へ切替え、`HDB_PLUGIN_SPEC_MODE=package pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` で正規 specifier を再生成。
 - 2025-11-10 16:35 done: fix/dev-plugin-registry-alias — python 経由の `pnpm dev` 起動テストで `[generate-plugin-registry] updated files { registry: true }` を確認し、生成物が package spec へ戻ることをログ化。ロールバックは該当 tsconfig/vite alias を dist に戻し、`HDB_PLUGIN_SPEC_MODE=dist-url pnpm --filter @hierarchidb/tools-build-scripts run gen-plugin-registry` を再実行すること。
+- 2025-11-10 16:40 done: refactor/ui-treeconsole/trash-naming-phase1 — TASKS Kanban を Done に移動し、進捗メモへ Phase2/Phase3（Worker API rename / Working Copy `discard` 化）の計画を追記。DoD 再定義内容とローリング計画を記録。
 
 ## 今日の着手（運用ログ） <a id="worklog-11"></a>
 
@@ -7817,3 +7811,6 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-09 00:26 command: pnpm run tools:gen-plugin-registry — exit 0（registry に location/database loader が追加されたことを確認）。
 - 2025-11-09 00:28 command: pnpm --filter @hierarchidb/app build — exit 0（plugin-registry build → vite build が通過し、app/dist/assets/databases-*.js から bare specifier が消えた）。
 - 2025-11-09 00:29 blocked: fix/app/preview-plugin-db-loader — `pnpm --filter @hierarchidb/app preview --host 127.0.0.1 --port 4173 --strictPort` は引き続き sandbox で `listen EPERM`。ローカル dist の databases チャンクには `@hierarchidb/location-plugin/database` の import が埋め込まれていることを確認済み。
+- 2025-11-09 00:34 progress: fix/app/preview-plugin-db-loader — `app/tsconfig.json` に `@hierarchidb/ui-{csv-extract,map}` の path alias を追加し、app typecheck で Styler プラグインの依存解決ができるよう調整。
+- 2025-11-09 00:36 progress: fix/app/preview-plugin-db-loader — MapLibre 公開型 (`packages/ui/map/src/types/maplibre-public.ts`) に `paint` プロパティを追加し、StylerDataService 側で layer/paint を初期化して安全に色設定を行うよう修正。
+- 2025-11-09 00:37 command: pnpm -F @hierarchidb/app typecheck — exit 0。

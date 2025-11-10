@@ -1,5 +1,5 @@
 import type { CommandId, NodeId, Seq, Timestamp, TreeChangeEvent } from '@hierarchidb/common-types';
-import { SingletonMixin, safeRandomUUID } from '@hierarchidb/util';
+import { SingletonMixin, generateUUID } from '@hierarchidb/util';
 import { Subject } from 'rxjs';
 import { EntityLifecycleManager } from '../entity/EntityLifecycleManager.js';
 import { recordCommandLatency } from '../utils/metrics.js';
@@ -88,12 +88,12 @@ export class CommandProcessor {
     payload: TPayload,
     meta?: Partial<CommandMeta>
   ): CommandEnvelope<TType, TPayload> {
-    const commandId = meta?.commandId ?? (safeRandomUUID('cmd') as CommandId);
+    const commandId = meta?.commandId ?? (generateUUID() as CommandId);
     const timestamp = meta?.timestamp ?? (Date.now() as Timestamp);
 
     return {
       commandId,
-      groupId: safeRandomUUID('grp'), // Auto-generate group ID
+      groupId: generateUUID(), // Auto-generate group ID
       kind: type,
       payload,
       issuedAt: timestamp,

@@ -69,6 +69,18 @@
       ],
       "@hierarchidb/util/*": [
         "../packages/util/src/*"
+      ],
+      "@hierarchidb/ui-csv-extract": [
+        "../packages/ui/tabular-extract/src/index.ts"
+      ],
+      "@hierarchidb/ui-csv-extract/*": [
+        "../packages/ui/tabular-extract/src/*"
+      ],
+      "@hierarchidb/ui-map": [
+        "../packages/ui/map/src/index.ts"
+      ],
+      "@hierarchidb/ui-map/*": [
+        "../packages/ui/map/src/*"
       ]
     },
     "baseUrl": ".",

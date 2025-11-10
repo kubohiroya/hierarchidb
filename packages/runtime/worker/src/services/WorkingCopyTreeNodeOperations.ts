@@ -8,7 +8,7 @@ import {
   type TreeId,
   type TreeNode,
 } from '@hierarchidb/common-types';
-import { safeRandomUUID } from '@hierarchidb/util';
+import { generateUUID } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
 import type { CommandEnvelope, CommandResult } from './command-types.js';
 import { WorkerErrorCode } from './command-types.js';
@@ -244,8 +244,8 @@ export async function createWorkingCopyFromNode(
     const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
     const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
     await lifecycle.handleCommand({
-      commandId: safeRandomUUID('cmd'),
-      groupId: safeRandomUUID('grp'),
+      commandId: generateUUID(),
+      groupId: generateUUID(),
       kind: 'createWorkingCopy',
       payload: { originalId: nodeId, workingCopyId: workingCopyNode.id },
       issuedAt: Date.now(),
@@ -500,8 +500,8 @@ export async function discardWorkingCopy(
       const { EntityLifecycleManager } = await import('../entity/EntityLifecycleManager.js');
       const lifecycle = EntityLifecycleManager.getSingleton(coreDB);
       const envelope: CommandEnvelope<'discardWorkingCopy', { workingCopyId: NodeId }> = {
-        commandId: safeRandomUUID('cmd'),
-        groupId: safeRandomUUID('grp'),
+        commandId: generateUUID(),
+        groupId: generateUUID(),
         kind: 'discardWorkingCopy',
         payload: { workingCopyId: wcId },
         issuedAt: Date.now() as Timestamp,

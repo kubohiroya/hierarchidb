@@ -29,5 +29,8 @@
     "@types/node": "^24.3.0",
     "fake-indexeddb": "^6.1.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@hierarchidb/util": "workspace:*"
+  }
 }

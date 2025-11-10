@@ -16,6 +16,7 @@ export interface MapLibreLayer {
   id: string;
   type: MapLibreLayerType;
   layout?: Record<string, unknown>;
+  paint?: Record<string, unknown>;
 }
 
 export interface MapLibreStyle {

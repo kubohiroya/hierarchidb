@@ -170,6 +170,11 @@ export class StylerDataService {
         },
       ],
     } as MapLibreStyle;
+    const targetLayer = styleSpec.layers[0];
+    if (!targetLayer) {
+      throw new Error('Failed to initialize MapLibre layer for styler configuration');
+    }
+
 
     values.forEach((value) => {
       const colorResult = valueToColor(value, stylerConfig, values);
@@ -183,7 +188,8 @@ export class StylerDataService {
         color,
       ]);
 
-      styleSpec.layers[0].paint[stylerConfig.targetProperty] = [
+      const paint = (targetLayer.paint ??= {});
+      paint[stylerConfig.targetProperty] = [
         'interpolate',
         ['linear'],
         ['get', selectedValueColumn],

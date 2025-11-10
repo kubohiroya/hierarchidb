@@ -1,14 +1,6 @@
+import { generateUUID } from '@hierarchidb/util';
 import type { NodeId, NodeType, TreeId } from './id-types.js';
 
-function generateUUID(): string {
-  const maybeCrypto = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
-  if (maybeCrypto && typeof maybeCrypto.randomUUID === 'function') {
-    return maybeCrypto.randomUUID();
-  }
-  return `uuid-${Math.random().toString(36).slice(2, 10)}-${Date.now().toString(36)}`;
-}
-
-// Helper functions to create branded types
 export function toNodeId(id: string): NodeId {
   return id as NodeId;
 }
@@ -21,7 +13,6 @@ export function toNodeType(value: string): NodeType {
   return value as NodeType;
 }
 
-// Type guards
 export function isNodeId(id: unknown): boolean {
   return typeof id === 'string';
 }
