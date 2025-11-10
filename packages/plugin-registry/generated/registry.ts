@@ -1035,7 +1035,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
         "@hierarchidb/plugin-ui-sdk",
         "@hierarchidb/components",
         "@hierarchidb/plugin-base",
-        "@hierarchidb/ui-csv-extract",
         "@hierarchidb/ui-map"
       ],
     manifest: {
@@ -1070,7 +1069,6 @@ export const pluginRegistry: PluginRegistryEntry[] = [
           "@hierarchidb/plugin-ui-sdk",
           "@hierarchidb/components",
           "@hierarchidb/plugin-base",
-          "@hierarchidb/ui-csv-extract",
           "@hierarchidb/ui-map"
         ],
         "icon": {

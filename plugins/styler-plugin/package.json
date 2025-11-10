@@ -85,7 +85,6 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*"
   },
   "devDependencies": {
@@ -110,7 +109,6 @@
     "@hierarchidb/plugin-ui-sdk": "workspace:*",
     "@hierarchidb/components": "workspace:*",
     "@hierarchidb/plugin-base": "workspace:*",
-    "@hierarchidb/ui-csv-extract": "workspace:*",
     "@hierarchidb/ui-map": "workspace:*"
   },
   "keywords": [
