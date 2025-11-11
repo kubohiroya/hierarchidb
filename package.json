@@ -94,7 +94,7 @@
     "build:start": "bash -lc 'set -a; source scripts/env/production.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; pnpm build:turbo'",
     "preview:init": "pnpm run preview:build && pnpm run preview:start",
     "preview:build": "bash -lc 'set -a; source scripts/env/production.sh; if [ -f app/.env.secrets ]; then source app/.env.secrets; fi; set +a; turbo run build --filter @hierarchidb/app'",
-    "preview:start": "HDB_SKIP_FAVICON=1 pnpm preview"
+    "deploy": "pnpm -F @hierarchidb/app run deploy"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",

@@ -15,7 +15,7 @@ import {
 import { Box } from '@mui/material';
 import type { Remote } from 'comlink';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 
 import { ProjectsGuidedTour } from '../tour/ProjectsGuidedTour.tsx';
 import { ResourcesGuidedTour } from '../tour/ResourcesGuidedTour.tsx';
@@ -31,6 +31,9 @@ type TreeConsolePanelWithDynamicSpeedDialProps = Omit<TreeConsolePanelProps, 'on
   onBreadcrumbContextAction?: TreeConsolePanelProps['onBreadcrumbContextAction'];
   onTrash?: TreeConsolePanelProps['onDelete'];
   onDelete?: TreeConsolePanelProps['onDelete'];
+  speedDialSuppressed: boolean;
+  setSpeedDialSuppressed: (value: boolean) => void;
+  isDialogRoute: boolean;
 };
 
 export function TreeConsolePanelWithDynamicSpeedDial({
@@ -42,15 +45,25 @@ export function TreeConsolePanelWithDynamicSpeedDial({
   onBreadcrumbContextAction,
   onTrash,
   onDelete,
+  speedDialSuppressed,
+  setSpeedDialSuppressed,
+  isDialogRoute,
   ...panelProps
 }: TreeConsolePanelWithDynamicSpeedDialProps) {
-
   const [tourRun, setTourRun] = useState(false);
   // Handler for starting guided tour
 
   const handleTourFinish = useCallback(() => {
     setTourRun(false);
   }, []);
+
+  useEffect(() => {
+    if (isDialogRoute) {
+      setSpeedDialSuppressed(true);
+    } else {
+      setSpeedDialSuppressed(false);
+    }
+  }, [isDialogRoute, setSpeedDialSuppressed]);
 
   const guidedTour = useMemo(() => {
     if (treeId === 'p') {
@@ -60,7 +73,16 @@ export function TreeConsolePanelWithDynamicSpeedDial({
     }
   }, [handleTourFinish, tourRun, treeId]);
 
-  const onContextMenuAction = panelProps.onContextMenuAction ?? (() => {});
+  const rawContextAction = useMemo(()=>panelProps.onContextMenuAction ?? (() => {}), [panelProps.onContextMenuAction]);
+  const onContextMenuAction = useCallback(
+    (action: string, node: TreeNodeData) => {
+      if (action?.startsWith('create:')) {
+        setSpeedDialSuppressed(true);
+      }
+      rawContextAction(action, node);
+    },
+    [rawContextAction, setSpeedDialSuppressed]
+  );
   const resolvedOnDelete = onDelete ?? onTrash ?? (() => {});
   const parentForSpeedDial = (pageTreeNode?.parentId ??
     pageNodeId ??
@@ -92,7 +114,8 @@ export function TreeConsolePanelWithDynamicSpeedDial({
         treeId={treeId}
         onCreateAction={(action: string) => onContextMenuAction(action, speedDialContextNode)}
         position={{ bottom: 16, right: 16 }}
-        hidden={!panelProps.canCreate}
+        hidden={!panelProps.canCreate || isDialogRoute || speedDialSuppressed}
+        onSuppress={() => setSpeedDialSuppressed(true)}
       />
     </Box>
   );

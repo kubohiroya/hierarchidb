@@ -3,6 +3,7 @@
 const hasIndexedDB = typeof indexedDB !== 'undefined' && !!indexedDB.open;
 
 import type { PeerStore } from '@hierarchidb/runtime-worker';
+import type { BasemapEntitiesDB } from '../basemapEntitiesDB.js';
 
 type StoreRegistry = {
   getPeer<T = unknown>(nodeType: string): PeerStore<T> | undefined;
@@ -32,22 +33,35 @@ async function resolveStoreRegistry(
   }
 }
 
-type BasemapEntitiesDBCtor = new () => {
-  open?: () => Promise<unknown> | unknown;
-};
+type BasemapEntitiesDBCtor = new () => BasemapEntitiesDB;
+
+function extractBasemapEntitiesDBCtor(mod: unknown): BasemapEntitiesDBCtor | undefined {
+  const namedExport = (mod as { BasemapEntitiesDB?: unknown })?.BasemapEntitiesDB;
+  if (typeof namedExport === 'function') {
+    return namedExport as BasemapEntitiesDBCtor;
+  }
+
+  const defaultExport = (mod as { default?: unknown })?.default;
+  if (typeof defaultExport === 'function') {
+    return defaultExport as BasemapEntitiesDBCtor;
+  }
+
+  if (defaultExport && typeof defaultExport === 'object') {
+    const nested = (defaultExport as { BasemapEntitiesDB?: unknown }).BasemapEntitiesDB;
+    if (typeof nested === 'function') {
+      return nested as BasemapEntitiesDBCtor;
+    }
+  }
+
+  return undefined;
+}
 
 async function loadBasemapEntitiesDBCtor(): Promise<BasemapEntitiesDBCtor> {
   try {
     const mod = await import('@hierarchidb/basemap-plugin/worker-database');
-    const ctor =
-      (mod as { BasemapEntitiesDB?: BasemapEntitiesDBCtor }).BasemapEntitiesDB ??
-      ((mod as { default?: BasemapEntitiesDBCtor | { BasemapEntitiesDB?: BasemapEntitiesDBCtor } }).default as
-        | BasemapEntitiesDBCtor
-        | { BasemapEntitiesDB?: BasemapEntitiesDBCtor }
-        | undefined)?.BasemapEntitiesDB ??
-      ((mod as { default?: BasemapEntitiesDBCtor }).default ?? undefined);
+    const ctor = extractBasemapEntitiesDBCtor(mod);
 
-    if (typeof ctor === 'function') {
+    if (ctor) {
       return ctor;
     }
     throw new TypeError('[basemap-worker] BasemapEntitiesDB export missing or invalid');

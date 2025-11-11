@@ -222,6 +222,39 @@ describe('createTreeConsoleActions.handleEdit', () => {
 
     globalThis.prompt = originalPrompt;
   });
+
+  it('navigates to the create dialog when treetable context menu invokes create', async () => {
+    const mutationAPI = {
+      createNode: vi.fn(async () => ({ success: true, nodeId: 'wc-new-folder' })),
+    };
+
+    const { deps, pushPath } = buildDeps();
+    (
+      deps.client as unknown as { getMutationAPI: () => Promise<typeof mutationAPI> }
+    ).getMutationAPI = vi.fn().mockResolvedValue(mutationAPI);
+
+    const refreshUndoRedo = vi.fn(async () => {});
+    deps.refreshUndoRedo = refreshUndoRedo;
+
+    const actions = createTreeConsoleActions(deps);
+    const node: TreeNodeData = {
+      id: 'node-1',
+      nodeType: 'folder',
+      name: 'Existing',
+      parentId: 'parent-1',
+    } as TreeNodeData;
+
+    await actions.handleContextMenuAction('create:folder', node, { source: 'treetable' });
+
+    expect(mutationAPI.createNode).toHaveBeenCalledWith({
+      nodeType: 'folder',
+      treeId: 'console-1',
+      parentId: 'node-1',
+      name: 'New Folder',
+    });
+    expect(refreshUndoRedo).toHaveBeenCalled();
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/node-1/wc-new-folder/folder/create');
+  });
 });
 
 describe('createTreeConsoleActions.handleUndoRedo', () => {

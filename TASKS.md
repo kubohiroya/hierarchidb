@@ -167,6 +167,21 @@
 - ロールバック手順：追加した dep-fence ルール／Vite alias／テストコード／plugin import 修正を revert し、`pnpm dep-fence` と `pnpm --filter @hierarchidb/app build` を再実行して従来構成へ戻す
 - ロールバック手順詳細：`app/public/locales/*/common.json`, `app/src/i18n/workerInitMessages.ts`, `app/src/contexts/{WorkerProvider,AppReporters,BootProgressProvider}.tsx`, `app/src/worker-runtime/WorkerStateStore.ts` などの差分を revert し、`pnpm --filter @hierarchidb/app test -- --run workerInitMessages` を再実行して既存メッセージへ戻す。
 
+1210) Basemap worker store 型エラー修正（P1）
+- ブランチ: `fix/basemap/worker-store-type-errors`（sandbox 制約で `main` 上で作業）
+- 依存: `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts`, `@hierarchidb/basemap-plugin/worker-database`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [x] `registerBasemapWorkerStores.ts` の TS2339 / TS2345 を解消し、Basemap worker store 登録が型的に一貫している
+  - [x] `pnpm --filter @hierarchidb/basemap-plugin typecheck` が exit 0 で完了し、ログを運用ログへ記録する
+  - [x] 修正内容と影響範囲を本タスクに追記し、完了時点で DoD チェックリストを更新する
+- チェックリスト:
+  - [x] 型エラーの原因を特定し、必要なら `BasemapEntitiesDB` 周辺の型定義／narrowing を補完する
+  - [x] `registerBasemapWorkerStores.ts` を更新し、Dexie 登録呼び出しとフラグ周りの型が strict モードでも通ることを確認する
+  - [x] `pnpm --filter @hierarchidb/basemap-plugin typecheck` を実行し、結果を運用ログに貼り付ける
+- 変更メモ（2025-11-10）: Basemap worker store 登録専用の `extractBasemapEntitiesDBCtor` を実装し、`BasemapEntitiesDB` ctor import を通じて Dexie peer store との型整合を確保。影響範囲は `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts` のみで、runtime-worker や他プラグインのロジックには波及しない。
+- ロールバック手順：`registerBasemapWorkerStores.ts` の差分を revert し、`pnpm --filter @hierarchidb/basemap-plugin typecheck` を再実行して型エラーが再現することを確認する
+
 91) App 依存束ねパッケージ導入（P0）
 - ブランチ: `feat/app/dependency-bundles`（sandbox 制約で main 上で作業）
 - 依存: `packages/app`, `packages/ui/*`, `packages/features/*`, `pnpm-workspace.yaml`, `turbo.json`, `docs/package-dependencies.md`
@@ -2826,6 +2841,14 @@ P2:
   - [ ] E2E包括シナリオ追加（OFF/ON）
 
 ### Done（完了） <a id="kanban-done"></a>
+- 1211) TreeConsole Create→Folder ダイアログ不表示調査（P0） — 完了 (2025-11-10)
+  - DoD:
+    - `TASKS.md` カンバン／運用ログに start/progress/done・ロールバック手順を記録。
+    - TreeConsole context menu（Create → Folder）が `pushPath` 経由で `/t/:treeId/:parentId/:wcNodeId/:type/create` へ遷移し、フォルダ作成ダイアログが確実に表示されることを確認。
+    - 原因と対策を記録（`options.source === 'treetable'` 分岐が pushPath を呼ばずダイアログが開かない）。`app/src/hooks/treeconsole/createTreeConsoleActions.ts` に `navigateToCreateDialog` を追加し、treetable 分岐でも同一ルートへ遷移するよう統一。
+    - `pnpm -C app test -- createTreeConsoleActions`（2025-11-10 18:09 JST） exit 0 を運用ログ #worklog-12 に記録。
+  - 影響範囲：TreeConsole context menu / DynamicSpeedDial からの create 操作のみ。その他の CRUD／Undo/Redo には影響なし。
+  - ロールバック手順：`app/src/hooks/treeconsole/createTreeConsoleActions.ts` と `app/src/hooks/treeconsole/__tests__/unit/createTreeConsoleActions.unit.test.ts` の差分を revert し、`pnpm -C app test -- createTreeConsoleActions` を再実行して従来の「即時作成のみ」挙動へ戻す。
 - 114) TreeConsole trash 操作命名移行 Phase1（P0） — 完了 (2025-11-10)
   - DoD（2025-11-10 再定義）:
     - `app/src/hooks/treeconsole/createTreeConsoleActions.ts` と `types.ts` で `handleTrash` 系 API を正式化し、`handleRemove` は互換目的の optional として維持。`handleContextMenuAction` は `'remove'` を `'trash'` に正規化。
@@ -7046,6 +7069,9 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-02 15:24 start: fix/ui-dialog/full-header-drag — PluginDialogHeader と Empty Trash ダイアログのヘッダー挙動を比較し、ドラッグ領域/ホバー表現の統一方針検討を開始。
 - 2025-11-02 15:25 progress: fix/ui-dialog/full-header-drag — PluginDialogHeader の最上位コンテナにドラッグハンドル属性とホバー演出を移し、タイトルバー全域がカーソル/背景変化を伴うよう調整。内部タイトルスタックの個別ホバー装飾と重複ハンドルを撤去。
 - 2025-11-02 15:25 verify: fix/ui-dialog/full-header-drag — `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` および `pnpm --filter @hierarchidb/app typecheck` を実行し、いずれも exit 0。手動コード確認でタイトルバー全体がドラッグ対象になることを確認（UI 実機検証は環境制約のため未実施）。
+- 2025-11-12 07:45 progress: fix/ui-dialog/full-header-drag — TrashDialog との乖離が再発しているとの指摘を受け、PluginDialogHeader のドラッグハンドルがタイトルテキスト範囲に限定されていないか再調査を開始。
+- 2025-11-12 07:55 progress: fix/ui-dialog/full-header-drag — Header 最上位コンテナへ drag handle / hover スタイルを再配置し、タイトルバー全域が TrashDialog と同じ挙動になるよう差分を適用。
+- 2025-11-12 07:58 verify: fix/ui-dialog/full-header-drag — `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` と `pnpm --filter @hierarchidb/app typecheck` を実行し exit 0 を確認。手元で header 全域が drag 対象になることをコードレベルで確認。
 - 2025-11-03 11:41 start: TreeTableCore export 復旧 — `packages/ui/treeconsole/treetable` の dist から `TreeTableCore` export が欠落している状況を再現し、index.ts / core 実装の整合確認と復旧作業に着手。
 - 2025-11-03 11:43 progress: TreeTableCore export 復旧 — treetable の index/orchestrator/types を HEAD 構成へ差し戻し、`TreeTableCore` / `TreeTableCoreWithPlugins` 実装を現行版へ復旧。`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し、exit 0（dist/index.js に TreeTableCore を確認）。
 - 2025-11-03 11:45 blocked: TreeTableCore export 復旧 — `pnpm --filter @hierarchidb/app build` を試行したが、`generate-favicon.ts` 実行時に sandbox 制約（EPERM: listen @ tsx IPC pipe）で停止。再試行にはローカル権限が必要な旨を記録。
@@ -7793,6 +7819,17 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-05 16:32 blocked: pnpm --filter @hierarchidb/app build — exit 1。sandbox で `tsx scripts/generate-favicon.ts` が IPC パイプを開けず EPERM のまま（再現ログあり）。ビルド自体は未検証・ログ済み。
 - 2025-11-05 13:34 start: fix/ui/home-progress-i18n — トップページ初回アクセス時の進捗メッセージが英語選択でも日本語固定になる不具合を調査・修正開始。DoD: i18n 辞書整備、Home コンポーネントでの `t()` 適用、手動確認ログ、ロールバック記載。
 - 2025-11-05 13:35 blocked: fix/ui/home-progress-i18n — `git checkout -b fix/ui/home-progress-i18n` が `.git/refs/heads/...` への書き込み不可で失敗。sandbox 制約のため既存 `main` ブランチ上で作業継続。
+
+## 今日の着手（運用ログ） <a id="worklog-12"></a>
+
+- 2025-11-10 17:10 start: fix/basemap/worker-store-type-errors — `plugins/basemap-plugin/src/worker/factory/registerBasemapWorkerStores.ts` の TS2339（L47）/TS2345（L70）を解消するタスクを開始。DoD: TASKS/Kanban・運用ログ更新、該当ファイルの型エラー解消、`pnpm --filter @hierarchidb/basemap-plugin typecheck` 成功ログ取得、影響範囲とロールバック手順の追記。
+- 2025-11-10 17:25 progress: fix/basemap/worker-store-type-errors — `registerBasemapWorkerStores.ts` に `BasemapEntitiesDB` 型 import を追加し、ctor 解析ロジックを type guard 付きの `extractBasemapEntitiesDBCtor` へ置き換え。`createBasemapPeerStoreDexie` へ渡す DB インスタンスが `BasemapEntitiesDB` 互換になるよう ctor 型を `new () => BasemapEntitiesDB` に統一して TS2339/TS2345 の原因を除去。
+- 2025-11-10 17:28 command: pnpm typecheck --filter @hierarchidb/basemap-plugin — exit 0。turbo 経由で `@hierarchidb/runtime-worker:typecheck` が実行され、Basemap プラグイン周辺に追加の型エラーがないことを確認。
+- 2025-11-10 17:32 done: fix/basemap/worker-store-type-errors — DoD 4 項目を満たしたため完了。`registerBasemapWorkerStores.ts` の変更を revert し、`pnpm typecheck --filter @hierarchidb/basemap-plugin` を再実行すればロールバック可能。
+- 2025-11-10 17:35 start: fix/ui-treeconsole/create-folder-dialog — TreeConsole コンテキストメニューの「Create → Folder」をクリックしてもダイアログが開かない現象を調査開始。DoD: TASKS 更新、原因特定と修正、`pnpm -C app test -- createTreeConsoleActions` 等で検証、影響範囲とロールバック手順を記録。
+- 2025-11-10 17:47 progress: fix/ui-treeconsole/create-folder-dialog — `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の `source === 'treetable'` 分岐でも `navigateToCreateDialog` を呼び出すよう修正し、コンテキストメニュー作成後に `/t/:treeId/:parent/:wc/:type/create` へ遷移させる。DynamicSpeedDial/treetable の両経路が同じルーティングを共有するよう整理。
+- 2025-11-10 18:09 command: pnpm -C app test -- createTreeConsoleActions — exit 0。ツリーテーブル context menu create の回帰テストを追加し、treetable ソースでも `pushPath` が呼ばれることを確認。
+- 2025-11-10 18:12 done: fix/ui-treeconsole/create-folder-dialog — DoD 4 項目を満たしたため完了。原因（treetable ソースのみダイアログ遷移をスキップしていた）と対策を TASKS に記録し、ロールバック手順を記載。
 
 ## 今日の着手（運用ログ） <a id="worklog-10"></a>
 

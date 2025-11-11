@@ -5,7 +5,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Box } from '@mui/material';
+import { Box, Fade } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { createPortal } from 'react-dom';
 import { FRAME_CONSTANTS } from './frameHelpers.js';
@@ -30,6 +31,8 @@ export interface MultiDialogFrameComponentProps<TData> {
   disablePortal?: boolean;
   /** Custom container for the portal. Defaults to document.body when available. */
   portalContainer?: Element | DocumentFragment | null;
+  /** Duration (ms) for the fade transition when the dialog mounts/unmounts. */
+  transitionDuration?: number;
 }
 
 const DEFAULT_DIALOG_SIZE = { width: 960, height: 640 } as const;
@@ -56,11 +59,14 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
     stopWheelPropagation = true,
     disablePortal = false,
     portalContainer,
+    transitionDuration,
   } = props;
 
   const { open } = headlessProps;
 
   const isBrowser = typeof document !== 'undefined';
+  const theme = useTheme();
+  const fadeDuration = transitionDuration ?? theme.transitions.duration.shorter;
 
   const [isInteracting, setIsInteracting] = useState(false);
 
@@ -412,22 +418,20 @@ export function MultiDialogFrame<TData>(props: MultiDialogFrameComponentProps<TD
   const portalTarget = portalContainer ?? (isBrowser ? document.body : null);
 
   const dialogNode = (
-    <Box
-      sx={combinedBackdropSx}
-      role="presentation"
-      onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
-        if (event.target !== event.currentTarget) return;
-        guards.handleBackdropClick();
-      }}
-      onWheelCapture={guards.handleWheelCapture}
-    >
-      {frameNode}
-    </Box>
+    <Fade in={open} timeout={fadeDuration} mountOnEnter unmountOnExit>
+      <Box
+        sx={combinedBackdropSx}
+        role="presentation"
+        onPointerDown={(event: React.PointerEvent<HTMLDivElement>) => {
+          if (event.target !== event.currentTarget) return;
+          guards.handleBackdropClick();
+        }}
+        onWheelCapture={guards.handleWheelCapture}
+      >
+        {frameNode}
+      </Box>
+    </Fade>
   );
-
-  if (!open) {
-    return null;
-  }
 
   if (disablePortal || !isBrowser || !portalTarget) {
     return dialogNode;

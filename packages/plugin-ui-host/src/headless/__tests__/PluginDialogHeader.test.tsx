@@ -50,6 +50,7 @@ describe('PluginDialogHeader', () => {
       onRequestCommit: vi.fn(),
       displayMode: 'normal' as const,
       onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown: vi.fn(),
     };
 
     headerLocationRef.pathname = '/dialog';
@@ -73,5 +74,40 @@ describe('PluginDialogHeader', () => {
     const closeButton = screen.getByLabelText('Close dialog');
     fireEvent.click(closeButton);
     expect(onRequestClose).toHaveBeenCalledWith('close');
+  });
+
+  it('treats the entire header container as the drag handle', () => {
+    const onDragHandlePointerDown = vi.fn();
+    const contextValue = {
+      open: true,
+      stepComponents: [{ id: 'basic', label: 'Basic', component: () => null }],
+      stepData: {},
+      onStepDataChange: vi.fn(),
+      activeStepIndex: 0,
+      enabledStepIndices: [0],
+      validatedStepIndices: [],
+      committableStepIndices: [],
+      invalidMessageMap: {},
+      isDirty: false,
+      onStepNavigate: vi.fn(),
+      onRequestClose: vi.fn(),
+      onRequestCommit: vi.fn(),
+      displayMode: 'normal' as const,
+      onDisplayModeChange: vi.fn(),
+      onDragHandlePointerDown,
+    };
+
+    const { container } = render(
+      <ThemeProvider theme={createTheme()}>
+        <MultiStepDialogProvider value={contextValue}>
+          <PluginDialogHeader title="Create Folder" />
+        </MultiStepDialogProvider>
+      </ThemeProvider>
+    );
+
+    const dragHandle = container.querySelector('[data-dialog-drag-handle="true"]') as HTMLElement | null;
+    expect(dragHandle).not.toBeNull();
+    fireEvent.pointerDown(dragHandle!, { button: 0 });
+    expect(onDragHandlePointerDown).toHaveBeenCalledTimes(1);
   });
 });

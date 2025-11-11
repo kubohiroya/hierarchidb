@@ -468,6 +468,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
           }
           const wcNodeId = res.nodeId as NodeId;
           fireCmdEvent();
+          const navigateToCreateDialog = () => {
+            if (!pushPath) return;
+            const nodeTypePath = String(newType);
+            pushPath(`/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`);
+          };
 
           if (source === 'breadcrumb') {
             await refreshParent(targetNodeId);
@@ -492,15 +497,13 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
               void refreshParent(targetNodeId);
             }, 0);
             await refreshUndoRedo();
+            navigateToCreateDialog();
             return;
           }
 
           // default (speed dial etc.)
           await refreshParent(targetNodeId);
-          if (pushPath) {
-            const nodeTypePath = String(newType);
-            pushPath(`/t/${treeId}/${targetNodeId}/${wcNodeId}/${nodeTypePath}/create`);
-          }
+          navigateToCreateDialog();
         } catch (error) {
           console.error('Context create failed:', error);
           showCommandError('UNKNOWN_ERROR');

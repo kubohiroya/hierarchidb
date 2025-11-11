@@ -20,17 +20,21 @@ interface DynamicSpeedDialProps {
   position?: { bottom?: number; right?: number; left?: number; top?: number };
   hidden?: boolean;
   menuContext?: TreeContext; // Optional explicit context to build items from VM
+  onSuppress?: () => void;
 }
 
 type DynamicSpeedDialWindow = Window & {
   __HDB_SD_HITBOX__?: boolean;
 };
 
+const SPEED_DIAL_TRANSITION_MS = 220;
+
 export function DynamicSpeedDial({
   treeId,
   onCreateAction,
   position = { bottom: 16, right: 16 },
   hidden = false,
+  onSuppress,
 }: DynamicSpeedDialProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -101,10 +105,17 @@ export function DynamicSpeedDial({
   }, [open]);
 
   // VM-based click
+  useEffect(() => {
+    if (hidden) {
+      setOpen(false);
+    }
+  }, [hidden]);
+
   const handleVMActionClick = (nodeType: string) => {
     const action = `create:${nodeType}`;
-    onCreateAction(action, {} as TreeNodeData);
+    onSuppress?.();
     handleClose();
+    onCreateAction(action, {} as TreeNodeData);
   };
 
   // Toggle debug with Alt+Shift+H
@@ -230,6 +241,7 @@ export function DynamicSpeedDial({
           icon={<SpeedDialIcon />}
           direction="up"
           open={open}
+          transitionDuration={SPEED_DIAL_TRANSITION_MS}
           onClose={(_, reason?: string) => {
             // Ignore auto-close reasons we don’t want (blur/mouseLeave)
             if (reason === 'blur' || reason === 'mouseLeave') return;

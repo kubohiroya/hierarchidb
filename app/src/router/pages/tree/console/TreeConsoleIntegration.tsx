@@ -112,6 +112,11 @@ const TreeConsoleIntegrationInner: React.FC<
     locationSearch: location.searchStr,
   });
 
+  const [speedDialSuppressed, setSpeedDialSuppressed] = useState(false);
+  const isDialogRoute = useMemo(() => {
+    const segments = location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+    return segments.length >= 6 && segments[0] === 't';
+  }, [location.pathname]);
   // Row Click Action state (Select | Edit | Navigate)
   const [rowClickAction, setRowClickAction] = useState<'Select/Navigate' | 'Edit'>(
     'Select/Navigate'
@@ -596,6 +601,9 @@ const TreeConsoleIntegrationInner: React.FC<
           onBreadcrumbContextAction={handleBreadcrumbContextAction}
           onMoveNodes={actions.handleMoveNodes}
           useTrashColumns={isTrashPage}
+          speedDialSuppressed={speedDialSuppressed}
+          setSpeedDialSuppressed={setSpeedDialSuppressed}
+          isDialogRoute={isDialogRoute}
         />
       </Box>
     </Box>

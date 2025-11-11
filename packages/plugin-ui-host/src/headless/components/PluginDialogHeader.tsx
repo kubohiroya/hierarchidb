@@ -96,6 +96,8 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
 
   return (
     <Box
+      data-dialog-drag-handle="true"
+      onPointerDown={dragHandlePointerDown}
       sx={(theme) => ({
         display: 'flex',
         alignItems: 'flex-start',
@@ -103,6 +105,21 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
         padding: theme.spacing(1.5, 2, 0.1, 2),
         borderBottom: `1px solid ${theme.palette.divider}`,
         userSelect: 'none',
+        gap: theme.spacing(1.5),
+        cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
+        backgroundColor:
+          theme.palette.mode === 'dark'
+            ? alpha(theme.palette.common.white, 0.04)
+            : getDialogSurfaceColor(theme),
+        transition: theme.transitions.create('background-color', {
+          duration: theme.transitions.duration.shorter,
+        }),
+        '&:hover': {
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.common.white, 0.1)
+              : theme.palette.action.hover,
+        },
       })}
     >
       <Stack direction="column" spacing={1} sx={{ minWidth: 0, flex: 1, pr: 2 }}>
@@ -110,23 +127,10 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
           direction="row"
           spacing={1.5}
           alignItems="center"
-          sx={(theme) => ({
+          sx={(_theme) => ({
             borderRadius: 8,
             minWidth: 0,
-            cursor: ctx.displayMode === 'full-screen' ? 'default' : 'move',
-            backgroundColor: getDialogSurfaceColor(theme),
-            transition: theme.transitions.create(['background-color'], {
-              duration: theme.transitions.duration.shorter,
-            }),
-            '&:hover': {
-              backgroundColor:
-                theme.palette.mode === 'dark'
-                  ? alpha(theme.palette.common.white, 0.08)
-                  : theme.palette.action.hover,
-            },
           })}
-          onPointerDown={dragHandlePointerDown}
-          data-dialog-drag-handle="true"
         >
           {icon && (
             <Box
@@ -182,9 +186,7 @@ export const PluginDialogHeader: React.FC<PluginDialogHeaderProps> = ({
                       disabled={!canNavigate}
                       preload="intent"
                       onClick={(
-                        event:
-                          | React.MouseEvent<HTMLButtonElement>
-                          | React.KeyboardEvent<HTMLButtonElement>
+                        event
                       ) => handleStepClick(event, index, canNavigate)}
                       sx={{ padding: 0, margin: 0 }}
                     >
