@@ -935,16 +935,6 @@ export default defineConfig(({ mode, isSsrBuild }) => {
           // Peer deps referenced by workspace libs (ui-dialog) that should resolve from app
           'react-resizable',
           'react-draggable',
-          // Prevent bundling plugin database entry points; they stay lazy-loaded via plugin loader
-          '@hierarchidb/basemap-plugin/database',
-          '@hierarchidb/basemap-plugin/dist/services/database/index.js',
-          '@hierarchidb/resolver-plugin/database',
-          '@hierarchidb/resolver-plugin/dist/services/database/index.js',
-          '@hierarchidb/route-plugin/database',
-          '@hierarchidb/route-plugin/dist/services/database/index.js',
-          '@hierarchidb/spreadsheet-plugin/database',
-          '@hierarchidb/spreadsheet-plugin/dist/services/database/index.js',
-
         ],
         output: {
           entryFileNames: 'assets/[name].js',

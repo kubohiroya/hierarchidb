@@ -45,8 +45,13 @@ The router engine is controlled by the `VITE_ROUTER_ENGINE` environment variable
 
 The router mode is controlled by `VITE_ROUTER_MODE`:
 
-- `browser` (default): Standard browser history routing
+- `browser`: Standard browser history routing
 - `hash`: Hash-based routing (useful for GitHub Pages)
+
+If `VITE_ROUTER_MODE` is not set, the runtime chooses a sensible default based on the Vite mode:
+
+- `pnpm dev` (`MODE=development`) → Browser history for easier local debugging.
+- `pnpm build` / `pnpm preview` (`MODE=production`) → Hash history so direct links such as `/hierarchidb/#/t/r` work on static hosting.
 
 ### Example Configuration
 
@@ -57,12 +62,12 @@ VITE_ROUTER_ENGINE=tanstack
 VITE_ROUTER_MODE=browser
 ```
 
-In `.env.production`:
+In `.env.production` (override the default if you need browser history even for production bundles):
 ```bash
-# Use React Router with hash mode for GitHub Pages
-VITE_ROUTER_ENGINE=react-router
+# Force browser routing in production (defaults to hash otherwise)
+VITE_ROUTER_ENGINE=tanstack
 VITE_ROUTER_MODE=browser
-VITE_USE_HASH_ROUTING=true
+VITE_USE_HASH_ROUTING=false
 ```
 
 ## Key Functions
@@ -254,4 +259,3 @@ treeLayoutRoute (t/:treeId)
 ```
 
 Each level loads its specific data and passes it down through TanStack Router's context system.
-

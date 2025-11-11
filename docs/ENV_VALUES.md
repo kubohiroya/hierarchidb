@@ -19,6 +19,11 @@ This document lists all environment variables used by the browser application an
   - Default: `''`
   - Example: `hierarchidb`
   - Used by: `app` (vite/react-router config, build scripts)
+- Name: `VITE_ROUTER_MODE`
+  - Meaning: Forces the router to use either browser or hash history, overriding the default (`pnpm dev` → browser / `pnpm build|preview` → hash).
+  - Default: `''` (unset)
+  - Example: `browser` | `hash`
+  - Used by: `app/src/router/config.ts`
 - Name: `VITE_USE_HASH_ROUTING`
   - Meaning: Enable hash-based routing for static hosting.
   - Default: `true` (treated as true unless explicitly `'false'`)

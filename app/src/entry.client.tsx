@@ -2,6 +2,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { startTransition } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createHierarchiRouter, getBasePath, getRouterMode } from './router/index.js';
+import AppRoot from './root.js';
 import { initializeBrowserGlobals } from './router/init/initializeBrowserGlobals.ts';
 
 /**
@@ -17,7 +18,7 @@ async function initializeApp() {
   const mode = getRouterMode();
   const basename = getBasePath();
 
-  const router = createHierarchiRouter({
+  const router = await createHierarchiRouter({
     mode,
     basename,
   });
@@ -40,6 +41,10 @@ initializeApp().then((router) => {
 
     removeHydrateFallback();
 
-    createRoot(rootElement).render(<RouterProvider router={router} />);
+    createRoot(rootElement).render(
+      <AppRoot>
+        <RouterProvider router={router} />
+      </AppRoot>
+    );
   });
 });

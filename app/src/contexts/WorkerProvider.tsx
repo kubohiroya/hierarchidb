@@ -28,7 +28,6 @@ import { useTranslation } from '@hierarchidb/ui-shell/ui-i18n';
 type BootWindow = Window & {
   __HDB_INIT_COMPLETE__?: boolean;
   __HDB_INIT_STARTED__?: boolean;
-  __HDB_WORKER_CLIENT_REF__?: WorkerContextValue;
 };
 
 function normalizeError(error: unknown): Error {
@@ -57,7 +56,11 @@ import {
 
 const logWorkerProviderWarning = (message: string, error: unknown): void => {
   if (typeof console === 'undefined') return;
-  console.warn('[WorkerProvider]', message, error);
+  if (error === undefined) {
+    console.warn('[WorkerProvider]', message);
+  } else {
+    console.warn('[WorkerProvider]', message, error);
+  }
 };
 
 const getWorkerClientClass = () => getWorkerAPIClientModule()?.WorkerAPIClient ?? null;
@@ -327,6 +330,12 @@ function ErrorOverlay({ error, onRetry }: { error: Error; onRetry: () => void })
       </div>
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    __HDB_WORKER_CLIENT_REF__?: WorkerContextValue;
+  }
 }
 
 export const WorkerProvider = ({
@@ -601,17 +610,6 @@ export const WorkerProvider = ({
     }),
     [status, getAPI, initialize, reset]
   );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const win = window as BootWindow;
-    win.__HDB_WORKER_CLIENT_REF__ = contextValue;
-    return () => {
-      if (win.__HDB_WORKER_CLIENT_REF__ === contextValue) {
-        delete win.__HDB_WORKER_CLIENT_REF__;
-      }
-    };
-  }, [contextValue]);
 
   const suspenseFallback = useMemo(() => {
     if (status.error) return null;

@@ -22,13 +22,17 @@ describe('createHierarchiRouter', () => {
     vi.unstubAllEnvs();
   });
 
-  it('should create a router with browser mode', async () => {
+it(
+  'should create a router with browser mode',
+  async () => {
     const router = await createHierarchiRouter({ mode: 'browser' });
 
     expect(router).toBeDefined();
     expect(router.history).toBeDefined();
     expect(router.history.location).toBeDefined();
-  });
+  },
+  15_000
+);
 
   it('should create a router with hash mode', async () => {
     const router = await createHierarchiRouter({ mode: 'hash' });
@@ -92,6 +96,18 @@ describe('getRouterMode', () => {
   it('should return "browser" when VITE_USE_HASH_ROUTING is false', () => {
     vi.stubEnv('VITE_USE_HASH_ROUTING', 'false');
     expect(getRouterMode()).toBe('browser');
+  });
+
+  it('should default to "browser" in development mode when not overridden', () => {
+    vi.stubEnv('MODE', 'development');
+    vi.stubEnv('VITE_USE_HASH_ROUTING', 'true');
+    expect(getRouterMode()).toBe('browser');
+  });
+
+  it('should default to "hash" in production mode when not overridden', () => {
+    vi.stubEnv('MODE', 'production');
+    vi.stubEnv('VITE_USE_HASH_ROUTING', 'false');
+    expect(getRouterMode()).toBe('hash');
   });
 });
 

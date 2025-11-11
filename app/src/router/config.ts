@@ -2,12 +2,21 @@ export type RouterMode = 'browser' | 'hash';
 
 /**
  * Helper to determine router mode from environment variables
- * Priority: VITE_ROUTER_MODE > default to 'browser'
+ * Priority: VITE_ROUTER_MODE > Vite MODE (dev=browser / prod=hash) > legacy hash flag
  */
 export function getRouterMode(): RouterMode {
   const explicitMode = import.meta.env.VITE_ROUTER_MODE?.toLowerCase();
   if (explicitMode === 'hash' || explicitMode === 'browser') {
     return explicitMode;
+  }
+
+  const normalizedMode = import.meta.env.MODE?.toLowerCase();
+  if (normalizedMode === 'development') {
+    return 'browser';
+  }
+
+  if (normalizedMode === 'production') {
+    return 'hash';
   }
 
   const hashFlag = import.meta.env.VITE_USE_HASH_ROUTING;

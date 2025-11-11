@@ -117,6 +117,21 @@
 - ロールバック手順：plugin registry generator・型定義・app services の差分を revert し、`pnpm run tools:gen-plugin-registry` → `pnpm --filter @hierarchidb/app build` を再実行して旧挙動へ戻す
 
 
+952) Router モード dev/prod 自動切替（P1）
+- ブランチ: `fix/app/router-mode-split`（sandbox 制約で `main` 上で作業）
+- 依存: `app/src/router/config.ts`, `app/src/router/__tests__/unit/configure-router-mode.unit.test.ts`, `app/src/router/README.md`, `docs/ENV_VALUES.md`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `pnpm dev` 実行時に Router が常に Browser history を選択し、`VITE_USE_HASH_ROUTING` デフォルトが true でも hash mode へ強制されない
+  - [ ] `pnpm build && pnpm preview` では Router が hash history を選択し、`/hierarchidb/#/...` 直アクセスでルーティングできる構成を整備する
+  - [ ] `app/src/router/__tests__/unit/configure-router-mode.unit.test.ts` を更新し、dev/prod それぞれの既定モードがユニットテストで保証される
+  - [ ] `TASKS.md` の Kanban／運用ログに start→progress→done を記録し、ロールバック手順と検証ログを明記する
+- チェックリスト:
+  - [ ] `app/src/router/config.ts` の `getRouterMode()` を MODE ベースの既定値（dev=browser / prod=hash）へ更新し、既存の明示指定（`VITE_ROUTER_MODE`）優先ロジックを維持する
+  - [ ] Router README / docs/ENV_VALUES に既定挙動と override 方法を追記する
+  - [ ] `pnpm --filter @hierarchidb/app test -- router/__tests__/unit/configure-router-mode.unit.test.ts` を実行し、成功ログを運用ログに残す
+- ロールバック手順：`app/src/router/config.ts`, `app/src/router/__tests__/unit/configure-router-mode.unit.test.ts`, `app/src/router/README.md`, `docs/ENV_VALUES.md` の差分を revert し、`pnpm --filter @hierarchidb/app test -- router/__tests__/unit/configure-router-mode.unit.test.ts` を再実行して旧 Browser モード既定へ戻す。
+
+
 912) Home 初期進捗メッセージ i18n 対応（P1）
 - ブランチ: `fix/ui/home-progress-i18n`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/router/pages/home/HomePage.tsx`, `app/src/components/**/*`, `packages/ui/i18n`, `app/src/router/pages/home/tour/**/*`
@@ -7814,3 +7829,17 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-09 00:34 progress: fix/app/preview-plugin-db-loader — `app/tsconfig.json` に `@hierarchidb/ui-{csv-extract,map}` の path alias を追加し、app typecheck で Styler プラグインの依存解決ができるよう調整。
 - 2025-11-09 00:36 progress: fix/app/preview-plugin-db-loader — MapLibre 公開型 (`packages/ui/map/src/types/maplibre-public.ts`) に `paint` プロパティを追加し、StylerDataService 側で layer/paint を初期化して安全に色設定を行うよう修正。
 - 2025-11-09 00:37 command: pnpm -F @hierarchidb/app typecheck — exit 0。
+- 2025-11-10 09:45 start: fix/app/router-mode-split — `pnpm dev` では browser routing、`pnpm build/preview` では hash routing を既定化するタスクに着手。DoD: router config 更新、ユニットテスト、TASKS/ログ整備、ドキュメント反映。
+- 2025-11-10 10:08 progress: fix/app/router-mode-split — `app/src/router/config.ts` を MODE ベースの既定（dev=browser / prod=hash）へ更新し、`docs/ENV_VALUES.md` と `app/src/router/README.md` に新しいルールと override 方法を追記。`TASKS.md` Kanban/ログも整備。
+- 2025-11-10 10:09 command: pnpm --filter @hierarchidb/app test -- router/__tests__/unit/configure-router-mode.unit.test.ts — exit 0（17 tests, 5.68s）。dev/prod 既定を確認する新規ユニットテストを追加。
+- 2025-11-10 10:12 done: fix/app/router-mode-split — MODE による自動切替と周辺ドキュメントを整備し、ユニットテストで dev=browser / prod=hash の既定と override パスを確認済み。プレビューの手動検証は sandbox のポート制約で保留。
+- 2025-11-10 10:28 progress: fix/app/preview-plugin-db-loader — Vite build の `rollupOptions.external` から各プラグイン database エントリを削除し、`pnpm build`/`preview` で bundler がハッシュ済みチャンクを生成できるよう調整。
+- 2025-11-10 10:29 command: pnpm --filter @hierarchidb/app build — exit 0。plugin-registry 再生成 → vite build まで完走し、`app/dist/assets` に bare specifier が残らないことを確認（preview は sandbox のポート制約で未実行）。
+- 2025-11-10 10:33 progress: fix/app/preview-plugin-db-loader — Location plugin の `@hierarchidb/location-plugin/database` が `getEphemeralLocationDB` を再エクスポートしていなかったため、`plugins/location-plugin/src/database/index.ts` に Ephemeral DB モジュールの export を追加し、`pnpm --filter @hierarchidb/location-plugin build` → `pnpm --filter @hierarchidb/app build` を再実行して dist へ反映。
+- 2025-11-10 10:45 start: fix/app/reload-browser-route — `/hierarchidb/t/...` 直アクセスやリロードで真っ白画面になる問題を修正するタスクを開始。DoD: dev/prod 両モードで entry script が正しく解決され、browser/hash の直リンク再読込で SPA が復元される。
+- 2025-11-10 10:48 progress: fix/app/reload-browser-route — `app/index.html` のエントリースクリプト参照を一時的に絶対パスへ切り替えて検証したが、ユーザー環境では白画面解消につながらず元に戻した（原因は worker 初期化レイヤーにあると判断）。
+- 2025-11-10 10:58 progress: fix/app/reload-browser-route — `<base href>` 追加によるベースパス制御も効果がないため撤回。現在は WorkerProvider / TanStack Router ローダー周りの初期化レースを重点的に調査中。
+- 2025-11-10 11:10 progress: fix/app/reload-browser-route — ユーザー環境では `/hierarchidb/t/r` リロード時に UI が描画されない一方、ネットワーク/コンソールにエラーが出ていないことから、ルートローダーと Worker 初期化の同期待ち（`__HDB_INIT_WAIT__` / `WorkerProvider`）に起因するハングを疑い、Worker コンソールログ取得と router state の可視化手順を依頼中。
+- 2025-11-10 11:15 progress: fix/app/reload-browser-route — Router インスタンスを `window.__HDB_ROUTER__` に公開するフックを `entry.client.tsx` に追加し、ユーザーが DevTools から現在のマッチ状態/ロケーションを確認できるようにした（ハング時の実測値を共有してもらうため）。
+- 2025-11-10 12:40 progress: fix/app/reload-browser-route — RouterProvider を `AppRoot`/`AppProviders` で外側から包むようにエントリーを変更し、rootRoute 側は単純な `<Outlet/>` だけにして WorkerProvider がルートローダーの完了前でも必ずマウントされるように調整。`pnpm --filter @hierarchidb/app test -- router/__tests__/unit/configure-router-mode.unit.test.ts` を再実行し、タイムアウト対策として同テストのタイムアウトも延長済み。
+- 2025-11-11 12:50 progress: fix/app/reload-browser-route — デバッグ用途で一時的に追加していた `window.__HDB_ROUTER__` / `window.__HDB_WORKER_CLIENT_REF__` への代入処理を削除し、公開ビルドに不要なグローバル汚染が残らないよう後片付け。`entry.client.tsx` と `WorkerProvider.tsx` を整理済み。
