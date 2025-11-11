@@ -1,0 +1,1 @@
+import{loadRouteEntitiesDbModule as e,registerRouteWorkerStores as o}from"./index-B-uIPmAE.js";var t=Object.freeze({__proto__:null,loadRouteEntitiesDbModule:e,registerRouteWorkerStores:o});export{t as i};

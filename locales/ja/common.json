@@ -9,6 +9,26 @@
     "prefetch": "サービスの事前接続が完了しました。{{time}}",
     "prefetchList": "サービスの事前接続が完了: {{list}}"
   },
+  "workerInit": {
+    "heading": "Worker をセットアップしています…",
+    "progressFallback": "Worker を初期化しています",
+    "progressLabel": "{{value}}% 完了",
+    "messages": {
+      "start": "Worker 初期化を開始しています…",
+      "complete": "Worker の初期化が完了しました"
+    },
+    "error": {
+      "title": "Worker 初期化エラー",
+      "unknown": "不明なエラー",
+      "actions": {
+        "retry": "再試行",
+        "reload": "再読み込み"
+      }
+    },
+    "status": {
+      "ready": "Worker の準備が整いました"
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {
@@ -21,6 +41,22 @@
         "close": "ダイアログを閉じる",
         "exitFullscreen": "全画面を終了"
       }
+    }
+  },
+  "trash": {
+    "columns": {
+      "name": "名称",
+      "type": "種類",
+      "description": "説明",
+      "createdAt": "作成日時",
+      "updatedAt": "更新日時",
+      "removedAt": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   },
   "plugins": {
@@ -80,10 +116,150 @@
       "description": "タイムライン型プロジェクトを管理し、進行状況を追跡します。"
     }
   },
+  "treeConsole": {
+    "toolbar": {
+      "search": {
+        "placeholder": "ツリーを検索…",
+        "ariaLabel": "ツリー検索"
+      },
+      "aria": {
+        "toolbarLabel": "ツリーコンソールツールバー",
+        "trashMenuButton": "ゴミ箱メニューを開く",
+        "importExportButton": "インポート／エクスポートメニューを開く",
+        "settingsButton": "ツールバー設定を開く"
+      },
+      "tooltips": {
+        "undo": "取り消し ({{shortcut}})",
+        "redo": "やり直し ({{shortcut}})",
+        "cut": "切り取り ({{shortcut}})",
+        "copy": "コピー ({{shortcut}})",
+        "paste": "貼り付け ({{shortcut}})",
+        "duplicate": "複製 ({{shortcut}})",
+        "moveToTrash": "ゴミ箱に移動 ({{shortcut}})"
+      },
+      "trashMenu": {
+        "restore": "ゴミ箱から復元",
+        "empty": "ゴミ箱を空にする"
+      },
+      "importExportMenu": {
+        "import": "JSONファイルからインポート",
+        "export": "JSONファイルへエクスポート",
+        "importTemplate": "テンプレートをインポート",
+        "importTemplateFallback": "テンプレートをインポート"
+      },
+      "rowClick": {
+        "title": "行クリック時の操作",
+        "options": {
+          "selectNavigate": "選択／移動",
+          "edit": "編集"
+        }
+      },
+      "settings": {
+        "theme": {
+          "title": "テーマ",
+          "modes": {
+            "system": "システム設定",
+            "light": "ライト",
+            "dark": "ダーク"
+          }
+        },
+        "language": {
+          "title": "言語",
+          "modes": {
+            "system": "システム既定",
+            "en": "英語",
+            "ja": "日本語"
+          }
+        }
+      }
+    },
+    "contextMenu": {
+      "create": "作成",
+      "openFolder": "フォルダーを開く",
+      "open": "開く",
+      "edit": "編集",
+      "copy": "コピー",
+      "cut": "切り取り",
+      "duplicate": "複製",
+      "moveToTrash": "ゴミ箱に移動",
+      "checkReference": "参照を確認",
+      "preview": "プレビュー"
+    }
+  },
   "treeTable": {
     "selectAll": {
       "select": "すべて選択",
       "clear": "すべて解除"
+    },
+    "columns": {
+      "name": "名前",
+      "description": "説明",
+      "created": "作成日時",
+      "updated": "更新日時",
+      "removed": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    },
+    "validation": {
+      "invalidName": "名前が正しくありません",
+      "invalidDescription": "説明が正しくありません"
+    },
+    "placeholders": {
+      "nameConfirm": "Enterキーで確定 / Escでキャンセル",
+      "descriptionConfirm": "Ctrl+Enterで確定 / Escでキャンセル"
+    },
+    "header": {
+      "default": "列"
+    },
+    "emptyCell": "-"
+  },
+  "trash": {
+    "columns": {
+      "name": "名前",
+      "type": "種類",
+      "removedAt": "削除日時"
+    },
+    "timestamps": {
+      "today": "今日 {{time}}",
+      "yesterday": "昨日 {{time}}",
+      "twoDaysAgo": "一昨日 {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    },
+    "dialog": {
+      "stepLabel": "ゴミ箱",
+      "panelTitle": "ゴミ箱",
+      "title": {
+        "restore": "ゴミ箱から復元",
+        "empty": "ゴミ箱を空にする"
+      },
+      "searchPlaceholder": "ゴミ箱内を検索",
+      "buttons": {
+        "cancel": "キャンセル",
+        "restore": "復元",
+        "restoreWithCount": "復元 ({{count}})",
+        "empty": "ゴミ箱を空にする",
+        "emptyWithCount": "ゴミ箱を空にする ({{count}})",
+        "confirmDelete": "完全に削除する"
+      },
+      "aria": {
+        "restore": "復元",
+        "restoreWithCount": "{{count}}件を復元",
+        "empty": "ゴミ箱を空にする",
+        "emptyWithCount": "ゴミ箱を空にする ({{count}}件)"
+      },
+      "confirm": {
+        "title": "すべての項目を削除しますか？",
+        "empty": "ゴミ箱に項目はありません。",
+        "description": "ゴミ箱から{{count}}件を完全に削除します。この操作は元に戻せません。"
+      },
+      "units": {
+        "item_one": "件",
+        "item_other": "件"
+      }
     }
   }
 }

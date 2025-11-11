@@ -1,1 +1,0 @@
-function n(){const t=globalThis.crypto;return t&&typeof t.randomUUID=="function"?t.randomUUID():`uuid-${Math.random().toString(36).slice(2,10)}-${Date.now().toString(36)}`}function o(t){return t}function r(){return n()}export{r as g,o as t};

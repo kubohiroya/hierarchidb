@@ -1,0 +1,1 @@
+async function e(t={}){var r;(r=t.signal)!=null&&r.aborted}async function n(){return null}e().catch(()=>{});var i=Object.freeze({__proto__:null,loadLinkerEntitiesDbModule:n,registerLinkerWorkerStores:e}),o=Object.freeze({__proto__:null,loadLinkerEntitiesDbModule:n,registerLinkerWorkerStores:e});export{o as a,i};

@@ -1,0 +1,1 @@
+import{j as a}from"../worker.js";import{c as o}from"./createSvgIcon-X17Vw7O0.js";var p=o(a.jsx("path",{d:"m12 8-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"})),t=o(a.jsx("path",{d:"M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z"}));export{p as E,t as a};
