@@ -1,0 +1,1 @@
+var r=Object.defineProperty;var o=(t,e,s)=>e in t?r(t,e,{enumerable:!0,configurable:!0,writable:!0,value:s}):t[e]=s;var i=(t,e,s)=>o(t,typeof e!="symbol"?e+"":e,s);import{D as n,c as d}from"../worker.js";class u extends n{constructor(s=d("route-entities-db")){super(s);i(this,"peerEntities");this.version(1).stores({peerEntities:"&nodeId, updatedAt"})}}export{u as RouteEntitiesDB};

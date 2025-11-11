@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-    <!-- Hierarchical tree structure icon for HierarchiDB -->
+    <!-- Hierarchical console structure icon for HierarchiDB -->
 
     <!-- Top node (root) -->
     <circle cx="12" cy="4" r="2.5" fill="#1976d2"/>

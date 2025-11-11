@@ -9,6 +9,26 @@
     "prefetch": "Service preconnection is complete.{{time}}",
     "prefetchList": "Service preconnection complete: {{list}}"
   },
+  "workerInit": {
+    "heading": "Setting up worker…",
+    "progressFallback": "Worker initializing",
+    "progressLabel": "{{value}}% Complete",
+    "messages": {
+      "start": "Starting worker initialization…",
+      "complete": "Worker initialization complete"
+    },
+    "error": {
+      "title": "Worker initialization error",
+      "unknown": "Unknown error",
+      "actions": {
+        "retry": "Retry",
+        "reload": "Reload"
+      }
+    },
+    "status": {
+      "ready": "Worker ready"
+    }
+  },
   "dialogs": {
     "trash": {
       "modeMenu": {
@@ -21,6 +41,22 @@
         "close": "Close dialog",
         "exitFullscreen": "Exit full screen"
       }
+    }
+  },
+  "trash": {
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "description": "Description",
+      "createdAt": "Created",
+      "updatedAt": "Modified",
+      "removedAt": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
     }
   },
   "plugins": {
@@ -84,6 +120,146 @@
     "selectAll": {
       "select": "Select all",
       "clear": "Clear all"
+    },
+    "columns": {
+      "name": "Name",
+      "description": "Description",
+      "created": "Created",
+      "updated": "Updated",
+      "removed": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    },
+    "validation": {
+      "invalidName": "Invalid name",
+      "invalidDescription": "Invalid description"
+    },
+    "placeholders": {
+      "nameConfirm": "Press Enter to confirm / Esc to cancel",
+      "descriptionConfirm": "Press Ctrl+Enter to confirm / Esc to cancel"
+    },
+    "header": {
+      "default": "Column"
+    },
+    "emptyCell": "-"
+  },
+  "treeConsole": {
+    "toolbar": {
+      "search": {
+        "placeholder": "Search tree…",
+        "ariaLabel": "Tree search"
+      },
+      "aria": {
+        "toolbarLabel": "Tree console toolbar",
+        "trashMenuButton": "Open trash actions",
+        "importExportButton": "Import and export options",
+        "settingsButton": "Open toolbar settings"
+      },
+      "tooltips": {
+        "undo": "Undo ({{shortcut}})",
+        "redo": "Redo ({{shortcut}})",
+        "cut": "Cut ({{shortcut}})",
+        "copy": "Copy ({{shortcut}})",
+        "paste": "Paste ({{shortcut}})",
+        "duplicate": "Duplicate ({{shortcut}})",
+        "moveToTrash": "Move to Trash ({{shortcut}})"
+      },
+      "trashMenu": {
+        "restore": "Restore from Trash",
+        "empty": "Empty Trash"
+      },
+      "importExportMenu": {
+        "import": "Import from JSON file",
+        "export": "Export to JSON file",
+        "importTemplate": "Import template",
+        "importTemplateFallback": "Import template"
+      },
+      "rowClick": {
+        "title": "Row click action",
+        "options": {
+          "selectNavigate": "Select / Navigate",
+          "edit": "Edit"
+        }
+      },
+      "settings": {
+        "theme": {
+          "title": "Theme",
+          "modes": {
+            "system": "System",
+            "light": "Light",
+            "dark": "Dark"
+          }
+        },
+        "language": {
+          "title": "Language",
+          "modes": {
+            "system": "System default",
+            "en": "English",
+            "ja": "Japanese"
+          }
+        }
+      }
+    },
+    "contextMenu": {
+      "create": "Create",
+      "openFolder": "Open folder",
+      "open": "Open",
+      "edit": "Edit",
+      "copy": "Copy",
+      "cut": "Cut",
+      "duplicate": "Duplicate",
+      "moveToTrash": "Move to Trash",
+      "checkReference": "Check reference",
+      "preview": "Preview"
+    }
+  },
+  "trash": {
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "removedAt": "Removed"
+    },
+    "timestamps": {
+      "today": "Today {{time}}",
+      "yesterday": "Yesterday {{time}}",
+      "twoDaysAgo": "Two days ago {{time}}",
+      "dateTime": "{{date}} {{time}}"
+    },
+    "dialog": {
+      "stepLabel": "Trash",
+      "panelTitle": "Trash",
+      "title": {
+        "restore": "Restore from Trash",
+        "empty": "Empty Trash"
+      },
+      "searchPlaceholder": "Search trash items",
+      "buttons": {
+        "cancel": "Cancel",
+        "restore": "Restore",
+        "restoreWithCount": "Restore ({{count}})",
+        "empty": "Empty Trash",
+        "emptyWithCount": "Empty Trash ({{count}})",
+        "confirmDelete": "Permanently delete"
+      },
+      "aria": {
+        "restore": "Restore",
+        "restoreWithCount": "Restore {{count}} {{unit}}",
+        "empty": "Empty Trash",
+        "emptyWithCount": "Empty Trash {{count}} {{unit}}"
+      },
+      "confirm": {
+        "title": "Delete all items?",
+        "empty": "There are no items in the trash.",
+        "description": "This will permanently delete {{count}} {{unit}} from the trash. This action cannot be undone."
+      },
+      "units": {
+        "item_one": "item",
+        "item_other": "items"
+      }
     }
   }
 }
