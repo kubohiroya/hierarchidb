@@ -225,12 +225,7 @@ export function useDialogWorkingCopy({
       hasRequestedAutoDiscard = true;
       queueMicrotask(() => {
         getClient()
-          .then(({ wc: wcAPI }) => wcAPI.discardWorkingCopy(currentId))
-          .catch((autoDiscardError) => {
-            if (process.env.NODE_ENV !== 'production') {
-              console.warn('[useDialogWorkingCopy] auto discard failed', autoDiscardError);
-            }
-          });
+          .then(({ wc: wcAPI }) => wcAPI.discardWorkingCopy(currentId));
       });
     };
 
