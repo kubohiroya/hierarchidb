@@ -18,8 +18,10 @@ import {
   createWorkingCopyFromNode as createWcFromNode,
   discardWorkingCopy as discardWc,
   getWorkingCopy as getWc,
+  touchWorkingCopyByRecord,
   updateWorkingCopy as updateWc,
 } from './WorkingCopyTreeNodeOperations.js';
+import { getWorkingCopyCleaner, WorkingCopyCleaner } from './WorkingCopyCleaner.js';
 
 /**
  * WorkingCopyService - minimal implementation backed by EphemeralDB/CoreDB
@@ -27,11 +29,19 @@ import {
  * Note: This service returns only serializable data. It does not expose ProxyMarked types.
  */
 export class WorkingCopyService implements WorkingCopyAPI {
+  private readonly cleaner: WorkingCopyCleaner;
+
   constructor(
     private coreDB: CoreDB,
     _ephemeralDB: unknown,
     private commandProcessor?: CommandProcessor
-  ) {}
+  ) {
+    this.cleaner = getWorkingCopyCleaner(this.coreDB);
+    this.cleaner.start();
+    this.cleaner
+      .cleanStaleEntries()
+      .catch((error) => console.warn('[WorkingCopyCleaner] initial sweep failed', error));
+  }
 
   async createDraftWorkingCopy(
     nodeType: NodeType,
@@ -61,7 +71,11 @@ export class WorkingCopyService implements WorkingCopyAPI {
   }
 
   async getWorkingCopy(nodeId: NodeId): Promise<TreeNode | undefined> {
-    return getWc(this.coreDB, nodeId);
+    const wc = await getWc(this.coreDB, nodeId);
+    if (wc) {
+      await touchWorkingCopyByRecord(this.coreDB, wc as TreeNode);
+    }
+    return wc ?? undefined;
   }
 
   async updateWorkingCopy(nodeId: NodeId, updates: Partial<TreeNode>): Promise<TreeNode> {

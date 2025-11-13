@@ -69,7 +69,7 @@ export function TreeTableContextMenu({
           handleClose();
           return;
         }
-        triggerContextAction('rename-dialog');
+        triggerContextAction('edit', { source: 'treetable' });
         handleClose();
       }}
       onDuplicate={() => {

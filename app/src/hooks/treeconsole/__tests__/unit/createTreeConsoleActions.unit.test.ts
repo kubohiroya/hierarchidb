@@ -183,24 +183,8 @@ describe('createTreeConsoleActions.handleEdit', () => {
     expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-existing/folder/edit');
   });
 
-  it('renames via context menu rename-dialog action', async () => {
-    const originalPrompt = globalThis.prompt;
-    globalThis.prompt = vi.fn(() => 'Renamed Folder');
-
-    const mutationAPI = {
-      updateNode: vi.fn(async () => ({ success: true })),
-    };
-
-    const { deps } = buildDeps({ selectedIds: [] });
-    (
-      deps.client as unknown as { getMutationAPI: () => Promise<typeof mutationAPI> }
-    ).getMutationAPI = vi.fn().mockResolvedValue(mutationAPI);
-
-    const loadChildrenOf = vi.fn(async () => {});
-    const refreshUndoRedo = vi.fn(async () => {});
-    deps.loadChildrenOf = loadChildrenOf;
-    deps.refreshUndoRedo = refreshUndoRedo;
-
+  it('opens edit dialog via context menu edit action', async () => {
+    const { deps, workingCopyApi, pushPath } = buildDeps({ selectedIds: [] });
     const actions = createTreeConsoleActions(deps);
 
     const node: TreeNodeData = {
@@ -210,17 +194,11 @@ describe('createTreeConsoleActions.handleEdit', () => {
       parentId: 'parent-1',
     } as TreeNodeData;
 
-    await actions.handleContextMenuAction('rename-dialog', node);
+    await actions.handleContextMenuAction('edit', node, { source: 'treetable' });
 
-    expect(globalThis.prompt).toHaveBeenCalledWith('Enter new name', 'Existing');
-    expect(mutationAPI.updateNode).toHaveBeenCalledWith({
-      nodeId: 'node-1',
-      name: 'Renamed Folder',
-    });
-    expect(loadChildrenOf).toHaveBeenCalledWith('parent-1');
-    expect(refreshUndoRedo).toHaveBeenCalled();
-
-    globalThis.prompt = originalPrompt;
+    expect(workingCopyApi.getWorkingCopy).toHaveBeenCalledTimes(2);
+    expect(workingCopyApi.createWorkingCopyFromNode).toHaveBeenCalledWith('node-1');
+    expect(pushPath).toHaveBeenCalledWith('/t/console-1/parent-1/wc-1/folder/edit');
   });
 
   it('navigates to the create dialog when treetable context menu invokes create', async () => {

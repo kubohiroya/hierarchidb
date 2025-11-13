@@ -30,6 +30,7 @@ import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
 // No direct Comlink types should leak at this boundary
 import { WorkingCopyService } from './services/WorkingCopyService.js';
+import { getWorkingCopyCleaner } from './services/WorkingCopyCleaner.js';
 
 export {
   configureWorkerContainer,
@@ -198,6 +199,12 @@ export class WorkerService {
 
   async initialize(): Promise<void> {
     // Initialization is handled in getSingleton; nothing to do.
+    try {
+      const cleaner = getWorkingCopyCleaner(this.coreDB);
+      await cleaner.cleanStaleEntries();
+    } catch (error) {
+      console.warn('[WorkerService] initial working copy cleanup failed', error);
+    }
   }
 
   getQueryAPI(): TreeQueryAPI {

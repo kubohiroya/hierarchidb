@@ -64,6 +64,7 @@ export type TreeNode = NodeBase &
     originalName: string;
     originalParentId: NodeId;
     removedAt: Timestamp;
+    lastTouchedAt: Timestamp;
   }>;
 
 export interface TreeNodeWithChildren extends TreeNode, DescendantProperties {

@@ -25,7 +25,6 @@ export type ContextAction =
   | 'openFolder'
   | 'preview'
   | 'edit'
-  | 'rename-dialog'
   | 'rename-inline'
   | 'update-desc-inline'
   | 'duplicate'

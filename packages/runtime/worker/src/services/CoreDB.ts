@@ -64,7 +64,7 @@ export class CoreDB extends Dexie {
   private constructor(name: string) {
     super(name);
 
-    // Development: schema v1 (no backward-compat fields)
+    // Development: schema v1 (legacy)
     this.version(1).stores({
       trees: '&id, rootId, trashRootId, superRootId',
       nodes: [
@@ -80,6 +80,38 @@ export class CoreDB extends Dexie {
       tags: '&id, name, category, usageCount, createdAt',
       tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
     });
+
+    this.version(2)
+      .stores({
+        trees: '&id, rootId, trashRootId, superRootId',
+        nodes: [
+          '&id',
+          'parentId',
+          '&[parentId+name]',
+          '[parentId+updatedAt]',
+          '[holderType+holderTargetId]',
+          'holderType',
+          'lastTouchedAt',
+          '[holderType+lastTouchedAt]',
+          'depth',
+          '*references',
+        ].join(', '),
+        rootStates: '&rootNodeId',
+        tags: '&id, name, category, usageCount, createdAt',
+        tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
+      })
+      .upgrade(async (tx) => {
+        const nodesTable = tx.table<TreeNode, NodeId>('nodes');
+        const now = Date.now();
+        await nodesTable
+          .where('holderType')
+          .equals('workingCopy')
+          .modify((node) => {
+            if (typeof node.lastTouchedAt !== 'number') {
+              node.lastTouchedAt = node.updatedAt ?? now;
+            }
+          });
+      });
   }
 
   // console name helper was unused in the current implementation

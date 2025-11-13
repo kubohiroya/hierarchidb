@@ -337,6 +337,7 @@ export function createTreeTableColumns(params: ColumnBuilderParams): ColumnDef<T
                 backgroundColor: 'transparent',
                 color: 'inherit',
                 transition: 'background-color 120ms ease, box-shadow 120ms ease',
+                cursor: 'context-menu',
               }}
             >
               <IconComponent

@@ -426,28 +426,6 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         return;
       }
 
-      if (normalizedAction === 'rename-dialog') {
-        if (!client || !node?.id) return;
-        const currentName = node.name ?? '';
-        const nextName = prompt('Enter new name', currentName)?.trim();
-        if (!nextName || nextName === currentName) return;
-        try {
-          const mutationAPI = await client.getMutationAPI();
-          const res = await mutationAPI.updateNode({ nodeId: targetNodeId, name: nextName });
-          if (!res.success) {
-            showCommandError('INVALID_OPERATION', res.error || 'Update failed');
-            return;
-          }
-          await refreshParent(parentId ?? (pageNodeId as NodeId));
-          await refreshUndoRedo();
-          fireCmdEvent();
-        } catch (error) {
-          console.error('Rename dialog failed:', error);
-          showCommandError('UNKNOWN_ERROR');
-        }
-        return;
-      }
-
       if (normalizedAction.startsWith('create:')) {
         if (!client || !treeId) return;
         const source = options.source ?? 'speedDial';

@@ -12,6 +12,7 @@ import type { CoreDB } from '../../CoreDB.js';
 import type { CommandEnvelope, CommandResult } from '../../command-types.js';
 import { WorkerErrorCode } from '../../command-types.js';
 import { hasWorkingCopyInSubtree } from '../../utils/policy-c.js';
+import { getWorkingCopyCleaner } from '../../WorkingCopyCleaner.js';
 import { commitWorkingCopyV2, createNewName } from '../../WorkingCopyTreeNodeOperations.js';
 import type { CommandExecutionContext } from '../execution/CommandExecutionRunner.js';
 import type { CommandHistoryManager } from '../history/CommandHistoryManager.js';
@@ -150,6 +151,7 @@ async function handleMoveNodes(
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
+    await getWorkingCopyCleaner(deps.coreDB).cleanStaleEntries({ maxEntries: 25 });
     const payload = envelope.payload as {
       nodeIds: NodeId[];
       toParentId: NodeId;
@@ -368,6 +370,7 @@ async function handleRemove(
   deps: CoreCommandDeps
 ): Promise<CommandResult> {
   try {
+    await getWorkingCopyCleaner(deps.coreDB).cleanStaleEntries({ maxEntries: 25 });
     const payload = envelope.payload as { nodeIds: NodeId[] };
 
     for (const id of payload.nodeIds) {

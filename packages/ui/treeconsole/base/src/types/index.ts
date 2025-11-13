@@ -15,6 +15,8 @@ import type { ReactNode } from 'react';
  */
 export type SelectionMode = 'none' | 'checkbox' | 'radio' | 'row-click';
 
+export type TreeConsoleSearchMode = 'local' | 'fulltext';
+
 /**
  * TreeTableConsolePanel Props
  */

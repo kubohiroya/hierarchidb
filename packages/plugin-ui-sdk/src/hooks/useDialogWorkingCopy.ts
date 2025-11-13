@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NodeId, TreeId, TreeNode, NodeType } from '@hierarchidb/common-types';
 import type { WorkingCopyAPI, TreeQueryAPI } from '@hierarchidb/common-api';
 import type { WorkerClientRef } from '@hierarchidb/runtime-client';
@@ -46,6 +46,7 @@ export function useDialogWorkingCopy({
   const [originalCopy, setOriginalCopy] = useState<WorkingCopyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const workingCopyIdRef = useRef<NodeId | null>(null);
 
   const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
@@ -205,6 +206,53 @@ export function useDialogWorkingCopy({
     setOriginalCopy(null);
   }, [workingCopy, getClient]);
 
+  useEffect(() => {
+    workingCopyIdRef.current = workingCopy?.treeNodeId ?? null;
+  }, [workingCopy?.treeNodeId]);
+
+  useEffect(() => {
+    // Skip if worker client is unavailable or no working copy has been established yet
+    if (!workerClient || !workingCopy?.treeNodeId) {
+      return undefined;
+    }
+
+    let hasRequestedAutoDiscard = false;
+
+    const requestAutoDiscard = () => {
+      if (hasRequestedAutoDiscard) return;
+      const currentId = workingCopyIdRef.current;
+      if (!currentId) return;
+      hasRequestedAutoDiscard = true;
+      queueMicrotask(() => {
+        getClient()
+          .then(({ wc: wcAPI }) => wcAPI.discardWorkingCopy(currentId))
+          .catch((autoDiscardError) => {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('[useDialogWorkingCopy] auto discard failed', autoDiscardError);
+            }
+          });
+      });
+    };
+
+    const handlePageHide = (event: Event) => {
+      const maybePageTransition = event as PageTransitionEvent | undefined;
+      if (maybePageTransition?.persisted) return;
+      requestAutoDiscard();
+    };
+
+    const handleBeforeUnload = () => {
+      requestAutoDiscard();
+    };
+
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [getClient, workerClient, workingCopy?.treeNodeId]);
+
   return {
     workingCopy,
     hasUnsavedChanges: hasUnsavedChanges(),
@@ -216,4 +264,3 @@ export function useDialogWorkingCopy({
     error,
   } satisfies UseDialogWorkingCopyResult;
 }
-

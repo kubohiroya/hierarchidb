@@ -60,11 +60,7 @@ export async function createNewDraftWorkingCopy(
     }
 
     await coreDB.transaction('rw', coreDB.nodes, async () => {
-      const workingCopyNodeHolder: NodeBase & {
-        holderType?: 'workingCopy' | 'trash';
-        holderTargetId?: NodeId;
-        holderMetaParentId?: NodeId;
-      } = {
+      const workingCopyNodeHolder: TreeNode = {
         parentId: workingCopyNodeHolderParentId,
         id: workingCopyNodeHolderId,
         name: holderName,
@@ -76,8 +72,9 @@ export async function createNewDraftWorkingCopy(
         holderType: 'workingCopy',
         holderTargetId: targetNodeId,
         holderMetaParentId: parentId,
+        lastTouchedAt: now,
       };
-      const workingCopyNode: NodeBase = {
+      const workingCopyNode: TreeNode = {
         parentId: workingCopyNodeHolderId,
         id: workingCopyNodeId,
         nodeType,
@@ -86,6 +83,7 @@ export async function createNewDraftWorkingCopy(
         createdAt: now,
         updatedAt: now,
         version: 1,
+        lastTouchedAt: now,
       };
       await coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
     });
@@ -163,10 +161,14 @@ export async function createDraftWorkingCopyGetOrCreate(
         createdAt: now,
         updatedAt: now,
         version: 1,
+        lastTouchedAt: now,
       });
       // Re-read
       const arr = await coreDB.nodes.where('parentId').equals(existing.id).toArray();
       child = Array.isArray(arr) ? arr[0] : undefined;
+    }
+    if (child?.id) {
+      await touchWorkingCopyNodes(coreDB, existing.id as NodeId, child.id as NodeId, Date.now() as Timestamp);
     }
     return {
       wcHolderId: existing.id as NodeId,
@@ -179,6 +181,9 @@ export async function createDraftWorkingCopyGetOrCreate(
   const wcHolderId = await createNewDraftWorkingCopy(coreDB, treeId, parentId, nodeType, baseName);
   const children = await coreDB.nodes.where('parentId').equals(wcHolderId).toArray();
   const child = Array.isArray(children) ? children[0] : undefined;
+  if (child?.id) {
+    await touchWorkingCopyNodes(coreDB, wcHolderId, child.id as NodeId, Date.now() as Timestamp);
+  }
   return { wcHolderId, wcNodeId: (child?.id as NodeId) || ('' as NodeId), returnedExisting: false };
 }
 
@@ -200,24 +205,25 @@ export async function createWorkingCopyFromNode(
     throw new Error('Node not found');
   }
 
+  const now = Date.now() as Timestamp;
   // get-or-create: reuse existing WC if present for this original node
   const existingHolder = await coreDB.nodes
     .where('[holderType+holderTargetId]')
     .equals(['workingCopy', sourceNode.id])
     .first();
   if (existingHolder) {
+    await coreDB.nodes.update(existingHolder.id, { lastTouchedAt: now });
+    const existingChild = await coreDB.nodes.where('parentId').equals(existingHolder.id).first();
+    if (existingChild?.id) {
+      await coreDB.nodes.update(existingChild.id as NodeId, { lastTouchedAt: now });
+    }
     return nodeId; // WC already exists; return original id (behavior preserved)
   }
 
   const workingCopyNodeHolderId = generateNodeId();
   const workingCopyNodeId = generateNodeId();
-  const now = Date.now() as Timestamp;
 
-  const workingCopyNodeHolder: NodeBase & {
-    holderType?: 'workingCopy' | 'trash';
-    holderTargetId?: NodeId;
-    holderMetaParentId?: NodeId;
-  } = {
+  const workingCopyNodeHolder: TreeNode = {
     parentId: workingCopyNodeHolderParentId, // New node gets a new ID
     id: workingCopyNodeHolderId,
     // For editing WC, targetNodeId is the original nodeId
@@ -230,12 +236,14 @@ export async function createWorkingCopyFromNode(
     holderType: 'workingCopy',
     holderTargetId: sourceNode.id,
     holderMetaParentId: sourceNode.parentId,
+    lastTouchedAt: now,
   };
 
-  const workingCopyNode: NodeBase = {
+  const workingCopyNode: TreeNode = {
     ...sourceNode,
     parentId: workingCopyNodeHolderId,
     id: workingCopyNodeId,
+    lastTouchedAt: now,
   };
 
   coreDB.nodes.bulkPut([workingCopyNodeHolder, workingCopyNode]);
@@ -562,13 +570,18 @@ export async function updateWorkingCopy(
     throw new Error('Working copy not found');
   }
 
-  const updated: NodeBase = {
+  const timestamp = Date.now() as Timestamp;
+  const updated: TreeNode = {
     ...existing,
     ...updates,
-    updatedAt: Date.now() as Timestamp,
+    updatedAt: timestamp,
+    lastTouchedAt: timestamp,
   };
 
   await coreDB.nodes.put(updated);
+  if (updated.parentId) {
+    await coreDB.nodes.update(updated.parentId, { lastTouchedAt: timestamp });
+  }
 }
 
 /**
@@ -622,4 +635,36 @@ export function createNewName(siblingNames: string[], baseName: string): string 
   const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 2;
 
   return `${baseName} (${nextNumber})`;
+}
+
+export async function touchWorkingCopyNodes(
+  coreDB: CoreDB,
+  holderId: NodeId,
+  wcNodeId: NodeId,
+  timestamp: Timestamp = Date.now() as Timestamp
+): Promise<void> {
+  await Promise.all([
+    coreDB.nodes.update(holderId, { lastTouchedAt: timestamp }),
+    coreDB.nodes.update(wcNodeId, { lastTouchedAt: timestamp }),
+  ]);
+}
+
+export async function touchWorkingCopyByRecord(
+  coreDB: CoreDB,
+  wcNode: TreeNode,
+  timestamp: Timestamp = Date.now() as Timestamp
+): Promise<void> {
+  const holderId = wcNode.parentId as NodeId | undefined;
+  if (!holderId) return;
+  await touchWorkingCopyNodes(coreDB, holderId, wcNode.id as NodeId, timestamp);
+}
+
+export async function touchWorkingCopyById(
+  coreDB: CoreDB,
+  wcNodeId: NodeId,
+  timestamp: Timestamp = Date.now() as Timestamp
+): Promise<void> {
+  const node = await coreDB.nodes.get(wcNodeId);
+  if (!node) return;
+  await touchWorkingCopyByRecord(coreDB, node as TreeNode, timestamp);
 }

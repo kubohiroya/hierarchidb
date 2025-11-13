@@ -252,7 +252,7 @@ export function TreeConsoleBreadcrumb(props: TreeConsoleBreadcrumbProps): ReactE
 
   const handleEdit = () => {
     if (contextMenuNode && onContextAction) {
-      onContextAction('rename-dialog', contextMenuNode, { source: 'breadcrumb' });
+      onContextAction('edit', contextMenuNode, { source: 'breadcrumb' });
     }
   };
 

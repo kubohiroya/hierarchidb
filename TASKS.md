@@ -2849,6 +2849,15 @@ P2:
     - `pnpm -C app test -- createTreeConsoleActions`（2025-11-10 18:09 JST） exit 0 を運用ログ #worklog-12 に記録。
   - 影響範囲：TreeConsole context menu / DynamicSpeedDial からの create 操作のみ。その他の CRUD／Undo/Redo には影響なし。
   - ロールバック手順：`app/src/hooks/treeconsole/createTreeConsoleActions.ts` と `app/src/hooks/treeconsole/__tests__/unit/createTreeConsoleActions.unit.test.ts` の差分を revert し、`pnpm -C app test -- createTreeConsoleActions` を再実行して従来の「即時作成のみ」挙動へ戻す。
+- 1212) TreeConsole コンテキストメニュー Edit 再配線（P0） — 完了 (2025-11-10)
+  - DoD:
+    - `TASKS.md` Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記。
+    - TreeConsole context menu Edit で WorkingCopy を生成／再利用し、`/t/:treeId/:parentId/:wcId/:nodeType/edit` へ遷移して Plugin Edit Dialog を表示できることを確認。
+    - `createTreeConsoleActions.ts` から prompt ベースの rename-dialog 分岐を削除し、ContextAction 型も更新。
+    - TreeTableContextMenu / TreeConsoleBreadcrumb の `onEdit` が `handleContextMenuAction('edit', …)` を呼ぶよう再配線。
+    - `pnpm -C app test -- createTreeConsoleActions`（2025-11-10 18:36 JST） exit 0 を運用ログ #worklog-12 に記録し、Edit コンテキストアクションのユニットテストを追加。
+  - 影響範囲：TreeConsole の context menu / breadcrumb menu の Edit 操作および関連ユニットテスト。Toolbar Edit や他の CRUD には非影響。
+  - ロールバック手順：`app/src/hooks/treeconsole/createTreeConsoleActions.ts`, `app/src/hooks/treeconsole/types.ts`, `app/src/hooks/treeconsole/__tests__/unit/createTreeConsoleActions.unit.test.ts`, `packages/ui/treeconsole/treetable/src/components/internal/TreeTableContextMenu.tsx`, `packages/ui/treeconsole/breadcrumb/src/components/TreeConsoleBreadcrumb.tsx` を revert し、`pnpm -C app test -- createTreeConsoleActions` を再実行して旧 rename-dialog フローへ戻る。
 - 114) TreeConsole trash 操作命名移行 Phase1（P0） — 完了 (2025-11-10)
   - DoD（2025-11-10 再定義）:
     - `app/src/hooks/treeconsole/createTreeConsoleActions.ts` と `types.ts` で `handleTrash` 系 API を正式化し、`handleRemove` は互換目的の optional として維持。`handleContextMenuAction` は `'remove'` を `'trash'` に正規化。
@@ -7072,6 +7081,12 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-12 07:45 progress: fix/ui-dialog/full-header-drag — TrashDialog との乖離が再発しているとの指摘を受け、PluginDialogHeader のドラッグハンドルがタイトルテキスト範囲に限定されていないか再調査を開始。
 - 2025-11-12 07:55 progress: fix/ui-dialog/full-header-drag — Header 最上位コンテナへ drag handle / hover スタイルを再配置し、タイトルバー全域が TrashDialog と同じ挙動になるよう差分を適用。
 - 2025-11-12 07:58 verify: fix/ui-dialog/full-header-drag — `pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogHeader` と `pnpm --filter @hierarchidb/app typecheck` を実行し exit 0 を確認。手元で header 全域が drag 対象になることをコードレベルで確認。
+- 2025-11-12 22:22 start: fix/ui-dialog/wc-auto-discard — ダイアログを開いたままタブを閉じた際に WorkingCopy が残存する問題を解消するため、beforeunload/pagehide で discardWorkingCopy を発火する仕組みの実装を開始。
+- 2025-11-12 22:23 progress: fix/ui-dialog/wc-auto-discard — `useDialogWorkingCopy` へタブ終了イベントのハンドラ設計メモを追加し、workerClient/WC ID 参照を使って fire-and-forget discard を呼び出す方針を決定。
+- 2025-11-12 22:24 verify: fix/ui-dialog/wc-auto-discard — `useDialogWorkingCopy` に pagehide/beforeunload リスナーを実装し、`pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` が exit 0 であることを確認。
+- 2025-11-13 17:10 progress: fix/ui-dialog/wc-auto-discard — Worker 側に `WorkingCopyCleaner` を新設し、CoreDB schema v2 で `lastTouchedAt` インデックス・TTL メタを付与。WorkingCopy 作成/取得/更新時に `lastTouchedAt` を更新し、Policy C 直前に軽量 GC を走らせるように変更。
+- 2025-11-13 17:14 verify: fix/ui-dialog/wc-auto-discard — `pnpm --filter @hierarchidb/runtime-worker test -- --run working-copy-cleaner` および `pnpm --filter @hierarchidb/plugin-ui-sdk test -- --run useWorkingCopy` を実行し exit 0、TTL クリーンアップとタブ終了時の discard 双方がテストで確認できたことを記録。
+- 2025-11-13 17:18 progress: fix/ui-dialog/wc-auto-discard — WorkerService.initialize() で `getWorkingCopyCleaner` を呼び、service 起動直後にも GC が必ず 1 度走るように追補。
 - 2025-11-03 11:41 start: TreeTableCore export 復旧 — `packages/ui/treeconsole/treetable` の dist から `TreeTableCore` export が欠落している状況を再現し、index.ts / core 実装の整合確認と復旧作業に着手。
 - 2025-11-03 11:43 progress: TreeTableCore export 復旧 — treetable の index/orchestrator/types を HEAD 構成へ差し戻し、`TreeTableCore` / `TreeTableCoreWithPlugins` 実装を現行版へ復旧。`pnpm --filter @hierarchidb/ui-treeconsole-treetable build` を実行し、exit 0（dist/index.js に TreeTableCore を確認）。
 - 2025-11-03 11:45 blocked: TreeTableCore export 復旧 — `pnpm --filter @hierarchidb/app build` を試行したが、`generate-favicon.ts` 実行時に sandbox 制約（EPERM: listen @ tsx IPC pipe）で停止。再試行にはローカル権限が必要な旨を記録。
@@ -7830,6 +7845,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-10 17:47 progress: fix/ui-treeconsole/create-folder-dialog — `app/src/hooks/treeconsole/createTreeConsoleActions.ts` の `source === 'treetable'` 分岐でも `navigateToCreateDialog` を呼び出すよう修正し、コンテキストメニュー作成後に `/t/:treeId/:parent/:wc/:type/create` へ遷移させる。DynamicSpeedDial/treetable の両経路が同じルーティングを共有するよう整理。
 - 2025-11-10 18:09 command: pnpm -C app test -- createTreeConsoleActions — exit 0。ツリーテーブル context menu create の回帰テストを追加し、treetable ソースでも `pushPath` が呼ばれることを確認。
 - 2025-11-10 18:12 done: fix/ui-treeconsole/create-folder-dialog — DoD 4 項目を満たしたため完了。原因（treetable ソースのみダイアログ遷移をスキップしていた）と対策を TASKS に記録し、ロールバック手順を記載。
+- 2025-11-10 18:20 start: fix/ui-treeconsole/context-edit-dialog — コンテキストメニュー「Edit」を WorkingCopy ベースの Plugin Dialog 起動へ統合するタスクを開始。DoD: TASKS 更新、rename-dialog ロジック撤去、`pnpm -C app test -- createTreeConsoleActions` 検証、影響範囲／ロールバック記載。
+- 2025-11-10 18:32 progress: fix/ui-treeconsole/context-edit-dialog — TreeTableContextMenu / TreeConsoleBreadcrumb の `onEdit` を `handleContextMenuAction('edit', ...)` へ再配線し、`createTreeConsoleActions` から rename-dialog 分岐と prompt ベースの rename 処理を削除。ContextAction 型から `rename-dialog` を除去。
+- 2025-11-10 18:36 command: pnpm -C app test -- createTreeConsoleActions — exit 0。context menu Edit の新ユニットテストと既存シナリオがすべてグリーン。
+- 2025-11-10 18:38 done: fix/ui-treeconsole/context-edit-dialog — DoD の 5 項目を満たしたため完了。コンテキストメニュー Edit は WorkingCopy 作成→Plugin Dialog への遷移を行い、簡易 rename-dialog ロジックは撤去済み。ロールバックは `createTreeConsoleActions.ts` / breadcrumb & treetable context menu差分 / ユニットテストを revert し、`pnpm -C app test -- createTreeConsoleActions` を再実行すること。
 
 ## 今日の着手（運用ログ） <a id="worklog-10"></a>
 
