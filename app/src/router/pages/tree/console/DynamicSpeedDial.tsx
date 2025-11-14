@@ -8,7 +8,7 @@
 import type { TreeId } from '@hierarchidb/common-types';
 import { useGlobalI18nTranslator } from '@hierarchidb/ui-shell/ui-i18n';
 import { getMuiIconWithColor as getMuiIconComponent } from '@hierarchidb/ui-shell/ui-icon';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { Box, Portal, SpeedDial, SpeedDialAction, SpeedDialIcon } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePluginMenuItems } from '~/hooks/usePluginMenuItems.js';

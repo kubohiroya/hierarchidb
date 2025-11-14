@@ -18,9 +18,9 @@ packages directly:
 - `@hierarchidb/ui-shell/ui-routing`
 - `@hierarchidb/ui-shell/ui-theme`
 - `@hierarchidb/ui-shell/ui-tour`
-- `@hierarchidb/ui-shell/ui-treeconsole-base`
+- `@hierarchidb/ui-treeconsole-base`
 - `@hierarchidb/ui-shell/ui-treeconsole-breadcrumb`
-- `@hierarchidb/ui-shell/ui-treeconsole-toolbar`
+- `@hierarchidb/ui-treeconsole-toolbar`
 - `@hierarchidb/ui-shell/ui-treeconsole-treetable`
 - `@hierarchidb/ui-shell/ui-usermenu`
 

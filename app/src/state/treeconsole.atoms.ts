@@ -1,4 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -11,6 +12,7 @@ export interface TreeConsoleSSOTEntry {
   expandedIds: NodeId[];
   searchTerm: string;
   viewMode: ViewMode;
+  searchMode: TreeConsoleSearchMode;
   sortBy?: string;
   sortDirection?: 'asc' | 'desc';
   filterBy?: string;
@@ -32,6 +34,7 @@ function defaults(pageNodeId: string): TreeConsoleSSOTEntry {
     expandedIds: [],
     searchTerm: '',
     viewMode: 'list',
+    searchMode: 'local',
     sortBy: 'name',
     sortDirection: 'asc',
     filterBy: '',

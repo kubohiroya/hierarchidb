@@ -81,6 +81,18 @@
       ],
       "@hierarchidb/ui-map/*": [
         "../packages/ui/map/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-base": [
+        "../packages/ui/treeconsole/base/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-base/*": [
+        "../packages/ui/treeconsole/base/src/*"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar": [
+        "../packages/ui/treeconsole/toolbar/src/index.ts"
+      ],
+      "@hierarchidb/ui-treeconsole-toolbar/*": [
+        "../packages/ui/treeconsole/toolbar/src/*"
       ]
     },
     "baseUrl": ".",

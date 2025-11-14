@@ -100,6 +100,24 @@
   - [ ] 懸念点（preview での HMR 等）があれば TASKS の進捗メモへ追記
 - ロールバック手順：runtime-worker の exports/tsconfig と plugin-registry の postbuild/生成スクリプト変更を revert し、`pnpm --filter {@hierarchidb/plugin-registry,@hierarchidb/app} build` を再度実行して旧エラー再現を確認する
 
+
+1214) TreeConsole Search フルテキスト導入（P0）
+- ブランチ: `feat/ui-treeconsole/search-mode-menu`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/toolbar`, `packages/ui/treeconsole/base`, `app/src/hooks/treeconsole/*`, `app/src/router/pages/tree/console/*`, `packages/runtime-worker`, `packages/plugin-registry`
+- 受け入れ基準（DoD）:
+  - [ ] TreeConsole Toolbar の Search フィールドを 1.4x 幅に拡張し、Search アイコンから `local` / `fulltext` 切替メニューを表示できる（dev/preview 双方で確認）
+  - [ ] TreeConsole SSOT・hooks・UI に `searchMode` 状態が貫通し、`local` は従来の展開枝検索、`fulltext` は lunr.js インデックス経由で未展開枝も対象にできる
+  - [ ] Worker 側で name/description を対象とした lunr インデックスを生成し、`TreeSubscriptionAPI`/`TreeQueryAPI` に全文検索 API（結果ブランチの購読含む）を追加する
+  - [ ] plugin-registry 生成物と preview/build の両方でプラグイン DB/worker 参照が一致し、`pnpm build && pnpm preview:init` で `@hierarchidb/*-plugin` 解決エラーが再発しない
+  - [ ] `pnpm -F @hierarchidb/app typecheck && pnpm -F @hierarchidb/app test -- --run createTreeConsoleActions` を実行し、成功ログを TASKS の運用ログに記録する（既知失敗は blocked として記載）
+- チェックリスト:
+  - [ ] Toolbar/SearchField の UI 調整と i18n 文言（`treeConsole.toolbar.searchMode.*`）を定義
+  - [ ] `TreeConsoleSSOTEntry` / `useTreeConsoleIntegration` / `createTreeConsoleActions` へ `searchMode` を追加し、`local`/`fulltext` 切替時の挙動を実装
+  - [ ] `TreeConsoleActions` に lunr 検索呼び出し＋結果ノード購読処理を追加し、`TreeSubscriptionAPI` 経由でブランチ展開を制御
+  - [ ] runtime-worker にインデックス生成・キャッシュ・検索 API とテスト（unit もしくは wfl）を追加
+  - [ ] plugin-registry 生成処理に search manifest/flag を取り込み、preview/build 両モードで specifier が一致することを確認
+- ロールバック手順：TreeConsole Toolbar/SSOT/worker/registry に加えた差分を revert し、`pnpm -F @hierarchidb/app typecheck` を再実行して local 検索のみの旧挙動へ戻ることを確認する
+
 950) fix/app/preview-plugin-db-loader（P0）
 - ブランチ: `fix/app/preview-plugin-db-loader`（sandbox 制約で `main` 上で作業）
 - 依存: `app/src/services/databases.ts`, `packages/tools/build-scripts`, `packages/plugin-registry`, `types/@hierarchidb__plugin-registry`, `app/vite.config.ts`, `scripts/preview.*`

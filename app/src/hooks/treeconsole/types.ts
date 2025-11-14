@@ -6,13 +6,14 @@
  */
 
 import type { WorkerAPI } from '@hierarchidb/common-api';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 import type {
   CommandResult,
   NodeId,
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import type { Remote } from 'comlink';
 import type { Dispatch, SetStateAction } from 'react';
@@ -68,6 +69,7 @@ export interface TreeConsoleActions {
   handleSearchChange: (term: string) => void;
   handleSearchClear: () => void;
   handleSearchCommit: () => void;
+  handleSearchModeChange: (mode: TreeConsoleSearchMode) => void;
   handleCreate: () => void;
   handleEdit: () => void;
   handleTrash: () => void;
@@ -118,8 +120,10 @@ export interface TreeConsoleActionDeps {
   pageTreeNode?: TreeNode;
   pushPath?: (to: string | number) => void;
   searchTerm: string;
+  searchMode: TreeConsoleSearchMode;
   selectedIds: NodeId[];
   expandedIds: NodeId[];
+  locale?: string;
   setState: Dispatch<SetStateAction<TreeConsoleState>>;
   setSSOT: (patch: Partial<TreeConsoleSSOTEntry>) => void;
   ssot: TreeConsoleSSOTEntry;
@@ -145,3 +149,5 @@ export interface ImportExportAdapter {
     onProgress?: (progress: unknown) => void;
   }) => Promise<Blob>;
 }
+
+export type { TreeConsoleSearchMode };

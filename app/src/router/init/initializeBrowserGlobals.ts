@@ -13,7 +13,7 @@ import { bootLog } from '../../utils/bootLog.ts';
 import { APP_VERSION, BUILD_TIME } from '../../version.ts';
 
 type TreeConsolePanelGlobal =
-  typeof import('@hierarchidb/ui-shell/ui-treeconsole-base')['TreeConsolePanel'];
+  typeof import('@hierarchidb/ui-treeconsole-base')['TreeConsolePanel'];
 
 type BrowserGlobals = Window & {
   __uiPluginsRegistered?: boolean;
@@ -124,7 +124,7 @@ export function initializeBrowserGlobals(): void {
     logWarning('Failed to initialize plugin definitions from registry', error);
   }
 
-  void import('@hierarchidb/ui-shell/ui-treeconsole-base')
+  void import('@hierarchidb/ui-treeconsole-base')
     .then((mod) => {
       const panel = mod?.TreeConsolePanel as TreeConsolePanelGlobal | undefined;
       if (panel) {

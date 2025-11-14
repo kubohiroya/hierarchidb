@@ -11,7 +11,7 @@ import {
   TreeConsolePanel,
   type TreeConsolePanelProps,
   type TreeNodeData,
-} from '@hierarchidb/ui-shell/ui-treeconsole-base';
+} from '@hierarchidb/ui-treeconsole-base';
 import { Box } from '@mui/material';
 import type { Remote } from 'comlink';
 import { DynamicSpeedDial } from './DynamicSpeedDial.js';

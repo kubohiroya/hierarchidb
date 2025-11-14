@@ -24,6 +24,7 @@ import {
   Clear as RemoveIcon,
   Save as SaveIcon,
   Search as SearchIcon,
+  ScreenSearchDesktop as ScreenSearchDesktopIcon,
   Settings as SettingsIcon,
   SnippetFolder as SnippetFolderIcon,
   SettingsBrightness as SystemThemeIcon,
@@ -54,12 +55,19 @@ import {
   type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactNode,
   useCallback,
   useMemo,
   useState,
 } from 'react';
 
 import type { TreeConsoleToolbarActionParams, TreeConsoleToolbarProps } from '../types.js';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+
+const BASE_SEARCH_FIELD_WIDTH_PX = 300;
+const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
+const SEARCH_FIELD_MIN_WIDTH_PX = Math.round(SEARCH_FIELD_WIDTH_PX * 0.67);
+const TREECONSOLE_SEARCH_INPUT_ID = 'treeconsole-toolbar-search-input';
 
 const SearchTextFieldContainer = styled(Box)(() => ({
   display: 'flex',
@@ -67,8 +75,8 @@ const SearchTextFieldContainer = styled(Box)(() => ({
   borderBottom: 1,
   borderColor: 'divider',
   backgroundColor: 'background.paper',
-  minWidth: '200px',
-  width: '300px',
+  minWidth: `${SEARCH_FIELD_MIN_WIDTH_PX}px`,
+  width: `${SEARCH_FIELD_WIDTH_PX}px`,
   borderRadius: '24px',
 }));
 
@@ -87,6 +95,10 @@ function SearchField({
   fullWidth,
   placeholder,
   ariaLabel,
+  searchMode,
+  onSearchModeButtonClick,
+  searchModeIcon,
+  searchModeAriaLabel,
 }: {
   searchText: string;
   handleSearchTextChange: (_value: string) => void;
@@ -94,10 +106,15 @@ function SearchField({
   fullWidth?: boolean;
   placeholder: string;
   ariaLabel: string;
+  searchMode: TreeConsoleSearchMode;
+  onSearchModeButtonClick: (event: MouseEvent<HTMLElement>) => void;
+  searchModeIcon: ReactNode;
+  searchModeAriaLabel: string;
 }) {
   return (
     <SearchTextFieldContainer>
       <TextField
+        id={TREECONSOLE_SEARCH_INPUT_ID}
         fullWidth={fullWidth}
         size="small"
         placeholder={placeholder}
@@ -114,12 +131,20 @@ function SearchField({
         }}
         InputProps={{
           style: {
-            width: '300px',
+            width: `${SEARCH_FIELD_WIDTH_PX}px`,
             borderRadius: '30px',
           },
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
+              <IconButton
+                size="small"
+                onClick={onSearchModeButtonClick}
+                aria-label={searchModeAriaLabel}
+                aria-pressed={searchMode === 'fulltext'}
+                edge="start"
+              >
+                {searchModeIcon}
+              </IconButton>
             </InputAdornment>
           ),
           inputProps: {
@@ -222,11 +247,23 @@ function TreeConsoleToolbarContent({
     () => (typeof localStorage !== 'undefined' && localStorage.getItem('app.lang')) || 'system'
   );
   const [templateAnchorEl, setTemplateAnchorEl] = useState<null | HTMLElement>(null);
+  const [searchModeAnchorEl, setSearchModeAnchorEl] = useState<null | HTMLElement>(null);
 
   const settingsOpen = Boolean(settingsAnchorEl);
   const importExportOpen = Boolean(importExportAnchorEl);
   const trashOpen = Boolean(trashAnchorEl);
   const templateMenuOpen = Boolean(templateAnchorEl);
+  const searchModeMenuOpen = Boolean(searchModeAnchorEl);
+
+  const currentSearchMode: TreeConsoleSearchMode = controller?.searchMode ?? 'local';
+  const openSearchModeMenu = (event: MouseEvent<HTMLElement>) => {
+    setSearchModeAnchorEl(event.currentTarget);
+  };
+  const closeSearchModeMenu = () => setSearchModeAnchorEl(null);
+  const handleSelectSearchMode = (mode: TreeConsoleSearchMode) => {
+    controller?.onSearchModeChange?.(mode);
+    closeSearchModeMenu();
+  };
 
   const undoTooltip = t('tooltips.undo', { shortcut: '⌘+Z' });
   const redoTooltip = t('tooltips.redo', { shortcut: '⌘+Shift+Z' });
@@ -235,20 +272,30 @@ function TreeConsoleToolbarContent({
   const pasteTooltip = t('tooltips.paste', { shortcut: '⌘+V' });
   const duplicateTooltip = t('tooltips.duplicate', { shortcut: '⌘+D' });
   const moveToTrashTooltip = t('tooltips.moveToTrash', { shortcut: '⌘+X' });
+  const searchModeMenuLabel = t('aria.searchModeMenu', 'Select search mode');
+  const localSearchLabel = t('searchMode.local', 'Search expanded nodes');
+  const fulltextSearchLabel = t('searchMode.fulltext', 'Full-text search');
+  const localSearchDescription = t('searchMode.localDescription', 'Search currently expanded branches');
+  const fulltextSearchDescription = t('searchMode.fulltextDescription', 'Search entire subtree');
+  const searchModeIcon =
+    currentSearchMode === 'fulltext' ? (
+      <ScreenSearchDesktopIcon fontSize="small" />
+    ) : (
+      <SearchIcon fontSize="small" />
+    );
 
   const allowTrash =
     (typeof canTrash === 'boolean' ? canTrash : undefined) ?? canRemove ?? true;
 
   const resolvedTemplates = useMemo(() => {
     try {
-      const raw = typeof availableTemplates === 'function' ? availableTemplates() : availableTemplates;
-      if (!Array.isArray(raw)) return [];
-      return raw.filter(
+      if (!Array.isArray(availableTemplates)) return [];
+      return availableTemplates.filter(
         (item): item is { id: string; label?: string } =>
           Boolean(item && typeof item.id === 'string')
       );
     } catch (error) {
-      console.warn('[TreeConsoleToolbar] availableTemplates() failed', error);
+      console.warn('[TreeConsoleToolbar] availableTemplates parse failed', error);
       return [];
     }
   }, [availableTemplates]);
@@ -433,7 +480,33 @@ function TreeConsoleToolbarContent({
         handleSearchCommit={controller?.handleSearchCommit}
         placeholder={searchPlaceholder}
         ariaLabel={searchAriaLabel}
+        searchMode={currentSearchMode}
+        onSearchModeButtonClick={openSearchModeMenu}
+        searchModeIcon={searchModeIcon}
+        searchModeAriaLabel={searchModeMenuLabel}
       />
+      <Menu anchorEl={searchModeAnchorEl} open={searchModeMenuOpen} onClose={closeSearchModeMenu}>
+        <MenuItem
+          selected={currentSearchMode === 'local'}
+          onClick={() => handleSelectSearchMode('local')}
+          aria-label={localSearchLabel}
+        >
+          <ListItemIcon>
+            <SearchIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={localSearchLabel} secondary={localSearchDescription} />
+        </MenuItem>
+        <MenuItem
+          selected={currentSearchMode === 'fulltext'}
+          onClick={() => handleSelectSearchMode('fulltext')}
+          aria-label={fulltextSearchLabel}
+        >
+          <ListItemIcon>
+            <ScreenSearchDesktopIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={fulltextSearchLabel} secondary={fulltextSearchDescription} />
+        </MenuItem>
+      </Menu>
 
       {/* Undo/Redo Group */}
       <ButtonGroup size="small">
@@ -807,6 +880,7 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   } = props;
 
   const resolvedCanTrash = typeof canTrash === 'boolean' ? canTrash : canRemove;
+  const [searchOnlyAnchorEl, setSearchOnlyAnchorEl] = useState<null | HTMLElement>(null);
 
   const theme = useTheme();
   const { t } = useTranslation('common', { keyPrefix: 'treeConsole.toolbar' });
@@ -820,15 +894,65 @@ export const TreeConsoleToolbar = (props: TreeConsoleToolbarProps): React.JSX.El
   }
 
   if (showSearchOnly) {
+    const currentSearchMode: TreeConsoleSearchMode = controller?.searchMode ?? 'local';
+    const searchModeMenuLabel = t('aria.searchModeMenu', 'Select search mode');
+    const localSearchLabel = t('searchMode.local', 'Search expanded nodes');
+    const fulltextSearchLabel = t('searchMode.fulltext', 'Full-text search');
+    const localSearchDescription = t('searchMode.localDescription', 'Search currently expanded branches');
+    const fulltextSearchDescription = t('searchMode.fulltextDescription', 'Search entire subtree');
+    const searchModeMenuOpen = Boolean(searchOnlyAnchorEl);
+    const openSearchModeMenu = (event: MouseEvent<HTMLElement>) => {
+      setSearchOnlyAnchorEl(event.currentTarget);
+    };
+    const closeSearchModeMenu = () => setSearchOnlyAnchorEl(null);
+    const handleSearchModeSelect = (mode: TreeConsoleSearchMode) => {
+      controller?.onSearchModeChange?.(mode);
+      closeSearchModeMenu();
+    };
+    const searchModeIcon =
+      currentSearchMode === 'fulltext' ? (
+        <ScreenSearchDesktopIcon fontSize="small" />
+      ) : (
+        <SearchIcon fontSize="small" />
+      );
+
     return (
-      <SearchField
-        fullWidth={true}
-        searchText={controller?.searchText || ''}
-        handleSearchTextChange={controller?.handleSearchTextChange || (() => {})}
-        handleSearchCommit={controller?.handleSearchCommit}
-        placeholder={searchPlaceholder}
-        ariaLabel={searchAriaLabel}
-      />
+      <>
+        <SearchField
+          fullWidth={true}
+          searchText={controller?.searchText || ''}
+          handleSearchTextChange={controller?.handleSearchTextChange || (() => {})}
+          handleSearchCommit={controller?.handleSearchCommit}
+          placeholder={searchPlaceholder}
+          ariaLabel={searchAriaLabel}
+          searchMode={currentSearchMode}
+          onSearchModeButtonClick={openSearchModeMenu}
+          searchModeIcon={searchModeIcon}
+          searchModeAriaLabel={searchModeMenuLabel}
+        />
+        <Menu anchorEl={searchOnlyAnchorEl} open={searchModeMenuOpen} onClose={closeSearchModeMenu}>
+          <MenuItem
+            selected={currentSearchMode === 'local'}
+            onClick={() => handleSearchModeSelect('local')}
+            aria-label={localSearchLabel}
+          >
+            <ListItemIcon>
+              <SearchIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={localSearchLabel} secondary={localSearchDescription} />
+          </MenuItem>
+          <MenuItem
+            selected={currentSearchMode === 'fulltext'}
+            onClick={() => handleSearchModeSelect('fulltext')}
+            aria-label={fulltextSearchLabel}
+          >
+            <ListItemIcon>
+              <ScreenSearchDesktopIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={fulltextSearchLabel} secondary={fulltextSearchDescription} />
+          </MenuItem>
+        </Menu>
+      </>
     );
   }
 

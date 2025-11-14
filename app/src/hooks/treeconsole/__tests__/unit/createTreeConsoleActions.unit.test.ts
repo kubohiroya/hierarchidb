@@ -1,6 +1,6 @@
 import type { WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import type { Remote } from 'comlink';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -107,6 +107,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     expandedIds: [],
     searchTerm: '',
     viewMode: 'list',
+    searchMode: 'local',
     sortBy: 'name',
     sortDirection: 'asc',
     filterBy: '',
@@ -129,6 +130,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     searchTerm: '',
     selectedIds: [nodeId],
     expandedIds: [],
+    searchMode: 'local',
     setState: vi.fn(),
     setSSOT: vi.fn(),
     ssot: baseSSOT,

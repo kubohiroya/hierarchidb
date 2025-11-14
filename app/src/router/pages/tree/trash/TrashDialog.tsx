@@ -21,7 +21,7 @@ import {
   type TreeNodeData,
   type TreeTableColumn,
   TreeTableSearchInput,
-} from '@hierarchidb/ui-shell/ui-treeconsole-base';
+} from '@hierarchidb/ui-treeconsole-base';
 import type { BreadcrumbNode } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import { DualKeyMap } from '@hierarchidb/util';
 import {

@@ -5,7 +5,7 @@
  */
 
 import type { NodeType } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleState } from './types.js';
 
 export interface SortFilterConfig {

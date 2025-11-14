@@ -7,9 +7,9 @@
 
 import type { ImportData, WorkerAPI } from '@hierarchidb/common-api';
 import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
-import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
-import { TreeConsoleToolbar } from '@hierarchidb/ui-shell/ui-treeconsole-toolbar';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
+import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
@@ -83,6 +83,7 @@ const TreeConsoleIntegrationInner: React.FC<
     selectedIds,
     expandedIds,
     searchTerm,
+    searchMode,
     viewMode,
     canCreate,
     canEdit,
@@ -534,8 +535,10 @@ const TreeConsoleIntegrationInner: React.FC<
         isResourcesPage={pageTreeNode?.name?.toLowerCase().includes('resource')}
         controller={{
           searchText: searchTerm,
+          searchMode,
           handleSearchTextChange: actions.handleSearchChange,
           handleSearchCommit: actions.handleSearchCommit,
+          onSearchModeChange: actions.handleSearchModeChange,
         }}
         hasTrashItems={hasTrashItems}
         onAction={handleToolbarAction}

@@ -12,7 +12,8 @@ import type {
   TreeId,
   TreeNode,
 } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { preconnectPluginServices } from '../../services/preconnect.js';
 import type { TreeConsoleSSOTEntry } from '../../state/treeconsole.atoms.js';
@@ -67,6 +68,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     pageTreeNode,
     pushPath,
     searchTerm,
+    searchMode,
     selectedIds,
     expandedIds,
     setState,
@@ -138,6 +140,29 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
         }
         fireCmdEvent();
       }
+    }
+  };
+
+  const runLocalSearch = async (term: string) => {
+    if (!client) return;
+    const root = pageNodeId as NodeId;
+    const trimmed = term.trim();
+    if (!trimmed) {
+      await loadChildrenOf(root, '');
+      return;
+    }
+    try {
+      const queryAPI = await client.getQueryAPI();
+      const results = (await queryAPI.searchNodes({
+        rootNodeId: root,
+        query: trimmed,
+        mode: 'partial',
+        maxResults: 200,
+      })) as TreeNode[];
+      const index = buildIndexFromNodes(results, root);
+      setSSOT({ nodeIndex: index });
+    } catch (error) {
+      console.error('Search failed:', error);
     }
   };
 
@@ -274,24 +299,11 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
     handleSearchChange: async (term: string) => {
       setSSOT({ searchTerm: term });
-      if (!client) return;
-      const root = pageNodeId as NodeId;
-      if (!term.trim()) {
+      if (searchMode === 'local') {
+        await runLocalSearch(term);
+      } else if (!term.trim()) {
+        const root = pageNodeId as NodeId;
         await loadChildrenOf(root, '');
-        return;
-      }
-      try {
-        const queryAPI = await client.getQueryAPI();
-        const results = (await queryAPI.searchNodes({
-          rootNodeId: root,
-          query: term,
-          mode: 'partial',
-          maxResults: 200,
-        })) as TreeNode[];
-        const index = buildIndexFromNodes(results, root);
-        setSSOT({ nodeIndex: index });
-      } catch (error) {
-        console.error('Search failed:', error);
       }
     },
 
@@ -313,6 +325,14 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       const next = term ? `?q=${encodeURIComponent(term)}` : '?';
       const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
       if (currentSearch !== (next === '?' ? '' : next)) pushPath(next);
+    },
+
+    handleSearchModeChange: (mode: TreeConsoleSearchMode) => {
+      if (mode === searchMode) return;
+      setSSOT({ searchMode: mode });
+      if (mode === 'local') {
+        void runLocalSearch(searchTerm);
+      }
     },
 
     handleCreate: async () => {

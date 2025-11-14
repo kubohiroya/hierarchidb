@@ -6,7 +6,8 @@
  */
 
 import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
+import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import { DualKeyMap } from '@hierarchidb/util';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +55,7 @@ export function useTreeConsoleIntegration({
   const selectedIds = (ssot.selectedIds as NodeId[]) || [];
   const expandedIds = (ssot.expandedIds as NodeId[]) || [];
   const searchTerm = ssot.searchTerm || '';
+  const searchMode = (ssot.searchMode as TreeConsoleSearchMode) || 'local';
   const viewMode = (ssot.viewMode as ViewMode) || 'list';
   const defaultFilters = useMemo(() => getMenuSpec('resources').order, []);
   const { t, i18n } = useTranslation();
@@ -163,6 +165,7 @@ export function useTreeConsoleIntegration({
       selectedIds: [],
       expandedIds: [],
       searchTerm: '',
+      searchMode: 'local',
       error: null,
     });
 
@@ -226,6 +229,7 @@ export function useTreeConsoleIntegration({
         pageTreeNode,
         pushPath,
         searchTerm,
+        searchMode,
         selectedIds,
         expandedIds,
         setState,
@@ -246,6 +250,7 @@ export function useTreeConsoleIntegration({
       pageTreeNode,
       pushPath,
       refreshUndoRedo,
+      searchMode,
       searchTerm,
       selectedIds,
       setSSOT,
@@ -270,6 +275,7 @@ export function useTreeConsoleIntegration({
     selectedIds,
     expandedIds,
     searchTerm,
+    searchMode,
     viewMode,
     canCreate,
     canEdit,

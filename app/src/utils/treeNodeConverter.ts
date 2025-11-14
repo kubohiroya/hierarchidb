@@ -6,7 +6,7 @@
  */
 
 import type { TreeNode } from '@hierarchidb/common-types';
-import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-shell/ui-treeconsole-base';
+import type { TreeNodeData, TreeTableColumn } from '@hierarchidb/ui-treeconsole-base';
 
 /**
  * Convert TreeNode to TreeNodeData for UI display

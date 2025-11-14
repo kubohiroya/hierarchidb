@@ -1,3 +1,4 @@
+import type { TreeConsoleSearchMode } from '@hierarchidb/ui-treeconsole-base';
 /**
  * Types for TreeConsoleToolbar_Deprecated package
  */
@@ -32,11 +33,13 @@ export type TreeConsoleToolbarActionParams =
 
 export interface TreeConsoleToolbarController {
   searchText?: string;
+  searchMode?: TreeConsoleSearchMode;
   handleSearchTextChange?: (value: string) => void;
   /**
    * Called when the search input loses focus to commit the current value.
    */
   handleSearchCommit?: () => void;
+  onSearchModeChange?: (mode: TreeConsoleSearchMode) => void;
 }
 
 export interface TreeConsoleToolbarContext {
