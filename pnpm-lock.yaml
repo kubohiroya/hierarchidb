@@ -34,6 +34,9 @@ importers:
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.5(@mui/material@7.3.5(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react@18.3.1))(@types/react@18.3.26)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.26)(react@18.3.1)
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
       gh-pages:
         specifier: ^6.3.0
         version: 6.3.0
@@ -108,10 +111,10 @@ importers:
         specifier: ^3.0.8
         version: 3.0.8
       '@typescript-eslint/eslint-plugin':
-        specifier: ^8.46.4
+        specifier: ^8.46.3
         version: 8.46.4(@typescript-eslint/parser@8.46.4(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
       '@typescript-eslint/parser':
-        specifier: ^8.46.4
+        specifier: ^8.46.3
         version: 8.46.4(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
       '@vitejs/plugin-react':
         specifier: 4.3.4
@@ -180,7 +183,7 @@ importers:
         specifier: ^26.1.0
         version: 26.1.0
       knip:
-        specifier: ^5.69.1
+        specifier: ^5.68.0
         version: 5.69.1(@types/node@18.19.123)(typescript@5.9.3)
       license-checker:
         specifier: ^25.0.1
@@ -234,7 +237,7 @@ importers:
         specifier: ^4.20.6
         version: 4.20.6
       turbo:
-        specifier: ^2.6.1
+        specifier: ^2.6.0
         version: 2.6.1
       typescript:
         specifier: 5.9.3
@@ -353,9 +356,6 @@ importers:
       jotai:
         specifier: ^2.14.0
         version: 2.15.0(@babel/core@7.28.5)(@babel/template@7.27.2)(@types/react@18.3.26)(react@18.3.1)
-      lunr:
-        specifier: 2.3.9
-        version: 2.3.9
       react-draggable:
         specifier: ^4.5.0
         version: 4.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2135,6 +2135,10 @@ importers:
         version: 18.3.1(react@18.3.1)
 
   packages/ui/treeconsole/treetable:
+    dependencies:
+      dexie:
+        specifier: 4.2.0
+        version: 4.2.0
     devDependencies:
       '@emotion/react':
         specifier: 11.14.0
@@ -14706,7 +14710,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)
+      vitest: 3.2.4(@types/node@18.19.123)(@vitest/ui@3.2.4)(happy-dom@16.8.1)(jsdom@26.1.0)
 
   '@vitest/utils@3.2.4':
     dependencies:
