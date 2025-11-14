@@ -1,12 +1,14 @@
-import type { TreeChangeEvent } from '@hierarchidb/common-types';
-import type { NodeId, TreeId, TreeNode } from '@hierarchidb/common-types';
-import { SingletonMixin } from '@hierarchidb/util';
+import type { TreeChangeEvent, TreeNode } from '@hierarchidb/common-types';
+import type { NodeId, TreeId } from '@hierarchidb/common-types';
 import type { Table } from 'dexie';
+import lunr from 'lunr';
+import { SingletonMixin } from '@hierarchidb/util';
 import type { Subscription } from 'rxjs';
 import type { CoreDB } from './CoreDB.js';
 import type { FulltextIndexRecord, FulltextNodeRecord } from './fulltext-types.js';
 
 const DEFAULT_LOCALE = 'en';
+
 
 interface FulltextSearchParams {
   rootNodeId: NodeId;
@@ -22,9 +24,14 @@ export class FulltextIndexService {
     });
   }
 
+  static async createForTesting(coreDB: CoreDB): Promise<FulltextIndexService> {
+    return new FulltextIndexService(coreDB);
+  }
+
   private readonly fulltextNodes: Table<FulltextNodeRecord, [TreeId, NodeId]>;
   private readonly fulltextIndexes: Table<FulltextIndexRecord, [TreeId, string]>;
   private readonly subscription: Subscription;
+  private readonly rebuildQueue = new Map<string, Promise<void>>();
 
   private constructor(private readonly coreDB: CoreDB) {
     this.fulltextNodes = coreDB.fulltextNodes;
@@ -36,17 +43,19 @@ export class FulltextIndexService {
         });
       },
     });
+
+    void this.bootstrapExistingIndexes();
   }
 
   dispose(): void {
     this.subscription.unsubscribe();
+    this.rebuildQueue.clear();
   }
 
   async search(params: FulltextSearchParams): Promise<TreeNode[]> {
-    const { rootNodeId, query } = params;
     const locale = (params.locale || DEFAULT_LOCALE).toLowerCase();
-    const treeId = this.extractTreeId(rootNodeId);
-    const trimmed = query.trim();
+    const treeId = this.extractTreeId(params.rootNodeId);
+    const trimmed = params.query.trim();
     if (!trimmed) {
       return [];
     }
@@ -54,19 +63,22 @@ export class FulltextIndexService {
     await this.recordLocaleUsage(treeId, locale);
     await this.ensureIndexReady(treeId, locale);
 
-    const allowedIds = await this.collectAllowedNodes(rootNodeId);
-    const normalizedQuery = this.normalize(trimmed);
+    const state = await this.fulltextIndexes.get([treeId, locale]);
+    if (!state?.serializedIndex) {
+      return [];
+    }
 
-    const rows = await this.fulltextNodes.where('treeId').equals(treeId).toArray();
+    const allowedIds = await this.collectAllowedNodes(params.rootNodeId);
+    const index = lunr.Index.load(JSON.parse(state.serializedIndex));
+    const results = index.search(trimmed);
+
     const matches: TreeNode[] = [];
-    for (const row of rows) {
-      if (!allowedIds.has(row.nodeId)) continue;
-      const haystack = this.buildSearchText(row);
-      if (haystack.includes(normalizedQuery)) {
-        const node = await this.coreDB.getNode(row.nodeId);
-        if (node) {
-          matches.push(node);
-        }
+    for (const result of results) {
+      const nodeId = result.ref as NodeId;
+      if (!allowedIds.has(nodeId)) continue;
+      const node = await this.coreDB.getNode(nodeId);
+      if (node) {
+        matches.push(node);
       }
       if (params.maxResults && matches.length >= params.maxResults) {
         break;
@@ -76,7 +88,8 @@ export class FulltextIndexService {
     return matches;
   }
 
-  async recordLocaleUsage(treeId: TreeId, locale: string): Promise<void> {
+  async recordLocaleUsage(treeId: TreeId, rawLocale: string): Promise<void> {
+    const locale = rawLocale.toLowerCase();
     const existing = await this.fulltextIndexes.get([treeId, locale]);
     if (!existing) {
       await this.fulltextIndexes.put({
@@ -86,23 +99,89 @@ export class FulltextIndexService {
         dirty: true,
       });
     }
+    void this.scheduleRebuild(treeId, locale);
+  }
+
+  private async bootstrapExistingIndexes(): Promise<void> {
+    const existing = await this.fulltextIndexes.toArray();
+    await Promise.all(
+      existing
+        .filter((record) => record.dirty || !record.serializedIndex)
+        .map((record) => this.scheduleRebuild(record.treeId, record.locale))
+    );
   }
 
   private async ensureIndexReady(treeId: TreeId, locale: string): Promise<void> {
     const state = await this.fulltextIndexes.get([treeId, locale]);
-    if (!state || state.dirty) {
-      await this.buildIndex(treeId, locale);
+    if (!state || state.dirty || !state.serializedIndex) {
+      await this.scheduleRebuild(treeId, locale);
     }
+  }
+
+  private buildRebuildKey(treeId: TreeId, locale: string): string {
+    return `${treeId}:${locale}`;
+  }
+
+  private scheduleRebuild(treeId: TreeId, locale: string): Promise<void> {
+    const key = this.buildRebuildKey(treeId, locale);
+    const existing = this.rebuildQueue.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    const task = (async () => {
+      try {
+        await this.buildIndex(treeId, locale);
+      } catch (error) {
+        console.warn('[FulltextIndexService] rebuild failed', { treeId, locale }, error);
+        await this.fulltextIndexes.put({
+          treeId,
+          locale,
+          updatedAt: Date.now(),
+          dirty: true,
+        });
+      } finally {
+        this.rebuildQueue.delete(key);
+      }
+    })();
+
+    this.rebuildQueue.set(key, task);
+    return task;
   }
 
   private async buildIndex(treeId: TreeId, locale: string): Promise<void> {
     await this.seedFulltextNodes(treeId);
+    const docs = await this.fulltextNodes.where('treeId').equals(treeId).toArray();
+
+    const builder = new lunr.Builder();
+    builder.ref('nodeId');
+    builder.field('name');
+    builder.field('description');
+    builder.metadataWhitelist = ['position'];
+
+    this.configureLocalePipeline(builder, locale);
+
+    for (const doc of docs) {
+      builder.add({
+        nodeId: doc.nodeId,
+        name: doc.name ?? '',
+        description: doc.description ?? '',
+      });
+    }
+
+    const index = builder.build();
     await this.fulltextIndexes.put({
       treeId,
       locale,
       updatedAt: Date.now(),
       dirty: false,
+      serializedIndex: JSON.stringify(index.toJSON()),
     });
+  }
+
+  private configureLocalePipeline(builder: lunr.Builder, _locale: string): void {
+    builder.pipeline.reset();
+    builder.pipeline.add(lunr.trimmer, lunr.stopWordFilter, lunr.stemmer);
   }
 
   private async seedFulltextNodes(treeId: TreeId): Promise<void> {
@@ -113,6 +192,10 @@ export class FulltextIndexService {
 
     const prefix = `${treeId}:`;
     const nodes = await this.coreDB.nodes.where('id').startsWith(prefix).toArray();
+    if (nodes.length === 0) {
+      return;
+    }
+
     const rows: FulltextNodeRecord[] = nodes.map((node) => ({
       treeId,
       nodeId: node.id,
@@ -121,9 +204,7 @@ export class FulltextIndexService {
       description: node.description ?? '',
       updatedAt: node.updatedAt ?? Date.now(),
     }));
-    if (rows.length > 0) {
-      await this.fulltextNodes.bulkPut(rows);
-    }
+    await this.fulltextNodes.bulkPut(rows);
   }
 
   private async collectAllowedNodes(rootNodeId: NodeId): Promise<Set<NodeId>> {
@@ -135,14 +216,6 @@ export class FulltextIndexService {
     return allowed;
   }
 
-  private normalize(value: string): string {
-    return value.toLocaleLowerCase();
-  }
-
-  private buildSearchText(row: FulltextNodeRecord): string {
-    return `${row.name}\n${row.description ?? ''}`.toLocaleLowerCase();
-  }
-
   private extractTreeId(nodeId: NodeId): TreeId {
     const separator = nodeId.indexOf(':');
     if (separator === -1) {
@@ -152,44 +225,30 @@ export class FulltextIndexService {
   }
 
   private async handleChangeEvent(event: TreeChangeEvent): Promise<void> {
+    const treeId = this.extractTreeId(event.nodeId);
+    const locales = await this.getLocalesForTree(treeId);
+
     switch (event.type) {
       case 'node-created':
       case 'node-updated':
       case 'node-moved':
         if (event.node) {
           await this.upsertNodeRecord(event.node);
+          await this.rebuildLocales(treeId, locales);
         }
-        await this.markTreeDirty(event.nodeId);
         break;
       case 'node-deleted':
-        await this.removeNodeRecord(event.nodeId);
-        await this.markTreeDirty(event.nodeId);
+        {
+          await this.removeNodeRecord(event.nodeId);
+          await this.rebuildLocales(treeId, locales);
+        }
         break;
       default:
-        await this.markTreeDirty(event.nodeId);
         break;
     }
   }
 
-  private async upsertNodeRecord(node: TreeNode): Promise<void> {
-    const treeId = this.extractTreeId(node.id);
-    await this.fulltextNodes.put({
-      treeId,
-      nodeId: node.id,
-      parentId: node.parentId,
-      name: node.name ?? '',
-      description: node.description ?? '',
-      updatedAt: Date.now(),
-    });
-  }
-
-  private async removeNodeRecord(nodeId: NodeId): Promise<void> {
-    const treeId = this.extractTreeId(nodeId);
-    await this.fulltextNodes.delete([treeId, nodeId]);
-  }
-
-  private async markTreeDirty(nodeId: NodeId): Promise<void> {
-    const treeId = this.extractTreeId(nodeId);
+  private async getLocalesForTree(treeId: TreeId): Promise<string[]> {
     const records = await this.fulltextIndexes.where('treeId').equals(treeId).toArray();
     if (records.length === 0) {
       await this.fulltextIndexes.put({
@@ -198,9 +257,41 @@ export class FulltextIndexService {
         updatedAt: 0,
         dirty: true,
       });
-      return;
+      void this.scheduleRebuild(treeId, DEFAULT_LOCALE);
+      return [DEFAULT_LOCALE];
     }
-    const updates = records.map((record) => ({ ...record, dirty: true }));
-    await this.fulltextIndexes.bulkPut(updates);
+    const locales = Array.from(new Set(records.map((record) => record.locale)));
+    if (!locales.includes(DEFAULT_LOCALE)) {
+      locales.push(DEFAULT_LOCALE);
+    }
+    return locales;
   }
+
+  private async upsertNodeRecord(node: TreeNode): Promise<FulltextNodeRecord> {
+    const treeId = this.extractTreeId(node.id);
+    const record: FulltextNodeRecord = {
+      treeId,
+      nodeId: node.id,
+      parentId: node.parentId,
+      name: node.name ?? '',
+      description: node.description ?? '',
+      updatedAt: Date.now(),
+    };
+    await this.fulltextNodes.put(record);
+    return record;
+  }
+
+  private async removeNodeRecord(nodeId: NodeId): Promise<FulltextNodeRecord | undefined> {
+    const treeId = this.extractTreeId(nodeId);
+    const record = await this.fulltextNodes.get([treeId, nodeId]);
+    await this.fulltextNodes.delete([treeId, nodeId]);
+    return record;
+  }
+
+  private async rebuildLocales(treeId: TreeId, locales: string[]): Promise<void> {
+    for (const locale of locales) {
+      await this.scheduleRebuild(treeId, locale);
+    }
+  }
+
 }

@@ -30,6 +30,8 @@
     "src*.spec.ts"
   ],
   "references": [
-    { "path": "../../plugin-service-api" }
+    {
+      "path": "../../plugin-service-api"
+    }
   ]
 }

@@ -14,4 +14,5 @@ export interface FulltextIndexRecord {
   locale: string;
   updatedAt: number;
   dirty: boolean;
+  serializedIndex?: string;
 }

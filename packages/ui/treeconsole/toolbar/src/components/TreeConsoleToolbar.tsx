@@ -68,6 +68,7 @@ const BASE_SEARCH_FIELD_WIDTH_PX = 300;
 const SEARCH_FIELD_WIDTH_PX = Math.round(BASE_SEARCH_FIELD_WIDTH_PX * 1.4);
 const SEARCH_FIELD_MIN_WIDTH_PX = Math.round(SEARCH_FIELD_WIDTH_PX * 0.67);
 const TREECONSOLE_SEARCH_INPUT_ID = 'treeconsole-toolbar-search-input';
+const TREECONSOLE_SEARCH_INPUT_LABEL_ID = 'treeconsole-toolbar-search-input-label';
 
 const SearchTextFieldContainer = styled(Box)(() => ({
   display: 'flex',
@@ -113,6 +114,22 @@ function SearchField({
 }) {
   return (
     <SearchTextFieldContainer>
+      <label
+        htmlFor={TREECONSOLE_SEARCH_INPUT_ID}
+        id={TREECONSOLE_SEARCH_INPUT_LABEL_ID}
+        style={{
+          position: 'absolute',
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          border: 0,
+        }}
+      >
+        Search tree console
+      </label>
       <TextField
         id={TREECONSOLE_SEARCH_INPUT_ID}
         fullWidth={fullWidth}
