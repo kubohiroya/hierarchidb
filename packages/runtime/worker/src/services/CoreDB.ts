@@ -14,6 +14,7 @@ import { getDBName, SingletonMixin } from '@hierarchidb/util';
 import type { BulkError } from 'dexie';
 import { Dexie, type Table } from 'dexie';
 import { Subject } from 'rxjs';
+import type { FulltextIndexRecord, FulltextNodeRecord } from './fulltext-types.js';
 
 export class CoreDB extends Dexie {
   trees!: Table<Tree, TreeId>;
@@ -21,6 +22,8 @@ export class CoreDB extends Dexie {
   rootStates!: Table<TreeRootState, NodeId>;
   tags!: Table<TagEntity, TagEntity['id']>;
   tagAssociations!: Table<NodeTagAssociation, [NodeId, TagEntity['id']]>;
+  fulltextNodes!: Table<FulltextNodeRecord, [TreeId, NodeId]>;
+  fulltextIndexes!: Table<FulltextIndexRecord, [TreeId, string]>;
 
   //  Subject
   public readonly changeSubject = new Subject<TreeChangeEvent>();
@@ -32,7 +35,9 @@ export class CoreDB extends Dexie {
    */
   async runInTx<T>(
     mode: 'r' | 'rw',
-    tableNames: Array<'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations'>,
+    tableNames: Array<
+      'trees' | 'nodes' | 'rootStates' | 'tags' | 'tagAssociations' | 'fulltextNodes' | 'fulltextIndexes'
+    >,
     fn: () => Promise<T>
   ): Promise<T> {
     const tableMap = {
@@ -41,6 +46,8 @@ export class CoreDB extends Dexie {
       rootStates: this.rootStates,
       tags: this.tags,
       tagAssociations: this.tagAssociations,
+      fulltextNodes: this.fulltextNodes,
+      fulltextIndexes: this.fulltextIndexes,
     } as const;
 
     const tables = tableNames
@@ -112,6 +119,27 @@ export class CoreDB extends Dexie {
             }
           });
       });
+
+    this.version(3).stores({
+      trees: '&id, rootId, trashRootId, superRootId',
+      nodes: [
+        '&id',
+        'parentId',
+        '&[parentId+name]',
+        '[parentId+updatedAt]',
+        '[holderType+holderTargetId]',
+        'holderType',
+        'lastTouchedAt',
+        '[holderType+lastTouchedAt]',
+        'depth',
+        '*references',
+      ].join(', '),
+      rootStates: '&rootNodeId',
+      tags: '&id, name, category, usageCount, createdAt',
+      tagAssociations: 'nodeId, tagId, createdAt, &[nodeId+tagId]',
+      fulltextNodes: '&[treeId+nodeId], treeId, nodeId, updatedAt',
+      fulltextIndexes: '&[treeId+locale], treeId, locale, dirty',
+    });
   }
 
   // console name helper was unused in the current implementation

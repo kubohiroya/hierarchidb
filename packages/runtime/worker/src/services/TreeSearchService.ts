@@ -1,6 +1,5 @@
 import type { NodeId, TreeNode } from '@hierarchidb/common-types';
-import type { CoreDB } from './CoreDB.js';
-import { TreeQueryService } from './TreeQueryService.js';
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
 
 type DepthSearchOptions = {
   maxDepth: number;
@@ -23,11 +22,7 @@ type MatchModeOptions = {
  * TreeSubscriptionService focused on subscription management.
  */
 export class TreeSearchService {
-  private readonly treeQuery: TreeQueryService;
-
-  constructor(coreDB: CoreDB) {
-    this.treeQuery = new TreeQueryService(coreDB);
-  }
+  constructor(private readonly treeQuery: TreeQueryAPI) {}
 
   async searchByNameWithDepth(
     rootNodeId: NodeId,

@@ -14,7 +14,7 @@ type P = StepComponentProps<StepData>;
 
 const registry = PluginStepRegistry.getInstance();
 
-registry.registerConfigProvider({
+registry.registerConfigProvider<StepData>({
   nodeType: 'basemap',
   getCreateStepConfigs() {
     return [
@@ -87,7 +87,7 @@ registry.registerConfigProvider({
       },
     ];
   },
-  getEditStepConfigs() {
+  getEditStepConfigs(_nodeId: string, _data?: StepData) {
     return this.getCreateStepConfigs();
   },
 });

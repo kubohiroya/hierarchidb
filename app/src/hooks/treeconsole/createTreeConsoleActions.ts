@@ -69,6 +69,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     pushPath,
     searchTerm,
     searchMode,
+    locale,
     selectedIds,
     expandedIds,
     setState,
@@ -163,6 +164,30 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       setSSOT({ nodeIndex: index });
     } catch (error) {
       console.error('Search failed:', error);
+    }
+  };
+
+  const runFulltextSearch = async (term: string) => {
+    if (!client) return;
+    const root = pageNodeId as NodeId;
+    const trimmed = term.trim();
+    if (!trimmed) {
+      await loadChildrenOf(root, '');
+      return;
+    }
+    try {
+      const queryAPI = await client.getQueryAPI();
+      const effectiveLocale = locale ?? 'en';
+      const results = (await queryAPI.searchNodesFulltext({
+        rootNodeId: root,
+        query: trimmed,
+        maxResults: 200,
+        locale: effectiveLocale,
+      })) as TreeNode[];
+      const index = buildIndexFromNodes(results, root);
+      setSSOT({ nodeIndex: index });
+    } catch (error) {
+      console.error('Full-text search failed:', error);
     }
   };
 
@@ -301,9 +326,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       setSSOT({ searchTerm: term });
       if (searchMode === 'local') {
         await runLocalSearch(term);
-      } else if (!term.trim()) {
-        const root = pageNodeId as NodeId;
-        await loadChildrenOf(root, '');
+      } else {
+        await runFulltextSearch(term);
       }
     },
 
@@ -332,6 +356,8 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
       setSSOT({ searchMode: mode });
       if (mode === 'local') {
         void runLocalSearch(searchTerm);
+      } else {
+        void runFulltextSearch(searchTerm);
       }
     },
 

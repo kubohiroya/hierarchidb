@@ -16,6 +16,9 @@ import type {
   UndoStateEvent,
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
+import { FulltextIndexService } from './FulltextIndexService.js';
+import { TreeQueryService } from './TreeQueryService.js';
 import {
   bufferTime,
   concat,
@@ -36,9 +39,18 @@ import { TreeSearchService } from './TreeSearchService.js';
  * Provides real-time subscription functionality for console structure changes
  */
 export class TreeSubscriptionService {
-  static async getSingleton(coreDB: CoreDB): Promise<TreeSubscriptionService> {
-    return SingletonMixin.getSingleton(TreeSubscriptionService.name, () => {
-      return new TreeSubscriptionService(coreDB);
+  static async getSingleton(
+    coreDB: CoreDB,
+    treeQuery?: TreeQueryAPI
+  ): Promise<TreeSubscriptionService> {
+    return SingletonMixin.getSingleton(TreeSubscriptionService.name, async () => {
+      const resolvedQuery =
+        treeQuery ||
+        (await TreeQueryService.getSingleton(
+          coreDB,
+          await FulltextIndexService.getSingleton(coreDB)
+        ));
+      return new TreeSubscriptionService(coreDB, resolvedQuery);
     });
   }
 
@@ -63,8 +75,8 @@ export class TreeSubscriptionService {
 
   private readonly searchService: TreeSearchService;
 
-  constructor(private coreDB: CoreDB) {
-    this.searchService = new TreeSearchService(coreDB);
+  constructor(private coreDB: CoreDB, treeQuery: TreeQueryAPI) {
+    this.searchService = new TreeSearchService(treeQuery);
     //  CoreDBchangeSubject
     this.coreDB.changeSubject.subscribe({
       next: (event) => {

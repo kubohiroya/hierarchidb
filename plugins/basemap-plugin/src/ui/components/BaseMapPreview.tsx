@@ -9,15 +9,15 @@ import {
   loadMapLibreMap,
   type MapLibreLayer,
   type MapLibreMapInstance,
-  type MapLibreStyle,
   type MapViewState,
 } from '@hierarchidb/ui-map';
 import { DarkMode, LightMode, Map as MapIcon, Satellite, Terrain, Tune } from '@mui/icons-material';
 import { Box, Chip, Paper, Stack, Typography } from '@mui/material';
 import type React from 'react';
 import { lazy, Suspense, useMemo } from 'react';
-import { getBuiltInStyleUrl, getStyleAttribution } from '../../common/constants/builtInStyles.js';
+import { getStyleAttribution } from '../../common/constants/builtInStyles.js';
 import type { DisplayOptions, MapStyle, MapViewport } from '../../common/types/BaseMapEntity.js';
+import { resolvePreviewMapStyle } from '../utils/mapStyle.js';
 
 export interface BaseMapPreviewProps {
   /** Map style configuration */
@@ -106,17 +106,7 @@ export const BaseMapPreview: React.FC<BaseMapPreviewProps> = ({
   };
 
   // Get map style URL
-  const mapStyleUrl = useMemo(() => {
-    if (mapStyle.style === 'custom') {
-      if (mapStyle.customStyleUrl) {
-        return mapStyle.customStyleUrl;
-      }
-      if (mapStyle.customStyleConfig) {
-        return mapStyle.customStyleConfig as MapLibreStyle;
-      }
-    }
-    return getBuiltInStyleUrl(mapStyle.style);
-  }, [mapStyle]);
+  const mapStyleUrl = useMemo(() => resolvePreviewMapStyle(mapStyle), [mapStyle]);
 
   // Get attribution
   const attribution = useMemo(() => {

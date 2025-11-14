@@ -7,6 +7,7 @@ import type {
   TreeNode,
   TreeNodeEvent,
 } from '@hierarchidb/common-types';
+import type { TreeQueryAPI } from '@hierarchidb/common-api';
 import { Subject } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreDB } from '../../CoreDB.js';
@@ -35,10 +36,40 @@ function createCoreStub(
   };
 }
 
+function createTreeQueryStub(core: CoreDB & { __store: Map<NodeId, TreeNode> }): TreeQueryAPI {
+  const listAllNodes = () => Array.from(core.__store.values());
+
+  const listDescendants = async (nodeId: NodeId): Promise<TreeNode[]> => {
+    const out: TreeNode[] = [];
+    const stack: NodeId[] = [nodeId];
+    while (stack.length) {
+      const current = stack.pop();
+      if (!current) continue;
+      const children = listAllNodes().filter((node) => node.parentId === current);
+      for (const child of children) {
+        out.push(child);
+        stack.push(child.id);
+      }
+    }
+    return out;
+  };
+
+  return {
+    getTree: vi.fn(async () => undefined),
+    listTrees: vi.fn(async () => []),
+    getNode: core.getNode as TreeQueryAPI['getNode'],
+    listChildren: core.listChildren as TreeQueryAPI['listChildren'],
+    listDescendants: vi.fn(listDescendants) as TreeQueryAPI['listDescendants'],
+    listAncestors: vi.fn(async () => []),
+    searchNodes: vi.fn(async () => listAllNodes()),
+    searchNodesFulltext: vi.fn(async () => []),
+  } as TreeQueryAPI;
+}
+
 describe('TreeSubscriptionService subscribe wrappers', () => {
   it('handles function observer subscribe/unsubscribe flow', async () => {
     const core = createCoreStub();
-    const service = new TreeSubscriptionService(core);
+    const service = new TreeSubscriptionService(core, createTreeQueryStub(core));
     const nodeId = 'node-1' as NodeId;
 
     const cmd = {
@@ -76,7 +107,7 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
 
   it('supports observer object argument for subscribe', async () => {
     const core = createCoreStub();
-    const service = new TreeSubscriptionService(core);
+    const service = new TreeSubscriptionService(core, createTreeQueryStub(core));
     const nodeId = 'node-2' as NodeId;
 
     const cmd = {
@@ -147,7 +178,7 @@ describe('TreeSubscriptionService subscribe wrappers', () => {
     };
 
     const core = createCoreStub([rootNode, childNode, otherNode]);
-    const service = new TreeSubscriptionService(core);
+    const service = new TreeSubscriptionService(core, createTreeQueryStub(core));
 
     const received: TreeNodeEvent[] = [];
     await service.subscribeSubtree(rootId, (event) => {

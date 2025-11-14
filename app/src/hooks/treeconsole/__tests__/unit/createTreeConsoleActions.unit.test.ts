@@ -58,6 +58,10 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
   deps: TreeConsoleActionDeps;
   workingCopyApi: MockWorkingCopy;
   pushPath: ReturnType<typeof vi.fn>;
+  queryApi: {
+    getNode: ReturnType<typeof vi.fn>;
+    searchNodesFulltext: ReturnType<typeof vi.fn>;
+  };
 } {
   const nodeId = 'node-1' as NodeId;
   const treeId = 'console-1' as TreeId;
@@ -81,6 +85,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
       parentId: pageNodeId,
       nodeType: 'folder',
     })),
+    searchNodesFulltext: vi.fn(async () => []),
   };
 
   const client = {
@@ -131,6 +136,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     selectedIds: [nodeId],
     expandedIds: [],
     searchMode: 'local',
+    locale: 'en',
     setState: vi.fn(),
     setSSOT: vi.fn(),
     ssot: baseSSOT,
@@ -146,7 +152,7 @@ function buildDeps(overrides: Partial<TreeConsoleActionDeps> = {}): {
     ...overrides,
   };
 
-  return { deps, workingCopyApi, pushPath };
+  return { deps, workingCopyApi, pushPath, queryApi };
 }
 
 describe('createTreeConsoleActions.handleEdit', () => {
@@ -337,5 +343,36 @@ describe('createTreeConsoleActions.handleUndoRedo', () => {
     expect(loadChildrenOf).toHaveBeenCalledWith('console-1:root');
 
     dispatchSpy.mockRestore();
+  });
+});
+
+describe('createTreeConsoleActions.handleSearchChange', () => {
+  it('invokes worker full-text search when mode is fulltext', async () => {
+    const { deps, queryApi } = buildDeps();
+    deps.searchMode = 'fulltext';
+    deps.ssot = { ...deps.ssot, searchMode: 'fulltext' };
+
+    const matches = [
+      {
+        id: 'node-2' as NodeId,
+        parentId: 'parent-1' as NodeId,
+        nodeType: 'folder',
+        name: 'Matching node',
+      } as TreeNode,
+    ];
+    queryApi.searchNodesFulltext.mockResolvedValue(matches);
+
+    const actions = createTreeConsoleActions(deps);
+    await actions.handleSearchChange('Matching node');
+
+    expect(queryApi.searchNodesFulltext).toHaveBeenCalledWith({
+      rootNodeId: 'parent-1',
+      query: 'Matching node',
+      maxResults: 200,
+      locale: 'en',
+    });
+    expect(deps.setSSOT).toHaveBeenCalledWith(
+      expect.objectContaining({ nodeIndex: expect.anything() })
+    );
   });
 });

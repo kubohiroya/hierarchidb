@@ -19,6 +19,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { BUILT_IN_STYLES } from '../../common/constants/builtInStyles.js';
 import type { BaseMapEntity } from '../../common/types/BaseMapEntity.js';
 import { BaseMapEntityHandler } from '../hooks/BaseMapEntityHandler.js';
+import { resolveMapStyleSource } from '../utils/mapStyle.js';
 
 interface DemoFeatureCollection {
   type: 'FeatureCollection';
@@ -135,32 +136,10 @@ export const BaseMapDisplay: React.FC<BaseMapDisplayProps> = ({
   // Get map style URL based on configuration
   const mapStyleUrl = useMemo<string | MapLibreStyle>(() => {
     if (!entity?.mapStyle) {
-      return BUILT_IN_STYLES.streets.url; // Default style
+      return BUILT_IN_STYLES.streets.url;
     }
-
-    const { style, customStyleUrl, customStyleConfig } = entity.mapStyle;
-
-    // Custom URL takes precedence
-    if (style === 'custom' && customStyleUrl) {
-      return customStyleUrl;
-    }
-
-    // Custom config (return as object, not URL)
-    if (style === 'custom' && customStyleConfig) {
-      return customStyleConfig as MapLibreStyle;
-    }
-
-    // Built-in style
-    if (style !== 'custom') {
-      const builtInStyle = BUILT_IN_STYLES[style as keyof typeof BUILT_IN_STYLES];
-      if (builtInStyle) {
-        return builtInStyle.url;
-      }
-    }
-
-    // Fallback to default
-    return BUILT_IN_STYLES.streets.url;
-  }, [entity]);
+    return resolveMapStyleSource(entity.mapStyle);
+  }, [entity?.mapStyle]);
 
   // Handle map load event
   const handleMapLoad = useCallback(

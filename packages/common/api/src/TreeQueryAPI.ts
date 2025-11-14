@@ -229,4 +229,15 @@ export interface TreeQueryAPI {
     caseSensitive?: boolean;
     searchInDescription?: boolean;
   }): Promise<TreeNode[]>;
+
+  /**
+   * Experimental full-text search that leverages worker-side indexing (lunr.js予定).
+   * モック実装の段階でも API 契約を確立し、UI から Comlink 経由で呼び出せるようにする。
+   */
+  searchNodesFulltext(options: {
+    rootNodeId: NodeId;
+    query: string;
+    maxResults?: number;
+    locale?: string;
+  }): Promise<TreeNode[]>;
 }

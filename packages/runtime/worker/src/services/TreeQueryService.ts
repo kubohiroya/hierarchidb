@@ -13,15 +13,22 @@ import type {
 } from '@hierarchidb/common-types';
 import { SingletonMixin } from '@hierarchidb/util';
 import type { CoreDB } from './CoreDB.js';
+import { FulltextIndexService } from './FulltextIndexService.js';
 
 export class TreeQueryService implements TreeQueryAPI {
-  static async getSingleton(coreDB: CoreDB): Promise<TreeQueryService> {
+  static async getSingleton(
+    coreDB: CoreDB,
+    fulltextService: FulltextIndexService
+  ): Promise<TreeQueryService> {
     return SingletonMixin.getSingleton(TreeQueryService.name, () => {
-      return new TreeQueryService(coreDB);
+      return new TreeQueryService(coreDB, fulltextService);
     });
   }
 
-  constructor(private coreDB: CoreDB) {}
+  constructor(
+    private coreDB: CoreDB,
+    private fulltextService: FulltextIndexService
+  ) {}
 
   // Basic Query Operations
 
@@ -504,5 +511,19 @@ export class TreeQueryService implements TreeQueryAPI {
   private getNextSeq(): number {
     // In a real implementation, this should be managed by CommandProcessor
     return Date.now();
+  }
+
+  async searchNodesFulltext(options: {
+    rootNodeId: NodeId;
+    query: string;
+    maxResults?: number;
+    locale?: string;
+  }): Promise<TreeNode[]> {
+    return await this.fulltextService.search({
+      rootNodeId: options.rootNodeId,
+      query: options.query,
+      maxResults: options.maxResults,
+      locale: options.locale,
+    });
   }
 }

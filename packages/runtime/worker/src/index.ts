@@ -24,7 +24,7 @@ import { DialogStateService } from './services/DialogStateService.js';
 import { EphemeralDB } from './services/EphemeralDB.js';
 import { bootstrapFeatures } from './services/FeatureBootstrap.js';
 import { NodeLifecycleManager } from './services/NodeLifecycleManager.js';
-//import {PluginDefinition} from '@hierarchidb/common-api';
+import { FulltextIndexService } from './services/FulltextIndexService.js';
 import { TreeMutationService } from './services/TreeMutationService.js';
 import { TreeQueryService } from './services/TreeQueryService.js';
 import { TreeSubscriptionService } from './services/TreeSubscriptionService.js';
@@ -66,6 +66,7 @@ export class WorkerService {
     return SingletonMixin.getSingleton(WorkerService.name, async () => {
       const coreDB: CoreDB = await CoreDB.getSingleton();
       const ephemeralDB: EphemeralDB = await EphemeralDB.getSingleton();
+      const fulltextIndexService = await FulltextIndexService.getSingleton(coreDB);
 
       // Feature bootstrap (registry-driven). Keeps init order and opt-in capabilities.
       await bootstrapFeatures();
@@ -107,13 +108,16 @@ export class WorkerService {
 
       // Query/Mutation services
       const commandProcessor: CommandProcessor = await CommandProcessor.getSingleton(coreDB);
-      const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(coreDB);
+      const treeQueryService: TreeQueryAPI = await TreeQueryService.getSingleton(
+        coreDB,
+        fulltextIndexService
+      );
       const treeMutationService: TreeMutationAPI = await TreeMutationService.getSingleton(
         coreDB,
         commandProcessor
       );
       const treeSubscriptionService: TreeSubscriptionAPI =
-        await TreeSubscriptionService.getSingleton(coreDB);
+        await TreeSubscriptionService.getSingleton(coreDB, treeQueryService);
 
       const pluginMap: { [key: string]: PluginDefinition } = Object.fromEntries(
         plugins.map((plugin) => [plugin.name, plugin])
@@ -148,7 +152,8 @@ export class WorkerService {
         tagService,
         nodeLifecycleManager,
         commandProcessor,
-        dialogStateService
+        dialogStateService,
+        fulltextIndexService
       );
     });
   }
@@ -164,7 +169,8 @@ export class WorkerService {
     private tagService: TagAPI,
     private nodeLifecycleManager: NodeLifecycleManager,
     private commandProcessor: CommandProcessor,
-    private dialogStateService: DialogStateAPI
+    private dialogStateService: DialogStateAPI,
+    private fulltextService: FulltextIndexService
   ) {
     this.queryApiFacade = {
       getTree: (treeId: TreeId) => this.queryService.getTree(treeId),
@@ -175,6 +181,7 @@ export class WorkerService {
         this.queryService.listDescendants(nodeId, maxDepth),
       listAncestors: (nodeId: NodeId) => this.queryService.listAncestors(nodeId),
       searchNodes: (options) => this.queryService.searchNodes(options),
+      searchNodesFulltext: (options) => this.queryService.searchNodesFulltext(options),
     } satisfies TreeQueryAPI;
   }
 
@@ -195,6 +202,7 @@ export class WorkerService {
     // Close databases
     this.coreDB.close();
     this.ephemeralDB.close();
+    this.fulltextService.dispose();
   }
 
   async initialize(): Promise<void> {
