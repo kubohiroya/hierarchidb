@@ -14,6 +14,10 @@ import { useEffect, useMemo, useState } from 'react';
 interface Params {
   client: Remote<WorkerAPI> | undefined;
   pageTreeNode?: TreeNode;
+  /**
+   * Optional override used mainly for tests to force breadcrumb truncation.
+   */
+  maxBreadcrumbItems?: number;
 }
 
 const DEFAULT_MAX_BREADCRUMBS = 20;
@@ -29,9 +33,27 @@ function resolveMaxBreadcrumbs(): number {
   }
 }
 
-export function useTreeConsoleBreadcrumbs({ client, pageTreeNode }: Params): BreadcrumbNode[] {
+function normalizeMaxBreadcrumbOverride(value?: number): number | undefined {
+  if (typeof value !== 'number') {
+    return undefined;
+  }
+  if (!Number.isFinite(value)) {
+    return undefined;
+  }
+  const normalized = Math.floor(value);
+  return normalized > 3 ? normalized : undefined;
+}
+
+export function useTreeConsoleBreadcrumbs({
+  client,
+  pageTreeNode,
+  maxBreadcrumbItems,
+}: Params): BreadcrumbNode[] {
   const [breadcrumbItems, setBreadcrumbItems] = useState<BreadcrumbNode[]>([]);
-  const maxBreadcrumbItems = useMemo(() => resolveMaxBreadcrumbs(), []);
+  const resolvedMaxBreadcrumbItems = useMemo(
+    () => normalizeMaxBreadcrumbOverride(maxBreadcrumbItems) ?? resolveMaxBreadcrumbs(),
+    [maxBreadcrumbItems]
+  );
 
   useEffect(() => {
     let disposed = false;
@@ -51,8 +73,8 @@ export function useTreeConsoleBreadcrumbs({ client, pageTreeNode }: Params): Bre
           nodeType: n.nodeType,
         }));
 
-        if (nodes.length + 1 > maxBreadcrumbItems) {
-          const keepTail = Math.max(1, maxBreadcrumbItems - 3);
+        if (nodes.length + 1 > resolvedMaxBreadcrumbItems) {
+          const keepTail = Math.max(1, resolvedMaxBreadcrumbItems - 3);
           const rootNode = nodes[0];
           const tail = nodes.slice(Math.max(1, nodes.length - keepTail));
           nodes = [
@@ -89,7 +111,7 @@ export function useTreeConsoleBreadcrumbs({ client, pageTreeNode }: Params): Bre
     return () => {
       disposed = true;
     };
-  }, [client, pageTreeNode, maxBreadcrumbItems]);
+  }, [client, pageTreeNode, resolvedMaxBreadcrumbItems]);
 
   return breadcrumbItems;
 }

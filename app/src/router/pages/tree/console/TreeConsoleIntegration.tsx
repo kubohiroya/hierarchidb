@@ -10,12 +10,14 @@ import type { NodeId, NodeType, TreeId, TreeNode } from '@hierarchidb/common-typ
 import type { TreeNodeData } from '@hierarchidb/ui-treeconsole-base';
 import type { TreeConsoleToolbarActionParams } from '@hierarchidb/ui-treeconsole-toolbar';
 import { TreeConsoleToolbar } from '@hierarchidb/ui-treeconsole-toolbar';
+import { TreeConsoleBreadcrumb } from '@hierarchidb/ui-shell/ui-treeconsole-breadcrumb';
 import { Alert, Box, CircularProgress } from '@mui/material';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import type { Remote } from 'comlink';
 import { proxy as comlinkProxy } from 'comlink';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TreeConsolePanelWithDynamicSpeedDial } from './TreeConsolePanelWithDynamicSpeedDial.js';
+import { TreeNodeInfoPanel } from './TreeNodeInfoPanel.js';
 import { SubscriptionCallback, Subscriptions } from '~/services/SubscriptionServices.ts';
 import { useTreeConsoleIntegration } from '~/hooks/useTreeConsoleIntegration.ts';
 import { useWorker } from '~/contexts/WorkerProvider.tsx';
@@ -489,6 +491,8 @@ const TreeConsoleIntegrationInner: React.FC<
     pageTreeNode?.nodeType === 'trash' ||
     lowerPageNodeId.endsWith(':trash') ||
     lowerPageNodeId === 'trash';
+  const shouldRenderTreeTable =
+    !pageTreeNode || (pageTreeNode.nodeType ?? '').toLowerCase() === 'folder';
 
   // Handle loading state
   if (workerLoading) {
@@ -553,61 +557,82 @@ const TreeConsoleIntegrationInner: React.FC<
         availableTemplates={availableTemplateOptions}
       />
 
-      {/* TreeConsole Panel */}
+      {/* TreeConsole Panel / Node Info */}
       <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <TreeConsolePanelWithDynamicSpeedDial
-          treeId={treeId as TreeId}
-          workerClient={workerClient}
-          title={`Tree: ${pageTreeNode?.name || 'Root'}`}
-          pageNodeId={pageNodeId}
-          pageTreeNode={pageTreeNode}
-          data={[...treeData]}
-          nodeIndex={nodeIndex}
-          columns={columns}
-          breadcrumbItems={breadcrumbItems}
-          loading={state.loading}
-          error={state.error || undefined}
-          selectedIds={selectedIds}
-          expandedIds={expandedIds}
-          searchTerm={searchTerm}
-          sortBy={state.sortBy}
-          sortDirection={state.sortDirection}
-          filterBy={state.filterBy}
-          availableFilters={state.availableFilters}
-          viewMode={viewMode}
-          rowClickAction={rowClickAction}
-          canCreate={canCreate}
-          canEdit={canEdit}
-          canTrash={canTrash}
-          showNavigationButtons={true}
-          dense={false}
-          onNodeClick={actions.handleNodeClick}
-          onNodeSelect={actions.handleNodeSelect}
-          onNodeExpand={actions.handleNodeExpand}
-          onSearchChange={actions.handleSearchChange}
-          onSearchClear={actions.handleSearchClear}
-          onCreate={actions.handleCreate}
-          onEdit={actions.handleEdit}
-          onDelete={actions.handleTrash}
-          onRefresh={actions.handleRefresh}
-          onExpandAll={actions.handleExpandAll}
-          onCollapseAll={actions.handleCollapseAll}
-          onSort={actions.handleSort}
-          onFilterChange={actions.handleFilterChange}
-          onViewModeChange={actions.handleViewModeChange}
-          onBreadcrumbNavigate={actions.handleBreadcrumbNavigate}
-          onNavigateBack={actions.handleNavigateBack}
-          onNavigateForward={actions.handleNavigateForward}
-          canGoBack={state.canGoBack}
-          canGoForward={state.canGoForward}
-          onContextMenuAction={handleContextMenuAction}
-          onBreadcrumbContextAction={handleBreadcrumbContextAction}
-          onMoveNodes={actions.handleMoveNodes}
-          useTrashColumns={isTrashPage}
-          speedDialSuppressed={speedDialSuppressed}
-          setSpeedDialSuppressed={setSpeedDialSuppressed}
-          isDialogRoute={isDialogRoute}
-        />
+        {shouldRenderTreeTable ? (
+          <TreeConsolePanelWithDynamicSpeedDial
+            treeId={treeId as TreeId}
+            workerClient={workerClient}
+            title={`Tree: ${pageTreeNode?.name || 'Root'}`}
+            pageNodeId={pageNodeId}
+            pageTreeNode={pageTreeNode}
+            data={[...treeData]}
+            nodeIndex={nodeIndex}
+            columns={columns}
+            breadcrumbItems={breadcrumbItems}
+            loading={state.loading}
+            error={state.error || undefined}
+            selectedIds={selectedIds}
+            expandedIds={expandedIds}
+            searchTerm={searchTerm}
+            sortBy={state.sortBy}
+            sortDirection={state.sortDirection}
+            filterBy={state.filterBy}
+            availableFilters={state.availableFilters}
+            viewMode={viewMode}
+            rowClickAction={rowClickAction}
+            canCreate={canCreate}
+            canEdit={canEdit}
+            canTrash={canTrash}
+            showNavigationButtons={true}
+            dense={false}
+            onNodeClick={actions.handleNodeClick}
+            onNodeSelect={actions.handleNodeSelect}
+            onNodeExpand={actions.handleNodeExpand}
+            onSearchChange={actions.handleSearchChange}
+            onSearchClear={actions.handleSearchClear}
+            onCreate={actions.handleCreate}
+            onEdit={actions.handleEdit}
+            onDelete={actions.handleTrash}
+            onRefresh={actions.handleRefresh}
+            onExpandAll={actions.handleExpandAll}
+            onCollapseAll={actions.handleCollapseAll}
+            onSort={actions.handleSort}
+            onFilterChange={actions.handleFilterChange}
+            onViewModeChange={actions.handleViewModeChange}
+            onBreadcrumbNavigate={actions.handleBreadcrumbNavigate}
+            onNavigateBack={actions.handleNavigateBack}
+            onNavigateForward={actions.handleNavigateForward}
+            canGoBack={state.canGoBack}
+            canGoForward={state.canGoForward}
+            onContextMenuAction={handleContextMenuAction}
+            onBreadcrumbContextAction={handleBreadcrumbContextAction}
+            onMoveNodes={actions.handleMoveNodes}
+            useTrashColumns={isTrashPage}
+            speedDialSuppressed={speedDialSuppressed}
+            setSpeedDialSuppressed={setSpeedDialSuppressed}
+            isDialogRoute={isDialogRoute}
+          />
+        ) : (
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <TreeConsoleBreadcrumb
+              nodePath={breadcrumbItems}
+              onNodeClick={actions.handleBreadcrumbNavigate}
+              treeId={treeId}
+              pageNodeId={pageNodeId}
+              useTrashColumns={isTrashPage}
+              iconInteractive={!isTrashPage}
+              onContextAction={handleBreadcrumbContextAction}
+            />
+            <Box sx={{ flex: 1, minHeight: 0 }}>
+              <TreeNodeInfoPanel
+                treeId={treeId as TreeId | undefined}
+                node={pageTreeNode}
+                onContextMenuAction={handleContextMenuAction}
+              />
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
   );

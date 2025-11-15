@@ -53,6 +53,21 @@
 
 ### Doing（進行中） <a id="kanban-doing"></a>
 
+1284) TreeConsole Breadcrumb ルート表示修正（P0）
+- ブランチ: `fix/ui-treeconsole/breadcrumb-root`（sandbox 制約で `main` 上で作業）
+- 依存: `packages/ui/treeconsole/breadcrumb`, `packages/ui/treeconsole/base`, `app/src/components/TreeConsoleIntegration.tsx`, `app/src/hooks/treeconsole/**/*`
+- 受け入れ基準（DoD）:
+  - [x] `TASKS.md` の Kanban／運用ログへ start→progress→done を記録し、ロールバック手順を明記する
+  - [x] TreeConsole breadcrumb の表示仕様（ルート Resources の固定表示、省略ルール、ディレクトリ階層の取り扱い）を明文化したユニットテストを追加し、期待挙動を網羅する
+  - [x] テストで明確にした仕様に沿うよう `TreeConsoleBreadcrumb`（および関連ロジック）を修正し、Resources ルートおよび中間ノードが意図せず省略されないことを確認する
+  - [x] `pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck && pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb test` を実行して green を確認し、必要に応じて `pnpm -C app typecheck` も実行してログに記録する
+- チェックリスト:
+  - [x] Breadcrumb の短縮/展開条件を整理し、ルート固定・省略対象・多階層ケースを含むテストケースを設計する
+  - [x] `packages/ui/treeconsole/breadcrumb` 直下に表示ルールを検証するテストを追加し、`TreeConsoleBreadcrumb` もしくはそのビルダーの期待レンダリングを確認する
+  - [x] 実装を修正し、Resources ルートと中間階層が常に仕様通りに表示されるようにする
+  - [x] 必要なコマンド（typecheck/test）を実行し、結果を運用ログに追記する
+- ロールバック手順：`packages/ui/treeconsole/breadcrumb` と関連する `app/src` の差分を revert し、`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb test` を再実行して現状挙動へ戻ることを確認する
+
 
 303) TreeConsole Folder Undo エラー修正（P0）
 - ブランチ: `fix/ui-treeconsole/folder-undo-error`（sandbox 制約で `main` 上で作業）
@@ -81,6 +96,22 @@
  - [ ] loader.ts の `retryComlinkCall` / 戻り値処理を新 API に合わせて整理し、必要に応じてコメントで用途を補足する
   - [ ] 影響範囲を軽く grep して同様のパターンがないか確認し、必要に応じて TODO を残す
  - ロールバック手順：追加したハンドル API と loader.ts の変更を revert し、旧二重 `loadWorkerAPIClient()` 呼び出し構成へ戻す
+
+
+1204) AGENTS.md ツールチェーン更新反映（P1）
+- ブランチ: `chore/docs/agents-tsdown-update`（sandbox 制約で `main` 上で作業）
+- 依存: `AGENTS.md`, `docs/turbo-tsdown-migration-plan.md`, `tsdown.config.ts`, `TASKS.md`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログに start/progress/done を記録し、ロールバック手順を明記する
+  - [ ] `tsup` から `tsdown` へ移行済みであること、root `tsdown.config.ts` に統一している点、Turbo 経由の build/typecheck の取り扱いを AGENTS.md に反映する
+  - [ ] 依存タスク順序や dist 保持方針の記述が tsdown 前提に更新され、旧 `tsup` 前提の記述が残らない
+  - [ ] ロールバック（AGENTS.md と TASKS ログ差分の revert）手順と自己レビュー結果をログへ記録する
+- チェックリスト:
+  - [ ] `docs/turbo-tsdown-migration-plan.md` と `tsdown.config.ts` の要点を確認し、反映箇所を整理する
+  - [ ] AGENTS.md 内の `tsup` 記述を棚卸しし、必要に応じて削除 or tsdown 情報へ置換する
+  - [ ] tsdown 特有の `external`/`transform`/`clean:false` などの扱いと Turbo 連携ポリシーを明文化する
+  - [ ] ロールバック手順と影響範囲（ドキュメントのみ）を TASKS 運用ログで共有する
+- ロールバック手順：`AGENTS.md` と本タスクで更新した `TASKS.md` の差分を revert し、旧 tsup 記述を復元した上で `docs/turbo-tsdown-migration-plan.md` を参照して再検討する
 
 
 910) plugin-registry stage worker 解決フロー修正（P0）
@@ -7852,6 +7883,29 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-05 16:32 blocked: pnpm --filter @hierarchidb/app build — exit 1。sandbox で `tsx scripts/generate-favicon.ts` が IPC パイプを開けず EPERM のまま（再現ログあり）。ビルド自体は未検証・ログ済み。
 - 2025-11-05 13:34 start: fix/ui/home-progress-i18n — トップページ初回アクセス時の進捗メッセージが英語選択でも日本語固定になる不具合を調査・修正開始。DoD: i18n 辞書整備、Home コンポーネントでの `t()` 適用、手動確認ログ、ロールバック記載。
 - 2025-11-05 13:35 blocked: fix/ui/home-progress-i18n — `git checkout -b fix/ui/home-progress-i18n` が `.git/refs/heads/...` への書き込み不可で失敗。sandbox 制約のため既存 `main` ブランチ上で作業継続。
+
+## 今日の着手（運用ログ） <a id="worklog-13"></a>
+
+- 2025-11-15 15:16 start: chore/docs/agents-tsdown-update — AGENTS.md に tsdown 移行後の手順（root tsdown.config.ts, Turbo 連携, `tsup` 記述整理）を反映するタスクを開始。DoD: Kanban/ログ更新、tsdown 前提のビルドフロー記述、旧 tsup 記述の除去、ロールバック記述と自己レビューを完了する。
+- 2025-11-15 15:20 start: feat/ui-treeconsole/node-info-panel — TreeConsole で Folder 以外の pageNode を表示する際に TreeNodeInfoPanel を描画する実装へ着手。DoD: (1) Folder/Trash/Root 系は従来通り TreeTableCore を維持、(2) それ以外はアイコン→名前→説明→作成/更新日時→Edit/Play ボタンの順で縦配置する InfoPanel を追加、(3) アイコン/ボタンから既存の ContextMenu/Edit/Preview アクションを呼び出せるよう配線、(4) `pnpm --filter @hierarchidb/app typecheck` 成功ログとロールバック手順（変更ファイル revert）を運用ログへ記録。
+- 2025-11-15 15:23 progress: chore/docs/agents-tsdown-update — Kanban にタスクを追加し、tsdown 周辺の現状把握（`tsdown.config.ts`, `docs/turbo-tsdown-migration-plan.md`, `@hierarchidb/runtime-worker/package.json` など）を棚卸し。AGENTS.md の Turbo セクション／Agent Workflow セクションで tsup 依存の残骸を特定。
+- 2025-11-15 15:32 blocked: feat/ui-treeconsole/node-info-panel — `pnpm --filter @hierarchidb/app typecheck` exit 1。`TreeNodeInfoPanel` 追加に伴い `@hierarchidb/ui-treeconsole-breadcrumb` 参照解決不可・MUI Button の `aria-label` 型が `DefaultTFuncReturn` で不一致 (tsc TS2307/TS2769)。UI-shell の再エクスポートと翻訳 helper で string に収束させる修正を継続中。
+- 2025-11-15 15:38 command: pnpm --filter @hierarchidb/app typecheck — exit 0。`TreeNodeInfoPanel` で `@hierarchidb/ui-shell/ui-treeconsole-breadcrumb` を参照し、翻訳 helper で `aria-label` を string 化したことで tsc の TS2307/TS2769 が解消されたことを確認。
+- 2025-11-15 15:24 done: chore/docs/agents-tsdown-update — AGENTS.md に tsdown 導入後の運用（root config の external/clean:false, `pnpm --filter <pkg> build` による tsdown 実行, `tsup` 廃止/ロールバック手順）を追記し、依存タスク順序ポリシーも `tsdown` 前提へ更新。ドキュメントのみの変更につき追加コマンド実行なし。
+- 2025-11-15 15:45 progress: feat/ui-treeconsole/node-info-panel — Folder 以外のページで Breadcrumb が消える不具合を `TreeConsoleIntegration` の info panel 分岐にも `TreeConsoleBreadcrumb` を描画することで解消。`TreeNodeInfoPanel` からの Edit/Play が `effectiveAction`/nodeType を欠落させていたため、context アクションで渡すノード情報を `openEditDialog` へ引き渡し、`loadNodeAction`/`PluginDialogRoute` 側で `action=edit` を NodeAction.UPDATE として解釈するよう修正。
+- 2025-11-15 15:46 command: pnpm -C app test -- createTreeConsoleActions — exit 0。TreeConsole action factory のユニットテストで info panel 向け edit ハンドリングの回帰がないことを確認。
+- 2025-11-15 15:46 command: pnpm -C app test -- load-tree-router-handlers — exit 0。Router loader が `action=edit` を UPDATE として扱うルートのユニットテストを通過。
+- 2025-11-15 15:47 done: feat/ui-treeconsole/node-info-panel — Breadcrumb 常時表示と PluginDialogRoute 修正を反映済み。ロールバックは `TreeConsoleIntegration.tsx`, `TreeNodeInfoPanel.tsx`, `createTreeConsoleActions.ts`, `app/src/loader.ts`, `app/src/router/routes/tree/PluginDialogRoute.tsx`, `app/src/router/loaders/__tests__/unit/...` 差分を revert し、上記テストコマンドを再実行する。
+- 2025-11-15 16:01 progress: feat/ui-treeconsole/node-info-panel — TreeNodeInfoPanel の NodeTypeIcon が常に primary 色になる問題を、`getPluginIconColor`/`rainbowColors` ベースの既存ロジックを流用して解消。`nodeType` に応じて manifest 色または depth 依存グラデーションを反映し、Breadcrumb や TreeTable と同じ色決定が行われるようにした（テストコマンドは未実行、UI 変更のみ）。
+- 2025-11-15 16:10 start: fix/ui-treeconsole/breadcrumb-root — TreeConsole Breadcrumb でルート Resources や中間階層が省略／短縮される不具合を再現し、仕様をテストで明文化しながら修正するタスクを開始。DoD: Kanban/ログの更新、表示ルールを網羅する詳細テストの追加、`TreeConsoleBreadcrumb` 実装修正、`pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck && test`（必要に応じて `pnpm -C app typecheck`）の成功ログ取得、ロールバック手順の明記。
+- 2025-11-15 16:21 progress: fix/ui-treeconsole/breadcrumb-root — `useTreeConsoleBreadcrumbs` に maxBreadcrumbItems override を追加し、ルート固定・省略ルールを検証するユニットテストを新設。`TreeQueryService.listAncestors` の親更新ロジックを修正して欠落していた Resources ルートと中間フォルダを確実に返すようにし、breadcrumb 仕様に沿う挙動を確認した。
+- 2025-11-15 16:24 command: pnpm -C app test -- --run useTreeConsoleBreadcrumbs — exit 0。root 固定と ellipsis 仕様を検証する新規テスト 2 件が通過（微修正後に再実行しても green）。
+- 2025-11-15 16:21 command: pnpm --filter @hierarchidb/runtime-worker test -- --run tree-query.listAncestors — exit 0。`listAncestors` の多段ケース/偶数深度/ルートの 3 ケースがグリーン。
+- 2025-11-15 16:22 command: pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb typecheck — exit 0（対象パッケージに typecheck スクリプトがなく、skip メッセージのみ出力）。
+- 2025-11-15 16:22 command: pnpm --filter @hierarchidb/ui-treeconsole-breadcrumb test — exit 0。
+- 2025-11-15 16:23 blocked: pnpm -C app typecheck — exit 1。`@hierarchidb/ui-theme` の path alias が app/tsconfig.json に未定義で、`TreeNodeInfoPanel.tsx` で TS2307 が発生したため alias を追加して再実行する。
+- 2025-11-15 16:25 command: pnpm -C app typecheck — exit 0。`app/tsconfig.json` に `@hierarchidb/ui-theme` の paths を追記し、TS2307 を解消。
+- 2025-11-15 16:26 command: pnpm -C app typecheck — exit 0。breadcrumb テストのフォーマット調整後も typecheck が維持されることを確認。
 
 ## 今日の着手（運用ログ） <a id="worklog-12"></a>
 

@@ -76,6 +76,12 @@
       "@hierarchidb/ui-csv-extract/*": [
         "../packages/ui/tabular-extract/src/*"
       ],
+      "@hierarchidb/ui-theme": [
+        "../packages/ui/theme/src/index.ts"
+      ],
+      "@hierarchidb/ui-theme/*": [
+        "../packages/ui/theme/src/*"
+      ],
       "@hierarchidb/ui-map": [
         "../packages/ui/map/src/index.ts"
       ],

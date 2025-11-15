@@ -1,7 +1,21 @@
 # Repository Guidelines
 
+# Language
+
+- ユーザーのとの会話は原則として日本語で行う。
+- ソースコードのコメントおよびドキュメントは英語で記述する。
+- TASKS.mdは日本語で記述する。
+- そのほか、ユーザーが特に求めた場合にはドキュメントは日本語版を作成してもよいものとする。
+
 ## Project Structure & Module Organization
 The workspace relies on `pnpm`. `app/` contains the main UI, with shared documentation in `app/docs/`. Core libraries live in `packages/` (runtime services, UI components, tooling), feature plugins in `plugins/`, and shared assets inside `docs/`, `reports/`, or package-level `dist/`. Tests are colocated: unit suites in `packages/*/src/__tests__/`, worker flows in `packages/runtime-worker/src/__tests__/wfl/`, and Playwright smoke tests in `e2e/`.
+
+- **モノレポ構成の現況（2025-11 調査メモ）**
+  - `app/` は React + Vite シェルとドキュメント (`app/docs/`) に加えて、プラグイン定義をローディングする `app/src/plugin-registry` や Worker エントリ (`app/src/worker-runtime/worker.ts`) を内包し、UI から Worker までを 1 つのパッケージで束ねている。`plugin-registry/index.ts` は `@hierarchidb/plugin-registry` が提供する `pluginRegistry` を `import.meta.glob` で解決し、UI/Worker/Icon ローダーを同時に export する。
+  - `packages/runtime`（UI/Worker 共有 API 群）・`packages/runtime-worker`（DI+Comlink で Worker サービスを構築）を頂点に、`packages/plugin-service-sdk`（`getWorkerBridge()` と WorkerProvider 連携）、`packages/plugin-ui-host`（MultiStep dialog + `useWorkerSync`）、`packages/plugin-base`（共通エンティティハンドラ）、`packages/plugin-runtime-services` / `plugin-service-api` / `plugin-ui-sdk` などが UI と Worker の橋渡しを担う。
+  - `packages/plugin-registry` と `pnpm tools:gen-plugin-registry`（`package.json` script）が `plugins/*-plugin` 配下の `hierarchidb.plugin` メタデータ・Dexie schema・UI/Worker エントリパスを集計し、`pluginRegistry`/`pluginDefinitions` を dist・`app/src/plugin-registry` 双方へ同期する。新規プラグイン追加時は Kanban/TASKS.md と同時にこのコマンドを実行する。
+  - `plugins/` 直下には folder/location/shape/... の各ノードタイプが pnpm パッケージとして存在し、`src/{ui,worker,shared,icon}` と Dexie schema を同居させる（`plugins/README.md` の比較表・3 層図を参照）。`package.json` の `turbo.pipeline` で `@hierarchidb/plugin-base` や runtime への `build` 依存を宣言し、`dist/` の `clean: false` 前提で再ビルドを最小化する。
+  - `config/` は Feature Flag や Turbo パイプライン (pipeline) の実行順、`scripts/env/*.sh` は dev/build で読み込む環境変数を保持。`docs/` と `app/docs/` はアーキテクチャ設計、Worker 初期化、プラグイン実装ガイドの一次情報。
 
 - **TypeScript path & references policy (2025-10-21, NodeNext 対応版)**
   - ルートの `tsconfig.base.json` に、ワークスペース alias（例: `@hierarchidb/foo`）を **必ず `src/` 指向で** 定義する。`dist/` 参照は登録しない。
@@ -9,6 +23,38 @@ The workspace relies on `pnpm`. `app/` contains the main UI, with shared documen
   - `tsconfig.build.json` では `paths` を空（もしくは最小限）に保ち、代わりに `references` で依存パッケージ（例: `../common/types/tsconfig.build.json`）を明示する。`tsc -b` で依存先の型出力を先に生成し、NodeNext の解決規約に従ってビルド順を保証する。
   - NodeNext では未生成の `dist/*.d.ts` を `paths` で直接指すと TS7016/TS6305 が即座に発生するため、**build 依存は project references に一本化** する。どうしても暫定で相対パスを追加する場合は、TASKS 運用ログに理由と撤去予定を記録すること。
   - Turbo 側は従来同様 `dependsOn: ['^build:types']` を設定しつつ、`pnpm typecheck:graph` が NodeNext モードでグリーンになることを DoD とする。必要に応じて `npx tsc -b` で依存チェーンの `.d.ts` を明示的に更新する。
+
+## プラグイン機構と UI ↔ Worker API
+
+- **Registry & Loader**
+  - 各プラグインは `package.json` の `hierarchidb.plugin` セクション（例: `plugins/shape-plugin/package.json`）に nodeType・Dexie DB・UI/Worker 入口・依存関係を宣言し、`@hierarchidb/plugin-registry` が `PluginDefinition` / `PluginRegistryEntry` へ変換する。`tools:gen-plugin-registry` 完了後、UI/Worker は同一の JSON を参照するためロード順・依存解決が揃う。
+  - `app/src/plugin-registry/index.ts` はその定義から `pluginDefinitions`・`pluginUi/Worker/IconLoaders`・`pluginDatabaseLoaders` を導出し、`import.meta.glob('../../../plugins/*-plugin/src/**/index.{ts,tsx}')` で遅延 import 可能なファクトリとして公開する。UI のメニュー構築や Dialog 拡張登録はこのモジュール経由で行う。
+  - Worker 起動処理（`app/src/worker-runtime/worker.ts`）は `WorkerInitializationReporter` → `pluginWorkerLoaders` → `@hierarchidb/runtime-worker` の `WorkerModuleLoader` → `wirePluginsFromModules` の順でモジュールを読み込み、deny-list / fallback / legacy defs もここで処理する。結果として `getAllRuntimeExports()` から lifecycle/handler を抽出し、プラグイン定義へ差し戻す。
+
+- **UI レイヤ（`@hierarchidb/plugin-ui-host` / `plugin-ui-sdk`）**
+  - `packages/plugin-ui-host/docs/ARCHITECTURE.md` の MultiStep ダイアログが UI のコア。Jotai Atom (`workingCopyAtom`, `dialogStateAtom`, `validationResultsAtom`, `stepCapabilitiesAtom`) と `useWorkerSync` が 100ms デバウンスの Comlink RPC をラップし、`StepCapabilities`（`canNavigateTo`/`canStartBatch` 等）をプラグインごとに合成する。
+  - EphemeralDB（Worker 側 Dexie）がワーキングコピーの唯一の永続層であり、UI では URL Query でステップ位置を保持、Jotai でリアクティブな状態管理を行う。`plugins/README.md` の 3 層アーキ図にある通り、UI ↔ Worker 間は Comlink + MessageChannel の RPC のみを使用し、プレビューや Progress 表示は `WorkerBridge` を経由する。
+
+- **Worker レイヤ（`@hierarchidb/runtime-worker` / `plugin-service-sdk` / `plugin-runtime-services`）**
+  - `packages/plugin-service-sdk/src/worker/bridge.ts` の `getWorkerBridge()` は `window.__HDB_WORKER_CLIENT_REF__`（`WorkerProvider` が注入）の Remote を捕捉し、`startBatchSession`/`getBatchSessionStatus`/`pause`/`resume`/`cancel`/`subscribeBatchProgress` を UI に提供する。`plugins/location-plugin/src/common/hooks/useLocationProgress.ts` 等の hook はこの Bridge を介して進捗イベントを購読する。
+  - `@hierarchidb/runtime-worker` は IoC コンテナ (`WorkerDiTokens`) で Plugin loader を DI し、`PluginWorkerModuleLoader` が Dexie ストア登録や `register<Plugin>WorkerStores` 呼び出しを担う。`@hierarchidb/runtime-client` の `wirePluginsFromModules` が EntityHandler/Lifecycle hook を登録し、Undo/Redo・Import/Export・WorkingCopy API を 1 か所で公開する。
+  - バッチ処理は `@hierarchidb/plugin-runtime-services` の `AbstractBatchSession` + Download アダプタを共有することで shape/location/route 等で実装が共通化されており、`plugins/README.md` Runtime Worker Factory セクションの `register<Plugin>WorkerStores` / `load<Plugin>EntitiesDbModule` が UI 起動前に呼び出される。
+
+## Turbo ベースの開発・ビルド・型チェックフロー
+
+- `turbo.json` は `build`/`test`/`typecheck`/`lint`/`format`/`dev`/`preview`/`e2e`/`wfl` を定義し、`^` 接頭辞で親タスクの build/type 出力を保証する。`typecheck` は `^build` + `^typecheck` に依存し、`wfl` は Worker Flow Lab のレポートを `reports/runtime-worker/*.xml` に出力する設定。
+- `pnpm dev` は `dev:pre`（`guard:deps:extra` → optional dep-fence → `dev:ensure-plugin-alias`）の後に `scripts/env/development.sh` / `app/.env.secrets` を読み込み、`pnpm --filter @hierarchidb/app dev` を起動する。`pnpm dev:with-watch`（`scripts/run-dev-with-turbo-watch.mjs`）は `turbo run build --filter @hierarchidb/app^... --watch` と UI dev server を並列実行し、片方の停止時に両方へ SIGINT を送ってクリーンに終了させる。
+- `pnpm build` は `build:pre` で favicon 生成・dep-fence・ライセンス・TS config policy・`pnpm as-any:check`・`pnpm lint` を通した後、`build:start` で `scripts/env/production.sh` を読み込み `pnpm build:turbo`（=`turbo run build`）を実行する。`pnpm preview`/`pnpm e2e` も turbo タスクをラップし、`preview`・`e2e` は `build` 依存に設定済み。
+- `pnpm typecheck` / `pnpm typecheck:ci` / `pnpm test` は turbo タスクを全パッケージにブロードキャストし、CI では `NODE_OPTIONS="--max-old-space-size=4096"` などメモリ制限を付与する。プラグイン単位の検証は `pnpm --filter @hierarchidb/<plugin> typecheck|test` または `pnpm build:plugins`（代表的なプラグインだけを turbo build）で対応。
+- プラグイン各社の `package.json` で宣言している `turbo.pipeline.build.dependsOn`（例: `@hierarchidb/plugin-base#build`）に合わせ、**tsdown を唯一のバンドラ**として扱う。root `tsdown.config.ts` が `clean: false` と共通 `external`（dependencies/peer/optional）を注入するため、個別パッケージで `tsup` を再導入しないこと。依存 `.d.ts` が古い場合は `pnpm --filter <pkg> build` や `npx tsc -b` を TASKS.md のチェックリストに追加し、Turbo キャッシュは `pnpm clean && turbo run clean` で明示的に破棄する。
+- プラグインメタデータを変更したら `pnpm tools:gen-plugin-registry` → `pnpm lint && pnpm typecheck` → `pnpm dev`（または `pnpm preview`）の順で検証し、UI メニューと Worker モジュールが同じ `pluginDefinitions` を参照しているか（`app/src/plugin-registry` と `@hierarchidb/plugin-registry` dist）を確認する。
+
+### tsdown ベースのバンドルポリシー
+
+- 2025-11 以降、ライブラリ/プラグインの `build` スクリプトはすべて `tsdown … --config ../../../tsdown.config.ts` へ移行済み。`tsup.config.*` や `tsup` CLI の呼び出しが残っていたらレガシー扱いとし、差分に触れたタイミングで撤去する。`pnpm --filter <pkg> build` が唯一のビルド導線であることを前提に作業する。
+- ルートの `tsdown.config.ts` は `dependencies`/`peerDependencies`/`optionalDependencies` をまとめて `external` に追加し、`clean: false`・`sourcemap: true`・`dts: true`・`outExtension` 固定（`.js`/`.d.ts`）を共通設定として注入する。パッケージ固有の override は `package.json` の `tsdown` セクションで行い、`define`/`inject` を指定したい場合は config が自動的に `transform` にマージされる。必要なら `TSDOWN_DEBUG=1 pnpm --filter <pkg> build` で最終設定を出力して確認する。
+- 複数エントリーポイントを持つパッケージは tsdown CLI の引数で明示的に列挙し（例: `tsdown src/index.ts src/stageWorker.entry.ts --config …`）、`dist/` を共有する構成に統一する。`dist` を温存したい理由（ウォームスタートや Dexie schema の比較など）があるため、`clean: false` を維持し、クリーンビルドが必要な場合のみ `pnpm clean && turbo run clean` を使用する。
+- `tsdown` でのビルドが失敗した場合は TASKS 運用ログへコマンド・終了コード・ログ概要を貼り付け、必要に応じて tsdown 導入前のコミットへ revert して `tsup` スクリプトを一時復旧する。その際もロールバック手順と再適用計画（再移行 TODO）を Kanban/ログに追記する。
 
 ## Build, Test, and Development Commands
 - `pnpm install --frozen-lockfile` – sync dependencies before editing.
@@ -30,14 +76,18 @@ Use `TASKS.md` as the single source of truth: move cards to Doing, note branches
 ## Agent Workflow Notes
 Work in small, reviewable increments. Document sandbox blockers and attempted alternatives in `TASKS.md`, and never modify code without updating the Kanban and 運用ログ. Prioritise reversibility—capture config edits, migrations, and generated assets so a flag toggle or revert restores prior behaviour quickly.
 
-### 失敗例（再発防止メモ）
-- 2025-10-20: `@hierarchidb/batch-types` の型ビルドで `packages/features/batch/dist/index.d.ts` を生成せずに `api-extractor` を実行し、依存宣言だけ変更した時点で検証を怠ったため、ユーザー環境ではエラーが継続した。**教訓**: 依存パッケージのビルド有無を CLI で再現確認してから完了報告すること。必要であれば `prebuild:*` スクリプトなどで明示的に依存ビルドを組み込み、Turbo 以外の単独実行でも成功するよう担保する。
-
 ### 作業プロセスの自己ルール
 - **DoD 提案義務**: ユーザーからタスク指示を受けるたびに、着手前に自分から DoD（受け入れ基準）を箇条書きで提案し、ユーザーの了承を得てから作業を開始する。承認前にタスクを進めない。
 - **検証の明示**: 作業完了と主張する際は、成功ログ（コマンド名・終了コード・出力要点）を提示し、未検証の項目があれば理由と今後の案を記載する。
 - **指示再確認**: 重要な指示（初期プロンプト、TASKS.md、個別依頼）は作業前に読み返し、回答直前にも遵守確認を行う。
 - **疑義エスカレーション**: 不明点や仮定を伴う判断が必要な場合は、独断で決定せずにユーザーへ必ず確認を取る。
-- **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。runtime/plugin など別パッケージの `.d.ts` に依存する場合は、明示的に `pipeline.build(:types|:bundle)` を設定し、`prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先行実行する。`tsup` は必要に応じて `clean: false` に設定し、生成済み dist を保持する。
-- **依存タスクの順序制御**: 他パッケージの `.d.ts` を参照するビルドでは、依存先の `build` / `build:types` / `build:bundle` を Turbo で明示し、必要に応じて `prebuild:*` で `pnpm --filter <pkg> build[:types|:bundle]` を実行してから自パッケージの `tsc`/`tsup` を呼び出す。`tsup` が `dist/` を clean しないようにする（`clean: false`）ことも忘れない。
-- **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。`@hierarchidb/*` の `.d.ts` を使うプラグインは、Turbo の `pipeline` や `prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先に呼び出し、さらに `tsup` は `clean: false` に設定して dist を消さないこと。
+- **依存タスクの順序制御**: Turbo は同名タスク間でのみ順序保証される。runtime/plugin など別パッケージの `.d.ts` に依存する場合は、明示的に `pipeline.build(:types|:bundle)` を設定し、`prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先行実行する。`tsdown` は root config で `clean: false` を強制しているため、個別パッケージで `clean` を上書きしない。
+- **依存タスクの順序制御**: 他パッケージの `.d.ts` を参照するビルドでは、依存先の `build` / `build:types` / `build:bundle` を Turbo で明示し、必要に応じて `prebuild:*` で `pnpm --filter <pkg> build[:types|:bundle]` を実行してから自パッケージの `tsc`/`tsdown` を呼び出す。`tsup` 系のスクリプトは廃止済みであることを常に意識する。
+- **依存タスクの順序制御**: `@hierarchidb/*` の `.d.ts` を使うプラグインは、Turbo の `pipeline` や `prebuild:*` で `pnpm --filter <pkg> build(:types|:bundle)` を先に呼び出し、その後に `tsdown` を起動する。dist を消したい場合は明示的に `pnpm clean` 系のタスクを実行し、`tsdown` へ `clean:true` を渡さない。
+
+## メンテナンス_ポリシー（Maintenance policy）
+
+- 会話の中で繰り返し指示されたことがある場合は反映を検討すること
+- 冗長だったり、圧縮の余地がある箇所を検討すること
+- 簡潔でありながら密度の濃い文書にすること
+- 

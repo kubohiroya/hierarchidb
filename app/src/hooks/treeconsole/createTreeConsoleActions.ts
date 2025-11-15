@@ -200,17 +200,20 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
     }
   };
 
-  const openEditDialog = async (targetNodeId: NodeId) => {
+  const openEditDialog = async (targetNodeId: NodeId, nodeHint?: TreeNodeData | TreeNode) => {
     if (!client || !pushPath || !treeId) {
       return;
     }
 
     const nodeIndex = ssot.nodeIndex ?? new DualKeyMap<NodeId, NodeId, TreeNode>();
     const nodeRecord = nodeIndex.get(targetNodeId);
-    const recordType =
+    const hintedType =
       (nodeRecord as { nodeType?: string; type?: string } | undefined)?.nodeType ??
-      (nodeRecord as { type?: string } | undefined)?.type;
-    const nodeType = String(recordType ?? 'folder');
+      (nodeRecord as { type?: string } | undefined)?.type ??
+      (nodeHint as { nodeType?: string } | undefined)?.nodeType ??
+      (nodeHint as { type?: string } | undefined)?.type ??
+      (pageTreeNode && pageTreeNode.id === targetNodeId ? pageTreeNode.nodeType : undefined);
+    const nodeType = String(hintedType ?? 'folder');
 
     await preconnectPluginServices(nodeType).catch(() => {});
 
@@ -232,9 +235,13 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
       const workingCopyId = (workingCopy.id as NodeId) ?? targetNodeId;
 
+      const hintedParent =
+        nodeRecord?.parentId ??
+        (nodeHint as { parentId?: NodeId | null } | undefined)?.parentId ??
+        (pageTreeNode && pageTreeNode.id === targetNodeId ? pageTreeNode.parentId : undefined);
       const parentForRoute: NodeId = (() => {
         if (pageNodeId) return pageNodeId as NodeId;
-        if (nodeRecord?.parentId) return nodeRecord.parentId as NodeId;
+        if (hintedParent) return hintedParent as NodeId;
         return targetNodeId;
       })();
 
@@ -468,7 +475,7 @@ export function createTreeConsoleActions(deps: TreeConsoleActionDeps): TreeConso
 
       if (normalizedAction === 'edit') {
         setSSOT({ selectedIds: [targetNodeId] });
-        await openEditDialog(targetNodeId);
+        await openEditDialog(targetNodeId, node);
         return;
       }
 

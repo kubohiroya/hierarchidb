@@ -217,6 +217,8 @@ function toNodeAction(value: string | undefined): NodeAction | undefined {
     case NodeAction.RESTORE:
     case NodeAction.DISCARD:
       return value;
+    case 'edit':
+      return NodeAction.UPDATE;
     default:
       return undefined;
   }

@@ -178,7 +178,7 @@ describe('console Loaders for TanStack Router', () => {
         targetNodeId: 'target123' as NodeId,
         targetNode: createTreeNode({ id: 'target123' as NodeId }),
         nodeType: 'folder' as NodeType,
-        action: 'edit' as unknown as NodeAction,
+        action: 'update' as NodeAction,
       } satisfies LoadNodeActionReturn);
 
       const result = await loadNodeAction({
@@ -189,7 +189,7 @@ describe('console Loaders for TanStack Router', () => {
         action: 'edit',
       });
       expect(result).toHaveProperty('action');
-      expect(result.action).toBe('edit');
+      expect(result.action).toBe('update');
     });
   });
 });

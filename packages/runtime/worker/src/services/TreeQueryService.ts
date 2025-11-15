@@ -146,7 +146,7 @@ export class TreeQueryService implements TreeQueryAPI {
       if (!parent) break;
 
       ancestors.unshift(parent); // Add to beginning to get root-first order
-      currentNodeId = parent.parentId;
+      currentNodeId = parent.id as NodeId;
     }
 
     return ancestors;

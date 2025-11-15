@@ -422,7 +422,8 @@ export async function loadNodeAction({
 
 function normalizeNodeAction(action: string | undefined): NodeAction | undefined {
   if (!action) return undefined;
-  const candidate = action as NodeAction;
+  const normalized = action === 'edit' ? NodeAction.UPDATE : action;
+  const candidate = normalized as NodeAction;
   if ((Object.values(NodeAction) as readonly string[]).includes(candidate)) {
     return candidate;
   }
