@@ -1,1 +1,0 @@
-import{loadRouteEntitiesDbModule as e,registerRouteWorkerStores as o}from"./index-CTId52bU.js";const r=Object.freeze(Object.defineProperty({__proto__:null,loadRouteEntitiesDbModule:e,registerRouteWorkerStores:o},Symbol.toStringTag,{value:"Module"}));export{r as i};
