@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
+import * as path from 'node:path';
 
 const originalWarn = console.warn;
 console.warn = (...args) => {
@@ -83,6 +83,11 @@ if (typeof rawOutExtension === 'string') {
   normalizedOutExtension = () => ({ js: rawOutExtension });
 }
 
+const defaultOutExtension = () => ({
+  js: '.js',
+  dts: '.d.ts',
+});
+
 const baseConfig = {
   name: pkg.name,
   format: ['esm'] as const,
@@ -92,6 +97,9 @@ const baseConfig = {
   outDir: 'dist',
   dts: true,
   external: mergedExternal as any,
+  outExtension: defaultOutExtension,
+  hash: false,
+  splitting: false,
 };
 
 const finalConfig: Record<string, unknown> = {
