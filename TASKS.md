@@ -116,6 +116,23 @@
   - [x] 実行ログとロールバック手順を TASKS.md に明記する
 - ロールバック手順：`packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` と関連テスト差分を revert し、上記テストコマンドを再実行して従来の Stepper 表示へ戻ることを確認する
 
+-1289) Shape metadata 生成ガード（P0）
+- ブランチ: `chore/metadata/ensure-shape`（sandbox 制約で `main` 上で作業）
+- 依存: `package.json`, `packages/features/fetch-save-metadata/*`, `scripts/data-generation/*`, `plugins/shape-plugin/package.json`
+- 受け入れ基準（DoD）:
+  - [ ] `TASKS.md` の Kanban／運用ログを更新し、start→done とロールバック手順を明記する
+  - [ ] `generate-*-metadata` スクリプトにファイル存在チェックを導入し、既存ファイルがある場合はスキップする
+  - [ ] `pnpm dev` / `pnpm build`（および Shape Plugin の build）が開始される前にメタデータ生成スクリプトが確実に実行されるよう、前処理に `metadata:ensure` を組み込む
+  - [ ] `packages/features/fetch-save-metadata/output` 配下の GADM / geoBoundaries / NaturalEarth / OSM すべてを対象に同様の仕組みを適用する
+  - [ ] 確認コマンド（例: `pnpm run metadata:ensure`）を実行して結果を運用ログに記録する
+- チェックリスト:
+  - [ ] `fetchAndSaveMetadata` にファイル存在チェックを追加し、既存ファイル時は早期 return する
+  - [ ] `scripts/data-generation/generate-metadata.mjs` を実装し、指定データセットごとに fetch 処理をまとめる（環境変数で URL を override 可能に）
+  - [ ] ルート `package.json` に `metadata:ensure` を追加し、`dev:pre` と `build:pre` に組み込む
+  - [ ] `plugins/shape-plugin/package.json` に `prebuild` を追加し、Shape Plugin 単体 build 時にも metadata ensure が走るようにする
+  - [ ] 実行ログを TASKS.md に追記し、ロールバック手順として `package.json`/scripts/{data-generation}/fetch-save-metadata 変更を revert する旨を記載する
+- ロールバック手順：追加した `metadata:ensure` 関連スクリプトと `fetchAndSaveMetadata` のガードを revert し、`package.json`/`plugins/shape-plugin/package.json` の変更を元に戻した上で `pnpm run metadata:ensure` を再実行して従来挙動へ戻ることを確認する
+
 
 1286) SpeedDial/TreeConsole プラグインアイコン回帰修正（P0）
 - ブランチ: `fix/app/plugin-menu-icons`（sandbox 制約で `main` 上で作業）
@@ -7972,6 +7989,10 @@ ToDo（Phase 2/3: any の完全撤去）
 - 2025-11-15 19:45 done: feat/plugin-dialog/stepper-states — Stepper 表示の状態分離とアクセシビリティ対応を完了。ロールバックは `packages/plugin-ui-host/src/headless/components/PluginDialogHeader.tsx` とヘッダーテスト差分を revert し、上記テストコマンドを再実行する。
 - 2025-11-15 19:46 progress: feat/plugin-dialog/footer-icons — primary ボタンのアイコン位置を `endIcon` へ切り替え、ラベル右側に表示されるよう調整。
 - 2025-11-15 19:47 command: pnpm --filter @hierarchidb/plugin-ui-host test -- --run PluginDialogFooter — exit 0（endIcon 変更後も 3 テストすべて緑）。
+- 2025-11-15 20:05 start: chore/metadata/ensure-shape — Shape Plugin が依存する `@hierarchidb/fetch-metadata/output/*.json` の自動生成を前処理化するタスクを開始。DoD: スクリプトのスキップ判定、metadata:ensure 実行導線、Shape Plugin build への組み込み、運用ログ更新。
+- 2025-11-15 20:12 progress: chore/metadata/ensure-shape — `fetchAndSaveMetadata` にファイル存在チェックを追加し、`scripts/data-generation/generate-metadata.mjs` を実装。`package.json` へ `metadata:ensure` を追加し、`dev:pre`/`build:pre` と Shape Plugin `prebuild` で実行されるよう更新。
+- 2025-11-15 20:14 command: pnpm run metadata:ensure — exit 0（既存ファイル検知により 4 つのデータセットすべてスキップ）。
+- 2025-11-15 20:15 done: chore/metadata/ensure-shape — metadata 生成を dev/build 前処理化し、Shape Plugin 単体 build でも `metadata:ensure` が走る構成を反映。ロールバックは `package.json`, `plugins/shape-plugin/package.json`, `scripts/data-generation/generate-metadata.mjs`, `packages/features/fetch-save-metadata/src/fetchSaveMetadata.ts` の差分を revert し、`pnpm run metadata:ensure` を再実行すること。
 - 2025-11-15 16:01 progress: feat/ui-treeconsole/node-info-panel — TreeNodeInfoPanel の NodeTypeIcon が常に primary 色になる問題を、`getPluginIconColor`/`rainbowColors` ベースの既存ロジックを流用して解消。`nodeType` に応じて manifest 色または depth 依存グラデーションを反映し、Breadcrumb や TreeTable と同じ色決定が行われるようにした（テストコマンドは未実行、UI 変更のみ）。
 - 2025-11-15 16:20 start: fix/app/plugin-menu-icons — SpeedDial および TreeConsole コンテキストメニューで folder/basemap/resolver 以外のプラグイン nodeType がすべて代替アイコン表示になる回帰を調査・修正開始。DoD: (1) TASKS Kanban/ログ更新（start→done + rollback）、(2) SpeedDial/ContextMenu 双方で全 nodeType が manifest 設定に沿ったアイコンへ戻ることを手動確認、(3) DynamicSpeedDial 等のユニット or 明示的検証手順を整備し成功ログを残す、(4) ロールバック手順と実行コマンドを記載。
 - 2025-11-15 17:05 progress: fix/app/plugin-menu-icons — `@hierarchidb/ui-icon` の `getMuiIconComponent` / `getMuiIconWithColor` が正規化後のアイコン名のみで global icon map を参照していたため、nodeType ベースで登録されるプラグイン固有アイコンを拾えず汎用 MUI アイコンへフォールバックしていたと判明。raw 名称 → 正規化名称の順で global map / static map を探索するよう修正し、`collectPascalCandidates` ヘルパーで重複排除を行った。`packages/ui/icon/src/__tests__/getMuiIconComponent.test.tsx` を新設し、raw 名称で custom icon が優先されること＆ `getMuiIconWithColor` が色指定を維持することを検証。

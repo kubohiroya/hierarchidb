@@ -132,6 +132,19 @@ function createRuntimeAliasConfig({
     if (exclude) optimizeExclude.add(specifier);
   };
 
+  const registerMetadataAliases = () => {
+    const files = ['gadm.json', 'geoboundaries.json', 'naturalearth.json', 'osm.json'];
+    for (const fileName of files) {
+      addAlias(
+        `@hierarchidb/fetch-save-metadata/output/${fileName}`,
+        `../packages/features/fetch-save-metadata/output/${fileName}`,
+        { exclude: true, exact: true }
+      );
+    }
+  };
+
+  registerMetadataAliases();
+
   const processedPackages = new Set<string>();
   const shouldAliasPackage = (specifier: string, group?: string) => shouldUseSource(selection, specifier, group);
 

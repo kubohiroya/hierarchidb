@@ -100,6 +100,15 @@
       "@hierarchidb/fetch-save-metadata/*": [
         "packages/features/fetch-save-metadata/dist/*"
       ],
+      "@hierarchidb/fetch-save-metadata/output": [
+        "packages/features/fetch-save-metadata/output"
+      ],
+      "@hierarchidb/fetch-save-metadata/output/*": [
+        "packages/features/fetch-save-metadata/output/*"
+      ],
+      "@hierarchidb/fetch-save-metadata/output/*.json": [
+        "packages/features/fetch-save-metadata/output/*.json"
+      ],
       "@hierarchidb/folder-plugin": [
         "plugins/folder-plugin/src/index.ts"
       ],

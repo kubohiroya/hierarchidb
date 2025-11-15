@@ -12,6 +12,15 @@ export async function fetchAndSaveMetadata(
   //const  = dataSourceFetcher;
   const fullPath = path.join(outputDirName, outputFileName);
 
+  async function fileExists(filePath: string): Promise<boolean> {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Ensure directory exists, create if not
    */
@@ -22,6 +31,11 @@ export async function fetchAndSaveMetadata(
       console.error(`Error creating directory ${dirPath}:`, error);
       throw error;
     }
+  }
+
+  if (await fileExists(fullPath)) {
+    console.log(`[fetch-save-metadata] ${outputFileName} already exists – skipping download.`);
+    return;
   }
 
   await ensureDirectory(outputDirName);

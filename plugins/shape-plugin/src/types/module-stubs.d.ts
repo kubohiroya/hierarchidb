@@ -1,4 +1,4 @@
-declare module '@hierarchidb/fetch-metadata/output/*.json' {
+declare module '@hierarchidb/fetch-save-metadata/output/*.json' {
   const data: any[];
   export default data;
 }

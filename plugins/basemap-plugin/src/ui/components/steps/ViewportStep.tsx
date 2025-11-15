@@ -99,7 +99,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   useEffect(() => {
     if (!mapRef.current) return;
     if (!pendingSyncRef.current) return;
-    mapRef.current.jumpTo({
+    mapRef.current.flyTo({
       center: vp.center as [number, number],
       zoom: vp.zoom,
       bearing: vp.bearing ?? 0,
@@ -109,7 +109,7 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
   }, [vp.center, vp.zoom, vp.bearing]);
 
   return (
-    <Box sx={{ p: 2 }} onWheel={(event) => event.stopPropagation() }>
+    <Box sx={{ p: 2 }} onWheel={(event) => event.stopPropagation()}>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         Fine-tune the initial viewport. Enter values directly or drag / zoom the map below.
       </Typography>
@@ -164,11 +164,9 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
           overflow: 'hidden',
           height: 320,
           position: 'relative',
+          overscrollBehavior: 'contain',
         }}
-        onWheelCapture={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
+        onWheelCapture={(event) => event.stopPropagation()}
       >
         <Suspense
           fallback={
@@ -206,39 +204,32 @@ export const ViewportStep: React.FC<ViewportStepProps> = ({ value, mapStyle, onC
         <Box
           sx={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 24,
-            height: 24,
+            inset: 0,
             pointerEvents: 'none',
-          }}
-        >
-          <Box
-            sx={{
+            '&::before': {
+              content: '""',
               position: 'absolute',
               top: '50%',
-              left: -12,
-              right: -12,
-              height: 1,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              transform: 'translateY(-50%)',
-              boxShadow: '0 0 2px rgba(0,0,0,0.6)',
-            }}
-          />
-          <Box
-            sx={{
-              position: 'absolute',
               left: '50%',
-              top: -12,
-              bottom: -12,
-              width: 1,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              transform: 'translateX(-50%)',
+              width: 32,
+              height: 2,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              transform: 'translate(-50%, -50%)',
               boxShadow: '0 0 2px rgba(0,0,0,0.6)',
-            }}
-          />
-        </Box>
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: 2,
+              height: 32,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              transform: 'translate(-50%, -50%)',
+              boxShadow: '0 0 2px rgba(0,0,0,0.6)',
+            },
+          }}
+        />
       </Box>
     </Box>
   );

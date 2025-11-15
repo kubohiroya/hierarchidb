@@ -6,7 +6,7 @@ import type {
   UrlMetadata,
   VectorTileTask,
 } from '../shared/index.js';
-import { BatchTaskStageType } from '../shared/index.js';
+import { BatchTaskStage } from '../shared/index.js';
 
 // ================================
 // Data Source Configurations
@@ -277,8 +277,8 @@ let taskIdCounter = 1;
 
 export function generateMockDownloadTasks(urlMetadata: UrlMetadata[]): DownloadTask[] {
   return urlMetadata.slice(0, 5).map(meta => {
-    const stages = [BatchTaskStageType.SUCCESS, BatchTaskStageType.PROCESS, BatchTaskStageType.WAIT];
-    const stage = stages[Math.floor(Math.random() * 3)] as BatchTaskStageType;
+    const stages = [BatchTaskStage.SUCCESS, BatchTaskStage.PROCESS, BatchTaskStage.WAIT] as const;
+    const stage = stages[Math.floor(Math.random() * stages.length)];
 
     return {
       taskId: `download-${taskIdCounter++}`,
@@ -303,7 +303,7 @@ export function generateMockSimplifyTasks(countries: string[], adminLevels: numb
       tasks.push({
         taskId: `simplify1-${taskIdCounter++}`,
         taskType: 'simplify1',
-        stage: BatchTaskStageType.WAIT,
+        stage: BatchTaskStage.WAIT,
         countryCode,
         adminLevel: level,
         featureCount: Math.floor(Math.random() * 10000) + 1000,
@@ -324,7 +324,7 @@ export function generateMockVectorTileTasks(countries: string[], adminLevels: nu
         tasks.push({
           taskId: `vectortile-${taskIdCounter++}`,
           taskType: 'vectortile',
-          stage: BatchTaskStageType.WAIT,
+          stage: BatchTaskStage.WAIT,
           countryCode,
           adminLevel: level,
           zoomLevel: zoom,
